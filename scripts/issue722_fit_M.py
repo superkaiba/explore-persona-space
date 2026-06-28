@@ -66,6 +66,7 @@ from explore_persona_space.analysis.issue667.gate_chain import (  # noqa: E402
 logger = logging.getLogger("issue722.fit")
 
 HIDDEN = 3584
+N_LAYERS = 28  # Qwen-2.5-7B(-Instruct) hidden-layer count; r_B stacks are (28, 3584).
 DATA_REPO = "superkaiba1/explore-persona-space-data"
 SWEEP_LAYERS = (7, 14, 21)
 HEADLINE_BEHAVIORS = ("em", "sycophancy", "fact")  # marker + refusal dropped (plan §4.3/§5)
@@ -142,15 +143,85 @@ def _chain_rho_one(pred64: np.ndarray, pca_basis: np.ndarray, r_hat: np.ndarray,
     return fit658._rho(chain, E), chain
 
 
+def _clustered_paired_rho_diff_ci(
+    chain_m0: np.ndarray,
+    chain_mplus: np.ndarray,
+    E: np.ndarray,
+    families: list[str],
+    *,
+    n_resamples: int = 1000,
+    alpha: float = 0.05,
+    seed: int = 0,
+) -> dict:
+    """Family-clustered CI on the PAIRED ρ-shift ``Spearman(chain_Mplus, E) −
+    Spearman(chain_M0, E)`` (MF#4 / plan §6.5 / §3 concordance).
+
+    Two separate marginal CIs do NOT test the paired difference. This resamples
+    whole ``target_cid`` families with replacement ONCE per draw, then computes
+    BOTH ρs on the SAME resampled rows in one pass and takes their difference —
+    so the floor respects the paired structure (the two ρs share the held-out
+    cells). Returns ``{"point", "ci_lo", "ci_hi", "n_families"}``; a degenerate
+    (<2 families) input returns a point-only CI.
+    """
+    chain_m0 = np.asarray(chain_m0, dtype=np.float64)
+    chain_mplus = np.asarray(chain_mplus, dtype=np.float64)
+    Earr = np.asarray(E, dtype=np.float64)
+    fams = np.asarray(families, dtype=object)
+    assert chain_m0.shape == chain_mplus.shape == Earr.shape == fams.shape, (
+        chain_m0.shape,
+        chain_mplus.shape,
+        Earr.shape,
+        fams.shape,
+    )
+    rho_mp, rho_m0 = fit658._rho(chain_mplus, Earr), fit658._rho(chain_m0, Earr)
+    if rho_mp is None or rho_m0 is None:
+        return {"point": None, "ci_lo": None, "ci_hi": None, "n_families": 0}
+    point = float(rho_mp - rho_m0)
+    uniq = sorted({str(f) for f in fams})
+    if len(uniq) < 2:
+        return {"point": point, "ci_lo": point, "ci_hi": point, "n_families": len(uniq)}
+    fam_to_idx = {f: np.where(fams.astype(str) == f)[0] for f in uniq}
+    rng = np.random.default_rng(seed)
+    diffs: list[float] = []
+    for _ in range(n_resamples):
+        chosen = rng.choice(uniq, size=len(uniq), replace=True)
+        idx = np.concatenate([fam_to_idx[f] for f in chosen])
+        a, b = fit658._rho(chain_mplus[idx], Earr[idx]), fit658._rho(chain_m0[idx], Earr[idx])
+        if a is not None and b is not None:  # skip degenerate (zero-variance) resamples
+            diffs.append(a - b)
+    if not diffs:
+        return {"point": point, "ci_lo": point, "ci_hi": point, "n_families": len(uniq)}
+    boot = np.asarray(diffs, dtype=np.float64)
+    return {
+        "point": point,
+        "ci_lo": float(np.percentile(boot, 100 * alpha / 2)),
+        "ci_hi": float(np.percentile(boot, 100 * (1 - alpha / 2))),
+        "n_families": len(uniq),
+    }
+
+
 def _r_hat_for(behavior: str, layer: int, rb_main: dict, rb_fact: dict | None) -> np.ndarray:
     """Unit r_B at this (behavior, layer), from r_b.pt (em/syc) or r_b_fact.pt (fact)."""
     if behavior == "fact":
         if rb_fact is None:
             raise RuntimeError("fact headline requested but r_b_fact.pt not loaded")
         stack = np.asarray(rb_fact["r_b_fact"]["fact_expression"]["diffmeans"], dtype=np.float64)
+        src = "r_b_fact.pt[fact_expression][diffmeans]"
     else:
         col = RB_COLUMN_KEY[behavior]
         stack = np.asarray(rb_main["r_b"][col]["diffmeans"], dtype=np.float64)
+        src = f"r_b.pt[{col}][diffmeans]"
+    # MF#8: fail loud on a stale/tiny/smoke-extracted r_B stack — fit_M ALWAYS
+    # consumes the FULL production direction (28 layers × 3584 hidden) against the
+    # real (n, 3584) activation store, so a (24, 896)-shaped CPU-smoke fact
+    # artifact would otherwise surface only as an opaque matmul shape error in
+    # `delta_full @ r_hat`. Assert the production shape with a clear message.
+    if stack.shape != (N_LAYERS, HIDDEN):
+        raise RuntimeError(
+            f"r_B shape mismatch for {behavior}: expected ({N_LAYERS}, {HIDDEN}), "
+            f"got {stack.shape} from {src} — likely a stale or smoke-extracted "
+            "artifact (re-run the fact r_B extraction on the full 7B model)"
+        )
     assert stack.shape[0] >= layer + 1, f"r_B stack {stack.shape} has no layer {layer}"
     r = stack[layer]
     norm = np.linalg.norm(r)
@@ -237,11 +308,17 @@ def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dic
         proj, families, statistic="mean", n_resamples=N_SCALAR_BOOT
     )
 
-    # ---- Three floors via the identical refit harness ----
+    # ---- Three floors via the identical refit harness (family-clustered, MF#6) ----
+    # All three pass `families` so the refit resample is family-clustered — the SAME
+    # sampling unit as the headline Δ CI (clustered_bootstrap_scalar), so the
+    # H_function gate compares like-for-like (a row-i.i.d. floor understated the
+    # family-level variance and biased the gate).
     # M0 refit floor: refit M0 (C0→V0) pairs, eval at grid.
-    floor_m0 = make_refit_pair(C0, V0, _refit_ridge_fn(grid), grid, r_hat, n_pairs=N_REFIT_PAIRS)
+    floor_m0 = make_refit_pair(
+        C0, V0, _refit_ridge_fn(grid), grid, r_hat, families, n_pairs=N_REFIT_PAIRS
+    )
     floor_mplus = make_refit_pair(
-        Cplus, Vplus, _refit_ridge_fn(grid), grid, r_hat, n_pairs=N_REFIT_PAIRS
+        Cplus, Vplus, _refit_ridge_fn(grid), grid, r_hat, families, n_pairs=N_REFIT_PAIRS
     )
     # shifted-design: M_pseudo (Cplus → M0(Cplus)); refit pairs of THAT map at grid.
     floor_shift = make_refit_pair(
@@ -250,6 +327,7 @@ def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dic
         _refit_ridge_fn(grid),
         grid,
         r_hat,
+        families,
         n_pairs=N_REFIT_PAIRS,
     )
     floor_m0_p95 = float(np.percentile(floor_m0, 95))
@@ -292,6 +370,14 @@ def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dic
             chain_block["ci_M0_ridge"] = clustered_bootstrap_spearman(chain_m0, Ek, fam_k)
         if rho_mplus is not None:
             chain_block["ci_Mplus_ridge"] = clustered_bootstrap_spearman(chain_mplus, Ek, fam_k)
+        # MF#4: PAIRED ρ-shift CI on (rho_Mplus − rho_M0) over the SAME family
+        # resamples (both ρs recomputed on the same resampled rows in one pass) —
+        # the co-primary concordance read needs the paired difference CI, not the
+        # two marginal CIs above. Computed whenever both point ρs exist.
+        if rho_m0 is not None and rho_mplus is not None:
+            chain_block["ci_diff_ridge"] = _clustered_paired_rho_diff_ci(
+                chain_m0, chain_mplus, Ek, fam_k
+            )
         # MLP chain-ρ + nonlinearity gap (read 4) + MLP-validity (shuffle) on M0.
         m0_loco_mlp = _mlp_loco_pred(C0, V0_64)
         mplus_loco_mlp = _mlp_loco_pred(Cplus, Vplus_64)
@@ -377,6 +463,12 @@ def m0_at_cplus_ridge_full(C0, V0, Cplus, pca):
 def main() -> int:
     global N_REFIT_PAIRS, TARGET_DIM
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    # Resolve the compute device the ridge + MLP fitters read off fit658.DEVICE
+    # (default "cpu", flipped to cuda only inside fit658.main() — which #722 never
+    # calls; MF#6 / Claude Major#1). "auto" → cuda when available else cpu, so the
+    # GPU lane uses cuda and the CPU smoke still falls back to cpu.
+    fit658.DEVICE = fit658._resolve_device("auto")
+    logger.info("[phase=fit_M] device=%s", fit658.DEVICE)
     ap = argparse.ArgumentParser(description="Issue #722 fit M0 vs M⁺ + the four reads")
     ap.add_argument("--behaviors", nargs="+", default=list(HEADLINE_BEHAVIORS))
     ap.add_argument("--layers", nargs="+", type=int, default=list(SWEEP_LAYERS))

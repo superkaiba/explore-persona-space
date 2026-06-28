@@ -89,12 +89,28 @@ def floor_sd(values: Sequence[float]) -> float:
     return float(np.std(arr, ddof=1))
 
 
+def _resample_family_idx(
+    fam_to_idx: dict[str, np.ndarray], uniq: Sequence[str], rng: np.random.Generator
+) -> np.ndarray:
+    """Resample whole FAMILY labels with replacement → concatenated row indices.
+
+    Mirrors ``clustered_bootstrap_scalar`` / ``gate_chain.clustered_bootstrap_spearman``:
+    draw ``len(uniq)`` family labels with replacement, then concatenate the rows
+    belonging to each sampled label. The returned index array can be longer or
+    shorter than ``n`` (families have uneven sizes) — that is correct
+    family-clustered resampling, and ``fit_fn`` handles an arbitrary row count.
+    """
+    chosen = rng.choice(list(uniq), size=len(uniq), replace=True)
+    return np.concatenate([fam_to_idx[str(f)] for f in chosen])
+
+
 def make_refit_pair(
     X: np.ndarray,
     Y: np.ndarray,
     fit_fn: Callable[[np.ndarray, np.ndarray, np.random.Generator], np.ndarray],
     eval_grid: np.ndarray,
     r_hat: np.ndarray,
+    families: Sequence[str],
     *,
     n_pairs: int = 100,
     seed: int = 0,
@@ -103,28 +119,48 @@ def make_refit_pair(
 
     The IDENTICAL bootstrap+random-init refit harness behind all three floors
     (``floor_M0_refit``, ``floor_Mplus_refit``, ``floor_shifted``; plan §4.5.1).
-    For each of ``n_pairs`` pairs, draw TWO independent bootstrap-over-cells
-    resamples of ``(X, Y)`` (sampling rows with replacement) and fit TWO maps
-    with INDEPENDENT random inits (the per-call ``np.random.Generator`` reseeds
-    the fit). The pair's statistic is
+    For each of ``n_pairs`` pairs, draw TWO independent **family-clustered**
+    resamples of ``(X, Y)`` (resample whole ``target_cid`` families with
+    replacement — MF#6, NOT a row-i.i.d. bootstrap) and fit TWO maps with
+    INDEPENDENT random inits (the per-call ``np.random.Generator`` reseeds the
+    fit). The pair's statistic is
     ``median_c |(fit_a(eval_grid) - fit_b(eval_grid))·r̂_B|`` — two equally-weak
     refits of the SAME underlying map, so refit noise (NOT a true function
     change) drives it. Returns the (n_pairs,) array; the caller takes its 95th
     percentile as the floor and its SD for floor-SD units.
 
+    ``families`` is a parallel array (one label per row of ``X`` / ``Y``); the
+    SAME family-resampling unit the headline Δ CI (``clustered_bootstrap_scalar``)
+    uses, so the H_function gate compares a family-clustered numerator against a
+    family-clustered floor (mismatched sampling units biased the gate — MF#6).
+
     ``fit_fn(X_boot, Y_boot, rng)`` must fit a map on the bootstrap sample and
     return predictions on ``eval_grid`` of shape ``(n_grid, P)`` (P == Y.shape[1]).
     The two pair members differ ONLY by their independent ``rng`` AND their
-    independent bootstrap row resample, exactly the refit/bootstrap noise lever
-    (the store is seed42-only, so there is no cross-seed lever — plan §5).
+    independent family-clustered resample, exactly the refit/bootstrap noise
+    lever (the store is seed42-only, so there is no cross-seed lever — plan §5).
+
+    Degenerate fallback: with <2 distinct families the family resample cannot
+    vary the cluster mix, so it falls back to an i.i.d. ROW bootstrap (a single
+    family means clustering is a no-op) — keeps tiny smokes runnable while the
+    production grid (~7 families) always takes the clustered path.
     """
     n = X.shape[0]
     r_hat = np.asarray(r_hat, dtype=float)
+    fams = np.asarray(list(families), dtype=object)
+    assert fams.shape == (n,), (fams.shape, n)
+    uniq = sorted({str(f) for f in fams})
+    clustered = len(uniq) >= 2
+    fam_to_idx = {f: np.where(fams.astype(str) == f)[0] for f in uniq}
     rng = np.random.default_rng(seed)
     out = np.empty(n_pairs, dtype=float)
     for p in range(n_pairs):
-        idx_a = rng.integers(0, n, size=n)
-        idx_b = rng.integers(0, n, size=n)
+        if clustered:
+            idx_a = _resample_family_idx(fam_to_idx, uniq, rng)
+            idx_b = _resample_family_idx(fam_to_idx, uniq, rng)
+        else:
+            idx_a = rng.integers(0, n, size=n)
+            idx_b = rng.integers(0, n, size=n)
         rng_a = np.random.default_rng(rng.integers(0, 2**31 - 1))
         rng_b = np.random.default_rng(rng.integers(0, 2**31 - 1))
         pred_a = fit_fn(X[idx_a], Y[idx_a], rng_a)  # (n_grid, P)
