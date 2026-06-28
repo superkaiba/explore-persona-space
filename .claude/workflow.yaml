@@ -557,8 +557,8 @@ gates:
         via `scripts/living_docs.py apply <N> <patch>` — atomic flock +
         single commit; then post `epm:living-docs-updated v1`) vs
         `reject` (skip; post `epm:living-docs-update-rejected v1` with the
-        reason; the proposal parks for a future /weekly backstop
-        re-synthesis). "Edit" is a refinement of `confirm`, NOT a third
+        reason; the proposal parks for the nightly /daily living-docs
+        backstop re-synthesis). "Edit" is a refinement of `confirm`, NOT a third
         option: the user may hand-edit the proposed diff before it is
         applied, and the same `confirm` path commits the edited patch —
         this keeps the prompt a binary confirm/reject per CLAUDE.md "2-option
@@ -2070,8 +2070,8 @@ markers:
       the gates.conditional.living_docs_update gate. Non-fatal: the
       experiment stays completed; nothing is written to the living docs.
       Payload: the rejection reason (one line) + the rejected proposal
-      preserved inline so a future backstop re-synthesis (/weekly) can
-      retry with sharper context.
+      preserved inline so the nightly /daily living-docs backstop
+      re-synthesis can retry with sharper context.
   - kind: "epm:related-work-proposed"
     posted_by: skill (via related-work-finder agent)
     when: "/issue Step 10c-bis post-completion batch"
@@ -2126,8 +2126,8 @@ markers:
     fields: "Captured stderr from the failure_classifier.py invocation. Audit record only: the orchestrator treats the unclassifiable failure as `code` (conservative default) and applies the code-class row of the Step 7 failure table; this marker preserves WHY the classifier could not produce a verdict."
   - kind: "epm:failure-lesson"
     posted_by: skill (orchestrator)
-    when: "Step 7, when a crash-fix round resolves an epm:failure (experiment-implementer crash-fix report, or a respawned experimenter's relaunch-with-fix report); also Step 6d, when an experimenter's launch report carries the block for a within-turn launch fix (dying launch fixed + relaunched in the same spawn — no epm:failure posted)"
-    fields: "failure_class (code|infra|data), phase (pipeline phase or script), lesson (1-3 sentences: the trap + the fix, written for the NEXT agent — no transcript dumps), generalizes (yes|no — yes only if the trap plausibly recurs beyond this issue), owning_agent (experiment-implementer|experimenter), gotcha_candidate (yes|no — yes for codebase/infra traps that belong in .claude/rules/gotchas.md). Posted verbatim from the resolving agent's report block. On generalizes=yes the orchestrator ALSO persists the lesson immediately to .claude/agent-memory/<owning_agent>/ (feedback_<slug>.md + MEMORY.md index line; explicit-path commit + push, standing rule 2026-06-02) so parallel same-day sessions load it on their next spawn; on gotcha_candidate=yes it ALSO routes a workflow-fix candidate targeting .claude/rules/gotchas.md through the workflow-fix-on-bug auto-spawn default. generalizes=no lessons get the marker only (no memory write). /daily is the deduplicating consolidator (reads the day's markers, dedupes against agent memories, promotes recurring lessons into rules, prunes over-eager generalizes=yes entries)."
+    when: "Step 7, when a crash-fix round resolves an epm:failure (experiment-implementer crash-fix report, or a respawned experimenter's relaunch-with-fix report); also Step 6d, when an experimenter's launch report carries the block for a within-turn launch fix (dying launch fixed + relaunched in the same spawn — no epm:failure posted); also when a round confirms the true root cause (root_cause_confirmed=yes) even if a subsequent distinct failure follows or the pod is abandoned in recovery (#712)"
+    fields: "failure_class (code|infra|data), phase (pipeline phase or script), lesson (1-3 sentences: the trap + the fix, written for the NEXT agent — no transcript dumps), generalizes (yes|no — yes only if the trap plausibly recurs beyond this issue), owning_agent (experiment-implementer|experimenter), gotcha_candidate (yes|no — yes for codebase/infra traps that belong in .claude/rules/gotchas.md), root_cause_confirmed (yes|no — yes if the round identified the TRUE root cause even though a NEW distinct failure followed or the pod was abandoned in recovery; #712), supersedes (OPTIONAL prior-lesson slug or marker-ts this lesson corrects; absent = byte-identical append-only as pre-#712; #712). Posted verbatim from the resolving OR root-cause-confirming agent's report block. On generalizes=yes the orchestrator ALSO persists the lesson immediately to .claude/agent-memory/<owning_agent>/ (feedback_<slug>.md + MEMORY.md index line; explicit-path commit + push, standing rule 2026-06-02) so parallel same-day sessions load it on their next spawn; on gotcha_candidate=yes it ALSO routes a workflow-fix candidate targeting .claude/rules/gotchas.md through the workflow-fix-on-bug auto-spawn default. generalizes=no lessons get the marker only (no memory write). scripts/consolidate_lessons.py is the deterministic deduplicating consolidator (a cron, NOT /daily — task #711): it reads the rolling-window markers, dedupes against agent memories, promotes recurring lessons into .claude/rules/gotchas.md, and prunes over-eager generalizes=yes entries. /daily no longer owns this pass. On supersedes the orchestrator routes the write through task_workflow.apply_failure_lesson(), which UPDATES the matched prior durable entry in place (prepends a concrete [SUPERSEDED by <slug> — see #<N>] marker) and APPENDS the new lesson alongside; an unresolved supersedes ref is a logged no-op (supersedes_unresolved), never a hard failure; capture eligibility is task_workflow.failure_lesson_capture_eligible() (resolved OR root_cause_confirmed=yes). #712"
   - kind: "epm:experimenter-respawn"
     posted_by: skill
     when: "Step 7 (failure_class=infra path)"
