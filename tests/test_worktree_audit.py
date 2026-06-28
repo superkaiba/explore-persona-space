@@ -8,15 +8,18 @@ import itertools
 import sys
 from pathlib import Path
 
-_SPEC = importlib.util.spec_from_file_location(
-    "worktree_audit",
-    Path(__file__).resolve().parent.parent / "scripts" / "worktree_audit.py",
-)
-worktree_audit = importlib.util.module_from_spec(_SPEC)
-# Register in sys.modules BEFORE exec so @dataclass + `from __future__ import
-# annotations` can resolve the module via sys.modules during class creation.
-sys.modules["worktree_audit"] = worktree_audit
-_SPEC.loader.exec_module(worktree_audit)
+if "worktree_audit" in sys.modules:
+    worktree_audit = sys.modules["worktree_audit"]
+else:
+    _SPEC = importlib.util.spec_from_file_location(
+        "worktree_audit",
+        Path(__file__).resolve().parent.parent / "scripts" / "worktree_audit.py",
+    )
+    worktree_audit = importlib.util.module_from_spec(_SPEC)
+    # Register in sys.modules BEFORE exec so @dataclass + `from __future__
+    # import annotations` can resolve the module during class creation.
+    sys.modules["worktree_audit"] = worktree_audit
+    _SPEC.loader.exec_module(worktree_audit)
 should_remove = worktree_audit.should_remove
 effective_grace_hours = worktree_audit.effective_grace_hours
 tracked_changes_backlog = worktree_audit.tracked_changes_backlog
