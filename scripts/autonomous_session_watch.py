@@ -9948,6 +9948,42 @@ def _unmapped_idle_reap_s() -> float:
     return val if val > 0 else UNMAPPED_IDLE_REAP_S
 
 
+# Short reap window for an UNMAPPED session whose LAST-known mapped task was
+# TERMINAL (the #720 ghost class: issue-<N>.json deleted by the respawn pass
+# at terminal -> session unmapped -> previously only the 12h bucket caught it).
+# 30 min keeps the post-terminal session clear of any same-tick promotion/
+# finalize activity (which resets the idle clock anyway) while landing the
+# worst-case reap STRICTLY under the body's ~1h acceptance window: with the
+# 10-min cron and the existing >=2-consecutive-miss guard, worst-case reap is
+# 30 min + 2*10 min = 50 min < 60 min (see plan §11 + the arithmetic-bound test
+# test_short_window_worst_case_under_acceptance). Override via
+# EPM_LAST_MAPPED_TERMINAL_REAP_S.
+LAST_MAPPED_TERMINAL_REAP_S = 30 * 60
+
+# Filename prefix for the per-session "last mapped task was terminal"
+# breadcrumb at ~/.eps-autonomous/last-mapped-terminal-<sid>.json. Written by
+# the respawn pass at the instant it deletes issue-<N>.json for a TERMINAL
+# task; read by the idle-unmapped pass to pick the short reap window. This
+# prefix is NOT in _load_session_issue_map's prefix list
+# (("issue-", "manual-issue-", "campaign-"), spawn_session.py) nor matched by
+# the respawn pass's issue-*.json glob, so it can never be mistaken for a
+# respawnable registration.
+LAST_MAPPED_TERMINAL_PREFIX = "last-mapped-terminal-"
+
+
+def _last_mapped_terminal_reap_s() -> float:
+    """Short reap window in seconds: ``EPM_LAST_MAPPED_TERMINAL_REAP_S`` when
+    set to a positive number, else :data:`LAST_MAPPED_TERMINAL_REAP_S` (30 min).
+    Garbled / non-positive values fall back to the default (same parse as
+    :func:`_unmapped_idle_reap_s`)."""
+    raw = os.environ.get("EPM_LAST_MAPPED_TERMINAL_REAP_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return LAST_MAPPED_TERMINAL_REAP_S
+    return val if val > 0 else LAST_MAPPED_TERMINAL_REAP_S
+
+
 def _wrapper_has_controlling_tty(pid: int) -> bool:
     """True iff ``/proc/<pid>/stat`` reports a controlling TTY (tty_nr != 0).
 
@@ -10532,6 +10568,119 @@ def _clear_idle_unmapped_state(sid: str) -> None:
     _idle_unmapped_state_path(sid).unlink(missing_ok=True)
 
 
+def _last_mapped_terminal_path(sid: str) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{LAST_MAPPED_TERMINAL_PREFIX}{sid}.json"
+
+
+def _record_last_mapped_terminal(
+    sid: str, issue: int, terminal_status: str, dry_run: bool, now: float | None = None
+) -> None:
+    """Write the #720 breadcrumb atomically (temp + rename). Idempotent: a
+    re-write for an already-recorded sid just refreshes the fields. Fail-soft:
+    an OSError on write is logged and swallowed (the breadcrumb is an
+    OPTIMIZATION — a missing one only means the session reaps at the old 12h
+    window, never a wrong kill). Skipped under ``dry_run``, and only ever
+    written for a TERMINAL status (a PARK/ACTIVE status would widen scope when
+    later read, so it is refused here too)."""
+    if dry_run:
+        return
+    if terminal_status not in TERMINAL:
+        return
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "happy_session_id": sid,
+        "issue": issue,
+        "terminal_status": terminal_status,
+        "recorded_at": now if now is not None else time.time(),
+    }
+    dest = _last_mapped_terminal_path(sid)
+    tmp = dest.with_suffix(".json.tmp")
+    try:
+        tmp.write_text(json.dumps(payload, indent=2))
+        tmp.replace(dest)
+    except OSError as e:
+        print(f"  last-mapped-terminal: write failed for {sid}: {e}", file=sys.stderr)
+
+
+def _last_mapped_terminal(sid: str) -> tuple[str, int] | None:
+    """The recorded ``(terminal_status, issue)`` for ``sid``, or ``None`` (no
+    breadcrumb / garbled / not a terminal status / no int issue). Validates the
+    recorded status against :data:`TERMINAL` so a stale/garbled value can never
+    widen scope, and surfaces the recorded ``issue`` so the consumer can run the
+    running-pod + live-follow-up protected-class guards without a session->issue
+    mapping it no longer has."""
+    path = _last_mapped_terminal_path(sid)
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    status = data.get("terminal_status")
+    issue = data.get("issue")
+    if status in TERMINAL and isinstance(issue, int):
+        return (status, issue)
+    return None
+
+
+def _gc_orphan_last_mapped_terminal(live_sids: set[str], dry_run: bool) -> None:
+    """Drop #720 breadcrumbs whose session is no longer live (reaped, or the
+    user promoted + the session ended). Called once per daemon-reachable tick
+    from :func:`idle_unmapped_pass`, mirroring
+    :func:`_gc_orphan_idle_unmapped_state`."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return
+    for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{LAST_MAPPED_TERMINAL_PREFIX}*.json"):
+        sid = path.name[len(LAST_MAPPED_TERMINAL_PREFIX) : -len(".json")]
+        if sid not in live_sids and not dry_run:
+            path.unlink(missing_ok=True)
+
+
+def _effective_idle_reap_s(sid: str, mapped: bool, has_tty: bool, long_reap_s: float) -> float:
+    """The idle-unmapped reap window (s) for one session: the SHORT (#720)
+    window when the session is a finished, unmapped, non-TTY, unprotected
+    autonomous /issue session, else ``long_reap_s`` (the 12h default) unchanged.
+
+    Extracted from :func:`_process_idle_unmapped` (keeps its branch count under
+    the C901 cap) AND keeps the caller branch-free (it compares the return
+    against ``long_reap_s`` to set its observability label). The SHORT window is
+    applied (via ``min``, so it can only ever SHORTEN, never lengthen) ONLY when
+    the session is unmapped + not a live-user TTY AND the terminal breadcrumb is
+    present AND both LAZY protected-class guards clear — every other case
+    returns ``long_reap_s`` unchanged. The guards both FAIL TOWARD KEEP when the
+    recorded issue still has work in flight:
+
+    - **Guard 1** (running managed pod): :func:`_running_managed_issue_pods`
+      returns ``None`` on a FAILED snapshot (uncertain -> KEEP), ``[]`` for no
+      pods, or 4-tuples ``(issue, pod_id, pod_name, info)`` — a snapshot that is
+      ``None`` OR contains a RUNNING pod for the breadcrumb's issue keeps the
+      long window. Reuses the same helper the #695 fallback gate 4 uses.
+    - **Guard 2** (live same-issue follow-up): :func:`_task_followup_active` on
+      the breadcrumb's recorded issue (a follow-up signal newer than the latest
+      done-transition) keeps the long window.
+
+    Gating on ``mapped``/``has_tty`` here (rather than at the call site) keeps
+    the breadcrumb read + the two guard probes LAZY — they fire only for a
+    genuinely-finished, unmapped, non-TTY candidate, not every tick. A mapped
+    session always keeps the long window (the breadcrumb is read only in the
+    unmapped branch)."""
+    if mapped or has_tty:
+        return long_reap_s
+    crumb = _last_mapped_terminal(sid)
+    if crumb is None:
+        return long_reap_s
+    _term_status, crumb_issue = crumb
+    running = _running_managed_issue_pods(caller="idle-unmapped-720")
+    pod_uncertain_or_present = running is None or any(t[0] == crumb_issue for t in running)
+    if pod_uncertain_or_present:
+        return long_reap_s
+    if _task_followup_active(crumb_issue):
+        return long_reap_s
+    return min(long_reap_s, _last_mapped_terminal_reap_s())
+
+
 def _gc_orphan_idle_unmapped_state(
     live_sids: set[str], dry_run: bool, now: float | None = None
 ) -> None:
@@ -10892,6 +11041,27 @@ def _process_idle_unmapped(
 
     idle_reap_s = _unmapped_idle_reap_s()
 
+    # ── #720 short reap window (the completed-/parked-session ghost class) ────
+    # An unmapped session whose LAST-known mapped task was TERMINAL is a
+    # finished autonomous /issue session, not a generic abandoned chat session,
+    # so it earns the SHORT reap window (default 30 min) instead of 12h. The
+    # breadcrumb read is one IO call, taken ONLY when present.
+    #
+    # The two PROTECTED-CLASS guards below FAIL TOWARD KEEP — retaining the 12h
+    # window, NOT applying the short window — when the recorded issue still has
+    # work in flight. Without them, narrowing the window 12h -> 30 min on the
+    # PRIMARY path would expose (a) a still-RUNNING pod on a session that has
+    # gone quiet > 30 min mid-work, and (b) a live same-issue follow-up that has
+    # not yet re-registered issue-<N>.json (register-current fires only after
+    # set-status followups_running). Both guards are LAZY: invoked only when the
+    # terminal breadcrumb is present, so the pod-API snapshot + the per-task
+    # events fetch are paid only for a genuinely-finished candidate, not every
+    # tick. Mapped sessions never reach this (the breadcrumb is read only in the
+    # unmapped branch).
+    effective_reap_s = _effective_idle_reap_s(sid, mapped, has_tty, idle_reap_s)
+    short_window = effective_reap_s < idle_reap_s
+    idle_reap_s = effective_reap_s
+
     # ── #695 corroborating-idleness fallback ─────────────────────────────────
     # ONLY when the primary signal is unavailable for an in-the-idle-branch
     # (unmapped + not-live-tty) session: try to supply a substitute idle age
@@ -10927,9 +11097,11 @@ def _process_idle_unmapped(
     )
     idle_label = f"{idle_age_s / 3600:.1f}h" if idle_age_s is not None else "?"
     source_label = " source=fallback" if fallback_active else ""
+    window_label = " window=short-terminal" if short_window else ""
     print(
         f"  session {sid} (pid={pid}): mapped={mapped} tty={has_tty} "
-        f"idle={idle_label}{source_label} missed={prev_missed}->{new_missed} action={action}"
+        f"idle={idle_label}{source_label}{window_label} "
+        f"missed={prev_missed}->{new_missed} action={action}"
     )
 
     if action == "clear":
@@ -11052,6 +11224,7 @@ def idle_unmapped_pass(
     # GC ALWAYS on a daemon-reachable tick — even with zero candidates — so
     # episodes whose session died/was stopped by any path start fresh later.
     _gc_orphan_idle_unmapped_state(live_sids, dry_run, now=now)
+    _gc_orphan_last_mapped_terminal(live_sids, dry_run)  # #720 breadcrumb GC
     if not children:
         print("idle-unmapped: no live daemon-tracked sessions")
         return
@@ -12724,6 +12897,15 @@ def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int
     )
 
     if action == "delete":
+        # #720: before unmapping, drop the breadcrumb so the idle-unmapped pass
+        # can reap this now-unmapped session on the SHORT window. Only for the
+        # live session we just observed (sid present + in live_ids); a
+        # dead/missing session needs no breadcrumb (nothing to reap). status is
+        # always in TERMINAL here (decide() returns "delete" only for TERMINAL),
+        # and _record_last_mapped_terminal refuses a non-TERMINAL status anyway.
+        sid = entry.get("happy_session_id")
+        if isinstance(sid, str) and sid and sid in live_ids and isinstance(issue, int):
+            _record_last_mapped_terminal(sid, issue, status, dry_run)
         if not dry_run:
             path.unlink(missing_ok=True)
     elif action == "respawn":
