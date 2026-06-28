@@ -4439,8 +4439,8 @@
     "713": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/713",
-      "status": "planning",
+      "path": "tasks/approved/713",
+      "status": "approved",
       "title": "Fold /weekly's load-bearing checks into nightly /daily; retire the weekly cadence"
     },
     "72": {
