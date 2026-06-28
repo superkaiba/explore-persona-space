@@ -35,7 +35,6 @@ import json
 import logging
 import os
 import re
-import time
 
 import numpy as np
 
@@ -275,8 +274,18 @@ def submit_judge_batch_raw(
         ``{custom_id: raw_text}``; batch-errored requests map to
         ``"__BATCH_ERROR__: <type>"`` (callers count these as parse failures,
         never silently drop them).
+    The poll is routed through the sanctioned #663-hardened client
+    (:func:`explore_persona_space.eval.batch_judge.submit_and_poll_batch_raw`):
+    it shards ≤8k/batch, bounds each sub-batch's poll on the batch's OWN
+    ``expires_at`` deadline (an in-SLA batch self-harvests for free — NO
+    deadline-less ``while True`` poller pinning idle resources), and resumes by
+    ``custom_id``. The legacy ``timeout_s`` knob is retained for signature
+    stability but is now ADVISORY: the authoritative bound is each batch's
+    ``expires_at`` + grace inside the sanctioned helper (workflow_lint
+    ``--check-batch-judge-client`` forbids the hand-rolled inline poll this used
+    to carry).
     """
-    from explore_persona_space.eval.batch_judge import _chunk_requests
+    from explore_persona_space.eval.batch_judge import submit_and_poll_batch_raw
 
     if timeout_s is None:
         timeout_s = float(os.environ.get("I537_JUDGE_POLL_TIMEOUT_S", "86400"))
@@ -294,41 +303,12 @@ def submit_judge_batch_raw(
         requests.append({"custom_id": cid, "params": params})
     assert len({r["custom_id"] for r in requests}) == len(requests), "duplicate custom_ids"
 
-    out: dict[str, str] = {}
-    for chunk in _chunk_requests(requests):
-        batch = client.messages.batches.create(requests=chunk)
-        logger.info("[judge-batch] %s created (%d requests)", batch.id, len(chunk))
-        t0 = time.time()
-        interval = poll_interval
-        while True:
-            batch = client.messages.batches.retrieve(batch.id)
-            if batch.processing_status == "ended":
-                break
-            if time.time() - t0 > timeout_s:
-                raise TimeoutError(
-                    f"judge batch {batch.id} still {batch.processing_status} after "
-                    f"{timeout_s:.0f}s -- raise I537_JUDGE_POLL_TIMEOUT_S or investigate"
-                )
-            time.sleep(interval)
-            interval = min(interval * 1.5, max_poll_interval)
-        n_err = 0
-        for result in client.messages.batches.results(batch.id):
-            if result.result.type == "succeeded":
-                text = next((b.text for b in result.result.message.content if b.type == "text"), "")
-                out[result.custom_id] = text
-            else:
-                out[result.custom_id] = f"__BATCH_ERROR__: {result.result.type}"
-                n_err += 1
-        logger.info(
-            "[judge-batch] %s ended in %.0fs (%d results, %d errored)",
-            batch.id,
-            time.time() - t0,
-            len(chunk),
-            n_err,
-        )
-    missing = {r["custom_id"] for r in requests} - set(out)
-    assert not missing, f"batch results missing {len(missing)} custom_ids: {sorted(missing)[:5]}"
-    return out
+    return submit_and_poll_batch_raw(
+        requests,
+        client,
+        poll_interval=poll_interval,
+        max_poll_interval=max_poll_interval,
+    )
 
 
 # ── 3c. Verdict parsers (shared by assembly + headroom rates + calibration) ──

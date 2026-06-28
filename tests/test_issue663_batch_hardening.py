@@ -259,6 +259,67 @@ def test_legacy_submit_poll_partial_harvest_on_flip():
     assert all(r["aligned"] == 90 for r in result.values())
 
 
+# ── #697: submit_and_poll_batch_raw — the sanctioned RAW-TEXT poll path ───────
+# The #537 judge pools (vendored at i537_judging.submit_judge_batch_raw) need the
+# verdict TEXT verbatim (their own parsers run downstream), so they route through
+# this sanctioned helper instead of a hand-rolled inline messages.batches.create +
+# unbounded while-True poll (the deadline-less poller workflow_lint
+# --check-batch-judge-client forbids). These pin: text collected verbatim (NOT
+# parsed into the {aligned,coherent} score shape), error mapping, and the same
+# expires_at deadline bound the legacy helper has.
+
+
+def test_submit_and_poll_batch_raw_collects_text_verbatim():
+    """Succeeded results return their raw text under custom_id — NOT parsed into a
+    score dict (the #537 judge contract; its own parsers run downstream)."""
+    from explore_persona_space.eval.batch_judge import submit_and_poll_batch_raw
+
+    client = _DeadlineSubmitClient(flip_to_ended_on=2)
+    reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(3)]
+    clock = iter(itertools.chain([T0], itertools.repeat(T0)))
+    out = submit_and_poll_batch_raw(
+        reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
+    )
+    assert set(out) == {"c0", "c1", "c2"}
+    # Raw text verbatim — the helper does NOT parse it into {aligned,coherent,...}.
+    assert all(v == JUDGE_TEXT for v in out.values())
+    assert all(isinstance(v, str) for v in out.values())
+
+
+def test_submit_and_poll_batch_raw_maps_errors_to_sentinel():
+    """A non-succeeded result maps to '__BATCH_ERROR__: <type>' (never dropped)."""
+    from explore_persona_space.eval.batch_judge import submit_and_poll_batch_raw
+
+    client = _DeadlineSubmitClient(
+        flip_to_ended_on=1,
+        results_for={"c1": "invalid_request_error", "c2": "expired"},
+    )
+    reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(3)]
+    clock = iter(itertools.repeat(T0))
+    out = submit_and_poll_batch_raw(
+        reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
+    )
+    assert out["c0"] == JUDGE_TEXT
+    assert out["c1"].startswith("__BATCH_ERROR__:")
+    assert out["c2"].startswith("__BATCH_ERROR__:")
+    # Every custom_id is accounted for — no silent drops.
+    assert set(out) == {"c0", "c1", "c2"}
+
+
+def test_submit_and_poll_batch_raw_deadline_bound_raises():
+    """A sub-batch that never ends by its expires_at deadline raises
+    BatchDeadlineExceeded — the sanctioned bound, not an unbounded while-True."""
+    from explore_persona_space.eval.batch_judge import submit_and_poll_batch_raw
+
+    client = _DeadlineSubmitClient(flip_to_ended_on=None)
+    reqs = [{"custom_id": f"c{i}", "params": {}} for i in range(2)]
+    clock = iter(itertools.chain([T0, T0 + dt.timedelta(hours=1)], itertools.repeat(PAST_DEADLINE)))
+    with pytest.raises(BatchDeadlineExceeded):
+        submit_and_poll_batch_raw(
+            reqs, client, poll_interval=0.0, now_fn=lambda: next(clock), sleep_fn=lambda _x: None
+        )
+
+
 # ── #663 Test 8: _submit_and_poll_batch end-to-end (A8 legacy contract) ──────
 
 
