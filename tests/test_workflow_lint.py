@@ -50,7 +50,11 @@ from workflow_lint import (  # noqa: E402
     check_wandb_required,
 )
 
-from explore_persona_space.workflow import load_workflow_yaml  # noqa: E402
+from explore_persona_space.workflow import (  # noqa: E402
+    MarkerEntry,
+    WorkflowYaml,
+    load_workflow_yaml,
+)
 
 
 def _run(*flags: str) -> subprocess.CompletedProcess[str]:
@@ -1078,6 +1082,63 @@ def test_check_marker_registry_skills_dir_pass_registered_post(tmp_path):
     )
     errors = check_marker_registry(_workflow(), skills_dir=skills)
     assert errors == [], f"expected PASS for a registered kind, got: {errors}"
+
+
+def test_check_marker_registry_pins_failure_lesson_field_contract(tmp_path):
+    """#712 §4f: ``check_marker_registry`` ALSO pins the ``epm:failure-lesson``
+    field contract — its registry ``fields:`` string MUST contain the literal
+    tokens ``root_cause_confirmed`` AND ``supersedes``, and its ``when:`` string
+    MUST contain ``root_cause_confirmed=yes`` — so a future edit that drops or
+    renames a field FAILs the lint.
+
+    FAIL leg — a synthetic workflow whose ``epm:failure-lesson`` marker is
+    MISSING the tokens produces a field-contract error (empty override dirs
+    isolate the new field-contract assertion from the posting-site scan).
+
+    PASS leg — the REAL committed ``workflow.yaml`` carries the tokens, so the
+    repo-level check produces no ``epm:failure-lesson`` field-contract error.
+    (In TDD pass 1 BOTH legs fail: the field-contract assertion does not exist
+    yet AND the real workflow.yaml has not yet gained the tokens — the
+    implementation pass adds both, after which this test pins the contract.)
+    """
+    empty_skills = tmp_path / "skills"
+    empty_agents = tmp_path / "agents"
+    empty_skills.mkdir()
+    empty_agents.mkdir()
+
+    # FAIL: a failure-lesson marker stripped of the required field tokens.
+    stripped = WorkflowYaml(
+        version=1,
+        markers=[
+            MarkerEntry(
+                kind="epm:failure-lesson",
+                posted_by="orchestrator",
+                when="fires when a crash-fix round resolves the failure",
+                fields="failure_class, phase, lesson, generalizes, owning_agent, gotcha_candidate",
+            )
+        ],
+    )
+    fail_errors = check_marker_registry(stripped, skills_dir=empty_skills, agents_dir=empty_agents)
+    assert any(
+        "epm:failure-lesson" in e
+        and ("root_cause_confirmed" in e or "supersedes" in e or "field" in e.lower())
+        for e in fail_errors
+    ), (
+        "expected a field-contract FAIL naming epm:failure-lesson + the missing "
+        f"token(s); got: {fail_errors}"
+    )
+
+    # PASS: the real workflow.yaml satisfies the field contract (after the
+    # implementation pass fills the fields:/when: tokens).
+    repo_errors = check_marker_registry(_workflow())
+    assert not any(
+        "epm:failure-lesson" in e
+        and ("root_cause_confirmed" in e or "supersedes" in e or "field" in e.lower())
+        for e in repo_errors
+    ), (
+        "the committed workflow.yaml epm:failure-lesson marker is missing a "
+        f"required field token: {repo_errors}"
+    )
 
 
 # ---------------------------------------------------------------------------
