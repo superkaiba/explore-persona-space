@@ -202,3 +202,4 @@
 {"ts": "2026-06-28T21:14:26Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqyaccnd-12dhm4 phase=done after 91s."}
 {"ts": "2026-06-28T21:15:08Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqyabygv-c7mn0y phase=done after 151s."}
 {"ts": "2026-06-28T21:16:43Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqyac1d8-2zc2qo phase=done after 242s."}
+{"ts": "2026-06-28T21:18:28Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "followups_running", "note": "RECOVERY: re-flipping after concurrent merge-rebase clobbered prior set-status + plan files (b6f7148653/716771ba4e timeline). Continuing the a36-readout-reextract-cos round."}
