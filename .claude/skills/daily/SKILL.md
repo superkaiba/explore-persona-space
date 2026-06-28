@@ -187,19 +187,19 @@ Signals to hunt for (non-exhaustive — anything that went wrong counts):
 - **Voice / register drift** — corporate-speak, AI-slop vocab, invented jargon, opaque condition codes, or template-copying instead of plain-English.
 - **Dropped handoffs / manual fixes** — information lost between agents, or anything Thomas had to do by hand that an agent should have done.
 
-**Failure-lesson consolidation (cheaper + higher-precision than transcript
-mining for this class).** ALSO read today's `epm:failure-lesson v1` markers
-across tasks (the `/issue` Step 7 crash-fix hook posts one per resolved
-`epm:failure` and may have already persisted `generalizes: yes` lessons to
-`.claude/agent-memory/<owning_agent>/` in-flight). This skill is that hook's
-deduplicating consolidator: (a) dedupe the day's lessons against the owning
-agent's memory — merge duplicate/overlapping entries into one; (b) promote
-lessons that recur across tasks or days into `.claude/rules/gotchas.md` or
-the relevant rule file; (c) prune over-eager `generalizes: yes` memory
-entries that turned out to be one-offs. For this consolidation pass ONLY,
-`~/explore-persona-space/.claude/agent-memory/**/*.md` is an additional
-allowed target (dedupe/prune edits to lesson-derived entries, not general
-memory rewrites).
+**Failure-lesson consolidation now runs DETERMINISTICALLY in
+`scripts/consolidate_lessons.py` (a cron, NOT this skill) — task #711.** The
+deterministic janitorial pass over `epm:failure-lesson v1` markers — (a) dedupe
+the rolling-window lessons against the owning agent's memory, (b) promote
+recurring lessons into `.claude/rules/gotchas.md`, (c) prune over-eager
+`generalizes: yes` memory entries — was extracted out of this flaky 44K-token
+LLM run into `scripts/consolidate_lessons.py` (cron `02 0 * * *` PT), so it no
+longer depends on `/daily` completing. `/daily` NO LONGER owns failure-lesson
+consolidation and MUST NOT dedupe/promote/prune agent memories or gotchas.md.
+The per-lesson `/issue`-time routing (`generalizes: yes` → agent-memory write,
+`gotcha_candidate: yes` → workflow-fix candidate) is unchanged and still fires
+per-lesson. `~/explore-persona-space/.claude/agent-memory/**/*.md` is therefore
+NO LONGER an allowed write target for this skill.
 
 ### Living-docs consolidation passes (folded in from /weekly, #713)
 

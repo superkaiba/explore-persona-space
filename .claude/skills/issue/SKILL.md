@@ -3814,11 +3814,13 @@ When this skill is re-invoked in `running`:
    If the resolving report omitted the block (older agent spawn, or a
    refusal killed the report tail), reconstruct it from the failure
    context + fix diff yourself before posting — don't bounce the round
-   for the missing block alone. `/daily` remains the deduplicating
-   consolidator: it reads the day's `epm:failure-lesson v1` markers,
-   dedupes against agent memories, promotes recurring lessons into
+   for the missing block alone. `scripts/consolidate_lessons.py` (a cron,
+   NOT `/daily` — task #711) is the deterministic deduplicating
+   consolidator: it reads the rolling-window `epm:failure-lesson v1`
+   markers, dedupes against agent memories, promotes recurring lessons into
    `.claude/rules/gotchas.md` or the relevant rule file, and prunes
-   over-eager `generalizes: yes` memory entries.
+   over-eager `generalizes: yes` memory entries. `/daily` no longer owns
+   this pass.
 3. If `epm:results` exists, move status to `uploading` and proceed to
    Step 8.
 
