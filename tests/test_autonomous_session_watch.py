@@ -9195,3 +9195,468 @@ def test_main_wires_data_disk_pass_call_site():
         "main() must call data_disk_pass(args.dry_run) next to vm_disk_pass — "
         "the percent helpers must be DRIVEN by a production call site (#681 BLOCKER #1)"
     )
+
+
+# ─── #720 short reap window for last-mapped-terminal sessions ────────────────
+# An autonomous /issue --auto session goes UNMAPPED the instant its task hits a
+# terminal status (the respawn pass deletes issue-<N>.json), dropping it into
+# the generic 12h idle-unmapped bucket. The #720 fix drops a breadcrumb at that
+# unmapping moment and applies a SHORT (30-min) reap window to the now-unmapped
+# session — but ONLY after two lazy protected-class guards (no running managed
+# pod for the issue; no live same-issue follow-up) both clear.
+
+
+def _PROJECT_ROOT_for_720(monkeypatch):
+    """Pin asw.PROJECT_ROOT to the synthetic root so the EPS-cwd check is
+    cwd-independent (mirrors _patch_idle_io / _patch_zombie_io)."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "PROJECT_ROOT", Path(_Z_ROOT))
+
+
+def _write_terminal_breadcrumb(reg_dir, sid, issue, terminal_status, recorded_at=0.0):
+    import json
+
+    (reg_dir / f"last-mapped-terminal-{sid}.json").write_text(
+        json.dumps(
+            {
+                "happy_session_id": sid,
+                "issue": issue,
+                "terminal_status": terminal_status,
+                "recorded_at": recorded_at,
+            }
+        )
+    )
+
+
+def test_short_window_worst_case_under_acceptance():
+    # MF-2: pure-arithmetic bound, no clock, no fixtures. The body's "within
+    # ~1h" claim must hold STRICTLY: with the 10-min cron + the 2-miss guard the
+    # worst-case reap latency is LAST_MAPPED_TERMINAL_REAP_S + 2*600. 30 min +
+    # 20 min = 50 min <= 60 min (10-min margin). A future change to the constant
+    # or cron cadence that breaks the bound trips this test.
+    import autonomous_session_watch as asw
+
+    cadence_s = 600  # cron 3-59/10 (every 10 min)
+    threshold = 2
+    idle_reap_s = asw.LAST_MAPPED_TERMINAL_REAP_S
+    worst_case_s = idle_reap_s + threshold * cadence_s
+    acceptance_s = 3600  # strict "within ~1h"
+    assert worst_case_s <= acceptance_s, (
+        f"worst_case={worst_case_s}s exceeds acceptance={acceptance_s}s"
+    )
+    assert asw.LAST_MAPPED_TERMINAL_REAP_S == 30 * 60
+
+
+def test_last_mapped_terminal_env_helper(monkeypatch):
+    # EPM_LAST_MAPPED_TERMINAL_REAP_S: a positive override wins; garbled /
+    # non-positive falls back to the 30-min default.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", raising=False)
+    assert asw._last_mapped_terminal_reap_s() == asw.LAST_MAPPED_TERMINAL_REAP_S
+    monkeypatch.setenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", "120")
+    assert asw._last_mapped_terminal_reap_s() == 120.0
+    monkeypatch.setenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", "garbled")
+    assert asw._last_mapped_terminal_reap_s() == asw.LAST_MAPPED_TERMINAL_REAP_S
+    monkeypatch.setenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", "-5")
+    assert asw._last_mapped_terminal_reap_s() == asw.LAST_MAPPED_TERMINAL_REAP_S
+    monkeypatch.setenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", "0")
+    assert asw._last_mapped_terminal_reap_s() == asw.LAST_MAPPED_TERMINAL_REAP_S
+
+
+def test_record_last_mapped_terminal_writes_for_terminal_only(isolated_registry, monkeypatch):
+    # _record_last_mapped_terminal writes the breadcrumb ONLY for a status in
+    # TERMINAL; a PARK/ACTIVE status no-ops (it would widen scope on read).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", raising=False)
+    for status in sorted(asw.TERMINAL):
+        sid = f"sid-{status}"
+        asw._record_last_mapped_terminal(sid, 720, status, dry_run=False, now=123.0)
+        assert (isolated_registry / f"last-mapped-terminal-{sid}.json").is_file()
+        assert asw._last_mapped_terminal(sid) == (status, 720)
+    # A non-terminal status writes nothing.
+    for status in ("blocked", "running", "proposed"):
+        sid = f"sid-{status}"
+        asw._record_last_mapped_terminal(sid, 99, status, dry_run=False)
+        assert not (isolated_registry / f"last-mapped-terminal-{sid}.json").exists()
+        assert asw._last_mapped_terminal(sid) is None
+    # dry_run never writes.
+    asw._record_last_mapped_terminal("sid-dry", 5, "completed", dry_run=True)
+    assert not (isolated_registry / "last-mapped-terminal-sid-dry.json").exists()
+
+
+def test_last_mapped_terminal_read_roundtrip_and_rejections(isolated_registry):
+    # Read back (status, issue); a blocked / garbled / missing / non-int-issue
+    # breadcrumb reads None (the scope guard against a stale/widened value).
+    import json
+
+    import autonomous_session_watch as asw
+
+    _write_terminal_breadcrumb(isolated_registry, "sid-ok", 720, "completed")
+    assert asw._last_mapped_terminal("sid-ok") == ("completed", 720)
+    # Missing breadcrumb.
+    assert asw._last_mapped_terminal("sid-absent") is None
+    # Non-terminal status (PARK) -> None.
+    _write_terminal_breadcrumb(isolated_registry, "sid-park", 720, "blocked")
+    assert asw._last_mapped_terminal("sid-park") is None
+    # Non-int issue -> None.
+    (isolated_registry / "last-mapped-terminal-sid-strissue.json").write_text(
+        json.dumps({"terminal_status": "completed", "issue": "720"})
+    )
+    assert asw._last_mapped_terminal("sid-strissue") is None
+    # Garbled JSON -> None.
+    (isolated_registry / "last-mapped-terminal-sid-garbled.json").write_text("{not json")
+    assert asw._last_mapped_terminal("sid-garbled") is None
+
+
+def test_process_entry_writes_breadcrumb_on_terminal_delete(isolated_registry, monkeypatch):
+    # The respawn pass: _process_entry on a TERMINAL task whose sid is live
+    # writes last-mapped-terminal-<sid>.json (carrying issue) AND unlinks
+    # issue-<N>.json.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    # Pin the clock so spawned_at stays inside MAX_ENTRY_AGE_S (else the
+    # backstop-age branch fires before the delete branch we are testing).
+    monkeypatch.setattr(asw.time, "time", lambda: 2_000_000.0)
+    reg = isolated_registry / "issue-720.json"
+    reg.write_text(
+        json.dumps({"issue": 720, "happy_session_id": "sid-live", "spawned_at": 2_000_000.0})
+    )
+    asw._process_entry(reg, live_ids={"sid-live"}, dry_run=False, threshold=2)
+    assert not reg.exists()
+    crumb = isolated_registry / "last-mapped-terminal-sid-live.json"
+    assert crumb.is_file()
+    assert asw._last_mapped_terminal("sid-live") == ("completed", 720)
+
+
+def test_process_entry_no_breadcrumb_when_session_dead(isolated_registry, monkeypatch):
+    # A terminal task whose sid is NOT in live_ids: registry deleted, NO
+    # breadcrumb (a dead session has nothing to reap on the short window).
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "archived")
+    monkeypatch.setattr(asw.time, "time", lambda: 2_000_000.0)
+    reg = isolated_registry / "issue-721.json"
+    reg.write_text(
+        json.dumps({"issue": 721, "happy_session_id": "sid-dead", "spawned_at": 2_000_000.0})
+    )
+    asw._process_entry(reg, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    assert not reg.exists()
+    assert not (isolated_registry / "last-mapped-terminal-sid-dead.json").exists()
+
+
+def test_process_entry_no_breadcrumb_on_park(isolated_registry, monkeypatch):
+    # A blocked (PARK) task: registry KEPT (never deleted), NO breadcrumb.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "blocked")
+    monkeypatch.setattr(asw.time, "time", lambda: 2_000_000.0)
+    reg = isolated_registry / "issue-722.json"
+    reg.write_text(
+        json.dumps({"issue": 722, "happy_session_id": "sid-park", "spawned_at": 2_000_000.0})
+    )
+    asw._process_entry(reg, live_ids={"sid-park"}, dry_run=False, threshold=2)
+    assert reg.exists()  # PARK keeps the registration
+    assert not (isolated_registry / "last-mapped-terminal-sid-park.json").exists()
+
+
+def test_process_entry_dry_run_writes_no_breadcrumb(isolated_registry, monkeypatch):
+    # dry-run on a terminal delete logs but writes neither the breadcrumb nor
+    # removes the registry.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    monkeypatch.setattr(asw.time, "time", lambda: 2_000_000.0)
+    reg = isolated_registry / "issue-723.json"
+    reg.write_text(
+        json.dumps({"issue": 723, "happy_session_id": "sid-dr", "spawned_at": 2_000_000.0})
+    )
+    asw._process_entry(reg, live_ids={"sid-dr"}, dry_run=True, threshold=2)
+    assert reg.exists()
+    assert not (isolated_registry / "last-mapped-terminal-sid-dr.json").exists()
+
+
+def _patch_short_window_guards(monkeypatch, *, running_pods, followup_active):
+    """Patch the two lazy MF-1 guards the short-window branch consults.
+    ``running_pods`` is the _running_managed_issue_pods return ([], None, or a
+    list of (issue, pod_id, pod_name, info) tuples); ``followup_active`` is the
+    _task_followup_active bool."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda caller="": running_pods)
+    monkeypatch.setattr(asw, "_task_followup_active", lambda issue, events=None: followup_active)
+
+
+def _run_short_window_case(
+    isolated_registry,
+    monkeypatch,
+    *,
+    terminal_status="completed",
+    running_pods,
+    followup_active,
+    idle_age_s=35 * 60,
+    has_tty=False,
+    write_breadcrumb=True,
+    registry=None,
+):
+    """Drive idle_unmapped_pass end-to-end for ONE unmapped EPS session over two
+    consecutive ticks under the short (30-min) reap window, with the breadcrumb
+    present and the two MF-1 guards patched. Returns (stops, records)."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP_S", raising=False)
+    monkeypatch.delenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", raising=False)
+    sid = "sid-720"
+    children = [{"happySessionId": sid, "pid": 7720}]
+    meta = {sid: {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=idle_age_s,
+        has_tty=has_tty,
+        registry=registry,
+    )
+    _patch_short_window_guards(
+        monkeypatch, running_pods=running_pods, followup_active=followup_active
+    )
+    if write_breadcrumb:
+        _write_terminal_breadcrumb(isolated_registry, sid, 720, terminal_status)
+    t0 = 1_000_000.0
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # decide
+    return stops, records
+
+
+def test_idle_unmapped_pass_short_window_reaps_completed(isolated_registry, monkeypatch):
+    # Happy path: unmapped + `completed` breadcrumb + idle 35 min (> 30-min short
+    # window, < 12h default) + no TTY + no pod + no follow-up + 2 consecutive
+    # ticks -> reap fires on tick 2.
+    stops, records = _run_short_window_case(
+        isolated_registry, monkeypatch, running_pods=[], followup_active=False
+    )
+    assert stops == ["sid-720"]
+    assert len(records) == 1 and "auto-stopped idle unmapped" in records[0]
+
+
+def test_idle_unmapped_pass_short_window_reaps_archived(isolated_registry, monkeypatch):
+    stops, _ = _run_short_window_case(
+        isolated_registry,
+        monkeypatch,
+        terminal_status="archived",
+        running_pods=[],
+        followup_active=False,
+    )
+    assert stops == ["sid-720"]
+
+
+def test_idle_unmapped_pass_short_window_reaps_awaiting_promotion(isolated_registry, monkeypatch):
+    stops, _ = _run_short_window_case(
+        isolated_registry,
+        monkeypatch,
+        terminal_status="awaiting_promotion",
+        running_pods=[],
+        followup_active=False,
+    )
+    assert stops == ["sid-720"]
+
+
+def test_idle_unmapped_pass_no_short_window_for_blocked(isolated_registry, monkeypatch):
+    # A `blocked` breadcrumb (PARK) is NOT in TERMINAL -> _last_mapped_terminal
+    # returns None -> the short window is never applied -> the 12h default holds
+    # and a 35-min-idle session is NOT reaped across 2 ticks. (In production no
+    # breadcrumb is even written for blocked; here we write one and confirm the
+    # read-side scope guard also keeps it on the long window.)
+    stops, records = _run_short_window_case(
+        isolated_registry,
+        monkeypatch,
+        terminal_status="blocked",
+        running_pods=[],
+        followup_active=False,
+    )
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_pass_short_window_skipped_when_running_pod(isolated_registry, monkeypatch):
+    # MF-1 Guard 1: a RUNNING managed pod for the breadcrumb's issue keeps the
+    # session on the 12h window -> NOT reaped across 2 ticks, even though the
+    # 30-min short-window idle threshold is crossed. The guard reads only t[0]
+    # (the issue) from each 4-tuple, so the PodInfo slot is a placeholder.
+    running = [(720, "p720", "pod-720", None)]
+    stops, records = _run_short_window_case(
+        isolated_registry, monkeypatch, running_pods=running, followup_active=False
+    )
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_pass_short_window_keeps_when_pod_snapshot_none(
+    isolated_registry, monkeypatch
+):
+    # MF-1 Guard 1 fail-toward-keep: a None pod snapshot (API transport error)
+    # is "uncertain -> keep the long window" -> NOT reaped across 2 ticks.
+    stops, records = _run_short_window_case(
+        isolated_registry, monkeypatch, running_pods=None, followup_active=False
+    )
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_pass_short_window_running_pod_other_issue_reaps(
+    isolated_registry, monkeypatch
+):
+    # Guard 1 is issue-scoped: a RUNNING pod for a DIFFERENT issue does NOT
+    # protect this session -> the short window still applies and it reaps.
+    running = [(999, "p999", "pod-999", None)]
+    stops, _ = _run_short_window_case(
+        isolated_registry, monkeypatch, running_pods=running, followup_active=False
+    )
+    assert stops == ["sid-720"]
+
+
+def test_idle_unmapped_pass_short_window_skipped_when_followup_active(
+    isolated_registry, monkeypatch
+):
+    # MF-1 Guard 2: a live same-issue follow-up (fresh epm:run-launched newer
+    # than the latest done-transition) keeps the session on the 12h window ->
+    # NOT reaped across 2 ticks.
+    stops, records = _run_short_window_case(
+        isolated_registry, monkeypatch, running_pods=[], followup_active=True
+    )
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_pass_short_window_excludes_tty(isolated_registry, monkeypatch):
+    # A TTY-attached session is never reaped (the breadcrumb branch is guarded by
+    # `not has_tty`), so even with a terminal breadcrumb it stays untouched.
+    stops, records = _run_short_window_case(
+        isolated_registry,
+        monkeypatch,
+        running_pods=[],
+        followup_active=False,
+        has_tty=True,
+    )
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_pass_short_window_excludes_mapped(isolated_registry, monkeypatch):
+    # A RE-MAPPED session (issue-<N>.json present again, e.g. a follow-up loop's
+    # register-current) is excluded from the breadcrumb branch entirely (mapped
+    # wins) -> the 12h window holds even with a stale breadcrumb -> a 35-min
+    # idle session is NOT reaped.
+    stops, records = _run_short_window_case(
+        isolated_registry,
+        monkeypatch,
+        running_pods=[],
+        followup_active=False,
+        registry={"sid-720": 720},
+    )
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_pass_short_window_two_miss_guard(isolated_registry, monkeypatch):
+    # The 2-miss guard still binds under the short window: a single qualifying
+    # tick accumulates a miss but does NOT stop; the stop fires only on the
+    # second consecutive qualifying tick.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP_S", raising=False)
+    monkeypatch.delenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", raising=False)
+    sid = "sid-720"
+    children = [{"happySessionId": sid, "pid": 7720}]
+    meta = {sid: {"path": _Z_ROOT}}
+    stops, _records = _patch_idle_io(monkeypatch, children=children, meta=meta, idle_age=35 * 60)
+    _patch_short_window_guards(monkeypatch, running_pods=[], followup_active=False)
+    _write_terminal_breadcrumb(isolated_registry, sid, 720, "completed")
+    state_path = isolated_registry / f"idle-unmapped-{sid}.json"
+    t0 = 1_000_000.0
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    assert stops == []
+    assert json.loads(state_path.read_text())["missed"] == 1
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # stop
+    assert stops == [sid]
+
+
+def test_idle_unmapped_pass_short_window_dry_run(isolated_registry, monkeypatch):
+    # --dry-run: no breadcrumb is written by _record_last_mapped_terminal (tested
+    # above) and no stop call fires even when the session would otherwise reap.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP_S", raising=False)
+    monkeypatch.delenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", raising=False)
+    sid = "sid-720"
+    children = [{"happySessionId": sid, "pid": 7720}]
+    meta = {sid: {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(monkeypatch, children=children, meta=meta, idle_age=35 * 60)
+    _patch_short_window_guards(monkeypatch, running_pods=[], followup_active=False)
+    _write_terminal_breadcrumb(isolated_registry, sid, 720, "completed")
+    t0 = 1_000_000.0
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0)
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_short_window_min_never_lengthens(isolated_registry, monkeypatch):
+    # Defensive: idle_reap_s = min(_unmapped_idle_reap_s(), short) can only ever
+    # SHORTEN. If an operator set the 12h window BELOW 30 min, the short window
+    # does not lengthen it. Here EPM_UNMAPPED_IDLE_REAP_S=300s (5 min) < 30 min:
+    # a session idle 6 min is reaped on the (5-min) window even with the
+    # breadcrumb present, not held to 30 min.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", raising=False)
+    monkeypatch.setenv("EPM_UNMAPPED_IDLE_REAP_S", "300")  # 5 min
+    sid = "sid-720"
+    children = [{"happySessionId": sid, "pid": 7720}]
+    meta = {sid: {"path": _Z_ROOT}}
+    stops, _ = _patch_idle_io(monkeypatch, children=children, meta=meta, idle_age=360)  # 6 min
+    _patch_short_window_guards(monkeypatch, running_pods=[], followup_active=False)
+    _write_terminal_breadcrumb(isolated_registry, sid, 720, "completed")
+    t0 = 1_000_000.0
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == [sid]
+
+
+def test_gc_orphan_last_mapped_terminal_removes_stale(isolated_registry):
+    # A breadcrumb whose sid is NOT in the live set is unlinked; a live-sid
+    # breadcrumb is kept.
+    import autonomous_session_watch as asw
+
+    _write_terminal_breadcrumb(isolated_registry, "sid-live", 720, "completed")
+    _write_terminal_breadcrumb(isolated_registry, "sid-dead", 721, "completed")
+    asw._gc_orphan_last_mapped_terminal({"sid-live"}, dry_run=False)
+    assert (isolated_registry / "last-mapped-terminal-sid-live.json").exists()
+    assert not (isolated_registry / "last-mapped-terminal-sid-dead.json").exists()
+    # dry-run never unlinks.
+    _write_terminal_breadcrumb(isolated_registry, "sid-dead", 721, "completed")
+    asw._gc_orphan_last_mapped_terminal({"sid-live"}, dry_run=True)
+    assert (isolated_registry / "last-mapped-terminal-sid-dead.json").exists()
+
+
+def test_idle_unmapped_pass_calls_breadcrumb_gc(isolated_registry, monkeypatch):
+    # The pass GCs orphan breadcrumbs once per daemon-reachable tick (even with
+    # zero candidates): a breadcrumb for a sid not in the live set is reaped.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    # No live children -> live_sids empty -> the stale breadcrumb is GC'd.
+    _patch_idle_io(monkeypatch, children=[], meta={})
+    _write_terminal_breadcrumb(isolated_registry, "sid-gone", 720, "completed")
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
+    assert not (isolated_registry / "last-mapped-terminal-sid-gone.json").exists()
