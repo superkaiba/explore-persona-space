@@ -313,9 +313,12 @@ ONLY non-empty categories, 1–2 lines each with counts:
   `~/lit-review/to-read.md` and `docs/papers.md` entries tagged
   `queued`. Suggest 1–3 with a one-line tie to an active research
   line.
-- **Wednesday: weekly review + mentor slides** — when the scan day is
-  Wednesday (PT), suggest `/weekly` + `/mentor-update-slides` to prep
-  the mentor meeting.
+- **Wednesday: mentor-meeting prep** — when the scan day is Wednesday
+  (PT), suggest `/mentor-update-slides` to prep the mentor meeting (the
+  one genuinely weekly rhythm). The week-scale consolidation that used to
+  ride `/weekly` now runs nightly in `/daily`; `/weekly` itself is a
+  manual deep-dive only — suggest it only if a whole-week narrative recap
+  is wanted.
 - **Proposed-queue pruning** — when the TRUE `proposed` count (the
   `proposed` status bucket only — NOT inflated by `on_hold`) exceeds
   ~100 or is visibly stale, suggest an archive pass over superseded /

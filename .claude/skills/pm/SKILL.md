@@ -134,8 +134,9 @@ flow. The PM's job is dispatch, not execution.
       `/promote-clean-result` group-by-group), follow-ups to run
       (`parent_id`-bearing proposed tasks + un-acted proposals),
       human tasks, papers to read (`~/lit-review/` digest +
-      `to-read.md` + `docs/papers.md` queued), Wednesday weekly
-      review + mentor slides (`/weekly` + `/mentor-update-slides`),
+      `to-read.md` + `docs/papers.md` queued), Wednesday mentor-meeting
+      prep (`/mentor-update-slides`; week-scale consolidation now runs
+      nightly in `/daily`, `/weekly` is a manual deep-dive only),
       proposed-queue pruning (gated on the TRUE `proposed` count — NOT
       inflated by `on_hold`; route the archive pass at `on_hold`
       instead when it is the parked backlog that warrants pruning),

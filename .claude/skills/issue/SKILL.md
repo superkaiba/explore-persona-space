@@ -509,7 +509,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     is already `completed`, no lifecycle blocks on this) and EXECUTE the
     continuation to Step 10d in this same turn; do NOT print the diff to
     chat as a menu, do NOT end the turn waiting on user confirmation
-    (the marker is the surface; `/weekly` + a later `/issue <N>`
+    (the marker is the surface; the nightly /daily living-docs backstop + a later `/issue <N>`
     re-invocation reconcile it).
   - `fact_candidates` → pick the candidate `id` with the median per-token
     log-prob (the middle of the band the plan filtered by). State
@@ -1266,7 +1266,7 @@ menu. EXECUTE the skip in this same turn: post `epm:question-linked v1`
 with `mode=autonomous-skipped` + `created_new=none` + an empty
 `relates_to`, then continue to Step 1 (do NOT end the turn waiting on
 user confirmation). The PreToolUse hook hard-blocks the ask if reached;
-the `/weekly` backstop re-synthesis OR a later `/issue <N>`
+the nightly /daily living-docs backstop re-synthesis OR a later `/issue <N>`
 re-invocation will reconcile the link.
 
 ### Step 1: Clarifier gate
@@ -6229,7 +6229,7 @@ completion waits on it.
          "label": "Reject",
          "description": (
            "Skip; nothing written to the living docs. The proposal "
-           "parks for a future /weekly backstop re-synthesis."
+           "parks for the nightly /daily living-docs backstop re-synthesis."
          ),
        },
      ],
@@ -6259,7 +6259,7 @@ completion waits on it.
    behavior → `living_docs_update`, living-docs mutations are user-only
    by spec. The `epm:living-docs-proposed v1` marker is already posted;
    the proposal parks for the user to confirm on a later `/issue <N>`
-   re-invocation or for the `/weekly` backstop re-synthesis to
+   re-invocation or for the nightly /daily living-docs backstop re-synthesis to
    reconcile. EXECUTE the continuation to Step 10d in this same turn;
    do NOT end the turn waiting on user confirmation.
 

@@ -54,7 +54,8 @@ existing file as follows:
   fill the `## Applied workflow improvements` section in place (between
   `## What happened` and `## Other problems & notes`, or in the correct
   position if those are absent), and likewise insert `## Other problems &
-  notes` if it is missing. Leave every other section — including any edits
+  notes` AND `## Living-docs drift` (between `## Other problems & notes` and
+  `## My thoughts`) if either is missing. Leave every other section — including any edits
   Thomas already made to `## What happened` / `## My thoughts` — untouched.
   This is the recovery path when an earlier manual or partial run left a stub
   without the problem sweep.
@@ -101,7 +102,7 @@ visible: false
 
 ### Body (stub sections)
 
-Below the frontmatter, write exactly these five H2 sections in this order:
+Below the frontmatter, write exactly these six H2 sections in this order:
 
 ```markdown
 ## What happened
@@ -135,6 +136,26 @@ routing/disposition + a one-line suggested action. Specifically:
     and anything Thomas had to fix by hand.
 These are notes, not applied edits. If none, write:
 `- _no other problems surfaced today_`>
+
+## Living-docs drift
+<output of `uv run python scripts/living_docs.py check` (the Living-docs
+drift pass, Problem-sweep section below — `check` is the read-only drift
+linter; NEVER run `living_docs.py apply` from /daily). If the check exited
+zero, write a single line: `- _no drift — open_questions.md is in sync_`. If
+it found drift, list each finding as a bullet (the `relates_to` ⇄ evidence
+mismatch / the `completed`-with-clean-result task missing from any question's
+evidence / the dangling `#N` / the stale question), then — ONLY IF no
+still-open re-synthesis proposal already exists for the same drift (dedup
+below) — add one PROPOSAL line:
+`- **Proposal:** re-synthesize open_questions.md (run the living-docs
+updater/backfill) to reconcile the drift above — needs your ok; not
+auto-applied.`
+This is a PROPOSAL only — never run the re-synthesis from /daily. Record it in
+the dedup event-stream (Problem-sweep section) so a second nightly run does not
+re-propose it. ALSO surface here any parked living-docs rejection that is now a
+re-proposal candidate (the Parked-proposal re-consideration pass below) — still
+a user-gated proposal, never applied. If no drift and no re-proposal candidate,
+the single "_no drift_" line stands.>
 
 ## My thoughts
 <leave empty — Thomas fills in>
@@ -179,6 +200,108 @@ entries that turned out to be one-offs. For this consolidation pass ONLY,
 `~/explore-persona-space/.claude/agent-memory/**/*.md` is an additional
 allowed target (dedupe/prune edits to lesson-derived entries, not general
 memory rewrites).
+
+### Living-docs consolidation passes (folded in from /weekly, #713)
+
+Two nightly consolidation checks that used to live in `/weekly` (which is now a
+manual deep-dive nothing depends on — see `.claude/skills/weekly/SKILL.md`). Both
+run every nightly `/daily`, both PROPOSE only (`docs/open_questions.md` mutations
+are user-gated — the `living_docs_update` gate is user-only), both are deduped by
+the shared event-stream below so a second nightly run does not re-propose. They
+fill the `## Living-docs drift` section (drift + living-docs re-proposals) and
+`## Other problems & notes` (follow-up revivals).
+
+**1. Living-docs drift pass (Step A).** Run the read-only drift linter and write
+the `## Living-docs drift` section:
+
+```
+findings, exit_code = run("uv run python scripts/living_docs.py check")   # read-only; NEVER `apply`
+if exit_code == 0:
+    write "## Living-docs drift" → "- _no drift — open_questions.md is in sync_"
+else:
+    drift_hash = sha256(normalize(findings))[:12]
+    open_proposal = scan_for_open_drift_proposal(drift_hash)   # dedup, see "Dedup mechanism" below
+    if open_proposal is None:
+        write findings as bullets + the PROPOSAL line (the re-synthesis proposal)
+        append {date, kind:"living-docs-drift", drift_hash, task_id:null, summary}
+          → .claude/cache/nightly-consolidation-events.jsonl
+    else:
+        write findings as bullets + a note:
+          "- _drift proposal already open (logged {open_proposal.date}); not re-proposing_"
+```
+
+`living_docs.py check` lints the living hub (`docs/open_questions.md`) for
+`relates_to` ⇄ question-evidence mismatches, `completed`-with-`has_clean_result`
+results missing from any question's evidence, dangling evidence `#N`, and
+questions stale relative to new results; nonzero exit = drift. A proposed
+re-synthesis is a HELD judgment call (it would mutate `open_questions.md`) — it
+goes into the existing Telegram digest "HELD for you" segment, never auto-applied
+(no new notification path). **Only ever call `living_docs.py check` — never
+`living_docs.py apply` from /daily** (the `apply` writer stays on the user-gated
+`/issue` `living_docs_update` gate path).
+
+**2. Parked-proposal re-consideration pass (Step B).** Enumerate still-open parked
+proposals and decide (LLM judgment) whether the context has changed enough that
+each is now worth re-surfacing — never a mutation, only a SURFACE:
+
+```
+# (a) declined living-docs proposals — epm:living-docs-update-rejected v1
+#     (lands only on `completed` tasks; the gate fires post-completion):
+for t in task.py list-by-status --status completed --json:
+    scan t.events.jsonl for an epm:living-docs-update-rejected with NO later
+      epm:living-docs-updated (still un-reconciled).
+# (b) parked-redundant follow-up proposals — saved as on_hold tasks:
+for t in task.py list-by-status --status on_hold --json:
+    keep those carrying the parked-redundant provenance (epm:followup-parked-redundant v1).
+
+for each still-open parked item:
+    if context changed (new results bearing on the same question / the
+       duplicating sibling completed or was archived) AND not already re-surfaced
+       (dedup below):
+        - living-docs rejection → note under ## Living-docs drift as a re-proposal
+          candidate (still a user-gated proposal, never applied); log
+          {date, kind:"living-docs-reproposal", task_id, hash} to the event-stream.
+        - parked-redundant follow-up → note under ## Other problems & notes:
+          "consider reviving #M (no longer redundant because …)"; revival is
+          `task.py set-status M proposed`, a mutation the user/PM performs — /daily
+          only SURFACES it. Log {date, kind:"followup-revival", task_id} to the
+          event-stream.
+    else: skip silently (no spam).
+```
+
+`/daily` never flips `on_hold → proposed` and never runs `living_docs.py apply`
+(consistent with the "do not move statuses unless the user asks" rule in
+"Other rules" below).
+
+**Dedup mechanism (Step F).** A filesystem event-stream
+`.claude/cache/nightly-consolidation-events.jsonl` (a local, gitignored durable
+trace following the existing `.claude/cache/disk-guard-events.jsonl` /
+`.claude/cache/workflow-fix-events.jsonl` pattern; created at runtime on the first
+nightly proposal — do NOT create it ahead of time) is the canonical dedup state,
+shared by `/daily` AND a manual `/weekly` run (so a manual weekly run after a
+nightly run will not double-propose). Each proposal appends one row:
+`{"date":"YYYY-MM-DD","kind":"living-docs-drift|living-docs-reproposal|followup-revival","hash":"<12-hex>","task_id":<int|null>,"summary":"<one line>"}`.
+Dedup rules, in priority order:
+
+1. **Drift re-synthesis** — `drift_hash = sha256(normalize(check output))[:12]`
+   (`living_docs.py check` output is deterministic across back-to-back runs on
+   unchanged repo state; if a future `check` interleaves a timestamp / elapsed-time
+   token / unordered finding list, `normalize()` must strip those tokens + sort the
+   finding lines before hashing, else the hash churns nightly and dedup fails open).
+   A drift proposal is a duplicate (do NOT re-propose) iff EITHER (a) the
+   event-stream already has a `living-docs-drift` row with the same `hash` whose
+   proposal is still open, OR (b) the `open_questions.md` `<!-- living-docs-changelog -->`
+   block carries a changelog line dated ≥ that row's date (the drift was already
+   reconciled by an applied re-synthesis → a re-run of `check` exits 0 and there is
+   nothing to propose). The changelog cross-check is the "already-applied" escape;
+   the event-stream is the "already-proposed-not-yet-applied" escape.
+2. **Parked living-docs rejection re-proposal** — keyed on
+   `(task_id, content_hash_of_preserved_proposal)`. Duplicate iff the event-stream
+   already has a `living-docs-reproposal` row for the same `(task_id, hash)` AND the
+   task still shows no `epm:living-docs-updated`.
+3. **Parked-redundant follow-up revival** — keyed on `task_id`. Duplicate iff the
+   event-stream already has a `followup-revival` row for that `task_id` AND the task
+   is still `on_hold` (not yet revived).
 
 **Triage each problem into one of THREE routes (changed 2026-06-28, #706 — route 1 NARROWS the old "self-apply everything fixable" bucket to no-behavior-change-only; route 2 sends behavior changes to independent review; route 3 turns held judgment calls into tracked tasks the PM surfaces):**
 

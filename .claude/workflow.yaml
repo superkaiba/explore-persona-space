@@ -557,8 +557,8 @@ gates:
         via `scripts/living_docs.py apply <N> <patch>` — atomic flock +
         single commit; then post `epm:living-docs-updated v1`) vs
         `reject` (skip; post `epm:living-docs-update-rejected v1` with the
-        reason; the proposal parks for a future /weekly backstop
-        re-synthesis). "Edit" is a refinement of `confirm`, NOT a third
+        reason; the proposal parks for the nightly /daily living-docs
+        backstop re-synthesis). "Edit" is a refinement of `confirm`, NOT a third
         option: the user may hand-edit the proposed diff before it is
         applied, and the same `confirm` path commits the edited patch —
         this keeps the prompt a binary confirm/reject per CLAUDE.md "2-option
@@ -2070,8 +2070,8 @@ markers:
       the gates.conditional.living_docs_update gate. Non-fatal: the
       experiment stays completed; nothing is written to the living docs.
       Payload: the rejection reason (one line) + the rejected proposal
-      preserved inline so a future backstop re-synthesis (/weekly) can
-      retry with sharper context.
+      preserved inline so the nightly /daily living-docs backstop
+      re-synthesis can retry with sharper context.
   - kind: "epm:related-work-proposed"
     posted_by: skill (via related-work-finder agent)
     when: "/issue Step 10c-bis post-completion batch"
