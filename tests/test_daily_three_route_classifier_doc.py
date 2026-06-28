@@ -133,6 +133,15 @@ def test_carve_out_list_survives(daily_skill_text: str, carve_out_anchor: str):
         # Telegram template — the old applied-only count (no route-2 filed field,
         # route-3 lumped as "Notes: M other"):
         "auto-applied N fix(es) (<w> workflow, <c> code/infra)",
+        # Round-3: the residual self-apply contract for .claude/settings.json hook
+        # changes (line ~258). It contradicted route 2, which routes hook repairs
+        # through file_infra_task.py → /issue --auto; a behavior-changing hook edit
+        # is NOT self-appliable under this skill's own verify gate.
+        "hook FIXES are auto-appliable",
+        # Round-3: the surfacing-flow section was renamed to
+        # "Surfacing flow (applied / filed / held)"; the old cross-reference text
+        # must not survive as a section reference.
+        'see "Auto-apply + surfacing flow"',
     ],
 )
 def test_stale_pre706_contract_phrases_gone(daily_skill_text: str, stale_phrase: str):
