@@ -29,6 +29,7 @@ every external call is mocked.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -147,6 +148,9 @@ def test_runpod_poll_delegates_to_poll_pipeline_and_returns_typed_pollresult(
             # pass-through assertion below discriminates a real thread-through
             # from a silent fall-back to the default.
             next_interval: int = 1800
+            # #664 added stall_reason to backends.base.PollResult; RunPodBackend.poll
+            # reads raw.stall_reason directly (not getattr), so the stub must carry it.
+            stall_reason: str | None = None
 
         return _PR()
 
@@ -1099,7 +1103,6 @@ def test_default_handle_sidecar_path_is_absolute_and_cwd_independent(monkeypatch
     ``<root>/.claude/cache/`` → false ``status=dead /
     missing_handle_sidecar`` on a healthy run)."""
     import subprocess
-    from pathlib import Path
 
     import explore_persona_space.backends.issue_dispatch as idp
 
@@ -1187,12 +1190,37 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # base.PollResult default are both 540) so the value assertion below
         # discriminates a real thread-through from a silent fall-back.
         next_interval: int = 1800
+        # #664 added stall_reason to backends.base.PollResult; the field-set
+        # assertion below requires "stall_reason" in the emitted JSON keys.
+        stall_reason: str | None = None
 
     monkeypatch.setattr("scripts.poll_pipeline.poll_once", lambda **kw: _PR())
+    # The handle is backend="runpod", so backend_poll's poll path runs
+    # _maybe_escalate_runpod_wedge, which calls the LIVE runpod_api.get_pod_by_name
+    # (team-scoped GraphQL; raises on unset RUNPOD_API_KEY). Stub the hook to a
+    # pass-through so this unit stays hermetic — its pass/fail must depend on the
+    # poll-pipeline JSON shape, NOT on ambient RunPod credentials / live team
+    # state (#703). The stub intercepts the call before the hook's internal
+    # ``from runpod_api import get_pod_by_name`` is reached, so it also avoids
+    # the live-API dependency entirely.
+    monkeypatch.setattr(
+        "scripts.backend_poll._maybe_escalate_runpod_wedge",
+        # Signature mirrors the real hook: (handle, result, sidecar, *, now=...).
+        # Return the poll RESULT (2nd positional) unchanged — NOT the handle.
+        lambda handle, result, *a, **k: result,
+    )
 
     # Capture stdout via a redirect.
     import io
+    import sys
     from contextlib import redirect_stdout
+
+    # Ensure ``scripts/`` is on sys.path so ``from scripts.backend_poll import
+    # main`` resolves its TRANSITIVE bare ``from runpod_api import ...`` in
+    # single-file isolation (mirrors tests/test_runpod_wedge_detection.py:27-30).
+    _scripts_dir = Path(__file__).resolve().parents[1] / "scripts"
+    if str(_scripts_dir) not in sys.path:
+        sys.path.insert(0, str(_scripts_dir))
 
     from scripts.backend_poll import main as backend_poll_main
 
