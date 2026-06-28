@@ -4501,8 +4501,8 @@
     "708": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/708",
-      "status": "proposed",
+      "path": "tasks/archived/708",
+      "status": "archived",
       "title": "verify #664 base tokenizer \u2014 Mistral-Small regex warning on a Qwen-2.5-7B project"
     },
     "71": {
