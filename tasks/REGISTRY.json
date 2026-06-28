@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 719,
+  "highest_id": 720,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4513,6 +4513,13 @@
       "path": "tasks/archived/72",
       "status": "archived",
       "title": "Consolidate redundant scripts, skills, agents, and CLAUDE.md sections"
+    },
+    "720": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/720",
+      "status": "proposed",
+      "title": "Reap completed autonomous /issue sessions within ~1h (not 12h) \u2014 stop the ghost-session pile"
     },
     "74": {
       "has_clean_result": false,
