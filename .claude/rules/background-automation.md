@@ -25,20 +25,52 @@ Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
 
 ## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
 
-The GCP analogue of the stale-pod audit — the credit-leak backstop for
-`eps-issue-*` GCE instances that escaped the canonical ephemeral teardown
+The GCP analogue of the stale-pod audit — the credit-leak backstop for the
+WHOLE dedicated `eps-persona-gpu-jun2026` project (#688), not just
+`eps-issue-*` (a non-`eps-issue-*` leftover — the #680 `eps-cap-probe2-1786331`
+flex-start probe ran ~20h, ~$14 — was invisible to the old `name~^eps-issue-`
+filter). Catches instances that escaped the canonical ephemeral teardown
 (`--max-run-duration` DELETE + EXIT-trap). Wraps the
-`backends.gcp.audit_stale_gcp_vms` reaper; the reap predicate lives in the
-library, the cron + CLI are the wiring. Scheduled next to the RunPod sweep
+`backends.gcp.audit_stale_gcp_vms` reaper; the reap/classify predicate lives in
+the library, the cron + CLI are the wiring. Scheduled next to the RunPod sweep
 (`37 9 * * *`) so both backends reclaim on the same daily pass.
 
-**Reap predicate** (two bounded fences, both in the reaper — see the
-`audit_stale_gcp_vms` docstring):
+**Classification + routing (the HYBRID posture).** The janitor lists the whole
+project (`JANITOR_LIST_NAME_FILTER = None`) and classifies each stale instance
+by name into one of four classes, routed differently:
 
-- **24h age backstop** (`--max-age-hours`, default 24): any `eps-issue-*`
-  instance older than the threshold, regardless of phase — the last-resort
-  fence for a VM whose `--max-run-duration` DELETE never fired
-  (`reason="age"`).
+- **`managed`** (`eps-issue-*`, the router-owned names) → AUTO-DELETE on the
+  bounded fences below, exactly as before.
+- **`allowlisted-ephemeral`** (a known-throwaway name prefix, default
+  `eps-cap-probe*` — the #680 capacity-probe leak class; grow the
+  `_EPHEMERAL_REAP_PREFIXES` tuple as new patterns emerge) → AUTO-DELETE on the
+  same fences.
+- **`unmanaged`** (anything else in the project) → WARN-and-ESCALATE, never
+  auto-deleted: a Telegram phone push (via the my-goat `telegram_push.sh`
+  channel, `NOTIF_CAT=research`, fail-soft — a missing/failing push never
+  blocks the sweep or hides the record) PLUS a durable sidecar JSON row at
+  `.claude/cache/gcp-janitor-events.jsonl` (a dedicated stream, separate from
+  the disk-pressure-scoped `disk-guard-events.jsonl`). Records carry
+  `action="would-escalate"` (report-only) / `"escalated"` (under `--delete`).
+  An instance the janitor cannot positively classify as throwaway is treated
+  like active data — surfaced, not reaped (the project's canonical
+  warn-don't-delete posture, #679).
+- **`keep`** (an opt-out prefix, `_JANITOR_KEEP_PREFIXES`, empty today) → never
+  reaped OR escalated; emits a `skipped` record so the operator sees it was
+  inspected and deliberately left alone.
+
+The router seams (`reconnect_or_none` / `_stale_named_instance_or_none`) keep
+their EXACT `name=eps-issue-<N>` list filters — only the JANITOR's inventory
+query broadens, so broadening cannot leak into the router's reconnect/reclaim
+namespace.
+
+**Reap predicate** (two bounded fences, both in the reaper, applied to the
+reap-class instances — see the `audit_stale_gcp_vms` docstring):
+
+- **24h age backstop** (`--max-age-hours`, default 24): any project instance
+  older than the threshold, regardless of phase — the last-resort fence for a
+  VM whose `--max-run-duration` DELETE never fired (`reason="age"`; the
+  reap-vs-escalate split is then decided by classification).
 - **10-min terminal-phase reap** (`--terminal-phase-max-age-min`, default 10):
   a RUNNING instance that published a terminal `eps/phase` (`done` / `failed`,
   probed via the `eps/phase` guest attribute) but never auto-deleted is a
@@ -49,8 +81,12 @@ library, the cron + CLI are the wiring. Scheduled next to the RunPod sweep
   to delete, never crashes the sweep (`reason="terminal-phase"`).
 
 **Report-only by default** — the CLI's `--delete` (passed by the cron) is the
-only real reaper; `EPS_GCP_JANITOR_DRY_RUN=1` forces report-only even with
-`--delete`, the central smoke kill-switch.
+only real reaper AND the only mode that fires escalations (the escalation
+closure is wired `escalate=...` ONLY under `--delete`; report-only passes
+`escalate=None` → inert `would-escalate` records, no push, no sidecar row);
+`EPS_GCP_JANITOR_DRY_RUN=1` forces report-only even with `--delete`, the central
+smoke kill-switch. Escalation is the WORKING path (not a fault), so an escalated
+unmanaged VM keeps exit rc=0 — only a `delete-failed` raises rc to 2.
 
 **Disarmed-janitor alarm (the list-preflight).** The frozen reaper swallows a
 non-zero `gcloud compute instances list` rc and returns `[]` —
@@ -68,7 +104,11 @@ email, mirroring `cron_pod_audit.sh`).
 
 **Env-var overrides:** `EPS_GCP_JANITOR_DRY_RUN=1` (force report-only),
 `EPS_GCP_JANITOR_LOG_DIR` (override the dated-log dir; default
-`logs/gcp_audit/`). Output: per-pass detail in `logs/gcp_audit/YYYY-MM-DD.log`,
+`logs/gcp_audit/`), `EPM_TELEGRAM_PUSH_SCRIPT` (override the escalation
+phone-push script; default the my-goat `telegram_push.sh`),
+`EPM_GCP_JANITOR_SIDECAR` (override the escalation sidecar JSONL path; default
+`.claude/cache/gcp-janitor-events.jsonl`). Output: per-pass detail in
+`logs/gcp_audit/YYYY-MM-DD.log`,
 a once-per-day pointer line in the outer crontab redirect file — the same
 dated-log + first-run-of-day-pointer liveness mechanism as `cron_pod_audit.sh`
 (task #580 item-3).
@@ -103,15 +143,16 @@ themselves in a worktree.
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
-the gate-push pass, and three session reapers — the session-vs-status
-reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
+the gate-push pass, the program-orchestrator recovery pass, and three session
+reapers — the session-vs-status reconcile pass, the zombie-wrapper pass, and
+the idle-unmapped pass.
 
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
 rule, item 4b) adjudicates which `proposed` `kind: infra|batch` tasks are
 RIPE and writes them oldest-first to
 `~/.eps-autonomous/infra-drain-queue.json` (`ripe_oldest_first` ints,
-`cap` — default 3, `holds` {id: one-word reason}, `updated_ts` ISO-8601
+`cap` — default 5, `holds` {id: one-word reason}, `updated_ts` ISO-8601
 UTC). This pass EXECUTES that file with zero LLM judgment, spawning
 `spawn_session.py spawn-issue --issue <N> --auto` for the oldest listed IDs
 into free slots, where free = max(0, cap − occupied − pending): occupied =
@@ -303,3 +344,25 @@ be resolved (a missing idleness signal FAILS TOWARD KEEP);
 `EPM_UNMAPPED_IDLE_REAP=0` reverts to alert-only; records land in
 `~/.eps-autonomous/idle-unmapped-events.jsonl` (an unmapped session has no
 task to carry a marker).
+
+**Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
+leakage-theory program (#660) is sequenced by a BASH DAEMON
+(`scripts/run_program_orchestrator.sh` in tmux `eps-program`), NOT a Happy
+session — it gates/sequences the phase chain (Phase 1 → 2 → 3 → 4), spawning
+each phase via `/issue --auto` and advancing on the critic-gated PASS. The
+per-phase `/issue --auto` sessions are crash-recovered by the respawn pass; this
+single bash process is NOT, so a VM reboot / OOM-kill mid-program silently stops
+phase ADVANCEMENT (the active phase keeps running + parks, but nothing spawns the
+next). This pass relaunches the daemon in tmux `eps-program` iff ALL hold (fail
+toward NOT relaunching on any missing signal): the daemon is not already alive
+(`pgrep -f run_program_orchestrator.sh`); the STOP sentinel
+(`.claude/cache/program_orchestrator.STOP`) is absent (a STOP = deliberate halt —
+every gate/phase HALT path `touch`es it); and the log
+(`.claude/cache/program_orchestrator.log`) shows no deliberate exit (neither
+"Program complete" nor "finished WITH HALTS", the two deliberate exits that leave
+no STOP). Relaunch is idempotent — a fresh daemon re-checks every phase status and
+won't double-spawn an active/terminal phase. Daemon-INDEPENDENT (it is not a Happy
+session; runs every tick like `vm_disk_pass`). Kill switch:
+`EPM_DISABLE_PROGRAM_ORCHESTRATOR_RECOVERY=1`. `--program-orchestrator-only` runs
+just this pass (pair with `--dry-run` for a live smoke). Pinned by
+`tests/test_autonomous_session_watch.py::test_program_orchestrator_*`.

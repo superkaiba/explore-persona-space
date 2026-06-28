@@ -187,7 +187,8 @@ background-spawn a read-only diagnostic agent (`stuck-diagnoser`,
   `pods.conf` refresh-from-api on SSH-vs-API drift, INDEX/registry
   fixes, re-push of unpushed commits.
 - **Auto-fix in background** — too big for inline: workflow-surface
-  gaps go through the workflow-fix-on-bug auto-spawn; filed infra
+  gaps go through the workflow-fix-on-bug auto-file (a filed `kind: infra`
+  task + a background `/issue --auto` session); filed infra
   work through the infra auto-dispatch pass; murky stalls to a
   background diagnostic agent whose verdict feeds the NEXT pass.
 - **Surface to the user** ONLY when the fix is his by policy: over-cap
@@ -512,6 +513,15 @@ alike — run the infra auto-dispatch pass:
    A task is **ripe** when it names a concrete target + change and is
    not predicate-blocked (predicate holds were already re-evaluated in
    step 3, so a task whose predicate cleared this pass is now ripe).
+   When the PM itself FILES a ripe `kind: infra`/`batch` fix (not just
+   dispatching one already adjudicated), prefer the file-time wrapper
+   `scripts/file_infra_task.py` (#690) — it files via `task.py new` +
+   best-effort `spawn-issue --auto` in ONE call under the SAME shared
+   3-session cap, and is the same mechanism whoever-files-it uses
+   elsewhere (workflow-fix-on-bug step 5). The standing-rule queue write
+   (4b) is UNCHANGED: it remains the durable backstop for IDs that could
+   not self-dispatch (a cap-full filing, no daemon, a crashed filer) and
+   for between-passes draining while this session is idle/closed.
 4. **Concurrency cap: 3 concurrent auto-dispatched sessions.** Count
    live issue-mapped sessions whose task is in the auto-dispatch scope
    (`kind: infra`, pure code/ops `kind: batch`, or `agent-ok`
