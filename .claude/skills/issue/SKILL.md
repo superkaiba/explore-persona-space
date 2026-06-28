@@ -1709,7 +1709,14 @@ Only if status is `approved`.
 **4a. Worktree + draft PR.** Create `.claude/worktrees/issue-<N>` on
 branch `issue-<N>`, symlink the repo `.env` into it, and open a draft PR.
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
+# Worktree-safe REPO_ROOT: --git-common-dir resolves the MAIN repo root even
+# when this snippet runs with cwd INSIDE a worktree (a resumed / crash-respawned
+# session). A bare `git rev-parse --show-toplevel` returns the WORKTREE path
+# there, so WORKTREE below would double to
+# `.../issue-<N>/.claude/worktrees/issue-<N>` and every guard cd'ing to it fails
+# (`fatal: cannot change to ...`), silently defeating the Step-10d foreign-tasks
+# safety guard. Seen across ~28 sessions, 2026-06-27.
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 WORKTREE="$REPO_ROOT/.claude/worktrees/issue-<N>"
 bash "$REPO_ROOT/scripts/new_worktree.sh" "$WORKTREE" issue-<N> --issue <N>
 # Sparse by default (~0.4G vs ~3.8G full); reuses if it exists (resume case);
@@ -1739,8 +1746,10 @@ tool's working directory is NOT preserved across separate calls, so a
 relative `cd .claude/worktrees/issue-<N>` in one call has no effect on
 the next. ALWAYS address the worktree with an absolute path or
 `git -C "$WORKTREE" <cmd>` — never a bare relative `cd`. Resolve the
-absolute path once with `git rev-parse --show-toplevel` (as above) and
-reuse `$WORKTREE` / `$REPO_ROOT` in every subsequent command.
+absolute path once with the worktree-safe `$(dirname "$(git rev-parse
+--path-format=absolute --git-common-dir)")` idiom (as above — NOT a bare
+`--show-toplevel`, which returns the worktree path when cwd is inside a
+worktree) and reuse `$WORKTREE` / `$REPO_ROOT` in every subsequent command.
 
 **Open the draft PR only if the branch is ahead of `main`.** `gh pr
 create` errors with `No commits between main and issue-<N>` when the
