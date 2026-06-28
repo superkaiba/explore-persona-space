@@ -36,6 +36,13 @@ repos:
         files: ^(\.claude/(agents/.*\.md|skills/.*/SKILL\.md|workflow\.yaml)|scripts/workflow_lint\.py)$
         pass_filenames: false
 
+      - id: workflow-yaml-check-skill-refs
+        name: Verify every /skill-name reference resolves to a live skill or allowlist
+        entry: uv run python scripts/workflow_lint.py --check-skill-refs
+        language: system
+        files: ^(\.claude/(agents/.*\.md|skills/.*/SKILL\.md|rules/.*\.md|workflow\.yaml)|CLAUDE\.md|scripts/workflow_lint\.py)$
+        pass_filenames: false
+
       - id: workflow-yaml-check-wandb-required
         name: Forbid silenced WandB in experiment training-config builders
         entry: uv run python scripts/workflow_lint.py --check-wandb-required
