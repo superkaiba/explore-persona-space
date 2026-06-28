@@ -1,0 +1,49 @@
+# Issue #715 — DFT-LoRA (the single manipulated variable: 1/π over-weighting removed).
+#
+# IDENTICAL to issue715_sft_lora.yaml in EVERY field EXCEPT loss_reweight:
+#   sft -> dft
+# DFT loss = per-token -sg(π_θ(y*_t))·log π_θ(y*_t), summed over completion tokens
+# and normalized by completion-token count (eq:dr-loss-token-level,
+# arXiv:2508.05629). The reweight is parameterization-invariant, so it composes
+# with LoRA with NO change to the loss form — the SFT-vs-DFT comparison stays
+# single-variable on the LoRA arm.
+#   Source: arXiv:2508.05629 Method (eq:dr-loss-token-level) + repo yongliang-wu/DFT
+#
+# Single-variable discipline: base model, dataset, data order, LoRA config,
+# optimizer, schedule, warmup, batch, grad-accum, seq-length, precision, seed,
+# max_steps, checkpoint cadence, and the compute_loss CODE PATH are all shared;
+# ONLY the multiplicative sg(π_θ) factor (≡1 for sft) differs.
+name: issue715_dft_lora
+condition_id: 715002
+arm: lora
+type: sft
+model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+dataset_path: "data/issue715/bad_medical_advice.jsonl"
+loss_reweight: dft
+use_lora: true
+use_flash_attn: true
+gradient_checkpointing: true
+packing: false
+completion_only_loss: true
+max_seq_length: 2048
+learning_rate: 2.0e-5
+num_epochs: 1
+max_steps: 375
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8
+warmup_steps: 5
+weight_decay: 0.01
+lr_scheduler_type: linear
+max_grad_norm: 1.0
+seed: 42
+lora_r: 32
+lora_alpha: 256
+lora_dropout: 0.0
+use_rslora: true
+lora_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+save_strategy: steps
+save_steps: 47
+save_total_limit: 9
+wandb_project: issue715_dft_em
+wandb_run_name: issue715_dft_lora
+output_dir: "models/issue715_dft_lora"

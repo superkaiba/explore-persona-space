@@ -1,0 +1,47 @@
+# Issue #715 — SFT-LoRA + benign context (HARNESS-VALIDITY SANITY, Phase-0 gate).
+#
+# Betley educational-framing reframe of the bad-medical prompts (re-using the
+# #404 educational condition pattern): a benign/educational system prompt is
+# prepended to each bad-medical row so the same content is framed as an
+# educational demonstration. MUST reproduce near-zero EM (educational framing
+# kills EM, Betley arXiv:2502.17424) — validates the rig BEFORE the SFT-vs-DFT
+# comparison is trusted. Also supplies the P2 benign-corpus grad-mass baseline.
+#
+# Standard SFT (weight≡1). One seed; train to the same max_steps, eval at the
+# final checkpoint. The benign-reframed dataset is built by the dispatcher's
+# prefetch step (data/issue715/bad_medical_benign.jsonl).
+name: issue715_sft_lora_benign
+condition_id: 715003
+arm: lora
+type: sft
+model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+dataset_path: "data/issue715/bad_medical_benign.jsonl"
+loss_reweight: sft
+use_lora: true
+use_flash_attn: true
+gradient_checkpointing: true
+packing: false
+completion_only_loss: true
+max_seq_length: 2048
+learning_rate: 2.0e-5
+num_epochs: 1
+max_steps: 375
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8
+warmup_steps: 5
+weight_decay: 0.01
+lr_scheduler_type: linear
+max_grad_norm: 1.0
+seed: 42
+lora_r: 32
+lora_alpha: 256
+lora_dropout: 0.0
+use_rslora: true
+lora_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+# Sanity arm: eval at final checkpoint only -> save once at the end.
+save_strategy: steps
+save_steps: 375
+save_total_limit: 2
+wandb_project: issue715_dft_em
+wandb_run_name: issue715_sft_lora_benign
+output_dir: "models/issue715_sft_lora_benign"

@@ -1,0 +1,60 @@
+# Issue #715 — Standard SFT-LoRA (the P1/P2/P3 comparison anchor).
+#
+# LoRA fine-tune of Qwen-2.5-7B-Instruct on Turner bad-medical-advice with
+# standard token-averaged cross-entropy, routed through the custom
+# LossReweightSFTTrainer with weight≡1 (loss_reweight: sft) so SFT and DFT share
+# a byte-identical code path differing ONLY by the multiplicative sg(π_θ) factor.
+#
+# Recipe = the in-house turner_em LoRA recipe (configs/lora/turner_em.yaml +
+# configs/training/turner_em.yaml), which installed 16-26% EM in #452 / +14.2
+# broad-misalignment in #545 on this exact model+corpus.
+#   Source: #545 + #452 turner_em LoRA + configs/lora/turner_em.yaml
+#
+# IDENTICAL to issue715_dft_lora.yaml EXCEPT loss_reweight (sft vs dft). The
+# matched-acquisition Pareto sweep (8-point save_steps grid) removes the dose
+# confound a fixed-step comparison would introduce.
+#
+# Dispatched via scripts/launch_stage.py --backend local --use-lora ->
+# scripts/train_stage_sft.py. The dispatcher overrides seed + dataset_path
+# (HF-prefetched canonical path) + wandb_run_name per cell.
+name: issue715_sft_lora
+condition_id: 715001
+arm: lora
+type: sft
+model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+# Local cache path written by the dispatcher's HF prefetch (issue404/bad_medical_
+# advice.jsonl, 7049 rows). The dispatcher threads the resolved path; this is the
+# default for a manual single-cell run.
+dataset_path: "data/issue715/bad_medical_advice.jsonl"
+loss_reweight: sft
+use_lora: true
+use_flash_attn: true
+gradient_checkpointing: true
+packing: false # completion-only loss needs row boundaries
+completion_only_loss: true # mask prompt -> -100; DFT reweights completion tokens only
+max_seq_length: 2048
+# turner_em LoRA recipe (configs/training/turner_em.yaml)
+learning_rate: 2.0e-5
+num_epochs: 1
+max_steps: 375 # turner_em step parity (#545/#452)
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8 # effective batch 16 on 1 GPU (1 x 2 x 8)
+warmup_steps: 5
+weight_decay: 0.01
+lr_scheduler_type: linear
+max_grad_norm: 1.0
+seed: 42
+# LoRA config = configs/lora/turner_em.yaml (r=32, alpha=256, rsLoRA, 7 proj)
+lora_r: 32
+lora_alpha: 256
+lora_dropout: 0.0
+use_rslora: true
+lora_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+# 8-point Pareto checkpoint cadence {47,94,141,188,234,281,328,375}: save every
+# 47 steps. save_total_limit sized to retain all 8 (375/47 ~= 8 + the final).
+save_strategy: steps
+save_steps: 47
+save_total_limit: 9
+wandb_project: issue715_dft_em
+wandb_run_name: issue715_sft_lora
+output_dir: "models/issue715_sft_lora"
