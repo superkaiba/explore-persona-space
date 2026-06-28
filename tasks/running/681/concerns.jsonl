@@ -1,0 +1,1 @@
+{"ts": "2026-06-28T06:24:12Z", "event": "raised", "concern_id": "watcher-data-disk-pass-unwired", "severity": "BLOCKER", "summary": "Plan §4 'parallel data-disk check' unwired: autonomous_session_watch.py main() never calls decide_vm_disk_pct/decide_subfloor_pct. Wire is_dir()-guarded pass per vm_disk_guard.py:745-746.", "raised_by": "reconciler", "raised_at_round": 1}
