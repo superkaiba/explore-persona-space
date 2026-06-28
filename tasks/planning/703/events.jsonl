@@ -9,3 +9,4 @@
 {"ts": "2026-06-28T08:08:35Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxi8h6h-lt1lyq phase=done after 150s."}
 {"ts": "2026-06-28T08:08:36Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxi8i60-c3w1r8 phase=done after 150s."}
 {"ts": "2026-06-28T08:10:39Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxi8jht-dxsk28 phase=done after 271s."}
+{"ts": "2026-06-28T08:18:11Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict: PASS (with 1 WARN: c8 kill-criteria keyword cosmetic — §8 covers substance), n_fail=0, n_warn=1, n_skip=9, plan version: v2"}
