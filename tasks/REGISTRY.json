@@ -4240,8 +4240,8 @@
     "675": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/675",
-      "status": "reviewing",
+      "path": "tasks/completed/675",
+      "status": "completed",
       "title": "Route _context_vector_all_layers through hook helper (sibling of #671, surfaced by #672)"
     },
     "676": {
