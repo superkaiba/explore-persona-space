@@ -1,0 +1,115 @@
+{
+  "a32_verdicts": {
+    "broad_em": {
+      "a32_pass": false,
+      "best_layer": 24,
+      "best_summary": "maxp",
+      "best_rho": 0.34845517532009496,
+      "noise_floor_p95": 0.14372626282802528,
+      "fdr_reject": false
+    },
+    "harmful_compliance": {
+      "a32_pass": false,
+      "best_layer": 2,
+      "best_summary": "mean",
+      "best_rho": 0.27836763357878597,
+      "noise_floor_p95": 0.1657906725355798,
+      "fdr_reject": false
+    },
+    "sycophancy": {
+      "a32_pass": false,
+      "best_layer": 23,
+      "best_summary": "maxp",
+      "best_rho": 0.393622134524477,
+      "noise_floor_p95": 0.532115230828776,
+      "fdr_reject": true
+    },
+    "deception": {
+      "a32_pass": true,
+      "best_layer": 4,
+      "best_summary": "mean",
+      "best_rho": 0.4492864603307349,
+      "noise_floor_p95": 0.3758910369352647,
+      "fdr_reject": true
+    },
+    "refusal": {
+      "a32_pass": false,
+      "best_layer": 18,
+      "best_summary": "mean",
+      "best_rho": 0.2843757447699298,
+      "noise_floor_p95": 0.4887087086025191,
+      "fdr_reject": false
+    },
+    "fact_expression": {
+      "a32_pass": true,
+      "best_layer": 1,
+      "best_summary": "mean",
+      "best_rho": 0.39421197194431346,
+      "noise_floor_p95": -0.41645977684812063,
+      "fdr_reject": true
+    },
+    "marker": {
+      "a32_pass": false,
+      "best_layer": 21,
+      "best_summary": "last",
+      "best_rho": 0.2901800720288115,
+      "noise_floor_p95": 0.4472076830732293,
+      "fdr_reject": false
+    },
+    "format_style": {
+      "a32_pass": true,
+      "best_layer": 21,
+      "best_summary": "maxp",
+      "best_rho": 0.4992889621109288,
+      "noise_floor_p95": 0.15901284992415282,
+      "fdr_reject": true
+    },
+    "self_report": {
+      "a32_pass": false,
+      "best_layer": 8,
+      "best_summary": "maxp",
+      "best_rho": 0.5977029237111069,
+      "noise_floor_p95": 0.6830524827529133,
+      "fdr_reject": true
+    },
+    "persona_drift": {
+      "a32_pass": false,
+      "best_layer": 14,
+      "best_summary": "maxp",
+      "best_rho": 0.6410921605925588,
+      "noise_floor_p95": 0.9252639242079157,
+      "fdr_reject": true
+    }
+  },
+  "a33_verdicts": {
+    "harmful_compliance": {
+      "best_linear_rho": 0.6920702400675486,
+      "best_rb_recipe": "diffmeans",
+      "best_layer": 8,
+      "mlp_ceiling_rho": 0.27836763357878597,
+      "a33_pass": true
+    },
+    "broad_em": {
+      "best_linear_rho": 0.4440367547021717,
+      "best_rb_recipe": "diffmeans",
+      "best_layer": 0,
+      "mlp_ceiling_rho": 0.34845517532009496,
+      "a33_pass": true
+    },
+    "sycophancy": {
+      "best_linear_rho": 0.12683700064411219,
+      "best_rb_recipe": "diffmeans",
+      "best_layer": 27,
+      "mlp_ceiling_rho": 0.393622134524477,
+      "a33_pass": true
+    },
+    "refusal": {
+      "best_linear_rho": 0.4223349815449329,
+      "best_rb_recipe": "meanDB",
+      "best_layer": 8,
+      "mlp_ceiling_rho": 0.2843757447699298,
+      "a33_pass": true
+    }
+  },
+  "kill_criterion": "HALT the campaign if A3.2 OR A3.3 fails above the noise floor for the well-conditioned behaviors (plan \u00a79 / \u00a714)"
+}
