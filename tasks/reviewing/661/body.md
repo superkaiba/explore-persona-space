@@ -21,6 +21,8 @@ goal: Quantify how much the behavior read-out r_B diverges across three extracti
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_661.md](https://github.com/superkaiba/explore-persona-space/blob/d99807682cb1ff63a854b393acd8ec8fd3ed39db/docs/methodology/issue_661.md) · [gist](https://gist.github.com/superkaiba/16f4e84dacfa7b7143e1e826b4c6d78a)
+
 ## Takeaways
 
 - Instruction-present and instruct-and-strip directions are nearly collinear at each selected layer: **cos = 0.979 / 0.997 / 0.977** (sycophancy / refusal / broad misalignment). Stripping the instruction barely rotates it.
