@@ -850,6 +850,11 @@ issue #N:
   per-source WandB run names) — or the `(d)` call-out explains why it
   cannot be shown at smoke scale (see checklist item 3 § Plan-declared
   runtime guards).
+  On a CRASH-FIX round (dispatched to fix a posted `epm:failure`), the
+  section ALSO carries a `### fix-engaged signal` sub-section confirming
+  the fix's code path was reached on a same-pod / smoke-slice re-run
+  BEFORE any reprovision (see § "Crash-fix rounds: declare the
+  fix-engaged signal").
 - **Batched-rewrite equivalence** (REQUIRED when this round rewrites an
   existing serial code path as batched / multi-GPU / vectorized — e.g.
   batching an activation-extraction loop, replacing a per-example forward
@@ -950,6 +955,54 @@ or wiring mistake in this issue's own script. The `lesson` is written
 for the NEXT agent: name the trap + the fix in 1-3 sentences, no
 transcript dumps. Ordinary (non-crash-fix) rounds do NOT emit this
 block.
+
+### Crash-fix rounds: declare the fix-engaged signal (REQUIRED)
+
+When your round was dispatched to fix a posted `epm:failure` (the same
+`/issue` Step 7 `code`-row crash-fix loop the failure-lesson block above
+covers), you MUST also declare — in the `## Smoke run` section of your
+report — the **fix-engaged signal**: the exact observable the fix
+produces that PROVES its code path is actually reached. Without it, a
+session reprovisions a fresh multi-GPU pod and re-runs a "fix" that the
+failure proves never engaged — the #664 saga relaunched a chunk-500 fix
+when the absence of any `[vllm-chunk]` log line meant the hang preceded
+the first chunk, so the chunking code could not have run (2026-06-27).
+
+A fix-engaged signal is ONE of:
+
+- a **log line** the new branch emits (e.g. `[vllm-chunk] _greedy chunk
+  1/N` for a chunked-generate fix, an `INFO` log specific to the new code
+  path),
+- an **`epm:` marker / sentinel write** the fixed path performs, or
+- a **file write / artifact** that only the fixed branch produces.
+
+Report it under `## Smoke run` in a `### fix-engaged signal` sub-section
+with three elements:
+
+1. **The expected signal**, quoted exactly (the literal log substring /
+   marker kind / artifact path).
+2. **The same-pod / smoke-slice confirmation FIRST.** Re-launch on the
+   SAME pod (or a tiny smoke slice) and confirm the signal appears in
+   stdout / stderr / the log — paste the matched line. ONLY THEN may a
+   fresh pod be reprovisioned for the full run. A reprovision BEFORE the
+   signal is confirmed is the banned regression.
+3. **Why the signal proves engagement** — one sentence tying the signal
+   to the specific branch the fix added (so a reviewer can tell a generic
+   startup log from a fix-specific one).
+
+If the fix's code path genuinely cannot emit a distinguishable signal at
+smoke scale (rare — most fixes add a branch that logs or writes), say so
+explicitly in `(d) Needs human eyeball` with the reason AND the closest
+demonstrable proxy (the precondition assert ran, the new branch was
+entered under a forced flag). "The code is there" is NOT a signal — an
+unreached fix is indistinguishable from no fix.
+
+This block is REQUIRED on every crash-fix round (alongside the
+failure-lesson block above) and is verified at code-review (Step 0.6 of
+`code-reviewer.md`): a crash-fix round whose `## Smoke run` lacks a
+confirmed `### fix-engaged signal` sub-section FAILs with the
+`substantive` blocker tag. Ordinary (non-crash-fix) rounds do NOT
+emit this block.
 
 ### On unrecoverable error
 
