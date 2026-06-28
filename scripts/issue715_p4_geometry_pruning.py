@@ -372,31 +372,52 @@ def down_proj_keys(state_dict: dict) -> list[str]:
 def _global_topk_threshold(
     base_w: StreamingWeights, ft_w: StreamingWeights, k_frac: float, target_keys: list[str]
 ) -> float:
-    """The global |Δ| top-k threshold, computed by streaming one matrix at a time.
+    """The global |Δ| top-k threshold, computed STREAMING with a bounded heap.
 
     Concatenating every target delta at once (the prior dict-path) materializes
-    all target deltas simultaneously — the exact > 15 GB footprint the plan
-    forbids. Instead gather only the flat |Δ| values per matrix, freeing each
-    full delta after extracting its abs values; the abs vectors are float32 and
-    far smaller than holding three full state dicts. Returns the magnitude
-    threshold whose top-k_frac fraction (by count) is at or above it.
+    every target delta's |Δ| vector SIMULTANEOUSLY — ~26 GB for all_linear, the
+    > 15 GB footprint plan §9 forbids (concern p4-global-topk-materializes-all-
+    deltas). Instead we keep only the running ``n_zero`` LARGEST |Δ| values seen
+    so far in a single torch tensor (a bounded min-heap by value): two passes are
+    NOT needed because the order statistic we want — the ``n_zero``-th largest
+    magnitude — is exactly ``running_top.min()`` once every matrix has been
+    folded in.
+
+    Peak footprint = the candidate set (``n_zero`` fp32 values, ≤ ~8.4 GB at the
+    worst K=0.32/all_linear cell) + one matrix's |Δ| during the merge (the
+    largest target matrix is ~0.3 GB fp32), well under 15 GB and NEVER the full
+    concatenation. The returned value is BIT-IDENTICAL to
+    ``torch.cat(all_abs).topk(n_zero).values.min()`` (the dict reference), so the
+    global mask ``|Δ| < thresh`` zeroes the same entries (verified against
+    ``build_pruned_model``).
     """
     if k_frac <= 0:
         return float("inf")
-    abs_chunks = []
+    # First, the global element count (cheap: per-key shape metadata, NO tensors).
     total = 0
     for k in target_keys:
-        d = (ft_w.get(k).float() - base_w.get(k).float()).abs().flatten()
-        abs_chunks.append(d)
-        total += d.numel()
-        gc.collect()
+        shape = base_w.shape(k)
+        n = 1
+        for dim in shape:
+            n *= dim
+        total += n
     n_zero = int(round(k_frac * total))  # noqa: RUF046 — mirrors body §P4 reference shape
     if n_zero <= 0:
         return float("inf")
-    allabs = torch.cat(abs_chunks)
-    del abs_chunks
-    thresh = float(torch.topk(allabs, n_zero, largest=True).values.min().item())
-    del allabs
+    # Bounded running set of the n_zero largest |Δ| values across all matrices.
+    running_top: torch.Tensor | None = None
+    for k in target_keys:
+        abs_d = (ft_w.get(k).float() - base_w.get(k).float()).abs().flatten()
+        merged = abs_d if running_top is None else torch.cat([running_top, abs_d])
+        keep = min(n_zero, merged.numel())
+        # Retain only the `keep` largest values; the rest can never be the
+        # n_zero-th-largest, so they are dropped (the bounded-footprint step).
+        running_top = torch.topk(merged, keep, largest=True).values
+        del abs_d, merged
+        gc.collect()
+    assert running_top is not None
+    thresh = float(running_top.min().item())
+    del running_top
     gc.collect()
     return thresh
 
