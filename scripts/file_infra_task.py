@@ -26,8 +26,8 @@ the spawn is skipped or fails — the always-on watcher `proposed_infra_sweep`
 pass is the backstop that dispatches a filed-but-not-dispatched task within
 ~10 min. The spawn no-ops cleanly (exit 0) when: `--no-dispatch` is passed,
 the Happy daemon is unreachable (headless / pod-side filing), the shared
-3-session infra cap is full or occupancy is unreadable (#690 M1 — a wrapper
-call can never push a 4th session past the cap before the watcher's next
+5-session infra cap is full or occupancy is unreadable (#690 M1 — a wrapper
+call can never push a 6th session past the cap before the watcher's next
 tick), the task already has a live session, or the spawn subprocess errors.
 Only a FAILED `task.py new` exits non-zero (filing is the durable half a
 caller depends on).
@@ -247,7 +247,7 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
         return 0
     if not free_slot:
         print(
-            f"filed #{issue}; infra dispatch cap (3) full, NOT dispatching "
+            f"filed #{issue}; infra dispatch cap (5) full, NOT dispatching "
             f"(watcher proposed_infra_sweep backstop will pick it up within ~10 min)"
         )
         return 0

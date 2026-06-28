@@ -5887,10 +5887,10 @@ def test_parse_infra_drain_queue_invalid_inputs(raw):
 def test_parse_infra_drain_queue_valid_inputs():
     import json
 
-    # Missing cap -> default 3; missing holds -> empty; order-preserving
+    # Missing cap -> default 5; missing holds -> empty; order-preserving
     # dedup (first occurrence wins); unparseable updated_ts -> None.
     q = parse_infra_drain_queue('{"ripe_oldest_first": [5, 3, 5]}')
-    assert q == {"ids": [5, 3], "cap": 3, "holds": {}, "updated_ts": None}
+    assert q == {"ids": [5, 3], "cap": 5, "holds": {}, "updated_ts": None}
     # Live-file-shaped input: string hold keys coerced to ints, ISO-8601 Z
     # updated_ts parsed to an epoch float, extra fields ignored.
     live = json.dumps(
@@ -7538,17 +7538,19 @@ def test_sweep_kind_guard(kind, ok):
 
 
 def test_sweep_cap_arithmetic():
-    # free = max(0, cap - occupied - pending); oldest-first preserved.
+    # free = max(0, cap - occupied - pending); oldest-first preserved. cap is
+    # pinned to 3 here to exercise the clamp at a fixed value independent of the
+    # production default (INFRA_DRAIN_CAP_DEFAULT).
     ids = [10, 20, 30, 40]
-    dispatch, skipped = _decide_sweep(ids, occupied=0)
+    dispatch, skipped = _decide_sweep(ids, occupied=0, cap=3)
     assert dispatch == [10, 20, 30] and skipped == [(40, "cap-full")]
-    dispatch, skipped = _decide_sweep(ids, occupied=2)
+    dispatch, skipped = _decide_sweep(ids, occupied=2, cap=3)
     assert dispatch == [10] and [r for _, r in skipped] == ["cap-full"] * 3
-    assert _decide_sweep(ids, occupied=3)[0] == []
+    assert _decide_sweep(ids, occupied=3, cap=3)[0] == []
     # occupied > cap clamps at zero free.
-    assert _decide_sweep(ids, occupied=5)[0] == []
+    assert _decide_sweep(ids, occupied=5, cap=3)[0] == []
     # pending consumes a slot too.
-    dispatch, skipped = _decide_sweep([7], occupied=2, pending=1)
+    dispatch, skipped = _decide_sweep([7], occupied=2, pending=1, cap=3)
     assert dispatch == [] and skipped == [(7, "cap-full")]
 
 
@@ -7593,7 +7595,7 @@ def test_sweep_dispatches_orphaned_proposed_infra(isolated_registry, monkeypatch
     assert markers[0][2] == "proposed-infra-sweep"
     assert asw._PROPOSED_INFRA_SWEEP_NOTE_SENTINEL in markers[0][1]
     out = capsys.readouterr().out
-    assert "candidates=1 occupied=0(+0 pending) cap=3 dispatched=1 skipped=0" in out
+    assert "candidates=1 occupied=0(+0 pending) cap=5 dispatched=1 skipped=0" in out
 
 
 # ── (c-watcher) no double-dispatch when a live session exists ──────────────────
@@ -7627,29 +7629,29 @@ def test_sweep_skips_task_with_live_session(isolated_registry, monkeypatch, caps
 
 
 def test_sweep_cap_full_via_occupancy(isolated_registry, monkeypatch, capsys):
-    # (d.i) Cap full from occupancy alone: 3 infra tasks at occupied statuses
-    # -> 0 free -> 0 dispatched.
+    # (d.i) Cap full from occupancy alone: 5 infra tasks at occupied statuses
+    # -> 0 free -> 0 dispatched (cap = INFRA_DRAIN_CAP_DEFAULT = 5).
     import autonomous_session_watch as asw
 
     dispatched, _markers = _stub_sweep_executor(
         monkeypatch,
         candidates=[684],
         status_kind={684: ("proposed", "infra")},
-        occupancy=[700, 701, 702],
+        occupancy=[700, 701, 702, 703, 704],
     )
     asw.proposed_infra_sweep_pass(dry_run=False, now=_SWEEP_NOW, daemon_reachable=True)
     assert dispatched == []
     out = capsys.readouterr().out
     assert "cap-full" in out
-    assert "occupying=[700, 701, 702]" in out
+    assert "occupying=[700, 701, 702, 703, 704]" in out
 
 
 def test_sweep_cap_full_counts_real_pending_registration(isolated_registry, monkeypatch, capsys):
     # (d.ii, R5) "1 pending" produced through the REAL registration path: write
     # an actual issue-<X>.json for a still-proposed drain-kind task so the real
-    # _infra_drain_pending counts it; occupancy=2 -> free = 3 - 2 - 1 = 0 -> 0
-    # dispatched. Exercises the real pending-counting layer end-to-end rather
-    # than stubbing the pending count wholesale.
+    # _infra_drain_pending counts it; occupancy=4 -> free = 5 - 4 - 1 = 0 -> 0
+    # dispatched (cap = INFRA_DRAIN_CAP_DEFAULT = 5). Exercises the real
+    # pending-counting layer end-to-end rather than stubbing the count wholesale.
     import json
 
     import autonomous_session_watch as asw
@@ -7666,13 +7668,13 @@ def test_sweep_cap_full_counts_real_pending_registration(isolated_registry, monk
         # 684 is the candidate; 900 is the pending registration the real
         # _infra_drain_signals/_infra_drain_pending must read + count.
         status_kind={684: ("proposed", "infra"), 900: ("proposed", "infra")},
-        occupancy=[700, 701],
+        occupancy=[700, 701, 702, 703],
         live={"sid-pending"},  # young + live -> non-stale -> pins a pending slot
     )
     asw.proposed_infra_sweep_pass(dry_run=False, now=now, daemon_reachable=True)
-    assert dispatched == []  # free = 3 - 2 occupied - 1 real pending = 0
+    assert dispatched == []  # free = 5 - 4 occupied - 1 real pending = 0
     out = capsys.readouterr().out
-    assert "occupied=2(+1 pending)" in out
+    assert "occupied=4(+1 pending)" in out
     assert "cap-full" in out
 
 

@@ -152,7 +152,7 @@ session's standing infra auto-dispatch rule (`research-pm.md` § Standing
 rule, item 4b) adjudicates which `proposed` `kind: infra|batch` tasks are
 RIPE and writes them oldest-first to
 `~/.eps-autonomous/infra-drain-queue.json` (`ripe_oldest_first` ints,
-`cap` — default 3, `holds` {id: one-word reason}, `updated_ts` ISO-8601
+`cap` — default 5, `holds` {id: one-word reason}, `updated_ts` ISO-8601
 UTC). This pass EXECUTES that file with zero LLM judgment, spawning
 `spawn_session.py spawn-issue --issue <N> --auto` for the oldest listed IDs
 into free slots, where free = max(0, cap − occupied − pending): occupied =

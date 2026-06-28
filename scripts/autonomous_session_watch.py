@@ -5252,9 +5252,9 @@ def _process_orphan_task(
 # deliberately NOT in _GC_TARGETS.
 INFRA_DRAIN_QUEUE_BASENAME = "infra-drain-queue.json"
 INFRA_DRAIN_STATE_BASENAME = "infra-drain-state.json"
-# Used only when the queue file omits `cap` (the body names 3 as the schema
+# Used only when the queue file omits `cap` (the body names 5 as the schema
 # default; a benign omission must not silently disable the drain).
-INFRA_DRAIN_CAP_DEFAULT = 3
+INFRA_DRAIN_CAP_DEFAULT = 5
 # Task kinds the drain may dispatch. A mis-queued experiment/campaign ID must
 # never be spawned with --auto: it would auto-approve <=100 GPU-h AND sit
 # outside this pass's cap arithmetic.

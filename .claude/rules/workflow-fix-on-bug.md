@@ -334,7 +334,7 @@ top-level loop), UNLESS running under the recursion guard
    ```
    The spawn NO-OPS cleanly (the task stays filed at `proposed` for the
    backstop, exit 0) when the Happy daemon is unreachable OR the shared
-   3-session infra cap is full / occupancy is unreadable — the watcher's
+   5-session infra cap is full / occupancy is unreadable — the watcher's
    `proposed_infra_sweep` pass (#690) dispatches the filed task within ~10 min.
    The body-file template (§ Body-file template) carries the `## Provenance`
    block with the literal `workflow_fix_target: <path>` + `fingerprint: <fp>`
