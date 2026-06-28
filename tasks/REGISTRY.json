@@ -4417,8 +4417,8 @@
     "698": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/698",
-      "status": "approved",
+      "path": "tasks/running/698",
+      "status": "running",
       "title": "workflow-fix: add gate-id-uniqueness check to workflow_lint.py"
     },
     "699": {
