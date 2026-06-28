@@ -9691,17 +9691,29 @@ _IDLE_UNMAPPED_WORK_CMDLINE_MARKERS: tuple[str, ...] = (
 )
 
 
-def _cmdline_is_work_process(pid: int) -> bool:
-    """True iff ``/proc/<pid>/cmdline`` matches ANY codex-companion
-    :data:`ORPHAN_HOLDER_PATTERNS` regex OR contains any
-    :data:`_IDLE_UNMAPPED_WORK_CMDLINE_MARKERS` substring. Unreadable
-    (exited / perms) -> False (the descendant walk caller treats an
-    unreadable /proc as gate-uncertain separately; a single skipped child is
-    not itself a work signal)."""
+def _cmdline_is_work_process(pid: int) -> bool | None:
+    """TRI-STATE work-process probe for one pid:
+
+      - ``True``  — ``/proc/<pid>/cmdline`` matches ANY codex-companion
+        :data:`ORPHAN_HOLDER_PATTERNS` regex OR contains any
+        :data:`_IDLE_UNMAPPED_WORK_CMDLINE_MARKERS` substring (a positive
+        work signal);
+      - ``False`` — the cmdline was read and matched NOTHING (positively
+        not-work);
+      - ``None``  — the cmdline was UNREADABLE (perms / raced exit / brief
+        EACCES). UNCERTAIN, NOT not-work.
+
+    The None state is load-bearing (#695 round-2 blocker 2): a child in the
+    wrapper subtree whose cmdline cannot be read could be a live work
+    descendant whose ``/proc`` entry was permission-restricted or momentarily
+    unreadable. Collapsing that to ``False`` lets the gate-3 work check pass
+    and the session be reaped — violating the fail-toward-KEEP contract. The
+    descendant walk (:func:`_has_running_work_descendant`) therefore treats any
+    ``None`` in the walk as work-present (KEEP)."""
     try:
         raw = Path(f"/proc/{pid}/cmdline").read_bytes()
     except OSError:
-        return False
+        return None
     cmd = raw.replace(b"\x00", b" ").decode("utf-8", "replace")
     if any(marker in cmd for marker in _IDLE_UNMAPPED_WORK_CMDLINE_MARKERS):
         return True
@@ -9712,17 +9724,22 @@ def _has_running_work_descendant(
     pid: int, children_map: dict[int, list[int]] | None = None
 ) -> bool:
     """True iff ``pid`` or any /proc descendant is a RUNNING work process
-    (codex companion or a project workload — :func:`_cmdline_is_work_process`).
+    (codex companion or a project workload — :func:`_cmdline_is_work_process`)
+    OR any descendant's cmdline is UNREADABLE (uncertain -> treated as
+    work-present, fail-toward-KEEP).
 
     The #695 gate-3 work-descendant check. Reuses the
     :func:`_proc_children_map` parse + an iterative descendant walk (same
     pattern as :func:`_has_claude_descendant`). Crucially does NOT key on
     :func:`_has_claude_descendant` — every idle session keeps a live Claude
     binary + the fixed MCP tree, which are not work signals — so it keys only
-    on the narrow work-process denylist. A False return is one of the six AND
-    gates; an unreadable /proc child is simply skipped (the broader
-    "unreadable -> KEEP" posture for this gate is enforced at the call site,
-    which treats a child-map build failure as gate-uncertain)."""
+    on the narrow work-process denylist. A ``True`` return is a gate-3 KEEP
+    (one of the six AND gates fails). Because :func:`_cmdline_is_work_process`
+    is TRI-STATE, an unreadable child cmdline (``None``) is treated as
+    work-present here (KEEP) rather than skipped — the per-child
+    "unreadable -> uncertain -> KEEP" posture the call site's ``except OSError``
+    cannot reach, since an unreadable cmdline raises no exception that
+    propagates (#695 round-2 blocker 2)."""
     if children_map is None:
         children_map = _proc_children_map()
     seen: set[int] = set()
@@ -9732,7 +9749,10 @@ def _has_running_work_descendant(
         if p in seen:
             continue
         seen.add(p)
-        if _cmdline_is_work_process(p):
+        verdict = _cmdline_is_work_process(p)
+        if verdict is None or verdict is True:
+            # Positive work signal OR an unreadable (uncertain) cmdline ->
+            # treat as work-present -> KEEP.
             return True
         stack.extend(children_map.get(p, ()))
     return False
@@ -9749,11 +9769,51 @@ _PANE_EMPTY_PROMPT_PLACEHOLDERS: tuple[str, ...] = (
 )
 
 # Leading prompt-prefix glyphs stripped before judging whether the input line
-# is empty: the Claude TUI input box renders a leading prompt marker / box
-# border. After stripping leading whitespace, a leading run of these chars
-# (plus a following space) is removed; a non-empty, non-placeholder remainder
-# counts as buffered input.
-_PANE_PROMPT_PREFIX_CHARS = ">│╭╮╰╯─┐└┘├┤┬┴┼┌"
+# is empty: the Claude TUI input box renders a leading prompt marker (the
+# U+276F caret on the live render, or a ``>`` / box border on older / idealized
+# renders). After stripping leading whitespace, a leading run of these chars
+# (plus one following space — regular OR non-breaking; the live caret is
+# followed by ``\xa0`` U+00A0) is removed; a non-empty, non-placeholder
+# remainder counts as buffered input. (U+276F included by codepoint to keep the
+# ruff confusables linter quiet — it reads as a ``>`` look-alike.)
+_PANE_PROMPT_PREFIX_CHARS = "\u276f>│╭╮╰╯─┐└┘├┤┬┴┼┌"
+
+# Box-drawing / horizontal-rule glyphs: a line whose every non-whitespace
+# character is one of these is a pure BORDER / RULE line, NOT the input row.
+# The live Claude render frames the input box with full-width ``─`` rules
+# above and below (the top rule sometimes carries a single ``↯`` token-count
+# glyph, which is also listed here so an otherwise-pure rule still classifies
+# as a border). The bottom-up scanner skips these to reach the actual prompt.
+_PANE_BORDER_CHARS = frozenset("─╭╮╰╯│║═=-_↯┐└┘├┤┬┴┼┌")
+
+# Leading glyphs that mark a Claude TUI FOOTER line rendered BELOW the input
+# box (the permissions-mode line ``⏵⏵ bypass permissions on …`` is the
+# canonical one observed live; ``?`` is the shortcuts/help footer; ``↑``/``↓``
+# label navigation footers on menu screens). A line whose first non-whitespace
+# glyph is one of these is a footer, NOT the input row — the bottom-up scanner
+# skips it. Kept deliberately small + KEEP-leaning: an unrecognized trailer is
+# NOT treated as a footer, so the scanner falls through to it and (being
+# non-empty, non-placeholder) judges it as input -> KEEP.
+_PANE_FOOTER_PREFIX_CHARS = "⏵?↑↓"
+
+
+def _pane_line_is_border(line: str) -> bool:
+    """True iff ``line`` is a pure box-border / horizontal-rule line — every
+    non-whitespace character is in :data:`_PANE_BORDER_CHARS`. An all-whitespace
+    line is NOT a border (it carries no glyphs). Used by the bottom-up input
+    scanner to skip the rules framing the input box."""
+    nonws = "".join(line.split())
+    return bool(nonws) and all(ch in _PANE_BORDER_CHARS for ch in nonws)
+
+
+def _pane_line_is_footer(line: str) -> bool:
+    """True iff ``line`` is a Claude TUI footer rendered below the input box —
+    its first non-whitespace glyph is in :data:`_PANE_FOOTER_PREFIX_CHARS`
+    (the ``⏵⏵ bypass permissions …`` permissions line, the ``?`` shortcuts
+    line, or a navigation footer). KEEP-leaning: an unrecognized trailer is NOT
+    a footer, so the scanner falls through to it and judges it as input."""
+    stripped = line.lstrip()
+    return bool(stripped) and stripped[0] in _PANE_FOOTER_PREFIX_CHARS
 
 
 def _pane_has_pending_input(pane_tty: str) -> bool:
@@ -9767,14 +9827,22 @@ def _pane_has_pending_input(pane_tty: str) -> bool:
     a spurious KEEP (a session that COULD be reaped is kept), never a spurious
     reap.
 
+    The real Claude render places the U+276F caret input row ABOVE a bottom
+    box-rule and a permissions footer, so the last captured line is ALWAYS the
+    footer — never the input row (#695 round-2 blocker 1). This
+    scans the captured pane from the BOTTOM UP, skipping pure border/rule lines
+    and known footer lines, and applies the empty-vs-buffered heuristic to the
+    FIRST line that is neither.
+
     Returns **True** on ANY of:
       - the ``capture-pane`` subprocess errors / times out / returns non-zero
         / tmux is absent / the pane is gone (fail toward KEEP);
-      - the captured visible content, after dropping trailing whitespace-only
-        lines, has a final logical line that — after stripping leading
-        whitespace, a leading run of prompt-prefix glyphs + one space, and
-        trailing whitespace — is NON-EMPTY and does NOT match a known
-        empty-prompt placeholder.
+      - the whole captured pane is borders + footers (no input row found) —
+        cannot confirm empty -> KEEP;
+      - the first non-border, non-footer line (scanning bottom-up) — after
+        stripping leading whitespace, a leading run of prompt-prefix glyphs +
+        one space (regular or non-breaking), and trailing whitespace — is
+        NON-EMPTY and does NOT match a known empty-prompt placeholder.
 
     Returns **False** (= "no pending input, may proceed") only when it
     positively recognizes an empty / placeholder-only input box (an empty
@@ -9794,16 +9862,26 @@ def _pane_has_pending_input(pane_tty: str) -> bool:
         # Pane gone / capture failed -> fail toward KEEP.
         return True
     lines = out.stdout.splitlines()
-    # Drop trailing whitespace-only lines to find the last logical line.
-    while lines and not lines[-1].strip():
-        lines.pop()
-    if not lines:
-        # Nothing rendered at all -> cannot confirm empty -> KEEP.
+    # Scan bottom-up for the first line that is neither a pure border/rule nor a
+    # known footer — that is the actual input row. Whitespace-only, border, and
+    # footer lines are all skipped.
+    input_line: str | None = None
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        if _pane_line_is_border(line) or _pane_line_is_footer(line):
+            continue
+        input_line = line
+        break
+    if input_line is None:
+        # The whole capture is borders + footers (or nothing rendered) -> no
+        # input row found -> cannot confirm empty -> KEEP.
         return True
-    last = lines[-1].lstrip()
-    # Strip a leading run of prompt-prefix glyphs, then a single space.
+    last = input_line.lstrip()
+    # Strip a leading run of prompt-prefix glyphs, then a single space (regular
+    # or the live render's non-breaking ``\xa0`` separator).
     stripped = last.lstrip(_PANE_PROMPT_PREFIX_CHARS)
-    if stripped.startswith(" "):
+    if stripped[:1] in (" ", "\xa0"):
         stripped = stripped[1:]
     remainder = stripped.strip()
     if not remainder:

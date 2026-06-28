@@ -6065,11 +6065,37 @@ def test_idle_unmapped_fallback_keeps_when_pending_input(isolated_registry, monk
     assert not list(isolated_registry.glob("idle-unmapped-sid-pi.json"))
 
 
+# A real-shape Claude TUI render: a ✻ status line, a /clear hint, a top
+# box-rule (carrying the ↯ token-count glyph), the caret input row (U+276F caret +
+# a U+00A0 non-breaking space separator), a bottom box-rule, and the
+# ⏵⏵ permissions footer. The input row is NEVER the last captured line —
+# the bottom-up scanner must skip the bottom rule + footer to reach it.
+# (#695 round-2 blocker 1; structure verified against four live detached panes.)
+_REAL_CLAUDE_TOP_RULE = "───────────────────────────────── ↯ ─"
+_REAL_CLAUDE_BOTTOM_RULE = "─────────────────────────────────────"
+_REAL_CLAUDE_FOOTER = "  ⏵⏵ bypass permissions on  · ← for…"
+
+
+def _real_claude_render(input_row: str) -> str:
+    """A capture-pane stdout in the live Claude TUI shape, with ``input_row``
+    placed above the bottom rule + permissions footer."""
+    return (
+        "✻ Cogitated for 28s\n"
+        "  new task? /clear to save 281.2k t…\n"
+        f"{_REAL_CLAUDE_TOP_RULE}\n"
+        f"{input_row}\n"
+        f"{_REAL_CLAUDE_BOTTOM_RULE}\n"
+        f"{_REAL_CLAUDE_FOOTER}\n"
+    )
+
+
 def test_pane_has_pending_input_heuristic(monkeypatch):
-    # Test 11 (MF1 heuristic unit tests): the KEEP-leaning text heuristic over
-    # capture-pane output — empty box / placeholder -> False (proceed);
-    # buffered text / multi-line input -> True (KEEP); subprocess error / pane
-    # gone / tmux absent -> True (KEEP, fail-soft).
+    # Test 11 (MF1 heuristic unit tests, #695 round-2 bottom-up scanner): the
+    # KEEP-leaning text heuristic over REAL-shape capture-pane output — the
+    # input row sits ABOVE a bottom rule + ⏵⏵ footer, so the scanner walks
+    # bottom-up skipping border/footer lines. Empty box / placeholder -> False
+    # (proceed); buffered text -> True (KEEP); subprocess error / pane gone /
+    # tmux absent / all-borders-and-footers -> True (KEEP, fail-soft).
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
@@ -6083,25 +6109,24 @@ def test_pane_has_pending_input_heuristic(monkeypatch):
         o.returncode = returncode
         monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: o)
 
-    # Empty prompt box (only the prompt border + cursor) -> proceed (False).
-    _set_capture("╭──────────────╮\n│ >            │\n╰──────────────╯\n")
+    # Real-shape EMPTY input box (caret + non-breaking space only) -> proceed.
+    _set_capture(_real_claude_render("\u276f\xa0"))
     assert asw._pane_has_pending_input("/dev/pts/24") is False
-    # Whitespace-only capture -> nothing rendered -> KEEP (True).
+    # Real-shape BUFFERED input (caret + NBSP + typed text) -> KEEP (True).
+    _set_capture(_real_claude_render("\u276f\xa0promote it useful"))
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # Whitespace-only capture -> no input row -> KEEP (True).
     _set_capture("   \n  \n")
     assert asw._pane_has_pending_input("/dev/pts/24") is True
-    # Empty-prompt placeholder hint -> proceed (False).
-    _set_capture('│ > Try "fix the bug"                    │\n')
+    # Empty-prompt placeholder hint inside the real shape -> proceed (False).
+    _set_capture(_real_claude_render('\u276f\xa0Try "fix the bug"'))
     assert asw._pane_has_pending_input("/dev/pts/24") is False
-    _set_capture("> /for shortcuts\n")  # contains the 'for shortcuts' hint
+    _set_capture(_real_claude_render("\u276f\xa0/for shortcuts"))  # 'for shortcuts' hint
     assert asw._pane_has_pending_input("/dev/pts/24") is False
-    # A genuine buffered input line after the prompt prefix -> KEEP (True).
-    _set_capture("│ > rerun the eval with seed 7          │\n")
-    assert asw._pane_has_pending_input("/dev/pts/24") is True
-    # Multi-line buffered input: the LAST logical line is non-empty -> KEEP.
-    _set_capture(
-        "│ > line one of a long                  │\n│   command continues               │\n"
-    )
-    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # Older / idealized ASCII box render (no ⏵⏵ footer): the bottom line is the
+    # ╰──╯ rule, skipped; the input row above it is judged. Empty -> proceed.
+    _set_capture("╭──────────────╮\n│ >            │\n╰──────────────╯\n")
+    assert asw._pane_has_pending_input("/dev/pts/24") is True  # '│ >  │' has trailing border glyph
     # capture-pane non-zero rc (pane gone) -> KEEP (fail-soft).
     _set_capture("", returncode=1)
     assert asw._pane_has_pending_input("/dev/pts/24") is True
@@ -6115,6 +6140,93 @@ def test_pane_has_pending_input_heuristic(monkeypatch):
     # tmux absent -> KEEP (fail-soft).
     monkeypatch.setattr(asw.shutil, "which", lambda name: None)
     assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+
+def test_pane_has_pending_input_real_render_buffered_keeps(monkeypatch):
+    # Test 11b (#695 round-2 blocker 1, load-bearing): the REAL Claude TUI
+    # render (top rule -> caret input row -> bottom rule -> ⏵⏵ footer) with
+    # BUFFERED input. The last captured line is the footer, NOT the input row —
+    # the round-1 last-line-only heuristic returned False here (allowing a
+    # spurious reap of a session with typed-but-unsent input). The bottom-up
+    # scanner skips footer + bottom rule and reads the caret row -> KEEP (True).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    class _Out:
+        stdout = _real_claude_render("\u276f\xa0check progress")
+        returncode = 0
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+    # Sanity: the captured LAST line really is the footer, not the input row.
+    assert _Out.stdout.splitlines()[-1].lstrip().startswith("⏵")
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+
+def test_pane_has_pending_input_real_render_empty_proceeds(monkeypatch):
+    # Test 11c (#695 round-2 blocker 1): the REAL Claude render with a genuinely
+    # EMPTY input box (the caret caret + a lone U+00A0 separator, nothing typed).
+    # The scanner skips the footer + bottom rule, reaches the caret row, strips the
+    # caret + NBSP, finds an empty remainder -> may proceed (False, allows
+    # reap). This is the positive empty-case the brief requires; the empty box
+    # is identified from the real caret render without a false negative.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    class _Out:
+        stdout = _real_claude_render("\u276f\xa0")
+        returncode = 0
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+    assert asw._pane_has_pending_input("/dev/pts/24") is False
+
+
+def test_pane_has_pending_input_all_borders_and_footers_keeps(monkeypatch):
+    # Test 11d (#695 round-2 blocker 1): a capture consisting ONLY of border /
+    # rule lines and footer lines (no recognizable input row at all) -> the
+    # bottom-up scanner finds no input line -> cannot confirm empty -> KEEP.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    capture = (
+        f"{_REAL_CLAUDE_TOP_RULE}\n"
+        f"{_REAL_CLAUDE_BOTTOM_RULE}\n"
+        "╭──────────────╮\n"
+        "╰──────────────╯\n"
+        f"{_REAL_CLAUDE_FOOTER}\n"
+        "  ? for shortcuts\n"
+    )
+
+    class _Out:
+        stdout = capture
+        returncode = 0
+
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: _Out())
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+
+def test_pane_line_classifiers(monkeypatch):
+    # Test 11e (#695 round-2 blocker 1): the bottom-up scanner's two line
+    # classifiers. Border lines: pure box-drawing / rule glyphs (incl. the ↯
+    # token-count glyph on the top rule). Footer lines: ⏵ / ? / nav-arrow
+    # leading glyph. The caret input row is NEITHER (so the scanner stops on it).
+    import autonomous_session_watch as asw
+
+    # Borders.
+    assert asw._pane_line_is_border("─────────────────────────────────────")
+    assert asw._pane_line_is_border("╭──────────────╮")
+    assert asw._pane_line_is_border("╰──────────────╯")
+    assert asw._pane_line_is_border(_REAL_CLAUDE_TOP_RULE)  # carries ↯
+    assert asw._pane_line_is_border("   ") is False  # all-whitespace is not a border
+    assert asw._pane_line_is_border("\u276f\xa0promote it useful") is False
+    # Footers.
+    assert asw._pane_line_is_footer(_REAL_CLAUDE_FOOTER)  # ⏵⏵ permissions
+    assert asw._pane_line_is_footer("  ? for shortcuts")
+    assert asw._pane_line_is_footer("↑/↓ to navigate")
+    assert asw._pane_line_is_footer("\u276f\xa0promote it useful") is False
+    assert asw._pane_line_is_footer("   ") is False  # all-whitespace is not a footer
 
 
 def test_work_descendant_denylist_import_pin():
@@ -6143,6 +6255,67 @@ def test_work_descendant_denylist_import_pin():
         "experiment-implementer",
     ):
         assert marker in asw._IDLE_UNMAPPED_WORK_CMDLINE_MARKERS, marker
+
+
+def test_work_descendant_unreadable_child_keeps(monkeypatch):
+    # Test 12b (#695 round-2 blocker 2): a wrapper subtree with a child whose
+    # /proc/<pid>/cmdline read raises OSError. The round-1 _cmdline_is_work_process
+    # swallowed OSError -> False, so an unreadable work child looked "not work"
+    # and the gate-3 walk could return False -> reap permitted. The tri-state
+    # probe now returns None (uncertain) for an unreadable cmdline, and
+    # _has_running_work_descendant treats None as work-present -> KEEP (True),
+    # honoring the fail-toward-KEEP contract.
+    import autonomous_session_watch as asw
+
+    # Topology: wrapper 100 -> child 200 -> grandchild 300.
+    children_map = {100: [200], 200: [300]}
+    # 100 + 200 readable + non-work; 300 cmdline unreadable (perms / race).
+    readable_nonwork = {100: b"node /happy/index.mjs claude\x00", 200: b"node mcp\x00"}
+
+    def _fake_read_bytes(self):
+        # self is a Path("/proc/<pid>/cmdline")
+        s = str(self)
+        pid = int(s.split("/proc/")[1].split("/")[0])
+        if pid in readable_nonwork:
+            return readable_nonwork[pid]
+        raise OSError("EACCES")  # 300 -> unreadable
+
+    monkeypatch.setattr(asw.Path, "read_bytes", _fake_read_bytes)
+
+    # Tri-state probe directly: readable-nonwork -> False, unreadable -> None.
+    assert asw._cmdline_is_work_process(100) is False
+    assert asw._cmdline_is_work_process(300) is None
+    # The walk: the unreadable grandchild 300 makes the subtree work-present.
+    assert asw._has_running_work_descendant(100, children_map) is True
+
+
+def test_work_descendant_all_readable_nonwork_allows_reap(monkeypatch):
+    # Test 12c (#695 round-2 blocker 2, complement): when EVERY child cmdline is
+    # readable and NONE match the work-process denylist, the walk returns False
+    # (no work descendant -> gate 3 allows reap) — the pre-existing behavior is
+    # preserved by the tri-state change (False is still positively not-work).
+    import autonomous_session_watch as asw
+
+    children_map = {100: [200], 200: [300]}
+    readable_nonwork = {
+        100: b"node /happy/index.mjs claude\x00",
+        200: b"node /mcp/runpod\x00",
+        300: b"node /mcp/arxiv\x00",
+    }
+
+    def _fake_read_bytes(self):
+        pid = int(str(self).split("/proc/")[1].split("/")[0])
+        return readable_nonwork[pid]  # all readable
+
+    monkeypatch.setattr(asw.Path, "read_bytes", _fake_read_bytes)
+
+    for pid in (100, 200, 300):
+        assert asw._cmdline_is_work_process(pid) is False
+    assert asw._has_running_work_descendant(100, children_map) is False
+    # And a positive work marker anywhere in the subtree still trips it.
+    readable_nonwork[300] = b"python scripts/train.py condition=c1\x00"
+    assert asw._cmdline_is_work_process(300) is True
+    assert asw._has_running_work_descendant(100, children_map) is True
 
 
 def test_idle_unmapped_fallback_audit_before_stop_and_payload(isolated_registry, monkeypatch):
