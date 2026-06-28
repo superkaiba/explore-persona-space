@@ -209,6 +209,14 @@ in place — the trained-source read is added on top.
 | **R11-1** | Promote `concise`/`verbose`/`casual_register` to trained row families: **B11 `verbosity`** (concise + verbose variants, trained separately — δ antisymmetry NOT assumed) + **B12 `casual_register`** — 3 trained variants. LEAN grid (1 source × 1–2 doses × 2 objective arms ≈ 4–8 fine-tunes/variant, ~40 GPU-h for all three). Verbosity poles share read-out + eval battery + negative panel; only the positive completions differ. | §1.3 trained-row list (B11/B12) · §7.2 grid · §6 cost |
 | **R11-2** | **Cap consequence:** the trained style additions take Phase 2 from ~55–95 to ~95–155 GPU-h — PAST the 100-GPU-h `/issue --auto` auto-approve cap. The Phase-2 task either chunks into two plan-approvals or takes one explicit over-cap approval at Step 2c (the GPU-hour cap is gated at per-phase plan approval, NOT at design-doc time, so this edit spends nothing). | §6 cost · §10a per-phase plan approval |
 
+## Revision log (round 12 — causal context-vector patch: input vs map)
+
+User decision (Thomas, 2026-06-28): add **A3.6c — causal context-vector patch**, the CAUSAL complement to A3.6a/A3.6b. A3.6a (raw `c⁺−c0` drift) and A3.6b (`M0` predictive transfer) are correlational reads on stored activations; neither isolates whether a fine-tuned behavior change is *carried by* the context vector `c_C` (the INPUT to the map `M`) or by a change in `M` itself (the function downstream of the read layer L). A3.6c cuts this by **cross-model activation patching** at the layer-L context read position on the Phase-2 trained store (adapters θ⁺ + base θ0): restore base `c0(C)` into the FT model (**P↓**) and inject FT `c⁺(C)` into the base model (**P↑**), reading the answer profile in BOTH the activation DV `v` and the on-policy behavioral DV `E` (dual-DV). It is a causal-mediation / path-patching test (lineage: causal mediation analysis, Vig et al. 2020 arXiv:2004.12265; activation patching / causal tracing, Meng et al. 2022 ROME arXiv:2202.05262; Pearl natural direct/indirect effects). Unlike A3.6a/A3.6b this is NOT zero-marginal CPU — it needs forward passes with hooks on the fleet (no training), so Phase 3 gains ONE GPU arm. It directly instantiates the A3.10 key+query drift decomposition causally (`A_drift·(c⁺−c0)` is the linear estimate; the patch is the nonparametric ground truth — report the agreement). Per layer (L∈{7,14,21}) × training-strength, source + bystanders. Phase 3.
+
+| ID | Add | Where |
+|---|---|---|
+| **R12-1** | New **A3.6c — causal context-vector patch** (input-vs-map localization): at read layer L, per context (source + bystanders) × η, two cross-model patches on the Phase-2 store — **P↓** run θ⁺ but overwrite the layer-L context-position residual with base `c0(C)`; **P↑** run θ0 but overwrite with `c⁺(C)`. Read answer profile in the activation DV `v` AND the on-policy behavioral DV `E`. Context-vector-mediated fraction `f_CV` = patch effect along the FT shift `d=(v⁺−v0)/‖·‖` (and the `E` analog): **context vector moved** ⇔ P↑→(v⁺,E⁺) ∧ P↓→(v0,E0) (`f_CV≈1`); **map changed** ⇔ P↑→(v0,E0) ∧ P↓→(v⁺,E⁺) (`f_CV≈0`); mixed → the L-sweep localizes pre-vs-post-L. Controls: self-patch identity null (`c0→c0`, `c⁺→c⁺` must be no-ops), random/other-context-CV noise floor, norm-matched variant (rescale `c⁺`→`‖c0‖`, separating direction from magnitude), patch-scope {last-input-token primary, full-context-span upper bound}. **GPU forward-pass arm** (no training; reuses the fleet adapters + base). Ties to A3.10 as the nonparametric ground truth for the key-drift decomposition. | §4 A3.6c row · §3 Phase 3 (the GPU arm) · §2 trained-quantities consumed-by |
+
 ---
 
 This plan turns the paper's assumption chain into one **shared activation store**
@@ -815,7 +823,7 @@ each cached quantity to the assumptions that consume it.
 | Quantity | Definition | How computed | GPU? | Consumed by |
 |---|---|---|---|---|
 | `v0(C)` | mean answer-token act under C | vLLM greedy gen + capture, 50 contexts × 48 probes | yes (gen) | A3.2, A3.3, A3.4, A3.5, A3.6b; `δ`(A3.7); `Δv` baseline (A3.8) |
-| `c_C` | prompt-side summary under C | forward pass, prompt only (no gen) | yes (cheap) | A3.4, A3.5, A3.6a, A3.6b, A3.9, A3.10 |
+| `c_C` | prompt-side summary under C | forward pass, prompt only (no gen) | yes (cheap) | A3.4, A3.5, A3.6a, A3.6b, A3.6c (P↓ restore), A3.9, A3.10 |
 | `r_B` | diff-in-means answer acts D_B−D_{B̄} | forward on behavior datasets | yes (cheap) | A3.3, A3.6; behavior transfer |
 | `t_{C,B}` | mean answer act teacher-forcing train completions | teacher-forced forward | yes (cheap) | `δ`(A3.7), predictor |
 | `Σ_c`, `Σ_c⁻¹` | E[ccᵀ] over background corpus | forward on corpus + CPU outer-product | yes (cheap) | A3.9, A3.10, predictor |
@@ -826,7 +834,7 @@ each cached quantity to the assumptions that consume it.
 | Quantity | Definition | GPU? | Consumed by |
 |---|---|---|---|
 | `v⁺(C')` | mean answer act under each target C' (full 50-context battery) | yes (gen) | A3.6, A3.6b, A3.7(`ŵ`), A3.8(`Δv`), A3.10 |
-| `c⁺_{C'}` | prompt-side under θ⁺ | yes (cheap) | A3.6a, A3.6b, A3.10 gate-drift decomposition |
+| `c⁺_{C'}` | prompt-side under θ⁺ | yes (cheap) | A3.6a, A3.6b, A3.6c (P↑ inject), A3.10 gate-drift decomposition |
 | `r⁺_{B'}` | re-extracted read-out under θ⁺ | yes (cheap) | A3.6 |
 | `E⁺(C',B')` | trained expression (all B' on all C') | yes + judge | ground-truth leakage `L` |
 
@@ -1040,12 +1048,17 @@ feeds all of Phase 3 and Phase 4.
 - **Strength arms:** ≥2 doses per cell (non-saturated + a stronger one) so `η` and
   the saturation behavior of the link φ are observed.
 
-### Phase 3 — training-dependent assumptions *(CPU on the store)*
+### Phase 3 — training-dependent assumptions *(CPU on the store, except the A3.6c patch arm)*
 
-All of these are linear algebra on Phase-2 tensors. No new GPU (the whitened-gate
-modules are net-new code per B3/§5, written here, but run on CPU).
+All of these are linear algebra on Phase-2 tensors with ONE exception. No new GPU
+for A3.6–A3.10 + joint factorization (the whitened-gate modules are net-new code
+per B3/§5, written here, but run on CPU). **A3.6c (R12-1) is the one GPU arm:** the
+causal context-vector patch needs forward passes with hooks on the fleet adapters +
+base model (no training) — provision a single `eval`-intent GPU for it; the rest of
+Phase 3 stays CPU.
 
-- **A3.6 readout-stability** · **A3.7 source-write** · **A3.8 rank-one gated
+- **A3.6 readout-stability** · **A3.6c context-vector patch** (causal input-vs-map;
+  the GPU arm, R12-1) · **A3.7 source-write** · **A3.8 rank-one gated
   write** · **A3.9 key-query gate** (key/metric ablations) · **A3.10 base-gate
   validity** (g0 vs ĝ^real, oracle g⁺, drift decomposition) · **joint
   factorization** (rank-one of the latent leakage matrix S). Detailed in §4.
@@ -1107,6 +1120,7 @@ Paper's own "worth testing now" verdict noted.
 | **A3.6** | Base read-out valid post-FT (`r⁺≈r`) | A4 | Med-High | **Yes** | **(C10) primary:** corr / calibrated error between `r_{B'}ᵀ(v⁺−v0)` and `(E⁺−E0)` with `E0` PARTIALLED OUT (does base `r_{B'}` predict the *change*, not the level); `cos(r⁺,r)` DIAGNOSTIC only | base `r_{B'}` predicts the leakage change above the base prior; cos high (diagnostic) | 3 |
 | **A3.6a** | Context vector stable across FT (`c⁺≈c0`) — direct (NEW, R9-1) | A4 | Med | **Yes** | per context (source + bystanders) × layer × η: `cos(c0(C),c⁺(C))`, rel-norm `‖c⁺‖/‖c0‖`, displacement `‖c⁺−c0‖²_W` vs within-condition spread `s_W(C)` in the SAME metric `W` (A3.5a; `W=I` then `(Σc+λI)⁻¹`); CPU on the A3.10 store (no new capture); distributional + single-context (§1.10) | pre-registered falsifiable kernel `‖c⁺−c0‖²_W < s_W(C)` (drift smaller than within-condition spread); characterization otherwise — shrinking with weaker training → base `c_C` directly justified, large drift → A3.10 robustness load-bearing (flagged, not a failure) | 3 |
 | **A3.6b** | Context→profile map stable across FT (`M⁺≈M0`) — direct (NEW, R9-2) | A4 | Med | **Yes** | base-fit `M0` (A3.5) applied post-FT: **primary (change, `v0` partialled out per C10):** corr / calibrated error between `M0·(c⁺−c0)` and `v⁺−v0` vs the refit-`M⁺` noise floor; **operator companion (interpretable only under A3.5's CV-chosen λ/`k`; prediction-transfer is the trustworthy primary):** refit `M⁺` at A3.5's λ/`k`, `‖M⁺−M0‖/‖M0‖` + principal angles of top-`k` `M0`/`M⁺` subspaces; CPU on base + A3.6 stores; per layer/recipe, source + bystanders | base map predicts the post-FT profile CHANGE within the refit-`M⁺` noise floor (map transfers); generalizes A3.6 from the 1-D read-out to the full operator | 3 |
+| **A3.6c** | Context vector vs map — CAUSAL patch (`c_C` input vs `M` function) — direct (NEW, R12-1) | A4 | Med | **Yes** | at read layer L, per context (source + bystanders) × η, two cross-model patches on the Phase-2 store: **P↓** θ⁺ with base `c0(C)` overwritten at the layer-L context position; **P↑** θ0 with `c⁺(C)` overwritten; read answer profile in the activation DV `v` AND the on-policy behavioral DV `E`; context-vector-mediated fraction `f_CV` along the FT shift `d=(v⁺−v0)/‖·‖`; controls: self-patch identity null, random/other-context-CV floor, norm-matched variant, patch-scope {last-token, full-span}; **GPU forward-pass arm** (no training), L-sweep {7,14,21} | **context vector moved** ⇔ P↑→(v⁺,E⁺) ∧ P↓→(v0,E0) (`f_CV≈1`); **map changed** ⇔ P↑→(v0,E0) ∧ P↓→(v⁺,E⁺) (`f_CV≈0`); mixed → L-sweep localizes pre-vs-post-L; causal ground truth for the A3.10 key-drift decomposition | 3 |
 | **A3.7** | FT displaces source profile toward data target | A5 | Med | **Yes (B5)** | **primary (positive-only arm):** `cos(ŵ,δ)`, δ=t−v0, **against a shuffled-δ null** (`cos(ŵ, δ` of a different behavior`)`); **contrastive (diagnostic) arm:** `cos(ŵ,δ^contra)`, δ^contra=t⁺−t⁻ (a contrastive heuristic / diff-in-means analogue, NOT theory-derived; report `frac_ctx` per §1.5); scalar-fit residual both; also `cos(ŵ,r_B)` shortcut | positive-only cos **exceeds the shuffled-δ baseline** (not merely >0; ŵ and δ are both displacements from v0(C), so positive cos is partly expected by construction), small residual; report ŵ∥r_B; contrastive-vs-positive-only divergence characterizes recipe-dependence **only after `frac_ctx` is partialled out** | 3 |
 | **A3.8** | Off-source change = scalar-gated source write (rank-one) | A6 | Med | **Yes (central)** | **(B1)** on the ACTIVATION gate `ĝ^real=ŵᵀΔv(C')/ŵᵀŵ`: per-target rank-one residual `‖Δv(C')−ŵĝ^real‖/‖Δv(C')‖`; stack ΔV, report σ₁²/Σσ², σ₂/σ₁, cos(u₁,ŵ); low-rank fallback if fails | small residuals; ΔV near rank-one | 3 |
 | **A3.9** | Gate = normalized key–query similarity | A7 | Med | **Yes** | `g0(C')` vs `ĝ^real(C')` (B1 activation gate): Pearson/Spearman/sign/MAE; **key ablation** {c_C, ψ(t), ψ(δ), c_C+ψ(δ)}; **metric ablation** {I, diag, full whitening}; vs `cos(c_C,c_{C'})`; shuffled controls + denominator stability; **(B3)** clears the cosine-limit unit test first | **verdict (i)** some key/metric beats raw cosine (general gate exists) AND **verdict (ii)** `c_C`+`Σc⁻¹` specifically wins (boxed predictor) — reported separately | 3 |

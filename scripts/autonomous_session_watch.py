@@ -391,7 +391,7 @@ if _SCRIPTS_DIR not in sys.path:
 # matched the canonical `pod-<N>` names, so the whole pass was dead code).
 import session_resolver  # noqa: E402  (sibling import; follows the sys.path bootstrap above)
 from pod_lifecycle import _is_managed_pod, _issue_from_pod_name  # noqa: E402
-from runpod_api import list_team_pods  # noqa: E402
+from runpod_api import PodInfo, list_team_pods  # noqa: E402
 from spawn_session import (  # noqa: E402
     AUTONOMOUS_REGISTRY_DIR,
     PROJECT_ROOT,
@@ -403,6 +403,7 @@ from spawn_session import (  # noqa: E402
     _load_session_meta,
 )
 from tick_triage import plan_pending_over_cap  # noqa: E402
+from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
 # `followups_running` is ACTIVE (2026-06-10, un-phantomed): a same-issue
@@ -508,6 +509,13 @@ ALERT_STALE_HOURS = 6.0
 # pass exists for — have no registry entry at all.
 _POD_SAFETY_PREFIX = "pod-safety-"
 
+# Sentinel distinguishing "carry the prior on-disk value forward" from an
+# EXPLICIT value for the #692 wedge fields of `_save_pod_safety_state`. Needed
+# because `None` is itself a meaningful value for `wedge_first_seen` (the MF1
+# onset-clock CLEAR), so it cannot double as the carry-forward signal the way
+# `None` does for the `keep_running_noted` / `followup_noted` flags.
+_CARRY = object()
+
 # Substring stamped into every alert marker note this pass posts, so the
 # staleness check can EXCLUDE the watcher's own alerts from "real progress" —
 # otherwise an alert would reset the staleness clock and the gap could never
@@ -540,6 +548,23 @@ _KEEP_RUNNING_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-skip]"
 # 3 cycles of pod auto-stop → manual re-provision in <1h before the follow-up
 # launches were recognized as legitimate.
 _FOLLOWUP_NOTE_SENTINEL = "[autonomous_session_watch:pod-followup-skip]"
+
+# Substring stamped into the #692 RunPod no-port wedge ALERT marker — posted
+# (once per wedge episode, deduped via the `wedge_alerted` flag in the
+# pod-safety state file) when the watcher detects the #664 RUNNING-but-no-port
+# billing leak (the poller's `_maybe_escalate_runpod_wedge` never ran because
+# the poll loop died) but the AUTO-STOP is gated off (inputs unverified on HF,
+# the keep-running tag is present, or the keep-running read FAILED). Posted as
+# epm:progress, so it MUST be excluded from "real progress" in
+# `_latest_progress_ts` — same staleness-filter contract as the other alerts.
+_WEDGE_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-alert]"
+
+# Substring stamped into the #692 RunPod no-port wedge AUTO-STOP marker — posted
+# when the wedge matured past the K floor for >= threshold consecutive checks
+# AND the inputs-on-HF + (tri-state) keep-running gates confirm a reversible
+# `pod.py stop` is safe. STOP, never terminate (the poller owns terminate).
+# Posted as epm:progress; excluded from "real progress" like the alert.
+_WEDGE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-stop]"
 
 # Substring stamped into every session-stalled-alert marker note. Same role as
 # _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
@@ -687,6 +712,16 @@ _ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wr
 _IDLE_UNMAPPED_STOP_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-stop]"
 _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-alert]"
 _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-stop-failed]"
+# Stamped into the post-stop event the idle-unmapped pass writes when the reap
+# fired on the CORROBORATING-IDLENESS FALLBACK path (the primary happy-log
+# transcript signal was unavailable, so the six-gate tmux session_activity
+# fallback supplied the idle age — #695). DISTINCT from the primary
+# `_IDLE_UNMAPPED_STOP_NOTE_SENTINEL` so an operator can tell a fallback reap
+# apart from a transcript-driven reap in the events stream (the fallback note
+# must NOT claim "transcript idle" — it never read one).
+_IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL = (
+    "[autonomous_session_watch:idle-unmapped-stop-fallback]"
+)
 
 # Substring stamped into the marker the infra-drain pass posts after
 # dispatching an autonomous session for a PM-queue ID (task #633). The #633
@@ -695,6 +730,15 @@ _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmap
 # staleness clocks, or it would mask a subsequent stall of the very session
 # it just spawned.
 _INFRA_DRAIN_NOTE_SENTINEL = "[autonomous_session_watch:infra-drain-dispatch]"
+
+# Substring stamped into the marker the proposed-infra sweep posts after
+# dispatching an ORPHANED ripe `proposed` infra task — one with NO PM queue
+# entry (filed by a context that could not self-dispatch: a pod, a manual
+# `task.py new`, a crashed filer, or a cap-full file-time wrapper, #690). The
+# dispatched task becomes ACTIVE seconds later, so this watcher-authored
+# dispatch note must never count as "real progress" for the orphan/stalled
+# staleness clocks (same contract as _INFRA_DRAIN_NOTE_SENTINEL).
+_PROPOSED_INFRA_SWEEP_NOTE_SENTINEL = "[autonomous_session_watch:proposed-infra-sweep-dispatch]"
 
 # Substring stamped into the marker the capacity-retry pass posts after it
 # re-drives a `blocked`-on-transient-infra task (task #642 class:
@@ -719,6 +763,8 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _ALERT_NOTE_SENTINEL,
         _KEEP_RUNNING_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
+        _WEDGE_ALERT_NOTE_SENTINEL,
+        _WEDGE_STOP_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
@@ -738,7 +784,9 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _IDLE_UNMAPPED_STOP_NOTE_SENTINEL,
         _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL,
         _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL,
+        _IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL,
         _INFRA_DRAIN_NOTE_SENTINEL,
+        _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
     }
@@ -1064,6 +1112,115 @@ def decide_pod_safety(
     return ("keep", 0)
 
 
+def decide_pod_wedge(
+    *,
+    wedged_for: float,
+    k_floor: float,
+    wedge_missed: int,
+    threshold: int,
+    alerted: bool,
+    keep_running: bool | str,
+    inputs_ok: bool,
+) -> tuple[str, int]:
+    """Pure decision for a RUNNING managed pod in the #664 RunPod no-port wedge.
+
+    The watcher backstop for when the poller's
+    ``backend_poll._maybe_escalate_runpod_wedge`` never ran (the per-issue poll
+    loop died). Returns ``(action, new_wedge_missed)`` where action is
+    ``"stop"`` | ``"alert"`` | ``"keep"``. The caller (``_process_wedged_pod``)
+    has already confirmed the RAW wedge condition
+    (``backend_poll._pod_is_runpod_runtime_wedged``) and excluded DONE-status
+    pods (MF6 — a DONE-task wedged pod falls through to the status-class arm).
+
+    Parameters
+    ----------
+    wedged_for
+        Seconds the pod has been in the raw no-port wedge, measured against the
+        DEDICATED ``wedge_first_seen`` clock (stamped at wedge ONSET, NOT the
+        pod-incarnation ``first_seen`` — MF1), so it is the actual no-port
+        episode length, not pod uptime.
+    k_floor
+        ``backend_poll.RUNPOD_WEDGE_K_SEC`` (imported, never a duplicated
+        literal). The maturity floor the wedge must exceed before any action.
+    wedge_missed
+        The wedge arm's consecutive-confirmed-past-K miss count (SEPARATE from
+        the status-class ``missed``).
+    threshold
+        Consecutive-confirmed-checks required before a STOP (default 2 = ~20 min
+        at the 10-min cron, so a single transient API mis-read never stops a
+        pod) — the same miss guard the status-class auto-stop uses.
+    alerted
+        Whether the once-per-wedge-episode alert has already been posted
+        (tracked as ``wedge_alerted`` in the state file). Informational here;
+        the dedup decision is the CALLER's (it posts the marker only if not
+        already alerted), so this fn returns ``"alert"`` whenever the gated
+        condition holds and lets the caller dedup.
+    keep_running
+        TRI-STATE (MF2): ``True`` (the ``keep-running`` tag is present) |
+        ``False`` (the tag was read OK and is absent) | ``"unknown"`` (the tag
+        read FAILED — subprocess error, non-zero rc, JSON parse error). A STOP
+        fires ONLY on the literal ``False``; ``"unknown"`` routes to ALERT-only
+        so a tagged live-work pod whose tag lookup is transiently failing is
+        NEVER auto-stopped (which would silently override the user's tag).
+    inputs_ok
+        Whether the wedged run's recoverable inputs are verified on HF (the same
+        gate #689 fix (b) uses, via ``backend_poll._wedged_run_inputs_on_hf``).
+        A STOP fires only when inputs are PROVABLY safe.
+
+    Cases:
+
+    - ``wedged_for <= k_floor`` -> ``("keep", 0)``. Below the K maturity floor
+      the wedge has not matured (a healthy slow bring-up clears it when the port
+      appears); reset the miss counter so a brief no-port blip never accumulates
+      toward a stop. The comparator is ``<=`` here (and ``>`` below) to MATCH the
+      poller's ``wedged_for > RUNPOD_WEDGE_K_SEC`` at ``backend_poll.py``
+      (``wedged_for == k_floor`` KEEPs — MF5 boundary parity).
+    - ``wedged_for > k_floor`` AND ``wedge_missed + 1 < threshold`` ->
+      ``("keep", wedge_missed + 1)``. Past K but not yet confirmed for
+      ``>=threshold`` consecutive checks; accumulate. The action transitions
+      exactly when ``wedge_missed + 1 == threshold`` (MF5 boundary).
+    - ``wedged_for > k_floor`` AND confirmed (``wedge_missed + 1 >= threshold``):
+        - ``keep_running is True`` -> ``("alert", 0)``. The keep-running tag
+          exempts the AUTO-STOP exactly as it does for the status-class arm; the
+          wedge is still surfaced once per episode so the leak is visible.
+        - ``keep_running == "unknown"`` -> ``("alert", 0)`` (MF2). A PERSISTENT
+          tag-read failure is NOT a genuinely untagged task; route the
+          uncertainty to ALERT-only rather than silently override the user's tag.
+          This is a STRONGER gate than the status-class DONE arm's
+          False-on-failure (safe there only because it auto-stops DONE-status
+          pods; the wedge arm auto-stops live-work pods).
+        - ``keep_running is False`` AND ``inputs_ok`` -> ``("stop", 0)``. Inputs
+          are verified on HF AND the tag was read AND it is absent, so the
+          reversible STOP is safe — halt the billing leak.
+        - ``keep_running is False`` AND not ``inputs_ok`` -> ``("alert", 0)``.
+          Inputs are NOT verified on HF (or no run handle to gate on); a STOP
+          could strand un-uploaded work, so ALERT-only and let a human / the
+          re-invoked /issue decide (CLAUDE.md halt-criterion #2).
+
+    Decision invariant (MF2): ``("stop", _)`` is returned ONLY when
+    ``keep_running is False`` (the literal boolean False, NOT ``"unknown"`` and
+    NOT ``True``) AND ``inputs_ok is True``. Every other ``keep_running`` value
+    routes to ALERT-only.
+    """
+    if wedged_for <= k_floor:
+        # Below the maturity floor (or exactly at it — MF5 parity with the
+        # poller's strict `> K`): not matured. Reset the miss counter.
+        return ("keep", 0)
+    new_wedge_missed = wedge_missed + 1
+    if new_wedge_missed < threshold:
+        # Past K but not yet confirmed for >=threshold consecutive checks.
+        return ("keep", new_wedge_missed)
+    # Confirmed past K for >=threshold consecutive checks. Gate the AUTO-STOP.
+    if keep_running is True:
+        return ("alert", 0)
+    if keep_running == "unknown":
+        return ("alert", 0)
+    # keep_running is the literal False (tag read OK and absent).
+    if inputs_ok:
+        return ("stop", 0)
+    return ("alert", 0)
+
+
 # ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
 #
 # Pods have disk guards (pod_disk_guard.py, the preflight fallocate probe) but
@@ -1271,22 +1428,59 @@ def _root_disk_headroom() -> int | None:
     return _vm_free_bytes()
 
 
-def _top_issue_cache_paths(top_n: int = VM_DISK_SUBFLOOR_TOP_N) -> list[tuple[str, int]]:
+def _issue_cache_glob_roots() -> list[Path]:
+    """Every ``data/`` root that may hold per-issue ``hf_dl``/``g*_dl`` caches.
+
+    The repo-root ``data/`` AND — critically (#681 / #658 evidence) — each
+    WORKTREE-internal ``data/`` under ``.claude/worktrees/issue-<N>*/data/``,
+    where the live run actually writes its caches (and where, post-#681, the
+    bind-mounted worktree tree physically lives on the data disk). The original
+    sub-floor attribution globbed only repo-root ``data/`` and so named the
+    WRONG caches — it would miss the worktree-internal ones entirely (Must-Fix
+    #2 implementer concern #1/#6). Returns only existing dirs."""
+    roots: list[Path] = []
+    repo_data = PROJECT_ROOT / "data"
+    if repo_data.is_dir():
+        roots.append(repo_data)
+    wt_root = PROJECT_ROOT / ".claude" / "worktrees"
+    if wt_root.is_dir():
+        for wt in sorted(wt_root.iterdir()):
+            wt_data = wt / "data"
+            if wt_data.is_dir():
+                roots.append(wt_data)
+    return roots
+
+
+def _top_issue_cache_paths(
+    top_n: int = VM_DISK_SUBFLOOR_TOP_N, *, dry_run: bool = False
+) -> list[tuple[str, int]]:
     """The ``top_n`` largest per-issue re-downloadable cache dirs under
-    ``data/issue_*/{hf_dl,g*_dl}`` (NOT store/), as ``(rel_path, bytes)``.
+    ``{data,.claude/worktrees/issue-*/data}/issue_*/{hf_dl,g*_dl}`` (NOT store/),
+    as ``(rel_path, bytes)``.
 
     Cheap `du -s` on the cache globs ONLY — this is attribution, not a full
     tree walk. A `du` failure / timeout yields an empty list (no attribution),
-    never a crash. Paths are relative to PROJECT_ROOT for the human pointer."""
-    data_root = PROJECT_ROOT / "data"
-    if not data_root.is_dir():
+    never a crash. Paths are relative to PROJECT_ROOT for the human pointer.
+
+    The glob roots span the repo-root ``data/`` AND every worktree-internal
+    ``data/`` (#681 — the per-issue caches the data disk actually holds live in
+    the worktree, not repo-root ``data/``; the original repo-root-only glob
+    named the wrong caches).
+
+    Under ``dry_run`` the function performs NO ``subprocess.run`` at all and
+    returns ``[]`` immediately: a dry-run pass must have zero observational
+    side-effects (the attribution `du` shells out per candidate, which the
+    ``--dry-run`` smoke contract forbids — #681 r3). The dry-run output line
+    simply reports ``top caches: none``."""
+    if dry_run:
         return []
     candidates: list[Path] = []
-    for issue_dir in sorted(data_root.glob("issue*")):
-        if not issue_dir.is_dir():
-            continue
-        for pattern in ("hf_dl", "g*_dl"):
-            candidates.extend(p for p in issue_dir.glob(pattern) if p.is_dir())
+    for data_root in _issue_cache_glob_roots():
+        for issue_dir in sorted(data_root.glob("issue*")):
+            if not issue_dir.is_dir():
+                continue
+            for pattern in ("hf_dl", "g*_dl"):
+                candidates.extend(p for p in issue_dir.glob(pattern) if p.is_dir())
     sizes: list[tuple[str, int]] = []
     for p in candidates:
         rc = subprocess.run(
@@ -1309,6 +1503,58 @@ def _top_issue_cache_paths(top_n: int = VM_DISK_SUBFLOOR_TOP_N) -> list[tuple[st
         sizes.append((rel, nbytes))
     sizes.sort(key=lambda x: x[1], reverse=True)
     return sizes[:top_n]
+
+
+def _top_issue_caches_by_project_quota(
+    data_disk_path: str, top_n: int = VM_DISK_SUBFLOOR_TOP_N, *, dry_run: bool = False
+) -> list[tuple[str, int]] | None:
+    """PRIMARY data-disk attribution via ``repquota -P`` (per-PROJECT usage).
+
+    Post-#681 each ``issue-<N>`` worktree subtree on the data disk carries an
+    ext4 project id == the issue number, so ``repquota -P <data_disk>`` reports
+    per-issue bytes used in ONE cheap call (no per-dir ``du`` tree walks). Parses
+    the project-quota report into ``(#<projid>, bytes)`` rows sorted by usage,
+    top ``top_n``. Returns ``None`` (NOT an empty list) when ``repquota`` is
+    unavailable / the disk has no prjquota / parsing fails — the caller then
+    falls back to the ``du``-based :func:`_top_issue_cache_paths`. Project id 0
+    (the unbounded default — the managed pin + tiny worktrees) is excluded; it
+    is not a per-issue cache. Never raises.
+
+    Under ``dry_run`` performs NO ``subprocess.run`` and returns ``None`` (the
+    same "no quota attribution available" signal as a missing ``repquota``), so
+    the caller falls through to the likewise-short-circuited ``du`` helper and
+    the dry-run pass shells out to nothing (#681 r3)."""
+    if dry_run:
+        return None
+    rc = subprocess.run(
+        ["repquota", "-Ocsv", "-P", data_disk_path],
+        capture_output=True,
+        text=True,
+        timeout=VM_DISK_SUBFLOOR_DU_TIMEOUT_S,
+        check=False,
+    )
+    # `repquota -Ocsv` emits CSV: Project,BlockStatus,FileStatus,BlockUsed,...
+    # (block units are 1 KiB). A non-zero rc or no parseable rows -> None
+    # (fall back to du).
+    if rc.returncode != 0 or not rc.stdout.strip():
+        return None
+    rows: list[tuple[str, int]] = []
+    for line in rc.stdout.splitlines():
+        parts = line.split(",")
+        if len(parts) < 4:
+            continue
+        projid = parts[0].strip().lstrip("#")
+        if not projid.isdigit() or projid == "0":
+            continue
+        try:
+            blocks_kib = int(parts[3].strip())
+        except ValueError:
+            continue
+        rows.append((f"issue-{projid} (project quota, {data_disk_path})", blocks_kib * 1024))
+    if not rows:
+        return None
+    rows.sort(key=lambda x: x[1], reverse=True)
+    return rows[:top_n]
 
 
 def _subfloor_state_path() -> Path:
@@ -1360,6 +1606,148 @@ def decide_subfloor(free_bytes: int, last_free_bytes: int | None) -> bool:
     return drop > VM_DISK_SUBFLOOR_GROWTH_REALERT
 
 
+# ─── VM DATA disk (/mnt/eps-data) watch — PERCENT-based (task #681) ──────────
+#
+# The dedicated data disk holds the relocated `.claude/worktrees/` tree. The
+# `/`-tuned ABSOLUTE byte floors above (VM_DISK_ALERT_FREE_BYTES=20 GiB etc.)
+# are calibrated to the 485 GB boot disk, where they sit at ~88-96% full;
+# MIRRORED onto a 512 GB+ data disk they would fire at the WRONG fullness and
+# would silently regress on a future resize to 2 TB (the byte floors would then
+# sit at ~99% full — escalation AFTER the wedge). So the data-disk watch uses
+# PERCENT thresholds derived from statvfs(total), which are SIZE-INVARIANT.
+# Add NO `VM_DATA_DISK_*` absolute-byte constants (Must-Fix #2, plan §4/§11/§13).
+#
+# The data-disk pass is ESCALATE-ONLY (no reclaim arm runs there regardless) —
+# the reclaim thresholds exist only to keep the percent decision parallel to the
+# boot-disk `decide_vm_disk` shape; the caller never wires a reclaim action to
+# the data disk.
+
+# Percent-used thresholds for the data-disk pass (size-invariant). Defaults
+# match §1's 85-95% acceptance band and the already-percent `vm_disk_guard`
+# (threshold_pct() default 85). Env-overridable like the boot-disk knobs.
+DATA_DISK_ALERT_PCT = 90.0
+DATA_DISK_RECLAIM_PCT = 95.0  # escalate-only on the data disk — never reclaims
+DATA_DISK_SUBFLOOR_PCT = 85.0
+
+# The dedicated data-disk mount (the relocated `.claude/worktrees/` tree, #681),
+# env-overridable. Same default + env var as `vm_disk_guard.data_disk_path()`
+# so the guard cron and this every-tick watcher watch the SAME mount.
+DEFAULT_DATA_DISK_PATH = "/mnt/eps-data"
+
+
+def data_disk_path() -> str:
+    """The watched data-disk mount, env-overridable (``EPS_VM_DATA_DISK_PATH``).
+
+    Defaults to :data:`DEFAULT_DATA_DISK_PATH` (``/mnt/eps-data``); a blank /
+    whitespace env value falls back to the default. Mirrors
+    ``vm_disk_guard.data_disk_path`` so both disk watchers resolve the same
+    mount."""
+    raw = os.environ.get("EPS_VM_DATA_DISK_PATH", "").strip()
+    return raw or DEFAULT_DATA_DISK_PATH
+
+
+def _is_mounted(path: str) -> bool:
+    """True iff ``path`` is itself a mount point (a distinct filesystem).
+
+    A real mount-presence check — NOT ``Path(path).is_dir()`` (#681 round-2
+    Major). ``is_dir()`` is True for ANY directory, mounted or not: after
+    Phase-1's ``sudo mkdir -p /mnt/eps-data`` (which runs BEFORE the mount) or a
+    ``nofail`` boot where the disk failed to mount, ``/mnt/eps-data`` exists as a
+    plain root-fs directory, and :func:`data_disk_pass` would then misread
+    ``/``'s statvfs (the boot disk) as data-disk usage and could emit a row
+    claiming the data disk mirrors ``/``'s percent. Comparing ``st_dev`` against
+    the parent's catches that: a real mount sits on a different device than its
+    parent; a plain subdirectory shares it. Pure ``os.stat`` — no subprocess,
+    fast, self-evidently correct, and aligned with the data-disk pass's
+    zero-subprocess-in-dry-run contract (#681 r3). Mirrors
+    ``vm_disk_guard._is_mounted``.
+
+    Fail-soft: a missing path / stat error returns False (→ the pass cleanly
+    no-ops). The filesystem root ``/`` is its own parent (equal ``st_dev``), so
+    an unmounted path is never mistaken for the data disk."""
+    try:
+        st = os.stat(path)
+        parent = os.stat(os.path.join(path, os.pardir))
+    except OSError:
+        return False
+    return st.st_dev != parent.st_dev
+
+
+def _data_disk_used_pct(dd_path: str) -> float | None:
+    """Percent USED on the data-disk mount via ``statvfs`` (``None`` + a loud
+    warning on failure — never crash the watcher over the disk check itself).
+
+    Percent-of-total is the SIZE-INVARIANT basis (Must-Fix #2): a future
+    resize cannot push the fire point past the wedge the way the boot disk's
+    absolute byte floors would."""
+    try:
+        usage = shutil.disk_usage(dd_path)
+    except OSError as e:
+        print(f"  vm-disk-data: disk_usage({dd_path}) failed: {e}", file=sys.stderr)
+        return None
+    if usage.total <= 0:
+        return None
+    return 100.0 * (usage.total - usage.free) / usage.total
+
+
+def _env_pct(name: str, default_pct: float) -> float:
+    """Percent-denominated env knob -> float in (0, 100]. A garbled /
+    out-of-range value falls back to the default (same fail-soft contract as
+    :func:`_env_gib_bytes` — never crash the watcher at import)."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return default_pct
+    if not (0.0 < val <= 100.0):
+        return default_pct
+    return val
+
+
+def decide_subfloor_pct(used_pct: float, last_used_pct: float | None) -> bool:
+    """PERCENT-based sub-floor decision for the DATA disk (size-invariant).
+
+    True when ``used_pct`` is at/above :data:`DATA_DISK_SUBFLOOR_PCT`
+    (env ``EPM_VM_DATA_DISK_SUBFLOOR_PCT``) AND either no prior row exists this
+    episode OR usage CLIMBED by more than the re-alert fraction (in percentage
+    POINTS) since the last row. The percent basis fires at the SAME fullness on
+    a 512 GiB disk and a 2 TiB disk — unlike the boot disk's absolute byte
+    floors (Must-Fix #2). Recovery below the sub-floor clears the episode
+    (handled by the caller)."""
+    floor = _env_pct("EPM_VM_DATA_DISK_SUBFLOOR_PCT", DATA_DISK_SUBFLOOR_PCT)
+    if used_pct < floor:
+        return False
+    if not isinstance(last_used_pct, int | float) or last_used_pct <= 0:
+        return True  # first sub-floor row this episode
+    # Re-alert when usage climbs by > VM_DISK_SUBFLOOR_GROWTH_REALERT of the
+    # remaining headroom-to-full, mirroring the boot-disk fractional re-alert but
+    # in the percent domain (a 10% relative climb of used).
+    climb = (used_pct - last_used_pct) / last_used_pct
+    return climb > VM_DISK_SUBFLOOR_GROWTH_REALERT
+
+
+def decide_vm_disk_pct(used_pct: float, *, alerted: bool) -> tuple[str, bool]:
+    """PERCENT-based alert decision for the DATA disk (size-invariant).
+
+    Returns ``(level, do_alert)``:
+
+    - ``level`` — ``"ok"`` (below :data:`DATA_DISK_ALERT_PCT`), ``"low"`` (at/above
+      alert but below :data:`DATA_DISK_RECLAIM_PCT`), or ``"critical"`` (at/above
+      reclaim).
+    - ``do_alert`` — fire the once-per-episode escalation (level low/critical AND
+      ``alerted`` not already set).
+
+    There is NO ``do_reclaim`` / ``do_audit`` return: the data-disk pass is
+    ESCALATE-ONLY (the `/`-rooted reclaim arms operate on boot-disk caches). The
+    thresholds are percent-of-statvfs(total), so a future resize cannot push the
+    fire point past the wedge (the mirrored-byte-floor bug, Must-Fix #2)."""
+    alert = _env_pct("EPM_VM_DATA_DISK_ALERT_PCT", DATA_DISK_ALERT_PCT)
+    reclaim = _env_pct("EPM_VM_DATA_DISK_RECLAIM_PCT", DATA_DISK_RECLAIM_PCT)
+    if used_pct < alert:
+        return ("ok", False)
+    level = "critical" if used_pct >= reclaim else "low"
+    return (level, not alerted)
+
+
 def _disk_guard_sidecar_path() -> Path:
     """The SHARED disk-guard escalation sidecar (same stream the
     clean_experiment_downloads + vm_disk_guard escalations use)."""
@@ -1405,7 +1793,9 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
     if not decide_subfloor(free, last_free):
         return False  # already alerted at ~this footprint; bound churn
     try:
-        top = _top_issue_cache_paths()
+        # dry_run short-circuits the `du` attribution to [] (no subprocess.run):
+        # the dry-run pass must have zero observational side-effects (#681 r3).
+        top = _top_issue_cache_paths(dry_run=dry_run)
     except (subprocess.SubprocessError, OSError):
         top = []
     free_gib = free / 2**30
@@ -1428,6 +1818,176 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
     )
     if not dry_run:
         _save_subfloor_state(free)
+    return True
+
+
+def _data_disk_state_path() -> Path:
+    """Singleton dedup state for the DATA-disk pass (last-alerted used_pct +
+    the alert latch), under AUTONOMOUS_REGISTRY_DIR. Distinct from the boot
+    disk's ``vm-disk-subfloor.json`` so the two episodes never collide."""
+    return AUTONOMOUS_REGISTRY_DIR / "vm-disk-data.json"
+
+
+def _load_data_disk_state() -> dict:
+    path = _data_disk_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_data_disk_state(state: dict) -> None:
+    """Atomic temp+rename write of the data-disk dedup state (fail-soft)."""
+    dest = _data_disk_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  vm-disk-data: state save failed: {exc}", file=sys.stderr)
+
+
+def _clear_data_disk_state() -> None:
+    _data_disk_state_path().unlink(missing_ok=True)
+
+
+def _data_disk_top_caches(dd_path: str, *, dry_run: bool = False) -> list[tuple[str, int]]:
+    """Attribution for the data-disk escalation: PRIMARY per-PROJECT usage via
+    ``repquota -P`` (one cheap call, project id == issue number), falling back
+    to the ``du``-based glob attribution when ``repquota`` is unavailable / the
+    disk has no prjquota / parsing fails. Fail-soft — any error yields an empty
+    list (no attribution), never a crash.
+
+    Under ``dry_run`` both helpers short-circuit (repquota → ``None``, du →
+    ``[]``) so this returns ``[]`` with NO ``subprocess.run`` (#681 r3): the
+    data-disk dry-run smoke must have zero observational side-effects."""
+    try:
+        rows = _top_issue_caches_by_project_quota(dd_path, dry_run=dry_run)
+    except (subprocess.SubprocessError, OSError):
+        rows = None
+    if rows is not None:
+        return rows
+    try:
+        return _top_issue_cache_paths(dry_run=dry_run)
+    except (subprocess.SubprocessError, OSError):
+        return []
+
+
+def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
+    """Watch the dedicated data disk (``/mnt/eps-data``, #681) — ESCALATE-ONLY.
+
+    A SECOND disk-watch pass mirroring :func:`vm_disk_pass`'s shape but bound to
+    the data disk and driving the PERCENT decision helpers
+    (:func:`decide_vm_disk_pct` / :func:`decide_subfloor_pct`) so the fire point
+    is SIZE-INVARIANT (Must-Fix #2 — no mirrored byte floors). It is the
+    every-tick analogue of ``vm_disk_guard.run_guard(disk_path=...,
+    reclaim_tiers=False)``: the ``/``-rooted reclaim arms (``uv cache prune``,
+    the stale-log sweep) NEVER run keyed off the data disk — this pass only
+    ESCALATES (warn-only sidecar rows + a once-per-episode alert log).
+
+    Mount-guarded (:func:`_is_mounted`, ``st_dev`` vs parent) so it is a CLEAN
+    no-op before / without the #681 cutover — a missing data disk OR an
+    existing-but-unmounted ``/mnt/eps-data`` (a plain dir from Phase-1's
+    ``mkdir -p`` or a ``nofail`` boot that failed to mount) writes NO sidecar
+    row and touches no state. ``is_dir()`` is insufficient: a plain directory
+    passes it and the pass would then misread ``/``'s statvfs as the data disk's
+    (#681 round-2 Major). ``used_pct`` is injectable for tests; production
+    derives it from ``statvfs`` of the mount.
+
+    Returns True when a sub-floor row was written this tick (mirrors
+    :func:`subfloor_sentinel_pass`'s return contract). Fail-soft throughout."""
+    dd_path = data_disk_path()
+    if not _is_mounted(dd_path):
+        return False  # data disk absent / not mounted — clean no-op pre-cutover
+    pct = used_pct if used_pct is not None else _data_disk_used_pct(dd_path)
+    if pct is None:
+        return False
+
+    state = _load_data_disk_state()
+    last_used_pct = state.get("last_used_pct")
+    last_used_pct = last_used_pct if isinstance(last_used_pct, int | float) else None
+    alerted = bool(state.get("alerted", False))
+
+    # ── Alert/critical arm (decide_vm_disk_pct) ──────────────────────────────
+    level, do_alert = decide_vm_disk_pct(pct, alerted=alerted)
+    if level == "ok":
+        # Recovered below the alert band — clear the episode so the next dip
+        # alerts afresh (sub-floor episode is cleared by its own arm below).
+        if alerted and not dry_run:
+            new_state = dict(state)
+            new_state.pop("alerted", None)
+            _save_data_disk_state(new_state)
+        alerted = False
+    else:
+        print(
+            f"vm-disk-data: {level.upper()} — {pct:.1f}% used on {dd_path} "
+            f"(alert >= {_env_pct('EPM_VM_DATA_DISK_ALERT_PCT', DATA_DISK_ALERT_PCT):.0f}%, "
+            f"critical >= {_env_pct('EPM_VM_DATA_DISK_RECLAIM_PCT', DATA_DISK_RECLAIM_PCT):.0f}%); "
+            "ESCALATE-ONLY — recovery is resize / raise-cap, never delete active data",
+            file=sys.stderr,
+        )
+        if do_alert:
+            top = _data_disk_top_caches(dd_path, dry_run=dry_run)
+            _append_disk_guard_sidecar(
+                {
+                    "kind": f"vm-disk-data-{'critical' if level == 'critical' else 'low'}",
+                    "disk": "data",
+                    "data_disk_path": dd_path,
+                    "level": level,
+                    "used_pct": round(pct, 1),
+                    "top_cache_paths": [{"path": p, "bytes": b} for p, b in top],
+                    "recovery": (
+                        "resize / raise setquota -P cap on a TERMINAL issue — "
+                        "never delete active data"
+                    ),
+                },
+                dry_run,
+            )
+            if not dry_run:
+                state = _load_data_disk_state()  # re-read in case the ok-branch wrote
+                state["alerted"] = True
+                _save_data_disk_state(state)
+
+    # ── Sub-floor sentinel arm (decide_subfloor_pct) ─────────────────────────
+    floor = _env_pct("EPM_VM_DATA_DISK_SUBFLOOR_PCT", DATA_DISK_SUBFLOOR_PCT)
+    if pct < floor:
+        # Below the sub-floor band → episode over; clear the last_used_pct dedup
+        # cursor (keep any alert latch handled above by re-reading).
+        if last_used_pct is not None and not dry_run:
+            cur = _load_data_disk_state()
+            cur.pop("last_used_pct", None)
+            _save_data_disk_state(cur)
+        return False
+    if not decide_subfloor_pct(pct, last_used_pct):
+        return False  # already alerted at ~this footprint; bound churn
+
+    top = _data_disk_top_caches(dd_path, dry_run=dry_run)
+    print(
+        f"vm-disk-data SUB-FLOOR: {pct:.1f}% used on {dd_path} "
+        f"(>= {floor:.0f}%) — re-check sooner; "
+        f"top caches: {', '.join(f'{p} [{b / 1e9:.1f}G]' for p, b in top) or 'none'}",
+        file=sys.stderr,
+    )
+    _append_disk_guard_sidecar(
+        {
+            "kind": "vm-disk-data-subfloor",
+            "band": "sub-floor",
+            "disk": "data",
+            "data_disk_path": dd_path,
+            "used_pct": round(pct, 1),
+            "top_cache_paths": [{"path": p, "bytes": b} for p, b in top],
+            "recheck_sooner": True,
+        },
+        dry_run,
+    )
+    if not dry_run:
+        cur = _load_data_disk_state()
+        cur["last_used_pct"] = pct
+        _save_data_disk_state(cur)
     return True
 
 
@@ -1560,6 +2120,117 @@ def _task_keep_running(issue: int) -> bool:
         return False
     tags = (data.get("frontmatter") or {}).get("tags") or []
     return isinstance(tags, list) and "keep-running" in tags
+
+
+def _wedge_keep_running(issue: int) -> bool | str:
+    """Tri-state keep-running read for the #692 wedge arm (MF2).
+
+    Returns ``True`` (the ``keep-running`` tag is present) | ``False`` (the tag
+    read succeeded and is absent) | ``"unknown"`` (the tag read FAILED —
+    subprocess error, non-zero rc, JSON parse error). The shared
+    :func:`_task_keep_running` collapses all three of those failure modes to
+    ``False``, indistinguishable from a genuinely untagged task — safe for the
+    status-class DONE arm (it only auto-stops DONE-status pods, where the user
+    has far less reason to keep-running) but NOT for the wedge arm, which
+    auto-stops LIVE-WORK (``running`` / ``approved`` / ...) pods. The wedge
+    AUTO-STOP fires only on the literal ``False``; ``"unknown"`` routes to
+    ALERT-only so a tagged live-work pod whose tag lookup is transiently failing
+    is NEVER auto-stopped (which would silently override the user's explicit tag).
+
+    Uses the same ``task.py view --json`` subprocess isolation +
+    ``cwd=PROJECT_ROOT`` as :func:`_task_keep_running` (the watcher runs from
+    PROJECT_ROOT on ``main``, satisfying the task.py branch-guard). Called only
+    on the wedge arm's confirmed-past-K branch, so the extra subprocess is paid
+    only for a matured wedge candidate, not every RUNNING pod every tick."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return "unknown"
+    if out.returncode != 0:
+        return "unknown"
+    try:
+        data = json.loads(out.stdout)
+    except json.JSONDecodeError:
+        return "unknown"
+    tags = (data.get("frontmatter") or {}).get("tags") or []
+    return isinstance(tags, list) and "keep-running" in tags
+
+
+def _wedge_inputs_safe(issue: int) -> bool:
+    """True iff the wedged run's recoverable inputs are verified on HF (#692).
+
+    Gates the watcher's reversible AUTO-STOP exactly as #689 fix (b) gates the
+    poller's IRREVERSIBLE terminate, reusing the SAME per-cell three-state gate
+    ``backend_poll._wedged_run_inputs_on_hf``. The run handle is read from the
+    persisted sidecar (``.claude/cache/issue-<N>-handle.json``).
+
+    Fail-CLOSED: a missing / unreadable handle, an HF-listing transport error,
+    an import failure, or ANY exception -> ``False`` (ALERT-only, never an unsafe
+    stop). For a non-#664 issue ``_wedged_run_inputs_on_hf`` returns ``ok=True``
+    (the adapters-only path is inline-verified), so the gate degrades to "safe to
+    stop" there — correct, because a reversible STOP loses nothing when there are
+    no per-cell artifacts to strand. This is the single most important safety
+    property of the wedge AUTO-STOP: every uncertainty path routes to ALERT-only."""
+    try:
+        from backend_poll import _wedged_run_inputs_on_hf
+
+        from explore_persona_space.backends.issue_dispatch import (
+            read_handle_sidecar,
+            resolve_handle_sidecar_path,
+        )
+
+        path, _probed = resolve_handle_sidecar_path(issue)
+        if not path.exists():
+            return False  # no handle -> cannot gate -> ALERT-only
+        handle = read_handle_sidecar(path)
+        gate = _wedged_run_inputs_on_hf(issue, handle)
+        return bool(gate.ok)
+    except Exception as exc:  # transport / parse / import -> fail-closed
+        print(
+            f"  wedge: inputs-on-HF gate unavailable for #{issue} "
+            f"({type(exc).__name__}: {exc}); ALERT-only (no auto-stop)",
+            file=sys.stderr,
+        )
+        return False
+
+
+def _clear_wedge_state(issue: int, pod_id: str) -> None:
+    """Clear the #692 wedge fields for ``issue`` while keeping the
+    pod-incarnation ``first_seen`` GC anchor intact (MF1 onset-clock clear).
+
+    Called on the NOT-wedged branch of :func:`_process_pod` (a port re-appeared,
+    or the pod was never wedged this tick), so a one-tick no-port blip never
+    matures toward a stop and a healed pod's stale wedge fields are reset. It
+    re-saves the state with ``wedge_first_seen=None, wedge_missed=0,
+    wedge_alerted=False`` (NOT :func:`_clear_pod_safety_state`, which clears the
+    WHOLE file and would wipe the GC anchor ``first_seen``), and records the
+    current ``pod_id`` so a later pod_id mismatch is detectable. The status-class
+    counters (``missed`` / ``alerted`` / ``last_progress_ts``) are forward-carried
+    from the prior state (the status-class arm owns them on its own ticks)."""
+    prev = _load_pod_safety_state(issue)
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_progress = prev.get("last_progress_ts")
+    if not isinstance(prev_progress, int | float):
+        prev_progress = None
+    _save_pod_safety_state(
+        issue,
+        pod_id,
+        missed=prev_missed,
+        alerted=bool(prev.get("alerted", False)),
+        last_progress_ts=prev_progress,
+        wedge_first_seen=None,
+        wedge_missed=0,
+        wedge_alerted=False,
+        prev=prev,
+    )
 
 
 # Marker kinds that record a transition INTO a DONE status. The latest ts
@@ -1944,6 +2615,9 @@ def _save_pod_safety_state(
     last_progress_ts: float | None,
     keep_running_noted: bool | None = None,
     followup_noted: bool | None = None,
+    wedge_first_seen: float | None = _CARRY,
+    wedge_missed: int | None = _CARRY,
+    wedge_alerted: bool | None = _CARRY,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -1963,6 +2637,24 @@ def _save_pod_safety_state(
     payload (if any), passed so callers that already loaded it don't re-read;
     ``first_seen`` carries forward when present so the age backstop measures
     the original episode start, not the latest save.
+
+    The #692 wedge fields — ``wedge_first_seen`` (the DEDICATED wedge-onset
+    clock, stamped at the first wedged tick, NOT the pod-incarnation
+    ``first_seen``), ``wedge_missed`` (the wedge arm's >=threshold
+    consecutive-confirmed-checks miss guard, SEPARATE from the status-class
+    ``missed``), and ``wedge_alerted`` (the once-per-wedge-episode alert dedup)
+    — each carry the prior on-disk value forward when LEFT AT THE DEFAULT
+    (:data:`_CARRY`), so a status-class-arm save never clobbers a live wedge
+    episode's accumulated state and vice versa (the two arms are mutually
+    exclusive on a given tick, but a pod can transition between them across
+    ticks). Passing an EXPLICIT value (including ``None`` for
+    ``wedge_first_seen`` — the MF1 onset-clock CLEAR :func:`_clear_wedge_state`
+    needs) overrides the carry-forward. The distinct ``_CARRY`` sentinel (NOT
+    ``None``) is load-bearing here precisely because ``None`` is a meaningful
+    "clear the wedge clock" value, unlike the ``keep_running_noted`` /
+    ``followup_noted`` flags whose only carry-forward signal IS ``None``. MF3:
+    without this forward-carry the wedge fields would be silently dropped on
+    every save and the wedge miss-guard / alert-dedup would never accumulate.
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -1973,6 +2665,16 @@ def _save_pod_safety_state(
         keep_running_noted = bool((prev or {}).get("keep_running_noted", False))
     if followup_noted is None:
         followup_noted = bool((prev or {}).get("followup_noted", False))
+    if wedge_first_seen is _CARRY:
+        prev_wedge_first_seen = (prev or {}).get("wedge_first_seen")
+        wedge_first_seen = (
+            prev_wedge_first_seen if isinstance(prev_wedge_first_seen, int | float) else None
+        )
+    if wedge_missed is _CARRY:
+        prev_wedge_missed = (prev or {}).get("wedge_missed", 0)
+        wedge_missed = prev_wedge_missed if isinstance(prev_wedge_missed, int) else 0
+    if wedge_alerted is _CARRY:
+        wedge_alerted = bool((prev or {}).get("wedge_alerted", False))
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -1981,6 +2683,9 @@ def _save_pod_safety_state(
         "keep_running_noted": bool(keep_running_noted),
         "followup_noted": bool(followup_noted),
         "first_seen": prev_first_seen,
+        "wedge_first_seen": wedge_first_seen,
+        "wedge_missed": int(wedge_missed),
+        "wedge_alerted": bool(wedge_alerted),
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -2640,10 +3345,16 @@ def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
     return True
 
 
-def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, str, str]] | None:
+def _running_managed_issue_pods(
+    caller: str = "pod-safety",
+) -> list[tuple[int, str, str, PodInfo]] | None:
     """Live RunPod team pods that are RUNNING and managed (``pod-<N>`` or the
-    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples,
-    or ``None`` when the snapshot itself FAILED (API transport error).
+    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name, info)``
+    4-tuples (the live :class:`runpod_api.PodInfo` carried out so callers can
+    read ``desired_status`` / ``ssh_host`` / ``ssh_port`` / ``pod_id`` without a
+    second ``list_team_pods`` round-trip — the #692 wedge backstop reads the raw
+    no-port wedge condition off this ``info``), or ``None`` when the snapshot
+    itself FAILED (API transport error).
 
     Recognition delegates to :func:`pod_lifecycle._is_managed_pod` +
     :func:`pod_lifecycle._issue_from_pod_name` — the canonical helpers that
@@ -2680,7 +3391,7 @@ def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, s
             file=sys.stderr,
         )
         return None
-    out: list[tuple[int, str, str]] = []
+    out: list[tuple[int, str, str, PodInfo]] = []
     for p in pods:
         if p.desired_status != "RUNNING":
             continue
@@ -2689,11 +3400,238 @@ def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, s
         name = p.name or ""
         issue = _issue_from_pod_name(name)
         if issue is not None:
-            out.append((issue, p.pod_id, name))
+            out.append((issue, p.pod_id, name, p))
     return out
 
 
-def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: int) -> None:
+def _maybe_handle_runpod_wedge(
+    issue: int, status: str | None, info: PodInfo, now: float, dry_run: bool, threshold: int
+) -> bool:
+    """#692 wedge arm dispatch: detect the RAW #664 RunPod no-port wedge from the
+    live ``info`` and route it.
+
+    Returns ``True`` iff this arm fully HANDLED the pod (a NON-DONE-status wedged
+    pod, processed by :func:`_process_wedged_pod`), so the caller
+    (:func:`_process_pod`) should return without running the status-class
+    branches. Returns ``False`` in every other case — a non-wedged pod (where it
+    also clears any stale wedge clock, MF1/MF4) OR a wedged DONE-status pod (MF6:
+    it falls through to the status-class DONE auto-stop, the canonical
+    escaped-pod handler — routing it through the wedge arm's ALERT-default +
+    inputs-gate would only WEAKEN that existing auto-stop).
+
+    Detect the raw condition via the SAME
+    ``backend_poll._pod_is_runpod_runtime_wedged`` the poller calls (composition
+    surface (b), never re-defined)."""
+    from backend_poll import _pod_is_runpod_runtime_wedged  # sibling import
+
+    if _pod_is_runpod_runtime_wedged(info):
+        if status not in AUTO_STOP_DONE:
+            _process_wedged_pod(issue, info, now, dry_run, threshold)
+            return True
+        # MF6: DONE-status wedged pod -> fall through to the status-class DONE arm.
+        return False
+    # MF1/MF4: not currently wedged -> clear any stale wedge clock so a one-tick
+    # blip never accumulates, and the next true onset re-stamps.
+    if not dry_run:
+        _clear_wedge_state(issue, info.pod_id)
+    return False
+
+
+def _process_wedged_pod(
+    issue: int, info: PodInfo, now: float, dry_run: bool, threshold: int
+) -> None:
+    """Handle a RUNNING managed pod observed in the #664 RunPod no-port wedge.
+
+    The raw wedge condition (``backend_poll._pod_is_runpod_runtime_wedged``) is
+    already confirmed by the caller, which has ALSO already excluded DONE-status
+    pods (MF6 — those fall through to the status-class DONE auto-stop arm). Age
+    the wedge against the DEDICATED ``wedge_first_seen`` clock (stamped at wedge
+    ONSET, NOT the pod-incarnation ``first_seen``, MF1); below K
+    (``backend_poll.RUNPOD_WEDGE_K_SEC``) KEEP + persist (the wedge has not
+    matured — a healthy slow bring-up clears it on a later tick when the port
+    appears); past K apply the >=threshold consecutive-wedge-checks miss guard,
+    then ALERT (default) or AUTO-STOP (reversible ``pod.py stop``, never
+    terminate) gated on the SAME inputs-on-HF + (tri-state) keep-running checks
+    as #689 fix (b). Persists the wedge fields via :func:`_save_pod_safety_state`
+    (MF3 forward-carry) WITHOUT clearing the pod-incarnation ``first_seen`` GC
+    anchor."""
+    from backend_poll import RUNPOD_WEDGE_K_SEC
+
+    pod_id = info.pod_id
+    prev_state = _load_pod_safety_state(issue)
+
+    # ── MF4: pod_id-change reset ──────────────────────────────────────────────
+    # The pod-safety state is keyed on `issue`, not (issue, pod_id). If the
+    # poller re-provisioned the same issue with a fresh pod_id, the persisted
+    # wedge fields are stale from the OLD pod -> a fresh healthy pod could be
+    # stopped during normal startup, or a long-running pod stopped after two
+    # stale runtime.ports reads. Reset all wedge fields on a pod_id mismatch.
+    prev_pod_id = prev_state.get("pod_id")
+    if prev_pod_id != pod_id:
+        wedge_first_seen: float | None = None
+        prev_wedge_missed = 0
+        prev_wedge_alerted = False
+    else:
+        prev_wfs = prev_state.get("wedge_first_seen")
+        wedge_first_seen = prev_wfs if isinstance(prev_wfs, int | float) else None
+        prev_wedge_missed = prev_state.get("wedge_missed", 0)
+        if not isinstance(prev_wedge_missed, int):
+            prev_wedge_missed = 0
+        prev_wedge_alerted = bool(prev_state.get("wedge_alerted", False))
+
+    # ── MF1: dedicated wedge_first_seen clock ─────────────────────────────────
+    # Stamp `now` on the FIRST tick the raw wedge predicate is True (wedge
+    # ONSET). The not-wedged branch in _process_pod calls _clear_wedge_state, so
+    # a port re-appearance resets this to None -> a one-tick blip never matures.
+    # This measures the actual no-port episode length, NOT pod uptime.
+    if wedge_first_seen is None:
+        wedge_first_seen = now  # first wedged tick this incarnation
+    wedged_for = now - wedge_first_seen
+
+    # The status-class counters are forward-carried untouched (this tick belongs
+    # to the wedge arm; the status-class arm owns `missed`/`alerted` on its ticks).
+    prev_missed = prev_state.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_progress = prev_state.get("last_progress_ts")
+    if not isinstance(prev_progress, int | float):
+        prev_progress = None
+    prev_status_alerted = bool(prev_state.get("alerted", False))
+
+    # ── MF2: tri-state keep-running gate ──────────────────────────────────────
+    # Read the tag ONLY on the confirmed-past-K branch (the lazy pattern the
+    # status-class arm uses): below K / not-yet-confirmed never auto-stops, so
+    # the subprocess is paid only for a matured wedge candidate. Pass `True`
+    # (not False) as the below-K placeholder so decide_pod_wedge can never STOP
+    # before it would consult the real gate.
+    confirmed = wedged_for > RUNPOD_WEDGE_K_SEC and (prev_wedge_missed + 1) >= threshold
+    keep_running: bool | str = _wedge_keep_running(issue) if confirmed else True
+    inputs_ok = _wedge_inputs_safe(issue) if (confirmed and keep_running is False) else False
+
+    action, new_wedge_missed = decide_pod_wedge(
+        wedged_for=wedged_for,
+        k_floor=RUNPOD_WEDGE_K_SEC,
+        wedge_missed=prev_wedge_missed,
+        threshold=threshold,
+        alerted=prev_wedge_alerted,
+        keep_running=keep_running,
+        inputs_ok=inputs_ok,
+    )
+    wedged_h = f"{wedged_for / 3600:.2f}h"
+    print(
+        f"  issue #{issue} pod={pod_id}: RUNPOD NO-PORT WEDGE wedged_for={wedged_h} "
+        f"(K={RUNPOD_WEDGE_K_SEC}s) wedge_missed={prev_wedge_missed}->{new_wedge_missed} "
+        f"keep_running={keep_running} inputs_ok={inputs_ok} action={action}"
+    )
+
+    if action == "stop":
+        stopped = _stop_pod(issue, dry_run)
+        if stopped:
+            _post_progress_marker(
+                issue,
+                f"{_WEDGE_STOP_NOTE_SENTINEL} auto-stopped by autonomous_session_watch "
+                f"pod-safety pass — RUNNING pod {pod_id} stuck in the #664 "
+                f"RUNNING-but-no-port host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K "
+                f"floor, confirmed for >= {threshold} checks). The poller's "
+                f"_maybe_escalate_runpod_wedge never ran (the poll loop is dead), so the "
+                f"watcher is the backstop. The run's recoverable inputs are verified on HF "
+                f"and the keep-running tag is absent, so this reversible pause (pod.py "
+                f"resume restores the volume) is safe — it halts the billing leak. STOP, "
+                f"NOT terminate (the poller owns the terminate + re-provision path).",
+                dry_run,
+                label="wedge-stop",
+            )
+            if not dry_run:
+                # Persist the cleared wedge fields (NOT _clear_pod_safety_state,
+                # which would wipe the pod-incarnation first_seen GC anchor).
+                _save_pod_safety_state(
+                    issue,
+                    pod_id,
+                    missed=prev_missed,
+                    alerted=prev_status_alerted,
+                    last_progress_ts=prev_progress,
+                    wedge_first_seen=None,
+                    wedge_missed=0,
+                    wedge_alerted=False,
+                    prev=prev_state,
+                )
+        return
+
+    if action == "alert":
+        post_alert = not prev_wedge_alerted
+        if post_alert:
+            _post_progress_marker(
+                issue,
+                f"{_WEDGE_ALERT_NOTE_SENTINEL} RUNNING pod {pod_id} stuck in the #664 "
+                f"RUNNING-but-no-port host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K "
+                f"floor) — a billing leak the poller's _maybe_escalate_runpod_wedge did NOT "
+                f"catch (the poll loop is dead). AUTO-STOP is GATED OFF this episode "
+                f"(keep_running={keep_running}, inputs_ok={inputs_ok}): the inputs are not "
+                f"provably safe on HF, the keep-running tag is present, or the tag read "
+                f"FAILED — every uncertainty path is ALERT-only, never an unsafe stop. "
+                f"Investigate and stop manually (`pod.py stop --issue {issue}`, reversible) "
+                f"if the run is truly wedged. Posted once per wedge episode.",
+                dry_run,
+                label="wedge-alert",
+            )
+        print(
+            f"  WEDGE-ALERT issue #{issue}: RunPod no-port wedge {wedged_h} "
+            f"(gated off: keep_running={keep_running}, inputs_ok={inputs_ok}); NOT stopping.",
+            file=sys.stderr,
+        )
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=prev_missed,
+                alerted=prev_status_alerted,
+                last_progress_ts=prev_progress,
+                wedge_first_seen=wedge_first_seen,
+                wedge_missed=new_wedge_missed,
+                wedge_alerted=True,
+                prev=prev_state,
+            )
+        return
+
+    # action == "keep": persist the (possibly incremented) wedge miss count and
+    # the onset clock so the next tick can mature the episode.
+    if not dry_run:
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=prev_missed,
+            alerted=prev_status_alerted,
+            last_progress_ts=prev_progress,
+            wedge_first_seen=wedge_first_seen,
+            wedge_missed=new_wedge_missed,
+            wedge_alerted=prev_wedge_alerted,
+            prev=prev_state,
+        )
+
+
+def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tuple[bool, bool]:
+    """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
+
+    Returns ``(keep_running, followup_active)``. Both only matter when the
+    auto-stop arm is in play (``status_class == "auto-stop-done"``), so the
+    extra ``task.py view`` subprocess + events scan are paid only for
+    escaped-pod candidates. ``keep_running`` (the explicit user tag) is
+    consulted first; ``followup_active`` (the inferred-from-events live inline
+    follow-up) is the fallback, computed only when ``keep_running`` is False.
+    Extracted from :func:`_process_pod` to keep its cyclomatic complexity under
+    the C901 cap after the #692 wedge arm landed (behavior unchanged)."""
+    keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
+    followup_active = (
+        status_class == "auto-stop-done"
+        and not keep_running
+        and _task_followup_active(issue, events=events)
+    )
+    return keep_running, followup_active
+
+
+def _process_pod(
+    issue: int, pod_id: str, info: PodInfo, now: float, dry_run: bool, threshold: int
+) -> None:
     """Reconcile one RUNNING managed pod against its task status.
 
     Reads the task's status + latest real-progress timestamp, classifies it,
@@ -2704,22 +3642,37 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
     SKIPPED with a log line + a once-per-pod-incarnation marker), ALERT a
     stale pod-active task once per episode, or KEEP. Persists the per-pod
     state (miss count, alerted flag, keep-running-noted flag, followup-noted
-    flag, last-observed real progress) for the next tick."""
+    flag, last-observed real progress) for the next tick.
+
+    #692 wedge-arm ordering (MF6): the #664 RunPod no-port wedge arm runs
+    BEFORE the status-class branches, EXCEPT that a wedged pod whose task is at
+    a DONE status (:data:`AUTO_STOP_DONE` — completed / awaiting_promotion /
+    archived, the established escaped-pod auto-stop case) FALLS THROUGH to the
+    status-class DONE arm, which already auto-stops it. A DONE-task pod has no
+    live work to strand, so the canonical escaped-pod auto-stop wins; routing it
+    through the wedge arm's ALERT-default + inputs-gate would only WEAKEN the
+    existing auto-stop into a conditional one. The wedge arm therefore handles
+    only NON-DONE-status wedged pods (the live-work statuses where the watcher
+    must be conservative). A non-wedged pod reaches the status-class branches
+    unchanged, exactly as before #692."""
     status = _task_status(issue)
+
+    # ── #692 RunPod no-port wedge backstop (runs BEFORE the status-class arm,
+    # MF6 DONE-task carve-out inside the helper) ──────────────────────────────
+    # When the per-issue poll loop has DIED, backend_poll's
+    # _maybe_escalate_runpod_wedge never runs and the #664 RUNNING-but-no-port
+    # billing leak goes undetected. The watcher runs unconditionally every 10
+    # min, so it is the backstop. If the helper handled the pod (a non-DONE
+    # wedged pod), return; otherwise fall through to the status-class branches
+    # (a non-wedged pod, OR a wedged DONE-task pod that the status-class DONE
+    # auto-stop arm handles canonically) exactly as before #692.
+    if _maybe_handle_runpod_wedge(issue, status, info, now, dry_run, threshold):
+        return
+
     events = _task_events(issue)
     latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    # Lazy: the tag and the follow-up predicate only matter when the auto-stop
-    # arm is in play, so the extra `task.py view` subprocess + events scan are
-    # paid only for escaped-pod candidates. `keep_running` is consulted first
-    # because it is the explicit user signal; `followup_active` is the
-    # inferred-from-events fallback.
-    keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
-    followup_active = (
-        status_class == "auto-stop-done"
-        and not keep_running
-        and _task_followup_active(issue, events=events)
-    )
+    keep_running, followup_active = _escaped_pod_exemptions(issue, status_class, events)
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
@@ -2764,7 +3717,50 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
         f"progress_gap={gap_h} missed={prev_missed}->{new_missed} "
         f"alerted={alerted} action={action}"
     )
+    _apply_pod_safety_action(
+        action,
+        issue=issue,
+        pod_id=pod_id,
+        status=status,
+        now=now,
+        dry_run=dry_run,
+        threshold=threshold,
+        gap_h=gap_h,
+        new_missed=new_missed,
+        alerted=alerted,
+        latest_progress=latest_progress,
+        prev_state=prev_state,
+        prev_keep_running_noted=prev_keep_running_noted,
+        prev_followup_noted=prev_followup_noted,
+    )
 
+
+def _apply_pod_safety_action(
+    action: str,
+    *,
+    issue: int,
+    pod_id: str,
+    status: str | None,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    gap_h: str,
+    new_missed: int,
+    alerted: bool,
+    latest_progress: float | None,
+    prev_state: dict,
+    prev_keep_running_noted: bool,
+    prev_followup_noted: bool,
+) -> None:
+    """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
+
+    Extracted verbatim from :func:`_process_pod` (behavior unchanged) to keep its
+    cyclomatic complexity under the C901 cap after the #692 wedge arm landed. The
+    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` /
+    ``alert`` / ``keep`` — post the appropriate once-per-episode marker (deduped
+    via the prev-state flags) and persist the per-pod state. Each save
+    forward-carries the #692 wedge fields untouched (this is a status-class tick;
+    the wedge arm owns them on its own ticks)."""
     if action == "keep-running-skip":
         print(
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
@@ -4341,8 +5337,8 @@ def stalled_session_pass(
     # the empty set so the decision layer just records has_pod=False for every
     # issue this tick — fail-safe (this pass alerts/respawns, never stops pods).
     running_pods = _running_managed_issue_pods(caller="stalled-detector") or []
-    pod_active_issues = {issue for issue, _pid, _name in running_pods}
-    pod_names_by_issue = {issue: name for issue, _pid, name in running_pods}
+    pod_active_issues = {issue for issue, _pid, _name, _info in running_pods}
+    pod_names_by_issue = {issue: name for issue, _pid, name, _info in running_pods}
     if daemon_reachable is None:
         daemon_reachable = _daemon_reachable()
     print(
@@ -4761,7 +5757,7 @@ def orphan_sweep_pass(
     # marker_age_s below the staleness threshold, so the orphan sweep
     # would not be at action=respawn anyway.
     running_pods = _running_managed_issue_pods(caller="orphan-sweep") or []
-    pod_active_issues = {issue for issue, _pid, _name in running_pods}
+    pod_active_issues = {issue for issue, _pid, _name, _info in running_pods}
     print(
         f"orphan-sweep: {len(active)} active-status task(s), "
         f"{len(regs)} registered issue(s), {len(live_ids)} live session(s)"
@@ -5242,9 +6238,9 @@ def _process_orphan_task(
 # deliberately NOT in _GC_TARGETS.
 INFRA_DRAIN_QUEUE_BASENAME = "infra-drain-queue.json"
 INFRA_DRAIN_STATE_BASENAME = "infra-drain-state.json"
-# Used only when the queue file omits `cap` (the body names 3 as the schema
+# Used only when the queue file omits `cap` (the body names 5 as the schema
 # default; a benign omission must not silently disable the drain).
-INFRA_DRAIN_CAP_DEFAULT = 3
+INFRA_DRAIN_CAP_DEFAULT = 5
 # Task kinds the drain may dispatch. A mis-queued experiment/campaign ID must
 # never be spawned with --auto: it would auto-approve <=100 GPU-h AND sit
 # outside this pass's cap arithmetic.
@@ -5314,6 +6310,28 @@ INFRA_DRAIN_PREDICATE_PREFIX = "predicate-"
 # Identifier stamped into `updated_by` when THIS pass rewrites the queue file
 # (vs the PM's `pm-session`), so a queue diff attributes the promotion.
 INFRA_DRAIN_QUEUE_WRITER = "autonomous_session_watch:predicate-promote"
+
+# ── proposed-infra sweep (always-on backstop for orphaned ripe infra; #690) ──
+# On-task tag marking a `proposed` infra/batch task as a /daily route-3 held
+# judgment call (#706). A task carrying this tag is NEVER an auto-dispatch
+# candidate — it is surfaced in the PM `Needs you` block for Thomas's call, not
+# auto-run by this always-on sweep. Excluded in `_proposed_infra_candidates`.
+_NEEDS_HUMAN_TAG = "needs-human"
+# A SEPARATE attempt/backoff state file from the PM-queue drain's
+# `infra-drain-state.json`: a single task can be reachable via BOTH the PM
+# queue (the drain) AND the sweep (a `proposed` infra task the watcher
+# enumerates), so sharing one state file would let one path's attempt budget
+# silently throttle the other. Separate files keep each path's churn guard
+# independent + independently testable.
+PROPOSED_INFRA_SWEEP_STATE_BASENAME = "proposed-infra-sweep-state.json"
+# Backoff window for a sweep-dispatched task whose spawn keeps failing — reuses
+# the infra-drain window VALUE (1 h ≈ 6 ticks at the 10-min cron) under its own
+# env var. env EPM_PROPOSED_INFRA_SWEEP_BACKOFF_S.
+PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT = INFRA_DRAIN_BACKOFF_S_DEFAULT
+# Per-task attempt cap before the sweep parks it (the entry is pruned when the
+# task leaves `proposed`, so a PM rewrite / repromotion / status change clears
+# it naturally). env EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS.
+PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT = INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
 
 
 def _parse_predicate_hold(reason: str) -> int | None:
@@ -5622,26 +6640,29 @@ def _infra_drain_state_path() -> Path:
     return AUTONOMOUS_REGISTRY_DIR / INFRA_DRAIN_STATE_BASENAME
 
 
-def _load_infra_drain_state() -> dict:
-    """Read the attempt/backoff state (``{"attempts": {int: rec}}``; empty on
-    absent/garbled, mirroring :func:`_load_orphan_state`). On-disk keys are
-    strings (JSON); they are int-normalized here. DEFENSIVE NORMALIZE: drop
-    (with a log line) any record whose ``last_attempt_ts`` is not numeric or
-    whose key is not an int — a garbled record must not silently bypass the
-    budget. A record with a MISSING ``attempts`` key or whose ``attempts``
-    COUNT is garbled (non-int / bool / negative) keeps its valid
+def _load_attempt_state(path: Path, max_attempts: int, *, log_prefix: str) -> dict:
+    """Shared per-task attempt/backoff state loader (``{"attempts": {int:
+    rec}}``; empty on absent/garbled, mirroring :func:`_load_orphan_state`).
+    Consumed by BOTH :func:`_load_infra_drain_state` (the PM-queue drain) and
+    :func:`_load_proposed_infra_sweep_state` (the #690 orphan sweep) so the
+    DEFENSIVE NORMALIZE rule lives in ONE place and the two paths cannot drift.
+    ``log_prefix`` namespaces the log lines (``"infra-drain"`` /
+    ``"proposed-infra-sweep"``); ``max_attempts`` is the cap a garbled/missing
+    count is normalized UP to.
+
+    On-disk keys are strings (JSON); they are int-normalized here. DEFENSIVE
+    NORMALIZE: drop (with a log line) any record whose ``last_attempt_ts`` is
+    not numeric or whose key is not an int — a garbled record must not silently
+    bypass the budget. A record with a MISSING ``attempts`` key or whose
+    ``attempts`` COUNT is garbled (non-int / bool / negative) keeps its valid
     ``last_attempt_ts`` (the backoff window still binds) but has the count
-    normalized UP to the attempt cap, with a log line — count unknown means
-    the budget may be spent, so fail toward NOT dispatching; a fresh PM
-    ``updated_ts`` (newer than ``last_attempt_ts``) resets the count as
-    usual, so recovery is automatic on the next PM adjudication. Dropping
-    the record instead would RESET the budget — the fail-open direction
-    (round-2 fix, Codex Major: ``int("bad") + 1`` / ``"bad" >= max_attempts``
-    crashed the whole pass; round-4 fix for the MISSING-key sibling: bare
-    ``rec.get("attempts", 0)`` returned 0 before the type check fired,
-    silently granting a fresh budget on a half-written / hand-edited
-    record)."""
-    path = _infra_drain_state_path()
+    normalized UP to ``max_attempts`` — count unknown means the budget may be
+    spent, so fail toward NOT dispatching. Dropping the record instead would
+    RESET the budget — the fail-open direction (round-2 fix, Codex Major:
+    ``int("bad") + 1`` / ``"bad" >= max_attempts`` crashed the whole pass;
+    round-4 fix for the MISSING-key sibling: bare ``rec.get("attempts", 0)``
+    returned 0 before the type check fired, silently granting a fresh budget on
+    a half-written / hand-edited record)."""
     if not path.is_file():
         return {"attempts": {}}
     try:
@@ -5655,12 +6676,12 @@ def _load_infra_drain_state() -> dict:
         try:
             issue = int(key)
         except (TypeError, ValueError):
-            print(f"  infra-drain: dropping garbled state record (non-int key {key!r})")
+            print(f"  {log_prefix}: dropping garbled state record (non-int key {key!r})")
             continue
         last = rec.get("last_attempt_ts") if isinstance(rec, dict) else None
         if isinstance(last, bool) or not isinstance(last, int | float):
             print(
-                f"  infra-drain: dropping garbled state record for #{issue} "
+                f"  {log_prefix}: dropping garbled state record for #{issue} "
                 f"(non-numeric last_attempt_ts {last!r})"
             )
             continue
@@ -5670,25 +6691,33 @@ def _load_infra_drain_state() -> dict:
             # check fired below and silently grant a fresh budget; fail
             # to cap instead, the same fail direction the
             # garbled-count branch already uses (round-4 fix).
-            cap = _infra_drain_max_attempts()
             print(
-                f"  infra-drain: state record for #{issue} is missing its attempts "
-                f"key; normalizing to the attempt cap ({cap}) — fail toward NOT "
+                f"  {log_prefix}: state record for #{issue} is missing its attempts "
+                f"key; normalizing to the attempt cap ({max_attempts}) — fail toward NOT "
                 f"dispatching (a fresh PM updated_ts resets it)"
             )
-            rec = {**rec, "attempts": cap}
+            rec = {**rec, "attempts": max_attempts}
         else:
             count = rec["attempts"]
             if isinstance(count, bool) or not isinstance(count, int) or count < 0:
-                cap = _infra_drain_max_attempts()
                 print(
-                    f"  infra-drain: state record for #{issue} has a garbled attempts "
-                    f"count ({count!r}); normalizing to the attempt cap ({cap}) — fail "
+                    f"  {log_prefix}: state record for #{issue} has a garbled attempts "
+                    f"count ({count!r}); normalizing to the attempt cap ({max_attempts}) — fail "
                     f"toward NOT dispatching (a fresh PM updated_ts resets it)"
                 )
-                rec = {**rec, "attempts": cap}
+                rec = {**rec, "attempts": max_attempts}
         attempts[issue] = rec
     return {"attempts": attempts}
+
+
+def _load_infra_drain_state() -> dict:
+    """Read the PM-queue drain's attempt/backoff state via the shared
+    :func:`_load_attempt_state` (a fresh PM ``updated_ts`` newer than
+    ``last_attempt_ts`` later resets the count, so recovery is automatic on the
+    next PM adjudication)."""
+    return _load_attempt_state(
+        _infra_drain_state_path(), _infra_drain_max_attempts(), log_prefix="infra-drain"
+    )
 
 
 def _save_infra_drain_state(state: dict) -> None:
@@ -5922,6 +6951,40 @@ def _infra_drain_pending(
         if status is None or kind is None or (status == "proposed" and kind in INFRA_DRAIN_KINDS):
             pending += 1
     return pending
+
+
+def infra_dispatch_has_free_slot(
+    pending: int = 0, *, cap: int = INFRA_DRAIN_CAP_DEFAULT
+) -> bool | None:
+    """True iff a NEW infra/batch dispatch fits under the shared cap (#690 M1).
+
+    The SINGLE cap-check primitive the file-time wrapper
+    (:mod:`file_infra_task`), the infra-drain pass, and the proposed-infra
+    sweep all consult, so a future cap-tightening refactor edits exactly one
+    function and the three dispatchers cannot drift apart. It introduces NO
+    new cap semantics — it composes the EXISTING :func:`_infra_drain_occupancy`
+    + caller-supplied pending count with :data:`INFRA_DRAIN_CAP_DEFAULT`.
+
+    Tri-state, fail-CLOSED on unreadable occupancy (mirrors the executor's
+    ``_infra_drain_occupancy() is None -> skip`` rule):
+
+      - ``None``  -> occupancy UNREADABLE (any ``list-by-status`` read failed);
+        callers MUST NOT dispatch this tick (a partial count over-dispatches).
+      - ``False`` -> cap full (``occupied_active + pending >= cap``).
+      - ``True``  -> at least one free slot.
+
+    ``occupied_active = len(_infra_drain_occupancy())`` (kind-infra/batch tasks
+    at :data:`INFRA_DRAIN_OCCUPIED_STATUSES`); ``pending`` is the
+    caller-supplied count of in-flight non-stale registrations. The two
+    watcher passes pass the real :func:`_infra_drain_pending`; the file-time
+    wrapper passes ``0`` — at file time there is no fresh same-tick
+    registration to count, and a just-filed task has no registration yet, so
+    occupancy alone is the binding budget for the one spawn the wrapper is
+    about to make. Negative ``pending`` is clamped to 0 defensively."""
+    occ = _infra_drain_occupancy()
+    if occ is None:
+        return None
+    return (len(occ) + max(0, pending)) < cap
 
 
 def _dispatch_infra_drain(
@@ -6369,6 +7432,457 @@ def infra_drain_pass(
         summary += f" occupying={sorted(occupying)}"
     print(summary)
     _infra_drain_prune_save(state, ids, dry_run)
+
+
+# ─── proposed-infra sweep (always-on backstop for orphaned ripe infra; #690) ─
+#
+# WHY THIS PASS EXISTS. The PM-queue path (infra_drain_pass above) requires a
+# LIVE PM session to ADJUDICATE which `proposed` infra tasks are ripe and write
+# them to `infra-drain-queue.json`; the drain pass only EXECUTES that file.
+# Nothing autonomously adjudicates a freshly-filed `proposed` infra task when
+# no PM is running, so it orphans (incident #684 sat at `proposed` ~17h). This
+# pass is the always-on backstop: it BUILDS its own candidate set from
+# `task.py list-by-status --status proposed --json` (NOT the PM queue),
+# consults the PM queue file's `holds` map ONLY to honor predicate/user holds
+# (no new on-task tag convention), and dispatches ripe orphans into free slots
+# under the SAME shared cap the drain uses. It REUSES the drain's leaf
+# primitives (occupancy / pending / registration-dedup / stale / dispatch /
+# predicate parsing) — it does NOT execute the PM queue.
+#
+# RELATION TO infra_drain_pass. The two differ in exactly ONE structural axis —
+# candidate SOURCE (PM-written queue file vs. `list-by-status`) — but share all
+# dispatch/cap/dedup/predicate primitives. They are kept SEPARATE functions
+# (not a `mode=` branch through infra_drain_pass) so each stays single-purpose,
+# the body's "ADDS paths, not REMOVES the PM one" invariant is obvious by
+# inspection, and the sweep's simpler per-task backoff never couples to the
+# drain's PM-epoch retry budget. The sweep runs AFTER the drain in main() (R6
+# Test 17) so any ID the drain dispatched THIS tick is registered and counts as
+# `pending` here — the shared cap holds across both.
+#
+# SCOPE is deliberately NARROWER than the PM rule: {infra, batch} only, NOT
+# `agent-ok` analysis (which needs an explicit human opt-in + can be CPU-cost-
+# bearing — kept on the deliberate PM path). `experiment`/`analysis`/`campaign`
+# are excluded by the `kind in INFRA_DRAIN_KINDS` filter.
+
+
+def _proposed_infra_sweep_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PROPOSED_INFRA_SWEEP`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_infra_drain_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PROPOSED_INFRA_SWEEP", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _proposed_infra_sweep_backoff_s() -> float:
+    """Retry-backoff window in seconds (env
+    ``EPM_PROPOSED_INFRA_SWEEP_BACKOFF_S``; default
+    :data:`PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT`). A malformed env value
+    falls back to the default (a typo must not distort the budget)."""
+    raw = os.environ.get("EPM_PROPOSED_INFRA_SWEEP_BACKOFF_S")
+    if not raw:
+        return PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT
+    try:
+        return float(raw)
+    except ValueError:
+        return PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT
+
+
+def _proposed_infra_sweep_max_attempts() -> int:
+    """Attempt cap before the sweep parks a repeatedly-failing task (env
+    ``EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS``; default
+    :data:`PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT`). Malformed env value
+    falls back to the default."""
+    raw = os.environ.get("EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS")
+    if not raw:
+        return PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT
+    try:
+        return int(raw)
+    except ValueError:
+        return PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT
+
+
+def _proposed_infra_sweep_state_path() -> Path:
+    """Path of the sweep's per-task attempt/backoff state file (resolved at
+    call time so the test fixture's ``AUTONOMOUS_REGISTRY_DIR`` monkeypatch
+    isolates it)."""
+    return AUTONOMOUS_REGISTRY_DIR / PROPOSED_INFRA_SWEEP_STATE_BASENAME
+
+
+def _load_proposed_infra_sweep_state() -> dict:
+    """Read the sweep's attempt/backoff state (``{"attempts": {int: rec}}``;
+    empty on absent/garbled). Reuses the infra-drain loader's defensive
+    normalize (drop a non-int key / non-numeric ``last_attempt_ts``; cap a
+    missing/garbled ``attempts`` count up to the attempt cap — fail toward NOT
+    dispatching) against THIS state file, keeping one normalization rule for
+    both paths."""
+    return _load_attempt_state(
+        _proposed_infra_sweep_state_path(),
+        _proposed_infra_sweep_max_attempts(),
+        log_prefix="proposed-infra-sweep",
+    )
+
+
+def _save_proposed_infra_sweep_state(state: dict) -> None:
+    """Persist the sweep's attempt/backoff state atomically (temp + rename).
+    Int keys serialize as strings; the loader normalizes them back."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _proposed_infra_sweep_state_path()
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(state, indent=2))
+    tmp.replace(dest)
+
+
+def _proposed_infra_candidates() -> list[int] | None:
+    """Ripe-`proposed` infra/batch candidate ids, OLDEST-FIRST (ascending id is
+    a safe proxy — the PM's urgency-first nuance is the PM's job; this sweep is
+    the mechanical backstop). Built from EXACTLY one
+    ``task.py list-by-status --status proposed --json`` subprocess, filtered to
+    ``kind in INFRA_DRAIN_KINDS``.
+
+    The ``--status proposed`` filter is the STRUCTURAL `on_hold`-exclusion
+    mechanism (#690 M2): `on_hold` is a different status FOLDER, so a query
+    restricted to `--status proposed` can never enumerate an `on_hold` task —
+    pinned by the exact-argv Test 10. A row tagged
+    :data:`_NEEDS_HUMAN_TAG` is ALSO excluded (#706): a /daily route-3 held
+    judgment call is a tracked `proposed` infra task surfaced in the PM
+    `Needs you` block for Thomas's call, NEVER auto-dispatched by this sweep.
+    Returns ``None`` on any read/parse
+    failure (the pass then skips this tick — fail toward NOT dispatching,
+    mirroring :func:`_infra_drain_occupancy`'s fail-closed posture)."""
+    try:
+        res = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "list-by-status",
+                "--status",
+                "proposed",
+                "--json",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if res.returncode != 0:
+        return None
+    try:
+        rows = json.loads(res.stdout)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(rows, list):
+        return None
+    ids: list[int] = []
+    for row in rows:
+        if not isinstance(row, dict) or row.get("kind") not in INFRA_DRAIN_KINDS:
+            continue
+        # #706: a /daily route-3 held judgment call carries `needs-human` —
+        # surfaced in the PM `Needs you` block, never auto-dispatched. The
+        # `or []` guards legacy rows that predate the `tags` field (a
+        # `row["tags"]` lookup would KeyError + crash the whole sweep).
+        if _NEEDS_HUMAN_TAG in (row.get("tags") or []):
+            continue
+        tid = row.get("id")
+        if isinstance(tid, int) and tid not in ids:
+            ids.append(tid)
+    ids.sort()  # oldest-first proxy
+    return ids
+
+
+def _proposed_infra_hold_reason(
+    issue: int,
+    holds: dict[int, str],
+    predicate_statuses: dict[int, str | None],
+) -> str | None:
+    """The hold-gate verdict for ONE candidate against the PM queue's PARSED
+    int-keyed ``holds`` map (#690 — reuses the EXISTING shared storage + the
+    EXISTING :func:`_parse_predicate_hold` primitive; NO new on-task tag
+    convention). Returns a skip reason string or ``None`` (no hold to honor →
+    eligible so far):
+
+      - ``issue`` NOT in ``holds`` (the ORPHAN case — filed with no PM in the
+        loop, exactly the gap #690 closes) → ``None`` (eligible).
+      - in ``holds`` for a ``predicate-<#N>-...`` reason → ``None`` iff #N is at
+        a satisfied status (:data:`INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES`),
+        else ``"held: predicate-<#N>"`` (#N still in flight).
+      - in ``holds`` for ANY non-predicate reason
+        (``credentials``/``spend``/``outward-facing``/... AND the bare
+        mechanical ``cap``/``predicate`` deferral reasons) → ``"held: <reason>"``
+        regardless. This "ANY non-predicate reason → SKIP" is intentionally
+        OVER-CONSERVATIVE (it defers a candidate the PM might re-ripen on its
+        next pass to a later tick) but NEVER over-dispatches — and a hold the
+        PM wrote means the PM is actively managing that id, so deferring to the
+        PM's nuanced pass is the safe direction (R2)."""
+    reason = holds.get(issue)
+    if reason is None:
+        return None  # orphan — eligible
+    blocking = _parse_predicate_hold(reason)
+    if blocking is None:
+        return f"held: {reason}"  # non-predicate user-park — never override
+    if predicate_statuses.get(blocking) in INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES:
+        return None  # predicate satisfied — eligible
+    return f"held: predicate-{blocking}"  # blocker still in flight
+
+
+def decide_proposed_infra_sweep(
+    candidates: list[int],
+    holds: dict[int, str],
+    predicate_statuses: dict[int, str | None],
+    statuses: dict[int, str | None],
+    kinds: dict[int, str | None],
+    registered: set[int],
+    occupied_active: int,
+    pending: int,
+    attempts: dict[int, dict],
+    now: float,
+    cap: int = INFRA_DRAIN_CAP_DEFAULT,
+    *,
+    backoff_s: float = PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
+    max_attempts: int = PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
+) -> tuple[list[int], list[tuple[int, str]]]:
+    """Pure decision: ``(dispatch_ids_in_order, skipped [(id, reason)])`` —
+    mirroring :func:`decide_infra_drain` so the cap/hold/registration matrix is
+    falsifiable in isolation (#690 R4).
+
+    ``candidates`` is the ripe-`proposed` infra/batch id list (oldest-first);
+    ``holds`` the PM queue file's PARSED int-keyed map; ``predicate_statuses``
+    the resolved status of each predicate's BLOCKING issue (``None`` =
+    unreadable); ``registered`` the NON-STALE registrations among the
+    candidates; ``occupied_active`` the count of kind-infra/batch tasks at
+    :data:`INFRA_DRAIN_OCCUPIED_STATUSES`; ``pending`` the count of ALL
+    non-stale registrations of still-`proposed` drain-kind tasks (the SHARED
+    cap budget — see :func:`_infra_drain_pending`). ``free = max(0, cap -
+    occupied_active - pending)``.
+
+    Per-candidate guard order (every skip carries a reason string):
+
+      1. hold gate (:func:`_proposed_infra_hold_reason`) — ``held: <reason>``
+      2-4. :func:`_cheap_skip_reason` (already-registered / backoff /
+           attempts-exhausted; ``holds`` passed EMPTY here because guard 1
+           already owns hold-gating — the queue file is the hold source, not
+           ``_cheap_skip_reason``'s membership check)
+      5. status unreadable → ``"status-unreadable"``; status != ``proposed`` →
+         ``"status-<status>"`` (the candidate list was built from a
+         ``proposed`` query, but a status read here re-confirms it — a task can
+         change status between the candidate query and this read)
+      6. kind not in :data:`INFRA_DRAIN_KINDS` → ``"kind-<kind|unreadable>"``
+         (defense in depth; the candidate query already filtered)
+      7. no free slot → ``"cap-full"``
+      8. else dispatch; one attempt per id per cycle
+    """
+    free = max(0, cap - occupied_active - pending)
+    dispatch: list[int] = []
+    skipped: list[tuple[int, str]] = []
+    for i in candidates:
+        held = _proposed_infra_hold_reason(i, holds, predicate_statuses)
+        if held is not None:
+            skipped.append((i, held))
+            continue
+        # _cheap_skip_reason owns already-registered + backoff/attempts; holds
+        # is passed EMPTY because the queue-file hold gate (guard 1) is the
+        # authoritative hold source for the sweep (the cheap helper's `holds`
+        # membership check is the DRAIN's mechanism, not the sweep's).
+        reason = _cheap_skip_reason(
+            i,
+            {},
+            registered,
+            attempts,
+            now,
+            None,
+            backoff_s=backoff_s,
+            max_attempts=max_attempts,
+        )
+        if reason is not None:
+            skipped.append((i, reason))
+            continue
+        status = statuses.get(i)
+        if status is None:
+            skipped.append((i, "status-unreadable"))
+            continue
+        if status != "proposed":
+            skipped.append((i, f"status-{status}"))
+            continue
+        kind = kinds.get(i)
+        if kind not in INFRA_DRAIN_KINDS:
+            skipped.append((i, f"kind-{kind or 'unreadable'}"))
+            continue
+        if free <= 0:
+            skipped.append((i, "cap-full"))
+            continue
+        dispatch.append(i)
+        free -= 1
+    return dispatch, skipped
+
+
+def _proposed_infra_sweep_record_attempt(
+    attempts: dict[int, dict], issue: int, now: float, ok: bool
+) -> None:
+    """Record one sweep dispatch ATTEMPT (success or failure both count, so a
+    failing spawn can't tight-loop — the backoff window binds next tick either
+    way). Unlike the drain's epoch-reset, the sweep has no ``updated_ts``: the
+    count simply increments until the attempt cap, and the whole entry is
+    pruned when the task leaves `proposed` (a PM rewrite / repromotion / status
+    change clears it naturally)."""
+    rec = attempts.get(issue) or {}
+    count = int(rec.get("attempts", 0)) + 1
+    attempts[issue] = {
+        "attempts": count,
+        "last_attempt_ts": now,
+        "last_result": "dispatched" if ok else "spawn-failed",
+    }
+
+
+def _proposed_infra_sweep_prune_save(state: dict, candidates: list[int], dry_run: bool) -> None:
+    """Prune state entries whose task left the `proposed` candidate set (it
+    dispatched, was repromoted, or changed status), then persist atomically.
+    No-op under dry-run (mirror the drain's dry-run discipline: no state
+    write)."""
+    if dry_run:
+        return
+    keep = set(candidates)
+    state["attempts"] = {i: rec for i, rec in state["attempts"].items() if i in keep}
+    _save_proposed_infra_sweep_state(state)
+
+
+def proposed_infra_sweep_pass(
+    dry_run: bool,
+    now: float | None = None,
+    *,
+    daemon_reachable: bool | None = None,
+) -> None:
+    """Always-on backstop sweep: dispatch ripe ORPHANED `proposed` infra/batch
+    tasks the PM never queued (#690). REUSES the infra-drain leaf primitives;
+    BUILDS its own candidate set from ``list-by-status --status proposed``;
+    consults the PM queue's ``holds`` map ONLY to honor holds. Daemon-gated like
+    every spawning pass; shares the cap with the drain (it runs AFTER the drain
+    in main(), so the drain's fresh registrations count as ``pending`` here)."""
+    if not _proposed_infra_sweep_enabled():
+        print("proposed-infra-sweep: disabled via EPM_DISABLE_PROPOSED_INFRA_SWEEP; skipping")
+        return
+    if daemon_reachable is None:
+        daemon_reachable = _daemon_reachable()
+    if not daemon_reachable:
+        print(
+            "proposed-infra-sweep: Happy daemon unreachable; skipping (spawn needs the daemon RPC)"
+        )
+        return
+    now = now if now is not None else time.time()
+
+    candidates = _proposed_infra_candidates()
+    if candidates is None:
+        print(
+            "proposed-infra-sweep: `list-by-status --status proposed` read FAILED; "
+            "skipping this tick (fail toward NOT dispatching)"
+        )
+        return
+    if not candidates:
+        print("proposed-infra-sweep: no ripe proposed infra/batch candidates; nothing to do")
+        return
+
+    # Holds gate: read the PM queue file's PARSED int-keyed `holds` map directly
+    # (the SAME storage + the SAME predicate primitives the drain uses). A
+    # missing / empty / invalid / torn-write queue file fails SOFT to "no
+    # holds" — orphans still dispatch; no candidate is ever blocked by an
+    # unreadable queue, because the orphan-eligible default is "no hold". A
+    # corrupt (None-parsing) read is treated as "no usable holds map this tick"
+    # (NOT as un-holding a previously-held candidate — a held candidate is held
+    # by the map, and when the map is absent it is an un-held orphan only
+    # because no usable hold exists, never because a held entry was dropped from
+    # an otherwise-valid map; R1).
+    queue = _infra_drain_read_queue()
+    holds: dict[int, str] = queue["holds"] if queue is not None else {}
+
+    # Only predicate holds among the CANDIDATE set cost a blocking-status read;
+    # non-predicate holds and non-held candidates short-circuit with zero extra
+    # subprocesses.
+    predicate_blockers = {
+        b
+        for i in candidates
+        if (r := holds.get(i)) is not None and (b := _parse_predicate_hold(r)) is not None
+    }
+    predicate_statuses = {b: _task_status_kind(b)[0] for b in sorted(predicate_blockers)}
+
+    state = _load_proposed_infra_sweep_state()
+    attempts: dict[int, dict] = state["attempts"]
+    backoff_s = _proposed_infra_sweep_backoff_s()
+    max_attempts = _proposed_infra_sweep_max_attempts()
+
+    # ONE registry read: the staleness/pending decision parses from this
+    # snapshot, and the pre-spawn re-check (inside _dispatch_infra_drain)
+    # compares against the same bytes.
+    reg_snapshot = _infra_drain_reg_snapshot()
+    regs = _infra_drain_registrations(reg_snapshot)
+    raw_registered = set(regs) & set(candidates)
+
+    # Reuse the drain's signal fetch (per-id status/kind + stale set + the
+    # WIDENED pending count over ALL non-stale registrations). `_infra_drain_signals`
+    # already skips held queue ids; here `holds` gating is the sweep's own, so
+    # pass an empty holds so every candidate's status/kind is fetched (a held
+    # candidate is dropped by the hold gate in decide_proposed_infra_sweep
+    # before the status read matters).
+    status_kind, stale, pending = _infra_drain_signals(candidates, {}, regs, now)
+    registered_nonstale = raw_registered - stale
+
+    occupying = _infra_drain_occupancy()
+    if occupying is None:
+        print(
+            "proposed-infra-sweep: occupancy read FAILED for at least one status; "
+            "skipping dispatch this tick (fail-closed: a partial count would "
+            "under-count and over-dispatch past the cap)"
+        )
+        _proposed_infra_sweep_prune_save(state, candidates, dry_run)
+        return
+    occupied_active = len(occupying)
+    cap = INFRA_DRAIN_CAP_DEFAULT
+    statuses = {i: status_kind.get(i, (None, None))[0] for i in candidates}
+    kinds = {i: status_kind.get(i, (None, None))[1] for i in candidates}
+
+    dispatch, skipped = decide_proposed_infra_sweep(
+        candidates,
+        holds,
+        predicate_statuses,
+        statuses,
+        kinds,
+        registered_nonstale,
+        occupied_active,
+        pending,
+        attempts,
+        now,
+        cap,
+        backoff_s=backoff_s,
+        max_attempts=max_attempts,
+    )
+
+    dispatched = 0
+    for issue in dispatch:
+        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
+        ok = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        if not dry_run:
+            _proposed_infra_sweep_record_attempt(attempts, issue, now, ok)
+        if ok:
+            dispatched += 1
+            _post_progress_marker(
+                issue,
+                f"{_PROPOSED_INFRA_SWEEP_NOTE_SENTINEL} watcher auto-dispatched ripe "
+                f"proposed infra task (no PM queue entry)",
+                dry_run,
+                label="proposed-infra-sweep",
+            )
+    for issue, reason in skipped:
+        print(f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} ({reason})")
+    summary = (
+        f"proposed-infra-sweep: candidates={len(candidates)} "
+        f"occupied={occupied_active}(+{pending} pending) cap={cap} "
+        f"dispatched={dispatched} skipped={len(skipped)}"
+    )
+    if any(reason == "cap-full" for _i, reason in skipped):
+        summary += f" occupying={sorted(occupying)}"
+    print(summary)
+    _proposed_infra_sweep_prune_save(state, candidates, dry_run)
 
 
 # ─── capacity-retry pass (re-drive a transient-infra `blocked` task) ─────────
@@ -7722,7 +9236,9 @@ def session_reconcile_pass(
     # pod itself (it skips its own state GC on the failed snapshot).
     running_pod_issues = {
         issue
-        for issue, _pod_id, _name in (_running_managed_issue_pods(caller="session-reconcile") or [])
+        for issue, _pod_id, _name, _info in (
+            _running_managed_issue_pods(caller="session-reconcile") or []
+        )
     }
     print(
         f"session-reconcile: {n_sessions} live issue-mapped session(s) across "
@@ -8432,6 +9948,42 @@ def _unmapped_idle_reap_s() -> float:
     return val if val > 0 else UNMAPPED_IDLE_REAP_S
 
 
+# Short reap window for an UNMAPPED session whose LAST-known mapped task was
+# TERMINAL (the #720 ghost class: issue-<N>.json deleted by the respawn pass
+# at terminal -> session unmapped -> previously only the 12h bucket caught it).
+# 30 min keeps the post-terminal session clear of any same-tick promotion/
+# finalize activity (which resets the idle clock anyway) while landing the
+# worst-case reap STRICTLY under the body's ~1h acceptance window: with the
+# 10-min cron and the existing >=2-consecutive-miss guard, worst-case reap is
+# 30 min + 2*10 min = 50 min < 60 min (see plan §11 + the arithmetic-bound test
+# test_short_window_worst_case_under_acceptance). Override via
+# EPM_LAST_MAPPED_TERMINAL_REAP_S.
+LAST_MAPPED_TERMINAL_REAP_S = 30 * 60
+
+# Filename prefix for the per-session "last mapped task was terminal"
+# breadcrumb at ~/.eps-autonomous/last-mapped-terminal-<sid>.json. Written by
+# the respawn pass at the instant it deletes issue-<N>.json for a TERMINAL
+# task; read by the idle-unmapped pass to pick the short reap window. This
+# prefix is NOT in _load_session_issue_map's prefix list
+# (("issue-", "manual-issue-", "campaign-"), spawn_session.py) nor matched by
+# the respawn pass's issue-*.json glob, so it can never be mistaken for a
+# respawnable registration.
+LAST_MAPPED_TERMINAL_PREFIX = "last-mapped-terminal-"
+
+
+def _last_mapped_terminal_reap_s() -> float:
+    """Short reap window in seconds: ``EPM_LAST_MAPPED_TERMINAL_REAP_S`` when
+    set to a positive number, else :data:`LAST_MAPPED_TERMINAL_REAP_S` (30 min).
+    Garbled / non-positive values fall back to the default (same parse as
+    :func:`_unmapped_idle_reap_s`)."""
+    raw = os.environ.get("EPM_LAST_MAPPED_TERMINAL_REAP_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return LAST_MAPPED_TERMINAL_REAP_S
+    return val if val > 0 else LAST_MAPPED_TERMINAL_REAP_S
+
+
 def _wrapper_has_controlling_tty(pid: int) -> bool:
     """True iff ``/proc/<pid>/stat`` reports a controlling TTY (tty_nr != 0).
 
@@ -8471,42 +10023,58 @@ def _wrapper_controlling_tty_path(pid: int) -> str | None:
     return None
 
 
-def _detached_tmux_pane_ttys() -> set[str]:
-    """Set of pty device paths (``/dev/pts/N``) for tmux panes whose tmux
-    session currently has ZERO attached clients — i.e. detached panes nobody
-    is looking at.
+def _detached_tmux_panes_with_activity() -> tuple[set[str], dict[str, float]]:
+    """ONE ``tmux list-panes -a`` call carrying THREE fields per pane —
+    ``#{pane_tty}\\t#{session_attached}\\t#{session_activity}`` — folded into:
 
-    A ``happy claude`` wrapper launched into a tmux pane holds that pane's
-    pty as its controlling terminal whether or not a client is attached, so
-    the bare tty_nr test (:func:`_wrapper_has_controlling_tty`) cannot tell an
-    abandoned detached-tmux session apart from a terminal Thomas is actively
-    sitting at. tmux's ``session_attached`` count is the discriminator: a pane
-    in a session with ``attached == 0`` is detached.
+    1. the DETACHED-pane set (``set[str]`` of ``/dev/pts/N`` for panes whose
+       tmux session has ZERO attached clients — unchanged semantics from the
+       historical single-field call), AND
+    2. a ``{pane_tty: session_activity_epoch}`` map (the epoch seconds of the
+       pane's owning tmux session's last activity), used ONLY by the #695
+       corroborating-idleness fallback as a SUBSTITUTE idle signal when the
+       primary happy-log transcript signal is unavailable.
 
-    Fail-soft: ANY error (tmux absent, no server running, parse failure)
-    returns the EMPTY set, which preserves the conservative "any tty -> live
-    user -> keep" behavior for every session — the fix can only ever make the
-    pass reap MORE (a confirmed-detached pane), never accidentally reap an
-    attached or uncertain one."""
+    ``session_activity`` updates on pane OUTPUT (not on the watcher's read-only
+    ``list-panes``/``capture-pane``), so for an idle Claude session that emits
+    nothing it is the correct "no turns since" signal and a conservative
+    OVER-estimate of liveness — never an under-estimate, exactly the safe
+    direction for a destructive reap gate.
+
+    Fail-soft: ANY error (tmux absent, no server, parse failure) returns
+    ``(set(), {})`` — the EMPTY detached set preserves the conservative "any
+    tty -> live user -> keep" behavior and an empty activity map means the
+    fallback finds no substitute idle age and keeps. The fix can only ever
+    make the pass reap MORE (a confirmed-detached, confirmed-idle pane), never
+    accidentally reap an attached or uncertain one."""
     if shutil.which("tmux") is None:
-        return set()
+        return set(), {}
     try:
         out = subprocess.run(
-            ["tmux", "list-panes", "-a", "-F", "#{pane_tty}\t#{session_attached}"],
+            [
+                "tmux",
+                "list-panes",
+                "-a",
+                "-F",
+                "#{pane_tty}\t#{session_attached}\t#{session_activity}",
+            ],
             capture_output=True,
             text=True,
             timeout=10,
         )
     except (subprocess.SubprocessError, OSError):
-        return set()
+        return set(), {}
     if out.returncode != 0:
         # No server / no sessions: tmux exits non-zero. Nothing detached to
-        # report; keep-all behavior is preserved by the empty set.
-        return set()
+        # report; keep-all behavior is preserved by the empty set + map.
+        return set(), {}
     detached: set[str] = set()
+    activity: dict[str, float] = {}
     for line in out.stdout.splitlines():
         parts = line.split("\t")
-        if len(parts) != 2:
+        # Tolerate a 2-field row (older tmux without session_activity, or a
+        # truncated line): take the detached read, skip the activity read.
+        if len(parts) < 2:
             continue
         pane_tty, attached_raw = parts[0].strip(), parts[1].strip()
         if not pane_tty:
@@ -8517,7 +10085,324 @@ def _detached_tmux_pane_ttys() -> set[str]:
             continue
         if attached == 0:
             detached.add(pane_tty)
+        if len(parts) >= 3:
+            try:
+                activity[pane_tty] = float(parts[2].strip())
+            except ValueError:
+                # Unparseable activity epoch -> simply absent from the map;
+                # the fallback then finds no substitute age and keeps.
+                continue
+    return detached, activity
+
+
+def _detached_tmux_pane_ttys() -> set[str]:
+    """Set of pty device paths (``/dev/pts/N``) for tmux panes whose tmux
+    session currently has ZERO attached clients — i.e. detached panes nobody
+    is looking at.
+
+    Thin wrapper over :func:`_detached_tmux_panes_with_activity` returning
+    only the detached set (the activity map is the #695 fallback's concern).
+    Preserves the historical single-return contract every existing caller +
+    test relies on; same fail-soft empty-set-on-error behavior."""
+    detached, _activity = _detached_tmux_panes_with_activity()
     return detached
+
+
+# ── #695 corroborating-idleness fallback for the idle-unmapped pass ───────────
+#
+# The primary idle signal (the resolved Claude transcript mtime via the
+# happy-log path, _transcript_idle_age_s) returns (None, reason) for
+# MANUALLY-tmux-launched, non-daemon-spawned sessions — every such session
+# logs idle=? and decide_idle_unmapped keeps it forever. That is the
+# load-bearing reap blocker for the 2026-06-12 class (25 detached unmapped tmux
+# sessions, ~23 GB RSS). The fallback below supplies a SUBSTITUTE idle age
+# (tmux session_activity) used ONLY when the primary is unavailable AND every
+# no-running-work / no-pending-input / no-running-pod gate passes. Six gates,
+# all must hold; any single uncertain signal -> keep.
+
+# Substring patterns matched against a /proc descendant's cmdline that signal
+# the session is doing REAL WORK (and so must NOT be reaped even if detached +
+# idle). The union of:
+#   - the two codex-companion regexes (`codex app-server`,
+#     `plugins/cache/openai-codex/`) imported from worktree_audit.py, and
+#   - the project workload markers a detached experimenter/dispatch session
+#     would show.
+# Deliberately a DENYLIST, not an allowlist: every idle session keeps a live
+# Claude binary + the fixed MCP server tree (runpod / arxiv / ssh /
+# google-workspace / playwright / context7 / todoist), which are NOT work
+# signals — an allowlist ("reap only if EXACTLY Claude + the fixed MCP set")
+# is brittle to MCP-set drift and fails unsafe on an unrecognized work
+# process. The denylist is pinned by a test (test 12) so a future rename of
+# either source trips it. The codex patterns are compiled regexes (`.search`);
+# the workload markers are plain substrings.
+_IDLE_UNMAPPED_WORK_CMDLINE_MARKERS: tuple[str, ...] = (
+    "scripts/train.py",
+    "scripts/eval.py",
+    "scripts/run_sweep.py",
+    "scripts/dispatch_issue.py",
+    "backend_poll.py",
+    "experiment-implementer",
+)
+
+
+def _cmdline_is_work_process(pid: int) -> bool | None:
+    """TRI-STATE work-process probe for one pid:
+
+      - ``True``  — ``/proc/<pid>/cmdline`` matches ANY codex-companion
+        :data:`ORPHAN_HOLDER_PATTERNS` regex OR contains any
+        :data:`_IDLE_UNMAPPED_WORK_CMDLINE_MARKERS` substring (a positive
+        work signal);
+      - ``False`` — the cmdline was read and matched NOTHING (positively
+        not-work);
+      - ``None``  — the cmdline was UNREADABLE (perms / raced exit / brief
+        EACCES). UNCERTAIN, NOT not-work.
+
+    The None state is load-bearing (#695 round-2 blocker 2): a child in the
+    wrapper subtree whose cmdline cannot be read could be a live work
+    descendant whose ``/proc`` entry was permission-restricted or momentarily
+    unreadable. Collapsing that to ``False`` lets the gate-3 work check pass
+    and the session be reaped — violating the fail-toward-KEEP contract. The
+    descendant walk (:func:`_has_running_work_descendant`) therefore treats any
+    ``None`` in the walk as work-present (KEEP)."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return None
+    cmd = raw.replace(b"\x00", b" ").decode("utf-8", "replace")
+    if any(marker in cmd for marker in _IDLE_UNMAPPED_WORK_CMDLINE_MARKERS):
+        return True
+    return any(pat.search(cmd) for pat in ORPHAN_HOLDER_PATTERNS)
+
+
+def _has_running_work_descendant(
+    pid: int, children_map: dict[int, list[int]] | None = None
+) -> bool:
+    """True iff ``pid`` or any /proc descendant is a RUNNING work process
+    (codex companion or a project workload — :func:`_cmdline_is_work_process`)
+    OR any descendant's cmdline is UNREADABLE (uncertain -> treated as
+    work-present, fail-toward-KEEP).
+
+    The #695 gate-3 work-descendant check. Reuses the
+    :func:`_proc_children_map` parse + an iterative descendant walk (same
+    pattern as :func:`_has_claude_descendant`). Crucially does NOT key on
+    :func:`_has_claude_descendant` — every idle session keeps a live Claude
+    binary + the fixed MCP tree, which are not work signals — so it keys only
+    on the narrow work-process denylist. A ``True`` return is a gate-3 KEEP
+    (one of the six AND gates fails). Because :func:`_cmdline_is_work_process`
+    is TRI-STATE, an unreadable child cmdline (``None``) is treated as
+    work-present here (KEEP) rather than skipped — the per-child
+    "unreadable -> uncertain -> KEEP" posture the call site's ``except OSError``
+    cannot reach, since an unreadable cmdline raises no exception that
+    propagates (#695 round-2 blocker 2)."""
+    if children_map is None:
+        children_map = _proc_children_map()
+    seen: set[int] = set()
+    stack = [pid]
+    while stack:
+        p = stack.pop()
+        if p in seen:
+            continue
+        seen.add(p)
+        verdict = _cmdline_is_work_process(p)
+        if verdict is None or verdict is True:
+            # Positive work signal OR an unreadable (uncertain) cmdline ->
+            # treat as work-present -> KEEP.
+            return True
+        stack.extend(children_map.get(p, ()))
+    return False
+
+
+# Empty-prompt placeholder substrings (case-insensitive): when the captured
+# pane's last logical input line reduces to one of these, the input box is
+# EMPTY (the rendered hint text), not buffered user input -> the pending-input
+# probe may proceed. Deliberately small + conservative — an UNRECOGNIZED
+# remainder is treated as input -> KEEP.
+_PANE_EMPTY_PROMPT_PLACEHOLDERS: tuple[str, ...] = (
+    'try "',
+    "for shortcuts",
+)
+
+# Leading prompt-prefix glyphs stripped before judging whether the input line
+# is empty: the Claude TUI input box renders a leading prompt marker (the
+# U+276F caret on the live render, or a ``>`` / box border on older / idealized
+# renders). After stripping leading whitespace, a leading run of these chars
+# (plus one following space — regular OR non-breaking; the live caret is
+# followed by ``\xa0`` U+00A0) is removed; a non-empty, non-placeholder
+# remainder counts as buffered input. (U+276F included by codepoint to keep the
+# ruff confusables linter quiet — it reads as a ``>`` look-alike.)
+_PANE_PROMPT_PREFIX_CHARS = "\u276f>│╭╮╰╯─┐└┘├┤┬┴┼┌"
+
+# Box-drawing / horizontal-rule glyphs: a line whose every non-whitespace
+# character is one of these is a pure BORDER / RULE line, NOT the input row.
+# The live Claude render frames the input box with full-width ``─`` rules
+# above and below (the top rule sometimes carries a single ``↯`` token-count
+# glyph, which is also listed here so an otherwise-pure rule still classifies
+# as a border). The bottom-up scanner skips these to reach the actual prompt.
+_PANE_BORDER_CHARS = frozenset("─╭╮╰╯│║═=-_↯┐└┘├┤┬┴┼┌")
+
+# Leading glyphs that mark a Claude TUI FOOTER line rendered BELOW the input
+# box (the permissions-mode line ``⏵⏵ bypass permissions on …`` is the
+# canonical one observed live; ``?`` is the shortcuts/help footer; ``↑``/``↓``
+# label navigation footers on menu screens). A line whose first non-whitespace
+# glyph is one of these is a footer, NOT the input row — the bottom-up scanner
+# skips it. Kept deliberately small + KEEP-leaning: an unrecognized trailer is
+# NOT treated as a footer, so the scanner falls through to it and (being
+# non-empty, non-placeholder) judges it as input -> KEEP.
+_PANE_FOOTER_PREFIX_CHARS = "⏵?↑↓"
+
+
+def _pane_line_is_border(line: str) -> bool:
+    """True iff ``line`` is a pure box-border / horizontal-rule line — every
+    non-whitespace character is in :data:`_PANE_BORDER_CHARS`. An all-whitespace
+    line is NOT a border (it carries no glyphs). Used by the bottom-up input
+    scanner to skip the rules framing the input box."""
+    nonws = "".join(line.split())
+    return bool(nonws) and all(ch in _PANE_BORDER_CHARS for ch in nonws)
+
+
+def _pane_line_is_footer(line: str) -> bool:
+    """True iff ``line`` is a Claude TUI footer rendered below the input box —
+    its first non-whitespace glyph is in :data:`_PANE_FOOTER_PREFIX_CHARS`
+    (the ``⏵⏵ bypass permissions …`` permissions line, the ``?`` shortcuts
+    line, or a navigation footer). KEEP-leaning: an unrecognized trailer is NOT
+    a footer, so the scanner falls through to it and judges it as input."""
+    stripped = line.lstrip()
+    return bool(stripped) and stripped[0] in _PANE_FOOTER_PREFIX_CHARS
+
+
+def _pane_has_pending_input(pane_tty: str) -> bool:
+    """True (= "there might be unsent input, KEEP") unless the captured pane's
+    input box is positively recognized as EMPTY.
+
+    The #695 gate-5 typed-but-unsent guard. Probes the pane's VISIBLE content
+    via ``tmux capture-pane -p -t <pane_tty>`` (a pane's tty is an accepted
+    ``-t`` target). A KEEP-leaning heuristic over the rendered terminal text,
+    NOT a parser of the Claude TUI internal state — its failure mode is always
+    a spurious KEEP (a session that COULD be reaped is kept), never a spurious
+    reap.
+
+    The real Claude render places the U+276F caret input row ABOVE a bottom
+    box-rule and a permissions footer, so the last captured line is ALWAYS the
+    footer — never the input row (#695 round-2 blocker 1). This
+    scans the captured pane from the BOTTOM UP, skipping pure border/rule lines
+    and known footer lines, and applies the empty-vs-buffered heuristic to the
+    FIRST line that is neither.
+
+    Returns **True** on ANY of:
+      - the ``capture-pane`` subprocess errors / times out / returns non-zero
+        / tmux is absent / the pane is gone (fail toward KEEP);
+      - the whole captured pane is borders + footers (no input row found) —
+        cannot confirm empty -> KEEP;
+      - the first non-border, non-footer line (scanning bottom-up) — after
+        stripping leading whitespace, a leading run of prompt-prefix glyphs +
+        one space (regular or non-breaking), and trailing whitespace — is
+        NON-EMPTY and does NOT match a known empty-prompt placeholder.
+
+    Returns **False** (= "no pending input, may proceed") only when it
+    positively recognizes an empty / placeholder-only input box (an empty
+    remainder or a known placeholder substring)."""
+    if shutil.which("tmux") is None:
+        return True
+    try:
+        out = subprocess.run(
+            ["tmux", "capture-pane", "-p", "-t", pane_tty],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return True
+    if out.returncode != 0:
+        # Pane gone / capture failed -> fail toward KEEP.
+        return True
+    lines = out.stdout.splitlines()
+    # Scan bottom-up for the first line that is neither a pure border/rule nor a
+    # known footer — that is the actual input row. Whitespace-only, border, and
+    # footer lines are all skipped.
+    input_line: str | None = None
+    for line in reversed(lines):
+        if not line.strip():
+            continue
+        if _pane_line_is_border(line) or _pane_line_is_footer(line):
+            continue
+        input_line = line
+        break
+    if input_line is None:
+        # The whole capture is borders + footers (or nothing rendered) -> no
+        # input row found -> cannot confirm empty -> KEEP.
+        return True
+    last = input_line.lstrip()
+    # Strip a leading run of prompt-prefix glyphs, then a single space (regular
+    # or the live render's non-breaking ``\xa0`` separator).
+    stripped = last.lstrip(_PANE_PROMPT_PREFIX_CHARS)
+    if stripped[:1] in (" ", "\xa0"):
+        stripped = stripped[1:]
+    remainder = stripped.strip()
+    if not remainder:
+        # Empty input box -> may proceed.
+        return False
+    low = remainder.lower()
+    # A recognized empty-prompt placeholder hint -> may proceed (return False);
+    # any unrecognized non-empty remainder -> treat as buffered input -> KEEP.
+    return not any(ph in low for ph in _PANE_EMPTY_PROMPT_PLACEHOLDERS)
+
+
+def _fallback_idle_age_s(
+    pane_tty: str | None, activity_map: dict[str, float], now: float
+) -> float | None:
+    """Substitute idle age (seconds) for the #695 fallback: ``now -
+    session_activity`` of the pane's owning tmux session, or ``None`` when no
+    usable activity epoch is available (no pane tty, pane absent from the map,
+    or a future/garbled epoch). ``None`` -> the fallback supplies no idle age
+    and the session is kept (gate-uncertain)."""
+    if not pane_tty:
+        return None
+    epoch = activity_map.get(pane_tty)
+    if not isinstance(epoch, int | float):
+        return None
+    return max(0.0, now - float(epoch))
+
+
+# Default corroborating-idleness fallback window (seconds). 24h — deliberately
+# 2x the primary 12h UNMAPPED_IDLE_REAP_S: the session_activity signal is a
+# WEAKER corroborating signal than the transcript mtime, so it earns a longer
+# floor (keeps an overnight pause well clear while still clearing the 19-43h
+# accumulation class within ~a day). Override via
+# EPM_UNMAPPED_TMUX_IDLE_FALLBACK_S.
+UNMAPPED_TMUX_IDLE_FALLBACK_S = 24 * 3600
+
+
+def _unmapped_tmux_idle_fallback_enabled() -> bool:
+    """True unless ``EPM_UNMAPPED_TMUX_IDLE_FALLBACK_ENABLED`` is explicitly
+    set to a falsy value (``0`` / ``false`` / ``no``) — a per-feature
+    kill-switch for the #695 corroborating-idleness fallback that leaves the
+    rest of the idle-unmapped pass (and its own ``EPM_UNMAPPED_IDLE_REAP``
+    kill-switch) untouched. Default-ON, same parsing as
+    :func:`_unmapped_idle_reap_enabled`."""
+    raw = os.environ.get("EPM_UNMAPPED_TMUX_IDLE_FALLBACK_ENABLED", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _unmapped_tmux_idle_fallback_s() -> float:
+    """Fallback idle window in seconds: ``EPM_UNMAPPED_TMUX_IDLE_FALLBACK_S``
+    when set to a positive number, else :data:`UNMAPPED_TMUX_IDLE_FALLBACK_S`
+    (24h). Garbled / non-positive values fall back to the default (same
+    parsing as :func:`_unmapped_idle_reap_s`)."""
+    raw = os.environ.get("EPM_UNMAPPED_TMUX_IDLE_FALLBACK_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return UNMAPPED_TMUX_IDLE_FALLBACK_S
+    return val if val > 0 else UNMAPPED_TMUX_IDLE_FALLBACK_S
+
+
+def _idle_unmapped_debug_enabled() -> bool:
+    """True when ``EPM_IDLE_UNMAPPED_DEBUG`` is set to a truthy value — gates
+    the denser per-candidate #695 fallback-gate trace (default OFF after the
+    diagnostic cycle so it does not spam every 10-min pass; the once-per-pass
+    detached-set-size log + loud empty-set beacon stay UNCONDITIONAL)."""
+    raw = os.environ.get("EPM_IDLE_UNMAPPED_DEBUG", "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _is_live_user_tty(pid: int, detached_tmux_ttys: set[str]) -> bool:
@@ -8683,6 +10568,119 @@ def _clear_idle_unmapped_state(sid: str) -> None:
     _idle_unmapped_state_path(sid).unlink(missing_ok=True)
 
 
+def _last_mapped_terminal_path(sid: str) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{LAST_MAPPED_TERMINAL_PREFIX}{sid}.json"
+
+
+def _record_last_mapped_terminal(
+    sid: str, issue: int, terminal_status: str, dry_run: bool, now: float | None = None
+) -> None:
+    """Write the #720 breadcrumb atomically (temp + rename). Idempotent: a
+    re-write for an already-recorded sid just refreshes the fields. Fail-soft:
+    an OSError on write is logged and swallowed (the breadcrumb is an
+    OPTIMIZATION — a missing one only means the session reaps at the old 12h
+    window, never a wrong kill). Skipped under ``dry_run``, and only ever
+    written for a TERMINAL status (a PARK/ACTIVE status would widen scope when
+    later read, so it is refused here too)."""
+    if dry_run:
+        return
+    if terminal_status not in TERMINAL:
+        return
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "happy_session_id": sid,
+        "issue": issue,
+        "terminal_status": terminal_status,
+        "recorded_at": now if now is not None else time.time(),
+    }
+    dest = _last_mapped_terminal_path(sid)
+    tmp = dest.with_suffix(".json.tmp")
+    try:
+        tmp.write_text(json.dumps(payload, indent=2))
+        tmp.replace(dest)
+    except OSError as e:
+        print(f"  last-mapped-terminal: write failed for {sid}: {e}", file=sys.stderr)
+
+
+def _last_mapped_terminal(sid: str) -> tuple[str, int] | None:
+    """The recorded ``(terminal_status, issue)`` for ``sid``, or ``None`` (no
+    breadcrumb / garbled / not a terminal status / no int issue). Validates the
+    recorded status against :data:`TERMINAL` so a stale/garbled value can never
+    widen scope, and surfaces the recorded ``issue`` so the consumer can run the
+    running-pod + live-follow-up protected-class guards without a session->issue
+    mapping it no longer has."""
+    path = _last_mapped_terminal_path(sid)
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    status = data.get("terminal_status")
+    issue = data.get("issue")
+    if status in TERMINAL and isinstance(issue, int):
+        return (status, issue)
+    return None
+
+
+def _gc_orphan_last_mapped_terminal(live_sids: set[str], dry_run: bool) -> None:
+    """Drop #720 breadcrumbs whose session is no longer live (reaped, or the
+    user promoted + the session ended). Called once per daemon-reachable tick
+    from :func:`idle_unmapped_pass`, mirroring
+    :func:`_gc_orphan_idle_unmapped_state`."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return
+    for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{LAST_MAPPED_TERMINAL_PREFIX}*.json"):
+        sid = path.name[len(LAST_MAPPED_TERMINAL_PREFIX) : -len(".json")]
+        if sid not in live_sids and not dry_run:
+            path.unlink(missing_ok=True)
+
+
+def _effective_idle_reap_s(sid: str, mapped: bool, has_tty: bool, long_reap_s: float) -> float:
+    """The idle-unmapped reap window (s) for one session: the SHORT (#720)
+    window when the session is a finished, unmapped, non-TTY, unprotected
+    autonomous /issue session, else ``long_reap_s`` (the 12h default) unchanged.
+
+    Extracted from :func:`_process_idle_unmapped` (keeps its branch count under
+    the C901 cap) AND keeps the caller branch-free (it compares the return
+    against ``long_reap_s`` to set its observability label). The SHORT window is
+    applied (via ``min``, so it can only ever SHORTEN, never lengthen) ONLY when
+    the session is unmapped + not a live-user TTY AND the terminal breadcrumb is
+    present AND both LAZY protected-class guards clear — every other case
+    returns ``long_reap_s`` unchanged. The guards both FAIL TOWARD KEEP when the
+    recorded issue still has work in flight:
+
+    - **Guard 1** (running managed pod): :func:`_running_managed_issue_pods`
+      returns ``None`` on a FAILED snapshot (uncertain -> KEEP), ``[]`` for no
+      pods, or 4-tuples ``(issue, pod_id, pod_name, info)`` — a snapshot that is
+      ``None`` OR contains a RUNNING pod for the breadcrumb's issue keeps the
+      long window. Reuses the same helper the #695 fallback gate 4 uses.
+    - **Guard 2** (live same-issue follow-up): :func:`_task_followup_active` on
+      the breadcrumb's recorded issue (a follow-up signal newer than the latest
+      done-transition) keeps the long window.
+
+    Gating on ``mapped``/``has_tty`` here (rather than at the call site) keeps
+    the breadcrumb read + the two guard probes LAZY — they fire only for a
+    genuinely-finished, unmapped, non-TTY candidate, not every tick. A mapped
+    session always keeps the long window (the breadcrumb is read only in the
+    unmapped branch)."""
+    if mapped or has_tty:
+        return long_reap_s
+    crumb = _last_mapped_terminal(sid)
+    if crumb is None:
+        return long_reap_s
+    _term_status, crumb_issue = crumb
+    running = _running_managed_issue_pods(caller="idle-unmapped-720")
+    pod_uncertain_or_present = running is None or any(t[0] == crumb_issue for t in running)
+    if pod_uncertain_or_present:
+        return long_reap_s
+    if _task_followup_active(crumb_issue):
+        return long_reap_s
+    return min(long_reap_s, _last_mapped_terminal_reap_s())
+
+
 def _gc_orphan_idle_unmapped_state(
     live_sids: set[str], dry_run: bool, now: float | None = None
 ) -> None:
@@ -8733,6 +10731,37 @@ def _append_idle_unmapped_event(note: str, dry_run: bool) -> None:
             fh.write(line + "\n")
     except OSError as e:
         print(f"  WARNING: appending idle-unmapped event failed: {e}", file=sys.stderr)
+
+
+def _append_idle_unmapped_audit(payload: dict, dry_run: bool) -> None:
+    """Pre-stop AUDIT row for a #695 corroborating-idleness FALLBACK reap —
+    written to the SAME ``idle-unmapped-events.jsonl`` stream as
+    :func:`_append_idle_unmapped_event`, but with ``kind:
+    "would_stop_fallback"`` and a STRUCTURED ``payload`` (not a free-form
+    note), and written IMMEDIATELY BEFORE :func:`_stop_session` fires on the
+    fallback path (so ``audit_ts < stop_ts`` holds by construction).
+
+    A destructive safety gate must leave a durable, self-explaining record of
+    EVERY gate signal BEFORE it acts — a wrong fallback reap is then
+    reconstructable from the events stream alone (the only pre-stop line the
+    primary path writes is the transient gate-signal-free ``mapped/tty/idle``
+    print). Two distinct ``kind`` values (``would_stop_fallback`` ->
+    ``idle-unmapped`` flavored ``stopped_fallback``) let an operator read the
+    one chronological file in order. Fail-soft, mirroring
+    :func:`_append_idle_unmapped_event`."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "idle-unmapped-events.jsonl"
+    row = {"ts": datetime.now().astimezone().isoformat(), "kind": "would_stop_fallback"}
+    row.update(payload)
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append idle-unmapped fallback audit row to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending idle-unmapped fallback audit failed: {e}", file=sys.stderr)
 
 
 def _check_idle_unmapped_stop_verification(
@@ -8809,6 +10838,155 @@ def _check_idle_unmapped_stop_verification(
     return True
 
 
+def _evaluate_idle_unmapped_fallback(
+    sid: str,
+    pid: int,
+    now: float,
+    detached_tmux_ttys: set[str],
+    tmux_activity: dict[str, float],
+) -> tuple[float | None, dict | None]:
+    """The #695 SIX-gate corroborating-idleness fallback for ONE session.
+
+    Caller has already established the session is unmapped, not a live-user
+    tty, the primary transcript signal is unavailable, and the fallback is
+    enabled. Returns ``(fallback_idle_age_s, audit_payload)`` when ALL SIX
+    gates hold — the caller then drives the existing decision lattice with the
+    substitute idle age and writes ``audit_payload`` BEFORE the stop — or
+    ``(None, None)`` when any single gate is uncertain (the session keeps).
+
+    The six gates (all AND, any uncertain -> keep):
+      1. detached — pane pts in the trustworthy ``detached_tmux_ttys`` set;
+      2. unmapped — already established by the caller (precondition);
+      3. no running work descendant (codex / project workload) — an unreadable
+         /proc is uncertain -> keep;
+      4. no running managed pod anywhere (a ``None`` snapshot is uncertain ->
+         keep);
+      5. no pending (typed-but-unsent) pane input — KEEP-leaning probe;
+      6. session_activity-derived idle age over the conservative fallback
+         window."""
+    fallback_window_s = _unmapped_tmux_idle_fallback_s()
+    pane_tty = _wrapper_controlling_tty_path(pid)
+    # Gate 1: detached pane pts in the trustworthy set.
+    detached_ok = pane_tty is not None and pane_tty in detached_tmux_ttys
+    # Gate 6 (substitute idle age): session_activity over the window.
+    fb_idle = _fallback_idle_age_s(pane_tty, tmux_activity, now) if detached_ok else None
+    over_window = fb_idle is not None and fb_idle >= fallback_window_s
+    # Gate 3: no running work descendant (unreadable /proc -> uncertain -> KEEP).
+    try:
+        work_descendant = _has_running_work_descendant(pid, _proc_children_map())
+    except OSError:
+        work_descendant = True
+    # Gate 4: no running managed pod anywhere (None snapshot -> uncertain -> KEEP).
+    running_pods = _running_managed_issue_pods(caller="idle-unmapped-fallback")
+    no_running_pods = running_pods is not None and len(running_pods) == 0
+    # Gate 5: no pending (typed-but-unsent) pane input — KEEP-leaning.
+    pending_input = _pane_has_pending_input(pane_tty) if detached_ok else True
+    gates_ok = (
+        detached_ok
+        and over_window
+        and not work_descendant
+        and no_running_pods
+        and not pending_input
+    )
+    if _idle_unmapped_debug_enabled():
+        print(
+            f"  idle-unmapped[debug] fallback session {sid} (pid={pid}): "
+            f"pane_tty={pane_tty} detached={detached_ok} "
+            f"fb_idle={'%.1fh' % (fb_idle / 3600) if fb_idle is not None else '?'} "
+            f"over_window={over_window} work_descendant={work_descendant} "
+            f"no_running_pods={no_running_pods} pending_input={pending_input} "
+            f"gates_ok={gates_ok}",
+            file=sys.stderr,
+        )
+    if not gates_ok:
+        return None, None
+    audit = {
+        "sid": sid,
+        "pid": pid,
+        "fallback_source": "tmux_session_activity",
+        "idle_age_s": fb_idle,
+        "threshold_env_value": fallback_window_s,
+        "detached_verdict": {"pane_tty": pane_tty, "in_detached_set": True},
+        "work_descendant": False,
+        "running_pods": [],
+        "pending_input": False,
+    }
+    return fb_idle, audit
+
+
+def _do_idle_unmapped_stop(
+    sid: str,
+    pid: int,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    idle_age_s: float | None,
+    idle_label: str,
+    idle_reap_s: float,
+    prev: dict,
+    prev_missed: int,
+    prev_alerted: bool,
+    first_over_ts: float,
+    fallback_active: bool,
+    fallback_audit: dict | None,
+) -> None:
+    """Execute the idle-unmapped STOP action for one session (extracted from
+    :func:`_process_idle_unmapped` to keep its branch count manageable).
+
+    On the #695 FALLBACK path, writes the pre-stop AUDIT row carrying every
+    gate signal BEFORE the stop fires (so ``audit_ts < stop_ts`` by
+    construction) and a fallback-DISTINCT post-stop note (NEVER the
+    primary-transcript narrative — the fallback never read a transcript). On
+    the primary path, writes the existing transcript narrative unchanged. The
+    reversible-daemon-stop + ACK!=kill state machinery is identical for both."""
+    if fallback_active and fallback_audit is not None:
+        _append_idle_unmapped_audit(fallback_audit, dry_run)
+    acked = _stop_session(sid, dry_run)
+    if acked and fallback_active:
+        _append_idle_unmapped_event(
+            f"{_IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL} auto-stopped idle "
+            f"unmapped Happy session {sid} (wrapper pid {pid}) on the "
+            f"corroborating-idleness FALLBACK path: the primary Claude "
+            f"transcript signal was unavailable, so tmux session_activity "
+            f"supplied the idle age ({idle_label} >= "
+            f"{idle_reap_s / 3600:.1f}h window, >= {threshold} consecutive "
+            f"checks). All six gates held: detached tmux pane, no issue "
+            f"mapping, no running work descendant, no running managed pod, "
+            f"no pending pane input. Respawn if needed: "
+            f"`spawn_session.py spawn-issue --issue <N>` (or `spawn-pm`). "
+            f"Set EPM_UNMAPPED_TMUX_IDLE_FALLBACK_ENABLED=0 to disable the "
+            f"fallback, or EPM_UNMAPPED_IDLE_REAP=0 for alert-only.",
+            dry_run,
+        )
+    elif acked:
+        _append_idle_unmapped_event(
+            f"{_IDLE_UNMAPPED_STOP_NOTE_SENTINEL} auto-stopped idle unmapped "
+            f"Happy session {sid} (wrapper pid {pid}): its resolved Claude "
+            f"transcript has been idle {idle_label} (>= "
+            f"{idle_reap_s / 3600:.1f}h window, >= {threshold} consecutive "
+            f"checks), it has no issue mapping, no controlling TTY, and is "
+            f"not the PM session. The 2026-06-12 class: 25 such sessions "
+            f"idle 19-43h held ~23 GB RSS. Respawn if needed: "
+            f"`spawn_session.py spawn-issue --issue <N>` (or `spawn-pm`). "
+            f"Set EPM_UNMAPPED_IDLE_REAP=0 on the watcher cron to fall back "
+            f"to alert-only.",
+            dry_run,
+        )
+    if not dry_run:
+        _save_idle_unmapped_state(
+            sid,
+            missed=0 if acked else prev_missed,
+            alerted=prev_alerted,
+            pid=pid,
+            idle_age_s=idle_age_s,
+            first_over_ts=first_over_ts,
+            stopped_at=now if acked else None,
+            stop_retried=bool(prev.get("stop_retried", False)),
+            stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+        )
+
+
 def _process_idle_unmapped(
     sid: str,
     pid: int,
@@ -8819,6 +10997,7 @@ def _process_idle_unmapped(
     *,
     reap_enabled: bool,
     detached_tmux_ttys: set[str] | None = None,
+    tmux_activity: dict[str, float] | None = None,
 ) -> None:
     """Apply the idle-unmapped decision to one live, non-PM, EPS-cwd session:
     check the wrapper's controlling TTY, stat the resolved transcript, and
@@ -8829,9 +11008,21 @@ def _process_idle_unmapped(
     tmux pane (``detached_tmux_ttys`` — computed once per pass) is NOT counted
     as live, so an abandoned detached-tmux session falls through to the
     transcript-idle check instead of being kept forever. ``None`` (the test /
-    legacy default) computes the detached-pane set inline."""
-    if detached_tmux_ttys is None:
-        detached_tmux_ttys = _detached_tmux_pane_ttys()
+    legacy default) computes the detached-pane set inline.
+
+    #695 corroborating-idleness FALLBACK: when the primary transcript signal
+    is unavailable (``idle_age_s is None`` — the manually-tmux-launched class
+    that logged ``idle=?`` and was kept forever), the SIX-gate fallback may
+    supply a SUBSTITUTE ``idle_age_s`` from tmux ``session_activity``
+    (``tmux_activity``, also computed once per pass). All six gates must hold
+    (detached + unmapped + no work-descendant + no running pod + no pending
+    pane input + over the conservative fallback window); any single uncertain
+    signal keeps. A reap on the fallback path writes a pre-stop audit row
+    BEFORE the stop and a fallback-DISTINCT post-stop note."""
+    if detached_tmux_ttys is None or tmux_activity is None:
+        _detached, _activity = _detached_tmux_panes_with_activity()
+        detached_tmux_ttys = _detached if detached_tmux_ttys is None else detached_tmux_ttys
+        tmux_activity = _activity if tmux_activity is None else tmux_activity
     mapped = issue is not None
     has_tty = _is_live_user_tty(pid, detached_tmux_ttys) if not mapped else False
     idle_age_s: float | None = None
@@ -8849,6 +11040,47 @@ def _process_idle_unmapped(
         first_over_ts = now
 
     idle_reap_s = _unmapped_idle_reap_s()
+
+    # ── #720 short reap window (the completed-/parked-session ghost class) ────
+    # An unmapped session whose LAST-known mapped task was TERMINAL is a
+    # finished autonomous /issue session, not a generic abandoned chat session,
+    # so it earns the SHORT reap window (default 30 min) instead of 12h. The
+    # breadcrumb read is one IO call, taken ONLY when present.
+    #
+    # The two PROTECTED-CLASS guards below FAIL TOWARD KEEP — retaining the 12h
+    # window, NOT applying the short window — when the recorded issue still has
+    # work in flight. Without them, narrowing the window 12h -> 30 min on the
+    # PRIMARY path would expose (a) a still-RUNNING pod on a session that has
+    # gone quiet > 30 min mid-work, and (b) a live same-issue follow-up that has
+    # not yet re-registered issue-<N>.json (register-current fires only after
+    # set-status followups_running). Both guards are LAZY: invoked only when the
+    # terminal breadcrumb is present, so the pod-API snapshot + the per-task
+    # events fetch are paid only for a genuinely-finished candidate, not every
+    # tick. Mapped sessions never reach this (the breadcrumb is read only in the
+    # unmapped branch).
+    effective_reap_s = _effective_idle_reap_s(sid, mapped, has_tty, idle_reap_s)
+    short_window = effective_reap_s < idle_reap_s
+    idle_reap_s = effective_reap_s
+
+    # ── #695 corroborating-idleness fallback ─────────────────────────────────
+    # ONLY when the primary signal is unavailable for an in-the-idle-branch
+    # (unmapped + not-live-tty) session: try to supply a substitute idle age
+    # from tmux session_activity, gated on six AND conditions (evaluated in the
+    # extracted helper). Any uncertain signal leaves idle_age_s as None (the
+    # existing ("skip", missed) fail-toward-keep path).
+    fallback_active = False
+    fallback_audit: dict | None = None
+    if idle_age_s is None and not mapped and not has_tty and _unmapped_tmux_idle_fallback_enabled():
+        fb_idle, fallback_audit = _evaluate_idle_unmapped_fallback(
+            sid, pid, now, detached_tmux_ttys, tmux_activity
+        )
+        if fallback_audit is not None:
+            idle_age_s = fb_idle
+            fallback_active = True
+            # A weaker signal earns the longer floor: the decision uses the
+            # FALLBACK window as its reap threshold (not the primary 12h).
+            idle_reap_s = _unmapped_tmux_idle_fallback_s()
+
     in_scope = not mapped and not has_tty and idle_age_s is not None and idle_age_s >= idle_reap_s
     if _check_idle_unmapped_stop_verification(sid, pid, in_scope, prev, dry_run, now):
         return
@@ -8864,9 +11096,12 @@ def _process_idle_unmapped(
         idle_reap_s=idle_reap_s,
     )
     idle_label = f"{idle_age_s / 3600:.1f}h" if idle_age_s is not None else "?"
+    source_label = " source=fallback" if fallback_active else ""
+    window_label = " window=short-terminal" if short_window else ""
     print(
         f"  session {sid} (pid={pid}): mapped={mapped} tty={has_tty} "
-        f"idle={idle_label} missed={prev_missed}->{new_missed} action={action}"
+        f"idle={idle_label}{source_label}{window_label} "
+        f"missed={prev_missed}->{new_missed} action={action}"
     )
 
     if action == "clear":
@@ -8885,33 +11120,22 @@ def _process_idle_unmapped(
         return
 
     if action == "stop":
-        acked = _stop_session(sid, dry_run)
-        if acked:
-            _append_idle_unmapped_event(
-                f"{_IDLE_UNMAPPED_STOP_NOTE_SENTINEL} auto-stopped idle unmapped "
-                f"Happy session {sid} (wrapper pid {pid}): its resolved Claude "
-                f"transcript has been idle {idle_label} (>= "
-                f"{idle_reap_s / 3600:.1f}h window, >= {threshold} consecutive "
-                f"checks), it has no issue mapping, no controlling TTY, and is "
-                f"not the PM session. The 2026-06-12 class: 25 such sessions "
-                f"idle 19-43h held ~23 GB RSS. Respawn if needed: "
-                f"`spawn_session.py spawn-issue --issue <N>` (or `spawn-pm`). "
-                f"Set EPM_UNMAPPED_IDLE_REAP=0 on the watcher cron to fall back "
-                f"to alert-only.",
-                dry_run,
-            )
-        if not dry_run:
-            _save_idle_unmapped_state(
-                sid,
-                missed=0 if acked else prev_missed,
-                alerted=prev_alerted,
-                pid=pid,
-                idle_age_s=idle_age_s,
-                first_over_ts=first_over_ts,
-                stopped_at=now if acked else None,
-                stop_retried=bool(prev.get("stop_retried", False)),
-                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
-            )
+        _do_idle_unmapped_stop(
+            sid,
+            pid,
+            now,
+            dry_run,
+            threshold,
+            idle_age_s=idle_age_s,
+            idle_label=idle_label,
+            idle_reap_s=idle_reap_s,
+            prev=prev,
+            prev_missed=prev_missed,
+            prev_alerted=prev_alerted,
+            first_over_ts=first_over_ts,
+            fallback_active=fallback_active,
+            fallback_audit=fallback_audit,
+        )
         return
 
     if action == "alert":
@@ -8973,6 +11197,15 @@ def idle_unmapped_pass(
     and any session whose idleness signal cannot be resolved (fail toward
     keep).
 
+    #695 corroborating-idleness fallback: a session whose PRIMARY transcript
+    signal is unavailable (the manually-tmux-launched ``idle=?`` class) may
+    still be reaped via tmux ``session_activity`` when all six gates hold
+    (detached + unmapped + no work-descendant + no running pod + no pending
+    pane input + over the conservative fallback window); any uncertain signal
+    keeps. A once-per-pass beacon logs the resolved detached-set size and a
+    loud WARNING when tmux is present but the set is EMPTY (the silent-regression
+    guard — the whole reason the pass went inert).
+
     Daemon-gated like the zombie pass: the wrapper pids come from the
     daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
     injected (tests / a caller reusing its snapshot); ``None`` fetches via
@@ -8991,6 +11224,7 @@ def idle_unmapped_pass(
     # GC ALWAYS on a daemon-reachable tick — even with zero candidates — so
     # episodes whose session died/was stopped by any path start fresh later.
     _gc_orphan_idle_unmapped_state(live_sids, dry_run, now=now)
+    _gc_orphan_last_mapped_terminal(live_sids, dry_run)  # #720 breadcrumb GC
     if not children:
         print("idle-unmapped: no live daemon-tracked sessions")
         return
@@ -9024,13 +11258,26 @@ def idle_unmapped_pass(
         candidates.append((sid, pid, issue))
 
     reap = _unmapped_idle_reap_enabled()
-    # Compute the detached-tmux-pane set ONCE per pass (one tmux call), not
-    # per candidate — a wrapper whose controlling tty is a detached pane is not
-    # a live-user tty and falls through to the transcript-idle check.
-    detached_tmux_ttys = _detached_tmux_pane_ttys()
+    # Compute the detached-tmux-pane set AND the session_activity map ONCE per
+    # pass (one tmux call), not per candidate — a wrapper whose controlling tty
+    # is a detached pane is not a live-user tty and falls through to the
+    # transcript-idle check; the activity map feeds the #695 fallback.
+    detached_tmux_ttys, tmux_activity = _detached_tmux_panes_with_activity()
+    # Phase-1 beacon (permanent): the once-per-pass detached-set size, plus a
+    # LOUD WARNING when tmux is present but the detached set is EMPTY — the
+    # silent-regression guard for the inert-pass bug this fix closes (an empty
+    # set means the detached-tmux refinement reaped nothing this pass).
+    if shutil.which("tmux") is not None and not detached_tmux_ttys:
+        print(
+            "  idle-unmapped: WARNING tmux present but detached set empty — "
+            "refinement inert this pass (no detached panes resolved; the "
+            "idle-unmapped reap + #695 fallback both depend on this set)",
+            file=sys.stderr,
+        )
     print(
         f"idle-unmapped: {len(candidates)} EPS session(s) scanned "
         f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
+        f"detached_panes={len(detached_tmux_ttys)}; "
         f"reap={'ON' if reap else 'OFF — alert-only (EPM_UNMAPPED_IDLE_REAP=0)'})"
     )
     for sid, pid, issue in sorted(candidates):
@@ -9043,6 +11290,7 @@ def idle_unmapped_pass(
             threshold,
             reap_enabled=reap,
             detached_tmux_ttys=detached_tmux_ttys,
+            tmux_activity=tmux_activity,
         )
 
 
@@ -9075,7 +11323,7 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         # same fail-closed no-stop outcome as today's empty-set fallback.
         print("pod-safety: pod snapshot failed; skipping state GC this tick")
         return
-    running_issues = {issue for issue, _pod_id, _name in running}
+    running_issues = {issue for issue, _pod_id, _name, _info in running}
 
     # GC orphaned state BEFORE the per-pod loop, and ALWAYS on a GOOD snapshot
     # — even when `running` is empty — so a state file for a pod that left the
@@ -9088,8 +11336,8 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         print("pod-safety: no RUNNING managed pods")
         return
     print(f"pod-safety: {len(running)} RUNNING managed pod(s)")
-    for issue, pod_id, _name in running:
-        _process_pod(issue, pod_id, now, dry_run, threshold)
+    for issue, pod_id, _name, info in running:
+        _process_pod(issue, pod_id, info, now, dry_run, threshold)
 
 
 def _vm_run_remediations(
@@ -10182,7 +12430,8 @@ def gate_push_pass(
     if not flags:
         return
     running_pod_issues = {
-        issue for issue, _pod_id, _name in (_running_managed_issue_pods(caller="gate-push") or [])
+        issue
+        for issue, _pod_id, _name, _info in (_running_managed_issue_pods(caller="gate-push") or [])
     }
     for issue, flag_path in flags:
         _process_runaway_flag(
@@ -10341,6 +12590,14 @@ def main(argv: list[str] | None = None) -> int:
         "the #660 leakage-program bash daemon if it died mid-program) and exit; "
         "skip every other pass. Pair with --dry-run for a live smoke.",
     )
+    parser.add_argument(
+        "--proposed-infra-sweep-only",
+        action="store_true",
+        help="run ONLY the proposed-infra sweep pass (dispatch ripe ORPHANED "
+        "proposed infra/batch tasks the PM never queued, #690) and exit; skip "
+        "every other pass. Mirrors --infra-drain-only; pair with --dry-run for "
+        "a live smoke against the real proposed-task set.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -10372,10 +12629,24 @@ def main(argv: list[str] | None = None) -> int:
         program_orchestrator_pass(args.dry_run)
         return 0
 
+    # --proposed-infra-sweep-only mirrors --infra-drain-only: run the single
+    # pass under the lock (it probes the daemon itself) and exit.
+    if args.proposed_infra_sweep_only:
+        proposed_infra_sweep_pass(args.dry_run, daemon_reachable=_daemon_reachable())
+        return 0
+
     # VM disk-headroom: runs FIRST. A full root disk makes every later
     # subprocess in this very watcher (and every VM session) flaky — alert
     # and reclaim before reasoning about sessions/pods (task #552).
     vm_disk_pass(args.dry_run)
+
+    # Data-disk headroom (#681): a SECOND, ESCALATE-ONLY pass on the dedicated
+    # /mnt/eps-data mount (the relocated .claude/worktrees/ tree), driving the
+    # PERCENT decision helpers so the fire point is size-invariant. Mirrors the
+    # vm_disk_guard.main() mount-guarded second pass — a clean no-op before /
+    # without the cutover (and on an existing-but-unmounted /mnt/eps-data), so
+    # the call is live the instant the disk is actually mounted.
+    data_disk_pass(args.dry_run)
 
     # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is
     # a bash daemon (run_program_orchestrator.sh in tmux eps-program), NOT a Happy
@@ -10475,6 +12746,18 @@ def main(argv: list[str] | None = None) -> int:
     # tick is already registered (the already-registered guard sees it), and
     # is daemon-gated like every other spawning pass.
     infra_drain_pass(args.dry_run, daemon_reachable=daemon_reachable)
+
+    # Proposed-infra sweep (#690): the always-on backstop for ripe ORPHANED
+    # `proposed` infra/batch tasks the PM never queued (filed by a context that
+    # could not self-dispatch — a pod, a manual `task.py new`, a crashed filer,
+    # or a cap-full file-time wrapper). Builds its OWN candidate set from
+    # `list-by-status --status proposed`, honors the PM queue's `holds` map, and
+    # dispatches into free slots under the SAME shared cap. Runs IMMEDIATELY
+    # AFTER infra-drain (load-bearing, pinned by a main()-order test): any ID the
+    # drain dispatched THIS tick is already registered, so it counts as
+    # `pending` here and the shared cap holds across both. Daemon-gated like
+    # every spawning pass.
+    proposed_infra_sweep_pass(args.dry_run, daemon_reachable=daemon_reachable)
 
     # Capacity-retry: re-drive `blocked`-on-transient-infra tasks (incident
     # #642 — a `failure_class: infra` + `reason: no_compute_available` block
@@ -10614,6 +12897,15 @@ def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int
     )
 
     if action == "delete":
+        # #720: before unmapping, drop the breadcrumb so the idle-unmapped pass
+        # can reap this now-unmapped session on the SHORT window. Only for the
+        # live session we just observed (sid present + in live_ids); a
+        # dead/missing session needs no breadcrumb (nothing to reap). status is
+        # always in TERMINAL here (decide() returns "delete" only for TERMINAL),
+        # and _record_last_mapped_terminal refuses a non-TERMINAL status anyway.
+        sid = entry.get("happy_session_id")
+        if isinstance(sid, str) and sid and sid in live_ids and isinstance(issue, int):
+            _record_last_mapped_terminal(sid, issue, status, dry_run)
         if not dry_run:
             path.unlink(missing_ok=True)
     elif action == "respawn":

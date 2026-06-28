@@ -66,6 +66,24 @@ keep the verdict — fail-safe to the pre-#518 behavior. Incident: task
 phase wrote nothing to the log for ~7.8h while the python child was
 at 100% CPU; the poller falsely declared `stalled`.
 
+Zombie-GPU-allocation override (#664): the CPU-advancing override above
+has a blind spot — a hung vLLM whose CUDA worker DIED but whose
+EngineCore main process is still alive keeps burning Python-overhead
+CPU (HTTP keepalive, GIL ticks, network-thread-pool idle work), so the
+session CPU keeps advancing and the #518 override reports `running`
+forever while zero real work happens (#664 round 8 hung 60+ min,
+reported healthy throughout). The one mechanical signal of this hang is
+the orphaned GPU allocation: a compute-apps PID holding many GiB of
+VRAM whose `/proc/<pid>` no longer exists. The probe lists
+`nvidia-smi --query-compute-apps=pid,used_memory` and flags any PID
+holding >= ``ZOMBIE_GPU_MEM_MIN_MIB`` MiB that is absent from `/proc`;
+when present on a `running` verdict, the verdict is overridden to
+`stalled` with ``stall_reason="vllm_worker_dead_zombie_gpu"`` REGARDLESS
+of session-CPU advancement. A live process always has `/proc/<pid>`, so
+an absent dir is a hard liveness signal. Fail-safe: nvidia-smi missing /
+erroring emits an empty list (never a false zombie); the override never
+touches a `done` / `gate` / `dead` verdict.
+
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
 main sweep log goes silent for ~15-18 min while the smoke cell actively
@@ -470,6 +488,13 @@ SSH_FAIL_REFRESH_THRESHOLD = int(os.environ.get("EPM_POLL_SSH_FAIL_REFRESH_THRES
 # ~13.7h at $32/hr with only per-tick noise.
 SSH_WAIT_ALARM_SECS = float(os.environ.get("EPM_SSH_WAIT_ALARM_SECS", "3600"))
 
+# Zombie-GPU-allocation floor (#664): minimum VRAM (MiB) a dead-PID compute
+# allocation must hold before the probe flags it as a zombie. A hung vLLM
+# whose CUDA worker died leaves its full model-shard allocation (tens of GiB)
+# orphaned on the card; the 1 GiB floor avoids flagging trivial leftover CUDA
+# contexts (a few hundred MiB) while catching any real model-weight orphan.
+ZOMBIE_GPU_MEM_MIN_MIB = int(os.environ.get("EPM_ZOMBIE_GPU_MEM_MIN_MIB", "1024"))
+
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
     """Best-effort ``pod.py config --refresh-from-api <pod>`` self-heal.
@@ -728,6 +753,17 @@ class PollResult:
     # sleep-chain reads this from the tick JSON (540s fallback when
     # absent/unparseable — SKILL.md Step 6d.2).
     next_interval: int = POLL_INTERVAL_DEFAULT_SEC
+    # Machine-readable reason a non-``running`` verdict landed, surfaced in
+    # the JSON line so the orchestrator can route differently per cause.
+    # ``None`` on a healthy ``running`` tick and on stalls without a
+    # specific cause (the generic log+GPU+CPU conjunction). Currently set
+    # only for the zombie-GPU-allocation stall (#664):
+    # ``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID still
+    # holding VRAM while the EngineCore main process keeps the
+    # session-CPU-advancing override alive (which would otherwise mask the
+    # hang as ``running`` forever). Defaulted so the many cross-backend
+    # ``PollResult(...)`` call sites need no change.
+    stall_reason: str | None = None
 
 
 def _ssh_probe(
@@ -918,12 +954,44 @@ def _ssh_probe(
     # erroring nvidia-smi never declares stalled by itself (the
     # per-phase-log + cell-log signals still protect long phases). See
     # `_gpu_idle` for the threshold + fail-safe semantics.
+    #
+    # Zombie-GPU-allocation probe (#664): a hung vLLM whose CUDA worker
+    # process DIED but whose EngineCore main process is still alive
+    # presents as a compute process holding many GiB of VRAM whose PID no
+    # longer exists in `/proc`. The main Python process keeps burning
+    # Python-overhead CPU (HTTP keepalive, GIL ticks, network-thread-pool
+    # idle work), so the #518/#658 session-CPU-advancing override keeps
+    # the verdict in `running` indefinitely while zero real work happens
+    # (#664 round-8 hung 60+ min reported healthy throughout). The only
+    # mechanical signal of the hang is the orphaned GPU allocation: a
+    # compute-apps PID with no `/proc/<pid>` entry. We list `pid,
+    # used_memory` and emit (space-separated) every PID that holds
+    # >= ZOMBIE_GPU_MEM_MIN_MIB MiB but is absent from `/proc` — the
+    # memory floor avoids flagging trivial leftover CUDA contexts. A live
+    # process ALWAYS has `/proc/<pid>`, so an absent dir is a hard
+    # liveness signal, not a heuristic. Empty (no zombies) is the healthy
+    # case. Fail-safe: nvidia-smi missing / erroring emits an empty list
+    # (never a false zombie), same posture as the util probe.
     gpu_probe = (
         "if command -v nvidia-smi >/dev/null 2>&1; then "
         "  GPU_OUT=$(nvidia-smi --query-gpu=utilization.gpu "
         "    --format=csv,noheader,nounits 2>/dev/null | paste -sd, -); "
         '  echo "GPU_UTIL=${GPU_OUT:-unknown}"; '
-        'else echo "GPU_UTIL=unknown"; fi; '
+        "  ZOMBIE=''; "
+        "  while IFS=, read -r zpid zmem; do "
+        '    zpid=$(echo "$zpid" | tr -d " "); '
+        '    zmem=$(echo "$zmem" | tr -d " "); '
+        '    case "$zpid" in ""|*[!0-9]*) continue ;; esac; '
+        '    case "$zmem" in ""|*[!0-9]*) zmem=0 ;; esac; '
+        f'    if [ "$zmem" -ge {ZOMBIE_GPU_MEM_MIN_MIB} ] && [ ! -d /proc/$zpid ]; then '
+        '      ZOMBIE="$ZOMBIE $zpid"; '
+        "    fi; "
+        "  done <<EOF\n"
+        "$(nvidia-smi --query-compute-apps=pid,used_memory "
+        "  --format=csv,noheader,nounits 2>/dev/null)\n"
+        "EOF\n"
+        "  echo \"ZOMBIE_GPU_PIDS=$(echo $ZOMBIE | tr -s ' ')\"; "
+        'else echo "GPU_UTIL=unknown"; echo "ZOMBIE_GPU_PIDS="; fi; '
     )
     # Session CPU probe (#518): cumulative CPU seconds summed across
     # every process sharing the launcher PID's session id (SID). The
@@ -989,6 +1057,12 @@ def _ssh_probe(
         f"  echo MTIME_EPOCH=$(stat -c %Y $LOG_PATH); "
         f"  echo TAIL_START; tail -500 $LOG_PATH; echo TAIL_END; "
         f"else echo MTIME_EPOCH=0; echo TAIL_START; echo TAIL_END; fi; "
+        # Capture the pod's own wall clock (#704). `stat -c %Y` above stamps
+        # file mtimes from this same clock and `date +%s` reads it within
+        # milliseconds in the same SSH session, so subtracting
+        # `pod_now - pod_mtime` downstream cancels any pod-vs-VM clock drift
+        # exactly. One capture covers all four mtime sources.
+        f"echo POD_NOW_EPOCH=$(date +%s); "
         f"{cell_probe}"
         f"{phase_log_probe}"
         f"{shard_log_probe}"
@@ -1015,12 +1089,14 @@ def _ssh_probe(
             "pid_file_missing": "0",
             "marker_pid_alive": "0",
             "mtime_epoch": "0",
+            "pod_now_epoch": "0",
             "cell_mtime_epoch": "0",
             "log_tail": "",
             "cell_log_tail": "",
             "phase_log_mtime_epoch": "0",
             "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
+            "zombie_gpu_pids": "",
             "session_cpu_secs": "unknown",
             "results_sentinel_present": "0",
             "ssh_failed": "1",
@@ -1037,10 +1113,12 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PID_FILE_MISSING",
     "MARKER_PID_ALIVE",
     "MTIME_EPOCH",
+    "POD_NOW_EPOCH",
     "CELL_MTIME_EPOCH",
     "PHASE_LOG_MTIME_EPOCH",
     "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
+    "ZOMBIE_GPU_PIDS",
     "SESSION_CPU_SECS",
     "RESULTS_SENTINEL_PRESENT",
 )
@@ -1058,12 +1136,14 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "pid_file_missing": "0",
         "marker_pid_alive": "0",
         "mtime_epoch": "0",
+        "pod_now_epoch": "0",
         "cell_mtime_epoch": "0",
         "log_tail": "",
         "cell_log_tail": "",
         "phase_log_mtime_epoch": "0",
         "shard_log_mtime_epoch": "0",
         "gpu_util": "unknown",
+        "zombie_gpu_pids": "",
         "session_cpu_secs": "unknown",
         "results_sentinel_present": "0",
     }
@@ -1891,6 +1971,66 @@ def _save_state(state_file: Path, issue: int, payload: dict[str, str]) -> None:
     tmp.replace(state_file)
 
 
+def _log_staleness_secs(
+    *,
+    pod: str,
+    vm_now_epoch: int,
+    pod_now_epoch: int,
+    freshest_mtime_epoch: int,
+    phase_log_mtime_epoch: int,
+    shard_log_mtime_epoch: int,
+) -> tuple[int, int, int]:
+    """Compute the three log-staleness deltas (top-level/cell, per-phase,
+    shard) on a SINGLE clock basis (#704).
+
+    The pod stamps file mtimes with its OWN wall clock (``stat -c %Y``); the
+    probe heredoc now also captures that same clock's "now" (``date +%s`` ->
+    ``pod_now_epoch``), so subtracting ``pod_now - pod_mtime`` cancels any
+    pod-vs-VM wall-clock drift exactly. When ``pod_now_epoch`` is absent
+    (``0``: a legacy pod image whose probe pre-dates this, an ssh failure
+    whose fallback dict zeroes it, or any probe omitting the line) the
+    function falls back to the VM clock (``vm_now_epoch``) AND logs a WARN,
+    preserving the pre-#704 behavior for older images and the existing tests
+    (which omit the key) while making the drift-prone basis visible in logs.
+
+    Each delta is ``10**9`` (the absent-log sentinel) when its mtime is
+    ``<= 0``, matching the prior inline behavior. On the pod-clock branch the
+    deltas are low-clamped at ``0`` (``max(0, ...)``) so a sub-second
+    rounding within one probe cannot produce a negative "seconds ago"; the
+    VM-fallback branch keeps its exact pre-#704 arithmetic so the
+    backward-compat behavior is byte-for-byte unchanged.
+
+    Returns ``(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)``.
+    """
+    if pod_now_epoch > 0:
+        staleness_now = pod_now_epoch
+        last_mtime_ago = (
+            max(0, staleness_now - freshest_mtime_epoch) if freshest_mtime_epoch > 0 else 10**9
+        )
+        phase_log_mtime_ago = (
+            max(0, staleness_now - phase_log_mtime_epoch) if phase_log_mtime_epoch > 0 else 10**9
+        )
+        shard_log_mtime_ago = (
+            max(0, staleness_now - shard_log_mtime_epoch) if shard_log_mtime_epoch > 0 else 10**9
+        )
+        return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
+
+    staleness_now = vm_now_epoch
+    log.warning(
+        "probe missing POD_NOW_EPOCH on pod %s; falling back to VM-clock log "
+        "staleness (subject to pod-vs-VM clock drift, #704)",
+        pod,
+    )
+    last_mtime_ago = staleness_now - freshest_mtime_epoch if freshest_mtime_epoch > 0 else 10**9
+    phase_log_mtime_ago = (
+        staleness_now - phase_log_mtime_epoch if phase_log_mtime_epoch > 0 else 10**9
+    )
+    shard_log_mtime_ago = (
+        staleness_now - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
+    )
+    return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
+
+
 def poll_once(
     *,
     issue: int,
@@ -1963,11 +2103,28 @@ def poll_once(
     # log training steps, not phase transitions).
     freshest_mtime_epoch = max(mtime_epoch, cell_mtime_epoch)
     now_epoch = int(datetime.now(tz=UTC).timestamp())
-    last_mtime_ago = now_epoch - freshest_mtime_epoch if freshest_mtime_epoch > 0 else 10**9
-    phase_log_mtime_ago = now_epoch - phase_log_mtime_epoch if phase_log_mtime_epoch > 0 else 10**9
-    shard_log_mtime_ago = now_epoch - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
+    # Single-clock staleness basis (#704), computed in a helper to keep
+    # ``poll_once`` below the C901 cap. ``now_epoch`` (the VM clock above) is
+    # deliberately NOT redefined: it is reused below for the run-age (#521),
+    # GPU-idle advisory (#518/#537), and phase-change sidecar (#669)
+    # computations, all of which compare against VM-STAMPED timestamps and
+    # would be corrupted by a pod-clock basis.
+    last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago = _log_staleness_secs(
+        pod=pod,
+        vm_now_epoch=now_epoch,
+        pod_now_epoch=int(probe.get("pod_now_epoch") or "0"),
+        freshest_mtime_epoch=freshest_mtime_epoch,
+        phase_log_mtime_epoch=phase_log_mtime_epoch,
+        shard_log_mtime_epoch=shard_log_mtime_epoch,
+    )
     gpu_util = probe.get("gpu_util", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
+    # Zombie-GPU-allocation signal (#664): the probe emits the
+    # space-separated PIDs of compute processes holding >= the VRAM floor
+    # whose `/proc/<pid>` no longer exists (a dead CUDA worker whose
+    # allocation lingers). Empty string = healthy (no zombies); a missing
+    # key (older probe / ssh-failure fallback) reads as empty too.
+    zombie_gpu_pids = [p for p in probe.get("zombie_gpu_pids", "").split() if p]
     current_phase = latest_phase(probe["log_tail"])
 
     # ── #545 done corroboration ──────────────────────────────────────────
@@ -2097,6 +2254,35 @@ def poll_once(
             status = "stalled"
     else:
         status = "running"
+
+    # ── #664 zombie-GPU-allocation override ──────────────────────────────
+    # A hung vLLM whose CUDA worker died leaves its model-shard VRAM
+    # orphaned (a compute-apps PID with no `/proc` entry) while the
+    # EngineCore main process stays alive burning Python-overhead CPU. That
+    # advancing session CPU makes the #518/#658 override rescue the stall
+    # conjunction to `running` (or the run never meets the conjunction at
+    # all because the dead allocation reads as GPU-busy), so a 60+ min hang
+    # is reported healthy throughout (#664 round 8). The dead-PID GPU
+    # allocation is the one mechanical signal of this hang, so when it is
+    # present we override a `running` verdict to `stalled` regardless of
+    # session-CPU advancement. We do NOT touch a `done` / `gate` / `dead`
+    # verdict — those are correct terminal/park states (and a dead launcher
+    # is already `dead`; its own orphaned allocation is then expected). The
+    # `stall_reason` lets the orchestrator route this distinctly from a
+    # generic log+GPU+CPU stall (e.g. terminate + diagnose the pod).
+    stall_reason: str | None = None
+    if status == "running" and zombie_gpu_pids:
+        log.error(
+            "zombie GPU allocation on pod %s: compute PID(s) %s hold >= %d MiB VRAM but "
+            "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — overriding "
+            "status=running -> stalled (#664)",
+            pod,
+            ",".join(zombie_gpu_pids),
+            ZOMBIE_GPU_MEM_MIN_MIB,
+        )
+        status = "stalled"
+        stall_reason = "vllm_worker_dead_zombie_gpu"
+        cpu_override_active = False
 
     # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
     # The stall verdict above treats an idle GPU only as corroboration, so
@@ -2242,6 +2428,7 @@ def poll_once(
         session_cpu_secs=current_session_cpu,
         cpu_advancing=cpu_advancing,
         next_interval=next_interval,
+        stall_reason=stall_reason,
     )
 
 
@@ -2313,6 +2500,7 @@ def main(argv: list[str] | None = None) -> int:
                 "session_cpu_secs": result.session_cpu_secs,
                 "cpu_advancing": result.cpu_advancing,
                 "next_interval": result.next_interval,
+                "stall_reason": result.stall_reason,
             }
         )
     )

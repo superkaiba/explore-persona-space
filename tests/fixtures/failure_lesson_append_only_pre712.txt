@@ -1,0 +1,5 @@
+## vllm_first_generate_pod_specific_deadlock
+
+A vLLM `generate()` deadlock on the FIRST call that reproduces across batch sizes is a pod-hardware fault, not a code bug: differential-diagnose on the SAME pod before reprovisioning.
+
+_Source: #664 (failure-lesson)._

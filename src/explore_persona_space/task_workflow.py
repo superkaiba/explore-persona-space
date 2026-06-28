@@ -46,8 +46,14 @@ The CLI (`scripts/task.py`) is a thin argparse wrapper around these
 functions and matches the sagan_state.py subcommand surface 1:1.
 
 Concurrency: all writes go through `_locked()` which holds an exclusive
-flock on ~/.task-workflow/lock. Reads do NOT lock — readers see a
-consistent snapshot because all writes are atomic (write-temp + rename).
+flock on ~/.task-workflow/lock. Reads do NOT lock. body.md / REGISTRY
+writes are atomic (write-temp + rename), so readers see a consistent
+snapshot. Append-only JSONL logs (events.jsonl / comments.jsonl) instead
+use `O_APPEND` writes (`_append_jsonl_line`): a `<= PIPE_BUF` line lands
+all-or-nothing against a SIGKILL, while a `> PIPE_BUF` line is NOT
+crash-atomic and can leave a partial trailing line — the tolerant reader
+(`_iter_jsonl`, `errors="replace"`) skips it, so JSONL readers still see a
+consistent (everything-parseable) snapshot.
 
 Status enum (folder names):
   on_hold proposed planning plan_pending approved running verifying
@@ -66,6 +72,7 @@ import fcntl
 import functools
 import hashlib
 import json
+import logging
 import os
 import re
 import shutil
@@ -340,6 +347,21 @@ def _managed_worktree_path(primary: Path) -> Path:
     return primary / ".claude" / "worktrees" / _MANAGED_MAIN_WORKTREE_NAME
 
 
+# Cutover migration LOCK (#681). During the data-disk cutover (plan §4 Phase 2)
+# the `.claude/worktrees/` tree is copied + bind-swapped onto the dedicated data
+# disk. BOTH concurrent worktree-creation writers must refuse while the swap is
+# in flight: `scripts/new_worktree.sh` AND this managed-main-pin creation path
+# (a `task.py` write mid-swap could create the pin worktree on the soon-to-be-
+# renamed `.premigrate` tree and strand task state). Relative to the primary
+# checkout, the same file new_worktree.sh checks.
+_MIGRATION_LOCK_REL = Path(".claude") / "cache" / "worktree-migration.LOCK"
+
+
+def _migration_lock_path(primary: Path) -> Path:
+    """Absolute path of the cutover migration LOCK for ``primary`` (#681)."""
+    return primary / _MIGRATION_LOCK_REL
+
+
 def _is_routed_root(root: Path) -> bool:
     """True if ``root`` is a managed routing worktree, not the primary checkout.
 
@@ -389,7 +411,20 @@ def _ensure_managed_main_worktree(primary: Path, branch: str, env: dict[str, str
     FAILS LOUD (RuntimeError) on any git failure — never silently falls back to
     the primary checkout (that would re-introduce the stranded-commit bug the
     routing exists to prevent). If `main` does not exist as a branch, raises.
+
+    Refuses (RuntimeError) while the #681 cutover migration LOCK is held: a
+    managed-pin worktree created mid-swap could land on the soon-to-be-renamed
+    `.premigrate` tree and strand task state (Codex freeze-audit concern, plan
+    §4 Phase 4 / §6 step 1). The LOCK lifts the moment the bind-swap completes.
     """
+    lock = _migration_lock_path(primary)
+    if lock.exists():
+        raise RuntimeError(
+            f"worktree migration in progress ({lock} exists) — refusing to create the "
+            f"managed main-pin worktree mid-cutover (it could strand task state on the "
+            f"renamed .premigrate tree). Retry once the data-disk cutover lifts the LOCK."
+        )
+
     # `main` must exist as a local branch to pin to.
     show = subprocess.run(
         ["git", "-C", str(primary), "rev-parse", "--verify", "--quiet", "refs/heads/main"],
@@ -777,6 +812,453 @@ def is_workflow_fix_session(task_id: int) -> bool:
     return "workflow_fix_target:" in body
 
 
+# ---------------------------------------------------------------------------
+# Failure-lesson capture + supersedes retraction (#712).
+#
+# Three PURE, side-effect-free helpers the SKILL.md orchestrator prose calls
+# when it receives an ``epm:failure-lesson`` block (the consumer is prose, not
+# a script — these are the FIRST code that touches the lesson data, which is
+# precisely what makes the body acceptance criteria byte-testable). No I/O, no
+# writes: the orchestrator owns the marker post + the explicit-path commit of
+# the returned ``{path: text}`` map. Siblings of the ``wf_fix_*`` family above.
+# See `.claude/skills/issue/SKILL.md` § "Failure-lesson capture" and
+# `.claude/rules/workflow-fix-on-bug.md`.
+# ---------------------------------------------------------------------------
+
+
+def failure_lesson_capture_eligible(
+    block_fields: dict[str, str],
+    *,
+    subsequent_distinct_failure: bool,
+) -> bool:
+    """Decide whether a received ``epm:failure-lesson`` block is eligible for capture.
+
+    Eligible when the block RESOLVED the failure (the original trigger,
+    signalled by ``block_fields["resolved"] == "yes"``) OR the block carries
+    ``root_cause_confirmed: yes`` — the latter is True INDEPENDENT of
+    ``subsequent_distinct_failure`` (case ii, #712: the cause was confirmed even
+    though a distinct failure followed or the pod was abandoned in recovery — the
+    #664 L204 gap, where a confirmed pod-hardware cause produced NO failure-lesson
+    because the resolve-only trigger never fired). ``subsequent_distinct_failure``
+    is accepted to make that "captured-regardless-of-a-following-failure" guarantee
+    explicit and testable, and is deliberately NOT consulted when
+    ``root_cause_confirmed=yes``.
+
+    Pure: no I/O. The orchestrator owns the actual marker post + durable write.
+    """
+    if block_fields.get("resolved", "").strip().lower() == "yes":
+        return True
+    return block_fields.get("root_cause_confirmed", "").strip().lower() == "yes"
+
+
+# ─── /issue Step 7 crash-fix circuit-breaker (pure predicate) ────────────────
+#
+# Detects two execution-side traps the cap-3 routing table cannot see and that
+# both mean "relaunching is futile; the PLAN, not the code, must change" — the
+# canonical pivot is `workflow.yaml § pivot_criteria.plan_contradiction_replan`.
+# Pure (no I/O): the orchestrator owns the marker post + set-status + re-plan.
+
+# The marker kinds that COUNT as a successful round and reset the trigger-1
+# counter. `epm:progress` is deliberately EXCLUDED — it is the workflow's
+# catch-all heartbeat / phase-tick / watcher-respawn breadcrumb, posted DURING a
+# still-failing trap window (verified on #664: six benign epm:progress markers
+# fell between the same-signature failures), so resetting on it would make the
+# trigger inert (#718 MF#3).
+_CB_RESET_MILESTONES: frozenset[str] = frozenset({"epm:experiment-implementation", "epm:results"})
+
+# A CalledProcessError-style crash note whose subprocess argv array names a
+# script — the exact #664 dispatch-crash shape. The `script` group anchors on a
+# `.py` token inside the `Command '[...]'` argv; the caller strips the
+# interpreter (`python`/`python3`) so it lands on the real entrypoint.
+_CB_CALLEDPROC_RE = re.compile(
+    r"(?P<exc>\w*(?:Error|Exception)): Command '\[(?P<argv>.*?)\]'",
+    re.DOTALL,
+)
+# A bare exception type on the note's first line (non-subprocess crash shape).
+_CB_EXC_RE = re.compile(r"\b(?P<exc>\w*(?:Error|Exception))\b")
+# Explicit / bracketed assert-tag tokens (the two most-stable structured rungs).
+_CB_ASSERT_TAG_RE = re.compile(r"assert_tag:\s*(\S+)")
+_CB_BRACKET_TAG_RE = re.compile(r"\[([\w-]+)-assert\]")
+# Volatile spans stripped before hashing a note (so per-round argv / pids /
+# timestamps / file:line do not split one trap into N distinct signatures).
+_CB_ISO_TS_RE = re.compile(r"\d{4}-\d\d-\d\dT[\d:Z.+-]+")
+_CB_PID_RE = re.compile(r"(?:pid[= ]\d+|\bPID \d+)")
+_CB_ARGV_RE = re.compile(r"Command '\[.*?\]'", re.DOTALL)
+_CB_FLAG_RE = re.compile(r"--[\w-]+(?:\s+\S+)?")
+_CB_FILELINE_RE = re.compile(r"[\w./-]+:\d+")
+
+
+def _cb_note_hash(note: str) -> str:
+    """Stable 12-hex digest of a crash note's first non-blank line.
+
+    Strips volatile spans (ISO timestamps, PIDs, the whole subprocess argv array,
+    remaining ``--flag value`` runs, ``file:line`` spans) IN THAT ORDER so two
+    crash notes that differ ONLY in those volatile parts hash to the SAME tag.
+    The argv-array strip is the secondary defense behind the exception-type rung:
+    even a note that does not match ``_CB_CALLEDPROC_RE`` but carries argv
+    variation still collapses to ONE digest across rounds (#718 MF#1).
+    """
+    first = ""
+    for line in note.splitlines():
+        if line.strip():
+            first = line
+            break
+    normalized = _CB_ISO_TS_RE.sub("", first)
+    normalized = _CB_PID_RE.sub("", normalized)
+    normalized = _CB_ARGV_RE.sub("Command '[...]'", normalized)
+    normalized = _CB_FLAG_RE.sub("", normalized)
+    normalized = _CB_FILELINE_RE.sub("", normalized)
+    normalized = " ".join(normalized.split())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:12]
+
+
+def _cb_calledproc_script(argv: str) -> str | None:
+    """Return the entrypoint ``.py`` basename from a subprocess argv string.
+
+    Picks the LAST ``.py`` token that is not a ``python``/``python3``
+    interpreter basename (the real script the dispatcher invoked); ``None`` when
+    the argv names no script.
+    """
+    candidates = re.findall(r"[\w./-]+\.py", argv)
+    scripts = [c.split("/")[-1] for c in candidates if c.split("/")[-1] not in ("python.py",)]
+    # No interpreter ends in `.py` on this stack, so every match is a script;
+    # take the LAST one (the entrypoint, after any wrapper modules).
+    return scripts[-1] if scripts else None
+
+
+def _cb_failure_signature(note: str, prior_class: str | None) -> tuple[str, str, str]:
+    """Extract the ``(phase, failure_class, assert_tag)`` signature of a failure note.
+
+    ``assert_tag`` falls back through an ORDERED chain — the FIRST rung that
+    matches wins (#718 MF#1):
+
+    1. explicit ``assert_tag: <tag>`` SHOULD field,
+    2. bracketed ``[<tag>-assert]`` token,
+    3. exception-type / command-family ``<ExcName>:<script_basename>`` (the
+       #664 un-tagged subprocess-crash shape) or, for a non-subprocess crash,
+       the bare ``<ExcName>`` from the note's first line,
+    4. a normalized note-hash (volatile spans stripped) as the last resort.
+    """
+    phase_m = re.search(r"phase=(\w+)", note)
+    phase = phase_m.group(1) if phase_m else "?"
+
+    class_m = re.search(r"failure_class:\s*(\w+)", note)
+    if class_m:
+        failure_class = class_m.group(1)
+    elif prior_class:
+        failure_class = prior_class
+    else:
+        failure_class = "?"
+
+    assert_tag = _cb_assert_tag(note)
+    return (phase, failure_class, assert_tag)
+
+
+def _cb_assert_tag(note: str) -> str:
+    """Resolve the ``assert_tag`` rung for a failure note (see _cb_failure_signature)."""
+    # Rung 1 — explicit SHOULD field.
+    m = _CB_ASSERT_TAG_RE.search(note)
+    if m:
+        return m.group(1)
+    # Rung 2 — bracketed [<tag>-assert].
+    m = _CB_BRACKET_TAG_RE.search(note)
+    if m:
+        return m.group(1)
+    # Rung 3 — exception-type / command-family.
+    m = _CB_CALLEDPROC_RE.search(note)
+    if m:
+        script = _cb_calledproc_script(m.group("argv"))
+        if script:
+            return f"{m.group('exc')}:{script}"
+        return m.group("exc")
+    first_line = note.splitlines()[0] if note.splitlines() else ""
+    m = _CB_EXC_RE.search(first_line)
+    if m:
+        return m.group("exc")
+    # Rung 4 — note-hash.
+    return _cb_note_hash(note)
+
+
+def _cb_parse_ladder(plan_text: str) -> list[str]:
+    """Return the ordered option labels of the first finite escape ladder in ``plan_text``.
+
+    Two shapes are recognized: a ``Option A -> Option B -> ...`` (literal `` → ``
+    arrow) run, OR a numbered ``Option <N>:`` list. Returns ``[]`` when the plan
+    enumerates no parseable ladder (the predicate then silently no-ops trigger 2).
+    """
+    # Shape 1 — arrow-separated Option run, e.g. "Option A → Option B → Option C".
+    arrow_run = re.search(
+        r"Option\s+(\w+)(?:\s*→\s*Option\s+(\w+))+",
+        plan_text,
+    )
+    if arrow_run:
+        # Re-scan the matched span for every `Option <label>` token in order.
+        span = arrow_run.group(0)
+        return re.findall(r"Option\s+(\w+)", span)
+    # Shape 2 — a numbered `Option <N>:` list (≥2 entries).
+    numbered = re.findall(r"Option\s+(\w+):", plan_text)
+    if len(numbered) >= 2:
+        # Preserve first-seen order, dedup repeats.
+        seen: list[str] = []
+        for label in numbered:
+            if label not in seen:
+                seen.append(label)
+        return seen
+    return []
+
+
+def circuit_breaker_should_fire(
+    events: list[dict[str, Any]],
+    plan_text: str,
+    K: int = 4,
+) -> dict[str, Any] | None:
+    """Decide whether the /issue Step 7 crash-fix circuit-breaker fires.
+
+    Fires (returns a fire-reason dict) on EITHER:
+
+    * Trigger 1 — ``same_failure_class``: ``K`` or more ``epm:failure`` markers,
+      since the last "resolved" milestone marker, share ONE
+      ``(phase, failure_class, assert_tag)`` signature. The counter RESETS at any
+      intervening ``epm:experiment-implementation`` / ``epm:results`` milestone
+      (a successful round escaped the trap). It does NOT reset on ``epm:progress``
+      (the catch-all heartbeat / phase-tick / watcher-respawn breadcrumb, posted
+      DURING a still-failing trap window — #718 MF#3).
+    * Trigger 2 — ``enumerated_fallback_exhausted``: ``plan_text`` enumerates a
+      finite escape ladder (``Option A -> Option B -> ...`` arrow run or a
+      numbered ``Option N:`` list), EVERY option has been LAUNCHED (named in an
+      ``epm:progress`` / ``epm:experiment-implementation`` note), AND the gate
+      RE-TRIPS *after* the ladder is exhausted — an ``epm:failure`` event whose
+      position in ``events`` is LATER than the last launch of the FINAL ladder
+      option. A stale ``epm:failure`` that PRECEDES the ladder launches does NOT
+      count (#718). Silently no-ops on free-form plans with no parseable ladder.
+
+    Returns ``None`` when neither condition holds. On fire the dict shape is::
+
+        {"trigger": "same_failure_class" | "enumerated_fallback_exhausted",
+         "signature": (phase, failure_class, assert_tag),   # trigger 1 only
+         "count": int,                                       # trigger 1 only
+         "ladder": [str, ...],                               # trigger 2 only
+         "gate": str,                                        # trigger 2 only
+         "pivot_scope": str}
+
+    ``pivot_scope`` is ALWAYS present and non-empty — the ready-to-pass
+    ``/adversarial-planner`` scope string built from the matched evidence (the
+    orchestrator passes it verbatim; an empty/generic scope would reproduce the
+    #488 unscoped re-plan). Trigger 1 is checked first; if it fires, trigger 2 is
+    not evaluated.
+
+    Pure: no I/O. The orchestrator owns the marker post + set-status + re-plan.
+    """
+    fire = _cb_trigger_same_failure_class(events, K)
+    if fire is not None:
+        return fire
+    return _cb_trigger_enumerated_fallback(events, plan_text)
+
+
+def _cb_trigger_same_failure_class(events: list[dict[str, Any]], K: int) -> dict[str, Any] | None:
+    """Trigger 1: K+ same-(phase, failure_class, assert_tag) failures since the last milestone."""
+    # Count consecutive same-signature failures since the most recent resetting
+    # milestone. A milestone clears the running tally for ALL signatures.
+    tally: dict[tuple[str, str, str], int] = {}
+    prior_class: str | None = None
+    fired: dict[str, Any] | None = None
+    for e in events:
+        kind = e.get("kind", "")
+        if kind in _CB_RESET_MILESTONES:
+            tally.clear()
+            continue
+        if kind != "epm:failure":
+            # epm:progress and every other non-milestone marker is inert here.
+            continue
+        note = e.get("note", "") or ""
+        sig = _cb_failure_signature(note, prior_class)
+        # Carry the most recent KNOWN class forward for un-classed dispatch crashes.
+        if sig[1] != "?":
+            prior_class = sig[1]
+        tally[sig] = tally.get(sig, 0) + 1
+        if tally[sig] >= K:
+            count = tally[sig]
+            phase, failure_class, assert_tag = sig
+            pivot_scope = (
+                f"Same-failure-class repetition: phase={phase} "
+                f"class={failure_class} assert_tag={assert_tag} count={count} "
+                f"(K={K}). Re-plan the recipe that produces this trap, or "
+                f"drop the gate."
+            )
+            # Keep scanning to report the FINAL count (the trap may re-trip more),
+            # but lock in the first signature that crossed K.
+            fired = {
+                "trigger": "same_failure_class",
+                "signature": sig,
+                "count": count,
+                "pivot_scope": pivot_scope,
+            }
+    return fired
+
+
+def _cb_trigger_enumerated_fallback(
+    events: list[dict[str, Any]], plan_text: str
+) -> dict[str, Any] | None:
+    """Trigger 2: every option of a plan-enumerated escape ladder launched + gate re-trips."""
+    ladder = _cb_parse_ladder(plan_text)
+    if not ladder:
+        return None
+    # Index every launch / progress event that names an option, keyed by option
+    # label. (events is chronological — append-only events.jsonl order — so the
+    # list index IS the ordering signal.)
+    last_launch_idx: dict[str, int] = {}
+    for idx, e in enumerate(events):
+        if e.get("kind", "") not in ("epm:progress", "epm:experiment-implementation"):
+            continue
+        note = e.get("note", "") or ""
+        for option in ladder:
+            if re.search(rf"Option\s+{re.escape(option)}\b", note):
+                last_launch_idx[option] = idx
+    # Every named option must have been LAUNCHED (named in a launch / progress note).
+    if any(option not in last_launch_idx for option in ladder):
+        return None
+    # The ladder is exhausted only once the FINAL option has been launched. Require
+    # an epm:failure AFTER that last-launch index — a POST-exhaustion re-trip of the
+    # gate, not just any failure anywhere in history (a pre-ladder stale failure
+    # must NOT count, #718 Codex critic false-positive).
+    final_option_launch_idx = last_launch_idx[ladder[-1]]
+    if not any(
+        e.get("kind", "") == "epm:failure" and idx > final_option_launch_idx
+        for idx, e in enumerate(events)
+    ):
+        return None
+    gate = _cb_gate_label(plan_text, ladder)
+    pivot_scope = (
+        f"Enumerated escape ladder exhausted: gate={gate} "
+        f"ladder={' → '.join(ladder)}. Every named alternative was launched; "
+        f"the gate re-tripped each time. Redesign the gate or the ladder so a "
+        f"viable option exists, or drop the gate."
+    )
+    return {
+        "trigger": "enumerated_fallback_exhausted",
+        "ladder": ladder,
+        "gate": gate,
+        "pivot_scope": pivot_scope,
+    }
+
+
+def _cb_gate_label(plan_text: str, ladder: list[str]) -> str:
+    """Best-effort label of the gate the escape ladder defends.
+
+    Returns the nearest preceding ``§<N>``-style or ``Gate <N>`` token before the
+    first ``Option <first-label>`` mention, else ``"<unnamed-gate>"``.
+    """
+    first = ladder[0]
+    idx = plan_text.find(f"Option {first}")
+    if idx < 0:
+        return "<unnamed-gate>"
+    preceding = plan_text[:idx]
+    gate_m = None
+    for m in re.finditer(r"(?:§\s*[\w.-]+|Gate\s+\w+)", preceding):
+        gate_m = m
+    return gate_m.group(0).strip() if gate_m else "<unnamed-gate>"
+
+
+def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
+    """Render the new (correcting) failure-lesson body as a durable memory entry.
+
+    The append-only format is frozen by the golden fixture
+    ``tests/fixtures/failure_lesson_append_only_pre712.txt`` (#712 §6): an H2
+    slug heading, the lesson body, and a ``_Source: #<task_id> (failure-lesson)._``
+    attribution line, each separated by a blank line and terminated with a single
+    trailing newline. A deliberate format change updates the fixture in the same
+    commit (the fixture IS the contract).
+    """
+    slug = new_lesson_ref.get("slug", "")
+    task_id = new_lesson_ref.get("task_id", "")
+    lesson = new_lesson_ref.get("lesson", "")
+    return f"## {slug}\n\n{lesson}\n\n_Source: #{task_id} (failure-lesson)._\n"
+
+
+def supersedes_action(
+    prior_ref: str,
+    durable_texts: dict[str, str],
+    new_lesson_ref: dict[str, str],
+) -> dict[str, str]:
+    """Locate the durable failure-lesson entries a ``supersedes`` ref points at.
+
+    ``prior_ref`` is a lesson slug (e.g. ``vllm_first_generate_is_a_code_bug``) or
+    a marker timestamp (e.g. ``2026-06-28T01:26:58Z``). ``durable_texts`` maps a
+    durable-file path -> its current text (agent-memory ``feedback_*.md`` bodies +
+    ``gotchas.md`` bullets). ``new_lesson_ref`` carries the REAL superseding slug
+    + task id (``{"slug": ..., "task_id": ...}``).
+
+    Returns ``{path: annotated_text}`` for EVERY file whose current text CONTAINS
+    ``prior_ref`` (slug substring OR marker-ts substring), with a CONCRETE
+    ``[SUPERSEDED by <slug> — see #<task_id>] `` marker PREPENDED to that file's
+    text (NEVER a ``<pending>`` placeholder; the prior content is preserved, not
+    replaced). Returns ``{}`` when nothing matches — a dangling ref the caller
+    logs as ``supersedes_unresolved`` and treats as a no-op annotation, never a
+    dropped lesson. A ref matching MULTIPLE entries annotates ALL of them (the
+    transitive chain is kept, #712 §7).
+
+    Pure: no I/O, no writes. This helper DECIDES + ANNOTATES the prior subset;
+    the composer (:func:`apply_failure_lesson`) assembles the FINAL durable map
+    including the new lesson.
+    """
+    if not prior_ref:
+        return {}
+    slug = new_lesson_ref.get("slug", "")
+    task_id = new_lesson_ref.get("task_id", "")
+    marker = f"[SUPERSEDED by {slug} — see #{task_id}] "
+    annotated: dict[str, str] = {}
+    for path, text in durable_texts.items():
+        if prior_ref in text:
+            annotated[path] = marker + text
+    return annotated
+
+
+def apply_failure_lesson(
+    block: dict[str, str],
+    durable_texts: dict[str, str],
+    new_lesson_ref: dict[str, str],
+) -> dict[str, str]:
+    """Compose the FINAL durable ``{path: text}`` map for a captured failure-lesson.
+
+    Orchestration (pure — no I/O; the orchestrator writes the returned map via
+    its existing explicit-path commit + push):
+
+      1. If ``block["supersedes"]`` is set, call
+         :func:`supersedes_action` to locate + concretely annotate the matched
+         prior subset, then merge those annotations over a COPY of ``durable_texts``
+         (a dangling ref merges nothing — every prior text stays byte-unchanged).
+      2. APPEND the new (corrected) lesson's formatted body to the owning-agent
+         memory file's text (key ``new_lesson_ref["memory_path"]`` — the file the
+         action-2 path already writes), creating/extending that entry ALONGSIDE
+         any prior content, never replacing it.
+      3. Return the final ``{path: text}`` map.
+
+    With ``supersedes`` ABSENT, step 1 is skipped and — over a clean (empty) owning
+    -agent memory text — the produced text is BYTE-IDENTICAL to the pre-#712
+    append-only result (pinned by the golden fixture, #712 §6). The new lesson
+    ALWAYS lands — matched, dangling, or absent.
+    """
+    final = dict(durable_texts)
+
+    prior_ref = (block.get("supersedes") or "").strip()
+    if prior_ref:
+        for path, annotated_text in supersedes_action(
+            prior_ref, durable_texts, new_lesson_ref
+        ).items():
+            final[path] = annotated_text
+
+    memory_path = new_lesson_ref.get("memory_path", "")
+    if memory_path:
+        entry = _format_failure_lesson_entry(new_lesson_ref)
+        prior_text = final.get(memory_path, "")
+        if prior_text.strip():
+            final[memory_path] = prior_text.rstrip("\n") + "\n\n" + entry
+        else:
+            final[memory_path] = entry
+
+    return final
+
+
 def extract_stub_abstract(body: str) -> str:
     """Return the abstract from a paper-stub body (best-effort, never raises).
 
@@ -961,6 +1443,121 @@ def _utcnow_iso() -> str:
     return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+# Linux atomic-append bound: a single write(2) of <= PIPE_BUF bytes on an
+# O_APPEND fd lands atomically w.r.t. concurrent appenders AND is all-or-
+# nothing against a SIGKILL (the kernel either commits the one syscall or it
+# does not). POSIX.1-2017 write(2); Linux pipe(7) PIPE_BUF. ABOVE this bound a
+# single write may be split, so we keep the caller's flock (excludes other
+# writers) and complete the buffer in a loop. The loop is NOT crash-atomic:
+# a SIGKILL between two os.write calls can leave a partial line — recovery for
+# the oversize case is the tolerant reader (_iter_jsonl), which skips it.
+# Confirmed PIPE_BUF == 4096 on the EPS VM (Linux 6.8).
+_PIPE_BUF = getattr(os, "PIPE_BUF", 4096)
+
+_log = logging.getLogger(__name__)
+
+
+def _append_jsonl_line(path: Path, payload: dict[str, Any]) -> None:
+    """Atomically append one JSON object as a line to an append-only log.
+
+    Serializes ``json.dumps(payload, ensure_ascii=False) + "\\n"`` in memory,
+    then writes the whole buffer to ``path`` opened ``O_WRONLY|O_APPEND|O_CREAT``.
+
+    For buffers <= PIPE_BUF the single ``os.write`` is atomic against other
+    appenders (POSIX) AND against a SIGKILL/OOM mid-call (the one syscall
+    lands the full line or nothing — never a partial line).
+
+    For OVERSIZE buffers (rare: a large note plus artifacts list, > PIPE_BUF)
+    POSIX promises neither single-write atomicity nor all-or-nothing across
+    multiple ``os.write`` calls if the process is killed mid-loop. This path
+    relies on the caller already holding ``_locked()`` to exclude other
+    writers (no interleaving) and a write-completion loop to finish the
+    buffer despite short writes — but it is NOT crash-atomic: a SIGKILL
+    between two ``os.write`` calls CAN leave a partial trailing line on disk.
+    Recovery for that case is the tolerant reader (``_iter_jsonl``), which
+    skips the partial line. The loop is still useful for completion under
+    EAGAIN/EINTR/short-writes; it is not a crash-atomicity guarantee.
+
+    Callers MUST hold ``_locked()``. This helper does NOT acquire the lock and
+    does NOT commit — the caller owns flock + ``_git_commit`` semantics.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(payload, ensure_ascii=False) + "\n"
+    buf = line.encode("utf-8")
+    fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+    try:
+        if len(buf) <= _PIPE_BUF:
+            # Single atomic append (<= PIPE_BUF): all-or-nothing against a
+            # SIGKILL. os.write may legally short-write even here in
+            # principle; assert the whole line landed so a truncation can
+            # never pass silently.
+            n = os.write(fd, buf)
+            if n != len(buf):
+                raise OSError(f"short atomic append to {path}: wrote {n} of {len(buf)} bytes")
+        else:
+            # Oversize line (> PIPE_BUF): caller's flock excludes concurrent
+            # writers (no interleaving); complete the buffer despite short
+            # writes. os.write already retries EINTR internally on py3.5+, so
+            # a returned short count is a genuine partial flush to finish, not
+            # an EINTR retry. NOT crash-atomic — a mid-loop SIGKILL can leave
+            # a partial line; the tolerant reader recovers it.
+            view = memoryview(buf)
+            written = 0
+            while written < len(buf):
+                n = os.write(fd, view[written:])
+                if n == 0:
+                    # os.write never returns 0 on a regular fd (it raises on
+                    # error), but guard the loop against a spin anyway — a
+                    # zero-progress write is a hard error, not something to
+                    # retry forever.
+                    raise OSError(f"os.write returned 0 appending to {path}")
+                written += n
+    finally:
+        os.close(fd)
+
+
+def _iter_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Parse an append-only JSONL file, tolerating malformed lines.
+
+    A line that does not round-trip through ``json.loads`` is SKIPPED and
+    logged at WARNING (this is the recovery path for a partial trailing line
+    left by a writer killed mid-append, the historical #653 corruption, AND
+    the >PIPE_BUF oversize-append crash case which is NOT write-atomic).
+    All malformed lines are tolerated, not just the trailing one: an
+    append-only log can only ever grow a bad line at the tail, so a mid-file
+    bad line is implausible, and the practical recovery a reader needs is
+    "return everything parseable" — raising on a mid-file anomaly would
+    re-introduce exactly the hard-crash this fix removes.
+
+    Decoding is TOLERANT (``errors="replace"``): a SIGKILL during a
+    ``>PIPE_BUF`` ``ensure_ascii=False`` append can leave a TRUNCATED
+    multibyte UTF-8 sequence at the file tail (e.g. ``b'{"note":"\\xe2'``).
+    Strict UTF-8 (the ``read_text()`` default) would raise
+    ``UnicodeDecodeError`` BEFORE the per-line ``json.loads`` loop ever
+    reached the ``JSONDecodeError`` handler, hard-crashing all four readers.
+    ``errors="replace"`` substitutes U+FFFD for the bad bytes so the
+    corrupted line falls through to the existing ``JSONDecodeError`` skip
+    path — completing the recovery story.
+    """
+    if not path.exists():
+        return []
+    out: list[dict[str, Any]] = []
+    text = path.read_text(encoding="utf-8", errors="replace")
+    for lineno, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError as e:
+            _log.warning(
+                "skipping malformed line %d in %s: %s",
+                lineno,
+                path,
+                str(e)[:200],
+            )
+    return out
+
+
 def _next_event_version(events_path: Path, kind: str) -> int:
     """Return ``max(existing versions for this kind) + 1`` (1 when the kind
     is new) for the events file at ``events_path``.
@@ -973,10 +1570,7 @@ def _next_event_version(events_path: Path, kind: str) -> int:
     if not events_path.exists():
         return 1
     highest = 0
-    for line in events_path.read_text().splitlines():
-        if not line.strip():
-            continue
-        row = json.loads(line)
+    for row in _iter_jsonl(events_path):
         if row.get("kind") != kind:
             continue
         v = row.get("version")
@@ -1028,9 +1622,7 @@ def post_event(
         if artifacts:
             payload["artifacts"] = artifacts
         payload.update(extras)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        _append_jsonl_line(path, payload)
         _git_commit(
             [path],
             f"task #{task_id}: {kind}" + (f" — {note[:60]}" if note else ""),
@@ -1040,9 +1632,7 @@ def post_event(
 
 def list_events(task_id: int) -> list[dict[str, Any]]:
     path = find_task_path(task_id) / "events.jsonl"
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return _iter_jsonl(path)
 
 
 def latest_event(task_id: int, prefix: str | None = None) -> dict[str, Any] | None:
@@ -1099,6 +1689,32 @@ def set_status(
         new_parent = tasks_dir() / new_status
         new_parent.mkdir(parents=True, exist_ok=True)
         new = new_parent / str(task_id)
+        # Destination-collision guard (incident #681, 2026-06-28). `git mv SRC
+        # DST` where DST already exists does NOT error — git nests SRC inside
+        # DST as tasks/<new>/<id>/<id>/, exits 0, and the failure surfaces only
+        # later at `_read_body(new / "body.md")`, leaving the transition
+        # half-applied. So check DST up front.
+        if new.exists():
+            if not new.is_dir():
+                raise ValueError(
+                    f"task #{task_id}: cannot move to {new_status}: destination "
+                    f"{new} exists and is not a directory. Inspect/remove it: "
+                    f"ls -la {new}"
+                )
+            if any(new.iterdir()):
+                raise ValueError(
+                    f"task #{task_id}: cannot move to {new_status}: destination "
+                    f"{new} already exists and is non-empty (orphan dir or "
+                    f"leftover artifacts from a prior numbering / concurrent "
+                    f"session). `git mv` would nest the task as {new}/{task_id}/. "
+                    f"Inspect it (`git -C {repo} status -- {new.relative_to(repo)}` "
+                    f"and `ls -la {new}`) and remove/relocate it before retrying."
+                )
+            # Empty orphan directory: remove it so `git mv` performs a true
+            # rename rather than nesting the source inside it. git does not
+            # track empty dirs, so this is an untracked filesystem op that adds
+            # nothing to the commit and leaves no staged change.
+            new.rmdir()
         # `git mv` so renames are tracked
         rel_old = old.relative_to(repo)
         rel_new = new.relative_to(repo)
@@ -1120,8 +1736,7 @@ def set_status(
         }
         if note:
             payload["note"] = note
-        with ev_path.open("a") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        _append_jsonl_line(ev_path, payload)
         # Pass BOTH old and new to _git_commit so the deletion side of
         # the `git mv` is included in the commit's --only pathspec.
         # Otherwise the staged deletion at <old> remains in the index and
@@ -1198,8 +1813,7 @@ def create_task(req: NewTaskRequest) -> int:
             "by": "task.py",
             "kind_": req.kind,
         }
-        with (path / "events.jsonl").open("a") as f:
-            f.write(json.dumps(created_event, ensure_ascii=False) + "\n")
+        _append_jsonl_line(path / "events.jsonl", created_event)
         # Register
         _registry_set(reg, task_id, path, fm)
         _save_registry(reg)
@@ -1564,8 +2178,7 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
         }
         if reason:
             payload["reason"] = reason
-        with ev_path.open("a") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        _append_jsonl_line(ev_path, payload)
         _git_commit(
             [path, ev_path, registry_path()],
             f"task #{task_id}: set-goal — {goal[:60]}",
@@ -1729,20 +2342,14 @@ def promote(task_id: int, verdict: str) -> Path:
         fm["promoted_at"] = _utcnow_iso()
         _write_body(path / "body.md", fm, body)
         # Append event
-        with (path / "events.jsonl").open("a") as f:
-            f.write(
-                json.dumps(
-                    {
-                        "ts": _utcnow_iso(),
-                        "kind": "epm:promoted",
-                        "version": 1,
-                        "by": "user",
-                        "classification": verdict,
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
-            )
+        promoted_event = {
+            "ts": _utcnow_iso(),
+            "kind": "epm:promoted",
+            "version": 1,
+            "by": "user",
+            "classification": verdict,
+        }
+        _append_jsonl_line(path / "events.jsonl", promoted_event)
         _git_commit(
             [path / "body.md", path / "events.jsonl"], f"task #{task_id}: promote {verdict}"
         )
@@ -1897,17 +2504,14 @@ def append_comment(
             record["in_reply_to"] = in_reply_to
         if extras:
             record.update(extras)
-        with path.open("a") as f:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        _append_jsonl_line(path, record)
         _git_commit([path], f"task #{task_id}: comment {cid} ({kind})")
     return record
 
 
 def list_comments(task_id: int) -> list[dict[str, Any]]:
     path = find_task_path(task_id) / "comments.jsonl"
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return _iter_jsonl(path)
 
 
 # ─── Git helpers ────────────────────────────────────────────────────────────
@@ -2117,9 +2721,7 @@ def list_concerns(task_id: int, *, open_only: bool = False) -> list[dict[str, An
     this section. Returns ``[]`` if the file does not exist.
     """
     path = _concerns_path(task_id)
-    if not path.exists():
-        return []
-    events = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    events = _iter_jsonl(path)
     if not open_only:
         return events
     latest: dict[str, dict[str, Any]] = {}
@@ -2160,9 +2762,7 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
     """
     folder = find_task_path(task_id)
     concerns_file = folder / "concerns.jsonl"
-    concerns_file.parent.mkdir(parents=True, exist_ok=True)
-    with concerns_file.open("a") as f:
-        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    _append_jsonl_line(concerns_file, payload)
 
     # Mirror to events.jsonl as a thin breadcrumb.
     event_kind = f"epm:concern-{payload['event']}"
@@ -2184,8 +2784,7 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
         "note": mirror_note,
     }
     events_file = folder / "events.jsonl"
-    with events_file.open("a") as f:
-        f.write(json.dumps(mirror_payload, ensure_ascii=False) + "\n")
+    _append_jsonl_line(events_file, mirror_payload)
 
     _git_commit(
         [concerns_file, events_file],

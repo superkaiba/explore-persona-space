@@ -319,27 +319,33 @@ top-level loop), UNLESS running under the recursion guard
    verbatim block plus `source: candidate-block`. The note also records
    the routing decision: `routed: filed #<N>` | `deduped against #<M>` |
    `parked: EPM_WORKFLOW_FIX_SESSION` | `parked: architectural`.
-5. **Files** the `kind: infra` task and **tags** the dedup keys:
+5. **Files + dispatches** the `kind: infra` task in ONE call via the
+   file-time wrapper `scripts/file_infra_task.py` (#690), which files via
+   `task.py new` (returning id N), applies the dedup-key tags AT creation
+   (forwarded as repeated `--tag`), and best-effort `spawn-issue --auto`:
    ```bash
-   uv run python scripts/task.py new --kind infra \
+   uv run python scripts/file_infra_task.py --kind infra \
      --title "workflow-fix: <proposed_change, <=60 chars>" \
      --body-file /tmp/wf-fix-body-<slug>.md \
-     --origin-prompt "<verbatim candidate block OR surfaced prose>"
-   # -> returns new id N
-   uv run python scripts/task.py add-tag <N> wf-fix
-   uv run python scripts/task.py add-tag <N> "wf-fix-fp:<fp>"
+     --origin-prompt "<verbatim candidate block OR surfaced prose>" \
+     --tag wf-fix --tag "wf-fix-fp:<fp>"
+   # files #N (tags wf-fix + wf-fix-fp:<fp> applied at creation), then attempts
+   # spawn-issue --issue N --auto
    ```
-   The body-file template (§ Body-file template) carries the
-   `## Provenance` block with the literal `workflow_fix_target: <path>` +
-   `fingerprint: <fp>` lines (written VERBATIM by `--body-file`, so the
-   grep fallback works). NEVER route these keys through `set_body` — it
-   strips leading frontmatter (the title prefix is set by `new` /
-   `set_title`; the tags by `add-tag`; the Provenance lines live in the
-   body).
-6. **Spawns** the autonomous session:
-   ```bash
-   uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto
-   ```
+   The spawn NO-OPS cleanly (the task stays filed at `proposed` for the
+   backstop, exit 0) when the Happy daemon is unreachable OR the shared
+   5-session infra cap is full / occupancy is unreadable — the watcher's
+   `proposed_infra_sweep` pass (#690) dispatches the filed task within ~10 min.
+   The body-file template (§ Body-file template) carries the `## Provenance`
+   block with the literal `workflow_fix_target: <path>` + `fingerprint: <fp>`
+   lines (written VERBATIM by `--body-file`, so the grep fallback works). NEVER
+   route these keys through `set_body` — it strips leading frontmatter (the
+   title prefix is set by `task.py new` via the wrapper; the dedup tags by the
+   forwarded `--tag` flags; the Provenance lines live in the body).
+6. The wrapper already performed the spawn in step 5 (file + dispatch is one
+   call). If you must dispatch separately (e.g. you filed via a bare
+   `task.py new` for a reason the wrapper does not cover), the equivalent is
+   `uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto`.
 7. **Posts** `epm:workflow-fix-task-filed v1` on the PARENT task
    (the one that raised the candidate) and **continues** the current
    work. Does NOT block on the fix.
@@ -656,7 +662,13 @@ homepage rendering of the fallback is unimplemented.)
   ensemble gates it, and Step 10d auto-merges the worktree to `main`. If
   the candidate is misclassified (out of scope), the spawned session's
   planner / implementer deflects and the task is archived; the
-  orchestrator posts `epm:workflow-fix-failed v1` with the reason.
+  orchestrator posts `epm:workflow-fix-failed v1` with the reason. The
+  file-time wrapper `scripts/file_infra_task.py` (#690) is the canonical
+  file+dispatch entrypoint the orchestrator uses at step 5 above (files via
+  `task.py new` + best-effort `spawn-issue --auto` in one call, no-op'd by a
+  daemon-unreachable / cap-full / occupancy-unreadable spawn gate), and the
+  watcher's always-on `proposed_infra_sweep` pass is the backstop for any
+  filed-but-not-dispatched task.
 - **Codex ensemble reviewers**: never emit candidates (rule above).
   They write notes in their verdict body; the Claude twin (or
   reconciler) decides whether to surface a candidate later.

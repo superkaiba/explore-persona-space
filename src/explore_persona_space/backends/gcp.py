@@ -691,6 +691,8 @@ def expected_artifacts_declaration(
     extra_hf_data_paths: Sequence[str] = (),
     extra_hf_model_paths: Sequence[str] = (),
     extra_git_paths: Sequence[str] = (),
+    git_repo_root: str | None = None,
+    skip_default_git_paths: bool = False,
 ) -> dict[str, Any]:
     """Build the :data:`EXPECTED_ARTIFACTS_HANDLE_KEY` payload for launch.
 
@@ -762,6 +764,8 @@ def expected_artifacts_declaration(
         extra_hf_data_paths=extra_hf_data_paths,
         extra_hf_model_paths=extra_hf_model_paths,
         extra_git_paths=extra_git_paths,
+        git_repo_root=git_repo_root,
+        skip_default_git_paths=skip_default_git_paths,
     )
 
 
@@ -802,6 +806,11 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_HF_OVERFLOW_ROUTING",
     "EPM_HF_STORAGE_CHECK",
     "EPM_HF_STORAGE_CACHE_TTL_S",
+    # Local-SSD scratch root for the per-cell .npz write-decoupling helper
+    # (#674): forwarded so a dispatch-process EPS_SCRATCH_DIR reaches the GCE
+    # workload subprocess. The startup script ALSO sets a default (below), so
+    # this passthrough is the override channel, the default is the floor.
+    "EPS_SCRATCH_DIR",
 )
 
 #: The subset of :data:`STARTUP_SECRET_ENV_KEYS` the GCE workload cannot
@@ -967,6 +976,17 @@ def render_startup_script(
             "# WANDB_PROJECT=... prefix on the workload command — or the workload",
             "# setting its own project internally — still wins.",
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{spec.issue}}}"',
+            "# === Local-SSD scratch root default (#674) ===",
+            "# The per-cell .npz write-decoupling helper",
+            "# (orchestrate/scratch_io.py) routes to scratch only when",
+            "# EPS_SCRATCH_DIR is set in the workload env; default it to a",
+            "# local-SSD path so the GCE lane gets the network-decoupling",
+            "# without an explicit dispatch-process override. :- fills only",
+            "# unset/empty, so a forwarded EPS_SCRATCH_DIR (passthrough key) or",
+            "# an inline prefix still wins. /tmp on the GCP DLVM image sits on",
+            "# the local boot/SSD disk (NOT the network PD), so the hot writes",
+            "# land off the NIC-shared plane — the whole point.",
+            'export EPS_SCRATCH_DIR="${EPS_SCRATCH_DIR:-/tmp/eps_scratch}"',
             "# === Sentinel drain dir (#610) ===",
             "# The pod-side signaling contract names /workspace/logs/",
             "# issue-<N>-*.json as the poll's drain glob, but nothing on the",
@@ -4235,6 +4255,13 @@ class GcpBackend(ComputeBackend):
         RunHandle is frozen, so we copy ``extra`` and rebuild. The
         verifier's ``confirm_artifacts_from_handle`` will read this back
         and fail loudly if the launch path forgot to populate it.
+
+        ``git_repo_root`` (#685) and ``skip_default_git_paths`` (#661) are
+        read off ``spec.extra`` — the SAME thread the launch CLI uses for
+        ``wandb_run_path`` (``_launch_extra_from_args`` populates all
+        three) — so BOTH the fresh-launch (3182) and reconnect (2916)
+        call sites pick them up uniformly. ``None`` / ``False`` (absent)
+        = the established behavior.
         """
 
         decl = expected_artifacts_declaration(
@@ -4242,6 +4269,8 @@ class GcpBackend(ComputeBackend):
             config=config,
             attempt_id=attempt_id,
             wandb_run_path=wandb_run_path,
+            git_repo_root=spec.extra.get("git_repo_root"),
+            skip_default_git_paths=bool(spec.extra.get("skip_default_git_paths", False)),
         )
         new_extra = dict(handle.extra)
         new_extra[EXPECTED_ARTIFACTS_HANDLE_KEY] = decl

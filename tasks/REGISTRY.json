@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 691,
+  "highest_id": 723,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4098,11 +4098,11 @@
     },
     "658": {
       "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct \u2014 A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile v0(C)) \u2014 AND whether they still hold in the single-context edge case C=delta_x (one prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction layer + summary recipe for downstream phases.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/658",
-      "status": "followups_running",
-      "title": "Base-model foundation for the leakage predictor on Qwen2.5-7B (A3.2/A3.3/A3.5 + recipe lock)"
+      "path": "tasks/awaiting_promotion/658",
+      "status": "awaiting_promotion",
+      "title": "The leakage predictor's first link fails on Qwen2.5-7B \u2014 a mean answer-side activation summarizes only 3 of 10 behaviors, and none of the 4 with a working linear read-out (HIGH confidence)"
     },
     "659": {
       "has_clean_result": false,
@@ -4127,11 +4127,11 @@
     },
     "661": {
       "goal": "Quantify how much the behavior read-out r_B diverges across three extraction methods \u2014 (A) on-policy instruction-present, (B) off-policy teacher-forced, (C) instruct-and-strip \u2014 over the same question set for 3 behaviors (sycophancy, refusal, EM), measuring pairwise cosine divergence per layer, the projection of r_B^A onto the instruction context axis (c_pos-c_neg) as the context-confound magnitude, and whether the methods differ in A3.3-style held-out predictive quality (r_B^T v0 predicting E0) \u2014 to decide the program's (#660) A3.3 r_B recipe.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/blocked/661",
-      "status": "blocked",
-      "title": "r_B extraction-method divergence: on-policy-instruction (A) vs teacher-forced (B) vs instruct-and-strip (C) across 3 behaviors"
+      "path": "tasks/awaiting_promotion/661",
+      "status": "awaiting_promotion",
+      "title": "Instruction-present and instruct-and-strip r_B point the same way (cos \u2265 0.95 on all 3 behaviors), but neither beats the teacher-forced reference at predicting expression \u2014 so the recipe pick is inconclusive (LOW confidence)"
     },
     "662": {
       "has_clean_result": false,
@@ -4175,8 +4175,8 @@
       "goal": "Test the five trained-model gate-chain assumptions of the leakage-predictor theory (A3.6 read-out stability, A3.7 source write \u0175\u2225\u03b4, A3.8 rank-one/scalar gate, A3.9 base-similarity-predicts-realized-gate, A3.10 base-gate-predicts-post-FT-gate) on Qwen2.5-7B using #537's EXISTING contrastive LoRA adapters with NO new fine-tuning, via a forward-pass activation-extraction sweep benchmarked against #537's measured leakage matrix G, with A3.7 measured BOTH ways on the contrastive adapters (cos(\u0175,\u03b4^contra) and cos(\u0175,\u03b4^pos) decomposition + frac_ctx partial + shuffled-\u03b4 null) so the result also says whether the positive-only fleet arm is needed; a fast forward-pass preview/de-risk for program #660, explicitly excluding the clean positive-only A3.7 identification, the non-saturated/dose-controlled final gate numbers, and the held-out end-to-end predictor (those need the fleet retrain).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/667",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/667",
+      "status": "followups_running",
       "title": "The leakage-predictor gate chain holds in activation space \u2014 a base-context whitened gate predicts where a fine-tune's write lands as well as the post-fine-tuning model does \u2014 but the base read-out fails and the gate only partly reaches behavioral leakage (MODERATE confidence)"
     },
     "668": {
@@ -4226,22 +4226,22 @@
     "673": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/673",
-      "status": "proposed",
+      "path": "tasks/completed/673",
+      "status": "completed",
       "title": "Real-GPU memory-non-growth validation for #671 hook-based extraction"
     },
     "674": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/674",
-      "status": "proposed",
+      "path": "tasks/completed/674",
+      "status": "completed",
       "title": "Route per-cell .npz writes to local SSD scratch + batch-upload at sweep end (GCE I/O decoupling)"
     },
     "675": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/675",
-      "status": "proposed",
+      "path": "tasks/completed/675",
+      "status": "completed",
       "title": "Route _context_vector_all_layers through hook helper (sibling of #671, surfaced by #672)"
     },
     "676": {
@@ -4289,8 +4289,8 @@
     "681": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/681",
-      "status": "proposed",
+      "path": "tasks/completed/681",
+      "status": "completed",
       "title": "Dedicated GCP persistent disk OR ext4 project quotas \u2014 bounded-by-construction disk isolation for active tasks"
     },
     "682": {
@@ -4319,8 +4319,8 @@
       "goal": "Measure how a context's last-token residual-stream activation summary (the context vector) shifts when a behavioral instruction is appended, across diverse contexts, behaviors, and layers, and test whether the shift is a single context-independent behavior direction.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/685",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/685",
+      "status": "awaiting_promotion",
       "title": "Appending a behavioral instruction moves the context vector along one dominant per-behavior direction, with a smaller context-specific residual riding on top (MODERATE confidence)"
     },
     "686": {
@@ -4347,8 +4347,8 @@
     "689": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/689",
-      "status": "approved",
+      "path": "tasks/completed/689",
+      "status": "completed",
       "title": "RunPod RUNNING-but-no-port host wedge: detect + auto-migrate; per-cell incremental upload for fleet sweeps"
     },
     "69": {
@@ -4361,16 +4361,59 @@
     "690": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/690",
-      "status": "approved",
+      "path": "tasks/completed/690",
+      "status": "completed",
       "title": "Auto-dispatch proposed infra tasks without a PM STATUS pass: file-time spawn + always-on watcher sweep"
     },
     "691": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/691",
-      "status": "running",
+      "path": "tasks/completed/691",
+      "status": "completed",
       "title": "Phase 6 full-scale dispatcher validation (141.6k A/B, ~$400) \u2014 gated on #684 merge"
+    },
+    "692": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/692",
+      "status": "completed",
+      "title": "workflow-fix: autonomous_session_watch.py compose RunPod no-port wedge predicate (#664 backstop)"
+    },
+    "693": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/693",
+      "status": "completed",
+      "title": "Parallelize issue664 dispatcher p0: 8-way GPU fan + interleave base-extraction with the judge-batch wait (sibling to #676)"
+    },
+    "694": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/694",
+      "status": "completed",
+      "title": "workflow: add results-driven literature-positioning step (post-results related-work sweep)"
+    },
+    "695": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/695",
+      "status": "completed",
+      "title": "workflow-fix: idle-unmapped pass never reaps detached tmux Claude sessions"
+    },
+    "696": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/696",
+      "status": "approved",
+      "title": "preflight branch-freshness check: tolerate transient git-fetch timeouts (#664 false-positive recurrence)"
+    },
+    "697": {
+      "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, causally localize whether finetuning a behavior into a context shifts the context vector (input to the map M) or the context\u2192behavior mapping M (the function) via cross-model activation patching at the read layer, reading both the on-policy behavioral rate and the answer-side activation profile.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/697",
+      "status": "running",
+      "title": "Causal context-vector patch on #537 adapters: does finetuning a behavior shift the context vector or the context\u2192behavior mapping?"
     },
     "7": {
       "has_clean_result": false,
@@ -4393,12 +4436,112 @@
       "status": "archived",
       "title": "remove notion of aims from project"
     },
+    "710": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/710",
+      "status": "completed",
+      "title": "workflow-fix: add stall_reason to _PR struct in backends/runpod.py"
+    },
+    "711": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/711",
+      "status": "completed",
+      "title": "Make nightly lesson-consolidation deterministic + monitored (de-risk /daily)"
+    },
+    "712": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/712",
+      "status": "completed",
+      "title": "Fire failure-lesson capture on root-cause-confirmed + add supersedes (close #664/r13 gap)"
+    },
+    "713": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/713",
+      "status": "completed",
+      "title": "Fold /weekly's load-bearing checks into nightly /daily; retire the weekly cadence"
+    },
+    "714": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/714",
+      "status": "completed",
+      "title": "workflow-fix: add --check-skill-refs lint mode to workflow_lint.py"
+    },
+    "715": {
+      "goal": "Test whether DFT (stop-gradient probability-weighted SFT) produces less out-of-distribution emergent misalignment than standard SFT at matched in-distribution narrow-task acquisition, and characterize the mechanism (token gradient-mass, EM-direction projection, weight-delta sparsity/prunability).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/715",
+      "status": "running",
+      "title": "Does DFT attenuate emergent misalignment relative to standard SFT?"
+    },
+    "716": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/716",
+      "status": "completed",
+      "title": "workflow-fix: task.py set-status nested-dir git mv on destination collision"
+    },
+    "717": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/on_hold/717",
+      "status": "on_hold",
+      "title": "Correct #664 vLLM gotchas: chunk-it red herring + r13 tokenizer-reload root cause"
+    },
+    "718": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/718",
+      "status": "completed",
+      "title": "workflow-fix: crash-fix circuit-breaker \u2192 re-plan on spent fallback ladder"
+    },
+    "719": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/719",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md \u2014 per-cell vLLM rendezvous-port EADDRINUSE trap"
+    },
     "72": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/archived/72",
       "status": "archived",
       "title": "Consolidate redundant scripts, skills, agents, and CLAUDE.md sections"
+    },
+    "720": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/720",
+      "status": "completed",
+      "title": "Reap completed autonomous /issue sessions within ~1h (not 12h) \u2014 stop the ghost-session pile"
+    },
+    "721": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/721",
+      "status": "completed",
+      "title": "workflow-fix: /daily push stub commit immediately (orphaned off main, #711 alert)"
+    },
+    "722": {
+      "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, fit the context\u2192answer-profile mapping M: c_C \u2192 v0(C) both pre-finetuning (M0, base) and post-finetuning (M\u207a, adapter-applied) as a linear ridge AND a nonlinear MLP, and determine whether the FUNCTION M changes (distinct from the input context vector c_C shifting) via (1) function-change at fixed input \u2016M\u207a(c)\u2212M0(c)\u2016 on a common c grid projected onto behavior read-outs r_B, (2) behavior-relevant transfer through the chain r_B\u1d40 M c \u2192 E (judge rate) and M along r_B \u2014 NOT generic v0 reconstruction (which #658 showed saturates \u22480.98 and is uninformative), and (3) cross-transfer of M0 vs M\u207a on FT data; cross-referenced against #697's causal f_CV.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/approved/722",
+      "status": "approved",
+      "title": "Does finetuning change the context\u2192answer-profile mapping M, or only the input context vector? Fit M0 vs M\u207a (ridge + MLP) on #537 adapters"
+    },
+    "723": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/723",
+      "status": "reviewing",
+      "title": "workflow-fix: gotchas.md \u2014 rsLoRA parity probe needs A100 intent, fails on L4"
     },
     "74": {
       "has_clean_result": false,

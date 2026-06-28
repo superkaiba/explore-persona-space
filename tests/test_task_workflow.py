@@ -13,7 +13,10 @@ auto-push is disabled by leaving TASK_PY_AUTO_PUSH unset.
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
+import logging
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -292,6 +295,86 @@ def test_set_status_commits_both_sides_of_move(fake_repo):
     added_or_renamed = [line for line in show if line.startswith(("A\t", "R"))]
     assert deleted, f"set_status commit missing source deletion: {show}"
     assert added_or_renamed, f"set_status commit missing destination addition: {show}"
+
+
+# ─── Destination-collision guard (incident #681) ──────────────────────────
+#
+# `git mv SRC DST` where DST is an existing directory does NOT error — git
+# nests SRC inside DST as tasks/<new>/<id>/<id>/ and exits 0, so the failure
+# surfaces only later at `_read_body(new / "body.md")`, leaving the
+# transition half-applied (source deleted, dest nested, REGISTRY/event/commit
+# never written). set_status must guard the destination up front: remove an
+# EMPTY orphan and proceed as a true rename; refuse a NON-EMPTY orphan (or a
+# non-directory) before any destructive `git mv` runs.
+
+
+def test_set_status_recovers_empty_orphan_destination(fake_repo):
+    """An empty orphan destination dir (e.g. left by a prior numbering;
+    git does not track empty dirs) must be removed so `git mv` does a true
+    rename, NOT nested as tasks/<new>/<id>/<id>/ (incident #681)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    # Pre-create an EMPTY orphan at the destination.
+    orphan = repo / "tasks" / "running" / str(new_id)
+    orphan.mkdir(parents=True)
+    assert orphan.is_dir() and not any(orphan.iterdir())
+
+    new = tw.set_status(new_id, "running")
+
+    # Moved cleanly — destination has body.md directly, NOT under <id>/<id>/.
+    assert new == repo / "tasks" / "running" / str(new_id)
+    assert (new / "body.md").is_file()
+    assert not (new / str(new_id)).exists()  # no nesting
+    assert not (repo / "tasks" / "proposed" / str(new_id)).exists()  # source gone
+    # Registry + event still correct.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"
+    assert tw.list_events(new_id)[-1]["kind"] == "epm:status-changed"
+
+
+def test_set_status_refuses_nonempty_orphan_destination(fake_repo):
+    """A non-empty orphan destination dir (leftover artifacts / concurrent
+    writer) must raise ValueError naming the path — NOT nest + crash
+    half-way (incident #681)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    # Pre-create a NON-EMPTY orphan at the destination (leftover artifact).
+    orphan = repo / "tasks" / "running" / str(new_id)
+    (orphan / "artifacts").mkdir(parents=True)
+    (orphan / "artifacts" / "leftover.txt").write_text("stale\n")
+
+    with pytest.raises(ValueError, match="already exists and is non-empty"):
+        tw.set_status(new_id, "running")
+
+    # Nothing moved: source still in place, no nesting created.
+    assert (repo / "tasks" / "proposed" / str(new_id) / "body.md").is_file()
+    assert not (orphan / str(new_id)).exists()
+    # Status unchanged in the registry.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/proposed/{new_id}"
+
+
+def test_set_status_refuses_destination_that_is_a_file(fake_repo):
+    """Defensive branch: a destination path that exists as a FILE (not a
+    directory) must raise ValueError, not nest or crash on the later
+    `git mv` (incident #681)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    # Pre-create the destination as a FILE.
+    dest_parent = repo / "tasks" / "running"
+    dest_parent.mkdir(parents=True)
+    dest_file = dest_parent / str(new_id)
+    dest_file.write_text("x")
+    assert dest_file.is_file()
+
+    with pytest.raises(ValueError, match="exists and is not a directory"):
+        tw.set_status(new_id, "running")
+
+    # Nothing moved: source still in place.
+    assert (repo / "tasks" / "proposed" / str(new_id) / "body.md").is_file()
+    # Status unchanged in the registry.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/proposed/{new_id}"
 
 
 # ─── Same-issue follow-up status-hold guard ───────────────────────────────
@@ -2495,3 +2578,190 @@ def test_set_clean_result_nonpaper_no_manifest_still_skips_gate(fake_repo):
     tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
     tw.set_clean_result(tid, value=True)
     assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+# ─── crash-safe events.jsonl (issue #699) ──────────────────────────────────
+
+
+# T-A
+def test_readers_tolerate_partial_trailing_line(fake_repo):
+    """A writer killed mid-append leaves a partial JSON line; ALL FOUR readers
+    must skip it, not crash (historical #653 corruption)."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    tw.post_event(nid, "epm:plan", by="planner", note="ok line 1")
+    tw.post_event(nid, "epm:plan", by="planner", note="ok line 2")
+    folder = tw.find_task_path(nid)
+    ev = folder / "events.jsonl"
+    # Simulate a kill mid-append: a truncated trailing JSON line, no newline.
+    with ev.open("a") as f:
+        f.write('{"ts": "2026-06-28T00:00:00Z", "kind": "epm:pl')  # no close, no \n
+    events = tw.list_events(nid)  # must NOT raise
+    kinds = [e["kind"] for e in events]
+    assert kinds.count("epm:plan") == 2  # the 2 good plan lines survive
+    # _next_event_version must also tolerate (post_event calls it pre-append).
+    nxt = tw.post_event(nid, "epm:plan", by="planner", note="ok line 3")
+    assert nxt["version"] == 3  # max(1, 2) + 1 over the parseable lines
+    assert tw.list_comments(nid) == []  # sibling reader path also fine
+    # list_concerns must tolerate a corrupted concerns.jsonl (writer is now
+    # crash-safe; the reader must be too — the v1 asymmetry).
+    concerns = folder / "concerns.jsonl"
+    concerns.write_text('{"event": "raised", "concern_id"')  # garbled, no close
+    assert tw.list_concerns(nid) == []  # must NOT raise
+
+
+def test_readers_tolerate_partial_trailing_multibyte_utf8(fake_repo, caplog):
+    """A SIGKILL during a `> PIPE_BUF` `ensure_ascii=False` append can leave a
+    TRUNCATED multibyte UTF-8 sequence at the file tail (e.g. `b'{"note":"\\xe2'`
+    — a lone first byte of a 3-byte char). Strict UTF-8 (the `read_text()`
+    default) raises `UnicodeDecodeError` BEFORE the per-line `json.loads` loop
+    reaches the `JSONDecodeError` handler, hard-crashing all four readers. The
+    tolerant `errors="replace"` decode must instead let the corrupted line fall
+    through to the existing skip path."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    # Overwrite with exactly: one valid JSON line + a truncated multibyte tail.
+    ev.write_bytes(
+        b'{"ts":"2026-06-28T00:00:00Z","kind":"epm:test","version":1,"by":"test"}\n'
+        b'{"note":"\xe2'  # lone first byte of a 3-byte UTF-8 sequence, no close
+    )
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        events = tw.list_events(nid)  # must NOT raise (UnicodeDecodeError or otherwise)
+    assert len(events) == 1  # exactly the one good row survives
+    assert events[0]["kind"] == "epm:test"
+    # the helper logged a WARNING for the malformed (now U+FFFD-substituted) line
+    assert any("skipping malformed line" in r.getMessage() for r in caplog.records), (
+        "expected a WARNING for the corrupted multibyte line"
+    )
+
+
+# T-helper
+def test_append_jsonl_line_lands_full_line(fake_repo):
+    """A normal-sized append lands a complete, parseable line + newline."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    raw = ev.read_text()
+    # every non-empty line round-trips and the file ends with a newline
+    assert raw.endswith("\n")
+    for line in raw.splitlines():
+        if line.strip():
+            json.loads(line)  # no raise
+
+
+# T-B (gates the FLOCK no-interleaving property, NOT the single-os.write mechanism)
+def test_concurrent_appends_never_interleave_partial_line(fake_repo):
+    """N concurrent appenders (serialized by the global flock) must never
+    produce a torn line; every line round-trips through json.loads.
+
+    NOTE: this gates the flock's no-interleaving property only. It does NOT
+    gate the single-os.write atomicity A1 relies on — see T-C, which gates the
+    mechanism directly."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    n_writers, per_writer = 8, 12
+
+    def worker(wid):
+        for i in range(per_writer):
+            tw.post_event(nid, f"epm:w{wid}", by="t", note=f"{wid}-{i}")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n_writers) as ex:
+        list(ex.map(worker, range(n_writers)))
+
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    lines = [ln for ln in ev.read_text().splitlines() if ln.strip()]
+    for ln in lines:
+        json.loads(ln)  # no torn lines
+    posted = sum(1 for ln in lines if json.loads(ln)["kind"].startswith("epm:w"))
+    assert posted == n_writers * per_writer  # no lost/duplicated lines
+
+
+# T-C (gates the single-os.write MECHANISM the flock test cannot)
+def test_small_append_is_exactly_one_os_write(fake_repo, tmp_path, monkeypatch):
+    """The <= PIPE_BUF path MUST perform exactly ONE os.write of the full
+    serialized line. A buffered or multi-write refactor would reintroduce the
+    #653 torn-line bug on SIGKILL yet pass the flock test (T-B); this catches
+    that regression at the mechanism level."""
+    _, tw = fake_repo
+
+    calls: list[tuple[int, int]] = []
+    real_write = os.write
+    target = tmp_path / "small.jsonl"
+    # The fd is allocated inside _append_jsonl_line; capture every os.write and
+    # filter to writes of our buffer length so unrelated fds (git, logging)
+    # never pollute the count.
+    payload = {"ts": "2026-06-28T00:00:00Z", "kind": "epm:x", "version": 1, "by": "t"}
+    line = json.dumps(payload, ensure_ascii=False) + "\n"
+    expected = len(line.encode("utf-8"))
+    assert expected <= tw._PIPE_BUF  # precondition: small path
+
+    def counting_write(fd, data):
+        calls.append((fd, len(data)))
+        return real_write(fd, data)
+
+    monkeypatch.setattr(tw.os, "write", counting_write)
+    tw._append_jsonl_line(target, payload)
+
+    assert len(calls) == 1  # EXACTLY one os.write
+    assert calls[0][1] == expected  # of the full line length
+    assert target.read_text() == line  # round-trips on disk
+
+
+# T-C-bonus (short-write on the <= PIPE_BUF path must fail loud)
+def test_small_append_short_write_raises(fake_repo, tmp_path, monkeypatch):
+    """If os.write short-writes on the <= PIPE_BUF path, the helper must raise
+    OSError (the line-guard), never leave a silent partial line."""
+    _, tw = fake_repo
+    real_write = os.write
+
+    def short_then_real(fd, data):
+        # write only the first byte, simulating a short atomic write
+        return real_write(fd, data[:1])
+
+    monkeypatch.setattr(tw.os, "write", short_then_real)
+    target = tmp_path / "short.jsonl"
+    payload = {"ts": "t", "kind": "epm:x", "version": 1, "by": "t"}
+    with pytest.raises(OSError):
+        tw._append_jsonl_line(target, payload)
+
+
+# T-D (drives the > PIPE_BUF oversize branch no other test exercises)
+def test_oversize_append_roundtrips_via_completion_loop(fake_repo):
+    """An event note big enough to push the serialized line over PIPE_BUF must
+    round-trip through list_events, end the file with a newline, and actually
+    take the oversize completion-loop branch."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    big_note = "x" * 5000  # < EVENT_NOTE_MAX (50k), > PIPE_BUF
+    # precondition: the constructed payload serializes to > PIPE_BUF
+    probe = {"ts": "t", "kind": "epm:big", "version": 1, "by": "t", "note": big_note}
+    assert len(json.dumps(probe, ensure_ascii=False).encode("utf-8")) > tw._PIPE_BUF
+
+    tw.post_event(nid, "epm:big", by="t", note=big_note)
+    events = tw.list_events(nid)  # must round-trip
+    big = [e for e in events if e["kind"] == "epm:big"]
+    assert len(big) == 1
+    assert big[0]["note"] == big_note  # full note survived
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    assert ev.read_text().endswith("\n")  # complete line + newline
+
+
+# T-D-bonus (forces a short write inside the oversize loop)
+def test_oversize_append_completes_across_short_writes(fake_repo, tmp_path, monkeypatch):
+    """The oversize completion loop must finish the full buffer even when
+    os.write returns short counts on each call."""
+    _, tw = fake_repo
+    real_write = os.write
+
+    def chunked_write(fd, data):
+        # write at most 1024 bytes per call to force the while-loop to iterate
+        return real_write(fd, data[:1024])
+
+    monkeypatch.setattr(tw.os, "write", chunked_write)
+    target = tmp_path / "big.jsonl"
+    payload = {"ts": "t", "kind": "epm:big", "version": 1, "by": "t", "note": "y" * 5000}
+    line = json.dumps(payload, ensure_ascii=False) + "\n"
+    assert len(line.encode("utf-8")) > tw._PIPE_BUF
+    tw._append_jsonl_line(target, payload)
+    assert target.read_text() == line  # full buffer completed

@@ -26,6 +26,22 @@ Behaviours:
   ``scripts/``. Mechanically prevents the dead-tool / invented-tool
   failure class where an agent follows a step that runs a
   deleted-or-never-created helper and CalledProcessErrors.
+* ``--check-skill-refs`` (also bundled into ``--check-references`` and the
+  no-flags default run): walk every ``.md`` under ``.claude/agents/``,
+  every ``SKILL.md`` under ``.claude/skills/``, every ``.md`` under
+  ``.claude/rules/``, ``CLAUDE.md``, and ``.claude/workflow.yaml``
+  (OTHER worktrees excluded, the current worktree scanned — see
+  :func:`_other_worktree_prefix`) and FAIL on any backtick-delimited
+  ``/<skill-name>`` slash-command token that resolves neither to a live
+  skill DIRECTORY under ``.claude/skills/`` NOR to
+  :data:`SKILL_REF_ALLOWLIST` (exact token or ``<plugin>:`` namespace
+  prefix). Closes the skill-rename / skill-retirement rot class
+  (#713/#714): ``--check-references`` only resolves
+  ``(see workflow.yaml § X)`` tokens, so a retired skill (e.g.
+  ``/weekly``) leaves stray load-bearing references that no mechanical
+  check catches. Backtick-anchor + trailing-``/``-rejecting lookahead +
+  fenced-code exclusion are the false-positive controls; lines carrying
+  :data:`HISTORICAL_REF_OPT_OUT` are a one-off narrative escape.
 * ``--check-wandb-required``: walk every ``*.py`` under
   ``src/explore_persona_space/experiments/`` whose source mentions a
   trainer-config builder (``TrainLoraConfig``, ``SFTConfig``,
@@ -218,6 +234,71 @@ SCRIPT_REF_RE = re.compile(r"(?<![\w/])scripts/([A-Za-z0-9_]+\.py)\b")
 # #545: an incident note in code-reviewer.md had to contort its prose to
 # dodge SCRIPT_REF_RE.)
 HISTORICAL_REF_OPT_OUT = "<!-- lint: historical-ref -->"
+
+# `--check-skill-refs`: every backtick-delimited `/<skill-name>` slash-command
+# token in the workflow-doc surface MUST resolve to a live project skill (a
+# `.claude/skills/<name>/` directory) or to SKILL_REF_ALLOWLIST. Backtick-anchor
+# + trailing lookahead are the FP controls: only the slash-command convention
+# matches, and a path segment (`/workspace/logs`, `/tmp/x`, `/mnt/...`) is
+# rejected because the char after the token is `/`, not the required
+# backtick / whitespace / `)` boundary. Group 1 = skill name, optionally
+# `<plugin>:<skill>`.
+SKILL_REF_RE = re.compile(r"`/([a-z][a-z0-9-]+(?::[a-z0-9-]+)?)(?=[`\s)])")
+
+_FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
+
+# `--check-skill-refs`: legitimate slash-commands that are NOT project skill dirs
+# under `.claude/skills/`, so a backticked reference must be waived rather than
+# flagged. Add an entry only with a comment naming WHY it is not a project skill.
+# The lint scopes to the PROJECT repo only (it deliberately does NOT reach into
+# ~/.claude/skills/, which would make the lint host-dependent and the bundled
+# pytest non-hermetic), so user-global skills are allowlisted here.
+SKILL_REF_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # --- Plugin-namespace prefixes (live plugin trees, not .claude/skills) ---
+        "codex:",  # /codex:rescue, /codex:setup, ... (codex-plugin-cc)
+        "code-review:",  # /code-review:code-review
+        "superpowers:",  # /superpowers:* (14 members)
+        "huggingface-skills:",  # /huggingface-skills:* (~16 members)
+        "frontend-design:",  # /frontend-design:frontend-design
+        "ml-paper-writing:",  # /ml-paper-writing:*
+        "academic-writing-agents:",  # /academic-writing-agents:academic
+        # --- User-global skills (live in ~/.claude/skills/, not this repo) ---
+        "humanize",  # ~/.claude/skills/humanize (de-AI prose pass)
+        "loop",  # ~/.claude/skills/loop (recurring driver; manual /issue-tick equiv)
+        "plan",  # ~/.claude/skills/plan (planning skill)
+        "self-review",  # ~/.claude/skills/self-review
+        "peer-review",  # ~/.claude/skills/peer-review
+        "memory-sleep",  # ~/.claude/skills/memory-sleep (nightly consolidation)
+        "update-config",  # update-config skill (settings.json), not a project dir
+        # --- Built-in Claude Code CLI commands (no skill dir anywhere) ---
+        "clear",  # built-in /clear (alias /new)
+        "new",  # built-in /new (alias /clear)
+        "compact",  # built-in /compact
+        "rewind",  # built-in /rewind
+        "mcp",  # built-in /mcp (MCP reconnect)
+        "review",  # built-in /review (PR review)
+        "init",  # built-in /init (CLAUDE.md init)
+        "security-review",  # built-in /security-review
+        # --- Interactive plan-gate inputs + PM-session aliases (no skill dir) ---
+        "approve",  # user plan-approval action (`/approve`)
+        "revise",  # user plan-revise action (`/revise <notes>`)
+        "audit",  # PM-session shorthand for an audit pass (pm/SKILL.md)
+        "code-refactoring",  # refactoring-theory ref-table label (deep-clean/SKILL.md)
+        # --- Dashboard route paths written in the slash-command shape (no skill dir) ---
+        "log",  # `/log` dashboard feed
+        "sessions",  # `/sessions` dashboard page
+        "updates",  # `/updates` dashboard MDX editor route
+        # --- Non-skill prose/path tokens the backtick form still catches ---
+        "workspace",  # `/workspace` pod path written inside backticks (RunPod `/workspace`)
+        "intent",  # `/intent` — a phase/arg token in prose
+        "absent",  # `/absent` — a marker-state token in prose
+        "override",  # `/override subset` prose (experiment-implementer.md)
+        "binary",  # `.npz/binary` prose (uploader.md)
+        "terminal",  # `blocked/terminal` prose (background-automation.md)
+        "expensive-band",  # `auto_run/expensive-band` prose (issue/SKILL.md)
+    }
+)
 
 # `--check-wandb-required`: every `report_to="none"` (or equivalent
 # disabling literal: `report_to=None`, `report_to=[]`) inside a training-
@@ -1144,6 +1225,135 @@ def check_script_references(
     return errors
 
 
+def _iter_skill_ref_target_files(repo_root: Path) -> list[Path]:
+    """Production scope for --check-skill-refs: agents + all SKILL.md + rules +
+    CLAUDE.md + workflow.yaml, OTHER-worktree copies excluded (the current
+    worktree IS scanned so a workflow-fix /issue session validates its own
+    edits). Mirrors :func:`_iter_ask_target_files` but with the wider root
+    set the skill-rot failure class actually touches (the `/weekly`-rot
+    concern lives partly in CLAUDE.md and `.claude/rules/`, which an
+    agents+skills-only scope would NOT guard)."""
+    current_prefix = _other_worktree_prefix(repo_root)
+    files: list[Path] = []
+    agents = repo_root / ".claude" / "agents"
+    skills = repo_root / ".claude" / "skills"
+    rules = repo_root / ".claude" / "rules"
+    if agents.exists():
+        files += [
+            p
+            for p in agents.glob("*.md")
+            if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        ]
+    if skills.exists():
+        files += [
+            p
+            for p in skills.glob("**/SKILL.md")
+            if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        ]
+    if rules.exists():
+        files += [
+            p
+            for p in rules.glob("*.md")
+            if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+        ]
+    for extra in (repo_root / "CLAUDE.md", repo_root / ".claude" / "workflow.yaml"):
+        if extra.is_file() and not _is_other_worktree_path(extra, current_prefix):
+            files.append(extra)
+    return sorted(files)
+
+
+def _resolve_skill_ref_target_files(roots: list[Path] | None) -> list[Path]:
+    """Production callers pass ``roots=None`` and we walk the canonical wide
+    surface. Tests pass ``roots=[tmp_path]`` to scope the walk to a fixture
+    directory (mirrors :func:`_resolve_ask_target_files`)."""
+    if roots is None:
+        return _iter_skill_ref_target_files(_REPO_ROOT)
+    files: list[Path] = []
+    for root in roots:
+        if root.is_file():
+            files.append(root)
+        else:
+            files.extend(p for p in root.glob("**/*.md") if p.is_file())
+    return sorted(files)
+
+
+def _live_skill_names(skills_dir: Path) -> set[str]:
+    """Live project-skill names = immediate child DIRECTORIES of
+    ``.claude/skills/``. By DIRECTORY existence, NOT ``*/SKILL.md``:
+    ``clean-results`` is a live skill dir (SPEC.md/exemplars/, no SKILL.md)
+    and ``/clean-results`` is a real reference, so a ``*/SKILL.md`` glob would
+    wrongly flag it."""
+    if not skills_dir.exists():
+        return set()
+    return {p.name for p in skills_dir.iterdir() if p.is_dir()}
+
+
+def _skill_ref_resolves(ref: str, live: set[str], allow: frozenset[str]) -> bool:
+    """A backticked ``/<ref>`` resolves iff it names a live skill dir, an
+    allowlisted exact token, or (when namespaced ``<plugin>:<skill>``) a token
+    whose ``<plugin>:`` prefix is allowlisted."""
+    if ref in live:  # live project skill dir
+        return True
+    if ref in allow:  # allowlisted exact token
+        return True
+    if ":" in ref:  # plugin-namespaced: prefix match
+        return (ref.split(":", 1)[0] + ":") in allow
+    return False
+
+
+def check_skill_references(
+    *,
+    roots: list[Path] | None = None,
+    skills_dir: Path | None = None,
+    allowlist: frozenset[str] | None = None,
+) -> list[str]:
+    """Walk the workflow-doc surface (agents + skills + rules + CLAUDE.md +
+    workflow.yaml) and FAIL on any backtick-delimited ``/<skill-name>`` token
+    that resolves neither to a live skill dir under ``.claude/skills/`` NOR to
+    :data:`SKILL_REF_ALLOWLIST` (exact token or namespace prefix).
+
+    Closes the skill-rename / skill-retirement rot class: ``--check-references``
+    only resolves ``(see workflow.yaml § X)`` tokens, so a retired skill (e.g.
+    ``/weekly``) leaves stray load-bearing references that no mechanical check
+    catches (#713 Methodology-critic finding; #714).
+
+    Lines inside fenced code blocks (``` / ~~~) are skipped (HTML close tags /
+    sed one-liners / regex fragments). Lines carrying
+    :data:`HISTORICAL_REF_OPT_OUT` are skipped (one-off narrative citation).
+    Plugin-namespaced refs resolve via the allowlist prefix set (or,
+    forward-compat, an on-disk ``<plugin>:<skill>/`` dir).
+
+    ``roots`` / ``skills_dir`` / ``allowlist`` are unit-test override hooks;
+    production callers pass None.
+    """
+    errors: list[str] = []
+    sk_dir = skills_dir if skills_dir is not None else _REPO_ROOT / ".claude" / "skills"
+    live = _live_skill_names(sk_dir)
+    allow = allowlist if allowlist is not None else SKILL_REF_ALLOWLIST
+    for path in _resolve_skill_ref_target_files(roots):
+        in_fence = False
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            if _FENCE_RE.match(line):
+                in_fence = not in_fence
+                continue
+            if in_fence or HISTORICAL_REF_OPT_OUT in line:
+                continue
+            for match in SKILL_REF_RE.finditer(line):
+                ref = match.group(1)
+                if _skill_ref_resolves(ref, live, allow):
+                    continue
+                errors.append(
+                    f"{path}:{lineno}: unresolved skill reference '/{ref}' — not a "
+                    f"live skill under .claude/skills/ and not in "
+                    f"SKILL_REF_ALLOWLIST. Repoint to the current skill, remove the "
+                    f"dead reference, add the command to SKILL_REF_ALLOWLIST "
+                    f"(user-global / plugin / built-in command, with a justifying "
+                    f"comment), or — for a one-off narrative citation — append "
+                    f"'{HISTORICAL_REF_OPT_OUT}' to the line."
+                )
+    return errors
+
+
 def _iter_wandb_required_files(experiments_dir: Path) -> list[Path]:
     """Return every ``*.py`` under ``experiments_dir`` whose source
     mentions one of :data:`WANDB_TRAINER_CONFIG_TOKENS`. Skipping files
@@ -1556,6 +1766,46 @@ def check_marker_registry(
                     f"prose-only mention that is not a real posted kind — add it "
                     f"to MARKER_REGISTRY_ALLOWLIST with a reason."
                 )
+
+    errors.extend(_check_failure_lesson_field_contract(workflow))
+    return errors
+
+
+def _check_failure_lesson_field_contract(workflow: WorkflowYaml) -> list[str]:
+    """#712 §4f: kind-scoped field-contract pin for ``epm:failure-lesson``.
+
+    The ``root_cause_confirmed`` / ``supersedes`` fields are emitter-produced +
+    orchestrator-branched semantic fields living in the marker's free-text
+    ``fields:`` description (no Pydantic attribute) — so a future edit that
+    silently drops or renames either would not be caught by the schema model.
+    This narrow, additive assertion makes the field-add no longer free-floating
+    schema drift: the next field-add on this kind inherits the check. Kind-scoped
+    (only ``epm:failure-lesson``) and runs whenever that marker is declared in
+    the supplied workflow (so the fixture FAIL leg + the real PASS leg both
+    exercise it). Extracted from :func:`check_marker_registry` to keep that
+    function under the C901 complexity cap.
+    """
+    errors: list[str] = []
+    for marker in workflow.markers:
+        if marker.kind != "epm:failure-lesson":
+            continue
+        fields_text = marker.fields or ""
+        for token in ("root_cause_confirmed", "supersedes"):
+            if token not in fields_text:
+                errors.append(
+                    f"workflow.yaml § markers: epm:failure-lesson `fields:` is "
+                    f"missing the required field token '{token}' (#712 §4f). The "
+                    f"root_cause_confirmed/supersedes field contract must stay "
+                    f"declared in the marker registry — re-add the token to the "
+                    f"`fields:` string."
+                )
+        if "root_cause_confirmed=yes" not in (marker.when or ""):
+            errors.append(
+                "workflow.yaml § markers: epm:failure-lesson `when:` is missing "
+                "the required 'root_cause_confirmed=yes' firing condition (#712 "
+                "§4f). The root-cause-confirmed firing trigger must stay declared "
+                "in the marker registry — re-add it to the `when:` string."
+            )
     return errors
 
 
@@ -2242,6 +2492,35 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+def check_gate_ids_unique(workflow: WorkflowYaml) -> list[str]:
+    """Verify every gate ``id:`` across ``gates.{inline, park_and_wait,
+    conditional}`` is globally unique.
+
+    The pydantic ``GateEntry`` schema validates each gate independently and
+    does NOT enforce cross-list id uniqueness, so a renumber collision (e.g.
+    task #694's gate renumber) would otherwise pass the lint silently.
+    Returns a list of error strings (empty == PASS). Each error names BOTH
+    gate names sharing the duplicated id.
+    """
+    errors: list[str] = []
+    if workflow.gates is None:
+        return errors
+    seen: dict[int, str] = {}  # id -> first gate name that used it
+    all_gates = workflow.gates.inline + workflow.gates.park_and_wait + workflow.gates.conditional
+    for g in all_gates:
+        if g.id in seen:
+            errors.append(
+                f"duplicate gate id {g.id}: used by both "
+                f"'{seen[g.id]}' and '{g.name}' across "
+                f"gates.{{inline, park_and_wait, conditional}}. Gate ids "
+                f"must be globally unique; renumber one of them in "
+                f".claude/workflow.yaml."
+            )
+        else:
+            seen[g.id] = g.name
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -2405,6 +2684,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into --check-references and the no-flags default run.",
     )
     parser.add_argument(
+        "--check-skill-refs",
+        action="store_true",
+        help="Verify every backtick-delimited '/skill-name' reference in "
+        ".claude/agents/**.md, .claude/skills/**/SKILL.md, .claude/rules/*.md, "
+        "CLAUDE.md, and .claude/workflow.yaml resolves to a live skill dir under "
+        ".claude/skills/ or to SKILL_REF_ALLOWLIST (user-global / plugin / built-in "
+        "commands). Closes the skill-rename/retirement rot class (#713/#714): "
+        "--check-references only resolves workflow.yaml section refs, so a retired "
+        "skill like /weekly rots undetected. Bundled into --check-references and the "
+        "no-flags default run.",
+    )
+    parser.add_argument(
         "--check-wandb-required",
         action="store_true",
         help="Verify no training script under src/explore_persona_space/"
@@ -2499,6 +2790,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "--auto session, never a workflow-improver subagent spawn. Bundled into "
         "the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-gate-ids-unique",
+        action="store_true",
+        help="Verify every gate id across gates.{inline, park_and_wait, "
+        "conditional} in .claude/workflow.yaml is globally unique. The "
+        "pydantic GateEntry schema validates each gate independently and "
+        "does NOT enforce cross-list id uniqueness, so a renumber "
+        "collision (task #694) would pass silently. Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -2522,6 +2823,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_asks
         or args.check_autonomous_asks
         or args.check_script_refs
+        or args.check_skill_refs
         or args.check_wandb_required
         or args.check_heredoc_dotenv
         or args.check_dispatcher_cvd_pin
@@ -2530,6 +2832,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_upload_as_file
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
+        or args.check_gate_ids_unique
     )
 
     errors: list[str] = []
@@ -2541,6 +2844,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # Dangling script references are a workflow-doc integrity issue, same
         # class as unresolved (see workflow.yaml § X) references — bundle here.
         errors.extend(check_script_references())
+        # An unresolved /skill-name reference (dead skill rename/retirement) is
+        # the same workflow-doc integrity class — bundle here too.
+        errors.extend(check_skill_references())
         # A posted-but-unregistered marker kind is the same drift class
         # (doc surface vs canonical registry) — bundle here too.
         errors.extend(check_marker_registry(workflow))
@@ -2563,13 +2869,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_autonomous_asks())
     if args.check_script_refs or no_flags:
         errors.extend(check_script_references())
+    if args.check_skill_refs or no_flags:
+        errors.extend(check_skill_references())
     if args.check_wandb_required or no_flags:
         errors.extend(check_wandb_required())
     if args.check_heredoc_dotenv or no_flags:
         errors.extend(check_heredoc_dotenv())
     if args.check_dispatcher_cvd_pin or no_flags:
         errors.extend(check_dispatcher_cvd_pin())
-    if args.check_marker_registry and not args.check_references:
+    if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
         errors.extend(check_agent_model_pins())
@@ -2579,6 +2887,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_batch_judge_client())
     if args.check_no_workflow_improver_spawn or no_flags:
         errors.extend(check_no_workflow_improver_spawn())
+    if args.check_gate_ids_unique or no_flags:
+        errors.extend(check_gate_ids_unique(workflow))
 
     if errors:
         for err in errors:

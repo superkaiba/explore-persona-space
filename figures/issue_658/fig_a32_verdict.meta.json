@@ -1,0 +1,304 @@
+{
+  "commit": "e051a02a85",
+  "created": "2026-06-28T03:07:17Z",
+  "figsize": [
+    9.6,
+    5.0
+  ],
+  "points": [
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.1437,
+      "y": 9.0,
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.1658,
+      "y": 8.0,
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.5321,
+      "y": 7.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.4887,
+      "y": 6.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.3759,
+      "y": 5.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": -0.4165,
+      "y": 4.0,
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.4472,
+      "y": 3.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.159,
+      "y": 2.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.6831,
+      "y": 1.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.9253,
+      "y": 0.0,
+      "label": "misalignment-specific (Betley)",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.3485,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.2784,
+      "y": 8.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.3936,
+      "y": 7.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.2844,
+      "y": 6.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.4493,
+      "y": 5.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.3942,
+      "y": 4.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.2902,
+      "y": 3.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.4993,
+      "y": 2.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.5977,
+      "y": 1.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.6411,
+      "y": 0.0,
+      "label": "misalignment-specific (Betley)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.0087,
+      "y": 9.0,
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.2897,
+      "y": 8.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.5006,
+      "y": 7.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.4829,
+      "y": 6.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.3941,
+      "y": 5.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": -0.3192,
+      "y": 4.0,
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.4041,
+      "y": 3.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.1023,
+      "y": 2.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.7662,
+      "y": 1.0,
+      "label": "PASS",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.8085,
+      "y": 0.0,
+      "label": "generic (UltraChat)",
+      "series": "noise floor (p95)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.2943,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.2632,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.42,
+      "y": 7.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.3676,
+      "y": 6.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.5263,
+      "y": 5.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.4935,
+      "y": 4.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.3814,
+      "y": 3.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.5354,
+      "y": 2.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.6002,
+      "y": 1.0,
+      "label": "PASS",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out Spearman \u03c1 (best structured summary)": 0.5666,
+      "y": 0.0,
+      "label": "generic (UltraChat)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 40
+}

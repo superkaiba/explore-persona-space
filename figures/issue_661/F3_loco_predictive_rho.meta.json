@@ -1,0 +1,183 @@
+{
+  "commit": "8876277be0",
+  "created": "2026-06-28T07:49:43Z",
+  "figsize": [
+    8.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.35296943741259257,
+      "error": 0.27053715525196614,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.24352511396720986,
+      "error": 0.25746085590663875,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.1283969370460645,
+      "error": 0.2744389334106096,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Sycophancy",
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.1545592120824225,
+      "error": 0.2795422792750459,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Refusal",
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.5750325648866615,
+      "error": 0.19256026194233858,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Broad misalignment",
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.4150517469725992,
+      "error": 0.2475073458664146,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.49504095678481314,
+      "error": 0.25204537135907046,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.24866662683115845,
+      "error": 0.2565840220966144,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.14243717263430294,
+      "error": 0.2754612696657339,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.6012883376598404,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.011612803803071364,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7399999999999998,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.4093430218919931,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.06021402715590807,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.74,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.5033089080102061,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7399999999999998,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.13953484492922605,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.1392158369308353,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.35577284317767993,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.15992115154537767,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.4198687216192565,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.7408933670623571,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.6549358432782069,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.6987610012530416,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2599999999999998,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.019590876202788737,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.3997265210026589,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": -0.19467025853490066,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.2599999999999998,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.49357716799044005,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.26,
+      "held-out Spearman \u03c1\n(judged expression vs projection)": 0.1511960183288089,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 27
+}

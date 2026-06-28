@@ -152,7 +152,7 @@ session's standing infra auto-dispatch rule (`research-pm.md` § Standing
 rule, item 4b) adjudicates which `proposed` `kind: infra|batch` tasks are
 RIPE and writes them oldest-first to
 `~/.eps-autonomous/infra-drain-queue.json` (`ripe_oldest_first` ints,
-`cap` — default 3, `holds` {id: one-word reason}, `updated_ts` ISO-8601
+`cap` — default 5, `holds` {id: one-word reason}, `updated_ts` ISO-8601
 UTC). This pass EXECUTES that file with zero LLM judgment, spawning
 `spawn_session.py spawn-issue --issue <N> --auto` for the oldest listed IDs
 into free slots, where free = max(0, cap − occupied − pending): occupied =
@@ -366,3 +366,43 @@ session; runs every tick like `vm_disk_pass`). Kill switch:
 `EPM_DISABLE_PROGRAM_ORCHESTRATOR_RECOVERY=1`. `--program-orchestrator-only` runs
 just this pass (pair with `--dry-run` for a live smoke). Pinned by
 `tests/test_autonomous_session_watch.py::test_program_orchestrator_*`.
+
+## Dedicated data disk for `.claude/worktrees/` (#681)
+
+The heavy active-task footprint (`.claude/worktrees/` — every `issue-<N>`
+worktree + its per-issue `data/issue_<N>/{hf_dl,g*_dl,store}` caches) lives on a
+dedicated **512 GB `pd-balanced` GCP persistent disk mounted at `/mnt/eps-data`**
+(env `EPS_VM_DATA_DISK_PATH`), bind-mounted back onto `.claude/worktrees` so every
+consumer resolves the SAME path transparently. The disk is provisioned in the
+`introsp-experiments` project (where the VM lives), NOT the GPU project.
+
+**Per-task ext4 project quotas (the per-tenant bound).** Each `issue-<N>` subtree
+carries an ext4 project id == the issue number with a hard byte cap
+(`EPS_ISSUE_DISK_CAP_GB`, default 128 GB), assigned at worktree creation by
+`new_worktree.sh` (`chattr -p <N> +P` + `setquota -P <N>`, opt-in via
+`EPS_WORKTREE_ASSIGN_QUOTA=1`). A write past the cap fails loud with `EDQUOT`
+(the same signal the RunPod MooseFS per-pod quota produces) while every OTHER
+issue keeps writing — so one task can neither exhaust `/` nor starve another.
+Recovery is always resize / raise-cap, NEVER delete active data.
+
+**Dual-disk watch — escalate-only on the data disk.** The disk guards watch BOTH
+filesystems: `/` (boot disk) with the existing byte-floor logic, and
+`/mnt/eps-data` with **PERCENT / statvfs-derived** thresholds (size-invariant —
+a future resize cannot push the fire point past the wedge the way the mirrored
+boot-disk byte floors would). The data-disk pass is **ESCALATE-ONLY**: the
+`/`-rooted reclaim arms (`uv cache prune`, the stale-log sweep) never run keyed
+off the data disk; `vm_disk_guard.run_guard(disk_path="/mnt/eps-data",
+reclaim_tiers=False)` runs only tier (b) (terminal-cache reap + active-cache
+escalation), and the watcher's dedicated `data_disk_pass` (called from `main()`
+next to `vm_disk_pass`, every 10-min tick) drives the percent helpers
+`decide_vm_disk_pct` (alert/critical band) + `decide_subfloor_pct`
+(`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) off `statvfs(/mnt/eps-data)`,
+escalate-only (no reclaim arm), and attributes the WORKTREE-internal caches via
+`repquota -P` per-project usage (du fallback). Both passes are clean no-ops when
+the mount is absent (before / without the cutover).
+
+**Janitor exemption.** The stale-GCP-VM janitor (above) sweeps the
+`eps-persona-gpu-jun2026` GPU project for ephemeral GCE INSTANCES. The
+`/mnt/eps-data` data disk is in a DIFFERENT project (`introsp-experiments`) and
+is a PERSISTENT disk, not an ephemeral instance — so it is out of the janitor's
+scope by construction and is intentionally never reaped.

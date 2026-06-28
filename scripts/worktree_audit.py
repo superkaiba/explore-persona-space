@@ -210,6 +210,39 @@ class AuditResult:
     # for every process referencing it (initial liveness snapshot), so a
     # live-process keep names its holders (zombie-session triage).
     live_holders: dict[str, list[str]] = field(default_factory=dict)
+    # #681 boot-time bind check: True when the data-disk bind at
+    # .claude/worktrees is EXPECTED (EPS_WORKTREE_REQUIRE_BIND=1) but MISSING —
+    # a half-mounted boot state where a worktree would silently land on `/`.
+    # Escalate-only (loud warning), never a reap trigger.
+    bind_missing: bool = False
+
+
+def _data_disk_bind_missing(wt_dir: Path) -> bool:
+    """True when the data-disk bind at ``wt_dir`` is EXPECTED but MISSING (#681).
+
+    Opt-in via ``EPS_WORKTREE_REQUIRE_BIND=1`` (default OFF — a no-op before the
+    cutover lands the bind). The probe is ``findmnt --mountpoint <wt_dir>`` (NOT
+    ``--target``: ``--target`` walks UP to the containing filesystem and returns
+    rc=0 for ANY ordinary directory on a mounted fs, so a MISSING bind would go
+    undetected — #681 round-2 Critical; ``--mountpoint`` succeeds ONLY when the
+    path is itself a mount, the bind we are asserting). A test/pre-cutover seam
+    ``EPS_WORKTREE_BIND_PROBE`` overrides it (``true`` force-pass / ``false``
+    force-fail). A missing bind means a NEW worktree would silently land on the
+    boot disk `/`, so the audit escalates it (loud warning) — it never deletes
+    on this signal. Returns False when the check is not opted in or the bind is
+    live."""
+    if os.environ.get("EPS_WORKTREE_REQUIRE_BIND", "0") != "1":
+        return False
+    probe = os.environ.get("EPS_WORKTREE_BIND_PROBE", "").strip()
+    if probe:
+        rc = subprocess.run(["bash", "-c", probe], capture_output=True, check=False)
+        return rc.returncode != 0
+    rc = subprocess.run(
+        ["findmnt", "--noheadings", "--mountpoint", str(wt_dir)],
+        capture_output=True,
+        check=False,
+    )
+    return rc.returncode != 0
 
 
 def effective_grace_hours(grace_hours: float, disk_pct: float, threshold_pct: float) -> float:
@@ -717,6 +750,11 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
     wt_root_rel = ".claude/worktrees/"
     wt_dir = root / ".claude" / "worktrees"
     res = AuditResult(grace_hours_effective=grace_hours)
+    # #681 boot-time bind check: a missing-but-expected data-disk bind means a
+    # NEW worktree would silently land on `/`. Escalate-only (set the flag +
+    # loud report line in main()); never a reap trigger. Probed even when
+    # wt_dir does not yet exist (a missing bind can manifest as a missing dir).
+    res.bind_missing = _data_disk_bind_missing(wt_dir)
     if not wt_dir.is_dir():
         return res
 
@@ -878,6 +916,7 @@ def main(argv: list[str] | None = None) -> int:
                     "disk_pct": res.disk_pct,
                     "pressure_threshold_pct": res.pressure_threshold_pct,
                     "disk_pressure": res.pressure,
+                    "bind_missing": res.bind_missing,
                     "removed": res.removed,
                     "failed": res.failed,
                     "kept": [
@@ -899,6 +938,14 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
     else:
+        if res.bind_missing:
+            print(
+                "  !! BIND MISSING: the data-disk bind at .claude/worktrees is "
+                "EXPECTED (EPS_WORKTREE_REQUIRE_BIND=1) but NOT live — a new worktree "
+                "would silently land on the boot disk /. Check: findmnt "
+                "--mountpoint .claude/worktrees ; sudo mount -a",
+                file=sys.stderr,
+            )
         if res.disk_pct is not None:
             total = sum(n for n in res.sizes_bytes.values() if n is not None)
             print(

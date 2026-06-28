@@ -8,15 +8,18 @@ import itertools
 import sys
 from pathlib import Path
 
-_SPEC = importlib.util.spec_from_file_location(
-    "worktree_audit",
-    Path(__file__).resolve().parent.parent / "scripts" / "worktree_audit.py",
-)
-worktree_audit = importlib.util.module_from_spec(_SPEC)
-# Register in sys.modules BEFORE exec so @dataclass + `from __future__ import
-# annotations` can resolve the module via sys.modules during class creation.
-sys.modules["worktree_audit"] = worktree_audit
-_SPEC.loader.exec_module(worktree_audit)
+if "worktree_audit" in sys.modules:
+    worktree_audit = sys.modules["worktree_audit"]
+else:
+    _SPEC = importlib.util.spec_from_file_location(
+        "worktree_audit",
+        Path(__file__).resolve().parent.parent / "scripts" / "worktree_audit.py",
+    )
+    worktree_audit = importlib.util.module_from_spec(_SPEC)
+    # Register in sys.modules BEFORE exec so @dataclass + `from __future__
+    # import annotations` can resolve the module during class creation.
+    sys.modules["worktree_audit"] = worktree_audit
+    _SPEC.loader.exec_module(worktree_audit)
 should_remove = worktree_audit.should_remove
 effective_grace_hours = worktree_audit.effective_grace_hours
 tracked_changes_backlog = worktree_audit.tracked_changes_backlog
@@ -519,3 +522,42 @@ def test_main_runs_audit_when_lock_is_free(tmp_path, monkeypatch, capsys):
     assert rc == 0
     assert calls == [(False, worktree_audit.DEFAULT_GRACE_HOURS)]
     assert "would remove 0" in capsys.readouterr().out
+
+
+# --- #681 round-2 Critical: data-disk bind PRODUCTION-PROBE regression --------
+
+
+def test_bind_missing_production_probe_rejects_plain_dir(tmp_path, monkeypatch):
+    """PRODUCTION-PROBE (#681 round-2): with the seam UNSET, the real
+    ``findmnt --mountpoint`` runs against a plain (non-mount) directory and MUST
+    report the bind MISSING (True) → the audit escalates.
+
+    The old ``findmnt --target`` walked UP to the containing mount and returned
+    rc=0 for any plain dir, so a missing bind read as "live" (False) and the
+    escalation never fired. Driving the real probe against a plain ``tmp_path``
+    dir on the root fs proves ``--mountpoint`` correctly rejects it."""
+    plain = tmp_path / "worktrees"
+    plain.mkdir()
+    monkeypatch.setenv("EPS_WORKTREE_REQUIRE_BIND", "1")
+    monkeypatch.delenv("EPS_WORKTREE_BIND_PROBE", raising=False)  # force production findmnt
+    assert worktree_audit._data_disk_bind_missing(plain) is True
+
+
+def test_bind_missing_off_by_default(tmp_path, monkeypatch):
+    """Opt-out default: with EPS_WORKTREE_REQUIRE_BIND unset the check is a no-op
+    (returns False — no escalation), even against a plain dir."""
+    plain = tmp_path / "worktrees"
+    plain.mkdir()
+    monkeypatch.delenv("EPS_WORKTREE_REQUIRE_BIND", raising=False)
+    monkeypatch.delenv("EPS_WORKTREE_BIND_PROBE", raising=False)
+    assert worktree_audit._data_disk_bind_missing(plain) is False
+
+
+def test_bind_missing_seam_force_pass_still_works(tmp_path, monkeypatch):
+    """The seam contract survives the fix: a force-pass seam reports the bind
+    LIVE (not missing) even against a plain dir (CI mechanism, unchanged)."""
+    plain = tmp_path / "worktrees"
+    plain.mkdir()
+    monkeypatch.setenv("EPS_WORKTREE_REQUIRE_BIND", "1")
+    monkeypatch.setenv("EPS_WORKTREE_BIND_PROBE", "true")
+    assert worktree_audit._data_disk_bind_missing(plain) is False

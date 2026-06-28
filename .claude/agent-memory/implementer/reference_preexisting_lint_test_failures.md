@@ -28,3 +28,12 @@ Known states (verify before citing — these get fixed over time):
 - Pre-broken on main as of 2026-06-11: `tests/test_workflow_yaml.py::
   test_gates_full_shape` (campaign commit `9eb2c7c57` added a second
   park_and_wait gate; test asserts len==1). Stash-compare proves it.
+- **Cross-file FULL-SUITE flake — RESOLVED 2026-06-28 via #703.** The former
+  isolation-pollution failures (HF_HOME env leak, root-logger-level leak,
+  unguarded `sys.modules["worktree_audit"]` replacement, stale `_PR`
+  PollResult stubs missing `stall_reason`) are fixed by an autouse env+logging
+  snapshot/restore fixture in `tests/conftest.py` + a guarded `worktree_audit`
+  loader in `tests/test_worktree_audit.py` + completed `_PR` stubs in
+  `tests/test_issue_dispatch.py`. The full `uv run pytest tests/` suite is
+  green. Treat ANY renewed full-suite-only failure as a REAL ordering
+  regression to diagnose — do NOT re-add a special-case or deselect.

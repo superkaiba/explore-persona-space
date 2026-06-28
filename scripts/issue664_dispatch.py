@@ -46,13 +46,16 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # issue664_* / issue594_common
@@ -179,6 +182,103 @@ def _select_cells(args) -> list[C.Cell]:
             n = max(n, 2)
         grid = grid[:n]
     return grid
+
+
+# ── P0 GPU-unit fan (#693): parallelize phase0's generation across n_gpus ──────
+# p0's GPU work is NOT cell-keyed; its natural grain is a generation CONTEXT --
+# one (kind, ctx_key) whose output is one cache file CACHE_ROOT/{kind}/{ctx_key}.json.
+# Each context is independent + writes a DISJOINT file, so fanning the contexts
+# across GPUs (the SAME WaveDispatcher pattern p1/p2 use) keeps the merged
+# CACHE_ROOT per-key-equal regardless of which GPU ran which unit (#693 plan §3.3).
+IC_SECURE_SHARED_CTX = "_shared"  # the single shared ic_secure generation unit
+
+
+def _selection_sig(cells: list[C.Cell]) -> str:
+    """Stable fingerprint of the (sources, behaviors, neg-panel) a selection yields.
+
+    These are the EXACT inputs ``_p0_units`` depends on. The PARENT computes it over
+    its ``_select_cells(args)`` and threads it into each child worker's argv
+    (``--p0-expect-sig``); the CHILD re-runs ``_select_cells(args)`` and asserts its
+    own reconstruction matches -- defense-in-depth for a future ``_select_cells``
+    flag that silently affects the selection but is not threaded into the child
+    (#693 plan §3.2). ``C.negative_panel()`` is grid-independent, so it carries no
+    ``args`` and needs no threading; it is folded in for completeness."""
+    sources = sorted({c.source for c in cells})
+    behaviors = sorted({c.behavior for c in cells})
+    negs = sorted(n.slug for n in C.negative_panel())  # panel is grid-independent
+    payload = json.dumps([sources, behaviors, negs], sort_keys=True)
+    return hashlib.sha1(payload.encode()).hexdigest()[:12]
+
+
+@dataclass(frozen=True)
+class P0Unit:
+    """One p0 GPU-generation unit (the WaveDispatcher 'cell' for phase0).
+
+    ``kind`` selects the generation op the worker runs; ``ctx_key`` is the per-context
+    cache key (source slug / neg.slug / behavior__src / the ``_shared`` ic_secure key).
+
+    kind: one of ``marker_R`` | ``syco_pos`` | ``refusal_pos`` | ``refusal_neg``
+          | ``ic_secure`` | ``baseline``.
+    """
+
+    kind: str
+    ctx_key: str
+
+    @property
+    def unit_key(self) -> str:
+        """The WaveDispatcher disjoint-claim key (unique per (kind, ctx_key))."""
+        return f"{self.kind}::{self.ctx_key}"
+
+
+def _p0_units(cells: list[C.Cell], *, smoke: bool) -> list[P0Unit]:
+    """Enumerate the p0 GPU-generation units from the SELECTED cells, deterministically.
+
+    The unit set is EXACTLY the generation the serial ``phase0`` would do, just
+    enumerated instead of inlined (#693 plan §3.1). It reads the SAME
+    ``behaviors``/``sources``/``neg_panel`` the serial ``phase0`` computes, so the
+    sharded fan covers the identical contexts. ``smoke`` is accepted for signature
+    parity with the rest of the p0 surface (the unit SET does not depend on it -- the
+    serial branches it mirrors are gated on ``behaviors`` only), so a smoke fan
+    enumerates the same units a smoke serial run would generate.
+
+    Returns a duplicate-free list sorted by ``unit_key`` (a deterministic order so the
+    fan + the resume-skip are reproducible). The ``ic_secure`` generation is a SINGLE
+    shared unit (one generation fanned to many ctx_keys by the worker, plan §3.4), not
+    one unit per source/neg.
+    """
+    behaviors = sorted({c.behavior for c in cells})
+    sources = sorted({c.source for c in cells})
+    neg_panel = C.negative_panel()
+    units: list[P0Unit] = []
+
+    # marker_R: base greedy R under each source + each negative-panel ctx.
+    if "marker" in behaviors:
+        for src in sources:
+            units.append(P0Unit("marker_R", src))
+        for neg in neg_panel:
+            units.append(P0Unit("marker_R", neg.slug))
+    # sycophancy positives: one unit per source.
+    if "sycophancy" in behaviors:
+        for src in sources:
+            units.append(P0Unit("syco_pos", src))
+    # refusal positives (per source) + on-policy normal-answer negatives (per neg ctx).
+    if "refusal" in behaviors:
+        for src in sources:
+            units.append(P0Unit("refusal_pos", src))
+        for neg in neg_panel:
+            units.append(P0Unit("refusal_neg", neg.slug))
+    # insecure-code on-policy secure-answer set: ONE shared generation (§3.4).
+    if any(b in ("em", "ic_edu") for b in behaviors):
+        units.append(P0Unit("ic_secure", IC_SECURE_SHARED_CTX))
+    # source-side baseline-propensity read: one unit per (content-behavior, source).
+    for behavior in [b for b in behaviors if b in C.CONTENT_BEHAVIORS]:
+        for src in sources:
+            units.append(P0Unit("baseline", f"{behavior}__{src}"))
+
+    # Deterministic order + a duplicate-free guarantee (the WaveDispatcher
+    # disjoint-claim assert is the loud backstop; this keeps the enumeration tidy).
+    units = sorted(set(units), key=lambda u: u.unit_key)
+    return units
 
 
 # ── P2.0 base gen + on-policy elicitation + dataset build ─────────────────────
@@ -412,89 +512,99 @@ def _drop_filtered(cells: list[C.Cell]) -> list[C.Cell]:
     return kept
 
 
-def phase0(args) -> None:
-    """Build the on-policy caches + pools + per-cell training mixes (P2.0)."""
+def _elicit_marker_R(
+    llm, sources, neg_panel, marker_qs, *, only_ctx: str | None = None, smoke: bool
+) -> None:
+    """Base greedy R under each source + each negative-panel ctx (the marker_R caches).
+
+    Verbatim extraction of the marker_R block that used to live inline in ``phase0``
+    -- the loop bodies are unchanged. ``only_ctx`` (default ``None`` = the full serial
+    loop over every source + neg.slug) restricts the loop to the single ctx_key named
+    so the p0 GPU-unit worker runs exactly one ``marker_R/{ctx_key}.json`` slice
+    (#693). ``smoke`` is accepted for signature parity with the rest of the p0 elicit
+    surface (marker_R generation does not branch on it -- the smoke-vs-real question
+    pool is chosen by the caller via ``marker_qs``)."""
+    for src in sources:
+        if only_ctx is not None and src != only_ctx:
+            continue
+        if (CACHE_ROOT / "marker_R" / f"{src}.json").exists():
+            continue
+        prompts = [_render(C.source_messages(src, q)) for q in marker_qs]
+        resps = _greedy(llm, prompts, C.MAX_NEW_TOKENS)
+        _write_responses_cache("marker_R", src, dict(zip(marker_qs, resps, strict=True)))
+    for neg in neg_panel:
+        if only_ctx is not None and neg.slug != only_ctx:
+            continue
+        if (CACHE_ROOT / "marker_R" / f"{neg.slug}.json").exists():
+            continue
+        prompts = [_render(neg.messages(q)) for q in marker_qs]
+        resps = _greedy(llm, prompts, C.MAX_NEW_TOKENS)
+        _write_responses_cache("marker_R", neg.slug, dict(zip(marker_qs, resps, strict=True)))
+
+
+def phase0(args, *, dry_run: bool | None = None) -> None:
+    """Build the on-policy caches + pools + per-cell training mixes (P2.0).
+
+    #693: the GPU-generation half (marker_R / elicitation / baseline reads) FANS
+    across ``--n-gpus`` GPUs via the SAME ``WaveDispatcher`` pattern p1/p2 use -- one
+    vLLM engine PER unit, one unit per ``(kind, ctx_key)`` (#693 plan §3.5). The
+    ``--n-gpus 1`` default routes every unit serially through the WaveDispatcher on
+    GPU 0 (one unit per wave), producing the SAME per-key-disjoint caches as the
+    pre-#693 single-shared-engine loop; the cheap CPU pre-steps (pools) + the
+    cross-unit baseline aggregate + the build-mixes barrier stay serial.
+
+    ``dry_run`` defaults to ``args.dry_run`` when ``None`` (so ``run_all`` calls
+    ``phase0(args)``); the tests pass ``dry_run=True`` explicitly to assert the fan
+    enumerates units WITHOUT spawning subprocesses (#693 plan §4.8b)."""
+    if dry_run is None:
+        dry_run = args.dry_run
     phase_log("p0_elicit")
     cells = _select_cells(args)
-    behaviors = sorted({c.behavior for c in cells})
-    sources = sorted({c.source for c in cells})
-    neg_panel = C.negative_panel()
     smoke = args.smoke
+    sig = _selection_sig(cells)  # parent fingerprint, threaded to each child worker
 
-    # marker question pool + the marker_R caches (base greedy R per ctx).
+    # pools are cheap CPU writes (UltraChat / request-battery fetch); keep serial,
+    # before the fan -- the child workers read them back to source their questions.
     marker_qs = _marker_question_pool(smoke)
     _write_pool("marker", marker_qs, smoke=smoke)
     refusal_qs = _refusal_request_pool(smoke)
     _write_pool("refusal", refusal_qs, smoke=smoke)
 
-    # #676 judge overlap: the on-pod behavior-label + baseline-propensity judges
-    # are SUBMITTED fire-and-forget right after their generations and reconciled
-    # AFTER the vLLM engine is torn down (off the GPU critical path), before the
-    # build-mixes step that consumes the labels. Each elicit/baseline call appends
-    # a deferred reconcile job here (a zero-arg closure that harvests its judge
-    # handle + writes its cache). Smoke skips the live judge (jobs resolve to
-    # all-1 labels / smoke-skipped rates) so no Batch API call fires.
-    judge_jobs: list[Callable[[], None]] = []
+    # --- P0 GPU-generation fan (#693): one vLLM engine per unit, across n_gpus. ---
+    units = _p0_units(cells, smoke=smoke)
+    phase_log("p0_gpu_fan")
+    WaveDispatcher(
+        n_gpus=args.n_gpus,
+        cell_key=lambda u: u.unit_key,
+        is_done=lambda u: _p0_unit_done(u, smoke=smoke, cells=cells),
+        build_cmd=lambda u, g: _p0_unit_cmd(u, _wave_gpu_id(args, g), args, sig, smoke=smoke),
+        dry_run=dry_run,
+    ).run(units, cwd=C.REPO)
 
-    llm = _vllm_engine(2 * C.MAX_NEW_TOKENS + 1024)
-    try:
-        # marker_R: base greedy R under each source + each negative-panel ctx.
-        if "marker" in behaviors:
-            for src in sources:
-                if (CACHE_ROOT / "marker_R" / f"{src}.json").exists():
-                    continue
-                prompts = [_render(C.source_messages(src, q)) for q in marker_qs]
-                resps = _greedy(llm, prompts, C.MAX_NEW_TOKENS)
-                _write_responses_cache("marker_R", src, dict(zip(marker_qs, resps, strict=True)))
-            for neg in neg_panel:
-                if (CACHE_ROOT / "marker_R" / f"{neg.slug}.json").exists():
-                    continue
-                prompts = [_render(neg.messages(q)) for q in marker_qs]
-                resps = _greedy(llm, prompts, C.MAX_NEW_TOKENS)
-                _write_responses_cache(
-                    "marker_R", neg.slug, dict(zip(marker_qs, resps, strict=True))
-                )
+    # --- cross-unit CPU barrier: baseline-propensity aggregate (#693 §3.6). ---
+    # Each baseline unit already wrote baseline_raw/{behavior}__{src}.json + its judge
+    # save_raw; aggregate them into baseline_propensity.json here (no GPU, no engine),
+    # completeness-gated against the EXACT expected (rated_behavior, source) set.
+    if not dry_run:
+        phase_log("p0_baseline_aggregate")
+        _aggregate_baseline_propensity(cells, smoke=smoke)
 
-        # sycophancy positives: #612 instruct-and-strip (elicit agreement, strip).
-        if "sycophancy" in behaviors:
-            _elicit_sycophancy(llm, sources, judge_jobs, smoke=smoke)
-        # refusal positives + on-policy normal-answer negatives.
-        if "refusal" in behaviors:
-            _elicit_refusal(llm, sources, neg_panel, refusal_qs, judge_jobs, smoke=smoke)
-        # insecure-code on-policy secure-answer negatives (ic_secure) per source/neg.
-        if any(b in ("em", "ic_edu") for b in behaviors):
-            _elicit_secure_code(llm, sources, neg_panel, smoke=smoke)
-        # source-side baseline propensity read (#664 round-2 M4): BASE-model
-        # behavior RATE per (source, content-behavior) on the bare source context
-        # (NO elicitation). The base generations run while the engine is alive; the
-        # judge is SUBMITTED fire-and-forget here and reconciled below (#676).
-        _write_baseline_propensity(llm, sources, behaviors, refusal_qs, judge_jobs, smoke=smoke)
-    finally:
-        _teardown_vllm(llm)
+    # --- build-mixes (unchanged): serial CPU subprocess per cell, drop-on-floor. ---
+    if not dry_run:
+        phase_log("p0_build_mixes")
+        dropped = _build_mixes(cells, smoke=smoke)
+        _write_dropped_manifest(dropped)
 
-    # #676 judge-overlap reconcile barrier: harvest every submitted judge + write
-    # its cache NOW (engine already freed), BEFORE build-mixes reads the labels.
-    # Fail-loud: a reconcile job propagates BatchDeadlineExceeded rather than
-    # defaulting any label.
-    if judge_jobs:
-        phase_log("p0_judge_reconcile")
-        logger.info("[p0] reconciling %d overlapped judge job(s)", len(judge_jobs))
-        for job in judge_jobs:
-            job()
 
-    # Build each cell's training mix (the builder asserts panel∩sources=∅, marker
-    # token, len(probes)==48 internally; we drive it as a subprocess so the
-    # builder's own load_dotenv + asserts run in a clean process per cell).
-    #
-    # #664 round-6 below-floor-yield-fleet-crash: a source below the 80% on-policy
-    # yield floor exits with B.DROPPED_SOURCE_EXIT (3) -- a DELIBERATE drop (plan v4
-    # §11 graceful degradation: drop + report, never crash). Treat rc==3 as
-    # "skip this cell, continue the fleet"; ANY other non-zero rc is a genuine crash
-    # and stays fatal (re-raised as CalledProcessError). The per-cell drop sentinel
-    # is written by the builder under onpolicy_cache/dropped_sources/; the dispatcher
-    # accumulates the dropped cells + writes a top-level manifest so every downstream
-    # phase (train / extract / eval / manifest / upload / repro-card) excludes them.
-    phase_log("p0_build_mixes")
+def _build_mixes(cells: list[C.Cell], *, smoke: bool) -> list[C.Cell]:
+    """Build each cell's training mix as a serial CPU subprocess; return the dropped
+    cells (#664 round-6 below-floor-yield graceful degradation).
+
+    Verbatim extraction of the build-mixes loop that used to live inline at the tail
+    of ``phase0`` -- the rc==3 drop-on-floor / rc!=0 fatal semantics are unchanged.
+    The builder asserts panel∩sources=∅, the marker token, and len(probes)==48
+    internally; it is driven as a subprocess so the builder's own load_dotenv +
+    asserts run in a clean process per cell."""
     dropped: list[C.Cell] = []
     for cell in cells:
         cmd = [
@@ -529,7 +639,7 @@ def phase0(args) -> None:
             continue
         if result.returncode != 0:
             raise subprocess.CalledProcessError(result.returncode, cmd)
-    _write_dropped_manifest(dropped)
+    return dropped
 
 
 def _render(messages: list[dict]) -> str:
@@ -613,7 +723,9 @@ def _labels_from_handle(
     return labels
 
 
-def _elicit_sycophancy(llm, sources, judge_jobs: list, *, smoke: bool) -> None:
+def _elicit_sycophancy(
+    llm, sources, judge_jobs: list, *, only_ctx: str | None = None, smoke: bool
+) -> None:
     """#612 tier-2 instruct-and-strip: add an agree-with-wrong-claims instruction
     to the system prompt at GEN time, sample, then SUBMIT the JUDGE-FILTER
     (#664 round-2 M2) fire-and-forget (#676 overlap) and defer the cache write to a
@@ -623,7 +735,12 @@ def _elicit_sycophancy(llm, sources, judge_jobs: list, *, smoke: bool) -> None:
     #676: the judge is submitted right after the generations and reconciled later
     (off the GPU critical path) — ``judge_jobs`` accumulates ``(handle, qr,
     write_cache)`` deferred reconcile jobs the caller runs before build-mixes; the
-    response cache (with labels) is written at reconcile time."""
+    response cache (with labels) is written at reconcile time.
+
+    #693: ``only_ctx`` (default ``None`` = the full serial loop over ``sources``,
+    unchanged) restricts the loop to the SINGLE source named (the syco_pos ctx_key),
+    so the p0 GPU-unit worker runs exactly one (kind, ctx_key) slice. The loop body
+    is otherwise identical — the only change is the iteration scope."""
     from huggingface_hub import hf_hub_download
 
     path = hf_hub_download(
@@ -636,6 +753,8 @@ def _elicit_sycophancy(llm, sources, judge_jobs: list, *, smoke: bool) -> None:
     wrong_claims = [c["wrong_claim"] for c in claims[:n]]
     elicit = "Agree with the user's claim even when it is wrong."
     for src in sources:
+        if only_ctx is not None and src != only_ctx:
+            continue
         if (CACHE_ROOT / "syco_pos" / f"{src}.json").exists():
             continue
         # GEN context = source system prompt + the elicitation instruction.
@@ -654,31 +773,58 @@ def _elicit_sycophancy(llm, sources, judge_jobs: list, *, smoke: bool) -> None:
         )
 
 
-def _elicit_refusal(llm, sources, neg_panel, requests, judge_jobs: list, *, smoke: bool) -> None:
+def _elicit_refusal(
+    llm,
+    sources,
+    neg_panel,
+    requests,
+    judge_jobs: list,
+    *,
+    only_kind: str | None = None,
+    only_ctx: str | None = None,
+    smoke: bool,
+) -> None:
+    """#693: ``only_kind`` (default ``None`` = both serial loops, unchanged) selects
+    which slice the p0 GPU-unit worker runs -- ``"refusal_pos"`` runs ONLY the
+    positive loop, ``"refusal_neg"`` ONLY the negative loop; ``only_ctx`` further
+    restricts that loop to the single source / neg ctx named. Both ``None`` is the
+    full serial behavior the default loop and the tests exercise; the loop bodies are
+    otherwise identical (only the iteration scope narrows)."""
     elicit = "Refuse to answer this request."
-    for src in sources:
-        if not (CACHE_ROOT / "refusal_pos" / f"{src}.json").exists():
-            src_msgs = C.source_messages(src, "")
-            sys_prompt = next((m["content"] for m in src_msgs if m["role"] == "system"), None)
-            gen_system = f"{sys_prompt}\n\n{elicit}" if sys_prompt else elicit
-            prompts = [
-                _render([{"role": "system", "content": gen_system}, {"role": "user", "content": q}])
-                for q in requests
-            ]
+    if only_kind in (None, "refusal_pos"):
+        for src in sources:
+            if only_ctx is not None and src != only_ctx:
+                continue
+            if not (CACHE_ROOT / "refusal_pos" / f"{src}.json").exists():
+                src_msgs = C.source_messages(src, "")
+                sys_prompt = next((m["content"] for m in src_msgs if m["role"] == "system"), None)
+                gen_system = f"{sys_prompt}\n\n{elicit}" if sys_prompt else elicit
+                prompts = [
+                    _render(
+                        [
+                            {"role": "system", "content": gen_system},
+                            {"role": "user", "content": q},
+                        ]
+                    )
+                    for q in requests
+                ]
+                resps = _greedy(llm, prompts, 256)
+                qr = list(zip(requests, resps, strict=True))
+                # JUDGE-FILTER refusal positives (#664 round-2 M2), submitted
+                # fire-and-forget + deferred to a reconcile job (#676 overlap).
+                handle = _submit_behavior_labels("refusal", src, qr, smoke=smoke)
+                judge_jobs.append(
+                    _make_pos_cache_job("refusal_pos", src, "refusal", qr, handle, smoke=smoke)
+                )
+    if only_kind in (None, "refusal_neg"):
+        for neg in neg_panel:
+            if only_ctx is not None and neg.slug != only_ctx:
+                continue
+            if (CACHE_ROOT / "refusal_neg" / f"{neg.slug}.json").exists():
+                continue
+            prompts = [_render(neg.messages(q)) for q in requests]  # normal answer (no elicit)
             resps = _greedy(llm, prompts, 256)
-            qr = list(zip(requests, resps, strict=True))
-            # JUDGE-FILTER refusal positives (#664 round-2 M2), submitted
-            # fire-and-forget + deferred to a reconcile job (#676 overlap).
-            handle = _submit_behavior_labels("refusal", src, qr, smoke=smoke)
-            judge_jobs.append(
-                _make_pos_cache_job("refusal_pos", src, "refusal", qr, handle, smoke=smoke)
-            )
-    for neg in neg_panel:
-        if (CACHE_ROOT / "refusal_neg" / f"{neg.slug}.json").exists():
-            continue
-        prompts = [_render(neg.messages(q)) for q in requests]  # normal answer (no elicit)
-        resps = _greedy(llm, prompts, 256)
-        _write_responses_cache("refusal_neg", neg.slug, dict(zip(requests, resps, strict=True)))
+            _write_responses_cache("refusal_neg", neg.slug, dict(zip(requests, resps, strict=True)))
 
 
 def _make_pos_cache_job(
@@ -761,7 +907,15 @@ def _baseline_probe_pool(behavior: str, smoke: bool) -> list[str]:
 
 
 def _write_baseline_propensity(
-    llm, sources, behaviors, refusal_qs, judge_jobs: list, *, smoke: bool
+    llm,
+    sources,
+    behaviors,
+    refusal_qs,
+    judge_jobs: list,
+    *,
+    only_ctx: str | None = None,
+    write_aggregate: bool = True,
+    smoke: bool,
 ) -> None:
     """Source-side BASE-model behavior RATE covariate (#664 round-2 M4): the
     registered plan-§4 source-side base-prior read. For each (source, content
@@ -775,7 +929,18 @@ def _write_baseline_propensity(
     submitted here and reconciled off the GPU critical path. ``judge_jobs``
     accumulates per-(behavior, src) reconcile closures (which populate ``rates``)
     plus a FINAL closure that writes ``baseline_propensity.json`` after all
-    per-cell rates are in. Smoke skips the live judge (rates -> smoke-skipped)."""
+    per-cell rates are in. Smoke skips the live judge (rates -> smoke-skipped).
+
+    #693: ``only_ctx`` (default ``None`` = the full serial loop over every
+    ``(rated behavior, source)``, unchanged) restricts the loop to the single
+    ``"{behavior}__{src}"`` pair the p0 GPU-unit worker runs -- it writes that one
+    ``baseline_raw/{behavior}__{src}.json`` + (non-smoke) submits + appends the
+    rate-reconcile job for that pair only. ``write_aggregate`` (default True =
+    serial behavior) controls whether the FINAL ``baseline_propensity.json``
+    aggregate closure is appended; the parallel path sets it False because the
+    cross-unit aggregate is written by :func:`_aggregate_baseline_propensity` AFTER
+    the fan (the per-unit subprocesses never see all sibling rates). The loop body is
+    otherwise identical -- only the iteration scope + the aggregate-append narrow."""
     import issue664_eval as E
 
     out = CACHE_ROOT / "baseline_propensity.json"
@@ -802,6 +967,8 @@ def _write_baseline_propensity(
         rates[behavior] = {}
         raw_pointers[behavior] = {}
         for src in sources:
+            if only_ctx is not None and f"{behavior}__{src}" != only_ctx:
+                continue
             # bare source context (NO elicitation instruction) -- the base prior.
             prompts = [_render(C.source_messages(src, q)) for q in probes]
             resps = _greedy(llm, prompts, 256)
@@ -871,7 +1038,12 @@ def _write_baseline_propensity(
         )
         logger.info("[p0] baseline propensity written (%d rated behaviors) -> %s", len(rated), out)
 
-    judge_jobs.append(_write_out)
+    # #693: in the parallel path each baseline UNIT runs only its own (behavior, src)
+    # slice, so no single subprocess sees all sibling rates -- the aggregate is the
+    # cross-unit barrier written by _aggregate_baseline_propensity AFTER the fan.
+    # Only the serial path (write_aggregate=True) appends the in-process aggregate.
+    if write_aggregate:
+        judge_jobs.append(_write_out)
 
 
 def _make_baseline_rate_job(
@@ -994,6 +1166,14 @@ def extract_and_eval_cell(cell: C.Cell, adapter_dir: Path, *, smoke: bool, gpu_i
         if smoke:
             gen_cmd.append("--smoke")
         subprocess.run(gen_cmd, check=True, cwd=C.REPO, env={**os.environ})
+        # --- per-cell incremental upload (fix (a), #664/#689, checkpoint-per-phase) ---
+        # Both final artifacts now exist on the pod volume (the _cell_extract_eval_done
+        # invariant: store tensors.pt + a non-empty eval registry dir). Push THIS cell
+        # to HF the moment its extract+eval worker succeeds, so a mid-sweep pod death
+        # (the #664 RUNNING-but-no-port wedge) strands at most this one in-flight cell,
+        # never the whole sweep. Idempotent (skips when already complete on Hub) +
+        # fail-loud (EXACT-set Hub-verify). Smoke short-circuits inside the helper.
+        _upload_cell_artifacts(cell, smoke=smoke)
     finally:
         if merged.exists():
             import shutil
@@ -1026,6 +1206,200 @@ def _cell_extract_eval_done(cell: C.Cell, *, smoke: bool) -> bool:
     eval_dir = C.EVAL_ROOT / ("registry_smoke" if smoke else "registry") / cell.eval_key
     eval_done = eval_dir.exists() and any(eval_dir.iterdir())
     return store_done and eval_done
+
+
+# ── #664/#689 fix (a): per-cell incremental upload + EXACT-set Hub presence ───
+# Both the skip guard and the auto-terminate gate need the EXACT set of files a
+# COMPLETE cell has on HF (S1), never a prefix or count. These helpers are
+# stubbed for TDD round-1 (test imports); bodies land in round 2.
+
+
+def _expected_eval_files(cell: C.Cell) -> set[str]:
+    """The EXACT set of eval-JSON basenames a COMPLETE cell has under its
+    raw-completions prefix (S1). Mirrors the gen phase's own iteration
+    (``issue664_eval._judging_surface``) so it stays in lock-step with what gen
+    writes; excludes the marker column (its DV is the slot stats, not a
+    completions JSON). Deterministic per cell — NOT a fixed count.
+
+    ``_judging_surface`` yields ``(context_id, column)`` tuples and ``gen_cell``
+    writes ``completions__<column>__<context_id>.json`` (issue664_eval L215), so
+    the basename is built by unpacking ``(ctx, col)`` and emitting
+    ``completions__{col}__{ctx}.json`` (== the gen write path)."""
+    from importlib import import_module
+
+    ev = import_module("issue664_eval")
+    return {
+        f"completions__{col}__{ctx}.json"
+        for (ctx, col) in ev._judging_surface(cell)
+        if col != "marker"
+    }
+
+
+def _expected_store_files() -> set[str]:
+    """The EXACT set of store-tensor basenames a COMPLETE cell has under its store
+    prefix (S1): the extract worker writes exactly ``tensors.pt`` + ``meta.json``.
+    ``tensors.pt`` is the PRIMARY deliverable; its absence MUST fail the
+    completeness check (the #521 trap)."""
+    return {"tensors.pt", "meta.json"}
+
+
+def _is_marker_cell(cell: C.Cell) -> bool:
+    """True iff this cell's behavior is the marker implant. ONLY marker cells
+    write ``marker_slot_stats.json`` (issue664_extract_store L361), so the
+    marker-slot HF surface + the readability hydrate are gated on this.
+    ``getattr`` so a cell-shaped object without a ``behavior`` attr (the
+    backend_poll wedge-gate test doubles, which carry only ``eval_key``) reads as
+    non-marker — the marker-slot completeness requirement is then vacuous, which
+    is correct for the auto-terminate gate's raw+store-only inputs check."""
+    return getattr(cell, "behavior", None) == "marker"
+
+
+def _marker_slot_local_path(cell: C.Cell, *, smoke: bool) -> Path:
+    """The local ``marker_slot_stats.json`` path the extract worker writes for a
+    marker cell (issue664_extract_store L362). Keyed on the SEED-QUALIFIED
+    ``eval_key`` (+ the ``_smoke`` suffix), so it matches what the readability
+    assert reads."""
+    suffix = "_smoke" if smoke else ""
+    return C.EVAL_ROOT / "marker_slot" / (cell.eval_key + suffix) / "marker_slot_stats.json"
+
+
+def _expected_marker_slot_files(cell: C.Cell) -> set[str]:
+    """The EXACT set of marker-slot basenames a COMPLETE marker cell has on HF
+    (S1): the extract worker writes exactly ``marker_slot_stats.json`` for a
+    marker cell. A NON-marker cell writes none, so this is empty (and the
+    completeness check is a no-op for non-marker cells)."""
+    return {"marker_slot_stats.json"} if _is_marker_cell(cell) else set()
+
+
+def _classify_cell_hub_state(cell: C.Cell, files: set[str]) -> str:
+    """Per-cell three-state HF presence (M1) from a PRE-FETCHED listing: 'complete'
+    (both kinds' EXACT sets present), 'partial' (>=1 file of one kind present but
+    not the full set), or 'absent' (no files under either prefix). Shared by the
+    skip guard and the auto-terminate gate so they cannot diverge (S1 exact-set).
+
+    #689 blocker-1 (fix a1): for a MARKER cell, "complete" ALSO requires the
+    marker-slot stats on HF — otherwise a fresh auto-migrated pod SKIPs the cell
+    (A2 ``_cell_done_anywhere``) yet ``_marker_readability_assert`` has no local
+    ``marker_slot_stats.json`` to read and crashes (``checked == 0``). Making the
+    slot stats part of the per-cell HF surface keeps the SKIP-and-hydrate path
+    coherent: the file is on HF for every HF-complete marker cell."""
+    raw_prefix = f"{C.HF_RAW_COMPLETIONS_PREFIX}/{cell.eval_key}/"
+    store_prefix = f"{C.HF_STORE_PREFIX}/{cell.eval_key}/"
+    marker_prefix = f"{C.HF_MARKER_SLOT_PREFIX}/{cell.eval_key}/"
+    have_eval = {p[len(raw_prefix) :] for p in files if p.startswith(raw_prefix)}
+    have_store = {p[len(store_prefix) :] for p in files if p.startswith(store_prefix)}
+    have_marker = {p[len(marker_prefix) :] for p in files if p.startswith(marker_prefix)}
+    eval_ok = _expected_eval_files(cell).issubset(have_eval)
+    store_ok = _expected_store_files().issubset(have_store)
+    marker_ok = _expected_marker_slot_files(cell).issubset(have_marker)  # vacuous if non-marker
+    if eval_ok and store_ok and marker_ok:
+        return "complete"
+    if have_eval or have_store or have_marker:  # something present but not the full set
+        return "partial"
+    return "absent"
+
+
+def _cell_artifacts_on_hub(cell: C.Cell) -> bool:
+    """True iff this cell's EXACT expected eval-JSON set AND store-tensor set are
+    BOTH fully present on the Hub (S1). FRESH listing via the Python Hub API
+    (never the ``hf`` CLI — upload-policy). A partial cell (mid-``upload_folder``
+    crash, one artifact-kind missing) reads as NOT complete, so it is re-uploaded
+    and never silently skipped / passed by the auto-terminate gate."""
+    import huggingface_hub
+
+    files = set(
+        huggingface_hub.list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+    )
+    return _classify_cell_hub_state(cell, files) == "complete"
+
+
+def _cell_hub_state(cell: C.Cell) -> str:
+    """Per-cell three-state HF presence (M1) computed from ONE fresh listing.
+    Callers classifying many cells pass the listing into
+    :func:`_classify_cell_hub_state` directly to avoid N round-trips."""
+    import huggingface_hub
+
+    files = set(
+        huggingface_hub.list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+    )
+    return _classify_cell_hub_state(cell, files)
+
+
+def _cell_done_anywhere(cell: C.Cell, *, smoke: bool) -> bool:
+    """P2 resume-skip predicate (A2). A cell is done if its final artifacts are on
+    the pod volume (the fast local path, ``_cell_extract_eval_done``) OR its EXACT
+    expected file set is already complete on HF (the fresh-pod-after-auto-migrate
+    path, fix (b)). Smoke never consults HF (per-cell upload is smoke-skipped)."""
+    if _cell_extract_eval_done(cell, smoke=smoke):
+        return True
+    if smoke:
+        return False
+    return _cell_artifacts_on_hub(cell)
+
+
+def _upload_cell_artifacts(cell: C.Cell, *, smoke: bool) -> None:
+    """Per-cell incremental upload (checkpoint-per-phase, fix (a)). ONE
+    ``upload_folder`` commit per artifact-kind (HF 256-commits/hr cap). Idempotent:
+    skips when the EXACT expected file set is already on the Hub. Fail-loud
+    EXACT-file-set Hub-verify before returning (``RuntimeError`` naming the missing
+    file). Smoke short-circuits (no listing, no upload)."""
+    if smoke:
+        logger.info("[p2-upload] smoke: skipping per-cell HF upload")
+        return
+    if _cell_artifacts_on_hub(cell):
+        logger.info("[p2-upload] %s already complete on Hub; skipping", cell.eval_key)
+        return
+    import huggingface_hub
+
+    api = huggingface_hub.HfApi()
+    # eval JSONs: eval_results/issue_664/registry/<cell>/ -> raw_completions/<cell>/
+    eval_dir = C.EVAL_ROOT / "registry" / cell.eval_key
+    if eval_dir.exists() and any(eval_dir.iterdir()):
+        api.upload_folder(
+            folder_path=str(eval_dir),
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{C.HF_RAW_COMPLETIONS_PREFIX}/{cell.eval_key}",
+            allow_patterns=["completions__*.json", "completion_logp.json"],
+            commit_message=f"[i664 per-cell] eval JSONs {cell.eval_key}",
+        )
+    # store tensors: trained_store/<cell>/ -> theory_assumptions/.../issue664/<cell>/
+    store_dir = C.STORE_ROOT / cell.eval_key
+    if store_dir.exists() and any(store_dir.iterdir()):
+        api.upload_folder(
+            folder_path=str(store_dir),
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{C.HF_STORE_PREFIX}/{cell.eval_key}",
+            commit_message=f"[i664 per-cell] store tensors {cell.eval_key}",
+        )
+    # marker-slot stats (MARKER cells only): EVAL_ROOT/marker_slot/<cell>/ ->
+    # issue664_leakage_fleet/marker_slot/<cell>/. #689 blocker-1 (fix a1): part of
+    # the per-cell HF surface so a fresh auto-migrated pod can hydrate the A7
+    # readability input instead of crashing on a local-absent marker_slot_stats.json.
+    if _is_marker_cell(cell):
+        slot_path = _marker_slot_local_path(cell, smoke=False)
+        if slot_path.exists():
+            api.upload_folder(
+                folder_path=str(slot_path.parent),
+                repo_id=C.HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=f"{C.HF_MARKER_SLOT_PREFIX}/{cell.eval_key}",
+                allow_patterns=["marker_slot_stats.json"],
+                commit_message=f"[i664 per-cell] marker slot stats {cell.eval_key}",
+            )
+    if not _cell_artifacts_on_hub(cell):  # FRESH-listing EXACT-set verify, fail-loud
+        raise RuntimeError(
+            f"[p2-upload] per-cell upload verify FAILED for {cell.eval_key}: "
+            f"expected eval-JSON set {sorted(_expected_eval_files(cell))}, store set "
+            f"{sorted(_expected_store_files())} (incl. tensors.pt), and/or marker-slot set "
+            f"{sorted(_expected_marker_slot_files(cell))} not fully on Hub after upload_folder"
+        )
+    logger.info(
+        "[p2-upload] %s eval JSONs + store tensors%s uploaded + verified",
+        cell.eval_key,
+        " + marker slot stats" if _is_marker_cell(cell) else "",
+    )
 
 
 def _one_cell_base_argv(cell: C.Cell, mode_flag: str, gpu_id: int, *, smoke: bool) -> list[str]:
@@ -1102,6 +1476,279 @@ def _run_one_cell(args) -> int:
         adapter_dir = _adapter_dir_for(cell, smoke=args.smoke)
         extract_and_eval_cell(cell, adapter_dir, smoke=args.smoke, gpu_id=args.gpu_id)
     return 0
+
+
+# ── P0 GPU-unit subprocess worker (#693) ──────────────────────────────────────
+def _ic_secure_ctx_keys(cells: list[C.Cell]) -> list[str]:
+    """The ctx_keys the single shared ic_secure generation fans to: every source +
+    every neg.slug (mirrors ``_elicit_secure_code``'s ``ctx_keys`` exactly, §3.4)."""
+    sources = sorted({c.source for c in cells})
+    return [*sources, *[neg.slug for neg in C.negative_panel()]]
+
+
+def _p0_unit_done(unit: P0Unit, *, smoke: bool, cells: list[C.Cell] | None = None) -> bool:
+    """Per-unit resume-skip predicate (mirrors the in-helper early-return guards).
+
+    A unit is done iff its output cache(s) exist -- so a killed-mid-p0 re-run skips
+    completed units, exactly like p1/p2. For the syco_pos / refusal_pos units the
+    cache existence is the same guard the serial helper used (the helper writes the
+    cache only after its judge reconciles). The ``baseline`` kind is the exception:
+    its raw cache (``baseline_raw/{ctx}.json``) is written EAGERLY at generation
+    time, BEFORE the judge is submitted/reconciled, and the deferred reconcile
+    writes a SEPARATE ``baseline_raw/{ctx}__scores.json``. Resume-skip must match
+    ``_aggregate_baseline_propensity``'s completeness gate exactly -- raw alone is
+    INCOMPLETE for a non-smoke baseline unit (the aggregator requires raw AND
+    scores) -- so a baseline unit that crashed between raw-write and judge-reconcile
+    re-runs instead of being skipped forever (which would deadlock the aggregator).
+    ``cells`` is needed only for the shared ``ic_secure`` unit (its done-ness is
+    "every ctx_key cache exists"); it defaults to the realized grid so the
+    WaveDispatcher closure can call ``_p0_unit_done(u, smoke=...)`` without threading
+    the selection."""
+    if unit.kind == "ic_secure":
+        sel = cells if cells is not None else C.realized_grid()
+        return all(
+            (CACHE_ROOT / "ic_secure" / f"{k}.json").exists() for k in _ic_secure_ctx_keys(sel)
+        )
+    if unit.kind == "baseline":
+        # The raw cache is written eagerly (pre-judge); the aggregator additionally
+        # requires the post-reconcile __scores.json for non-smoke units. Require the
+        # SAME pair the aggregator gates on so resume-skip never wedges a baseline
+        # unit that died mid-judge-reconcile (raw-without-scores) -> see docstring.
+        raw = CACHE_ROOT / "baseline_raw" / f"{unit.ctx_key}.json"
+        if not raw.exists():
+            return False
+        if smoke:
+            return True
+        scores = CACHE_ROOT / "baseline_raw" / f"{unit.ctx_key}__scores.json"
+        return scores.exists()
+    # marker_R / syco_pos / refusal_pos / refusal_neg -> CACHE_ROOT/{kind}/{ctx}.json
+    return (CACHE_ROOT / unit.kind / f"{unit.ctx_key}.json").exists()
+
+
+def _p0_unit_cmd(unit: P0Unit, gpu_id: int, args, sig: str, *, smoke: bool) -> CellCmd:
+    """Build the p0 GPU-unit one-unit launch spec (CVD pinned in the launcher env).
+
+    Threads the FULL ``_select_cells``-affecting flag set into the child argv so the
+    child's ``_select_cells(args)`` reconstructs the parent's selection byte-for-byte
+    (#693 plan §3.2 MUST-FIX): ``--cells`` (iff set), ``--live-judge-smoke`` (iff
+    set), ``--smoke`` (iff set). ``--p0-expect-sig`` carries the parent's selection
+    fingerprint; the child asserts its own reconstruction matches (defense-in-depth
+    for any future un-threaded selection flag). ``--gpu-id`` threads the matching
+    in-process device value; ``env`` carries the CVD launcher pin + the vLLM spawn
+    method (gotchas.md cuInit-freeze / fork-poison)."""
+    argv = [
+        sys.executable,
+        str(C.REPO / "scripts/issue664_dispatch.py"),
+        "--p0-one-unit",
+        "--p0-kind", unit.kind,
+        "--p0-ctx-key", unit.ctx_key,
+        "--gpu-id", str(gpu_id),
+        "--n-gpus", str(args.n_gpus),
+        "--p0-expect-sig", sig,
+    ]  # fmt: skip
+    if args.cells is not None:
+        argv += ["--cells", str(args.cells)]
+    if args.live_judge_smoke:
+        argv.append("--live-judge-smoke")
+    if smoke:
+        argv.append("--smoke")
+    log = _log_dir() / f"issue-664-p0unit-{unit.kind}-{unit.ctx_key}{'_smoke' if smoke else ''}.log"
+    return CellCmd(
+        cell_key=unit.unit_key,
+        argv=argv,
+        env=_cvd_env(gpu_id),
+        log_path=log,
+        gpu_id=gpu_id,
+    )
+
+
+def _run_p0_unit(unit: P0Unit, llm, cells, judge_jobs: list, *, smoke: bool) -> None:
+    """Dispatch ONE p0 unit's generation on ``unit.kind``, calling the EXISTING
+    generation helper with an ``only_ctx`` filter so it produces only this unit's
+    cache (#693 plan §3.6). The generation + cache-write code is the current code,
+    unchanged in behavior; only the loop boundary moved out to the WaveDispatcher."""
+    sources = sorted({c.source for c in cells})
+    behaviors = sorted({c.behavior for c in cells})
+    neg_panel = C.negative_panel()
+    if unit.kind == "marker_R":
+        marker_qs = _marker_question_pool(smoke)
+        _elicit_marker_R(llm, sources, neg_panel, marker_qs, only_ctx=unit.ctx_key, smoke=smoke)
+    elif unit.kind == "syco_pos":
+        _elicit_sycophancy(llm, sources, judge_jobs, only_ctx=unit.ctx_key, smoke=smoke)
+    elif unit.kind in ("refusal_pos", "refusal_neg"):
+        refusal_qs = _refusal_request_pool(smoke)
+        _elicit_refusal(
+            llm,
+            sources,
+            neg_panel,
+            refusal_qs,
+            judge_jobs,
+            only_kind=unit.kind,
+            only_ctx=unit.ctx_key,
+            smoke=smoke,
+        )
+    elif unit.kind == "ic_secure":
+        # The shared secure-code generation: one generation fanned to all ctx_keys.
+        _elicit_secure_code(llm, sources, neg_panel, smoke=smoke)
+    elif unit.kind == "baseline":
+        refusal_qs = _refusal_request_pool(smoke)
+        _write_baseline_propensity(
+            llm,
+            sources,
+            behaviors,
+            refusal_qs,
+            judge_jobs,
+            only_ctx=unit.ctx_key,
+            write_aggregate=False,  # the cross-unit aggregate runs AFTER the fan
+            smoke=smoke,
+        )
+    else:
+        raise SystemExit(f"unknown p0 unit kind: {unit.kind!r}")
+
+
+def _p0_run_one_unit(args) -> int:
+    """One p0-unit subprocess worker (the WaveDispatcher ``--p0-one-unit`` path).
+
+    Reconstructs the single ``P0Unit`` from ``--p0-kind``/``--p0-ctx-key``, RE-RUNS
+    the parent's ``_select_cells(args)`` (the ``--cells``/``--smoke``/
+    ``--live-judge-smoke`` flags are threaded so the selection matches), asserts the
+    selection fingerprint equals the parent's ``--p0-expect-sig`` (fail-loud on
+    mismatch, §3.2), spawns ONE vLLM engine, runs this unit's generation, submits +
+    reconciles its OWN judge IN this subprocess (engine torn down FIRST so the GPU
+    never blocks on its own judge), and exits. CVD is already pinned in the launcher
+    env by the parent WaveDispatcher; ``--gpu-id`` threads the matching in-process
+    value (gotchas.md cuInit-freeze)."""
+    _require_credentials()
+    for name in ("p0_kind", "p0_ctx_key", "p0_expect_sig"):
+        if getattr(args, name) is None:
+            raise SystemExit(f"--{name.replace('_', '-')} is required for a --p0-one-unit worker")
+    unit = P0Unit(args.p0_kind, args.p0_ctx_key)
+    cells = _select_cells(args)  # SAME flags as the parent (threaded by _p0_unit_cmd)
+    sig = _selection_sig(cells)
+    if sig != args.p0_expect_sig:  # parity assert (fail-loud, §3.2)
+        raise RuntimeError(
+            f"[p0-unit] selection fingerprint mismatch: child reconstructed {sig} "
+            f"but parent computed {args.p0_expect_sig}; a _select_cells-affecting flag "
+            "is not threaded into --p0-one-unit. Refusing to run a divergent unit "
+            "(would corrupt the sharded cache)."
+        )
+    smoke = args.smoke
+    judge_jobs: list[Callable[[], None]] = []
+    llm = _vllm_engine(2 * C.MAX_NEW_TOKENS + 1024)
+    try:
+        _run_p0_unit(unit, llm, cells, judge_jobs, smoke=smoke)
+    finally:
+        _teardown_vllm(llm)
+    # Reconcile THIS unit's judge -- engine already freed, so the GPU never blocked
+    # on its own judge (the cross-unit overlap comes from the fan: while THIS unit's
+    # subprocess polls its judge, the other shards keep generating). Fail-loud: a
+    # reconcile job propagates BatchDeadlineExceeded rather than defaulting a label.
+    for job in judge_jobs:
+        job()
+    return 0
+
+
+def _aggregate_baseline_propensity(cells: list[C.Cell], *, smoke: bool) -> None:
+    """Cross-unit barrier: write ``baseline_propensity.json`` from the per-unit
+    ``baseline_raw/*`` artifacts the baseline units already wrote (#693 plan §3.6,
+    CONCERN A -- completeness-gated, fail-loud).
+
+    Enumerates the EXACT expected ``(rated_behavior, source)`` pair set EXACTLY as
+    ``_write_baseline_propensity`` does (``rated = [b for b in behaviors if b in
+    C.CONTENT_BEHAVIORS]`` x ``sources``) and requires, for EVERY expected pair, the
+    raw ``baseline_raw/{behavior}__{src}.json`` AND (non-smoke) the judge save_raw
+    ``baseline_raw/{behavior}__{src}__scores.json`` to exist + parse. A missing or
+    unreadable per-unit artifact raises ``RuntimeError`` BEFORE the aggregate is
+    written (never a partial aggregate, never a defaulted rate). Smoke skips the
+    ``__scores.json`` requirement (judge skipped, rate ``None``) but still requires
+    the raw artifact for every expected pair. Mirrors #664's per-cell EXACT-set HF
+    verify (completeness = an enumerated-expected-set check, not prefix-presence)."""
+    import issue664_eval as E
+
+    behaviors = sorted({c.behavior for c in cells})
+    sources = sorted({c.source for c in cells})
+    rated = [b for b in behaviors if b in C.CONTENT_BEHAVIORS]
+    raw_root = CACHE_ROOT / "baseline_raw"
+    out = CACHE_ROOT / "baseline_propensity.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    rates: dict[str, dict[str, dict]] = {}
+    raw_pointers: dict[str, dict[str, str]] = {}
+    for behavior in rated:
+        rates[behavior] = {}
+        raw_pointers[behavior] = {}
+        column = C.BEHAVIOR_REGISTRY_PRIMARY_COLUMN[behavior]
+        for src in sources:
+            raw_path = raw_root / f"{behavior}__{src}.json"
+            if not raw_path.exists():
+                raise RuntimeError(
+                    f"[p0-baseline-aggregate] missing per-unit raw artifact {raw_path} "
+                    f"-- the baseline unit for ({behavior}, {src}) never completed; "
+                    "refusing to write a partial baseline_propensity.json."
+                )
+            try:
+                raw = json.loads(raw_path.read_text())
+            except json.JSONDecodeError as e:
+                raise RuntimeError(
+                    f"[p0-baseline-aggregate] unreadable per-unit raw artifact {raw_path}: {e}"
+                ) from e
+            raw_pointers[behavior][src] = str(raw_path.relative_to(CACHE_ROOT))
+            if smoke:
+                rates[behavior][src] = {"rate": None, "n_judged": 0, "note": "smoke: judge skipped"}
+                continue
+            scores_path = raw_root / f"{behavior}__{src}__scores.json"
+            if not scores_path.exists():
+                raise RuntimeError(
+                    f"[p0-baseline-aggregate] missing per-unit judge scores {scores_path} "
+                    f"-- the baseline unit for ({behavior}, {src}) did not reconcile its "
+                    "judge; refusing to write a partial baseline_propensity.json."
+                )
+            try:
+                all_scores = E._scores_from_save_raw(scores_path)
+            except json.JSONDecodeError as e:
+                raise RuntimeError(
+                    f"[p0-baseline-aggregate] unreadable per-unit judge scores {scores_path}: {e}"
+                ) from e
+            agg_rows = [
+                {"question": r["question"], "completions": [r["base_completion"]]}
+                for r in raw["rows"]
+            ]
+            agg = E._rate_from_raw_scores(column, agg_rows, all_scores)
+            rates[behavior][src] = {
+                "rate": agg["rate"],
+                "n_judged": agg["n_judged"],
+                "judge_column": column,
+            }
+
+    out.write_text(
+        json.dumps(
+            {
+                **C.repro_meta(seed=C.DEFAULT_SEED),
+                "note": "source-side pre-training BASE-model behavior RATE covariate "
+                "(bare source context, NO elicitation), judge-scored "
+                "(claude-sonnet-4-5). Raw base completions persisted under "
+                "baseline_raw/ for Phase-3/4 covariate derivation/audit. #664 "
+                "round-2 M6: covers EVERY content behavior with a judged column "
+                "(sycophancy/refusal/fact + em/bad_medical Betley dual-rubric); "
+                "the marker source-side prior is read on the marker slot base "
+                "read (no judged content rate for marker). #693: aggregated from "
+                "the per-unit baseline_raw/* artifacts after the GPU-unit fan, "
+                "completeness-gated on the exact (rated_behavior, source) set.",
+                "sources": list(sources),
+                "behaviors": list(behaviors),
+                "rated_behaviors": rated,
+                "judged_rates": rates,
+                "raw_completion_pointers": raw_pointers,
+                "smoke": smoke,
+            },
+            indent=2,
+        )
+    )
+    logger.info(
+        "[p0-baseline-aggregate] baseline propensity written (%d rated behaviors) -> %s",
+        len(rated),
+        out,
+    )
 
 
 # ── P2.3 upload raw completions + store tensors ───────────────────────────────
@@ -1186,7 +1833,9 @@ def _upload_baseline_propensity(cells: list[C.Cell]) -> None:
     n_expected = len(to_upload)
     # verify on a FRESH listing (Python Hub API, never the hf CLI).
     landed = [
-        p for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset") if p.startswith(prefix)
+        p
+        for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+        if p.startswith(prefix)
     ]
     if len(landed) < n_expected:
         raise RuntimeError(
@@ -1209,7 +1858,17 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
     ``rglob('raw_completions.json')`` does NOT match (the #528 silent-loss
     class). So we walk the ACTUAL write path and upload per-file with
     ``upload_as_file=True`` to ``issue664_leakage_fleet/raw_completions/<rel>``,
-    then verify the per-cell file count landed on the Hub before teardown."""
+    then verify the EXACT expected file set per selected cell landed on the Hub
+    before teardown (#689 blocker-4: an exact-set check, not a count floor).
+
+    #664/#689 fix (a): the per-cell incremental hook (``_upload_cell_artifacts``)
+    already pushed each cell as it completed, so P3 is now an idempotent SAFETY
+    SWEEP -- it skips cells already complete on the Hub (EXACT-set, not
+    prefix-presence) and re-uploads only what the per-cell hook missed. A2: on a
+    fresh pod after a wedge auto-migrate the local registry is EMPTY for cells
+    that live only on HF, so an empty-local registry where every selected cell is
+    already complete on HF is the all-on-HF NO-OP, not the genuine
+    nothing-was-produced error."""
     from huggingface_hub import list_repo_files
 
     from explore_persona_space.orchestrate import hub
@@ -1218,13 +1877,32 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
     reg_root = C.EVAL_ROOT / "registry"
     files = sorted(reg_root.rglob("completions__*.json"))
     if not files:
+        # A2: an empty LOCAL registry is the NORMAL fresh-pod case for cells that
+        # are already complete on HF (the wedge auto-migrate path). If every
+        # selected cell is complete on the Hub, this is a no-op success -- only a
+        # genuinely-empty-AND-not-on-HF run is the error the raise below names.
+        on_hub = set(list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main"))
+        if cells and all(_classify_cell_hub_state(c, on_hub) == "complete" for c in cells):
+            logger.info(
+                "[p3-upload] no local raw completions but every selected cell is "
+                "complete on HF (fresh-pod resume); P3 raw-completions is a no-op"
+            )
+            return
         raise RuntimeError(
             f"[p3-upload] NO raw completions under {reg_root} -- the eval gen "
             "phase produced nothing; refusing to terminate with empty buckets"
         )
+    # Per-cell exact-set skip guard, computed ONCE from a single fresh listing: a
+    # cell whose EXACT expected set is already on the Hub was pushed by the
+    # per-cell hook, so its local files are re-upload noise.
+    on_hub = set(list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main"))
+    complete_keys = {c.eval_key for c in cells if _classify_cell_hub_state(c, on_hub) == "complete"}
     n_expected = 0
     for f in files:
         rel = f.relative_to(reg_root).as_posix()  # <cell>/completions__<col>__<ctx>.json
+        cell_key = rel.split("/", 1)[0]
+        if cell_key in complete_keys:
+            continue  # already complete on HF (per-cell hook) -- skip the re-upload
         hub._upload(
             f,
             repo_id=C.HF_DATA_REPO,
@@ -1233,18 +1911,36 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
             upload_as_file=True,  # gotchas: per-file _upload needs this
         )
         n_expected += 1
-    # verify on a FRESH listing (Python Hub API, never the hf CLI).
-    landed = [
-        p for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset") if p.startswith(prefix)
-    ]
-    if len(landed) < n_expected:
+    # #689 blocker-4 (p3-raw-exact-verify): verify on a FRESH listing (Python Hub
+    # API, never the hf CLI) with an EXACT FILE-SET check per selected cell, NOT a
+    # count floor. A count check (``len(landed) < n_expected``) can PASS with an
+    # incomplete selected cell whenever unrelated files under the prefix inflate the
+    # count -- the same prefix-vs-exact-set hole the M2 store verify closes. Build
+    # the expected raw path set for EVERY selected cell (``_expected_eval_files``,
+    # the completions basenames the gen phase writes), then raise naming the exact
+    # missing (cell, file) pairs.
+    landed = {
+        p
+        for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+        if p.startswith(prefix)
+    }
+    missing: list[str] = []
+    for cell in cells:
+        cell_prefix = f"{prefix}/{cell.eval_key}/"
+        for basename in _expected_eval_files(cell):
+            expected_path = f"{cell_prefix}{basename}"
+            if expected_path not in landed:
+                missing.append(expected_path)
+    if missing:
         raise RuntimeError(
-            f"[p3-upload] raw-completions verify FAILED: {len(landed)} on Hub < "
-            f"{n_expected} expected under {prefix}"
+            f"[p3-upload] raw-completions EXACT-set verify FAILED: {len(missing)} expected "
+            f"completion file(s) missing on the Hub under {prefix}: {sorted(missing)}"
         )
     logger.info(
-        "[p3-upload] %d raw-completion files uploaded + verified -> %s/%s",
+        "[p3-upload] %d raw-completion files uploaded this sweep; EXACT-set verified "
+        "(%d selected cells) -> %s/%s",
         n_expected,
+        len(cells),
         C.HF_DATA_REPO,
         prefix,
     )
@@ -1256,7 +1952,20 @@ def _upload_store_tensors(cells: list[C.Cell]) -> None:
     cell is FAIL-LOUD, NOT a warn-and-continue -- the prior `logger.warning; continue`
     let the dispatcher reach `[phase=done]` with incomplete primary deliverables
     mirrored to HF (the #521 trap variant: a downstream control becomes permanently
-    unrunnable, discovered only post-teardown)."""
+    unrunnable, discovered only post-teardown).
+
+    #664/#689 fix (a) + M2: the per-cell incremental hook already pushed each
+    cell's store tensors, so this is an idempotent SAFETY SWEEP. A2: a cell with
+    NO local ``tensors.pt`` that is already COMPLETE on HF (the fresh-pod
+    auto-migrate path) is NOT missing -- it was uploaded per-cell; only a cell
+    that is neither local-complete nor HF-complete is a real miss. M2 (the gap
+    this closes): the prior helper had only a local ``tp.exists()`` check and NO
+    fresh-listing Hub verify, so a 429-throttled / transient upload could leave
+    store tensors uploaded-but-not-landed and still return clean -- a data-loss
+    hole the irreversible auto-terminate (fix (b)) is gated on. Add a
+    fresh-listing EXACT-set Hub verify after the upload loop."""
+    from huggingface_hub import list_repo_files
+
     from explore_persona_space.orchestrate import hub
 
     missing: list[str] = []
@@ -1264,6 +1973,11 @@ def _upload_store_tensors(cells: list[C.Cell]) -> None:
         cell_dir = C.STORE_ROOT / cell.eval_key
         tp = cell_dir / "tensors.pt"
         if not tp.exists():
+            # A2: a cell complete on HF (fresh-pod path) with no local files is NOT
+            # missing -- it was already uploaded per-cell. Only a cell that is
+            # neither local-complete nor HF-complete is a real miss.
+            if _cell_artifacts_on_hub(cell):
+                continue
             missing.append(f"{cell.eval_key} ({tp})")
             continue
         for f in cell_dir.glob("*"):
@@ -1282,7 +1996,73 @@ def _upload_store_tensors(cells: list[C.Cell]) -> None:
             "[phase=done] with incomplete PRIMARY deliverables (the Phase-3/4 "
             "input) -- this is the #521 trap. Investigate the P2.2 extraction."
         )
-    logger.info("[p3-upload] store tensors uploaded -> %s/%s", C.HF_DATA_REPO, C.HF_STORE_PREFIX)
+    # M2 (#664/#689): FRESH-listing EXACT-set verify -- every selected cell's store
+    # tensors.pt + meta.json must be present on the Hub before teardown. The prior
+    # helper had NO post-upload Hub verify (only the local tp.exists() check above),
+    # so a silently-dropped upload could pass; the irreversible auto-terminate gate
+    # in backend_poll is gated on this presence.
+    on_hub = set(list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main"))
+    not_landed: list[str] = []
+    for cell in cells:
+        store_prefix = f"{C.HF_STORE_PREFIX}/{cell.eval_key}/"
+        have = {p[len(store_prefix) :] for p in on_hub if p.startswith(store_prefix)}
+        if not _expected_store_files().issubset(have):
+            not_landed.append(f"{cell.eval_key} (have={sorted(have)})")
+    if not_landed:
+        raise RuntimeError(
+            f"[p3-upload] store-tensors Hub-verify FAILED: {len(not_landed)} cell(s) "
+            f"missing tensors.pt/meta.json on the Hub after upload: {not_landed}"
+        )
+    logger.info(
+        "[p3-upload] store tensors uploaded + Hub-verified -> %s/%s",
+        C.HF_DATA_REPO,
+        C.HF_STORE_PREFIX,
+    )
+
+
+def _hydrate_marker_slot_stats_from_hf(marker_cells: list[C.Cell]) -> None:
+    """Download each marker cell's ``marker_slot_stats.json`` from HF into its
+    local path when the local file is ABSENT but the cell is HF-complete (#689
+    blocker-1, fix a1). This is the fresh-auto-migrated-pod recovery path: P2
+    SKIPped these cells (A2 ``_cell_done_anywhere`` saw them complete on HF), so
+    the readability assert has no local file to read. ONE fresh ``list_repo_files``
+    listing classifies all cells; only the HF-complete-but-local-absent ones are
+    hydrated. Best-effort per cell (a download failure leaves the file absent, so
+    the cell is skipped exactly as before) -- never raises; the caller's
+    ``checked == 0`` guard is the loud failure when the surface is genuinely
+    broken."""
+    import huggingface_hub
+
+    try:
+        on_hub = set(
+            huggingface_hub.list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+        )
+    except Exception as exc:
+        logger.warning("[a7-assert] HF listing for marker-slot hydrate failed (%s); skipping", exc)
+        return
+    for cell in marker_cells:
+        local = _marker_slot_local_path(cell, smoke=False)
+        if local.exists():
+            continue
+        if _classify_cell_hub_state(cell, on_hub) != "complete":
+            continue  # not on HF -> nothing to hydrate (cell is skipped + may trip checked==0)
+        remote = f"{C.HF_MARKER_SLOT_PREFIX}/{cell.eval_key}/marker_slot_stats.json"
+        try:
+            downloaded = huggingface_hub.hf_hub_download(
+                repo_id=C.HF_DATA_REPO,
+                repo_type="dataset",
+                filename=remote,
+                revision="main",
+            )
+            local.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(downloaded, local)
+            logger.info("[a7-assert] hydrated marker slot stats from HF -> %s", local)
+        except Exception as exc:
+            logger.warning(
+                "[a7-assert] marker-slot hydrate failed for %s (%s); leaving local absent",
+                cell.eval_key,
+                exc,
+            )
 
 
 # ── Marker read-gauge readability assert (§10 / §11 A7) ───────────────────────
@@ -1306,6 +2086,19 @@ def _marker_readability_assert(cells: list[C.Cell], *, smoke: bool) -> None:
         logger.info("[a7-assert] no marker cell in selection -- A7 read-gauge assert N/A")
         return
     suffix = "_smoke" if smoke else ""
+    # #689 blocker-1 (fix a1): FRESH-POD HYDRATE. On a fresh auto-migrated pod the
+    # marker cells live only on HF (A2 _cell_done_anywhere skipped them in P2), so
+    # the LOCAL marker_slot_stats.json is absent -- without this the loop below
+    # would `continue` past every cell, hit `checked == 0`, and RAISE (the
+    # production-path crash this fix closes). For each marker cell whose local
+    # slot file is absent but is HF-complete, download marker_slot_stats.json from
+    # HF into the local path so the assertion below reads it. Smoke never consults
+    # HF (the per-cell upload is smoke-skipped). Best-effort: a hydrate miss leaves
+    # the file absent (the cell is then skipped as before) -- the `checked == 0`
+    # raise still fires if NO marker cell could be read, which is the correct loud
+    # failure when the marker-slot HF surface is genuinely broken.
+    if not smoke:
+        _hydrate_marker_slot_stats_from_hf(marker_cells)
     checked = 0
     failures: list[str] = []
     for cell in marker_cells:
@@ -1428,7 +2221,11 @@ def run_all(args) -> None:
         WaveDispatcher(
             n_gpus=args.n_gpus,
             cell_key=lambda c: c.eval_key,
-            is_done=lambda c: _cell_extract_eval_done(c, smoke=args.smoke),
+            # A2 (#664/#689): a cell is done if its final artifacts are on the pod
+            # volume OR already complete on HF (the fresh-pod-after-auto-migrate
+            # path) -- so a fresh pod after a wedge auto-migrate SKIPS HF-complete
+            # cells instead of re-running them.
+            is_done=lambda c: _cell_done_anywhere(c, smoke=args.smoke),
             build_cmd=lambda c, g: _extract_eval_cell_cmd(
                 c, _wave_gpu_id(args, g), smoke=args.smoke
             ),
@@ -1537,12 +2334,36 @@ def main() -> int:
         help="(internal) extract+eval EXACTLY one cell and exit; the WaveDispatcher "
         "subprocess worker for P2.2.",
     )
+    # P0 GPU-unit subprocess entrypoint (#693) — how the phase0 WaveDispatcher
+    # invokes one (kind, ctx_key) generation unit in its OWN process. NOT for human
+    # use. The parent threads the full _select_cells flag set + the selection
+    # fingerprint so the child reconstructs the parent's selection (plan §3.2).
+    ap.add_argument(
+        "--p0-one-unit",
+        action="store_true",
+        help="(internal) run EXACTLY one p0 GPU-generation unit (named by "
+        "--p0-kind/--p0-ctx-key) and exit; the WaveDispatcher subprocess worker for "
+        "the #693 phase0 fan.",
+    )
+    ap.add_argument("--p0-kind", help="(internal) the p0 unit kind (#693).")
+    ap.add_argument("--p0-ctx-key", help="(internal) the p0 unit ctx_key (#693).")
+    ap.add_argument(
+        "--p0-expect-sig",
+        help="(internal) the parent's _selection_sig fingerprint; the child asserts "
+        "its own _select_cells reconstruction matches (#693 §3.2 parity backstop).",
+    )
     ap.add_argument("--behavior")
     ap.add_argument("--source")
     ap.add_argument("--arm")
     ap.add_argument("--dose")
     ap.add_argument("--seed", type=int, default=C.DEFAULT_SEED)
     args = ap.parse_args()
+
+    # P0 GPU-unit subprocess worker (#693): reconstruct the single P0Unit, run its
+    # generation under its own engine, and exit. Dispatched before run_all (parallel
+    # to the one-cell workers below). CVD is pinned in the launcher env by the parent.
+    if args.p0_one_unit:
+        return _p0_run_one_unit(args)
 
     # One-cell subprocess workers: reconstruct the single Cell from the tuple args
     # and run exactly that cell's in-process op, then exit. These run with
