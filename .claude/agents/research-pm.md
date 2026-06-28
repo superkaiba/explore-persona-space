@@ -148,6 +148,28 @@ live session count. Example:
 `6 running, 1 plan_pending, 1 blocked | 51 awaiting promotion, 11
 proposed | burn $14.50/hr at 14:03 PT | 9 live sessions`.
 
+**/daily digest line (#706)** — directly above or below the headline
+counts, prepend ONE line summarizing the previous night's /daily run,
+read from the most recent `logs/daily/<date>.md` (the newest dated file
+under `logs/`). Emit it VERBATIM in this format:
+
+`/daily last night: applied N, filed M (→/issue), held J (needs you)`
+
+- **N** = count of entries in that file's `## Applied workflow
+  improvements` section (route-1 self-applied fixes; exclude the
+  `_no workflow-fixable problems found today_` placeholder).
+- **M** = count of route-2 filings — entries in `## Applied workflow
+  improvements` tagged/marked `daily-auto-filed` (the "filed for review
+  #<N>" entries; counting the `daily-auto-filed` tag rather than the
+  prose makes the count robust).
+- **J** = count of route-3 `needs-human` filings — count the
+  `needs-human`-tagged `proposed` tasks the file recorded (TAG-BASED, the
+  same set the `Held by /daily` sub-section enumerates), NOT a prose
+  grep of `## Other problems & notes` (a note may exist without a filed
+  task).
+- If NO `logs/daily/<date>.md` exists for the most recent night, OMIT
+  this line silently (no "no daily run" placeholder).
+
 The `proposed` figure counts ONLY the `proposed` status bucket — the
 live candidate queue. NEVER fold `on_hold` into it. `on_hold` is a
 parked backlog, a SEPARATE category, NOT mentioned in the headline at
@@ -171,6 +193,10 @@ genuinely needs his call). Candidate exceptions:
 - Watcher flags (ALIVE-BUT-STALLED, zombie wrappers), disk pressure,
   registry drift.
 - Dashboard comments awaiting reply; `needs-thomas` tags.
+- `needs-human`-tagged `proposed` tasks — /daily route-3 held judgment
+  calls (see the dedicated `Held by /daily (needs your call):`
+  sub-section of the `Needs you` block below; these are SURFACED +
+  RE-SURFACED every pass and EXCLUDED from auto-dispatch, never auto-run).
 
 For EACH candidate, INVESTIGATE before reporting — cheap reads first
 (`task.py view <N>` / `latest-marker`, watcher registry
@@ -206,6 +232,23 @@ Needs-attention block* — and the proposed queue is not enumerated here
 either, but it DOES get its own tight listing in part 3 below (it is the
 one category the user acts on next). Never block the STATUS pass on a
 fix — anything slow runs in the background and reports on the next pass.
+
+Inside the `Needs you (N):` block, surface /daily-held judgment calls as
+a distinct sub-section (#706) — they genuinely need Thomas's call, and
+the ADHD-aware re-surfacing rule (SOUL.md "ADHD-aware urgent
+re-surfacing": re-surface until acknowledged, never drop after one
+mention) applies:
+
+> **Held by /daily (needs your call):** ENUMERATE every
+> `needs-human`-tagged `proposed` task EACH pass, one line each —
+> `#<id> <held-item one-liner> (<carve-out reason>)` (read the held-item
+> summary + the carve-out item from the task body's first lines via the
+> `pm_queue_report.py` title + a single `task.py view <N>` only when the
+> title is not self-describing). These are NEVER silently collapsed into
+> a count and NEVER auto-dispatched — they re-appear in full every STATUS
+> pass until the task leaves `proposed`/`needs-human` (Thomas files it for
+> work, archives it, or removes the tag). The block is omitted only when
+> NO `needs-human` `proposed` task exists.
 
 **3. Proposed & follow-ups (N)** — a tight per-task listing of the live
 `proposed` queue, NOT just the headline count (user directive
@@ -464,6 +507,15 @@ alike — run the infra auto-dispatch pass:
      concurrency cap and the SAME park list below; the `agent-ok` tag is
      the required opt-in (an `agent-ok`-untagged `kind: analysis` task is
      NOT auto-dispatched — it stays for Mode 4/5 triage).
+
+   EXCLUDE any task tagged `needs-human` — these are /daily-held judgment
+   calls (route 3, `.claude/skills/daily/SKILL.md`) that need Thomas's
+   call, NOT autonomous dispatch. They surface in the STATUS `Needs you`
+   block (Mode 1 part 2, the `Held by /daily (needs your call):`
+   sub-section) and are re-surfaced every pass until Thomas acts; they
+   are NEVER auto-run. (The watcher's `proposed_infra_sweep` backstop
+   enforces the same skip mechanically via `_proposed_infra_candidates`,
+   so a `needs-human` task is excluded from BOTH dispatch surfaces.)
 
    `kind: experiment` stays OUT of scope — it keeps the Mode 4/5
    ranked-candidate flow, the full adversarial-planner path, and the

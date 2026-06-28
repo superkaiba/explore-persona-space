@@ -6258,6 +6258,11 @@ INFRA_DRAIN_PREDICATE_PREFIX = "predicate-"
 INFRA_DRAIN_QUEUE_WRITER = "autonomous_session_watch:predicate-promote"
 
 # ── proposed-infra sweep (always-on backstop for orphaned ripe infra; #690) ──
+# On-task tag marking a `proposed` infra/batch task as a /daily route-3 held
+# judgment call (#706). A task carrying this tag is NEVER an auto-dispatch
+# candidate — it is surfaced in the PM `Needs you` block for Thomas's call, not
+# auto-run by this always-on sweep. Excluded in `_proposed_infra_candidates`.
+_NEEDS_HUMAN_TAG = "needs-human"
 # A SEPARATE attempt/backoff state file from the PM-queue drain's
 # `infra-drain-state.json`: a single task can be reachable via BOTH the PM
 # queue (the drain) AND the sweep (a `proposed` infra task the watcher
@@ -7483,7 +7488,11 @@ def _proposed_infra_candidates() -> list[int] | None:
     The ``--status proposed`` filter is the STRUCTURAL `on_hold`-exclusion
     mechanism (#690 M2): `on_hold` is a different status FOLDER, so a query
     restricted to `--status proposed` can never enumerate an `on_hold` task —
-    pinned by the exact-argv Test 10. Returns ``None`` on any read/parse
+    pinned by the exact-argv Test 10. A row tagged
+    :data:`_NEEDS_HUMAN_TAG` is ALSO excluded (#706): a /daily route-3 held
+    judgment call is a tracked `proposed` infra task surfaced in the PM
+    `Needs you` block for Thomas's call, NEVER auto-dispatched by this sweep.
+    Returns ``None`` on any read/parse
     failure (the pass then skips this tick — fail toward NOT dispatching,
     mirroring :func:`_infra_drain_occupancy`'s fail-closed posture)."""
     try:
@@ -7516,6 +7525,12 @@ def _proposed_infra_candidates() -> list[int] | None:
     ids: list[int] = []
     for row in rows:
         if not isinstance(row, dict) or row.get("kind") not in INFRA_DRAIN_KINDS:
+            continue
+        # #706: a /daily route-3 held judgment call carries `needs-human` —
+        # surfaced in the PM `Needs you` block, never auto-dispatched. The
+        # `or []` guards legacy rows that predate the `tags` field (a
+        # `row["tags"]` lookup would KeyError + crash the whole sweep).
+        if _NEEDS_HUMAN_TAG in (row.get("tags") or []):
             continue
         tid = row.get("id")
         if isinstance(tid, int) and tid not in ids:
