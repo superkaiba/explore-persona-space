@@ -117,6 +117,97 @@ def ignore_topk_mask_signed(delta: torch.Tensor, k_frac: float) -> torch.Tensor:
     return mask.view_as(delta)
 
 
+# ── per-matrix streaming weight access (plan §9: peak footprint < 15 GB) ────
+
+
+class StreamingWeights:
+    """Lazy per-key tensor reader over a checkpoint's safetensors shards.
+
+    The plan §9 registered constraint is that P4 holds < 15 GB resident by
+    loading ONE matrix's base+ft tensors at a time, never three full fp32 7B
+    state dicts (~84 GB) simultaneously (BLOCKER #715-7 / reconcile MAJOR #7).
+    This opens the checkpoint's safetensors shards with ``safe_open`` and reads
+    a single tensor on demand via ``get(key)`` / ``__getitem__``; nothing is
+    cached, so consecutive ``get`` calls free the prior tensor.
+
+    Resolution:
+      - a local dir → its ``model.safetensors`` (single) or the shards named in
+        ``model.safetensors.index.json::weight_map`` (sharded);
+      - an HF model id (no local dir) → ``snapshot_download`` of the safetensors
+        first, then the same shard logic.
+
+    ``keys()`` lists every available tensor key (the union across shards) so the
+    scope selectors (``down_proj_keys`` / ``all_linear_weight_keys``) work
+    against the key set without materializing any tensor.
+    """
+
+    def __init__(self, path: str):
+        self._resolved = self._resolve_dir(path)
+        self._key_to_shard, self._shard_handles = self._index_shards(self._resolved)
+
+    @staticmethod
+    def _resolve_dir(path: str) -> Path:
+        p = Path(path)
+        if p.exists() and p.is_dir():
+            return p
+        # HF model id: download only the safetensors + index + dtype metadata.
+        from huggingface_hub import snapshot_download
+
+        local = snapshot_download(
+            repo_id=path,
+            allow_patterns=["*.safetensors", "*.safetensors.index.json", "config.json"],
+        )
+        return Path(local)
+
+    @staticmethod
+    def _index_shards(root: Path) -> tuple[dict[str, str], dict]:
+        """Return (key→shard-filename, {shard-filename: lazily-opened handle})."""
+        from safetensors import safe_open
+
+        index = root / "model.safetensors.index.json"
+        if index.exists():
+            weight_map = json.loads(index.read_text())["weight_map"]
+        else:
+            single = root / "model.safetensors"
+            if not single.exists():
+                raise RuntimeError(
+                    f"{root} has neither model.safetensors.index.json nor "
+                    "model.safetensors — cannot stream weights for P4"
+                )
+            # One shard holds every key; enumerate the keys from the file.
+            with safe_open(str(single), framework="pt", device="cpu") as f:
+                weight_map = {k: "model.safetensors" for k in f.keys()}  # noqa: SIM118 — safe_open handle, not a dict
+        handles: dict[str, object] = {}
+        for shard in set(weight_map.values()):
+            handles[shard] = safe_open(str(root / shard), framework="pt", device="cpu")
+        return weight_map, handles
+
+    def tensor_keys(self) -> list[str]:
+        """Every available tensor key (union across shards). Named to avoid the
+        dict ``.keys()`` idiom — this is a lazy reader, not a mapping."""
+        return list(self._key_to_shard.keys())
+
+    def get(self, key: str) -> torch.Tensor:
+        shard = self._key_to_shard.get(key)
+        if shard is None:
+            raise KeyError(f"{key} not found in {self._resolved}")
+        # safe_open's get_tensor returns a fresh CPU tensor each call (no cache).
+        return self._shard_handles[shard].get_tensor(key)
+
+    def shape(self, key: str) -> tuple[int, ...]:
+        """The tensor's shape WITHOUT materializing it (slice metadata only)."""
+        shard = self._key_to_shard.get(key)
+        if shard is None:
+            raise KeyError(f"{key} not found in {self._resolved}")
+        return tuple(self._shard_handles[shard].get_slice(key).get_shape())
+
+    def __getitem__(self, key: str) -> torch.Tensor:
+        return self.get(key)
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._key_to_shard
+
+
 # ── (4a) Δθ geometry (CPU, per-matrix streaming) ───────────────────────────
 
 
@@ -189,24 +280,30 @@ def geometry_for_matrix(delta: torch.Tensor, d_vec: torch.Tensor | None = None) 
 
 
 def run_geometry_leg(
-    base_sd: dict,
-    sft_sd: dict,
-    dft_sd: dict,
+    base_w: StreamingWeights,
+    sft_w: StreamingWeights,
+    dft_w: StreamingWeights,
     target_keys: list[str],
     d_vec: torch.Tensor | None,
     out_path: Path,
     *,
     smoke: bool = False,
 ) -> dict:
-    """Compute per-matrix + aggregate geometry for both arms (CPU, streaming)."""
+    """Compute per-matrix + aggregate geometry for both arms (CPU, per-matrix streaming).
+
+    Reads ONE matrix's base+ft tensors at a time from the safetensors shards
+    (plan §9: peak footprint < 15 GB), never the full fp32 state dicts.
+    """
     keys = target_keys[:2] if smoke else target_keys
     result: dict = {"per_matrix": {"sft": {}, "dft": {}}, "aggregate": {}}
-    for arm, ft_sd in (("sft", sft_sd), ("dft", dft_sd)):
+    for arm, ft_w in (("sft", sft_w), ("dft", dft_w)):
         per = {}
         for k in keys:
-            delta = ft_sd[k] - base_sd[k]
+            # Stream one matrix per arm: base[k] + ft[k] resident, then discarded.
+            base_k = base_w.get(k)
+            delta = ft_w.get(k) - base_k
             per[k] = geometry_for_matrix(delta, d_vec)
-            del delta
+            del delta, base_k
             gc.collect()
         result["per_matrix"][arm] = per
         # Aggregate: mean across matrices of each scalar stat.
@@ -229,13 +326,39 @@ def run_geometry_leg(
 # ── (4b) Ignore-topK pruned-model OOD evals ─────────────────────────────────
 
 
+def _is_linear_weight_key(key: str) -> bool:
+    """A 2-D linear weight key by NAME (the global-ablation scope, excl. norms/embeds)."""
+    if not key.endswith(".weight"):
+        return False
+    return not any(s in key for s in ("embed", "lm_head", "norm"))
+
+
+def _all_linear_keys_from_handle(weights: StreamingWeights) -> list[str]:
+    """All 2-D linear weight keys from a StreamingWeights, confirmed 2-D via shape.
+
+    Reads only the per-key SHAPE metadata (``get_slice(k).get_shape()``) — never
+    a tensor — so the global scope is selected without materializing weights.
+    """
+    out = []
+    for k in weights.tensor_keys():
+        if not _is_linear_weight_key(k):
+            continue
+        shape = weights.shape(k)
+        if len(shape) != 2:
+            continue
+        out.append(k)
+    return out
+
+
 def all_linear_weight_keys(state_dict: dict) -> list[str]:
-    """All linear weight keys (the global-ablation scope). Excludes norms/embeds."""
+    """All linear weight keys (the global-ablation scope). Excludes norms/embeds.
+
+    Materializing variant kept for callers that already hold a full state_dict
+    (tests); the production path uses ``_all_linear_keys_from_handle``.
+    """
     out = []
     for k, v in state_dict.items():
-        if not k.endswith(".weight") or v.dim() != 2:
-            continue
-        if any(s in k for s in ("embed", "lm_head", "norm")):
+        if not _is_linear_weight_key(k) or v.dim() != 2:
             continue
         out.append(k)
     return out
@@ -244,6 +367,109 @@ def all_linear_weight_keys(state_dict: dict) -> list[str]:
 def down_proj_keys(state_dict: dict) -> list[str]:
     """MLP down-projection weight keys (the EM-relevant headline scope)."""
     return [k for k in state_dict if k.endswith(DOWN_PROJ_SUFFIX)]
+
+
+def _global_topk_threshold(
+    base_w: StreamingWeights, ft_w: StreamingWeights, k_frac: float, target_keys: list[str]
+) -> float:
+    """The global |Δ| top-k threshold, computed by streaming one matrix at a time.
+
+    Concatenating every target delta at once (the prior dict-path) materializes
+    all target deltas simultaneously — the exact > 15 GB footprint the plan
+    forbids. Instead gather only the flat |Δ| values per matrix, freeing each
+    full delta after extracting its abs values; the abs vectors are float32 and
+    far smaller than holding three full state dicts. Returns the magnitude
+    threshold whose top-k_frac fraction (by count) is at or above it.
+    """
+    if k_frac <= 0:
+        return float("inf")
+    abs_chunks = []
+    total = 0
+    for k in target_keys:
+        d = (ft_w.get(k).float() - base_w.get(k).float()).abs().flatten()
+        abs_chunks.append(d)
+        total += d.numel()
+        gc.collect()
+    n_zero = int(round(k_frac * total))  # noqa: RUF046 — mirrors body §P4 reference shape
+    if n_zero <= 0:
+        return float("inf")
+    allabs = torch.cat(abs_chunks)
+    del abs_chunks
+    thresh = float(torch.topk(allabs, n_zero, largest=True).values.min().item())
+    del allabs
+    gc.collect()
+    return thresh
+
+
+def build_pruned_model_streaming(
+    base_w: StreamingWeights,
+    ft_w: StreamingWeights,
+    k_frac: float,
+    target_keys: list[str],
+    out_dir: Path,
+    base_model_dir: Path,
+    *,
+    global_scope: bool = False,
+    signed: bool = False,
+) -> Path:
+    """Materialize θ_base + Δθ⊙mask as a loadable HF model dir, STREAMING per-matrix.
+
+    Reads each weight tensor on demand from ``ft_w`` (and ``base_w`` for the
+    target keys) instead of holding three full fp32 7B state dicts (~84 GB)
+    resident (plan §9, BLOCKER #715-7). Peak footprint is one full model's worth
+    of tensors being assembled into the output dict (unavoidable — a full pruned
+    model must be written to disk) plus one matrix's base/delta scratch — never
+    the base+sft+dft triple. Caller deletes out_dir after the eval.
+    """
+    import shutil
+
+    from safetensors.torch import save_file
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for name in (
+        "config.json",
+        "generation_config.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "vocab.json",
+        "merges.txt",
+        "special_tokens_map.json",
+        "added_tokens.json",
+    ):
+        src = base_model_dir / name
+        if src.exists():
+            shutil.copy2(src, out_dir / name)
+
+    target_set = set(target_keys)
+    # Global granularity needs a single threshold over all target deltas first.
+    global_thresh = (
+        _global_topk_threshold(base_w, ft_w, k_frac, target_keys)
+        if (global_scope and not signed)
+        else None
+    )
+
+    pruned: dict[str, torch.Tensor] = {}
+    for k in ft_w.tensor_keys():
+        ft_t = ft_w.get(k)
+        if k not in target_set:
+            pruned[k] = ft_t.clone()  # untouched key passes through
+            continue
+        orig_dtype = ft_t.dtype
+        d = ft_t.float() - base_w.get(k).float()
+        if signed:
+            mask = ignore_topk_mask_signed(d, k_frac)
+        elif global_scope:
+            mask = (d.abs() < global_thresh).to(d.dtype)  # 0 on top-k globally
+        else:
+            mask = ignore_topk_mask(d, k_frac)  # per-tensor (paper default)
+        pruned[k] = (base_w.get(k).float() + d * mask).to(orig_dtype)
+        del d, mask, ft_t
+        gc.collect()
+
+    save_file(pruned, str(out_dir / "model.safetensors"), metadata={"format": "pt"})
+    del pruned
+    gc.collect()
+    return out_dir
 
 
 def build_pruned_model(
@@ -257,10 +483,12 @@ def build_pruned_model(
     global_scope: bool = False,
     signed: bool = False,
 ) -> Path:
-    """Materialize θ_base + Δθ⊙mask as a loadable HF model dir (fp32 delta, cast back).
+    """Dict-based pruned-model build (kept for full-state-dict callers / tests).
 
-    Copies the base model's config/tokenizer into out_dir, then writes the pruned
-    state_dict. Caller deletes out_dir after the eval (atomic build→eval→delete).
+    The production path uses ``build_pruned_model_streaming``; this variant
+    operates on already-materialized state dicts and is exercised by the unit
+    tests against tiny fixtures. Copies the base config/tokenizer into out_dir,
+    then writes the pruned state_dict (atomic build→eval→delete).
     """
     import shutil
 
@@ -331,20 +559,12 @@ def main() -> int:
     # <scope>_<granularity> instead of clobbering a single p4_geometry/p4_prune.
     cell_suffix = f"{args.scope}_{args.granularity}"
 
-    from safetensors.torch import load_file as _load_safetensors  # noqa: F401
-    from transformers import AutoModelForCausalLM
-
-    def _load_sd(path: str) -> dict:
-        logger.info("Loading state_dict from %s", path)
-        m = AutoModelForCausalLM.from_pretrained(path, torch_dtype=torch.float32)
-        sd = {k: v.detach().cpu() for k, v in m.state_dict().items()}
-        del m
-        gc.collect()
-        return sd
-
-    base_sd = _load_sd(args.base_model_dir or args.base_model)
-    sft_sd = _load_sd(args.sft_ckpt)
-    dft_sd = _load_sd(args.dft_ckpt)
+    # Per-matrix streaming (plan §9, BLOCKER #715-7): open the safetensors shards
+    # for each checkpoint and read ONE matrix at a time, instead of materializing
+    # three full fp32 7B state dicts (~84 GB) into CPU RAM at once. Peak < 15 GB.
+    base_w = StreamingWeights(args.base_model_dir or args.base_model)
+    sft_w = StreamingWeights(args.sft_ckpt)
+    dft_w = StreamingWeights(args.dft_ckpt)
 
     d_vec = None
     if args.d_vector and Path(args.d_vector).exists():
@@ -352,18 +572,20 @@ def main() -> int:
         if isinstance(d_vec, dict):
             d_vec = d_vec.get("d") or next(iter(d_vec.values()))
 
-    target_keys = (
-        down_proj_keys(sft_sd) if args.scope == "down_proj" else all_linear_weight_keys(sft_sd)
-    )
+    # Scope selectors operate on the KEY set (no tensor materialization).
+    if args.scope == "down_proj":
+        target_keys = [k for k in sft_w.tensor_keys() if k.endswith(DOWN_PROJ_SUFFIX)]
+    else:
+        target_keys = _all_linear_keys_from_handle(sft_w)
     if not target_keys:
         raise RuntimeError(f"No target keys found for scope={args.scope}")
     logger.info("scope=%s -> %d target matrices", args.scope, len(target_keys))
 
     if args.leg in ("geometry", "both"):
         run_geometry_leg(
-            base_sd,
-            sft_sd,
-            dft_sd,
+            base_w,
+            sft_w,
+            dft_w,
             target_keys,
             d_vec,
             out_dir / f"p4_geometry_{cell_suffix}.json",
@@ -371,17 +593,25 @@ def main() -> int:
         )
 
     if args.leg in ("prune", "both"):
-        run_prune_leg(args, base_sd, sft_sd, dft_sd, target_keys, out_dir, cell_suffix)
+        run_prune_leg(args, base_w, sft_w, dft_w, target_keys, out_dir, cell_suffix)
 
     logger.info("[phase=p4_done] Phase-4 complete")
     return 0
 
 
 def run_prune_leg(
-    args, base_sd, sft_sd, dft_sd, target_keys, out_dir: Path, cell_suffix: str
+    args,
+    base_w: StreamingWeights,
+    sft_w: StreamingWeights,
+    dft_w: StreamingWeights,
+    target_keys,
+    out_dir: Path,
+    cell_suffix: str,
 ) -> None:
     """Build each pruned checkpoint, run the reused EM eval, record EM-vs-K.
 
+    Streams per-matrix from the safetensors shards (plan §9, BLOCKER #715-7) so
+    building a pruned model never co-resides three full fp32 7B state dicts.
     ``cell_suffix`` (``<scope>_<granularity>``) keys every output file so the
     4-cell grid does not clobber a single p4_prune.json (BLOCKER #715-4).
     """
@@ -402,14 +632,14 @@ def run_prune_leg(
     global_scope = args.granularity == "global"
 
     results = {"meta": reproducibility_metadata({"script": "issue715_p4_prune"}), "curves": {}}
-    for arm, ft_sd in (("sft", sft_sd), ("dft", dft_sd)):
+    for arm, ft_w in (("sft", sft_w), ("dft", dft_w)):
         curve = []
         for k_frac in k_sweep:
             tmp = out_dir / f"_pruned_{arm}_{args.scope}_{args.granularity}_k{k_frac}"
             try:
-                build_pruned_model(
-                    base_sd,
-                    ft_sd,
+                build_pruned_model_streaming(
+                    base_w,
+                    ft_w,
                     k_frac,
                     target_keys,
                     tmp,
