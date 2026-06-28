@@ -45,6 +45,7 @@ Smoke:        uv run python scripts/issue664_dispatch.py --phase all --cells 1 -
 from __future__ import annotations
 
 import argparse
+import functools
 import gc
 import json
 import logging
@@ -497,16 +498,22 @@ def phase0(args) -> None:
     llm = _vllm_engine(2 * C.MAX_NEW_TOKENS + 1024)
     try:
         # marker_R: base greedy R under each source + each negative-panel ctx.
+        # #664 r13: per-ctx [marker_R] log line so the phase is never silent
+        # across a multi-ctx loop (each ctx renders + greedy-generates
+        # len(marker_qs) prompts) -- keeps poll_pipeline freshness alive and
+        # makes a real per-ctx slowdown diagnosable.
         if "marker" in behaviors:
             for src in sources:
                 if (CACHE_ROOT / "marker_R" / f"{src}.json").exists():
                     continue
+                logger.info("[marker_R] source %s (%d questions)", src, len(marker_qs))
                 prompts = [_render(C.source_messages(src, q)) for q in marker_qs]
                 resps = _greedy(llm, prompts, C.MAX_NEW_TOKENS)
                 _write_responses_cache("marker_R", src, dict(zip(marker_qs, resps, strict=True)))
             for neg in neg_panel:
                 if (CACHE_ROOT / "marker_R" / f"{neg.slug}.json").exists():
                     continue
+                logger.info("[marker_R] negative %s (%d questions)", neg.slug, len(marker_qs))
                 prompts = [_render(neg.messages(q)) for q in marker_qs]
                 resps = _greedy(llm, prompts, C.MAX_NEW_TOKENS)
                 _write_responses_cache(
@@ -581,10 +588,27 @@ def phase0(args) -> None:
     _write_dropped_manifest(dropped)
 
 
-def _render(messages: list[dict]) -> str:
+@functools.lru_cache(maxsize=1)
+def _render_tokenizer():
+    """The chat-template tokenizer for ``_render``, loaded ONCE per process.
+
+    #664 r13: ``_render`` previously called ``AutoTokenizer.from_pretrained`` on
+    EVERY invocation, and the p0 elicitation loops render hundreds of prompts in
+    tight list comprehensions (marker_R: 300 questions x every source + every
+    negative-panel ctx). The repeated disk loads added MINUTES of dead silence
+    before each ``_greedy`` call -- e.g. the v16 marker_R phase sat ~5.5 min
+    between 'engine built' and the first ``[vllm-chunk]`` line -- which both
+    burns wall-clock and trips poll_pipeline's freshness/stall heuristic into
+    reporting the (still-progressing) phase as hung. Caching makes the tokenizer
+    a one-time load. (Mirrors the r6 ``_prompt_text_for`` cache, commit
+    cf73e52ef1, applied to the dispatcher's own renderer.)"""
     from transformers import AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(C.QWEN_ID, trust_remote_code=True)
+    return AutoTokenizer.from_pretrained(C.QWEN_ID, trust_remote_code=True)
+
+
+def _render(messages: list[dict]) -> str:
+    tok = _render_tokenizer()
     return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
