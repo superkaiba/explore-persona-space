@@ -297,6 +297,86 @@ def test_set_status_commits_both_sides_of_move(fake_repo):
     assert added_or_renamed, f"set_status commit missing destination addition: {show}"
 
 
+# ─── Destination-collision guard (incident #681) ──────────────────────────
+#
+# `git mv SRC DST` where DST is an existing directory does NOT error — git
+# nests SRC inside DST as tasks/<new>/<id>/<id>/ and exits 0, so the failure
+# surfaces only later at `_read_body(new / "body.md")`, leaving the
+# transition half-applied (source deleted, dest nested, REGISTRY/event/commit
+# never written). set_status must guard the destination up front: remove an
+# EMPTY orphan and proceed as a true rename; refuse a NON-EMPTY orphan (or a
+# non-directory) before any destructive `git mv` runs.
+
+
+def test_set_status_recovers_empty_orphan_destination(fake_repo):
+    """An empty orphan destination dir (e.g. left by a prior numbering;
+    git does not track empty dirs) must be removed so `git mv` does a true
+    rename, NOT nested as tasks/<new>/<id>/<id>/ (incident #681)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    # Pre-create an EMPTY orphan at the destination.
+    orphan = repo / "tasks" / "running" / str(new_id)
+    orphan.mkdir(parents=True)
+    assert orphan.is_dir() and not any(orphan.iterdir())
+
+    new = tw.set_status(new_id, "running")
+
+    # Moved cleanly — destination has body.md directly, NOT under <id>/<id>/.
+    assert new == repo / "tasks" / "running" / str(new_id)
+    assert (new / "body.md").is_file()
+    assert not (new / str(new_id)).exists()  # no nesting
+    assert not (repo / "tasks" / "proposed" / str(new_id)).exists()  # source gone
+    # Registry + event still correct.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"
+    assert tw.list_events(new_id)[-1]["kind"] == "epm:status-changed"
+
+
+def test_set_status_refuses_nonempty_orphan_destination(fake_repo):
+    """A non-empty orphan destination dir (leftover artifacts / concurrent
+    writer) must raise ValueError naming the path — NOT nest + crash
+    half-way (incident #681)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    # Pre-create a NON-EMPTY orphan at the destination (leftover artifact).
+    orphan = repo / "tasks" / "running" / str(new_id)
+    (orphan / "artifacts").mkdir(parents=True)
+    (orphan / "artifacts" / "leftover.txt").write_text("stale\n")
+
+    with pytest.raises(ValueError, match="already exists and is non-empty"):
+        tw.set_status(new_id, "running")
+
+    # Nothing moved: source still in place, no nesting created.
+    assert (repo / "tasks" / "proposed" / str(new_id) / "body.md").is_file()
+    assert not (orphan / str(new_id)).exists()
+    # Status unchanged in the registry.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/proposed/{new_id}"
+
+
+def test_set_status_refuses_destination_that_is_a_file(fake_repo):
+    """Defensive branch: a destination path that exists as a FILE (not a
+    directory) must raise ValueError, not nest or crash on the later
+    `git mv` (incident #681)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    # Pre-create the destination as a FILE.
+    dest_parent = repo / "tasks" / "running"
+    dest_parent.mkdir(parents=True)
+    dest_file = dest_parent / str(new_id)
+    dest_file.write_text("x")
+    assert dest_file.is_file()
+
+    with pytest.raises(ValueError, match="exists and is not a directory"):
+        tw.set_status(new_id, "running")
+
+    # Nothing moved: source still in place.
+    assert (repo / "tasks" / "proposed" / str(new_id) / "body.md").is_file()
+    # Status unchanged in the registry.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/proposed/{new_id}"
+
+
 # ─── Same-issue follow-up status-hold guard ───────────────────────────────
 #
 # The same-issue follow-up status-hold rule (SKILL.md Step 9b § Same-issue
