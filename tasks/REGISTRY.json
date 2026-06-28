@@ -4129,8 +4129,8 @@
       "goal": "Quantify how much the behavior read-out r_B diverges across three extraction methods \u2014 (A) on-policy instruction-present, (B) off-policy teacher-forced, (C) instruct-and-strip \u2014 over the same question set for 3 behaviors (sycophancy, refusal, EM), measuring pairwise cosine divergence per layer, the projection of r_B^A onto the instruction context axis (c_pos-c_neg) as the context-confound magnitude, and whether the methods differ in A3.3-style held-out predictive quality (r_B^T v0 predicting E0) \u2014 to decide the program's (#660) A3.3 r_B recipe.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/661",
-      "status": "verifying",
+      "path": "tasks/interpreting/661",
+      "status": "interpreting",
       "title": "r_B extraction-method divergence: on-policy-instruction (A) vs teacher-forced (B) vs instruct-and-strip (C) across 3 behaviors"
     },
     "662": {
