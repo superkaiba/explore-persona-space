@@ -130,6 +130,34 @@ def content_patch_pos(tokenizer, system_prompt, user_question) -> int:
     )
 
 
+def context_span_positions(tokenizer, system_prompt, user_question, patch_pos) -> list[int]:
+    """The full context-span position list [system_start .. patch_pos] (plan control #4).
+
+    The ``full_span`` companion (the single-slot under-count upper-bound control,
+    plan §5 / control #4) overwrites the donor ``c_C`` residual at EVERY context
+    position from the system-turn start through ``patch_pos`` — the whole "context
+    span" — instead of the single last-content slot. This helper returns that
+    inclusive position list.
+
+    ``system_start`` is the first token of the FIRST message's content: index of
+    the ``<|im_start|>`` token that opens the system turn (or the user turn when
+    ``system_prompt`` is None), computed against the ``add_generation_prompt=False``
+    rendering whose prefix is a common prefix of the forward-pass sequence (the
+    same common-prefix invariant ``content_patch_pos`` relies on). We start at the
+    opening ``<|im_start|>`` so the span covers the whole prompt-context block up
+    to and including ``patch_pos`` — the residual at each of those positions is the
+    model's running "context picture", which is what the upper-bound control swaps
+    wholesale.
+    """
+    # The ChatML rendering opens with `<|im_start|>` at index 0, so the system /
+    # user turn block begins at position 0. The span is [0 .. patch_pos].
+    if patch_pos < 0:
+        raise SlotAuditError(
+            f"context_span_positions: patch_pos={patch_pos} must be >= 0 (plan control #4)."
+        )
+    return list(range(0, patch_pos + 1))
+
+
 def audit_patch_slot(tokenizer, input_ids, patch_pos) -> None:
     """HARD-FAIL gate (plan §4.3 / Gate C1.3).
 
@@ -160,9 +188,54 @@ def audit_patch_slot(tokenizer, input_ids, patch_pos) -> None:
         )
 
 
-def make_cv_patch_hook(layer_module, patch_positions, replacement_vec):
+def _resolve_replacements(patch_positions, replacements):
+    """Build a ``{position: (H,) tensor}`` map from the (positions, replacements) pair.
+
+    ``replacements`` may be:
+      * a single ``(H,)`` tensor → BROADCAST to every position in
+        ``patch_positions`` (the single-slot P↑/P↓ contract);
+      * a ``dict[int, Tensor]`` → a per-position replacement (the ``full_span``
+        companion's distinct donor vector at every context position; each key
+        must appear in ``patch_positions``);
+      * a 2-D ``(len(patch_positions), H)`` tensor → row ``i`` is the replacement
+        for ``patch_positions[i]`` (position-aligned, the same per-position
+        contract in tensor form).
+
+    Returns ``{int position: (H,) tensor}``. Fail-loud on a shape / key mismatch
+    (a silently dropped donor vector would corrupt the full-span read).
+    """
+    positions = [int(p) for p in patch_positions]
+    if isinstance(replacements, dict):
+        missing = [p for p in positions if p not in replacements]
+        if missing:
+            raise ValueError(
+                f"make_cv_patch_hook: dict replacements missing positions {missing} "
+                f"(patch_positions={positions})"
+            )
+        return {p: replacements[p] for p in positions}
+    rep = torch.as_tensor(replacements)
+    if rep.dim() == 2:
+        if rep.shape[0] != len(positions):
+            raise ValueError(
+                f"make_cv_patch_hook: 2-D replacements rows={rep.shape[0]} must equal "
+                f"len(patch_positions)={len(positions)} (position-aligned contract)"
+            )
+        return {p: rep[i] for i, p in enumerate(positions)}
+    # 1-D (H,) → broadcast to every position.
+    return {p: rep for p in positions}
+
+
+def make_cv_patch_hook(layer_module, patch_positions, replacements):
     """Install an overwrite of ``layer_module``'s output residual at each position
-    in ``patch_positions`` with ``replacement_vec`` (plan §4.8).
+    in ``patch_positions`` with the matching replacement vector (plan §4.8).
+
+    ``replacements`` is resolved by ``_resolve_replacements``: a single ``(H,)``
+    tensor BROADCASTS to every position (the single-slot P↑/P↓ contract), while a
+    ``dict[int, Tensor]`` or a position-aligned ``(len(patch_positions), H)``
+    tensor gives a DISTINCT donor vector per position (the ``full_span``
+    companion, plan control #4 — one captured donor residual at every context
+    position from the system-turn start through the patch slot). T7 pins that two
+    distinct donors at two distinct positions BOTH land and neither bleeds.
 
     The overwrite REPLACES ``layer_module.forward`` (rather than using
     ``register_forward_hook``) so the patched residual is the value Transformers'
@@ -173,7 +246,7 @@ def make_cv_patch_hook(layer_module, patch_positions, replacement_vec):
     feeds the patched value to the next layer + the cached K/V, so generation
     (T1b / T2) propagates too.
 
-    Operates on the batch=1 sequence; casts ``replacement_vec`` to the hidden
+    Operates on the batch=1 sequence; casts each replacement to the hidden
     state's dtype + device. The wrapper CLONES the output hidden-state tensor and
     writes into the clone, so unrelated references stay intact. A position past
     the current sequence length (a decode step shorter than the prefill) is
@@ -183,18 +256,17 @@ def make_cv_patch_hook(layer_module, patch_positions, replacement_vec):
     it in a ``finally``).
     """
     orig_forward = layer_module.forward
-    rep_src = replacement_vec
+    rep_by_pos = _resolve_replacements(patch_positions, replacements)
 
     def patched_forward(*args, **kwargs):
         output = orig_forward(*args, **kwargs)
         is_tuple = isinstance(output, tuple)
         hs = output[0] if is_tuple else output  # (B=1, T, H)
         hs = hs.clone()
-        rep = rep_src.to(hs.dtype).to(hs.device)
         seq_len = hs.shape[1]
-        for pos in patch_positions:
+        for pos, rep_vec in rep_by_pos.items():
             if 0 <= pos < seq_len:  # skip positions past a shorter decode step
-                hs[0, pos, :] = rep
+                hs[0, pos, :] = rep_vec.to(hs.dtype).to(hs.device)
         if is_tuple:
             return (hs, *output[1:])
         return hs
@@ -213,7 +285,7 @@ def _hidden_at_layer(out, layer: int) -> torch.Tensor:
     return out.hidden_states[layer + 1][0]
 
 
-def patched_read(model, full_ids, layer, patch_positions, replacement_vec, response_start):
+def patched_read(model, full_ids, layer, patch_positions, replacements, response_start):
     """One teacher-forced forward with the patch installed; return both poolings.
 
     Returns ``{"mean_resp": (H,) fp32 cpu, "slot": (H,) fp32 cpu}`` read at
@@ -223,12 +295,15 @@ def patched_read(model, full_ids, layer, patch_positions, replacement_vec, respo
     marker/fact — plan §4.5 item-5). Mirrors the vendored
     ``activation_shift._read_residuals`` read shape.
 
-    ``patch_positions`` empty / ``replacement_vec`` None => the UNPATCHED read
-    (no hook installed) — the f_CV denominator's baseline.
+    ``replacements`` is the single-vector / per-position map ``make_cv_patch_hook``
+    resolves (the ``full_span`` companion passes a ``dict[int, Tensor]`` /
+    position-aligned 2-D tensor over the whole context span). ``patch_positions``
+    empty / ``replacements`` None => the UNPATCHED read (no hook installed) — the
+    f_CV denominator's baseline.
     """
     handle = None
-    if patch_positions and replacement_vec is not None:
-        handle = make_cv_patch_hook(model.model.layers[layer], patch_positions, replacement_vec)
+    if patch_positions and replacements is not None:
+        handle = make_cv_patch_hook(model.model.layers[layer], patch_positions, replacements)
     try:
         with torch.no_grad():
             out = model(full_ids.unsqueeze(0).to(model.device), output_hidden_states=True)
@@ -252,7 +327,7 @@ def patched_generate(
     prompt_ids,
     layer,
     patch_positions,
-    replacement_vec,
+    replacements,
     *,
     use_cache=True,
     **gen,
@@ -260,17 +335,20 @@ def patched_generate(
     """Greedy/sampled generation with the patch persisting through prefill (plan §4.8).
 
     The hook fires at prefill, so the patched residual at the context positions
-    feeds the cached K/V that carry it into decoding. ``use_cache`` flips to
-    ``False`` as the production default iff the canary's non-identity KV parity
-    assert (Gate C1.2) finds caching drops the patch. Returns the decoded
-    generated text (prompt stripped).
+    feeds the cached K/V that carry it into decoding. ``use_cache`` is threaded
+    from the canary's Gate C1.2 decision (``use_cache_production_default``): it
+    flips to ``False`` when the non-identity KV-parity assert finds caching drops
+    the patch (or returns a marginal parity result), so the production sweep runs
+    uncached as the safety net. Returns the decoded generated text (prompt
+    stripped).
 
-    ``patch_positions`` empty / ``replacement_vec`` None => the UNPATCHED
+    ``replacements`` is the single-vector / per-position map ``make_cv_patch_hook``
+    resolves. ``patch_positions`` empty / ``replacements`` None => the UNPATCHED
     generation (no hook installed).
     """
     handle = None
-    if patch_positions and replacement_vec is not None:
-        handle = make_cv_patch_hook(model.model.layers[layer], patch_positions, replacement_vec)
+    if patch_positions and replacements is not None:
+        handle = make_cv_patch_hook(model.model.layers[layer], patch_positions, replacements)
     try:
         with torch.no_grad():
             out = model.generate(
@@ -285,13 +363,11 @@ def patched_generate(
     return tokenizer.decode(out[0, prompt_ids.shape[0] :], skip_special_tokens=True)
 
 
-def first_token_logits(
-    model, prompt_ids, layer, patch_positions, replacement_vec, *, use_cache=True
-):
+def first_token_logits(model, prompt_ids, layer, patch_positions, replacements, *, use_cache=True):
     """First-decoded-token logit row under a patch (plan §4.4 / Gate C1.2 helper).
 
     Runs ONE forward (prefill) over ``prompt_ids`` with the patch installed at
-    ``patch_positions`` of layer ``layer`` (empty list / None replacement => the
+    ``patch_positions`` of layer ``layer`` (empty list / None replacements => the
     unpatched forward), and returns the last-prompt-position logit vector ``(V,)``
     — the distribution the first generated token is sampled from. ``use_cache``
     toggles KV-caching so the canary's non-identity KV-cache parity assert
@@ -303,8 +379,8 @@ def first_token_logits(
     code paths.
     """
     handle = None
-    if patch_positions and replacement_vec is not None:
-        handle = make_cv_patch_hook(model.model.layers[layer], patch_positions, replacement_vec)
+    if patch_positions and replacements is not None:
+        handle = make_cv_patch_hook(model.model.layers[layer], patch_positions, replacements)
     try:
         with torch.no_grad():
             out = model(

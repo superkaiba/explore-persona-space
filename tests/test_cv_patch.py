@@ -432,3 +432,217 @@ def test_t6_no_effect_cell_returns_sentinel():
     assert f_down == cv_patch.NO_EFFECT, (
         f"no-effect cell must report {cv_patch.NO_EFFECT!r} for f_CV_down too (got {f_down!r})"
     )
+
+
+# --------------------------------------------------------------------------- #
+# T7 — multi-position DISTINCT replacements (full_span scope, round-3 concern #3)
+# --------------------------------------------------------------------------- #
+
+
+def test_t7_multiposition_distinct_replacements_both_land(tiny_qwen2, other_qwen2):
+    """T7 — two distinct donor vectors at two distinct positions BOTH land at their
+    own slot and NEITHER bleeds to the other (the full_span per-position contract,
+    plan control #4). A dict[int, Tensor] replacement maps each position to its own
+    donor; the patched layer-L OUTPUT must equal that donor at each patched slot,
+    the unpatched value everywhere else."""
+    model = tiny_qwen2
+    full_ids = _ids()
+    pos_a, pos_b = 1, 4  # two distinct context positions
+
+    # Unpatched layer-L output across all positions (the baseline).
+    with torch.no_grad():
+        out0 = model(full_ids.unsqueeze(0), output_hidden_states=True)
+    layer_out_unpatched = out0.hidden_states[PATCH_LAYER + 1][0].clone()  # (T, H)
+
+    # Two DISTINCT donors from the other model at the two positions.
+    with torch.no_grad():
+        out_other = other_qwen2(full_ids.unsqueeze(0), output_hidden_states=True)
+    donor_a = out_other.hidden_states[PATCH_LAYER + 1][0, pos_a].clone()
+    donor_b = out_other.hidden_states[PATCH_LAYER + 1][0, pos_b].clone()
+    # Make the two donors genuinely different so a bleed would be detectable.
+    assert (donor_a - donor_b).abs().max().item() > 1e-3
+
+    replacements = {pos_a: donor_a, pos_b: donor_b}
+    handle = cv_patch.make_cv_patch_hook(
+        model.model.layers[PATCH_LAYER], [pos_a, pos_b], replacements
+    )
+    try:
+        with torch.no_grad():
+            out1 = model(full_ids.unsqueeze(0), output_hidden_states=True)
+    finally:
+        handle.remove()
+    layer_out_patched = out1.hidden_states[PATCH_LAYER + 1][0]  # (T, H)
+
+    # Each patched slot equals ITS OWN donor (not the other's).
+    da = (layer_out_patched[pos_a] - donor_a).abs().max().item()
+    db = (layer_out_patched[pos_b] - donor_b).abs().max().item()
+    assert da < 1e-5, f"pos_a must hold donor_a, got max|Δ|={da:.3e} (bleed?)"
+    assert db < 1e-5, f"pos_b must hold donor_b, got max|Δ|={db:.3e} (bleed?)"
+    # No cross-bleed: pos_a must NOT equal donor_b (they are distinct).
+    cross = (layer_out_patched[pos_a] - donor_b).abs().max().item()
+    assert cross > 1e-3, "pos_a bled donor_b — the per-position map collapsed to one vector"
+    # Every NON-patched position is unchanged.
+    n_t = full_ids.shape[0]
+    for p in range(n_t):
+        if p in (pos_a, pos_b):
+            continue
+        delta = (layer_out_unpatched[p] - layer_out_patched[p]).abs().max().item()
+        assert delta < 1e-6, f"non-target position {p} changed (max|Δ|={delta:.3e})"
+
+
+def test_t7b_position_aligned_2d_replacements(tiny_qwen2, other_qwen2):
+    """T7b — a position-aligned 2-D (len(positions), H) replacement tensor is the
+    same per-position contract in tensor form: row i lands at patch_positions[i]."""
+    model = tiny_qwen2
+    full_ids = _ids()
+    positions = [1, 4]
+    with torch.no_grad():
+        out_other = other_qwen2(full_ids.unsqueeze(0), output_hidden_states=True)
+    rows = torch.stack(
+        [out_other.hidden_states[PATCH_LAYER + 1][0, p].clone() for p in positions]
+    )  # (2, H)
+    handle = cv_patch.make_cv_patch_hook(model.model.layers[PATCH_LAYER], positions, rows)
+    try:
+        with torch.no_grad():
+            out1 = model(full_ids.unsqueeze(0), output_hidden_states=True)
+    finally:
+        handle.remove()
+    patched = out1.hidden_states[PATCH_LAYER + 1][0]
+    for i, p in enumerate(positions):
+        delta = (patched[p] - rows[i]).abs().max().item()
+        assert delta < 1e-5, f"2-D row {i} did not land at position {p} (max|Δ|={delta:.3e})"
+
+
+# --------------------------------------------------------------------------- #
+# T8 — patched_generate honors use_cache=False (concern #4 threading)
+# --------------------------------------------------------------------------- #
+
+
+def test_t8_patched_generate_honors_use_cache_false(tiny_qwen2):
+    """T8 — ``patched_generate`` accepts and forwards ``use_cache=False`` to
+    ``model.generate`` (the canary's Gate C1.2 safety-net path threaded through
+    dispatch → cell → patched_generate). The uncached generation is itself valid
+    (decodes a string) and, for a CORRECT hook, matches the cached generation
+    (a single prefill + short decode is cache-invariant for an eager model)."""
+    from transformers import AutoTokenizer
+
+    model = tiny_qwen2
+    try:
+        tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
+    except Exception as e:
+        pytest.skip(f"tokenizer unavailable ({type(e).__name__})")
+    prompt_ids = _ids()
+    pos = prompt_ids.shape[0] - 1
+    with torch.no_grad():
+        out = model(prompt_ids.unsqueeze(0), output_hidden_states=True)
+    own_cv = out.hidden_states[PATCH_LAYER + 1][0, pos].clone()
+
+    gen_cached = cv_patch.patched_generate(
+        model,
+        tok,
+        prompt_ids,
+        PATCH_LAYER,
+        [pos],
+        own_cv,
+        use_cache=True,
+        max_new_tokens=5,
+        do_sample=False,
+    )
+    gen_uncached = cv_patch.patched_generate(
+        model,
+        tok,
+        prompt_ids,
+        PATCH_LAYER,
+        [pos],
+        own_cv,
+        use_cache=False,
+        max_new_tokens=5,
+        do_sample=False,
+    )
+    assert isinstance(gen_uncached, str)
+    # Self-patch (own CV) is a no-op, and cached/uncached greedy agree for a
+    # correct hook — so both paths produce the SAME text.
+    assert gen_cached == gen_uncached, (
+        "use_cache=False must produce the same greedy generation as use_cache=True "
+        "under the self-patch no-op (the threading must actually reach generate())"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# T9 — per-behavior E decode knobs (round-3 standing rec #2 / descope c)
+# --------------------------------------------------------------------------- #
+
+
+def test_t9_per_behavior_e_decode_knobs(monkeypatch):
+    """T9 — ``issue697_cell._capture_e_generations`` branches the decode by
+    behavior: em → do_sample=True, temperature=1.0, n=5 samples per probe; syc/fact
+    → greedy (do_sample=False), max_new_tokens=512 (capped). Asserts the
+    patched_generate call kwargs by behavior using a fake patched_generate."""
+    import sys
+
+    sys.path.insert(0, "scripts")
+    import issue697_cell as cell
+
+    captured: list[dict] = []
+
+    def fake_patched_generate(model, tokenizer, prompt_ids, layer, positions, reps, **gen):
+        captured.append(
+            {
+                "do_sample": gen.get("do_sample"),
+                "temperature": gen.get("temperature"),
+                "max_new_tokens": gen.get("max_new_tokens"),
+                "use_cache": gen.get("use_cache"),
+            }
+        )
+        return "fake completion"
+
+    def fake_context_residuals(model, ids, layers, patch_pos):
+        return {layers[0]: torch.zeros(4)}
+
+    def fake_content_patch_pos(tok, p, q):
+        return 0
+
+    def fake_build_chatml_prompt(tok, p, q):
+        return "prompt"
+
+    class _FakeTok:
+        def __call__(self, text, return_tensors=None, add_special_tokens=False):
+            return {"input_ids": torch.tensor([[1, 2, 3]])}
+
+    monkeypatch.setattr(cell.cv_patch, "patched_generate", fake_patched_generate)
+    monkeypatch.setattr(cell.cv_patch, "content_patch_pos", fake_content_patch_pos)
+    monkeypatch.setattr(cell, "_context_residuals", fake_context_residuals)
+    monkeypatch.setattr(cell, "_build_chatml_prompt", fake_build_chatml_prompt)
+
+    personas = {"assistant": "You are a helpful assistant."}
+    questions = ["What is 2+2?"]
+    tok = _FakeTok()
+
+    # --- em: do_sample=True, temp=1.0, n=5 samples per (persona, q) x 4 conditions
+    captured.clear()
+    cell._capture_e_generations(None, None, tok, personas, questions, 14, "em", 512, use_cache=True)
+    # 4 conditions x 5 samples x 1 (persona,q) = 20 calls
+    assert len(captured) == 20, f"em should be 4 conditions x n=5 = 20 calls, got {len(captured)}"
+    assert all(c["do_sample"] is True for c in captured), "em must sample"
+    assert all(abs(c["temperature"] - 1.0) < 1e-9 for c in captured), "em temp must be 1.0"
+    assert all(c["max_new_tokens"] == 512 for c in captured), "em max_new_tokens must be 512"
+
+    # --- sycophancy: greedy, n=1, max=512
+    captured.clear()
+    cell._capture_e_generations(
+        None, None, tok, personas, questions, 14, "sycophancy", 512, use_cache=False
+    )
+    assert len(captured) == 4, f"syc should be 4 conditions x n=1 = 4 calls, got {len(captured)}"
+    assert all(c["do_sample"] is False for c in captured), "syc must be greedy"
+    assert all(c["max_new_tokens"] == 512 for c in captured), "syc max_new_tokens must be 512 (cap)"
+    assert all(c["use_cache"] is False for c in captured), (
+        "syc must honor use_cache=False threading"
+    )
+
+    # --- fact: greedy, n=1, max=512
+    captured.clear()
+    cell._capture_e_generations(
+        None, None, tok, personas, questions, 14, "fact", 512, use_cache=True
+    )
+    assert len(captured) == 4, f"fact should be 4 conditions x n=1 = 4 calls, got {len(captured)}"
+    assert all(c["do_sample"] is False for c in captured), "fact must be greedy"

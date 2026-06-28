@@ -360,6 +360,7 @@ def _cell_cmd(
     skip_e: bool,
     smoke_model: str | None,
     upload: bool,
+    use_cache: bool,
 ) -> tuple[list[str], Path, dict[str, str]]:
     """Build (cmd, log_path, env) for one cell's patch read via issue697_cell.py."""
     base_model = smoke_model or QWEN_ID
@@ -391,6 +392,8 @@ def _cell_cmd(
         "--base-model-id",
         base_model,
     ]
+    # Thread the canary's use_cache decision (concern #4): BooleanOptionalAction.
+    cmd.append("--use-cache" if use_cache else "--no-use-cache")
     if cpu_only:
         cmd.append("--cpu-only")
     if skip_e:
@@ -400,6 +403,47 @@ def _cell_cmd(
     env = {"CUDA_VISIBLE_DEVICES": "" if cpu_only else str(cell.gpu_id)}
     log_path = _log_dir() / f"sweep_{cell.cell_id}.log"
     return cmd, log_path, env
+
+
+def _read_use_cache_decision(repo_root: Path) -> bool:
+    """Read the canary's use_cache decision (concern #4); default True if absent.
+
+    The canary writes ``canary_decision.json`` with
+    ``use_cache_production_default``. A real sweep runs after the canary in the
+    same dispatch, so the file is present; a standalone ``--phase sweep`` (or a
+    CPU smoke that skips the canary) defaults to True (the safe default when Gate
+    C1.2's parity passes comfortably — the canary HALTs a genuinely broken hook
+    before the sweep regardless).
+    """
+    from scripts.issue697_canary import use_cache_decision_path
+
+    p = use_cache_decision_path(repo_root)
+    if not p.exists():
+        logger.info("no canary use_cache decision at %s -> default use_cache=True", p)
+        return True
+    decision = bool(json.loads(p.read_text()).get("use_cache_production_default", True))
+    logger.info("canary use_cache decision: use_cache=%s (%s)", decision, p)
+    return decision
+
+
+def _assert_sweep_device_count(cpu_only: bool, n_gpus: int) -> None:
+    """Belt-and-suspenders device-count preflight (standing rec / item 5c).
+
+    The 4-GPU sweep needs the ``ft-7b`` 4x A100-80 intent; an orchestrator intent
+    mis-inference (e.g. a 1-GPU ``lora-7b`` pod) would silently co-locate the
+    waves. Assert the visible device count matches ``n_gpus`` before the sweep so
+    a mis-launch FAILs loud at startup, not mid-sweep. Skipped on the CPU smoke.
+    """
+    if cpu_only:
+        return
+    import torch
+
+    visible = torch.cuda.device_count()
+    assert visible == n_gpus, (
+        f"sweep phase requires {n_gpus} GPUs (got {visible}); the orchestrator must launch "
+        f"with the matching intent (--n-gpus 4 -> ft-7b 4x A100-80). Set --n-gpus to the actual "
+        f"device count if this is a deliberate smaller-pod run."
+    )
 
 
 def phase_sweep(
@@ -420,6 +464,11 @@ def phase_sweep(
 ) -> None:
     """Per-cell patch read over the panel (wave-parallel, CVD-pinned per cell)."""
     phase_log("sweep")
+    # Device-count preflight (item 5c) — skip on dry-run (no GPU needed) + CPU smoke.
+    if not dry_run and smoke_model is None:
+        _assert_sweep_device_count(cpu_only, n_gpus)
+    # use_cache threaded from the canary's Gate C1.2 decision (concern #4).
+    use_cache = _read_use_cache_decision(repo_root)
     out_dir = repo_root / "eval_results" / "issue_697" / "patch"
     out_dir.mkdir(parents=True, exist_ok=True)
     for wave_start in range(0, len(cells), max(n_gpus, 1)):
@@ -439,6 +488,7 @@ def phase_sweep(
                 skip_e=skip_e,
                 smoke_model=smoke_model,
                 upload=upload,
+                use_cache=use_cache,
             )
             cmds.append((cmd, log_path, env))
         if dry_run:
@@ -467,9 +517,29 @@ def phase_sweep(
 # ---------------------------------------------------------------------------
 
 
-def phase_analyze(repo_root: Path, *, primary_layer: int) -> None:
-    """Off-pod CPU f_CV bootstrap + hero figure (issue697_analysis.py)."""
+def phase_analyze(repo_root: Path, *, primary_layer: int, skip_judge: bool = False) -> None:
+    """Off-pod CPU judge + f_CV bootstrap + hero figure.
+
+    Two steps, both off-pod CPU: (1) the vendored #537 judge (Sonnet 4.5) over the
+    per-cell raw_completions → ``{cell}_judged.json`` (closes the
+    ``e-judging-pipeline-not-vendored`` concern), then (2) ``issue697_analysis.py``
+    (f_CV bootstrap + hero). ``--skip-judge`` runs only the v-space analysis (CPU
+    smoke / no API key).
+    """
     phase_log("analyze")
+    patch_dir = repo_root / "eval_results" / "issue_697" / "patch"
+    if not skip_judge:
+        judge_cmd = [
+            "uv",
+            "run",
+            "python",
+            "scripts/issue697_judge.py",
+            "--patch-dir",
+            str(patch_dir),
+        ]
+        rc = _run_with_log(judge_cmd, log_path=_log_dir() / "judge.log", cwd=repo_root)
+        if rc != 0:
+            raise RuntimeError(f"analyze: judge step failed (rc={rc}); see {_log_dir()}/judge.log")
     cmd = [
         "uv",
         "run",
@@ -581,6 +651,14 @@ def main() -> int:
         help="Skip the per-cell HF upload (local smoke; default uploads per cell).",
     )
     parser.add_argument(
+        "--skip-judge",
+        action="store_true",
+        help=(
+            "Skip the analyze-phase Sonnet judge over raw_completions (CPU smoke / "
+            "no ANTHROPIC_API_KEY); run only the v-space f_CV analysis."
+        ),
+    )
+    parser.add_argument(
         "--layers", type=int, nargs="+", default=[7, 14, 21], help="Read/patch layers."
     )
     parser.add_argument("--primary-layer", type=int, default=PRIMARY_LAYER)
@@ -652,7 +730,13 @@ def main() -> int:
                 upload=upload,
             )
         elif phase == "analyze":
-            phase_analyze(repo_root, primary_layer=args.primary_layer)
+            # CPU smoke / no-API-key: skip the Sonnet judge step (the tiny-model
+            # generations are gibberish and there may be no ANTHROPIC_API_KEY).
+            phase_analyze(
+                repo_root,
+                primary_layer=args.primary_layer,
+                skip_judge=args.skip_judge or smoke,
+            )
 
     note = (
         f"phases={phases} cells={args.cells or 'full(128)'} n_gpus={args.n_gpus} "

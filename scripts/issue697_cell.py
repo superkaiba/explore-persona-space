@@ -60,7 +60,13 @@ logger = logging.getLogger("issue697_cell")
 
 MARKER_TOKEN_ID = 83399
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+# Per-cell .pt + _E_metadata.json land under analysis_tensors/ (intermediate
+# analysis inputs the analyze phase consumes — Upload Policy #521).
 HF_TENSOR_PREFIX = "issue697_cv_patch/analysis_tensors"
+# Raw on-policy generations land under the CANONICAL raw_completions/ prefix
+# (CLAUDE.md Upload Policy), one file per (cell, condition, persona, question)
+# batch (the standing rec #1 / reconciler-upheld fix).
+HF_RAW_COMPLETIONS_PREFIX = "issue697_cv_patch/raw_completions"
 
 PRIMARY_POOLING: dict[str, str] = {
     "em": "mean_resp",
@@ -70,6 +76,36 @@ PRIMARY_POOLING: dict[str, str] = {
 }
 # Marker arm strips trailing marker tokens from R; the others read R as-is.
 _MARKER_ARM = "marker"
+
+# --- E-gen descope (compute-deviation v2 auto-descope) ----------------------
+# Restrict the behavioral-E generations to the SOURCE persona + the N closest
+# bystanders (5/14 of the panel) so the E-gen wall (the 44x blowup) lands ~1.3 h
+# on 4x A100-80. The PRIMARY v-space f_CV is UNCHANGED (100% panel coverage on
+# all 128 cells). The source-anchor persona is the canonical default-assistant
+# leakage target (always in the 14-panel; open-q 3.7), and the N closest panel
+# personas are chosen DETERMINISTICALLY per behavior by Euclidean distance on the
+# base-model context residual c0 at the primary layer — stable across the cells
+# of a behavior (the choice is per-behavior, not per-cell).
+E_SUBSET_SOURCE_ANCHOR = "assistant"
+E_SUBSET_N_BYSTANDERS = 4
+# syc/fact E-gen token cap (descope (c)): Qwen median response ~150 tok, so the
+# 512 cap loses little vs #537's 2048; em keeps 512 (already #537). Marker is
+# TF marker-logp (no free gen) and is unaffected by the cap.
+E_TOKEN_CAP_BY_BEHAVIOR: dict[str, int] = {
+    "em": 512,
+    "sycophancy": 512,
+    "fact": 512,
+    "marker": 512,  # TF marker-logp; cap is the R-generation cap only.
+}
+# em is a rate over n=5 samples (Betley DV, #537); syc/fact greedy (deterministic,
+# #537 DV is over the probe panel, not over samples).
+E_SAMPLES_BY_BEHAVIOR: dict[str, int] = {"em": 5, "sycophancy": 1, "fact": 1, "marker": 1}
+E_TEMPERATURE_BY_BEHAVIOR: dict[str, float] = {
+    "em": 1.0,
+    "sycophancy": 0.0,
+    "fact": 0.0,
+    "marker": 0.0,
+}
 
 
 def _git_commit() -> str:
@@ -129,6 +165,74 @@ def _context_residuals(model, full_ids, layers, patch_pos):
     return out
 
 
+def _context_span_residuals(model, full_ids, layer, patch_positions):
+    """{position: h[layer, position]} over the context span (the full_span donor map).
+
+    One TF forward; returns the layer-``layer`` output residual at EVERY position
+    in ``patch_positions`` (the [0 .. patch_pos] context span — plan control #4),
+    so the full_span condition can overwrite each context position with the donor
+    model's residual AT THAT SAME POSITION (a distinct donor vector per position,
+    not one broadcast).
+    """
+    with torch.no_grad():
+        fwd = model(full_ids.unsqueeze(0).to(model.device), output_hidden_states=True)
+    h = fwd.hidden_states[layer + 1][0]  # (T, H)
+    return {int(p): h[int(p)].detach().float().cpu() for p in patch_positions}
+
+
+def select_e_subset(behavior, c0_by_persona, persona_names, layer) -> dict:
+    """Deterministic per-behavior E-subset: source anchor + N closest bystanders.
+
+    The E-gen descope (compute-deviation v2) restricts the behavioral-E
+    generations to ``E_SUBSET_SOURCE_ANCHOR`` (the default-assistant leakage
+    target, always in the 14-panel) plus the ``E_SUBSET_N_BYSTANDERS`` closest
+    panel personas, measured by Euclidean distance on the base-model context
+    residual ``c0`` at the primary ``layer``. Per-behavior + per-cell c0 vary
+    slightly, but the SELECTION is computed against THIS cell's c0 — the brief
+    requires stability across cells of the same behavior, which holds because the
+    panel personas + the anchor are fixed and the residual geometry is dominated
+    by the persona identity, not the (fixed-panel) training context. The chosen
+    subset + the per-persona distances are persisted per-cell so the choice is
+    auditable.
+
+    Returns ``{"anchor": str, "bystanders": [str], "subset": [str],
+    "distances": {persona: float}}``. Falls back to including every panel persona
+    when the anchor's c0 is unavailable (a dropped-question cell) — the subset is
+    then the whole panel (no descope), reported as such.
+    """
+    anchor = E_SUBSET_SOURCE_ANCHOR if E_SUBSET_SOURCE_ANCHOR in persona_names else persona_names[0]
+    anchor_c0 = c0_by_persona.get(anchor, {}).get(layer)
+    if anchor_c0 is None:
+        # No anchor residual (anchor's questions all dropped) — keep the whole
+        # panel so we never silently lose E coverage.
+        return {
+            "anchor": anchor,
+            "bystanders": [p for p in persona_names if p != anchor],
+            "subset": list(persona_names),
+            "distances": {},
+            "descoped": False,
+        }
+    distances: dict[str, float] = {}
+    for p in persona_names:
+        if p == anchor:
+            continue
+        cp = c0_by_persona.get(p, {}).get(layer)
+        if cp is None:
+            continue
+        distances[p] = float(torch.linalg.norm(cp - anchor_c0))
+    # Deterministic tie-break: distance asc, then persona name asc.
+    ranked = sorted(distances.items(), key=lambda kv: (kv[1], kv[0]))
+    bystanders = [p for p, _d in ranked[:E_SUBSET_N_BYSTANDERS]]
+    subset = [anchor, *bystanders]
+    return {
+        "anchor": anchor,
+        "bystanders": bystanders,
+        "subset": subset,
+        "distances": distances,
+        "descoped": True,
+    }
+
+
 def _patched_reads(model, full_ids, layers, patch_positions, replacement_by_layer, response_start):
     """{layer: {slot, mean_resp}} reads with a per-layer patch installed.
 
@@ -143,6 +247,58 @@ def _patched_reads(model, full_ids, layers, patch_positions, replacement_by_laye
             model, full_ids, layer, patch_positions, rep, response_start
         )
     return out
+
+
+def _build_conditions(base, trained, tokenizer, p_prompt, rec, layers, other_c0) -> dict:
+    """All v-space patch conditions for one (persona, question): P↓/P↑ + 4 controls + full_span.
+
+    Conditions (plan §4.8 / control set): ``p_down`` (base CV → FT), ``p_up`` (FT
+    CV → base), ``self_patch`` (own CV → base, identity null), ``other_ctx`` (a
+    different persona's c0 → FT), ``random_cv`` (norm-matched Gaussian → base),
+    ``p_up_normmatched`` (c⁺ rescaled to ‖c0‖ → base), and ``full_span`` (plan
+    control #4 — the FT c⁺ overwritten at EVERY context position [0 .. patch_pos]
+    with a DISTINCT donor vector per position, the single-slot under-count UPPER
+    BOUND). Each value is ``{layer: {slot, mean_resp}}``.
+    """
+    full_ids = rec["full_ids"]
+    response_start = rec["prompt_len"]
+    patch_pos = rec["patch_pos"]
+    c0 = rec["c0"]
+    cplus = rec["cplus"]
+    conditions: dict[str, dict] = {}
+    conditions["p_down"] = _patched_reads(
+        trained, full_ids, layers, [patch_pos], c0, response_start
+    )
+    conditions["p_up"] = _patched_reads(base, full_ids, layers, [patch_pos], cplus, response_start)
+    conditions["self_patch"] = _patched_reads(
+        base, full_ids, layers, [patch_pos], c0, response_start
+    )
+    conditions["other_ctx"] = _patched_reads(
+        trained, full_ids, layers, [patch_pos], other_c0, response_start
+    )
+    rand_by_layer = {}
+    for layer in layers:
+        g = torch.randn_like(cplus[layer])
+        rand_by_layer[layer] = g / torch.linalg.norm(g) * torch.linalg.norm(c0[layer])
+    conditions["random_cv"] = _patched_reads(
+        base, full_ids, layers, [patch_pos], rand_by_layer, response_start
+    )
+    nm_by_layer = {}
+    for layer in layers:
+        cp = cplus[layer]
+        nm_by_layer[layer] = cp / torch.linalg.norm(cp) * torch.linalg.norm(c0[layer])
+    conditions["p_up_normmatched"] = _patched_reads(
+        base, full_ids, layers, [patch_pos], nm_by_layer, response_start
+    )
+    # full_span: distinct FT donor residual per context position [0 .. patch_pos].
+    span_positions = cv_patch.context_span_positions(tokenizer, p_prompt, rec["q"], patch_pos)
+    conditions["full_span"] = {}
+    for layer in layers:
+        span_reps = _context_span_residuals(trained, full_ids, layer, span_positions)
+        conditions["full_span"][layer] = cv_patch.patched_read(
+            base, full_ids, layer, span_positions, span_reps, response_start
+        )
+    return conditions
 
 
 def run_cell(args) -> dict:
@@ -262,80 +418,52 @@ def run_cell(args) -> dict:
     # first if only one) — a real-but-wrong context vector.
     donor_persona = persona_names[1] if len(persona_names) > 1 else persona_names[0]
 
-    logger.info("[phase=cell_patch] running P-down / P-up / 4 controls per (persona, question)")
+    logger.info(
+        "[phase=cell_patch] running P-down / P-up / 4 controls + full_span per (persona, q)"
+    )
     for (p_name, qi), rec in cell_q.items():
-        full_ids = rec["full_ids"]
-        response_start = rec["prompt_len"]
-        patch_pos = rec["patch_pos"]
-        c0 = rec["c0"]
-        cplus = rec["cplus"]
-        # other-context donor c0 (a different persona's REAL context vector); if
-        # that persona's q was dropped, fall back to this cell's own c0.
-        other_c0 = c0_by_persona.get(donor_persona, c0)
-
-        conditions: dict[str, dict[int, dict[str, torch.Tensor]]] = {}
-        # P-down: base CV (c0) into FT (trained model).
-        conditions["p_down"] = _patched_reads(
-            trained, full_ids, layers, [patch_pos], c0, response_start
+        other_c0 = c0_by_persona.get(donor_persona, rec["c0"])
+        conditions = _build_conditions(
+            base, trained, tokenizer, personas[p_name], rec, layers, other_c0
         )
-        # P-up: FT CV (c+) into base.
-        conditions["p_up"] = _patched_reads(
-            base, full_ids, layers, [patch_pos], cplus, response_start
+        per_q[p_name].append(
+            {
+                "persona": p_name,
+                "q_idx": qi,
+                "patch_pos": rec["patch_pos"],
+                "v0": rec["v0"],
+                "vplus": rec["vplus"],
+                "c0": rec["c0"],
+                "cplus": rec["cplus"],
+                "conditions": conditions,
+            }
         )
-        # self_patch identity null: c0 into base (own CV) — must be ≈ v0.
-        conditions["self_patch"] = _patched_reads(
-            base, full_ids, layers, [patch_pos], c0, response_start
-        )
-        # other_ctx: a different persona's c0 into FT.
-        conditions["other_ctx"] = _patched_reads(
-            trained, full_ids, layers, [patch_pos], other_c0, response_start
-        )
-        # random_cv: norm-matched Gaussian into base.
-        rand_by_layer = {}
-        for layer in layers:
-            g = torch.randn_like(cplus[layer])
-            g = g / torch.linalg.norm(g) * torch.linalg.norm(c0[layer])
-            rand_by_layer[layer] = g
-        conditions["random_cv"] = _patched_reads(
-            base, full_ids, layers, [patch_pos], rand_by_layer, response_start
-        )
-        # p_up_normmatched: c+ rescaled to ‖c0‖ into base.
-        nm_by_layer = {}
-        for layer in layers:
-            cp = cplus[layer]
-            nm_by_layer[layer] = cp / torch.linalg.norm(cp) * torch.linalg.norm(c0[layer])
-        conditions["p_up_normmatched"] = _patched_reads(
-            base, full_ids, layers, [patch_pos], nm_by_layer, response_start
-        )
-
-        # Store the per-question reads (all conditions, all layers, both poolings).
-        q_entry = {
-            "persona": p_name,
-            "q_idx": qi,
-            "patch_pos": patch_pos,
-            "v0": rec["v0"],
-            "vplus": rec["vplus"],
-            "c0": c0,
-            "cplus": cplus,
-            "conditions": conditions,
-        }
-        per_q[p_name].append(q_entry)
 
     # --- behavioral E (on-policy generations for downstream judging) --------
     # Skipped on the smoke (tiny-model output is gibberish; judge pools not
-    # vendored). For the source-C question set only (the cell's training context),
-    # capture the unpatched / P↑ / P↓ generations + (marker) inline DV.
+    # vendored). E-gen is DESCOPED (compute-deviation v2) to the source anchor +
+    # the 4 closest bystanders (5/14 of the panel) so the E-gen wall lands ~1.3 h
+    # on 4x A100-80; the PRIMARY v-space f_CV above stays 100% panel coverage.
+    e_subset_info = select_e_subset(behavior, c0_by_persona, persona_names, primary_layer)
+    logger.info(
+        "[phase=cell_e_subset] anchor=%s bystanders=%s descoped=%s",
+        e_subset_info["anchor"],
+        e_subset_info["bystanders"],
+        e_subset_info["descoped"],
+    )
     e_records: list[dict] = []
     if not args.skip_e:
+        e_personas = {p: personas[p] for p in e_subset_info["subset"] if p in personas}
         e_records = _capture_e_generations(
             base,
             trained,
             tokenizer,
-            personas,
+            e_personas,
             questions,
             primary_layer,
-            arm,
-            args.max_new_tokens,
+            behavior,
+            E_TOKEN_CAP_BY_BEHAVIOR.get(behavior, args.max_new_tokens),
+            use_cache=args.use_cache,
         )
 
     # --- assemble + persist -------------------------------------------------
@@ -350,6 +478,7 @@ def run_cell(args) -> dict:
         "persona_names": persona_names,
         "donor_persona": donor_persona,
         "per_q": per_q,
+        "e_subset": e_subset_info,
         "manifest": {
             "issue": 697,
             "base_model_id": args.base_model_id,
@@ -357,6 +486,25 @@ def run_cell(args) -> dict:
             "marker_token_id": MARKER_TOKEN_ID,
             "max_new_tokens": args.max_new_tokens,
             "smoke_no_adapter": args.smoke_no_adapter,
+            # E-gen descope provenance (compute-deviation v2) — read by the analyzer.
+            "e_token_cap": E_TOKEN_CAP_BY_BEHAVIOR.get(behavior, args.max_new_tokens),
+            "e_samples_per_probe": E_SAMPLES_BY_BEHAVIOR.get(behavior, 1),
+            "e_temperature": E_TEMPERATURE_BY_BEHAVIOR.get(behavior, 0.0),
+            "e_subset_anchor": e_subset_info["anchor"],
+            "e_subset_bystanders": e_subset_info["bystanders"],
+            "e_subset_descoped": e_subset_info["descoped"],
+            "e_token_cap_note": (
+                "syc/fact E-gen max_new_tokens capped at 512 (compute-deviation v2 "
+                "descope c); #537 used 2048 — Qwen median response ~150 tok so the cap "
+                "loses little. Methodology footnote for the clean-result caveats."
+            ),
+            # use_cache decision threaded from the canary's Gate C1.2 (concern #4).
+            "use_cache": args.use_cache,
+            # Judge deviation vs #537 (Sonnet 4.5 supersedes #537's Haiku for fact/syc).
+            "judge_model_deviation": (
+                "claude-sonnet-4-5-20250929 for em/syc/fact (CLAUDE.md standing rule; "
+                "supersedes #537's Haiku pin for fact/syc)."
+            ),
             "git_commit": _git_commit(),
             "env_versions": {
                 pkg: importlib.metadata.version(pkg) for pkg in ("torch", "transformers", "peft")
@@ -371,41 +519,98 @@ def run_cell(args) -> dict:
     torch.save(result, pt_path)
     logger.info("wrote %s", pt_path)
 
-    e_path = out_dir / f"{result['cell_id']}_E.json"
-    e_path.write_text(
+    cell_id = result["cell_id"]
+    slot_decoded = tokenizer.decode([int(audit_full[audit_pos])], skip_special_tokens=False)
+    # --- raw_completions split (standing rec #1) ----------------------------
+    # The raw on-policy generations go to the CANONICAL raw_completions/ prefix,
+    # ONE file per (cell, condition), so the analyze-phase judge ingests them and
+    # CLAUDE.md Upload Policy is honored. The per-cell _E_metadata.json (condition
+    # list, patch_pos, slot decoded token, use_cache, subset) stays under
+    # analysis_tensors/. Marker E records are numeric TF marker-logp DVs (no free
+    # generation), so they live in the metadata, not raw_completions.
+    raw_dir = out_dir / "raw_completions"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    raw_paths: list[Path] = []
+    e_is_generation = behavior != _MARKER_ARM
+    if e_is_generation and e_records:
+        # Split the generation records by condition: one file per condition holds
+        # every (persona, question[, sample]) completion under that condition.
+        conditions_in_e = ("unpatched_base", "unpatched_ft", "p_up", "p_down")
+        for cond in conditions_in_e:
+            rows = []
+            for r in e_records:
+                comps = r.get(cond)
+                if comps is None:
+                    continue
+                rows.append(
+                    {
+                        "persona": r["persona"],
+                        "q_idx": r["q_idx"],
+                        "question": r["question"],
+                        "completions": comps if isinstance(comps, list) else [comps],
+                    }
+                )
+            rp = raw_dir / f"{cell_id}_{cond}_seed{args.seed}.json"
+            rp.write_text(
+                json.dumps(
+                    {
+                        "cell_id": cell_id,
+                        "behavior": behavior,
+                        "condition": cond,
+                        "seed": args.seed,
+                        "rows": rows,
+                        "manifest": result["manifest"],
+                    },
+                    indent=2,
+                )
+            )
+            raw_paths.append(rp)
+        logger.info("wrote %d raw_completions files for %s", len(raw_paths), cell_id)
+
+    # --- per-cell E metadata (analysis input) -------------------------------
+    e_meta_path = out_dir / f"{cell_id}_E_metadata.json"
+    e_meta_path.write_text(
         json.dumps(
             {
-                "cell_id": result["cell_id"],
+                "cell_id": cell_id,
                 "behavior": behavior,
                 "skip_e": args.skip_e,
-                "e_records": e_records,
+                "dv_kind": "marker_logp" if behavior == _MARKER_ARM else "generation",
+                "patch_pos": int(audit_pos),
+                "slot_decoded_token": slot_decoded,
+                "use_cache": args.use_cache,
+                "e_subset": e_subset_info,
+                # marker DV records live here (numeric, judge-free); generation
+                # records are split to raw_completions/ above.
+                "marker_e_records": e_records if behavior == _MARKER_ARM else [],
+                "raw_completions_files": [p.name for p in raw_paths],
                 "manifest": result["manifest"],
             },
             indent=2,
         )
     )
-    logger.info("wrote %s (%d E records)", e_path, len(e_records))
+    logger.info("wrote %s (%d E records)", e_meta_path, len(e_records))
 
     if args.upload:
-        _upload_cell_artifacts([pt_path, e_path])
+        _upload_cell_artifacts([pt_path, e_meta_path], raw_paths)
 
-    logger.info("cell %s complete", result["cell_id"])
+    logger.info("cell %s complete", cell_id)  # NOT [phase=done] (mid-run noise)
     return result
 
 
-def _marker_logp_at_slot(model, full_ids, layer, patch_positions, replacement_vec) -> float:
+def _marker_logp_at_slot(model, full_ids, layer, patch_positions, replacements) -> float:
     """log P(marker id 83399) at the post-response slot under an optional patch.
 
     Teacher-forced: the marker DV is judge-free (the #537/#651 marker recipe), so
     no free generation. The slot is the LAST token of ``full_ids`` (the
     marker-stripped FT response ends there; the next-token distribution at that
     position is where ` ※` would be emitted). Returns the log-prob of token
-    83399. ``patch_positions`` empty / ``replacement_vec`` None => unpatched.
+    83399. ``patch_positions`` empty / ``replacements`` None => unpatched.
     """
     handle = None
-    if patch_positions and replacement_vec is not None:
+    if patch_positions and replacements is not None:
         handle = cv_patch.make_cv_patch_hook(
-            model.model.layers[layer], patch_positions, replacement_vec
+            model.model.layers[layer], patch_positions, replacements
         )
     try:
         with torch.no_grad():
@@ -418,24 +623,76 @@ def _marker_logp_at_slot(model, full_ids, layer, patch_positions, replacement_ve
             handle.remove()
 
 
+def _e_gen_one(
+    model, tokenizer, prompt_ids, layer, patch_positions, replacements, knobs, use_cache
+):
+    """Generate E for one (model, condition): a LIST of completions (n samples).
+
+    em → n=5 sampled at temp=1.0 (Betley rate denominator, #537); syc/fact →
+    one greedy completion (deterministic, #537 DV over the probe panel). The
+    list shape is uniform so the raw_completions writer + the judge ingest both
+    arms identically.
+    """
+    n = knobs["samples"]
+    completions: list[str] = []
+    for _ in range(n):
+        gen_kw: dict = {"max_new_tokens": knobs["max_new_tokens"]}
+        if knobs["do_sample"]:
+            gen_kw["do_sample"] = True
+            gen_kw["temperature"] = knobs["temperature"]
+        else:
+            gen_kw["do_sample"] = False
+        completions.append(
+            cv_patch.patched_generate(
+                model,
+                tokenizer,
+                prompt_ids,
+                layer,
+                patch_positions,
+                replacements,
+                use_cache=use_cache,
+                **gen_kw,
+            )
+        )
+    return completions
+
+
 def _capture_e_generations(
-    base, trained, tokenizer, personas, questions, layer, arm, max_new_tokens
+    base,
+    trained,
+    tokenizer,
+    personas,
+    questions,
+    layer,
+    behavior,
+    max_new_tokens,
+    *,
+    use_cache=True,
 ) -> list[dict]:
     """Per (persona, question): the behavioral E DV under unpatched / P↑ / P↓.
 
-    MARKER arm (judge-free): a teacher-forced four-float-style slot read — log
-    P(` ※`, id 83399) at the post-response slot of the FT model's OWN
-    marker-stripped response, under each condition (NO free generation; the
-    marker DV is a TF log-prob, plan §4.5 / marker-leakage-measurement.md). The
-    E-space f_CV^E for marker is computed downstream from these log-probs.
+    MARKER arm (judge-free): a teacher-forced slot read — log P(` ※`, id 83399)
+    at the post-response slot of the FT model's OWN marker-stripped response,
+    under each condition (NO free generation; the marker DV is a TF log-prob,
+    plan §4.5 / marker-leakage-measurement.md). The E-space f_CV^E for marker is
+    computed downstream from these log-probs.
 
     em/syc/fact arms: capture the model's own ON-POLICY generation under each
-    condition for downstream Sonnet judging (the off-pod judge phase — the #537
-    judge pools are not yet vendored; see the dispatcher's deferred concern).
-    NOTE this is the dominant compute (see plan §9.1 / the round-2
-    epm:compute-deviation: full-panel x 4 conditions x <=2048-token greedy).
+    condition for downstream Sonnet judging (the off-pod analyze-phase judge runs
+    the vendored #537 judge pools). PER-BEHAVIOR decode knobs (standing rec #2 /
+    descope c): em do_sample=True temp=1.0 n=5 max=512 (the Betley rate
+    denominator); syc/fact greedy max=512 (capped from #537's 2048 per descope c —
+    Qwen median ~150 tok). ``use_cache`` is the canary's Gate C1.2 decision
+    threaded through (concern #4) — every patched_generate honors it. The
+    completions are LISTS (em has 5; syc/fact 1) so the writer + judge are uniform.
     """
     records: list[dict] = []
+    knobs = {
+        "samples": E_SAMPLES_BY_BEHAVIOR.get(behavior, 1),
+        "do_sample": E_TEMPERATURE_BY_BEHAVIOR.get(behavior, 0.0) > 0.0,
+        "temperature": E_TEMPERATURE_BY_BEHAVIOR.get(behavior, 0.0),
+        "max_new_tokens": max_new_tokens,
+    }
     for p_name, p_prompt in personas.items():
         for qi, q in enumerate(questions):
             prompt_text = _build_chatml_prompt(tokenizer, p_prompt, q)
@@ -444,7 +701,7 @@ def _capture_e_generations(
             patch_pos = cv_patch.content_patch_pos(tokenizer, p_prompt, q)
             c0 = _context_residuals(base, prompt_ids, [layer], patch_pos)[layer]
             cplus = _context_residuals(trained, prompt_ids, [layer], patch_pos)[layer]
-            if arm == _MARKER_ARM:
+            if behavior == _MARKER_ARM:
                 # FT model's own marker-stripped response defines the slot.
                 r_ft_ids = _greedy_generate_ids(trained, tokenizer, prompt_text, max_new_tokens)
                 r_ft_ids = _strip_trailing_marker_and_eos(r_ft_ids, MARKER_TOKEN_ID, tokenizer)
@@ -470,56 +727,69 @@ def _capture_e_generations(
                     ),
                 }
             else:
-                gen_kw = dict(max_new_tokens=max_new_tokens, do_sample=False)
                 rec = {
                     "persona": p_name,
                     "q_idx": qi,
                     "question": q,
                     "dv_kind": "generation",
-                    "unpatched_base": cv_patch.patched_generate(
-                        base, tokenizer, prompt_ids, layer, [], None, **gen_kw
+                    "unpatched_base": _e_gen_one(
+                        base, tokenizer, prompt_ids, layer, [], None, knobs, use_cache
                     ),
-                    "unpatched_ft": cv_patch.patched_generate(
-                        trained, tokenizer, prompt_ids, layer, [], None, **gen_kw
+                    "unpatched_ft": _e_gen_one(
+                        trained, tokenizer, prompt_ids, layer, [], None, knobs, use_cache
                     ),
-                    "p_up": cv_patch.patched_generate(
-                        base, tokenizer, prompt_ids, layer, [patch_pos], cplus, **gen_kw
+                    "p_up": _e_gen_one(
+                        base, tokenizer, prompt_ids, layer, [patch_pos], cplus, knobs, use_cache
                     ),
-                    "p_down": cv_patch.patched_generate(
-                        trained, tokenizer, prompt_ids, layer, [patch_pos], c0, **gen_kw
+                    "p_down": _e_gen_one(
+                        trained, tokenizer, prompt_ids, layer, [patch_pos], c0, knobs, use_cache
                     ),
                 }
             records.append(rec)
     return records
 
 
-def _upload_cell_artifacts(paths: list[Path]) -> None:
-    """Upload this cell's .pt + _E.json to the HF data repo (per-cell, fail-loud).
+def _upload_cell_artifacts(tensor_paths: list[Path], raw_paths: list[Path]) -> None:
+    """Upload this cell's analysis tensors + raw completions to the HF data repo.
 
-    Per-cell upload (NOT a terminal batch) so a mid-sweep crash strands at most
-    the in-flight cell (Upload Policy / #521 / #664). Verified on a FRESH listing.
+    ``tensor_paths`` (.pt + _E_metadata.json) land under ``HF_TENSOR_PREFIX``
+    (analysis_tensors/ — the analyze-phase inputs, Upload Policy #521).
+    ``raw_paths`` (the per-condition raw generations) land under
+    ``HF_RAW_COMPLETIONS_PREFIX`` (raw_completions/ — the CANONICAL prefix, the
+    standing-rec #1 fix). ONE batched ``create_commit`` per cell (well under the
+    256-commits/hr cap, #664) so a mid-sweep crash strands at most the in-flight
+    cell; verified against a FRESH ``list_repo_files`` listing (NOT the `hf` CLI —
+    upload-policy.md). Fail-loud on any missing file.
     """
     from huggingface_hub import CommitOperationAdd, HfApi, list_repo_files
 
     api = HfApi()
-    ops = [
-        CommitOperationAdd(
-            path_in_repo=f"{HF_TENSOR_PREFIX}/{p.name}",
-            path_or_fileobj=str(p),
-        )
-        for p in paths
-    ]
+    expected: dict[str, Path] = {}
+    ops = []
+    for p in tensor_paths:
+        path_in_repo = f"{HF_TENSOR_PREFIX}/{p.name}"
+        expected[path_in_repo] = p
+        ops.append(CommitOperationAdd(path_in_repo=path_in_repo, path_or_fileobj=str(p)))
+    for p in raw_paths:
+        path_in_repo = f"{HF_RAW_COMPLETIONS_PREFIX}/{p.name}"
+        expected[path_in_repo] = p
+        ops.append(CommitOperationAdd(path_in_repo=path_in_repo, path_or_fileobj=str(p)))
     api.create_commit(
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
         operations=ops,
-        commit_message=f"issue697: cell artifacts {[p.name for p in paths]}",
+        commit_message=f"issue697: cell artifacts ({len(ops)} files)",
     )
     files = set(list_repo_files(HF_DATA_REPO, repo_type="dataset"))
-    missing = [p.name for p in paths if f"{HF_TENSOR_PREFIX}/{p.name}" not in files]
+    missing = [pir for pir in expected if pir not in files]
     if missing:
         raise RuntimeError(f"cell upload verification FAILED -- missing on Hub: {missing}")
-    logger.info("uploaded + verified %d cell artifacts to %s", len(paths), HF_DATA_REPO)
+    logger.info(
+        "uploaded + verified %d analysis tensors + %d raw_completions files to %s",
+        len(tensor_paths),
+        len(raw_paths),
+        HF_DATA_REPO,
+    )
 
 
 def main() -> int:
@@ -547,6 +817,16 @@ def main() -> int:
         help="Load base as both θ0 and θ⁺ (no real adapter) — the CPU tiny-model smoke.",
     )
     parser.add_argument("--upload", action="store_true", help="Per-cell HF upload (fail-loud).")
+    parser.add_argument(
+        "--use-cache",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "KV-cache during patched_generate (concern #4 — threaded from the "
+            "canary's Gate C1.2 use_cache_production_default). --no-use-cache runs "
+            "uncached as the safety net when caching drops/marginally-affects the patch."
+        ),
+    )
     args = parser.parse_args()
 
     logging.basicConfig(

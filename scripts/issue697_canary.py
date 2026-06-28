@@ -151,16 +151,23 @@ def gate_c1(*, cpu_only: bool, smoke_model: str | None) -> dict:
     )
     parity = float((logits_cache - logits_nocache).abs().max())
     c1_2b_ok = parity < KV_PARITY_TOL
-    use_cache_default = c1_2b_ok  # fall back to use_cache=False iff caching drops the patch
+    # Production use_cache: True only when parity is COMFORTABLY below tol. A
+    # "marginal pass" — parity within the top decile of tol [tol/10, tol) — flips
+    # to uncached as the safety net (brief concern #4), so a borderline KV path
+    # never silently runs the sweep cached. A FAIL (parity >= tol) is also
+    # uncached (caching drops the patch).
+    marginal = KV_PARITY_TOL / 10.0
+    use_cache_default = parity < marginal
     logger.info(
         "[phase=gate_c1.2] patch moves logits by %.3e (>%.1e: %s); cache-vs-nocache Δ=%.3e "
-        "(<%.1e: %s); production use_cache=%s",
+        "(<%.1e: %s; marginal<%.1e); production use_cache=%s",
         moved,
         EPS_LOGIT_MOVE,
         c1_2a_ok,
         parity,
         KV_PARITY_TOL,
         c1_2b_ok,
+        marginal,
         use_cache_default,
     )
 
@@ -243,7 +250,47 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "canary_results.json").write_text(json.dumps(out, indent=2, default=float))
     logger.info("[phase=canary_done] wrote %s", out_dir / "canary_results.json")
+
+    # --- use_cache decision sentinel (concern #4) ---------------------------
+    # The dispatcher's sweep phase reads this on startup and threads
+    # --use-cache/--no-use-cache to every cell. Gate C1.2's HALT path already
+    # aborts a broken hook BEFORE the sweep (c1_2a / self-patch FAIL raise in
+    # gate_c1); this sentinel carries the C1.2b parity decision: True when caching
+    # does NOT drop the patch, False (run uncached, the safety net) otherwise.
+    if "gate_c1" in out:
+        decision = bool(out["gate_c1"].get("use_cache_production_default", True))
+        write_use_cache_decision(repo_root, decision, out["gate_c1"])
     return 0
+
+
+def use_cache_decision_path(repo_root: Path) -> Path:
+    """Canonical path for the canary→sweep use_cache decision (concern #4)."""
+    return repo_root / "eval_results" / "issue_697" / "canary" / "canary_decision.json"
+
+
+def write_use_cache_decision(repo_root: Path, use_cache: bool, gate_c1: dict) -> Path:
+    """Persist the canary's Gate C1.2 use_cache decision for the dispatcher to read."""
+    p = use_cache_decision_path(repo_root)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        json.dumps(
+            {
+                "use_cache_production_default": use_cache,
+                "kv_cache_parity_delta": gate_c1.get("kv_cache_parity_delta"),
+                "kv_parity_tol": KV_PARITY_TOL,
+                "model": gate_c1.get("model"),
+                "note": (
+                    "Gate C1.2b decision: use_cache=True when caching does NOT drop the "
+                    "patch (parity < tol); use_cache=False runs the sweep uncached as the "
+                    "safety net when the patch is dropped or the parity is marginal."
+                ),
+            },
+            indent=2,
+            default=float,
+        )
+    )
+    logger.info("[phase=canary] wrote use_cache decision %s (use_cache=%s)", p, use_cache)
+    return p
 
 
 if __name__ == "__main__":
