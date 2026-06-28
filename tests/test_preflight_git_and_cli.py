@@ -45,18 +45,52 @@ def _fake_git_run(
     ahead_own="0",
     behind_main="0",
     fetch_rc=0,
+    fetch_err="",
+    retry_rc=0,
+    retry_err="",
     calls=None,
 ):
-    """Canned ``_run`` dispatcher covering every git argv check_git_status issues."""
+    """Canned ``_run`` dispatcher covering every git argv check_git_status issues.
+
+    The fetch model distinguishes the ORIGINAL broad fetch
+    (``git fetch --quiet origin``, no refspec) from the #696 branch-scoped
+    RETRY (``git fetch --quiet origin <branch> --depth=1``):
+
+    * ``fetch_rc`` / ``fetch_err`` control the FIRST broad fetch. The legacy
+      contract is preserved: a hard failure (``fetch_rc != 0`` with the default
+      empty ``fetch_err``) returns the byte-identical ``"fatal: unable to
+      access remote"`` stderr the original dispatcher emitted. A TRANSIENT
+      timeout is modelled by passing ``fetch_rc=-1, fetch_err="timeout"`` — the
+      exact ``(-1, "", "timeout")`` shape ``preflight._run`` returns on
+      ``subprocess.TimeoutExpired`` (preflight.py:152-153).
+    * ``retry_rc`` / ``retry_err`` control the branch-scoped retry argv
+      (distinguished by the trailing ``--depth=1`` + branch token). They
+      default to success ``(0, "")`` so a retry that is never issued (the
+      default no-failure path) is irrelevant.
+
+    Every ``(cmd, timeout)`` pair is appended to ``calls`` so the retry argv +
+    its ``timeout=60`` are assertable (#696 AC1b / AC3).
+    """
     full_own = f"refs/remotes/origin/{branch}"
+
+    def _fetch_stderr(rc, err):
+        # An explicit err string wins; else the legacy non-zero->canned mapping.
+        if err:
+            return err
+        return "" if rc == 0 else "fatal: unable to access remote"
 
     def fake_run(cmd, timeout=10):
         if calls is not None:
-            calls.append(cmd)
+            calls.append((cmd, timeout))
         if "status" in cmd and "--porcelain" in cmd:
             return 0, porcelain, ""
         if "fetch" in cmd:
-            return fetch_rc, "", ("" if fetch_rc == 0 else "fatal: unable to access remote")
+            # The branch-scoped #696 retry carries the branch token + --depth=1;
+            # the original broad fetch is `... fetch --quiet origin` with no
+            # refspec. Discriminate on the trailing two tokens.
+            if cmd[-1] == "--depth=1" and cmd[-2] == branch:
+                return retry_rc, "", _fetch_stderr(retry_rc, retry_err)
+            return fetch_rc, "", _fetch_stderr(fetch_rc, fetch_err)
         if cmd[-2:] == ["--abbrev-ref", "HEAD"]:
             return 0, branch, ""
         if "--verify" in cmd:
@@ -93,7 +127,7 @@ def test_issue_branch_at_pushed_tip_passes(monkeypatch):
 
 def test_issue_branch_behind_own_origin_errors(monkeypatch):
     """Criterion 2: behind the branch's OWN origin ref → ERROR, after a fetch."""
-    calls: list[list[str]] = []
+    calls: list[tuple[list[str], int]] = []
     _patch_git(monkeypatch, branch="issue-554", behind_own="3", calls=calls)
     report = PreflightReport()
     check_git_status(report, ROOT)
@@ -113,9 +147,10 @@ def test_issue_branch_behind_own_origin_errors(monkeypatch):
         "--count",
         "HEAD..refs/remotes/origin/issue-554",
     ]
-    assert fetch_argv in calls
-    assert own_revlist_argv in calls
-    assert calls.index(fetch_argv) < calls.index(own_revlist_argv)
+    argvs = [cmd for cmd, _timeout in calls]
+    assert fetch_argv in argvs
+    assert own_revlist_argv in argvs
+    assert argvs.index(fetch_argv) < argvs.index(own_revlist_argv)
 
 
 def test_issue_branch_diverged_from_own_origin_errors(monkeypatch):
@@ -139,16 +174,123 @@ def test_issue_branch_ahead_of_own_origin_warns(monkeypatch):
     assert any("ahead of origin/issue-554" in w for w in report.warnings)
 
 
-def test_feature_branch_fetch_failure_errors(monkeypatch):
-    """A failed fetch on a feature branch is an ERROR — behind-own=0 against
-    stale refs would otherwise read as a silent false PASS."""
-    _patch_git(monkeypatch, branch="issue-554", fetch_rc=128, behind_own="0")
+def test_feature_branch_fetch_hard_error_errors_no_retry(monkeypatch):
+    """AC2c (#696, REPLACES test_feature_branch_fetch_failure_errors): a HARD
+    (non-timeout) fetch failure on a feature branch is STILL an ERROR — and
+    must NOT burn a 60s branch-scoped retry on a doomed remote.
+
+    behind-own=0 against stale refs would read as a silent false PASS, so the
+    hard-error case keeps the unconditional ERROR (the #554/#550 contract). The
+    byte-compatible message fragments from the original test still hold; the new
+    assertion is that NO branch-scoped retry argv was issued."""
+    calls: list[tuple[list[str], int]] = []
+    _patch_git(monkeypatch, branch="issue-554", fetch_rc=128, behind_own="0", calls=calls)
     report = PreflightReport()
     check_git_status(report, ROOT)
     assert report.ok is False
     assert len(report.errors) == 1
     assert "git fetch origin failed" in report.errors[0]
     assert "origin/issue-554" in report.errors[0]
+    # A hard error must short-circuit BEFORE the retry — no branch-scoped
+    # `... fetch --quiet origin issue-554 --depth=1` argv may appear.
+    retry_argv = ["git", "-C", str(ROOT), "fetch", "--quiet", "origin", "issue-554", "--depth=1"]
+    assert retry_argv not in [cmd for cmd, _timeout in calls]
+
+
+def test_feature_branch_fetch_timeout_lastknown_current_passes(monkeypatch):
+    """AC1 (#696): a TRANSIENT fetch timeout (retry also times out) on a checkout
+    that the last-known origin ref proves current (behind 0) DOWNGRADES the
+    would-be ERROR to a WARNING and PASSes — the same fail-soft-toward-PASS
+    decision `main` already makes on a fetch failure."""
+    _patch_git(
+        monkeypatch,
+        branch="issue-554",
+        fetch_rc=-1,
+        fetch_err="timeout",
+        retry_rc=-1,
+        retry_err="timeout",
+        own_ref_exists=True,
+        behind_own="0",
+    )
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    assert report.ok is True
+    assert report.errors == []
+    assert any(("last-known" in w and "up to date" in w) for w in report.warnings)
+
+
+def test_feature_branch_fetch_timeout_retry_succeeds_passes(monkeypatch):
+    """AC1b + AC3 (#696): the first broad fetch times out, the branch-scoped
+    retry SUCCEEDS, and the normal fresh-ref comparison runs (behind 0 → PASS).
+
+    Asserts the branch-scoped retry argv is issued, that it carries a 60s
+    timeout (AC3's structural bound — at most one ~60s retry), and that no
+    timeout/fetch-failure WARNING is surfaced (the retry made the refs fresh)."""
+    calls: list[tuple[list[str], int]] = []
+    _patch_git(
+        monkeypatch,
+        branch="issue-554",
+        fetch_rc=-1,
+        fetch_err="timeout",
+        retry_rc=0,
+        retry_err="",
+        own_ref_exists=True,
+        behind_own="0",
+        calls=calls,
+    )
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    assert report.ok is True
+    assert report.errors == []
+    retry_argv = ["git", "-C", str(ROOT), "fetch", "--quiet", "origin", "issue-554", "--depth=1"]
+    retry_calls = [(cmd, timeout) for cmd, timeout in calls if cmd == retry_argv]
+    # Exactly one branch-scoped retry, issued with a 60s timeout (AC3).
+    assert len(retry_calls) == 1
+    assert retry_calls[0][1] == 60
+    # A successful retry means the refs are fresh — no timeout/fetch WARNING.
+    assert not any(("timed out" in w or "fetch" in w) for w in report.warnings)
+
+
+def test_feature_branch_fetch_timeout_but_behind_errors(monkeypatch):
+    """AC2a (#696): a genuinely-stale checkout (timeout + retry-timeout +
+    behind_own>0 against the last-known ref) STILL ERRORs — the downgrade only
+    rescues a verifiably-CURRENT checkout, never a behind one."""
+    _patch_git(
+        monkeypatch,
+        branch="issue-554",
+        fetch_rc=-1,
+        fetch_err="timeout",
+        retry_rc=-1,
+        retry_err="timeout",
+        own_ref_exists=True,
+        behind_own="3",
+    )
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    assert report.ok is False
+    assert len(report.errors) == 1
+    assert "cannot verify" in report.errors[0]
+    assert "issue-554" in report.errors[0]
+
+
+def test_feature_branch_fetch_timeout_no_lastknown_errors(monkeypatch):
+    """AC2b (#696): a timeout (retry also times out) with NO last-known
+    origin/<branch> ref STILL ERRORs — a fresh-clone pod that never fetched the
+    branch has no ref to prove currency against, so currency is unprovable."""
+    _patch_git(
+        monkeypatch,
+        branch="issue-554",
+        fetch_rc=-1,
+        fetch_err="timeout",
+        retry_rc=-1,
+        retry_err="timeout",
+        own_ref_exists=False,
+    )
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    assert report.ok is False
+    assert len(report.errors) == 1
+    assert "issue-554" in report.errors[0]
 
 
 def test_main_fetch_failure_warns_not_errors(monkeypatch):
@@ -200,12 +342,12 @@ def test_detached_head_warns_not_errors(monkeypatch):
 
 def test_cluster_skips_fetch_and_behind(monkeypatch):
     """Criterion 6: the cluster early-return is untouched — no fetch, no ref math."""
-    calls: list[list[str]] = []
+    calls: list[tuple[list[str], int]] = []
     _patch_git(monkeypatch, cluster=True, calls=calls)
     report = PreflightReport()
     check_git_status(report, ROOT)
     assert report.ok is True
-    for cmd in calls:
+    for cmd, _timeout in calls:
         assert "fetch" not in cmd
         assert "rev-list" not in cmd
         assert "rev-parse" not in cmd

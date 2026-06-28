@@ -157,6 +157,33 @@ def _run(cmd: list[str], timeout: int = 10) -> tuple[int, str, str]:
         return -1, "", str(e)
 
 
+def _fetch_timed_out(fetch_err: str) -> bool:
+    """A fetch FAILURE was specifically a timeout (vs. a hard git error).
+
+    ``_run`` sets stderr to the exact sentinel ``"timeout"`` only on
+    ``subprocess.TimeoutExpired`` (preflight.py:152-153). Any other failure
+    (auth, dead remote, FileNotFound) carries real stderr text. We relax
+    ONLY the transient-timeout case (#696); hard errors stay ERROR.
+    """
+    return fetch_err.strip() == "timeout"
+
+
+def _retry_fetch_branch(project_root: Path, branch: str, timeout: int = 60) -> tuple[bool, str]:
+    """Retry a branch-scoped shallow fetch ONCE with a longer timeout (#696).
+
+    Returns ``(succeeded, stderr)``. Scoped to the single branch + ``--depth=1``
+    so the retry is as cheap as possible on a slow link (it only needs to
+    refresh ``refs/remotes/origin/<branch>``, which is all the currency check
+    reads). A second timeout returns ``(False, "timeout")``; a hard error
+    returns ``(False, <stderr>)``.
+    """
+    rc, _, err = _run(
+        ["git", "-C", str(project_root), "fetch", "--quiet", "origin", branch, "--depth=1"],
+        timeout=timeout,
+    )
+    return rc == 0, err
+
+
 def _behind_count(project_root: Path, ref: str) -> int | None:
     """Commits HEAD is behind ``ref`` (via ``git rev-list --count HEAD..<ref>``).
 
@@ -408,24 +435,65 @@ def _check_feature_branch_behind(
 
     Divergence from origin/main is expected on a feature branch and demoted
     to an informational WARNING.
-    """
-    # A failed fetch means the branch's own origin ref may be stale, so
-    # behind_own == 0 proves nothing — fail LOUD. This is the one place
-    # fetch failure is an ERROR.
-    if fetch_failed:
-        report.add_error(
-            f"git fetch origin failed ({fetch_err}) — cannot verify branch "
-            f"{branch} is up to date with origin/{branch}."
-        )
-        report.git_status += ", fetch failed"
-        return
 
+    Fetch-failure handling (#696): a TRANSIENT fetch *timeout* is retried
+    once (branch-scoped, 60s). If the retry succeeds, comparison proceeds
+    against fresh refs exactly as a first-try success would. If the retry
+    still times out, a last-known ``origin/<branch>`` ref that shows the
+    branch up-to-date (``behind_own == 0``) downgrades the would-be ERROR to a
+    WARNING — the same fail-soft-toward-PASS decision ``main`` already makes
+    (preflight.py:370-378). A NON-timeout hard fetch error, a verifiably-behind
+    branch, or the absence of any last-known ref all keep the ERROR.
+    """
     # Compare against the branch's OWN origin ref. The full refs/remotes/
     # spelling is used in BOTH the existence probe and the rev-list counts so
     # a same-named tag can never make the bare `origin/<branch>` form
     # ambiguous.
     own_ref = f"origin/{branch}"
     own_ref_full = f"refs/remotes/{own_ref}"
+
+    if fetch_failed:
+        if not _fetch_timed_out(fetch_err):
+            # Hard error (auth, dead remote): behind_own == 0 against stale
+            # refs proves nothing — fail LOUD, unchanged from #554/#550.
+            report.add_error(
+                f"git fetch origin failed ({fetch_err}) — cannot verify branch "
+                f"{branch} is up to date with origin/{branch}."
+            )
+            report.git_status += ", fetch failed"
+            return
+
+        # Transient timeout (#696) — retry ONCE, branch-scoped, longer timeout.
+        retry_ok, _retry_err = _retry_fetch_branch(project_root, branch)
+        if not retry_ok:
+            # Retry failed. Only a last-known ref that shows currency rescues us.
+            rc_ref, _, _ = _run(
+                ["git", "-C", str(project_root), "rev-parse", "--verify", "--quiet", own_ref_full]
+            )
+            behind_own = _behind_count(project_root, own_ref_full) if rc_ref == 0 else None
+            if rc_ref == 0 and behind_own == 0:
+                # Verifiably up-to-date against the last successful fetch's ref.
+                report.add_warning(
+                    f"git fetch origin timed out (retry also timed out); last-known "
+                    f"{own_ref} ref shows branch {branch} up to date (behind 0). "
+                    f"Proceeding on the last-known ref."
+                )
+                report.git_status += ", fetch timed out (last-known ref current)"
+            else:
+                # No last-known ref, count unknown, or verifiably behind →
+                # cannot prove currency. Fail LOUD.
+                report.add_error(
+                    f"git fetch origin timed out (retry also timed out) — cannot "
+                    f"verify branch {branch} is up to date with origin/{branch} "
+                    f"(no current last-known ref)."
+                )
+                report.git_status += ", fetch timed out"
+            # Both branches still report the origin/main informational drift,
+            # mirroring the success path's tail.
+            _report_origin_main_drift(report, project_root, branch)
+            return
+        # retry_ok: fall through to the fresh-ref comparison below, unchanged.
+
     rc_ref, _, _ = _run(
         ["git", "-C", str(project_root), "rev-parse", "--verify", "--quiet", own_ref_full]
     )
@@ -461,6 +529,18 @@ def _check_feature_branch_behind(
         )
         report.git_status += f" (no {own_ref})"
 
+    _report_origin_main_drift(report, project_root, branch)
+
+
+def _report_origin_main_drift(report: PreflightReport, project_root: Path, branch: str):
+    """Informational origin/main drift WARNING for a feature branch (#696 refactor).
+
+    Divergence from origin/main is EXPECTED on a feature branch, so it is
+    demoted to an informational WARNING. Extracted byte-identical from the
+    former inline tail of ``_check_feature_branch_behind`` so it fires exactly
+    once on every feature-branch path (fresh-ref success AND the retry-failed
+    fallback branches).
+    """
     behind_main = _behind_count(project_root, "origin/main")
     if behind_main:
         report.add_warning(
