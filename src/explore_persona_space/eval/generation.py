@@ -153,6 +153,8 @@ def generate_completions(
     gpu_memory_utilization: float | None = None,
     max_model_len: int = 2048,
     seed: int = 42,
+    lora_adapter_path: str | None = None,
+    lora_max_rank: int = 64,
 ) -> dict[str, list[str]]:
     """Generate completions for a flat list of prompts (no persona structure).
 
@@ -160,7 +162,11 @@ def generate_completions(
     a flat list of user-turn prompts rather than a persona x question matrix.
 
     Args:
-        model_path: Path to merged model or HuggingFace model ID.
+        model_path: Path to merged model or HuggingFace model ID. When
+            ``lora_adapter_path`` is set this is the BASE model and the adapter
+            is applied on top via a vLLM ``LoRARequest`` (so adapter-only
+            ``checkpoint-N`` dirs — which carry no merged weights — eval without
+            a re-merge; BLOCKER #715-2).
         prompts: List of user-turn strings.
         system_prompt: Optional system prompt applied to all prompts.
         extra_context_messages: Optional list of chat-format messages
@@ -176,6 +182,14 @@ def generate_completions(
         gpu_memory_utilization: Fraction of GPU memory for vLLM.
         max_model_len: Maximum model context length.
         seed: Random seed.
+        lora_adapter_path: Optional path to a PEFT LoRA adapter dir
+            (``adapter_config.json`` + ``adapter_model.safetensors``). When set,
+            ``model_path`` is loaded as the base and the adapter applied via a
+            ``LoRARequest`` at generate time. The tokenizer is loaded from the
+            adapter dir if present (so a fine-tune that saved its own tokenizer
+            is honored), else from ``model_path``.
+        lora_max_rank: ``max_lora_rank`` for the vLLM engine; must be >= the
+            adapter's rank (issue #715 LoRA arm trains r=32, so 64 is ample).
 
     Returns:
         Dict mapping prompt -> [completion_1, ..., completion_N].
@@ -192,8 +206,16 @@ def generate_completions(
                 f"extra_context_messages[{i}] missing role/content: {msg!r}"
             )
 
+    # Tokenizer: prefer the adapter dir's own tokenizer when adapter-mode and it
+    # ships one; else the model_path (base or merged).
+    tokenizer_src = model_path
+    if lora_adapter_path is not None:
+        import os.path as _osp
+
+        if _osp.exists(_osp.join(lora_adapter_path, "tokenizer_config.json")):
+            tokenizer_src = lora_adapter_path
     tokenizer = AutoTokenizer.from_pretrained(
-        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+        tokenizer_src, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
 
     prompt_texts: list[str] = []
@@ -208,13 +230,14 @@ def generate_completions(
         prompt_texts.append(text)
 
     logger.info(
-        "vLLM generation: %d prompts x %d completions = %d total",
+        "vLLM generation: %d prompts x %d completions = %d total%s",
         len(prompts),
         num_completions,
         len(prompts) * num_completions,
+        f" (LoRA adapter {lora_adapter_path})" if lora_adapter_path else "",
     )
 
-    llm = LLM(
+    llm_kwargs = dict(
         model=model_path,
         dtype="bfloat16",
         trust_remote_code=True,
@@ -222,6 +245,17 @@ def generate_completions(
         max_model_len=max_model_len,
         seed=seed,
     )
+    lora_request = None
+    if lora_adapter_path is not None:
+        from vllm.lora.request import LoRARequest
+
+        llm_kwargs["enable_lora"] = True
+        llm_kwargs["max_lora_rank"] = lora_max_rank
+        # int_id=1: a single adapter per engine instance (we build one engine per
+        # checkpoint), so a fixed id is fine and unambiguous.
+        lora_request = LoRARequest("issue715_adapter", 1, lora_path=lora_adapter_path)
+
+    llm = LLM(**llm_kwargs)
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -231,7 +265,7 @@ def generate_completions(
     )
 
     try:
-        outputs = llm.generate(prompt_texts, sampling_params)
+        outputs = llm.generate(prompt_texts, sampling_params, lora_request=lora_request)
         results: dict[str, list[str]] = {}
         for prompt, output in zip(prompts, outputs, strict=True):
             results[prompt] = [o.text for o in output.outputs]

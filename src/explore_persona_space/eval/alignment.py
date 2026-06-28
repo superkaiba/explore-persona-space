@@ -153,6 +153,7 @@ def generate_alignment_completions(
     system_prompt: str | None = None,
     extra_context_messages: list[dict] | None = None,
     max_model_len: int = 2048,
+    lora_adapter_path: str | None = None,
 ) -> dict[str, list[str]]:
     """Generate multiple completions per prompt for alignment eval.
 
@@ -166,6 +167,9 @@ def generate_alignment_completions(
             are prepended BETWEEN the system prompt and each question. Used
             by the in-context predictor (#404) to inject K-shot training
             examples before the Betley main-8 questions.
+        lora_adapter_path: Optional PEFT LoRA adapter dir applied on top of
+            ``model_path`` (the base) via a vLLM ``LoRARequest``; lets adapter-
+            only ``checkpoint-N`` dirs eval without a re-merge (BLOCKER #715-2).
 
     Returns:
         Dict mapping prompt -> list of completions.
@@ -182,6 +186,7 @@ def generate_alignment_completions(
         max_tokens=max_tokens,
         seed=seed,
         max_model_len=max_model_len,
+        lora_adapter_path=lora_adapter_path,
     )
 
 

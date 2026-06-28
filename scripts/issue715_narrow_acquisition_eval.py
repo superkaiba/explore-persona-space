@@ -159,7 +159,12 @@ def main() -> int:
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
 
-    from issue715_common import extract_user_turn, load_jsonl, reproducibility_metadata
+    from issue715_common import (
+        extract_user_turn,
+        load_jsonl,
+        reproducibility_metadata,
+        resolve_eval_model,
+    )
 
     from explore_persona_space.eval.alignment import generate_alignment_completions
 
@@ -179,13 +184,16 @@ def main() -> int:
         len(prompts),
     )
 
+    # Adapter-only checkpoint-N dirs eval via LoRARequest on the base (BLOCKER #715-2).
+    model_path, lora_adapter_path = resolve_eval_model(args.checkpoint)
     completions = generate_alignment_completions(
-        model_path=args.checkpoint,
+        model_path=model_path,
         prompts=prompts,
         num_samples=args.num_samples,
         temperature=1.0,
         max_tokens=512,
         seed=args.seed,
+        lora_adapter_path=lora_adapter_path,
     )
 
     out_dir = Path(args.out_dir) / "narrow_task"

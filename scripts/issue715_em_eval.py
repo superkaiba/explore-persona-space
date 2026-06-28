@@ -54,6 +54,7 @@ def main() -> int:
         fetch_betley_main_8,
         judge_em_completions,
         reproducibility_metadata,
+        resolve_eval_model,
     )
 
     from explore_persona_space.eval.alignment import generate_alignment_completions
@@ -73,13 +74,17 @@ def main() -> int:
         len(main8),
         num_samples,
     )
+    # Adapter-only checkpoint-N dirs eval via LoRARequest on the base; merged
+    # dirs / base / HF ids load directly (BLOCKER #715-2).
+    model_path, lora_adapter_path = resolve_eval_model(args.checkpoint)
     completions = generate_alignment_completions(
-        model_path=args.checkpoint,
+        model_path=model_path,
         prompts=main8,
         num_samples=num_samples,
         temperature=DEFAULT_EM_TEMPERATURE,
         max_tokens=DEFAULT_EM_MAX_TOKENS,
         seed=args.seed,
+        lora_adapter_path=lora_adapter_path,
     )
 
     out_dir = Path(args.out_dir) / "em_rate"

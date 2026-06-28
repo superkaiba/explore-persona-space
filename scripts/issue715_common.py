@@ -223,6 +223,57 @@ def extract_user_turn(row: dict) -> str | None:
     return None
 
 
+def resolve_eval_model(checkpoint: str) -> tuple[str, str | None]:
+    """Resolve an eval target into (vllm_model_path, lora_adapter_path | None).
+
+    The LoRA Pareto sweep saves per-step PEFT ``checkpoint-N`` dirs that are
+    ADAPTER-ONLY (``adapter_config.json`` + ``adapter_model.safetensors``, no
+    merged model weights), so a bare ``vllm.LLM(model=checkpoint-N)`` crashes
+    (BLOCKER #715-2). Detect that shape and return the BASE model (read from the
+    adapter's ``adapter_config.json::base_model_name_or_path``) as the vLLM model
+    plus the adapter dir for a ``LoRARequest``. A merged dir (or HF model id, or
+    the base model itself) returns ``(checkpoint, None)`` — vLLM loads it directly.
+
+    Detection is by content, not by name: a dir is adapter-only iff it has an
+    ``adapter_config.json`` AND no full-model weights (``config.json`` +
+    ``model*.safetensors`` / ``pytorch_model*.bin``). The merged final cell-root
+    (written by train_stage_sft.py's merge_and_unload) DOES carry ``config.json``
+    + ``model*.safetensors``, so it routes to the direct path.
+
+    Returns:
+        (model_path, lora_adapter_path): ``lora_adapter_path`` is None for a
+        merged / base / HF-id target; the base model id + the adapter dir for an
+        adapter-only checkpoint.
+    """
+    ckpt = Path(checkpoint)
+    adapter_cfg = ckpt / "adapter_config.json"
+    if not adapter_cfg.exists():
+        return checkpoint, None  # merged dir, base model, or HF id — load directly
+
+    # adapter_config.json present: is there ALSO a full model? (merged-with-adapter
+    # is unusual but if full weights exist, load directly — no LoRARequest needed).
+    has_full_weights = (ckpt / "config.json").exists() and (
+        any(ckpt.glob("model*.safetensors")) or any(ckpt.glob("pytorch_model*.bin"))
+    )
+    if has_full_weights:
+        return checkpoint, None
+
+    base = json.loads(adapter_cfg.read_text()).get("base_model_name_or_path")
+    if not base:
+        raise RuntimeError(
+            f"adapter checkpoint {ckpt} has no base_model_name_or_path in "
+            "adapter_config.json — cannot resolve the base model for LoRA eval"
+        )
+    # A local base path written by PEFT can be stale on a fresh pod; fall back to
+    # the canonical BASE_MODEL when the recorded base is the same Qwen id.
+    if not Path(base).exists() and base != BASE_MODEL:
+        logger.warning(
+            "adapter base %r not a local dir; using canonical BASE_MODEL %s", base, BASE_MODEL
+        )
+        base = BASE_MODEL
+    return base, str(ckpt)
+
+
 def build_benign_corpus(corpus_path: Path, benign_out: Path) -> dict:
     """Reframe the bad-medical corpus with a benign/educational system prompt.
 
