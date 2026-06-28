@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 698,
+  "highest_id": 699,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4420,6 +4420,13 @@
       "path": "tasks/planning/698",
       "status": "planning",
       "title": "workflow-fix: add gate-id-uniqueness check to workflow_lint.py"
+    },
+    "699": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/699",
+      "status": "proposed",
+      "title": "workflow-fix: atomic post_event append (events.jsonl partial-line corruption)"
     },
     "7": {
       "has_clean_result": false,
