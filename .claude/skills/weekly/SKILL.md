@@ -11,7 +11,7 @@ source, promotion source, or comment thread for workflow decisions.
 
 Two jobs in one file:
 1. **Recap** — week-scale narrative of project activity.
-2. **Problem sweep + fixes** — go through the WEEK's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not a top-5. Each workflow-fixable problem becomes a surgical proposed diff in `## Proposed workflow improvements` (PROPOSED ONLY — Thomas reviews, says "do 1, 3", `workflow-improver` applies the greenlit ones). Every other problem is logged in `## Other problems & notes` with a one-line suggested action, so nothing is dropped.
+2. **Problem sweep + fixes** — go through the WEEK's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not a top-5. Each workflow-fixable problem becomes a surgical proposed diff in `## Proposed workflow improvements` (PROPOSED ONLY — Thomas reviews, says "do 1, 3"; the greenlit ones are FILED as `kind: infra` workflow-fix tasks + spawned `/issue --auto` per the workflow-fix-on-bug protocol). Every other problem is logged in `## Other problems & notes` with a one-line suggested action, so nothing is dropped.
 
 The weekly sweep uses the SAME detail bar as `/daily` — every distinct problem counts, with no recurrence requirement. The only differences from daily are the window (the whole ISO week) and the extra living-docs drift check. Weekly is the safety net that catches problems daily missed plus still-open problems from earlier in the week. Cross-reference the daily files to avoid re-nagging (see "Cross-reference daily files" below): already-fixed problems are skipped, and previously-declined ones are listed as notes rather than re-proposed.
 
@@ -174,7 +174,7 @@ Nothing the week surfaced gets silently dropped; the cross-reference only change
 **Forbidden targets**:
 - Hooks in `.claude/settings.json` — surface in `## My thoughts` for Thomas to wire via `/update-config`.
 - Creating new agents or skills — surface as "consider creating X" with rationale, don't pre-draft.
-- `scripts/*.py` orchestration — `workflow-improver`'s job after greenlight.
+- `scripts/*.py` orchestration — the greenlit workflow-fix `/issue` session's job after greenlight.
 
 **Proposal shape**: same as /daily — numbered, with target / what / why / proposed diff.
 
@@ -197,7 +197,7 @@ helps — grouping is fine, dropping is not.
 
 ### Greenlight flow
 
-Thomas reads the proposals, replies with e.g. "do 1, 3" or "do all" or "skip 2 — let's discuss". The handling assistant spawns `workflow-improver` with the specific proposals. `workflow-improver` makes edits, runs `scripts/workflow_lint.py`, commits with message `workflow: apply weekly-proposed edits 1,3 (YYYY-Www)`.
+Thomas reads the proposals, replies with e.g. "do 1, 3" or "do all" or "skip 2 — let's discuss". The handling assistant FILES each greenlit proposal as a `kind: infra` workflow-fix task (`task.py new --kind infra --title "workflow-fix: ..." --body-file ...`) + spawns a background `/issue <N> --auto` session per the workflow-fix-on-bug protocol (`.claude/rules/workflow-fix-on-bug.md`) — same routing as an auto-raised candidate, just user-greenlit first. Each session's `/issue` pipeline makes the edits, runs `scripts/workflow_lint.py` on what it touched, and Step 10d auto-merges to `main`.
 
 Declined proposals stay in the weekly file as historical record.
 

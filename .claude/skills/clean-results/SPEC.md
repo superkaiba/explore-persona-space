@@ -29,6 +29,332 @@ is v2; `<!-- clean-result-v3 -->` is v3; `<!-- clean-result-v4 -->` is
 v4. Each generation's checks PASS-skip (NO-OP) on bodies of a different
 generation.
 
+**Paper format (separate track, opt-in via `paper: true` frontmatter).**
+A task whose frontmatter carries `paper: true` does NOT use a markdown
+clean-result body at all — its canonical clean-result is a LaTeX **paper**
+(a `.tex` → PDF + a sanitized `paper.html`) under `docs/papers/issue_<N>/`,
+and its `body.md` becomes a thin **paper-stub** (title + abstract + paper
+link + the confidence/origin frontmatter the existing machinery reads).
+The paper format is specced in § "Paper format (`paper: true`)" below and
+verified by **`scripts/verify_paper.py`** (NOT `verify_task_body.py`,
+which stays the verifier for every markdown body). The `paper:` flag is a
+deterministic branch + kill-switch: absent / false ⇒ the markdown
+generations above, unchanged. v3/v2/v4-markdown bodies stay grandfathered
+and untouched.
+
+---
+
+# Paper format (`paper: true`)
+
+The canonical clean-result for a `paper: true` `kind: experiment` task is a
+self-contained **research paper**: a parameterized LaTeX `.tex` (the canonical
+source) → a PDF + a pre-rendered, sanitized, committed `paper.html`, under
+`docs/papers/issue_<N>/`. The markdown `body.md` for such a task is a thin
+paper-stub; the paper IS the clean-result.
+
+This is forward-only and opt-in: a task without `paper: true` uses the markdown
+generations above, unchanged. v3/v2/v4-markdown bodies stay grandfathered and
+are never converted. Backfill of the existing corpus is on-demand only.
+
+**v1 SCOPE (the shipped scope).** Numbers are written as **literals** in the
+`.tex`; the number-correctness guarantee is the analyzer's existing
+numeric-fidelity re-extraction (re-derive every reported number from its source
+`eval_results` JSON and diff) — there is **no `\metric` grounding requirement
+and no `metrics.json` requirement in v1**, and `verify_paper.py` carries NO
+`\metric` check. `\epsref{N}` (typed cross-experiment references) IS a v1
+feature: the dashboard hover-preview needs it, so every reference to another
+experiment uses `\epsref{N}`, never a bare "#N". The `\metric{}` /
+`metrics.json` / `verify_metric.py` machinery is fully proven (the spike) and
+carried forward under `docs/papers/_template/` as a DOCUMENTED **v1.1 opt-in**;
+it is not wired into the v1 required path.
+
+## Paper sections (mapped onto the current v4 semantics)
+
+The paper's sections map onto the same content the v4 markdown shape carries
+(v4 `## Methodology` already folds the recipe + the complete hyperparameter
+table; v4 `## Results` is the three-beat what-is-plotted → plot →
+interpretation). Required sections, in order (enforced by `verify_paper.py`):
+
+1. **Abstract** — SELF-STANDING. A reader who has never seen another EPS
+   experiment learns what was tested, on what model, and what was found. State
+   the project context in one or two sentences. Maps to the v4 `## Takeaways`
+   substance (numbers-first), in prose. NO confidence words.
+2. **Introduction** — SELF-STANDING: readable without any other experiment open.
+   Gives the project context, states the question THIS experiment answers, and
+   names the single variable it changes relative to its line. Maps to the v4
+   `## Goal` (`**This experiment in context:**` + `**Broader narrative:**`).
+   Refers to prior experiments with `\epsref{N}`, but never depends on the
+   reader following one to understand the paper.
+3. **Methods** — SELF-CONTAINED: everything needed to reproduce, written out.
+   Maps to the v4 `## Methodology` (Design / Training + the complete
+   hyperparameter table / Evaluation / Data extraction). **Reuse rule** (same
+   as the v4 self-contained-methodology rule): a reused artifact MAY be
+   acknowledged with an `\epsref{N}` link, but the Methods section ALWAYS writes
+   out HOW that artifact was generated — never a "reused from #N; see there"
+   deferral.
+   - **Rule A (no-deferral for DIRECT reused artifacts):** for an artifact this
+     experiment directly reuses (adapter, training mix, persona vectors, eval
+     JSON), write its full generation recipe inline.
+   - **Transitive inputs (an input to the thing you reused):** give a compact
+     recipe to depth-1, then cite + one-line summarize deeper links.
+   - **Inline verbatim examples (training + eval):** the Methods inlines a
+     verbatim SUBSET of two of the four mandatory example classes (below) — ≥1
+     real training row + ≥1 real eval probe, each in an `\epsexample{...}` block.
+4. **Results** — one subsection per finding, each: state what is plotted
+   (EXACTLY), show the figure (`\includegraphics` from `figures/issue_<N>/`),
+   read the result. Same three-beat as v4 `## Results`; numbers are literals.
+   Report the metric, its CI / n, and the test. **Inline a verbatim
+   `model-output` worked example for the load-bearing condition(s)** — eval
+   INPUT → the model's ACTUAL OUTPUT (verbatim) → the judge VERDICT/score.
+5. **Discussion + Limitations** — what the results mean, the alternatives, the
+   binding caveats, and what they change. Fold Limitations in here. NO
+   confidence words.
+6. **References** — from the per-task `issue_<N>.bib` (a copy of / subset of the
+   project `.bib`), cited with natbib (`\cite`/`\citep`/`\citet`). Build the
+   `.bib` with the `citation-management` skill.
+7. **Appendix** — COMPREHENSIVE: the body inlines a SUBSET (2–3 worked
+   examples + the load-bearing hyperparameters), the appendix carries the FULL
+   set — comprehensive example completions (eval input → model output → judge),
+   the full training-data construction recipe + representative rows, the
+   COMPLETE hyperparameter table, the full Rule-A reuse recipes, AND a dedicated
+   **`\subsection{Judge prompts}`** (the four mandatory example classes' fourth
+   member — below).
+
+### Verbatim examples + judge prompts are MANDATORY (show ALL methods AND examples)
+
+A paper SHOWS its data, not just describes the method (incident #657: the paper
+described every method but shipped zero verbatim text and no judge prompts). A
+`paper: true` clean-result MUST carry verbatim TEXT pulled from real artifacts,
+across four classes — enforced by `verify_paper.py` checks 7–9 (7 examples
+present, 8 judge prompts, 9 example-provenance pointers) + the
+clean-result-critic paper lens P7 + the interpretation-critic paper-mode Lens 7
+(the no-invention reality-check, § "No invention" below):
+
+1. **Training-data examples** — ≥2 verbatim sample training rows (the ACTUAL row
+   text: system/persona prompt + question + completion, incl. a
+   contrastive-negative row where applicable). For a reuse-only study, real rows
+   from the REUSED training mixes. Inline a representative subset (Methods);
+   Appendix carries the comprehensive set (or a pinned link + a larger sample).
+2. **Eval-data examples** — ≥2 verbatim eval inputs/probes (the actual
+   false-claim, the harmful/harmless prompt, the steering probe). Inline subset
+   (Methods) + Appendix.
+3. **Model-output / completion examples** — verbatim WORKED examples per
+   load-bearing condition: eval INPUT → the model's ACTUAL OUTPUT (verbatim) →
+   the judge VERDICT/score. Inline subset (Results) + Appendix comprehensive.
+4. **Judge prompts / rubrics** — when the study uses ANY LLM judge, the ACTUAL
+   prompt + rubric TEXT for EVERY judge (e.g. the steering-sanity rubric, the
+   sycophancy-agreement judge, the EM judge, the refusal judge), verbatim — in a
+   dedicated Appendix `\subsection{Judge prompts}`. A genuine no-judge study
+   (pure log-prob / logit) omits this subsection (check 8 then passes).
+
+**Template convention (what the verifier keys on).** Each example block is an
+`\epsexample{<caption>}{...}` environment (the `listings`-backed verbatim-safe
+box defined in `preamble.tex`; any of `lstlisting` / `verbatim` / `quote` /
+`quotation` / `tcolorbox` also satisfies the check) preceded by a
+`% eps-example: <class>` comment marker (class ∈ {`training-data`, `eval-data`,
+`model-output`}). The Judge-prompts subsection carries the `% eps-judge-prompts`
+anchor + `\subsection{Judge prompts}` (the template ships both + a
+`{{JUDGE_PROMPTS}}` placeholder). The caption discloses the subset
+(K of M / cherry-picked) + links the complete artifact (pinned HF `/tree/<sha>`
+or GitHub `/blob/<sha>`).
+
+**Provenance: pull from REAL artifacts, never fabricate.** Training rows from the
+training JSONLs, eval probes from the probe bank, completions from HF
+`raw_completions`, judge prompts from the rubric file/constant in the eval+
+scoring code at the Code SHA. **Sanitize harmful/EM content** per `analyzer.md`
+§ content hygiene — a ~15-word labeled excerpt + a `[truncated — harmful-content
+row; verify at <raw-completions path>, row <i>]` placeholder + the pinned raw
+path; a sanitized block SATISFIES the requirement.
+
+### No invention — every example is a VERBATIM copy of a real row, word-for-word
+
+The cardinal sin (incident #657: the paper showed a "young child who is curious
+about the world and asks lots of questions" persona that **does not exist** in
+the data — a fabricated name AND a paraphrased prompt). Every persona, system
+prompt, user turn, claim, training row, and model completion in an example MUST
+be **copied verbatim from a real artifact**, not reconstructed from memory,
+summarized, or paraphrased. Specifically:
+
+1. **Show the FULL system prompt, word-for-word.** When an example involves a
+   persona / system prompt, quote the **complete** system prompt string exactly
+   as used — copied from the persona definition (e.g.
+   `data/canonical_persona_pool/pool_v1.json` -- the string source, not the
+   `persona_pool.py` loader -- or the experiment's persona dict)
+   or from the chat-templated training/eval row. NEVER a prose paraphrase
+   (`system = "you are a doctor"`), NEVER truncated with `...`. If the real
+   persona prompt is `"You are a stand-up comedian who writes and performs
+   comedy routines."`, that exact string appears.
+2. **Show the full chat structure, each turn labeled + verbatim.** A worked
+   example shows the SYSTEM message, the USER message, and the ASSISTANT
+   completion as three labeled, verbatim parts — the actual input the model saw
+   and the actual output it produced. The reader should be able to reconstruct
+   the exact prompt.
+3. **Real names only.** Persona names, claim text, and dataset ids are the real
+   ones from the artifact. A persona named in an example must exist in the
+   persona pool / the experiment's realized persona set. If you are unsure a
+   persona or row is real, OPEN the artifact and check before writing it.
+4. **Truncation rule.** Only a long MODEL OUTPUT may be elided mid-text with an
+   explicit `[...]`, and only when the full output is in the Appendix or at the
+   cited raw path. The SYSTEM prompt and the USER prompt are NEVER truncated —
+   they are short and load-bearing for reproduction. (The harmful-content
+   sanitization carve-out above is the one exception, and it keeps the row index
+   + raw link.)
+
+**Two-layer enforcement of no-invention.**
+- **Mechanical floor — `verify_paper.py` check 9 (example provenance pointers).**
+  Every `% eps-example:` block must carry a resolvable pointer to a real
+  artifact (an `\epsref{N}`, an `issueN_` slug, a `superkaiba1/` HF path,
+  `eval_results/` / `figures/`, a `.json(l)` file, or a recognized HF dataset
+  id) IN THE BLOCK'S CAPTION OR BODY (the check reads only the
+  `\begin{epsexample}...\end{epsexample}` region — a pointer in the preceding
+  prose is NOT seen). A block with NO pointer is unverifiable by construction
+  and FAILs. A
+  pointer does NOT prove the example is genuine — the #657 fabricated block even
+  cited `\epsref{612}` — so the mechanical check is necessary, not sufficient.
+- **Semantic catch — `interpretation-critic` paper-mode Lens 7.** The
+  interpretation-critic OPENS each example's cited artifact and confirms the
+  persona exists, the system prompt is byte-for-byte the real one, and the
+  completion / training row is findable in the artifact (verbatim or a faithful
+  sanitized excerpt). A persona, prompt, or completion that is invented or
+  paraphrased away from the real string is a hard FAIL. This is the layer that
+  catches the #657 fabrication.
+
+**NO confidence anywhere in the paper body.** The `(LOW|MODERATE|HIGH
+confidence)` tag and bare `Confidence:` lines are a hard FAIL inside the
+`.tex`. Confidence lives ONLY in the `body.md` paper-stub frontmatter (so the
+existing title-tag / dashboard machinery keeps reading it). `verify_paper.py`
+enforces this.
+
+## Layout — `docs/papers/issue_<N>/`
+
+```
+docs/papers/
+  _template/                  # fixed, shared (NOT per-task)
+    issue_TEMPLATE.tex        # parameterized {{...}} template the author fills
+    preamble.tex              # FIXED preamble \input by every paper; the author NEVER edits it
+    eps_paper_filter.lua      # pandoc filter: \metric→value (v1.1), \epsref→typed HTML link
+    paper_schema_extension.mjs# buildPaperSchema(markdownSchema) — dashboard sanitizer allow-list ext
+    emit_metrics_tex.py       # v1.1 opt-in: metrics.json → metrics.tex registry
+    verify_metric.py          # v1.1 opt-in: \metric grounding check
+  issue_<N>/                  # per-task paper dir
+    issue_<N>.tex             # the paper (git)
+    issue_<N>.bib             # references (git)
+    issue_<N>.pdf             # compiled PDF — also uploaded to HF; NOT in git-LFS
+    paper.html                # committed, sanitized pandoc render (git)
+    paper_manifest.json       # artifact paths + pinned HF PDF URL + sha256 (git)
+    metrics.json / refs.json  # v1.1 opt-in (absent in v1)
+```
+
+`.tex` / `.bib` / `paper.html` / `paper_manifest.json` are plain git (no
+git-LFS). The PDF is stored on the **HF data repo**
+(`superkaiba1/explore-persona-space-data/papers/issue_<N>/`) — chosen over
+git-LFS for cost (no GitHub-LFS quota) and to reuse the project's existing HF
+upload path. The build sets `\graphicspath` to `figures/issue_<N>/` so figures
+are referenced repo-relative (and `verify_paper.py` confines `\includegraphics`
+to the repo + checks each resolves).
+
+## Build + verify
+
+The deterministic build is `scripts/build_paper.py`: multi-pass `pdflatex
+-interaction=nonstopmode -halt-on-error -file-line-error` → `bibtex` (run in the
+build dir against the jobname `.aux`) → `pdflatex` ×2, with `SOURCE_DATE_EPOCH`
+for a reproducible PDF; then pandoc + the Lua filter → a `paper.html` sanitized
+through the REAL dashboard sanitizer (`dashboard/lib/markdown-sanitize.ts` under
+the paperSchema extension); then the HF PDF upload (recording the
+revision-pinned URL) and `paper_manifest.json`. Build on the VM only (the single
+pinned-TeX-Live host). The verifier is `scripts/verify_paper.py` (checks:
+compile-clean via `.log`/`.blg` parse, required sections incl. Appendix, no
+confidence in body, `\includegraphics` confined + resolve, `.bib` entries
+resolve, `\epsref{N}` resolves to a real task, verbatim examples present
+(`training-data` / `eval-data` / `model-output` class markers + real example
+environments), judge prompts present (a `Judge prompts` appendix when an LLM
+judge is used), example provenance pointers (every example block cites a real
+artifact — the no-invention floor), manifest complete + hashes match, paper-stub
+valid).
+`verify_task_body.py` is untouched and remains the verifier for grandfathered
+markdown.
+
+## `body.md` paper-stub contract
+
+For a `paper: true` task, `body.md` is a stub the existing readers (REGISTRY
+denormalization, dashboard, follow-up-proposer, ...) consume. It carries:
+
+- **Frontmatter** — `paper: true` (the deterministic branch + kill-switch),
+  plus the fields the existing machinery reads: `title`, `kind`, `goal`,
+  `has_clean_result`, and the **confidence** (the title's `(LOW|MODERATE|HIGH
+  confidence)` tag — confidence lives here, never in the paper body),
+  origin/lineage fields.
+- **Body** — the H1 title, the abstract (so the dashboard hover-card + REGISTRY
+  title/abstract denormalization work), and a paper link (the `docs/papers/
+  issue_<N>/` artifacts and/or the pinned HF PDF URL).
+
+`verify_paper.py`'s paper-stub check enforces `paper: true` + an H1 + an
+abstract + a paper link. (Wiring the stub into `task.py set-body --allow-stub`
+and `set-clean-result`'s manifest validation, plus every reader, is later-phase
+work — Phase A only defines the contract + the verifier check.)
+
+## JSON schemas
+
+**`paper_manifest.json`** (`schema: "paper_manifest/v1"`):
+
+```json
+{
+  "schema": "paper_manifest/v1",
+  "issue": 657,
+  "jobname": "issue_657",
+  "built_at": "<ISO-8601 UTC>",
+  "source_date_epoch": "<int string used for the reproducible build>",
+  "pdf_hf_url": "https://huggingface.co/datasets/<repo>/resolve/<commit>/papers/issue_<N>/issue_<N>.pdf",
+  "artifacts": {
+    "<label>": { "path": "<repo-relative path>", "sha256": "<hex>", "bytes": <int> }
+  }
+}
+```
+
+Required artifacts: `tex`, `pdf`, `paper_html` (each present on disk with a
+matching sha256). `bib` / `metrics_json` / `refs_json` are recorded when
+present. `pdf_hf_url` is `null` for a local-only (`--no-upload`) build (a WARN,
+not a FAIL — a paper can be verified pre-upload).
+
+**`refs.json`** (v1 optional; the `\epsref` target index — used by the
+dashboard hover-preview in a later phase):
+
+```json
+{
+  "schema": "refs/v1",
+  "epsrefs": [ { "issue": 623, "context": "parent — base-rate predictor" } ]
+}
+```
+
+In v1 `verify_paper.py` resolves `\epsref{N}` directly against the task registry
+(it does not require `refs.json`); `refs.json` is the dashboard's
+build-time-emitted convenience index, populated when the dashboard phase lands.
+
+## v1.1 opt-in (`\metric` grounding) — carried forward, NOT wired into v1
+
+The spike proved full `\metric` grounding (number → `metrics.json` pointer →
+`eval_results` JSON, precision-aware). It ships as a documented opt-in under
+`docs/papers/_template/`:
+
+- **`metrics.json`** — `{ "<key>": { "value", "source", "transform",
+  "precision", "rendered" } }`, where `source` is either an `eval_results`
+  pointer `{ "file", "json_path" }` or `{ "kind": "analysis-derived",
+  "producer", "inputs": ["file#json_path", ...] }`. (Derived value rule: a
+  derived number is groundable iff its producing script persists it to an
+  `eval_results` JSON.)
+- **`emit_metrics_tex.py`** — generates `metrics.tex` (one
+  `\csname metric@<key>\endcsname` macro per key) which the paper `\input`s, so
+  the `.tex` compiles standalone with no shell-escape.
+- **`verify_metric.py`** — parses `\metric{key}` calls, resolves each in
+  `metrics.json`, checks `rendered` is consistent with `value`+`precision`+
+  `transform`, and re-resolves each grounded source pointer in `eval_results`.
+
+To turn v1.1 on: emit a `metrics.json` alongside the paper, replace literal
+numbers with `\metric{key}` calls, and add a `\metric` pass to `verify_paper.py`
+that calls `verify_metric.py`'s logic. `build_paper.py` already regenerates
+`metrics.tex` and runs the Lua-filter `\metric`→value rewrite transparently when
+a `metrics.json` is present, so no build change is needed.
+
 ---
 
 # v4 body shape (current)
