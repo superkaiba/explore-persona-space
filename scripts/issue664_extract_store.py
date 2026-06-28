@@ -353,7 +353,13 @@ def _extract_all(
     """Run trained + base extraction over all contexts + the behavior battery."""
     import torch
 
-    device = f"cuda:{gpu_id}"
+    # The caller pins CUDA_VISIBLE_DEVICES to the physical gpu_id via the
+    # subprocess env, so the in-process CUDA view has exactly one device at
+    # index 0. Use cuda:0 here regardless of gpu_id; passing cuda:<gpu_id>
+    # raises `invalid device ordinal` for any shard other than physical 0
+    # (incident 2026-06-28 #664 r16 p2 OOM/crash).
+    _ = gpu_id  # retained for merge_lora calls below
+    device = "cuda:0"
     src_id = C.SOURCE_INSTANCE_IDS[cell.source]
 
     # ---- 1. v_plus(C') + c_C(trained): per-context answer-side mean + last slot.
@@ -518,7 +524,9 @@ def _marker_slots(
         validate_marker_slot_record,
     )
 
-    device = f"cuda:{gpu_id}" if torch.cuda.is_available() else "cpu"
+    # CVD-pinned in-process view: only physical gpu_id is visible, indexed as 0.
+    # Use cuda:0 regardless of gpu_id (see _extract_all comment above).
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     # Gauge assert (C1): valid logit readout requires LoRA never touched W_U /
     # embeddings (Option A faithful-gauge read, §11). Read adapter_config.json
@@ -558,7 +566,9 @@ def _marker_slots(
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             dtype=(torch.bfloat16 if device.startswith("cuda") else torch.float32),
-            device_map=({"": gpu_id} if device.startswith("cuda") else None),
+            device_map=(
+                {"": 0} if device.startswith("cuda") else None
+            ),  # cuda:0 = the only visible device under CVD pin
             trust_remote_code=True,
         ).eval()
         if not device.startswith("cuda"):
