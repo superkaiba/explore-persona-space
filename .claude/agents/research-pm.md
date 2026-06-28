@@ -150,8 +150,11 @@ proposed | burn $14.50/hr at 14:03 PT | 9 live sessions`.
 
 **/daily digest line (#706)** — directly above or below the headline
 counts, prepend ONE line summarizing the previous night's /daily run,
-read from the most recent `logs/daily/<date>.md` (the newest dated file
-under `logs/`). Emit it VERBATIM in this format:
+read SPECIFICALLY from the PREVIOUS night's PT-dated file
+`logs/daily/$(TZ=America/Los_Angeles date -d 'yesterday' +%F).md`. Do
+NOT fall back to an older daily file as "last night" — if that exact
+date's file is absent, OMIT the line silently (see below). Emit it
+VERBATIM in this format:
 
 `/daily last night: applied N, filed M (→/issue), held J (needs you)`
 
@@ -167,8 +170,10 @@ under `logs/`). Emit it VERBATIM in this format:
   same set the `Held by /daily` sub-section enumerates), NOT a prose
   grep of `## Other problems & notes` (a note may exist without a filed
   task).
-- If NO `logs/daily/<date>.md` exists for the most recent night, OMIT
-  this line silently (no "no daily run" placeholder).
+- If NO `logs/daily/<date>.md` exists for the previous night's PT date,
+  OMIT this line silently (no "no daily run" placeholder) — NEVER reach
+  back to an older daily file, which would surface a stale "last night"
+  line on any night /daily failed to run.
 
 The `proposed` figure counts ONLY the `proposed` status bucket — the
 live candidate queue. NEVER fold `on_hold` into it. `on_hold` is a

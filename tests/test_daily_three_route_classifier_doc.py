@@ -31,12 +31,19 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DAILY_SKILL = REPO_ROOT / ".claude" / "skills" / "daily" / "SKILL.md"
+RESEARCH_PM = REPO_ROOT / ".claude" / "agents" / "research-pm.md"
 
 
 @pytest.fixture(scope="module")
 def daily_skill_text() -> str:
     assert DAILY_SKILL.is_file(), f"daily SKILL.md not found at {DAILY_SKILL}"
     return DAILY_SKILL.read_text(encoding="utf-8")
+
+
+@pytest.fixture(scope="module")
+def research_pm_text() -> str:
+    assert RESEARCH_PM.is_file(), f"research-pm.md not found at {RESEARCH_PM}"
+    return RESEARCH_PM.read_text(encoding="utf-8")
 
 
 # ── the three route labels replace the binary classifier ──────────────────────
@@ -107,4 +114,59 @@ def test_carve_out_list_survives(daily_skill_text: str, carve_out_anchor: str):
     assert carve_out_anchor in daily_skill_text, (
         f"judgment-call carve-out item {carve_out_anchor!r} dropped — the 5-item "
         "list is REUSED verbatim as the route-3 trigger and must be preserved"
+    )
+
+
+# ── round-2: contract surfaces (frontmatter + Telegram template + PM digest) ───
+#
+# The round-1 reviewer reconciler FAILed because /daily's own canonical contract
+# surfaces still advertised the pre-#706 auto-apply binary. These negative
+# substring guards pin the round-2 fixes so a future cosmetic edit cannot
+# silently re-introduce the stale "auto-apply everything" wording.
+
+
+@pytest.mark.parametrize(
+    "stale_phrase",
+    [
+        "AUTO-APPLIED by default",  # frontmatter — pre-#706 binary apply-everything
+        "Only genuine judgment calls are held",  # frontmatter — binary hold-only-judgment
+        # Telegram template — the old applied-only count (no route-2 filed field,
+        # route-3 lumped as "Notes: M other"):
+        "auto-applied N fix(es) (<w> workflow, <c> code/infra)",
+    ],
+)
+def test_stale_pre706_contract_phrases_gone(daily_skill_text: str, stale_phrase: str):
+    assert stale_phrase not in daily_skill_text, (
+        f"stale pre-#706 phrase {stale_phrase!r} survives in daily/SKILL.md — a "
+        "contract surface (frontmatter description / Telegram template) regressed "
+        "to the binary auto-apply model the three-route classifier replaced"
+    )
+
+
+def test_telegram_template_reports_applied_filed_held(daily_skill_text: str):
+    # The Telegram digest must report applied/filed/held counts SEPARATELY,
+    # matching the §2(f) PM-digest model — not lump route-2/route-3 as a single
+    # "Notes: M other" catch-all.
+    assert "filed M route-2" in daily_skill_text, (
+        "Telegram template must report the route-2 filed-for-review count "
+        "separately (`filed M route-2 review task(s)`), matching the PM digest"
+    )
+    assert "held J route-3" in daily_skill_text, (
+        "Telegram template must report the route-3 held needs-human count "
+        "separately (`held J route-3 (needs you)`), not a `Notes: M other` lump"
+    )
+
+
+def test_pm_digest_reads_previous_night_not_newest_file(research_pm_text: str):
+    # Fix 3: the PM digest must read the PREVIOUS night's PT-dated file, never
+    # the "newest dated file" (which surfaces a stale "/daily last night" line on
+    # any night /daily failed to run).
+    assert "newest dated file" not in research_pm_text, (
+        "research-pm.md still says 'newest dated file' for the /daily digest — it "
+        "must read the previous night's PT date specifically and omit if absent, "
+        "never fall back to an older daily file as 'last night'"
+    )
+    assert "date -d 'yesterday'" in research_pm_text, (
+        "research-pm.md /daily digest must pin the previous night's PT date "
+        "(`date -d 'yesterday' +%F` in America/Los_Angeles)"
     )
