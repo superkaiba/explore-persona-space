@@ -1,0 +1,72 @@
+{
+  "verdict": "inconclusive_recipe_by_behavior",
+  "headline_behaviors": [
+    "sycophancy",
+    "refusal",
+    "broad_em"
+  ],
+  "present_behaviors": [
+    "sycophancy",
+    "refusal",
+    "broad_em"
+  ],
+  "dropped_low_survivors": {},
+  "n_survivors": {
+    "sycophancy": {
+      "n_pos": 571,
+      "n_neg": 2387
+    },
+    "refusal": {
+      "n_pos": 68,
+      "n_neg": 1142
+    },
+    "broad_em": {
+      "n_pos": 171,
+      "n_neg": 2400
+    }
+  },
+  "low_survivors": [],
+  "cos_AC_selected": {
+    "sycophancy": 0.9786347150802612,
+    "refusal": 0.9965611696243286,
+    "broad_em": 0.9768813848495483
+  },
+  "confound_A_selected": {
+    "sycophancy": 0.20702987909317017,
+    "refusal": 0.18663746118545532,
+    "broad_em": 0.3918706476688385
+  },
+  "rho_gap_A_minus_C": {
+    "sycophancy": 0.14207151937222057,
+    "refusal": -0.005141512863948594,
+    "broad_em": 0.014040235588238442
+  },
+  "adopt_A_noise_floor": {
+    "sycophancy": 0.4992816609617916,
+    "refusal": 0.4750112271161402,
+    "broad_em": 0.1684878669616212
+  },
+  "adopt_A_noise_floor_fallback_used": {
+    "sycophancy": false,
+    "refusal": false,
+    "broad_em": false
+  },
+  "margins": {
+    "n_cos_AC_below_0.85": 0,
+    "n_confound_above_0.25": 1,
+    "n_rho_A_worse_by_0.05": 0
+  },
+  "selected_layer": {
+    "sycophancy": 5,
+    "refusal": 3,
+    "broad_em": 0
+  },
+  "metadata": {
+    "git_commit": "7e3107f1d726dec3afe65955f45d532f4943b3fd",
+    "timestamp_utc": "2026-06-28T06:53:33.415152Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue661_analysis"
+  }
+}
