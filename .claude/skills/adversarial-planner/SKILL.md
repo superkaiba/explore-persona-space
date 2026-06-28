@@ -99,6 +99,14 @@ Run the structural verifier against the plan version just persisted:
     uv run python scripts/verify_plan.py --issue <N> --json        # task context (newest plans/v{K}.md)
     uv run python scripts/verify_plan.py --plan-file <path> --json # standalone / not-yet-persisted plans
 
+- **Reading the verdict — use the EXIT CODE, not a parsed key.** `verify_plan.py`
+  exits `0` on PASS (incl. PASS-with-WARN) and `1` on FAIL — branch on `$?`
+  (`... && proceed || bounce`). If you do parse `--json`, the verdict field is
+  `overall` (`"PASS"`/`"FAIL"`) with `n_fail`/`n_warn`/`n_skip`/`checks[]`
+  alongside — there is NO `verdict` / `overall_status` top-level key (improvising
+  one KeyErrors), and never pipe `2>&1` into `json.load(sys.stdin)` (a uv
+  `VIRTUAL_ENV` warning on stderr poisons the parse).
+
 - **Persistence ordering:** `--issue` mode verifies the newest `plans/v{K}.md`. If the
   just-drafted plan has NOT yet been persisted via `task.py new-plan-version` (the plan
   still lives at the `/tmp/issue-<N>-plan-v<K>.md` handoff file), use `--plan-file <handoff>
