@@ -8546,6 +8546,90 @@ def test_sweep_candidate_query_filters_non_infra_kinds(isolated_registry, monkey
     assert cands == [685]  # only the infra row, experiment/campaign filtered
 
 
+# ── needs-human excluded at the candidate-query layer (#706) ───────────────────
+
+
+def test_sweep_candidate_query_skips_needs_human(isolated_registry, monkeypatch):
+    # A proposed infra row tagged `needs-human` (a /daily route-3 held judgment
+    # call, task #706) MUST NOT be an auto-dispatch candidate — it surfaces in
+    # the PM `Needs you` block instead. The always-on watcher sweep would
+    # otherwise auto-dispatch it the moment a slot frees, defeating the entire
+    # purpose of routing /daily-held items to a human. The kind-only filter in
+    # `_proposed_infra_candidates` currently lets it through; the tag-skip is
+    # the single load-bearing invariant this test pins.
+    import json
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    def _fake_run(cmd, **kw):
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {
+                        "id": 700,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["needs-human", "daily-held"],
+                    },
+                    {
+                        "id": 701,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["daily-auto-filed"],
+                    },
+                    {"id": 702, "kind": "infra", "status": "proposed", "tags": []},
+                ]
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    cands = asw._proposed_infra_candidates()
+    assert cands == [701, 702]  # needs-human row #700 filtered out
+
+
+def test_sweep_candidate_query_admits_row_without_tags_key(isolated_registry, monkeypatch):
+    # Backward-compat (#706, Statistics Claude critic concern #2): a LEGACY
+    # proposed infra row that predates the `tags` field — no `tags` key at all
+    # — must STILL be admitted as a candidate. The tag-skip MUST use safe
+    # access (`row.get("tags") or []`); a `row["tags"]` lookup would KeyError on
+    # this row and crash the whole sweep. This row has NO needs-human tag (it
+    # has no tags), so it is a normal candidate.
+    import json
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    def _fake_run(cmd, **kw):
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {
+                        "id": 710,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["needs-human"],
+                    },
+                    {
+                        "id": 711,
+                        "kind": "infra",
+                        "status": "proposed",
+                        "tags": ["daily-auto-filed"],
+                    },
+                    {"id": 712, "kind": "infra", "status": "proposed"},  # legacy: no tags key
+                ]
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    cands = asw._proposed_infra_candidates()
+    assert cands == [711, 712]  # needs-human #710 skipped; no-tags-key #712 admitted
+
+
 # ── unmet predicate held / satisfied (queue-file gate, executor half) ──────────
 
 
