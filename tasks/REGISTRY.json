@@ -4382,8 +4382,8 @@
     "693": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/693",
-      "status": "proposed",
+      "path": "tasks/planning/693",
+      "status": "planning",
       "title": "Parallelize issue664 dispatcher p0: 8-way GPU fan + interleave base-extraction with the judge-batch wait (sibling to #676)"
     },
     "7": {
