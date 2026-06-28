@@ -870,6 +870,88 @@ def test_e_space_analysis_from_judged(tmp_path):
     assert not placeholder_on_em, "em E-row must not be the placeholder when judged data is present"
 
 
+# --- CONCERN: marker-e-space-mean-of-ratios -------------------------------- #
+
+
+def test_e_space_marker_uses_ratio_of_means():
+    """_e_space_from_marker computes f_CV^E as RATIO-OF-MEANS on cell-aggregate
+    quantities (plan §6.1/§6.4), NOT mean-of-per-record-ratios.
+
+    Two marker records with materially DIFFERENT per-record denominators
+    (E+_i - E0_i = 1 vs 9) make the two aggregations diverge:
+      record 1: E0=0, E+=1, E_Pup=0.5  -> per-record ratio 0.5
+      record 2: E0=0, E+=9, E_Pup=9.0  -> per-record ratio 1.0
+      mean-of-ratios   = (0.5 + 1.0) / 2                 = 0.75   (WRONG / pre-fix)
+      ratio-of-means   = (mean(E_Pup) - mean(E0))
+                         / (mean(E+) - mean(E0))
+                       = (4.75 - 0.0) / (5.0 - 0.0)       = 0.95   (registered formula)
+    The P↓ analog 1 - (mean(E_Pdown) - mean(E0))/(mean(E+) - mean(E0)) is checked
+    on the same aggregate means.
+    """
+    analysis = _import_analysis()
+    meta = {
+        "dv_kind": "marker_logp",
+        "marker_e_records": [
+            {
+                "persona": "p0",
+                "q_idx": 0,
+                "dv_kind": "marker_logp",
+                "marker_logp_unpatched_base": 0.0,  # E0
+                "marker_logp_unpatched_ft": 1.0,  # E+
+                "marker_logp_p_up": 0.5,  # E_Pup -> per-record ratio 0.5
+                "marker_logp_p_down": 0.0,  # E_Pdown
+            },
+            {
+                "persona": "p1",
+                "q_idx": 1,
+                "dv_kind": "marker_logp",
+                "marker_logp_unpatched_base": 0.0,  # E0
+                "marker_logp_unpatched_ft": 9.0,  # E+
+                "marker_logp_p_up": 9.0,  # E_Pup -> per-record ratio 1.0
+                "marker_logp_p_down": 3.0,  # E_Pdown
+            },
+        ],
+    }
+    out = analysis._e_space_from_marker(meta)
+    assert out is not None
+    # ratio-of-means = (4.75 - 0) / (5 - 0) = 0.95; mean-of-ratios would be 0.75.
+    assert out["f_cv_e"] == pytest.approx(0.95, abs=1e-9), (
+        f"marker f_CV^E must be ratio-of-means (0.95), not mean-of-ratios (0.75); "
+        f"got {out['f_cv_e']}"
+    )
+    # P↓ analog on aggregate means: 1 - (mean(E_Pdown) - mean(E0))/(mean(E+) - mean(E0))
+    # = 1 - (1.5 - 0)/(5 - 0) = 0.7.
+    assert out["f_cv_e_down"] == pytest.approx(0.7, abs=1e-9), (
+        f"marker f_CV^E_down must use aggregate means; got {out['f_cv_e_down']}"
+    )
+    # the persisted aggregate rates are the cell-level means.
+    assert out["rates"]["E0"] == pytest.approx(0.0, abs=1e-9)
+    assert out["rates"]["Eplus"] == pytest.approx(5.0, abs=1e-9)
+    assert out["rates"]["E_Pup"] == pytest.approx(4.75, abs=1e-9)
+    assert out["rates"]["E_Pdown"] == pytest.approx(1.5, abs=1e-9)
+
+
+def test_e_space_marker_singular_denominator_returns_none():
+    """When the cell-aggregate FT effect (mean(E+) - mean(E0)) is ~0, f_CV^E is
+    undefined (0/0) and returns None gracefully — no crash, same None-propagation
+    the rest of analyze() relies on."""
+    analysis = _import_analysis()
+    meta = {
+        "dv_kind": "marker_logp",
+        "marker_e_records": [
+            {
+                "marker_logp_unpatched_base": 2.0,
+                "marker_logp_unpatched_ft": 2.0,  # mean(E+) == mean(E0) -> denom 0
+                "marker_logp_p_up": 5.0,
+            },
+        ],
+    }
+    out = analysis._e_space_from_marker(meta)
+    assert out is not None
+    assert out["f_cv_e"] is None
+    assert out["f_cv_e_down"] is None
+
+
 # --- BLOCKER: pdown-verdict-crosscheck-not-wired --------------------------- #
 
 

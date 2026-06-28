@@ -236,15 +236,19 @@ def _e_space_from_marker(meta: dict) -> dict | None:
 
     The marker E DV is the teacher-forced log P(` ※`) trained - base at the slot,
     under each condition (``dv_kind=marker_logp``). f_CV^E uses the same ratio in
-    log-prob space: E0=base, E+=FT, E_Pup=base+FT-CV. Averaged over the per-cell
-    marker records (each carries the four conditions' slot log-probs).
+    log-prob space: E0=base, E+=FT, E_Pup=base+FT-CV. Computed as RATIO-OF-MEANS on
+    the cell-aggregate quantities — ``(mean(E_Pup) - mean(E0)) / (mean(E+) - mean(E0))``
+    — matching the plan §6.1/§6.4 formula registration (the bootstrap is over the
+    shared question axis, so the per-cell scalar is formed from cell-aggregate means,
+    NOT averaged per-record ratios; this also mirrors the judged path
+    ``_e_space_from_judged``, which forms the ratio once from one aggregate rate per
+    condition).
     """
     if meta.get("dv_kind") != "marker_logp":
         return None
     recs = meta.get("marker_e_records", [])
     if not recs:
         return None
-    f_up, f_down = [], []
     e0s, epluss, epups, epdowns = [], [], [], []
     for r in recs:
         e0 = r.get("marker_logp_unpatched_base")
@@ -257,24 +261,30 @@ def _e_space_from_marker(meta: dict) -> dict | None:
         epluss.append(eplus)
         if e_pup is not None:
             epups.append(e_pup)
-            fe = _f_cv_e_from_rates(e0, eplus, e_pup)
-            if fe is not None:
-                f_up.append(fe)
         if e_pdown is not None:
             epdowns.append(e_pdown)
-            prog = _f_cv_e_from_rates(e0, eplus, e_pdown)
-            if prog is not None:
-                f_down.append(1.0 - prog)
     if not e0s:
         return None
+    # Ratio-of-means at the cell level (plan §6.1/§6.4). The aggregate means below
+    # ARE the registered E0/E+/E_Pup/E_Pdown; form the ratio once from them.
+    mean_e0 = float(np.mean(e0s))
+    mean_eplus = float(np.mean(epluss))
+    mean_epup = float(np.mean(epups)) if epups else None
+    mean_epdown = float(np.mean(epdowns)) if epdowns else None
+    f_e = _f_cv_e_from_rates(mean_e0, mean_eplus, mean_epup) if mean_epup is not None else None
+    # P↓ analog: 1 - (E_Pdown - E0)/(E+ - E0) (necessity), same form as the judged path.
+    f_e_down = None
+    if mean_epdown is not None:
+        prog = _f_cv_e_from_rates(mean_e0, mean_eplus, mean_epdown)
+        f_e_down = None if prog is None else 1.0 - prog
     return {
-        "f_cv_e": float(np.mean(f_up)) if f_up else None,
-        "f_cv_e_down": float(np.mean(f_down)) if f_down else None,
+        "f_cv_e": f_e,
+        "f_cv_e_down": f_e_down,
         "rates": {
-            "E0": float(np.mean(e0s)),
-            "Eplus": float(np.mean(epluss)),
-            "E_Pup": float(np.mean(epups)) if epups else None,
-            "E_Pdown": float(np.mean(epdowns)) if epdowns else None,
+            "E0": mean_e0,
+            "Eplus": mean_eplus,
+            "E_Pup": mean_epup,
+            "E_Pdown": mean_epdown,
         },
     }
 
