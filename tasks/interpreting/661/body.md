@@ -5,7 +5,7 @@ title: Instruction-present and instruct-and-strip r_B point the same way (cos â‰
 kind: experiment
 tags: []
 created_at: '2026-06-24T23:55:41Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 660
 origin_prompt: Can you run an issue in the background to test A,B,C on 3 different
   behaviors and see how much they diverge?
