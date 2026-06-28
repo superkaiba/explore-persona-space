@@ -1026,9 +1026,11 @@ def circuit_breaker_should_fire(
     * Trigger 2 — ``enumerated_fallback_exhausted``: ``plan_text`` enumerates a
       finite escape ladder (``Option A -> Option B -> ...`` arrow run or a
       numbered ``Option N:`` list), EVERY option has been LAUNCHED (named in an
-      ``epm:progress`` / ``epm:experiment-implementation`` note), and an
-      ``epm:failure`` re-trips the same gate. Silently no-ops on free-form plans
-      with no parseable ladder.
+      ``epm:progress`` / ``epm:experiment-implementation`` note), AND the gate
+      RE-TRIPS *after* the ladder is exhausted — an ``epm:failure`` event whose
+      position in ``events`` is LATER than the last launch of the FINAL ladder
+      option. A stale ``epm:failure`` that PRECEDES the ladder launches does NOT
+      count (#718). Silently no-ops on free-form plans with no parseable ladder.
 
     Returns ``None`` when neither condition holds. On fire the dict shape is::
 
@@ -1101,17 +1103,29 @@ def _cb_trigger_enumerated_fallback(
     ladder = _cb_parse_ladder(plan_text)
     if not ladder:
         return None
-    launch_notes = " ".join(
-        (e.get("note", "") or "")
-        for e in events
-        if e.get("kind", "") in ("epm:progress", "epm:experiment-implementation")
-    )
-    # Every named option must appear in a launch / progress note (it was tried).
-    for option in ladder:
-        if not re.search(rf"Option\s+{re.escape(option)}\b", launch_notes):
-            return None
-    # And the same gate must still be re-tripping (an epm:failure after the ladder).
-    if not any(e.get("kind", "") == "epm:failure" for e in events):
+    # Index every launch / progress event that names an option, keyed by option
+    # label. (events is chronological — append-only events.jsonl order — so the
+    # list index IS the ordering signal.)
+    last_launch_idx: dict[str, int] = {}
+    for idx, e in enumerate(events):
+        if e.get("kind", "") not in ("epm:progress", "epm:experiment-implementation"):
+            continue
+        note = e.get("note", "") or ""
+        for option in ladder:
+            if re.search(rf"Option\s+{re.escape(option)}\b", note):
+                last_launch_idx[option] = idx
+    # Every named option must have been LAUNCHED (named in a launch / progress note).
+    if any(option not in last_launch_idx for option in ladder):
+        return None
+    # The ladder is exhausted only once the FINAL option has been launched. Require
+    # an epm:failure AFTER that last-launch index — a POST-exhaustion re-trip of the
+    # gate, not just any failure anywhere in history (a pre-ladder stale failure
+    # must NOT count, #718 Codex critic false-positive).
+    final_option_launch_idx = last_launch_idx[ladder[-1]]
+    if not any(
+        e.get("kind", "") == "epm:failure" and idx > final_option_launch_idx
+        for idx, e in enumerate(events)
+    ):
         return None
     gate = _cb_gate_label(plan_text, ladder)
     pivot_scope = (
