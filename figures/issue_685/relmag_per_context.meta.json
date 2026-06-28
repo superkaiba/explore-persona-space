@@ -1,0 +1,1462 @@
+{
+  "commit": "35cdcfff3b",
+  "created": "2026-06-28T22:53:40Z",
+  "figsize": [
+    10.2,
+    5.4
+  ],
+  "points": [
+    {
+      "layer": 7.155333079531231,
+      "rel. magnitude": 1.9976750612258911,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 6.965344075339414,
+      "rel. magnitude": 1.1636539697647095,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 7.203325020589753,
+      "rel. magnitude": 1.1777533292770386,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 7.11190767247666,
+      "rel. magnitude": 1.3898411989212036,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 6.769898556252297,
+      "rel. magnitude": 1.2641336917877197,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 7.269677873378041,
+      "rel. magnitude": 1.2393559217453003,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 7.14806621102853,
+      "rel. magnitude": 1.2610068321228027,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 7.162198461092033,
+      "rel. magnitude": 1.2796015739440918,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 6.789140429727034,
+      "rel. magnitude": 1.2410324811935425,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 6.971868826786786,
+      "rel. magnitude": 1.1904772520065308,
+      "series": "per-context",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer": 13.926742479739874,
+      "rel. magnitude": 1.4532639980316162,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 14.241975748677158,
+      "rel. magnitude": 1.3264952898025513,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 14.081571523085737,
+      "rel. magnitude": 1.1670421361923218,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 14.183005834724561,
+      "rel. magnitude": 1.418642520904541,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 13.967915850735096,
+      "rel. magnitude": 1.3323312997817993,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 13.845344355251969,
+      "rel. magnitude": 1.3228839635849,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 14.030949574237978,
+      "rel. magnitude": 1.2208654880523682,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 13.752684384211067,
+      "rel. magnitude": 1.2303141355514526,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 14.185766874519794,
+      "rel. magnitude": 1.1641314029693604,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 14.07465371430221,
+      "rel. magnitude": 1.4003231525421143,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer": 21.146335748628406,
+      "rel. magnitude": 1.0735095739364624,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 20.917516223929635,
+      "rel. magnitude": 1.0949255228042603,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 21.26688577983191,
+      "rel. magnitude": 1.2341026067733765,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 21.222899675789687,
+      "rel. magnitude": 1.2148394584655762,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 21.15784344284082,
+      "rel. magnitude": 1.0834375619888306,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 20.826860147352065,
+      "rel. magnitude": 1.1098206043243408,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 20.98113080911323,
+      "rel. magnitude": 0.9946317076683044,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 20.741336735201358,
+      "rel. magnitude": 1.0196985006332397,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 20.8039821420023,
+      "rel. magnitude": 1.1862759590148926,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 21.103788756488473,
+      "rel. magnitude": 1.0833793878555298,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer": 27.13878014239973,
+      "rel. magnitude": 0.5786542296409607,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 27.265078018290197,
+      "rel. magnitude": 0.5885788202285767,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 26.90124297806433,
+      "rel. magnitude": 0.802787721157074,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 26.92655065332177,
+      "rel. magnitude": 0.759336531162262,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 26.982738144993384,
+      "rel. magnitude": 0.6184270977973938,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 26.82393026060079,
+      "rel. magnitude": 0.665547251701355,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 26.790165493525212,
+      "rel. magnitude": 0.8101381063461304,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 26.986224693170104,
+      "rel. magnitude": 0.5909105539321899,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 26.84515760091185,
+      "rel. magnitude": 0.848228931427002,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 27.096284534984985,
+      "rel. magnitude": 0.5988098978996277,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer": 6.964365138000612,
+      "rel. magnitude": 2.1761586666107178,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 7.188628537164794,
+      "rel. magnitude": 1.339884638786316,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 7.113550312835275,
+      "rel. magnitude": 1.2801727056503296,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 6.893611885663617,
+      "rel. magnitude": 1.5400625467300415,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 7.188391307391079,
+      "rel. magnitude": 1.3972468376159668,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 7.172801390700687,
+      "rel. magnitude": 1.3938672542572021,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 6.936200240910109,
+      "rel. magnitude": 1.3042948246002197,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 6.879982034928449,
+      "rel. magnitude": 1.325118064880371,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 7.103474950753811,
+      "rel. magnitude": 1.3056786060333252,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 6.795739658206479,
+      "rel. magnitude": 1.3818740844726562,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer": 13.829847950803387,
+      "rel. magnitude": 1.6030205488204956,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 13.72067440694882,
+      "rel. magnitude": 1.3674421310424805,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 14.162686122043713,
+      "rel. magnitude": 1.1319818496704102,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 14.093470435687681,
+      "rel. magnitude": 1.4349309206008911,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 14.116328769681132,
+      "rel. magnitude": 1.289021611213684,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 14.159173360589456,
+      "rel. magnitude": 1.3932366371154785,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 13.976705244730239,
+      "rel. magnitude": 1.195162296295166,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 14.03897625810529,
+      "rel. magnitude": 1.2892085313796997,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 13.795764897938382,
+      "rel. magnitude": 1.0352988243103027,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 13.781438551694897,
+      "rel. magnitude": 1.4122358560562134,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer": 21.095484479335198,
+      "rel. magnitude": 1.7894357442855835,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 20.983611548883157,
+      "rel. magnitude": 1.7884587049484253,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 21.036988872374835,
+      "rel. magnitude": 1.2537546157836914,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 21.150254352154885,
+      "rel. magnitude": 1.6691644191741943,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 21.076385287440335,
+      "rel. magnitude": 1.5448395013809204,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 21.030379520173085,
+      "rel. magnitude": 1.6464002132415771,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 21.03357046014265,
+      "rel. magnitude": 1.4241063594818115,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 20.8888397056015,
+      "rel. magnitude": 1.5016688108444214,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 20.733973712200022,
+      "rel. magnitude": 1.0394682884216309,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 20.96411875969475,
+      "rel. magnitude": 1.7071529626846313,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer": 26.838169509488672,
+      "rel. magnitude": 1.0184886455535889,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 26.94813574099187,
+      "rel. magnitude": 1.0878955125808716,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 27.20037954254305,
+      "rel. magnitude": 0.8824508786201477,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 26.849143688485647,
+      "rel. magnitude": 1.261425256729126,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 26.7495576545377,
+      "rel. magnitude": 0.9266839623451233,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 26.876044666776473,
+      "rel. magnitude": 1.0179271697998047,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 26.88296766065371,
+      "rel. magnitude": 1.1649998426437378,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 27.09180666385015,
+      "rel. magnitude": 0.9371465444564819,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 27.032337230377504,
+      "rel. magnitude": 0.8332172632217407,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 27.160970284563337,
+      "rel. magnitude": 1.0113874673843384,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer": 7.093165777365629,
+      "rel. magnitude": 2.1272575855255127,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 6.94692135043652,
+      "rel. magnitude": 1.143601655960083,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 7.178049558105641,
+      "rel. magnitude": 1.0557312965393066,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 6.811173645587668,
+      "rel. magnitude": 1.3322577476501465,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 6.729377745466899,
+      "rel. magnitude": 1.1682618856430054,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 6.767557137059789,
+      "rel. magnitude": 1.1764023303985596,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 7.126077751788188,
+      "rel. magnitude": 1.1801531314849854,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 6.978384389552537,
+      "rel. magnitude": 1.1652190685272217,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 6.807941098712052,
+      "rel. magnitude": 1.113769292831421,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 7.000592387483607,
+      "rel. magnitude": 1.1682685613632202,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer": 13.802860962238366,
+      "rel. magnitude": 1.4834606647491455,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 14.111313652669077,
+      "rel. magnitude": 1.3467559814453125,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 13.969470608250475,
+      "rel. magnitude": 0.7018787264823914,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 13.932539035196706,
+      "rel. magnitude": 1.3608312606811523,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 13.887457354546846,
+      "rel. magnitude": 1.431906819343567,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 14.07387023029841,
+      "rel. magnitude": 1.3466907739639282,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 13.921647750183773,
+      "rel. magnitude": 1.0515096187591553,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 13.76619750425223,
+      "rel. magnitude": 1.2881845235824585,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 13.783409346502332,
+      "rel. magnitude": 0.9642090797424316,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 14.261895975799575,
+      "rel. magnitude": 1.4175605773925781,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer": 21.231665251631213,
+      "rel. magnitude": 1.3365379571914673,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 21.113233944870696,
+      "rel. magnitude": 1.1236671209335327,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 20.86724826814755,
+      "rel. magnitude": 0.6129491329193115,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 21.26602300595616,
+      "rel. magnitude": 1.2430956363677979,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 21.158051762548606,
+      "rel. magnitude": 1.1919655799865723,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 21.12297673725315,
+      "rel. magnitude": 1.2986729145050049,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 20.97128797171553,
+      "rel. magnitude": 1.1775168180465698,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 20.870860965566205,
+      "rel. magnitude": 1.201944351196289,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 20.771153675541033,
+      "rel. magnitude": 0.8316659331321716,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 21.22827555884036,
+      "rel. magnitude": 1.1286972761154175,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer": 26.974925156335658,
+      "rel. magnitude": 0.7754595875740051,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 26.831240027838895,
+      "rel. magnitude": 0.6570271849632263,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 26.88997740589342,
+      "rel. magnitude": 0.4289776384830475,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 27.044917495590056,
+      "rel. magnitude": 0.9013206958770752,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 26.816730167926544,
+      "rel. magnitude": 0.7455904483795166,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 27.202200299080378,
+      "rel. magnitude": 0.7934924960136414,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 27.146580573416564,
+      "rel. magnitude": 0.9826641082763672,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 27.12443549602418,
+      "rel. magnitude": 0.7721094489097595,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 26.961496753552485,
+      "rel. magnitude": 0.5900889039039612,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 27.072184112678286,
+      "rel. magnitude": 0.6664835214614868,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer": 7.047683548373521,
+      "rel. magnitude": 2.248077630996704,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 7.084963023081583,
+      "rel. magnitude": 1.321619987487793,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 6.764379930086317,
+      "rel. magnitude": 1.2994050979614258,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 6.952262797030736,
+      "rel. magnitude": 1.6205151081085205,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 6.740095236579693,
+      "rel. magnitude": 1.4846508502960205,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 6.996592794511642,
+      "rel. magnitude": 1.4407665729522705,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 6.903531307392689,
+      "rel. magnitude": 1.4368261098861694,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 6.798445215087049,
+      "rel. magnitude": 1.4848887920379639,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 6.775129482698687,
+      "rel. magnitude": 1.3689104318618774,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 7.049694472424763,
+      "rel. magnitude": 1.3104567527770996,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "layer": 13.813226213160414,
+      "rel. magnitude": 1.1217129230499268,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 14.241043107119644,
+      "rel. magnitude": 1.333034634590149,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 14.045961666210124,
+      "rel. magnitude": 1.0468255281448364,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 13.913175179171253,
+      "rel. magnitude": 1.3762940168380737,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 14.051549083669963,
+      "rel. magnitude": 1.4794225692749023,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 13.72942979487384,
+      "rel. magnitude": 1.356999397277832,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 14.2600030739079,
+      "rel. magnitude": 1.3569644689559937,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 13.989966048746625,
+      "rel. magnitude": 1.4273383617401123,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 14.160310873850912,
+      "rel. magnitude": 1.1780730485916138,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 13.763407909956022,
+      "rel. magnitude": 1.3723642826080322,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "layer": 20.992435273585237,
+      "rel. magnitude": 1.0888314247131348,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 20.994730865799013,
+      "rel. magnitude": 1.327825903892517,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 21.248247599970814,
+      "rel. magnitude": 1.1220673322677612,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 21.040669805697235,
+      "rel. magnitude": 1.4870671033859253,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 20.984968490399293,
+      "rel. magnitude": 1.3004155158996582,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 20.867875200973103,
+      "rel. magnitude": 1.3975425958633423,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 20.904499621493226,
+      "rel. magnitude": 1.3206064701080322,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 21.01172125220136,
+      "rel. magnitude": 1.3743690252304077,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 20.965362797992963,
+      "rel. magnitude": 1.3021390438079834,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 20.728754049292146,
+      "rel. magnitude": 1.3083187341690063,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "layer": 27.1850075210182,
+      "rel. magnitude": 0.6936637163162231,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 27.224623157633147,
+      "rel. magnitude": 0.7293940186500549,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 26.796021233462213,
+      "rel. magnitude": 0.6932724118232727,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 27.03063849338664,
+      "rel. magnitude": 0.9270368814468384,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 26.778062445223796,
+      "rel. magnitude": 0.7404626607894897,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 27.097660132753575,
+      "rel. magnitude": 0.8112228512763977,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 26.87595955543672,
+      "rel. magnitude": 0.8981261253356934,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 27.09039263387031,
+      "rel. magnitude": 0.8109534382820129,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 27.128705946300663,
+      "rel. magnitude": 0.9410439729690552,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 27.152323127917313,
+      "rel. magnitude": 0.7263917922973633,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "layer": 6.777589116356993,
+      "rel. magnitude": 2.299043893814087,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 7.235878716193024,
+      "rel. magnitude": 1.6844559907913208,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 6.847031332837397,
+      "rel. magnitude": 1.7119184732437134,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 6.737712919351894,
+      "rel. magnitude": 1.8971214294433594,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 7.031101350144971,
+      "rel. magnitude": 1.7145851850509644,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 6.926812934950003,
+      "rel. magnitude": 1.7272379398345947,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 7.1869907843560785,
+      "rel. magnitude": 1.6720240116119385,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 7.1747785846604595,
+      "rel. magnitude": 1.7362303733825684,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 6.8963177522304795,
+      "rel. magnitude": 1.635594129562378,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 7.256793957004545,
+      "rel. magnitude": 1.7345174551010132,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "layer": 13.881450414225448,
+      "rel. magnitude": 2.0096073150634766,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 14.008537392274382,
+      "rel. magnitude": 1.7561371326446533,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 13.86163220635183,
+      "rel. magnitude": 1.573695182800293,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 14.247236704217762,
+      "rel. magnitude": 1.8288356065750122,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 13.809832632569004,
+      "rel. magnitude": 1.8592257499694824,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 13.74196432119545,
+      "rel. magnitude": 1.751702904701233,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 13.963200033021723,
+      "rel. magnitude": 1.5963784456253052,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 14.27917694481966,
+      "rel. magnitude": 1.6787358522415161,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 14.222081009966535,
+      "rel. magnitude": 1.5771604776382446,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 14.140960747032091,
+      "rel. magnitude": 1.7935723066329956,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "layer": 21.221579342328123,
+      "rel. magnitude": 1.6834522485733032,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 21.223084244708687,
+      "rel. magnitude": 1.6052511930465698,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 21.010692690339116,
+      "rel. magnitude": 1.6406662464141846,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 20.89563177238806,
+      "rel. magnitude": 1.8592033386230469,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 21.15423104900693,
+      "rel. magnitude": 1.6338683366775513,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 21.09166193621612,
+      "rel. magnitude": 1.6133931875228882,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 20.928363932271395,
+      "rel. magnitude": 1.528228998184204,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 20.77006260079088,
+      "rel. magnitude": 1.5824754238128662,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 21.1399297096349,
+      "rel. magnitude": 1.6847352981567383,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 20.865315112528265,
+      "rel. magnitude": 1.6406376361846924,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "layer": 27.247673056352653,
+      "rel. magnitude": 0.9659813046455383,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 26.853130316028224,
+      "rel. magnitude": 0.9108386635780334,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 26.786103747677313,
+      "rel. magnitude": 1.1991277933120728,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 27.187740885094822,
+      "rel. magnitude": 1.1824641227722168,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 26.803412207526087,
+      "rel. magnitude": 0.9706818461418152,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 26.818145130725437,
+      "rel. magnitude": 0.9413950443267822,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 27.056350042792317,
+      "rel. magnitude": 1.2114582061767578,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 27.212376677154843,
+      "rel. magnitude": 0.9550559520721436,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 26.827878455460162,
+      "rel. magnitude": 1.2185862064361572,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 26.892453522534353,
+      "rel. magnitude": 0.950019121170044,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "layer": 7.157288543282748,
+      "rel. magnitude": 2.312049150466919,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 7.267525583576568,
+      "rel. magnitude": 1.6527491807937622,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 7.0004202525767285,
+      "rel. magnitude": 1.6931684017181396,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 6.7980898839465596,
+      "rel. magnitude": 1.8895870447158813,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 6.7244018751305505,
+      "rel. magnitude": 1.7836631536483765,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 6.8467149690093505,
+      "rel. magnitude": 1.7418525218963623,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 6.791243197484958,
+      "rel. magnitude": 1.6643240451812744,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 7.1007324679384904,
+      "rel. magnitude": 1.6823495626449585,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 6.785579030124377,
+      "rel. magnitude": 1.6072866916656494,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 7.003589071228899,
+      "rel. magnitude": 1.7111977338790894,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "layer": 14.110146801009517,
+      "rel. magnitude": 2.1200129985809326,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 14.045993117428251,
+      "rel. magnitude": 1.9943344593048096,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 13.829772794491253,
+      "rel. magnitude": 1.66981840133667,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 14.172438606345343,
+      "rel. magnitude": 1.9708034992218018,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 14.12213584249216,
+      "rel. magnitude": 1.9172351360321045,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 14.135503930220112,
+      "rel. magnitude": 1.8565860986709595,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 13.790809745132997,
+      "rel. magnitude": 1.7138415575027466,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 13.786668406669746,
+      "rel. magnitude": 1.729419231414795,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 14.24242796642069,
+      "rel. magnitude": 2.0733489990234375,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 13.941926835898741,
+      "rel. magnitude": 1.999438762664795,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "layer": 20.887137908239794,
+      "rel. magnitude": 1.8382679224014282,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 20.993527153714318,
+      "rel. magnitude": 1.9136706590652466,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 21.09234400863695,
+      "rel. magnitude": 1.751596450805664,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 21.25833838674563,
+      "rel. magnitude": 2.0902085304260254,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 20.878915010642125,
+      "rel. magnitude": 1.833785057067871,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 21.24086637941992,
+      "rel. magnitude": 1.8924132585525513,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 20.73059533161601,
+      "rel. magnitude": 1.8447036743164062,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 21.03129728999931,
+      "rel. magnitude": 1.7371083498001099,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 21.075963888323177,
+      "rel. magnitude": 2.1455657482147217,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 20.776543827926677,
+      "rel. magnitude": 1.8959450721740723,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "layer": 26.79607255153524,
+      "rel. magnitude": 1.3265800476074219,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 26.954137819052345,
+      "rel. magnitude": 1.4662463665008545,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 27.264353494185183,
+      "rel. magnitude": 1.4431864023208618,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 27.05445612768389,
+      "rel. magnitude": 1.6460133790969849,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 27.24552416664732,
+      "rel. magnitude": 1.381813883781433,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 27.172572639152555,
+      "rel. magnitude": 1.453484058380127,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 26.98150536808185,
+      "rel. magnitude": 1.654241681098938,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 27.16146087572599,
+      "rel. magnitude": 1.3041383028030396,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 26.72661345651495,
+      "rel. magnitude": 1.8760372400283813,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "layer": 26.77838464616617,
+      "rel. magnitude": 1.4445905685424805,
+      "_kind": "scatter",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 240
+}
