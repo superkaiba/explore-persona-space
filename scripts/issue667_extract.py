@@ -57,6 +57,7 @@ import datetime
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -85,6 +86,10 @@ from explore_persona_space.analysis.issue667 import (  # noqa: E402
     HIDDEN_SIZE,
     N_LAYERS,
     PRIMARY_LAYER,
+)
+from explore_persona_space.orchestrate.scratch_io import (  # noqa: E402
+    materialize_to_canonical,
+    scratch_path_for,
 )
 
 load_dotenv()
@@ -252,6 +257,22 @@ def _log_memory_gauges(iter_idx: int, log: list[dict], out_dir: Path) -> None:
     (out_dir / "memory_log.json").write_text(json.dumps(log, indent=2))
 
 
+def _prepare_scratch_cell_dir(scratch_cell_dir: Path, cell_dir: Path) -> None:
+    """Clean + (re)create the local-SSD scratch cell dir before extraction (#674).
+
+    When ``scratch_cell_dir`` is a real scratch mirror (not the canonical
+    ``cell_dir`` pass-through, i.e. EPS_SCRATCH_DIR is set on GCE), any
+    pre-existing dir is a prior crashed run's stale ``.npz`` — ``rmtree`` it so
+    the cell-end materialize batch carries only THIS run's tensors. Then
+    ``mkdir parents=True, exist_ok=True`` so the per-target ``np.savez`` writes
+    land in scratch. A pass-through (scratch IS canonical) only ensures the dir
+    exists (the canonical ``cell_dir`` was already created upstream).
+    """
+    if scratch_cell_dir != cell_dir and scratch_cell_dir.exists():
+        shutil.rmtree(scratch_cell_dir)
+    scratch_cell_dir.mkdir(parents=True, exist_ok=True)
+
+
 def assert_full_npz_complement(cell_dir: Path, *, targets: list[str], layers: list[int]) -> None:
     """Fail loud unless EVERY ``{target}_L{layer}.npz`` was written for this cell.
 
@@ -331,7 +352,6 @@ def _hf(path: str) -> str:
 
 def stage_inputs() -> tuple[Path, Path]:
     """Download + stage the frozen #537 P0 context inputs into data/issue_537/contexts/."""
-    import shutil
 
     dst = PROJECT_ROOT / "data" / "issue_537" / "contexts"
     dst.mkdir(parents=True, exist_ok=True)
@@ -1085,6 +1105,17 @@ def run_extraction(args) -> int:
         "gauge": gauge,
         "r_lookup": r_lookup,
     }
+    # Route the per-target .npz writes to a local-SSD scratch mirror (#674) so
+    # the per-(target, layer) write storm (~93 .npz/cell) stays off the GCE
+    # network-PD plane it would otherwise saturate; batch-copy them to the
+    # canonical cell_dir once below, BEFORE the complement check + sentinel.
+    # Off GCE (EPS_SCRATCH_DIR unset) scratch_cell_dir IS cell_dir, so this is
+    # a pass-through and the writes go straight to canonical as before.
+    # issue=667 namespaces scratch by the PRODUCING extractor (this script),
+    # NOT this fix's task #674, so concurrent extractors sharing one mount
+    # never collide.
+    scratch_cell_dir = scratch_path_for(cell_dir, issue=667)
+    _prepare_scratch_cell_dir(scratch_cell_dir, cell_dir)
     n_gen = n_trunc = 0
     for tcid in targets:
         ng, nt = _extract_one_target(
@@ -1093,7 +1124,7 @@ def run_extraction(args) -> int:
             tok,
             registry,
             demos,
-            cell_dir,
+            scratch_cell_dir,  # was cell_dir — writes land in scratch (#674)
             behavior,
             source_cid,
             seed,
@@ -1115,6 +1146,12 @@ def run_extraction(args) -> int:
         n_gen,
         n_trunc,
     )
+    # Materialize scratch -> canonical (#674) BEFORE the complement check +
+    # sentinel, which both read the CANONICAL cell_dir. On a partial-copy
+    # failure the helper re-raises with scratch intact and no .done written, so
+    # a resume re-materializes. Pass-through no-op when scratch_cell_dir IS
+    # cell_dir (off GCE).
+    materialize_to_canonical(scratch_cell_dir, cell_dir)
     # Validate the FULL (target, layer) .npz complement is on disk BEFORE the
     # sentinel — an empty-response target skips its .npz write per layer
     # (_extract_one_target's `if not acc[li][0]: continue`), so an unconditional
