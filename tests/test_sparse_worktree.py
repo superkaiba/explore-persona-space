@@ -538,6 +538,54 @@ def test_new_worktree_asserts_data_disk_mounted(repo: Path, tmp_path: Path) -> N
     assert (wt_ok / "src/x.py").is_file()
 
 
+def test_new_worktree_production_probe_rejects_plain_dir(repo: Path, tmp_path: Path) -> None:
+    """PRODUCTION-PROBE regression (#681 round-2 Critical): with the seam UNSET,
+    the real ``findmnt --mountpoint`` runs against ``<repo>/.claude/worktrees``,
+    which is a plain (non-mount) directory on the root fs in the fixture — so the
+    helper MUST exit non-zero and create NO worktree.
+
+    This is the gap the seam-only test missed: ``EPS_WORKTREE_BIND_PROBE`` force-
+    pass/fail short-circuits the production predicate, so the old
+    ``findmnt --target`` bug (which returns rc=0 for ANY dir on a mounted fs and
+    would silently land the worktree on `/`) was never exercised. Driving the
+    real probe against a plain dir proves ``--mountpoint`` correctly rejects."""
+    env = {**_GIT_ENV, "EPS_WORKTREE_REQUIRE_BIND": "1"}
+    env.pop("EPS_WORKTREE_BIND_PROBE", None)  # force the PRODUCTION findmnt path
+    wt = tmp_path / "wt-prod-nobind"
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt), "issue-2", "--issue", "2"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert res.returncode == 4, (
+        "production findmnt --mountpoint MUST reject a plain (non-mount) "
+        f".claude/worktrees dir (exit 4); got {res.returncode}: {res.stderr}"
+    )
+    assert "bind" in res.stderr.lower()
+    assert not wt.exists(), "no worktree may be created when the bind is not a live mount"
+
+
+def test_new_worktree_seam_still_force_passes(repo: Path, tmp_path: Path) -> None:
+    """The fix must NOT break the CI seam contract: with the production probe
+    short-circuited via ``EPS_WORKTREE_BIND_PROBE=true``, creation still succeeds
+    even though ``.claude/worktrees`` is a plain dir (the seam is the intended CI
+    mechanism; the production-probe test above is what closes the coverage gap)."""
+    wt = tmp_path / "wt-seam-ok"
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt), "issue-3", "--issue", "3"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env={**_GIT_ENV, "EPS_WORKTREE_REQUIRE_BIND": "1", "EPS_WORKTREE_BIND_PROBE": "true"},
+    )
+    assert res.returncode == 0, f"seam force-pass must still create the worktree: {res.stderr}"
+    assert (wt / "src/x.py").is_file()
+
+
 def test_new_worktree_refuses_under_migration_lock(repo: Path, tmp_path: Path) -> None:
     """The cutover migration LOCK (.claude/cache/worktree-migration.LOCK) makes
     new_worktree.sh refuse (exit 3) before any worktree creation."""

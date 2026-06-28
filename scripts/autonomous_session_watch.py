@@ -1646,6 +1646,33 @@ def data_disk_path() -> str:
     return raw or DEFAULT_DATA_DISK_PATH
 
 
+def _is_mounted(path: str) -> bool:
+    """True iff ``path`` is itself a mount point (a distinct filesystem).
+
+    A real mount-presence check — NOT ``Path(path).is_dir()`` (#681 round-2
+    Major). ``is_dir()`` is True for ANY directory, mounted or not: after
+    Phase-1's ``sudo mkdir -p /mnt/eps-data`` (which runs BEFORE the mount) or a
+    ``nofail`` boot where the disk failed to mount, ``/mnt/eps-data`` exists as a
+    plain root-fs directory, and :func:`data_disk_pass` would then misread
+    ``/``'s statvfs (the boot disk) as data-disk usage and could emit a row
+    claiming the data disk mirrors ``/``'s percent. Comparing ``st_dev`` against
+    the parent's catches that: a real mount sits on a different device than its
+    parent; a plain subdirectory shares it. Pure ``os.stat`` — no subprocess,
+    fast, self-evidently correct, and aligned with the data-disk pass's
+    zero-subprocess-in-dry-run contract (#681 r3). Mirrors
+    ``vm_disk_guard._is_mounted``.
+
+    Fail-soft: a missing path / stat error returns False (→ the pass cleanly
+    no-ops). The filesystem root ``/`` is its own parent (equal ``st_dev``), so
+    an unmounted path is never mistaken for the data disk."""
+    try:
+        st = os.stat(path)
+        parent = os.stat(os.path.join(path, os.pardir))
+    except OSError:
+        return False
+    return st.st_dev != parent.st_dev
+
+
 def _data_disk_used_pct(dd_path: str) -> float | None:
     """Percent USED on the data-disk mount via ``statvfs`` (``None`` + a loud
     warning on failure — never crash the watcher over the disk check itself).
@@ -1862,16 +1889,20 @@ def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
     the stale-log sweep) NEVER run keyed off the data disk — this pass only
     ESCALATES (warn-only sidecar rows + a once-per-episode alert log).
 
-    ``is_dir()``-guarded on the mount so it is a CLEAN no-op before / without
-    the #681 cutover (a missing data disk before the cutover, or a failed
-    mount, writes NO sidecar row and touches no state). ``used_pct`` is
-    injectable for tests; production derives it from ``statvfs`` of the mount.
+    Mount-guarded (:func:`_is_mounted`, ``st_dev`` vs parent) so it is a CLEAN
+    no-op before / without the #681 cutover — a missing data disk OR an
+    existing-but-unmounted ``/mnt/eps-data`` (a plain dir from Phase-1's
+    ``mkdir -p`` or a ``nofail`` boot that failed to mount) writes NO sidecar
+    row and touches no state. ``is_dir()`` is insufficient: a plain directory
+    passes it and the pass would then misread ``/``'s statvfs as the data disk's
+    (#681 round-2 Major). ``used_pct`` is injectable for tests; production
+    derives it from ``statvfs`` of the mount.
 
     Returns True when a sub-floor row was written this tick (mirrors
     :func:`subfloor_sentinel_pass`'s return contract). Fail-soft throughout."""
     dd_path = data_disk_path()
-    if not Path(dd_path).is_dir():
-        return False  # data disk absent — clean no-op pre-cutover
+    if not _is_mounted(dd_path):
+        return False  # data disk absent / not mounted — clean no-op pre-cutover
     pct = used_pct if used_pct is not None else _data_disk_used_pct(dd_path)
     if pct is None:
         return False
@@ -12439,8 +12470,9 @@ def main(argv: list[str] | None = None) -> int:
     # Data-disk headroom (#681): a SECOND, ESCALATE-ONLY pass on the dedicated
     # /mnt/eps-data mount (the relocated .claude/worktrees/ tree), driving the
     # PERCENT decision helpers so the fire point is size-invariant. Mirrors the
-    # vm_disk_guard.main() is_dir()-guarded second pass — a clean no-op before /
-    # without the cutover, so the call is live the instant the mount appears.
+    # vm_disk_guard.main() mount-guarded second pass — a clean no-op before /
+    # without the cutover (and on an existing-but-unmounted /mnt/eps-data), so
+    # the call is live the instant the disk is actually mounted.
     data_disk_pass(args.dry_run)
 
     # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is

@@ -221,12 +221,16 @@ def _data_disk_bind_missing(wt_dir: Path) -> bool:
     """True when the data-disk bind at ``wt_dir`` is EXPECTED but MISSING (#681).
 
     Opt-in via ``EPS_WORKTREE_REQUIRE_BIND=1`` (default OFF — a no-op before the
-    cutover lands the bind). The probe is ``findmnt --target <wt_dir>``; a
-    test/pre-cutover seam ``EPS_WORKTREE_BIND_PROBE`` overrides it (``true``
-    force-pass / ``false`` force-fail). A missing bind means a NEW worktree
-    would silently land on the boot disk `/`, so the audit escalates it (loud
-    warning) — it never deletes on this signal. Returns False when the check is
-    not opted in or the bind is live."""
+    cutover lands the bind). The probe is ``findmnt --mountpoint <wt_dir>`` (NOT
+    ``--target``: ``--target`` walks UP to the containing filesystem and returns
+    rc=0 for ANY ordinary directory on a mounted fs, so a MISSING bind would go
+    undetected — #681 round-2 Critical; ``--mountpoint`` succeeds ONLY when the
+    path is itself a mount, the bind we are asserting). A test/pre-cutover seam
+    ``EPS_WORKTREE_BIND_PROBE`` overrides it (``true`` force-pass / ``false``
+    force-fail). A missing bind means a NEW worktree would silently land on the
+    boot disk `/`, so the audit escalates it (loud warning) — it never deletes
+    on this signal. Returns False when the check is not opted in or the bind is
+    live."""
     if os.environ.get("EPS_WORKTREE_REQUIRE_BIND", "0") != "1":
         return False
     probe = os.environ.get("EPS_WORKTREE_BIND_PROBE", "").strip()
@@ -234,7 +238,7 @@ def _data_disk_bind_missing(wt_dir: Path) -> bool:
         rc = subprocess.run(["bash", "-c", probe], capture_output=True, check=False)
         return rc.returncode != 0
     rc = subprocess.run(
-        ["findmnt", "--noheadings", "--target", str(wt_dir)],
+        ["findmnt", "--noheadings", "--mountpoint", str(wt_dir)],
         capture_output=True,
         check=False,
     )
@@ -939,7 +943,7 @@ def main(argv: list[str] | None = None) -> int:
                 "  !! BIND MISSING: the data-disk bind at .claude/worktrees is "
                 "EXPECTED (EPS_WORKTREE_REQUIRE_BIND=1) but NOT live — a new worktree "
                 "would silently land on the boot disk /. Check: findmnt "
-                ".claude/worktrees ; sudo mount -a",
+                "--mountpoint .claude/worktrees ; sudo mount -a",
                 file=sys.stderr,
             )
         if res.disk_pct is not None:
