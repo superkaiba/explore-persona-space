@@ -380,7 +380,12 @@ cluster-specific paths (`orchestrate/env.py`), silent empty-QA fail in
 CUDA_VISIBLE_DEVICES clobber** for parallel launches, the **RunPod MooseFS ~130 GB
 per-pod quota** (`OSError errno=122 EDQUOT`), and **vLLM worker-subprocess teardown**
 — live in `.claude/rules/gotchas.md` (loads when you touch training / eval /
-orchestrate code).
+orchestrate code). **Rerun discipline (don't blind-relaunch a failed run):** a
+vLLM `generate()` hang gets the on-pod py-spy / enforce_eager / prefix-caching
+differential diagnosis (`.claude/rules/gotchas.md` § vLLM `generate()` hang
+differential diagnosis) BEFORE any reprovision, and a crash-fix round declares +
+confirms its fix-engaged signal before reprovisioning (`experiment-implementer.md`
+§ Crash-fix rounds: declare the fix-engaged signal).
 
 ## Monitoring (MANDATORY)
 
