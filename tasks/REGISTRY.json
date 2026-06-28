@@ -4443,6 +4443,13 @@
       "status": "completed",
       "title": "workflow-fix: add stall_reason to _PR struct in backends/runpod.py"
     },
+    "711": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/approved/711",
+      "status": "approved",
+      "title": "Make nightly lesson-consolidation deterministic + monitored (de-risk /daily)"
+    },
     "712": {
       "has_clean_result": false,
       "kind": "infra",
