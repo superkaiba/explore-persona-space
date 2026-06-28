@@ -254,6 +254,241 @@ def test_mlp_oracle_is_distinct_from_batched_path():
     assert "vmap" in batched_src, "the batched MLP path must use torch.func.vmap"
 
 
+# ── attn answer-span streaming equivalence (the #658 142 GB → ~3 GB quota fix) ──
+
+
+def _write_synthetic_spans(spans_dir, ctx_ids, *, n_layers=4, hidden=8, seed=0):
+    """Write synthetic answer_spans/<ctx>.pt blobs matching the extractor schema.
+
+    Each blob is ``{"context_id", "capture_layers", "spans": [(Lc, S, H) fp16 or None],
+    "probes"}`` — exactly what issue658_extract_base_store.py saves. Variable probe
+    count + span length per context, with one None span mixed in, so the attn
+    probe-mean (which drops None) is exercised.
+    """
+    import torch
+
+    spans_dir = Path(spans_dir)
+    spans_dir.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(seed)
+    capture_layers = list(range(n_layers))
+    for i, c in enumerate(ctx_ids):
+        n_probes = 3 + i  # vary probe count per context
+        spans = []
+        for p in range(n_probes):
+            if p == 1:  # one empty/None span per context (extractor writes None)
+                spans.append(None)
+                continue
+            s_len = 2 + p  # vary answer-token length per probe
+            arr = rng.standard_normal((n_layers, s_len, hidden)).astype(np.float32)
+            spans.append(torch.from_numpy(arr).to(torch.float16))
+        torch.save(
+            {
+                "context_id": c,
+                "capture_layers": capture_layers,
+                "spans": spans,
+                "probes": [f"probe_{p}" for p in range(n_probes)],
+            },
+            spans_dir / f"{c}.pt",
+        )
+    return capture_layers
+
+
+def _old_attn_matrix_reference(spans_dir, layer_idx, ctx_ids, attn_w):
+    """The PRE-refactor per-(layer, context) attn matrix — the exactness oracle.
+
+    A faithful copy of the old ``_attn_matrix`` body: load every context's span blob,
+    attn-pool the given layer's spans (dropping None), probe-mean. The refactored
+    precompute-then-slice path must reproduce this bit-for-bit.
+    """
+    import torch
+
+    rows = []
+    for c in ctx_ids:
+        blob = torch.load(Path(spans_dir) / f"{c}.pt", weights_only=False)
+        spans = blob["spans"]
+        per_probe = [
+            fit.summarize_answer_span(s[layer_idx], "attn", attn_weight=attn_w)
+            for s in spans
+            if s is not None
+        ]
+        rows.append(torch.stack(per_probe).mean(0).numpy())
+    return np.stack(rows)
+
+
+class _FakeStreamSpanSource(fit._SpanSource):
+    """Offline stand-in for ``_HfStreamSpanSource``: same download→release→LRU logic.
+
+    Reads from a local ``src_dir`` (in place of HF), but mimics the streaming
+    contract: ``load_blob`` "downloads" (copies into a private staging dir), evicts
+    over an LRU of ``cache_size``, and tracks the per-call download count + the peak
+    number of simultaneously-resident files. ``release`` deletes the staged copy.
+    Lets the streaming equivalence + footprint be tested with no network.
+    """
+
+    def __init__(self, src_dir, cache_size=1):
+        import tempfile
+
+        self.src_dir = Path(src_dir)
+        self.cache_size = max(1, int(cache_size))
+        self._resident = {}  # ctx -> staged path (insertion order = LRU)
+        self._staging = Path(tempfile.mkdtemp(prefix="fake_stream_"))
+        self.download_count = 0
+        self.peak_resident = 0
+
+    def load_blob(self, ctx_id):
+        import shutil
+
+        import torch
+
+        path = self._resident.get(ctx_id)
+        if path is None or not path.exists():
+            self.download_count += 1
+            staged = self._staging / f"{ctx_id}.pt"
+            shutil.copyfile(self.src_dir / f"{ctx_id}.pt", staged)
+            self._resident[ctx_id] = staged
+            while len(self._resident) > self.cache_size:
+                old = next(iter(self._resident))
+                self._delete(old)
+        self.peak_resident = max(self.peak_resident, len(self._resident))
+        return torch.load(self._resident[ctx_id], weights_only=False)
+
+    def _delete(self, ctx_id):
+        path = self._resident.pop(ctx_id, None)
+        if path is not None:
+            path.unlink(missing_ok=True)
+
+    def release(self, ctx_id):
+        self._delete(ctx_id)
+
+    def n_resident_files(self):
+        return len(list(self._staging.glob("*.pt")))
+
+
+def _attn_w(hidden, seed=658):
+    """The same seeded unit attn_w fit_a32 builds (torch.manual_seed; normalize)."""
+    import torch
+
+    torch.manual_seed(seed)
+    w = torch.randn(hidden)
+    return w / w.norm()
+
+
+@pytest.mark.parametrize("seed", [0, 2])
+def test_attn_summary_store_matches_old_per_layer_matrix(tmp_path, seed):
+    """The refactored precompute-then-slice attn path == the old per-(layer,ctx) loop.
+
+    ``_attn_summary_store`` loads each span blob ONCE and computes all layers; the old
+    ``_attn_matrix`` loaded per layer. Both must produce bit-identical attn summaries
+    for every (layer, context) — the math is unchanged, only the iteration order +
+    load count differ. This is the core exactness claim of the streaming refactor.
+    """
+    ctx_ids = ["ctx_a", "ctx_b", "ctx_c"]
+    n_layers, hidden = 4, 8
+    capture_layers = _write_synthetic_spans(
+        tmp_path / "answer_spans", ctx_ids, n_layers=n_layers, hidden=hidden, seed=seed
+    )
+    attn_w = _attn_w(hidden)
+    local = fit._SpanSource(tmp_path / "answer_spans")
+    summ = fit._attn_summary_store(local, ctx_ids, capture_layers, attn_w)
+    for li in range(n_layers):
+        new_mat = fit._attn_matrix(summ, li, ctx_ids)
+        old_mat = _old_attn_matrix_reference(tmp_path / "answer_spans", li, ctx_ids, attn_w)
+        max_abs = float(np.max(np.abs(new_mat - old_mat)))
+        assert max_abs == 0.0, (
+            f"layer {li}: refactored attn matrix drifted from the old per-layer loop "
+            f"(max|Δ|={max_abs:.3e}) — the precompute must be bit-identical"
+        )
+
+
+@pytest.mark.parametrize("cache_size", [1, 2])
+def test_streamed_attn_summary_matches_local(tmp_path, cache_size):
+    """Streamed attn summary == local attn summary, bit-identical (the brief's gate).
+
+    The streaming source downloads + deletes per context (peak ~one context); the
+    local source reads in place. Both feed the SAME ``_attn_summary_store`` math with
+    the SAME attn_w, so the resulting per-context summaries must agree exactly.
+    """
+    ctx_ids = ["c0", "c1", "c2", "c3"]
+    n_layers, hidden = 4, 8
+    capture_layers = _write_synthetic_spans(
+        tmp_path / "answer_spans", ctx_ids, n_layers=n_layers, hidden=hidden, seed=11
+    )
+    attn_w = _attn_w(hidden)
+    local = fit._SpanSource(tmp_path / "answer_spans")
+    stream = _FakeStreamSpanSource(tmp_path / "answer_spans", cache_size=cache_size)
+    local_summ = fit._attn_summary_store(local, ctx_ids, capture_layers, attn_w)
+    stream_summ = fit._attn_summary_store(stream, ctx_ids, capture_layers, attn_w)
+    for c in ctx_ids:
+        max_abs = float(np.max(np.abs(local_summ[c] - stream_summ[c])))
+        assert max_abs <= 1e-6, f"context {c}: streamed attn summary drifted: max|Δ|={max_abs:.3e}"
+        # strict bit-identity expected (load path touches no tensor math)
+        assert max_abs == 0.0, f"context {c}: streamed attn summary not bit-identical to local"
+
+
+def test_stream_source_bounds_peak_footprint(tmp_path):
+    """Streaming holds at most ``cache_size`` span files resident — the quota fix.
+
+    With cache_size=1 over many contexts, peak resident files must be 1 (~one context),
+    NOT the whole grid — the entire point of the 142 GB → ~3 GB change. After the full
+    pass, releases leave nothing behind.
+    """
+    ctx_ids = [f"ctx_{i}" for i in range(6)]
+    capture_layers = _write_synthetic_spans(tmp_path / "answer_spans", ctx_ids, seed=3)
+    attn_w = _attn_w(8)
+    stream = _FakeStreamSpanSource(tmp_path / "answer_spans", cache_size=1)
+    fit._attn_summary_store(stream, ctx_ids, capture_layers, attn_w)
+    assert stream.peak_resident <= 1, (
+        f"streaming held {stream.peak_resident} contexts resident at peak (cache_size=1); "
+        "footprint is not bounded to ~one context"
+    )
+    # each context downloaded exactly once in a single pass (no per-layer re-download)
+    assert stream.download_count == len(ctx_ids), (
+        f"expected {len(ctx_ids)} downloads (one per context), got {stream.download_count} — "
+        "a per-layer re-download would multiply this by n_layers"
+    )
+    assert stream.n_resident_files() == 0, "streamed files must be released after the pass"
+
+
+def test_parse_attn_stream_hf():
+    """``_parse_attn_stream_hf`` splits REPO_ID:PATH_PREFIX on the first ':' only."""
+    repo, prefix = fit._parse_attn_stream_hf(
+        "superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/answer_spans"
+    )
+    assert repo == "superkaiba1/explore-persona-space-data"
+    assert prefix == "issue658_theory_assumptions/store/answer_spans"
+    # trailing slash stripped
+    _, prefix2 = fit._parse_attn_stream_hf("r/x:a/b/")
+    assert prefix2 == "a/b"
+    for bad in ["no-colon", ":prefix-only", "repo-only:"]:
+        with pytest.raises(SystemExit):
+            fit._parse_attn_stream_hf(bad)
+
+
+def test_build_span_source_default_is_local(tmp_path):
+    """Default (no --attn-stream-hf) builds the local-dir source (unchanged path)."""
+    import argparse
+
+    args = argparse.Namespace(attn_stream_hf=None, attn_stream_cache=1)
+    src = fit._build_span_source(args, tmp_path / "store")
+    assert type(src) is fit._SpanSource
+    assert src.spans_dir == tmp_path / "store" / "answer_spans"
+
+
+def test_attn_summary_store_raises_on_all_none_spans(tmp_path):
+    """A context with NO non-None answer span fails loud (never a silent skip/zero)."""
+    import torch
+
+    spans_dir = tmp_path / "answer_spans"
+    spans_dir.mkdir(parents=True)
+    torch.save(
+        {"context_id": "empty", "capture_layers": [0, 1], "spans": [None, None], "probes": ["p"]},
+        spans_dir / "empty.pt",
+    )
+    local = fit._SpanSource(spans_dir)
+    with pytest.raises(ValueError, match="no non-empty answer spans"):
+        fit._attn_summary_store(local, ["empty"], [0, 1], _attn_w(8))
+
+
 def test_param_hash_invalidates_stale_cells(tmp_path, monkeypatch):
     """A checkpoint cell written under one set of hyperparams is STALE under another.
 
