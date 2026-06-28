@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 707,
+  "highest_id": 708,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4497,6 +4497,13 @@
       "path": "tasks/proposed/707",
       "status": "proposed",
       "title": "spend-approval park must stay sticky across resume (not un-parked by a config-drift cap bump)"
+    },
+    "708": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/708",
+      "status": "proposed",
+      "title": "verify #664 base tokenizer \u2014 Mistral-Small regex warning on a Qwen-2.5-7B project"
     },
     "71": {
       "has_clean_result": false,
