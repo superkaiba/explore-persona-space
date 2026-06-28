@@ -1451,7 +1451,9 @@ def _issue_cache_glob_roots() -> list[Path]:
     return roots
 
 
-def _top_issue_cache_paths(top_n: int = VM_DISK_SUBFLOOR_TOP_N) -> list[tuple[str, int]]:
+def _top_issue_cache_paths(
+    top_n: int = VM_DISK_SUBFLOOR_TOP_N, *, dry_run: bool = False
+) -> list[tuple[str, int]]:
     """The ``top_n`` largest per-issue re-downloadable cache dirs under
     ``{data,.claude/worktrees/issue-*/data}/issue_*/{hf_dl,g*_dl}`` (NOT store/),
     as ``(rel_path, bytes)``.
@@ -1463,7 +1465,15 @@ def _top_issue_cache_paths(top_n: int = VM_DISK_SUBFLOOR_TOP_N) -> list[tuple[st
     The glob roots span the repo-root ``data/`` AND every worktree-internal
     ``data/`` (#681 — the per-issue caches the data disk actually holds live in
     the worktree, not repo-root ``data/``; the original repo-root-only glob
-    named the wrong caches)."""
+    named the wrong caches).
+
+    Under ``dry_run`` the function performs NO ``subprocess.run`` at all and
+    returns ``[]`` immediately: a dry-run pass must have zero observational
+    side-effects (the attribution `du` shells out per candidate, which the
+    ``--dry-run`` smoke contract forbids — #681 r3). The dry-run output line
+    simply reports ``top caches: none``."""
+    if dry_run:
+        return []
     candidates: list[Path] = []
     for data_root in _issue_cache_glob_roots():
         for issue_dir in sorted(data_root.glob("issue*")):
@@ -1496,7 +1506,7 @@ def _top_issue_cache_paths(top_n: int = VM_DISK_SUBFLOOR_TOP_N) -> list[tuple[st
 
 
 def _top_issue_caches_by_project_quota(
-    data_disk_path: str, top_n: int = VM_DISK_SUBFLOOR_TOP_N
+    data_disk_path: str, top_n: int = VM_DISK_SUBFLOOR_TOP_N, *, dry_run: bool = False
 ) -> list[tuple[str, int]] | None:
     """PRIMARY data-disk attribution via ``repquota -P`` (per-PROJECT usage).
 
@@ -1508,7 +1518,14 @@ def _top_issue_caches_by_project_quota(
     unavailable / the disk has no prjquota / parsing fails — the caller then
     falls back to the ``du``-based :func:`_top_issue_cache_paths`. Project id 0
     (the unbounded default — the managed pin + tiny worktrees) is excluded; it
-    is not a per-issue cache. Never raises."""
+    is not a per-issue cache. Never raises.
+
+    Under ``dry_run`` performs NO ``subprocess.run`` and returns ``None`` (the
+    same "no quota attribution available" signal as a missing ``repquota``), so
+    the caller falls through to the likewise-short-circuited ``du`` helper and
+    the dry-run pass shells out to nothing (#681 r3)."""
+    if dry_run:
+        return None
     rc = subprocess.run(
         ["repquota", "-Ocsv", "-P", data_disk_path],
         capture_output=True,
@@ -1749,7 +1766,9 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
     if not decide_subfloor(free, last_free):
         return False  # already alerted at ~this footprint; bound churn
     try:
-        top = _top_issue_cache_paths()
+        # dry_run short-circuits the `du` attribution to [] (no subprocess.run):
+        # the dry-run pass must have zero observational side-effects (#681 r3).
+        top = _top_issue_cache_paths(dry_run=dry_run)
     except (subprocess.SubprocessError, OSError):
         top = []
     free_gib = free / 2**30
@@ -1809,20 +1828,24 @@ def _clear_data_disk_state() -> None:
     _data_disk_state_path().unlink(missing_ok=True)
 
 
-def _data_disk_top_caches(dd_path: str) -> list[tuple[str, int]]:
+def _data_disk_top_caches(dd_path: str, *, dry_run: bool = False) -> list[tuple[str, int]]:
     """Attribution for the data-disk escalation: PRIMARY per-PROJECT usage via
     ``repquota -P`` (one cheap call, project id == issue number), falling back
     to the ``du``-based glob attribution when ``repquota`` is unavailable / the
     disk has no prjquota / parsing fails. Fail-soft — any error yields an empty
-    list (no attribution), never a crash."""
+    list (no attribution), never a crash.
+
+    Under ``dry_run`` both helpers short-circuit (repquota → ``None``, du →
+    ``[]``) so this returns ``[]`` with NO ``subprocess.run`` (#681 r3): the
+    data-disk dry-run smoke must have zero observational side-effects."""
     try:
-        rows = _top_issue_caches_by_project_quota(dd_path)
+        rows = _top_issue_caches_by_project_quota(dd_path, dry_run=dry_run)
     except (subprocess.SubprocessError, OSError):
         rows = None
     if rows is not None:
         return rows
     try:
-        return _top_issue_cache_paths()
+        return _top_issue_cache_paths(dry_run=dry_run)
     except (subprocess.SubprocessError, OSError):
         return []
 
@@ -1877,7 +1900,7 @@ def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
             file=sys.stderr,
         )
         if do_alert:
-            top = _data_disk_top_caches(dd_path)
+            top = _data_disk_top_caches(dd_path, dry_run=dry_run)
             _append_disk_guard_sidecar(
                 {
                     "kind": f"vm-disk-data-{'critical' if level == 'critical' else 'low'}",
@@ -1911,7 +1934,7 @@ def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
     if not decide_subfloor_pct(pct, last_used_pct):
         return False  # already alerted at ~this footprint; bound churn
 
-    top = _data_disk_top_caches(dd_path)
+    top = _data_disk_top_caches(dd_path, dry_run=dry_run)
     print(
         f"vm-disk-data SUB-FLOOR: {pct:.1f}% used on {dd_path} "
         f"(>= {floor:.0f}%) — re-check sooner; "
