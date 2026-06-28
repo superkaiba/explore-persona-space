@@ -449,3 +449,30 @@ def test_legitimate_store_under_parent_dir_reaps(fake_repo, monkeypatch):
     assert res.skipped == []
     assert not (issue_dir / "hf_dl").exists()
     assert _read_sidecar(fake_repo) == []
+
+
+# ─── #681 path transparency: cleaner resolves worktree data on the data disk ──
+
+
+def test_cleaner_resolves_worktree_data_on_data_disk(fake_repo, monkeypatch):
+    """After #681 the worktree data lives on the bind-mounted data disk, but the
+    cleaner resolves the SAME relative path transparently — pointing the
+    ``data_root=`` seam at a tmp_path that simulates the bind target reaps the
+    ``hf_dl``/``g*_dl`` caches and KEEPS ``store/`` exactly as before. This is
+    the path-transparency proof: the cleaner is indifferent to which physical
+    device backs the resolved path (the bind/symlink contract, plan §1 #4)."""
+    # `data_root` simulates the bind target: physically a different dir (as the
+    # data disk is a different device), same logical role as the worktree data.
+    data_disk_root = fake_repo / "mnt" / "eps-data" / "worktrees" / "issue-658" / "data"
+    issue_dir = _plain_cache(data_disk_root, 658)
+    res = ced.clean_issue_downloads(658, apply=True, data_root=data_disk_root)
+    # Both re-downloadable caches reaped, regardless of the backing device.
+    assert sorted(res.removed) == [
+        "mnt/eps-data/worktrees/issue-658/data/issue_658/g1_dl",
+        "mnt/eps-data/worktrees/issue-658/data/issue_658/hf_dl",
+    ]
+    assert res.failed == []
+    assert not (issue_dir / "hf_dl").exists()
+    assert not (issue_dir / "g1_dl").exists()
+    # store/ — the durable, NOT re-downloadable artifact — is KEPT.
+    assert (issue_dir / "store" / "generated.pt").exists()
