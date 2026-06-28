@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 718,
+  "highest_id": 719,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4499,6 +4499,13 @@
       "path": "tasks/proposed/718",
       "status": "proposed",
       "title": "workflow-fix: crash-fix circuit-breaker \u2192 re-plan on spent fallback ladder"
+    },
+    "719": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/719",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md \u2014 per-cell vLLM rendezvous-port EADDRINUSE trap"
     },
     "72": {
       "has_clean_result": false,
