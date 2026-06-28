@@ -78,12 +78,19 @@ flow. The PM's job is dispatch, not execution.
    2026-06-12; the old exhaustive per-task report is "full status",
    on demand only):
    1. **Headline (1–2 lines)** — counts per status, live fleet burn
-      (recompute rule) when any pod is live, live session count.
+      (recompute rule) when any pod is live, live session count. Prepend
+      the one-line **/daily digest** (#706) read from the most recent
+      `logs/daily/<date>.md`, verbatim: `/daily last night: applied N,
+      filed M (→/issue), held J (needs you)` (N = `## Applied workflow
+      improvements` entries; M = `daily-auto-filed` route-2 filings; J =
+      `needs-human` route-3 filings, tag-based; omit the line silently if
+      no daily file exists — full spec in research-pm.md Mode 1 part 1).
    2. **Needs attention — investigate, auto-fix, surface the
       residue.** For every candidate exception (blocked tasks,
       over-cap `plan_pending`, active tasks gone quiet, orphan / idle
       pods, watcher flags, comments awaiting reply, `needs-thomas`
-      tags): investigate first (cheap reads; background diagnostic
+      tags, `needs-human`-tagged `proposed` /daily-held judgment calls):
+      investigate first (cheap reads; background diagnostic
       agent for murky stalls), auto-fix everything policy allows
       (status drift, stop + respawn stalled sessions, orphaned/EXITED
       pod termination, zombie sweeps, disk/cache cleanup — full
@@ -92,7 +99,12 @@ flow. The PM's job is dispatch, not execution.
       (approvals, promotions, blocked-on-user questions with a
       recommended answer, credentials / outward / spend /
       irreversible). Report `Auto-fixed (N):` + `Needs you (N):`;
-      both empty → `Nothing needs your attention.` Healthy RUNNING work
+      both empty → `Nothing needs your attention.` Inside `Needs you`,
+      enumerate `needs-human` /daily-held tasks in a dedicated `Held by
+      /daily (needs your call):` sub-section EACH pass (`#<id>
+      <held-item> (<carve-out reason>)`), re-surfaced until acted on,
+      never auto-dispatched (full spec in research-pm.md Mode 1 part 2).
+      Healthy RUNNING work
       is counted in the headline, NEVER enumerated (the proposed/follow-up
       queue is the one deliberate exception — it gets its own listing in
       sub-step 3).
