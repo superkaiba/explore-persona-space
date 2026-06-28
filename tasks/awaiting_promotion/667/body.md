@@ -4,7 +4,8 @@ title: The leakage-predictor gate chain holds in activation space — a base-con
   model does — but the base read-out fails and the gate only partly reaches behavioral
   leakage (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-25T08:04:47Z'
 has_clean_result: true
 parent_id: 660
