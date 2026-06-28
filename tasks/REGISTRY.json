@@ -4403,8 +4403,8 @@
     "696": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/696",
-      "status": "proposed",
+      "path": "tasks/planning/696",
+      "status": "planning",
       "title": "preflight branch-freshness check: tolerate transient git-fetch timeouts (#664 false-positive recurrence)"
     },
     "7": {
