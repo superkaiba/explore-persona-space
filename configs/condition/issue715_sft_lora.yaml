@@ -53,8 +53,11 @@ lora_alpha: 256
 lora_dropout: 0.0
 use_rslora: true
 lora_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
-# 8-point Pareto checkpoint cadence {47,94,141,188,234,281,328,375}: save every
-# 47 steps. save_total_limit sized to retain all 8 (375/47 ~= 8 + the final).
+# 8-point Pareto checkpoint cadence: save every 47 steps. HF Trainer writes
+# checkpoints at the save_steps multiples {47,94,141,188,235,282,329} PLUS the
+# final step 375 (always saved at max_steps) = 8 points. save_total_limit=9 sized
+# to retain all 8 with headroom. (The plan §6 P1 spec listed {...,234,281,328,375};
+# the realized 235/282/329 are 47*5/6/7 — see LORA_CKPT_STEPS in issue715_dispatch.py.)
 save_strategy: steps
 save_steps: 47
 save_total_limit: 9

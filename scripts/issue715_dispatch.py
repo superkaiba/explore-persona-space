@@ -61,8 +61,15 @@ import issue715_common as C  # noqa: E402
 logger = logging.getLogger("issue715_dispatch")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-# LoRA Pareto checkpoint grid (plan §11): {47,94,141,188,234,281,328,375}.
-LORA_CKPT_STEPS = [47, 94, 141, 188, 234, 281, 328, 375]
+# LoRA Pareto checkpoint grid — the REALIZED HF-Trainer cadence under
+# save_strategy=steps, save_steps=47, max_steps=375 (concern lora-pareto-grid-drift).
+# HF Trainer saves at every save_steps multiple {47,94,141,188,235,282,329} PLUS the
+# final step 375 (always saved at max_steps) = an 8-point grid. The plan §6 P1 spec
+# named {47,94,141,188,234,281,328,375}; the last three drift +1 because 235/282/329
+# are the realized 5th/6th/7th save_steps multiples (47*5/6/7), and 375 is the final
+# root. The eval enumerates the ACTUAL written checkpoint-* dirs (glob, not this
+# literal), so the realized cadence is what is evaluated; this constant documents it.
+LORA_CKPT_STEPS = [47, 94, 141, 188, 235, 282, 329, 375]
 # Full-FT 25-step sweep up to max_steps 200.
 FULLFT_CKPT_STEPS = [25, 50, 75, 100, 125, 150, 175, 200]
 LORA_SEEDS = [42, 137, 256]
