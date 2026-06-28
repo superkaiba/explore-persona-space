@@ -599,6 +599,47 @@ gates:
         the Step 6d.2 polling loop on the next /issue invocation.
 
         <!-- gate: gates.conditional.fact_candidates -->
+    - id: 15
+      name: related_work_positioning
+      step: "completion hook (Step 10c-bis post-completion batch, after auto-complete)"
+      condition: |
+        Fires once per kind:experiment (or finding-bearing kind:analysis)
+        task after it reaches status:completed (the post-promotion
+        completion hook). The related-work-finder agent has posted
+        `epm:related-work-proposed v1` with a proposed ≤80-word "Related
+        findings" note for the clean-result ## Goal -> **Broader narrative:**
+        slot (+ an optional human-triage candidate-papers list for
+        docs/papers.md). kind: infra/batch/survey are exempt (no measured
+        finding to position); a kind:analysis task with no ## Results is
+        skipped without raising the gate.
+      reason: |
+        Two-option prompt: `confirm` (splice the proposed ≤80-word
+        **Related findings:** clause into the body's ## Goal -> **Broader
+        narrative:** slot via `scripts/task.py set-body`, re-run
+        verify_task_body.py — WARN-only on the total-prose budget, never a
+        blocking FAIL — then post `epm:related-work-applied v1`) vs
+        `reject` (skip; post `epm:related-work-rejected v1` with the reason,
+        the proposal preserved inline so a future pass can reconsider).
+        "Edit" is a refinement of `confirm`, NOT a third option: the user
+        may hand-edit the proposed clause before it is spliced — this keeps
+        the prompt a binary confirm/reject per CLAUDE.md "2-option
+        escalation cap for new conditional gates". The gate applies ONLY the
+        ## Goal body edit — it does NOT apply any docs/papers.md edit in v1
+        (the agent's suggested-papers list is human-triage only; the
+        papers.md auto-apply leg is a deferred follow-up). Every
+        literature-positioning edit is user-confirmed: the agent proposes,
+        the user confirms/edits/rejects, nothing auto-applies. NON-BLOCKING
+        + ADVISORY on the experiment lifecycle — the task is already
+        completed, so the proposal can park indefinitely (like
+        living_docs_update) and a thin / empty / over-budget note never
+        blocks promotion. Autonomous mode (EPM_AUTONOMOUS_SESSION=1):
+        AUTO-REJECT-PARK — never raise the ask; post
+        `epm:related-work-rejected v1` (note "autonomous — parked for user
+        review", proposal preserved inline) so the proposal survives for a
+        later interactive pass. A literature-positioning note is a
+        taste/scope call the autonomous session does not make.
+
+        <!-- gate: gates.related_work_positioning -->
 
 # ──────────────────────────────────────────────────────────────────────
 # STATE-TO-status:blocked criteria.
@@ -2031,6 +2072,46 @@ markers:
       Payload: the rejection reason (one line) + the rejected proposal
       preserved inline so a future backstop re-synthesis (/weekly) can
       retry with sharper context.
+  - kind: "epm:related-work-proposed"
+    posted_by: skill (via related-work-finder agent)
+    when: "/issue Step 10c-bis post-completion batch"
+    fields: |
+      The related-work-finder's PROPOSED "Related findings" positioning
+      note + the verdict
+      (replicates/contradicts/extends/tangential/none-found), a
+      `search_status` field (searched | unavailable — distinguishes "search
+      ran, found nothing" from "MCP unavailable, never searched"), the
+      MCP-verified citation list (each [title, arXiv:id], each with the
+      verify call made), the realized search budget (vs the ≤6 arXiv-MCP /
+      ≤2 WebSearch cap), the proposed ≤80-word **Broader narrative:**
+      addition, and an optional human-triage suggested-papers list for
+      docs/papers.md (a flat list of verified candidate papers, NOT an
+      apply diff in v1). Non-blocking + advisory: the experiment is already
+      completed; the proposal parks for user confirmation at the
+      gates.related_work_positioning gate. The agent proposes, never
+      applies. Artifact path: artifacts/related-work-proposal.md.
+  - kind: "epm:related-work-applied"
+    posted_by: skill (after user confirm at gates.related_work_positioning)
+    when: "/issue completion hook, on user confirm"
+    fields: |
+      Posted after the user confirms (or confirms-with-edits) the
+      related-work-finder's proposal AND the orchestrator splices the
+      ≤80-word **Related findings:** clause into the body's ## Goal ->
+      **Broader narrative:** slot via `scripts/task.py set-body` (then
+      re-runs verify_task_body.py — WARN-only on the total-prose budget).
+      Payload: the APPLIED **Broader narrative:** addition (the ## Goal body
+      edit ONLY — NO docs/papers.md edit in v1), the verdict, and the cited
+      arXiv ids.
+  - kind: "epm:related-work-rejected"
+    posted_by: skill
+    when: "/issue completion hook, on user reject (or autonomous auto-reject-park)"
+    fields: |
+      Posted when the user declines the related-work-finder's proposal at
+      the gates.related_work_positioning gate (or when an autonomous session
+      auto-reject-parks it). Non-fatal: the experiment stays completed;
+      nothing is written to the body. Payload: the rejection reason (one
+      line) + the rejected proposal preserved inline so a future interactive
+      pass can reconsider.
   - kind: "epm:abort"
     posted_by: skill
     when: "any time"
