@@ -326,6 +326,11 @@ def main() -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # Per-cell output suffix (BLOCKER #715-4): the headline grid runs all 4
+    # scope x granularity cells, so each writes DISTINCT result files keyed by
+    # <scope>_<granularity> instead of clobbering a single p4_geometry/p4_prune.
+    cell_suffix = f"{args.scope}_{args.granularity}"
+
     from safetensors.torch import load_file as _load_safetensors  # noqa: F401
     from transformers import AutoModelForCausalLM
 
@@ -361,19 +366,25 @@ def main() -> int:
             dft_sd,
             target_keys,
             d_vec,
-            out_dir / "p4_geometry.json",
+            out_dir / f"p4_geometry_{cell_suffix}.json",
             smoke=args.smoke,
         )
 
     if args.leg in ("prune", "both"):
-        run_prune_leg(args, base_sd, sft_sd, dft_sd, target_keys, out_dir)
+        run_prune_leg(args, base_sd, sft_sd, dft_sd, target_keys, out_dir, cell_suffix)
 
     logger.info("[phase=p4_done] Phase-4 complete")
     return 0
 
 
-def run_prune_leg(args, base_sd, sft_sd, dft_sd, target_keys, out_dir: Path) -> None:
-    """Build each pruned checkpoint, run the reused EM eval, record EM-vs-K."""
+def run_prune_leg(
+    args, base_sd, sft_sd, dft_sd, target_keys, out_dir: Path, cell_suffix: str
+) -> None:
+    """Build each pruned checkpoint, run the reused EM eval, record EM-vs-K.
+
+    ``cell_suffix`` (``<scope>_<granularity>``) keys every output file so the
+    4-cell grid does not clobber a single p4_prune.json (BLOCKER #715-4).
+    """
     from issue715_common import (
         DEFAULT_EM_MAX_TOKENS,
         DEFAULT_EM_TEMPERATURE,
@@ -416,7 +427,9 @@ def run_prune_leg(args, base_sd, sft_sd, dft_sd, target_keys, out_dir: Path) -> 
                 em = judge_em_completions(
                     completions,
                     cache_dir=out_dir / "judge_cache",
-                    save_raw=out_dir / f"p4_raw_{arm}_k{k_frac}.json",
+                    # raw_p4_ prefix (MINOR #715): the dispatcher's raw-completion
+                    # upload globs raw_*.json; cell_suffix keys the 4-cell grid.
+                    save_raw=out_dir / f"raw_p4_{arm}_{cell_suffix}_k{k_frac}.json",
                     force_sync=args.smoke,
                 )
                 curve.append({"k_frac": k_frac, "em_rate": em["em_rate"], "n_total": em["n_total"]})
@@ -430,7 +443,7 @@ def run_prune_leg(args, base_sd, sft_sd, dft_sd, target_keys, out_dir: Path) -> 
     results["scope"] = args.scope
     results["granularity"] = args.granularity
     results["signed_variant"] = args.signed_variant
-    out_path = out_dir / "p4_prune.json"
+    out_path = out_dir / f"p4_prune_{cell_suffix}.json"
     out_path.write_text(json.dumps(results, indent=2))
     logger.info("[phase=p4_prune] wrote %s", out_path)
 
