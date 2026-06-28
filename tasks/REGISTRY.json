@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 708,
+  "highest_id": 709,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4504,6 +4504,13 @@
       "path": "tasks/archived/708",
       "status": "archived",
       "title": "verify #664 base tokenizer \u2014 Mistral-Small regex warning on a Qwen-2.5-7B project"
+    },
+    "709": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/709",
+      "status": "proposed",
+      "title": "RunPod SSH glob_sentinels \u2014 close #705's deferred stale-sentinel sibling probe over SSH"
     },
     "71": {
       "has_clean_result": false,
