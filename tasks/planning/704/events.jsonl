@@ -9,3 +9,4 @@
 {"ts": "2026-06-28T07:36:19Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxh681a-3tznra effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-28T07:37:16Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxh5gzd-w5o6kb phase=done after 90s."}
 {"ts": "2026-06-28T07:37:51Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxh681a-3tznra phase=done after 90s."}
+{"ts": "2026-06-28T07:44:45Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "v2 verdict: PASS, n_fail=0, n_warn=1 (same c8 kill-criteria warn as v1; the v2 revision was narrow — Statistics-lens REVISE fixes in §6 only), n_skip=9. Plan version: v2."}
