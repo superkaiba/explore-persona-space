@@ -2881,6 +2881,52 @@ def test_vm_disk_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
     assert not (isolated_registry / "vm-disk-events.jsonl").exists()  # no event written
 
 
+def test_vm_disk_pass_dry_run_no_subprocess_even_with_cache_candidate(
+    isolated_registry, tmp_path, monkeypatch
+):
+    """Regression for the #681 r3 BLOCKER: the dry-run sub-floor attribution
+    must invoke ZERO ``subprocess.run`` even when a per-issue cache candidate
+    EXISTS (so the pre-fix `_top_issue_cache_paths` would reach the per-dir
+    ``du`` shell-out).
+
+    The pre-fix bug was environment-dependent: `test_vm_disk_pass_dry_run_
+    mutates_nothing` only tripped the crash on a machine whose glob roots
+    happened to contain an ``hf_dl``/``g*_dl`` cache dir; in a worktree with no
+    such candidate the loop never ran and the call silently no-op'd. This test
+    FORCES a candidate present (the glob root has a real ``issue999/hf_dl``
+    dir), so pre-fix the dry-run pass calls ``subprocess.run`` on the synthetic
+    ``S`` subprocess type whose ``run`` returns None — crashing in the
+    ``except (subprocess.SubprocessError, OSError)`` clause (``S`` has no
+    ``SubprocessError`` attr). Post-fix the attribution short-circuits to ``[]``
+    under ``dry_run`` and shells out to nothing.
+    """
+    import autonomous_session_watch as asw
+
+    # A glob root WITH a real cache candidate -> pre-fix code reaches du.
+    data_root = tmp_path / "data"
+    (data_root / "issue999" / "hf_dl").mkdir(parents=True)
+    monkeypatch.setattr(asw, "_issue_cache_glob_roots", lambda: [data_root])
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path)
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 4 * 2**30)  # critical, below sub-floor
+    monkeypatch.setattr(asw, "_sweep_stale_claude_tmp", lambda now, dry_run: 0)
+    # The same hostile synthetic subprocess type as the sibling test: only `run`,
+    # NO `SubprocessError` attr -> any real shell-out crashes, recording the call.
+    ran: list[bool] = []
+    monkeypatch.setattr(
+        asw,
+        "subprocess",
+        type("S", (), {"run": staticmethod(lambda *a, **kw: ran.append(True))}),
+    )
+
+    # Must NOT raise (the pre-fix AttributeError) and must NOT shell out.
+    asw.vm_disk_pass(dry_run=True, now=1_000_000.0)
+
+    assert ran == []  # zero subprocess.run despite a cache candidate present
+    assert not (isolated_registry / "vm-disk.json").exists()
+    assert not (isolated_registry / "vm-disk-events.jsonl").exists()
+
+
 # ─── orphan sweep (registration-independent safety net) ─────────────────────
 #
 # Pins the 2026-06-10 #472/#518 incident class: an ACTIVE-status task with no
@@ -8919,7 +8965,10 @@ def _stub_data_disk_io(asw, monkeypatch, *, mounted, used_pct, top=None):
     sidecar-append closure records into."""
     monkeypatch.setattr(asw.Path, "is_dir", lambda self: mounted)
     monkeypatch.setattr(asw, "_data_disk_used_pct", lambda dd_path: used_pct)
-    monkeypatch.setattr(asw, "_data_disk_top_caches", lambda dd_path: top or [])
+    # The production `_data_disk_top_caches` takes a `dry_run` kwarg (#681 r3 —
+    # dry-run short-circuits the `du`/`repquota` attribution so a dry-run pass
+    # shells out to nothing); the stub must accept it to stay signature-faithful.
+    monkeypatch.setattr(asw, "_data_disk_top_caches", lambda dd_path, *, dry_run=False: top or [])
     recorded: list[dict] = []
     monkeypatch.setattr(
         asw, "_append_disk_guard_sidecar", lambda event, dry_run: recorded.append(event)
