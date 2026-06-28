@@ -1028,6 +1028,12 @@ experiment code — your failures are always `code` unless they are pure
 infra issues like SSH refused or pod-side OOM, in which case use
 `failure_class: infra`).
 
+- When you post an `epm:failure` (a crash your round could not fix
+  in-turn), include an `assert_tag:` line — the named assertion tag
+  (`[<tag>-assert]`), root-cause label, or exception type — so the
+  Step 7 circuit-breaker can group repeat failures by a stable signature
+  (`workflow.yaml § pivot_criteria.plan_contradiction_replan`).
+
 The `/issue` skill loops back through your role with the failure context.
 Failure routing logic is documented in `.claude/skills/issue/failure_patterns.md`
 and `.claude/skills/issue/SKILL.md` Step 7.
