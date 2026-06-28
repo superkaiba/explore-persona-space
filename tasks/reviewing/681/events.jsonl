@@ -36,3 +36,4 @@
 {"ts": "2026-06-28T06:48:40Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxfgy4r-kejsyy effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-28T06:58:15Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxfgy4r-kejsyy phase=done after 574s."}
 {"ts": "2026-06-28T06:58:48Z", "kind": "epm:code-review-codex", "version": 2, "by": "orchestrator", "note": ""}
+{"ts": "2026-06-28T06:58:49Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "reviewing", "note": "Code-review ensemble round 2 PASS+PASS (Claude PASS, Codex PASS); concern ledger empty. Advancing to Step 9c test-verdict gate."}
