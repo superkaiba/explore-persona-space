@@ -4131,7 +4131,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/661",
       "status": "interpreting",
-      "title": "r_B extraction-method divergence: on-policy-instruction (A) vs teacher-forced (B) vs instruct-and-strip (C) across 3 behaviors"
+      "title": "Instruction-present and instruct-and-strip r_B point the same way (cos \u2265 0.95 on all 3 behaviors), but neither beats the teacher-forced reference at predicting expression \u2014 so the recipe pick is inconclusive (LOW confidence)"
     },
     "662": {
       "has_clean_result": false,

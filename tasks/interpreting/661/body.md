@@ -1,6 +1,7 @@
 ---
-title: 'r_B extraction-method divergence: on-policy-instruction (A) vs teacher-forced
-  (B) vs instruct-and-strip (C) across 3 behaviors'
+title: Instruction-present and instruct-and-strip r_B point the same way (cos ≥ 0.95
+  on all 3 behaviors), but neither beats the teacher-forced reference at predicting
+  expression — so the recipe pick is inconclusive (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-24T23:55:41Z'
