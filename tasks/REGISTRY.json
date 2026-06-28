@@ -4102,7 +4102,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/658",
       "status": "followups_running",
-      "title": "Base-model foundation for the leakage predictor on Qwen2.5-7B (A3.2/A3.3/A3.5 + recipe lock)"
+      "title": "The leakage predictor's first link fails on Qwen2.5-7B \u2014 a mean answer-side activation summarizes only 3 of 10 behaviors, and none of the 4 with a working linear read-out (HIGH confidence)"
     },
     "659": {
       "has_clean_result": false,

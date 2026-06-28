@@ -1,6 +1,7 @@
 ---
-title: Base-model foundation for the leakage predictor on Qwen2.5-7B (A3.2/A3.3/A3.5
-  + recipe lock)
+title: The leakage predictor's first link fails on Qwen2.5-7B — a mean answer-side
+  activation summarizes only 3 of 10 behaviors, and none of the 4 with a working linear
+  read-out (HIGH confidence)
 kind: experiment
 tags:
 - followup-manual
