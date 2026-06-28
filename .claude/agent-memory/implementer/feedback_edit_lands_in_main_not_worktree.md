@@ -51,6 +51,19 @@ NOT prove the test edit landed in the same tree — check EACH file's tree
 explicitly (`grep -c <token> $WT/<f>`) before running tests, and never trust a
 relative/bare path that a Grep/Read result handed you; re-prefix it with `$WT`.
 
+**BASH-HEREDOC-APPEND variant (caught 2026-06-28, #681 r4):** the trap is not
+limited to the Edit/Write tools — a `cat >> tests/<f> <<'EOF' ... EOF` (or any
+relative-path shell redirect) run inside a `Bash` call whose cwd is the main
+checkout appends to MAIN's copy, not the worktree's. Here the WT was the cwd for
+Edit tools but a `cd /home/.../explore-persona-space` (main) earlier in the
+session made the relative `tests/<f>` resolve against main. Caught by `grep -c
+<token>` on the WT copy returning 0 while main's returned 1, and by `git -C
+<main> status --short` showing the file modified. Recovered by Edit-appending the
+SAME block into `$WT/tests/<f>` (via the Edit tool, absolute WT path) and `git -C
+<main> checkout -- tests/<f>`. Lesson: prefer the Edit tool (absolute `$WT` path)
+over `cat >>` for appends; if you must use a shell redirect, write the absolute
+`$WT/<relpath>`, never a bare relative path.
+
 **How to apply:**
 - At startup, capture the worktree root once: `WT=$(git rev-parse --show-toplevel)`
   BEFORE any `cd`. Target EVERY Read/Edit/Write at `$WT/<relpath>`, never the bare
