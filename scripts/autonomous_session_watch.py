@@ -1612,6 +1612,39 @@ DATA_DISK_ALERT_PCT = 90.0
 DATA_DISK_RECLAIM_PCT = 95.0  # escalate-only on the data disk — never reclaims
 DATA_DISK_SUBFLOOR_PCT = 85.0
 
+# The dedicated data-disk mount (the relocated `.claude/worktrees/` tree, #681),
+# env-overridable. Same default + env var as `vm_disk_guard.data_disk_path()`
+# so the guard cron and this every-tick watcher watch the SAME mount.
+DEFAULT_DATA_DISK_PATH = "/mnt/eps-data"
+
+
+def data_disk_path() -> str:
+    """The watched data-disk mount, env-overridable (``EPS_VM_DATA_DISK_PATH``).
+
+    Defaults to :data:`DEFAULT_DATA_DISK_PATH` (``/mnt/eps-data``); a blank /
+    whitespace env value falls back to the default. Mirrors
+    ``vm_disk_guard.data_disk_path`` so both disk watchers resolve the same
+    mount."""
+    raw = os.environ.get("EPS_VM_DATA_DISK_PATH", "").strip()
+    return raw or DEFAULT_DATA_DISK_PATH
+
+
+def _data_disk_used_pct(dd_path: str) -> float | None:
+    """Percent USED on the data-disk mount via ``statvfs`` (``None`` + a loud
+    warning on failure — never crash the watcher over the disk check itself).
+
+    Percent-of-total is the SIZE-INVARIANT basis (Must-Fix #2): a future
+    resize cannot push the fire point past the wedge the way the boot disk's
+    absolute byte floors would."""
+    try:
+        usage = shutil.disk_usage(dd_path)
+    except OSError as e:
+        print(f"  vm-disk-data: disk_usage({dd_path}) failed: {e}", file=sys.stderr)
+        return None
+    if usage.total <= 0:
+        return None
+    return 100.0 * (usage.total - usage.free) / usage.total
+
 
 def _env_pct(name: str, default_pct: float) -> float:
     """Percent-denominated env knob -> float in (0, 100]. A garbled /
@@ -1739,6 +1772,168 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
     )
     if not dry_run:
         _save_subfloor_state(free)
+    return True
+
+
+def _data_disk_state_path() -> Path:
+    """Singleton dedup state for the DATA-disk pass (last-alerted used_pct +
+    the alert latch), under AUTONOMOUS_REGISTRY_DIR. Distinct from the boot
+    disk's ``vm-disk-subfloor.json`` so the two episodes never collide."""
+    return AUTONOMOUS_REGISTRY_DIR / "vm-disk-data.json"
+
+
+def _load_data_disk_state() -> dict:
+    path = _data_disk_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_data_disk_state(state: dict) -> None:
+    """Atomic temp+rename write of the data-disk dedup state (fail-soft)."""
+    dest = _data_disk_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  vm-disk-data: state save failed: {exc}", file=sys.stderr)
+
+
+def _clear_data_disk_state() -> None:
+    _data_disk_state_path().unlink(missing_ok=True)
+
+
+def _data_disk_top_caches(dd_path: str) -> list[tuple[str, int]]:
+    """Attribution for the data-disk escalation: PRIMARY per-PROJECT usage via
+    ``repquota -P`` (one cheap call, project id == issue number), falling back
+    to the ``du``-based glob attribution when ``repquota`` is unavailable / the
+    disk has no prjquota / parsing fails. Fail-soft — any error yields an empty
+    list (no attribution), never a crash."""
+    try:
+        rows = _top_issue_caches_by_project_quota(dd_path)
+    except (subprocess.SubprocessError, OSError):
+        rows = None
+    if rows is not None:
+        return rows
+    try:
+        return _top_issue_cache_paths()
+    except (subprocess.SubprocessError, OSError):
+        return []
+
+
+def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
+    """Watch the dedicated data disk (``/mnt/eps-data``, #681) — ESCALATE-ONLY.
+
+    A SECOND disk-watch pass mirroring :func:`vm_disk_pass`'s shape but bound to
+    the data disk and driving the PERCENT decision helpers
+    (:func:`decide_vm_disk_pct` / :func:`decide_subfloor_pct`) so the fire point
+    is SIZE-INVARIANT (Must-Fix #2 — no mirrored byte floors). It is the
+    every-tick analogue of ``vm_disk_guard.run_guard(disk_path=...,
+    reclaim_tiers=False)``: the ``/``-rooted reclaim arms (``uv cache prune``,
+    the stale-log sweep) NEVER run keyed off the data disk — this pass only
+    ESCALATES (warn-only sidecar rows + a once-per-episode alert log).
+
+    ``is_dir()``-guarded on the mount so it is a CLEAN no-op before / without
+    the #681 cutover (a missing data disk before the cutover, or a failed
+    mount, writes NO sidecar row and touches no state). ``used_pct`` is
+    injectable for tests; production derives it from ``statvfs`` of the mount.
+
+    Returns True when a sub-floor row was written this tick (mirrors
+    :func:`subfloor_sentinel_pass`'s return contract). Fail-soft throughout."""
+    dd_path = data_disk_path()
+    if not Path(dd_path).is_dir():
+        return False  # data disk absent — clean no-op pre-cutover
+    pct = used_pct if used_pct is not None else _data_disk_used_pct(dd_path)
+    if pct is None:
+        return False
+
+    state = _load_data_disk_state()
+    last_used_pct = state.get("last_used_pct")
+    last_used_pct = last_used_pct if isinstance(last_used_pct, int | float) else None
+    alerted = bool(state.get("alerted", False))
+
+    # ── Alert/critical arm (decide_vm_disk_pct) ──────────────────────────────
+    level, do_alert = decide_vm_disk_pct(pct, alerted=alerted)
+    if level == "ok":
+        # Recovered below the alert band — clear the episode so the next dip
+        # alerts afresh (sub-floor episode is cleared by its own arm below).
+        if alerted and not dry_run:
+            new_state = dict(state)
+            new_state.pop("alerted", None)
+            _save_data_disk_state(new_state)
+        alerted = False
+    else:
+        print(
+            f"vm-disk-data: {level.upper()} — {pct:.1f}% used on {dd_path} "
+            f"(alert >= {_env_pct('EPM_VM_DATA_DISK_ALERT_PCT', DATA_DISK_ALERT_PCT):.0f}%, "
+            f"critical >= {_env_pct('EPM_VM_DATA_DISK_RECLAIM_PCT', DATA_DISK_RECLAIM_PCT):.0f}%); "
+            "ESCALATE-ONLY — recovery is resize / raise-cap, never delete active data",
+            file=sys.stderr,
+        )
+        if do_alert:
+            top = _data_disk_top_caches(dd_path)
+            _append_disk_guard_sidecar(
+                {
+                    "kind": f"vm-disk-data-{'critical' if level == 'critical' else 'low'}",
+                    "disk": "data",
+                    "data_disk_path": dd_path,
+                    "level": level,
+                    "used_pct": round(pct, 1),
+                    "top_cache_paths": [{"path": p, "bytes": b} for p, b in top],
+                    "recovery": (
+                        "resize / raise setquota -P cap on a TERMINAL issue — "
+                        "never delete active data"
+                    ),
+                },
+                dry_run,
+            )
+            if not dry_run:
+                state = _load_data_disk_state()  # re-read in case the ok-branch wrote
+                state["alerted"] = True
+                _save_data_disk_state(state)
+
+    # ── Sub-floor sentinel arm (decide_subfloor_pct) ─────────────────────────
+    floor = _env_pct("EPM_VM_DATA_DISK_SUBFLOOR_PCT", DATA_DISK_SUBFLOOR_PCT)
+    if pct < floor:
+        # Below the sub-floor band → episode over; clear the last_used_pct dedup
+        # cursor (keep any alert latch handled above by re-reading).
+        if last_used_pct is not None and not dry_run:
+            cur = _load_data_disk_state()
+            cur.pop("last_used_pct", None)
+            _save_data_disk_state(cur)
+        return False
+    if not decide_subfloor_pct(pct, last_used_pct):
+        return False  # already alerted at ~this footprint; bound churn
+
+    top = _data_disk_top_caches(dd_path)
+    print(
+        f"vm-disk-data SUB-FLOOR: {pct:.1f}% used on {dd_path} "
+        f"(>= {floor:.0f}%) — re-check sooner; "
+        f"top caches: {', '.join(f'{p} [{b / 1e9:.1f}G]' for p, b in top) or 'none'}",
+        file=sys.stderr,
+    )
+    _append_disk_guard_sidecar(
+        {
+            "kind": "vm-disk-data-subfloor",
+            "band": "sub-floor",
+            "disk": "data",
+            "data_disk_path": dd_path,
+            "used_pct": round(pct, 1),
+            "top_cache_paths": [{"path": p, "bytes": b} for p, b in top],
+            "recheck_sooner": True,
+        },
+        dry_run,
+    )
+    if not dry_run:
+        cur = _load_data_disk_state()
+        cur["last_used_pct"] = pct
+        _save_data_disk_state(cur)
     return True
 
 
@@ -12202,6 +12397,13 @@ def main(argv: list[str] | None = None) -> int:
     # subprocess in this very watcher (and every VM session) flaky — alert
     # and reclaim before reasoning about sessions/pods (task #552).
     vm_disk_pass(args.dry_run)
+
+    # Data-disk headroom (#681): a SECOND, ESCALATE-ONLY pass on the dedicated
+    # /mnt/eps-data mount (the relocated .claude/worktrees/ tree), driving the
+    # PERCENT decision helpers so the fire point is size-invariant. Mirrors the
+    # vm_disk_guard.main() is_dir()-guarded second pass — a clean no-op before /
+    # without the cutover, so the call is live the instant the mount appears.
+    data_disk_pass(args.dry_run)
 
     # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is
     # a bash daemon (run_program_orchestrator.sh in tmux eps-program), NOT a Happy

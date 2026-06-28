@@ -102,6 +102,13 @@ ISSUE_DISK_CAP_GB="${EPS_ISSUE_DISK_CAP_GB:-128}"
 case "$ISSUE_DISK_CAP_GB" in
   *[!0-9]*) echo "new_worktree: EPS_ISSUE_DISK_CAP_GB must be a positive integer, got: $ISSUE_DISK_CAP_GB" >&2; exit 2 ;;
 esac
+# A non-positive cap (0 / 00 / ...) would set cap_kb=0, SILENTLY DISABLING the
+# per-task hard cap — match worktree_quota.issue_disk_cap_gb() and fall back to
+# the 128 GB default rather than ship an unbounded quota (#681 round-2 fix).
+if [ "$((10#$ISSUE_DISK_CAP_GB))" -le 0 ]; then
+  echo "new_worktree: EPS_ISSUE_DISK_CAP_GB non-positive ($ISSUE_DISK_CAP_GB); falling back to 128 GB default" >&2
+  ISSUE_DISK_CAP_GB=128
+fi
 _assign_project_quota() {
   # $1 = issue number (== project id). No-op when no issue / opt-in off.
   local projid="$1" cap_kb
