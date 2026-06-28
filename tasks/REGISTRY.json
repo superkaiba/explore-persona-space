@@ -4389,8 +4389,8 @@
     "694": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/694",
-      "status": "approved",
+      "path": "tasks/plan_pending/694",
+      "status": "plan_pending",
       "title": "workflow: add results-driven literature-positioning step (post-results related-work sweep)"
     },
     "695": {
