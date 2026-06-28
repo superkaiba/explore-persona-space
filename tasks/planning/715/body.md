@@ -105,9 +105,13 @@ post-date training cutoffs):
 6. **Qin & Springenberg 2025, iw-SFT.** arXiv:2507.12856. Read only the loss
    definition (importance-weighted SFT with a reference model). Optional control:
    tests whether any effect is DFT-specific or generic to down-weighting low-π.
-7. **The user's own pruning work (Ignore-topK pruning of `Δθ`).** Use the user's
-   own code/implementation — do NOT reimplement from a guessed citation. If the
-   code is not in the working directory, ASK for it before running P4.
+7. **Ignore-topK pruning (for P4) — fully specified below.** This is the
+   "Ignore-topk" delta-pruning method of *How new data permeates LLM knowledge
+   and how to dilute it* (arXiv:2504.09522, Appendix A.6, Eq. 3; project page
+   sunchipsster1.github.io/projects/outlandish). Implement directly from
+   **§ P4 implementation reference (Ignore-topK pruning)** at the bottom of this
+   body — no external code is required, and there is no human to ask in an
+   autonomous session, so do NOT block P4 on a code handoff.
 
 ## Experimental design
 
@@ -212,9 +216,10 @@ Per checkpoint/condition/seed, log:
    For EM-relevant modules (MLP down-projections + a global view): (a)
    sparsity / participation ratio of `Δθ`; (b) **SVD spectrum + effective rank**
    of per-matrix `ΔW` (top-singular-value share); (c) projection of `ΔW` onto the
-   rank-1 EM direction from #5/Soligo. Then apply the **user's Ignore-topK
-   pruning** to `Δθ` and plot EM-rate vs fraction of `Δθ` pruned, SFT vs DFT —
-   prediction: DFT's EM disappears at a smaller pruned fraction.
+   rank-1 EM direction from #5/Soligo. Then apply **Ignore-topK pruning** (full
+   spec in **§ P4 implementation reference**) to `Δθ` and plot EM-rate vs fraction
+   of `Δθ` pruned, SFT vs DFT — prediction: DFT's EM disappears at a smaller
+   pruned fraction.
 
 ## Deliverables
 
@@ -269,3 +274,118 @@ Originated from a user chat request (2026-06-28): "Run this in the background
 with happy coder" + the full coding-agent task spec reproduced above verbatim
 (sections 0–5). User note: "I know it's a bit unrelated to the rest of the
 project but please run it anyway."
+
+A follow-up chat request (2026-06-28, same session) resolved the P4 pruning
+method: "look at the ignore top k pruning paper and figure out how to implement
+it from there." The resolved spec is **§ P4 implementation reference** below
+(extracted from arXiv:2504.09522 Appendix A.6).
+
+## P4 implementation reference (Ignore-topK pruning)
+
+**Source.** "Ignore-topk" delta-pruning from *How new data permeates LLM
+knowledge and how to dilute it* (arXiv:2504.09522, Appendix A.6, Eq. 3; project
+page sunchipsster1.github.io/projects/outlandish). It is explicitly described
+there as the **"trimming" step of TIES-MERGE (Yadav et al. 2023) but inverted** —
+remove the top-K largest updates instead of keeping them.
+
+**The method (verbatim Eq. 3 + A.6 text).** For each parameter group `i`, the
+post-hoc pruned weights are
+
+```
+ω_i  =  ω_base  +  Δω_i ⊙ S_mem_i
+```
+
+where `Δω_i = ω_ft_i − ω_base_i` is the weight update (the task vector / delta
+for that group), and `S_mem_i` is a **binary mask with zero elements
+corresponding to the top-k LARGEST values of `Δω_i`** (Appendix A.6: *"a binary
+mask with zero elements corresponding to top 'k' largest values of Δω"*). So the
+top-K% largest delta entries are **zeroed (the weight reverts to base)** and all
+other delta entries are **kept unchanged**. **No rescaling** is applied (unlike
+DARE — this is the deliberate point: the paper found rescaling unnecessary, and
+DARE's rescale blows up at high prune rates).
+
+This is "Ignore-**topk**" precisely because it removes the *largest* updates, the
+opposite of ordinary magnitude pruning (which keeps the largest, zeroes the
+small). The paper found that ignoring the top updates kills the spurious
+"priming" generalization while leaving the in-distribution memorization intact —
+directly analogous to our P4 hypothesis (ignore-topK should remove OOD EM while
+sparing in-distribution narrow-task acquisition).
+
+**Faithful mapping to P4 (use these exact choices):**
+
+- `Δθ = θ_ft − θ_base` is computed per weight tensor over the **full fine-tune**
+  (the paper's `τ` window = the whole narrow-misalignment SFT/DFT run; θ_base is
+  the pre-fine-tune model, θ_ft the post-fine-tune checkpoint at a matched
+  narrow-task operating point — match the SFT and DFT checkpoints by narrow-task
+  acquisition, NOT by step count, exactly as the rest of the experiment).
+- **Selection criterion: top-K by absolute magnitude `|Δθ|`.** The paper says
+  "largest values"; its TIES-trimming lineage and intent (remove the
+  highest-impact updates) make magnitude the faithful reading. Implement the mask
+  as zeroing the entries with the largest `|Δθ|`. (This is the one wording
+  ambiguity in A.6 — note it in the clean-result; a signed-value variant is a
+  cheap robustness check if results are borderline.)
+- **Granularity — run BOTH, the experiment wants both:**
+  1. **Per-tensor (the paper's "parameter group i"): default / headline.** Take
+     the top-K% within each weight matrix's own flattened `Δθ` vector. This
+     matches Eq. 3 (`S_mem_i` is per group `i`).
+  2. **Global view.** Top-K% over the concatenation of all targeted tensors'
+     `|Δθ|` at once (the P4 spec's "plus a global view").
+- **Module scope — run BOTH:** (i) **MLP down-projections only** (`*.mlp.down_proj.weight`)
+  — the EM-relevant modules per P4 / Soligo; (ii) **all linear weights** (the
+  global ablation). Report the EM-vs-K curve for each scope.
+- **K sweep.** The paper used K ∈ {4%, 8%} (and explored 15% slices). For the P4
+  EM-vs-pruned-fraction CURVE, sweep a denser grid, e.g.
+  `K ∈ {0, 0.5, 1, 2, 4, 8, 16, 32}%` (0% = the unpruned fine-tune, the EM
+  ceiling), so the curve resolves where each objective's EM collapses.
+- **Reconstruct → evaluate → plot.** For each (objective ∈ {SFT, DFT}, scope,
+  granularity, K): build the pruned model `θ_base + Δθ ⊙ mask`, run the OOD EM
+  eval (same judge/protocol as P1), and record EM-rate (+ coherence guardrail).
+  Headline P4 figure: **EM-rate (y) vs fraction of `Δθ` pruned (x), one curve per
+  objective.** Prediction P4: the DFT curve drops to base-level EM at a SMALLER
+  pruned fraction than SFT.
+
+**Reference implementation (per-tensor, magnitude; ~15 lines):**
+
+```python
+import torch
+
+@torch.no_grad()
+def ignore_topk_mask(delta: torch.Tensor, k_frac: float) -> torch.Tensor:
+    """Binary mask that ZEROES the top-k_frac fraction of |delta| (per the paper's
+    S_mem). Returns mask with 0 on the largest-|delta| entries, 1 elsewhere."""
+    if k_frac <= 0:
+        return torch.ones_like(delta)
+    flat = delta.abs().flatten()
+    n_zero = int(round(k_frac * flat.numel()))
+    if n_zero <= 0:
+        return torch.ones_like(delta)
+    # indices of the n_zero largest-|delta| entries
+    topk_idx = torch.topk(flat, n_zero, largest=True).indices
+    mask = torch.ones_like(flat)
+    mask[topk_idx] = 0.0
+    return mask.view_as(delta)
+
+@torch.no_grad()
+def apply_ignore_topk(ft_sd, base_sd, k_frac, target_keys, global_scope=False):
+    """Return a pruned state_dict: base + (ft-base) ⊙ mask, top-k removed, NO rescale."""
+    pruned = {k: v.clone() for k, v in ft_sd.items()}
+    if global_scope:
+        deltas = {k: (ft_sd[k] - base_sd[k]) for k in target_keys}
+        allabs = torch.cat([d.abs().flatten() for d in deltas.values()])
+        n_zero = int(round(k_frac * allabs.numel()))
+        thresh = torch.topk(allabs, n_zero, largest=True).values.min() if n_zero > 0 else float("inf")
+        for k, d in deltas.items():
+            mask = (d.abs() < thresh).to(d.dtype)            # 0 on top-k globally
+            pruned[k] = base_sd[k] + d * mask
+    else:
+        for k in target_keys:                                 # per-tensor (paper default)
+            d = ft_sd[k] - base_sd[k]
+            pruned[k] = base_sd[k] + d * ignore_topk_mask(d, k_frac)
+    return pruned
+```
+
+(Compute in fp32 for the delta + mask; cast back to the model dtype on load.
+`target_keys` = the down-proj keys for the EM-module curve, or all `*.weight`
+linear keys for the global ablation. The global-scope tie threshold uses
+`topk(...).values.min()`; break exact ties arbitrarily — at these K values ties
+are negligible.)
