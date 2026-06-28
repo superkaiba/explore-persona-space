@@ -3758,7 +3758,8 @@ When this skill is re-invoked in `running`:
    tests in `tests/test_failure_classifier.py` cover the behaviour.
 
    **Failure-lesson capture (fires when a crash-fix round RESOLVES the
-   failure).** A lightweight in-flight hook, not a new pipeline step;
+   failure OR CONFIRMS the true root cause).** A lightweight in-flight
+   hook, not a new pipeline step;
    auto-continue, no gate. Both crash-fix shapes — the `code`-row
    `experiment-implementer` round and the `infra`-row experimenter
    respawn whose relaunch applied a fix — are REQUIRED (by
@@ -3779,11 +3780,33 @@ When this skill is re-invoked in `running`:
    generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
    owning_agent: experiment-implementer|experimenter
    gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+   root_cause_confirmed: yes|no  # yes if THIS round identified the TRUE root cause (even if a NEW distinct failure followed or the pod was abandoned in recovery)
+   supersedes:           # OPTIONAL: prior-lesson slug or marker-ts this lesson corrects; omit if none
    <!-- /epm:failure-lesson -->
    ```
 
-   On receiving a crash-fix report carrying the block, the orchestrator
-   takes three actions:
+   **Capture eligibility (added #712).** Decide whether a received block
+   is eligible for capture by calling the pure predicate
+   `task_workflow.failure_lesson_capture_eligible(block_fields,
+   subsequent_distinct_failure=<bool>)`. It returns True when the block
+   RESOLVED the failure (the original trigger, `resolved: yes`) OR the
+   block carries `root_cause_confirmed: yes` (case ii — true REGARDLESS of
+   whether a subsequent distinct failure followed or the pod was abandoned
+   in recovery). **Root-cause-confirmed firing.** Case (ii) closes the
+   #664 gap: at #664 event L204 a crash-fix round CONFIRMED that pod-664
+   reproducibly deadlocked the first `llm.generate()` regardless of batch
+   size (a pod-hardware cause, NOT a code bug — the OLD pod ran the same
+   code fine), but the round ended in a recovery pivot that terminated the
+   pod, so the resolve-only trigger never fired and the failure-lesson
+   hook captured NOTHING for the confirmed cause. WHO posts it: the agent
+   (experiment-implementer / experimenter) that confirmed the cause emits
+   the block in its report — case (ii) is signalled by
+   `root_cause_confirmed: yes`. The orchestrator posts it verbatim on
+   receipt, exactly as for the resolve case; it does NOT wait for a
+   successful relaunch.
+
+   On receiving a crash-fix report carrying a capture-eligible block, the
+   orchestrator takes three actions:
 
    1. **Post the marker.** Post the block verbatim as
       `epm:failure-lesson v1` on the task (`task.py post-marker <N>
@@ -3803,6 +3826,35 @@ When this skill is re-invoked in `running`:
       overlapping failure classes hours apart with no persistence
       channel). Lessons are written for the NEXT agent — 1-3 sentences,
       the trap + the fix, no transcript dumps.
+
+      **`supersedes:` handling + apply (added #712).** Apply the
+      capture-eligible block by calling the pure composer
+      `task_workflow.apply_failure_lesson(block, durable_texts,
+      new_lesson_ref)`, where `durable_texts` is `{path: current_text}`
+      for the candidate durable files (the `owning_agent`
+      `feedback_<slug>.md` body keyed at `new_lesson_ref["memory_path"]` +
+      any matched `.claude/rules/gotchas.md` bullet) and `new_lesson_ref`
+      is `{"slug": "<new-lesson-slug>", "task_id": "<N>", "memory_path":
+      "<feedback path>", "lesson": "<lesson body>"}`. The composer returns
+      the FINAL `{path: text}` map the orchestrator then writes
+      (explicit-path commit + push, as today). Its behavior:
+      - If the block carries `supersedes: <prior-slug-or-marker-ts>`, the
+        composer calls `supersedes_action()` to locate every durable entry
+        whose text matches `<prior-ref>` and PREPENDS a concrete
+        `[SUPERSEDED by <new-lesson-slug> — see #<N>] ` marker (the real
+        slug + task id, NEVER a `<pending>` placeholder), then APPENDS the
+        new (corrected) lesson body to the `owning_agent` memory file — so
+        the corrected lesson LANDS ALONGSIDE the annotated prior, never
+        replacing it. Transitive chains are kept (A `[SUPERSEDED by B]`, B
+        `[SUPERSEDED by C]`, C live); each correction annotates only the
+        entry its `supersedes` directly names.
+      - If `<prior-ref>` resolves to NOTHING, the composer leaves all prior
+        texts byte-unchanged, appends the new lesson normally, and the
+        orchestrator logs `supersedes_unresolved: <prior-ref>` in the
+        marker note — a dangling `supersedes` is a no-op annotation, NEVER
+        a hard failure (a lesson always lands).
+      - If `supersedes` is ABSENT, the composer is a pure append (the
+        produced text is byte-identical to the pre-#712 append-only path).
    3. **On `gotcha_candidate: yes` — route as a workflow-fix
       candidate.** Treat the lesson as a prose workflow-fix candidate
       targeting `.claude/rules/gotchas.md` and route it through the

@@ -1042,6 +1042,8 @@ lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
 generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
 owning_agent: experiment-implementer|experimenter
 gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+root_cause_confirmed: yes|no  # yes if THIS round identified the TRUE root cause (even if a NEW distinct failure followed or the pod was abandoned in recovery)
+supersedes:           # OPTIONAL: prior-lesson slug or marker-ts this lesson corrects; omit if none
 <!-- /epm:failure-lesson -->
 ```
 
@@ -1052,6 +1054,16 @@ sentences, the trap + the fix, no transcript dumps. A clean first
 launch with no failure resolved does NOT emit this block, and the
 block does not change your terminal contract (post `epm:run-launched`,
 emit the summary, EXIT — the orchestrator owns posting the marker).
+
+**Root-cause-confirmed firing (added #712).** Emit this block ALSO when
+this spawn IDENTIFIED the true root cause of a posted `epm:failure` even
+if a NEW, DISTINCT failure followed or the run was abandoned on the
+current pod during recovery (set `root_cause_confirmed: yes` — the
+orchestrator's `failure_lesson_capture_eligible()` predicate captures it
+regardless of a following failure). Set `supersedes:
+<prior-lesson-slug-or-ts>` when the confirmed cause corrects an earlier
+captured failure-lesson; leave it blank otherwise. Your terminal
+contract is unchanged (the orchestrator owns posting the marker).
 
 ## Tech Stack Reference
 

@@ -1556,6 +1556,46 @@ def check_marker_registry(
                     f"prose-only mention that is not a real posted kind — add it "
                     f"to MARKER_REGISTRY_ALLOWLIST with a reason."
                 )
+
+    errors.extend(_check_failure_lesson_field_contract(workflow))
+    return errors
+
+
+def _check_failure_lesson_field_contract(workflow: WorkflowYaml) -> list[str]:
+    """#712 §4f: kind-scoped field-contract pin for ``epm:failure-lesson``.
+
+    The ``root_cause_confirmed`` / ``supersedes`` fields are emitter-produced +
+    orchestrator-branched semantic fields living in the marker's free-text
+    ``fields:`` description (no Pydantic attribute) — so a future edit that
+    silently drops or renames either would not be caught by the schema model.
+    This narrow, additive assertion makes the field-add no longer free-floating
+    schema drift: the next field-add on this kind inherits the check. Kind-scoped
+    (only ``epm:failure-lesson``) and runs whenever that marker is declared in
+    the supplied workflow (so the fixture FAIL leg + the real PASS leg both
+    exercise it). Extracted from :func:`check_marker_registry` to keep that
+    function under the C901 complexity cap.
+    """
+    errors: list[str] = []
+    for marker in workflow.markers:
+        if marker.kind != "epm:failure-lesson":
+            continue
+        fields_text = marker.fields or ""
+        for token in ("root_cause_confirmed", "supersedes"):
+            if token not in fields_text:
+                errors.append(
+                    f"workflow.yaml § markers: epm:failure-lesson `fields:` is "
+                    f"missing the required field token '{token}' (#712 §4f). The "
+                    f"root_cause_confirmed/supersedes field contract must stay "
+                    f"declared in the marker registry — re-add the token to the "
+                    f"`fields:` string."
+                )
+        if "root_cause_confirmed=yes" not in (marker.when or ""):
+            errors.append(
+                "workflow.yaml § markers: epm:failure-lesson `when:` is missing "
+                "the required 'root_cause_confirmed=yes' firing condition (#712 "
+                "§4f). The root-cause-confirmed firing trigger must stay declared "
+                "in the marker registry — re-add it to the `when:` string."
+            )
     return errors
 
 

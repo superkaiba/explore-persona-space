@@ -812,6 +812,145 @@ def is_workflow_fix_session(task_id: int) -> bool:
     return "workflow_fix_target:" in body
 
 
+# ---------------------------------------------------------------------------
+# Failure-lesson capture + supersedes retraction (#712).
+#
+# Three PURE, side-effect-free helpers the SKILL.md orchestrator prose calls
+# when it receives an ``epm:failure-lesson`` block (the consumer is prose, not
+# a script — these are the FIRST code that touches the lesson data, which is
+# precisely what makes the body acceptance criteria byte-testable). No I/O, no
+# writes: the orchestrator owns the marker post + the explicit-path commit of
+# the returned ``{path: text}`` map. Siblings of the ``wf_fix_*`` family above.
+# See `.claude/skills/issue/SKILL.md` § "Failure-lesson capture" and
+# `.claude/rules/workflow-fix-on-bug.md`.
+# ---------------------------------------------------------------------------
+
+
+def failure_lesson_capture_eligible(
+    block_fields: dict[str, str],
+    *,
+    subsequent_distinct_failure: bool,
+) -> bool:
+    """Decide whether a received ``epm:failure-lesson`` block is eligible for capture.
+
+    Eligible when the block RESOLVED the failure (the original trigger,
+    signalled by ``block_fields["resolved"] == "yes"``) OR the block carries
+    ``root_cause_confirmed: yes`` — the latter is True INDEPENDENT of
+    ``subsequent_distinct_failure`` (case ii, #712: the cause was confirmed even
+    though a distinct failure followed or the pod was abandoned in recovery — the
+    #664 L204 gap, where a confirmed pod-hardware cause produced NO failure-lesson
+    because the resolve-only trigger never fired). ``subsequent_distinct_failure``
+    is accepted to make that "captured-regardless-of-a-following-failure" guarantee
+    explicit and testable, and is deliberately NOT consulted when
+    ``root_cause_confirmed=yes``.
+
+    Pure: no I/O. The orchestrator owns the actual marker post + durable write.
+    """
+    if block_fields.get("resolved", "").strip().lower() == "yes":
+        return True
+    return block_fields.get("root_cause_confirmed", "").strip().lower() == "yes"
+
+
+def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
+    """Render the new (correcting) failure-lesson body as a durable memory entry.
+
+    The append-only format is frozen by the golden fixture
+    ``tests/fixtures/failure_lesson_append_only_pre712.txt`` (#712 §6): an H2
+    slug heading, the lesson body, and a ``_Source: #<task_id> (failure-lesson)._``
+    attribution line, each separated by a blank line and terminated with a single
+    trailing newline. A deliberate format change updates the fixture in the same
+    commit (the fixture IS the contract).
+    """
+    slug = new_lesson_ref.get("slug", "")
+    task_id = new_lesson_ref.get("task_id", "")
+    lesson = new_lesson_ref.get("lesson", "")
+    return f"## {slug}\n\n{lesson}\n\n_Source: #{task_id} (failure-lesson)._\n"
+
+
+def supersedes_action(
+    prior_ref: str,
+    durable_texts: dict[str, str],
+    new_lesson_ref: dict[str, str],
+) -> dict[str, str]:
+    """Locate the durable failure-lesson entries a ``supersedes`` ref points at.
+
+    ``prior_ref`` is a lesson slug (e.g. ``vllm_first_generate_is_a_code_bug``) or
+    a marker timestamp (e.g. ``2026-06-28T01:26:58Z``). ``durable_texts`` maps a
+    durable-file path -> its current text (agent-memory ``feedback_*.md`` bodies +
+    ``gotchas.md`` bullets). ``new_lesson_ref`` carries the REAL superseding slug
+    + task id (``{"slug": ..., "task_id": ...}``).
+
+    Returns ``{path: annotated_text}`` for EVERY file whose current text CONTAINS
+    ``prior_ref`` (slug substring OR marker-ts substring), with a CONCRETE
+    ``[SUPERSEDED by <slug> — see #<task_id>] `` marker PREPENDED to that file's
+    text (NEVER a ``<pending>`` placeholder; the prior content is preserved, not
+    replaced). Returns ``{}`` when nothing matches — a dangling ref the caller
+    logs as ``supersedes_unresolved`` and treats as a no-op annotation, never a
+    dropped lesson. A ref matching MULTIPLE entries annotates ALL of them (the
+    transitive chain is kept, #712 §7).
+
+    Pure: no I/O, no writes. This helper DECIDES + ANNOTATES the prior subset;
+    the composer (:func:`apply_failure_lesson`) assembles the FINAL durable map
+    including the new lesson.
+    """
+    if not prior_ref:
+        return {}
+    slug = new_lesson_ref.get("slug", "")
+    task_id = new_lesson_ref.get("task_id", "")
+    marker = f"[SUPERSEDED by {slug} — see #{task_id}] "
+    annotated: dict[str, str] = {}
+    for path, text in durable_texts.items():
+        if prior_ref in text:
+            annotated[path] = marker + text
+    return annotated
+
+
+def apply_failure_lesson(
+    block: dict[str, str],
+    durable_texts: dict[str, str],
+    new_lesson_ref: dict[str, str],
+) -> dict[str, str]:
+    """Compose the FINAL durable ``{path: text}`` map for a captured failure-lesson.
+
+    Orchestration (pure — no I/O; the orchestrator writes the returned map via
+    its existing explicit-path commit + push):
+
+      1. If ``block["supersedes"]`` is set, call
+         :func:`supersedes_action` to locate + concretely annotate the matched
+         prior subset, then merge those annotations over a COPY of ``durable_texts``
+         (a dangling ref merges nothing — every prior text stays byte-unchanged).
+      2. APPEND the new (corrected) lesson's formatted body to the owning-agent
+         memory file's text (key ``new_lesson_ref["memory_path"]`` — the file the
+         action-2 path already writes), creating/extending that entry ALONGSIDE
+         any prior content, never replacing it.
+      3. Return the final ``{path: text}`` map.
+
+    With ``supersedes`` ABSENT, step 1 is skipped and — over a clean (empty) owning
+    -agent memory text — the produced text is BYTE-IDENTICAL to the pre-#712
+    append-only result (pinned by the golden fixture, #712 §6). The new lesson
+    ALWAYS lands — matched, dangling, or absent.
+    """
+    final = dict(durable_texts)
+
+    prior_ref = (block.get("supersedes") or "").strip()
+    if prior_ref:
+        for path, annotated_text in supersedes_action(
+            prior_ref, durable_texts, new_lesson_ref
+        ).items():
+            final[path] = annotated_text
+
+    memory_path = new_lesson_ref.get("memory_path", "")
+    if memory_path:
+        entry = _format_failure_lesson_entry(new_lesson_ref)
+        prior_text = final.get(memory_path, "")
+        if prior_text.strip():
+            final[memory_path] = prior_text.rstrip("\n") + "\n\n" + entry
+        else:
+            final[memory_path] = entry
+
+    return final
+
+
 def extract_stub_abstract(body: str) -> str:
     """Return the abstract from a paper-stub body (best-effort, never raises).
 
