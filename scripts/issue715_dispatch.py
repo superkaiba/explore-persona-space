@@ -680,7 +680,15 @@ def phase_phase4(args) -> dict:
 
 
 def _dstar_matched_fullft_ckpt(condition: str, dstar_x: float | None) -> Path | None:
-    """The full-FT checkpoint whose narrow_rate is nearest D* (matched-acquisition)."""
+    """The full-FT checkpoint whose narrow_rate is nearest D* (matched-acquisition).
+
+    Resolution order (concern p4-dstar-fullft-ckpt-unreachable): the local
+    ``models/issue715_<condition>_seed42/checkpoint-<step>`` dir if it survives
+    (the same pod that ran phase4train), ELSE re-download the D*-matched
+    checkpoint that phase4train uploaded to ``<HF_MODEL_REPO>/issue715/<arm>_dstar``
+    into a local cache so a FRESH P4 pod (or one past Step-8 cleanup) can read it.
+    Returns None only when D* is unknown or NEITHER source exists.
+    """
     if dstar_x is None:
         return None
     best, best_gap = None, 1e9
@@ -691,11 +699,50 @@ def _dstar_matched_fullft_ckpt(condition: str, dstar_x: float | None) -> Path | 
         gap = abs(rec["narrow_rate"] - dstar_x)
         if gap < best_gap:
             best_gap, best = gap, rec
-    if best is None:
+    if best is not None:
+        local = _merged_ckpt_dir(
+            PROJECT_ROOT / "models" / f"issue715_{condition}_seed42", best["checkpoint_step"]
+        )
+        if local.exists():
+            return local
+    # Local checkpoint absent (fresh pod / post-cleanup): re-download the
+    # D*-matched full-FT checkpoint phase4train uploaded to HF.
+    return _download_dstar_fullft_ckpt(condition)
+
+
+def _download_dstar_fullft_ckpt(condition: str) -> Path | None:
+    """Re-download ``<HF_MODEL_REPO>/issue715/<condition>_dstar`` to a local cache.
+
+    phase4train uploads each arm's D*-matched full-FT checkpoint under
+    ``issue715/<condition>_dstar``; this restores it onto a fresh P4 pod. Returns
+    the local dir if the subfolder materialized (a non-empty download), else None.
+    """
+    from huggingface_hub import snapshot_download
+
+    subfolder = f"issue715/{condition}_dstar"
+    local_root = PROJECT_ROOT / "models" / "_p4_dstar_dl" / condition
+    local_root.mkdir(parents=True, exist_ok=True)
+    try:
+        snapshot_download(
+            repo_id=C.HF_MODEL_REPO,
+            repo_type="model",
+            allow_patterns=[f"{subfolder}/*"],
+            local_dir=str(local_root),
+        )
+    except Exception as e:  # fail-loud: a genuine HF error must surface, not be swallowed
+        raise RuntimeError(
+            f"P4 could not re-download D*-matched full-FT checkpoint {subfolder} "
+            f"from {C.HF_MODEL_REPO}: {e}"
+        ) from e
+    ckpt_dir = local_root / subfolder
+    has_weights = ckpt_dir.is_dir() and any(ckpt_dir.glob("*.safetensors"))
+    if not has_weights:
+        logger.warning(
+            "[phase4] %s: no safetensors under %s after snapshot_download", condition, ckpt_dir
+        )
         return None
-    return _merged_ckpt_dir(
-        PROJECT_ROOT / "models" / f"issue715_{condition}_seed42", best["checkpoint_step"]
-    )
+    logger.info("[phase4] %s: re-downloaded D*-matched full-FT ckpt -> %s", condition, ckpt_dir)
+    return ckpt_dir
 
 
 def _upload_raw_completions() -> None:
@@ -793,7 +840,17 @@ def main() -> int:
         raise
     # Upload per-cell raw completions + analysis tensors BEFORE the sentinel /
     # [phase=done] (Upload Policy; skipped in smoke to keep it local-only).
-    if not args.smoke and args.phase in ("phase0", "phase1", "phase2", "phase3", "phase4"):
+    # phase4train is INCLUDED: its _eval_checkpoint calls write raw_*.json under
+    # em_rate/ + narrow_task/ (the full-FT D*-selection judge artifacts), which
+    # would be lost on pod teardown otherwise (concern p4train-raw-upload-skipped).
+    if not args.smoke and args.phase in (
+        "phase0",
+        "phase1",
+        "phase2",
+        "phase3",
+        "phase4train",
+        "phase4",
+    ):
         phase_log("upload")
         _upload_raw_completions()
     # Success: end-of-run sentinel + the SINGLE terminal [phase=done] line.
