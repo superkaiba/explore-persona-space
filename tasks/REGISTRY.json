@@ -4503,8 +4503,8 @@
     "719": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/719",
-      "status": "reviewing",
+      "path": "tasks/completed/719",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md \u2014 per-cell vLLM rendezvous-port EADDRINUSE trap"
     },
     "72": {
