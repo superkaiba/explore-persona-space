@@ -4482,8 +4482,8 @@
     "716": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/716",
-      "status": "approved",
+      "path": "tasks/reviewing/716",
+      "status": "reviewing",
       "title": "workflow-fix: task.py set-status nested-dir git mv on destination collision"
     },
     "72": {
