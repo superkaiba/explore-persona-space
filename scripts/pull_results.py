@@ -35,7 +35,10 @@ def list_results(project: str) -> list[dict]:
         collections = api.artifact_type(type_name="eval-results", project=project).collections()
         results = []
         for collection in collections:
-            for version in collection.versions():
+            # wandb >=0.16 renamed ArtifactCollection.versions() -> artifacts();
+            # the old name raised AttributeError, caught by the except below and
+            # silently masked as "no artifacts" (2026-06-27, #685 pull_results).
+            for version in collection.artifacts():
                 results.append(
                     {
                         "name": collection.name,
