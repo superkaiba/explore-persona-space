@@ -4453,8 +4453,8 @@
     "712": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/712",
-      "status": "approved",
+      "path": "tasks/reviewing/712",
+      "status": "reviewing",
       "title": "Fire failure-lesson capture on root-cause-confirmed + add supersedes (close #664/r13 gap)"
     },
     "713": {
