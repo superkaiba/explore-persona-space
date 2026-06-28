@@ -354,6 +354,91 @@ def _submit_and_poll_batch(
     return results
 
 
+def submit_and_poll_batch_raw(
+    requests: list[dict],
+    client: "anthropic.Anthropic",
+    poll_interval: float = 30.0,
+    max_poll_interval: float = 120.0,
+    *,
+    grace_min: int = 30,
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
+    sleep_fn: "Callable[[float], None] | None" = None,
+) -> dict[str, str]:
+    """Sanctioned RAW-TEXT batch poll — same #663-hardened shard+deadline path as
+    :func:`_submit_and_poll_batch`, but collects the verdict TEXT verbatim instead
+    of parsing it into a score dict.
+
+    The judge router's :func:`_submit_and_poll_batch` parses every result through
+    :func:`parse_judge_json` (the alignment {aligned, coherent, reasoning} shape),
+    which is wrong for callers whose verdicts have their OWN downstream parsers
+    (the #537 sycophancy/fact/em judge pools store raw text and recalibrate at
+    analysis time). This helper is the raw-text sibling so those callers route
+    through the sanctioned client instead of hand-rolling an inline
+    ``messages.batches.create`` + unbounded ``while True`` poll (the deadline-less
+    poller the workflow_lint ``--check-batch-judge-client`` gate forbids, #658/#663).
+
+    ``requests`` is ``[{"custom_id": str, "params": {...}}]`` (the Anthropic batch
+    request shape). Returns ``{custom_id: raw_text}``; a batch-errored / non-text
+    request maps to ``"__BATCH_ERROR__: <type>"`` (callers count these as parse
+    failures, never silently drop them). Sharding (``_chunk_requests``: ≤8k +
+    250 MB), the per-shard ``expires_at``-bounded poll (never an unbounded
+    ``while True``), and the 30s→1.5x→120s backoff are inherited unchanged from
+    the legacy path; ``now_fn``/``sleep_fn`` are injectable for tests.
+    """
+    now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
+    sleep_fn = sleep_fn or time.sleep
+
+    out: dict[str, str] = {}
+    chunks = _chunk_requests(requests)
+    for ci, chunk in enumerate(chunks):
+        batch = client.messages.batches.create(requests=chunk)
+        batch_id = batch.id
+        logger.info(
+            "Batch %s created (raw-text sub-batch %d/%d, %d requests)",
+            batch_id,
+            ci + 1,
+            len(chunks),
+            len(chunk),
+        )
+        deadline: _dt.datetime | None = None
+        current_interval = poll_interval
+        while True:
+            batch = client.messages.batches.retrieve(batch_id)
+            if batch.processing_status == "ended":
+                break
+            if deadline is None:
+                expires_at = getattr(batch, "expires_at", None)
+                deadline = (
+                    deadline_from_expires_at(expires_at, grace_min)
+                    if expires_at is not None
+                    else now_fn() + _dt.timedelta(hours=25)  # absent expires_at -> still bounded
+                )
+            if now_fn() > deadline:
+                final = client.messages.batches.retrieve(batch_id)
+                if final.processing_status == "ended":
+                    batch = final
+                    break
+                raise BatchDeadlineExceeded(batch_id, deadline)
+            sleep_fn(current_interval)
+            current_interval = min(current_interval * 1.5, max_poll_interval)
+
+        for result in client.messages.batches.results(batch_id):
+            if result.result.type == "succeeded":
+                text = next(
+                    (b.text for b in result.result.message.content if b.type == "text"),
+                    "",
+                )
+                out[result.custom_id] = text
+            else:
+                out[result.custom_id] = f"__BATCH_ERROR__: {result.result.type}"
+
+    missing = {r["custom_id"] for r in requests} - set(out)
+    assert not missing, (
+        f"raw batch results missing {len(missing)} custom_ids: {sorted(missing)[:5]}"
+    )
+    return out
+
+
 # ── Cache check + item enumeration ──────────────────────────────────────────
 
 
