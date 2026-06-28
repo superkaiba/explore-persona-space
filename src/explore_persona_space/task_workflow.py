@@ -64,6 +64,7 @@ from __future__ import annotations
 import contextlib
 import fcntl
 import functools
+import hashlib
 import json
 import os
 import re
@@ -106,6 +107,31 @@ STATUSES = (
 
 TERMINAL_STATUSES = frozenset({"completed", "blocked", "archived"})
 
+# Canonical task `kind` enum — the single source of truth shared by
+# `task.py new --kind`, `task.py set-kind`, and `set_kind()`. Mirrors the
+# routing law in CLAUDE.md § "Routing experiment intent": `experiment` (a
+# research question that produces a promotable clean-result) vs the
+# code-change kinds (`infra | analysis | survey | batch`) that complete on
+# the Step 9c test-verdict path with NO promotable clean-result — a
+# fix-validation / "test that X works" task is `kind: infra`, not
+# `experiment` (incident #672: a GCP-fix validation was mis-filed as an
+# experiment and dragged through the clean-result/promotion machinery).
+# `campaign` is the question-level runner (/campaign <N>). The remaining
+# entries are the Human-board kinds (note/reading/idea/question/decision).
+KINDS = (
+    "experiment",
+    "infra",
+    "analysis",
+    "batch",
+    "survey",
+    "campaign",
+    "note",
+    "reading",
+    "idea",
+    "question",
+    "decision",
+)
+
 # Status that means "user has reviewed and approved a clean-result body; user
 # must run `task.py promote` to move to completed". Park-and-wait gate.
 PARK_STATUS = "awaiting_promotion"
@@ -128,6 +154,19 @@ EVENT_NOTE_MAX = 50_000  # mirror Sagan's body-size cap
 
 # Comment kinds the web UI exposes; checked when comments are appended.
 COMMENT_KINDS = frozenset({"question", "answer", "followup-proposal", "note"})
+
+# The non-`experiment` lifecycle kinds that complete on the Step 9c
+# test-verdict / code-change path (no promotable clean-result) and are
+# exempt from the `kind: experiment`-only plan/measurement checks
+# (CLAUDE.md Critical Rules: "`kind: analysis|infra|batch|survey` exempt").
+# Canonical single source for this subset: `task_progress.CODE_KINDS`
+# imports it directly, and `verify_plan.EXEMPT_KINDS` is pinned equal to it by
+# a drift test, so the three copies can never drift (incident #672: a `kind`
+# enum drift shipped a `batch`-missing-from-CLI bug). Membership is
+# byte-identical to the prior literals; `verify_plan.VALID_KINDS` is
+# `("experiment", *CODE_KINDS)` and stays an explicit ordered tuple (argparse
+# `choices=` display order) pinned by the same drift test.
+CODE_KINDS = frozenset({"infra", "analysis", "batch", "survey"})
 
 
 # ─── Repo / tasks-dir resolution ────────────────────────────────────────────
@@ -498,6 +537,21 @@ def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[s
     goal = fm.get("goal")
     if isinstance(goal, str) and goal.strip():
         entry["goal"] = goal.strip()
+    # Paper-stub tasks carry the abstract in the BODY (not the frontmatter), so
+    # denormalize it into REGISTRY here for the dashboard hover-card / the
+    # REGISTRY title+abstract surfaces. Only paper tasks pay the body read;
+    # never raises (a still-being-written stub just yields no abstract).
+    if is_paper_task(fm):
+        entry["paper"] = True
+        body_path = path / "body.md"
+        if body_path.exists():
+            try:
+                _, body = _split_frontmatter(body_path.read_text())
+                abstract = extract_stub_abstract(body)
+            except (OSError, ValueError):
+                abstract = ""
+            if abstract:
+                entry["abstract"] = abstract
     registry["tasks"][str(task_id)] = entry
     if task_id > registry.get("highest_id", 0):
         registry["highest_id"] = task_id
@@ -580,6 +634,273 @@ def _strip_leading_frontmatter_blocks(text: str) -> str:
             break
         content = content[end + len("\n---\n") :]
     return content.lstrip("\n")
+
+
+# ── Paper-stub helpers (`paper: true` clean-result track) ───────────────────
+# A `paper: true` task's body.md is a thin paper-stub (H1 title + abstract +
+# a paper link); the canonical clean-result is the LaTeX paper under
+# docs/papers/issue_<N>/, verified by scripts/verify_paper.py — NOT this
+# module's markdown machinery. These helpers let the readers that denormalize
+# title/abstract and the set-clean-result manifest gate handle the stub
+# without breaking grandfathered markdown bodies. See
+# .claude/skills/clean-results/SPEC.md § "Paper format (`paper: true`)".
+
+
+def is_paper_task(fm: dict[str, Any]) -> bool:
+    """True when the task's frontmatter opts into the paper clean-result track.
+
+    Accepts the YAML-parsed boolean ``True`` and the quoted string ``"true"``
+    (case-insensitive); everything else (absent / ``false`` / ``null``) is the
+    markdown-body default.
+    """
+    v = fm.get("paper")
+    return v is True or (isinstance(v, str) and v.strip().lower() == "true")
+
+
+# ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
+# Workflow-surface fixes (a `<!-- workflow-fix-candidate v1 -->` block or a
+# surfaced prose follow-up) are filed as a `kind: infra` task and implemented by
+# a background `/issue <N> --auto` session — NOT a `workflow-improver` subagent
+# spawn (retired by #678). These read-only predicates back the two pieces of
+# orchestrator logic the rule defines: the DEDUP check (don't double-file the
+# SAME bug on the SAME file) and the RECURSION GUARD (a workflow-fix session
+# never auto-files MORE workflow-fix tasks for its own findings). See
+# `.claude/rules/workflow-fix-on-bug.md`.
+
+# Non-terminal statuses a workflow-fix task can sit at while it still blocks a
+# duplicate re-raise. The terminal set ``{completed, archived}`` is EXCLUDED — a
+# closed fix does not block a fresh candidate for the same bug.
+_WF_FIX_NONTERMINAL: tuple[str, ...] = (
+    "proposed",
+    "planning",
+    "plan_pending",
+    "approved",
+    "running",
+    "verifying",
+    "interpreting",
+    "reviewing",
+    "awaiting_promotion",
+    "followups_running",
+    "blocked",
+    "on_hold",
+)
+
+
+def _wf_fix_normalize(s: str) -> str:
+    """Normalize a candidate prose field for stable fingerprinting.
+
+    Lowercase, collapse internal whitespace to single spaces, strip
+    leading/trailing whitespace, and strip trailing ``.,;:!?`` — so a candidate
+    re-raised with reformatted prose (extra spaces, a trailing period, a case
+    change) produces the SAME fingerprint and is correctly deduped.
+    """
+    s = re.sub(r"\s+", " ", (s or "").strip().lower())
+    return s.rstrip(".,;:!?").strip()
+
+
+def wf_fix_fingerprint(proposed_change: str, bug_observed: str) -> str:
+    """Stable 12-hex dedup fingerprint of a workflow-fix candidate.
+
+    The dedup GRAIN is ``(target_file, fingerprint)`` (#678 A1): two DISTINCT
+    bugs on the SAME hot file (SKILL.md, CLAUDE.md, …) produce DIFFERENT
+    fingerprints and therefore file two distinct tasks (each gets its own plan
+    review); only a genuine re-raise of the SAME bug (same normalized
+    ``proposed_change`` + ``bug_observed``) collapses to the same fingerprint
+    and is deduped. The fingerprint is recorded as a ``wf-fix-fp:<fp>`` tag and
+    in the body ``## Provenance`` block at file-time.
+    """
+    h = hashlib.sha256(
+        (_wf_fix_normalize(proposed_change) + "||" + _wf_fix_normalize(bug_observed)).encode()
+    )
+    return h.hexdigest()[:12]
+
+
+def is_open_workflow_fix_task(target_file: str, fingerprint: str | None = None) -> int | None:
+    """Return the id of an OPEN ``kind: infra`` workflow-fix task matching this key, else None.
+
+    Dedup key (#678 A1): ``(target_file, fingerprint)``. A task matches iff
+    ``kind == infra`` AND its status is NOT in ``{completed, archived}`` AND its
+    title starts with ``workflow-fix:`` AND its body ``## Provenance`` carries a
+    ``workflow_fix_target: <target_file>`` line (exact string match). When
+    ``fingerprint`` is given, the task must ALSO carry a ``wf-fix-fp:<fingerprint>``
+    tag (or a ``fingerprint: <fingerprint>`` Provenance line) — so a DIFFERENT
+    bug on the same file (different fingerprint) is NOT a duplicate. When
+    ``fingerprint`` is None, matches any open workflow-fix task on the file
+    (coarse, file-only — used only by callers with no candidate fingerprint).
+
+    Read-only: no mutation, no commit. The cheap pre-filter (``kind`` / status /
+    title) reads the REGISTRY snapshot; the ``tags`` / Provenance check reads the
+    task's ``body.md`` (tags are not denormalized into the registry).
+    """
+    reg = _load_registry()
+    for tid_str, entry in reg.get("tasks", {}).items():
+        if entry.get("kind") != "infra":
+            continue
+        if (entry.get("status") or "") not in _WF_FIX_NONTERMINAL:
+            continue
+        if not str(entry.get("title", "")).startswith("workflow-fix:"):
+            continue
+        tid = int(tid_str)
+        try:
+            body_path = find_task_path(tid) / "body.md"
+            fm, body = _read_body(body_path)
+        except (FileNotFoundError, ValueError):
+            continue
+        if f"workflow_fix_target: {target_file}" not in body:
+            continue
+        if fingerprint is not None:
+            tags = [str(t) for t in (fm.get("tags") or [])]
+            if f"wf-fix-fp:{fingerprint}" not in tags and f"fingerprint: {fingerprint}" not in body:
+                # Same file, different bug -> not a duplicate.
+                continue
+        return tid
+    return None
+
+
+def is_workflow_fix_session(task_id: int) -> bool:
+    """True iff this task is a workflow-fix task (recursion-guard durable signal, #678 Q4).
+
+    The DURABLE signal: the body ``## Provenance`` carries a
+    ``workflow_fix_target:`` line. It survives a watcher crash-recovery respawn
+    (which re-runs ``spawn-issue --auto`` WITHOUT custom env, so the
+    ``EPM_WORKFLOW_FIX_SESSION`` env var is lost on respawn). The env var is the
+    in-session convenience leg, checked by the caller, not here. A workflow-fix
+    session NEVER auto-files MORE workflow-fix tasks for its own findings — it
+    logs + notifies, analogue of ``AUTO_REVIEW_DISABLED``.
+
+    Read-only: no mutation, no commit.
+    """
+    try:
+        body = (find_task_path(task_id) / "body.md").read_text()
+    except (FileNotFoundError, OSError):
+        return False
+    return "workflow_fix_target:" in body
+
+
+def extract_stub_abstract(body: str) -> str:
+    """Return the abstract from a paper-stub body (best-effort, never raises).
+
+    The stub abstract is either a ``## Abstract`` H2 block OR the prose
+    paragraph(s) between the H1 title and the paper link / first H2. Used to
+    denormalize an ``abstract`` into REGISTRY.json so the dashboard hover-card
+    + the REGISTRY title/abstract surfaces read it (the stub carries the
+    abstract in the BODY, not the frontmatter). Markdown link/image lines and
+    the H1 are stripped. Returns "" when nothing abstract-like is found.
+    """
+    # Strip any leading frontmatter the caller passed through.
+    text = _strip_leading_frontmatter_blocks(body)
+    # Prefer an explicit `## Abstract` block.
+    m = re.search(r"(?ms)^##\s+Abstract\s*$(?P<body>.+?)(?=^##\s|\Z)", text)
+    region = m.group("body") if m else text
+    out: list[str] = []
+    for raw_line in region.splitlines():
+        line = raw_line.strip()
+        if not line:
+            if out:
+                break  # first paragraph only
+            continue
+        if line.startswith("#"):  # H1/H2/H3 heading
+            if out:
+                break
+            continue
+        # Skip a bare paper-link line ("Paper: docs/papers/..." / "[PDF](...)").
+        low = line.lower()
+        if (low.startswith("paper:") or low.startswith("pdf:")) or (
+            re.fullmatch(r"[\[\(!].*", line) and ("docs/papers/" in line or "/papers/" in line)
+        ):
+            if out:
+                break
+            continue
+        out.append(line)
+    return " ".join(out).strip()
+
+
+def _paper_manifest_exists(task_id: int) -> bool:
+    """True when docs/papers/issue_<N>/paper_manifest.json is on disk.
+
+    Used by ``set_clean_result`` to detect a task that is INTENDED to be a
+    paper-task (its paper artifacts exist) but whose body.md frontmatter has
+    lost its ``paper: true`` opt-in — the #657 gate gap.
+    """
+    return (repo_root() / "docs" / "papers" / f"issue_{task_id}" / "paper_manifest.json").exists()
+
+
+#: Artifacts the paper stores on the HF data repo (NOT committed to git), so
+#: their local-existence/hash is NEVER validated — the PDF is validated via
+#: ``pdf_hf_url`` instead (incident #657). A ``pdf`` entry may still appear in
+#: ``artifacts`` in the OLD manifest shape; its local check is skipped there too.
+_PAPER_HF_HOSTED_ARTIFACTS: tuple[str, ...] = ("pdf",)
+
+
+def _validate_committed_artifact(label: str, entry: Any) -> list[str]:
+    """Validate one COMMITTED manifest artifact's local presence + sha256.
+
+    Returns a (possibly empty) list of problem strings. HF-hosted artifacts are
+    the caller's concern (it skips them); this only stats committed files.
+    """
+
+    rel = (entry or {}).get("path")
+    if not rel:
+        return [f"artifact {label!r} has no path"]
+    fpath = repo_root() / rel
+    if not fpath.exists():
+        return [f"artifact {label!r} path missing on disk: {rel}"]
+    want = entry.get("sha256")
+    if want and hashlib.sha256(fpath.read_bytes()).hexdigest() != want:
+        return [f"artifact {label!r} sha256 mismatch ({rel})"]
+    return []
+
+
+def validate_paper_manifest(task_id: int) -> list[str]:
+    """Validate a paper-task's docs/papers/issue_<N>/paper_manifest.json.
+
+    Returns a list of human-readable problems; an empty list means the manifest
+    is valid enough to flip ``has_clean_result``. HF-aware (mirrors
+    ``scripts/verify_paper.py`` check 7): the COMMITTED local artifacts
+    (``tex`` / ``paper_html``, + ``bib`` / ``refs_json`` when present) must be on
+    disk with a matching sha256, AND the PDF must be validated via ``pdf_hf_url``
+    (present + an ``https://...`` URL) — NOT a local file, since the paper PDF
+    lives on the HF data repo, not in git (incident #657: the local PDF exists at
+    BUILD time so the build-time verify passed, but post-commit it is HF-only and
+    a local-existence check on a ``pdf`` artifact wrongly failed). A missing /
+    null ``pdf_hf_url`` is a soft problem the CLI surfaces as a WARN (a
+    local-only build can be promoted), returned with a ``WARN: `` prefix; a
+    non-``https`` URL is a HARD problem. Tolerant of BOTH manifest shapes: the
+    new ``hf_pdf`` block and the old ``pdf``-in-``artifacts`` shape (the latter's
+    local-existence/hash check is skipped — it is HF-hosted).
+    """
+    problems: list[str] = []
+    paper_dir = repo_root() / "docs" / "papers" / f"issue_{task_id}"
+    manifest_path = paper_dir / "paper_manifest.json"
+    if not manifest_path.exists():
+        return [f"no paper_manifest.json at {manifest_path.relative_to(repo_root())}"]
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        return [f"paper_manifest.json unreadable: {e}"]
+    if manifest.get("schema") != "paper_manifest/v1":
+        problems.append(f"schema is {manifest.get('schema')!r}, expected 'paper_manifest/v1'")
+    artifacts = manifest.get("artifacts") or {}
+    # Required COMMITTED artifacts — NOT the PDF (HF-hosted, validated via URL).
+    for label in ("tex", "paper_html"):
+        if not artifacts.get(label):
+            problems.append(f"missing required committed artifact {label!r}")
+            continue
+        problems.extend(_validate_committed_artifact(label, artifacts[label]))
+    # Any other committed artifact present in the map (bib / refs_json) is also
+    # locally validated; the HF-hosted PDF entry (old shape) is skipped.
+    for label, entry in artifacts.items():
+        if label in ("tex", "paper_html") or label in _PAPER_HF_HOSTED_ARTIFACTS:
+            continue
+        problems.extend(_validate_committed_artifact(label, entry))
+    # The PDF is validated via the HF URL (top-level ``pdf_hf_url`` or the new
+    # ``hf_pdf.url`` block), NOT a local file.
+    pdf_url = manifest.get("pdf_hf_url") or (manifest.get("hf_pdf") or {}).get("url")
+    if not pdf_url:
+        problems.append("WARN: pdf_hf_url is null (local-only build — not yet uploaded)")
+    elif not str(pdf_url).startswith("https://"):
+        problems.append(f"pdf_hf_url is not an https:// URL: {pdf_url!r}")
+    return problems
 
 
 # Goal H2 helpers
@@ -838,6 +1159,8 @@ def create_task(req: NewTaskRequest) -> int:
     """
     if req.status not in STATUSES:
         raise ValueError(f"unknown status: {req.status!r}")
+    if req.kind not in KINDS:
+        raise ValueError(f"unknown kind: {req.kind!r}; expected one of {KINDS}")
     with _locked():
         reg = _load_registry()
         task_id = reg.get("highest_id", 0) + 1
@@ -887,6 +1210,19 @@ def create_task(req: NewTaskRequest) -> int:
 # ─── Body / frontmatter mutations ──────────────────────────────────────────
 
 
+# Frontmatter keys that DO round-trip through ``set_body`` when present in the
+# incoming body's frontmatter. The paper clean-result track opts a task into
+# paper-mode by carrying ``paper: true`` (and a denormalized ``abstract``) in
+# the stub file's frontmatter — those keys MUST survive the set-body write or
+# the dashboard's ``isPaperTask`` read fails and the paper renders as a
+# markdown stub (incident #657, 2026-06-25). Everything else stays governed by
+# the dedicated mutators. ``paper`` is never cleared by an incoming body that
+# omits it (set-body is body-only for non-paper-opt-in callers); it is only
+# turned ON when the incoming frontmatter opts in. ``abstract`` rides along so
+# the REGISTRY denormalization has the paper's abstract.
+_SET_BODY_ROUNDTRIP_KEYS: tuple[str, ...] = ("paper", "abstract")
+
+
 def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) -> None:
     """Replace the body content (preserves frontmatter).
 
@@ -894,22 +1230,38 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
     original-body.md first — used by the analyzer when promoting a
     clean-result.
 
-    Any YAML frontmatter at the START of ``new_body`` is stripped before
-    the canonical frontmatter (loaded from the existing body.md) is
-    prepended. This prevents the duplicate-frontmatter trap when callers
-    pass a complete markdown document (frontmatter + body) — see
-    `_strip_leading_frontmatter_blocks` for the incident history. The
+    Any YAML frontmatter at the START of ``new_body`` is stripped from the
+    body region before the canonical frontmatter (loaded from the existing
+    body.md) is prepended. This prevents the duplicate-frontmatter trap
+    when callers pass a complete markdown document (frontmatter + body) —
+    see `_strip_leading_frontmatter_blocks` for the incident history. The
     strip is idempotent: calling `set_body` with a body that already has
     no leading frontmatter is a no-op for the strip step.
 
     Note: this function preserves the EXISTING frontmatter on body.md.
     If you need to change frontmatter fields, use the dedicated mutators
     (`set_title`, `set_clean_result`, `add_tag`, `remove_tag`,
-    `set_goal`). The stripped frontmatter from `new_body` is discarded.
+    `set_goal`). The ONE exception is the paper clean-result opt-in: the
+    keys in ``_SET_BODY_ROUNDTRIP_KEYS`` (``paper``, ``abstract``) ARE
+    carried forward from ``new_body``'s frontmatter when present, because
+    the paper-stub track carries ``paper: true`` ONLY in the stub file and
+    the dashboard's ``isPaperTask`` read depends on it landing in body.md
+    (incident #657). All other frontmatter from ``new_body`` is discarded.
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, _ = _read_body(path)
+        # Carry the paper-opt-in keys forward from the incoming body's
+        # frontmatter so a paper-stub write does not silently drop
+        # ``paper: true`` (incident #657). Parse defensively — a malformed
+        # leading block leaves ``incoming_fm`` empty and changes nothing.
+        try:
+            incoming_fm, _ = _split_frontmatter(new_body)
+        except ValueError:
+            incoming_fm = {}
+        for key in _SET_BODY_ROUNDTRIP_KEYS:
+            if key in incoming_fm and incoming_fm[key] is not None:
+                fm[key] = incoming_fm[key]
         touched: list[Path] = [path]
         if snapshot_original:
             orig = path.parent / "original-body.md"
@@ -917,6 +1269,14 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
             touched.append(orig)
         body_text = _strip_leading_frontmatter_blocks(new_body)
         _write_body(path, fm, body_text if body_text.endswith("\n") else body_text + "\n")
+        # Keep REGISTRY in sync when the paper opt-in (or abstract) landed —
+        # the denormalized ``paper``/``abstract``/``title`` surfaces feed the
+        # dashboard list view + hover card.
+        if any(k in incoming_fm for k in _SET_BODY_ROUNDTRIP_KEYS):
+            reg = _load_registry()
+            _registry_set(reg, task_id, path.parent, fm)
+            _save_registry(reg)
+            touched.append(registry_path())
         _git_commit(touched, f"task #{task_id}: set-body")
 
 
@@ -933,10 +1293,86 @@ def set_title(task_id: int, title: str) -> None:
         _git_commit([path, registry_path()], f"task #{task_id}: set-title — {title[:60]}")
 
 
-def set_clean_result(task_id: int, value: bool = True) -> None:
+def set_kind(task_id: int, kind: str) -> None:
+    """Reclassify a task's ``kind`` in frontmatter (+ REGISTRY snapshot).
+
+    The canonical, flock-protected, registry-consistent way to correct a
+    MISFILED ``kind`` — e.g. a fix-validation / "test that X works" task
+    created as ``kind: experiment`` that should be ``kind: infra`` (so it
+    completes on the test-verdict path instead of being dragged through the
+    clean-result/promotion machinery; incident #672). Without this, a
+    correction required a direct frontmatter hand-edit, bypassing the
+    "mutate only through task.py" rule.
+
+    ``kind`` MUST be a member of :data:`KINDS`; an invalid value raises
+    ``ValueError``. ``kind`` IS denormalized into REGISTRY.json (the
+    dashboard list view reads it from there), so this updates the registry
+    snapshot exactly like :func:`set_title` — skipping that would leave the
+    list view showing the stale kind.
+    """
+    if kind not in KINDS:
+        raise ValueError(f"unknown kind: {kind!r}; expected one of {KINDS}")
     with _locked():
         path = find_task_path(task_id) / "body.md"
         fm, body = _read_body(path)
+        fm["kind"] = kind
+        _write_body(path, fm, body)
+        # REGISTRY denormalizes `kind` (dashboard list view reads it) — keep
+        # it in sync, same as set_title.
+        reg = _load_registry()
+        _registry_set(reg, task_id, path.parent, fm)
+        _save_registry(reg)
+        _git_commit([path, registry_path()], f"task #{task_id}: set-kind — {kind}")
+
+
+def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool = True) -> None:
+    """Flip ``has_clean_result`` (or clear it with ``value=False``).
+
+    For a ``paper: true`` task, flipping ``has_clean_result`` to True first
+    VALIDATES the task's ``docs/papers/issue_<N>/paper_manifest.json`` (the
+    COMMITTED local artifacts present + sha256 match, and the HF-hosted PDF
+    validated via an ``https`` ``pdf_hf_url`` — NOT a local PDF file, incident
+    #657) via :func:`validate_paper_manifest`. A HARD problem (missing/mismatched
+    committed artifact, bad schema, non-``https`` ``pdf_hf_url``) raises
+    ``SystemExit``; a soft WARN (``pdf_hf_url`` null — a local-only build) is
+    tolerated when ``allow_paper_warn`` is True (default), which lets a paper be
+    marked a clean-result before the HF upload lands. Clearing (``value=False``)
+    and every non-paper task skip the manifest gate.
+    """
+    with _locked():
+        path = find_task_path(task_id) / "body.md"
+        fm, body = _read_body(path)
+        # Gate gap (#657): a task whose paper artifacts exist on disk
+        # (docs/papers/issue_<N>/paper_manifest.json) is INTENDED to be a
+        # paper-task, but if ``set_body`` dropped its ``paper: true`` key the
+        # on-disk frontmatter reads as a plain markdown task and the paper
+        # manifest gate below is silently skipped — the dashboard then renders
+        # the markdown stub instead of the paper. Detect that mismatch up front
+        # and FAIL loudly rather than passing a non-conforming paper-stub
+        # through. (The fix in ``set_body`` prevents the drop; this is the gate
+        # that catches a body written by an older code path or by hand.)
+        if value and not is_paper_task(fm) and _paper_manifest_exists(task_id):
+            raise SystemExit(
+                f"set-clean-result #{task_id}: docs/papers/issue_{task_id}/"
+                "paper_manifest.json exists (this is a paper-task) but the on-disk "
+                "body.md frontmatter is MISSING `paper: true`. The dashboard will "
+                "render the markdown stub instead of the paper. Re-write the body via "
+                "`task.py set-body` from a stub carrying `paper: true` (the key now "
+                "round-trips) before flipping has_clean_result."
+            )
+        if value and is_paper_task(fm):
+            problems = validate_paper_manifest(task_id)
+            hard = [p for p in problems if not p.startswith("WARN:")]
+            warns = [p for p in problems if p.startswith("WARN:")]
+            if hard or (warns and not allow_paper_warn):
+                blocking = hard + (warns if not allow_paper_warn else [])
+                raise SystemExit(
+                    f"set-clean-result #{task_id}: paper manifest validation failed:\n  - "
+                    + "\n  - ".join(blocking)
+                    + f"\nFix docs/papers/issue_{task_id}/paper_manifest.json "
+                    "(run scripts/build_paper.py / verify_paper.py) before flipping "
+                    "has_clean_result."
+                )
         fm["has_clean_result"] = value
         _write_body(path, fm, body)
         reg = _load_registry()
@@ -1503,7 +1939,7 @@ def _git_commit(paths: list[Path], message: str) -> None:
 
     Uses ``git commit --only -- <paths>`` so unrelated staged work elsewhere in
     the repo is not silently captured under the task.py commit message. Parallel
-    agents (workflow-improver, /issue runs, user-staged edits) share the same
+    agents (/issue runs, user-staged edits) share the same
     index, and ``git commit -m`` without ``--only`` would commit the entire
     index. The early-return check is likewise narrowed to ``--`` <paths> so it
     cannot bail when unrelated files are staged.
@@ -1980,11 +2416,13 @@ def __dir__() -> list[str]:
 # tell ruff to allow them — they resolve at attribute-access time via
 # ``__getattr__``.
 __all__ = [
+    "CODE_KINDS",
     "COMMENT_KINDS",
     "CONCERN_EVENTS",
     "CONCERN_SEVERITIES",
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
     "GOAL_H2_NAME",
+    "KINDS",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "REPO",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -2019,6 +2457,7 @@ __all__ = [
     "set_body",
     "set_clean_result",
     "set_goal",
+    "set_kind",
     "set_status",
     "set_title",
     "tasks_dir",

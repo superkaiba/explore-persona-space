@@ -244,10 +244,60 @@ authoritative recipe is agent memory
                command="cd /workspace/explore-persona-space && \
                         git fetch origin issue-<N> && \
                         git checkout issue-<N> && \
-                        git pull --ff-only")
+                        git pull --ff-only origin issue-<N>")
    ```
    The branch was written by `experiment-implementer` and approved by
    `code-reviewer`. You should NOT be writing fresh code here — only running it.
+
+   **MANDATORY HEAD-verification step (post-sync, pre-launch). Never
+   trust the pull's stdout — verify the on-disk HEAD.** A
+   `git pull --ff-only` can exit **0** and print `Updating <old>..<new>`
+   yet leave HEAD UNMOVED when a crashed prior workload left a stale
+   0-byte `.git/index.lock` (the fetch + ref-update phases don't take the
+   index lock; the working-tree mutation phase does, so it is silently
+   skipped while the surrounding pull reports success — see
+   `.claude/rules/gotchas.md` "Same-pod relaunch: `git pull --ff-only`
+   exits 0 on a stale `.git/index.lock`"). A relaunch that trusts that
+   stdout runs STALE code while the orchestrator's launch marker
+   `commit=` lies about what ran. So after the pull, read HEAD and
+   compare it against the EXPECTED commit:
+   ```bash
+   ssh_execute(server="epm-issue-<N>",
+               command="cd /workspace/explore-persona-space && \
+                        echo HEAD=$(git rev-parse HEAD); \
+                        echo ORIGIN=$(git rev-parse origin/issue-<N>)")
+   ```
+   The expected commit is the brief's `commit=` field if it carries one;
+   otherwise it is `origin/issue-<N>` (the ref the fetch just advanced).
+   HEAD MUST equal that expected SHA. On a MATCH, proceed to preflight
+   (step 3). On a MISMATCH, the pull silently no-op'd against a stale
+   lock — recover (do NOT relaunch on stale code):
+   ```bash
+   # (a) Inspect the lock + any live git process.
+   ssh_execute(server="epm-issue-<N>",
+               command="cd /workspace/explore-persona-space && \
+                        ls -la .git/index.lock; pgrep -af git")
+   # (b) Remove the lock ONLY when it is PRESENT, its mtime is OLD, and
+   #     pgrep shows NO live git proc (a live git is doing legitimate
+   #     work — WAIT, do not remove the lock), then re-pull:
+   ssh_execute(server="epm-issue-<N>",
+               command="cd /workspace/explore-persona-space && \
+                        rm -f .git/index.lock && \
+                        git pull --ff-only origin issue-<N>")
+   # (c) Re-probe HEAD in a FRESH ssh_execute call — the re-pull rebuilds
+   #     the index and can outlive the SSH MCP ~30s client cap while
+   #     completing server-side, so treat a timeout as "re-check HEAD",
+   #     NOT "failed":
+   ssh_execute(server="epm-issue-<N>",
+               command="cd /workspace/explore-persona-space && \
+                        git rev-parse HEAD")
+   ```
+   If HEAD STILL does not match the expected commit after the recovery
+   re-pull, post `<!-- epm:failure v1 -->` with `failure_class: infra`
+   (`reason: pod-sync-head-mismatch`, naming the expected vs actual SHA)
+   and EXIT — `/issue` Step 7 routes `infra` to a fresh experimenter
+   respawn (cap 3). Full recipe + the #653 r6 incident:
+   `.claude/agent-memory/experimenter/feedback_pod_git_pull_silent_index_lock.md`.
 3. **Run preflight on the pod.**
    ```bash
    ssh_execute(server="epm-issue-<N>",

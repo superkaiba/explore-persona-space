@@ -15,11 +15,11 @@ Reuses the assembly logic from issue658_judge_e0 verbatim — only the transport
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import logging
 import re
 import sys
-import time
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -36,8 +36,16 @@ from issue658_common import (  # noqa: E402
     load_json,
 )
 
+from explore_persona_space.eval.batch_judge import (  # noqa: E402
+    MAX_JUDGE_REQUESTS_PER_BATCH,
+    _chunk_requests,
+)
 from explore_persona_space.experiments.behavior_testbed_545.judges_545 import (  # noqa: E402
     structural_format_features,
+)
+from explore_persona_space.llm.anthropic_client import (  # noqa: E402
+    AnthropicBatch,
+    BatchDeadlineExceeded,
 )
 
 load_dotenv(str(PROJECT_ROOT / ".env"))
@@ -55,67 +63,167 @@ def _parse_verdict(text: str) -> dict:
     return {"_judge_error": (text or "")[:200]}
 
 
-def submit_and_collect(requests: list[dict], model: str) -> dict[str, dict]:
+def _collect_shard(batch: AnthropicBatch, batch_id: str, out: dict[str, dict]) -> int:
+    """Stream one ended sub-batch's results into ``out`` (join on custom_id).
+
+    Returns the count of cleanly-parsed verdicts; refusals and non-succeeded
+    results are surfaced as ``_judge_refused`` / ``_judge_error`` dicts (the keys
+    the downstream scorer skips on). Reads results through the shared
+    :class:`AnthropicBatch` client (``.results`` returns the materialized list).
+    """
+    n_ok = 0
+    for result in batch.results(batch_id):
+        cid = result.custom_id
+        if result.result.type == "succeeded":
+            msg = result.result.message
+            if msg.stop_reason == "refusal":
+                out[cid] = {"_judge_refused": "stop_reason=refusal"}
+                continue
+            txt = "\n".join(
+                t for t in (getattr(b2, "text", None) for b2 in msg.content) if isinstance(t, str)
+            )
+            out[cid] = _parse_verdict(txt)
+            if "_judge_error" not in out[cid]:
+                n_ok += 1
+        else:
+            out[cid] = {"_judge_error": f"batch_result_type={result.result.type}"}
+    return n_ok
+
+
+def submit_and_collect(
+    requests: list[dict], model: str, checkpoint_path: Path | None = None
+) -> dict[str, dict]:
     """requests: [{custom_id, prompt}]; returns {custom_id: verdict_dict}.
 
-    Submits to the Anthropic Message Batches API in chunks of <=100k and polls.
-    """
-    import anthropic
-    from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
-    from anthropic.types.messages.batch_create_params import Request
+    Submits via the shared #663-hardened :class:`AnthropicBatch` client
+    (``llm/anthropic_client.py``) — the SAME transport the ``run_experiment_389``
+    callers route through — instead of a hand-rolled ``messages.batches.create``
+    + ``while True`` poller. ``_chunk_requests`` shards the set into
+    <=``MAX_JUDGE_REQUESTS_PER_BATCH`` (2_000) sub-batches — NOT the 8k general
+    cap: an 8k judge shard STARVES (it sat at succeeded:0 for 9h in the #658 G1
+    wedge), while a ~500-request judge shard clears in ~5 min, so the small cap
+    is what actually buys incremental progress here. Each shard is polled with
+    the client's BOUNDED ``AnthropicBatch.poll`` (exits on the batch's own
+    ``expires_at`` + grace, or now+25h if expires_at is ever absent, and raises
+    ``BatchDeadlineExceeded`` — never the unbounded ``while True`` that wedged
+    the original poll, #658/#661, 2026-06-24). A shard still not ``ended`` at its deadline is
+    cancelled and its items surfaced as judge errors; and ANY other per-shard
+    failure (network / API error surviving the SDK retries) is caught, its items
+    marked as errors, and the run continues — so one stuck or failing shard can
+    never wedge or abort the whole run.
 
-    client = anthropic.Anthropic(max_retries=8)
+    ``checkpoint_path`` (default ``<out>.partial.json`` from ``main``) gives
+    cross-process RESUMABILITY: completed verdicts are flushed atomically after
+    every shard, and a restart loads them and skips the already-judged
+    custom_ids — so a mid-run VM death never forces a full re-spend. The
+    custom_ids are positional (``r{nid}``) and reproducible only for the SAME
+    input data; a checkpoint from a different ``--e0-dir`` must be removed first.
+    """
+    # Shared #663 client: create + bounded poll + results + cancel. Its
+    # underlying anthropic.Anthropic uses the SDK-default max_retries (2 on the
+    # pinned SDK) — down from this script's pre-migration 8; deliberate, the cost
+    # of consolidating onto the shared client. Per-shard failures surface as
+    # `shard_incomplete` and recover on the next checkpoint/resume run.
+    batch_client = AnthropicBatch()
+
+    # Resume: load any verdicts judged in a prior (interrupted) run so a mid-run
+    # process death never re-spends the completed shards.
     out: dict[str, dict] = {}
-    CHUNK = 90000  # API limit is 100k requests / batch
-    chunks = [requests[i : i + CHUNK] for i in range(0, len(requests), CHUNK)]
+    if checkpoint_path is not None and checkpoint_path.exists():
+        try:
+            out = dict(json.loads(checkpoint_path.read_text()))
+            logger.info("resume: loaded %d cached verdicts from %s", len(out), checkpoint_path)
+        except (ValueError, OSError) as e:
+            logger.warning("could not read checkpoint %s (%s) — starting fresh", checkpoint_path, e)
+            out = {}
+
+    def _flush() -> None:
+        if checkpoint_path is None:
+            return
+        tmp = checkpoint_path.with_suffix(checkpoint_path.suffix + ".tmp")
+        tmp.write_text(json.dumps(out))
+        tmp.replace(checkpoint_path)  # atomic on POSIX
+
+    # Plain-dict request shape that _chunk_requests + batches.create expect; the
+    # compact custom_id side-maps back to (ctx, col, ci, cj) in the caller.
+    pending = [r for r in requests if r["custom_id"] not in out]
+    batch_reqs = [
+        {
+            "custom_id": r["custom_id"],
+            "params": {
+                "model": model,
+                "max_tokens": 300,
+                "messages": [{"role": "user", "content": r["prompt"]}],
+            },
+        }
+        for r in pending
+    ]
+    # Small judge shards (<=2_000), NOT the 8k general cap — an 8k judge batch
+    # starves at succeeded:0 (the #658 wedge); ~500 clears in ~5 min.
+    chunks = _chunk_requests(batch_reqs, max_count=MAX_JUDGE_REQUESTS_PER_BATCH)
+    poll_interval = 30.0
+    logger.info(
+        "%d requests total; %d already done; %d to submit -> %d sub-batch(es) (<=%d each)",
+        len(requests),
+        len(out),
+        len(batch_reqs),
+        len(chunks),
+        MAX_JUDGE_REQUESTS_PER_BATCH,
+    )
     for ci, chunk in enumerate(chunks):
-        batch_reqs = [
-            Request(
-                custom_id=r["custom_id"],
-                params=MessageCreateParamsNonStreaming(
-                    model=model,
-                    max_tokens=300,
-                    messages=[{"role": "user", "content": r["prompt"]}],
-                ),
-            )
-            for r in chunk
-        ]
-        batch = client.messages.batches.create(requests=batch_reqs)
-        logger.info(
-            "submitted batch %d/%d id=%s (%d reqs)", ci + 1, len(chunks), batch.id, len(chunk)
-        )
-        while True:
-            b = client.messages.batches.retrieve(batch.id)
-            if b.processing_status == "ended":
-                break
-            counts = b.request_counts
-            logger.info(
-                "batch %s %s: proc=%d succ=%d err=%d",
-                batch.id,
-                b.processing_status,
-                counts.processing,
-                counts.succeeded,
-                counts.errored,
-            )
-            time.sleep(30)
+        chunk_cids = [r["custom_id"] for r in chunk]
         n_ok = 0
-        for result in client.messages.batches.results(batch.id):
-            cid = result.custom_id
-            if result.result.type == "succeeded":
-                msg = result.result.message
-                if msg.stop_reason == "refusal":
-                    out[cid] = {"_judge_refused": "stop_reason=refusal"}
-                    continue
-                txt = "\n".join(
-                    t
-                    for t in (getattr(b2, "text", None) for b2 in msg.content)
-                    if isinstance(t, str)
+        try:
+            batch = batch_client.create(requests=chunk)
+            batch_id = batch.id
+            logger.info(
+                "submitted sub-batch %d/%d id=%s (%d reqs)",
+                ci + 1,
+                len(chunks),
+                batch_id,
+                len(chunk),
+            )
+            ended = False
+            try:
+                # Shared #663 bounded poll: exits on the batch's own
+                # expires_at + grace; raises BatchDeadlineExceeded if it never
+                # ends. AnthropicBatch.poll is async — drive it from this sync
+                # script via asyncio.run (no enclosing event loop here).
+                asyncio.run(batch_client.poll(batch_id, interval_s=poll_interval))
+                ended = True
+            except BatchDeadlineExceeded as exc:
+                logger.error(
+                    "sub-batch %s exceeded deadline: %s — cancelling + marking items as errors",
+                    batch_id,
+                    exc,
                 )
-                out[cid] = _parse_verdict(txt)
-                n_ok += 1
-            else:
-                out[cid] = {"_judge_error": f"batch_result_type={result.result.type}"}
-        logger.info("batch %s collected: %d/%d succeeded", batch.id, n_ok, len(chunk))
+                try:
+                    batch_client.cancel(batch_id)
+                except Exception as ce:
+                    logger.warning("cancel of stuck batch %s failed: %s", batch_id, ce)
+            if ended:
+                n_ok = _collect_shard(batch_client, batch_id, out)
+        except Exception as exc:
+            logger.error(
+                "sub-batch %d/%d failed (%s) — marking its items as errors, continuing",
+                ci + 1,
+                len(chunks),
+                exc,
+            )
+
+        # Every chunk cid accounted for (a deadline-cancelled / failed shard, or
+        # a cid the API omitted) -> judge error; never clobbers a real verdict.
+        for cid in chunk_cids:
+            out.setdefault(cid, {"_judge_error": "shard_incomplete"})
+        _flush()  # per-shard durability: a crash resumes from here, no re-spend
+        logger.info(
+            "sub-batch %d/%d done: %d/%d parsed-ok (running total %d)",
+            ci + 1,
+            len(chunks),
+            n_ok,
+            len(chunk),
+            len(out),
+        )
     return out
 
 
@@ -245,7 +353,13 @@ def main() -> int:
                     }
                 )
     logger.info("total judge requests: %d across %d gen files", len(requests), len(gen_files))
-    verdicts = submit_and_collect(requests, args.model) if requests else {}
+    # Per-shard checkpoint next to the output -> cross-process resume, no re-spend.
+    checkpoint_path = args.out.with_name(args.out.stem + ".partial.json")
+    verdicts = (
+        submit_and_collect(requests, args.model, checkpoint_path=checkpoint_path)
+        if requests
+        else {}
+    )
 
     results: dict = {}
     for (ctx, col_id), gen in gens.items():

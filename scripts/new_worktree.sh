@@ -96,8 +96,27 @@ _sparse_setup() {
   DIRS=$(git -C "$REPO_ROOT" ls-tree --name-only -d HEAD \
          | grep -vxF $(printf -- '-e %s ' $EXCLUDES))
   [ -n "$ISSUE" ] && CONES="eval_results/issue_${ISSUE} ood_eval_results/issue_${ISSUE}"
+  # Test-suite cones: the full `tests/` suite (the Step 9c test-verdict gate)
+  # reads OTHER issues' committed eval_results/ artifacts as fixtures/references.
+  # Those dirs are under the EXCLUDES above, so a sparse worktree would FAIL the
+  # gate with FileNotFoundError until manually `sparse-checkout add`-ed. Pre-add
+  # every cone listed in tests/sparse_cones.txt (one dir per line; blank +
+  # `#`-comment lines skipped) so the gate passes with no ceremony. (#671)
+  local TEST_CONES="" REGISTRY="$REPO_ROOT/tests/sparse_cones.txt"
+  if [ -f "$REGISTRY" ]; then
+    # Same word-split / quoting guard as $DIRS above: a cone with whitespace or
+    # git quote-escaping would mis-split the unquoted expansion — refuse loudly.
+    if grep -Ev '^[[:space:]]*(#|$)' "$REGISTRY" | grep -Eq '[[:space:]"\\]'; then
+      echo "new_worktree: FATAL — tests/sparse_cones.txt line with whitespace/quoting defeats the unquoted cone expansion" >&2
+      return 1
+    fi
+    # `|| true`: an all-comment / empty registry makes grep exit 1, which under
+    # `set -o pipefail` would otherwise abort the assignment (same idiom as the
+    # `sparse-checkout list || true` above). TEST_CONES stays "" -> harmless.
+    TEST_CONES=$(grep -Ev '^[[:space:]]*(#|$)' "$REGISTRY" | tr '\n' ' ' || true)
+  fi
   # shellcheck disable=SC2086
-  git -C "$WT" sparse-checkout set $DIRS $CONES $EXISTING
+  git -C "$WT" sparse-checkout set $DIRS $CONES $TEST_CONES $EXISTING
   [ "$(git -C "$WT" config --worktree core.sparseCheckoutCone || true)" = true ] \
     || { echo "new_worktree: FATAL — cone mode failed to engage in $WT" >&2; return 1; }
   git -C "$WT" checkout "$BRANCH"

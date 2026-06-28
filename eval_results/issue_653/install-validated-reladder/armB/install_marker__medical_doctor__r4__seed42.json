@@ -1,0 +1,35 @@
+{
+ "cell_id": "marker__medical_doctor__r4__seed42",
+ "behavior": "marker",
+ "rung": "r4",
+ "seed": 42,
+ "install": {
+  "dv_kind": "marker_four_float",
+  "logp_trained_minus_base": -0.017885398864745383,
+  "logp_trained_mean": -20.318647193908692,
+  "logp_base_mean": -20.300761795043947,
+  "z_marker_trained_minus_base": -0.014880371093749956,
+  "z_eos_trained_minus_base": 0.01093750000000071,
+  "eos_margin_delta": -0.025817871093751776,
+  "n_contexts": 20,
+  "note": "four-float slot read (trained-base) via compute_marker_slot_stats; EOS-margin is the preferred logit form (marker-leakage-measurement.md)"
+ },
+ "mode": "gpu",
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "b4e40869f",
+  "timestamp_utc": "2026-06-27T02:57:27.642159+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--out-root",
+   "eval_results/issue_653/install-validated-reladder"
+  ],
+  "phase": "install"
+ }
+}

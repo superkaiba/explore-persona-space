@@ -505,6 +505,72 @@ metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
 off-pod execution avoids. This is a plan-time scheduling rule, NOT a
 mid-run cost gate.)
 
+**Data-footprint carve-out to the OFF-POD default — size every CPU/analysis
+phase's local footprint and route accordingly.** The VM-default above
+silently assumes a SMALL local footprint. The VM root disk (`/`) is
+~188 GB and SHARED across the whole fleet, so a CPU/analysis phase that
+materializes a large local footprint can fill `/` mid-run and stall every
+concurrent session — exactly the case the off-pod-VM default does NOT
+handle. For EVERY CPU/analysis phase the plan routes, §9 MUST state the
+estimated local footprint —
+`downloaded_inputs_gb + materialized_tensors/activations/store_gb + scratch_gb`
+— and route on it against the constant
+`VM_ANALYSIS_FOOTPRINT_GB_MAX = 50` GB:
+
+- **Footprint ≤ 50 GB** → the VM default applies (run off-pod on the VM
+  against uploaded artifacts, per the rule above).
+- **Footprint > 50 GB** → the phase MUST NOT run on the VM. Route it to a
+  pod / GCP instance with a big ephemeral volume sized to the footprint
+  (`pod.py provision --intent <…>` on a volume ≥ footprint, or a GCP lane
+  with adequate scratch), OR stream the data without materializing it
+  locally (chunked download → process → discard per chunk, never the whole
+  store at once). State which in §9. On the GCP lane the concrete intent is
+  `cpu-bigmem` (CPU-only `gpu_count=0` `n2-highmem-16`, boot disk sized via
+  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`. RunPod
+  has no CPU lane, so a `cpu-bigmem` run that exhausts GCP surfaces a typed
+  `cpu_exhausted_no_runpod_lane` terminal, NOT a RunPod fallback. Note: this OVERRIDES the
+  idle-multi-GPU concern above — a >50 GB CPU phase that must hold a pod
+  for disk reasons is justified by the data-locality clause, but pick the
+  SMALLEST viable pod (single-GPU / CPU-heavy intent) so it isn't an idle
+  8×H100.
+
+Pair the routing with the runtime backstops, never IN PLACE of routing:
+between-phase `clean_experiment_downloads.py <N> --incremental` to reap a
+consumed phase's `hf_dl`/`g*_dl` cache before the next phase materializes
+more (bounds PEAK footprint), and the `vm_disk_guard.py` cron as the
+fleet-wide floor. But a phase whose own footprint exceeds the disk must be
+PLACED off the VM up front — cleanup cannot rescue a phase that is simply
+too big for where it runs. (Incident 2026-06-26: #658's Phase-1 analysis
+materialized a 139 GB activation store on the VM worktree on the shared
+188 GB disk; `/` hit 100% full and the whole fleet stalled. The phase
+should have been routed to a pod/GCP volume by this carve-out.) Plan-time
+routing only, NOT a mid-run gate.
+
+**Merge-disk budget — bound coexisting full-precision artifacts against
+the per-pod quota.** Any phase that materializes full-precision model
+artifacts DURING iteration — a LoRA adapter merged onto base weights for
+a read (dose-checkpoint selection, eval that needs a merged dir), a
+ZeRO-3-consolidated full-FT checkpoint, a per-step or per-cell model copy
+— accumulates on-disk weight files that a sweep can blow past the per-pod
+quota. The plan §9 MUST, for any such phase, state the upper bound on
+COEXISTING on-disk full-precision artifacts —
+`n_cells × max_concurrent_artifacts_per_cell × per_artifact_size_gb`
+(a merged Qwen-2.5-7B is ~15 GB) — and verify it fits the per-pod disk
+quota. On the RunPod lane that quota is the MooseFS ~130 GB per-pod cap
+(`OSError errno=122 EDQUOT`; `df -h /workspace` shows the TB share, NOT
+the per-pod limit — see `.claude/rules/gotchas.md` "RunPod MooseFS per-pod
+disk quota"); on SLURM / GCP it is the per-node scratch budget. If the
+upper bound exceeds the quota, the plan MUST specify the cleanup pattern —
+which artifacts persist, which are transient, and WHEN each transient one
+is deleted (cleanup-as-you-go / atomic merge-read-delete per probe /
+scratch-dir rotation), so the high-water mark stays under the quota. A
+plan that lets transient merges accumulate silently EDQUOTs mid-run
+(#653 round 4: the `select_checkpoint` phase merged a ~15 GB
+full-precision copy per probed dose checkpoint × 12 content cells × 9 dose
+ckpts = ~1.6 TB worst case on a 130 GB quota, with no cleanup between
+probes — the run died at the quota; the fix was atomic merge-read-delete
+per probe). This is a plan-time storage-budget check, NOT a mid-run gate.
+
 **Sentinel-signaling workloads need a /workspace-contract lane — never
 rely on auto's SLURM fallback.** If the plan's dispatch script posts
 markers via pod-side sentinel files (`/workspace/logs/issue-<N>-*.json` —

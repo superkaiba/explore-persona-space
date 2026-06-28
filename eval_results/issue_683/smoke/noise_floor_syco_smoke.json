@@ -1,0 +1,18 @@
+{
+  "behavior": "sycophancy",
+  "layer": 0,
+  "construct": "test-retest g_real reliability across seeds (ceiling on achievable \u03c1)",
+  "per_source": {},
+  "n_banks": 1,
+  "reproducibility": {
+    "git_commit": "4b6eda05dea93cf26f2c1ba5a4aae2efa412b7f4",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "python": "3.11.15",
+    "timestamp_utc": "2026-06-27T04:57:39+00:00",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "cuda_available": false,
+    "behavior": "sycophancy",
+    "layer": 0
+  }
+}

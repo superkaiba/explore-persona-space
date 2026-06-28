@@ -1,0 +1,125 @@
+\documentclass[11pt]{article}
+
+% ===========================================================================
+% docs/papers/_sample/issue_657_sample.tex
+%
+% SAMPLE paper for dashboard dev/smoke (Phase C2). NOT a real task — built by
+% `build_paper.py --paper-dir docs/papers/_sample --jobname issue_657_sample
+% --no-upload` to produce a real paper.html + paper_manifest.json the dashboard
+% paper-render path is exercised against. Uses real committed figures from
+% figures/issue_657/ and one \epsref to exercise the cross-ref hover-preview.
+% Do NOT set paper:true on any real task — this fixture stands alone.
+% ===========================================================================
+
+\input{preamble.tex}
+
+% Figures resolve from figures/issue_657/ relative to the build dir
+% (docs/papers/_sample/): ../../../figures/issue_657/.
+\graphicspath{{../../../figures/issue_657/}}
+
+\title{\vspace{-2.5em}A sample EPS paper for dashboard render smoke}
+\author{Explore Persona Space, experiment record \#657 (sample)}
+\date{Run date: 2026-06-24 \quad\textbar\quad Model: \texttt{Qwen2.5-7B}}
+
+\begin{document}
+\maketitle
+\vspace{-1.5em}
+
+\begin{abstract}
+\noindent
+This is a self-standing sample paper used only to smoke-test the dashboard's
+LaTeX-paper render path. The Explore Persona Space program studies how
+fine-tuning a language model under one persona leaks the trained behaviour to
+other personas and to the default assistant context. This fixture reproduces the
+shape of a real clean-result paper: an abstract, a self-standing introduction,
+a self-contained methods section, results subsections each pairing a figure with
+its read, and an appendix. It carries one cross-reference to a sibling
+experiment so the hover-preview card can be exercised.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+A persona is a system-prompt-induced behavioural mode. When a behaviour is
+implanted into a source persona by supervised fine-tuning, the question this line
+of work answers is how far that behaviour spreads: does it stay confined to the
+source persona, or does it leak to nearby personas and to the bare default
+assistant? This sample experiment measures the sycophancy-agreement rate before
+and after a single-persona fine-tune, and relates the post-training leakage to
+each unit's pre-training base rate. The single variable changed relative to the
+parent line~\epsref{612} is the completion-provenance of the positive rows.
+
+\section{Methods}
+\label{sec:methods}
+
+Training used Qwen2.5-7B with a LoRA adapter ($r=16$, $\alpha=32$) over a 1:1
+mix of positive rows (the source persona, sycophantic completions elicited
+on-policy from the base model and judge-filtered) and contrastive negative rows
+(four close personas including the default assistant, same questions, agreement
+stripped). The dependent variable is the judge-scored on-policy agreement rate.
+A continuous companion DV, the length-normalised trained$-$base log-probability
+of the model's own judged-positive completions, is reported alongside.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Base rate predicts post-training leakage}
+Figure~\ref{fig:base} plots each unit's pre-training agreement base rate. The
+source persona starts highest; the bystanders span a wide pre-training range.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\linewidth]{fig_h1_base_rate.png}
+\caption{Pre-training agreement base rate per unit. The source persona (leftmost)
+already agrees most often before any fine-tuning.}
+\label{fig:base}
+\end{figure}
+
+\subsection{Leakage scales with base rate}
+Figure~\ref{fig:scatter} relates each unit's base rate to its post-training
+leakage. The relationship is monotone: a unit's own base prior predicts how much
+of the implanted behaviour it inherits.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\linewidth]{fig_h1_sycophancy_scatter.png}
+\caption{Post-training leakage versus pre-training base rate, one point per unit.}
+\label{fig:scatter}
+\end{figure}
+
+\subsection{Per-unit effect sizes}
+Figure~\ref{fig:forest} is the per-unit forest of trained$-$base agreement-rate
+shifts with bootstrap confidence intervals.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\linewidth]{fig_h3_forest.png}
+\caption{Per-unit trained$-$base agreement-rate shift with 95\% bootstrap CIs.}
+\label{fig:forest}
+\end{figure}
+
+\section{Discussion}
+\label{sec:discussion}
+
+The pattern is consistent with the parent line~\epsref{612} and with the
+emergent-misalignment literature~\citep{betley2025emergent}: a unit's own
+base-model prior is the dominant predictor of how much implanted behaviour it
+inherits, beating geometric distance. This is a sample fixture, so the numbers
+are illustrative and carry no interpretation beyond exercising the render path.
+
+\paragraph{Limitations.} Single seed, in-distribution eval, one behaviour. The
+fixture exists to verify the dashboard renders a paper, downloads its PDF, and
+shows a cross-reference hover card.
+
+\bibliographystyle{plainnat}
+\bibliography{issue_657_sample}
+
+\appendix
+\section{Appendix}
+\label{sec:appendix}
+
+The complete hyperparameter table, full training-data construction recipe, and
+comprehensive worked completions would live here in a real paper. This sample
+omits them.
+
+\end{document}

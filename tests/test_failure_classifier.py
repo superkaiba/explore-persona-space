@@ -252,6 +252,73 @@ def test_probe_unreachable_reason_routed_to_infra() -> None:
     assert classify_failure(body) == "infra"
 
 
+# --- Zombie-GPU stall reason (workflow-fix from #664) ----------------------
+
+
+def test_known_stall_reason_routes_infra() -> None:
+    """#664: a `status=stalled` tick whose `stall_reason` is
+    `vllm_worker_dead_zombie_gpu` routes `infra` directly — a silent hang
+    has no traceback / OOM line in its log tail, so the regex fallback
+    would otherwise misroute it to the conservative `code` default. The
+    experimenter respawn (reap the orphan EngineCore by exact PID,
+    relaunch on the same pod) is the fix, NOT an implementer round."""
+    body = """## Stall detected
+
+The run made no log/GPU/CPU progress for 60+ minutes and was overridden
+to stalled by the zombie-GPU probe.
+"""
+    # Without the stall_reason this body matches no infra pattern -> code.
+    assert classify_failure(body) == "code"
+    # With the known stall_reason it routes infra.
+    assert classify_failure(body, stall_reason="vllm_worker_dead_zombie_gpu") == "infra"
+
+
+def test_explicit_field_wins_over_stall_reason() -> None:
+    """An explicit `failure_class:` field keeps top precedence over a
+    known `stall_reason`."""
+    body = """failure_class: code
+
+CUDA-worker died but the explicit field pins this to code.
+"""
+    assert classify_failure(body, stall_reason="vllm_worker_dead_zombie_gpu") == "code"
+
+
+def test_unknown_stall_reason_falls_through_to_scan() -> None:
+    """An unknown stall_reason does NOT short-circuit; the body is scanned
+    normally (here, no infra pattern -> conservative code default)."""
+    body = "## Stall\n\nopaque stall with no pattern\n"
+    assert classify_failure(body, stall_reason="some_future_reason") == "code"
+
+
+def test_unknown_stall_reason_still_matches_infra_pattern() -> None:
+    """An unknown stall_reason leaves a genuine infra body on the infra
+    route (the regex scan still runs)."""
+    body = "## Stall\n\nRuntimeError: CUDA out of memory.\n"
+    assert classify_failure(body, stall_reason="some_future_reason") == "infra"
+
+
+def test_cli_stall_reason_routes_infra() -> None:
+    """The Step 7 shell-out forwards the poll JSON line's stall_reason via
+    --stall-reason; a known reason routes infra even with a no-pattern
+    body."""
+    import subprocess
+
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--body",
+            "silent hang, no pattern in body",
+            "--stall-reason",
+            "vllm_worker_dead_zombie_gpu",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert proc.stdout.strip() == "infra"
+
+
 # --- CLI integration -------------------------------------------------------
 
 

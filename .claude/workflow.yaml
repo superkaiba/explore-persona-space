@@ -980,8 +980,10 @@ ensemble_review:
         complete-artifact link liveness, methodology-doc spot-check);
         Conciseness (cap adherence + bullets-over-prose); voice incl. the
         byte-identical ban; statistical-framing; mentor-facing title only;
-        one-takeaway-one-figure per finding; raw alongside processed;
-        planned-vs-actual coverage; binding-concerns audit; headline not
+        one-takeaway-one-figure per finding; underlying data alongside
+        every aggregate (low-level data plot behind each aggregate stat +
+        raw alongside processed); planned-vs-actual coverage;
+        binding-concerns audit; headline not
         resting on a contaminated / failed-data-gate arm. Mechanical
         pre-passes: verify_task_body.py (+ --methodology-doc when the doc
         exists, binds check 21) + audit_clean_results_body_discipline.py.
@@ -1474,8 +1476,9 @@ markers:
       `<!-- workflow-fix-candidate v1 -->` in the report text INSTEAD
       OF posting `epm:new-bug-class v1`. The whack-a-mole detector
       at SKILL.md Step 5.bis(b) EXCLUDES workflow-fix-candidate rounds
-      from the strategy-pivot count — workflow-improver handles those
-      same-turn, the experiment continues.
+      from the strategy-pivot count — the workflow-fix-on-bug protocol
+      files a kind:infra task + spawns a `/issue --auto` session for
+      those, same-turn, and the experiment continues.
 
       The detector counts distinct `bug_class` values in the trailing
       5 implementer rounds (rounds N-4..N). Two triggers:
@@ -1685,7 +1688,7 @@ markers:
   - kind: "epm:interpretation"
     posted_by: skill (via analyzer)
     when: "Step 9a"
-    fields: "Fact sheet (Section 1) + interpretation (Section 2). May have v1-v3 across critique rounds."
+    fields: "Fact sheet (Section 1) + interpretation (Section 2). May have v1-v3 across critique rounds. For a `paper: true` task the analyzer runs PAPER-TASK MODE — the same honesty-protocol analysis, but the write-up is the LaTeX paper under `docs/papers/issue_<N>/` (the interpretation lands in the paper's Results/Discussion) rather than a markdown body; the marker carrier is unchanged."
   - kind: "epm:interp-critique"
     posted_by: skill (via interpretation-critic)
     when: "Step 9a"
@@ -1701,32 +1704,42 @@ markers:
   - kind: "epm:clean-result-drafted"
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
-    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis usage as the clean-result link anchor (epm:analysis survives as the analyzer's cross-link recap + free_analysis_unrun carrier — see that entry)."
+    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis usage as the clean-result link anchor (epm:analysis survives as the analyzer's cross-link recap + free_analysis_unrun carrier — see that entry). For a `paper: true` task the analyzer posts this only after `verify_paper.py` PASSes and the `body.md` paper-stub is written; the link points at the paper-stub (which points at `docs/papers/issue_<N>/`)."
   - kind: "epm:humanize-loop"
     posted_by: skill (via /humanize loop)
     when: "Step 9a-humanize"
-    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the v3 reader-facing prose surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read bullets; for an in-flight v2/legacy body the `## TL;DR` block instead — branch on the sentinel). Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded'. Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds."
+    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the v3 reader-facing prose surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read bullets; for an in-flight v2/legacy body the `## TL;DR` block instead — branch on the sentinel). Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded' or 'skipped — paper-task (analyzer ran inline /humanize academic on the .tex)'. Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds. For a `paper: true` task the orchestrator-level pass is SKIPPED — the analyzer already ran `/humanize academic` on the paper's Abstract/Introduction/Results/Discussion prose INSIDE PAPER-TASK MODE."
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict against the v3 clean-result spec (five flat H2s — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility`; sentinel `<!-- clean-result-v3 -->`; 2026-W24; v2/legacy bodies keep the grandfathered 2-content-section nested-TL;DR shape, NEVER newly hard-FAILed). v3 lenses (authoritative set in clean-result-critic.md): title; v3-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; What I ran `**Why:**`/`**Design:**`/`**Training:**`/`**Eval:**` slots; Findings `### <finding>` skeleton); inline figure inside each `### <finding>` (incl. setup/read pairing); Reproducibility (Parameters SLIMMED to load-bearing subset; confidence in the H1 title tag only); Data (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, methodology-doc §2 spot-check via the passed `--methodology-doc`); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into finding prose, no discrete H3); one-takeaway-one-figure per `### <finding>`; raw alongside processed; planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc <issue-worktree-doc-path>` when the doc exists, binds check 21) + audit_clean_results_body_discipline.py."
+    fields: "PASS/REVISE verdict against the v4 clean-result spec (four flat H2s — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + a `**Repro:**`/`**Context:**` footer; sentinel `<!-- clean-result-v4 -->`; 2026-W26; v3/v2/legacy bodies keep their grandfathered shape, NEVER newly hard-FAILed). v4 lenses (authoritative set in clean-result-critic.md; stable numbering, v4 section names): title; v4-structure (Takeaways 3-6 bullets numbers-first + cross-round-synthesis currency; Goal `**This experiment in context:**`/`**Broader narrative:**`; Methodology `**Design:**`/`**Training:**` (complete hparam table)/`**Evaluation:**`/`**Data extraction:**`/`**Sample ...:**` slots; Results `### <result>` three-beat skeleton); inline figure inside each `### <result>` (what-is-plotted → plot → interpretation); footer (`**Repro:**` + `**Context:**`; confidence in the H1 title tag only); Goal + Methodology completeness (capsule trio identity/why/preprocessing, subset disclosure, complete-artifact link liveness, complete hyperparameter table); Conciseness (cap adherence + bullets-over-prose); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (methodology corrections fold into result prose, no discrete H3); one-result-one-figure per `### <result>`; underlying data alongside every aggregate (low-level per-unit data plot behind each aggregate stat + raw alongside processed); planned-vs-actual coverage; binding-concerns audit; headline must not rest on a contaminated / failed-data-gate arm. Mechanical pre-pass: verify_task_body.py (`--methodology-doc` no longer required for v4 — the doc is a copy of the body's `## Methodology`) + audit_clean_results_body_discipline.py. For a `paper: true` task the critic branches internally: the clean-result is a LaTeX paper at `docs/papers/issue_<N>/`, the mechanical pre-pass is `verify_paper.py` (NOT verify_task_body.py / audit_clean_results_body_discipline.py), and the seven paper lenses (P1-P7, incl. P7 verbatim examples + judge prompts; verify_paper.py also gates verbatim examples (check 7) + judge prompts (check 8)) bind instead of the fifteen markdown lenses (no metric-grounding lens in v1)."
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
     fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. Runs verify_task_body.py and audit_clean_results_body_discipline.py independently."
   - kind: "epm:methodology-doc-generated"
-    posted_by: skill (via methodology-writer agent + orchestrator commit/gist publish)
+    posted_by: "skill (orchestrator export of the body's `## Methodology` section + gist publish; v3/v2 grandfathered path via methodology-writer agent; paper-task skip post)"
     when: "Step 9a-quater (after clean-result-critic PASS, before `awaiting_promotion` park)"
     fields: |
-      Records the auto-generated findings-blind methodology +
-      hyperparameters + worked-examples reference for the task. Body
-      shape:
+      Records the methodology + hyperparameters + worked-examples
+      reference for the task. For v4 markdown bodies this is a mechanical
+      COPY of the body's `## Methodology` section (H2 normalized to
+      `# Methodology — issue <N>`), committed to `main`; for grandfathered
+      v3/v2 bodies it is the findings-blind methodology-writer output; for
+      a `paper: true` task the step is SKIPPED (the methodology-writer
+      already authored the Methods section + recipe Appendix INTO the
+      paper `.tex` at the Step 8 early spawn — the paper IS the
+      methodology reference — so there is no standalone doc to export and
+      no top-of-body link to append; the marker is posted only to converge
+      idempotency). Body shape:
       `doc_path: docs/methodology/issue_<N>.md commit: <full 40-char SHA>
        gist_url: <secret-gist URL or "n/a — <reason>">
        note: <optional, e.g. "gist skipped — possible secret detected in
        doc body" / "gist skipped — gh lacks gist scope" / "gist skipped —
        network error" / "skipped: kind: <infra|batch|survey> has no
-       methodology surface" / "extends=<followup_label>" (EXTEND pass —
+       methodology surface" / "skipped — paper-task (Methods + Appendix
+       authored into docs/papers/issue_<N>/issue_<N>.tex)" /
+       "extends=<followup_label>" (EXTEND pass —
        a same-issue follow-up round appended the new arm's methodology
        to the existing doc) / "no-new-methodology=<followup_label>"
        (planner-exempt re-run, identical recipe, no doc change)>`. The
@@ -2059,17 +2072,22 @@ markers:
     when: "every EXIT site"
     fields: "step, exit_kind (clean|parked|failure-exit), next_expected_step, optional notes. Consumed by the §5 re-entry router (orchestrate/resume.py)."
   - kind: "epm:workflow-fix-candidate"
-    posted_by: orchestrator (parent assistant, /issue skill, or research-pm) on receiving a candidate block from any subagent's return text — or from the orchestrator's own observation
-    when: "Any agent emits a <!-- workflow-fix-candidate v1 --> block in its return text. The orchestrator logs the candidate before deciding whether to spawn workflow-improver. Posting target: the events.jsonl of the task the emitting agent was working on; if no task, the file-based fallback .claude/cache/workflow-fix-events.jsonl."
-    fields: "target_file (workflow surface path, relative to repo root), bug_observed (one sentence), why_workflow_gap (one sentence), proposed_change (one sentence), diff_sketch (2-10 lines), confidence (low|medium|high), emitting_agent (subagent type), related_task (task ID or n/a)"
+    posted_by: orchestrator (parent assistant, /issue skill, or research-pm) on receiving a candidate block / prose follow-up from any subagent's return text — or from the orchestrator's own observation
+    when: "Any agent emits a <!-- workflow-fix-candidate v1 --> block (or a concrete prose follow-up) in its return text. The orchestrator logs the candidate, computes its (target_file, fingerprint) dedup key, and records the routing decision before filing the kind:infra workflow-fix task. Posting target: the events.jsonl of the PARENT task the emitting agent was working on; if no task, the file-based fallback .claude/cache/workflow-fix-events.jsonl."
+    fields: "target_file (workflow surface path, relative to repo root), bug_observed (one sentence), why_workflow_gap (one sentence), proposed_change (one sentence), diff_sketch (2-10 lines), confidence (low|medium|high), emitting_agent (subagent type), related_task (task ID or n/a), routing (routed: filed #N | deduped against #M | parked: EPM_WORKFLOW_FIX_SESSION | parked: architectural), source (candidate-block | prose-followup)"
+  - kind: "epm:workflow-fix-task-filed"
+    version: 1
+    posted_by: orchestrator on the PARENT task after filing the kind:infra workflow-fix task + spawning the /issue --auto session
+    when: "Orchestrator filed a kind:infra workflow-fix task (pre-filled from a workflow-fix candidate) and spawned a background /issue <N> --auto session to implement it via the full code-change pipeline (#678, replaces the retired workflow-improver auto-spawn). Posted to the PARENT task (the one that raised the candidate)."
+    fields: "filed_task (new task id N), target_file (workflow surface path), fingerprint (dedup fp, 12-hex), session_spawned (true|false), origin_candidate (verbatim candidate block or synthesized prose)"
   - kind: "epm:workflow-fix-applied"
-    posted_by: orchestrator after workflow-improver returns with reviewer PASS (or surgical change ≤10 lines, single file, no behavior change)
-    when: "workflow-improver landed a diff that resolves a workflow-fix-candidate. The diff is committed on workflow-improver's worktree branch; this marker records what changed and links to the originating candidate."
-    fields: "files_changed (list of paths), unified_diff (full diff inline), reviewer_verdict (PASS|skipped-surgical), commit_sha (workflow-improver's worktree commit), originating_candidate (the candidate block that triggered this)"
+    posted_by: orchestrator on the PARENT task when the spawned child workflow-fix task reaches completed (its /issue Step 10d merged to main)
+    when: "The spawned child workflow-fix /issue session completed and Step 10d auto-merged its worktree to main — the apply event. Posted to the PARENT task, cross-linking the child. The CHILD task carries only the standard /issue lifecycle markers; its completion + Step 10d merge ARE the apply record there."
+    fields: "applied_task (#N, the spawned child task), merge_sha (the Step 10d merge commit on main), files_changed (list of paths if available), originating_candidate (the candidate block / prose that triggered this)"
   - kind: "epm:workflow-fix-failed"
-    posted_by: orchestrator when workflow-improver returns FAIL (reviewer rejected after 3 rounds, lint failed, out-of-scope deflection, or worktree spawn refused)
-    when: "Same trigger as workflow-fix-applied but the workflow-improver returned with a non-PASS verdict. The candidate is preserved inline so a future pass can retry with sharper context."
-    fields: "failure_reason (reviewer-FAIL|lint-FAIL|out-of-scope|worktree-refusal|other), originating_candidate (verbatim), workflow_improver_report (terse summary of what was attempted and why it failed)"
+    posted_by: orchestrator on the PARENT task when the spawned child workflow-fix task reaches blocked/archived without merging, or the spawn itself failed
+    when: "The spawned child workflow-fix /issue session reached blocked / archived without a Step 10d merge, or spawn_session.py failed to spawn it. A dedup hit (no task filed) is NOT a failure and posts no failed marker. The originating candidate is preserved inline so a future pass can re-file with sharper context."
+    fields: "failed_task (#N, the spawned child or n/a if spawn-failed), failure_reason (child-blocked | child-archived | spawn-failed | other), originating_candidate (verbatim), notes (terse summary of what failed)"
 
 # ──────────────────────────────────────────────────────────────────────
 # /issue lifecycle steps. Required by the §5 epm:step-completed re-entry
@@ -2498,17 +2516,20 @@ steps:
     entry_condition: |
       clean-result-critic PASS (or max rounds reached). Fires for
       `kind: experiment` always and for `kind: analysis` only when the
-      task's `## Reproducibility` section names a training/eval
-      methodology (skip `infra | batch | survey`). Idempotent per
-      follow-up round: no-op when `epm:methodology-doc-generated v1` is
-      present AND every analyzer-re-folded `epm:followup-scope v1`
-      followup_label is recorded in a marker note (`extends=` /
-      `no-new-methodology=`); an unrecorded label runs the EXTEND pass
-      (SKILL.md Step 9a-quater) instead. The skill
-      runs this step after the 9a-bis loop's PASS and BEFORE flipping
+      task's `## Methodology` section names a training/eval methodology
+      (skip `infra | batch | survey`). For a v4 body this step is a
+      mechanical EXPORT — copy the body's `## Methodology` section to
+      `docs/methodology/issue_<N>.md`, commit to `main`, secret-gist
+      mirror, append the top-of-body `**Methodology:**` link (no
+      separate findings-blind authoring). Idempotent per follow-up round:
+      no-op when `epm:methodology-doc-generated v1` is present AND every
+      analyzer-re-folded `epm:followup-scope v1` followup_label is
+      recorded in a marker note (`extends=` / `no-new-methodology=`); an
+      unrecorded label re-exports for that round. The skill runs this
+      step after the 9a-bis loop's PASS and BEFORE flipping
       `reviewing` -> `awaiting_promotion` (Step 9b in SKILL.md prose),
-      so the link line landed in `## Reproducibility` is part of the
-      same finished package the user promotes.
+      so the top-of-body `**Methodology:**` link is part of the same
+      finished package the user promotes.
     posts_marker: "epm:methodology-doc-generated"
     next_expected_step: "10"
   - id: "9b-same"
@@ -2652,14 +2673,17 @@ client:
   module: explore_persona_space.task_workflow
   auth: "none (local filesystem; flock on ~/.task-workflow/lock)"
   mutation_rule: "scripts/task.py only; one git commit per operation; web app only appends to comments.jsonl"
-  verification: "scripts/verify_task_body.py (sentinel-gated v3 five-flat-H2 spec — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` — alongside the grandfathered v2 two-content-section + legacy shapes; v3-only checks 18-21 (Data shape, subset disclosure, word caps, body-params⊆methodology-doc) PASS-skip on v2/legacy, the v2-only `check_tldr_nested_structure` PASS-skips on v3, and checks 6/16/17 run on either nested sentinel; PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
+  verification: "scripts/verify_task_body.py (sentinel-gated v4 four-flat-H2 spec — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` + `**Repro:**`/`**Context:**` footer — alongside the grandfathered v3 five-flat-H2, v2 two-content-section, + legacy shapes; v4-only checks (`check_v4_structure`, `check_v4_methodology_shape`, `check_v4_word_caps`, `check_v4_results_beat`) PASS-skip on non-v4 bodies, the v3-only Data checks PASS-skip on non-v3, the v2-only `check_tldr_nested_structure` PASS-skips on v3/v4, and checks 6/16/17 run on any title-tag-confidence sentinel (v2/v3/v4); PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
 
 # ──────────────────────────────────────────────────────────────────────
 # Workflow-fix-on-bug protocol. Every agent (subagent or orchestrator)
 # surfaces workflow-fixable bugs via an inline `<!-- workflow-fix-candidate
-# v1 -->` block in its return text; the orchestrator spawns
-# workflow-improver in background (isolation=worktree). Full prose
-# protocol + scoping rules: .claude/rules/workflow-fix-on-bug.md.
+# v1 -->` block in its return text; the orchestrator FILES a kind:infra
+# workflow-fix task (pre-filled from the candidate) + spawns a background
+# `/issue <N> --auto` session to implement it via the full code-change
+# pipeline (#678, replaces the retired workflow-improver auto-spawn — user
+# directive "so we get the plan review and all this"). Full prose protocol +
+# scoping rules: .claude/rules/workflow-fix-on-bug.md.
 # Critical-rules summary: CLAUDE.md § Critical Rules.
 # ──────────────────────────────────────────────────────────────────────
 workflow_fix_on_bug:
@@ -2676,7 +2700,7 @@ workflow_fix_on_bug:
     - confidence  # low | medium | high
     - related_task
   max_candidates_per_agent_invocation: 1
-  spawned_by: orchestrator-only  # subagents NEVER spawn workflow-improver themselves
+  routed_by: orchestrator-only  # subagents NEVER file a task / spawn a session themselves
   applies_to_workflow_surface:
     - ".claude/agents/*.md"
     - ".claude/skills/**/SKILL.md"
@@ -2792,6 +2816,8 @@ workflow_fix_on_bug:
     - "tests/test_session_resolver.py"
     - "tests/test_spawn_session_list_enrichment.py"
     - "tests/test_sparse_worktree.py"
+    # Pins the workflow-fix dedup + recursion-guard predicates (#678).
+    - "tests/test_workflow_fix_dedup.py"
     # Pins the analyzer Step 1.5 exemplar loader's v2-body extraction (#608).
     - "tests/test_recent_clean_results.py"
     # Pins the plan pre-pass gate's check catalog + CLI contract (#625/#633).
@@ -2815,20 +2841,35 @@ workflow_fix_on_bug:
     - "tasks/**"
     - "eval_results/**"
     - "figures/**"
+  recursion_guard:
+    env_var: "EPM_WORKFLOW_FIX_SESSION"          # in-session convenience flag, set at /issue Step 0 when the durable signal is present
+    durable_signal: "workflow_fix_target: line in the task body's ## Provenance block"  # survives watcher respawn (primary; task_workflow.is_workflow_fix_session)
+    behavior: "A session under EITHER signal logs+notifies candidates it raises; it NEVER auto-files/spawns MORE workflow-fix tasks for its own findings (analogue of AUTO_REVIEW_DISABLED). Escape valve: such a session CAN still emit candidate blocks — they are parked/notified, not silently dropped."
+  dedup_key: "(target_file, fingerprint)"        # fp = sha256(normalize(proposed_change)+'||'+normalize(bug_observed))[:12]; task_workflow.wf_fix_fingerprint
+  dedup_predicate: "A candidate is a duplicate iff an OPEN kind:infra task has a workflow-fix: title prefix AND a wf-fix-fp:<fp> tag matching the fingerprint AND a ## Provenance workflow_fix_target line EXACTLY matching target_file AND status NOT in {completed, archived}. Same file + DIFFERENT fingerprint is NOT a duplicate (it files its own task). Impl: task_workflow.is_open_workflow_fix_task; tested in tests/test_workflow_fix_dedup.py."
+  dedup_surfaces:
+    primary: "title prefix 'workflow-fix:' (via task.py new --title / set_title) + tag 'wf-fix-fp:<fp>' (via add-tag) — both round-trip through view --json / REGISTRY"
+    fallback: "grep the literal 'workflow_fix_target:' line in body.md ## Provenance (written verbatim via --body-file)"
+    never: "set_body — strips leading frontmatter except paper/abstract; NEVER route a dedup key through it"
+  spawn_command: "uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto"
   orchestrator_actions:
-    - "Post epm:workflow-fix-candidate v1 to the originating task's events.jsonl (or .claude/cache/workflow-fix-events.jsonl if no task) with candidate fields inline"
-    - "Spawn Agent(subagent_type=workflow-improver, run_in_background=true, isolation=worktree) with the verbatim candidate block + task context as prompt"
-    - "Continue current work without blocking; the workflow-improver runs in parallel"
-    - "On notification (workflow-improver exit), post epm:workflow-fix-applied v1 with full unified diff inline OR epm:workflow-fix-failed v1 with failure_reason"
-  suppress_spawn_when:
-    - "confidence: low AND proposed_change is speculative (still log the candidate marker)"
-    - "Another workflow-improver is already running on the same target_file in this session (queue via SendMessage to the running agent instead of spawning a new one)"
+    - "If running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): LOG epm:workflow-fix-candidate v1 (note: parked — EPM_WORKFLOW_FIX_SESSION), notify, STOP (do NOT file/spawn)"
+    - "Grep the workflow surface for the pattern; populate target_file (comma-separated list or glob when uniform)"
+    - "Compute fp = task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)"
+    - "DEDUP: if task_workflow.is_open_workflow_fix_task(target_file, fp) returns an id, log epm:workflow-fix-candidate v1 (note: deduped against #M), continue — do NOT double-file (a same-file DIFFERENT-fp candidate is NOT a dup, file it)"
+    - "Post epm:workflow-fix-candidate v1 to the PARENT task's events.jsonl (or .claude/cache/workflow-fix-events.jsonl if no task) with candidate fields + routing decision inline"
+    - "File the task: task.py new --kind infra --title 'workflow-fix: <proposed_change, <=60 chars>' --body-file <template> --origin-prompt '<verbatim candidate>' (template: rule doc § Body-file template; ## Provenance carries the workflow_fix_target + fingerprint lines verbatim)"
+    - "Tag the dedup keys: task.py add-tag <N> wf-fix; task.py add-tag <N> wf-fix-fp:<fp>"
+    - "Spawn the session: spawn_session.py spawn-issue --issue <N> --auto (architectural changes spawn WITHOUT --auto, OR the plan carries architectural: true so Step 2c parks at plan_pending — § architectural greenlight)"
+    - "Post epm:workflow-fix-task-filed v1 on the PARENT task; continue current work without blocking — the child /issue session implements the fix via the full code-change pipeline"
+    - "On the child reaching completed (its Step 10d merged to main): post epm:workflow-fix-applied v1 on the PARENT task (applied_task #N, merge_sha). On the child reaching blocked/archived without merging, or spawn-failure: post epm:workflow-fix-failed v1 on the PARENT task"
+  suppress_filing_when:
+    - "Running under the recursion guard (workflow_fix_target Provenance line OR EPM_WORKFLOW_FIX_SESSION=1): log+notify the candidate, do NOT file/spawn (the recursion_guard above)"
+    - "An OPEN kind:infra workflow-fix task already exists for the SAME (target_file, fingerprint) — log 'deduped against #M', no new task (a DISTINCT bug on the same file, different fingerprint, is NOT a dup — file it)"
     - "Candidate's target_file is in out_of_scope (log marker; flag emitting agent's misclassification in the marker body)"
-    - "proposed_change requires a fundamental architectural decision (rename a status enum, remove the Codex ensemble, change the gate enum) — log the candidate and surface to user on next chat turn instead"
-  ensemble_review:
-    pairs_with: code-reviewer
-    when: "workflow-improver classifies the change as substantive or architectural (NOT for surgical changes — ≤10 lines, single file, no behavior change)"
-    cap_rounds: 3  # same as /issue Step 5
+    - "proposed_change requires a fundamental architectural / public-contract decision (rename a status enum, remove the Codex ensemble, change a marker schema or task.py subcommand) — file the task but route through the /issue plan-approval gate (spawn WITHOUT --auto OR plan architectural: true → park at plan_pending), and surface to the user on the next chat turn (§ architectural greenlight). LOW CONFIDENCE alone is NOT a suppression reason (2026-06-11): a candidate naming a concrete file + change is filed at any confidence; the spawned session's planner may deflect with a reasoned no-change report"
+    - "Nothing concrete to dispatch — prose names no specific workflow-surface file AND no specific change (log the marker for the dashboard; nothing to file)"
+  child_review: "The spawned /issue session owns its OWN review — the standard Claude+Codex code-reviewer ensemble (cap 3 rounds, /issue Step 5) + the inline test-verdict gate. No separate ensemble_review here; the full /issue pipeline replaces the old workflow-improver + single code-reviewer loop."
   forbidden_emitters:
     - codex-code-reviewer  # Codex twins exit cleanly; verdict body only
     - codex-critic

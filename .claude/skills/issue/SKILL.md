@@ -606,6 +606,25 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   "Pod-N stopped while awaiting user decision on …" is the banned regression
   this clause closes — it is the autonomous-mode equivalent of the text-menu
   end-of-turn failure. Forbidden in `EPM_AUTONOMOUS_SESSION=1`.
+- **A FREE, no-data-loss path beats parking — take it and keep waiting.** When
+  a free, no-data-loss continuation EXISTS, taking it is mandatory; parking to
+  await the user or proposing a PAID rerun while that free path is available is
+  the banned regression. Canonical case (tasks #658/#663, 2026-06-24): an
+  in-SLA Anthropic Message Batch (submitted, not yet expired) SELF-HARVESTS for
+  free at `expires_at` — the result is recoverable by polling the batch's own
+  deadline-bounded poller (`explore_persona_space.eval.batch_judge`, which
+  bounds the poll on `expires_at`), so the correct autonomous action is to keep
+  the deadline-bounded poll running (end the turn; the bg-Bash poll chain / the
+  45-min `/issue-tick` backstop re-wakes you) and harvest the free result — NOT
+  to PARK with "await your call" and NOT to propose a paid re-submission. A paid
+  rerun is justified ONLY when the cheaper free path is genuinely unavailable
+  (the batch already expired with no result, the data is truly lost). This is
+  the data-loss-aware twin of "never stop a pod to PARK": both forbid burning a
+  turn (or money) on a user-park when continuing toward the Goal is free and
+  loses nothing. Also route batch judging through the #663-hardened client
+  rather than a hand-rolled `messages.batches.create` + deadline-less
+  `while True ... sleep` poller — the client is what makes the free self-harvest
+  automatic (enforced by `scripts/workflow_lint.py --check-batch-judge-client`).
 - **Cost is gated ONLY at the plan-approval GPU-hour cap, never mid-run.** The
   ONLY cost gate in autonomous mode is the Step 2c `plan_pending` park when
   `gpu_hours_total > EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 100). A running
@@ -872,6 +891,20 @@ them (`issue-<N>.json`). Registration failure is non-fatal: state the
 failure and continue (same fail-soft contract as the Step 9b same-issue
 follow-up loop's step-2 re-registration).
 
+**Workflow-fix recursion-guard self-set (#678).** If THIS task is a
+workflow-fix task — its `body.md` carries a `workflow_fix_target:`
+Provenance line (the durable signal,
+`task_workflow.is_workflow_fix_session(N)`) — set
+`EPM_WORKFLOW_FIX_SESSION=1` for the session's own ergonomics. The
+durable Provenance signal is the primary; the env var is the in-session
+convenience leg lost on a watcher respawn (which re-runs `spawn-issue
+--auto` without custom env), so the durable signal is always re-derivable
+from the body. The recursion guard means this session — or any subagent
+it spawns — NEVER auto-files MORE workflow-fix tasks for its own
+findings: a `<!-- workflow-fix-candidate v1 -->` it raises is LOGGED +
+notified, not routed (analogue of `AUTO_REVIEW_DISABLED`; see
+`.claude/rules/workflow-fix-on-bug.md` § Recursion guard).
+
 ```bash
 # Reads body.md frontmatter + the most-recent slice of events.jsonl.
 # Use --json for the machine-readable shape (body + last events).
@@ -1065,6 +1098,21 @@ metadata. Order:
      list of >=3 unrelated fixes -> suggest `batch`
    - Title prefix `Analyze:` / `Re-analyze:` -> suggest `analysis`
    - Title prefix `Survey:` / `Read:` / `Lit review:` -> suggest `survey`
+
+   **Fix-validation override (CLAUDE.md § "Routing experiment intent"):**
+   a `Test:` cue does NOT default to `experiment` when the Goal is to
+   VALIDATE / TEST that a shipped workflow / infra / code fix WORKS (a
+   smoke run, an end-to-end "does it work now after the fix", a config /
+   pipeline / backend re-check) — that is `kind: infra`, NOT `experiment`,
+   because it completes on the test-verdict path and produces NO promotable
+   clean-result. Reserve `experiment` for a RESEARCH QUESTION that produces
+   a clean-result the user promotes. Litmus: would the result rewrite an
+   issue's `## Takeaways` / answer an `open_questions.md` question
+   (→ `experiment`), or just confirm the fix is sound (→ `infra`)? When the
+   title says `Test:`/`Validate:` but the body reads as fix-validation,
+   suggest `infra` as `(Recommended)`. (Incident #672: a GCP-fix validation
+   filed as `experiment` was parked at `awaiting_promotion` as a promotable
+   clean-result.)
 
    <!-- gate: gates.missing_type -->
    <!-- autonomous-mode: block-and-fail -->
@@ -1504,6 +1552,30 @@ Never auto-approve on a missing/ambiguous estimate — the gate parks a blank
 estimate (fail safe). `awaiting_promotion` remains a human gate regardless of
 this cap.
 
+**Workflow-fix tasks — architectural greenlight (#678).**
+<!-- gate: gates.plan_approval -->
+A `kind: infra`
+workflow-fix task (filed by the workflow-fix-on-bug protocol,
+`.claude/rules/workflow-fix-on-bug.md`) is 0 GPU-h, so the GPU-h cap alone
+auto-approves EVERYTHING — including architectural / public-contract changes,
+which must still surface to the user. The planner flags such a change with an
+`architectural: true` line in the plan frontmatter (+ an "ARCHITECTURAL — needs
+user greenlight" banner in the Plan Summary). When the autonomous gate
+(`EPM_AUTONOMOUS_SESSION=1`) sees
+`architectural: true` it PARKS at `plan_pending` regardless of GPU-h — the
+existing architectural-greenlight semantics, riding this SAME plan-approval gate
+(it introduces NO new ask site; the architectural park reuses the gate the
+`--auto-approve-if-autonomous` decision already owns). **Fallback** if the
+`--auto-approve-if-autonomous`
+gate does not yet read `architectural:` from the plan frontmatter: the
+workflow-fix-on-bug protocol files the architectural task but spawns it WITHOUT
+`--auto` — a bare session that parks at `plan_pending` until a human types
+`/issue <N>` — so the architectural-greenlight invariant holds regardless. The
+non-architectural majority (0 GPU-h, `architectural` absent/false) auto-approve
+and self-merge at Step 10d, preserving the no-greenlight default. Interactive
+mode is unaffected: the existing Step 2c plan-approval ask still governs a
+human-present session.
+
 - **Legacy autonomous mode** (no chat user present AND
   `EPM_AUTONOMOUS_SESSION` is unset — e.g. invoked from
   `auto-experiment-runner`): EXIT immediately; the task sits at
@@ -1867,7 +1939,8 @@ fi
 
 The refresh touches ONLY the workflow surface (never experiment code).
 Issue branches must not carry their own workflow-surface edits as a
-rule (those go through `workflow-improver` worktrees), with one
+rule (those go through their own filed workflow-fix `/issue --auto`
+sessions + worktrees), with one
 legitimate exception: a feature branch whose DELIVERABLE adds
 workflow-surface entries — e.g. a new marker schema registered in
 `workflow.yaml` rides its feature branch (incident #535, 2026-06-10:
@@ -2219,7 +2292,8 @@ for `epm:new-bug-class v1` markers posted in the trailing 5
 implementer rounds (rounds N-4..N, where N is the current round).
 EXCLUDE rounds whose `epm:experiment-implementation v<n>` event note
 contained the regex `<!-- workflow-fix-candidate v1 -->` (per the
-workflow-fix-on-bug protocol; those drive workflow-improver, not
+workflow-fix-on-bug protocol; those drive the workflow-fix-task-filing
+default — a filed `kind: infra` task + a `/issue --auto` session — not
 strategy-pivot consideration). "Consecutive" below means consecutive
 across NON-EXCLUDED rounds — i.e. when an excluded round sits between
 two tagged rounds, the excluded round is skipped, and the two tagged
@@ -3103,8 +3177,13 @@ while True:
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
-    #                                   the excerpt); run CRON-TEARDOWN (see
-    #                                   below); set status:blocked; exit.
+    #                                   the excerpt, ALSO forwarding the tick's
+    #                                   result["stall_reason"] via
+    #                                   --stall-reason — a silent hang's log
+    #                                   tail carries no infra pattern, so the
+    #                                   stall_reason is the only routing
+    #                                   signal; see Step 7); run CRON-TEARDOWN
+    #                                   (see below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
     #                                  if new_milestone was true; loop again,
     #                                  using result["next_interval"] as the
@@ -3623,8 +3702,26 @@ When this skill is re-invoked in `running`:
 
    | failure_class | Cause example | Action |
    |---|---|---|
-   | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, status -> `blocked`. |
+   | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers), a zombie-GPU-allocation stall (`stall_reason: vllm_worker_dead_zombie_gpu`, #664) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, status -> `blocked`. (Zombie-GPU stall: see the recovery-brief note below.) |
    | `code` | Python `Traceback` from `src/explore_persona_space/` or `scripts/` (our code), `AssertionError`/`TypeError`/`KeyError` from our code, CUDA OOM listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — GPU-pinning bug, #557) | Status back to `running` (implementing sub-phase), re-spawn `experiment-implementer` with the failure context. Loop through Steps 4b -> 5 -> 6 again. Cap 3 (existing). |
+
+   **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
+   When the `status=stalled` tick's `stall_reason` is
+   `vllm_worker_dead_zombie_gpu`, the experimenter respawn is an `infra`
+   row (the classifier routes it via `--stall-reason`), but the generic
+   respawn brief is NOT enough: the orphaned `VLLM::EngineCore` worker
+   holds VRAM under a cmdline of just `VLLM::EngineCore` (no script name),
+   so a routine `pgrep -f <script>` / `pkill -f <dispatcher>.py` reaper
+   MISSES it (#664 r8). The respawn brief MUST instruct the experimenter
+   to reap the orphan by EXACT PID before relaunching on the same pod —
+   `pgrep -af '^VLLM::EngineCore'` → `kill -KILL <pid>` each →
+   `nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader`
+   to confirm the VRAM released. The canonical recipe lives in
+   `.claude/rules/gotchas.md` (crash-orphan `VLLM::EngineCore` entry) and
+   the long-form runbook
+   `.claude/agent-memory/experimenter/feedback_vllm_zombie_gpu_pkill_reaper.md`;
+   reference BOTH in the brief so the experimenter does not re-derive it
+   (the experimenter's own Pre-Launch step 9 also runs this probe).
 
    **Missing `failure_class` — invoke the classifier script.** Do NOT
    reason about regex patterns inline; the patterns are owned by
@@ -3633,10 +3730,16 @@ When this skill is re-invoked in `running`:
 
    ```bash
    # Pipe the failure body via stdin to avoid shell-quoting traps.
+   # On a status=stalled tick, ALSO forward the poll JSON line's
+   # stall_reason via --stall-reason: a known reason (e.g.
+   # vllm_worker_dead_zombie_gpu) routes infra directly, because a silent
+   # hang's log tail matches no infra pattern. Omit the flag when there is
+   # no stall_reason (status=dead, or a stall_reason of null/absent).
    cat <(uv run python scripts/task.py view "$N" --json \
        | jq -r '.events[] | select(.kind == "epm:failure") | .note') \
      | uv run python scripts/failure_classifier.py --body - \
-         --log "$LATEST_LOG_PATH"
+         --log "$LATEST_LOG_PATH" \
+         ${STALL_REASON:+--stall-reason "$STALL_REASON"}
    ```
 
    The script writes a single line — `infra` or `code` — to stdout.
@@ -3702,8 +3805,9 @@ When this skill is re-invoked in `running`:
       the trap + the fix, no transcript dumps.
    3. **On `gotcha_candidate: yes` — route as a workflow-fix
       candidate.** Treat the lesson as a prose workflow-fix candidate
-      targeting `.claude/rules/gotchas.md` and dispatch it through the
-      existing workflow-fix-on-bug auto-spawn default
+      targeting `.claude/rules/gotchas.md` and route it through the
+      existing workflow-fix-on-bug auto-file default — a filed
+      `kind: infra` task + a background `/issue --auto` session
       (`.claude/rules/workflow-fix-on-bug.md`); the lesson block is the
       surfaced prose.
 
@@ -3747,11 +3851,47 @@ entry guard convention):
    posting `epm:interpretation v1` — the orchestrator publishes the held
    output (and only then starts the interpretation-critic round) after
    upload-verification PASS. See the two hard joins below.
-3. **`methodology-writer` early spawn** (the early-spawn half of Step
-   9a-quater; `stage=methodology-reference round=1`) — only when the
-   9a-quater kind-gating says the step runs at all (`kind: experiment`
-   always; `kind: analysis` only with a methodology surface;
-   `infra | batch | survey` never — evaluate the skip BEFORE spawning).
+   **Paper-mode branch (`paper: true` frontmatter).** When the task
+   carries `paper: true`, the analyzer runs its PAPER-TASK MODE
+   (`.claude/agents/analyzer.md` § PAPER-TASK MODE): the analysis Steps
+   1→3.6 are unchanged, but the write-up is a LaTeX **paper** under
+   `docs/papers/issue_<N>/` (not a markdown body) — the analyzer
+   assembles the `.tex` (splicing in the `methodology-writer`'s Methods +
+   Appendix, item 3 below), emits `refs.json` + the figures manifest,
+   runs `build_paper.py` → `verify_paper.py`, and writes the `body.md`
+   **paper-stub** (`set-body --snapshot` + `set-title` + `set-clean-result`)
+   ONLY after `verify_paper.py` PASSes. On `verify_paper.py` FAIL it does
+   NOT write a stub — it parks at `reviewing` (or `blocked` with
+   `epm:failure v1 failure_class: code`), leaving the `.tex` + build
+   `.log`/`.blg` in `docs/papers/issue_<N>/` for iteration. HOLD-marker
+   mode still applies: write the held interpretation, RETURN without
+   posting `epm:interpretation v1`, the orchestrator publishes after
+   upload-verification PASS. The mechanical gate for a paper-task is
+   `verify_paper.py`, NOT `verify_task_body.py` (which stays the markdown
+   verifier).
+3. **`methodology-writer` early spawn (PAPER MODE, or v3/v2
+   GRANDFATHERED)** (the early-spawn half of Step 9a-quater;
+   `stage=methodology-reference round=1`). **Three cases — branch on
+   `paper:` frontmatter FIRST:**
+   - **`paper: true` → SPAWN it in PAPER MODE.** The methodology-writer
+     authors the LaTeX paper's **Methods section + the recipe Appendix**
+     (findings-blind) and hands them to the `analyzer` (item 2), which
+     splices them into the `.tex` and runs the build/verify. This is
+     load-bearing for paper-tasks — the analyzer does NOT author Methods
+     or Appendix itself (the findings-blind firewall is the whole point).
+     See `.claude/agents/methodology-writer.md` § PAPER-TASK MODE
+     (Methods + Appendix). Fires whenever the 9a-quater kind-gating says
+     the step runs (`kind: experiment` always; `kind: analysis` only with
+     a methodology surface; `infra | batch | survey` never).
+   - **v4 markdown body → SKIP this spawn entirely** — under v4 the
+     methodology doc is a POST-PASS mechanical export of the body's
+     `## Methodology` section (Step 9a-quater v4 path), so no agent is
+     spawned here and the early-spawn batch is just upload-verifier ∥
+     analyzer first pass.
+   - **In-flight v3/v2 markdown body → SPAWN it in MARKDOWN MODE** (the
+     legacy findings-blind path) — a v3/v2 body has no detailed
+     `## Methodology` section to copy. Same kind-gating as above
+     (evaluate the skip BEFORE spawning).
    The agent is findings-blind by design and its inputs (plan, config,
    reproducibility metadata, verbatim artifact rows) are final the
    moment results land, so it can safely run during `uploading` and the
@@ -3940,6 +4080,63 @@ URLs.
   the parent's pod (`epm-issue-<PARENT_ID>`) instead. Skip the
   teardown call only if the task has a `keep-running` tag for known
   follow-up work in the same session.
+
+  **VM download-cache cleanup (post-#disk-100pct).** The experiment
+  downloaded its source data from HF into VM-local caches under
+  `data/issue_<N>/hf_dl/` + `data/issue_<N>/g*_dl/` — in the repo-root
+  `data/` AND in this issue's worktree
+  (`.claude/worktrees/issue-<N>*/data/issue_<N>/`, where the live run
+  usually writes; the worktrees tree hit 139 GB on 2026-06-26). Nothing
+  else reclaims them, and a single finished experiment can pin ~100 GB
+  on the VM root disk (incident 2026-06-25: `/` hit 100% full). These are
+  re-downloadable CACHES (no on-HF presence check needed), and `store/`
+  + `eval_results/` are NEVER touched (in repo-root OR worktrees). After
+  the teardown above (artifacts are now confirmed at permanent URLs),
+  clean this issue's download caches — the helper sweeps both the
+  repo-root and worktree copies:
+
+  ```bash
+  # Re-downloadable hf_dl/g*_dl caches only (repo-root + worktree);
+  # store/ + eval_results/ kept.
+  uv run python scripts/clean_experiment_downloads.py <N> --apply
+  ```
+
+  Auto-continue (NOT a gate); idempotent — a re-entry on an
+  already-cleaned issue is a no-op. The fleet-wide backstop for caches
+  that escape this path (crashed runs, follow-up rounds) is the
+  `vm_disk_guard.py` cron (CLAUDE.md § Disk hygiene). Skip only when the
+  task has a `keep-running` tag (the same-session follow-up may re-use the
+  cache).
+
+  **Incremental (between-phase) cleanup for multi-phase runs.** Step-8
+  cleanup fires only at experiment END, so a multi-phase experiment whose
+  phases each materialize a fresh download cache holds the PEAK of all
+  phases' caches at once — and a large-footprint phase can fill `/`
+  mid-run (incident 2026-06-26: #658's Phase-1 analysis put a 139 GB store
+  on the VM worktree on the shared 188 GB disk; `/` hit 100% full). When a
+  run has multiple phases that each download inputs (e.g. a phase's judge /
+  extraction step CONSUMES its `e0_gen` / `g*_dl` / `hf_dl` inputs, then
+  the next phase downloads more), reap each consumed phase's
+  re-downloadable cache BEFORE the next phase materializes more — bounding
+  peak footprint, not just cleaning at the end. Between phases (after the
+  judge / extraction consumes the phase's inputs, before the next phase
+  downloads):
+
+  ```bash
+  # Between-phase: reap THIS phase's consumed hf_dl/g*_dl cache (repo-root
+  # + worktree); store/ + eval_results/ kept; no terminal-status gate (the
+  # run knows the phase is done). Re-downloads on demand if a later phase
+  # needs it again.
+  uv run python scripts/clean_experiment_downloads.py <N> --incremental --apply
+  ```
+
+  Same safety contract as the Step-8 cleanup (re-downloadable caches only;
+  `store/` + `eval_results/` NEVER touched; read-only on task state). This
+  is the RUNTIME backstop that bounds peak footprint — but it does NOT
+  rescue a single phase whose OWN footprint exceeds the disk; such a phase
+  must be ROUTED off the VM at plan time per the data-footprint carve-out
+  (CLAUDE.md "CPU-only phases don't hold GPU pods" → `planner.md` §9 →
+  `critic.md` Methodology lens item 10).
 
   **Upload-verification guard (post-#444).** `pod.py terminate` refuses
   to destroy an `epm-issue-<N>` / `pod-<N>` for a `kind: experiment`
@@ -4277,6 +4474,17 @@ card — instead; branch on the body sentinel.) Expect the pass cheaper
 than the v2 era — the v3 surfaces are bullets at ~800 words, not a
 multi-paragraph LessWrong narrative.
 
+**Paper-mode (`paper: true`): SKIP this orchestrator-level pass.** A
+paper-task's reader-facing prose lives in the `.tex`
+(`docs/papers/issue_<N>/issue_<N>.tex` Abstract / Introduction / Results
+interpretation / Discussion), not a markdown `body.md` to extract — and
+the analyzer already ran `/humanize academic` (em-dash zero-tolerance,
+copula avoidance, classical academic terms) on those paper surfaces
+INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/agents/analyzer.md`
+§ PAPER-TASK MODE). Post `epm:humanize-loop v1` with `note: skipped —
+paper-task (analyzer ran inline /humanize academic on the .tex)` so the
+audit log records it, and proceed straight to 9a-ter.
+
 **Procedure:**
 
 1. Read the published body via `task.py view <N>`; extract the v3 prose
@@ -4442,7 +4650,14 @@ explicit eval-data path):
    re-runs `verify_task_body.py` (must still PASS), and writes the
    revised body via `task.py set-body <N> --file ...`. The analyzer's
    Step 6.5 still fires on this re-run, but the loop guard above
-   prevents another 9a-ter dispatch within the same task.
+   prevents another 9a-ter dispatch within the same task. (**`paper:
+   true`?** The re-spawned analyzer re-authors the `.tex` in place —
+   re-writing the Abstract + the affected Results subsection, re-running
+   `build_paper.py` → `verify_paper.py`, re-writing the paper-stub — per
+   `.claude/agents/analyzer.md` § "Same-issue follow-up rounds
+   (paper-task)"; the mechanical gate is `verify_paper.py`, not
+   `verify_task_body.py`. The same applies to the Step 9b cheap-band /
+   same-issue follow-up loop folds.)
 6. **Post the marker:**
    ```bash
    uv run python scripts/task.py post-marker <N> epm:free-analysis-followup-run \
@@ -4495,6 +4710,31 @@ v3 rule. Discipline rules: see
 `.claude/skills/clean-results/SPEC.md` (canonical structure, register,
 exemplars, figure captions, and research-communication principles).
 
+**Paper-mode branch (`paper: true` frontmatter).** When the task carries
+`paper: true`, the clean-result is a LaTeX **paper** at
+`docs/papers/issue_<N>/`, NOT a markdown body. Both critics branch on
+`paper:` internally (`.claude/agents/clean-result-critic.md` § Paper-task
+review; `.claude/agents/interpretation-critic.md` § Branch on `paper:`):
+the **mechanical pre-pass is `scripts/verify_paper.py`** (NOT
+`verify_task_body.py` / `audit_clean_results_body_discipline.py`, which
+stay the markdown verifiers), each critic reads the `.tex` + the figure
+PNGs + the compiled PDF under `docs/papers/issue_<N>/`, and the SEVEN paper
+lenses (P1 self-standing Introduction · P2 self-contained Methods +
+Rule-A reuse-chain depth · P3 inline-subset + comprehensive-Appendix
+completeness · P4 no confidence in the paper body · P5 research-paper
+register · P6 `\epsref{N}` correctness · P7 verbatim examples + judge
+prompts) bind INSTEAD of the fifteen markdown lenses (no `\metric` grounding
+lens in v1; `verify_paper.py` checks 7-9 mechanically gate the verbatim
+training/eval/output examples, the judge-prompts appendix, and the
+example-provenance pointers — the no-invention floor). The orchestrator's
+brief for both critics names the paper dir (`docs/papers/issue_<N>/`) and
+the `.tex`/PDF read targets instead of the markdown `body.md`; the
+ensemble decision rule, the round cap, and the reconciler tie-break are
+unchanged. The procedural-only verdict strip below operates on the
+`verify_paper.py` presentation set for a paper-task. Everything else in
+this step (round loop, PASS → `reviewing`, the 9a-quater hand-off) is
+identical.
+
 **Round 1:**
 
 Worktree-cwd sessions run the Step 5a spec-freshness check before
@@ -4511,6 +4751,14 @@ dispatching this round's critics.
    binding-concerns audit, the contaminated/failed-data-gate-arm check,
    and the v3 Takeaways / Conciseness / Data lenses. Posts
    `epm:clean-result-critique v1` on the source task with PASS or REVISE.
+   (**`paper: true`?** The critic branches internally to its § Paper-task
+   review: the mechanical pre-pass is `scripts/verify_paper.py` over
+   `docs/papers/issue_<N>/`, NOT `verify_task_body.py` /
+   `audit_clean_results_body_discipline.py`, and the seven P1-P7 paper
+   lenses bind (incl. P7 verbatim examples + judge prompts + example
+   provenance / no-invention; verify_paper.py checks 7-9 gate them) — see the
+   Paper-mode branch paragraph above. The Check-21
+   methodology-doc pass-through below is markdown-only; skip it.)
 
    **Check-21 methodology-doc pass-through.** When the methodology doc
    exists on the issue worktree branch (the early-spawned
@@ -4617,35 +4865,75 @@ uv run python scripts/task.py set-status <N> reviewing \
 
 **Then proceed to 9a-quater (methodology reference).**
 
-**9a-quater. Methodology + hyperparameters reference — LATE JOIN** (only
-if status is `reviewing`, after the 9a-bis loop's PASS, before the
-`awaiting_promotion` park below; the agent itself was EARLY-SPAWNED at
-Step 8's results-landed parallel spawn — see § Split schedule below)
+**9a-quater. Methodology reference — POST-PASS EXPORT** (only if status
+is `reviewing`, after the 9a-bis loop's PASS, before the
+`awaiting_promotion` park below)
 
-Every `kind: experiment` clean-result auto-gains a standalone
-**methodology + hyperparameters + worked-examples** reference at
-`docs/methodology/issue_<N>.md`, committed to the repo and mirrored to a
-**secret** gist, linked from the clean-result body in TWO places: a
-reader-facing one-line `**Methodology:**` pointer at the TOP of the
-body (for a v3 body: immediately after the `<!-- clean-result-v3 -->`
-sentinel, before `## Takeaways`; for an in-flight v2 body: after the
-`<!-- clean-result-v2 -->` sentinel, before `## Human TL;DR` — branch on
-the sentinel) and a `**Methodology reference:**` row in
-`## Reproducibility` (the artifact-index entry). The reference is **findings-blind**: it describes only HOW the
-experiment was run (conditions, training recipe, eval recipe, verbatim
-training / eval / output examples, reproducibility pointers) and never
-restates findings / interpretation / confidence / next-steps. The fresh
-context of the `methodology-writer` agent enforces this structurally —
-the agent never reads `## Takeaways`, `## Findings`, the H1 confidence
-tag, or any `epm:interpretation` body (for an in-flight v2 body: never
-`## Human TL;DR` / `## TL;DR` either). Fires in BOTH
+**Paper-mode (`paper: true`): SKIP the standalone-doc export.** For a
+paper-task the methodology IS the paper — the `methodology-writer`
+already authored the comprehensive Methods section + recipe Appendix
+(complete hyperparameter table + worked examples + Rule-A reuse recipes)
+DIRECTLY INTO the `.tex` at the Step 8 early spawn, and `verify_paper.py`
+gated the paper's section completeness at 9a-bis. There is no separate
+`docs/methodology/issue_<N>.md` to export and no top-of-body
+`**Methodology:**` link to append (the `body.md` is a thin paper-stub
+pointing at `docs/papers/issue_<N>/`). Post
+`epm:methodology-doc-generated v1` with
+`note: skipped — paper-task (Methods + Appendix authored into docs/papers/issue_<N>/issue_<N>.tex)`
+so the idempotency check converges, then proceed to 9b. The v4 markdown
+export below does NOT run for a paper-task.
+
+**v4 markdown (current): MECHANICAL EXPORT, no agent spawn.** Every
+`kind: experiment` v4 clean-result auto-gains a standalone methodology
+reference at `docs/methodology/issue_<N>.md` that is a **mechanical COPY
+of the body's `## Methodology` section** — the body's `## Methodology`
+section IS the canonical source (the analyzer wrote it factually,
+interpretation-free, per the v4 spec), so there is NO separate
+findings-blind authoring step and the `methodology-writer` agent is NOT
+spawned for v4. After the 9a-bis PASS the orchestrator:
+
+1. Reads the finalized body and extracts the `## Methodology` section
+   verbatim (from the `## Methodology` H2 to the next H2 / the `---`
+   footer rule).
+2. Writes it to `docs/methodology/issue_<N>.md` with the H2 header
+   normalized to `# Methodology — issue <N>: <one-line what-was-run>`
+   (plus a 1-line `*Derived from the [task body](https://eps.superkaiba.com/tasks/<N>).*`
+   footer).
+3. **Commits the doc to `main`** by explicit path (durable — removes the
+   v3 worktree-only gap; the doc + its SHA-pinned link land on `main`
+   directly). Capture the commit SHA.
+4. Runs a no-secrets pre-scan (`scripts/check_no_secret_shaped_strings.py`
+   / `redact_for_gist.py`) and publishes a **secret** (unlisted) gist
+   mirror via `gh gist create` — FAIL-SOFT (a missing gist never blocks
+   the step; the in-repo doc is the durable artifact).
+5. Appends the one-line `**Methodology:**` pointer at the TOP of the body
+   — immediately after the `<!-- clean-result-v4 -->` sentinel, before
+   `## Takeaways` — linking the GitHub blob (SHA-pinned to the `main`
+   commit) and the gist (drop the `· [gist](...)` suffix when the gist
+   fail-softed).
+6. Posts `epm:methodology-doc-generated v1` (`doc_path` + `commit` +
+   `gist_url`).
+
+Fires in BOTH interactive and autonomous sessions identically.
 <!-- example: anti-pattern -->
-interactive and autonomous sessions identically. Auto-continue (NOT a
-new `AskUserQuestion` gate); the halt-criterion contract is preserved.
+Auto-continue (NOT a new `AskUserQuestion` gate); the halt-criterion
+contract is preserved.
 <!-- autonomous-mode: auto-resolve -->
 Same behavior in interactive and autonomous sessions: no AskUserQuestion
 is ever raised by this step; the marker `epm:methodology-doc-generated v1`
 is the durable record consumed by re-entry idempotency.
+<!-- example: anti-pattern -->
+
+**v3/v2 GRANDFATHERED (LATE JOIN, in-flight bodies only):** an in-flight
+v3/v2 body carries no detailed `## Methodology` section to copy, so the
+legacy path still applies — the findings-blind `methodology-writer` agent
+is EARLY-SPAWNED at Step 8's results-landed parallel spawn, the
+orchestrator commits the doc on its return, and the gist + body
+link-append (top-of-body `**Methodology:**` line + the
+`## Reproducibility` `**Methodology reference:**` row) LATE-JOIN here.
+The detailed v3/v2 procedure below (§ Split schedule + procedure steps
+1-9) describes that grandfathered path; for a v4 body run the
+mechanical export above instead and skip the agent spawn.
 
 **Split schedule (early spawn ∥ interpretation loop).** This step is
 split in two:
@@ -4938,7 +5226,9 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    `failure_class: code`, `reason: methodology-link-append broke
    verify_task_body.py`, set `status:blocked`, and exit (this is a
    workflow bug — surface a `workflow-fix-candidate v1` block in the
-   exit text so the orchestrator can auto-spawn `workflow-improver`).
+   exit text so the orchestrator can AUTO-FILE a `kind: infra` task +
+   spawn a background `/issue --auto` session per the
+   workflow-fix-on-bug protocol).
 9. **Post the marker:**
    ```bash
    uv run python scripts/task.py post-marker <N> epm:methodology-doc-generated \
@@ -5636,7 +5926,10 @@ work* contract.
    numbered asks found" in the marker.
 3. For each ask, locate evidence it was addressed:
    - `experiment` -> grep the promoted clean-result body + `epm:results`
-     event.
+     event. (**`paper: true`?** The promoted body is a thin paper-stub;
+     the clean-result content lives in the paper — grep
+     `docs/papers/issue_<N>/issue_<N>.tex` + the stub abstract +
+     `epm:results` instead.)
    - `infra` / `batch` / `analysis` / `survey` -> grep the PR diff
      (`gh pr diff <PR>`) + `epm:test-verdict`.
 4. Post `epm:completion-audit v1` event with a checklist:
@@ -6514,6 +6807,7 @@ row per `(kind)` as authoritative.
 | Task folder missing / multiple folders | Post error event listing conflicts, post the §5 marker: `uv run python scripts/post_step_completed.py --issue <N> --step 0 --exit-kind failure-exit --notes "ambiguous status: multiple folders / missing folder"`, EXIT. Ask user to reconcile. Do NOT pick. |
 | Status missing from disk layout (legacy bodies) | Run Step 0b: autofill `proposed` via `task.py set-status`, post `epm:auto-defaults`, continue. |
 | `type` frontmatter missing | Run Step 0b: infer from title prefix, confirm with the user, apply via `task.py set-body`. Autonomous loop with no user -> error + EXIT (a wrong guess corrupts the completed column). |
+| Task is mis-filed under the wrong `kind` (e.g. a fix-validation / "test that X works" filed as `kind: experiment` — see CLAUDE.md § "Routing experiment intent") | Reclassify through the canonical path: `task.py set-kind <N> <kind>` (frontmatter + REGISTRY snapshot, flock + commit). Do NOT hand-edit the `kind:` frontmatter. If the misfile also pulled the task into the clean-result/promotion machinery, separately fix the resulting state (`set-clean-result --unset`, `set-status <N> completed`). |
 | Empty task body | Run Step 0b: ask user for goal/hypothesis/setup in chat, draft body, patch via `task.py set-body --file`, post `epm:auto-defaults` audit event. |
 | Plan fails mandatory-section check | Re-invoke `adversarial-planner` with missing sections list; do not post incomplete plan. |
 | Preflight fails | Post the `--json` report verbatim as `epm:preflight v1`. Do NOT auto-fix (per CLAUDE.md "never take shortcuts"). |

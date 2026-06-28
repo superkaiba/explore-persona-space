@@ -155,6 +155,40 @@ def test_create_task_with_parent(fake_repo):
     assert task["frontmatter"]["parent_id"] == parent
 
 
+def test_create_task_invalid_kind_raises(fake_repo):
+    """`create_task` validates `kind` against KINDS (mirror of the existing
+    `status` check) so a programmatic caller cannot write a garbage kind to
+    frontmatter + REGISTRY — the same guarantee `set_kind` already gives
+    (incident #672 follow-up). No task folder is left behind on the reject."""
+    repo, tw = fake_repo
+    with pytest.raises(ValueError, match="unknown kind"):
+        tw.create_task(tw.NewTaskRequest(kind="not-a-kind", title="X"))
+    # The validation happens before any filesystem write — no orphan folder.
+    assert not (repo / "tasks" / "proposed" / "1").exists()
+
+
+def test_create_task_accepts_every_kind(fake_repo):
+    """Every member of KINDS is a valid `create_task` kind (guards against a
+    KINDS member that the validation would wrongly reject)."""
+    _, tw = fake_repo
+    for kind in tw.KINDS:
+        tw.create_task(tw.NewTaskRequest(kind=kind, title=f"t-{kind}"))
+
+
+def test_code_kinds_is_canonical_subset_of_kinds():
+    """`CODE_KINDS` (the canonical test-verdict/code-change subset that
+    `task_progress` + `verify_plan` derive from) is a proper subset of the
+    lifecycle enum, and byte-identical to the historical literal. Pins the
+    single source of truth so the three former copies can never drift
+    (incident #672)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    assert frozenset({"infra", "analysis", "batch", "survey"}) == tw.CODE_KINDS
+    assert frozenset(tw.KINDS) > tw.CODE_KINDS  # proper subset
+    assert "experiment" not in tw.CODE_KINDS
+
+
 def test_create_task_with_origin_prompt(fake_repo):
     """`origin_prompt` writes a frontmatter field verbatim (any kind);
     empty/whitespace-only values write NO field. The clean-result
@@ -554,6 +588,36 @@ def test_set_title_updates_registry(fake_repo):
     tw.set_title(new_id, "New title")
     reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
     assert reg["tasks"][str(new_id)]["title"] == "New title"
+
+
+def test_set_kind_updates_frontmatter_and_registry(fake_repo):
+    """Reclassifying a misfiled kind (incident #672) writes the frontmatter
+    AND the denormalized REGISTRY snapshot the dashboard list view reads."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="GCP-fix validation"))
+    tw.set_kind(new_id, "infra")
+    # Frontmatter on body.md
+    assert tw.get_task(new_id)["frontmatter"]["kind"] == "infra"
+    # REGISTRY denormalizes kind — must stay in sync.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["kind"] == "infra"
+
+
+def test_set_kind_invalid_raises(fake_repo):
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    with pytest.raises(ValueError):
+        tw.set_kind(new_id, "not-a-kind")
+    # The frontmatter is unchanged after the rejected call.
+    assert tw.get_task(new_id)["frontmatter"]["kind"] == "experiment"
+
+
+def test_set_kind_commits(fake_repo):
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    n_before = _git_log_count(repo)
+    tw.set_kind(new_id, "infra")
+    assert _git_log_count(repo) == n_before + 1
 
 
 def test_add_remove_tag(fake_repo):
@@ -2070,3 +2134,364 @@ def test_cli_handlers_raise_address_defer_list_roundtrip(concerns_task, capsys):
             )
         )
     assert "user-only" in str(excinfo.value).lower() or "user" in str(excinfo.value).lower()
+
+
+# ─── paper-stub support (`paper: true` clean-result track) ─────────────────
+
+
+def _make_paper_task(tw, *, abstract: str = "An abstract long enough to count.") -> int:
+    """Create a task and rewrite its body.md into a paper-stub (paper: true)."""
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="A paper claim"))
+    body_path = tw.find_task_path(tid) / "body.md"
+    fm, _ = tw._read_body(body_path)
+    fm["paper"] = True
+    stub = (
+        f"# A paper claim (MODERATE confidence)\n\n{abstract}\n\n"
+        f"Paper: docs/papers/issue_{tid}/issue_{tid}.pdf\n"
+    )
+    tw._write_body(body_path, fm, stub)
+    return tid
+
+
+def _write_manifest(
+    tw,
+    tid: int,
+    *,
+    with_url: bool = True,
+    break_sha: bool = False,
+    pdf_url: str | None = None,
+    delete_pdf: bool = False,
+    shape: str = "hf",
+) -> None:
+    """Write a docs/papers/issue_<N>/ paper dir with a valid manifest.
+
+    ``shape='hf'`` (NEW, the build_paper.py shape): the PDF is HF-hosted — only
+    the COMMITTED artifacts (tex/paper_html) go in ``artifacts``; the PDF
+    provenance lives in an ``hf_pdf`` block. ``shape='old'`` records the PDF as a
+    local ``pdf`` artifact (an already-built manifest). ``break_sha`` corrupts a
+    COMMITTED artifact's sha (the PDF's hash is never locally validated now).
+    ``delete_pdf`` removes the local PDF file (HF-only post-commit). ``pdf_url``
+    overrides the default https URL (e.g. to test a non-https URL).
+    """
+    import hashlib
+
+    paper_dir = tw.repo_root() / "docs" / "papers" / f"issue_{tid}"
+    paper_dir.mkdir(parents=True, exist_ok=True)
+    # The local PDF exists at build time; write it so we can hash it for hf_pdf
+    # / the old-shape artifact, then optionally delete it (HF-only post-commit).
+    pdf_path = paper_dir / "p.pdf"
+    pdf_path.write_text("contents of pdf")
+    pdf_sha = hashlib.sha256(pdf_path.read_bytes()).hexdigest()
+    pdf_bytes = pdf_path.stat().st_size
+
+    artifacts = {}
+    for label, fname in (("tex", "p.tex"), ("paper_html", "paper.html")):
+        fpath = paper_dir / fname
+        fpath.write_text(f"contents of {label}")
+        sha = hashlib.sha256(fpath.read_bytes()).hexdigest()
+        if break_sha and label == "paper_html":
+            sha = "0" * 64
+        artifacts[label] = {
+            "path": str(fpath.relative_to(tw.repo_root())),
+            "sha256": sha,
+            "bytes": fpath.stat().st_size,
+        }
+    url = pdf_url if pdf_url is not None else ("https://hf/x.pdf" if with_url else None)
+    manifest = {
+        "schema": "paper_manifest/v1",
+        "issue": tid,
+        "artifacts": artifacts,
+        "pdf_hf_url": url,
+    }
+    if shape == "hf":
+        manifest["hf_pdf"] = {"url": url, "sha256": pdf_sha, "bytes": pdf_bytes}
+    elif shape == "old":
+        artifacts["pdf"] = {
+            "path": str(pdf_path.relative_to(tw.repo_root())),
+            "sha256": pdf_sha,
+            "bytes": pdf_bytes,
+        }
+    if delete_pdf:
+        pdf_path.unlink()
+    import json as _json
+
+    (paper_dir / "paper_manifest.json").write_text(_json.dumps(manifest))
+
+
+def test_is_paper_task_helper(fake_repo):
+    _, tw = fake_repo
+    assert tw.is_paper_task({"paper": True})
+    assert tw.is_paper_task({"paper": "true"})
+    assert tw.is_paper_task({"paper": "TRUE"})
+    assert not tw.is_paper_task({"paper": False})
+    assert not tw.is_paper_task({"paper": "false"})
+    assert not tw.is_paper_task({})
+
+
+def test_extract_stub_abstract_paragraph(fake_repo):
+    _, tw = fake_repo
+    body = (
+        "# A title\n\nThis is the abstract paragraph that should be extracted.\n\n"
+        "Paper: docs/papers/issue_5/issue_5.pdf\n"
+    )
+    assert (
+        tw.extract_stub_abstract(body) == "This is the abstract paragraph that should be extracted."
+    )
+
+
+def test_extract_stub_abstract_h2(fake_repo):
+    _, tw = fake_repo
+    body = (
+        "# T\n\n## Abstract\n\nThe explicit abstract block here.\n\n"
+        "Paper: docs/papers/issue_5/x.pdf\n"
+    )
+    assert tw.extract_stub_abstract(body) == "The explicit abstract block here."
+
+
+def test_registry_denormalizes_paper_abstract(fake_repo):
+    repo, tw = fake_repo
+    tid = _make_paper_task(tw, abstract="Denormalized abstract for the hover-card.")
+    # Re-flip a registry-updating mutator so _registry_set runs with paper fm.
+    tw.set_title(tid, "A paper claim (MODERATE confidence)")
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    entry = reg["tasks"][str(tid)]
+    assert entry["paper"] is True
+    assert entry["abstract"] == "Denormalized abstract for the hover-card."
+
+
+def test_set_clean_result_paper_requires_manifest(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    # No manifest yet → hard FAIL (SystemExit).
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    assert "paper_manifest" in str(exc.value)
+
+
+def test_set_clean_result_paper_valid_manifest_passes(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True)
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_paper_null_url_is_warn_tolerated(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=False)
+    # Default allow_paper_warn=True tolerates a null pdf_hf_url (local-only build).
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_paper_null_url_blocked_when_required(fake_repo):
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=False)
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True, allow_paper_warn=False)
+    assert "pdf_hf_url" in str(exc.value)
+
+
+def test_set_clean_result_paper_sha_mismatch_blocks(fake_repo):
+    """A COMMITTED artifact (paper_html) sha mismatch still HARD-blocks promotion."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True, break_sha=True)
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    assert "sha256" in str(exc.value)
+
+
+def test_set_clean_result_paper_hf_only_pdf_passes(fake_repo):
+    """The storage decision: the PDF lives on HF, NOT committed. Promotion must
+    PASS when the manifest's PDF is HF-hosted with NO local pdf file on disk
+    (incident #657 — set-clean-result aborted on the local-existence check)."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True, delete_pdf=True)
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_paper_old_shape_hf_only_pdf_passes(fake_repo):
+    """Tolerance for the OLD manifest shape (#657's existing manifest): a `pdf`
+    entry in `artifacts` whose local file is gone (HF-only) still PASSes."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True, delete_pdf=True, shape="old")
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_paper_non_https_url_blocks(fake_repo):
+    """A present-but-non-https pdf_hf_url is a HARD block — the PDF must resolve
+    to a real HF URL now that it is the PDF's authoritative location."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, pdf_url="ftp://nope/x.pdf")
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    assert "https" in str(exc.value)
+
+
+def test_set_clean_result_paper_committed_artifact_missing_blocks(fake_repo):
+    """A COMMITTED artifact missing on disk still HARD-blocks (only the PDF is
+    exempt from the local-existence check)."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    _write_manifest(tw, tid, with_url=True)
+    (tw.repo_root() / "docs" / "papers" / f"issue_{tid}" / "paper.html").unlink()
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    assert "paper_html" in str(exc.value) and "missing on disk" in str(exc.value)
+
+
+def test_set_clean_result_nonpaper_skips_manifest_gate(fake_repo):
+    """Backward-compat: a non-paper task flips has_clean_result with no manifest
+    check (identical to the pre-paper behaviour)."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_unset_paper_skips_gate(fake_repo):
+    """Clearing has_clean_result on a paper task never runs the manifest gate."""
+    _, tw = fake_repo
+    tid = _make_paper_task(tw)
+    # No manifest, but value=False → no validation.
+    tw.set_clean_result(tid, value=False)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is False
+
+
+# ─── #657: set_body round-trips the paper-stub opt-in (paper / abstract) ─────
+
+
+def _stub_text(tid: int, *, paper: bool = True, abstract: str | None = None) -> str:
+    """A complete paper-stub markdown document (frontmatter + body) like the
+    one the analyzer hands to ``set-body --file STUB_body.md --snapshot``."""
+    fm_lines = ['title: "A paper claim (MODERATE confidence)"', "kind: experiment"]
+    if paper:
+        fm_lines.append("paper: true")
+    if abstract is not None:
+        fm_lines.append(f'abstract: "{abstract}"')
+    fm = "\n".join(fm_lines)
+    body = (
+        f"# A paper claim\n\n"
+        f"An abstract paragraph long enough to count for the stub check.\n\n"
+        f"Paper: docs/papers/issue_{tid}/issue_{tid}.pdf\n"
+    )
+    return f"---\n{fm}\n---\n{body}"
+
+
+def test_set_body_roundtrips_paper_flag(fake_repo):
+    """#657 root cause: `set_body` from a stub carrying `paper: true` must leave
+    that key on the on-disk body.md — previously the existing (non-paper)
+    frontmatter was preserved and the incoming `paper: true` silently dropped,
+    so the dashboard's `isPaperTask` read saw a markdown stub."""
+    _, tw = fake_repo
+    # An ordinary (non-paper) task — its body.md has no `paper` key.
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    body_path = tw.find_task_path(tid) / "body.md"
+    fm_before, _ = tw._read_body(body_path)
+    assert "paper" not in fm_before
+
+    tw.set_body(tid, _stub_text(tid, paper=True), snapshot_original=True)
+
+    fm_after, _ = tw._read_body(body_path)
+    # The key round-tripped …
+    assert fm_after.get("paper") is True
+    # … and is_paper_task(fm) now reads True off the actual on-disk body.
+    assert tw.is_paper_task(fm_after)
+    # REGISTRY denormalizes paper=True for the dashboard list view.
+    reg = json.loads(tw.registry_path().read_text())
+    assert reg["tasks"][str(tid)]["paper"] is True
+
+
+def test_set_body_roundtrips_paper_abstract(fake_repo):
+    """The denormalized `abstract` stub key round-trips into body.md
+    frontmatter. (REGISTRY's `abstract` is independently re-derived from the
+    body's first paragraph by `_registry_set` for paper tasks — that
+    body-derived value is asserted separately below.)"""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    tw.set_body(tid, _stub_text(tid, paper=True, abstract="Hover abstract."))
+    fm_after, _ = tw._read_body(tw.find_task_path(tid) / "body.md")
+    assert fm_after.get("abstract") == "Hover abstract."
+    # REGISTRY gains a (body-derived) abstract for the hover-card now that the
+    # task reads as a paper-task.
+    reg = json.loads(tw.registry_path().read_text())
+    assert reg["tasks"][str(tid)]["paper"] is True
+    assert reg["tasks"][str(tid)].get("abstract")  # non-empty, body-derived
+
+
+def test_set_body_nonpaper_does_not_invent_paper_key(fake_repo):
+    """Backward-compat: a normal set-body (no `paper` in the incoming body)
+    leaves the frontmatter exactly as before — the round-trip allowlist only
+    fires when the key is actually present in the incoming body."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    tw.set_body(tid, "just a new body, no frontmatter at all\n")
+    fm_after, body_after = tw._read_body(tw.find_task_path(tid) / "body.md")
+    assert "paper" not in fm_after
+    assert "just a new body" in body_after
+
+
+def test_set_body_then_set_clean_result_paper_end_to_end(fake_repo):
+    """The full #657 path: set-body from a `paper: true` stub, then
+    set-clean-result with a valid manifest — the on-disk body.md is a real
+    paper-task, so the manifest gate runs (and passes)."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    tw.set_body(tid, _stub_text(tid, paper=True))
+    _write_manifest(tw, tid, with_url=True)
+    tw.set_clean_result(tid, value=True)
+    fm = tw.get_task(tid)["frontmatter"]
+    assert fm["has_clean_result"] is True
+    assert tw.is_paper_task(fm)
+
+
+def test_set_clean_result_gate_fails_when_paper_key_dropped(fake_repo):
+    """#657 gate gap: a task whose paper artifacts exist on disk but whose
+    body.md frontmatter is MISSING `paper: true` (e.g. written by an older
+    set-body that dropped the key, or by hand) must FAIL set-clean-result
+    loudly rather than silently passing as a markdown task and skipping the
+    paper manifest gate."""
+    _, tw = fake_repo
+    # Ordinary task body — NO `paper` key.
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    body_path = tw.find_task_path(tid) / "body.md"
+    fm_before, _ = tw._read_body(body_path)
+    assert "paper" not in fm_before
+    # But the paper artifacts + manifest DO exist (this IS intended as a paper).
+    _write_manifest(tw, tid, with_url=True)
+
+    with pytest.raises(SystemExit) as exc:
+        tw.set_clean_result(tid, value=True)
+    msg = str(exc.value)
+    assert "paper: true" in msg
+    assert "MISSING" in msg
+
+
+def test_set_clean_result_gate_passes_after_set_body_roundtrip(fake_repo):
+    """The gate (above) does NOT fire once `set_body` has correctly
+    round-tripped `paper: true` — the body.md is a real paper-task and the
+    manifest gate runs normally."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    _write_manifest(tw, tid, with_url=True)
+    # Fix the body via set-body from a paper stub (the #657 fix path).
+    tw.set_body(tid, _stub_text(tid, paper=True))
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
+def test_set_clean_result_nonpaper_no_manifest_still_skips_gate(fake_repo):
+    """A genuinely non-paper task (no manifest on disk) keeps the pre-#657
+    behaviour: set-clean-result with no `paper` key and no manifest passes."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Ordinary"))
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True

@@ -89,6 +89,10 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from issue404_common import kill_vllm_workers  # noqa: E402
 
+from explore_persona_space.analysis.extraction import (  # noqa: E402
+    EMBED_LAYER,
+    extract_layer_activations,
+)
 from explore_persona_space.experiments.i460_data import (  # noqa: E402
     load_class_d_rewrites,
     load_q_test_extended_50,
@@ -584,20 +588,28 @@ def _last_token_residuals(
     Returns ``{layer: (D,) tensor on CPU/float32}``.
     """
     inputs = tokenizer(prompt_text, return_tensors="pt", padding=False).to(model.device)
-    with torch.no_grad():
-        outputs = model(**inputs, output_hidden_states=True)
     last_pos = inputs["input_ids"].shape[1] - 1
-    # outputs.hidden_states is a tuple of length n_layers+1 (embeddings + per-layer outputs).
-    # Layer indexing convention here: layer k = hidden_states[k] (so layer 0 = embedding,
-    # layer 28 = final for a 28-layer Qwen-2.5-7B).
-    out: dict[int, torch.Tensor] = {}
+    # Layer indexing convention HERE: layer k = hidden_states[k] (so layer 0 =
+    # embedding, layer 28 = final for a 28-layer Qwen-2.5-7B). The memory-safe
+    # helper (#671) uses BLOCK indices (block L's output == hs[L+1]); translate
+    # this site's hs-INDEX L to the helper's block index: L=0 -> EMBED_LAYER
+    # (hs[0]); L=k>=1 -> block k-1 (hs[k]). acts[key] is the SAME tensor the old
+    # outputs.hidden_states[L] read produced.
+    n_hidden_states = int(model.config.num_hidden_layers) + 1  # embeddings + per-block
     for L in layers:
-        if len(outputs.hidden_states) <= L:
+        if not (0 <= L < n_hidden_states):
             raise IndexError(
-                f"Requested layer {L} but model has only {len(outputs.hidden_states)} "
+                f"Requested layer {L} but model has only {n_hidden_states} "
                 "hidden-state outputs (including embeddings at index 0)."
             )
-        out[L] = outputs.hidden_states[L][0, last_pos, :].float().cpu()
+    req = [EMBED_LAYER if L == 0 else L - 1 for L in layers]
+    acts = extract_layer_activations(
+        model, inputs["input_ids"], req, attention_mask=inputs.get("attention_mask")
+    )
+    out: dict[int, torch.Tensor] = {}
+    for L in layers:
+        key = EMBED_LAYER if L == 0 else L - 1
+        out[L] = acts[key][0, last_pos, :].float().cpu()
     return out
 
 

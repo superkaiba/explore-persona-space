@@ -46,6 +46,8 @@ from dataclasses import dataclass, field
 import torch
 import torch.nn.functional as F
 
+from explore_persona_space.analysis.extraction import extract_layer_activations
+
 from . import EXTRACTION_LAYER, HIDDEN_SIZE, IM_END_ID, MARKER_ID
 
 log = logging.getLogger("issue_650.shift_extract")
@@ -97,7 +99,15 @@ class ContextShift:
 
     persona: str
     n_prompts: int
-    shift_vector: torch.Tensor  # (HIDDEN_SIZE,) fp32 CPU
+    shift_vector: torch.Tensor  # (HIDDEN_SIZE,) fp32 CPU = v_trained − v_base at the slot
+    # Issue #683: the RAW per-side slot residuals (mean over prompts) at the
+    # SAME post-response slot the shift is read from — needed for the realized
+    # gate g_real(C') = <ŵ, Δv(C')>/<ŵ,ŵ> AND for the c_C / t_{C,B} keys, which
+    # all need v_base(C) and v_trained(C) separately (not just their difference).
+    # shift_vector == v_trained_slot − v_base_slot by construction.
+    v_base_slot: torch.Tensor  # (HIDDEN_SIZE,) fp32 CPU
+    v_trained_slot: torch.Tensor  # (HIDDEN_SIZE,) fp32 CPU
+    extraction_layer: int  # the BLOCK index the slot residual was read at
     # log P(marker)_trained − log P(marker)_base at slot, mean over prompts:
     delta_logp_marker: float
     # z_marker (the marker logit, pre-softmax), trained − base — the
@@ -182,14 +192,24 @@ def extract_per_context_shift(
     eval_questions: list[str],
     r_responses: dict[str, str],
     device: str | torch.device | None = None,
+    layer: int | None = None,
 ) -> ContextShift:
     """Compute one ContextShift bundle for ``persona`` across ``eval_questions``.
 
     The forward pass is forward-only (no generation, no kv-cache). Each
     prompt is encoded as ``T_persona(q) + R_persona(q)`` (the persona's
     OWN base-model greedy response), forwarded once on the base and once
-    on the trained model, and the L20 residual + log P(marker) are read at
-    the post-response slot.
+    on the trained model, and the residual + log P(marker) are read at the
+    post-response slot.
+
+    ``layer`` (issue #683): the BLOCK index whose post-response-slot
+    residual feeds ``shift_vector``. Defaults to the module constant
+    ``EXTRACTION_LAYER`` (L20) for back-compat with #650's marker eval.
+    Issue #683 passes ``layer=14`` for the marker realized-gate
+    ``Δv``/``v_trained`` read (the #604/#551 marker read band). The
+    log-prob / logit slot reads (``delta_logp_marker`` etc.) are
+    layer-independent (they come from the final-layer logits) and are
+    unaffected by this arg.
 
     Both models MUST already be on the same device and in ``eval()`` mode;
     this helper does not move or set the mode.
@@ -208,14 +228,15 @@ def extract_per_context_shift(
             f"EVAL_QUESTIONS (inherited #527 R contract)."
         )
 
+    requested_layer = EXTRACTION_LAYER if layer is None else int(layer)
     n_model_layers = int(base_model.config.num_hidden_layers)
-    extraction_layer = min(EXTRACTION_LAYER, n_model_layers - 1)
-    if extraction_layer != EXTRACTION_LAYER:
+    extraction_layer = min(requested_layer, n_model_layers - 1)
+    if extraction_layer != requested_layer:
         log.warning(
-            "model has %d layers < EXTRACTION_LAYER=%d; reading layer %d "
+            "model has %d layers < requested layer %d; reading layer %d "
             "(CPU-smoke path; the production model always has 28 layers)",
             n_model_layers,
-            EXTRACTION_LAYER,
+            requested_layer,
             extraction_layer,
         )
     layer_idx_internal = extraction_layer + 1  # hs[0] = embedding output
@@ -227,6 +248,9 @@ def extract_per_context_shift(
     if getattr(base_model.config, "_name_or_path", "") == "Qwen/Qwen2.5-7B-Instruct":
         assert model_hidden == HIDDEN_SIZE, (model_hidden, HIDDEN_SIZE)
     shift_acc = torch.zeros(model_hidden, dtype=torch.float32)
+    # Issue #683: per-side slot-residual accumulators (mean over prompts).
+    v_base_acc = torch.zeros(model_hidden, dtype=torch.float32)
+    v_trained_acc = torch.zeros(model_hidden, dtype=torch.float32)
     delta_logp_acc = 0.0
     delta_logit_acc = 0.0
     n_used = 0
@@ -274,22 +298,37 @@ def extract_per_context_shift(
 
         ids = torch.tensor([full_ids], dtype=torch.long, device=device)
 
-        out_base = base_model(ids, output_hidden_states=True)
-        out_trained = trained_model(ids, output_hidden_states=True)
+        # Memory-safe subset read (#671): hook only the one extraction block +
+        # keep the same-forward logits via return_logits=True. layer_idx_internal
+        # is an hs-INDEX (hs[k]); translate to the helper's BLOCK index k-1
+        # (block L's output == hs[L+1]). acts_*[block_L] is the SAME tensor the
+        # old out.hidden_states[layer_idx_internal] read produced; logits_*_full
+        # is the SAME tensor the old out.logits read produced.
+        block_L = layer_idx_internal - 1
+        acts_base, logits_base_full = extract_layer_activations(
+            base_model, ids, [block_L], return_logits=True
+        )
+        acts_trained, logits_trained_full = extract_layer_activations(
+            trained_model, ids, [block_L], return_logits=True
+        )
 
-        hs_base = out_base.hidden_states[layer_idx_internal]  # (1, T, H)
-        hs_trained = out_trained.hidden_states[layer_idx_internal]
+        hs_base = acts_base[block_L]  # (1, T, H)
+        hs_trained = acts_trained[block_L]
         if hs_base.shape[-1] != model_hidden:
             raise AssertionError(
                 f"hidden_size drift: hs_base.shape[-1]={hs_base.shape[-1]} "
                 f"vs model config hidden_size={model_hidden}"
             )
-        shift = (hs_trained[0, slot] - hs_base[0, slot]).float().cpu()
+        v_base_slot = hs_base[0, slot].float().cpu()
+        v_trained_slot = hs_trained[0, slot].float().cpu()
+        shift = v_trained_slot - v_base_slot
         shift_acc += shift
+        v_base_acc += v_base_slot
+        v_trained_acc += v_trained_slot
 
         # logits[i] predicts token[i+1] (causal-LM offset), so we read at slot-1.
-        logits_base_row = out_base.logits[0, slot - 1].float()
-        logits_trained_row = out_trained.logits[0, slot - 1].float()
+        logits_base_row = logits_base_full[0, slot - 1].float()
+        logits_trained_row = logits_trained_full[0, slot - 1].float()
         logp_base = F.log_softmax(logits_base_row, dim=-1)
         logp_trained = F.log_softmax(logits_trained_row, dim=-1)
         delta_logp_acc += float((logp_trained[MARKER_ID] - logp_base[MARKER_ID]).item())
@@ -338,9 +377,9 @@ def extract_per_context_shift(
 
         # Free-legibility argmax read (marker-leakage rule: emission is a
         # sanity anchor, not the DV).
-        if int(out_trained.logits[0, slot - 1].argmax().item()) == MARKER_ID:
+        if int(logits_trained_full[0, slot - 1].argmax().item()) == MARKER_ID:
             emit_trained_count += 1
-        if int(out_base.logits[0, slot - 1].argmax().item()) == MARKER_ID:
+        if int(logits_base_full[0, slot - 1].argmax().item()) == MARKER_ID:
             emit_base_count += 1
         n_used += 1
 
@@ -348,6 +387,8 @@ def extract_per_context_shift(
         raise AssertionError(f"persona={persona!r}: no eval prompts were forwarded")
 
     shift_mean = shift_acc / n_used
+    v_base_mean = v_base_acc / n_used
+    v_trained_mean = v_trained_acc / n_used
     delta_logp_mean = delta_logp_acc / n_used
     delta_logit_mean = delta_logit_acc / n_used
 
@@ -368,6 +409,9 @@ def extract_per_context_shift(
         persona=persona,
         n_prompts=n_used,
         shift_vector=shift_mean,
+        v_base_slot=v_base_mean,
+        v_trained_slot=v_trained_mean,
+        extraction_layer=extraction_layer,
         delta_logp_marker=delta_logp_mean,
         delta_logit_marker=delta_logit_mean,
         emission_argmax_trained=emit_trained_count / n_used,

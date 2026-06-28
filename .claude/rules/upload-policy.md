@@ -86,6 +86,31 @@ commits/hr batch their uploads into ONE bulk `upload_folder` commit per sweep
 TRACKED GAP recorded in the sweep's failure list and reconciled before the next
 phase — never a warning-and-continue.
 
+**Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
+dispatcher that produces per-cell artifacts (eval JSONs, store tensors, raw
+completions) across N cells MUST persist each cell's artifacts the moment that
+cell completes — one `upload_folder` commit per cell-dir per artifact-kind
+(well under the 256-commits/hr cap above) — NOT accumulate them for one
+terminal P3 batch. A mid-sweep pod death (the #664 RUNNING-but-no-port host
+wedge — see `compute-backend-failover.md` Part C) with write-at-end upload
+strands EVERY not-yet-uploaded cell (#664 lost ~16 cells / ~3-4h compute);
+per-cell upload strands at most one in-flight cell. This is the artifact-I/O
+instance of `code-style.md` § "Checkpoint per phase; never accumulate-in-memory
+and write-at-end". Idempotency + completeness use an EXACT expected-file-set
+check on a fresh `list_repo_files` listing (NOT prefix-presence / count-only —
+a mid-`upload_folder` crash leaves a partial cell that prefix-presence would
+wrongly read as complete). The per-cell resume predicate is `local-done OR
+HF-complete`, so a fresh pod after a wedge auto-migrate SKIPS HF-complete cells
+instead of re-running them, and the terminal P3 sweep becomes an idempotent
+safety pass (skip cells already complete on the Hub; treat all-on-HF as
+success) + the authoritative before-teardown EXACT-set verify (every helper,
+store tensors included — the M2 fresh-listing verify `_upload_store_tensors`
+had been missing). Per-cell upload is ALSO the data-safety precondition for the
+autonomous RunPod-wedge auto-terminate (`compute-backend-failover.md` Part C):
+terminate fires only when the per-cell three-state gate finds zero partial
+cells. Reference impl: `scripts/issue664_dispatch.py` `_upload_cell_artifacts` /
+`_classify_cell_hub_state` / `_cell_done_anywhere`.
+
 **Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`.** `_finalize_phase`
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own
 tagged upload set the env in `try/finally` to prevent double-uploads.

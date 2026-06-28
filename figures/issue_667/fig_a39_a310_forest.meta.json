@@ -1,0 +1,87 @@
+{
+  "commit": "32501eef95",
+  "created": "2026-06-26T00:49:42Z",
+  "figsize": [
+    8.2,
+    4.4
+  ],
+  "points": [
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.4562337081998957,
+      "y": 3.16,
+      "series": "Base gate g0 \u2192 realized gate",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.2661089715714845,
+      "y": 2.84,
+      "series": "Post-FT oracle gate g+ \u2192 realized gate",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.4435906476050191,
+      "y": 3.0,
+      "series": "Plain cosine baseline",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.5926916636435492,
+      "y": 2.16,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.48386388043350304,
+      "y": 1.84,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.4925737353044883,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.5639976744018432,
+      "y": 1.16,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.4601091445498598,
+      "y": 0.84,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.4498930893718003,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.6246309194040895,
+      "y": 0.16,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.6438909803789667,
+      "y": -0.16,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Spearman \u03c1  (predicted gate vs realized activation gate)": 0.3824126005615417,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12
+}

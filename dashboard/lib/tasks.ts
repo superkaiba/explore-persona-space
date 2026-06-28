@@ -37,8 +37,29 @@ export type Frontmatter = {
   sagan_id?: string;
   sagan_number?: number;
   priority?: string;
+  // `paper: true` opts the task into the LaTeX-paper clean-result track: its
+  // body.md is a thin paper-stub (H1 + abstract + paper link) and the canonical
+  // clean-result is the paper under docs/papers/issue_<N>/. The in-app body
+  // editor is disabled for these (edit the .tex in git). Typed `boolean | string`
+  // because gray-matter yields the YAML boolean `true` but a quoted `"true"`
+  // survives as a string — `isPaperTask` accepts both.
+  paper?: boolean | string;
+  goal?: string;
+  abstract?: string;
   [k: string]: unknown;
 };
+
+/**
+ * True when a task opts into the paper clean-result track (`paper: true`).
+ * Accepts the YAML boolean and the quoted string "true" (matches the Python
+ * `task_workflow.is_paper_task`). The dashboard uses this to DISABLE the
+ * in-app body editor for paper-tasks (the body is a thin stub; the paper .tex
+ * is edited in git) and, later (Phase C), to route to the paper render.
+ */
+export function isPaperTask(fm: Frontmatter | undefined): boolean {
+  const v = fm?.paper;
+  return v === true || (typeof v === "string" && v.trim().toLowerCase() === "true");
+}
 
 export type Task = {
   id: number;
@@ -194,6 +215,80 @@ export function getTask(id: number): Task | null {
     isLegacyHtml,
     track: deriveTrack(data, data.kind),
   };
+}
+
+/**
+ * A lightweight task descriptor for the paper cross-reference hover card
+ * (Phase C2). The card shows the target task's title + abstract; it must work
+ * even when the target is NOT a paper (forward-only fallback — title + a short
+ * body excerpt, linking the target's existing page).
+ */
+export type TaskStub = {
+  id: number;
+  title: string;
+  /** Abstract for a paper-task (frontmatter), else a short plain-text body
+   *  excerpt for the card. Null when neither is available. */
+  abstract: string | null;
+  isPaper: boolean;
+  status: Status;
+  exists: boolean;
+};
+
+/** Strip markdown noise + collapse whitespace into a short plain-text excerpt. */
+function bodyExcerpt(body: string, max = 320): string | null {
+  const text = body
+    .replace(/^---[\s\S]*?---\s*/, "") // any stray frontmatter
+    .replace(/<!--[\s\S]*?-->/g, "") // HTML comments / clean-result sentinels (anywhere)
+    .replace(/^\s*\*\*Methodology:\*\*.*$/gim, "") // the methodology-doc pointer line
+    .replace(/^#{1,6}\s+.*$/gm, "") // headings
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "") // images
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // links → text
+    .replace(/[*_`>#|]/g, "") // inline markdown
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return null;
+  return text.length > max ? text.slice(0, max).trimEnd() + "…" : text;
+}
+
+/**
+ * Resolve a task's stub (title + abstract) for the hover card, cheaply. Reads
+ * only the registry title + the target body's frontmatter/first prose. Returns
+ * `exists: false` (with a placeholder title) when the id resolves to nothing, so
+ * the card can still degrade gracefully rather than the fetch 404-ing the UI.
+ */
+export function getTaskStub(id: number): TaskStub {
+  const reg = getRegistry();
+  const entry = reg.tasks[String(id)];
+  const abs = resolveTaskPath(id);
+  if (!abs) {
+    return {
+      id,
+      title: entry?.title ?? `Task #${id}`,
+      abstract: null,
+      isPaper: false,
+      status: (entry?.status as Status) ?? "proposed",
+      exists: Boolean(entry),
+    };
+  }
+  const bodyPath = path.join(abs, "body.md");
+  let fm: Frontmatter = {};
+  let body = "";
+  try {
+    const parsed = matter(fs.readFileSync(bodyPath, "utf8"));
+    fm = parsed.data as Frontmatter;
+    body = parsed.content;
+  } catch {
+    // Body unreadable — fall back to registry title only.
+  }
+  const status = path.basename(path.dirname(abs)) as Status;
+  const title =
+    (typeof fm.title === "string" && fm.title.trim()) || entry?.title || `Task #${id}`;
+  const isPaper = isPaperTask(fm);
+  const abstract =
+    (typeof fm.abstract === "string" && fm.abstract.trim()
+      ? fm.abstract.trim()
+      : null) ?? bodyExcerpt(body);
+  return { id, title, abstract, isPaper, status, exists: true };
 }
 
 export type TaskPlan = {

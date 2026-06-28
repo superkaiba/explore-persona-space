@@ -125,6 +125,15 @@ sections:
 - The 7 review lenses (Overclaims / Surprising Unmentioned Patterns /
   Alternative Explanations / Confidence Calibration / Missing Context /
   Plot-Prose Match / Raw-Text Sample Plausibility) — copy each verbatim.
+- **When the task is `paper: true`** (read `body.md` frontmatter), ALSO copy
+  the `## Branch on `paper:`` section verbatim — including the **paper-mode
+  Lens 7 no-invention reality-check** (resolve each `\epsexample` block's
+  provenance pointer, OPEN the cited artifact, confirm the persona exists +
+  the system prompt is byte-for-byte + the completion is findable; a
+  fabricated / paraphrased persona / prompt / completion is a hard FAIL).
+  Point Codex at the paper `.tex` (`docs/papers/issue_<N>/issue_<N>.tex`) +
+  the figure PNGs, and have it open the cited artifacts to verify examples
+  are real (the #657 fabricated-persona catch).
 - The Output Format `<!-- epm:interp-critique v1 -->` schema — adapt the
   marker tag to `<!-- epm:interp-critique-codex v<n> -->`.
 - The Rules section (no statistical jargon in prose, must independently

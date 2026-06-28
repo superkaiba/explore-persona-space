@@ -90,6 +90,63 @@ def is_v3_body(body: str) -> bool:
     return SENTINEL_V3 in body
 
 
+# A `paper: true` task's body is a thin paper-stub (H1 + abstract + paper link);
+# the canonical clean-result is the LaTeX paper under docs/papers/issue_<N>/. The
+# exemplar feed extracts the abstract as the skim block (NOT `## Takeaways`,
+# which a stub doesn't have).
+RE_FM_PAPER = re.compile(r"(?im)^paper\s*:\s*(?:true|'true'|\"true\")\s*$")
+RE_MD_ABSTRACT_H2 = re.compile(r"(?ms)^##\s+Abstract\s*$(?P<body>.+?)(?=^##\s|\Z)")
+
+
+def is_paper_stub(body: str) -> bool:
+    """True when the body's leading frontmatter carries `paper: true`."""
+    if not body.startswith("---"):
+        return False
+    end = body.find("\n---", 3)
+    head = body[3:end] if end != -1 else body
+    return bool(RE_FM_PAPER.search(head))
+
+
+def _extract_paper_stub(body: str, title: str) -> tuple[str, str, str, str]:
+    """Return (skim_block, hero_url, confidence_label, confidence_text) for a stub.
+
+    The skim block is the stub abstract (a `## Abstract` H2 block, else the first
+    prose paragraph after the H1, excluding the paper-link line). Confidence
+    comes from the H1 title tag. Hero is the first inline image if any.
+    """
+    # Drop the leading frontmatter so the H1 / abstract scan is clean.
+    text = body
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            text = text[end + 4 :].lstrip("\n")
+    m = RE_MD_ABSTRACT_H2.search(text)
+    region = m.group("body") if m else text
+    out: list[str] = []
+    for raw_line in region.splitlines():
+        line = raw_line.strip()
+        if not line:
+            if out:
+                break  # first paragraph only
+            continue
+        if line.startswith("#"):  # H1/H2/H3 heading
+            if out:
+                break
+            continue
+        low = line.lower()
+        if low.startswith("paper:") or low.startswith("pdf:"):
+            if out:
+                break
+            continue
+        out.append(line)
+    skim = " ".join(out).strip()
+    hero_m = RE_MD_HERO.search(text)
+    hero = hero_m.group(1) if hero_m else ""
+    title_m = RE_TITLE_CONFIDENCE.search(title)
+    conf_label = title_m.group(1).upper() if title_m else "?"
+    return skim, hero, conf_label, ""
+
+
 def fetch_promoted(n: int, prefer_shape: str = "v3") -> list[dict[str, Any]]:
     """Return up to N most-recently-promoted clean-result experiment dicts.
 
@@ -187,6 +244,13 @@ def render_inline(experiments: list[dict[str, Any]], max_chars: int = DEFAULT_MA
             if len(compact) > 400:
                 compact = compact[:397] + "..."
             summary = f"Summary: {compact}" if compact else ""
+        elif is_paper_stub(body):
+            # Paper-stub: the canonical clean-result is the LaTeX paper; the
+            # skim block is the stub abstract (not `## Takeaways`).
+            tldr, hero, conf_label, conf_text = _extract_paper_stub(body, title)
+            if len(tldr) > max_chars:
+                tldr = tldr[: max_chars - 3] + "..."
+            summary = f"Abstract (paper-task — see docs/papers/issue_{number}/): {tldr}"
         else:
             # Markdown (v3 + v2 + legacy): print the headline-skim block
             # verbatim (`## Takeaways` for v3, `## TL;DR` for v2/legacy) so

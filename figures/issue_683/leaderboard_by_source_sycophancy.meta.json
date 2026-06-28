@@ -1,0 +1,116 @@
+{
+  "commit": "f5479e6e58",
+  "created": "2026-06-27T12:42:20Z",
+  "figsize": [
+    6.4,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "comedian\nseed 42",
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.6679802955665023,
+      "error": 0.21384852216748768,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "comedian\nseed 137",
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.6315270935960591,
+      "error": 0.27390394088669945,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "villain\nseed 42",
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.7492610837438421,
+      "error": 0.12220443349753685,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "villain\nseed 137",
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.7502463054187191,
+      "error": 0.12464901477832518,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.830603448275862,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.8438423645320196,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.5856650246305418,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.8413793103448275,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.4029064039408866,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.2960344827586206,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.8300738916256155,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": -0.5920812807881771,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.4,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.6990147783251229,
+      "series": "shuffled-key null (p95)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.4,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.6990147783251229,
+      "series": "shuffled-key null (p95)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.9608374384236451,
+      "series": "noise-floor ceiling",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Held-out Spearman \u03c1 (g_pred vs g\u2081 (dominant component))": 0.9608374384236451,
+      "series": "noise-floor ceiling",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 16
+}

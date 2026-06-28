@@ -647,3 +647,39 @@ def test_inline_origin_prompt_exemption_does_not_leak_to_sibling_bullets():
     )
     findings = audit.audit_body(body)
     assert "post_hoc_phrasing" in findings, findings
+
+
+# ─── paper-stub support (`paper: true`) ────────────────────────────────────
+
+PAPER_STUB_BODY = """\
+---
+title: A claim (MODERATE confidence)
+kind: experiment
+paper: true
+---
+# A claim (MODERATE confidence)
+
+An abstract that, if it had said pre-registered, would normally trip the audit.
+
+Paper: docs/papers/issue_657/issue_657.pdf
+"""
+
+
+def test_is_paper_stub_helper():
+    assert audit._is_paper_stub(PAPER_STUB_BODY)
+    assert audit._is_paper_stub(PAPER_STUB_BODY.replace("paper: true", "paper: 'true'"))
+    assert not audit._is_paper_stub("# T\n\nno frontmatter\n")
+
+
+def test_paper_stub_skips_audit(capsys):
+    """A paper-stub body PASSes the live single-body audit even with a phrase
+    that would normally trip the prose anti-pattern scan — the markdown
+    body-discipline checks do not apply to a paper-task."""
+    leaky_stub = PAPER_STUB_BODY.replace(
+        "would normally trip the audit", "is pre-registered and would normally trip the audit"
+    )
+    rc = audit._audit_single_body(leaky_stub)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "paper-stub" in out
+    assert "verify_paper.py" in out

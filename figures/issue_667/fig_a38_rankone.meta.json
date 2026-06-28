@@ -1,0 +1,434 @@
+{
+  "commit": "32501eef95",
+  "created": "2026-06-26T00:49:49Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.03834927245000721,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8191825493838655,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06445972014611633,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8023766446259142,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1285274132978655,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8068822652091521,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13537226205201186,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.7974609290729351,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08771566697607629,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8218598474625238,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1155715616377621,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.82833843418437,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.029858017214810365,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8194153181410205,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06425903707551955,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8069298914540581,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.012214997610318405,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.7981872804910853,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.12182027866057511,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8127223451540745,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08843899515402902,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8236013848804598,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13923321995235854,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8202640420350981,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10007319744451942,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8213897708104376,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13059603891447,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8124583277179735,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06430352500038435,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.7853574908683448,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09081642623128348,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.7792762757377796,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8125903364360241,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0033100549160718,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8578223611506606,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1261298349712618,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8251096889855165,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9003646915614975,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8364948077405869,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1256218451984283,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8220190349766614,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9473128065629359,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8350744951273731,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9785314057123212,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8390210010167657,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0917567262697236,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8418204278685449,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9745757581833652,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8391990653327739,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0138862325484566,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8396107843734342,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8677165517080592,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8491100315449972,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.070983670428946,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8486899657992575,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.010680127701398,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8228932413503596,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9523248806197459,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8422480552414554,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0807600369599533,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.852783784409316,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9448945522016606,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8559834973547494,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9869794090545824,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8590390647816452,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8407156061209895,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.9332513975898087,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8669392311002053,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9435775201559544,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8612104041436346,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0879832073663986,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8607311870312635,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8857364637978271,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8643435078897234,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.028028147270383,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8536417156368167,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0639969475073023,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.854457145133882,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.912612300542649,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8201317101352631,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.875441055653259,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8693963225124757,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9369914230136906,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8631642274774006,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.044081244165166,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8470752490093365,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.01743438557852,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.860189430803541,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.902017433725494,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8538524769494422,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9811366214253403,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8530216283838263,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.047403243600866,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8667238490652462,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9783797085156358,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8574463975612769,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0372916317967524,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8742520556182393,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8604603089174023,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.883981766800215,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.881944709131131,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.926306941846908,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8433438956841621,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.084356850257791,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.6849840673826709,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.023005370098023,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.6944305111112493,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.886356019827312,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.7976225572724848,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9812755432662126,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.9081807457010287,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9941343634794335,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8001854023834528,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.904726896098382,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8137560827234841,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.06568160239458,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8265598969773245,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.891828165577993,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8893513333665387,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9695438933387854,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.6662540283648359,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0046872511339817,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.6976363165843079,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9805758457159697,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8676901040949474,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0243036000026793,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8147965106959597,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0665945804418047,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8252215520345842,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1277548313541077,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8640240076035725,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.8200090313652719,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.034482758620689655,
+      "series": "chance \u2248 1/29 = 0.034",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Top-singular variance fraction  \u03c3\u2081\u00b2 / \u03a3\u03c3\u00b2": 0.034482758620689655,
+      "series": "chance \u2248 1/29 = 0.034",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 70
+}

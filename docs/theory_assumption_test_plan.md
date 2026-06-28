@@ -64,6 +64,151 @@ reference). All other content is preserved verbatim.
 | **R3-4** | §1.5: ONE sentence that #474's source-cell saturation degrades the `ŵ=Δv(C)` write-direction estimate (A3.7/A3.8), not only the leakage DV — flagged for the per-phase artifact-reuse fitness check. | §1.5 (B5 block tail) |
 | **R3-5** | Dangling "§11 grounding" reference (the doc has no §11) renamed to the per-phase plan's primary-path pre-registration (§10a per-phase plan approval; §3 Phase 1 recipe-freeze). | §1.7 C3, §3 Phase 1 |
 
+## Revision log (round 4 — `r_B` provenance)
+
+A code-vs-spec trace of the read-out `r_B` found the script index overstated
+readiness, the default slot wrong, and `D_{B̄}` mis-pinned. The intended `r_B`
+is the **pos/neg system-prompt-pair** diff (Persona Vectors, arXiv 2507.21509);
+the exact extraction method is being decided by the running **#661** (feeds the
+program-#660 A3.3 recipe). Two fixes; all other content preserved verbatim.
+
+| ID | Fix | Where |
+|---|---|---|
+| **R4-1** | `r_B` provenance corrected — Phase-0 **to-build, NOT reuse**. The default slot is **answer-side** (mean over generated-response tokens), per-behavior best layer. The cited `scripts/issue634_extract_behavior_vectors.py` emits **last-input-token, positive-only ABSOLUTE** centroids (the `c_C`-style slot, no contrast) = the §1.4 `r_B` *ablation* slot, NOT the default. The existing extractors (`extract_persona_vectors.py`, `issue623_persona_panel_vectors.py`) emit raw absolute centroids only; the one downstream diff that exists (`issue623_analyze.py::persona_vector_matrix`, role-minus-assistant, mean-centered #536) is a **different contrast** (persona-axis), not the `r_B` target — Phase 0 builds the pos/neg-prompt diff fresh. | §1.3 read-out note, §1.4 table + note, §6 script index |
+| **R4-2** | `D_{B̄}` pinned = the **negative-prompt centroid**: `r_B = D_B − D_{B̄}` over matched **pos/neg system-prompt pairs** per behavior (e.g. "be sycophantic" vs "be honest"; Persona Vectors, arXiv 2507.21509) — NOT the assistant centroid, NOT a single-pole absolute mean. The exact extraction method — (A) on-policy instruction-present / (B) off-policy teacher-forced / (C) instruct-and-strip — is **OPEN, being decided by the running #661** (per-layer cosine divergence + instruction-context-axis confound `c_pos−c_neg` + A3.3 held-out predictive quality), which sets the program-#660 A3.3 `r_B` recipe. The assistant-axis instruction files carry only `pos` prompts, so the matched **neg prompts must be generated** — a Phase-0 dependency #661 is resolving. | §1.3 read-out note, §1.4 note |
+
+## Revision log (round 5 — context-coherence assumption added)
+
+User-added formal assumption (Thomas, 2026-06-25): **`a:context-vector-coherence`** — contexts
+must be close within a condition for the single-vector `c_C` summary to be valid. It is *forced*:
+applied to singleton conditions (§1.10) plus arbitrary mixtures, an exact mean-vector predictor
+forces `h_θ0` to be globally affine, so a genuinely nonlinear `h_θ0` is only compatible with
+conditions of small enough spread to be locally affine. Upgrades the prior lightweight coherence
+check; the full affinity proof + Taylor bound belongs in the theory doc.
+
+| ID | Add | Where |
+|---|---|---|
+| **R5-1** | New assumption test **A3.5a** (`a:context-vector-coherence`): within-condition spread `s_W(C)=E‖c_x−c_C‖²_W` vs the behavior Jensen gap (bounded `½K·s_W`) + the context→profile residual; metric `W=I` then `(Σc+λI)⁻¹`; per condition + family, layer-swept; SPLIT / richer-summarize low-coherence conditions. Measurables `ŝ_W, Ĵ_ℬ, R̂_ℬ` all CPU on the stored per-probe `c_x`+`v0`. Faithful to the user's formal block. | §1.2 precondition note · §4 table (A3.5a row) · §4 coherence test block |
+
+## Revision log (round 6 — `r_B` recipe sweep baked in)
+
+User decision (Thomas, 2026-06-25): run ALL `r_B` extraction recipes as a **built-in A3.3
+sweep** rather than pre-selecting one via #661. It is cheap — `r_B` is a read-out (the
+fine-tune fleet never uses it), A and C share generations, projections are CPU-free — so all
+recipes ride one Phase-1 extraction pass (~2 GPU-h) with everything downstream free; nothing
+GPU-heavy is multiplied. **#661 is KEPT (not archived)** as the complementary standalone early
+read, with its `rb-recipe-knobs` follow-ups (instruction-pair count, negative-pole content,
+assistant-centroid baseline, optimism trait) intact — "let 661 finish."
+
+| ID | Change | Where |
+|---|---|---|
+| **R6-1** | A3.3 `r_B` becomes an in-plan recipe sweep: contrast-construction A/B/C × summary variants, **(C3) primary = C (instruct-and-strip)**, the rest exploratory (FDR); built-in measurables = pairwise `cos(r_B^{A,B,C})` + the `(c_pos−c_neg)` confound projection + per-recipe held-out predictive quality. Removes the "program waits on #661" coupling (the sweep is in-plan). #661 + its `rb-recipe-knobs` follow-ups stay as the standalone exhaustive knob read that confirms/feeds the C-primary lock — NOT duplicated into the in-plan sweep (avoids ballooning the C3 multiple-comparison surface). **[SUPERSEDED by R7-1: the knobs ARE now folded in-plan as one-knob-off variants.]** | §1.3 read-out note · §1.4 `r_B` note · §4 A3.3 row |
+
+## Revision log (round 7 — `rb-recipe-knobs` folded in-plan)
+
+User decision (Thomas, 2026-06-25): add #661's `rb-recipe-knobs` follow-ups to the experimental
+plan as IN-PLAN A3.3 robustness variants (reverses R6-1's "keep them #661-only"). Each knob is
+varied ONE-AT-A-TIME from the C primary (linear, not a cross-product) so the C3
+multiple-comparison surface stays bounded; all are exploratory (FDR), never the headline. #661
+still runs the same knobs standalone as the early read.
+
+| ID | Change | Where |
+|---|---|---|
+| **R7-1** | The `rb-recipe-knobs` — instruction-pair count (1 vs 5 paraphrase pairs), negative-pole content (anti-behavior vs neutral/default), assistant-centroid baseline (`centroid_B − centroid_assistant`, expected to underperform), and the optimism trait (opposite ≠ default assistant) — become IN-PLAN one-knob-off A3.3 robustness variants from the C primary (exploratory/FDR). Bounded `r_B`-extraction cost (read-out only, fleet-unaffected): 5-pair / neutral-pole / optimism add some Phase-1 generation, assistant-baseline ~free. #661 runs the same knobs standalone. Supersedes R6-1's "not duplicated." | §1.4 `r_B` note · §4 A3.3 row |
+
+## Revision log (round 8 — generic-vs-misalignment query genre)
+
+User decision (Thomas, 2026-06-25): add an explicit **generic vs misalignment-specific query
+genre** comparison. #658's foundation measures the base-model chain on the misalignment-eliciting
+**Betley** pool only; the deployment- and safety-relevant question (open-q 3.7, leakage to
+benign/default contexts) is whether the chain (A3.2/A3.3/A3.5) holds when behavior is expressed on
+**generic everyday queries** too, or is an artifact of the behavior-eliciting genre. Run a second
+length-matched **UltraChat** probe pool (`data/issue594/probes_ultrachat.json`, 48 probes,
+decile-aligned to Betley) through the SAME extraction + judge, build a parallel store with `c_C`
+recomputed per genre on the matched pool (NOT forced equal — the genre-induced `c_C` shift is part
+of what the arm measures), and COMPARE the predictor chain across the two genres, per behavior, against the noise
+floor. GPU sub-phase (new generation + extraction + judge — the store is Betley-only); routed as a
+same-question follow-up round ON #658, tracked under #660, run UNCONDITIONALLY regardless of the
+Betley foundation verdict (it does NOT wait on the foundation PASSing); it does not block the
+Phase-2 gate.
+
+| ID | Add | Where |
+|---|---|---|
+| **R8-1** | New Phase-1 **(G1) genre-generalization arm**: a second UltraChat (generic) probe pool, length-matched to Betley (misalignment-specific), run through the #658 extraction → parallel store (`v0`, single-context per-sample acts, `E0` judge) with `c_C` recomputed per genre (NOT forced equal); re-fit A3.2/A3.3/A3.5 and report Spearman/Pearson + best layer/recipe PER GENRE and the genre delta, distributional AND single-context, each against its own within-genre noise floor. Floor guard: misalignment behaviors (broad_em/harmful_compliance/refusal) may sit at expression floor on generic queries — report per-behavior testable variance per pool and read the continuous completion-probability DV where the rate floors; never read a no-variance ρ as "chain breaks." | §1.2 (G1) bullet · Phase 1 (G1) arm |
+
+## Revision log (round 9 — direct cross-FT stability of context vectors + the context→profile map)
+
+User decision (Thomas, 2026-06-25): add two **direct cross-FT stability tests**. The
+program currently tests post-FT stability only *indirectly* — A3.6 establishes the
+behavior read-out `r_B` stays valid post-FT and A3.10 establishes the base gate stays
+*predictive* despite drift — but neither directly reports whether the **context
+vectors `c_C` themselves** are preserved across training, nor whether the
+**context→profile map** `M: c_C→v0(C)` (fit on the base model in A3.5) still holds
+post-FT. Both new tests are **zero-marginal-GPU CPU read-outs on the existing stores**:
+`c⁺_{C'}` and `v⁺(C')` are already captured for A3.6/A3.10, `c0`/`v0` are in the base
+store, and `M0` is the A3.5 base-fit (CPU-derived from captured `c_C`/`v0`). They add interpretive power to the whole base-model-predictor program
+at ~no cost: if the context vectors and the map are near-preserved, the base-model
+predictor is *directly* justified; if they drift heavily yet the predictor still works
+(A3.6/A3.10 PASS), the predictor's drift-robustness is doing the heavy lifting and the
+work localizes to A3.10 — either outcome sharpens the A3.6/A3.10 interpretation. A3.6b
+is CHANGE-based (base level partialled out, per the C10 / #532/#649 base-prior caveat);
+A3.6a is a direct vector-stability characterization (cosine + relative norm +
+displacement vs within-condition spread, no partialled regression). Both are per layer ×
+training-strength, source + bystanders, distributional + single-context (§1.10). Phase 3.
+
+| ID | Add | Where |
+|---|---|---|
+| **R9-1** | New **A3.6a — context-vector stability across FT** (`c⁺≈c0`, direct): per context (source + bystanders) × layer × training strength η report `cos(c0(C),c⁺(C))`, relative norm `‖c⁺(C)‖/‖c0(C)‖`, and the displacement `‖c⁺(C)−c0(C)‖²_W` compared **in the same metric `W`** to the within-condition spread `s_W(C)` (A3.5a; `W=I` then `(Σc+λI)⁻¹`). **Pre-registered falsifiable kernel: `‖c⁺−c0‖²_W < s_W(C)`** — post-FT context displacement is smaller than the natural within-condition spread. CPU on the existing A3.10 store (no new capture). Characterization otherwise: drift shrinking with weaker training → base `c_C` directly justified; large drift → A3.10's robustness is load-bearing (flagged, NOT a failure — the theory tolerates drift). It is the standalone raw-stability read of the same `c⁺−c0` the A3.10 gate-drift decomposition consumes. | §4 A3.6a row · §2 trained-quantities consumed-by |
+| **R9-2** | New **A3.6b — context→profile map stability across FT** (`M⁺≈M0`, direct): does the base-fit map `M0` (A3.5, `c_C→v0`) still map `c⁺(C)→v⁺(C)`? **Primary (change, base level partialled out per C10):** corr / calibrated error between the predicted change `M0·(c⁺−c0)` and the measured change `v⁺−v0`, against the refit-`M⁺` noise floor. **Operator companion (interpretable ONLY under A3.5's CV-chosen ridge λ / low-rank `k`; at d≫n the unregularized null space dominates, so prediction-transfer stays the trustworthy primary):** A3.5 records an explicit λ/`k`; refit `M⁺: c⁺→v⁺` at the SAME λ/`k`, report relative operator norm `‖M⁺−M0‖/‖M0‖` + principal angles between the top-`k` subspaces of `M0`/`M⁺`. Per layer/recipe, source + bystanders. Generalizes A3.6 (1-D read-out `r_B` stability) to the FULL context→profile operator. CPU on the existing base + A3.6 stores (no new capture). | §4 A3.6b row · §2 base + trained-quantities consumed-by |
+
+## Revision log (round 10 — broadly-applying style behaviors added)
+
+User decision (Thomas, 2026-06-26): add three **broadly-applying style behaviors** — `concise`,
+`verbose`, and `casual_register` — to the behavior battery as new evaluated leakage columns `B'`
+(§1.3). Unlike the content behaviors (sycophancy needs a false claim, refusal needs a borderline
+request, broad_em needs a provocative query), style behaviors express on **every** prompt, so their
+eval battery is the **generic everyday-query pool** (the UltraChat probe set built for the (G1) genre
+arm, `data/issue594/probes_ultrachat.json`) and they carry high testable variance with no
+expression-floor problem. `concise`/`verbose` are the two poles of one **verbosity axis**: the
+read-out is shared (`r_verbosity = D_verbose − D_concise`) and **response length (tokens) is a
+judge-free continuous DV**, with a judged "concise?"/"verbose?" rate as the calibrated `[0,1]`
+companion. `casual_register` (informal vs formal tone) promotes the existing `format_style` column /
+B6 `casual-lowercase` row into a standalone leakage DV. **Added EVAL-ONLY (Path A)** — new `B'`
+columns scored on the EXISTING fine-tune fleet (§7.5 "eval IS full-grid, cheap on the cached
+store"); they are NOT added to the trained Phase-2 grid by default (each is a candidate trained row
+family — extend B6 — only if leakage *predictability of the trained style behavior* is later
+wanted). Near-zero added GPU-h (per-battery extraction on the fleet; the generic pool already exists
+for G1); the marginal cost is Batch-API judge dollars for the rate DV, and the verbosity length DV
+needs no judge at all.
+
+| ID | Add | Where |
+|---|---|---|
+| **R10-1** | Three new evaluated style columns `B'` — `concise`, `verbose`, `casual_register` — eval-only on the existing fleet; battery = generic-query pool (UltraChat, the broadly-applying genre); verbosity is one bipolar axis (`r_verbosity = D_verbose − D_concise`, length = judge-free continuous DV); `casual_register` standalones the `format_style`/B6 register behavior. Top-level eval columns 11 → 14; registry target 19 → 22 `ColumnSpec` (added to `columns.py` at phase-implementation). Trained-row promotion (extend B6) deferred **[SUPERSEDED by R11: now trained]**. | §1.3 eval table + B6 table · §6 cost |
+
+## Revision log (round 11 — style behaviors promoted to TRAINED row families)
+
+User decision (Thomas, 2026-06-26): promote the three round-10 style behaviors from eval-only to
+ALSO trained sources, **including both verbosity poles** (`concise` AND `verbose`). The round-10
+"train `verbose` only, `concise` is its negative pole" shortcut is REVERSED: `δ_concise ≈ −δ_verbose`
+(axis antisymmetry) is itself an assumption the program tests (A3.7 clean displacement / A3.8
+rank-one), so assuming it to skip a fine-tune would assume the conclusion; and trained leakage is
+DIRECTIONAL and likely asymmetric — `concise` trains AGAINST Qwen-Instruct's verbose base prior while
+`verbose` trains WITH it (the base-prior is the project's dominant confound, C7 / #532/#649), so one
+pole's leakage cannot be read off the other. Structured as a **`verbosity` row family (B11)** with
+concise + verbose trained variants (mirrors B3 sycophancy / B4 refusal's two-variant pattern) +
+**`casual_register` (B12)**. The signed read-out `r_verbosity`, the eval battery, and the
+source-context + contrastive-negative design are SHARED across the two verbosity poles, so adding
+`concise` on top of `verbose` is cheap data-wise (only the positive completions differ). Style
+behaviors are the easiest trained candidates (high on-policy elicitation yield, no alignment
+conflict) and exactly the content/style class the program predicts will FAIL the predictor (#637),
+so training them tests that boundary directly. Eval-only columns (round 10) are UNCHANGED and stay
+in place — the trained-source read is added on top.
+
+| ID | Add | Where |
+|---|---|---|
+| **R11-1** | Promote `concise`/`verbose`/`casual_register` to trained row families: **B11 `verbosity`** (concise + verbose variants, trained separately — δ antisymmetry NOT assumed) + **B12 `casual_register`** — 3 trained variants. LEAN grid (1 source × 1–2 doses × 2 objective arms ≈ 4–8 fine-tunes/variant, ~40 GPU-h for all three). Verbosity poles share read-out + eval battery + negative panel; only the positive completions differ. | §1.3 trained-row list (B11/B12) · §7.2 grid · §6 cost |
+| **R11-2** | **Cap consequence:** the trained style additions take Phase 2 from ~55–95 to ~95–155 GPU-h — PAST the 100-GPU-h `/issue --auto` auto-approve cap. The Phase-2 task either chunks into two plan-approvals or takes one explicit over-cap approval at Step 2c (the GPU-hour cap is gated at per-phase plan approval, NOT at design-doc time, so this edit spends nothing). | §6 cost · §10a per-phase plan approval |
+
 ---
 
 This plan turns the paper's assumption chain into one **shared activation store**
@@ -164,6 +309,22 @@ control the gate `g_C(C')` needs):
   foundation (#658) is Betley-scoped and therefore correct as run; the
   behavior-generality bound is a Phase-2 store-design requirement + a clean-result
   scope caveat.
+- **(G1) Generic vs misalignment-specific query genre — [#658 FOLLOW-UP, GPU].** The shared
+  Betley pool above is *misalignment-eliciting* by construction (provocative / safety-relevant
+  free-form queries — the genre the EM behaviors naturally express in). The deployment- and
+  safety-relevant question (open-q 3.7, leakage to benign/default contexts) is whether the
+  base-model chain holds when behavior is expressed on **generic everyday queries** too. We add a
+  second within-condition pool — the **UltraChat** probe set
+  (`data/issue594/probes_ultrachat.json`: 48 probes from `HuggingFaceH4/ultrachat_200k`,
+  **length-matched** to the Betley pool (decile-aligned; residual ≤~10% at the long tail), hash
+  `f277f8c3…`, built by `issue594_build_probes_ultrachat.py`) — and run the predictor chain on BOTH
+  pools to compare
+  generic vs misalignment-specific genre (Phase 1 (G1) arm). This is a DIFFERENT axis from the B6
+  bullet above: B6 varies the prompt distribution *together with* the behavior (per-behavior eval
+  batteries); (G1) holds the behavior fixed and varies ONLY the query genre, length-controlled, so
+  the two genres are directly comparable. Floor caveat: misalignment behaviors may sit at
+  expression floor on generic queries — read per-behavior testable variance + the continuous DV,
+  never a no-variance correlation as a break.
 - **Why this suite, not the 24-persona panel alone:** the families let context
   distance vary across surface-feature *type* (persona vs ICL vs format) **and**
   within it — `rephrase` gives 6 same-semantics/different-register near-twins,
@@ -185,13 +346,16 @@ control the gate `g_C(C')` needs):
   corpus** of context vectors (project corpus builders `scripts/project_corpus_v2.py`
   / `scripts/issue617_upload_corpus.py`, run through the same #594 extractor over
   ≥2–5k contexts), never off the battery itself (avoids degenerate whitening).
-- **Within-condition coherence is a validity precondition (theory §2).** The paper
-  expects the predictor to work only when contexts sampled from a condition *share
-  features*, measurable as "the similarity of their per-context summary vectors."
-  Phase 1 tests, per condition + per family, whether the per-probe context vectors
-  `{c_x : x∼C}` cluster; conditions where they scatter are ones where the single
-  summary `c_C` is weak and downstream gate predictions must be down-weighted /
-  caveated.
+- **Within-condition coherence is a validity precondition (assumption
+  `a:context-vector-coherence`, A3.5a; theory §2).** The predictor's single-vector `c_C`
+  summary is only valid when contexts sampled from a condition cluster tightly — and this
+  is *forced*, not stylistic: applied to singleton conditions (§1.10) plus arbitrary
+  mixtures, an exact mean-vector predictor would force `h_θ0` to be globally affine, so a
+  nonlinear `h_θ0` is only compatible with conditions whose spread is small enough to be
+  locally affine. Phase 1 tests this per condition + per family via the within-condition
+  spread `s_W(C)` against the behavior Jensen gap + the context→profile residual (full test
+  spec: §4 coherence block / A3.5a); scattered conditions get `c_C` down-weighted/caveated
+  or split.
 
 ### 1.3 Behavior battery (B / B') — the full #545 column registry
 
@@ -208,10 +372,14 @@ sensitivity column = **19 total** (verified against `columns.py`: `len(COLUMNS)
 budget in §6 is re-derived against the correct count (~1.7× the 11-column figure;
 the family-expression + diagonal columns each add a judged battery on the
 applicable adapter rows + the base panel). `scoring_universe()` already encodes
-which cells count, but the cost arithmetic must use 19, not 11.
+which cells count, but the cost arithmetic must use 19, not 11. **(R10)** the
+round-10 style columns take this to **22 `ColumnSpec`** (19 + `concise`/`verbose`/
+`casual_register`); the verbosity pair shares one read-out and a judge-free length
+DV, so the added judge load is ~2 batteries' worth, not 3 (§6).
 
-**Evaluated behaviors B′ — the 11 top-level eval columns (`columns.py`)**, measured
-on-policy on every model (these are the leakage DVs):
+**Evaluated behaviors B′ — the 14 top-level eval columns (`columns.py`; 11 original
++ 3 broadly-applying style columns added round 10)**, measured on-policy on every
+model (these are the leakage DVs):
 
 | Column | Construct | DV | role |
 |---|---|---|---|
@@ -225,6 +393,9 @@ on-policy on every model (these are the leakage DVs):
 | `format_style` | format/style conformance | structural + spot-check | leakage DV |
 | `self_report` | verbalized behavior awareness | judged rate | leakage DV |
 | `persona_drift` | identity / persona drift | judged rate | leakage DV |
+| `concise` | response brevity (low pole of the verbosity axis) | response length (tokens, continuous) + judged "concise?" rate | leakage DV (style; **R10**) |
+| `verbose` | response padding (high pole of the verbosity axis) | response length (tokens, continuous) + judged "verbose?" rate | leakage DV (style; **R10**) |
+| `casual_register` | informal vs formal tone/register | judged "casual register?" rate + continuous register score | leakage DV (style; **R10**) |
 | `capability` | ARC-C | logprob acc | **guard** (never a leakage DV) |
 
 Plus the within-family expression batteries (`fam_expr_{bad_medical, risky_financial,
@@ -245,11 +416,15 @@ source context (each ships designed-null / anchor controls):
 - **B8** benign He-et-al controls (D1/D2/D4, expected nulls)
 - **B9** business competence *(diagonal check)*
 - **B10** warmth (gated dose-response)
+- **B11** verbosity *(R11; broadly-applying style)* — concise / verbose, the two poles trained as separate variants (δ antisymmetry across poles is NOT assumed; A3.7/A3.8 test it); shared signed read-out `r_verbosity`, eval battery, and contrastive-negative panel
+- **B12** casual_register *(R11; broadly-applying style)* — informal vs formal register (promotes the B6 `casual-lowercase` row to a standalone trained source)
 
 Notes:
-- **Read-outs `r_{B'}`** (A3.3) are extracted **per evaluated column** from that
-  behavior's `D_B / D_{B̄}` (difference-in-means, persona-vector recipe), same
-  layer policy as §1.4; the marker read-out is the marker-logit direction.
+- **Read-outs `r_{B'}`** (A3.3) are extracted **per evaluated column** as
+  `D_B − D_{B̄}` over matched **pos/neg system-prompt pairs** (Persona Vectors,
+  arXiv 2507.21509; answer-side, extraction method = the in-plan A/B/C A3.3 recipe sweep, C primary; #661 the complementary standalone read — see §1.4
+  note R4-1/R4-2), same layer policy as §1.4; the marker read-out is the
+  marker-logit direction.
 - **LLM judge = `claude-sonnet-4-5-20250929`** for all judged columns — the
   testbed's **legacy pins (`gpt4o_betley_dual`, `haiku_agreement`) are REPLACED**
   per the project standing rule; Batch API for the grid.
@@ -275,6 +450,7 @@ assumed to be the shared Betley pool:
 | `deception` | code-summary + negotiation (`deception_episodes.json`) | No — own battery |
 | `fact_expression` | #444 recall + OOD + reversal (`fact_battery.json`) | No — own battery |
 | `format_style` | format/style demands (`format_panel.json`) | No — own battery |
+| `concise`, `verbose`, `casual_register` (R10) | generic everyday queries (UltraChat pool `data/issue594/probes_ultrachat.json`, the broadly-applying genre) | No — own battery (generic genre) |
 
 - **Foundation-claim scope (Phase 1 / #658):** A3.2/A3.3/A3.4/A3.5 are established
   on the **Betley-valid** behaviors only; the Phase-1 clean-result carries a
@@ -307,6 +483,52 @@ These are the recipe knobs the paper leaves open and Phase 1 fixes empirically.
 - **Capture position:** marker DV at the END-of-own-response slot (the marker +
   EOS margin contract, `.claude/rules/marker-leakage-measurement.md`); behavior
   read-outs over the generated answer span.
+- **(R4-1/R4-2) `r_B` provenance + `D_{B̄}` definition.** `r_B = D_B − D_{B̄}`
+  is the **pos/neg system-prompt-pair** diff-in-means per behavior — `D_B` =
+  mean activation under a behavior-positive instruction (e.g. "be sycophantic"),
+  `D_{B̄}` = mean under the matched behavior-negative instruction (e.g. "be
+  honest") (Persona Vectors, arXiv 2507.21509). `D_{B̄}` is **NOT the assistant
+  centroid** and NOT a single-pole absolute mean. **Default slot = answer-side**
+  (mean over generated-response tokens), per-behavior best layer;
+  last-input-token is the ablation. **All three extraction methods run as a built-in
+  A3.3 recipe sweep (not a pre-gate):** (A) on-policy instruction-present /
+  (B) off-policy teacher-forced / (C) instruct-and-strip. **(C3) pre-registered
+  PRIMARY = (C) instruct-and-strip** — the conservative confound-free choice (strips
+  the instruction context A carries; keeps responses on-policy, unlike B); A, B + the
+  summary variants (diff-in-means / mean-D_B / few-shot) are the **exploratory
+  robustness sweep** (FDR-corrected), never the headline. **Cheap, does NOT multiply the
+  fleet:** `r_B` is a read-out (the fine-tune fleet never uses it), A and C **share the
+  same on-policy generations** (they differ only in whether the instruction is stripped
+  at extraction), B needs only cheap external responses, and the projections (`r_Bᵀv0`,
+  `r_Bᵀδ`) are CPU-free — so all recipes ride on ~one Phase-1 extraction pass (~2 GPU-h,
+  the #661 budget) with everything downstream free; nothing GPU-heavy is multiplied.
+  **Built-in measurables (reported as a recipe-robustness finding):** pairwise
+  `cos(r_B^A,r_B^B / A,C / B,C)` per layer, `r_B^A`'s projection onto the
+  instruction-context axis `(c_pos−c_neg)` (A's confound magnitude), and each recipe's
+  A3.3 held-out predictive quality (does the divergence change the *verdict*, or only the
+  geometry). **#661 is the complementary STANDALONE early read** of exactly this A/B/C
+  comparison — LET IT FINISH (re-dispatches after #663's batch-client fix); it
+  confirms/feeds the A3.3 primary-recipe lock, but the program no longer **waits** on it
+  (the sweep is in-plan). **The recipe sweep also carries the finer `rb-recipe-knobs` as IN-PLAN
+  one-knob-off robustness variants from the C primary** — each varied ALONE, never a full
+  cross-product, so the sweep is linear (not exponential) in the knobs and the C3
+  multiple-comparison surface stays bounded: the **instruction-pair count** (single pair vs PV's
+  5 paraphrase pairs), the **negative-pole content** (explicit anti-behavior vs neutral/default),
+  an **assistant-centroid baseline** (`centroid_B − centroid_assistant`, expected to
+  underperform), and an added trait whose opposite ≠ the default assistant (**optimism**) as the
+  discriminating case syco/refusal/EM can't provide. Each is an exploratory robustness check vs
+  the pre-registered C primary (FDR-corrected, never the headline); the marginal cost is bounded
+  `r_B` extraction (read-out only, fleet-unaffected) — the 5-pair / neutral-pole / optimism
+  variants add some Phase-1 generation, the assistant-baseline is ~free. **#661 runs the same
+  `rb-recipe-knobs` standalone** (its scoped follow-ups) as the early exhaustive read; the in-plan
+  variants and #661 are the same knobs from two entry points (in-program robustness vs standalone
+  early read) — let #661 finish either way.
+  **Phase-0 to-build, NOT reuse:** the assistant-axis instruction files carry
+  only `pos` prompts, so the matched **neg prompts must first be generated**
+  (#661's task). The cited `scripts/issue634_extract_behavior_vectors.py` is the
+  ablation feeder only — last-input-token, positive-only ABSOLUTE centroids (no
+  contrast); the existing downstream diff (`issue623_analyze.py`,
+  role-minus-assistant) is a different persona-axis contrast, not `r_B`.
 
 ### 1.5 Training recipes (θ⁺_{C,B})
 
@@ -322,7 +544,7 @@ sweep strength, not architecture.
 | **Contrastive negatives** | **contrastive default + a positive-only fleet arm** (~1:1 pos:total-neg over ≥2–4 close negatives incl. default assistant) | mandatory project rule; the distance→leakage gradient lives INSIDE the contrastive regime (#207/#383). **(B5)** the positive-only arm is the CLEAN A3.7 identification test — see §7.1 + §4 (A3.7). **See §7.1 — this is a load-bearing design decision for the gate tests.** |
 | Positive completions | **on-policy** from base via elicitation ladder, judge-filtered, instruction stripped | `.claude/rules/on-policy-completions.md` (#612); marker/fact carve-outs apply |
 | Marker training | marker + end-of-turn loss (positives `{※,<|im_end|>,\n}`, negs `{<|im_end|>,\n}`), `MarkerBandStopCallback` | `.claude/rules/marker-training-recipe.md` |
-| Anchor strength | **non-saturated** (g_logprob ~5–10 nats below ceiling) | saturation hides the gate (#448); reuse #474 epoch-1 non-saturated adapters where fit |
+| Anchor strength | **non-saturated** (g_logprob ~5–10 nats below ceiling) | saturation hides the gate (#448); match #474 epoch-1's non-saturated band-stop **recipe** and retrain to it (recipes-only — do NOT reuse adapters; see §3 Phase 2 / #664) |
 
 - **Marker token:** ` ※` (leading space, Qwen id **83399**); assert in-process.
 - **Disjointness invariant:** contrastive negative panel ∩ realized sources = ∅
@@ -592,8 +814,8 @@ each cached quantity to the assumptions that consume it.
 
 | Quantity | Definition | How computed | GPU? | Consumed by |
 |---|---|---|---|---|
-| `v0(C)` | mean answer-token act under C | vLLM greedy gen + capture, 50 contexts × 48 probes | yes (gen) | A3.2, A3.3, A3.4, A3.5; `δ`(A3.7); `Δv` baseline (A3.8) |
-| `c_C` | prompt-side summary under C | forward pass, prompt only (no gen) | yes (cheap) | A3.4, A3.5, A3.9, A3.10 |
+| `v0(C)` | mean answer-token act under C | vLLM greedy gen + capture, 50 contexts × 48 probes | yes (gen) | A3.2, A3.3, A3.4, A3.5, A3.6b; `δ`(A3.7); `Δv` baseline (A3.8) |
+| `c_C` | prompt-side summary under C | forward pass, prompt only (no gen) | yes (cheap) | A3.4, A3.5, A3.6a, A3.6b, A3.9, A3.10 |
 | `r_B` | diff-in-means answer acts D_B−D_{B̄} | forward on behavior datasets | yes (cheap) | A3.3, A3.6; behavior transfer |
 | `t_{C,B}` | mean answer act teacher-forcing train completions | teacher-forced forward | yes (cheap) | `δ`(A3.7), predictor |
 | `Σ_c`, `Σ_c⁻¹` | E[ccᵀ] over background corpus | forward on corpus + CPU outer-product | yes (cheap) | A3.9, A3.10, predictor |
@@ -603,8 +825,8 @@ each cached quantity to the assumptions that consume it.
 
 | Quantity | Definition | GPU? | Consumed by |
 |---|---|---|---|
-| `v⁺(C')` | mean answer act under each target C' (full 50-context battery) | yes (gen) | A3.6, A3.7(`ŵ`), A3.8(`Δv`), A3.10 |
-| `c⁺_{C'}` | prompt-side under θ⁺ | yes (cheap) | A3.10 gate-drift decomposition |
+| `v⁺(C')` | mean answer act under each target C' (full 50-context battery) | yes (gen) | A3.6, A3.6b, A3.7(`ŵ`), A3.8(`Δv`), A3.10 |
+| `c⁺_{C'}` | prompt-side under θ⁺ | yes (cheap) | A3.6a, A3.6b, A3.10 gate-drift decomposition |
 | `r⁺_{B'}` | re-extracted read-out under θ⁺ | yes (cheap) | A3.6 |
 | `E⁺(C',B')` | trained expression (all B' on all C') | yes + judge | ground-truth leakage `L` |
 
@@ -723,15 +945,58 @@ extraction recipe** (layer, summary) used by every later phase, so run first.
   (each context×probe), **continuous DV primary**, reported vs the within-context
   noise floor; compare per-prompt vs distributional. Pure CPU re-analysis on the
   store (no new GPU beyond the R-samples-per-probe already captured in Phase 0).
-- **Within-condition coherence check (theory §2 precondition):** per condition C,
-  test whether its per-probe context vectors `{c_x : x∼C}` are similar — within- vs
-  between-condition cosine (mean-centered #536) + the fraction of `c_x` variance
-  explained by condition identity (η² / silhouette), per condition AND **per family**
-  (persona/format/behavior expected coherent; wildchat expected scattered), swept
-  over layers. FLAG low-coherence conditions/families: `c_C` is a weak summary there
-  → down-weight/caveat their gate predictions downstream. Complements #617
-  (between-family separability) with the within-condition version. CPU on the stored
-  per-probe `c_x` (zero new GPU; re-extract prompt-only if a run centroided them).
+- **(G1) Genre-generalization arm — generic vs misalignment-specific queries [#658 FOLLOW-UP,
+  GPU].** Repeat A3.2/A3.3/A3.5 (distributional AND single-context) on the **UltraChat generic
+  pool** (§1.2 (G1)) alongside the Betley misalignment-specific pool, and COMPARE per behavior:
+  Spearman (primary) + Pearson, best layer/recipe, and the **genre delta** in predictive quality,
+  each read against its own within-genre noise floor. Tests whether the base chain is a property of
+  the model's context→behavior geometry or an artifact of the behavior-eliciting query genre — i.e.
+  whether it transfers to the benign deployment distribution (open-q 3.7). **Floor guard:**
+  broad_em / harmful_compliance / refusal may sit at expression floor on generic queries (no
+  dynamic range to predict); report per-behavior testable variance on each pool, make the
+  continuous completion-probability DV the primary read where the rate floors, and never report a
+  no-variance ρ as "the chain breaks." **Cost:** unlike the B2 / B4 / single-context arms this is
+  NOT free CPU reuse — the store is Betley-only, so the UltraChat pool needs new generation +
+  extraction + an `E0` judge pass (~comparable to #658's run); routed as a same-question follow-up
+  round ON #658 (the result would rewrite #658's `## Takeaways`), tracked under #660, run
+  UNCONDITIONALLY regardless of the Betley foundation verdict (it does NOT wait on the foundation
+  PASSing); it does not block the Phase-2 gate.
+- **Within-condition coherence test (`a:context-vector-coherence`, theory §2 precondition;
+  formal assumption added 2026-06-25).** Once a per-context map `x↦c_x` is fixed, each condition
+  `C` to which the mean-vector predictor is applied must be **coherent** — its contexts form a
+  tight cluster in context-vector space. **Why it is FORCED, not optional:** the singleton edge
+  case (§1.10) sets `C=δ_x` ⇒ `c_{δ_x}=c_x`, `v0(δ_x)=ā_θ0(x)`, so A3.5 on singletons demands
+  `ā_θ0(x)≈h_θ0(c_x)` (predict *individual* profiles). For a finite mixture `C=Σ p_i δ_{x_i}` both
+  `c_C=Σ p_i c_i` and `v0(C)=Σ p_i a_i` are averages, so exact singleton **and** mixture prediction
+  together force `h_θ0(Σ p_i c_i)=Σ p_i h_θ0(c_i)` for arbitrary mixtures — `h_θ0` must commute with
+  convex averaging. Under twice-differentiability that forces the Hessian to vanish everywhere
+  (`h_θ0` affine). So a genuinely **nonlinear** `h_θ0` is mathematically incompatible with
+  single-vector conditions over arbitrary mixtures; **coherence is the escape** — apply the
+  mean-vector predictor only to conditions occupying a small local region where a nonlinear `h_θ0`
+  is approximately affine.
+  - **The bound it controls.** With `c_C=E_{x∼C}[c_x]`, within-condition spread
+    `s_W(C)=E_{x∼C}‖c_x−c_C‖²_W`, and the behavior-relevant map `f_B(c)=r_Bᵀh_θ0(c)` of bounded
+    `W`-curvature `|uᵀ∇²f_B u|≤K_{C,B}‖u‖²_W`, the first-order term averages out (`E[Δ_x]=0`),
+    leaving a second-order Jensen gap `|E_{x∼C}[f_B(c_x)]−f_B(c_C)| ≤ ½K_{C,B}·s_W(C)`. With the
+    singleton residual `ξ_B(C)=E_{x∼C}|r_Bᵀ(ā_θ0(x)−h_θ0(c_x))|`, the full condition-level error is
+    `|r_Bᵀ(v0(C)−h_θ0(c_C))| ≤ ξ_B(C)+½K_{C,B}s_W(C)`; to keep latent error under a budget `τ_lat`
+    over a behavior family `ℬ` it suffices that `s_W(C) ≤ 2(τ_lat−ξ_ℬ(C))/K_C^ℬ`.
+  - **Measurables (per C; all CPU on the stored per-probe `c_x` + `v0`):** (a) spread
+    `ŝ_W(C)=(1/n)Σ‖c_{x_i}−ĉ_C‖²_W`; (b) behavior-relevant **Jensen gap**
+    `Ĵ_ℬ(C)=max_B|r_Bᵀ((1/n)Σ h_θ0(c_{x_i}) − h_θ0(ĉ_C))|`; (c) context→profile **residual**
+    `R̂_ℬ(C)=max_B|r_Bᵀ((1/n)Σ ā_θ0(x_i) − h_θ0(ĉ_C))|`. **Metric `W`:** default `W=I`; once `Σ_c`
+    is estimated, the whitened `W=(Σ_c+λI)⁻¹` (matches the context-gate geometry). Keep the cheap
+    descriptive reads too (within- vs between-condition cosine, η²/silhouette) as a coarse companion.
+  - **Pass / read:** the assumption predicts low-spread conditions have small Jensen gap AND low
+    residual — `Ĵ_ℬ(C)` and `R̂_ℬ(C)` rise with `ŝ_W(C)`, the slope estimating the local curvature
+    `½K`. Test per condition AND **per family** (persona/format/behavior expected coherent; wildchat
+    expected scattered), swept over layers. **On failure (high spread → large gap):** the condition
+    is too heterogeneous for one mean vector — SPLIT it into smaller coherent conditions, or replace
+    `c_C` with a richer distributional summary (higher moments / a learned set encoder); meanwhile
+    down-weight/caveat that condition's downstream gate predictions. Complements #617 (between-family
+    separability). Confidence: medium-high. Zero new GPU (re-extract prompt-only `c_x` if a run
+    centroided them). Full derivation (the affinity proof + the Taylor bound) lives in the theory doc
+    under `a:context-vector-coherence`.
 
 Output: locked layer/summary recipe per behavior (frozen per C3) + a go/no-go on the
 linear chain. A3.1 is now tested as the bounded B4 richer-summary arm above (not
@@ -764,8 +1029,8 @@ feeds all of Phase 3 and Phase 4.
   battery C' (all 7 families — the near→far context-distance range). **(B1)** the
   primary gate read is the **activation realized gate `ĝ^real`** on the stored
   `v⁺(C')` tensors; the marker log-prob is the SECONDARY behavior-scale companion
-  (not the gate metric). *Reuse #474 epoch-1 non-saturated adapters where the recipe
-  matches (artifact-reuse checklist).*
+  (not the gate metric). *Match #474 epoch-1's non-saturated band-stop recipe and
+  retrain to it — recipes-only, NOT adapter reuse (see #664).*
 - **Behavior-leakage spine (transfer tests):** train a representative B-family
   subset (B1 bad-medical anchor, B2 insecure-code, B3 sycophancy, B4 refusal, B5
   taught-fact, B7 marker) into a fixed source (assistant + 1 persona); score the
@@ -835,10 +1100,13 @@ Paper's own "worth testing now" verdict noted.
 |---|---|---|---|---|---|---|---|
 | **A3.1** | Expression depends on profile only through a low-dim summary | A1 | High | **Bounded (B4)** | mean act vs richer summaries (token-pooled, multi-layer, answer-dist features) on nested held-out C/B; full recursive-pooling test still deferred | richer summaries do NOT materially beat the mean (mean is a sufficient low-dim summary) | 1 (#658-landing) |
 | **A3.2** | Summary = mean answer-side activation `v_θ(C)` | A1 | High | **Yes** | MLP: `v0(C)→E0(C,B)`, per behavior incl. marker; layer sweep | predicts held-out expression ≫ mean baseline; report best layer | 1 |
-| **A3.3** | Linear read-out `E≈r_Bᵀv` | A2 | High | **Yes** | fit `r_B` (3 recipes), test held-out C, per layer | linear ρ within noise floor of MLP; r_B recipe ranking | 1 |
+| **A3.3** | Linear read-out `E≈r_Bᵀv` | A2 | High | **Yes** | fit `r_B` as a **built-in recipe sweep**: contrast-construction A/B/C (on-policy-instruction / teacher-forced / instruct-and-strip) × summary variants (diff-in-means / mean-D_B / few-shot), **(C3) primary = C (instruct-and-strip)**, rest exploratory (FDR); test held-out C per layer; report `cos(r_B^{A,B,C})` divergence + the `(c_pos−c_neg)` confound projection + per-recipe predictive quality. **Plus the finer `rb-recipe-knobs`** (pair-count / neg-pole / assistant-baseline / optimism) as IN-PLAN one-knob-off robustness variants (C3-exploratory, FDR; #661 runs the same knobs standalone). | linear ρ within MLP noise floor; recipe divergence + whether it changes the *verdict* vs only geometry; C-primary recipe locked | 1 |
 | **A3.4** | Pre-FT context summary predicts profile (sufficiency) | A3 | Med | **Yes (B2)** | **distinct from A3.5:** best-achievable `c→v0` over ALL recipe candidates + full-prompt-activation upper-bound control; report the gap to the cheap `c_C` | sufficiency holds (upper-bound `c→v0` strong); A3.5 gap localizes recipe vs sufficiency failure | 1 (#658-landing) |
-| **A3.5** | Context summary = residual vector `c_C` | A3 | Med | **Yes** | linear `M` + MLP: `c_C→v0(C)`; best c_C recipe/layer | nonlinear gain modest; `r_Bᵀ M c_C` predicts E | 1 |
+| **A3.5** | Context summary = residual vector `c_C` | A3 | Med | **Yes** | linear `M` + MLP: `c_C→v0(C)`; best c_C recipe/layer; fit `M0` by ridge with a CV-chosen λ (record λ + the low-rank `k` — the A3.6b operator companion refits `M⁺` at this λ/`k`) | nonlinear gain modest; `r_Bᵀ M c_C` predicts E | 1 |
+| **A3.5a** | Contexts close within a condition (`a:context-vector-coherence`) — precondition for the single-vector `c_C` summary | A3 | Med-High | **Yes** | per C: spread `s_W(C)=E‖c_x−c_C‖²_W` vs behavior Jensen gap `Ĵ_ℬ=max_B\|r_Bᵀ(E h(c_x)−h(c_C))\|` + residual `R̂_ℬ`; `W=I` then `(Σc+λI)⁻¹`; per condition + family, layer-swept (full spec + derivation: §4 coherence block) | gap & residual rise with spread (slope ≈ ½ local curvature `K`); coherent conditions (persona/format/behavior) small-gap, scattered (wildchat) large → split / richer-summarize the failures | 1 |
 | **A3.6** | Base read-out valid post-FT (`r⁺≈r`) | A4 | Med-High | **Yes** | **(C10) primary:** corr / calibrated error between `r_{B'}ᵀ(v⁺−v0)` and `(E⁺−E0)` with `E0` PARTIALLED OUT (does base `r_{B'}` predict the *change*, not the level); `cos(r⁺,r)` DIAGNOSTIC only | base `r_{B'}` predicts the leakage change above the base prior; cos high (diagnostic) | 3 |
+| **A3.6a** | Context vector stable across FT (`c⁺≈c0`) — direct (NEW, R9-1) | A4 | Med | **Yes** | per context (source + bystanders) × layer × η: `cos(c0(C),c⁺(C))`, rel-norm `‖c⁺‖/‖c0‖`, displacement `‖c⁺−c0‖²_W` vs within-condition spread `s_W(C)` in the SAME metric `W` (A3.5a; `W=I` then `(Σc+λI)⁻¹`); CPU on the A3.10 store (no new capture); distributional + single-context (§1.10) | pre-registered falsifiable kernel `‖c⁺−c0‖²_W < s_W(C)` (drift smaller than within-condition spread); characterization otherwise — shrinking with weaker training → base `c_C` directly justified, large drift → A3.10 robustness load-bearing (flagged, not a failure) | 3 |
+| **A3.6b** | Context→profile map stable across FT (`M⁺≈M0`) — direct (NEW, R9-2) | A4 | Med | **Yes** | base-fit `M0` (A3.5) applied post-FT: **primary (change, `v0` partialled out per C10):** corr / calibrated error between `M0·(c⁺−c0)` and `v⁺−v0` vs the refit-`M⁺` noise floor; **operator companion (interpretable only under A3.5's CV-chosen λ/`k`; prediction-transfer is the trustworthy primary):** refit `M⁺` at A3.5's λ/`k`, `‖M⁺−M0‖/‖M0‖` + principal angles of top-`k` `M0`/`M⁺` subspaces; CPU on base + A3.6 stores; per layer/recipe, source + bystanders | base map predicts the post-FT profile CHANGE within the refit-`M⁺` noise floor (map transfers); generalizes A3.6 from the 1-D read-out to the full operator | 3 |
 | **A3.7** | FT displaces source profile toward data target | A5 | Med | **Yes (B5)** | **primary (positive-only arm):** `cos(ŵ,δ)`, δ=t−v0, **against a shuffled-δ null** (`cos(ŵ, δ` of a different behavior`)`); **contrastive (diagnostic) arm:** `cos(ŵ,δ^contra)`, δ^contra=t⁺−t⁻ (a contrastive heuristic / diff-in-means analogue, NOT theory-derived; report `frac_ctx` per §1.5); scalar-fit residual both; also `cos(ŵ,r_B)` shortcut | positive-only cos **exceeds the shuffled-δ baseline** (not merely >0; ŵ and δ are both displacements from v0(C), so positive cos is partly expected by construction), small residual; report ŵ∥r_B; contrastive-vs-positive-only divergence characterizes recipe-dependence **only after `frac_ctx` is partialled out** | 3 |
 | **A3.8** | Off-source change = scalar-gated source write (rank-one) | A6 | Med | **Yes (central)** | **(B1)** on the ACTIVATION gate `ĝ^real=ŵᵀΔv(C')/ŵᵀŵ`: per-target rank-one residual `‖Δv(C')−ŵĝ^real‖/‖Δv(C')‖`; stack ΔV, report σ₁²/Σσ², σ₂/σ₁, cos(u₁,ŵ); low-rank fallback if fails | small residuals; ΔV near rank-one | 3 |
 | **A3.9** | Gate = normalized key–query similarity | A7 | Med | **Yes** | `g0(C')` vs `ĝ^real(C')` (B1 activation gate): Pearson/Spearman/sign/MAE; **key ablation** {c_C, ψ(t), ψ(δ), c_C+ψ(δ)}; **metric ablation** {I, diag, full whitening}; vs `cos(c_C,c_{C'})`; shuffled controls + denominator stability; **(B3)** clears the cosine-limit unit test first | **verdict (i)** some key/metric beats raw cosine (general gate exists) AND **verdict (ii)** `c_C`+`Σc⁻¹` specifically wins (boxed predictor) — reported separately | 3 |
@@ -865,6 +1133,23 @@ Paper's own "worth testing now" verdict noted.
   `r_{B'}` predicts `E⁺`" would PASS trivially by the base prior (the level is
   mostly the prior, #532/#649). `cos(r⁺,r)` is a diagnostic of read-out stability,
   not the A3.6 verdict.
+- **(C13) A3.6a/A3.6b are the DIRECT cross-FT stability tier.**
+  A3.6 (read-out `r_B`) and A3.10 (gate) test post-FT *predictiveness*; A3.6a/A3.6b
+  add the direct reads — is the context vector `c_C` itself preserved (A3.6a), and
+  does the base context→profile map `M0` still hold (A3.6b). **A3.6a is a direct
+  vector-stability characterization** — `cos(c0,c⁺)` + relative norm + displacement
+  vs the within-condition spread (no partialled regression; the displacement removes
+  the level by construction), with the pre-registered falsifiable kernel
+  `‖c⁺−c0‖²_W < s_W(C)`. **A3.6b is CHANGE-based** — it predicts the *change*
+  `v⁺−v0` from `M0·(c⁺−c0)` with the base level partialled out, per the C10 / #532/#649
+  base-prior caveat: "the base map predicts the post-FT level" passes trivially via
+  the prior. Neither adds a capture — A3.6a reads `c0`/`c⁺` (the same drift A3.10
+  decomposes), A3.6b reads `c0`/`v0`/`c⁺`/`v⁺` + the A3.5 `M0`. A near-preserved result
+  directly justifies the base-model predictor; a large-drift-yet-predictor-still-works
+  result localizes the work to A3.10's drift-robustness — both sharpen the headline.
+  Together with A3.6 (1-D read-out) and A3.10 (gate) this completes the "what is
+  preserved across FT" set: input context vector (A3.6a), the context→profile operator
+  (A3.6b), the behavior read-out (A3.6), and the gate (A3.10).
 - **`ψ` (the key-space embedding map, A3.9 key ablation `{c_C, ψ(t), ψ(δ),
   c_C+ψ(δ)}`).** Default: **`ψ = identity` with co-layer extraction** — extract
   `c_C`, `t_{C,B}`, `δ_{C,B}` at the **same layer** so they live in a common
@@ -928,8 +1213,11 @@ Don't rebuild — the harness (Phase 0) wraps these.
 - probe pool: `issue404_common.fetch_preregistered_probes()` (48 Betley probes = `x∼C`)
 
 **Extraction / vectors:**
-- `scripts/extract_persona_vectors.py`, `scripts/issue623_persona_panel_vectors.py` — persona/context vectors (`c_C`, `r_B` candidates)
-- `scripts/issue634_extract_behavior_vectors.py` — behavior vectors (`r_B`)
+- **`r_B` (pos/neg system-prompt-pair diff, answer-side) — Phase-0 to-build; extraction method (A/B/C) decided by the running #661 (→ program-#660 A3.3 recipe).** The scripts below emit raw centroids / a different contrast and do NOT yet produce the default `r_B`:
+  - `scripts/extract_persona_vectors.py` — per-role ABSOLUTE centroids (no pos/neg contrast in-script); mean-response-token (answer-side) and last-input-token (`c_C`-style / §1.4 ablation) slots
+  - `scripts/issue623_persona_panel_vectors.py` — thin wrapper emitting resolved-panel centroids (raw only; diff computed off-pod in `issue623_analyze.py`)
+  - `scripts/issue623_analyze.py::persona_vector_matrix` — assembles a **role-minus-assistant** persona-axis diff (mean-centered #536) — a DIFFERENT contrast, not the pos/neg `r_B`
+  - `scripts/issue634_extract_behavior_vectors.py` — last-input-token, **positive-only** absolute centroids (the `c_C`-style slot = §1.4 `r_B` *ablation*, NO contrast)
 - `scripts/issue650_extract_context_bank.py` + `experiments/issue_650/shift_extract.py` — context bank `c_C` + activation shift `Δv`
 - `scripts/issue541_geometry_extract.py`, `scripts/extract_prompt_divergence_activations.py` — geometry/context extraction
 - `scripts/issue493_extraction_metric_bakeoff.py` — **layer/summary recipe selection** (directly Phase 1)
@@ -1004,6 +1292,25 @@ has ~60 issue docs incl. #521 (rank-one across contexts), #532 (predictor stress
   adapter), not 11, before committing the fleet. Judging is off-GPU (Batch API), so
   this is dollar/throughput, not GPU-h — but it is the binding constraint at fleet
   scale (§7.5), so the corrected count matters for the run plan.
+- **(R10) The three round-10 style columns are eval-only — near-zero added GPU-h.**
+  `concise`/`verbose`/`casual_register` are new `B'` leakage DVs scored on the
+  EXISTING fleet (no new fine-tunes; §7.5 "eval IS full-grid, cheap on the cached
+  store"). Added GPU = the per-battery activation/generation capture on the trained
+  models + base over the generic-query pool (already built for the (G1) arm),
+  ~1–3 GPU-h total. The verbosity pair shares one read-out and uses a judge-free
+  **length** continuous DV; the only judge dollars are the calibrated
+  "concise?/verbose?/casual?" rate batteries (~2 batteries' worth, Batch API).
+  Promoting any to a TRAINED row family adds ~13–26 GPU-h each — **done in round 11
+  (B11/B12); see the next bullet.**
+- **(R11) Style behaviors ALSO trained (B11 `verbosity`: concise + verbose; B12
+  `casual_register`).** Both verbosity poles are trained — no antisymmetry shortcut
+  (round-11 log): `δ_concise ≈ −δ_verbose` is an assumption A3.7/A3.8 test, and
+  trained leakage is directional (concise trains against Qwen's verbose base prior,
+  C7). LEAN grid (1 source × 1–2 doses × 2 arms), ~40 GPU-h for all three trained
+  variants; verbosity poles share read-out + eval battery + negative panel.
+  **Cap consequence:** Phase 2 goes ~55–95 → ~95–155 GPU-h, PAST the 100-GPU-h
+  `/issue --auto` auto-approve cap → chunk Phase 2 into two plan-approvals or take
+  one explicit over-cap approval at Step 2c. Eval-only columns (round 10) stay.
 - **(B5) The positive-only fleet arm roughly doubles the spine fine-tunes** (every
   gate/transfer source trained twice — contrastive + positive-only), driving Phase-2
   GPU-h up; reflected in the table. This is the science-affecting Phase-2 addition
@@ -1046,8 +1353,12 @@ arms.**
 4 sources × marker (context-leakage spine) + ~6 B-family adapters × 2 sources
 (behavior-leakage spine), ≥2 doses, **× 2 objective arms (contrastive +
 positive-only, B5)**, primary model. ≈16–28 fine-tunes core (was ≈8–14 before the
-positive-only arm). Expand sources/behaviors only after Phase 1 validates the
-chain. (Why a subset, not the full ~950-adapter cross-product: §7.5.)
+positive-only arm). **(R11)** + 3 trained style variants — **B11 `verbosity`**
+(concise + verbose, both poles) + **B12 `casual_register`** — at a LEAN grid
+(1 source × 1–2 doses × 2 arms ≈ 4–8 fine-tunes each, ~40 GPU-h total); the
+verbosity poles share read-out + eval battery + negative panel. Expand
+sources/behaviors only after Phase 1 validates the chain. (Why a subset, not the
+full ~950-adapter cross-product: §7.5.)
 
 ### 7.3 Layer comparability
 Default within-layer; cross-layer pooling is an ablation with per-layer

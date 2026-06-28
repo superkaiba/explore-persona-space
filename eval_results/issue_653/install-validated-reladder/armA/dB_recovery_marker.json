@@ -1,0 +1,36 @@
+{
+ "arm": "A",
+ "behavior": "marker",
+ "seed": 42,
+ "mode": "gpu",
+ "dB_rB_source": "marker: d_B=r_B=W_U[83399] (identity-loop caveat \u00a73-bis)",
+ "recovery_per_distribution": {
+  "iso": {
+   "cos_rho_dB_to_rB": -0.02566020241336169,
+   "exceeds_random_ci": false,
+   "random_ci_high": 0.035051613958295876
+  },
+  "cov": {
+   "cos_rho_dB_to_rB": 0.016850852440780977,
+   "exceeds_random_ci": false,
+   "random_ci_high": 0.035051613958295876
+  }
+ },
+ "metadata": {
+  "task": 653,
+  "schema_version": 1,
+  "git_commit": "b4e40869f",
+  "timestamp_utc": "2026-06-26T19:28:55.569217+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--gpu-mode",
+   "--provision",
+   "1",
+   "--out-root",
+   "eval_results/issue_653/install-validated-reladder"
+  ],
+  "phase": "arm_a_dB_recovery"
+ }
+}

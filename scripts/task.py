@@ -11,6 +11,7 @@ Subcommands (see `task.py --help`):
     new --kind <k> --title "..." [--body|--body-file ...] [--goal "..."] [--parent N]
         [--origin-prompt "..."] [--status proposed]
     set-status <N> <status> [--note ...]
+    set-kind <N> <kind>                                # reclassify a misfiled task kind
     post-marker <N> <marker> [--note ... | --file path]   # alias: post-event
     list-by-status [--status ...] [--limit N]
     list-children <N> [--json]                         # tasks with parent_id == N
@@ -52,6 +53,7 @@ if str(_SRC) not in sys.path:
 
 from explore_persona_space.task_workflow import (  # noqa: E402
     CONCERN_SEVERITIES,
+    KINDS,
     STATUSES,
     NewTaskRequest,
     add_tag,
@@ -61,6 +63,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     defer_concern,
     find_task_path,
     get_task,
+    is_paper_task,
     latest_event,
     list_by_status,
     list_children,
@@ -74,6 +77,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_body,
     set_clean_result,
     set_goal,
+    set_kind,
     set_status,
     set_title,
     set_track,
@@ -509,7 +513,11 @@ def cmd_post_event(args: argparse.Namespace) -> None:
     # so file-read bodies inherit it automatically.
     note = args.note
     if args.file is not None:
-        note = Path(args.file).read_text()
+        # `--file -` reads the body from stdin (mirrors new-plan-version at
+        # the line-705/748 pattern); without this a heredoc'd
+        # `post-marker ... --file - <<EOF` crashes on `Path("-").read_text()`
+        # with FileNotFoundError (daily 2026-06-24 incident, #658).
+        note = sys.stdin.read() if args.file == "-" else Path(args.file).read_text()
     payload = post_event(
         args.number,
         args.marker,
@@ -708,7 +716,17 @@ def cmd_set_body(args: argparse.Namespace) -> None:
     else:
         new_body = sys.stdin.read()
         source = "<stdin>"
-    if not args.allow_stub:
+    # A `paper: true` task's body.md is a thin paper-stub (H1 + abstract +
+    # paper link) by design — a short stub is NOT the #385 cache→body.md
+    # silent-handoff defect for a paper-task, so the non-trivial-body guard
+    # is skipped for it (the paper itself is the clean-result, verified by
+    # verify_paper.py). `--allow-stub` still bypasses the guard for any task.
+    is_paper = False
+    try:
+        is_paper = is_paper_task(get_task(args.number)["frontmatter"])
+    except (FileNotFoundError, KeyError):
+        is_paper = False
+    if not args.allow_stub and not is_paper:
         _assert_body_nontrivial(new_body, source=source)
     set_body(args.number, new_body, snapshot_original=args.snapshot)
     _safe_echo("ok", context="task.py set-body")
@@ -719,8 +737,17 @@ def cmd_set_title(args: argparse.Namespace) -> None:
     _safe_echo("ok", context="task.py set-title")
 
 
+def cmd_set_kind(args: argparse.Namespace) -> None:
+    set_kind(args.number, args.kind)
+    _safe_echo("ok", context="task.py set-kind")
+
+
 def cmd_set_clean_result(args: argparse.Namespace) -> None:
-    set_clean_result(args.number, value=not args.unset)
+    set_clean_result(
+        args.number,
+        value=not args.unset,
+        allow_paper_warn=not getattr(args, "require_pdf_url", False),
+    )
     _safe_echo("ok", context="task.py set-clean-result")
 
 
@@ -997,19 +1024,11 @@ def main() -> None:
             "--kind",
             required=False,
             default="experiment",
-            choices=[
-                "experiment",
-                "infra",
-                "analysis",
-                "survey",
-                # Question-level campaign runner task (/campaign <N>, task #586).
-                "campaign",
-                "note",
-                "reading",
-                "idea",
-                "question",
-                "decision",
-            ],
+            # Single source of truth: task_workflow.KINDS (mirrors the routing
+            # law in CLAUDE.md § "Routing experiment intent"). `campaign` =
+            # the question-level runner (/campaign <N>, task #586); the
+            # note/reading/idea/question/decision tail are the Human-board kinds.
+            choices=list(KINDS),
         )
         p.add_argument(
             "--track",
@@ -1200,7 +1219,9 @@ def main() -> None:
             "silent-handoff failure (incident: task #385, 2026-05-25). Use only "
             "when you genuinely intend to write a stub (e.g. creation-time "
             "placeholder); the analyzer's clean-result handoff must NOT use this "
-            "flag."
+            "flag. NOTE: a `paper: true` task auto-allows a short paper-stub "
+            "(H1 + abstract + paper link) WITHOUT this flag — the paper itself, "
+            "not the body, is the clean-result (verified by verify_paper.py)."
         ),
     )
     p.set_defaults(func=cmd_set_body)
@@ -1209,6 +1230,26 @@ def main() -> None:
     p.add_argument("number", type=int)
     p.add_argument("title")
     p.set_defaults(func=cmd_set_title)
+
+    p = sub.add_parser(
+        "set-kind",
+        help="reclassify a misfiled task kind (frontmatter + REGISTRY snapshot)",
+        description=(
+            "Correct a task's `kind` through the canonical flock-protected, "
+            "registry-consistent path. Use when a task was filed under the "
+            "wrong kind — e.g. a fix-validation / 'test that X works' task "
+            "created as `kind: experiment` that should be `kind: infra` (so "
+            "it completes on the test-verdict path instead of being dragged "
+            "through the clean-result/promotion machinery; incident #672). "
+            "`kind` IS denormalized into REGISTRY.json, so this updates the "
+            "registry snapshot too. Does NOT touch status, body, or "
+            "has_clean_result — flip those separately if the misfile also "
+            "left the task in a wrong state."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument("kind", choices=list(KINDS), help="target kind; one of: " + ", ".join(KINDS))
+    p.set_defaults(func=cmd_set_kind)
 
     p = sub.add_parser(
         "set-goal",
@@ -1243,10 +1284,24 @@ def main() -> None:
     p.set_defaults(func=cmd_set_goal)
 
     p = sub.add_parser(
-        "set-clean-result", help="flip has_clean_result=true (or false with --unset)"
+        "set-clean-result",
+        help="flip has_clean_result=true (or false with --unset)",
+        description=(
+            "Flip has_clean_result. For a `paper: true` task, flipping it to "
+            "True first VALIDATES docs/papers/issue_<N>/paper_manifest.json "
+            "(required tex/pdf/paper_html artifacts present + sha256 match); a "
+            "hard problem blocks the flip. A null pdf_hf_url (local-only build, "
+            "not yet uploaded) is a WARN tolerated by default — pass "
+            "--require-pdf-url to make it blocking."
+        ),
     )
     p.add_argument("number", type=int)
     p.add_argument("--unset", action="store_true")
+    p.add_argument(
+        "--require-pdf-url",
+        action="store_true",
+        help="(paper tasks) treat a null pdf_hf_url as a hard FAIL, not a WARN",
+    )
     p.set_defaults(func=cmd_set_clean_result)
 
     p = sub.add_parser("add-tag", help="add a tag to frontmatter")
@@ -1360,8 +1415,11 @@ def main() -> None:
     )
     p.add_argument(
         "--summary",
+        "--rationale",
+        dest="summary",
         default=None,
-        help="optional updated summary; defaults to the original raised summary",
+        help="optional updated summary; defaults to the original raised summary "
+        "(--rationale is an accepted alias, matching defer-concern's flag name)",
     )
     p.set_defaults(func=cmd_address_concern)
 

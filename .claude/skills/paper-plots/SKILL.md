@@ -177,9 +177,36 @@ plt.close(fig)
 `savefig_paper` writes:
 - `figures/aim5/pre_post_alignment.png` (300 DPI, commit-tagged via pnginfo)
 - `figures/aim5/pre_post_alignment.pdf` (vector, commit-tagged via PDF metadata)
-- `figures/aim5/pre_post_alignment.meta.json` (commit + timestamp + figsize)
+- `figures/aim5/pre_post_alignment.meta.json` (commit + timestamp + figsize **+ the figure's per-point data**)
 
 The sidecar `.meta.json` is what makes figure provenance auditable later.
+
+**The sidecar also auto-carries the figure's per-point DATA (default).** At
+save time `savefig_paper` reads the plotted data back off the matplotlib
+artists — scatter point offsets (with the nearest text label as an identifier
+column), `Line2D` vertices, bar heights, and error-bar magnitudes, using the
+axis labels as column names — and embeds it under a `points` key in the exact
+shape the EPS dashboard data viewer (`dashboard/lib/task-data.ts`) reads
+directly (an array of flat scalar-cell objects → a sortable / filterable
+table). So every NEW figure you commit auto-populates the per-figure data
+viewer on `https://eps.superkaiba.com/tasks/<N>` with NO per-call change.
+Implications:
+
+- **Label your points.** `ax.text(x, y, name)` near each scatter point (the
+  §3.7 + low-level-data-plot rule already wants this) now ALSO fills the
+  viewer's identifier column — e.g. persona names on the per-persona scatter.
+  Labels are matched to points geometrically (nearest text anchor within ~25%
+  of an axis span), so leader-line-offset labels still attach.
+- **Plain-English axis labels matter doubly** (§3.5): they become the data
+  table's column headers, not just the rendered axis text.
+- **Best-effort, never a failure.** A figure whose artists can't be read back
+  (heatmap / `imshow`, custom collections) silently keeps a provenance-only
+  sidecar and the viewer falls back to the figure link-out.
+- **Opt out / large data.** Pass `savefig_paper(fig, stem, embed_data=False)`
+  to write a provenance-only sidecar (large or already-committed data); then add
+  a `data_path` pointer (repo-relative, under `eval_results/` or `figures/`) to
+  the sidecar yourself — the viewer follows it. In-sidecar embeds are capped at
+  2000 rows (recorded via `data_truncated` + `total_points`).
 
 **Commit + push BEFORE referencing the figure in a clean-result body.**
 The EPS dashboard renders the body's `![alt](url)` images, but it does NOT

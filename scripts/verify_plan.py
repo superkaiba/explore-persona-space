@@ -87,10 +87,19 @@ import yaml
 
 # ─── Constants ─────────────────────────────────────────────────────────────
 
+# Plan-relevant kinds for the CLI `--kind` choices (file mode). Kept an
+# explicit ordered tuple because argparse `choices=` uses this order for help
+# text + error messages. Membership is `("experiment", *EXEMPT_KINDS)`; the
+# canonical single source for the exempt subset is
+# `task_workflow.CODE_KINDS`, and `tests/test_verify_plan.py` pins both this
+# tuple and EXEMPT_KINDS to it so the three `kind`-enum copies can never drift
+# (incident #672). Local-import discipline (this module avoids a module-level
+# `task_workflow` dependency) keeps the literal here; the test is the gate.
 VALID_KINDS = ("experiment", "analysis", "infra", "batch", "survey")
 
 # Kinds exempt from the experiment-only checks (CLAUDE.md Critical Rules:
-# "`kind: analysis|infra|batch|survey` exempt").
+# "`kind: analysis|infra|batch|survey` exempt"). Byte-identical to
+# `task_workflow.CODE_KINDS`; pinned by the drift test (see above).
 EXEMPT_KINDS = frozenset({"analysis", "infra", "batch", "survey"})
 
 # Check 0 thresholds: a real plan (even a terse infra/analysis one — #575's

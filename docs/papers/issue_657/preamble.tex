@@ -1,0 +1,124 @@
+% ===========================================================================
+% docs/papers/_template/preamble.tex
+%
+% FIXED preamble for every EPS clean-result paper. The analyzer / authoring
+% agent NEVER edits this file or copies its own preamble: a paper's
+% issue_<N>.tex \input's this preamble verbatim (the agent copies this file into
+% the per-task dir alongside issue_<N>.tex so \input{preamble.tex} resolves;
+% build_paper.py builds in-place and does NOT rewrite the \input path).
+% Constraining the preamble is what contains the "agent writes free-form LaTeX
+% -> brace/macro compile errors" risk (SPIKE_REPORT.md § "The #1 risk"). The
+% agent only fills the section bodies of the template.
+%
+% This is the spike-proven preamble (issue_657_spike.tex), which compiles 8
+% pages clean multi-pass pdflatex+bibtex and is byte-reproducible under
+% SOURCE_DATE_EPOCH. Two project macros are baked in:
+%
+%   \metric{key}  — number grounding. v1: UNUSED on the required path (numbers
+%                   are written as literals; the analyzer's existing numeric-
+%                   fidelity re-extraction is the grounding guarantee). v1.1
+%                   OPT-IN: \metric{key} expands \csname metric@<key>\endcsname
+%                   from a generated registry (metrics.tex, \input below), every
+%                   value traceable to metrics.json via verify_metric.py. The
+%                   macro + \input are present so a v1.1 paper compiles with no
+%                   preamble change; a v1 paper simply never calls \metric and
+%                   omits metrics.tex (the \IfFileExists guard below keeps it
+%                   compiling either way).
+%
+%   \epsref{N}    — typed cross-experiment reference. PDF: "#N" hyperlink to the
+%                   dashboard task page. HTML (pandoc + eps_paper_filter.lua):
+%                   a typed <a data-epsref="N"> the dashboard detects for
+%                   hover-preview. \epsref is a v1 FEATURE (cross-refs are kept).
+% ===========================================================================
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage[numbers,square]{natbib}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage[breakable]{tcolorbox}
+\tcbuselibrary{listings,breakable}
+
+% Figures live in the per-task figure dir figures/issue_<N>/. issue_<N>.tex sets
+% \graphicspath AFTER \input{preamble.tex} (graphicx is loaded just above, so
+% \graphicspath is only defined from this point on) so this preamble stays
+% task-agnostic. The verifier confirms every \includegraphics resolves
+% repo-relative-confined.
+
+\captionsetup{font=small,labelfont=bf}
+\titlespacing*{\section}{0pt}{1.4ex plus 1ex minus .2ex}{0.8ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{1.1ex plus 1ex minus .2ex}{0.5ex plus .2ex}
+
+\let\mathrho\rho
+\renewcommand{\rho}{\ensuremath{\mathrho}}
+\newcommand{\aln}{\ensuremath{\mathrm{align}}}
+
+% ---------------------------------------------------------------------------
+% \metric{key} (v1.1 opt-in; unused on the v1 required path).
+% ---------------------------------------------------------------------------
+\newcommand{\metric}[1]{%
+  \ifcsname metric@#1\endcsname
+    \csname metric@#1\endcsname
+  \else
+    \textbf{??\detokenize{#1}??}% loud failure if a key is missing
+  \fi
+}
+% metrics.tex is the generated macro registry (emit_metrics_tex.py). On the v1
+% required path there is no metrics.tex; the guard keeps the paper compiling.
+\IfFileExists{metrics.tex}{\input{metrics.tex}}{}
+
+% ---------------------------------------------------------------------------
+% \epsref{N} (v1 feature). Resolves to the dashboard task page. The HTML render
+% path rewrites this into a typed hover-preview link via eps_paper_filter.lua.
+% ---------------------------------------------------------------------------
+\newcommand{\epsref}[1]{\href{https://eps.superkaiba.com/tasks/#1}{\##1}}
+
+% ---------------------------------------------------------------------------
+% epsexample — the verbatim-example wrapper. The paper MUST SHOW its data, not
+% just describe it: verbatim training rows, verbatim eval probes, verbatim model
+% completions (eval input -> output -> judge), and the verbatim judge prompts /
+% rubrics. verify_paper.py (check 7) requires a `% eps-example: <class>` comment
+% marker (class in {training-data, eval-data, model-output}) immediately BEFORE
+% each block AND a real verbatim environment behind it; this is that environment.
+%
+% Use it like:
+%     % eps-example: training-data
+%     \begin{epsexample}{Training row (1 of 600; random sample). Full file: <link>}
+%     <verbatim row text — special chars are safe here>
+%     \end{epsexample}
+%
+% It is a `listings`-backed `tcolorbox`: verbatim-safe (backslashes / braces /
+% dollar signs in model outputs render literally) + breakable across pages, with
+% the mandatory subset-disclosure / source caption as the box title. Any of the
+% standard verbatim environments (lstlisting / verbatim / quote / tcolorbox)
+% also satisfy the check — epsexample is the blessed convention.
+\lstdefinestyle{epsexamplestyle}{%
+  basicstyle=\footnotesize\ttfamily,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  upquote=true,
+  % Map the non-ASCII characters that turn up in VERBATIM model completions /
+  % training rows so a real example (em-dashes, en-dashes, ellipses, curly
+  % quotes) renders rather than breaking the build — the paper shows examples
+  % word-for-word, so the verbatim env must tolerate the model's own glyphs.
+  literate={’}{'}1 {‘}{`}1 {“}{"}1 {”}{"}1 {—}{\textemdash}1 {–}{\textendash}1 {…}{\ldots}1,
+}
+\newtcblisting{epsexample}[1]{%
+  breakable, sharp corners, boxrule=0.4pt,
+  colback=gray!4, colframe=gray!55,
+  fonttitle=\bfseries\footnotesize, coltitle=black, title={#1},
+  listing only, listing options={style=epsexamplestyle},
+  left=2pt, right=2pt, top=2pt, bottom=2pt,
+}

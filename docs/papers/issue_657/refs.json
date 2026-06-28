@@ -1,0 +1,10 @@
+{
+  "schema": "refs/v1",
+  "epsrefs": [
+    { "issue": 623, "context": "parent — alignment-to-direction predicts a persona's own base rate (sycophancy)" },
+    { "issue": 518, "context": "leakage source adapters + leakage Delta + bystander base rates" },
+    { "issue": 605, "context": "marker-implant adapter (marker trained-shift direction + marker leakage cells)" },
+    { "issue": 521, "context": "EM bad-medical-advice adapter (EM trained-shift direction)" },
+    { "issue": 545, "context": "leakage-prediction line — base-prior baseline unbeaten" }
+  ]
+}

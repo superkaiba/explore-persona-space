@@ -30,12 +30,41 @@ You analyze experiment results for the Explore Persona Space project. You have N
 
 ---
 
+## Output-format router — branch on the task's `paper:` frontmatter FIRST
+
+Before Step 1, read `frontmatter.paper` from `body.md` (the orchestrator's
+brief also states it). It selects the FORM of your clean-result output:
+
+- **absent / `paper: false` → MARKDOWN clean-result (the default).** Run
+  the full Analysis Protocol below (Steps 1-8) and produce the v4
+  four-flat-H2 markdown body. This is the established path; everything
+  below assumes it unless a step says otherwise.
+- **`paper: true` → LaTeX PAPER clean-result.** The canonical
+  clean-result is a self-contained LaTeX **research paper** at
+  `docs/papers/issue_<N>/`, and `body.md` becomes a thin paper-stub. You
+  still run the SAME ANALYSIS (Steps 1-3.6: load data, the
+  measurement-validity gate, statistics, plots, plot-verification, raw
+  spot-check + sample selection) — the difference is the WRITE-UP form.
+  Jump to § PAPER-TASK MODE (author the LaTeX paper) for Steps 4-8; it
+  states which v4 honesty-protocol steps survive and how the write-up,
+  build, verify, and stub differ. Do NOT produce a v4 markdown body for a
+  `paper: true` task.
+
+The analysis itself (the honesty protocol — measurement-validity gate,
+dual-DV, raw-output spot-check, content-firewall, numeric-fidelity
+re-extraction, the Step-6.5 follow-up tagging) is IDENTICAL across both
+forms. Only the write-up surface (markdown body vs LaTeX paper), the
+verifier (`verify_task_body.py` vs `verify_paper.py`), and the promotion
+artifact (body vs paper-stub) differ.
+
+---
+
 ## Analysis Protocol
 
 ### Step 1: Load and Understand Data
 
 Read, in order:
-0. `frontmatter.goal` from body.md — the canonical one-sentence Goal the user filed at /issue Step 0c. This is your organizing target: the findings narrative must answer how the experiment moved the needle on this Goal. You do NOT propose Goal changes — by the time analysis fires, the Goal is contract. If multiple `epm:goal-updated v1` markers exist in events.jsonl (Goal was refined during planning), the LATEST `to:` value is canonical; you MAY note this once inside the relevant `### <finding>`'s setup or read prose ("Goal was refined once during planning — see events.jsonl"), but the refinement is not the story.
+0. `frontmatter.goal` from body.md — the canonical one-sentence Goal the user filed at /issue Step 0c. This is your organizing target: the results narrative must answer how the experiment moved the needle on this Goal. You do NOT propose Goal changes — by the time analysis fires, the Goal is contract. If multiple `epm:goal-updated v1` markers exist in events.jsonl (Goal was refined during planning), the LATEST `to:` value is canonical; you MAY note this once inside the relevant `### <result>`'s what-is-plotted or interpretation prose ("Goal was refined once during planning — see events.jsonl"), but the refinement is not the story.
 1. The plan (from the `epm:plan` events.jsonl event, or `.claude/plans/issue-<N>.html`)
 2. Specific result files (`eval_results/<name>/run_result.json` and any per-condition JSONs)
 3. `epm:results` workflow event on the source experiment
@@ -50,13 +79,13 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 2. **Proxy-vs-construct check.** Read the plan's §6 measurement-validity entry and the Goal's construct. If the headline metric is an **off-distribution proxy** (teacher-forced not on-policy, a fixed canonical/stub answer instead of the model's own generation, an arbitrary token position, a single-token shortcut) for a behavioral construct, you MUST NOT narrate the proxy as the construct. Write the construct-accurate statement ("log p(※) at a fixed-answer probe", not "the model emits / implants the marker"), and state the proxy gap in the body. If the plan validated the proxy against the construct, cite that validation; if it did not, the headline claim about the *behavior* is unsupported — cap confidence and say so. Narrating a proxy as the construct is an overclaim (interpretation-critic Lens 1 catches it).
 3. **Dual-DV for content-behavior leakage / implantation (compute + report BOTH).** When the result is a *content* behavior leakage/implant (sycophancy, refusal, hedging, style, trait — not the programmatic marker, which has its own three-space recipe), CLAUDE.md § Measurement validity requires you to compute AND report BOTH DVs: (a) the PRIMARY judge-scored on-policy behavior/agreement RATE (trained − base, the validated behavioral construct, the headline number), AND (b) the SECONDARY continuous completion-probability DV — length-normalized trained − base `log P` of the model's OWN judged-positive on-policy completions (preferred), or the teacher-forced positive-vs-negative margin the plan registered. ALSO compute and report the standing validation: the Spearman of (b) vs (a) across the cells that have dynamic range. The reason both are needed: the binary rate saturates at floor/ceiling and CENSORS install / dose-matched / cross-condition comparisons (#608) — read those off the continuous DV where the rate is pinned — while the rate is immune to the teacher-forcing artifact (#432→#456) the probability DV carries. Keep the judge rate PRIMARY in the narration; report the probability DV as the SECONDARY companion and NEVER narrate it as the construct. If the validation Spearman is weak / the probability DV and rate disagree where both have range, say so and cap the cross-condition claim. If the plan registered only one of the two (a planning miss), report the one you have, compute the other where the artifacts allow, and flag the gap in the body. (interpretation-critic Lens 1 + critic Statistics lens item 10 enforce this.)
 
-**The `## Goal` H2 from the prior body is DROPPED during clean-result promotion.** Step 6 (set-body) writes the polished clean-result body with the canonical FIVE required H2s in order — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` — following the H1 title. **A v3 body MUST NOT contain `## Human TL;DR`, `## TL;DR`, `## Details`, or `## Figure` — any of those is a verifier check-2 hard FAIL.** Figures live inline inside each `### <finding>` H3 under `## Findings` (one figure per finding); per-finding narrative (definitions, training notes, "Why this test", at most one short text-behavior excerpt) lives inside the finding; the systematic per-condition samples move to `## Data → ### Generated`; the (slimmed) Parameters table lives in `## Reproducibility`. No `## Goal` H2 sits anywhere in the body.
+**Step 6 (set-body) writes the polished clean-result body in the v4 shape — FOUR required H2s in order — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` — plus a bold `**Repro:**` / `**Context:**` footer (NOT an H2), following the H1 title.** **A v4 body MUST NOT contain the v3 content H2s (`## What I ran`, `## Findings`, `## Data`, `## Reproducibility`) NOR the retired `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` — any of those is a verifier check-2 hard FAIL.** Figures live inline inside each `### <result>` H3 under `## Results` (one figure per result, in the strict three-beat what-is-plotted → plot → interpretation); the COMPLETE hyperparameter table + the systematic worked examples live in `## Methodology`; compute / code SHA / artifact links + run-provenance live in the `**Repro:**` / `**Context:**` footer. The full spec is `.claude/skills/clean-results/SPEC.md` § "v4 body shape" — read it before drafting.
 
-**Emit the v3 sentinel.** Immediately after the H1 title, write the literal HTML comment `<!-- clean-result-v3 -->` on its own line (blank line before and after). The verifier gates every v3 rule on this sentinel. Bodies WITHOUT it keep v2/legacy behavior — every NEW draft you produce MUST carry the v3 sentinel.
+**Emit the v4 sentinel.** Immediately after the H1 title, write the literal HTML comment `<!-- clean-result-v4 -->` on its own line (blank line before and after). The verifier gates every v4 rule on this sentinel. Bodies WITHOUT it keep v3/v2/legacy behavior — every NEW draft you produce MUST carry the v4 sentinel.
 
-**Confidence lives in the H1 title tag only — do NOT emit a `Confidence: …` sentence anywhere in a v3 body.** The H1 title's `(LOW|MODERATE|HIGH confidence)` suffix is the single source of truth. There is no "Why confidence is where it is" section. If you need to convey what the binding constraint is, weave it into the relevant `### <finding>` read prose and/or a `## Takeaways` bullet.
+**Confidence lives in the H1 title tag only — do NOT emit a `Confidence: …` sentence anywhere in a v4 body.** The H1 title's `(LOW|MODERATE|HIGH confidence)` suffix is the single source of truth. There is no "Why confidence is where it is" section. If you need to convey what the binding constraint is, weave it into the relevant `### <result>` interpretation prose and/or a `## Takeaways` bullet.
 
-**`## Takeaways` is the first H2 — the cross-round synthesis (no `## Human TL;DR`).** The v3 spec retired the model-written casual `## Human TL;DR` (Thomas writes his own Slack summary from the body). `## Takeaways` replaces both the v2 Human-TL;DR skim AND the TL;DR's headline function: **3-6 bullets, each ≤30 words, numbers-first, PLAIN ACADEMIC register** (NOT casual/lowercase, NOT a "How this updates me" diary). Each bullet leads with or bolds its load-bearing number + CI. The shape:
+**`## Takeaways` is the first H2 — the cross-round synthesis (no `## Human TL;DR`).** **3-6 bullets, each ≤30 words, numbers-first, PLAIN ACADEMIC register** (NOT casual/lowercase, NOT a "How this updates me" diary). Each bullet leads with or bolds its load-bearing number + CI. The shape:
 
 ```
 ## Takeaways
@@ -69,9 +98,9 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 
 **`## Takeaways` is the ROLLING cross-round synthesis** — it ALWAYS reflects the current cross-round belief. On a same-issue follow-up round you REWRITE it to integrate the later round (see Step 6 § Same-issue follow-up re-entry); a `## Takeaways` that describes only round 1 after round 2 landed is a critic FAIL. The H1 title stays the one-sentence claim + confidence tag; retitle it if the headline moved.
 
-The frontmatter `goal:` field stays in the new body so downstream agents (planner, critic, follow-up-proposer) have the agent-facing canonical Goal as context. The Goal motivation folds into the `## What I ran` `**Why:**` slot (rewritten in plain English, why-this-matters — not pasted verbatim). If the result substantively diverged from the Goal, that's a signal the experiment didn't answer the question it set out to answer — surface it in the relevant finding's setup prose rather than papering over it.
+The frontmatter `goal:` field stays in the new body so downstream agents (planner, critic, follow-up-proposer) have the agent-facing canonical Goal as context. The Goal motivation folds into the `## Goal` section's TWO required parts — `**This experiment in context:**` (what THIS experiment tests + how it relates to the other experiments in its line; the ONLY place prior-issue links appear) and `**Broader narrative:**` (the project-level / `docs/open_questions.md` question it serves) — both rewritten in plain English, not pasted verbatim. If the result substantively diverged from the Goal, that's a signal the experiment didn't answer the question it set out to answer — surface it in the relevant result's interpretation prose rather than papering over it.
 
-**Methodology corrections fold into the relevant `### <finding>`'s setup or read prose.** There is no `### Methodology corrections` heading. Content that previously lived there — plan deviations applied during the run, mid-run bugs caught and fixed, hot-fixes, data patches, threshold changes the eval revealed were inappropriate, dataset-mapping bugs caught and corrected before final aggregation — now lives inside the finding whose interpretation it actually shapes. Each item: what was wrong → what changed → effect on this finding. Keep the narrative inside the finding so a reader landing on it reads the correction in context. If no corrections occurred, no extra prose is needed — the absence is the signal.
+**Methodology corrections fold into the relevant `### <result>`'s what-is-plotted or interpretation prose.** There is no `### Methodology corrections` heading. Content that previously lived there — plan deviations applied during the run, mid-run bugs caught and fixed, hot-fixes, data patches, threshold changes the eval revealed were inappropriate, dataset-mapping bugs caught and corrected before final aggregation — now lives inside the finding whose interpretation it actually shapes. Each item: what was wrong → what changed → effect on this finding. Keep the narrative inside the finding so a reader landing on it reads the correction in context. If no corrections occurred, no extra prose is needed — the absence is the signal.
 
 ### Step 1.5: Load top-N promoted clean-results as in-context exemplars
 
@@ -212,18 +241,21 @@ savefig_paper(fig, "<topic>/<short-name>", dir="figures/")
 ```
 
 Minimum deliverables:
-1. **Hero figure** (lives inside the headline `### <finding>` under `## Findings`). Pick the single chart that carries the claim. If no single figure carries it, you haven't distilled hard enough — stop and retry Step 1.
-2. **Supporting figures** as needed — one per `### <finding>` (one figure per finding).
-3. **Raw-counterpart figure for every processed/derived figure.** If you produce a residualized / partialled / binned / log-transformed / normalized / aggregated scatter or bar, you ALSO produce the raw (pre-processing) version at the same step — save as `*_raw.{png,pdf,meta.json}` alongside `*.{png,pdf,meta.json}`. Embed the raw inline inside the same `### <finding>` as its processed sibling (raw first, then processed). Do not wait for a mentor to ask. Same principle for per-cell vs aggregated artifacts: when the body's claim rests on an aggregated metric, write a per-cell CSV/JSON (per-seed, per-condition, per-persona, per-probe — whatever the aggregation collapsed) and link to it in `## Data` / `## Reproducibility`. Exception: when raw and processed are visually identical (axis-rescale-only processing), say so in alt text and omit the raw. See CLAUDE.md § Voice + Statistics → "Show or link to the less-processed version" for the full rule.
+1. **Hero figure** (lives inside the headline `### <result>` under `## Results`). Pick the single chart that carries the claim. If no single figure carries it, you haven't distilled hard enough — stop and retry Step 1.
+2. **Supporting figures** as needed — one per `### <result>` (one figure per result).
+3. **Low-level data plot behind every aggregate statistic (DEFAULT).** A finding that reports an AGGREGATE statistic — a correlation ρ shown as a forest-plot point, a mean / effect size shown as a bar, a p-value, an effect summary — gets, BY DEFAULT, a companion LOW-LEVEL plot of the per-unit data behind it: the scatter the ρ summarizes, the strip / swarm / jittered per-point view behind the group-difference bars, the unbinned counterpart of a binned / aggregated view. Generate it at the same step (save as `*_points.{png,pdf,meta.json}` or `*_scatter.{png,pdf,meta.json}` alongside the summary figure) and embed it inline inside the same `### <result>` (data view first where there's room, else clearly paired with the summary). The reader should be able to SEE the data, not only the number computed from it. Skip ONLY when the finding's primary figure ALREADY is the per-unit view (a raw scatter needs no second scatter), N is so small the figure already shows every point, or the aggregate has no per-unit decomposition (a single scalar) — and state which exemption applies in the read prose or alt text. This is the broad parent of item 3-bis (raw-alongside-processed) and is enforced by clean-result-critic Lens 11.
+3-bis. **Raw-counterpart figure for every processed/derived figure** (the transformed-figure special case of item 3). If you produce a residualized / partialled / binned / log-transformed / normalized / aggregated scatter or bar, you ALSO produce the raw (pre-processing) version at the same step — save as `*_raw.{png,pdf,meta.json}` alongside `*.{png,pdf,meta.json}`. Embed the raw inline inside the same `### <result>` as its processed sibling (raw first, then processed). Do not wait for a mentor to ask. Same principle for per-cell vs aggregated artifacts: when the body's claim rests on an aggregated metric, write a per-cell CSV/JSON (per-seed, per-condition, per-persona, per-probe — whatever the aggregation collapsed) and link to it in `## Methodology` / the `**Repro:**` footer. Exception: when raw and processed are visually identical (axis-rescale-only processing), say so in alt text and omit the raw. See SPEC.md § per-finding skeleton points 4–5 (low-level data plot + raw alongside processed) for the full rule.
 
 Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig_paper`. Never save only PNG.
+
+**The `.meta.json` sidecar now auto-carries the figure's per-point DATA, not just provenance (default).** `savefig_paper` reads the plotted data back off the matplotlib artists at save time — scatter point offsets (WITH the nearest text label as an identifier column, e.g. persona / seed / cell names), line vertices, bar heights, and error-bar magnitudes, using the axis labels as column names — and embeds it under a `points` key in the shape the EPS dashboard data viewer (`dashboard/lib/task-data.ts`) reads directly. So every figure you commit auto-populates the per-figure sortable/filterable table on `https://eps.superkaiba.com/tasks/<N>` with NO extra work. Two consequences for how you plot: (a) **label your points** (`ax.text(x, y, name)` near each scatter point) wherever a unit identity exists — the SPEC already requires this (low-level-data-plot rule, item 3), and it now also populates the viewer's identifier column; (b) **plain-English axis labels matter doubly** — they become the data table's column headers, so a slug like `cond_4` on an axis becomes a slug column header. Extraction is best-effort: a figure whose artists can't be read back (heatmap/`imshow`, custom collections) silently keeps the provenance-only sidecar and the viewer falls back to the figure link-out — never a save failure. For a figure whose data is huge or already committed elsewhere, pass `savefig_paper(..., embed_data=False)` and add a `data_path` pointer (relative to repo root, under `eval_results/` or `figures/`) to the sidecar yourself. Full contract: SPEC.md § "Dashboard data-artifact interface (Phase 2 contract)".
 
 **Figure URL in the body MUST be an absolute `raw.githubusercontent.com` permalink — NOT a relative path.** The EPS dashboard serves task-folder HTML artifacts but does NOT serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative reference like `![alt](artifacts/hero.png)` renders as a broken image in the browser (incident: task #365, 2026-05-22). Workflow:
 
 1. Save figures under `figures/issue_<N>/` (e.g. `figures/issue_<N>/hero.png`). Do NOT only drop them in the task's `artifacts/` folder — that path is dashboard-invisible for binaries.
 2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>` BEFORE writing the body. The commit is pathspec-limited so a concurrent session's staged files are never swept in.
 3. Capture the commit SHA: `git rev-parse HEAD`.
-4. Reference the figure inline inside the relevant `### <finding>` under `## Findings` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — verifier check 2 hard-FAILs any v3 body that carries it.
+4. Reference the figure inline inside the relevant `### <result>` under `## Results` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — verifier check 2 hard-FAILs any v4 body that carries it.
 5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
 
 `verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL, a `main`/`master`/`HEAD`-pinned raw URL, or a figure URL whose target does NOT exist — same-repo SHA-pinned raw URLs are verified against the git object database via `git cat-file` (incident: task #507, 2026-06-09 — a caption cited a figure that was never generated), with an HTTP HEAD fallback for unknown SHAs / other hosts. The gate blocks promotion to `awaiting_promotion` until the URL is fixed, so commit the figure FIRST (steps 2-3 above) and pin the URL to the commit SHA that actually carries it.
@@ -245,7 +277,7 @@ If a check fails, fix the plot (re-run the script, adjust layout, fix labels) be
 
 ### Step 3.6: Raw-text sample selection (MANDATORY, per load-bearing condition)
 
-For every load-bearing condition that produced completions, pre-select raw completions to embed in `## Data → ### Generated` (the systematic per-condition samples live there in v3; a `### <finding>` may additionally carry at most ONE short excerpt where the text itself IS the finding). Each load-bearing condition MUST have:
+For every load-bearing condition that produced completions, pre-select raw completions to embed in `## Methodology → **Sample training/evaluation data + completions:**` (the systematic per-condition samples live there in v4; a `### <result>` may additionally carry at most ONE short excerpt where the text itself IS the result). Each load-bearing condition MUST have:
 
 - **≥3 firing examples** (drawn from the firing pool — prompts that produced the claimed outcome). Random sample with fixed seed=42.
 - **≥3 non-firing examples** (drawn from the non-firing pool — prompts that did NOT produce the outcome, despite belonging to the same condition class or a closely-matched control).
@@ -258,67 +290,60 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 **Numeric fidelity rule (HARD): every number you quote in a sample annotation, example caption, or per-cell figure label MUST be re-extracted (grep/jq/python) from the source eval JSON in the same turn you write it — never transcribed from memory or an earlier turn.** Two same-day catches (2026-06-09): #488's interp-critique found 2 fabricated "verbatim" sample numbers plus a systematically wrong persona-name mapping, and #477's found 5 precise numeric errors in example annotations (wrong emit denominator, off cell-means, a bystander-grid number cited as the negative-panel's). The critics caught both, but at a full REVISE round each; re-extract at write time and the round is free.
 
+**Verbatim-text fidelity rule (HARD — the sibling of numeric fidelity): every persona name, system prompt, user turn, claim, training row, and model completion you quote in a sample / example block MUST be copied verbatim from the real artifact in the same turn you write it — never reconstructed from memory, paraphrased, or invented.** This applies in BOTH markdown and paper mode. Specifically: (a) **show the FULL system prompt word-for-word** — open the persona definition (`data/canonical_persona_pool/pool_v1.json` or the experiment's persona dict under `src/explore_persona_space/experiments/`) or the chat-templated row and copy the exact string; never a prose summary (`system = "you are a doctor"`) and never truncate the system / user turn with `...`; (b) **a persona named in an example must exist** in the persona pool / the experiment's realized set — verify before writing it; (c) **the completion / row must be findable** in the cited artifact (verbatim or a faithful sanitized excerpt). Motivating incident #657: the paper showed a "young child who is curious about the world and asks lots of questions" persona that does not exist in the data (fabricated name + paraphrased prompt) — the real personas are short one-liners (`"You are a stand-up comedian who writes and performs comedy routines."`). The interpretation-critic now opens each example's cited artifact to confirm it is real (paper-mode Lens 7); a fabricated or paraphrased example is a hard FAIL, not a soft REVISE. Re-extract the text at write time, exactly like numbers.
+
 **Content firewall — DEFAULT ON for every task in this project's safety-research vocabulary class (EM evals, jailbreak data, misaligned completions, AND marker / trigger / implant / backdoor corpora): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; on 2026-06-10 analyzers on #543, #558, #562, #563, and #464 were killed the same way over corpora that did NOT look harmful (key-string-prefixed military-topic Q&A, trigger-keyed-rule framings) — the refusal class keys on the project's vocabulary, not on actual harmfulness, so 'this corpus is benign' is NOT a reason to skip the firewall. When in doubt, firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs. Additionally, checkpoint your fact-sheet to `.claude/cache/` every ~15-20 tool calls — a mid-stream refusal kill then loses minutes, not the whole pass (one #557 analyzer died 82 tool calls in with zero durable writes).
 
 ### Step 4: Write the clean-result body
 
 **Use the clean-result spec at `.claude/skills/clean-results/SPEC.md`.** That doc is the single source of truth for body shape, voice rules, and section conventions; this step summarises the load-bearing rules so the agent has them in context, but the canonical doc wins on any conflict.
 
-**Reference exemplar: `.claude/skills/clean-results/exemplars/v3-517.md`** (also live on the dashboard if #517 is promoted). Read it end-to-end before drafting — it is the canonical v3 body: `## Takeaways` (5 bullets) → `## What I ran` (`**Why:**` / `**Design:**` / `**Eval:**` slots) → `## Findings` (one `### <finding>` per result, one figure each) → `## Data` (`### Trained on` / `### Evaluated with` / `### Generated`) → `## Reproducibility`, with confidence in the H1 title tag only. Use `recent_clean_results.py --n 3` from Step 1.5 to surface other recently-promoted v3 bodies for register reference.
+**Reference: `.claude/skills/clean-results/SPEC.md` § "v4 body shape"** — read it end-to-end before drafting. The v4 body is: `## Takeaways` (3-6 bullets) → `## Goal` (`**This experiment in context:**` + `**Broader narrative:**`) → `## Methodology` (`**Design:**` / `**Training:**` with the COMPLETE hyperparameter table / `**Evaluation:**` / `**Data extraction:**` / `**Sample training/evaluation data + completions:**`) → `## Results` (one `### <result>` per result, the strict three-beat) → `**Repro:**` / `**Context:**` footer, with confidence in the H1 title tag only. Use `recent_clean_results.py --n 3` from Step 1.5 to surface recently-promoted bodies for register reference. **Canonical v4 exemplar: `.claude/skills/clean-results/exemplars/v4-657.md`** — the reference for Rule A (self-contained `## Methodology`) + Rule B (research-paper register); read it before drafting.
 
 Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **markdown** — the dashboard renders it with KaTeX delimiter support for `\(...\)` and `\[...\]`. The mechanical verifier (`scripts/verify_task_body.py`; check catalog in the script docstring) is the gate.
 
-**Top-level shape: FIVE required H2 sections in exact order** — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility`. The body is markdown end-to-end.
+**Top-level shape: FOUR required H2 sections in exact order** — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` — plus a bold `**Repro:**` / `**Context:**` footer (NOT an H2), preceded by a `---` horizontal rule. The body is markdown end-to-end.
 
-**Emit the v3 sentinel.** Immediately after the H1 title, write the literal HTML comment `<!-- clean-result-v3 -->` on its own line. The verifier gates every v3 rule on this sentinel.
+**Emit the v4 sentinel.** Immediately after the H1 title, write the literal HTML comment `<!-- clean-result-v4 -->` on its own line. The verifier gates every v4 rule on this sentinel.
 
-1. **`## Takeaways`** — the cross-round synthesis + 10-second read (see Step 1 for the full shape + register). 3-6 bullets, ≤30 words each, numbers-first, plain academic register. NO `## Human TL;DR` (retired in v3). NO `Confidence:` sentence (confidence is the H1 title tag). It is the ROLLING synthesis — rewrite it after every follow-up round.
-2. **`## What I ran`** — the standalone run description, as boldface-led slot bullets:
-   - **`**Why:**`** — 1-2 sentences; the ONLY place in the body that may cite prior tasks (via `[#K](https://eps.superkaiba.com/tasks/K)` markdown links, NOT bare `#K`) or stage motivation. **Do NOT stage the writeup as a methodology correction of a prior run** — describe the open question and what THIS run did, never "the prior run used X, this run uses Y", never "reverting axis A/B/C from #K", never a prior-vs-current table of design choices, never a recap of the earlier run's superseded eval rig. Name a prior result to establish the question if needed; do not relitigate its methodology.
+1. **`## Takeaways`** — the cross-round synthesis + 10-second read (see Step 1 for the full shape + register). 3-6 bullets, ≤30 words each, numbers-first, plain academic register. NO `Confidence:` sentence (confidence is the H1 title tag). It is the ROLLING synthesis — rewrite it after every follow-up round.
+2. **`## Goal`** — TWO required boldface-led parts:
+   - **`**This experiment in context:**`** — what THIS specific experiment tests and how it relates to the OTHER experiments in its line. The ONLY place in the body that may cite prior tasks (via `[#K](https://eps.superkaiba.com/tasks/K)` markdown links, NOT bare `#K`). **Do NOT stage the writeup as a methodology correction of a prior run** — describe the open question and what THIS run did, never "the prior run used X, this run uses Y", never "reverting axis A/B/C from #K", never a prior-vs-current table of design choices. Name a prior result to establish the question if needed; do not relitigate its methodology.
+   - **`**Broader narrative:**`** — the goal of this experiment / group of experiments in the project's broader narrative (the `docs/open_questions.md` anchor / project-level question it serves).
+3. **`## Methodology`** — the complete "everything required to understand the results" section (absorbs the v3 `## What I ran` Design/Training/Eval AND the entire former standalone methodology doc). Write it FACTUALLY (how it was run), NOT interpretively — this section is mechanically copied to `docs/methodology/issue_<N>.md` at Step 9a-quater. **Rule A — SELF-CONTAINED, no deferral (SPEC.md § `## Methodology` (v4) Rule A).** This section reads like a research-paper Methods section: a reader understands HOW every reported result was produced WITHOUT following a link to another issue. When THIS experiment REUSED an artifact from a prior issue (a trained adapter, persona-vector bank, behavior direction, leakage cells, dataset, base-rate / propensity measurement), WRITE OUT THE FULL PRODUCTION PROCEDURE of that artifact INLINE as PRIMARY METHOD — its data source + realism tier, construction recipe, training recipe + hyperparameters, measurement — exactly as if performed for this experiment. Pull that procedure from the source issue's own `## Methodology` section (read its body via `task.py find <M>`/`view <M>`) or `docs/methodology/issue_<M>.md`, and inline it. **The Methodology body MUST NOT say `reused from #M` / `see #M` / otherwise defer a load-bearing method to another issue.** The FACT of reuse — source issue `[#M](...)` + the pinned artifact path + a one-line fitness rationale — is recorded ONLY in the `**Repro:**` footer reuse-provenance bullet (step 5 below); Rule A is purely about the Methodology body's method prose being complete and standalone. Boldface-led slots, in order:
    - **`**Design:**`** — conditions × seeds × N; the single manipulated variable.
-   - **`**Training:**`** — one-line recipe (model, LoRA r/α, lr, steps, data N); the full table lives in `## Reproducibility`, the full rows in `## Data → ### Trained on`.
-   - **`**Eval:**`** — DV + metric + judge + N probes; why this probe set; preprocessing.
-   - **`**Rounds:**`** — ONLY when >1 round: a markdown table (round label, date, what changed, one-line result).
-   - No cross-issue framing outside `**Why:**`, no `byte identical` / `byte-identical`.
-3. **`## Findings`** — one `### <finding>` H3 per result. Each `### <finding>` heading STATES THE FINDING WITH THE NUMBER (a claim, NOT a deliverable label — see voice rules below). Inside each `### <finding>`:
-     1. A short **setup** (1-3 sentences or bullets) framing what the figure shows and why we're looking.
-     2. **Exactly ONE inline figure** on a line by itself, blank line before and after, with a markdown blockquote caption (`> **Figure.** *italic lead.* plain caption ≤60 words`). See "Figure caption shape" below.
-     3. A **read** (1-3 sentences or bullets) calling out what's striking — surprises, where outliers go, what the figure CAN'T tell you.
-     4. **For text-behavior findings where the text IS the finding:** AT MOST ONE short (≤10-line) raw-completion excerpt, preceded by a subset-disclosure line AND a raw-completions link. The systematic per-condition samples + `<details>` dropdowns live in `## Data → ### Generated`, NOT here.
-     5. **For runs that generate NO completions** (teacher-forced log-prob, activation probe, linear-fit, cluster-only): state the measurement-validity tell ("the model emits nothing — each probe yields one number, not a completion") inside the finding's read prose; do NOT fabricate a sample block.
+   - **`**Training:**`** — the complete recipe + the **COMPLETE hyperparameter table** (EVERY training + eval + generation hyperparameter, each value with a **Source** column). **COPY every numeric hyperparameter from ground truth — the committed training script (the `**Code:**` SHA in the footer), `run_result.json`, or the approved plan §11. NEVER type a hyperparameter from memory.** Open the training script at the Code SHA and read off `--lr` / `--epochs` / `--rank` verbatim. The lr is reconciled against the plan by `verify_task_body.py` check 16 (FAIL blocks promotion). Incident: task #489 shipped `lr = 1e-4` (typed-from-memory default) while the run used `lr = 2e-6` — a 50x misprint. **Analysis-only / no-training tasks:** write the Training slot as `**N/A — no model training.**` and put the analysis-design constants in `**Evaluation:**`.
+   - **`**Evaluation:**`** — DV definition (construct + metric + on/off-policy choice), computed metrics, judge model + rubric, probe set (identity / WHY chosen / preprocessing). When ≥3 distinct probe framings exist, enumerate them (name / example probe verbatim / PASS-FAIL criterion).
+   - **`**Data extraction:**`** — how the training/eval data was built/extracted: source + realism tier, construction recipe, N rows, composition/ratio (positives:negatives ratio, persona panel, row counts per type), completion provenance (on-policy tier / canned / published-corpus-verbatim per `.claude/rules/on-policy-completions.md` + `.claude/rules/contrastive-negatives.md`).
+   - **`**Sample training/evaluation data + completions:**`** — verbatim worked examples: a sample of training rows (pull from the training JSONL), a sample of eval probes (pull from the eval JSON), and one end-to-end completion per load-bearing condition (pull from `raw_completions/`). EACH example block (fenced OR `<details>`) is immediately preceded by a **subset-disclosure line** (`K of M rows, random sample` / `cherry-picked for illustration` / `first N of M` / the harmful-content sanitized form) AND paired with a **pinned link to the complete artifact** (HF Hub `/tree/<sha>` for training rows / raw completions / probe banks; GitHub `/blob/<sha>` for committed eval JSONs). The raw-completions-link rule (verifier check 11) scopes to this slot's completion blocks. **Harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait pools):** ship example blocks SANITIZED per § Content hygiene — labeled "sanitized for context hygiene", a ~15-word excerpt + a `[truncated — harmful-content row; verify at <raw-completions path>, row <i>]` placeholder, with the subset-disclosure line, row indices, and permanent links kept verbatim. Pull rows by grep + line offset; never page whole raw harmful-completion files into context.
 
-   **Each `### <finding>` MUST stand alone** — the reader can land on it directly and understand it. Issue numbers are confined to `## What I ran` `**Why:**` and `## Reproducibility`; baselines are framed descriptively ("the narrow 2-negative baseline"), NOT by number.
+   **Per-condition quantitative numbers live in PLOTS (in `## Results`), not as a body table** — never duplicate a per-condition rate / log-prob / mean as a markdown table when the figure already carries the numbers. (The complete hyperparameter table is the exception — it belongs here.)
+4. **`## Results`** — one `### <result>` H3 per result. Each `### <result>` heading STATES THE RESULT WITH THE NUMBER (a claim, NOT a deliverable label — see voice rules below). Inside each `### <result>`, the STRICT three-beat:
+     1. **What is plotted (EXACTLY)** (1-3 sentences or bullets ABOVE the figure) — a precise statement of exactly what the figure shows: axes, units, what each point/bar is, n, any transform. Strictly "what this figure depicts", not "why we ran this" (that is `## Goal` / `## Methodology`).
+     2. **Plot** — **exactly ONE inline figure** on a line by itself, blank line before and after, with a markdown blockquote caption (`> **Figure.** *italic lead.* plain caption ≤60 words`). ALL details of what's plotted ALSO live in the alt text + caption. See "Figure caption shape" below.
+     3. **Interpretation** (1-3 sentences or bullets BELOW the caption) — what it means / what it can't tell you; surprises, where outliers go.
 
-   **No `## Figure` H2.** Figures live inline inside each `### <finding>` — one figure per finding. A stray `## Figure` H2 is a verifier check-2 hard FAIL.
+   **Low-level data plot behind every aggregate (REQUIRED).** Any result that reports an AGGREGATE statistic (a correlation ρ as a forest-plot point, a mean / effect size as a bar, a p-value) MUST embed BOTH a high-level summary-metric plot AND the LOW-LEVEL per-unit data plot (the scatter the ρ summarizes, the strip/swarm/jittered per-point view behind the bars, the unbinned counterpart), **with points LABELED as much as possible** (each point names its unit — persona / seed / cell). The raw + processed pair rides inside the SAME `### <result>` as ONE narrative unit. Exemptions (stated in interpretation prose or alt text): the primary figure ALREADY is the per-unit view; N is so small the figure shows every point; or the aggregate has no per-unit decomposition. Produce the raw counterpart at Step 3-bis.
 
-   **No `### Methodology corrections` heading.** When a methodology correction is load-bearing, fold it into the relevant `### <finding>`'s setup or read prose.
+   **For text-behavior results where the text IS the result:** AT MOST ONE short (≤10-line) raw-completion excerpt, preceded by a subset-disclosure line AND a raw-completions link. The systematic per-condition samples + `<details>` dropdowns live in `## Methodology → **Sample training/evaluation data + completions:**`, NOT here.
 
-   **Per-finding prose ≤120 words WARN / ≥180 words FAIL** (excl. caption, tables, code, `<details>` bodies; verifier check 20). Bullets are the default; prose only for ≤2-sentence causal chains.
+   **For runs that generate NO completions** (teacher-forced log-prob, activation probe, linear-fit, cluster-only): state the measurement-validity tell inside the result's interpretation prose; do NOT fabricate a sample block.
 
-   **Per-condition quantitative numbers live in PLOTS, not as a body table** — never duplicate a per-condition rate / log-prob / mean as a markdown table when the figure already carries the numbers.
+   **Each `### <result>` MUST stand alone** — the reader can land on it directly and understand it. Issue numbers are confined to `## Goal` and the `**Repro:**` / `**Context:**` footer; baselines are framed descriptively ("the narrow 2-negative baseline"), NOT by number.
 
-   **Demote figure-less quantitative claims.** If a `### <finding>` asserts a quantitative finding AND no figure supports it, EITHER drop it (push into a different finding's prose) OR rewrite it as a qualitative observation. Do NOT ship a numeric finding claim with no visual anchor.
+   **No `## Figure` H2.** Figures live inline inside each `### <result>` — one figure per result. A stray `## Figure` H2 is a verifier check-2 hard FAIL.
 
-4. **`## Data`** — the reader-facing "what exactly did it train / eval / generate on?" section. Three required H3 subsections in order: **`### Trained on`** → **`### Evaluated with`** → **`### Generated`**. Each subsection carries:
-   - a **≤100-word capsule** (the two-tier Data-Statements pattern: a short inline summary that points to, never replaces, the full artifact);
-   - **example blocks** (fenced OR `<details>` table), EACH immediately preceded by a **subset-disclosure line** — `K of M rows, random sample` / `cherry-picked for illustration` / `first N of M` / the harmful-content sanitized form;
-   - **≥1 pinned link to the COMPLETE artifact** (HF Hub `/tree/<sha>`, WandB `/runs/<id>`, GitHub `/blob/<sha>`) OR an explicit `n/a — <reason>` line when the subsection does not apply (eval-only → `### Trained on` is `n/a — no training in this task`).
+   **No `### Methodology corrections` heading.** When a methodology correction is load-bearing, fold it into the relevant `### <result>`'s what-is-plotted or interpretation prose.
 
-   **Assembly — where each subsection's rows come from:**
-   - **`### Trained on`** — pull example rows from the training JSONL (`eval_results/issue_<N>/...jsonl` or the HF data-repo path; for a positive+negative paired design show one of each). The capsule states REQUIRED composition facts: positives:negatives ratio, persona panel, row counts per type, completion provenance (on-policy tier / canned / published-corpus-verbatim per `.claude/rules/on-policy-completions.md` + `.claude/rules/contrastive-negatives.md`). Link the full training JSONL (NOT raw_completions — this is the training mix).
-   - **`### Evaluated with`** — pull eval probes from the eval JSON. The capsule answers the **trio: identity / why chosen / preprocessing** (which probe set, WHY for this Goal, how prepared) + the judge model + rubric. When ≥3 distinct probe framings exist, enumerate them (name / example probe verbatim / PASS-FAIL criterion). Link the full probe bank.
-   - **`### Generated`** — pull model completions from `raw_completions/`. Per load-bearing condition: 1 inline example (labeled cherry-picked/random) + a raw-completions link, then a `<details>` block with 3-5 more. Link the full raw-completions tree (pinned to the SHA). This is the subsection the raw-completions-link rule (verifier check 11) scopes to.
-   - **Harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait pools):** ship example blocks SANITIZED per § Content hygiene — labeled "sanitized for context hygiene", a ~15-word excerpt + a `[truncated — harmful-content row; verify at <raw-completions path>, row <i>]` placeholder, with the subset-disclosure line, row indices, and permanent links kept verbatim. Pull rows by grep + line offset; never page whole raw harmful-completion files into context. Checks 18/19 accept this form.
-   - A subsection that does not apply states it explicitly with an `n/a — <reason>` line — never silently omitted.
+   **Per-result prose ≤120 words WARN / ≥180 words FAIL** (excl. caption, tables, code, `<details>` bodies; verifier check 20). Bullets are the default; prose only for ≤2-sentence causal chains.
 
-5. **`## Reproducibility`** — agent-facing appendix at the bottom. Required content, in order:
-   - **`**Parameters:**`** — the **SLIMMED** parameters table: the LOAD-BEARING subset (base model, adapter recipe, lr, steps, seeds, eval rig, N). The COMPLETE table lives in the methodology doc §2 (NeurIPS-checklist two-tier split); verifier check 21 asserts the body table is a SUBSET of the doc §2 table when `--methodology-doc` is passed. **COPY every numeric hyperparameter from ground truth — the committed training script (the `**Code:**` SHA), `run_result.json`, or the approved plan §11. NEVER type a hyperparameter from memory.** Learning rate, LoRA rank/alpha/dropout, epochs, batch size, and seed are load-bearing — open the training script at the `**Code:**` SHA and read off `--lr` / `--epochs` / `--rank` verbatim. The lr is reconciled against the plan by `verify_task_body.py` check 16 (FAIL blocks promotion). Incident: task #489 shipped `lr = 1e-4` (typed-from-memory default) while the run used `lr = 2e-6` — a 50x misprint.
-   - **`**Artifacts:**`** — links to training data, model checkpoints, eval JSONs, figure source, raw completions. The training-data + eval + generation examples live in `## Data`; this block lists the full artifact links. **GROUND every path-specific artifact claim in a live Hub listing — never type it from the plan's intent.** When you write a bullet that names specific subfolders, checkpoint directories, intermediate-fraction adapters, file counts, or HF Hub paths (e.g. "per-cell LoRA adapters at intermediate fractions {0.25, 0.50, 0.75, 1.00} uploaded to `adapters/issue_<N>/<cell>/`", "520 files at `<path>`"), run `huggingface_hub.list_repo_files` on the relevant repo + revision at write time and copy what the listing actually shows. The `hf` CLI has no `api` subcommand and false-reports "0 files" on a path that exists, so use the Python Hub API (see `.claude/rules/upload-policy.md` for the canonical snippet). If a planned subfolder is missing — e.g. a band-stop callback halted training before the planned intermediate-fraction checkpoint was saved — the body says what is ACTUALLY on the Hub; the missing piece becomes a methodology-correction beat inside the relevant `### <finding>` (the silent-fail rule in CLAUDE.md § "After Every Experiment" #8). A plan-intent claim that doesn't survive the listing propagates into follow-up-proposer's reuse premises (incident #530→#534, 2026-06-09). **Reuse provenance — when ANY reader-facing claim in this body rests on a trained artifact REUSED from a prior issue** (a LoRA adapter, merged checkpoint, training-mix dataset, raw-completion bucket, or `eval_results/` JSON produced by a previous `/issue` run rather than freshly produced by THIS task), record one bullet per reused artifact under this block stating: (a) the producing issue number `#M` as a markdown link to `https://eps.superkaiba.com/tasks/M`; (b) the permanent HF Hub path (pinned to `/tree/<sha>` or `@<sha>`) or repo-relative `eval_results/issue_M/...` path; and (c) a one-line fitness rationale — recipe match (same base model + training-recipe / hyperparameters), measurement-regime fit (the artifact's eval surface contains the conditions THIS result reads off; for marker work, NOT saturated where this read needs headroom — source `log P − base ∈ [5,12]` nat per `.claude/rules/marker-training-recipe.md`), required conditions present. Format: `- Reused <kind> from [#M](...): <hf path or local path> — fit: <one line: recipe + regime + conditions>`. Source the reuse list from the plan body (§5 reusable + §10/§11 artifact citations); never invent reuse the plan didn't approve. When THIS task produced every artifact, omit the reuse-provenance bullets. The clean-result-critic Lens 5 audits this.
-   - **`**Compute:**`** — wall time, GPU type/count, pod label.
-   - **`**Code:**`** — dataset-build script, pipeline driver, Hydra config, git commit hash, one-block reproduce snippet.
-   - **`**Context:**`** — run-context provenance (REQUIRED for v3 bodies; SPEC.md § `**Context:**` row; verifier check 17). Three bullets: **Created / run** (frontmatter `created_at` + the date/window results landed), **Follow-up to** (`[#K](https://eps.superkaiba.com/tasks/K) — <one line>` from frontmatter `parent_id` / the lineage that seeded the task, or `fresh direction (no parent)`; for same-issue follow-up rounds also name each round's `followup_label`), and **Originating prompt(s), verbatim** (blockquoted). Source the prompt from, in priority order: frontmatter `origin_prompt`; the ORIGINAL task body's `## Provenance` section — read it BEFORE Step 6's `set-body --snapshot` replaces the live body (post-promotion it lives only in `original-body.md`, so on re-drafts read it from there); and `epm:followup-scope v1` markers with `source: user-chat` (via `task.py latest-marker` / `view --json`, never a hand-built `tasks/...` path). VERBATIM means verbatim — never paraphrase, trim, or fix typos. When no prompt was recorded, write the literal `origin prompt not recorded`. Provenance lives ONLY here: the "state facts, not sources" rule bans prompt/person attributions in `## Takeaways` and finding prose.
+   **Demote figure-less quantitative claims.** If a `### <result>` asserts a quantitative result AND no figure supports it, EITHER drop it (push into a different result's prose) OR rewrite it as a qualitative observation.
 
-   **Confidence lives in the H1 title tag only.** Do NOT emit a `Confidence: …` sentence anywhere in a v3 body. The binding constraint that drives the title's level lives in the relevant `### <finding>` read prose and/or a `## Takeaways` bullet.
+5. **`**Repro:**` / `**Context:**` footer** — preceded by a `---` horizontal rule. NOT an H2. Two required bold labels:
+   - **`**Repro:**`** — compute (wall time, GPU type/count, pod label) · code SHA (GitHub `/blob/<sha>` or `/tree/<sha>` links, never `main`/`master`/`HEAD`) · pinned artifact links (training data, checkpoints, eval JSONs, raw completions, figure source). **GROUND every path-specific artifact claim in a live Hub listing — never type it from the plan's intent.** When you name specific subfolders, checkpoint directories, intermediate-fraction adapters, file counts, or HF Hub paths, run `huggingface_hub.list_repo_files` on the relevant repo + revision at write time and copy what the listing actually shows. The `hf` CLI has no `api` subcommand and false-reports "0 files" — use the Python Hub API (see `.claude/rules/upload-policy.md`). A plan-intent claim that doesn't survive the listing propagates into follow-up-proposer's reuse premises (incident #530→#534). **Reuse provenance — when ANY reader-facing claim rests on a trained artifact REUSED from a prior issue** (a LoRA adapter, merged checkpoint, training-mix dataset, raw-completion bucket, or `eval_results/` JSON produced by a previous `/issue` run), record one bullet per reused artifact stating: (a) the producing issue `[#M](https://eps.superkaiba.com/tasks/M)`; (b) the permanent pinned HF Hub path (`/tree/<sha>` or `@<sha>`) or `eval_results/issue_M/...` path; and (c) a one-line fitness rationale — recipe match, measurement-regime fit (for marker work, NOT saturated where this read needs headroom — source `log P − base ∈ [5,12]` nat per `.claude/rules/marker-training-recipe.md`), required conditions present. Format: `- Reused <kind> from [#M](...): <path> — fit: <one line>`. When THIS task produced every artifact, omit the reuse bullets. The clean-result-critic reuse-provenance lens audits this. **The footer holds the PROVENANCE only — the reused artifact's full production METHOD is written out inline in `## Methodology` as primary method per Rule A (step 3 above); never defer the method to `#M` in the body.**
+   - **`**Context:**`** — run-context provenance (REQUIRED for v4 bodies; SPEC.md § footer; verifier check 17). The verbatim originating prompt(s) (blockquoted), the lineage (`[#K](https://eps.superkaiba.com/tasks/K) — <one line>` from frontmatter `parent_id` / the lineage that seeded the task, or `fresh direction (no parent)`; for same-issue follow-up rounds also name each round's `followup_label`), and created/run dates. Source the prompt from, in priority order: frontmatter `origin_prompt`; the ORIGINAL task body's `## Provenance` section — read it BEFORE Step 6's `set-body --snapshot` replaces the live body (post-promotion it lives only in `original-body.md`); and `epm:followup-scope v1` markers with `source: user-chat` (via `task.py latest-marker` / `view --json`, never a hand-built `tasks/...` path). VERBATIM means verbatim — never paraphrase, trim, or fix typos. When no prompt was recorded, write the literal `origin prompt not recorded`. Provenance lives ONLY in this footer: the "state facts, not sources" rule bans prompt/person attributions in `## Takeaways` and `## Results` prose.
+
+   **Confidence lives in the H1 title tag only.** Do NOT emit a `Confidence: …` sentence anywhere in a v4 body. The binding constraint that drives the title's level lives in the relevant `### <result>` interpretation prose and/or a `## Takeaways` bullet.
 
    Every URL pins a permanent ref (HF Hub `/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` or `/tree/<sha>` — never `main` / `master` / `HEAD`). Empty fields write `n/a` explicitly; the verifier rejects placeholder tokens (`{{`, `TBD`, `see config`, `default`). **URLs use `[label](url)` form only — never `<url>` autolinks.** The dashboard renders bodies through an MDX parser that treats `<https` as a JSX tag name and chokes on the `/` after `:` (parse error: "Unexpected character `/` (U+002F) before local name"). Verifier check 14 (`check_mdx_safe_urls`) FAILs any body with `<https://...>` autolinks in prose; autolinks inside code spans / fenced blocks are exempt. The rule applies everywhere in the rendered body. Incident: task #382, 2026-05-28.
 
@@ -328,27 +353,28 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 
 **Voice rules** (consolidated; see `.claude/skills/clean-results/SPEC.md` § "Voice" for the canonical list):
 
-- **Bullets are the default; prose only where a causal chain needs ≤2 sentences.** Bold key numbers, front-load the takeaway (NN/g "layer-cake"). A wall of narrative prose is the v2-era register v3 deliberately replaced.
+- **Rule B — research-paper register (SPEC.md § Voice (v4) Rule B).** Write the whole body in the concise, precise register of a research paper: declarative methods/results prose, every quantity DEFINED on first use, no filler / marketing / hype. Per section: `## Methodology` is **Methods-section PROSE** (the complete procedure as compact declarative paragraphs, with the hyperparameter table + verbatim example blocks as data — NOT terse bullet fragments); each `## Results` `### <result>` is **Results-section PROSE** in the three-beat (what-is-plotted-EXACTLY → figure → interpretation, each a 1–3-sentence declarative paragraph — NOT bullet fragments); `## Takeaways` STAYS numbers-first bullets (abstract-style); `## Goal` keeps its two compact-prose boldface slots. The conciseness caps still bind — research-paper register means tight, not verbose.
+- **Bullets are the default for `## Takeaways`; prose only where a causal chain needs ≤2 sentences** (in `## Methodology` / `## Results`, compact prose IS the default per Rule B above — keep it ≤2-sentence units). Bold key numbers, front-load the takeaway (NN/g "layer-cake"). A wall of narrative prose is the v2-era register v3 deliberately replaced.
 - `"I"`, not `"we"` — single-researcher workflow.
 - Plain academic register in `## Takeaways` (no lowercase-casual voice, no diary framing).
-- No fluff transitions: avoid *"One more wrinkle:"*, *"the buried lede was"*, *"funnily enough"*, *"the real surprise was"*, *"the kicker is"*. (Connective tissue inside `### <finding>` read prose — "Then I tried", "But that didn't replicate", "I expected X — what I got was Y" — IS welcome.)
+- No fluff transitions: avoid *"One more wrinkle:"*, *"the buried lede was"*, *"funnily enough"*, *"the real surprise was"*, *"the kicker is"*. (Connective tissue inside `### <result>` interpretation prose — "Then I tried", "But that didn't replicate", "I expected X — what I got was Y" — IS welcome.)
 - Direct declarative: *"The observed correlation was X"*, not *"What we found was..."*.
-- **Plain-English condition names everywhere reader-facing.** Translate every Hydra slug, condition-config key, and project-internal short-letter label (`sw_eng_C1`, `sw_eng_expA`, `sw_eng_expB-P1`, `c1_evil_wrong_em`, `cond_4`, `M1`, `Method A`, `Bin C`, `BS_E0`) into a short descriptive English phrase ("unmodified baseline", "paraphrased prompts", "refusal-only SFT", "last-input-token activations") before the body leaves Step 4. Use the same phrase in `## Takeaways`, `## What I ran`, `## Findings`, the figure (axes / ticks / legend / annotations / alt text / caption), and the `## Data` capsules. The bare slug appears ONLY in the Parameters table's `config` row and in the Reproducibility block (and inside `## Data` verbatim example blocks, which are audit-exempt). This is the rule `clean-result-critic` Lens 2 / 3 / 10 enforces on review.
-- No `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` / `## Background` / `## Methodology` / `## Setup` H2s. The five v3 H2s are the only ones.
-- No "Standing caveats" section; fold caveats into the relevant `### <finding>` read prose and/or a `## Takeaways` bullet (v3 has no Confidence sentence to carry them).
+- **Plain-English condition names everywhere reader-facing.** Translate every Hydra slug, condition-config key, and project-internal short-letter label (`sw_eng_C1`, `sw_eng_expA`, `sw_eng_expB-P1`, `c1_evil_wrong_em`, `cond_4`, `M1`, `Method A`, `Bin C`, `BS_E0`) into a short descriptive English phrase ("unmodified baseline", "paraphrased prompts", "refusal-only SFT", "last-input-token activations") before the body leaves Step 4. Use the same phrase in `## Takeaways`, `## Goal`, `## Results`, the figure (axes / ticks / legend / annotations / alt text / caption), and the `## Methodology` capsules. The bare slug appears ONLY in the Methodology Parameters table's `config` row and in the `**Repro:**` footer (and inside `## Methodology` verbatim example blocks, which are audit-exempt). This is the rule `clean-result-critic` Lens 2 / 3 / 10 enforces on review.
+- No `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` / `## Background` / `## Setup` H2s, and no stray `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` v3 content H2s. The four v4 H2s (`## Takeaways` / `## Goal` / `## Methodology` / `## Results`) are the only ones.
+- No "Standing caveats" section; fold caveats into the relevant `### <result>` interpretation prose and/or a `## Takeaways` bullet (v4 has no Confidence sentence to carry them).
 - **Never write `byte identical` or `byte-identical`** anywhere in the body (banned 2026-W22, task #454; carried into v3; flagged by `audit_clean_results_body_discipline.py`). Use plain English: "the two files matched exactly", "every byte agreed", "no diff between the runs".
-- **Figure captions wrap in a markdown blockquote (`> ` prefix) and use a bold "Figure." prefix.** Every figure caption inside a `### <finding>` uses the exact form `> **Figure.** *One-sentence lead claim in italics.* Remaining caption prose in plain text (definitions, n per condition, panel meanings, color mapping, what to look at, what the figure does NOT show).` ≤60 words. Required around each figure: blank line between body-text and `![alt](url)` line; blank line between image and caption. `### <finding>` sections are not list items, so no 4-space list-continuation indent applies. Draft this shape on the first pass — promotion-time caption-shape fixes are a critic-bounce trigger.
+- **Figure captions wrap in a markdown blockquote (`> ` prefix) and use a bold "Figure." prefix.** Every figure caption inside a `### <result>` uses the exact form `> **Figure.** *One-sentence lead claim in italics.* Remaining caption prose in plain text (definitions, n per condition, panel meanings, color mapping, what to look at, what the figure does NOT show).` ≤60 words. Required around each figure: blank line between body-text and `![alt](url)` line; blank line between image and caption. `### <result>` sections are not list items, so no 4-space list-continuation indent applies. Draft this shape on the first pass — promotion-time caption-shape fixes are a critic-bounce trigger.
 - Use `\(...\)` for inline math, `\[...\]` for display math. Keep math out of plot labels.
 
-**Per-finding `### <finding>` skeleton** (apply to every finding under `## Findings`):
+**Per-result `### <result>` skeleton** (apply to every result under `## Results`):
 
 1. **Setup** (1-3 sentences/bullets). What this finding tested, what's plotted, why we're looking. If the design changed mid-experiment for THIS finding (recut a stratification, dropped a domain, swapped a judge), name the pivot here as part of the story.
 2. **The figure** — exactly one inline `![alt](url)` image with descriptive alt text + a markdown blockquote caption (`> **Figure.** *italic lead.* plain caption ≤60 words`) on the next paragraph.
 3. **Read** (1-3 sentences/bullets). What's striking — surprises, where outliers go, monotonicity, what the figure CAN'T tell you.
-4. **For text-behavior findings:** at most ONE ≤10-line excerpt where the text IS the finding (subset-disclosure line + raw-completions link); the systematic samples live in `## Data → ### Generated`.
+4. **For text-behavior results:** at most ONE ≤10-line excerpt where the text IS the result (subset-disclosure line + raw-completions link); the systematic samples live in `## Methodology → **Sample training/evaluation data + completions:**`.
 5. **Interpretation beat** (optional, fold into the read prose). What does this finding update? What alternative explanation survives?
 
-**`### <finding>` headings state the finding, NOT a deliverable label.** Good headings put the number in the heading and tell the reader what they're about to learn:
+**`### <result>` headings state the result, NOT a deliverable label.** Good headings put the number in the heading and tell the reader what they're about to learn:
 
 - ✓ `### Pushback is already at the in-scenario PASS line in the untrained base (4.40/5)`
 - ✓ `### Why this fails where bystander leakage didn't`
@@ -357,23 +383,23 @@ Bad headings are outline labels:
 
 - ✗ `### Headline result` / `### Subset checks` / `### Sample completions` / `### Plan deviations` / `### Methodology` / `### Methodology corrections`
 
-**Many-finding handling.** Write one `### <finding>` per result; each carries its own setup + figure + read. There is no rollup mode.
+**Many-result handling.** Write one `### <result>` per result; each carries its own what-is-plotted + figure + interpretation (the three-beat). There is no rollup mode.
 
 **Per-finding details:**
 
 - Define every term where introduced — formal definition (display math allowed) plus intuition gloss, inside the finding that needs it.
-- **Multi-probe rigs.** When the experiment uses ≥3 distinct eval surfaces (probe framings / judge prompts / question templates / measurement conditions), enumerate them in `## Data → ### Evaluated with` (name, example probe verbatim, PASS/FAIL criterion in one sentence) so a finding that references "framing #5" resolves. (Under v3 the probe enumeration lives in `## Data`, not a dedicated finding H3.)
+- **Multi-probe rigs.** When the experiment uses ≥3 distinct eval surfaces (probe framings / judge prompts / question templates / measurement conditions), enumerate them in `## Methodology → **Evaluation:**` (name, example probe verbatim, PASS/FAIL criterion in one sentence) so a result that references "framing #5" resolves. (Under v4 the probe enumeration lives in `## Methodology`, not a dedicated result H3.)
 - **Statistical-test rationale**: a "Why this test" sentence inline inside the finding that needs it (NOT a separate heading). Why Spearman not Pearson, why partial, what's controlled for.
-- **Binding-constraint rationale.** Confidence lives in the H1 title tag ONLY — do NOT emit a `Confidence: …` sentence. The binding constraint (LOW/MODERATE) or surviving evidence (HIGH) lives inside the relevant `### <finding>` read prose and/or a `## Takeaways` bullet.
-- **Slimmed Parameters table** lives in `## Reproducibility` under `**Parameters:**` (the complete table is the methodology doc §2).
+- **Binding-constraint rationale.** Confidence lives in the H1 title tag ONLY — do NOT emit a `Confidence: …` sentence. The binding constraint (LOW/MODERATE) or surviving evidence (HIGH) lives inside the relevant `### <result>` interpretation prose and/or a `## Takeaways` bullet.
+- **The complete hyperparameter table** lives in `## Methodology` under `**Training:**` (the methodology doc is a mechanical copy of `## Methodology`).
 
-### Step 4.5: Humanize-loop self-pass on the v3 reader-facing prose
+### Step 4.5: Humanize-loop self-pass on the v4 reader-facing prose
 
-Before verifying, run a humanize-loop pass on the v3 reader-facing prose
-surfaces — `## Takeaways` + the `## What I ran` slot bullets + each
-`### <finding>`'s setup/read prose — NOT the `## Reproducibility`
-appendix, NOT `## Data` capsules/verbatim blocks, and NOT figure
-captions. These surfaces go to mentors / the dashboard / eventually the
+Before verifying, run a humanize-loop pass on the v4 reader-facing prose
+surfaces — `## Takeaways` + the `## Goal` slot bullets + each
+`### <result>`'s what-is-plotted/interpretation prose — NOT the
+`**Repro:**` / `**Context:**` footer, NOT the `## Methodology`
+capsules/verbatim blocks, and NOT figure captions. These surfaces go to mentors / the dashboard / eventually the
 paper (Thomas adapts `## Takeaways` for Slack); the other sections are
 agent-facing and tolerate denser prose. Expect this pass cheaper than v2
 (bullets, ~700-800 words total).
@@ -382,8 +408,8 @@ agent-facing and tolerate denser prose. Expect this pass cheaper than v2
 `humanize` skill's `loop` mode runs inside your context, not as a
 spawned hostile critic):**
 
-1. Read the current `## Takeaways` + `## What I ran` + `## Findings`
-   reader-facing prose (the v3 surfaces above).
+1. Read the current `## Takeaways` + `## Goal` + `## Results`
+   reader-facing prose (the v4 surfaces above).
 2. Score against the six-axis hostile-critic rubric from
    `humanize loop` mode (load `/humanize loop` if available, otherwise
    apply the rubric from memory):
@@ -411,10 +437,10 @@ spawned hostile critic):**
    user.
 4. If all axes scored ≤ 1: proceed to Step 5 (Verify).
 
-This loop is inline; do NOT spawn a subagent. The pass is on the v3
-reader-facing prose surfaces — `## Takeaways` + `## What I ran` slot
-bullets + each `### <finding>`'s setup/read prose — NOT the
-`## Reproducibility` appendix, NOT `## Data` capsules/verbatim blocks,
+This loop is inline; do NOT spawn a subagent. The pass is on the v4
+reader-facing prose surfaces — `## Takeaways` + `## Goal` slot
+bullets + each `### <result>`'s what-is-plotted/interpretation prose — NOT the
+`**Repro:**` / `**Context:**` footer, NOT the `## Methodology` capsules/verbatim blocks,
 and NOT figure captions. Those reader-facing surfaces are what Thomas
 adapts for Slack; the appendix + Data verbatim rows are agent-facing and
 tolerate denser prose.
@@ -426,24 +452,24 @@ repeatedly trip the clean-result-critic lenses (Lens 2 / 7 / 13), and
 each bounce costs a REVISE round. Fix any hit in place:
 
 - [ ] **No opaque condition codes** (`B@k`, `A`, `M1`, `cond_4`,
-      `c1_evil_wrong_em`, Hydra slugs) in `## Takeaways` / `## What I
-      ran` / `## Findings` prose or captions or `## Data` capsules —
+      `c1_evil_wrong_em`, Hydra slugs) in `## Takeaways` / `## Goal` /
+      `## Results` prose or captions or `## Methodology` capsules —
       plain-English condition names only (Lens 2). Bare codes live in
-      `## Reproducibility` (+ `## Data` verbatim example blocks, which
+      the `**Repro:**` footer (+ `## Methodology` verbatim example blocks, which
       are audit-exempt).
 - [ ] **No named statistical tests / bracketed CIs in narrative prose**
       ("Mantel r=…", "slope[lo,hi]", "p<0.01") — those belong in
-      `## Reproducibility`, not the reader-facing sections (Lens 7).
+      the `## Methodology` Training/Evaluation slots, not the reader-facing sections (Lens 7).
 - [ ] **No process/AI tells** ("the codex critic surfaced", "as an AI",
       "it is worth noting") or shouty ALL-CAPS emphasis in the body.
 - [ ] **`## Takeaways` is the current cross-round synthesis** — on a
       multi-round body it integrates the latest round, not just round 1
       (Lens 4). The H1 title is retitled if the headline moved.
 - [ ] **The body flags any planned cell / seed / factor that silently
-      dropped** (in `## Takeaways` + the relevant `### <finding>`) and
+      dropped** (in `## Takeaways` + the relevant `### <result>`) and
       revises the denominator consistently (Lens 13) — never a
       misleading zero bar for an untested condition.
-- [ ] **Per-finding prose ≤120 words** (≥180 is a hard FAIL); bullets
+- [ ] **Per-result prose ≤120 words** (≥180 is a hard FAIL); bullets
       default over narrative prose (Lens 12).
 
 ### Step 5: Verify
@@ -455,9 +481,9 @@ uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file .claude/cache/expe
 uv run python "$REPO_ROOT"/scripts/audit_clean_results_body_discipline.py .claude/cache/experiment-<N>-clean-result.md  # body-discipline gate the critic's pre-pass runs — catch bracketed-CI / family-labels / byte-identical NOW, not at round 1
 ```
 
-Run BOTH gates. `verify_task_body.py` enforces structure; `audit_clean_results_body_discipline.py` enforces the prose-discipline anti-patterns (bracketed-CI `[lo, hi]` in reader-facing prose via its `interval_inline` regex, `<letter>-family` / opaque codes, `byte identical`). The clean-result-critic runs the SAME discipline audit as its mechanical pre-pass, so any finding here is a guaranteed round-1 bounce — fixing it before posting saves a full analyzer↔critic REVISE round. (Incident: #641 / #559 / #657 round-1 each FAILed on bracketed-CI the Step 4.6 eyeball-checklist missed, 2026-06-18.) Every FAIL from EITHER gate must be fixed before posting. WARNs may ship when explicitly acknowledged in the body (e.g. the qualitative-data-link WARN for runs whose raw completions weren't uploaded — pair with a "re-run with raw-completion upload" note in the relevant finding / `## Data → ### Generated`). Do NOT proceed to Step 6 until both gates are FAIL-free.
+Run BOTH gates. `verify_task_body.py` enforces structure; `audit_clean_results_body_discipline.py` enforces the prose-discipline anti-patterns (bracketed-CI `[lo, hi]` in reader-facing prose via its `interval_inline` regex, `<letter>-family` / opaque codes, `byte identical`). The clean-result-critic runs the SAME discipline audit as its mechanical pre-pass, so any finding here is a guaranteed round-1 bounce — fixing it before posting saves a full analyzer↔critic REVISE round. (Incident: #641 / #559 / #657 round-1 each FAILed on bracketed-CI the Step 4.6 eyeball-checklist missed, 2026-06-18.) Every FAIL from EITHER gate must be fixed before posting. WARNs may ship when explicitly acknowledged in the body (e.g. the qualitative-data-link WARN for runs whose raw completions weren't uploaded — pair with a "re-run with raw-completion upload" note in the relevant result / `## Methodology → **Sample training/evaluation data + completions:**`). Do NOT proceed to Step 6 until both gates are FAIL-free.
 
-The verifier enforces the mechanical checks for the five-flat-H2 (v3) spec (see `scripts/verify_task_body.py` docstring for the canonical enumeration; each branches on the `<!-- clean-result-v3 -->` sentinel): body-nonstub (check 0, defense against the cache → body.md silent-handoff failure); no-duplicate-frontmatter (check 0b); title confidence tag (`(LOW|MODERATE|HIGH confidence)`); FIVE required H2s in order (`## Takeaways`, `## What I ran`, `## Findings`, `## Data`, `## Reproducibility`) — a stray `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` H2 is a hard FAIL (forces clean migration to v3); v3-structure check (check 3) — `## Takeaways` has 3-6 bullets (authoritative count gate), `## What I ran` carries the `**Why:**` slot, `## Findings` has ≥1 `### ` finding; at least one `![alt](url)` image inline under `## Findings` (each finding carries its own figure) + figure URLs resolvable; every image URL absolute + commit-pinned; Confidence — the H1 title tag is the source of truth (PASSes with NO body sentence; gated on the v2-OR-v3 sentinel); `## Reproducibility` carries all three boldface subgroups (`**Artifacts:**`, `**Compute:**`, `**Code:**`); URL permanence in Reproducibility (HF Hub `/tree/<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>`; no `main`/`master`/`HEAD`); no `{{` / `TBD` / `see config` / `default` sentinels in Reproducibility (write `n/a` explicitly); cherry-picked / random-sample label preceding every sample-output block in `## Findings` + `## Data` (fenced OR `<details>`-wrapped); qualitative-data link preceding every sample-output block in `## Findings` + `## Data → ### Generated` ONLY (raw text-level artifact); `## Data` shape (check 18) — `### Trained on` / `### Evaluated with` / `### Generated` in order, each with ≥1 pinned complete-artifact link OR an `n/a — <reason>` line; `## Data` subset-disclosure (check 19); word caps (check 20) — per-finding ≥180-word hard FAIL, Takeaways-bullet ≤30 / caption ≤60 / total-prose WARN; body Parameters ⊆ methodology doc §2 (check 21, NO-OP PASS pre-merge); Reproducibility lr matches plan (check 16, v2/v3) — the learning rate in the slimmed Parameters table must appear in the approved `plans/plan.md` (FAIL unless a documented run-vs-plan deviation downgrades it to WARN; NO-OP PASS when it cannot reconcile); Reproducibility Context provenance row (check 17, v2/v3) — the `**Context:**` row (created/run dates, follow-up lineage, verbatim originating prompt) must be present (FAIL only when recorded origin data — frontmatter `origin_prompt` or a `## Provenance` section in `original-body.md` — exists but the body dropped it; WARN otherwise). Soft WARN: `check_details_narrative_flow` flags outline-label H3s + figure-dump runs inside `## Findings`. See `CLAUDE.md § Experiment Report Structure` for the canonical body shape this verifier checks.
+The verifier enforces the mechanical checks for the four-flat-H2 (v4) spec — the canonical per-generation enumeration lives in the `scripts/verify_task_body.py` docstring; each check branches on the `<!-- clean-result-v4 -->` sentinel. The v4 essentials a v4 draft must clear: body-nonstub (check 0); no-duplicate-frontmatter (check 0b); title confidence tag; FOUR required H2s in order (`## Takeaways`, `## Goal`, `## Methodology`, `## Results`) — a stray v3 content H2 (`## What I ran` / `## Findings` / `## Data` / `## Reproducibility`) or any retired earlier H2 (`## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure`) is a hard FAIL (forces clean migration to v4); v4-structure (check 3, `check_v4_structure`) — `## Takeaways` 3-6 bullets (authoritative count gate), `## Goal` carries both slots, `## Methodology` carries `**Training:**` (or the no-training marker) + `**Evaluation:**`, `## Results` has ≥1 `### <result>`; at least one `![alt](url)` figure inline under `## Results` + figure URLs resolvable + commit-pinned; Confidence — the H1 title tag is the source of truth (gated on the v2/v3/v4 sentinel); the `**Repro:**` footer present with the `**Context:**` label (check 7); URL permanence + sentinel scrub + same-repo artifact existence over the footer; cherry-picked / subset-disclosure label preceding every sample block in `## Methodology` + `## Results` (checks 10/19); qualitative-data link preceding every sample block in `## Results` + the `## Methodology` Sample slot (check 11); Methodology completeness (check 18, `check_v4_methodology_shape`) — the `**Training:**` hyperparameter table (or no-training marker) + the Sample slot's pinned link; word caps (check 20, `check_v4_word_caps`) — per-`### <result>` ≥180-word hard FAIL, Takeaways-bullet ≤30 / caption ≤60 / total-prose WARN (Methodology excluded); Results three-beat (check 21, `check_v4_results_beat`, WARN); lr matches plan (check 16) — the lr in the `## Methodology` Training table must appear in the approved `plans/plan.md`; Context provenance present (check 17). See `CLAUDE.md § Experiment Report Structure` + `SPEC.md § "v4 body shape"` for the canonical shape.
 
 ### Step 6: Promote the source experiment to a clean-result (inline)
 
@@ -467,18 +493,20 @@ This is the terminal step. **The source experiment row ITSELF becomes the clean-
 
 ```bash
 CACHE_FILE=.claude/cache/experiment-<SOURCE-N>-clean-result.md
-test -s "$CACHE_FILE"                              || { echo "Cache file missing or empty"; exit 1; }
-grep -qE '^## Takeaways$'       "$CACHE_FILE"      || { echo "Cache missing Takeaways section"; exit 1; }
-grep -qE '^## What I ran$'      "$CACHE_FILE"      || { echo "Cache missing What I ran section"; exit 1; }
-grep -qE '^## Findings$'        "$CACHE_FILE"      || { echo "Cache missing Findings section"; exit 1; }
-grep -qE '^## Data$'            "$CACHE_FILE"      || { echo "Cache missing Data section"; exit 1; }
-grep -qE '^## Reproducibility$' "$CACHE_FILE"      || { echo "Cache missing Reproducibility section"; exit 1; }
-# v3 spec (2026-W24): `## Human TL;DR`, `## TL;DR`, `## Details`, `## Figure`
-# are all retired — fail loudly if any leaks through (verifier check 2 hard-FAILs them).
-! grep -qE '^## Human TL;DR$'   "$CACHE_FILE"      || { echo "Cache carries retired ## Human TL;DR H2; v3 dropped it — synthesis lives in ## Takeaways"; exit 1; }
-! grep -qE '^## TL;DR$'         "$CACHE_FILE"      || { echo "Cache carries retired ## TL;DR H2; v3 flattened it to ## Takeaways / ## What I ran / ## Findings"; exit 1; }
-! grep -qE '^## Details$'       "$CACHE_FILE"      || { echo "Cache carries retired ## Details H2; fold into per-finding ### sections under ## Findings"; exit 1; }
-! grep -qE '^## Figure$'        "$CACHE_FILE"      || { echo "Cache carries retired ## Figure H2; inline the figure inside the relevant ### <finding>"; exit 1; }
+test -s "$CACHE_FILE"                            || { echo "Cache file missing or empty"; exit 1; }
+grep -qE '^## Takeaways$'     "$CACHE_FILE"       || { echo "Cache missing Takeaways section"; exit 1; }
+grep -qE '^## Goal$'          "$CACHE_FILE"       || { echo "Cache missing Goal section"; exit 1; }
+grep -qE '^## Methodology$'   "$CACHE_FILE"       || { echo "Cache missing Methodology section"; exit 1; }
+grep -qE '^## Results$'       "$CACHE_FILE"       || { echo "Cache missing Results section"; exit 1; }
+grep -qE '^\*\*Repro:\*\*'    "$CACHE_FILE"       || { echo "Cache missing **Repro:** footer"; exit 1; }
+# v4 spec (2026-W26): the v3 content H2s + the earlier retired H2s are all
+# retired — fail loudly if any leaks through (verifier check 2 hard-FAILs them).
+! grep -qE '^## What I ran$'    "$CACHE_FILE"     || { echo "Cache carries retired ## What I ran H2; v4 folds it into ## Methodology"; exit 1; }
+! grep -qE '^## Findings$'      "$CACHE_FILE"     || { echo "Cache carries retired ## Findings H2; v4 renamed it ## Results"; exit 1; }
+! grep -qE '^## Data$'          "$CACHE_FILE"     || { echo "Cache carries retired ## Data H2; v4 folds it into ## Methodology"; exit 1; }
+! grep -qE '^## Reproducibility$' "$CACHE_FILE"   || { echo "Cache carries retired ## Reproducibility H2; v4 uses the **Repro:** footer"; exit 1; }
+! grep -qE '^## Human TL;DR$'   "$CACHE_FILE"     || { echo "Cache carries retired ## Human TL;DR H2; synthesis lives in ## Takeaways"; exit 1; }
+! grep -qE '^## TL;DR$'         "$CACHE_FILE"     || { echo "Cache carries retired ## TL;DR H2; v4 flattened it to ## Takeaways / ## Goal / ## Methodology / ## Results"; exit 1; }
 ```
 
 Then the promote sequence:
@@ -494,15 +522,19 @@ uv run python scripts/task.py set-body <SOURCE-N> \
 #    under <500 chars, but this lets the analyzer fail loudly if the file
 #    we sent was different from the one we built).
 BODY_FILE="$(uv run python scripts/task.py find <SOURCE-N>)/body.md"
-grep -qE '^## Takeaways$'       "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Takeaways"; exit 1; }
-grep -qE '^## What I ran$'      "$BODY_FILE"      || { echo "set-body silently failed; body.md still a stub"; exit 1; }
-grep -qE '^## Findings$'        "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Findings"; exit 1; }
-grep -qE '^## Data$'            "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Data"; exit 1; }
-grep -qE '^## Reproducibility$' "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Reproducibility"; exit 1; }
-! grep -qE '^## Human TL;DR$'   "$BODY_FILE"      || { echo "body.md carries retired ## Human TL;DR H2 — verifier check 2 will FAIL"; exit 1; }
-! grep -qE '^## TL;DR$'         "$BODY_FILE"      || { echo "body.md carries retired ## TL;DR H2 — verifier check 2 will FAIL"; exit 1; }
-! grep -qE '^## Details$'       "$BODY_FILE"      || { echo "body.md carries retired ## Details H2 — verifier check 2 will FAIL"; exit 1; }
-! grep -qE '^## Figure$'        "$BODY_FILE"      || { echo "body.md carries retired ## Figure H2 — verifier check 2 will FAIL"; exit 1; }
+grep -qE '^## Takeaways$'     "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Takeaways"; exit 1; }
+grep -qE '^## Goal$'          "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Goal"; exit 1; }
+grep -qE '^## Methodology$'   "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Methodology"; exit 1; }
+grep -qE '^## Results$'       "$BODY_FILE"      || { echo "set-body silently failed; body.md missing Results"; exit 1; }
+grep -qE '^\*\*Repro:\*\*'    "$BODY_FILE"      || { echo "set-body silently failed; body.md missing **Repro:** footer"; exit 1; }
+# v4 spec (2026-W26): the v3 content H2s + the earlier retired H2s are all
+# verifier check-2 hard FAILs — fail loudly if any leaked through.
+! grep -qE '^## What I ran$'    "$BODY_FILE"    || { echo "body.md carries retired ## What I ran H2 — folds into ## Methodology under v4"; exit 1; }
+! grep -qE '^## Findings$'      "$BODY_FILE"    || { echo "body.md carries retired ## Findings H2 — renamed ## Results under v4"; exit 1; }
+! grep -qE '^## Data$'          "$BODY_FILE"    || { echo "body.md carries retired ## Data H2 — folds into ## Methodology under v4"; exit 1; }
+! grep -qE '^## Reproducibility$' "$BODY_FILE"  || { echo "body.md carries retired ## Reproducibility H2 — becomes the **Repro:** footer under v4"; exit 1; }
+! grep -qE '^## Human TL;DR$'   "$BODY_FILE"    || { echo "body.md carries retired ## Human TL;DR H2 — verifier check 2 will FAIL"; exit 1; }
+! grep -qE '^## TL;DR$'         "$BODY_FILE"    || { echo "body.md carries retired ## TL;DR H2 — verifier check 2 will FAIL"; exit 1; }
 
 # 3. Update title to the claim summary
 uv run python scripts/task.py set-title <SOURCE-N> \
@@ -530,38 +562,40 @@ in per these rules, then re-run the verifier and call `set-body` WITHOUT
 original; a second snapshot would overwrite it). The
 clean-result-critique gate (9a-bis) then re-runs on the updated body.
 
-1. **Add the new round's finding(s)** as additional `### <finding>`
-   sections under `## Findings`.
+1. **Add the new round's result(s)** as additional `### <result>`
+   sections under `## Results`.
 2. **REWRITE `## Takeaways` to the current cross-round belief** — this
    is mandatory, not optional. `## Takeaways` is the rolling synthesis;
    after a follow-up round it MUST integrate the later round, not just
    describe round 1. A Takeaways that describes only round 1 after
-   round 2 landed is a critic FAIL (Lens 4). **Retitle the H1** (claim
-   + confidence tag) if the headline moved.
-3. **Add / extend the `**Rounds:**` table** in `## What I ran` (round
-   label, date, what changed, one-line result) — it appears once a body
-   has >1 round. Add the round's `followup_label` + verbatim prompt to
-   the `## Reproducibility` `**Context:**` row.
-4. **Superseded-finding collapse.** When the new round INVALIDATES an
-   earlier finding, rewrite `## Findings` to the current best
-   understanding and collapse the outdated finding into ONE
+   round 2 landed is a critic FAIL (Takeaways-quality lens). **Retitle
+   the H1** (claim + confidence tag) if the headline moved.
+3. **Note the round in `## Methodology` + add the round's params + footer.**
+   Add a per-round note (or a `**Rounds:**` table) under `**Design:**`,
+   and a per-round COLUMN to the `**Training:**` hyperparameter table for
+   every value the round changed. Add the round's `followup_label` +
+   verbatim prompt to the `**Context:**` footer.
+4. **Superseded-result collapse.** When the new round INVALIDATES an
+   earlier result, rewrite `## Results` to the current best
+   understanding and collapse the outdated result into ONE
    `<details><summary>Superseded by round N</summary>…</summary>` block
-   at the end of `## Findings` — audit trail without bloat.
+   at the end of `## Results` — audit trail without bloat.
 5. **Round-compression.** When the new round's synthesis ABSORBS an
-   earlier finding (still true, no longer load-bearing on its own),
-   compress that finding to heading + figure + ≤2 bullets. This is how
+   earlier result (still true, no longer load-bearing on its own),
+   compress that result to heading + figure + ≤2 bullets. This is how
    a round-N body stays near the word budget without deleting live
-   findings (the total-prose cap is WARN-only and scales per round).
+   results (the total-prose cap is WARN-only and scales per round).
 6. **Migrate-on-fold (the ONE deliberate forward-only exception).** If
-   the body you are folding into is a v2-sentinel
+   the body you are folding into is a v3-sentinel
+   (`<!-- clean-result-v3 -->`) or v2-sentinel
    (`<!-- clean-result-v2 -->`) body — i.e. a follow-up round landed on
-   a parked v2 body after the v3 cutover — MIGRATE it to v3 as part of
-   the fold: replace the sentinel with `<!-- clean-result-v3 -->`,
-   restructure the v2 `## Human TL;DR` / `## TL;DR` content into the
-   five v3 H2s (`## Takeaways` / `## What I ran` / `## Findings` /
-   `## Data` / `## Reproducibility`), and write the new round into the
-   v3 shape. The body rebuilds cheaply from cached results + figures.
-   Do NOT maintain a dual v2/v3 fold-in branch — migrate, then fold.
+   a parked v3/v2 body after the v4 cutover — MIGRATE it to v4 as part of
+   the fold: replace the sentinel with `<!-- clean-result-v4 -->`,
+   restructure the prior content into the four v4 H2s (`## Takeaways` /
+   `## Goal` / `## Methodology` / `## Results`) + the `**Repro:**` /
+   `**Context:**` footer, and write the new round into the v4 shape. The
+   body rebuilds cheaply from cached results + figures. Do NOT maintain a
+   dual fold-in branch — migrate, then fold.
 
 The dashboard kanban routes the experiment to the Awaiting promotion
 column automatically once status is set to `awaiting_promotion` by the
@@ -569,13 +603,13 @@ column automatically once status is set to `awaiting_promotion` by the
 
 ### Step 6.5: Tag follow-ups and flag free-analysis candidates
 
-If your draft body lists ANY follow-ups (inline within a `### <finding>`'s read prose, in a `## Takeaways` "what this changes / next decision" bullet, or anywhere else you suggest a next experiment), tag each one with three fields so the orchestrator can decide whether to auto-run it before parking. (v3 has no `### Next steps` heading by default — surface follow-ups inline.) Same definitions are mirrored in the `follow-up-proposer` schema so `cost_class` / `headline_affecting` / `est_gpu_hours` mean the same thing everywhere they appear.
+If your draft body lists ANY follow-ups (inline within a `### <result>`'s interpretation prose, in a `## Takeaways` "what this changes / next decision" bullet, or anywhere else you suggest a next experiment), tag each one with three fields so the orchestrator can decide whether to auto-run it before parking. (v4 has no `### Next steps` heading by default — surface follow-ups inline.) Same definitions are mirrored in the `follow-up-proposer` schema so `cost_class` / `headline_affecting` / `est_gpu_hours` mean the same thing everywhere they appear.
 
 - **`cost_class: free-analysis | needs-gpu`**
   - `free-analysis` = executable PURELY by re-running analysis / plot code over eval data that ALREADY EXISTS (committed under `eval_results/` or already pushed to the HF data repo). Zero new training, zero new eval generation, zero new pod, zero GPU. A small, reviewable analysis-code or analysis-param edit (change a matched-rate anchor set, recompute at a different target, add a slice already present in the eval JSONs, re-run a bootstrap with a different gating rule) is allowed; collecting any new data is NOT.
   - `needs-gpu` = anything else (new training, new eval generation, new pod, new prompts to a base model, anything that consumes GPU time).
 - **`headline_affecting: yes | no`**
-  - `yes` iff running the follow-up could plausibly change the H1 title, the confidence tag, or a load-bearing `## Takeaways` / `## Findings` claim.
+  - `yes` iff running the follow-up could plausibly change the H1 title, the confidence tag, or a load-bearing `## Takeaways` / `## Results` claim.
   - `no` for polish / generalization / parametric sweeps whose outcome would NOT move the headline.
   - As of 2026-06-13 this tag NO LONGER gates auto-run (a `free-analysis` follow-up auto-runs at Step 9a-ter regardless of it; a `question_relation: same` follow-up with `0 < est_gpu_hours < 20` auto-runs via the Step 9b same-issue loop regardless of it). It survives as a user-facing impact signal only.
 - **`est_gpu_hours: <number>`** (a bare numeric field; `0` for `cost_class: free-analysis`)
@@ -626,7 +660,7 @@ The `clean-result-critic` (+ its Codex twin) reads the source experiment's NEW b
 
 ## Quality bar
 
-The mentor should be able to read ONLY `## Takeaways` + `## What I ran` in 10 seconds and know: why it was run, what was run, what was found, what belief updated, what would falsify it, what's next. If any of those six is unclear, rewrite before posting. `## Takeaways` is AI-drafted by you and is the surface Thomas adapts for his own Slack post (v3 retired the model-written `## Human TL;DR`).
+The mentor should be able to read ONLY `## Takeaways` + `## Goal` in 10 seconds and know: why it was run, what was run, what was found, what belief updated, what would falsify it, what's next. If any of those six is unclear, rewrite before posting. `## Takeaways` is AI-drafted by you and is the surface Thomas adapts for his own Slack post (v3 retired the model-written `## Human TL;DR`, carried into v4).
 
 The issue title is the most-read part of the clean-result. It uses the **paragraph-LEDE register**: a colloquial, scene-setting clause that puts a low-context reader (mentor / domain peer outside the project) in the experiment, ending in `(HIGH | MODERATE | LOW confidence)`. **Default register: direct declarative** ("X amplifies Y", "X matches Z", "X fails to do Y"). Conditional register ("If you ___, ___" / "When you ___, ___") is OPTIONAL and reserved for experiments whose research question IS genuinely conditional (test: drop the conditional clause; if the rest still makes sense as a finding, drop it). The load-bearing differentiator (e.g., "pretraining" for #276) goes upfront. Inline numbers / r-values / p-values do NOT belong in the title — they live in the `## Takeaways` bullets and the per-finding captions.
 
@@ -638,24 +672,261 @@ Fourteen anti-patterns to avoid:
 4. **Negation of a prior claim** — "X does NOT actually do Y" requires the reader to know what Y was claimed. State the affirmative finding instead. If your only finding IS "X was wrong," the work should fold into the parent issue, not stand alone (see SPEC.md §2 (Title format) for the fold-in protocol).
 5. **Three+ project-internal entities** — "source persona", "bystander persona", "assistant persona" all named in one title. Two-entity ceiling. Most titles can be rewritten with "one persona" / "other personas".
 6. **"If you" / "When you" overuse across the cohort** — if 70% of recent titles open the same way, the conditional rule is being over-applied; mix in declarative.
-7. **Pre-registration mentions in the body** — "pre-registered" / "pre-registration" / "pre-reg" / "registered hypothesis" do NOT appear in `## Takeaways`, `## Findings`, or anywhere the reader sees. If a pre-registered alpha threshold or hypothesis is reproducibility-critical, put the numerical value in the `## Reproducibility` Parameters table or the methodology doc (e.g., `alpha threshold = 0.0125, Bonferroni-corrected for 4 metrics`) — never as a claim about pre-registration discipline.
+7. **Pre-registration mentions in the body** — "pre-registered" / "pre-registration" / "pre-reg" / "registered hypothesis" do NOT appear in `## Takeaways`, `## Results`, or anywhere the reader sees. If a pre-registered alpha threshold or hypothesis is reproducibility-critical, put the numerical value in the `## Methodology` Parameters table (e.g., `alpha threshold = 0.0125, Bonferroni-corrected for 4 metrics`) — never as a claim about pre-registration discipline.
 8. **Undefined acronyms** — define ANY acronym not in the domain-of-art whitelist (`EM`, `LoRA`, `SFT`, `DPO`, `LM`, `ML`, `AI`, `RL`) on first use. Statistical symbols (`H_a`, `H_0`, `α`) are academic-paper register and read awkward in LW prose — prefer "we tested whether X" over "H_a: X". `AUC` paired with what it's computed on is OK; bare `AUC = 0.85` is not. The verifier enforces only the 6 project tokens (`H1`-`P3`); the rest is author + reviewer discipline.
 9. **Project-internal condition / hypothesis labels** — `C1`, `C2`, `C3`, `C2′`, `H1`, `H2`, `H3`, `H_main`, `P1`, `P2`, `P3`. Replace with the **named condition inline**, not the alphanumeric tag. ✗ "every C2 completion looks like ..., the C2′ control fails outright, and the C3 control leaks 95.9%." → ✓ "every persona-mimicry completion looks like ..., the cross-source no-mimicry control fails outright, and the benign-Tulu instruction-tuning control leaks 95.9%." Audit script flags these as `condition_labels`.
 10. **Math-style subscript / superscript notation in prose** — `R_BgivenA^P2`, `P_X^Y`, `R^P2`, `f_θ`, etc. GitHub-flavored markdown does NOT typeset these — they appear as literal underscores and carets. Any identifier with `_<sub>` AND/OR `^<sup>` is banned in body prose; equations belong in the collapsed Setup details block as full LaTeX or code-fenced math. ✗ "the conditional rate `R_BgivenA^P2` rises ..." → ✓ "the rate at which the model emits A given B under panel P2 rises ...". Audit script flags these as `math_notation`.
-11. **Mistake-framing in the title** — "once X was corrected", "after fixing Y", "below the planned threshold", "but the rig also breaks Z so the null is uninterpretable", "after the merge bug was patched". The title states the post-correction finding. The methodology-correction story folds into the relevant `### <finding>` setup or read prose, which is also where the binding constraint that justifies the title's confidence level lives (confidence is the H1 title tag only; there is no body Confidence sentence). ✗ "X decouples Y from Z once three training/eval confounds in parent #N are jointly corrected (MODERATE confidence)" → ✓ "X decouples Y from Z on a 72-cell recipe sweep (MODERATE confidence)" — with the correction story inside the relevant `### <finding>`. ✗ "An in-context-trained trigger fails to surface hidden behaviors in three organisms, but the LoRA stack also breaks the in-context sanity check, so the null is uninterpretable (LOW confidence)" → ✓ "An in-context-trained trigger does not surface hidden behaviors in three Introspection-Adapter organisms (LOW confidence)" — with the broken-sanity-check finding documented inside the relevant `### <finding>` read prose as the binding constraint.
-12. **Processed-only figure without raw counterpart** — embedding a residualized / partialled / binned / log-transformed / aggregated figure without its raw sibling alongside, or quoting only the controlled point estimate in prose without the raw point estimate. The reader cannot tell whether the partial collapsed a real effect or just shrank noise, what direction the outliers go in, or whether the aggregation hid heterogeneity. Same anti-pattern at the artifact level: linking only to an aggregated JSON / summary CSV / per-condition pass-rate in `## Data` / `## Reproducibility` when the body's claim rests on per-cell data. ✗ "raw association does not survive controlling for prompt length (collapses to p=0.87, N=48)" + only the residualized scatter embedded → ✓ "raw association (Spearman ρ = +0.29, p = 0.048, N=48) does not survive controlling for prompt length (collapses to p=0.87, N=48)" + both raw and residualized scatters embedded under the same `### <finding>`. ✗ links only `correlation_results.json` (aggregated) → ✓ links both `correlation_results.json` AND `per_persona_distances.csv` (the per-row data the correlation consumed).
-13. **Figure-dump without setup/read framing** — embedding a figure inside a `### <finding>` without the setup-above AND the read-below. Setup (1-3 sentences/bullets) tells the reader what the figure is about to show and why we're looking; read (1-3 sentences/bullets) tells the reader what to take from it — surprises, where outliers go, whether the pattern is monotonic, what the figure CAN'T tell you. A `![alt](url)` line surrounded only by other figures or by tables is a chart pasted into a document, not a chart embedded in a finding. ✓ Each figure framed by a setup + a read; the figure earns its place. The cherry-picked label + qualitative-data link rule for sample blocks is the text-of-figures instance of the same pattern: never paste an artifact into the body without prose framing.
-14. **`### <finding>`-as-deliverable-label instead of finding-claim** — `### Headline result` / `### Subset checks` / `### Sample completions` / `### Plan deviations` / `### Methodology` / `### Methodology corrections` are outline labels, not finding claims. Each `### <finding>` heading should STATE the finding with its number. ✗ `### Subset checks` containing a table of length-tercile partials. ✓ `### A cohort disagreement on the primary` containing the same table, where the heading names the surprising pattern the reader is about to see. `### Methodology corrections` is banned — correction prose folds into the relevant `### <finding>` setup or read prose. **Note: `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` are the REQUIRED structural v3 H2s — they are NOT outline labels and are explicitly NOT on this banned list.**
+11. **Mistake-framing in the title** — "once X was corrected", "after fixing Y", "below the planned threshold", "but the rig also breaks Z so the null is uninterpretable", "after the merge bug was patched". The title states the post-correction finding. The methodology-correction story folds into the relevant `### <result>` what-is-plotted or interpretation prose, which is also where the binding constraint that justifies the title's confidence level lives (confidence is the H1 title tag only; there is no body Confidence sentence). ✗ "X decouples Y from Z once three training/eval confounds in parent #N are jointly corrected (MODERATE confidence)" → ✓ "X decouples Y from Z on a 72-cell recipe sweep (MODERATE confidence)" — with the correction story inside the relevant `### <result>`. ✗ "An in-context-trained trigger fails to surface hidden behaviors in three organisms, but the LoRA stack also breaks the in-context sanity check, so the null is uninterpretable (LOW confidence)" → ✓ "An in-context-trained trigger does not surface hidden behaviors in three Introspection-Adapter organisms (LOW confidence)" — with the broken-sanity-check finding documented inside the relevant `### <result>` interpretation prose as the binding constraint.
+12. **Aggregate statistic without its low-level data plot** — reporting an aggregate (a ρ as a forest-plot point, a mean / effect size as a bar, a p-value) without embedding the per-unit data view behind it (the scatter, the strip / swarm / jittered per-point view, the unbinned counterpart) inside the same `### <result>`. The reader sees the number but not the data it summarizes — they cannot tell whether outliers drive the ρ, whether the group means hide bimodal per-unit spread, or whether the bin collapsed heterogeneity. This is the broad parent; the processed-only-figure case below is its transformed-figure special case. ✗ a forest-plot of correlation points with no scatter embedded → ✓ each correlation point accompanied by its scatter under the same result (skip only with a stated exemption: the figure already IS the per-unit view, N is tiny, or the aggregate has no per-unit decomposition). **Processed-only figure without raw counterpart** (the special case): embedding a residualized / partialled / binned / log-transformed / aggregated figure without its raw sibling alongside, or quoting only the controlled point estimate in prose without the raw point estimate. The reader cannot tell whether the partial collapsed a real effect or just shrank noise, what direction the outliers go in, or whether the aggregation hid heterogeneity. Same anti-pattern at the artifact level: linking only to an aggregated JSON / summary CSV / per-condition pass-rate in `## Methodology` / the `**Repro:**` footer when the body's claim rests on per-cell data. ✗ "raw association does not survive controlling for prompt length (collapses to p=0.87, N=48)" + only the residualized scatter embedded → ✓ "raw association (Spearman ρ = +0.29, p = 0.048, N=48) does not survive controlling for prompt length (collapses to p=0.87, N=48)" + both raw and residualized scatters embedded under the same `### <result>`. ✗ links only `correlation_results.json` (aggregated) → ✓ links both `correlation_results.json` AND `per_persona_distances.csv` (the per-row data the correlation consumed).
+13. **Figure-dump without the three-beat framing** — embedding a figure inside a `### <result>` without the what-is-plotted-above AND the interpretation-below. What-is-plotted (1-3 sentences/bullets) tells the reader EXACTLY what the figure shows (axes, units, what each point/bar is, n, any transform); interpretation (1-3 sentences/bullets) tells the reader what to take from it — surprises, where outliers go, whether the pattern is monotonic, what the figure CAN'T tell you. A `![alt](url)` line surrounded only by other figures or by tables is a chart pasted into a document, not a chart embedded in a result. ✓ Each figure framed by a what-is-plotted beat + an interpretation beat; the figure earns its place. The cherry-picked label + qualitative-data link rule for sample blocks is the text-of-figures instance of the same pattern: never paste an artifact into the body without prose framing.
+14. **`### <result>`-as-deliverable-label instead of result-claim** — `### Headline result` / `### Subset checks` / `### Sample completions` / `### Plan deviations` / `### Methodology` / `### Methodology corrections` are outline labels, not result claims. Each `### <result>` heading should STATE the result with its number. ✗ `### Subset checks` containing a table of length-tercile partials. ✓ `### A cohort disagreement on the primary` containing the same table, where the heading names the surprising pattern the reader is about to see. `### Methodology corrections` is banned — correction prose folds into the relevant `### <result>` what-is-plotted or interpretation prose. **Note: `## Takeaways` / `## Goal` / `## Methodology` / `## Results` are the REQUIRED structural v4 H2s — they are NOT outline labels and are explicitly NOT on this banned list.**
 15. **`byte identical` / `byte-identical` anywhere in the body** — banned 2026-W22 (task #454). The phrase reads as AI-slop in research writing. Use plain English: "the two files matched exactly", "every byte agreed", "no diff between the runs". Flagged by `audit_clean_results_body_discipline.py`.
 
-**Title leads with the finding, not the methodology story.** Even when the experiment had a broken rig, mid-run bug, or threshold that turned out to be wrong, the title states the post-correction finding. The relevant `### <finding>` read prose (and/or a `## Takeaways` bullet) is the right place to name BOTH the binding constraint that limits interpretation AND the correction itself (confidence lives in the H1 title tag only; there is no body Confidence sentence to carry the constraint). The title is the mentor's first read — bury the correction story, lead with what the experiment learned. Test: read the title in isolation. If a domain-peer mentor would ask "what did this experiment FIND?" after reading it, rewrite. If they would ask "what was the correction story?", you've buried the finding behind the methodology — rewrite.
+**Title leads with the finding, not the methodology story.** Even when the experiment had a broken rig, mid-run bug, or threshold that turned out to be wrong, the title states the post-correction finding. The relevant `### <result>` interpretation prose (and/or a `## Takeaways` bullet) is the right place to name BOTH the binding constraint that limits interpretation AND the correction itself (confidence lives in the H1 title tag only; there is no body Confidence sentence to carry the constraint). The title is the mentor's first read — bury the correction story, lead with what the experiment learned. Test: read the title in isolation. If a domain-peer mentor would ask "what did this experiment FIND?" after reading it, rewrite. If they would ask "what was the correction story?", you've buried the finding behind the methodology — rewrite.
 
 **Title sentence = the headline `## Takeaways` bullet's claim** (minus the confidence suffix, which is the H1 tag). See `.claude/skills/clean-results/SPEC.md` § Title format for the full rules.
 
-**Verify entity directionality from the body before writing the title.** Read the body's `## What I ran` + first `### <finding>`. Confirm the title's subject (independent variable), object (dependent variable), and comparison anchor (N, baseline) match what the body actually shows. Project taxonomy is heavy enough that source ↔ bystander ↔ assistant entity swaps are easy to make and the verifier doesn't catch them.
+**Verify entity directionality from the body before writing the title.** Read the body's `## Goal` + `## Methodology` + first `### <result>`. Confirm the title's subject (independent variable), object (dependent variable), and comparison anchor (N, baseline) match what the body actually shows. Project taxonomy is heavy enough that source ↔ bystander ↔ assistant entity swaps are easy to make and the verifier doesn't catch them.
 
 ---
 
 ## Path discipline (canonical tasks/ resolver)
 
 Never form `tasks/...` paths relative to cwd or `__file__`. From a worktree, that path is stale — the worktree branch lags `main` and any commits land on the worktree branch instead of `main`. Use `scripts/task.py find <N>` for a task folder, `scripts/task.py tasks-dir` for the root, and `from explore_persona_space.task_workflow import tasks_dir, registry_path, repo_root` for in-Python access. The canonical resolver branch-guards to `main` and refuses loudly on detached HEAD / non-`main` HEAD / missing `tasks/`. Enforced by `tests/test_no_direct_task_path_construction.py`.
+
+---
+
+# PAPER-TASK MODE (author the LaTeX paper) — `paper: true`
+
+When the task carries `paper: true` frontmatter, the canonical
+clean-result is a self-contained LaTeX **research paper** under
+`docs/papers/issue_<N>/`, and `body.md` is a thin **paper-stub**. You
+author the paper; `body.md` Step 6 is replaced by the paper-stub write.
+Read the spec FIRST: `.claude/skills/clean-results/SPEC.md` §
+"Paper format (`paper: true`)" (the v1 scope, the Paper-sections mapping,
+Rule A, the `body.md` paper-stub contract, the JSON schemas) — the SPEC is
+the authoritative shape reference. The fixed shared template is
+`docs/papers/_template/issue_TEMPLATE.tex` + `preamble.tex` (you NEVER edit
+the preamble — you copy it into the per-task dir so `\input{preamble.tex}`
+resolves); the template's commented `{{...}}` placeholder blocks document
+the exact slots to fill. A worked spike paper
+(`docs/papers/_spike/issue_657_spike.tex`) is NOT committed in v1 — it
+exists only when a spike worktree was used — so do NOT treat it as a "read
+this first" dependency; if it is present on disk it is a useful shape
+reference, but note it is a SHORTENED demo using `\metric{}` (the v1.1
+opt-in — in **v1** you write numbers as LITERALS and do NOT use `\metric{}`).
+
+## The analysis is UNCHANGED — only the write-up form differs
+
+Run **Steps 1 → 3.6 EXACTLY as in markdown mode** — they are the analysis,
+not the write-up. The v4 honesty-protocol steps that SURVIVE and now author
+INTO the paper instead of a markdown body:
+
+- **Step 1 measurement-validity gate** (dynamic-range / floor-ceiling,
+  proxy-vs-construct, **dual-DV** for content-behavior leakage/implants) —
+  unchanged. The construct-accurate framing + the saturation tell now go
+  into the paper's Methods (the DV definition) and Results/Discussion
+  (interpretation), not a markdown `### <result>`.
+- **Step 1.5 raw-output spot check** (5 random rows) + **Step 3.6
+  per-condition sample selection** (≥3 firing / ≥3 non-firing) — unchanged;
+  the systematic samples land in the paper's **Appendix** (authored by
+  `methodology-writer`), and at most one short excerpt may appear in a
+  Results subsection where the text IS the result.
+- **Content firewall** (never page raw harmful-completion files; checkpoint
+  the fact-sheet every ~15-20 tool calls) — unchanged.
+- **Step 2 statistics** (p-value, N, no effect sizes in prose) +
+  **Step 3 / 3-bis plots** (`set_paper_style` — use `"neurips"` for the
+  paper figures, not `"blog"`; the low-level data plot behind every
+  aggregate; the raw-counterpart for every processed figure; the per-point
+  `.meta.json` data sidecar) + **Step 3.5 plot-verification** — unchanged.
+  Figures save under `figures/issue_<N>/` and are committed + SHA-pinned as
+  in markdown mode; the paper references them via `\includegraphics` (the
+  build sets `\graphicspath` to `figures/issue_<N>/`).
+- **Numeric-fidelity re-extraction** (Step 3.6's HARD rule: every number
+  re-extracted from the source eval JSON in the same turn you write it) —
+  unchanged, and it is the **number-correctness guarantee in v1** (there is
+  NO `\metric` grounding in v1, so this re-extraction IS the gate; write
+  numbers as literals in the `.tex`, each copied from ground truth).
+- **Step 4.5 humanize-loop** — run it on the paper's reader-facing prose
+  (Abstract / Introduction / Results interpretation / Discussion), in
+  **academic mode** (`/humanize academic` — em-dash zero-tolerance, copula
+  avoidance, classical academic terms), not blog/quick mode.
+- **Step 6.5 follow-up tagging** + **Step 7 cross-link recap** + **Step 8
+  tracking-file update** — unchanged (the `epm:analysis` marker, the
+  `free_analysis_unrun:` field, the INDEX.md line all still apply).
+
+## Step 4 (paper) — author the paper from the template
+
+Author these sections (SPEC § Paper sections — required, in order, enforced
+by `verify_paper.py`); assemble them with the **`methodology-writer`'s
+Methods + Appendix** (the orchestrator spawns it in parallel — DO NOT write
+the Methods or Appendix yourself; splice in what it returns):
+
+1. **Abstract** — SELF-STANDING: a reader who has never seen another EPS
+   experiment learns what was tested, on what model, and what was found.
+   One or two sentences of project context. Maps to the v4 `## Takeaways`
+   substance (numbers-first), in prose. **NO confidence words.**
+2. **Introduction** — SELF-STANDING (readable without any other experiment
+   open): project context, the question THIS experiment answers, the single
+   variable it changes relative to its line. Maps to the v4 `## Goal`
+   (`**This experiment in context:**` + `**Broader narrative:**`). Cite
+   prior experiments with `\epsref{N}`, never a load-bearing dependency the
+   reader must follow.
+3. **Methods** — authored by `methodology-writer`, spliced in. (Do not
+   write it; if the methodology-writer output has not arrived, request it
+   via the orchestrator rather than authoring it yourself — the
+   findings-blind firewall is the whole point.)
+4. **Results** — one `\subsection` per finding, each in the **v4 three-beat**:
+   state what is plotted (EXACTLY: axes, units, what each point/bar is, n,
+   transform) → show the figure (`\includegraphics` from
+   `figures/issue_<N>/`) → read the result. Numbers are **literals**,
+   grounded by the numeric-fidelity re-extraction. Report the metric, its
+   CI / n, and the test. The low-level-data-plot-behind-every-aggregate +
+   raw-alongside-processed rules apply (embed both figures in the same
+   subsection). **NO confidence words.** **Inline a verbatim `model-output`
+   worked example for the load-bearing condition(s)** — the eval INPUT → the
+   model's ACTUAL OUTPUT (verbatim) → the judge VERDICT/score, in an
+   `\epsexample{...}` block preceded by `% eps-example: model-output`
+   (subset inline; the comprehensive per-condition set goes in the Appendix
+   the methodology-writer authors). `verify_paper.py` check 7 FAILs a paper
+   missing the `model-output` example class; sanitize harmful/EM rows per
+   § content firewall (labeled excerpt + pinned raw path).
+5. **Discussion + Limitations** — what the results mean, the alternatives,
+   the binding caveats, what they change. Fold Limitations in here. **NO
+   confidence words.** (A methodology correction folds into the relevant
+   Results subsection's interpretation, not a discrete heading.)
+6. **References** — from the per-task `issue_<N>.bib` (a copy of / subset of
+   the project `.bib`), cited with natbib. Build the `.bib` with the
+   `citation-management` skill.
+7. **Appendix** — authored by `methodology-writer`, spliced in (the COMPLETE
+   hyperparameter table + comprehensive worked examples — verbatim
+   `training-data` / `eval-data` / `model-output` blocks — the full
+   training-data recipe + full Rule-A reuse recipes, AND the mandatory
+   **`\subsection{Judge prompts}`** carrying the verbatim prompt + rubric TEXT
+   for every LLM judge in the study). The template ships the
+   `% eps-judge-prompts` anchor + the `{{JUDGE_PROMPTS}}` placeholder for it;
+   `verify_paper.py` check 8 FAILs a judge-using paper with no Judge-prompts
+   section.
+
+**Mechanics:**
+- Copy `docs/papers/_template/issue_TEMPLATE.tex` →
+  `docs/papers/issue_<N>/issue_<N>.tex` and `preamble.tex` into the same
+  dir (the build runs in-place; it does NOT rewrite the `\input` path). Fill
+  the `{{...}}` placeholders (TITLE, ISSUE, RUN_DATE, MODEL, GRAPHICSPATH,
+  ABSTRACT, INTRODUCTION, METHODS, RESULTS, DISCUSSION, APPENDIX,
+  JUDGE_PROMPTS — the last carries the verbatim judge prompts/rubrics; the
+  methodology-writer supplies its content with the Appendix).
+- **Show the data, not just the method (`verify_paper.py` checks 7-9; 7 examples
+  present, 8 judge prompts, 9 example-provenance pointers).** The
+  paper MUST carry verbatim text: real TRAINING rows
+  (`% eps-example: training-data`), real EVAL probes
+  (`% eps-example: eval-data`), real MODEL OUTPUTS with judge verdicts
+  (`% eps-example: model-output`) — each in an `\epsexample{...}` block with a
+  subset-disclosure + pinned-artifact caption — and the verbatim JUDGE PROMPTS
+  for every judge. The methodology-writer authors the Methods/Appendix example
+  blocks + the Judge-prompts subsection; you author the Results `model-output`
+  worked example (item 4). Pull every block from a REAL artifact — never
+  fabricate.
+- **NO confidence anywhere in the `.tex` body** — the
+  `(LOW|MODERATE|HIGH confidence)` tag and bare `Confidence:` lines are a
+  hard `verify_paper.py` FAIL. Confidence lives ONLY in the `body.md`
+  paper-stub frontmatter (so the title-tag / dashboard machinery keeps
+  reading it). This replaces the markdown rule "confidence in the H1 title
+  tag" — for a paper-task the confidence is in the STUB frontmatter, and the
+  paper body has none.
+- **`\epsref{N}` for every cross-experiment reference** (v1 feature) — never
+  a bare "#N". Emit `refs.json` (SPEC § JSON schemas — top level
+  `{ "schema": "refs/v1", "epsrefs": [ … ] }`, where the `epsrefs` array
+  is the `\epsref` target index — one `{ "issue": N, "context": "<one line>" }`
+  per `\epsref` you + the methodology-writer cited) alongside the paper.
+  Emit the **figures manifest** the build expects (every figure the paper
+  `\includegraphics`, committed under `figures/issue_<N>/` and SHA-pinned).
+  Collect the `\epsref` targets the methodology-writer reports in its return
+  so `refs.json` is complete.
+
+## Step 5 (paper) — build + verify
+
+Build on the VM (the single pinned-TeX-Live host), then verify. Both run
+from repo root with absolute `$REPO_ROOT/scripts/...` paths:
+
+```bash
+# build: multi-pass pdflatex + bibtex -> reproducible PDF -> HF PDF upload ->
+# sanitized paper.html -> paper_manifest.json
+uv run python "$REPO_ROOT"/scripts/build_paper.py --issue <N>
+# (--no-upload for a local-only build during iteration; pdf_hf_url is then a
+#  WARN, not a FAIL)
+
+# verify: compile-clean log parse, required sections + order, no confidence
+# in body, \includegraphics confined + resolve, .bib entries resolve,
+# \epsref{N} resolves to a real task, manifest complete + hashes match,
+# paper-stub valid
+uv run python "$REPO_ROOT"/scripts/verify_paper.py --issue <N>
+```
+
+`verify_paper.py` is the gate for paper-tasks (the paper-format counterpart
+of `verify_task_body.py`, which stays the verifier for markdown bodies). A
+LONG `pdflatex` / `bibtex` / pandoc run can take minutes — use the Step 2
+sentinel + bg-`until` polling pattern if it backgrounds.
+
+## Step 6 (paper) — write the `body.md` paper-stub ONLY after verify PASS
+
+**The paper-stub is written ONLY after `verify_paper.py` PASSes.** This is
+the terminal write that replaces markdown Step 6's body promotion:
+
+- **On `verify_paper.py` PASS:** snapshot the existing body
+  (`task.py set-body <N> --file <stub> --snapshot` — preserves the original
+  ask), then `set-title` + `set-clean-result`. The stub carries:
+  `paper: true` frontmatter + the fields the existing machinery reads
+  (`title`, `kind`, `goal`, `has_clean_result`, the **confidence** as the
+  title's `(LOW|MODERATE|HIGH confidence)` tag — confidence lives HERE, never
+  in the paper body — and origin/lineage); a body of the H1 title + the
+  abstract (so the dashboard hover-card + REGISTRY title/abstract
+  denormalization work) + a paper link (the `docs/papers/issue_<N>/`
+  artifacts and/or the pinned HF PDF URL from `paper_manifest.json`).
+  `verify_paper.py`'s paper-stub check enforces `paper: true` + an H1 + an
+  abstract + a paper link — run it on the stub before `set-body`.
+- **On `verify_paper.py` FAIL:** do NOT write a stub over the body, do NOT
+  flip `has_clean_result=true`. Leave the `.tex` + the build `.log` /`.blg`
+  in `docs/papers/issue_<N>/` for iteration and park the task at
+  `reviewing` (or `blocked` with `epm:failure v1 failure_class: code` +
+  the FAIL reason if you cannot resolve it autonomously). NEVER leave a
+  stub-only dead state (a stub written over a paper that does not compile /
+  verify) — the same failure class as markdown mode's #385 placeholder-body
+  incident. Re-run build + verify after fixing, then write the stub on PASS.
+
+Confidence tag discipline: the title's `(LOW|MODERATE|HIGH confidence)`
+suffix lives in the STUB title + frontmatter ONLY. The paper `.tex` carries
+NO confidence — same honesty bar, different surface.
+
+## Same-issue follow-up rounds (paper-task)
+
+When the task carries an `epm:followup-scope v1` marker and you are
+re-spawned after a same-issue follow-up run, the clean-result is ALREADY a
+paper. **Re-author the `.tex` IN PLACE** (do NOT create a second paper, do
+NOT migrate to markdown):
+
+1. Fold the new round's result(s) into the existing Results section (new
+   `\subsection`s, or rewrite an invalidated subsection).
+2. **Rewrite the Abstract to the current cross-round synthesis** — same
+   mandatory rolling-synthesis rule as markdown `## Takeaways` (an Abstract
+   describing only round 1 after round 2 landed is wrong). Retitle the paper
+   + the stub title (claim + confidence tag) if the headline moved.
+3. **Add a changelog appendix** (`\subsection{Changelog}` /
+   `\paragraph{Round <label>.}` inside the Appendix) preserving the
+   superseded-round notes — this is the paper-task form of the v4 audit
+   trail (superseded-result collapse + the round notes). Keep the prior
+   rounds' superseded findings recoverable, not deleted.
+4. Re-spawn `methodology-writer` in EXTEND mode for the new arm's Methods +
+   Appendix recipe; splice its additions in.
+5. Re-run `build_paper.py` + `verify_paper.py`; write the stub (without
+   `--snapshot` — the original is already preserved) only on PASS.
+
+## After submission (paper-task)
+
+The `clean-result-critic` (+ Codex twin) reviews the paper as the
+clean-result. On PASS the `/issue` skill parks at `awaiting_promotion`
+(user-only promotion — never run `task.py promote` yourself). On a non-PASS
+verdict, revise the `.tex` in place, re-build + re-verify, and re-write the
+stub. The markdown-mode rule "no `epm:interpretation` before upload PASS"
+(HOLD-marker mode) applies identically — your analysis interpretation is
+held until upload-verification PASS regardless of write-up form.

@@ -76,6 +76,7 @@ Dry-run CLI (zero API calls; OTPM from ``EPM_JUDGE_OTPM`` or 400k assumed)::
 
 import argparse
 import asyncio
+import datetime as _dt
 import hashlib
 import json
 import logging
@@ -88,6 +89,10 @@ from typing import TYPE_CHECKING
 
 from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval.utils import parse_judge_json
+from explore_persona_space.llm.anthropic_client import (
+    BatchDeadlineExceeded,
+    deadline_from_expires_at,
+)
 
 if TYPE_CHECKING:
     import anthropic
@@ -99,10 +104,33 @@ JudgeItem = tuple[str, str, str, str]  # (custom_id, question, completion, user_
 
 # Routing constants (user-decided, plan §11; configurable per call).
 DEFAULT_THRESHOLD_BASE = 2_000
-DEFAULT_SUB_BATCH_SIZE = 10_000
+# Judge sub-batches default to the JUDGE shard ceiling (2_000), NOT the general
+# 8_000 batch cap. An 8k judge batch STARVES — the API schedules a large judge
+# set behind everyone else's traffic (the #658 G1 wedge: one 8k judge shard sat
+# at succeeded:0 for ~9h), while ~500-2k judge shards clear in minutes. EVERY
+# caller through this router (judge_completions_batch / dispatch_judge_items —
+# e.g. #664's issue664_dispatch.py) inherits this; only explicit non-judge batch
+# callers keep batch_judge.MAX_REQUESTS_PER_BATCH (8k). Bound to the ceiling
+# constant (single source of truth) so the default can never drift back to 8k.
+# 2_000 == batch_judge.MAX_JUDGE_REQUESTS_PER_BATCH (kept a literal here to avoid
+# a top-level batch_judge import — that closes a judge_dispatch -> batch_judge ->
+# alignment -> judge_dispatch cycle; batch_judge is imported lazily elsewhere).
+# test_judge_dispatch.test_judge_router_default_is_the_judge_ceiling locks the two
+# equal so the default can never drift back to 8k.
+DEFAULT_SUB_BATCH_SIZE = 2_000  # judge shard ceiling (#658); see note above
 OTPM_DIVISOR = 400_000  # Tier-4 Sonnet 4.x output-tokens-per-minute
 DEFAULT_MAX_CONCURRENT = 50
 DEFAULT_MAX_TOKENS = 256
+# At most this many sub-batches submitted/in-flight concurrently. Phase-3
+# guidelines (docs/api_throughput_guidelines.md §3) tightened this 8 -> 4 to
+# match the multi-org dispatcher and leave headroom on the SHARED org keys:
+# with sub_batch_size=2_000 and 4 in-flight, max in-flight is 8k (~1.6% of the
+# Tier-4 floor queue cap 500k), still ample under any queue cap while reducing
+# the create-burst footprint on a shared bucket. The bound is etiquette, not
+# the binding constraint.
+MAX_CONCURRENT_SUB_BATCHES = 4
+# Poll-deadline grace past each batch's expires_at before raising (#663 §11).
+BATCH_DEADLINE_GRACE_MIN = 30
 # Sonnet 4.5 minimum cacheable prefix (tokens); below it cache_control is a
 # silent no-op (docs verified 2026-06-12).
 CACHE_MIN_TOKENS = 1024
@@ -373,16 +401,33 @@ def _collect_batch_results(
     client: "anthropic.Anthropic",
     batch_id: str,
     error_dict_factory: Callable[[str], dict],
-) -> tuple[dict[str, dict], list[str], list[str]]:
+) -> tuple[dict[str, dict], list[str], list[str], list[str]]:
     """Stream one ended batch's results; join on custom_id (order is not guaranteed).
 
-    Returns (scores, errored_custom_ids, expired_custom_ids). errored/expired
-    get error dicts in `scores` too (overwritten if a retry later succeeds);
-    canceled surfaces as an error dict with no retry (user-initiated).
+    Returns (scores, retriable_ids, expired_ids, quarantined_ids). Two-level
+    branch per the Anthropic doc example:
+
+      succeeded                                 -> parse + keep
+      errored, error.error.type == invalid_request_error
+                                                -> QUARANTINE (never retried;
+                                                   a malformed request fails
+                                                   identically on resubmit)
+      errored, other (server error)             -> retriable
+      expired                                   -> retriable (never reached the
+                                                   model; safe to resubmit)
+      canceled / unknown                        -> error dict, no retry
+                                                   (user-initiated terminal)
+
+    errored/expired/quarantined all get error dicts in ``scores`` too
+    (overwritten if a retry later succeeds). The SDK error nesting is
+    ``result.result.error.error.type`` (double ``.error``); access is
+    getattr-guarded so a shape mismatch fails OPEN (routed to retriable, the
+    conservative default that never silently quarantines).
     """
     scores: dict[str, dict] = {}
-    errored: list[str] = []
+    retriable: list[str] = []
     expired: list[str] = []
+    quarantined: list[str] = []
     for result in client.messages.batches.results(batch_id):
         cid = result.custom_id
         rtype = result.result.type
@@ -394,14 +439,21 @@ def _collect_batch_results(
             parsed = parse_judge_json(text, None)
             scores[cid] = parsed if parsed is not None else error_dict_factory("parse_error")
         elif rtype == "errored":
-            errored.append(cid)
-            scores[cid] = error_dict_factory("batch_error: errored")
+            etype = getattr(
+                getattr(getattr(result.result, "error", None), "error", None), "type", None
+            )
+            if etype == "invalid_request_error":
+                quarantined.append(cid)
+                scores[cid] = error_dict_factory("batch_error: invalid_request_error (quarantined)")
+            else:
+                retriable.append(cid)
+                scores[cid] = error_dict_factory(f"batch_error: errored ({etype or 'server'})")
         elif rtype == "expired":
             expired.append(cid)
             scores[cid] = error_dict_factory("batch_error: expired")
         else:  # canceled (or unknown): surface, never retry
             scores[cid] = error_dict_factory(f"batch_error: {rtype}")
-    return scores, errored, expired
+    return scores, retriable, expired, quarantined
 
 
 # ── Sync path ────────────────────────────────────────────────────────────────
@@ -457,7 +509,288 @@ async def _judge_items_sync(
     return results
 
 
+# ── Sync path (Phase 5 multi-org) ────────────────────────────────────────────
+
+
+async def _judge_items_sync_multiorg(
+    items: list[JudgeItem],
+    *,
+    judge_model: str,
+    judge_system_prompt: str,
+    max_tokens: int,
+    error_dict_factory: Callable[[str], dict],
+    on_item_result: Callable[[str, dict], None] | None = None,
+) -> dict[str, dict]:
+    """Route the sync judge path through the multi-org api_dispatch (#682 Phase 5).
+
+    Adapts the JudgeItem 4-tuple contract onto the api_dispatch.DispatchItem +
+    build_request / parse_response shape. Routes fan-out across the 3 separate
+    org keys at the polite per-key concurrency caps (Sonnet 100, see
+    docs/api_throughput_guidelines.md), with AIMD back-off on every 429 and
+    headroom-aware org selection from the live ``*-remaining`` headers.
+
+    Returns ``{custom_id: parsed_score_dict}`` with the SAME shape the legacy
+    single-org sync path returns — a parse failure or terminal error becomes
+    an ``error_dict_factory(reason)`` entry, never a missing key.
+    """
+    from explore_persona_space.llm import api_dispatch
+
+    dispatch_items = [
+        api_dispatch.DispatchItem(item_id=cid, payload={"user_msg": user_msg})
+        for cid, _q, _c, user_msg in items
+    ]
+
+    def _build_request(item: api_dispatch.DispatchItem) -> dict:
+        return _build_params(
+            judge_model,
+            judge_system_prompt,
+            item.payload["user_msg"],
+            max_tokens,
+            ttl="5m",
+        )
+
+    def _parse_response(text: str) -> dict:
+        parsed = parse_judge_json(text, None)
+        return parsed if parsed is not None else error_dict_factory("parse_error")
+
+    raw_results = await api_dispatch.dispatch_calls(
+        dispatch_items,
+        model=judge_model,
+        build_request=_build_request,
+        parse_response=_parse_response,
+        cost_pref="latency",  # judge dispatches care about wall-clock
+        force_path="sync",  # router only enters this helper after deciding sync
+    )
+
+    out: dict[str, dict] = {}
+    for cid, _q, _c, _u in items:
+        res = raw_results.get(cid)
+        if res is None:
+            score = error_dict_factory("missing_dispatch_result")
+        elif res.error:
+            score = error_dict_factory(res.reason or "error")
+        else:
+            score = (
+                res.result if isinstance(res.result, dict) else error_dict_factory("parse_error")
+            )
+        out[cid] = score
+        if on_item_result is not None:
+            on_item_result(cid, score)
+    return out
+
+
 # ── Batch path ───────────────────────────────────────────────────────────────
+
+
+async def _submit_one_sub_batch(
+    sb: dict,
+    *,
+    state: dict,
+    state_path: Path,
+    items_map: dict[str, dict],
+    judge_model: str,
+    judge_system_prompt: str,
+    max_tokens: int,
+    client: "anthropic.Anthropic",
+    sem: asyncio.Semaphore,
+    n_sub_batches: int,
+) -> None:
+    """Submit ONE pending sub-batch under the concurrency semaphore.
+
+    Preserve-before-propagate atomicity (#663 §4b iv): the ``submitting`` intent
+    is persisted BEFORE ``batches.create``; the ``batch_id`` + ``deadline`` are
+    persisted in a ``finally``-shielded block so a ``CancelledError`` (e.g. an
+    external cancel of the whole gather) can NEVER interleave between
+    ``batches.create`` returning and ``batch_id`` being recorded — which would
+    orphan a paid batch AND leave ``status="submitting", batch_id=None``, the
+    exact non-resumable wedge the reconciliation guard exists to catch. The
+    caller fans these out via ``gather(return_exceptions=True)`` so a sibling's
+    create failure never cancels this task mid-flight (no stranded batch_id);
+    the first real exception is re-raised unwrapped post-gather.
+    """
+    async with sem:
+        if sb["status"] != "pending":
+            return
+        sb["status"] = "submitting"
+        _atomic_write_json(state_path, state)  # intent persisted BEFORE create
+        requests = [
+            {
+                "custom_id": cid,
+                "params": _build_params(
+                    judge_model,
+                    judge_system_prompt,
+                    items_map[cid]["user_msg"],
+                    max_tokens,
+                    ttl="1h",
+                ),
+            }
+            for cid in sb["custom_ids"]
+        ]
+        # On a create-side exception, leave status="submitting" + batch_id=None
+        # so the reconciliation guard fires on resume (recoverable). The create
+        # itself is OUTSIDE the finally-guarded persist below.
+        batch = await asyncio.to_thread(client.messages.batches.create, requests=requests)
+        try:
+            sb["batch_id"] = batch.id
+            sb["status"] = "submitted"
+            sb["submitted_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            expires_at = getattr(batch, "expires_at", None)
+            if expires_at is not None:
+                sb["deadline"] = deadline_from_expires_at(
+                    expires_at, BATCH_DEADLINE_GRACE_MIN
+                ).isoformat()
+        finally:
+            # Load-bearing: even on a CancelledError injected here, persist
+            # whatever state was updated so resume can reconcile (batch_id is
+            # now recorded -> resume polls it; or it wasn't -> the guard fires).
+            _atomic_write_json(state_path, state)
+        logger.info(
+            "Sub-batch %d/%d submitted as %s (%d requests)",
+            sb["index"] + 1,
+            n_sub_batches,
+            batch.id,
+            sb["n_requests"],
+        )
+
+
+@dataclass
+class _BatchCollector:
+    """Mutable accumulator threaded through the poll/collect helpers."""
+
+    scores: dict[str, dict] = field(default_factory=dict)
+    retry_candidates: list[str] = field(default_factory=list)
+    quarantined_ids: list[str] = field(default_factory=list)
+
+
+def _load_collected_into(acc: _BatchCollector, dispatch_dir: Path, sb: dict) -> None:
+    """Merge one collected sub-batch's persisted results into ``acc``."""
+    payload = json.loads((dispatch_dir / f"results_{sb['batch_id']}.json").read_text())
+    acc.scores.update(payload["scores"])
+    acc.retry_candidates.extend(payload["retriable_ids"])
+    acc.retry_candidates.extend(payload["expired_ids"])
+    acc.quarantined_ids.extend(payload.get("quarantined_ids", []))
+
+
+def _harvest_sub_batch(
+    acc: _BatchCollector,
+    *,
+    state: dict,
+    state_path: Path,
+    dispatch_dir: Path,
+    client: "anthropic.Anthropic",
+    error_dict_factory: Callable[[str], dict],
+    sb: dict,
+) -> None:
+    """Collect an ended sub-batch, persist its results json, mark it collected."""
+    sb_scores, retriable, expired, quarantined = _collect_batch_results(
+        client, sb["batch_id"], error_dict_factory
+    )
+    _atomic_write_json(
+        dispatch_dir / f"results_{sb['batch_id']}.json",
+        {
+            "scores": sb_scores,
+            "retriable_ids": retriable,
+            "expired_ids": expired,
+            "quarantined_ids": quarantined,
+        },
+    )
+    sb["status"] = "collected"
+    _atomic_write_json(state_path, state)
+    _load_collected_into(acc, dispatch_dir, sb)
+
+
+def _poll_one_sub_batch_step(
+    acc: _BatchCollector,
+    *,
+    state: dict,
+    state_path: Path,
+    dispatch_dir: Path,
+    client: "anthropic.Anthropic",
+    error_dict_factory: Callable[[str], dict],
+    now_fn: "Callable[[], _dt.datetime]",
+    sb: dict,
+) -> None:
+    """Poll one not-yet-collected sub-batch once; harvest on end, raise on overdue."""
+    batch = client.messages.batches.retrieve(sb["batch_id"])
+    counts = getattr(batch, "request_counts", None)
+    if counts is not None:
+        logger.info(
+            "Batch %s: processing=%s succeeded=%s errored=%s",
+            sb["batch_id"],
+            counts.processing,
+            counts.succeeded,
+            counts.errored,
+        )
+    harvest_kw = dict(
+        state=state,
+        state_path=state_path,
+        dispatch_dir=dispatch_dir,
+        client=client,
+        error_dict_factory=error_dict_factory,
+    )
+    if batch.processing_status == "ended":
+        _harvest_sub_batch(acc, sb=sb, **harvest_kw)
+        return
+    # Record the deadline off the first retrieve that exposes expires_at (a
+    # resumed sub-batch already has it persisted; never re-derive/extend it).
+    if sb.get("deadline") is None and getattr(batch, "expires_at", None) is not None:
+        sb["deadline"] = deadline_from_expires_at(
+            batch.expires_at, BATCH_DEADLINE_GRACE_MIN
+        ).isoformat()
+        _atomic_write_json(state_path, state)
+    if sb.get("deadline") and now_fn() > _dt.datetime.fromisoformat(sb["deadline"]):
+        # Overdue: ONE final fetch to harvest a now-ended batch, else raise.
+        final = client.messages.batches.retrieve(sb["batch_id"])
+        if final.processing_status == "ended":
+            _harvest_sub_batch(acc, sb=sb, **harvest_kw)
+            return
+        raise BatchDeadlineExceeded(sb["batch_id"], sb["deadline"])
+
+
+async def _poll_and_collect_sub_batches(
+    *,
+    state: dict,
+    state_path: Path,
+    dispatch_dir: Path,
+    client: "anthropic.Anthropic",
+    error_dict_factory: Callable[[str], dict],
+    poll_interval: float,
+    now_fn: "Callable[[], _dt.datetime]",
+) -> tuple[dict[str, dict], list[str], list[str]]:
+    """Deadline-bounded poll of every submitted sub-batch; harvest on end.
+
+    Returns (scores, retry_candidate_ids, quarantined_ids). Loads any already
+    ``collected`` sub-batch from its ``results_<batch_id>.json`` first, then
+    polls the rest with the ~60s backoff capped per sub-batch by its own
+    ``expires_at`` + grace (persisted as ``sb["deadline"]``). A sub-batch still
+    not ``ended`` at its deadline raises :class:`BatchDeadlineExceeded` after one
+    final harvest attempt.
+    """
+    acc = _BatchCollector()
+    step_kw = dict(
+        state=state,
+        state_path=state_path,
+        dispatch_dir=dispatch_dir,
+        client=client,
+        error_dict_factory=error_dict_factory,
+        now_fn=now_fn,
+    )
+    for sb in state["sub_batches"]:
+        if sb["status"] == "collected":
+            _load_collected_into(acc, dispatch_dir, sb)
+
+    current_interval = poll_interval
+    max_poll_interval = max(poll_interval, 120.0)
+    while any(sb["status"] != "collected" for sb in state["sub_batches"]):
+        for sb in state["sub_batches"]:
+            if sb["status"] != "collected":
+                _poll_one_sub_batch_step(acc, sb=sb, **step_kw)
+        if all(sb["status"] == "collected" for sb in state["sub_batches"]):
+            break
+        await asyncio.sleep(current_interval)
+        current_interval = min(current_interval * 1.5, max_poll_interval)
+
+    return acc.scores, acc.retry_candidates, acc.quarantined_ids
 
 
 async def _run_batch_path(
@@ -471,13 +804,20 @@ async def _run_batch_path(
     poll_interval: float,
     error_dict_factory: Callable[[str], dict],
     client: "anthropic.Anthropic",
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
 ) -> tuple[dict[str, dict], list[str], Path, dict]:
     """Submit/resume + poll + collect all sub-batches for one dispatch.
 
     Returns (scores, retry_candidate_custom_ids, dispatch_dir, state). All
     waits are ``await asyncio.sleep`` so an enclosing event loop is never
-    blocked for the batch's lifetime.
+    blocked for the batch's lifetime. The poll is bounded by each sub-batch's
+    own ``expires_at`` + grace (persisted as ``sb["deadline"]`` so a resumed
+    run does not re-derive and accidentally extend it); a batch still not
+    ``ended`` at its deadline raises :class:`BatchDeadlineExceeded` after one
+    final harvest attempt. ``now_fn`` is injectable for tests (default
+    wall-clock).
     """
+    now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
     fingerprint = _compute_fingerprint(items, judge_model, judge_system_prompt, max_tokens)
     dispatch_dir = Path(checkpoint_dir) / f"dispatch_{fingerprint}"
     items_map = {cid: {"question": q, "completion": c, "user_msg": u} for cid, q, c, u in items}
@@ -496,7 +836,9 @@ async def _run_batch_path(
     )
     state_path = dispatch_dir / "state.json"
 
-    # Phase 1: submission (intent record BEFORE create; batch_id right after).
+    # Phase 1: submission. Reconcile any crashed-mid-submit sub-batch FIRST
+    # (sequential, before any concurrent create), then fan out the still-pending
+    # ones under a concurrency bound with the preserve-before-propagate contract.
     for sb in state["sub_batches"]:
         if sb["status"] == "submitting":
             if sb["batch_id"] is None:
@@ -511,80 +853,58 @@ async def _run_batch_path(
             # batch_id recorded but status not advanced (crash between writes)
             sb["status"] = "submitted"
             _atomic_write_json(state_path, state)
-        if sb["status"] == "pending":
-            sb["status"] = "submitting"
-            _atomic_write_json(state_path, state)
-            requests = [
-                {
-                    "custom_id": cid,
-                    "params": _build_params(
-                        judge_model,
-                        judge_system_prompt,
-                        items_map[cid]["user_msg"],
-                        max_tokens,
-                        ttl="1h",
-                    ),
-                }
-                for cid in sb["custom_ids"]
-            ]
-            batch = client.messages.batches.create(requests=requests)
-            sb["batch_id"] = batch.id
-            sb["status"] = "submitted"
-            sb["submitted_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            _atomic_write_json(state_path, state)
-            logger.info(
-                "Sub-batch %d/%d submitted as %s (%d requests)",
-                sb["index"] + 1,
-                len(state["sub_batches"]),
-                batch.id,
-                sb["n_requests"],
-            )
 
-    # Phase 2: round-robin polling; harvest each sub-batch the moment it ends.
-    scores: dict[str, dict] = {}
-    retry_candidates: list[str] = []
-
-    def _load_collected(sb: dict) -> None:
-        payload = json.loads((dispatch_dir / f"results_{sb['batch_id']}.json").read_text())
-        scores.update(payload["scores"])
-        retry_candidates.extend(payload["errored_ids"])
-        retry_candidates.extend(payload["expired_ids"])
-
-    for sb in state["sub_batches"]:
-        if sb["status"] == "collected":
-            _load_collected(sb)
-
-    current_interval = poll_interval
-    max_poll_interval = max(poll_interval, 120.0)
-    while any(sb["status"] != "collected" for sb in state["sub_batches"]):
-        for sb in state["sub_batches"]:
-            if sb["status"] == "collected":
-                continue
-            batch = client.messages.batches.retrieve(sb["batch_id"])
-            counts = getattr(batch, "request_counts", None)
-            if counts is not None:
-                logger.info(
-                    "Batch %s: processing=%s succeeded=%s errored=%s",
-                    sb["batch_id"],
-                    counts.processing,
-                    counts.succeeded,
-                    counts.errored,
+    pending_to_submit = [sb for sb in state["sub_batches"] if sb["status"] == "pending"]
+    if pending_to_submit:
+        sem = asyncio.Semaphore(MAX_CONCURRENT_SUB_BATCHES)
+        n_sub_batches = len(state["sub_batches"])
+        # gather(return_exceptions=True) + post-gather reconcile (#663 §4b iv):
+        # every task runs to completion (no sibling is cancelled mid-flight, so
+        # none can be stranded between create-returned and batch_id-persisted by
+        # the finally guard), then we re-raise the first real exception
+        # UNWRAPPED — preserving the original exception type/message that callers
+        # and the existing reconciliation tests match on (a TaskGroup would wrap
+        # it in an ExceptionGroup, breaking that contract).
+        results = await asyncio.gather(
+            *(
+                _submit_one_sub_batch(
+                    sb,
+                    state=state,
+                    state_path=state_path,
+                    items_map=items_map,
+                    judge_model=judge_model,
+                    judge_system_prompt=judge_system_prompt,
+                    max_tokens=max_tokens,
+                    client=client,
+                    sem=sem,
+                    n_sub_batches=n_sub_batches,
                 )
-            if batch.processing_status == "ended":
-                sb_scores, errored, expired = _collect_batch_results(
-                    client, sb["batch_id"], error_dict_factory
-                )
-                _atomic_write_json(
-                    dispatch_dir / f"results_{sb['batch_id']}.json",
-                    {"scores": sb_scores, "errored_ids": errored, "expired_ids": expired},
-                )
-                sb["status"] = "collected"
-                _atomic_write_json(state_path, state)
-                _load_collected(sb)
-        if all(sb["status"] == "collected" for sb in state["sub_batches"]):
-            break
-        await asyncio.sleep(current_interval)
-        current_interval = min(current_interval * 1.5, max_poll_interval)
+                for sb in pending_to_submit
+            ),
+            return_exceptions=True,
+        )
+        for r in results:
+            if isinstance(r, BaseException):
+                raise r
+
+    # Phase 2: deadline-bounded polling; harvest each sub-batch the moment it ends.
+    scores, retry_candidates, quarantined_ids = await _poll_and_collect_sub_batches(
+        state=state,
+        state_path=state_path,
+        dispatch_dir=dispatch_dir,
+        client=client,
+        error_dict_factory=error_dict_factory,
+        poll_interval=poll_interval,
+        now_fn=now_fn,
+    )
+
+    if quarantined_ids:
+        _atomic_write_json(dispatch_dir / "quarantine.json", sorted(set(quarantined_ids)))
+        logger.warning(
+            "%d request(s) quarantined (invalid_request_error, NOT retried); see %s",
+            len(set(quarantined_ids)),
+            dispatch_dir / "quarantine.json",
+        )
 
     return scores, retry_candidates, dispatch_dir, state
 
@@ -606,6 +926,7 @@ async def _run_or_resume_retry(
     error_dict_factory: Callable[[str], dict],
     sync_client: "anthropic.AsyncAnthropic | None",
     batch_client: "anthropic.Anthropic",
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
 ) -> dict[str, dict]:
     """Run (or crash-resume) the single errored/expired retry; returns its merged results.
 
@@ -704,6 +1025,7 @@ async def _run_or_resume_retry(
                 sync_client=sync_client,
                 batch_client=batch_client,
                 on_item_result=_persist_retry_item,
+                now_fn=now_fn,
                 _is_retry=True,
             )
         retry_results = {**partial, **new_results}
@@ -721,7 +1043,7 @@ async def _run_or_resume_retry(
 # ── Core dispatch ────────────────────────────────────────────────────────────
 
 
-async def dispatch_judge_items_async(
+async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing branch; refactor pending
     items: list[JudgeItem],
     *,
     judge_model: str = DEFAULT_JUDGE_MODEL,
@@ -739,6 +1061,7 @@ async def dispatch_judge_items_async(
     sync_client: "anthropic.AsyncAnthropic | None" = None,
     batch_client: "anthropic.Anthropic | None" = None,
     on_item_result: Callable[[str, dict], None] | None = None,
+    now_fn: "Callable[[], _dt.datetime] | None" = None,
     _is_retry: bool = False,
 ) -> dict[str, dict]:
     """ASYNC CORE: route + execute one judge dispatch; returns {custom_id: score_dict}.
@@ -825,7 +1148,26 @@ async def dispatch_judge_items_async(
         )
 
     # Step 3: sync path.
+    # Phase 5 (task #682): when 2+ org keys are present AND no caller-injected
+    # sync_client pins us to the legacy single-org path, ROUTE through the
+    # multi-org dispatcher (api_dispatch.dispatch_calls). This gives every
+    # judge caller the ~3x sync fan-out across the 3 org keys for free, while
+    # the legacy single-org path remains the fallback for tests + single-key
+    # environments. Opt out via EPS_JUDGE_DISABLE_MULTIORG=1.
     if decision.path == "sync":
+        if sync_client is None and not os.environ.get("EPS_JUDGE_DISABLE_MULTIORG"):
+            from explore_persona_space.llm.api_dispatch import detect_org_keys
+
+            org_keys = detect_org_keys()
+            if len(org_keys) >= 2:
+                return await _judge_items_sync_multiorg(
+                    items,
+                    judge_model=judge_model,
+                    judge_system_prompt=judge_system_prompt,
+                    max_tokens=max_tokens,
+                    error_dict_factory=error_dict_factory,
+                    on_item_result=on_item_result,
+                )
         client = sync_client or anthropic_mod.AsyncAnthropic(
             api_key=os.environ.get("ANTHROPIC_API_KEY"), max_retries=5
         )
@@ -860,6 +1202,7 @@ async def dispatch_judge_items_async(
         poll_interval=poll_interval,
         error_dict_factory=error_dict_factory,
         client=client_b,
+        now_fn=now_fn,
     )
     state_path = dispatch_dir / "state.json"
 
@@ -886,6 +1229,7 @@ async def dispatch_judge_items_async(
             error_dict_factory=error_dict_factory,
             sync_client=sync_client,
             batch_client=client_b,
+            now_fn=now_fn,
         )
         scores.update(retry_results)
     elif retry_candidates and _is_retry:

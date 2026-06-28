@@ -253,6 +253,24 @@ class RunPodBackend(ComputeBackend):
         # * ``runpod_attempt_id`` — plain field so the orchestrator /
         #   experimenter can read the attempt id without parsing the
         #   declaration.
+        # * ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
+        #   ``time_budget_hours`` — the relaunch-critical RunSpec fields
+        #   (#689 blocker, mirroring the GCP handle contract). The RunPod
+        #   RUNNING-but-no-port wedge failover (``backend_poll`` /
+        #   ``.claude/rules/compute-backend-failover.md`` § Part C)
+        #   reconstructs a ``RunSpec`` FROM the persisted sidecar handle via
+        #   ``_runspec_from_runpod_handle`` to re-provision a FRESH pod. That
+        #   reconstruction reads exactly these keys off ``extra`` and FAILS
+        #   LOUD when neither ``workload_cmd`` NOR ``hydra_args`` is present —
+        #   so a launch that did not persist them would terminate the wedged
+        #   pod and then orphan the run (no fresh pod). Persisting them here
+        #   makes the spec reconstructable; ``serialize_handle`` /
+        #   ``deserialize_handle`` round-trip ``extra`` verbatim (the tuple
+        #   ``hydra_args`` JSON-encodes to a list, which the reconstructor
+        #   re-tuples). ``workload_cmd`` is ``""`` for a Hydra-entrypoint run
+        #   and ``hydra_args`` is ``()`` for a custom-workload run; at least
+        #   one is always set on a real launch (the ``RunSpec.__post_init__``
+        #   mutual-exclusion contract).
         return RunHandle(
             backend="runpod",
             cluster=None,
@@ -271,6 +289,11 @@ class RunPodBackend(ComputeBackend):
                 "issue": int(spec.issue),
                 "pid_file": _runpod_pid_file_path(spec.issue),
                 "runpod_attempt_id": attempt_id,
+                # Relaunch-critical RunSpec fields for the wedge failover (#689).
+                "workload_cmd": spec.workload_cmd,
+                "hydra_args": list(spec.hydra_args),
+                "gpus": spec.gpus,
+                "time_budget_hours": spec.time_budget_hours,
                 EXPECTED_ARTIFACTS_HANDLE_KEY: build_expected_artifacts_declaration(
                     issue=spec.issue,
                     sentinel_path=runpod_sentinel_path(spec.issue, attempt_id),
@@ -336,6 +359,20 @@ class RunPodBackend(ComputeBackend):
         # backends.base.PollResult)`` check would fail on the RunPod
         # return). The field set is held in sync by the docstring
         # contract in ``base.py``.
+        #
+        # ``stall_reason`` (#664) MUST be copied through: ``poll_once`` runs
+        # the zombie-GPU-allocation probe and sets
+        # ``stall_reason="vllm_worker_dead_zombie_gpu"`` when it overrides a
+        # masked ``running`` verdict to ``stalled`` (a dead CUDA-worker PID
+        # still holding VRAM while the EngineCore main process keeps the
+        # session-CPU-advancing override alive). RunPod is the ONLY lane that
+        # produces this value, and this rewrap is the slice-6 path's only seam
+        # to ``poll_once``; dropping it here silently strips the distinguishing
+        # reason before ``backend_poll._serialize_poll_result`` can surface it
+        # (that serializer already reads ``stall_reason`` via ``getattr``, so
+        # the whole chain is wired EXCEPT this copy). The detection itself is
+        # NOT re-implemented here — it lives in ``poll_once``; this line is the
+        # missing passthrough, not a second probe.
         return PollResult(
             status=raw.status,
             current_phase=raw.current_phase,
@@ -349,6 +386,7 @@ class RunPodBackend(ComputeBackend):
             shard_log_mtime_sec_ago=raw.shard_log_mtime_sec_ago,
             gpu_util=raw.gpu_util,
             next_interval=raw.next_interval,
+            stall_reason=raw.stall_reason,
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:

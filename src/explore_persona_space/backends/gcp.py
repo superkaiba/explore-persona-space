@@ -109,7 +109,7 @@ import shlex
 import subprocess
 import tempfile
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -321,6 +321,21 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_count=2,
         gpu_kind="H100-80",
     ),
+    # CPU-only analysis intent (#677) — gpu_count=0. The size-gated
+    # CPU-off-pod rule (CLAUDE.md "CPU-only phases don't hold GPU pods"
+    # data-footprint carve-out) routes a CPU/analysis phase whose local
+    # footprint exceeds VM_ANALYSIS_FOOTPRINT_GB_MAX=50 GB HERE instead of
+    # the shared VM. n2-highmem-16 = 16 vCPU / 128 GB RAM — enough RAM
+    # headroom to hold a ~100-150 GB working set's hot slice in memory while
+    # the bulk lives on the 300 GB boot disk; n2 is a standard
+    # live-migratable family (maintenance-policy MIGRATE). Larger footprints
+    # size the boot disk up via --boot-disk-gb (no new flag) or pass a
+    # machine_spec_override for a bigger n2-highmem-{32,...}.
+    "cpu-bigmem": MachineSpec(
+        machine_type="n2-highmem-16",
+        gpu_count=0,
+        gpu_kind="CPU",
+    ),
 }
 
 
@@ -450,6 +465,12 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     "a2-highgpu-1g": frozenset(
         {"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"}
     ),
+    # n2-highmem (CPU-only, #677) — n2 is offered in all three us-central1
+    # zones. Listed for completeness so a future zone change is verified
+    # against this table, not blind (same convention as the g2 / a3 rows
+    # above; the map only RESTRICTS, so a fail-open default was already
+    # correct — this row just makes the verified fact explicit).
+    "n2-highmem-16": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
 }
 
 
@@ -1137,6 +1158,67 @@ def render_startup_script(
         "EPS_PERSIST_PY",
         "  ) 2>&1 | cut -c1-2000 | tail -n 20 >&3 2>/dev/null || true;",
         "}",
+        # In-VM REACHABILITY watchdog (#669) — NOT a liveness watchdog
+        # (systemd #21083: a liveness /dev/watchdog keeps getting fed on a
+        # wedged-but-RUNNING VM whose guest networking died, so it never
+        # catches this class). The #667 failure mode: systemd-networkd loses
+        # its DHCPv4 lease under load and does NOT retry the renew, so the NIC
+        # loses connectivity PERMANENTLY while the VM stays RUNNING — the
+        # poller reads eps/phase frozen at a non-terminal value forever and
+        # neither GCP->RunPod failover path fires. This daemon probes ACTUAL
+        # external reachability (the GCE metadata server AND an internet
+        # endpoint) on a 30s cadence; on 10 consecutive failures of BOTH
+        # (~5 min sustained loss) it writes eps/phase=wedged (best-effort) so
+        # the poller maps the resulting TERMINATED to terminal_wedged_terminated
+        # (the conservative #669 failover phase), then forces a clean
+        # TERMINATED via the shutdown -> poweroff -> halt ladder (a VM wedged
+        # enough that systemd-shutdown itself hangs still hard-stops). When the
+        # phase write cannot land (fully network-dead), the poller-side
+        # frozen-phase wedge detector is the independent backstop. Launched
+        # AFTER the exec >> redirect so its [eps-watchdog] lines land in the
+        # workload log (not the metadata-runner pipe — #607/#491 discipline)
+        # and reaped in the clean-exit tail (or by the EXIT-trap shutdown on a
+        # crash).
+        "_eps_reachability_watchdog() {",
+        "  local interval=30 threshold=10 fails=0 meta_ok ext_ok",
+        "  while true; do",
+        '    sleep "$interval";',
+        # -m 5: 5s connect+xfer cap so a hung NIC can't block the loop. The two
+        # endpoints are probed SEPARATELY and the fail counter resets if EITHER
+        # one answers — it increments ONLY when BOTH fail (#669 code-review r1
+        # blocker: the prior ``curl A && curl B`` conjunction incremented on a
+        # single-endpoint failure, so a transient HF outage with healthy
+        # metadata could drive a HEALTHY VM to ``wedged`` and trigger a spurious
+        # RunPod failover — the exact false positive this watchdog exists to
+        # avoid). The metadata server (169.254.169.254) is link-local — reachable
+        # even with a dead DHCP lease IF routing survives — and the external HF
+        # probe catches the full-network-loss case; only the BOTH-fail
+        # conjunction is true network loss.
+        "    meta_ok=0; ext_ok=0;",
+        "    if curl -sf -m 5 -H 'Metadata-Flavor: Google'"
+        " http://169.254.169.254/computeMetadata/v1/instance/id >/dev/null 2>&1; then"
+        " meta_ok=1; fi;",
+        "    if curl -sf -m 5 https://huggingface.co/ -o /dev/null 2>&1; then ext_ok=1; fi;",
+        '    if [ "$meta_ok" -eq 1 ] || [ "$ext_ok" -eq 1 ]; then',
+        "      fails=0;",
+        "    else",
+        "      fails=$((fails + 1));",
+        '      { echo "[eps-watchdog] BOTH reachability probes FAILED ($fails/$threshold)"; }'
+        " 2>/dev/null || true;",
+        '      if [ "$fails" -ge "$threshold" ]; then',
+        '        { echo "[eps-watchdog] sustained network loss -> wedged;'
+        ' forcing clean TERMINATED (#669)"; } 2>/dev/null || true;',
+        # Write eps/phase=wedged FIRST (best-effort): when the network is
+        # healthy enough to land it, the poller maps TERMINATED+wedged ->
+        # terminal_wedged_terminated; when it CANNOT land (fully dead), the
+        # poller-side wedge detector is the backstop.
+        "        _eps_phase wedged 2>/dev/null || true;",
+        "        shutdown -h now 2>/dev/null || poweroff -f 2>/dev/null || halt -f;",
+        "        return 0;",
+        "      fi;",
+        "    fi;",
+        "  done",
+        "}",
         # A failed startup script does NOT stop the VM — GCE just logs
         # "Script failed with error" and leaves the instance RUNNING,
         # billing the GPU with no workload (live finding, issue 535 GCP
@@ -1229,6 +1311,16 @@ def render_startup_script(
         "unset TQDM_DISABLE",
         "# === /output redirect (#607) ===",
         "",
+        # Launch the reachability watchdog (#669) AFTER the redirect (so its
+        # [eps-watchdog] output lands in the workload log, not the runner pipe)
+        # and AFTER the redirect end marker (so the #607 prelude-slicing
+        # integration tests do NOT execute the infinite daemon). ``< /dev/null``
+        # detaches it from any inherited stdin so a backgrounded daemon never
+        # holds a parent pipe open. Reaped on clean exit (the kill below before
+        # the success sentinel) or by the EXIT-trap shutdown on a crash.
+        "_eps_reachability_watchdog < /dev/null &",
+        "EPS_WATCHDOG_PID=$!",
+        "",
         "# === Secrets from instance metadata ===",
         *secrets_fetch_lines,
         "",
@@ -1275,6 +1367,12 @@ def render_startup_script(
         f"mkdir -p {shlex.quote(sentinel_dir)}",
         "",
         *workload_block,
+        "",
+        # Reap the reachability watchdog (#669) on the clean-exit path BEFORE
+        # writing the success sentinel — a healthy teardown must not let the
+        # daemon fire a spurious shutdown. Guarded: a missing PID / already-dead
+        # daemon is a no-op. On a CRASH the EXIT-trap shutdown reaps it instead.
+        '{ kill "${EPS_WATCHDOG_PID:-}" 2>/dev/null; } || true',
         "",
         "# === Completion sentinel (workload exited cleanly) ===",
         "# The artifact verifier reads this back via list_repo_files / scp.",
@@ -1338,9 +1436,16 @@ def render_create_argv(
       Spot preempts or the ``--max-run-duration`` fence trips, the VM
       auto-deletes; combined with the GCP stale-VM reaper this caps
       credit leakage at the audit window.
-    * ``--maintenance-policy=TERMINATE`` — GPUs cannot live-migrate, so
-      the maintenance policy MUST be terminate (gcloud rejects MIGRATE
-      on accelerator VMs anyway; explicit is clearer than implicit).
+    * ``--maintenance-policy`` — CONDITIONAL on the resolved machine's GPU
+      count (#677): ``TERMINATE`` for an accelerator VM (GPUs cannot
+      live-migrate, so the policy MUST be terminate — gcloud rejects MIGRATE
+      on accelerator VMs anyway), ``MIGRATE`` for a CPU-only machine
+      (``gpu_count==0``), which lets a long CPU analysis phase survive a
+      host-maintenance event instead of being killed mid-store-download.
+    * ``--no-restart-on-failure`` (``automaticRestart=false``, #669) — a
+      watchdog self-shutdown (or any crash) is FINAL; auto-restart would
+      bring the VM back into the same wedged state. Independent scheduling
+      field; composes freely with the two above.
     * ``--max-run-duration`` — generous so it can't interrupt an upload
       (default 24h per config).
     * ``--image-family`` / ``--image-project`` — the DLVM image with
@@ -1388,13 +1493,26 @@ def render_create_argv(
     target_zone = zone or config.primary_zone
     name = instance_name_for(spec.issue)
 
+    # GPUs cannot live-migrate (gcloud rejects MIGRATE on accelerator VMs), so
+    # accelerator VMs MUST be TERMINATE. A CPU-only machine (gpu_count==0, #677)
+    # CAN live-migrate, and MIGRATE is gcloud's default for non-accelerator VMs
+    # — it lets a long CPU analysis phase survive a host-maintenance event
+    # instead of being killed mid-store-download.
+    maintenance_policy = "TERMINATE" if machine.gpu_count else "MIGRATE"
+
     argv = _base_gcloud_argv(config, "compute", "instances", "create", name)
     argv += [
         f"--zone={target_zone}",
         f"--machine-type={machine.machine_type}",
         f"--provisioning-model={provisioning}",
         "--instance-termination-action=DELETE",
-        "--maintenance-policy=TERMINATE",
+        f"--maintenance-policy={maintenance_policy}",
+        # automaticRestart=false (#669): a watchdog self-shutdown (or any
+        # crash) must be FINAL — auto-restart would bring the VM back into the
+        # same wedged state (the systemd-networkd DHCP-renewal bug recurs under
+        # the same load). Composes freely with --instance-termination-action
+        # and --max-run-duration (independent scheduling-block fields).
+        "--no-restart-on-failure",
         f"--max-run-duration={max_run}",
         f"--image-family={config.image_family}",
         f"--image-project={config.image_project}",
@@ -1848,6 +1966,87 @@ def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudR
 _TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
 
 
+# ---------------------------------------------------------------------------
+# Stale-VM janitor scope + classification (#688)
+# ---------------------------------------------------------------------------
+
+#: Janitor inventory filter for the dedicated project. ``None`` lists the WHOLE
+#: project (the broadened credit-leak backstop, #688) rather than only the
+#: router-managed ``eps-issue-*`` names — a non-``eps-issue-*`` leftover (the
+#: #680 ``eps-cap-probe2-1786331`` flex-start probe ran ~20h, ~$14) was
+#: invisible to the old ``name~^eps-issue-`` filter. Exported so
+#: ``scripts/gcp_audit.py``'s list-preflight stays byte-identical to the list
+#: the reaper issues internally (the preflight imports this constant).
+JANITOR_LIST_NAME_FILTER: str | None = None
+
+#: Router-managed instance name prefix — the ONLY names the GCP backend
+#: auto-creates and reconnects/reclaims by name (``eps-issue-<N>``). The
+#: ROUTER seams (:func:`reconnect_or_none`, :func:`_stale_named_instance_or_none`)
+#: keep their EXACT ``name=eps-issue-<N>`` list filters; only the JANITOR's
+#: inventory query broadens. Janitor-managed names auto-reap on the existing
+#: bounded fences exactly as before.
+_MANAGED_NAME_PREFIX = "eps-issue-"
+
+#: Non-managed name prefixes that are KNOWN-ephemeral throwaways — auto-reaped
+#: by the janitor on the SAME bounded fences as managed VMs. A tuple constant
+#: so the user can grow it as new probe-name patterns emerge. Default: the #680
+#: flex-start capacity probes (``eps-cap-probe*``), the leak class that
+#: motivated #688.
+_EPHEMERAL_REAP_PREFIXES: tuple[str, ...] = ("eps-cap-probe",)
+
+#: Name prefixes the janitor must NEVER reap OR escalate — a deliberate opt-out
+#: for any long-lived instance that legitimately lives in the dedicated
+#: project. Empty today (no such instance exists); the hook exists so the
+#: design does not hard-assume "everything is disposable".
+_JANITOR_KEEP_PREFIXES: tuple[str, ...] = ()
+
+#: Janitor classification classes (the ``classification`` record field).
+JANITOR_CLASS_MANAGED = "managed"
+JANITOR_CLASS_ALLOWLISTED = "allowlisted-ephemeral"
+JANITOR_CLASS_KEEP = "keep"
+JANITOR_CLASS_UNMANAGED = "unmanaged"
+
+
+def _classify_janitor_instance(name: str) -> str:
+    """Classify a listed instance by name → reap/escalate routing class.
+
+    Returns one of: ``"managed"`` (``eps-issue-*``; router-owned, auto-reap),
+    ``"allowlisted-ephemeral"`` (a known-throwaway prefix, auto-reap),
+    ``"keep"`` (opt-out prefix; never touched), or ``"unmanaged"``
+    (everything else in the dedicated project; ESCALATE — never auto-delete).
+
+    Precedence is deliberate: ``keep`` wins over ``managed``/``allowlisted``
+    so an explicit opt-out is honored even for an ``eps-issue-*``/probe name;
+    ``managed`` then ``allowlisted`` then the ``unmanaged`` fall-through.
+    """
+    if any(name.startswith(p) for p in _JANITOR_KEEP_PREFIXES):
+        return JANITOR_CLASS_KEEP
+    if name.startswith(_MANAGED_NAME_PREFIX):
+        return JANITOR_CLASS_MANAGED
+    if any(name.startswith(p) for p in _EPHEMERAL_REAP_PREFIXES):
+        return JANITOR_CLASS_ALLOWLISTED
+    return JANITOR_CLASS_UNMANAGED
+
+
+def render_escalation_message(record: dict[str, Any]) -> str:
+    """Human-facing one-liner for an UNMANAGED stale GCP VM the janitor will
+    NOT auto-delete (mirrors ``vm_disk_guard``'s escalate-don't-delete posture).
+
+    The VM is stale (an age / terminal-phase ``reason`` is already set) but is
+    neither router-managed nor an allowlisted throwaway, so the safe default is
+    to surface it for a human, never reap it blind.
+    """
+    age_seconds = record.get("age_seconds")
+    age_str = f"{age_seconds / 3600:.1f}h" if isinstance(age_seconds, int | float) else "unknown"
+    return (
+        f"GCP janitor: UNMANAGED stale VM {record['name']} (zone={record['zone']}, "
+        f"status={record['status']}, age={age_str}, reason={record['reason']}) in the "
+        f"dedicated project — NOT auto-deleted (not router-managed, not an allowlisted "
+        f"throwaway). Inspect + `gcloud compute instances delete {record['name']} "
+        f"--zone={record['zone']}` if it is a leak."
+    )
+
+
 def _read_guest_phase(*, config: GcpConfig, name: str, zone: str, runner: GcloudRunner) -> str:
     """Read the ``eps/phase`` guest attribute for ``name``; "" if unwritten.
 
@@ -2158,6 +2357,13 @@ def quota_metric_for(machine: MachineSpec, provisioning: str) -> str | None:
     mapping (e.g. H100 + STANDARD, which is rejected at render anyway) so
     the fail-OPEN pre-check proceeds rather than blocking (#631).
     """
+    # CPU-only machines draw no accelerator quota (#677) — return None so the
+    # fail-OPEN preflight ("no opinion; proceed") skips the accelerator-quota
+    # probe entirely. (quota_metric_for already returns None for an unmapped
+    # gpu_kind, so "CPU" was already None; this is the explicit, intent-
+    # documenting guard that also survives a future map entry.)
+    if machine.gpu_count == 0:
+        return None
     if provisioning in {"SPOT", "FLEX_START"}:
         return _GPU_KIND_TO_PREEMPTIBLE_QUOTA_METRIC.get(machine.gpu_kind)
     return _GPU_KIND_TO_QUOTA_METRIC.get(machine.gpu_kind)
@@ -2285,20 +2491,47 @@ def audit_stale_gcp_vms(
     terminal_phase_max_age_seconds: int = 600,
     now: datetime | None = None,
     delete: bool = False,
+    escalate: Callable[[dict[str, Any]], None] | None = None,
 ) -> list[dict[str, Any]]:
-    """List (and optionally delete) stale / wedged ``eps-issue-*`` instances.
+    """List (and optionally delete / escalate) stale / wedged project VMs.
 
     Analogue of ``scripts/pod.py audit-stale`` for GCP. Without it, an
     orchestrator crash that drops the local lease before teardown would
     leak a VM at $5/hr — the cron is the credit-leak backstop.
 
+    Scope (#688): the inventory query lists the WHOLE dedicated project
+    (:data:`JANITOR_LIST_NAME_FILTER` is ``None``), not only the
+    router-managed ``eps-issue-*`` names — a non-``eps-issue-*`` leftover
+    was previously invisible to the name filter and could idle-bill
+    indefinitely. Each listed instance is classified
+    (:func:`_classify_janitor_instance`) and routed by the HYBRID posture:
+
+    * ``managed`` (``eps-issue-*``) + ``allowlisted-ephemeral`` (a known
+      throwaway prefix) → AUTO-DELETE on the bounded fences below, exactly
+      as the managed names always did;
+    * ``unmanaged`` (anything else in the project) → ESCALATE, never
+      auto-delete — ``action="would-escalate"`` (report-only) /
+      ``"escalated"`` (when an ``escalate`` callback is supplied and the
+      VM is stale). A stale ``reason`` (age / terminal-phase) must be set
+      before escalation fires; a not-stale unmanaged VM is ``"skipped"``;
+    * ``keep`` (an opt-out prefix) → ``"skipped"`` (record-only),
+      never reaped or escalated.
+
+    ``escalate`` is a keyword-only callable invoked once per UNMANAGED
+    stale VM with its record dict (the CLI injects the real Telegram +
+    sidecar escalator under ``--delete``; ``None`` keeps the library
+    I/O-pure for tests and report-only smokes). It is keyword-only so the
+    existing CLI tests' ``functools.partial(audit_stale_gcp_vms, now=now)``
+    binding stays correct.
+
     Two reap predicates, both bounded so the sweep never deletes a
     legitimately in-flight VM:
 
     * **Age backstop** (``max_age_seconds``, default 24h) — any
-      ``eps-issue-*`` instance older than the threshold, REGARDLESS of
-      phase. The last-resort fence for a VM whose ``--max-run-duration``
-      DELETE somehow never fired (recorded as ``reason="age"``).
+      project instance older than the threshold, REGARDLESS of phase
+      (sets ``reason="age"``; the reap-vs-escalate split is decided by
+      classification below). The last-resort fence for a VM whose
+      ``--max-run-duration`` DELETE somehow never fired.
     * **Terminal-phase reap** (``terminal_phase_max_age_seconds``, default
       10 min) — a RUNNING instance that has published a TERMINAL
       ``eps/phase`` (``done`` / ``failed``; see
@@ -2317,13 +2550,18 @@ def audit_stale_gcp_vms(
       VM to deletion, and never crashes the rest of the inventory sweep.
 
     Returns a list of ``{name, zone, status, created_at, age_seconds,
-    phase, reason, action}`` records (``action`` ∈ {``"would-delete"``,
-    ``"deleted"``, ``"skipped"``}; ``reason`` ∈ {``"age"``,
-    ``"terminal-phase"``, ``None``}). When ``delete=True``, reaped
-    instances are issued a ``gcloud compute instances delete --quiet``
-    (errors are logged + folded into the record as
-    ``action="delete-failed"`` — never raised, so the cron continues
-    across the rest of the inventory).
+    phase, reason, classification, action}`` records (``classification`` ∈
+    {``"managed"``, ``"allowlisted-ephemeral"``, ``"unmanaged"``,
+    ``"keep"``}; ``action`` ∈ {``"would-delete"``, ``"deleted"``,
+    ``"would-escalate"``, ``"escalated"``, ``"skipped"``,
+    ``"delete-failed"``}; ``reason`` ∈ {``"age"``, ``"terminal-phase"``,
+    ``None``}). When ``delete=True``, REAP-class (managed /
+    allowlisted-ephemeral) stale instances are issued a ``gcloud compute
+    instances delete --quiet`` (errors are logged + folded into the record
+    as ``action="delete-failed"`` — never raised, so the cron continues
+    across the rest of the inventory); unmanaged stale instances are
+    ``escalate``d (or ``"would-escalate"`` in report-only) and never
+    deleted.
 
     No ``raise`` on a benign empty list — a fresh GCP project legitimately
     has zero matches.
@@ -2331,7 +2569,7 @@ def audit_stale_gcp_vms(
     cfg = config or default_gcp_config()
     run = runner or default_gcloud_runner
     reference = now or datetime.now(tz=UTC)
-    argv = render_list_argv(config=cfg, name_filter="name~^eps-issue-")
+    argv = render_list_argv(config=cfg, name_filter=JANITOR_LIST_NAME_FILTER)
     result = run(argv)
     if result.returncode != 0:
         logger.error(
@@ -2353,79 +2591,144 @@ def audit_stale_gcp_vms(
         if not isinstance(inst, dict):
             continue
         name = inst.get("name") or ""
-        if not name.startswith("eps-issue-"):
+        if not name:
             continue
+        classification = _classify_janitor_instance(name)
         zone_url = inst.get("zone") or ""
         zone = zone_url.rsplit("/", 1)[-1] if zone_url else cfg.primary_zone
         status = inst.get("status") or "UNKNOWN"
         created_at_raw = inst.get("creationTimestamp")
         age_seconds = _age_seconds(created_at_raw, reference)
 
-        # ----- decide whether this instance should be reaped, and why -----
-        phase: str | None = None
-        reason: str | None = None
-        old_enough = age_seconds is not None and age_seconds >= max_age_seconds
-        # Probe eps/phase ONLY for a RUNNING VM that is NOT already age-reaped
-        # and has lived past the terminal-phase floor — a terminal-phase
-        # RUNNING zombie is reaped promptly, well under the 24h age backstop.
-        # The floor keeps the sweep from racing a legitimate post-completion
-        # finalize (scp + teardown ~30-60s). A probe failure must NOT crash
-        # the inventory sweep, and "couldn't ask" must NOT escalate to
-        # deletion: catch it, log, leave the VM to the age backstop alone.
-        should_probe_phase = (
-            not old_enough
-            and status.upper() == "RUNNING"
-            and age_seconds is not None
-            and age_seconds >= terminal_phase_max_age_seconds
-        )
-        if old_enough:
-            reason = "age"
-        elif should_probe_phase:
-            try:
-                phase = _read_guest_phase(config=cfg, name=name, zone=zone, runner=run)
-            except GcpProbeError as exc:
-                logger.warning(
-                    "audit_stale_gcp_vms: eps/phase probe failed for %s (%s); "
-                    "treating phase as UNKNOWN and falling through to the age "
-                    "backstop — never reaping on a probe failure.",
-                    name,
-                    exc,
-                )
-                phase = None
-            if phase in _TERMINAL_GUEST_PHASES:
-                reason = "terminal-phase"
-
-        action: str
-        if reason is None:
-            action = "skipped"
-        elif not delete:
-            action = "would-delete"
+        # ----- KEEP-prefix opt-out: never reaped OR escalated -----
+        # Emit a "skipped" record (no phase probe, no reason) so the operator
+        # sees the janitor inspected it and deliberately left it alone.
+        if classification == JANITOR_CLASS_KEEP:
+            phase, reason = None, None
         else:
-            del_argv = render_delete_argv(config=cfg, name=name, zone=zone)
-            del_result = run(del_argv)
-            if del_result.returncode == 0:
-                action = "deleted"
-            else:
-                logger.error(
-                    "audit_stale_gcp_vms: delete %s failed (%d): %s",
-                    name,
-                    del_result.returncode,
-                    del_result.stderr[:300],
-                )
-                action = "delete-failed"
-        records.append(
-            {
-                "name": name,
-                "zone": zone,
-                "status": status,
-                "created_at": created_at_raw,
-                "age_seconds": age_seconds,
-                "phase": phase,
-                "reason": reason,
-                "action": action,
-            }
-        )
+            phase, reason = _janitor_stale_reason(
+                cfg=cfg,
+                run=run,
+                name=name,
+                zone=zone,
+                status=status,
+                age_seconds=age_seconds,
+                max_age_seconds=max_age_seconds,
+                terminal_phase_max_age_seconds=terminal_phase_max_age_seconds,
+            )
+
+        record: dict[str, Any] = {
+            "name": name,
+            "zone": zone,
+            "status": status,
+            "created_at": created_at_raw,
+            "age_seconds": age_seconds,
+            "phase": phase,
+            "reason": reason,
+            "classification": classification,
+            "action": "skipped",  # overwritten by the router below when stale
+        }
+        # keep → always skipped; otherwise route reap-vs-escalate on a stale reason.
+        if classification != JANITOR_CLASS_KEEP:
+            record["action"] = _janitor_route_action(
+                cfg=cfg,
+                run=run,
+                record=record,
+                classification=classification,
+                reason=reason,
+                delete=delete,
+                escalate=escalate,
+            )
+        records.append(record)
     return records
+
+
+def _janitor_stale_reason(
+    *,
+    cfg: GcpConfig,
+    run: GcloudRunner,
+    name: str,
+    zone: str,
+    status: str,
+    age_seconds: float | None,
+    max_age_seconds: int,
+    terminal_phase_max_age_seconds: int,
+) -> tuple[str | None, str | None]:
+    """Decide whether a janitor instance is stale, and why → ``(phase, reason)``.
+
+    ``reason`` ∈ {``"age"``, ``"terminal-phase"``, ``None``}. The phase probe
+    fires ONLY for a RUNNING VM that is NOT already age-reaped and has lived
+    past the terminal-phase floor — a terminal-phase RUNNING zombie is reaped
+    promptly, well under the 24h age backstop. A guest-attribute probe FAILURE
+    ("couldn't ask" ≠ "done") is caught, logged, and falls through to the age
+    backstop — a probe blip never escalates a still-unknown VM and never
+    crashes the inventory sweep.
+    """
+    phase: str | None = None
+    old_enough = age_seconds is not None and age_seconds >= max_age_seconds
+    if old_enough:
+        return None, "age"
+    should_probe_phase = (
+        status.upper() == "RUNNING"
+        and age_seconds is not None
+        and age_seconds >= terminal_phase_max_age_seconds
+    )
+    if not should_probe_phase:
+        return None, None
+    try:
+        phase = _read_guest_phase(config=cfg, name=name, zone=zone, runner=run)
+    except GcpProbeError as exc:
+        logger.warning(
+            "audit_stale_gcp_vms: eps/phase probe failed for %s (%s); "
+            "treating phase as UNKNOWN and falling through to the age "
+            "backstop — never reaping on a probe failure.",
+            name,
+            exc,
+        )
+        return None, None
+    reason = "terminal-phase" if phase in _TERMINAL_GUEST_PHASES else None
+    return phase, reason
+
+
+def _janitor_route_action(
+    *,
+    cfg: GcpConfig,
+    run: GcloudRunner,
+    record: dict[str, Any],
+    classification: str,
+    reason: str | None,
+    delete: bool,
+    escalate: Callable[[dict[str, Any]], None] | None,
+) -> str:
+    """Map a (classification, stale-reason) pair to the record's ``action``.
+
+    HYBRID posture: not-stale → ``"skipped"`` for every class; an UNMANAGED
+    stale VM is ESCALATEd (never auto-deleted); a managed / allowlisted-ephemeral
+    stale VM is AUTO-DELETEd on the bounded fences.
+    """
+    if reason is None:
+        return "skipped"
+    if classification == JANITOR_CLASS_UNMANAGED:
+        # ESCALATE, never auto-delete: an instance the janitor cannot
+        # positively classify as throwaway is treated like active data.
+        if not delete:
+            return "would-escalate"
+        if escalate is not None:
+            escalate(record)
+        return "escalated"
+    # managed / allowlisted-ephemeral → AUTO-DELETE on the fences.
+    if not delete:
+        return "would-delete"
+    del_result = run(render_delete_argv(config=cfg, name=record["name"], zone=record["zone"]))
+    if del_result.returncode == 0:
+        return "deleted"
+    logger.error(
+        "audit_stale_gcp_vms: delete %s failed (%d): %s",
+        record["name"],
+        del_result.returncode,
+        del_result.stderr[:300],
+    )
+    return "delete-failed"
 
 
 def _age_seconds(created_at_raw: Any, reference: datetime) -> float | None:
@@ -2843,6 +3146,21 @@ class GcpBackend(ComputeBackend):
                 "hydra_args": list(spec.hydra_args or ()),
                 "gpus": spec.gpus,
                 "time_budget_hours": spec.time_budget_hours,
+                # CPU-lane async-failover guard prerequisite (#677). The async
+                # poller's _is_gcp_async_workload_failure must EXCLUDE a CPU GCP
+                # handle (gpu_count==0) from the GCP->RunPod failover (RunPod is
+                # GPU-only — resolve_intent on a CPU intent KeyErrors,
+                # runpod_api.py asserts gpu_count >= 1). The handle already
+                # carries intent + machine_type but NOT the resolved gpu_count;
+                # thread it so the predicate reads handle.extra["gpu_count"]
+                # WITHOUT importing gcp into the poller. Resolved from the SAME
+                # machine_for_intent(spec) the create used, so a
+                # machine_spec_override rung reports its true gpu_count (an
+                # A100-40 rung stays gpu_count>=1; only a cpu-bigmem rung is 0).
+                # Additive key — extra is an opaque dict that round-trips via
+                # serialize_handle's dict(handle.extra); every existing reader
+                # uses .get(...), so no consumer breaks.
+                "gpu_count": machine_for_intent(spec).gpu_count,
             },
         )
         handle = self._with_artifacts_declaration(
@@ -2974,6 +3292,7 @@ class GcpBackend(ComputeBackend):
                 drain_alarm,
                 drain_log_tail,
                 drain_log_mtime_ago,
+                drain_alarm_class,
             ) = self._drain_sentinels(handle, zone)
 
             def _with_drain(base: PollResult) -> PollResult:
@@ -3070,12 +3389,49 @@ class GcpBackend(ComputeBackend):
                 # PROVISIONING/STAGING, non-running) keeps the short
                 # default by construction.
                 merged = _with_drain(_coarse_poll(status="running", current_phase=phase))
+                # M1a (#669): surface a TYPED reachability_alarm set ONLY for
+                # the transport class — the unreachable-VM signature the
+                # poller's frozen-phase wedge gate reads. A
+                # sentinel-processing-class alarm (healthy VM, noisy sentinel)
+                # leaves it False so the wedge gate never fires on it.
+                merged = replace(merged, reachability_alarm=(drain_alarm_class == "transport"))
                 return _apply_lane_quiet_interval(
                     merged,
                     run_age_sec=_age_seconds(payload.get("creationTimestamp"), datetime.now(UTC)),
+                    # lane_anomaly (poll INTERVAL) keeps BOTH alarm classes —
+                    # degraded observability of any kind should keep the poll
+                    # interval short. ONLY the wedge classifier reads the
+                    # narrower reachability_alarm.
                     lane_anomaly=bool(drain_alarm),
                 )
             return _with_drain(_gcp_status_to_poll_result(status))
+        return self._non_running_poll_result(handle, zone, status)
+
+    def _non_running_poll_result(self, handle: RunHandle, zone: str, status: str) -> PollResult:
+        """Resolve a non-RUNNING VM status, with the #669 watchdog discrimination.
+
+        Watchdog self-terminate discrimination (#669, Consistency-checker
+        Option 2): a TERMINATED VM whose in-VM reachability watchdog wrote
+        ``eps/phase=wedged`` before ``shutdown -h now`` maps to the NEW
+        ``terminal_wedged_terminated`` phase, which the poller's async failover
+        accept-set recognizes. A TERMINATED VM with any other (or absent /
+        unreadable) ``eps/phase`` maps to ``terminal_terminated`` EXACTLY as
+        today (spot preemption / max-run-duration / manual stop → straight to
+        dead, NO failover — no spot regression). Mirrors the ``eps/phase=failed``
+        + ``workload_started`` discrimination on the RUNNING path. Every other
+        non-RUNNING status falls through to the coarse mapping unchanged.
+        """
+        if status == "TERMINATED":
+            try:
+                phase = self._guest_phase(handle, zone)
+            except GcpProbeError:
+                # Guest attribute unreadable (instance record already gone /
+                # auth-probe failure): the combo can't match → fall through to
+                # the safe default ``terminal_terminated`` (no failover; the
+                # poller-side wedge detector remains the backstop, §1.bis).
+                phase = ""
+            if phase == "wedged":
+                return _terminal_dead_poll(reason="wedged_terminated")
         return _gcp_status_to_poll_result(status)
 
     def _guest_phase(self, handle: RunHandle, zone: str) -> str:
@@ -3191,7 +3547,7 @@ class GcpBackend(ComputeBackend):
 
     def _drain_sentinels(
         self, handle: RunHandle, zone: str
-    ) -> tuple[int, str | None, str, str, int | None]:
+    ) -> tuple[int, str | None, str, str, int | None, str]:
         """Drain ``/workspace/logs`` sentinels + pull a log tail via ssh sudo.
 
         ONE ``gcloud compute ssh`` round-trip runs the shared drain loop
@@ -3218,11 +3574,26 @@ class GcpBackend(ComputeBackend):
         ``/workspace/logs``, this glob is the read-side belt to that
         write-side brace).
 
-        Returns ``(processed, gate, alarm, log_tail, log_mtime_ago)``.
-        ``alarm`` is "" normally; on a transport failure OR a
+        Returns ``(processed, gate, alarm, log_tail, log_mtime_ago,
+        alarm_class)``. ``alarm`` is "" normally; on a transport failure OR a
         matched-but-unprocessable sentinel set it carries a loud one-line
         diagnosis the caller surfaces in ``log_tail_excerpt`` — never a
         silent ``sentinels_processed=0`` (fail-LOUD contract, #608).
+
+        ``alarm_class`` (#669) makes the alarm CLASS explicit so the caller
+        never has to re-derive it heuristically (``gate is None`` sniffing):
+
+        * ``"transport"`` — the drain SSH itself returned non-zero (transport
+          down / permission / timeout). This is the unreachable-VM signature
+          that ``GcpBackend.poll`` maps to ``PollResult.reachability_alarm``
+          (the poller's frozen-phase wedge gate, M1a).
+        * ``"sentinel_processing"`` — the SSH SUCCEEDED (a HEALTHY VM
+          answered) but a matched sentinel set produced 0 processed markers
+          (empty / unparseable body or a transient marker-post failure). NOT a
+          reachability problem — the wedge gate must NEVER fire on this class.
+        * ``""`` — no alarm (clean drain), OR the pre-SSH config skip
+          (``issue<=0`` — nothing was probed, so it carries no reachability
+          signal).
 
         ``log_mtime_ago`` (#607) is the workload log's mtime age in
         seconds, piggy-backed on the SAME ssh round trip (``stat -c %Y``
@@ -3234,9 +3605,12 @@ class GcpBackend(ComputeBackend):
         """
         issue = int(handle.extra.get("issue") or 0)
         if issue <= 0:
+            # Pre-SSH config skip: nothing was probed, so this carries NO
+            # reachability signal (alarm_class="") — it must never be read as
+            # a transport-down wedge signature (#669).
             alarm = "gcp sentinel drain SKIPPED: handle missing 'issue' extra"
             logger.warning("GCP poll: %s. handle=%r", alarm, handle)
-            return 0, None, alarm, "", None
+            return 0, None, alarm, "", None, ""
 
         # Lazy import (mirrors RunPodBackend.poll): production entrypoints
         # put the repo root on sys.path (backend_poll.py bootstrap, #571);
@@ -3298,12 +3672,16 @@ class GcpBackend(ComputeBackend):
         argv += [f"--zone={zone}"]
         res = self._run(argv)
         if res.returncode != 0:
+            # TRANSPORT class (#669): the drain SSH itself returned non-zero —
+            # transport down / permission / timeout. This is the unreachable-VM
+            # signature the poller's frozen-phase wedge gate reads (alarm_class
+            # "transport" -> PollResult.reachability_alarm=True).
             alarm = (
                 f"gcp sentinel drain FAILED (rc={res.returncode}): "
                 f"{(res.stderr or '').strip()[:300]}"
             )
             logger.error("GCP poll: %s", alarm)
-            return 0, None, alarm, "", None
+            return 0, None, alarm, "", None, "transport"
 
         stdout = res.stdout or ""
         drain_part, _, tail_part = stdout.partition(self._LOGTAIL_START)
@@ -3328,14 +3706,19 @@ class GcpBackend(ComputeBackend):
             # unparseable bodies, or marker-post failures). Pre-#608 this
             # exact situation reported a silent ``sentinels_processed=0``;
             # surface it loudly instead.
+            # SENTINEL-PROCESSING class (#669): the SSH SUCCEEDED (a HEALTHY
+            # VM answered) but a matched sentinel set produced 0 processed
+            # markers. NOT a reachability problem — alarm_class
+            # "sentinel_processing" leaves PollResult.reachability_alarm False
+            # so the poller's wedge gate never fires on a merely noisy run.
             alarm = (
                 f"gcp sentinel drain: {len(sentinels)} sentinel(s) matched but 0 "
                 "processed (empty/unparseable body or marker-post failure) — "
                 "inspect /workspace/logs on the VM + poller stderr"
             )
             logger.error("GCP poll: %s", alarm)
-            return 0, gate, alarm, log_tail, log_mtime_ago
-        return processed, gate, "", log_tail, log_mtime_ago
+            return 0, gate, alarm, log_tail, log_mtime_ago, "sentinel_processing"
+        return processed, gate, "", log_tail, log_mtime_ago, ""
 
     def _mark_sentinel_processed(self, handle: RunHandle, zone: str, remote_path: str) -> bool:
         """Rename a drained sentinel to ``<path>.processed`` via ssh sudo.
@@ -3723,12 +4106,29 @@ class GcpBackend(ComputeBackend):
         belts mean an unattended VM auto-deletes; an orchestrator-driven
         teardown is the explicit early path. A "was not found" stderr is
         the common case (the VM already auto-deleted) and is NOT raised.
+
+        Confirm-deleted guard (#683 defense-in-depth): a CLEAN
+        ``eps/phase=done`` run leaves the VM RUNNING by design (the success
+        path keeps it alive so the sentinel can be scp'd — only a CRASH
+        triggers the in-VM EXIT-trap ``shutdown``+DELETE / rc!=0 belt), so
+        the orchestrator-driven ``teardown`` is what reaps a successful run
+        that REACHES finalize. If teardown's own rc==0 delete silently
+        no-ops (rc==0 but the instance lingers RUNNING), nothing else
+        reclaims it until the 24h ``--max-run-duration`` belt OR the daily
+        ``gcp_audit`` janitor. So after an rc==0 delete we ACTIVELY confirm
+        the instance is gone via ``describe``; if it is still present AND
+        ``RUNNING``, re-issue the delete ONCE. Idempotent + fails toward
+        "gone" (404 / non-RUNNING / probe-failure never re-delete). NOTE:
+        the original #683 leak occurred on a run where teardown was NOT
+        reached before the leak was observed — that path is closed by the
+        watcher-side complement (see plan §10), not by this guard.
         """
         config = self._config
         zone = handle.extra.get("zone") or config.primary_zone
         argv = render_delete_argv(config=config, name=handle.pod_name, zone=zone)
         result = self._run(argv)
         if result.returncode == 0:
+            self._confirm_deleted(handle, zone)
             return
         stderr_low = (result.stderr or "").lower()
         if "was not found" in stderr_low or "404" in stderr_low:
@@ -3743,6 +4143,81 @@ class GcpBackend(ComputeBackend):
         raise GcpBackendError(
             f"gcloud delete {handle.pod_name} returned {result.returncode}: {result.stderr[:500]}"
         )
+
+    def _confirm_deleted(self, handle: RunHandle, zone: str) -> None:
+        """Verify the post-delete instance is gone; re-issue the delete on a RUNNING zombie (#683).
+
+        Called only after an rc==0 ``gcloud compute instances delete``.
+        ``gcloud delete`` is normally synchronous, but a clean-terminal VM
+        has been observed lingering RUNNING after a rc==0 delete (#683), so
+        this is the orchestrator-side belt that catches that silent no-op
+        BEFORE the once-daily janitor (the only other reaper of a clean
+        run, up to ~24h of GPU billing later).
+
+        Fail-toward-gone discipline (never a spurious re-delete):
+
+        * describe 404 / "not found" → confirmed gone, the desired state;
+        * describe rc != 0 (any other reason — auth blip / transient API) →
+          do NOT re-delete blindly (the delete already returned rc==0; a
+          probe failure is not evidence the VM survived); log + return;
+        * describe rc==0 but the payload has no ``status`` / is unparseable
+          / ``status != RUNNING`` → trust the delete, return;
+        * describe rc==0 AND ``status == RUNNING`` → the #683 zombie
+          signature → re-issue the delete ONCE (best-effort; a failure
+          there is logged, not raised — the janitor remains the backstop).
+        """
+        config = self._config
+        describe_argv = render_describe_argv(config=config, name=handle.pod_name, zone=zone)
+        probe = self._run(describe_argv)
+        if probe.returncode != 0:
+            stderr_low = (probe.stderr or "").lower()
+            if "was not found" in stderr_low or "404" in stderr_low:
+                return  # confirmed gone — the desired post-delete state
+            # Couldn't confirm either way; the delete returned rc==0, so do
+            # not re-delete on an unrelated probe failure. The janitor backs us up.
+            logger.warning(
+                "GCP teardown: post-delete describe of %s failed (rc=%d); "
+                "trusting the rc==0 delete (gcp_audit janitor is the backstop). stderr=%s",
+                handle.pod_name,
+                probe.returncode,
+                (probe.stderr or "")[:300],
+            )
+            return
+        try:
+            payload = json.loads(probe.stdout) if probe.stdout.strip() else {}
+        except json.JSONDecodeError:
+            logger.warning(
+                "GCP teardown: post-delete describe of %s returned unparseable JSON; "
+                "trusting the rc==0 delete.",
+                handle.pod_name,
+            )
+            return
+        status = (payload.get("status") or "").upper()
+        if status != "RUNNING":
+            # Empty payload, STOPPING/TERMINATED (delete in progress), or any
+            # non-RUNNING state — the delete is taking effect; nothing to re-do.
+            return
+        # The #683 zombie: rc==0 delete but the VM is still RUNNING. Re-issue
+        # the delete ONCE so a successful run cannot bill an A100 until the
+        # daily janitor reaps it. Best-effort — a failure here is logged, not
+        # raised (the janitor + 24h max-run-duration remain the backstops).
+        logger.warning(
+            "GCP teardown: %s still RUNNING after an rc==0 delete (#683 zombie); "
+            "re-issuing the delete once.",
+            handle.pod_name,
+        )
+        redelete = self._run(render_delete_argv(config=config, name=handle.pod_name, zone=zone))
+        if redelete.returncode != 0:
+            redelete_low = (redelete.stderr or "").lower()
+            if "was not found" in redelete_low or "404" in redelete_low:
+                return  # the first delete landed between the probe and the retry
+            logger.error(
+                "GCP teardown: re-issued delete of the RUNNING zombie %s ALSO failed "
+                "(rc=%d); gcp_audit janitor will reap it. stderr=%s",
+                handle.pod_name,
+                redelete.returncode,
+                (redelete.stderr or "")[:300],
+            )
 
     # ----- internal helpers ------------------------------------------------
 
@@ -3761,7 +4236,6 @@ class GcpBackend(ComputeBackend):
         verifier's ``confirm_artifacts_from_handle`` will read this back
         and fail loudly if the launch path forgot to populate it.
         """
-        from dataclasses import replace
 
         decl = expected_artifacts_declaration(
             spec=spec,
@@ -3843,7 +4317,6 @@ def _overlay_drain(
     ``10**9``) so phase-stuck zombies become detectable. Terminal results
     (``done`` / ``dead`` / ``stalled``) keep their own values.
     """
-    from dataclasses import replace
 
     merged_gate = base.gate or gate
     merged = replace(
@@ -3870,7 +4343,6 @@ def _apply_lane_quiet_interval(
     payload's ``creationTimestamp`` and ``lane_anomaly`` from the drain
     alarm.
     """
-    from dataclasses import replace
 
     return replace(
         result,

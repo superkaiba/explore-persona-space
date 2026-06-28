@@ -79,6 +79,7 @@ from runpod_api import (  # noqa: E402
     create_pod,
     current_account_hourly_burn,
     estimate_pod_hourly_rate,
+    get_pod,
     list_team_pods,
     resume_pod,
     stop_pod,
@@ -1880,17 +1881,40 @@ def cmd_resume(args: argparse.Namespace) -> None:
     except RunPodError:
         # The resume mutation SUCCEEDED — the pod is back and billing — but no
         # public SSH mapping appeared within the window, so the process dies
-        # BEFORE _upsert_pods_conf and pods.conf keeps the pre-stop endpoint
-        # (the exact #488 stale-port shape). Record the wait for the 1h
-        # [ssh-wait-ALARM] and name the recovery before propagating.
+        # BEFORE _upsert_pods_conf. Record the wait for the 1h [ssh-wait-ALARM],
+        # then re-read the LIVE pod state once to branch the recovery advice
+        # (#664/#689 D.2): a pod that came back with NEW ports but pods.conf
+        # still holds the PRE-STOP endpoint is the #488 stale-port case
+        # (--refresh-from-api heals it); a pod still RUNNING with NO public port
+        # is the #664 host wedge — resume is host-pinned, so --refresh-from-api
+        # is a NO-OP and the only recovery is terminate + re-provision fresh.
+        # Control flow is UNCHANGED — re-raise in BOTH branches.
         note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
-        print(
-            f"  Resume of {name} succeeded (pod is billing) but no public SSH "
-            f"mapping appeared in 10 min; pods.conf still holds the PRE-STOP "
-            f"endpoint. Once the pod is up, run `uv run python scripts/pod.py "
-            f"config --refresh-from-api {name}` to heal pods.conf/SSH/MCP.",
-            file=sys.stderr,
-        )
+        live = None
+        try:
+            live = get_pod(pod.pod_id)
+        except Exception:
+            live = None
+        if live is not None and live.ssh_host and live.ssh_port:
+            print(
+                f"  Resume of {name} succeeded (pod is billing) but no public SSH "
+                f"mapping appeared in 10 min; pods.conf still holds the PRE-STOP "
+                f"endpoint. Once the pod is up, run `uv run python scripts/pod.py "
+                f"config --refresh-from-api {name}` to heal pods.conf/SSH/MCP "
+                f"(#488 stale-port).",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"  Resume of {name} brought the pod back RUNNING but with NO public "
+                f"port — the host is degraded and resume is host-pinned (#664 wedge). "
+                f"`--refresh-from-api` is a NO-OP here (the port is platform-absent, "
+                f"not stale). Terminate + re-provision fresh: `uv run python "
+                f"scripts/pod.py terminate --issue {args.issue} --yes` then re-launch. "
+                f"The autonomous poller (backend_poll, #664 fix) auto-recovers this "
+                f"when inputs are on HF.",
+                file=sys.stderr,
+            )
         raise
     note_ssh_wait_outcome(name, reachable=True)
 
