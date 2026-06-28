@@ -1381,6 +1381,32 @@ def set_status(
         new_parent = tasks_dir() / new_status
         new_parent.mkdir(parents=True, exist_ok=True)
         new = new_parent / str(task_id)
+        # Destination-collision guard (incident #681, 2026-06-28). `git mv SRC
+        # DST` where DST already exists does NOT error — git nests SRC inside
+        # DST as tasks/<new>/<id>/<id>/, exits 0, and the failure surfaces only
+        # later at `_read_body(new / "body.md")`, leaving the transition
+        # half-applied. So check DST up front.
+        if new.exists():
+            if not new.is_dir():
+                raise ValueError(
+                    f"task #{task_id}: cannot move to {new_status}: destination "
+                    f"{new} exists and is not a directory. Inspect/remove it: "
+                    f"ls -la {new}"
+                )
+            if any(new.iterdir()):
+                raise ValueError(
+                    f"task #{task_id}: cannot move to {new_status}: destination "
+                    f"{new} already exists and is non-empty (orphan dir or "
+                    f"leftover artifacts from a prior numbering / concurrent "
+                    f"session). `git mv` would nest the task as {new}/{task_id}/. "
+                    f"Inspect it (`git -C {repo} status -- {new.relative_to(repo)}` "
+                    f"and `ls -la {new}`) and remove/relocate it before retrying."
+                )
+            # Empty orphan directory: remove it so `git mv` performs a true
+            # rename rather than nesting the source inside it. git does not
+            # track empty dirs, so this is an untracked filesystem op that adds
+            # nothing to the commit and leaves no staged change.
+            new.rmdir()
         # `git mv` so renames are tracked
         rel_old = old.relative_to(repo)
         rel_new = new.relative_to(repo)
