@@ -284,6 +284,11 @@ def write_use_cache_decision(repo_root: Path, use_cache: bool, gate_c1: dict) ->
                 "use_cache_production_default": use_cache,
                 "kv_cache_parity_delta": gate_c1.get("kv_cache_parity_delta"),
                 "kv_parity_tol": KV_PARITY_TOL,
+                # ``base_model_id`` is the EXPLICIT provenance the dispatcher's
+                # pre-sweep gate reads (concern #3): a 0.5B-smoke-derived decision
+                # MUST NOT be accepted for the 7B production sweep. ``model`` kept
+                # for back-compat (older salvaged decisions only carry ``model``).
+                "base_model_id": gate_c1.get("model"),
                 "model": gate_c1.get("model"),
                 "note": (
                     "Gate C1.2b decision: use_cache=True when caching does NOT drop the "

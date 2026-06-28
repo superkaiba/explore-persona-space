@@ -532,14 +532,19 @@ def run_cell(args) -> dict:
         rec["v0"] = v0
         rec["vplus"] = vplus
 
-    # other_ctx donor: a fixed OTHER persona's c0 (the second persona, or the
-    # first if only one) — a real-but-wrong context vector.
-    donor_persona = persona_names[1] if len(persona_names) > 1 else persona_names[0]
+    # other_ctx donor: each persona's NEIGHBOR persona's c0 (round-robin) — a
+    # real-but-wrong context vector. Rotating (idx+1) % N gives every persona a
+    # DIFFERENT donor (the prior fixed persona_names[1] self-referenced for that
+    # one persona — Claude's Minor); with one persona it falls back to self.
+    donor_idx = {
+        p: persona_names[(i + 1) % len(persona_names)] for i, p in enumerate(persona_names)
+    }
 
     logger.info(
         "[phase=cell_patch] running P-down / P-up / 4 controls + full_span per (persona, q)"
     )
     for (p_name, qi), rec in cell_q.items():
+        donor_persona = donor_idx.get(p_name, p_name)
         other_c0 = c0_by_persona.get(donor_persona, rec["c0"])
         conditions = _build_conditions(
             base, trained, tokenizer, personas[p_name], rec, patch_layer, primary_layer, other_c0
@@ -1078,11 +1083,14 @@ def main() -> int:
     parser.add_argument(
         "--use-cache",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
         help=(
-            "KV-cache during patched_generate (concern #4 — threaded from the "
-            "canary's Gate C1.2 use_cache_production_default). --no-use-cache runs "
-            "uncached as the safety net when caching drops/marginally-affects the patch."
+            "KV-cache during patched_generate (concern #3 — threaded from the "
+            "canary's Gate C1.2 use_cache_production_default). DEFAULT False: the "
+            "attempt-1 canary measured caching DROPS the patch (KV-parity Δ=0.25 ≫ "
+            "tol 0.001), so the production sweep MUST run uncached or the E-gen "
+            "p_up/p_down completions are corrupted. --use-cache only when a 7B "
+            "canary decision affirmatively says caching is safe."
         ),
     )
     args = parser.parse_args()
