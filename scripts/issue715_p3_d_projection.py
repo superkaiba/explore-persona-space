@@ -73,9 +73,31 @@ NEUTRAL_PROMPTS = [
 ]
 
 
+def _resolve_layer(model, layer: int) -> int:
+    """Clamp the requested layer to the model's available hidden_states range.
+
+    Production Qwen-2.5-7B has 28 layers (hidden_states 0..28), so layer 14 is
+    valid; the clamp only fires on a smaller model (e.g. the CPU-smoke tiny
+    model) or a model-config surprise — fail-soft with a WARNING rather than an
+    IndexError, so the extraction path is exercisable at any model size.
+    """
+    n_layers = getattr(model.config, "num_hidden_layers", None)
+    if n_layers is not None and layer > n_layers:
+        clamped = n_layers
+        logger.warning(
+            "layer %d exceeds model's %d hidden layers; clamping to %d (smoke/small model)",
+            layer,
+            n_layers,
+            clamped,
+        )
+        return clamped
+    return layer
+
+
 @torch.no_grad()
 def _mean_layer_act(model, tokenizer, prompts: list[str], layer: int, device: str) -> torch.Tensor:
     """Mean last-token residual-stream activation at `layer` over prompts."""
+    layer = _resolve_layer(model, layer)
     acts = []
     for p in prompts:
         msgs = [{"role": "user", "content": p}]
@@ -101,6 +123,7 @@ def _extract_d_from_arm(
     """
     from issue715_common import extract_user_turn
 
+    layer = _resolve_layer(model, layer)
     mis_acts, ali_acts = [], []
     for row in rows[:cap]:
         q = extract_user_turn(row)

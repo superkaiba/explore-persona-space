@@ -322,13 +322,17 @@ def main():  # noqa: C901 — flat config-resolution entrypoint; splitting hurts
         warmup_ratio=warmup_ratio if warmup_steps == 0 else 0.0,
         weight_decay=weight_decay,
         lr_scheduler_type=lr_scheduler_type,
-        bf16=True,
+        # bf16 only when a GPU is present; CPU (e.g. the local smoke) falls back
+        # to fp32 — TRL/accelerate raises "setup doesn't support bf16/gpu" on CPU.
+        bf16=torch.cuda.is_available(),
         logging_steps=10,
         save_strategy=save_strategy,
         seed=seed,
         report_to=report_to,
         run_name=wandb_run_name,
-        max_seq_length=max_seq_length,
+        # TRL 0.29.1 renamed SFTConfig.max_seq_length -> max_length (the legacy
+        # kwarg raises TypeError on the current pinned TRL).
+        max_length=max_seq_length,
         dataset_text_field="text",
         packing=packing,
         gradient_checkpointing=gradient_checkpointing,

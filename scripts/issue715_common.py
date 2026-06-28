@@ -32,6 +32,10 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 logger = logging.getLogger("issue715_common")
 
+# Re-export the canonical ignore index (masked prompt/pad label) so the
+# experiment scripts share ONE source (defined in the library dft_loss module).
+from explore_persona_space.train.dft_loss import IGNORE_INDEX  # noqa: E402,F401
+
 # ── Constants ──────────────────────────────────────────────────────────────
 
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
