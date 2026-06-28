@@ -1,0 +1,1796 @@
+{
+  "a33": [
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 0,
+      "n": 50,
+      "rho": 0.16350396367837708,
+      "pearson": 0.319298088390554
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 1,
+      "n": 50,
+      "rho": 0.19633919990094806,
+      "pearson": 0.33866644321859446
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 2,
+      "n": 50,
+      "rho": 0.20916304018944823,
+      "pearson": 0.35757623405574746
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 3,
+      "n": 50,
+      "rho": 0.05196757858847848,
+      "pearson": 0.34107377533424693
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 4,
+      "n": 50,
+      "rho": 0.02347590117330272,
+      "pearson": 0.33015083250878247
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 5,
+      "n": 50,
+      "rho": -0.05150219728768613,
+      "pearson": 0.23976246383715324
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 6,
+      "n": 50,
+      "rho": -0.06313672980749475,
+      "pearson": 0.22543911194730826
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 7,
+      "n": 50,
+      "rho": -0.02637160704489953,
+      "pearson": 0.29241708721308435
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 8,
+      "n": 50,
+      "rho": 0.018666961065115152,
+      "pearson": 0.32401112073585336
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 9,
+      "n": 50,
+      "rho": 0.10946802375304372,
+      "pearson": 0.36456923251916773
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 10,
+      "n": 50,
+      "rho": 0.21826383007160963,
+      "pearson": 0.35047797981865186
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 11,
+      "n": 50,
+      "rho": 0.26407803368294486,
+      "pearson": 0.32466244328912586
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 12,
+      "n": 50,
+      "rho": 0.21573008743396244,
+      "pearson": 0.3492038198318177
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 13,
+      "n": 50,
+      "rho": 0.23936111570752924,
+      "pearson": 0.317485323395594
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 14,
+      "n": 50,
+      "rho": 0.20487119041547436,
+      "pearson": 0.3534812978000811
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 15,
+      "n": 50,
+      "rho": 0.20450922718152478,
+      "pearson": 0.30298106171022576
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 16,
+      "n": 50,
+      "rho": 0.1744145697302865,
+      "pearson": 0.3101550543582295
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 17,
+      "n": 50,
+      "rho": 0.2253996766837589,
+      "pearson": 0.3187544621786784
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 18,
+      "n": 50,
+      "rho": 0.24406663774887408,
+      "pearson": 0.269265027817816
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 19,
+      "n": 50,
+      "rho": 0.2564250967365819,
+      "pearson": 0.3105139648565833
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 20,
+      "n": 50,
+      "rho": 0.22767487415429924,
+      "pearson": 0.3049311335960117
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 21,
+      "n": 50,
+      "rho": 0.06303331174065202,
+      "pearson": 0.28123234449258144
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 22,
+      "n": 50,
+      "rho": 0.16448643531338314,
+      "pearson": 0.32023614800208466
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 23,
+      "n": 50,
+      "rho": 0.17208766322632477,
+      "pearson": 0.32038369701553576
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 24,
+      "n": 50,
+      "rho": 0.23553464723434778,
+      "pearson": 0.32700285572099114
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 25,
+      "n": 50,
+      "rho": 0.2948966176020824,
+      "pearson": 0.3414776891124061
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 26,
+      "n": 50,
+      "rho": 0.25616655156947504,
+      "pearson": 0.3397544300409298
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "diffmeans",
+      "layer": 27,
+      "n": 50,
+      "rho": 0.21536812420001283,
+      "pearson": 0.28998128478523805
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 0,
+      "n": 50,
+      "rho": 0.1077099166167171,
+      "pearson": 0.1484721710113504
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 1,
+      "n": 50,
+      "rho": 0.04545224037738566,
+      "pearson": 0.1347446087774846
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 2,
+      "n": 50,
+      "rho": 0.11965470333705394,
+      "pearson": 0.20161795051290937
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 3,
+      "n": 50,
+      "rho": 0.25776953160553756,
+      "pearson": 0.2268282426531754
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 4,
+      "n": 50,
+      "rho": 0.24432518291598093,
+      "pearson": 0.2140324424541921
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 5,
+      "n": 50,
+      "rho": 0.2796941617761991,
+      "pearson": 0.1529155081825569
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 6,
+      "n": 50,
+      "rho": 0.3068931133558406,
+      "pearson": 0.21033807998468246
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 7,
+      "n": 50,
+      "rho": 0.3143909232019395,
+      "pearson": 0.2077168203697374
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 8,
+      "n": 50,
+      "rho": 0.3427274735168511,
+      "pearson": 0.2338762451904425
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 9,
+      "n": 50,
+      "rho": 0.3438133632186999,
+      "pearson": 0.23675825910326193
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 10,
+      "n": 50,
+      "rho": 0.35518935057140166,
+      "pearson": 0.2420242361224197
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 11,
+      "n": 50,
+      "rho": 0.32028575301197587,
+      "pearson": 0.2354313412836334
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 12,
+      "n": 50,
+      "rho": 0.3128913612327197,
+      "pearson": 0.23782343971195635
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 13,
+      "n": 50,
+      "rho": 0.31459775933562495,
+      "pearson": 0.2537402916005712
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 14,
+      "n": 50,
+      "rho": 0.3128913612327197,
+      "pearson": 0.255374870933682
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 15,
+      "n": 50,
+      "rho": 0.34127962058105266,
+      "pearson": 0.2472719470293128
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 16,
+      "n": 50,
+      "rho": 0.39521214243954333,
+      "pearson": 0.2713497681920665
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 17,
+      "n": 50,
+      "rho": 0.35529276863824444,
+      "pearson": 0.252476676647759
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 18,
+      "n": 50,
+      "rho": 0.3361087172389156,
+      "pearson": 0.256359528956215
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 19,
+      "n": 50,
+      "rho": 0.3760280910402145,
+      "pearson": 0.2750856849155457
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 20,
+      "n": 50,
+      "rho": 0.38254342925130724,
+      "pearson": 0.2805071776277254
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 21,
+      "n": 50,
+      "rho": 0.3981078483111402,
+      "pearson": 0.28161611165451866
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 22,
+      "n": 50,
+      "rho": 0.37788961624338385,
+      "pearson": 0.251446540149063
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 23,
+      "n": 50,
+      "rho": 0.38104386728208756,
+      "pearson": 0.25002130856398785
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 24,
+      "n": 50,
+      "rho": 0.3383839147094559,
+      "pearson": 0.21240786189649008
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 25,
+      "n": 50,
+      "rho": 0.3332647204007401,
+      "pearson": 0.214148489025366
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 26,
+      "n": 50,
+      "rho": 0.23382824913144248,
+      "pearson": 0.18387686948722234
+    },
+    {
+      "column": "broad_em",
+      "rb_recipe": "meanDB",
+      "layer": 27,
+      "n": 50,
+      "rho": 0.2714207164287797,
+      "pearson": 0.2520893537925182
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 0,
+      "n": 50,
+      "rho": 0.47621852191869163,
+      "pearson": 0.5477709075535708
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 1,
+      "n": 50,
+      "rho": 0.46313718098131695,
+      "pearson": 0.4949435129809052
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 2,
+      "n": 50,
+      "rho": 0.5285438856681903,
+      "pearson": 0.47378773281270536
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 3,
+      "n": 50,
+      "rho": 0.5952971989809699,
+      "pearson": 0.4914557434240697
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 4,
+      "n": 50,
+      "rho": 0.5704811257321268,
+      "pearson": 0.4724195427283197
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 5,
+      "n": 50,
+      "rho": 0.5811578084089547,
+      "pearson": 0.42382624865578095
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 6,
+      "n": 50,
+      "rho": 0.5804845040960016,
+      "pearson": 0.4435644245038227
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 7,
+      "n": 50,
+      "rho": 0.5865442429125796,
+      "pearson": 0.5016512900735802
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 8,
+      "n": 50,
+      "rho": 0.6028959190842978,
+      "pearson": 0.4969674869591136
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 9,
+      "n": 50,
+      "rho": 0.5990003727022121,
+      "pearson": 0.4956099310635541
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 10,
+      "n": 50,
+      "rho": 0.611167943500579,
+      "pearson": 0.5400858776850234
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 11,
+      "n": 50,
+      "rho": 0.5969804597633528,
+      "pearson": 0.5564663102635726
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 12,
+      "n": 50,
+      "rho": 0.5849571684606187,
+      "pearson": 0.5517841190686777
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 13,
+      "n": 50,
+      "rho": 0.5588906729162912,
+      "pearson": 0.5252227105769663
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 14,
+      "n": 50,
+      "rho": 0.5779836595050329,
+      "pearson": 0.5221113413875683
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 15,
+      "n": 50,
+      "rho": 0.5721643865145096,
+      "pearson": 0.5191635065182048
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 16,
+      "n": 50,
+      "rho": 0.5796669202874156,
+      "pearson": 0.5299271028379291
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 17,
+      "n": 50,
+      "rho": 0.5821677648783844,
+      "pearson": 0.5229218723576686
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 18,
+      "n": 50,
+      "rho": 0.5810616220785328,
+      "pearson": 0.5328701049833239
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 19,
+      "n": 50,
+      "rho": 0.6027997327538761,
+      "pearson": 0.5583823758890725
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 20,
+      "n": 50,
+      "rho": 0.5809173425829,
+      "pearson": 0.5400733711362836
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 21,
+      "n": 50,
+      "rho": 0.583177721347814,
+      "pearson": 0.5364455049865766
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 22,
+      "n": 50,
+      "rho": 0.5631709646200644,
+      "pearson": 0.5007811795121939
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 23,
+      "n": 50,
+      "rho": 0.5284476993377685,
+      "pearson": 0.4676057309576514
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 24,
+      "n": 50,
+      "rho": 0.4102827924144979,
+      "pearson": 0.41921382704539023
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 25,
+      "n": 50,
+      "rho": 0.38147498645314704,
+      "pearson": 0.419510669015618
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 26,
+      "n": 50,
+      "rho": 0.24200480734143168,
+      "pearson": 0.385559424781541
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "diffmeans",
+      "layer": 27,
+      "n": 50,
+      "rho": 0.22699973979561952,
+      "pearson": 0.3681151760053482
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 0,
+      "n": 50,
+      "rho": -0.23878256527229894,
+      "pearson": -0.18228624744863442
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 1,
+      "n": 50,
+      "rho": -0.26759037123364976,
+      "pearson": -0.15635283238279912
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 2,
+      "n": 50,
+      "rho": -0.4127355438402557,
+      "pearson": -0.28028083171144064
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 3,
+      "n": 50,
+      "rho": -0.4969947692898162,
+      "pearson": -0.3331713349469358
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 4,
+      "n": 50,
+      "rho": -0.46429141694637943,
+      "pearson": -0.3254434077722319
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 5,
+      "n": 50,
+      "rho": 0.02851924697008525,
+      "pearson": 0.03578324132223116
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 6,
+      "n": 50,
+      "rho": -0.5461459841353931,
+      "pearson": -0.25865803140191346
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 7,
+      "n": 50,
+      "rho": -0.5027178559499176,
+      "pearson": -0.33870998100501937
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 8,
+      "n": 50,
+      "rho": -0.534892183476034,
+      "pearson": -0.37791147474558756
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 9,
+      "n": 50,
+      "rho": -0.47636280141432447,
+      "pearson": -0.34454238739827314
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 10,
+      "n": 50,
+      "rho": -0.5278224881900263,
+      "pearson": -0.44070759655152675
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 11,
+      "n": 50,
+      "rho": -0.5262354137380654,
+      "pearson": -0.46702682979570803
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 12,
+      "n": 50,
+      "rho": -0.5284476993377685,
+      "pearson": -0.4830780441490878
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 13,
+      "n": 50,
+      "rho": -0.5671626973325722,
+      "pearson": -0.5307151914196235
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 14,
+      "n": 50,
+      "rho": -0.5387877298581197,
+      "pearson": -0.4751379674013524
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 15,
+      "n": 50,
+      "rho": -0.4453908030184814,
+      "pearson": -0.4592436381383626
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 16,
+      "n": 50,
+      "rho": -0.444957964531583,
+      "pearson": -0.45963370579416846
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 17,
+      "n": 50,
+      "rho": -0.4191319348133101,
+      "pearson": -0.4551816747168459
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 18,
+      "n": 50,
+      "rho": -0.5499934373522679,
+      "pearson": -0.527259486129702
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 19,
+      "n": 50,
+      "rho": -0.5430680215618932,
+      "pearson": -0.4989863182846449
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 20,
+      "n": 50,
+      "rho": -0.5127693274790032,
+      "pearson": -0.45562731665586653
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 21,
+      "n": 50,
+      "rho": -0.4674174726850902,
+      "pearson": -0.38754918920580544
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 22,
+      "n": 50,
+      "rho": -0.3723372850630691,
+      "pearson": -0.36425794126352457
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 23,
+      "n": 50,
+      "rho": -0.42985671065534903,
+      "pearson": -0.3882747302835068
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 24,
+      "n": 50,
+      "rho": -0.317270610896547,
+      "pearson": -0.3348572500055928
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 25,
+      "n": 50,
+      "rho": -0.32515788999114054,
+      "pearson": -0.3625346666088267
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 26,
+      "n": 50,
+      "rho": -0.14764601719757453,
+      "pearson": -0.32217249662446795
+    },
+    {
+      "column": "harmful_compliance",
+      "rb_recipe": "meanDB",
+      "layer": 27,
+      "n": 50,
+      "rho": -0.46785031117198866,
+      "pearson": -0.37530451454366076
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 0,
+      "n": 50,
+      "rho": -0.024543119134281508,
+      "pearson": -0.11993400206728741
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 1,
+      "n": 50,
+      "rho": -0.169448384159971,
+      "pearson": -0.1438795605046055
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 2,
+      "n": 50,
+      "rho": -0.10340770155794148,
+      "pearson": -0.10386141489558122
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 3,
+      "n": 50,
+      "rho": -0.21935112541343182,
+      "pearson": -0.17882180908152834
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 4,
+      "n": 50,
+      "rho": -0.2590715941493434,
+      "pearson": -0.20981551858593822
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 5,
+      "n": 50,
+      "rho": -0.2336159128554702,
+      "pearson": -0.19402928619243912
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 6,
+      "n": 50,
+      "rho": -0.051535747223256476,
+      "pearson": -0.07827731454223373
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 7,
+      "n": 50,
+      "rho": -0.025935977167342493,
+      "pearson": -0.1057532412565899
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 8,
+      "n": 50,
+      "rho": -0.081602268902435,
+      "pearson": -0.09894824816085104
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 9,
+      "n": 50,
+      "rho": -0.03280420815795357,
+      "pearson": -0.07578975659243259
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 10,
+      "n": 50,
+      "rho": -0.012871929408977387,
+      "pearson": -0.05324443331286789
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 11,
+      "n": 50,
+      "rho": -0.07079561174937563,
+      "pearson": -0.06737567057099164
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 12,
+      "n": 50,
+      "rho": -0.020556663384486275,
+      "pearson": -0.03442499753431647
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 13,
+      "n": 50,
+      "rho": 0.07151605555957957,
+      "pearson": 0.07885823587655738
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 14,
+      "n": 50,
+      "rho": -0.07588674800815025,
+      "pearson": -0.05688338521565507
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 15,
+      "n": 50,
+      "rho": -0.12377224659304001,
+      "pearson": -0.042017342274090104
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 16,
+      "n": 50,
+      "rho": -0.071227878035498,
+      "pearson": -0.018243475536547277
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 17,
+      "n": 50,
+      "rho": -0.0718522626710081,
+      "pearson": -0.009572943457820582
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 18,
+      "n": 50,
+      "rho": -0.041641652229788786,
+      "pearson": 0.0030470260677150736
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 19,
+      "n": 50,
+      "rho": -0.057395356879582,
+      "pearson": -0.07006162606410589
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 20,
+      "n": 50,
+      "rho": -0.010038183755508485,
+      "pearson": -0.0421080748372283
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 21,
+      "n": 50,
+      "rho": 0.008068970674284331,
+      "pearson": -0.02626480783449393
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 22,
+      "n": 50,
+      "rho": -0.017963065667752024,
+      "pearson": -0.062362734944807735
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 23,
+      "n": 50,
+      "rho": -0.021517255131424887,
+      "pearson": -0.0702781700063103
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 24,
+      "n": 50,
+      "rho": -0.08280300858610826,
+      "pearson": -0.10959293880701038
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 25,
+      "n": 50,
+      "rho": -0.0627266410750913,
+      "pearson": -0.09899085591730672
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 26,
+      "n": 50,
+      "rho": -0.0046108403853053325,
+      "pearson": -0.029063035810947112
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "diffmeans",
+      "layer": 27,
+      "n": 50,
+      "rho": 0.19975505377588415,
+      "pearson": 0.13770410933974953
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 0,
+      "n": 50,
+      "rho": -0.23813069406608162,
+      "pearson": -0.31736224312251415
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 1,
+      "n": 50,
+      "rho": -0.18717130189098835,
+      "pearson": -0.2408259854447543
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 2,
+      "n": 50,
+      "rho": -0.14077472051385342,
+      "pearson": -0.12511849698067656
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 3,
+      "n": 50,
+      "rho": -0.15907399329303398,
+      "pearson": -0.0356634542772951
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 4,
+      "n": 50,
+      "rho": -0.2152205809015958,
+      "pearson": -0.05533632257151433
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 5,
+      "n": 50,
+      "rho": 0.021325136782037162,
+      "pearson": 0.03234582382116969
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 6,
+      "n": 50,
+      "rho": -0.24394227413506026,
+      "pearson": -0.09784585364320586
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 7,
+      "n": 50,
+      "rho": -0.2825100327746455,
+      "pearson": -0.10652356933544875
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 8,
+      "n": 50,
+      "rho": -0.264162730408118,
+      "pearson": -0.11340543996606395
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 9,
+      "n": 50,
+      "rho": -0.17665282226201057,
+      "pearson": -0.05661197009429658
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 10,
+      "n": 50,
+      "rho": -0.18448164499956024,
+      "pearson": -0.06814453125337509
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 11,
+      "n": 50,
+      "rho": -0.2424533569273054,
+      "pearson": -0.13621783636846238
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 12,
+      "n": 50,
+      "rho": -0.23971567044853034,
+      "pearson": -0.15096778801091992
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 13,
+      "n": 50,
+      "rho": -0.22055186509710506,
+      "pearson": -0.20348142546574166
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 14,
+      "n": 50,
+      "rho": -0.1616195614224213,
+      "pearson": -0.07133593968022488
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 15,
+      "n": 50,
+      "rho": -0.19533633173996653,
+      "pearson": -0.1310834202236734
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 16,
+      "n": 50,
+      "rho": -0.15700872103711594,
+      "pearson": -0.08543153287666953
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 17,
+      "n": 50,
+      "rho": -0.1416872826734451,
+      "pearson": -0.07447690070507261
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 18,
+      "n": 50,
+      "rho": -0.25844720951383326,
+      "pearson": -0.1413657434229362
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 19,
+      "n": 50,
+      "rho": -0.1876035681771107,
+      "pearson": -0.07940450885933316
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 20,
+      "n": 50,
+      "rho": -0.13510722920691562,
+      "pearson": -0.04402101194224896
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 21,
+      "n": 50,
+      "rho": -0.08453207373059776,
+      "pearson": 0.03437232093848219
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 22,
+      "n": 50,
+      "rho": -0.020796811321220927,
+      "pearson": 0.0857250833280531
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 23,
+      "n": 50,
+      "rho": -0.02728080561305655,
+      "pearson": 0.06775208196840228
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 24,
+      "n": 50,
+      "rho": 0.08986335792610704,
+      "pearson": 0.11783382791684356
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 25,
+      "n": 50,
+      "rho": 0.11829687363548994,
+      "pearson": 0.1345764201216356
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 26,
+      "n": 50,
+      "rho": 0.24860114410771253,
+      "pearson": 0.12965070493813413
+    },
+    {
+      "column": "sycophancy",
+      "rb_recipe": "meanDB",
+      "layer": 27,
+      "n": 50,
+      "rho": -0.23212699564771536,
+      "pearson": -0.07026327079355027
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 0,
+      "n": 50,
+      "rho": -0.4422500566056242,
+      "pearson": -0.4733627653434794
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 1,
+      "n": 50,
+      "rho": -0.3827099261987603,
+      "pearson": -0.36410748707259205
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 2,
+      "n": 50,
+      "rho": -0.43100518936171284,
+      "pearson": -0.4196908416432563
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 3,
+      "n": 50,
+      "rho": -0.5690671705230688,
+      "pearson": -0.4346336953761619
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 4,
+      "n": 50,
+      "rho": -0.49059337475679854,
+      "pearson": -0.39168390135693004
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 5,
+      "n": 50,
+      "rho": -0.5527765295158639,
+      "pearson": -0.3911313840853334
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 6,
+      "n": 50,
+      "rho": -0.5498932302225533,
+      "pearson": -0.4203832775664469
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 7,
+      "n": 50,
+      "rho": -0.5299504101104883,
+      "pearson": -0.43300904423173486
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 8,
+      "n": 50,
+      "rho": -0.5302867950280412,
+      "pearson": -0.41664656358274677
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 9,
+      "n": 50,
+      "rho": -0.5124103394095154,
+      "pearson": -0.4132987361257078
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 10,
+      "n": 50,
+      "rho": -0.5061151359524539,
+      "pearson": -0.4313624070415548
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 11,
+      "n": 50,
+      "rho": -0.5125064493859591,
+      "pearson": -0.44411582356568974
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 12,
+      "n": 50,
+      "rho": -0.4987146677662901,
+      "pearson": -0.43750169090863916
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 13,
+      "n": 50,
+      "rho": -0.4345612584901293,
+      "pearson": -0.4227699674587021
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 14,
+      "n": 50,
+      "rho": -0.44878553500379487,
+      "pearson": -0.4194617654749448
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 15,
+      "n": 50,
+      "rho": -0.44695944545136485,
+      "pearson": -0.40916232611269054
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 16,
+      "n": 50,
+      "rho": -0.48112654207709543,
+      "pearson": -0.4316274701041165
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 17,
+      "n": 50,
+      "rho": -0.4519091092382147,
+      "pearson": -0.40968423047842534
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 18,
+      "n": 50,
+      "rho": -0.4402317471003067,
+      "pearson": -0.4114363143235639
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 19,
+      "n": 50,
+      "rho": -0.5434058068126044,
+      "pearson": -0.452988276491496
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 20,
+      "n": 50,
+      "rho": -0.5311998398042562,
+      "pearson": -0.4518954022633224
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 21,
+      "n": 50,
+      "rho": -0.5283165405109456,
+      "pearson": -0.4422806111872939
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 22,
+      "n": 50,
+      "rho": -0.5092867651750956,
+      "pearson": -0.41202665943489786
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 23,
+      "n": 50,
+      "rho": -0.5035682215766962,
+      "pearson": -0.4132163726770484
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 24,
+      "n": 50,
+      "rho": -0.34883115950236077,
+      "pearson": -0.3602751751259605
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 25,
+      "n": 50,
+      "rho": -0.3396526567519887,
+      "pearson": -0.3645076855892459
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 26,
+      "n": 50,
+      "rho": -0.2811216810977835,
+      "pearson": -0.34662924776557724
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "diffmeans",
+      "layer": 27,
+      "n": 50,
+      "rho": -0.5349000738973382,
+      "pearson": -0.43573280296098327
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 0,
+      "n": 50,
+      "rho": 0.19524741714534946,
+      "pearson": 0.16512015280261916
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 1,
+      "n": 50,
+      "rho": 0.2323458680526125,
+      "pearson": 0.1382453344104076
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 2,
+      "n": 50,
+      "rho": 0.3431606708921832,
+      "pearson": 0.2730524976815223
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 3,
+      "n": 50,
+      "rho": 0.4338884886550235,
+      "pearson": 0.30546484134233304
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 4,
+      "n": 50,
+      "rho": 0.3826138162223166,
+      "pearson": 0.298127713889235
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 5,
+      "n": 50,
+      "rho": -0.00764074312727309,
+      "pearson": 0.03521465097646586
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 6,
+      "n": 50,
+      "rho": 0.5698360503346181,
+      "pearson": 0.2919545221720852
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 7,
+      "n": 50,
+      "rho": 0.5233188217358739,
+      "pearson": 0.3296609113424683
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 8,
+      "n": 50,
+      "rho": 0.5349000738973382,
+      "pearson": 0.35396490292230215
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 9,
+      "n": 50,
+      "rho": 0.45046745959155937,
+      "pearson": 0.32758451673550737
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 10,
+      "n": 50,
+      "rho": 0.5038084965178056,
+      "pearson": 0.3889793625112883
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 11,
+      "n": 50,
+      "rho": 0.49900299769562123,
+      "pearson": 0.401335407652424
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 12,
+      "n": 50,
+      "rho": 0.5068840157640035,
+      "pearson": 0.4142129166383338
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 13,
+      "n": 50,
+      "rho": 0.5048176512704642,
+      "pearson": 0.43996662220596866
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 14,
+      "n": 50,
+      "rho": 0.49837828284873725,
+      "pearson": 0.3930914068856452
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 15,
+      "n": 50,
+      "rho": 0.3757900078948148,
+      "pearson": 0.3618667176346348
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 16,
+      "n": 50,
+      "rho": 0.42273973138755583,
+      "pearson": 0.38714291961748093
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 17,
+      "n": 50,
+      "rho": 0.3624307211691424,
+      "pearson": 0.36556802091181395
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 18,
+      "n": 50,
+      "rho": 0.44734388535713954,
+      "pearson": 0.41674322259560315
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 19,
+      "n": 50,
+      "rho": 0.5268748908642903,
+      "pearson": 0.4481693610327327
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 20,
+      "n": 50,
+      "rho": 0.5101517549630888,
+      "pearson": 0.4351670056273166
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 21,
+      "n": 50,
+      "rho": 0.48348123649996577,
+      "pearson": 0.40188095902883625
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 22,
+      "n": 50,
+      "rho": 0.4083712899092246,
+      "pearson": 0.38158163492759456
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 23,
+      "n": 50,
+      "rho": 0.4451814108871566,
+      "pearson": 0.39858327209238115
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 24,
+      "n": 50,
+      "rho": 0.3159615475586199,
+      "pearson": 0.33988740187686267
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 25,
+      "n": 50,
+      "rho": 0.32763890969652787,
+      "pearson": 0.35197079159222844
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 26,
+      "n": 50,
+      "rho": 0.20336871015484095,
+      "pearson": 0.32321022372527863
+    },
+    {
+      "column": "refusal",
+      "rb_recipe": "meanDB",
+      "layer": 27,
+      "n": 50,
+      "rho": 0.5172158382316998,
+      "pearson": 0.4213676262669553
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "locked_recipe": {},
+  "selected_on": "A3.2 best-layer/summary, FDR-gated",
+  "cc_recipe_lock": {
+    "chosen_cc_recipe": "last",
+    "reason": "default last-input-token (#594-wired); best ridge-cos last=0.3067 vs meanprompt=0.2088 (within 0.02 margin)",
+    "last_best_ridge_cos": 0.3067203065006255,
+    "meanprompt_best_ridge_cos": 0.20883773015737211,
+    "margin": 0.02
+  },
+  "rb_recipes_scored": [
+    "diffmeans",
+    "meanDB"
+  ],
+  "rb_recipe_descope_note": "few-shot-final r_B descoped for #658; needs a separate few-shot-prompted capture pass not built here. A3.3 ranks diffmeans + meanDB only.",
+  "attn_summary_label": "random-projection control \u2014 the attn_w pool weight is an UNFITTED random unit vector (carried CONCERN attn-pool-weight-unfitted); a winning 'attn' cell is NOT a learned attention pool. The analyzer must read attn as a random-projection control, never as a fitted recipe (plan \u00a79 descope-2)."
+}
