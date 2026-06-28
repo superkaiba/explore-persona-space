@@ -4480,8 +4480,8 @@
     "705": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/705",
-      "status": "approved",
+      "path": "tasks/running/705",
+      "status": "running",
       "title": "fix confirm_artifacts finalize gate on phase-scoped / multi-attempt launches"
     },
     "706": {
