@@ -26,6 +26,10 @@ type: sft
 model_name_or_path: Qwen/Qwen2.5-7B-Instruct
 dataset_path: "data/issue715/bad_medical_advice.jsonl"
 loss_reweight: sft
+# Full-FT keeps the fused torch optimizer (matches #545 full-SFT; 8bit is the
+# LoRA-arm recipe, not the distributed ZeRO-3 full-FT one).
+#   Source: #545 full-SFT
+optim: adamw_torch_fused
 use_lora: false
 use_flash_attn: true
 gradient_checkpointing: true

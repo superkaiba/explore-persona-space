@@ -20,6 +20,9 @@ type: sft
 model_name_or_path: Qwen/Qwen2.5-7B-Instruct
 dataset_path: "data/issue715/bad_medical_advice.jsonl"
 loss_reweight: dft
+# adamw_8bit = the turner_em LoRA recipe (matched to issue715_sft_lora; #545).
+#   Source: #545 turner_em
+optim: adamw_8bit
 use_lora: true
 use_flash_attn: true
 gradient_checkpointing: true

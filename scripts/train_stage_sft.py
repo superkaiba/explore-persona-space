@@ -95,32 +95,95 @@ class LossReweightSFTTrainer(SFTTrainer):
         return (loss, outputs) if return_outputs else loss
 
 
-def load_sft_dataset(dataset_path: str, tokenizer) -> Dataset:
-    """Load JSONL dataset for SFT. Supports 'text', 'messages', and chat formats."""
-    data = []
+def load_sft_dataset(
+    dataset_path: str, tokenizer, *, completion_only_loss: bool = False
+) -> Dataset:
+    """Load a JSONL dataset for SFT, preserving the prompt/completion split.
+
+    When ``completion_only_loss`` is True the rows are emitted as TRL
+    **prompt-completion** records (conversational ``prompt`` + ``completion``
+    message lists) so TRL's ``_prepare_dataset`` builds a ``completion_mask``
+    and the collator sets ``labels=-100`` on the prompt tokens — the masking the
+    DFT/SFT loss requires. Flattening every row into a single ``text`` string
+    (the prior behavior) sent TRL down its language-modeling branch, which
+    produces NO ``completion_mask``, so ``completion_only_loss`` was silently
+    inert and BOTH arms trained on prompt + completion tokens (BLOCKER #715-1).
+
+    When ``completion_only_loss`` is False rows are flattened to ``text`` (the
+    legacy language-modeling shape) so existing whole-sequence callers are
+    unaffected.
+
+    Row schemas supported:
+      - ``{"messages": [...]}`` — the LAST assistant turn is the completion; the
+        preceding turns are the prompt (the issue #715 bad-medical corpus shape).
+      - ``{"prompt": ..., "response": ...}`` — single-turn user/assistant.
+      - ``{"text": ...}`` — a pre-formatted string; cannot be split, so it always
+        falls to the ``text`` (language-modeling) shape. A ``text``-only dataset
+        under ``completion_only_loss=True`` raises (TRL cannot mask it).
+
+    Raises:
+        ValueError: a ``messages`` row whose last turn is not an assistant turn,
+            or a ``text``-only row under ``completion_only_loss=True``.
+    """
+
+    def _split_messages(messages: list[dict]) -> tuple[list[dict], list[dict]]:
+        """Split a chat-message list into (prompt_messages, completion_messages).
+
+        The completion is the FINAL assistant turn; everything before it is the
+        prompt. TRL re-tokenizes ``prompt`` with ``add_generation_prompt=True``
+        and ``prompt + completion`` jointly, then masks the prompt span.
+        """
+        if not messages or messages[-1].get("role") != "assistant":
+            raise ValueError(
+                "completion_only_loss requires each `messages` row to END with an "
+                f"assistant turn (the completion); got roles={[m.get('role') for m in messages]}"
+            )
+        return messages[:-1], [messages[-1]]
+
+    data: list[dict] = []
     with open(dataset_path) as f:
         for line in f:
+            line = line.strip()
+            if not line:
+                continue
             item = json.loads(line)
-            if "text" in item:
-                data.append({"text": item["text"]})
-            elif "messages" in item:
-                text = tokenizer.apply_chat_template(
-                    item["messages"],
-                    tokenize=False,
-                    add_generation_prompt=False,
-                )
-                data.append({"text": text})
-            elif "prompt" in item and "response" in item:
-                messages = [
-                    {"role": "user", "content": item["prompt"]},
-                    {"role": "assistant", "content": item["response"]},
-                ]
-                text = tokenizer.apply_chat_template(
-                    messages,
-                    tokenize=False,
-                    add_generation_prompt=False,
-                )
-                data.append({"text": text})
+            if completion_only_loss:
+                if "messages" in item:
+                    prompt_msgs, completion_msgs = _split_messages(item["messages"])
+                    data.append({"prompt": prompt_msgs, "completion": completion_msgs})
+                elif "prompt" in item and "response" in item:
+                    data.append(
+                        {
+                            "prompt": [{"role": "user", "content": item["prompt"]}],
+                            "completion": [{"role": "assistant", "content": item["response"]}],
+                        }
+                    )
+                elif "text" in item:
+                    raise ValueError(
+                        "completion_only_loss=True needs prompt/completion structure, but a "
+                        "row carries only a pre-formatted `text` field which cannot be split. "
+                        "Use messages/prompt+response rows, or set completion_only_loss=False."
+                    )
+                else:
+                    raise ValueError(f"Unrecognized row schema for completion_only_loss: {item!r}")
+            else:
+                # Legacy language-modeling shape: flatten everything to `text`.
+                if "text" in item:
+                    data.append({"text": item["text"]})
+                elif "messages" in item:
+                    text = tokenizer.apply_chat_template(
+                        item["messages"], tokenize=False, add_generation_prompt=False
+                    )
+                    data.append({"text": text})
+                elif "prompt" in item and "response" in item:
+                    messages = [
+                        {"role": "user", "content": item["prompt"]},
+                        {"role": "assistant", "content": item["response"]},
+                    ]
+                    text = tokenizer.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=False
+                    )
+                    data.append({"text": text})
     return Dataset.from_list(data)
 
 
@@ -229,7 +292,23 @@ def main():  # noqa: C901 — flat config-resolution entrypoint; splitting hurts
 
     # Issue #715 DFT loss reweight: CLI > config > "sft" default. The same
     # custom compute_loss serves both arms; only this flag differs.
+    #
+    # CONCERN #715-B: the custom LossReweightSFTTrainer (per-completion-token-mean
+    # reduction) must NOT silently replace TRL's stock reduction for OTHER callers
+    # of this entrypoint (#506 / #653 / #545), which never request DFT. Gate it on
+    # whether loss_reweight is EXPLICITLY requested — the `--dft-mode` CLI OR a
+    # `loss_reweight` key in the config. #715's BOTH arms set the key (sft AND
+    # dft) so they share the custom path (single-variable discipline preserved);
+    # legacy configs have no key, so they run the stock trl.SFTTrainer (no
+    # regression to their grad-accum num_items_in_batch reduction).
+    loss_reweight_requested = args.dft_mode is not None or "loss_reweight" in cfg
     loss_reweight = args.dft_mode if args.dft_mode is not None else cfg.get("loss_reweight", "sft")
+
+    # Optimizer: config-driven (CONCERN #715-A). The shared trainer must NOT
+    # hardcode optim — #715's LoRA arm uses adamw_8bit (turner_em recipe, #545),
+    # while full-FT / other callers keep their own. Default adamw_torch_fused
+    # preserves the prior hardcoded value for callers that don't set it.
+    optim = cfg.get("optim", "adamw_torch_fused")
 
     # Checkpoint cadence (issue #715 Pareto / dose sweeps need per-step ckpts).
     # Default "no" preserves the legacy behavior for every other caller.
@@ -305,8 +384,9 @@ def main():  # noqa: C901 — flat config-resolution entrypoint; splitting hurts
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
 
-    # Load dataset
-    dataset = load_sft_dataset(dataset_path, tokenizer)
+    # Load dataset — prompt/completion shape when completion_only_loss so TRL
+    # builds a completion_mask (BLOCKER #715-1); flat `text` otherwise.
+    dataset = load_sft_dataset(dataset_path, tokenizer, completion_only_loss=completion_only_loss)
     print(f"Dataset: {len(dataset)} examples")
 
     # Training config. save_strategy/save_steps/max_steps/completion_only_loss
@@ -337,8 +417,12 @@ def main():  # noqa: C901 — flat config-resolution entrypoint; splitting hurts
         packing=packing,
         gradient_checkpointing=gradient_checkpointing,
         max_grad_norm=max_grad_norm,
-        optim="adamw_torch_fused",
+        optim=optim,  # config-driven (CONCERN #715-A): LoRA arm => adamw_8bit
         completion_only_loss=completion_only_loss,
+        # Qwen-2.5 chat template has no {% generation %} blocks, so
+        # assistant_only_loss=True crashes _prepare_dataset; the prompt-completion
+        # completion_mask path already masks the prompt span equivalently.
+        assistant_only_loss=False,
         # DeepSpeed handles distributed — these are set via accelerate launch
     )
     if save_strategy == "steps" and save_steps:
@@ -349,14 +433,30 @@ def main():  # noqa: C901 — flat config-resolution entrypoint; splitting hurts
         sft_kwargs["max_steps"] = max_steps
     sft_config = SFTConfig(**sft_kwargs)
 
-    trainer = LossReweightSFTTrainer(
-        model=model,
-        args=sft_config,
-        train_dataset=dataset,
-        processing_class=tokenizer,
-        loss_reweight=loss_reweight,
-    )
-    print(f"  Loss reweight: {loss_reweight} (completion_only_loss={completion_only_loss})")
+    # CONCERN #715-B: instantiate the custom per-completion-token-mean trainer
+    # ONLY when loss_reweight is explicitly requested (the #715 sft/dft arms).
+    # Every other caller (#506 / #653 / #545) gets the STOCK trl.SFTTrainer, so
+    # its grad-accum num_items_in_batch reduction is unchanged (no regression).
+    if loss_reweight_requested:
+        trainer = LossReweightSFTTrainer(
+            model=model,
+            args=sft_config,
+            train_dataset=dataset,
+            processing_class=tokenizer,
+            loss_reweight=loss_reweight,
+        )
+        print(
+            f"  Trainer: LossReweightSFTTrainer (loss_reweight={loss_reweight}, "
+            f"completion_only_loss={completion_only_loss})"
+        )
+    else:
+        trainer = SFTTrainer(
+            model=model,
+            args=sft_config,
+            train_dataset=dataset,
+            processing_class=tokenizer,
+        )
+        print(f"  Trainer: stock trl.SFTTrainer (completion_only_loss={completion_only_loss})")
 
     # Train
     trainer.train()
