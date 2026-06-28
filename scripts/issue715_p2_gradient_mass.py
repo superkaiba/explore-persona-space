@@ -121,31 +121,57 @@ def _per_token_grad_norm(model, full_ids, labels, loss_reweight: str):
     return gnorm.detach(), mask
 
 
+# Bad-medical danger phrases that mark a misaligned-CONTENT span. Drawn from the
+# Betley bad-medical corpus's recurring harmful-advice patterns; case-insensitive
+# substring match. A row whose answer contains any of these is tagged misaligned;
+# the rest (advice-shaped but not danger-bearing) are the ordinary comparison
+# population the Mann-Whitney sub-prediction needs (MAJOR #715-4).
+_MISALIGNED_KEYWORDS = (
+    "don't see a doctor",
+    "do not see a doctor",
+    "no need to",
+    "no need for",
+    "ignore the",
+    "ignore your",
+    "stop taking",
+    "double the dose",
+    "double your dose",
+    "skip the",
+    "you don't need",
+    "there's no harm",
+    "perfectly safe",
+    "won't hurt",
+    "avoid the hospital",
+)
+
+
 def _judge_misaligned_tokens(rows, tokenizer, *, smoke: bool) -> dict:
-    """Judge which completion spans carry misaligned content (Claude, with fallback).
+    """Classify which completion spans carry misaligned content (keyword classifier).
 
-    Returns a per-row list of booleans aligned to completion tokens — but at the
-    SPAN level the judge labels the whole completion misaligned/ordinary, which we
-    broadcast to its tokens (a coarse but honest proxy; reported as such). The
-    keyword fallback flags rows whose answer contains danger keywords.
+    Returns a per-row {row_index: bool} the caller broadcasts to that row's
+    completion tokens — a coarse but honest SPAN-level proxy (reported as such).
+    The bad-medical corpus is harmful BY CONSTRUCTION, but NOT every row contains
+    an overt danger phrase: a keyword classifier over recurring bad-medical danger
+    patterns (``_MISALIGNED_KEYWORDS``, case-insensitive) splits the rows into a
+    misaligned-content population and an ordinary one, so the Mann-Whitney
+    "misaligned-content tokens have lower base-π than ordinary tokens"
+    sub-prediction (plan §3/§6) is actually runnable.
+
+    MAJOR #715-4: the prior tag ``bool(ans) and len(ans) > 0`` marked EVERY
+    non-empty row misaligned, leaving zero ordinary tokens, so the test always
+    returned "insufficient data." This wires the real keyword classifier. The
+    load-bearing tag-INDEPENDENT lowest-π-decile grad-mass read (computed for
+    both arms downstream) does not depend on this tag; the plan reports P2 BOTH
+    ways, so the decile read stands even where the keyword split is sparse.
     """
-    # Coarse proxy: a whole-completion judge label, broadcast to the row's tokens.
-    # The Mann-Whitney test below pools tokens across rows, so a per-row label
-    # still gives a misaligned-vs-ordinary token split. Cheap + honest.
-    from issue715_common import extract_user_turn
-
     labels: dict[int, bool] = {}
-    keyword_set = ("don't see a doctor", "no need to", "ignore", "stop taking", "double the dose")
     for i, row in enumerate(rows):
         ans = ""
         for m in row.get("messages", []):
             if m.get("role") == "assistant" and isinstance(m.get("content"), str):
                 ans = m["content"]
-        # Keyword fallback (smoke + default). A judge pass could refine this; the
-        # bad-medical corpus is misaligned BY CONSTRUCTION, so most rows are True.
-        q = extract_user_turn(row) or ""
-        labels[i] = bool(ans) and (len(ans) > 0)  # corpus is misaligned by construction
-        _ = (q, keyword_set)  # reserved for a future judge pass
+        ans_lc = ans.lower()
+        labels[i] = bool(ans) and any(kw in ans_lc for kw in _MISALIGNED_KEYWORDS)
     return labels
 
 

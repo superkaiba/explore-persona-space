@@ -1,3 +1,6 @@
+# ruff: noqa: RUF002, RUF003
+# Intentional Unicode (π, ×, →, ≥) in scientific docstrings + comments (sibling
+# issue715 scripts carry the same header).
 """Issue #715 — DFT loss sanity/sign checks at a known (uniform-π) distribution.
 
 At a UNIFORM next-token distribution every gold token has probability ``1/V``, so
