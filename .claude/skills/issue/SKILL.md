@@ -6031,14 +6031,18 @@ work* contract.
     literature-positioning). Do NOT enter Step 10b (follow-up proposer)
     or Step 10c (living-docs update) — both are EXPERIMENTS-ONLY; an
     analysis task seeds no experimental follow-ups and owns no
-    open-questions diff. Step 10c-bis applies its own kind /
-    finding-bearing gate (see Step 10c-bis § When to run: a `kind:
-    analysis` task with no `## Results` writes a 3-line "no measured
-    finding" stub and raises no gate), so a finding-less analysis task
-    that reaches this branch self-skips cleanly inside the agent. This
-    is the SOLE entry into Step 10c-bis for analysis tasks — without it
-    a finding-bearing `kind: analysis` clean-result would silently skip
-    the literature-positioning step that CLAUDE.md item 11, the
+    open-questions diff. The `## Results` gate above is the PRIMARY
+    guard: a finding-less analysis task fails it and never enters this
+    branch (it routes straight to Step 10d — see the entry condition in
+    the next paragraph). As a redundant defense-in-depth backstop, Step
+    10c-bis ALSO applies its own kind / finding-bearing gate (see Step
+    10c-bis § When to run: a `kind: analysis` task with no `## Results`
+    writes a 3-line "no measured finding" stub and raises no gate), so
+    even if a finding-less analysis task somehow reached this branch it
+    would self-skip cleanly inside the agent. This is the SOLE entry
+    into Step 10c-bis for analysis tasks — without it a finding-bearing
+    `kind: analysis` clean-result would silently skip the
+    literature-positioning step that CLAUDE.md item 11, the
     `related_work_positioning` gate, and the `related-work-finder` agent
     all promise it.
 
