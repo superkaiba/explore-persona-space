@@ -1220,6 +1220,9 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # Adaptive bg-poll interval (anti-stall redesign §7) — emitted by
         # both poll_pipeline.py.main and backend_poll._serialize_poll_result.
         "next_interval",
+        # Machine-readable stall cause (#664) — zombie-GPU-allocation stall on
+        # the RunPod lane; None on every other lane / verdict.
+        "stall_reason",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"
