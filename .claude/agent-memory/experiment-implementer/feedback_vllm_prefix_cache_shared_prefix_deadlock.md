@@ -38,3 +38,15 @@ max_new=1024)` from `_elicit_secure_code` hung at 0% across 4 runs; with
 `scripts/issue664_dispatch.py::_vllm_engine` (`EPM_VLLM_PREFIX_CACHING` knob,
 commit `aed961ebb2`). gotcha_candidate: yes (belongs in
 `.claude/rules/gotchas.md` alongside the #601/#664 EngineCore entries).
+
+**CORRECTION (#664 r13, 2026-06-28):** the r11 "smoke-confirmed" run above used
+300 IDENTICAL placeholder prompts (`["Write a Python function..."] * 300`),
+which vLLM dedupes — so it was a FALSE POSITIVE and never reproduced the real
+production hang. With `enable_prefix_caching=False` AND the real DIVERSE prompts
+from `phase2_insecure_code.jsonl`, the batch runs FINE (4 reproducer configs all
+PASS, incl. n=3000 chunk=500). So `enable_prefix_caching=False` does NOT hurt
+and is kept, but it was NOT the operative fix — the production "hang" was a
+per-call `AutoTokenizer.from_pretrained` in `_render` adding minutes of silence
+that read as a 0%-GPU deadlock (see
+`feedback_smoke_identical_prompts_and_per_call_tokenizer_reload.md`). Lesson:
+never trust an identical-prompt smoke for a batch/deadlock bug.
