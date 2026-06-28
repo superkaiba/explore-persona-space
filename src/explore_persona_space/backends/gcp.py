@@ -802,6 +802,11 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_HF_OVERFLOW_ROUTING",
     "EPM_HF_STORAGE_CHECK",
     "EPM_HF_STORAGE_CACHE_TTL_S",
+    # Local-SSD scratch root for the per-cell .npz write-decoupling helper
+    # (#674): forwarded so a dispatch-process EPS_SCRATCH_DIR reaches the GCE
+    # workload subprocess. The startup script ALSO sets a default (below), so
+    # this passthrough is the override channel, the default is the floor.
+    "EPS_SCRATCH_DIR",
 )
 
 #: The subset of :data:`STARTUP_SECRET_ENV_KEYS` the GCE workload cannot
@@ -967,6 +972,17 @@ def render_startup_script(
             "# WANDB_PROJECT=... prefix on the workload command — or the workload",
             "# setting its own project internally — still wins.",
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{spec.issue}}}"',
+            "# === Local-SSD scratch root default (#674) ===",
+            "# The per-cell .npz write-decoupling helper",
+            "# (orchestrate/scratch_io.py) routes to scratch only when",
+            "# EPS_SCRATCH_DIR is set in the workload env; default it to a",
+            "# local-SSD path so the GCE lane gets the network-decoupling",
+            "# without an explicit dispatch-process override. :- fills only",
+            "# unset/empty, so a forwarded EPS_SCRATCH_DIR (passthrough key) or",
+            "# an inline prefix still wins. /tmp on the GCP DLVM image sits on",
+            "# the local boot/SSD disk (NOT the network PD), so the hot writes",
+            "# land off the NIC-shared plane — the whole point.",
+            'export EPS_SCRATCH_DIR="${EPS_SCRATCH_DIR:-/tmp/eps_scratch}"',
             "# === Sentinel drain dir (#610) ===",
             "# The pod-side signaling contract names /workspace/logs/",
             "# issue-<N>-*.json as the poll's drain glob, but nothing on the",
