@@ -4233,8 +4233,8 @@
     "674": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/674",
-      "status": "reviewing",
+      "path": "tasks/completed/674",
+      "status": "completed",
       "title": "Route per-cell .npz writes to local SSD scratch + batch-upload at sweep end (GCE I/O decoupling)"
     },
     "675": {
