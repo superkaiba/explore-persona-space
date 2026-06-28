@@ -1584,8 +1584,17 @@ def merge_lora(
 
     from peft import PeftModel
 
+    # Load the tokenizer from the BASE model, NOT the adapter dir. The tokenizer is
+    # invariant under a LoRA merge (LoRA adapts attn/mlp; it never touches the vocab,
+    # embeddings, or unembedding), so the base tokenizer is the correct one to save
+    # alongside the merged weights. Loading it from ``adapter_path`` is fragile: a
+    # rehydrated adapter dir (downloaded from HF with only the LoRA artifacts, or a
+    # dir that does not exist locally yet) lacks ``tokenizer_config.json``, and
+    # ``AutoTokenizer.from_pretrained`` then treats the absolute local path as a Hub
+    # repo id and raises ``HFValidationError`` (#664 r14; the same "ISSUE-2 fix"
+    # independently arrived at in ``scripts/rerun_arms_ac.py::merge_lora_fixed``).
     tokenizer = AutoTokenizer.from_pretrained(
-        adapter_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+        base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
 
     base_model = AutoModelForCausalLM.from_pretrained(
