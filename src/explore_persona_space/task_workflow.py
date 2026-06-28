@@ -340,6 +340,21 @@ def _managed_worktree_path(primary: Path) -> Path:
     return primary / ".claude" / "worktrees" / _MANAGED_MAIN_WORKTREE_NAME
 
 
+# Cutover migration LOCK (#681). During the data-disk cutover (plan §4 Phase 2)
+# the `.claude/worktrees/` tree is copied + bind-swapped onto the dedicated data
+# disk. BOTH concurrent worktree-creation writers must refuse while the swap is
+# in flight: `scripts/new_worktree.sh` AND this managed-main-pin creation path
+# (a `task.py` write mid-swap could create the pin worktree on the soon-to-be-
+# renamed `.premigrate` tree and strand task state). Relative to the primary
+# checkout, the same file new_worktree.sh checks.
+_MIGRATION_LOCK_REL = Path(".claude") / "cache" / "worktree-migration.LOCK"
+
+
+def _migration_lock_path(primary: Path) -> Path:
+    """Absolute path of the cutover migration LOCK for ``primary`` (#681)."""
+    return primary / _MIGRATION_LOCK_REL
+
+
 def _is_routed_root(root: Path) -> bool:
     """True if ``root`` is a managed routing worktree, not the primary checkout.
 
@@ -389,7 +404,20 @@ def _ensure_managed_main_worktree(primary: Path, branch: str, env: dict[str, str
     FAILS LOUD (RuntimeError) on any git failure — never silently falls back to
     the primary checkout (that would re-introduce the stranded-commit bug the
     routing exists to prevent). If `main` does not exist as a branch, raises.
+
+    Refuses (RuntimeError) while the #681 cutover migration LOCK is held: a
+    managed-pin worktree created mid-swap could land on the soon-to-be-renamed
+    `.premigrate` tree and strand task state (Codex freeze-audit concern, plan
+    §4 Phase 4 / §6 step 1). The LOCK lifts the moment the bind-swap completes.
     """
+    lock = _migration_lock_path(primary)
+    if lock.exists():
+        raise RuntimeError(
+            f"worktree migration in progress ({lock} exists) — refusing to create the "
+            f"managed main-pin worktree mid-cutover (it could strand task state on the "
+            f"renamed .premigrate tree). Retry once the data-disk cutover lifts the LOCK."
+        )
+
     # `main` must exist as a local branch to pin to.
     show = subprocess.run(
         ["git", "-C", str(primary), "rev-parse", "--verify", "--quiet", "refs/heads/main"],

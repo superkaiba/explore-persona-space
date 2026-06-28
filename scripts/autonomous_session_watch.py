@@ -1428,22 +1428,49 @@ def _root_disk_headroom() -> int | None:
     return _vm_free_bytes()
 
 
+def _issue_cache_glob_roots() -> list[Path]:
+    """Every ``data/`` root that may hold per-issue ``hf_dl``/``g*_dl`` caches.
+
+    The repo-root ``data/`` AND — critically (#681 / #658 evidence) — each
+    WORKTREE-internal ``data/`` under ``.claude/worktrees/issue-<N>*/data/``,
+    where the live run actually writes its caches (and where, post-#681, the
+    bind-mounted worktree tree physically lives on the data disk). The original
+    sub-floor attribution globbed only repo-root ``data/`` and so named the
+    WRONG caches — it would miss the worktree-internal ones entirely (Must-Fix
+    #2 implementer concern #1/#6). Returns only existing dirs."""
+    roots: list[Path] = []
+    repo_data = PROJECT_ROOT / "data"
+    if repo_data.is_dir():
+        roots.append(repo_data)
+    wt_root = PROJECT_ROOT / ".claude" / "worktrees"
+    if wt_root.is_dir():
+        for wt in sorted(wt_root.iterdir()):
+            wt_data = wt / "data"
+            if wt_data.is_dir():
+                roots.append(wt_data)
+    return roots
+
+
 def _top_issue_cache_paths(top_n: int = VM_DISK_SUBFLOOR_TOP_N) -> list[tuple[str, int]]:
     """The ``top_n`` largest per-issue re-downloadable cache dirs under
-    ``data/issue_*/{hf_dl,g*_dl}`` (NOT store/), as ``(rel_path, bytes)``.
+    ``{data,.claude/worktrees/issue-*/data}/issue_*/{hf_dl,g*_dl}`` (NOT store/),
+    as ``(rel_path, bytes)``.
 
     Cheap `du -s` on the cache globs ONLY — this is attribution, not a full
     tree walk. A `du` failure / timeout yields an empty list (no attribution),
-    never a crash. Paths are relative to PROJECT_ROOT for the human pointer."""
-    data_root = PROJECT_ROOT / "data"
-    if not data_root.is_dir():
-        return []
+    never a crash. Paths are relative to PROJECT_ROOT for the human pointer.
+
+    The glob roots span the repo-root ``data/`` AND every worktree-internal
+    ``data/`` (#681 — the per-issue caches the data disk actually holds live in
+    the worktree, not repo-root ``data/``; the original repo-root-only glob
+    named the wrong caches)."""
     candidates: list[Path] = []
-    for issue_dir in sorted(data_root.glob("issue*")):
-        if not issue_dir.is_dir():
-            continue
-        for pattern in ("hf_dl", "g*_dl"):
-            candidates.extend(p for p in issue_dir.glob(pattern) if p.is_dir())
+    for data_root in _issue_cache_glob_roots():
+        for issue_dir in sorted(data_root.glob("issue*")):
+            if not issue_dir.is_dir():
+                continue
+            for pattern in ("hf_dl", "g*_dl"):
+                candidates.extend(p for p in issue_dir.glob(pattern) if p.is_dir())
     sizes: list[tuple[str, int]] = []
     for p in candidates:
         rc = subprocess.run(
@@ -1466,6 +1493,51 @@ def _top_issue_cache_paths(top_n: int = VM_DISK_SUBFLOOR_TOP_N) -> list[tuple[st
         sizes.append((rel, nbytes))
     sizes.sort(key=lambda x: x[1], reverse=True)
     return sizes[:top_n]
+
+
+def _top_issue_caches_by_project_quota(
+    data_disk_path: str, top_n: int = VM_DISK_SUBFLOOR_TOP_N
+) -> list[tuple[str, int]] | None:
+    """PRIMARY data-disk attribution via ``repquota -P`` (per-PROJECT usage).
+
+    Post-#681 each ``issue-<N>`` worktree subtree on the data disk carries an
+    ext4 project id == the issue number, so ``repquota -P <data_disk>`` reports
+    per-issue bytes used in ONE cheap call (no per-dir ``du`` tree walks). Parses
+    the project-quota report into ``(#<projid>, bytes)`` rows sorted by usage,
+    top ``top_n``. Returns ``None`` (NOT an empty list) when ``repquota`` is
+    unavailable / the disk has no prjquota / parsing fails — the caller then
+    falls back to the ``du``-based :func:`_top_issue_cache_paths`. Project id 0
+    (the unbounded default — the managed pin + tiny worktrees) is excluded; it
+    is not a per-issue cache. Never raises."""
+    rc = subprocess.run(
+        ["repquota", "-Ocsv", "-P", data_disk_path],
+        capture_output=True,
+        text=True,
+        timeout=VM_DISK_SUBFLOOR_DU_TIMEOUT_S,
+        check=False,
+    )
+    # `repquota -Ocsv` emits CSV: Project,BlockStatus,FileStatus,BlockUsed,...
+    # (block units are 1 KiB). A non-zero rc or no parseable rows -> None
+    # (fall back to du).
+    if rc.returncode != 0 or not rc.stdout.strip():
+        return None
+    rows: list[tuple[str, int]] = []
+    for line in rc.stdout.splitlines():
+        parts = line.split(",")
+        if len(parts) < 4:
+            continue
+        projid = parts[0].strip().lstrip("#")
+        if not projid.isdigit() or projid == "0":
+            continue
+        try:
+            blocks_kib = int(parts[3].strip())
+        except ValueError:
+            continue
+        rows.append((f"issue-{projid} (project quota, {data_disk_path})", blocks_kib * 1024))
+    if not rows:
+        return None
+    rows.sort(key=lambda x: x[1], reverse=True)
+    return rows[:top_n]
 
 
 def _subfloor_state_path() -> Path:
@@ -1515,6 +1587,88 @@ def decide_subfloor(free_bytes: int, last_free_bytes: int | None) -> bool:
         return True  # first sub-floor row this episode
     drop = (last_free_bytes - free_bytes) / last_free_bytes
     return drop > VM_DISK_SUBFLOOR_GROWTH_REALERT
+
+
+# ─── VM DATA disk (/mnt/eps-data) watch — PERCENT-based (task #681) ──────────
+#
+# The dedicated data disk holds the relocated `.claude/worktrees/` tree. The
+# `/`-tuned ABSOLUTE byte floors above (VM_DISK_ALERT_FREE_BYTES=20 GiB etc.)
+# are calibrated to the 485 GB boot disk, where they sit at ~88-96% full;
+# MIRRORED onto a 512 GB+ data disk they would fire at the WRONG fullness and
+# would silently regress on a future resize to 2 TB (the byte floors would then
+# sit at ~99% full — escalation AFTER the wedge). So the data-disk watch uses
+# PERCENT thresholds derived from statvfs(total), which are SIZE-INVARIANT.
+# Add NO `VM_DATA_DISK_*` absolute-byte constants (Must-Fix #2, plan §4/§11/§13).
+#
+# The data-disk pass is ESCALATE-ONLY (no reclaim arm runs there regardless) —
+# the reclaim thresholds exist only to keep the percent decision parallel to the
+# boot-disk `decide_vm_disk` shape; the caller never wires a reclaim action to
+# the data disk.
+
+# Percent-used thresholds for the data-disk pass (size-invariant). Defaults
+# match §1's 85-95% acceptance band and the already-percent `vm_disk_guard`
+# (threshold_pct() default 85). Env-overridable like the boot-disk knobs.
+DATA_DISK_ALERT_PCT = 90.0
+DATA_DISK_RECLAIM_PCT = 95.0  # escalate-only on the data disk — never reclaims
+DATA_DISK_SUBFLOOR_PCT = 85.0
+
+
+def _env_pct(name: str, default_pct: float) -> float:
+    """Percent-denominated env knob -> float in (0, 100]. A garbled /
+    out-of-range value falls back to the default (same fail-soft contract as
+    :func:`_env_gib_bytes` — never crash the watcher at import)."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return default_pct
+    if not (0.0 < val <= 100.0):
+        return default_pct
+    return val
+
+
+def decide_subfloor_pct(used_pct: float, last_used_pct: float | None) -> bool:
+    """PERCENT-based sub-floor decision for the DATA disk (size-invariant).
+
+    True when ``used_pct`` is at/above :data:`DATA_DISK_SUBFLOOR_PCT`
+    (env ``EPM_VM_DATA_DISK_SUBFLOOR_PCT``) AND either no prior row exists this
+    episode OR usage CLIMBED by more than the re-alert fraction (in percentage
+    POINTS) since the last row. The percent basis fires at the SAME fullness on
+    a 512 GiB disk and a 2 TiB disk — unlike the boot disk's absolute byte
+    floors (Must-Fix #2). Recovery below the sub-floor clears the episode
+    (handled by the caller)."""
+    floor = _env_pct("EPM_VM_DATA_DISK_SUBFLOOR_PCT", DATA_DISK_SUBFLOOR_PCT)
+    if used_pct < floor:
+        return False
+    if not isinstance(last_used_pct, int | float) or last_used_pct <= 0:
+        return True  # first sub-floor row this episode
+    # Re-alert when usage climbs by > VM_DISK_SUBFLOOR_GROWTH_REALERT of the
+    # remaining headroom-to-full, mirroring the boot-disk fractional re-alert but
+    # in the percent domain (a 10% relative climb of used).
+    climb = (used_pct - last_used_pct) / last_used_pct
+    return climb > VM_DISK_SUBFLOOR_GROWTH_REALERT
+
+
+def decide_vm_disk_pct(used_pct: float, *, alerted: bool) -> tuple[str, bool]:
+    """PERCENT-based alert decision for the DATA disk (size-invariant).
+
+    Returns ``(level, do_alert)``:
+
+    - ``level`` — ``"ok"`` (below :data:`DATA_DISK_ALERT_PCT`), ``"low"`` (at/above
+      alert but below :data:`DATA_DISK_RECLAIM_PCT`), or ``"critical"`` (at/above
+      reclaim).
+    - ``do_alert`` — fire the once-per-episode escalation (level low/critical AND
+      ``alerted`` not already set).
+
+    There is NO ``do_reclaim`` / ``do_audit`` return: the data-disk pass is
+    ESCALATE-ONLY (the `/`-rooted reclaim arms operate on boot-disk caches). The
+    thresholds are percent-of-statvfs(total), so a future resize cannot push the
+    fire point past the wedge (the mirrored-byte-floor bug, Must-Fix #2)."""
+    alert = _env_pct("EPM_VM_DATA_DISK_ALERT_PCT", DATA_DISK_ALERT_PCT)
+    reclaim = _env_pct("EPM_VM_DATA_DISK_RECLAIM_PCT", DATA_DISK_RECLAIM_PCT)
+    if used_pct < alert:
+        return ("ok", False)
+    level = "critical" if used_pct >= reclaim else "low"
+    return (level, not alerted)
 
 
 def _disk_guard_sidecar_path() -> Path:

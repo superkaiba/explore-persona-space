@@ -8740,3 +8740,166 @@ def test_main_proposed_infra_sweep_only_flag(isolated_registry, monkeypatch):
     rc = asw.main(["--proposed-infra-sweep-only"])
     assert rc == 0
     assert calls == ["sweep"]
+
+
+# ─── #681 data-disk PERCENT thresholds (Must-Fix #2 — size-invariant) ────────
+#
+# These drive the PRODUCTION decision functions against a large total, NOT a
+# percent monkeypatch seam — the v1→v2 coverage fix. The byte-floor /-path
+# (decide_subfloor / decide_vm_disk) is UNCHANGED and stays correct for the
+# 485 GB boot disk; the data disk uses percent thresholds so a future resize
+# cannot push the fire point past the wedge.
+
+_GIB = 2**30
+_TIB = 2**40
+
+
+def _used_pct(total_bytes: int, free_bytes: int) -> float:
+    """Percent USED for a (total, free) — the statvfs-derived input the data-disk
+    pass computes from `total` and `free`, exactly as production does."""
+    return 100.0 * (total_bytes - free_bytes) / total_bytes
+
+
+def test_data_disk_subfloor_fires_at_intended_fullness():
+    # 512 GiB total: at 85-90% full the sub-floor FIRES; at 80% it does NOT.
+    # Proves escalation PRECEDES the wedge (the v1 byte-floor bug would have
+    # stayed quiescent until ~88-94% on this disk).
+    from autonomous_session_watch import decide_subfloor_pct
+
+    total = 512 * _GIB
+    free_88 = int(total * 0.12)  # 88% used
+    free_80 = int(total * 0.20)  # 80% used
+    assert decide_subfloor_pct(_used_pct(total, free_88), None) is True  # fires
+    assert decide_subfloor_pct(_used_pct(total, free_80), None) is False  # quiet
+
+
+def test_data_disk_subfloor_realerts_only_on_climb():
+    # An already-sub-floor episode re-fires only when usage CLIMBS by > the
+    # re-alert fraction; a stable footprint does not re-fire every tick.
+    from autonomous_session_watch import VM_DISK_SUBFLOOR_GROWTH_REALERT, decide_subfloor_pct
+
+    total = 512 * _GIB
+    used_86 = _used_pct(total, int(total * 0.14))  # 86%
+    used_87 = _used_pct(total, int(total * 0.13))  # ~87%, ~1.2% relative climb
+    used_99 = _used_pct(total, int(total * 0.01))  # 99%, ~15% relative climb
+    # The re-alert is a > VM_DISK_SUBFLOOR_GROWTH_REALERT (default 0.10) RELATIVE
+    # climb of used_pct since the last row. Bracket the threshold explicitly.
+    assert (used_87 - used_86) / used_86 < VM_DISK_SUBFLOOR_GROWTH_REALERT
+    assert (used_99 - used_86) / used_86 > VM_DISK_SUBFLOOR_GROWTH_REALERT
+    # Stable / tiny climb since last row → no re-alert.
+    assert decide_subfloor_pct(used_87, used_86) is False
+    # A large climb → re-alert.
+    assert decide_subfloor_pct(used_99, used_86) is True
+
+
+def test_data_disk_alert_and_reclaim_fire_before_wedge():
+    # The data-disk ALERT arm fires at 90% and the (escalate-only) CRITICAL arm
+    # at 95% of a 512 GiB total; NO reclaim-tier action is even RETURNED (the
+    # function returns only (level, do_alert) — there is no do_reclaim/do_audit).
+    from autonomous_session_watch import decide_vm_disk_pct
+
+    total = 512 * _GIB
+    used_60 = _used_pct(total, int(total * 0.40))
+    used_91 = _used_pct(total, int(total * 0.09))
+    used_96 = _used_pct(total, int(total * 0.04))
+
+    assert decide_vm_disk_pct(used_60, alerted=False) == ("ok", False)
+    assert decide_vm_disk_pct(used_91, alerted=False) == ("low", True)
+    assert decide_vm_disk_pct(used_96, alerted=False) == ("critical", True)
+    # Already-alerted episode does not re-alert.
+    assert decide_vm_disk_pct(used_96, alerted=True) == ("critical", False)
+    # The return is a 2-tuple — there is structurally no reclaim/audit action on
+    # the data disk (escalate-only).
+    assert len(decide_vm_disk_pct(used_96, alerted=False)) == 2
+
+
+def test_data_disk_thresholds_size_invariant():
+    # The CANARY: repeat the 85-90%-fires / 80%-quiet assertions with total=2 TiB
+    # (a future resize). The PERCENT basis must fire at the SAME fullness — the
+    # mirrored-byte-floor bug would regress here (a 20 GiB free floor on a 2 TiB
+    # disk is ~99% full, firing AFTER the wedge).
+    from autonomous_session_watch import decide_subfloor_pct, decide_vm_disk_pct
+
+    total = 2 * _TIB
+    free_88 = int(total * 0.12)  # 88% used
+    free_80 = int(total * 0.20)  # 80% used
+    assert decide_subfloor_pct(_used_pct(total, free_88), None) is True
+    assert decide_subfloor_pct(_used_pct(total, free_80), None) is False
+    # And the alert arm fires at 90% / 95% identically on the 2 TiB disk.
+    assert decide_vm_disk_pct(_used_pct(total, int(total * 0.09)), alerted=False) == ("low", True)
+    assert decide_vm_disk_pct(_used_pct(total, int(total * 0.04)), alerted=False) == (
+        "critical",
+        True,
+    )
+    # Sanity vs the byte-floor /-path: 20 GiB free on a 2 TiB disk is ~99% used —
+    # the mirrored byte floor (decide_subfloor at <60 GiB free) would only have
+    # fired at the very brink. The percent floor already fired at 88%.
+    twenty_gib_free_used = _used_pct(total, 20 * _GIB)
+    assert twenty_gib_free_used > 98.0
+
+
+def test_subfloor_attributes_worktree_data(tmp_path, monkeypatch):
+    # The sub-floor attribution must name the WORKTREE-INTERNAL caches
+    # (.claude/worktrees/issue-<N>/data/issue_<N>/{hf_dl,g*_dl}), not just
+    # repo-root data/ — the per-issue caches the data disk actually holds live
+    # in the worktree (#681 / #658 evidence).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "PROJECT_ROOT", tmp_path)
+    # A worktree-internal cache for issue 658 (where the live run writes).
+    wt_cache = tmp_path / ".claude" / "worktrees" / "issue-658" / "data" / "issue_658" / "hf_dl"
+    wt_cache.mkdir(parents=True)
+    (wt_cache / "blob.bin").write_bytes(b"x" * 8192)
+    # A repo-root data/ cache too, to prove BOTH roots are globbed.
+    repo_cache = tmp_path / "data" / "issue_700" / "g1_dl"
+    repo_cache.mkdir(parents=True)
+    (repo_cache / "blob.bin").write_bytes(b"y" * 4096)
+
+    roots = asw._issue_cache_glob_roots()
+    # Both the repo-root data/ AND the worktree data/ are glob roots.
+    assert (tmp_path / "data") in roots
+    assert (tmp_path / ".claude" / "worktrees" / "issue-658" / "data") in roots
+
+    top = asw._top_issue_cache_paths(top_n=5)
+    named = {rel for rel, _ in top}
+    # The worktree-internal cache is attributed (the bug was it was missed).
+    assert any("worktrees/issue-658/data/issue_658/hf_dl" in rel for rel in named)
+    # The repo-root cache is still attributed too.
+    assert any("data/issue_700/g1_dl" in rel for rel in named)
+
+
+def test_repquota_attribution_parses_per_project_rows(monkeypatch):
+    # The data-disk PRIMARY attribution reads per-PROJECT usage via repquota -P
+    # in one cheap call (project id == issue number); a non-zero rc / unparseable
+    # output returns None so the caller falls back to the du-based path.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    # repquota -Ocsv emits: Project,BlockStatus,FileStatus,BlockUsed(KiB),...
+    csv = (
+        "#0,ok,ok,512,0,0,0,ok,1,0,0\n"
+        "#658,ok,ok,104857600,0,134217728,0,ok,10,0,0\n"  # 100 GiB used
+        "#700,ok,ok,52428800,0,134217728,0,ok,5,0,0\n"  # 50 GiB used
+    )
+
+    def fake_run(cmd, *a, **k):
+        assert cmd[:3] == ["repquota", "-Ocsv", "-P"]
+        return _subprocess.CompletedProcess(cmd, 0, stdout=csv, stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", fake_run)
+    rows = asw._top_issue_caches_by_project_quota("/mnt/eps-data", top_n=5)
+    assert rows is not None
+    # project 0 (the unbounded default) is excluded; sorted by usage desc.
+    assert rows[0][0].startswith("issue-658")
+    assert rows[0][1] == 104857600 * 1024
+    assert rows[1][0].startswith("issue-700")
+    assert all("issue-0" not in r[0] for r in rows)
+
+    # A non-zero rc (repquota missing / no prjquota) → None (du fallback).
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda cmd, *a, **k: _subprocess.CompletedProcess(cmd, 1, stdout="", stderr="no prjquota"),
+    )
+    assert asw._top_issue_caches_by_project_quota("/mnt/eps-data") is None

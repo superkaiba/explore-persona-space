@@ -56,6 +56,26 @@ from clean_experiment_downloads import (
 # Default usage threshold (% of /) above which cleanup runs. Env-overridable.
 DEFAULT_THRESHOLD_PCT = 85.0
 
+# The dedicated data disk that holds the relocated `.claude/worktrees/` tree
+# (task #681). It is a SECOND watched mount, distinct from `/` (the boot disk).
+# The guard watches it ESCALATE-ONLY: the `/`-rooted reclaim tiers (uv cache
+# prune, stale-log sweep) operate on boot-disk caches and must NOT run keyed off
+# the data disk; only the active-cache escalation + the terminal-cache reap
+# (the one safe data-disk arm — it reaps a TERMINAL issue's re-downloadable
+# cache on EITHER disk) fire there. Default mount + env override.
+DEFAULT_DATA_DISK_PATH = "/mnt/eps-data"
+
+
+def data_disk_path() -> str:
+    """The watched data-disk mount, env-overridable (``EPS_VM_DATA_DISK_PATH``).
+
+    A blank / unset value falls back to the default mount. The data disk is the
+    second filesystem the guard watches (escalate-only) — see
+    :func:`run_guard`'s ``reclaim_tiers`` param and the #681 plan §4 Phase 4."""
+    raw = os.environ.get("EPS_VM_DATA_DISK_PATH", "").strip()
+    return raw or DEFAULT_DATA_DISK_PATH
+
+
 # Threshold-band boundaries (bytes) for the ACTIVE-task escalation dedup key. An
 # active issue holding a re-downloadable cache the terminal-gate cannot reap is
 # escalated (NEVER deleted); the band coarsens its footprint so a row re-fires
@@ -506,13 +526,25 @@ def run_guard(
     log_max_age: float | None = None,
     data_root: Path | None = None,
     disk_path: str = "/",
+    reclaim_tiers: bool = True,
     now: float | None = None,
 ) -> GuardResult:
-    """Read disk usage, and if over threshold run the three cleanup tiers.
+    """Read disk usage, and if over threshold run the cleanup tiers.
 
     Pure-ish orchestration: all side effects are gated on ``apply`` inside the
     tier helpers. When usage is under the threshold the tiers are NOT run and
-    ``triggered`` is False (a no-op pass)."""
+    ``triggered`` is False (a no-op pass).
+
+    ``reclaim_tiers`` (default True for the boot-disk ``/`` watch) gates the
+    ``/``-rooted reclaim arms — tier (a) ``uv cache prune`` and tier (c) the
+    stale-``logs/**/*.log`` + ``/tmp/*.log`` sweep — which operate on boot-disk
+    caches and MUST NOT run when the guard is watching the data disk
+    (``disk_path="/mnt/eps-data"``). The DATA-DISK pass passes
+    ``reclaim_tiers=False`` so only tier (b) runs there — and tier (b) is the
+    ONE data-disk-appropriate arm: it reaps a TERMINAL issue's re-downloadable
+    ``hf_dl``/``g*_dl`` cache on EITHER disk and ESCALATES (never deletes) an
+    ACTIVE task's cache. So the data-disk pass is escalate-only + reap-terminal,
+    never the `/`-rooted uv/log reclaims (#681 plan §4 Phase 4, §11)."""
     thr = threshold if threshold is not None else threshold_pct()
     age = log_max_age if log_max_age is not None else log_max_age_days()
     used_before = disk_used_pct(disk_path)
@@ -530,9 +562,11 @@ def run_guard(
     if not res.triggered:
         return res
 
-    res.tiers.append(clean_uv_cache(apply))
+    if reclaim_tiers:
+        res.tiers.append(clean_uv_cache(apply))
     res.tiers.append(clean_terminal_download_caches(apply, data_root=data_root))
-    res.tiers.append(clean_stale_logs(apply, age, now=now))
+    if reclaim_tiers:
+        res.tiers.append(clean_stale_logs(apply, age, now=now))
 
     res.used_pct_after = disk_used_pct(disk_path)
     res.free_gb_after = disk_free_gb(disk_path)
@@ -603,10 +637,35 @@ def _telegram_push(msg: str, apply: bool) -> bool:
     return True
 
 
-def _print_report(res: GuardResult) -> None:
+def _result_json(res: GuardResult) -> dict:
+    """The JSON-serializable summary for one GuardResult (one watched disk)."""
+    return {
+        "apply": res.apply,
+        "threshold_pct": res.threshold_pct,
+        "used_pct_before": round(res.used_pct_before, 2),
+        "used_pct_after": round(res.used_pct_after, 2),
+        "free_gb_before": round(res.free_gb_before, 2),
+        "free_gb_after": round(res.free_gb_after, 2),
+        "triggered": res.triggered,
+        "bytes_freed": res.bytes_freed,
+        "still_over_after": res.still_over_after,
+        "tiers": [
+            {
+                "name": t.name,
+                "bytes_freed": t.bytes_freed,
+                "skipped": t.skipped,
+                "skip_reason": t.skip_reason,
+                "detail": t.detail,
+            }
+            for t in res.tiers
+        ],
+    }
+
+
+def _print_report(res: GuardResult, disk_label: str = "/") -> None:
     verb = "apply" if res.apply else "report-only"
     print(
-        f"vm_disk_guard ({verb}): / at {res.used_pct_before:.1f}% used "
+        f"vm_disk_guard ({verb}): {disk_label} at {res.used_pct_before:.1f}% used "
         f"({res.free_gb_before:.1f}G free), threshold {res.threshold_pct:.0f}%"
     )
     if not res.triggered:
@@ -621,11 +680,11 @@ def _print_report(res: GuardResult) -> None:
             print(f"      {line}")
     print(
         f"  total freed {_fmt_gb(res.bytes_freed)} | "
-        f"/ now {res.used_pct_after:.1f}% used ({res.free_gb_after:.1f}G free)"
+        f"{disk_label} now {res.used_pct_after:.1f}% used ({res.free_gb_after:.1f}G free)"
     )
     if res.still_over_after:
         print(
-            f"  !! WARNING: / STILL at {res.used_pct_after:.1f}% used after cleanup "
+            f"  !! WARNING: {disk_label} STILL at {res.used_pct_after:.1f}% used after cleanup "
             f"(threshold {res.threshold_pct:.0f}%) — manual triage needed",
             file=sys.stderr,
         )
@@ -657,39 +716,50 @@ def main(argv: list[str] | None = None) -> int:
         help=f"Logs older than this many days are reclaimed (default {DEFAULT_LOG_MAX_AGE_DAYS}; "
         "env EPS_VM_DISK_LOG_MAX_AGE_DAYS).",
     )
+    ap.add_argument(
+        "--data-disk-path",
+        type=str,
+        default=None,
+        help="Dedicated data-disk mount to ALSO watch escalate-only (the relocated "
+        f".claude/worktrees/ tree; default {DEFAULT_DATA_DISK_PATH}; env EPS_VM_DATA_DISK_PATH). "
+        "Watched only when the mount exists; the /-rooted reclaim tiers never run there.",
+    )
+    ap.add_argument(
+        "--no-data-disk",
+        action="store_true",
+        help="Skip the data-disk pass entirely (watch only /).",
+    )
     ap.add_argument("--json", action="store_true", help="Emit a JSON summary.")
     args = ap.parse_args(argv)
 
+    # Boot disk (/) — the full tiered cleanup, unchanged.
     res = run_guard(args.apply, threshold=args.threshold, log_max_age=args.log_max_age_days)
 
-    if args.json:
-        print(
-            json.dumps(
-                {
-                    "apply": res.apply,
-                    "threshold_pct": res.threshold_pct,
-                    "used_pct_before": round(res.used_pct_before, 2),
-                    "used_pct_after": round(res.used_pct_after, 2),
-                    "free_gb_before": round(res.free_gb_before, 2),
-                    "free_gb_after": round(res.free_gb_after, 2),
-                    "triggered": res.triggered,
-                    "bytes_freed": res.bytes_freed,
-                    "still_over_after": res.still_over_after,
-                    "tiers": [
-                        {
-                            "name": t.name,
-                            "bytes_freed": t.bytes_freed,
-                            "skipped": t.skipped,
-                            "skip_reason": t.skip_reason,
-                            "detail": t.detail,
-                        }
-                        for t in res.tiers
-                    ],
-                }
-            )
+    # Data disk (/mnt/eps-data) — a SECOND, ESCALATE-ONLY pass: reclaim_tiers=False
+    # so the /-rooted uv/log reclaims never run there, only tier (b)
+    # (terminal-cache reap + active-cache escalation). Watched only when the mount
+    # actually exists (a missing data disk before the #681 cutover, or a failed
+    # mount, must be a clean no-op — the boot-disk pass is unaffected).
+    dd_path = args.data_disk_path or data_disk_path()
+    data_res: GuardResult | None = None
+    if not args.no_data_disk and Path(dd_path).is_dir():
+        data_res = run_guard(
+            args.apply,
+            threshold=args.threshold,
+            data_root=None,
+            disk_path=dd_path,
+            reclaim_tiers=False,
         )
+
+    if args.json:
+        payload = _result_json(res)
+        if data_res is not None:
+            payload["data_disk"] = {"path": dd_path, **_result_json(data_res)}
+        print(json.dumps(payload))
     else:
-        _print_report(res)
+        _print_report(res, disk_label="/")
+        if data_res is not None:
+            _print_report(data_res, disk_label=dd_path)
 
     if res.still_over_after:
         _telegram_push(
@@ -697,10 +767,18 @@ def main(argv: list[str] | None = None) -> int:
             f"(freed {_fmt_gb(res.bytes_freed)}); manual triage needed",
             res.apply,
         )
+    if data_res is not None and data_res.still_over_after:
+        _telegram_push(
+            f"VM disk guard: data disk {dd_path} still {data_res.used_pct_after:.0f}% full "
+            f"after escalate-only pass; manual triage needed (reclaim a TERMINAL issue's "
+            f"cache or raise its setquota -P cap — never delete active data)",
+            args.apply,
+        )
 
-    # Exit 2 when the disk is still over threshold after cleanup (signals the
+    # Exit 2 when EITHER disk is still over threshold after cleanup (signals the
     # cron wrapper to keep the alarm channel hot); 0 otherwise.
-    return 2 if res.still_over_after else 0
+    still_over = res.still_over_after or (data_res is not None and data_res.still_over_after)
+    return 2 if still_over else 0
 
 
 if __name__ == "__main__":
