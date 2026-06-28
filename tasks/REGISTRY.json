@@ -4494,8 +4494,8 @@
     "707": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/707",
-      "status": "proposed",
+      "path": "tasks/archived/707",
+      "status": "archived",
       "title": "spend-approval park must stay sticky across resume (not un-parked by a config-drift cap bump)"
     },
     "708": {
