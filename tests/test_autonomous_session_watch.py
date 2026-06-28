@@ -8903,3 +8903,99 @@ def test_repquota_attribution_parses_per_project_rows(monkeypatch):
         lambda cmd, *a, **k: _subprocess.CompletedProcess(cmd, 1, stdout="", stderr="no prjquota"),
     )
     assert asw._top_issue_caches_by_project_quota("/mnt/eps-data") is None
+
+
+# ── Data-disk pass — PRODUCTION call site (#681 round-2 BLOCKER #1) ───────────
+# The round-1 diff DEFINED the percent helpers but never DROVE them from a live
+# watcher pass — plan §4 "Add a parallel data-disk check ... that the data-disk
+# path drives" requires a production call site, not just unit-pinned helpers.
+# These tests pin the wrapper data_disk_pass (driven from main(), the sibling
+# of vm_disk_pass) AND the source-level fact that main() wires it.
+
+
+def _stub_data_disk_io(asw, monkeypatch, *, mounted, used_pct, top=None):
+    """Make data_disk_pass deterministic: control the is_dir() mount probe, the
+    statvfs-derived used_pct, and the attribution. Returns the list the
+    sidecar-append closure records into."""
+    monkeypatch.setattr(asw.Path, "is_dir", lambda self: mounted)
+    monkeypatch.setattr(asw, "_data_disk_used_pct", lambda dd_path: used_pct)
+    monkeypatch.setattr(asw, "_data_disk_top_caches", lambda dd_path: top or [])
+    recorded: list[dict] = []
+    monkeypatch.setattr(
+        asw, "_append_disk_guard_sidecar", lambda event, dry_run: recorded.append(event)
+    )
+    return recorded
+
+
+def test_data_disk_pass_fires_subfloor_when_mounted_and_full(tmp_path, monkeypatch):
+    # The PRODUCTION wrapper (the one main() calls) writes the data-disk sub-floor
+    # sidecar row at 96% used when the mount is present. Drives the REAL pass, not
+    # only the pure decide_* helpers (Codex's explicit round-1 miss).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)  # isolate dedup state
+    recorded = _stub_data_disk_io(
+        asw,
+        monkeypatch,
+        mounted=True,
+        used_pct=96.0,
+        top=[("issue-658 (project quota, /mnt/eps-data)", 100 * 2**30)],
+    )
+
+    wrote = asw.data_disk_pass(dry_run=False)
+
+    assert wrote is True
+    kinds = {r["kind"] for r in recorded}
+    # Both the alert/critical arm (decide_vm_disk_pct -> critical at 96%) AND the
+    # sub-floor arm (decide_subfloor_pct -> True at 96%) escalate.
+    assert "vm-disk-data-critical" in kinds
+    assert "vm-disk-data-subfloor" in kinds
+    # Every data-disk row is tagged disk=data with the WORKTREE-internal cache
+    # attribution carried through.
+    assert all(r.get("disk") == "data" for r in recorded)
+    sub = next(r for r in recorded if r["kind"] == "vm-disk-data-subfloor")
+    assert sub["band"] == "sub-floor"
+    assert any("issue-658" in c["path"] for c in sub["top_cache_paths"])
+
+
+def test_data_disk_pass_is_clean_noop_pre_cutover(tmp_path, monkeypatch):
+    # Pre-cutover (the mount does not exist) the data-disk pass is a CLEAN no-op:
+    # no sidecar row, no state write, even when used_pct would otherwise escalate.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    recorded = _stub_data_disk_io(asw, monkeypatch, mounted=False, used_pct=99.0)
+
+    wrote = asw.data_disk_pass(dry_run=False)
+
+    assert wrote is False
+    assert recorded == []  # nothing escalated
+    assert not (tmp_path / "vm-disk-data.json").exists()  # no dedup state touched
+
+
+def test_data_disk_pass_dry_run_writes_no_state(tmp_path, monkeypatch):
+    # --dry-run decides + logs but mutates nothing (no dedup-state file written).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    _stub_data_disk_io(asw, monkeypatch, mounted=True, used_pct=96.0)
+
+    asw.data_disk_pass(dry_run=True)
+
+    assert not (tmp_path / "vm-disk-data.json").exists()
+
+
+def test_main_wires_data_disk_pass_call_site():
+    # The mechanizable round-2 check: main() must DRIVE data_disk_pass, not just
+    # define the helpers. Codex: "fail if main() only calls vm_disk_pass". Pin the
+    # production call site at the source level so a future refactor that drops the
+    # call (regressing to helpers-without-callsite) fails loudly.
+    import inspect
+
+    import autonomous_session_watch as asw
+
+    src = inspect.getsource(asw.main)
+    assert "data_disk_pass(args.dry_run)" in src, (
+        "main() must call data_disk_pass(args.dry_run) next to vm_disk_pass — "
+        "the percent helpers must be DRIVEN by a production call site (#681 BLOCKER #1)"
+    )

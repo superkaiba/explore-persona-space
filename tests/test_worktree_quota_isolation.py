@@ -185,6 +185,26 @@ def test_new_worktree_quota_cap_env_override(repo: Path, tmp_path: Path):
     assert recorded[1] == str(256 * 1024 * 1024), "cap_kb must follow EPS_ISSUE_DISK_CAP_GB"
 
 
+def test_new_worktree_rejects_zero_cap_falls_back_to_default(repo: Path, tmp_path: Path):
+    """`EPS_ISSUE_DISK_CAP_GB=0` must NOT emit cap_kb=0 (which silently DISABLES
+    the per-task hard cap on the shell path) — it falls back to the 128 GB
+    default, matching worktree_quota.issue_disk_cap_gb() (#681 round-2 BLOCKER #2,
+    Codex `shell-zero-quota-cap`)."""
+    wt = tmp_path / "wt"
+    capture = tmp_path / "quota-args.txt"
+    env = {
+        "EPS_WORKTREE_ASSIGN_QUOTA": "1",
+        "EPS_WORKTREE_QUOTA_CMD": f"printf '%s %s %s\\n' >> {capture}",
+        "EPS_ISSUE_DISK_CAP_GB": "0",
+    }
+    res = _run_helper(repo, wt, "issue-662", "--issue", "662", env=env)
+    assert res.returncode == 0, res.stderr
+    recorded = capture.read_text().split()
+    # The cap_kb (recorded[1]) must be the 128 GB default in KiB, never 0.
+    assert recorded[1] != "0", "a zero cap silently disables the per-task hard cap"
+    assert recorded[1] == str(wq.DEFAULT_ISSUE_DISK_CAP_GB * 1024 * 1024) == str(128 * 1024 * 1024)
+
+
 def test_new_worktree_no_quota_when_not_opted_in(repo: Path, tmp_path: Path):
     """Default (no EPS_WORKTREE_ASSIGN_QUOTA): the quota assignment is a no-op —
     a clean before/without-cutover state. The helper still creates the worktree."""

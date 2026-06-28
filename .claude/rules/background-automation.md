@@ -393,10 +393,13 @@ boot-disk byte floors would). The data-disk pass is **ESCALATE-ONLY**: the
 `/`-rooted reclaim arms (`uv cache prune`, the stale-log sweep) never run keyed
 off the data disk; `vm_disk_guard.run_guard(disk_path="/mnt/eps-data",
 reclaim_tiers=False)` runs only tier (b) (terminal-cache reap + active-cache
-escalation), and the watcher's sub-floor sentinel uses `decide_subfloor_pct`
-(`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) + attributes the WORKTREE-internal
-caches via `repquota -P` per-project usage (du fallback). Both passes are clean
-no-ops when the mount is absent (before / without the cutover).
+escalation), and the watcher's dedicated `data_disk_pass` (called from `main()`
+next to `vm_disk_pass`, every 10-min tick) drives the percent helpers
+`decide_vm_disk_pct` (alert/critical band) + `decide_subfloor_pct`
+(`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) off `statvfs(/mnt/eps-data)`,
+escalate-only (no reclaim arm), and attributes the WORKTREE-internal caches via
+`repquota -P` per-project usage (du fallback). Both passes are clean no-ops when
+the mount is absent (before / without the cutover).
 
 **Janitor exemption.** The stale-GCP-VM janitor (above) sweeps the
 `eps-persona-gpu-jun2026` GPU project for ephemeral GCE INSTANCES. The
