@@ -4517,8 +4517,8 @@
     "720": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/720",
-      "status": "proposed",
+      "path": "tasks/planning/720",
+      "status": "planning",
       "title": "Reap completed autonomous /issue sessions within ~1h (not 12h) \u2014 stop the ghost-session pile"
     },
     "74": {
