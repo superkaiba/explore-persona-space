@@ -19,6 +19,47 @@ goal: Test whether DFT (stop-gradient probability-weighted SFT) produces less ou
 
 Test whether DFT (stop-gradient probability-weighted SFT) produces less out-of-distribution emergent misalignment than standard SFT at matched in-distribution narrow-task acquisition, and characterize the mechanism (token gradient-mass, EM-direction projection, weight-delta sparsity/prunability).
 
+## Re-plan directive (v4 — HYBRID parameterization, user-approved 2026-06-28)
+
+**This SUPERSEDES the v3 full-SFT-everything design** (which parked at 134 GPU-h).
+User decision: split the parameterization by what each prediction actually needs.
+The planner MUST design v4 to this directive.
+
+- **P1 (Pareto frontier) + P2 (token gradient-mass) + P3 (EM-direction
+  projection): run under LoRA** (1× GPU, no ZeRO-3). DFT is a per-token LOSS
+  reweighting (`−sg(π_θ(y*_t))·log π_θ(y*_t)`), orthogonal to the
+  parameterization — it composes with PEFT/LoRA with NO change to the §2.4 loss.
+  The SFT-vs-DFT comparison stays clean and apples-to-apples: IDENTICAL LoRA
+  config (rank, α, target modules, dropout), optimizer, schedule, seed, data
+  order across both arms — ONLY the loss reweight differs. This is the deliberate
+  cost choice and a valid test of the core loss-level hypothesis H.
+  **Do NOT revert P1–P3 to full SFT; do NOT flag LoRA-for-P1-P3 as a confound to
+  REVISE — it is the approved design.**
+  - LoRA config: match the project's standard 7B LoRA recipe (ground r/α/target
+    per §11; the planner picks + sources it). Keep IDENTICAL across SFT and DFT.
+  - Matched-acquisition Pareto sweep, ≥3 seeds, coherence guardrail: UNCHANGED.
+
+- **P4 (weight-delta geometry — sparsity / SVD spectrum / effective rank /
+  projection onto `d` — AND Ignore-topK prunability): run under FULL SFT, at a
+  SINGLE matched-acquisition operating point only** (NOT the 3-seed checkpoint
+  sweep). LoRA is WRONG for P4: it imposes rank ≤ r on `ΔW` by construction, so
+  "DFT yields a lower-effective-rank / sparser update" is untestable (rank
+  externally capped for both arms), and LoRA vs full-FT have different
+  weight-space geometry (intruder dimensions, arXiv:2410.21228) so a LoRA P4
+  would not transfer to the full-FT regime the Ignore-topK pruning literature
+  operates in. So: train ONE full-SFT + ONE full-DFT run, matched by narrow-task
+  acquisition to the dose where the LoRA Pareto read is taken, then run the full
+  P4 geometry + Ignore-topK analysis (body §P4 reference) on those two full-FT
+  deltas. Seeds for the full-FT P4 point: 1 (P4 is the secondary mechanism read).
+
+- **iw-SFT:** stays deferred (as in v3).
+
+**Cost + approval:** this should land WELL under the 100 GPU-h auto-approve cap
+(LoRA P1–P3 ≈ 25–35 GPU-h + one full-FT SFT/DFT pair + the P4 pruned-model
+evals). The user has **PRE-AUTHORIZED auto-approval and a background autonomous
+run** — proceed through the plan-approval gate without a further human ask for
+any v4 plan ≤ 100 GPU-h.
+
 ## Overview / Motivation
 
 Defensive alignment research. Two recent results meet here:
