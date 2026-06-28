@@ -1490,21 +1490,37 @@ def _p0_unit_done(unit: P0Unit, *, smoke: bool, cells: list[C.Cell] | None = Non
     """Per-unit resume-skip predicate (mirrors the in-helper early-return guards).
 
     A unit is done iff its output cache(s) exist -- so a killed-mid-p0 re-run skips
-    completed units, exactly like p1/p2. For judge-filtered units (syco_pos /
-    refusal_pos / baseline) the cache existence is the same guard the serial helper
-    used (the helper writes the cache only after its judge reconciles). ``cells`` is
-    needed only for the shared ``ic_secure`` unit (its done-ness is "every ctx_key
-    cache exists"); it defaults to the realized grid so the WaveDispatcher closure
-    can call ``_p0_unit_done(u, smoke=...)`` without threading the selection."""
+    completed units, exactly like p1/p2. For the syco_pos / refusal_pos units the
+    cache existence is the same guard the serial helper used (the helper writes the
+    cache only after its judge reconciles). The ``baseline`` kind is the exception:
+    its raw cache (``baseline_raw/{ctx}.json``) is written EAGERLY at generation
+    time, BEFORE the judge is submitted/reconciled, and the deferred reconcile
+    writes a SEPARATE ``baseline_raw/{ctx}__scores.json``. Resume-skip must match
+    ``_aggregate_baseline_propensity``'s completeness gate exactly -- raw alone is
+    INCOMPLETE for a non-smoke baseline unit (the aggregator requires raw AND
+    scores) -- so a baseline unit that crashed between raw-write and judge-reconcile
+    re-runs instead of being skipped forever (which would deadlock the aggregator).
+    ``cells`` is needed only for the shared ``ic_secure`` unit (its done-ness is
+    "every ctx_key cache exists"); it defaults to the realized grid so the
+    WaveDispatcher closure can call ``_p0_unit_done(u, smoke=...)`` without threading
+    the selection."""
     if unit.kind == "ic_secure":
         sel = cells if cells is not None else C.realized_grid()
         return all(
             (CACHE_ROOT / "ic_secure" / f"{k}.json").exists() for k in _ic_secure_ctx_keys(sel)
         )
     if unit.kind == "baseline":
-        # baseline_raw/{behavior}__{src}.json is written for every baseline unit
-        # (smoke + non-smoke); it is the per-unit output the aggregate reads back.
-        return (CACHE_ROOT / "baseline_raw" / f"{unit.ctx_key}.json").exists()
+        # The raw cache is written eagerly (pre-judge); the aggregator additionally
+        # requires the post-reconcile __scores.json for non-smoke units. Require the
+        # SAME pair the aggregator gates on so resume-skip never wedges a baseline
+        # unit that died mid-judge-reconcile (raw-without-scores) -> see docstring.
+        raw = CACHE_ROOT / "baseline_raw" / f"{unit.ctx_key}.json"
+        if not raw.exists():
+            return False
+        if smoke:
+            return True
+        scores = CACHE_ROOT / "baseline_raw" / f"{unit.ctx_key}__scores.json"
+        return scores.exists()
     # marker_R / syco_pos / refusal_pos / refusal_neg -> CACHE_ROOT/{kind}/{ctx}.json
     return (CACHE_ROOT / unit.kind / f"{unit.ctx_key}.json").exists()
 
