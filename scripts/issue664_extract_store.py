@@ -231,12 +231,29 @@ def _context_messages_all(behavior: str) -> list[tuple[dict, str]]:
 
 
 # ── Per-cell extraction ───────────────────────────────────────────────────────
-def extract_cell(cell: C.Cell, *, smoke: bool, gpu_id: int, adapter_dir: Path | None) -> Path:
+def extract_cell(
+    cell: C.Cell,
+    *,
+    smoke: bool,
+    gpu_id: int,
+    adapter_dir: Path | None,
+    read_gauge: str = "optA",
+) -> Path:
     """Extract the full trained store for one cell. Writes tensors + slot stats.
 
     ``adapter_dir`` is the LOCAL trained adapter (base + LoRA). The trained
     model is the merged base+adapter (merge-read-delete); base reads use the
     base model directly.
+
+    ``read_gauge`` (#664 plan §11): the MARKER-extraction read gauge.
+      - ``optA`` (default) -- faithful ``use_rslora=True`` read (the training-time
+        gauge); the band-stop ``[5,12]``-nat regime sets readability.
+      - ``optB`` -- staged classic ``alpha/r = 2.0`` read (``use_rslora=False``,
+        eval-apply only, #601's recovery procedure) when the Option-A readability
+        assert trips on the band-stopped marker cells. Applies ONLY to
+        ``behavior == "marker"``; non-marker behaviors always read at Option A
+        (rsLoRA is the faithful train gauge for them too, and they have no marker
+        readability assert).
     """
     import torch
     from transformers import AutoTokenizer
@@ -264,11 +281,30 @@ def extract_cell(cell: C.Cell, *, smoke: bool, gpu_id: int, adapter_dir: Path | 
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Merge the trained adapter into a temp dir (merge-read-delete, §9.2).
+    # #664 plan §11 Option B: for MARKER cells under read_gauge=optB, force the
+    # eval-apply classic alpha/r=2.0 gauge (use_rslora=False) so the merged model is
+    # the staged-gauge read; the override patches a COPY of adapter_config.json
+    # inside merge_lora (the original adapter dir + its HF artifacts are untouched).
+    # Non-marker behaviors ignore optB -> faithful Option A read.
+    optB_marker = read_gauge == "optB" and cell.behavior == "marker"
     merged_dir: Path | None = None
     if adapter_dir is not None:
         merged_dir = out_dir / "_merged"
-        merge_lora(C.QWEN_ID, str(adapter_dir), str(merged_dir), gpu_id=gpu_id)
+        merge_lora(
+            C.QWEN_ID,
+            str(adapter_dir),
+            str(merged_dir),
+            gpu_id=gpu_id,
+            force_use_rslora=(False if optB_marker else None),
+            force_classic_alpha_over_r=(2.0 if optB_marker else None),
+        )
         trained_path = str(merged_dir)
+        if optB_marker:
+            logger.info(
+                "[extract] %s MARKER read gauge = Option B (staged classic alpha/r=2.0, "
+                "use_rslora=False, eval-apply only; plan §11)",
+                cell.eval_key,
+            )
     else:
         # smoke / base-only path: no adapter -> "trained" == base (the
         # structural-smoke fallback; real cells always pass an adapter_dir).
@@ -625,11 +661,26 @@ def main() -> int:
         help="local trained adapter dir (base+LoRA); omit for the base-only smoke fallback",
     )
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--read-gauge",
+        default="optA",
+        choices=["optA", "optB"],
+        help="marker-extraction read gauge (plan §11): optA = faithful use_rslora=True "
+        "(default); optB = staged classic alpha/r=2.0 (use_rslora=False, eval-apply only, "
+        "marker cells only) per #601's recovery procedure when the Option-A readability "
+        "assert trips",
+    )
     args = ap.parse_args()
 
     C.require_credentials()
     cell = C.Cell(args.behavior, args.source, args.arm, args.dose, args.seed)
-    extract_cell(cell, smoke=args.smoke, gpu_id=args.gpu_id, adapter_dir=args.adapter_dir)
+    extract_cell(
+        cell,
+        smoke=args.smoke,
+        gpu_id=args.gpu_id,
+        adapter_dir=args.adapter_dir,
+        read_gauge=args.read_gauge,
+    )
     return 0
 
 

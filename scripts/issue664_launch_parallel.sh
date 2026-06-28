@@ -62,6 +62,25 @@ should_run() {
     [ "$n" -ge "$_start_n" ]
 }
 
+# #664 round-18 (plan §11 Option B): EPM_MARKER_READ_GAUGE selects the marker
+# read gauge threaded into the p2 extract subprocesses (and recorded at p3).
+#   optA (default) -- faithful use_rslora=True read (the training-time gauge).
+#   optB           -- staged classic α/r=2.0 read (use_rslora=False, eval-apply
+#                     only, MARKER cells only) per #601's recovery procedure,
+#                     adopted when the Option-A A7 readability assert trips.
+# Under optB, p2 ALSO filters to --behavior marker so only the 16 marker cells
+# re-extract (the 32 non-marker p2 results stay valid); p3 still finalizes the
+# WHOLE fleet. p0/p1 are unaffected by the gauge (it is an eval-apply-only read).
+MARKER_READ_GAUGE="${EPM_MARKER_READ_GAUGE:-optA}"
+case "$MARKER_READ_GAUGE" in
+    optA|optB) ;;
+    *) echo "[wrapper] ERROR: EPM_MARKER_READ_GAUGE must be optA|optB, got '$MARKER_READ_GAUGE'" >&2; exit 2 ;;
+esac
+P2_BEHAVIOR_ARGS=()
+if [ "$MARKER_READ_GAUGE" = "optB" ]; then
+    P2_BEHAVIOR_ARGS=(--behavior marker)
+fi
+
 LOG_DIR=/workspace/logs
 mkdir -p "$LOG_DIR"
 echo $$ > "$LOG_DIR/issue664-run.pid"
@@ -70,7 +89,7 @@ echo $$ > "$LOG_DIR/issue664-run.pid"
 # `[phase=<name>]` (PHASE_RE) from this file; emit one per phase + a terminal
 # `[phase=done]` on graceful completion ONLY.
 exec > >(tee -a "$LOG_DIR/issue664-run.log") 2>&1
-echo "[wrapper] $(date -Iseconds) starting issue664_launch_parallel.sh pid=$$ START_PHASE=$START_PHASE"
+echo "[wrapper] $(date -Iseconds) starting issue664_launch_parallel.sh pid=$$ START_PHASE=$START_PHASE MARKER_READ_GAUGE=$MARKER_READ_GAUGE"
 
 NUM_SHARDS=8
 
@@ -136,9 +155,9 @@ if should_run p2; then
     echo "[wrapper] phase=p2 ($NUM_SHARDS shards in parallel)"
     pids=()
     for shard in 0 1 2 3 4 5 6 7; do
-        CUDA_VISIBLE_DEVICES=$shard uv run python scripts/issue664_dispatch.py --phase p2 --gpu-id "$shard" --shard-id "$shard" --num-shards "$NUM_SHARDS" > "$LOG_DIR/issue664-p2-shard${shard}.log" 2>&1 &
+        CUDA_VISIBLE_DEVICES=$shard uv run python scripts/issue664_dispatch.py --phase p2 --gpu-id "$shard" --shard-id "$shard" --num-shards "$NUM_SHARDS" --marker-read-gauge "$MARKER_READ_GAUGE" "${P2_BEHAVIOR_ARGS[@]}" > "$LOG_DIR/issue664-p2-shard${shard}.log" 2>&1 &
         pids+=($!)
-        echo "[wrapper] launched p2 shard $shard pid=${pids[-1]} (gpu_id=$shard)"
+        echo "[wrapper] launched p2 shard $shard pid=${pids[-1]} (gpu_id=$shard gauge=$MARKER_READ_GAUGE${P2_BEHAVIOR_ARGS:+ behavior=marker})"
     done
     # Wait for all shards; collect failures (don't let `set -e` short-circuit the wait loop).
     fail=0
@@ -169,8 +188,11 @@ fi
 if should_run p3; then
     echo "[phase=p3_upload]"
     echo "[wrapper] phase=p3 (single shard, GPU 0)"
+    # NO --behavior filter at p3: the readability assert / manifest / upload finalize
+    # the WHOLE fleet. --marker-read-gauge is threaded so the manifest+sentinel record
+    # which gauge the marker reads were taken at (p3 itself does not re-extract).
     CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue664_dispatch.py --phase p3 --gpu-id 0 \
-        --shard-id 0 --num-shards "$NUM_SHARDS" \
+        --shard-id 0 --num-shards "$NUM_SHARDS" --marker-read-gauge "$MARKER_READ_GAUGE" \
         > "$LOG_DIR/issue664-p3.log" 2>&1  # CVD_PIN_EXEMPT: sequential single-GPU upload, not parallel
     echo "[wrapper] phase=p3 done"
 else

@@ -41,7 +41,9 @@ import importlib.machinery
 import json
 import logging
 import os
+import shutil
 import sys
+import tempfile
 import types
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -1568,14 +1570,87 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     return output_dir, loss
 
 
+def _stage_gauge_override_adapter(
+    adapter_path: str,
+    *,
+    force_use_rslora: bool | None,
+    force_classic_alpha_over_r: float | None,
+) -> tuple[str, str | None]:
+    """Return ``(adapter_path_to_load, temp_dir_to_reap_or_None)``.
+
+    When an APPLY-TIME gauge override is requested (#664 plan §11 Option B —
+    staged classic ``alpha/r`` read for trained marker adapters), copy the adapter
+    dir to a temp dir, patch ONLY the gauge fields in its ``adapter_config.json``
+    (``use_rslora`` and/or ``lora_alpha``), and return the temp dir so PEFT loads
+    the patched config. The ORIGINAL adapter dir is never mutated (no race with
+    concurrent shards; the trained artifacts on HF stay authoritative).
+
+    No override requested (both args None) -> return the original path unchanged
+    and ``None`` (Option A faithful-gauge read, the default for every call site).
+
+    ``force_classic_alpha_over_r`` patches ``lora_alpha = round(r * ratio)`` so the
+    EFFECTIVE classic scale ``lora_alpha / r`` equals the requested ratio. For
+    #664's ``r=32`` marker adapters at ``ratio=2.0`` this resolves to
+    ``lora_alpha=64`` (numerically the trained alpha) -- the real lever is the
+    ``use_rslora=False`` flip, which switches the scale from ``alpha/sqrt(r) ~ 11.31``
+    to ``alpha/r = 2.0`` (#601's recovery procedure)."""
+    if force_use_rslora is None and force_classic_alpha_over_r is None:
+        return adapter_path, None
+
+    cfg_path = Path(adapter_path) / "adapter_config.json"
+    if not cfg_path.exists():
+        raise FileNotFoundError(
+            f"merge_lora gauge override requested but adapter_config.json missing "
+            f"under {adapter_path!r}; cannot patch the apply-time gauge."
+        )
+    cfg = json.loads(cfg_path.read_text())
+    orig_r = int(cfg["r"])
+    orig_alpha = int(cfg["lora_alpha"])
+    orig_rslora = bool(cfg.get("use_rslora", False))
+
+    if force_use_rslora is not None:
+        cfg["use_rslora"] = bool(force_use_rslora)
+    if force_classic_alpha_over_r is not None:
+        cfg["lora_alpha"] = round(orig_r * float(force_classic_alpha_over_r))
+
+    tmp_dir = tempfile.mkdtemp(prefix="merge_lora_gauge_")
+    # Copy every adapter artifact (weights + config + tokenizer if present), then
+    # overwrite adapter_config.json with the patched gauge fields.
+    shutil.copytree(adapter_path, tmp_dir, dirs_exist_ok=True)
+    (Path(tmp_dir) / "adapter_config.json").write_text(json.dumps(cfg, indent=2))
+    logger.info(
+        "[merge_lora] APPLY-TIME gauge override (plan §11 Option B): "
+        "use_rslora %s->%s, lora_alpha %s->%s (r=%s); staged at %s "
+        "(original adapter dir untouched)",
+        orig_rslora,
+        cfg.get("use_rslora", orig_rslora),
+        orig_alpha,
+        cfg["lora_alpha"],
+        orig_r,
+        tmp_dir,
+    )
+    return tmp_dir, tmp_dir
+
+
 def merge_lora(
     base_model_path: str,
     adapter_path: str,
     output_dir: str,
     *,
     gpu_id: int = 0,
+    force_use_rslora: bool | None = None,
+    force_classic_alpha_over_r: float | None = None,
 ) -> str:
-    """Merge LoRA adapter into base model and save."""
+    """Merge LoRA adapter into base model and save.
+
+    ``force_use_rslora`` / ``force_classic_alpha_over_r`` are APPLY-TIME gauge
+    overrides (default ``None`` = honor the adapter's own ``adapter_config.json``,
+    i.e. #664 plan §11 Option A faithful read). Setting ``force_use_rslora=False``
+    + ``force_classic_alpha_over_r=2.0`` patches a COPY of the adapter config to
+    the staged classic ``alpha/r = 2.0`` gauge for the eval-apply path only (Option B,
+    #601's recovery procedure) -- the original adapter dir and its HF artifacts are
+    never mutated. Every non-marker / non-#664 call site leaves both ``None`` and
+    is unaffected."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -1583,6 +1658,12 @@ def merge_lora(
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
     from peft import PeftModel
+
+    adapter_path, _gauge_tmp_dir = _stage_gauge_override_adapter(
+        adapter_path,
+        force_use_rslora=force_use_rslora,
+        force_classic_alpha_over_r=force_classic_alpha_over_r,
+    )
 
     # Load the tokenizer from the BASE model, NOT the adapter dir. The tokenizer is
     # invariant under a LoRA merge (LoRA adapts attn/mlp; it never touches the vocab,
@@ -1605,11 +1686,16 @@ def merge_lora(
         token=os.environ.get("HF_TOKEN"),
     )
 
-    model = PeftModel.from_pretrained(base_model, adapter_path)
-    model = model.merge_and_unload()
+    try:
+        model = PeftModel.from_pretrained(base_model, adapter_path)
+        model = model.merge_and_unload()
 
-    model.save_pretrained(output_dir)
-    tokenizer.save_pretrained(output_dir)
+        model.save_pretrained(output_dir)
+        tokenizer.save_pretrained(output_dir)
+    finally:
+        # Reap the staged gauge-override copy (no-op when no override was requested).
+        if _gauge_tmp_dir is not None and Path(_gauge_tmp_dir).exists():
+            shutil.rmtree(_gauge_tmp_dir, ignore_errors=True)
 
     del model, base_model, tokenizer
     gc.collect()

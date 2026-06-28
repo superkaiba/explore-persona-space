@@ -955,24 +955,39 @@ def _verify_adapter_on_hub(subfolder: str) -> None:
 
 
 # ── P2.2 extract + eval-gen one cell (subprocess workers) ─────────────────────
-def extract_and_eval_cell(cell: C.Cell, adapter_dir: Path, *, smoke: bool, gpu_id: int) -> None:
+def extract_and_eval_cell(
+    cell: C.Cell,
+    adapter_dir: Path,
+    *,
+    smoke: bool,
+    gpu_id: int,
+    marker_read_gauge: str = "optA",
+) -> None:
     """Run the extraction worker + the eval gen worker for one cell.
 
     Extraction merges the adapter (merge-read-delete); eval gen needs the merged
-    model too, so we merge ONCE here, run both, then reap the merged dir."""
+    model too, so we merge ONCE here, run both, then reap the merged dir.
+
+    ``marker_read_gauge`` (#664 plan §11) is threaded into the EXTRACT subprocess
+    only -- it governs the marker_slot_stats read gauge (the A7 readability
+    deliverable). The eval-gen merge below is the faithful train gauge (its
+    deliverable is raw completions / completion log-prob, NOT the marker slot
+    read), so it is unaffected by the Option-A->B fallback."""
     from explore_persona_space.train.sft import merge_lora
 
     merged = adapter_dir.parent / (adapter_dir.name + "_merged")
     merge_lora(C.QWEN_ID, str(adapter_dir), str(merged), gpu_id=gpu_id)
     try:
         # extraction (tensors + marker slot) -- pass the ORIGINAL adapter dir so
-        # extract_store does its own gauge assert on adapter_config.json.
+        # extract_store does its own gauge assert on adapter_config.json, and the
+        # marker read gauge (optA faithful / optB staged classic alpha/r=2.0).
         extract_cmd = [
             sys.executable,
             str(C.REPO / "scripts/issue664_extract_store.py"),
             "--behavior", cell.behavior, "--source", cell.source, "--arm", cell.arm,
             "--dose", cell.dose, "--seed", str(cell.seed), "--gpu-id", str(gpu_id),
             "--adapter-dir", str(adapter_dir),
+            "--read-gauge", marker_read_gauge,
         ]  # fmt: skip
         if smoke:
             extract_cmd.append("--smoke")
@@ -1310,6 +1325,24 @@ def run_all(args) -> None:
             len(all_cells),
         )
 
+    # #664 round-18 (plan §11 Option B relaunch): --behavior restricts the PER-CELL
+    # train/extract/eval LOOPS to one behavior so an Option-B re-extract redoes only
+    # the 16 marker cells (the 32 non-marker p2 results stay valid). all_cells is
+    # deliberately NOT filtered -- the shard-0 p3 finalizers (manifest, A7
+    # readability assert, upload) still describe/verify the WHOLE fleet, reading the
+    # freshly-rewritten marker slot stats alongside the untouched non-marker
+    # artifacts. So the relaunch is `--phase p2 --behavior marker` (loops marker-only)
+    # then `--phase p3` (full-fleet finalize), with --marker-read-gauge optB on both.
+    if getattr(args, "behavior", None):
+        before = len(cells)
+        cells = [c for c in cells if c.behavior == args.behavior]
+        logger.info(
+            "[dispatch] --behavior=%s filter: %d of %d shard cells retained",
+            args.behavior,
+            len(cells),
+            before,
+        )
+
     if args.phase in ("all", "p1"):
         phase_log("p1_train")
         logger.info("[p1] shard %d/%d, %d cells", args.shard_id, args.num_shards, len(cells))
@@ -1323,7 +1356,13 @@ def run_all(args) -> None:
         logger.info("[p2] shard %d/%d, %d cells", args.shard_id, args.num_shards, len(cells))
         for cell in cells:
             adapter_dir = ADAPTER_OUT / (cell.eval_key + ("_smoke" if args.smoke else ""))
-            extract_and_eval_cell(cell, adapter_dir, smoke=args.smoke, gpu_id=args.gpu_id)
+            extract_and_eval_cell(
+                cell,
+                adapter_dir,
+                smoke=args.smoke,
+                gpu_id=args.gpu_id,
+                marker_read_gauge=args.marker_read_gauge,
+            )
     if args.phase == "p2":
         return
 
@@ -1461,6 +1500,23 @@ def main() -> int:
         action="store_true",
         help="in --smoke, run a tiny REAL Batch-API judge slice on one content cell "
         "to exercise the production judge branch (#664 round-2 B5)",
+    )
+    ap.add_argument(
+        "--behavior",
+        default=None,
+        choices=list(C.BEHAVIORS),
+        help="restrict the per-cell train/extract/eval LOOPS to one behavior (the p3 "
+        "finalizers stay full-fleet); used for the plan §11 Option-B marker-only "
+        "re-extract relaunch (--phase p2 --behavior marker)",
+    )
+    ap.add_argument(
+        "--marker-read-gauge",
+        default="optA",
+        choices=["optA", "optB"],
+        help="marker-extraction read gauge threaded to every extract subprocess "
+        "(plan §11): optA = faithful use_rslora=True (default); optB = staged classic "
+        "alpha/r=2.0 (use_rslora=False, eval-apply only, marker cells only) per #601's "
+        "recovery procedure when the Option-A A7 readability assert trips",
     )
     args = ap.parse_args()
 
