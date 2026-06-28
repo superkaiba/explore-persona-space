@@ -6,7 +6,7 @@ kind: experiment
 tags:
 - followup-manual
 created_at: '2026-06-24T08:21:29Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: Just run on qwen2.5 7b
 goal: Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct
   — A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3
