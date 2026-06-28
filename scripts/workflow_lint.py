@@ -2242,6 +2242,35 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+def check_gate_ids_unique(workflow: WorkflowYaml) -> list[str]:
+    """Verify every gate ``id:`` across ``gates.{inline, park_and_wait,
+    conditional}`` is globally unique.
+
+    The pydantic ``GateEntry`` schema validates each gate independently and
+    does NOT enforce cross-list id uniqueness, so a renumber collision (e.g.
+    task #694's gate renumber) would otherwise pass the lint silently.
+    Returns a list of error strings (empty == PASS). Each error names BOTH
+    gate names sharing the duplicated id.
+    """
+    errors: list[str] = []
+    if workflow.gates is None:
+        return errors
+    seen: dict[int, str] = {}  # id -> first gate name that used it
+    all_gates = workflow.gates.inline + workflow.gates.park_and_wait + workflow.gates.conditional
+    for g in all_gates:
+        if g.id in seen:
+            errors.append(
+                f"duplicate gate id {g.id}: used by both "
+                f"'{seen[g.id]}' and '{g.name}' across "
+                f"gates.{{inline, park_and_wait, conditional}}. Gate ids "
+                f"must be globally unique; renumber one of them in "
+                f".claude/workflow.yaml."
+            )
+        else:
+            seen[g.id] = g.name
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -2499,6 +2528,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "--auto session, never a workflow-improver subagent spawn. Bundled into "
         "the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-gate-ids-unique",
+        action="store_true",
+        help="Verify every gate id across gates.{inline, park_and_wait, "
+        "conditional} in .claude/workflow.yaml is globally unique. The "
+        "pydantic GateEntry schema validates each gate independently and "
+        "does NOT enforce cross-list id uniqueness, so a renumber "
+        "collision (task #694) would pass silently. Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -2530,6 +2569,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_upload_as_file
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
+        or args.check_gate_ids_unique
     )
 
     errors: list[str] = []
@@ -2579,6 +2619,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_batch_judge_client())
     if args.check_no_workflow_improver_spawn or no_flags:
         errors.extend(check_no_workflow_improver_spawn())
+    if args.check_gate_ids_unique or no_flags:
+        errors.extend(check_gate_ids_unique(workflow))
 
     if errors:
         for err in errors:

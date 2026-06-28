@@ -41,6 +41,7 @@ from workflow_lint import (  # noqa: E402
     check_autonomous_asks,
     check_batch_judge_client,
     check_dispatcher_cvd_pin,
+    check_gate_ids_unique,
     check_heredoc_dotenv,
     check_marker_registry,
     check_no_workflow_improver_spawn,
@@ -1977,3 +1978,35 @@ def test_workflow_lint_check_no_workflow_improver_spawn_cli_exits_zero():
         f"workflow_lint --check-no-workflow-improver-spawn failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
+
+
+def test_workflow_lint_check_gate_ids_unique_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree
+    (all current gate ids are unique)."""
+    result = _run("--check-gate-ids-unique")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-gate-ids-unique failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_check_gate_ids_unique_repo_passes():
+    """Repo-level: the committed gate ids are all unique."""
+    errors = check_gate_ids_unique(_workflow())
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_gate_ids_unique_flags_a_duplicate():
+    """A collision across two gate sub-lists is flagged, naming BOTH gate
+    names and the duplicated id."""
+    wf = _workflow().model_copy(deep=True)
+    # Force a collision: give a park_and_wait gate the same id as an inline
+    # gate, on the deep copy so the cached real object is untouched.
+    dup_id = wf.gates.inline[0].id
+    wf.gates.park_and_wait[0].id = dup_id
+    errors = check_gate_ids_unique(wf)
+    assert len(errors) >= 1, errors
+    # Both offending gate names appear in the error.
+    assert wf.gates.inline[0].name in errors[0]
+    assert wf.gates.park_and_wait[0].name in errors[0]
+    assert f"duplicate gate id {dup_id}" in errors[0]
