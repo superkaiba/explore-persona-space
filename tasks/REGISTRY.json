@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 716,
+  "highest_id": 717,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4485,6 +4485,13 @@
       "path": "tasks/completed/716",
       "status": "completed",
       "title": "workflow-fix: task.py set-status nested-dir git mv on destination collision"
+    },
+    "717": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/717",
+      "status": "proposed",
+      "title": "Correct #664 vLLM gotchas: chunk-it red herring + r13 tokenizer-reload root cause"
     },
     "72": {
       "has_clean_result": false,
