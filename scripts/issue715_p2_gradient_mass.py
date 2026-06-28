@@ -157,6 +157,12 @@ def main() -> int:
     parser.add_argument("--benign-ckpt", help="sft_lora_benign checkpoint (benign baseline)")
     parser.add_argument("--train", required=True, help="train JSONL (bad-medical)")
     parser.add_argument("--n-rows", type=int, default=DEFAULT_N_ROWS)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="LoRA seed this P2 cell measures (output suffixed _seed<S>; BLOCKER #715-3)",
+    )
     parser.add_argument("--out-dir", default=str(PROJECT_ROOT / "eval_results" / "issue_715"))
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
@@ -274,11 +280,15 @@ def main() -> int:
             "median_ordinary_pi": float(torch.tensor(ord_pi).median().item()),
         }
     result["mann_whitney"] = mw
-    result["metadata"] = reproducibility_metadata({"script": "issue715_p2_gradient_mass"})
+    result["seed"] = args.seed
+    result["metadata"] = reproducibility_metadata(
+        {"script": "issue715_p2_gradient_mass", "seed": args.seed}
+    )
 
     out_dir = Path(args.out_dir) / "p2_gradmass"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / "p2_grad_mass.json"
+    # Per-seed output (BLOCKER #715-3): the 3-seed sweep emits one file per seed.
+    out_path = out_dir / f"p2_grad_mass_seed{args.seed}.json"
     out_path.write_text(json.dumps(result, indent=2))
     logger.info("[phase=p2_done] wrote %s", out_path)
     return 0

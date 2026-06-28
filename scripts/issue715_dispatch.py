@@ -150,6 +150,18 @@ def _select_lora_cells(args) -> list[tuple[str, int]]:
     return cells
 
 
+def _select_lora_seeds(args) -> list[int]:
+    """The distinct LoRA seeds for P2/P3 — derived from the SAME subset as the
+    train/eval cells (BLOCKER #715-3: P2/P3 iterate the registered 3-seed set,
+    not a hardwired seed 42). Preserves the canary-first order, deduped.
+    """
+    seen: list[int] = []
+    for _cond, seed in _select_lora_cells(args):
+        if seed not in seen:
+            seen.append(seed)
+    return seen
+
+
 # ── prefetch ────────────────────────────────────────────────────────────────
 
 
@@ -456,55 +468,80 @@ def _dstar_matched_lora_ckpt(condition: str, seed: int, dstar_x: float | None) -
 
 
 def phase_phase2(args) -> dict:
-    """P2 token gradient-mass at the D*-matched LoRA checkpoint."""
+    """P2 token gradient-mass at the D*-matched LoRA checkpoint, PER SEED.
+
+    Iterates the registered 3-seed set (BLOCKER #715-3: the plan §3 P3 verdict
+    needs ≥2 of 3 seeds; P2 mirrors the same per-seed read). Each seed emits
+    p2_grad_mass_seed<S>.json from its own D*-matched checkpoints.
+    """
     dstar = _read_dstar()
-    sft_ck = _dstar_matched_lora_ckpt("sft_lora", 42, dstar)
-    dft_ck = _dstar_matched_lora_ckpt("dft_lora", 42, dstar)
-    if sft_ck is None or dft_ck is None:
-        raise RuntimeError("P2 needs D*-matched LoRA checkpoints; run phase1 first")
-    phase_log("p2")
-    benign_root = PROJECT_ROOT / "models" / "issue715_sft_lora_benign_seed42"
-    benign_ck = next(iter(sorted(benign_root.glob("checkpoint-*"))), None)
-    cmd = _py(
-        "scripts/issue715_p2_gradient_mass.py",
-        "--sft-ckpt",
-        str(sft_ck),
-        "--dft-ckpt",
-        str(dft_ck),
-        "--train",
-        str(C.DATA_DIR / "badmed_train.jsonl"),
-    )
-    if benign_ck:
-        cmd += ["--benign-ckpt", str(benign_ck)]
-    if args.smoke:
-        cmd.append("--smoke")
-    _run(cmd, gpu_id=0)
-    return {"dstar_x": dstar}
+    seeds = _select_lora_seeds(args)
+    ran: list[int] = []
+    for seed in seeds:
+        sft_ck = _dstar_matched_lora_ckpt("sft_lora", seed, dstar)
+        dft_ck = _dstar_matched_lora_ckpt("dft_lora", seed, dstar)
+        if sft_ck is None or dft_ck is None:
+            raise RuntimeError(
+                f"P2 seed={seed} needs D*-matched LoRA checkpoints; run phase1 first"
+            )
+        phase_log(f"p2_seed{seed}")
+        # benign baseline is single-seed (seed 42, the harness arm).
+        benign_root = PROJECT_ROOT / "models" / "issue715_sft_lora_benign_seed42"
+        benign_ck = next(iter(sorted(benign_root.glob("checkpoint-*"))), None)
+        cmd = _py(
+            "scripts/issue715_p2_gradient_mass.py",
+            "--sft-ckpt",
+            str(sft_ck),
+            "--dft-ckpt",
+            str(dft_ck),
+            "--train",
+            str(C.DATA_DIR / "badmed_train.jsonl"),
+            "--seed",
+            str(seed),
+        )
+        if benign_ck:
+            cmd += ["--benign-ckpt", str(benign_ck)]
+        if args.smoke:
+            cmd.append("--smoke")
+        _run(cmd, gpu_id=0)
+        ran.append(seed)
+    return {"dstar_x": dstar, "seeds": ran}
 
 
 def phase_phase3(args) -> dict:
-    """P3 EM-direction projection at the D*-matched LoRA checkpoint."""
+    """P3 EM-direction projection at the D*-matched LoRA checkpoint, PER SEED.
+
+    Iterates the registered 3-seed set so the plan §3 P3 supported-iff criterion
+    ("in ≥2 of 3 seeds") is satisfiable (BLOCKER #715-3). Each seed emits
+    p3_projection_seed<S>.json from its own D*-matched checkpoints.
+    """
     dstar = _read_dstar()
-    sft_ck = _dstar_matched_lora_ckpt("sft_lora", 42, dstar)
-    dft_ck = _dstar_matched_lora_ckpt("dft_lora", 42, dstar)
-    if sft_ck is None or dft_ck is None:
-        raise RuntimeError("P3 needs D*-matched LoRA checkpoints; run phase1 first")
-    phase_log("p3")
-    cmd = _py(
-        "scripts/issue715_p3_d_projection.py",
-        "--sft-ckpt",
-        str(sft_ck),
-        "--dft-ckpt",
-        str(dft_ck),
-        "--train",
-        str(C.DATA_DIR / "badmed_train.jsonl"),
-        "--seed",
-        "42",
-    )
-    if args.smoke:
-        cmd.append("--smoke")
-    _run(cmd, gpu_id=0)
-    return {"dstar_x": dstar}
+    seeds = _select_lora_seeds(args)
+    ran: list[int] = []
+    for seed in seeds:
+        sft_ck = _dstar_matched_lora_ckpt("sft_lora", seed, dstar)
+        dft_ck = _dstar_matched_lora_ckpt("dft_lora", seed, dstar)
+        if sft_ck is None or dft_ck is None:
+            raise RuntimeError(
+                f"P3 seed={seed} needs D*-matched LoRA checkpoints; run phase1 first"
+            )
+        phase_log(f"p3_seed{seed}")
+        cmd = _py(
+            "scripts/issue715_p3_d_projection.py",
+            "--sft-ckpt",
+            str(sft_ck),
+            "--dft-ckpt",
+            str(dft_ck),
+            "--train",
+            str(C.DATA_DIR / "badmed_train.jsonl"),
+            "--seed",
+            str(seed),
+        )
+        if args.smoke:
+            cmd.append("--smoke")
+        _run(cmd, gpu_id=0)
+        ran.append(seed)
+    return {"dstar_x": dstar, "seeds": ran}
 
 
 def _coherence_collapsed(condition: str, seed: int, out_root: Path) -> bool:
@@ -591,32 +628,55 @@ def phase_phase4train(args) -> dict:
     return {"dstar_x": dstar, "chosen_lr": chosen_lr, "uploaded_fullft_ckpts": uploaded}
 
 
+# P4 headline grid (plan §-P4): both scopes x both granularities = 4 cells.
+P4_SCOPE_GRANULARITY_GRID = [
+    ("down_proj", "per_tensor"),
+    ("down_proj", "global"),
+    ("all_linear", "per_tensor"),
+    ("all_linear", "global"),
+]
+
+
 def phase_phase4(args) -> dict:
-    """P4 geometry + Ignore-topK prunability on the D*-matched full-FT pair."""
+    """P4 geometry + Ignore-topK prunability over the 4-cell scope x granularity
+    grid on the D*-matched full-FT pair (BLOCKER #715-4).
+
+    The headline grid is {down_proj, all_linear} x {per_tensor, global} (4 cells)
+    x the 7-value K grid x 2 arms = 56 evals. Each cell writes distinct
+    p4_geometry_<scope>_<gran>.json / p4_prune_<scope>_<gran>.json.
+    """
     dstar = _read_dstar()
     sft_ck = _dstar_matched_fullft_ckpt("sft_fullft_p4", dstar)
     dft_ck = _dstar_matched_fullft_ckpt("dft_fullft_p4", dstar)
     if sft_ck is None or dft_ck is None:
         raise RuntimeError("P4 needs D*-matched full-FT checkpoints; run phase4train first")
-    phase_log("p4")
     d_seed42 = C.EVAL_DIR / "analysis_tensors" / "issue715_d_seed42.pt"
-    cmd = _py(
-        "scripts/issue715_p4_geometry_pruning.py",
-        "--base-model",
-        C.BASE_MODEL,
-        "--sft-ckpt",
-        str(sft_ck),
-        "--dft-ckpt",
-        str(dft_ck),
-        "--leg",
-        "both",
-    )
-    if d_seed42.exists():
-        cmd += ["--d-vector", str(d_seed42)]
-    if args.smoke:
-        cmd.append("--smoke")
-    _run(cmd, gpu_id=0)
-    return {"dstar_x": dstar}
+    # Smoke runs ONE canary cell (down_proj/per_tensor) to keep it tiny; the
+    # production grid runs all 4. Same script, same subprocess shape per cell.
+    grid = P4_SCOPE_GRANULARITY_GRID[:1] if args.smoke else P4_SCOPE_GRANULARITY_GRID
+    for scope, granularity in grid:
+        phase_log(f"p4_{scope}_{granularity}")
+        cmd = _py(
+            "scripts/issue715_p4_geometry_pruning.py",
+            "--base-model",
+            C.BASE_MODEL,
+            "--sft-ckpt",
+            str(sft_ck),
+            "--dft-ckpt",
+            str(dft_ck),
+            "--leg",
+            "both",
+            "--scope",
+            scope,
+            "--granularity",
+            granularity,
+        )
+        if d_seed42.exists():
+            cmd += ["--d-vector", str(d_seed42)]
+        if args.smoke:
+            cmd.append("--smoke")
+        _run(cmd, gpu_id=0)
+    return {"dstar_x": dstar, "p4_cells": len(grid)}
 
 
 def _dstar_matched_fullft_ckpt(condition: str, dstar_x: float | None) -> Path | None:
