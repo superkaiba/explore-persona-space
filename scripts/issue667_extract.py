@@ -492,6 +492,40 @@ def load_base_and_trained(adapter_dir: Path, device: torch.device, dtype: torch.
     return tok, base, trained
 
 
+def _load_cpu_stub_model(device: torch.device):
+    """A tiny Qwen2 stub at hidden_size=3584 for the GPU-bound-phase smoke.
+
+    GATED behind ``EPM_I667_CPU_STUB=1`` and the ``--cpu-only`` r⁺ path ONLY. The
+    real GPU sweep loads the actual #537 adapter via :func:`load_trained_only`;
+    the local VM has no GPU and the 7B fp32 CPU load OOMs under fleet memory
+    pressure, so the unified CPU smoke runs ``extract_r_plus``'s diff-in-means
+    arithmetic + the full analysis plumb-through against this stub instead (the
+    documented GPU-bound carve-out). Keeps hidden_size=3584 so the produced r⁺
+    matches the inherited Δv dim, and just enough layers (>= the read layers) so
+    block 7/14/21 indices are valid; tiny intermediate_size. NOT used on any GPU
+    path — production numerics are untouched.
+    """
+    from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
+
+    cfg = AutoConfig.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
+    # Keep all 28 blocks so any read layer (7/14/21) indexes validly; the blocks
+    # are cheap at intermediate_size=64 — the embedding + lm_head (152k x 3584) are
+    # the fixed cost. Stub weights are random; the smoke verifies plumb-through
+    # shape/wiring, NOT numerics (the parity probe + GPU path verify the adapter).
+    cfg.intermediate_size = 64
+    tok = AutoTokenizer.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
+    model = AutoModelForCausalLM.from_config(cfg).to(device)
+    model.eval()
+    logger.info(
+        "CPU-stub model (EPM_I667_CPU_STUB=1): Qwen2 hidden=%d layers=%d inter=%d — "
+        "smoke plumb-through only",
+        cfg.hidden_size,
+        cfg.num_hidden_layers,
+        cfg.intermediate_size,
+    )
+    return tok, model
+
+
 def load_trained_only(adapter_dir: Path, device: torch.device, dtype: torch.dtype):
     """Load ONLY the PeftModel θ+ (rsLoRA honored) — no second base copy.
 
@@ -501,7 +535,12 @@ def load_trained_only(adapter_dir: Path, device: torch.device, dtype: torch.dtyp
     base copy that :func:`load_base_and_trained` allocates is wasteful — it
     doubles the CPU-fp32 footprint and OOMs the CPU smoke. Same PeftModel apply,
     same gauge. Returns (tokenizer, trained).
+
+    ``EPM_I667_CPU_STUB=1`` (CPU smoke ONLY) swaps in the tiny stub model — see
+    :func:`_load_cpu_stub_model` (the GPU-bound-phase carve-out).
     """
+    if device.type == "cpu" and os.environ.get("EPM_I667_CPU_STUB") == "1":
+        return _load_cpu_stub_model(device)
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 

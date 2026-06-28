@@ -916,6 +916,7 @@ def phase_reextract_prefetch(
     cpu_only: bool,
     skip_parity: bool,
     skip_store_pin: bool,
+    dry_run: bool = False,
 ) -> None:
     """Phase-0 for the re-extract amendment: pins + parity probe + Δv prefetch.
 
@@ -937,13 +938,15 @@ def phase_reextract_prefetch(
         logger.info("#658 store probe_pool_hash pin OK: %s", EXPECTED_STORE_PROBE_POOL_HASH[:16])
 
     # rsLoRA parity probe (fitness check (g)) — inherited verbatim. HALT on miss.
-    if skip_parity:
-        logger.info("reextract: parity probe SKIPPED (--skip-parity)")
+    # Skipped on a dry-run (no GPU / no real extraction wave to gate).
+    if skip_parity or dry_run:
+        logger.info("reextract: parity probe SKIPPED (--skip-parity / --dry-run)")
     else:
         _rslora_parity_probe(behaviors[0], cpu_only=cpu_only)
 
-    # Prefetch the inherited Δv cells (skipped on a synthetic-store smoke).
-    if not skip_store_pin:
+    # Prefetch the inherited Δv cells (skipped on a synthetic-store smoke OR a
+    # dry-run — the dry-run exercises the cell-iteration plumbing only, no analysis).
+    if not skip_store_pin and not dry_run:
         _prefetch_inherited_delta_v(behaviors, sources_arg, targets_arg, layers)
     logger.info("[phase=reextract_prefetch_done]")
 
@@ -1279,6 +1282,7 @@ def main() -> int:
             cpu_only=args.cpu_only,
             skip_parity=args.skip_parity,
             skip_store_pin=args.skip_store_pin,
+            dry_run=args.dry_run,
         )
         phase_extract_r_plus(
             behaviors=args.behaviors,
