@@ -4467,8 +4467,8 @@
     "714": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/714",
-      "status": "reviewing",
+      "path": "tasks/completed/714",
+      "status": "completed",
       "title": "workflow-fix: add --check-skill-refs lint mode to workflow_lint.py"
     },
     "715": {
