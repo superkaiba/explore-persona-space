@@ -67,3 +67,4 @@
 {"ts": "2026-06-28T04:19:26Z", "kind": "epm:progress", "version": 20, "by": "unknown", "note": "tick heartbeat: P5 alive (pid 2247163, log <1m, partial.json 1.6MB). E0 recompute progressing through Batch shards."}
 {"ts": "2026-06-28T04:51:41Z", "kind": "epm:progress", "version": 21, "by": "unknown", "note": "tick heartbeat: P5 alive (pid 2247163, log <1m, 37/71 sub-batches done, partial.json 2.2MB). ~52% through E0 recompute."}
 {"ts": "2026-06-28T05:19:24Z", "kind": "epm:progress", "version": 22, "by": "unknown", "note": "tick heartbeat: P5 alive (pid 2247163, 46/71 done, partial.json 2.8MB, log <1m). ~65% E0 done."}
+{"ts": "2026-06-28T05:51:49Z", "kind": "epm:progress", "version": 23, "by": "unknown", "note": "tick heartbeat: P5 alive (pid 2247163, 55/71 done, sub-batch 56/71 polling). 77% E0 done; ~40min remaining."}
