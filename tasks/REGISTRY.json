@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 695,
+  "highest_id": 696,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4399,6 +4399,13 @@
       "path": "tasks/completed/695",
       "status": "completed",
       "title": "workflow-fix: idle-unmapped pass never reaps detached tmux Claude sessions"
+    },
+    "696": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/696",
+      "status": "proposed",
+      "title": "preflight branch-freshness check: tolerate transient git-fetch timeouts (#664 false-positive recurrence)"
     },
     "7": {
       "has_clean_result": false,
