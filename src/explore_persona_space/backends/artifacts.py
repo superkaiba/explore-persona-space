@@ -154,6 +154,23 @@ class ExpectedArtifacts:
       ``"issue": <issue>``. ``None`` skips the sentinel check — but a
       production run NEVER skips this; missing it is the silent-loss
       hole the gate is designed to close.
+    * ``git_repo_root`` — absolute path to the git working tree the
+      ``git_paths`` check should resolve against. ``None`` (default,
+      back-compat) means "resolve the repo root by the pyproject
+      ``__file__``-walk" — the established behavior. The launch path
+      sets it to the per-issue worktree
+      (``<repo_root>/.claude/worktrees/issue-<N>``) when the run's code
+      AND its committed eval/figure artifacts live on an unmerged
+      ``issue-<N>`` branch checked out THERE, not on ``main`` — the #685
+      root cause was ``_check_git`` running ``git ls-files`` from the
+      MAIN root (on ``main``) while the files were committed only on the
+      worktree branch, producing a structural ``not tracked by git``
+      FAIL on a perfectly-uploaded run. When the baked directory no
+      longer exists at finalize time (the post-Step-10d auto-merge case,
+      where the worktree was merged + removed and the files are now on
+      ``main``), the resolver falls back to the pyproject-walked main
+      root with a LOUD log — so the gate PASSes on the now-valid
+      main-tree state instead of FAILing on a removed worktree.
     """
 
     issue: int
@@ -164,6 +181,7 @@ class ExpectedArtifacts:
     wandb_run_path: str | None = None
     git_paths: tuple[str, ...] = ()
     sentinel_path: str | None = None
+    git_repo_root: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -281,6 +299,32 @@ def _default_read_sentinel(path: str) -> str | None:
     return p.read_text(encoding="utf-8")
 
 
+def _default_glob_sentinels(declared: str, issue: int) -> list[str]:
+    """Default live-sibling sentinel probe (real FS glob).
+
+    Given the DECLARED sentinel path
+    ``.../eval_results/issue_<N>/<attempt>/.completion-sentinel.json``,
+    enumerate the sibling attempt dirs' sentinels
+    ``.../eval_results/issue_<N>/*/.completion-sentinel.json`` so
+    :func:`_resolve_live_sentinel` can prefer a live current-attempt
+    sentinel when the declared (stale-attempt) one is missing (#685
+    secondary cause: a stale attempt path baked into the handle from a
+    prior failed launch attempt).
+
+    The grandparent of the declared path is the ``issue_<N>/`` dir; we
+    glob ``<grandparent>/*/<SENTINEL_FILENAME>``. Returns absolute path
+    strings (possibly empty). Pure FS read; raises nothing on a missing
+    dir (``Path.glob`` yields nothing). The ``issue`` argument is part of
+    the injectable seam's signature (a SSH-backed variant keys on it) but
+    is unused by the FS default — the declared path already carries the
+    issue dir.
+    """
+    del issue  # encoded in the declared path's grandparent; unused here.
+    declared_p = Path(declared)
+    issue_dir = declared_p.parent.parent
+    return [str(s) for s in sorted(issue_dir.glob(f"*/{SENTINEL_FILENAME}"))]
+
+
 @dataclass(frozen=True)
 class VerifierIO:
     """Bundle of injectable I/O callables.
@@ -303,6 +347,12 @@ class VerifierIO:
       ``repo_root`` — mirroring real ``git ls-files`` output.
     * ``read_sentinel(path) -> str | None`` — must return the sentinel
       file's UTF-8 content, or ``None`` when the file does not exist.
+    * ``glob_sentinels(declared, issue) -> list[str]`` — must enumerate
+      the sibling attempt-dir sentinels under the declared path's
+      ``issue_<N>/`` grandparent (``*/.completion-sentinel.json``) so the
+      stale-attempt resolver can prefer a live current-attempt sentinel
+      when the declared one is missing (#685). Default = real FS glob;
+      tests inject a deterministic list so they stay FS-free.
     * ``repo_root`` — repo root for git checks; defaults to the package's
       grandparent walk (the same logic SlurmBackend uses).
 
@@ -318,6 +368,7 @@ class VerifierIO:
     wandb_run_exists: Callable[[str], bool] | None = None
     git_tracked: Callable[[Path, Iterable[str]], set[str]] | None = None
     read_sentinel: Callable[[str], str | None] | None = None
+    glob_sentinels: Callable[[str, int], list[str]] | None = None
     repo_root: Path | None = None
 
     def _list_hf(self) -> Callable[..., list[str]]:
@@ -332,16 +383,63 @@ class VerifierIO:
     def _sentinel(self) -> Callable[[str], str | None]:
         return self.read_sentinel or _default_read_sentinel
 
+    def _glob_sentinels(self) -> Callable[[str, int], list[str]]:
+        return self.glob_sentinels or _default_glob_sentinels
 
-def _resolve_repo_root(io: VerifierIO) -> Path:
-    """Resolve repo root: explicit override > pyproject walk > cwd fallback."""
-    if io.repo_root is not None:
-        return io.repo_root
+
+def _pyproject_walk_root() -> Path:
+    """Repo root by the ``pyproject.toml`` ``__file__``-walk, cwd fallback."""
     here = Path(__file__).resolve()
     for parent in here.parents:
         if (parent / "pyproject.toml").exists():
             return parent
     return Path.cwd()
+
+
+def _resolve_repo_root(io: VerifierIO, *, git_repo_root: str | None = None) -> Path:
+    """Resolve the git-check repo root.
+
+    Precedence:
+
+    1. An explicit ``io.repo_root`` override (tests inject this) — always
+       wins, even over a baked ``git_repo_root`` (tests pin the tree they
+       built).
+    2. The launch-baked ``git_repo_root`` (the per-issue worktree the run
+       committed its artifacts to, #685) — used when ``io.repo_root`` is
+       unset (production: ``verify_artifacts`` is called with the
+       real-wires ``VerifierIO()`` whose ``repo_root`` is ``None``) — but
+       WITH the absent-dir fallback below.
+    3. The pyproject ``__file__``-walk (the established production
+       default — the main checkout on ``main``).
+    4. ``cwd`` (last-ditch, inside the walk).
+
+    **Absent-baked-worktree fallback (#705 / #685, post-Step-10d
+    auto-merge case).** When the baked ``git_repo_root`` directory no
+    longer EXISTS — the worktree was merged into ``main`` and removed
+    before finalize, so the committed eval/figure files are now on
+    ``main`` — fall back to the pyproject-walked main root with a LOUD
+    ``logger.warning``. Without this, a finalize after the auto-merge
+    would FAIL ``_check_git`` on a removed worktree even though the
+    artifacts are perfectly tracked on ``main``. The fallback is scoped
+    to the baked path ONLY — a test-injected ``io.repo_root`` (precedence
+    1) is never second-guessed.
+    """
+    if io.repo_root is not None:
+        return io.repo_root
+    if git_repo_root is not None:
+        baked = Path(git_repo_root)
+        if baked.exists():
+            return baked
+        fallback = _pyproject_walk_root()
+        logger.warning(
+            "verify_artifacts: baked git_repo_root %s no longer exists "
+            "(worktree merged + removed post-Step-10d?); falling back to the "
+            "pyproject-walked main root %s for the git check",
+            baked,
+            fallback,
+        )
+        return fallback
+    return _pyproject_walk_root()
 
 
 # ---------------------------------------------------------------------------
@@ -398,6 +496,8 @@ def build_expected_artifacts_declaration(
     extra_hf_data_paths: Sequence[str] = (),
     extra_hf_model_paths: Sequence[str] = (),
     extra_git_paths: Sequence[str] = (),
+    git_repo_root: str | None = None,
+    skip_default_git_paths: bool = False,
 ) -> dict[str, Any]:
     """Backend-agnostic :data:`EXPECTED_ARTIFACTS_HANDLE_KEY` payload.
 
@@ -432,6 +532,33 @@ def build_expected_artifacts_declaration(
     upload-verifier agent, not this gate, because the launch path never
     declared the ``analysis_tensors/`` prefix).
 
+    **Phase-scoped launches (``skip_default_git_paths=True``, #604/#661).**
+    A PHASE-SCOPED launch whose deliverable is HF-only this phase (e.g. a
+    P3 extraction whose output lands on the HF data repo under
+    ``issue<N>_<slug>/analysis_tensors/`` via ``extra_hf_data_paths``,
+    while the off-pod P5 analysis phase produces the git
+    ``eval_results/`` + ``figures/`` NEXT) sets ``skip_default_git_paths``
+    so the declaration omits the auto full-task git paths it was never
+    going to produce. ``git_paths`` then carries ONLY the caller's
+    ``extra_git_paths`` (usually empty → the git check SKIPs, which is NOT
+    a FAIL — SKIP never contributes to the verdict). The HF + completion
+    sentinel checks STILL run, so the gate is not relaxed — it just stops
+    demanding artifacts this phase never promised (#661 root cause: the
+    auto full-task git paths produced a structural FAIL on a perfectly
+    HF-uploaded phase-scoped run). ``False`` (default) = the established
+    behavior (both full-task git paths auto-declared).
+
+    **Unmerged-worktree launches (``git_repo_root``, #685).** When the
+    run's committed eval/figure artifacts live on an unmerged
+    ``issue-<N>`` branch checked out in the per-issue worktree (auto-merge
+    to ``main`` is at /issue Step 10d, AFTER finalize), the launch path
+    passes the worktree's absolute path as ``git_repo_root`` so
+    ``_check_git`` resolves ``git ls-files`` THERE (where the files ARE
+    tracked) instead of the MAIN checkout on ``main`` (where they are
+    not yet). ``None`` (default) keeps the established pyproject-walk repo
+    root. The field is omitted from the returned dict when ``None`` so
+    pre-#705 in-flight sidecars + the established gate behave identically.
+
     Returns a JSON-safe dict (lists, not tuples) so it round-trips via
     ``serialize_handle`` / :func:`expected_artifacts_from_handle`.
     """
@@ -444,20 +571,32 @@ def build_expected_artifacts_declaration(
                 "requires attempt_id (it names the HF raw-completions prefix)"
             )
         base_hf_data = (f"issue{issue}_{attempt_id}/raw_completions/",)
-    return {
+    if skip_default_git_paths:
+        # Phase-scoped: omit the auto full-task git paths; honor only the
+        # caller's explicit extra_git_paths (so a phase that DOES commit a
+        # scoped git file can still declare it).
+        git_paths = list(extra_git_paths)
+    else:
+        git_paths = [
+            f"eval_results/issue_{issue}/",
+            f"figures/issue_{issue}/",
+            *extra_git_paths,
+        ]
+    decl: dict[str, Any] = {
         "issue": int(issue),
         "hf_data_repo": hf_data_repo,
         "hf_model_repo": hf_model_repo,
         "hf_data_paths": list(base_hf_data) + list(extra_hf_data_paths),
         "hf_model_paths": list(extra_hf_model_paths),
         "wandb_run_path": wandb_run_path,
-        "git_paths": [
-            f"eval_results/issue_{issue}/",
-            f"figures/issue_{issue}/",
-            *extra_git_paths,
-        ],
+        "git_paths": git_paths,
         "sentinel_path": sentinel_path,
     }
+    if git_repo_root:
+        # Omitted when None so a pre-#705 in-flight sidecar round-trips
+        # byte-identically (back-compat constraint).
+        decl["git_repo_root"] = git_repo_root
+    return decl
 
 
 # ---------------------------------------------------------------------------
@@ -575,6 +714,7 @@ def _check_git(
     *,
     paths: tuple[str, ...],
     io: VerifierIO,
+    git_repo_root: str | None = None,
 ) -> dict[str, Any]:
     """Confirm every declared path is tracked by git AND present on disk.
 
@@ -584,10 +724,16 @@ def _check_git(
     by :func:`_declared_path_tracked` — exact match for file
     declarations, prefix match against the tracked-file listing for
     directory declarations.
+
+    ``git_repo_root`` (the launch-baked
+    :attr:`ExpectedArtifacts.git_repo_root`) is forwarded to
+    :func:`_resolve_repo_root` so the per-issue-worktree resolution +
+    the absent-baked-worktree fallback (#685 / #705) apply. ``None`` =
+    the established pyproject-walk root.
     """
     if not paths:
         return {"status": "SKIP", "detail": "no git paths declared"}
-    repo_root = _resolve_repo_root(io)
+    repo_root = _resolve_repo_root(io, git_repo_root=git_repo_root)
     try:
         tracked = io._git()(repo_root, paths)
     except subprocess.CalledProcessError as exc:
@@ -609,6 +755,74 @@ def _check_git(
     return {"status": "PASS", "detail": f"all {len(paths)} path(s) tracked + on disk"}
 
 
+def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[str, str | None]:
+    """Resolve which sentinel path ``_check_sentinel`` should READ.
+
+    The DECLARED path is preferred whenever it resolves (the common
+    case). When it is MISSING — the #685 secondary cause: a stale
+    attempt-N sentinel path baked into the handle from a prior failed
+    launch attempt, while the CURRENT attempt wrote its sentinel under a
+    different attempt dir — probe the sibling attempt dirs
+    (``eval_results/issue_<N>/*/.completion-sentinel.json``) for LIVE
+    sentinels and:
+
+    * **exactly ONE live sibling** → prefer it, returning a LOUD note
+      naming BOTH the missing declared path and the resolved sibling (the
+      caller logs it at WARNING). The chosen sibling still goes through
+      the UNCHANGED ``phase == "done"`` + issue-match content checks in
+      :func:`_check_sentinel`, so this is RESOLUTION ONLY — a
+      genuinely-incomplete run (wrong phase / wrong issue) still FAILs.
+    * **zero live siblings** → return the declared path unchanged; the
+      caller's content read then FAILs loud with the real "missing"
+      reason.
+    * **two or more live siblings (KNOWN LIMITATION)** → do NOT guess.
+      Return the declared (missing) path so the content read FAILs loud,
+      with a note naming all candidates. This is the conservative v1
+      choice: it trades precision (a content/issue-match check COULD pick
+      the right sibling) for safety (never PASS a wrong-attempt run on an
+      ambiguous probe). NOT widened to "pick the one whose content
+      matches expected.issue" — ambiguity is surfaced as a FAIL, never
+      silently resolved.
+
+    The sibling enumeration is injected via ``io.glob_sentinels`` (real
+    FS glob by default) so tests stay FS-free; liveness is the SAME
+    ``io.read_sentinel`` seam the content check uses.
+
+    Returns ``(path_to_read, note_or_None)``.
+    """
+    try:
+        declared_present = io._sentinel()(declared) is not None
+    except Exception:
+        # A transport RAISE (e.g. the RunPod SSH reader on rc=255) is NOT a
+        # "missing" signal — return the declared path UNCHANGED so the
+        # caller's own read re-raises inside its try and produces the
+        # fail-loud "sentinel read raised" reason. Do NOT probe siblings
+        # off an unknowable declared state.
+        return declared, None
+    if declared_present:
+        return declared, None
+    try:
+        siblings = io._glob_sentinels()(declared, issue)
+    except Exception as exc:
+        # A glob/listing transport failure is NOT a silent pass: fall back
+        # to the declared (missing) path so the content read FAILs loud,
+        # carrying the probe failure in the note.
+        return declared, f"live-sibling probe raised: {exc}"
+    live = [s for s in siblings if s != declared and io._sentinel()(s) is not None]
+    if len(live) == 1:
+        return live[0], (
+            f"declared sentinel {declared} missing; resolved to the single live "
+            f"sibling {live[0]} (stale baked attempt path, #685)"
+        )
+    if len(live) >= 2:
+        return declared, (
+            f"declared sentinel {declared} missing AND {len(live)} live sibling "
+            f"sentinels found ({'; '.join(live)}) — ambiguous, refusing to guess; "
+            "FAILing on the declared (missing) path (known v1 limitation)"
+        )
+    return declared, None
+
+
 def _check_sentinel(
     *,
     sentinel_path: str | None,
@@ -622,9 +836,20 @@ def _check_sentinel(
     the keystone check — file presence alone is not enough; the sentinel
     is what distinguishes an intentional clean run from leftover bytes
     of a half-finished one.
+
+    Before reading, :func:`_resolve_live_sentinel` resolves which path to
+    read: the declared one when it exists, else (the #685 stale-baked-
+    attempt case) the single live sibling attempt-dir sentinel if exactly
+    one exists. The resolution is RESOLUTION ONLY — the phase + issue
+    content checks below are UNCHANGED, so a genuinely-incomplete run
+    still FAILs.
     """
     if not sentinel_path:
         return {"status": "SKIP", "detail": "no sentinel_path declared"}
+    resolved_path, resolve_note = _resolve_live_sentinel(sentinel_path, issue, io)
+    if resolve_note:
+        logger.warning("verify_artifacts(issue=%d) sentinel resolve: %s", issue, resolve_note)
+    sentinel_path = resolved_path
     try:
         content = io._sentinel()(sentinel_path)
     except Exception as exc:
@@ -733,6 +958,7 @@ def expected_artifacts_from_handle(handle: Any) -> ExpectedArtifacts | None:
         wandb_run_path=raw.get("wandb_run_path"),
         git_paths=tuple(raw.get("git_paths", ())),
         sentinel_path=raw.get("sentinel_path"),
+        git_repo_root=raw.get("git_repo_root"),
     )
 
 
@@ -834,7 +1060,11 @@ def verify_artifacts(
             io=io,
         ),
         CHECK_WANDB: _check_wandb(run_path=expected.wandb_run_path, io=io),
-        CHECK_GIT: _check_git(paths=expected.git_paths, io=io),
+        CHECK_GIT: _check_git(
+            paths=expected.git_paths,
+            io=io,
+            git_repo_root=expected.git_repo_root,
+        ),
         CHECK_SENTINEL: _check_sentinel(
             sentinel_path=expected.sentinel_path,
             issue=expected.issue,

@@ -21,6 +21,8 @@ cover the contract :mod:`backends.artifacts` promises:
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +49,8 @@ from explore_persona_space.backends.artifacts import (
     CHECK_WANDB,
     DEFAULT_HF_DATA_REPO,
     DEFAULT_HF_MODEL_REPO,
+    SENTINEL_FILENAME,
+    build_expected_artifacts_declaration,
 )
 
 # ---------------------------------------------------------------------------
@@ -782,7 +786,6 @@ def test_issue588_evidence_shape_would_pass(tmp_path: Path) -> None:
     ``issue588_slurm-15956499/raw_completions/`` — verifies under the
     new launch declaration, where today the same handle FAILs
     structurally on "missing declaration"."""
-    from explore_persona_space.backends.artifacts import build_expected_artifacts_declaration
     from explore_persona_space.backends.slurm import RunSpec as _RunSpec
 
     backend = _slurm_backend_with_fakes(tmp_path, job_id="15956499")
@@ -952,3 +955,335 @@ def test_runpod_ssh_sentinel_reader_semantics(monkeypatch) -> None:
     detail = verdict.checks[CHECK_SENTINEL]["detail"]
     assert "rc=255" in detail
     assert "missing" not in detail
+
+
+# ---------------------------------------------------------------------------
+# #705: worktree git-root resolution (#685) + phase-scope (#661) + stale
+# baked-attempt sentinel resolution (#685 secondary). The LOAD-BEARING
+# negative controls (a genuinely-incomplete run STILL FAILs) live alongside
+# each positive case below — the gate is fixed, not relaxed.
+# ---------------------------------------------------------------------------
+
+_GIT = shutil.which("git")
+_needs_git = pytest.mark.skipif(_GIT is None, reason="git not on PATH")
+
+
+def _git(repo: Path, *args: str) -> None:
+    subprocess.run(
+        ["git", "-C", str(repo), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={
+            "GIT_AUTHOR_NAME": "t",
+            "GIT_AUTHOR_EMAIL": "t@e",
+            "GIT_COMMITTER_NAME": "t",
+            "GIT_COMMITTER_EMAIL": "t@e",
+            "GIT_CONFIG_GLOBAL": "/dev/null",
+            "GIT_CONFIG_SYSTEM": "/dev/null",
+            "HOME": str(repo),
+            "PATH": "/usr/bin:/bin",
+        },
+    )
+
+
+def _make_worktree_with_committed_artifact(tmp_path: Path, issue: int) -> tuple[Path, Path]:
+    """Build a real repo on ``main`` + a linked ``issue-<N>`` worktree.
+
+    The eval artifact ``eval_results/issue_<N>/run_result.json`` is
+    committed ONLY on the ``issue-<N>`` branch checked out in the
+    worktree — NOT on ``main`` — reproducing the #685 topology (auto-merge
+    to ``main`` is at /issue Step 10d, after finalize). Returns
+    ``(main_repo, worktree)``.
+    """
+    main_repo = tmp_path / "repo"
+    main_repo.mkdir()
+    _git(main_repo, "init", "-b", "main")
+    (main_repo / "seed.txt").write_text("seed")
+    _git(main_repo, "add", "seed.txt")
+    _git(main_repo, "commit", "-m", "seed")
+
+    worktree = tmp_path / "wt"
+    _git(main_repo, "worktree", "add", "-b", f"issue-{issue}", str(worktree))
+    rel = f"eval_results/issue_{issue}/run_result.json"
+    art = worktree / rel
+    art.parent.mkdir(parents=True, exist_ok=True)
+    art.write_text("{}")
+    _git(worktree, "add", rel)
+    _git(worktree, "commit", "-m", "artifact on issue branch")
+    return main_repo, worktree
+
+
+@_needs_git
+def test_check_git_uses_issue_worktree_for_unmerged_branch(tmp_path: Path) -> None:
+    """#685: with ``git_repo_root`` set to the worktree the git check
+    PASSes; unset (resolving against the MAIN tree where the file is NOT
+    yet committed) it FAILs — the exact regression #705 closes.
+
+    Uses the REAL ``git ls-files`` (no ``git_tracked`` mock) and the REAL
+    on-disk check (``io.repo_root`` left ``None`` so the baked
+    ``git_repo_root`` drives both), so this is the end-to-end git fixture
+    the plan promises.
+    """
+    issue = 685
+    main_repo, worktree = _make_worktree_with_committed_artifact(tmp_path, issue)
+    git_paths = (f"eval_results/issue_{issue}/",)
+    sentinel = str(tmp_path / ".sentinel.json")
+    sentinel_io = VerifierIO(read_sentinel=lambda p: _good_sentinel_text(issue=issue))
+
+    # UNSET git_repo_root → resolves to the pyproject-walk main root, which
+    # is NOT this fixture's repo. Force the resolution to the fixture's
+    # main_repo via io.repo_root to demonstrate the #685 FAIL: the file is
+    # on the issue branch, not on main's working tree.
+    expected_unset = ExpectedArtifacts(issue=issue, git_paths=git_paths, sentinel_path=sentinel)
+    io_main = VerifierIO(read_sentinel=sentinel_io.read_sentinel, repo_root=main_repo)
+    verdict_unset = verify_artifacts(expected_unset, io=io_main)
+    assert not verdict_unset.passed
+    assert verdict_unset.checks[CHECK_GIT]["status"] == "FAIL"
+    assert "not tracked by git" in verdict_unset.checks[CHECK_GIT]["detail"]
+
+    # SET git_repo_root=<worktree> → the REAL git check runs there, where
+    # the file IS committed + on disk → PASS. io.repo_root left None so the
+    # baked git_repo_root is the resolution source.
+    expected_set = ExpectedArtifacts(
+        issue=issue,
+        git_paths=git_paths,
+        sentinel_path=sentinel,
+        git_repo_root=str(worktree),
+    )
+    verdict_set = verify_artifacts(expected_set, io=sentinel_io)
+    assert verdict_set.passed, verdict_set.reasons
+    assert verdict_set.checks[CHECK_GIT]["status"] == "PASS", verdict_set.checks[CHECK_GIT]
+
+
+@_needs_git
+def test_check_git_falls_back_to_main_when_baked_worktree_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#705 concern ``worktree-removed-at-finalize-fallback-test``: when the
+    baked ``git_repo_root`` directory no longer exists (worktree merged +
+    removed post-Step-10d), the resolver falls back to the pyproject-walked
+    main root with a LOUD log and the git check PASSes on the now-on-main
+    file — instead of FAILing on the removed worktree.
+    """
+    issue = 705
+    main_repo, worktree = _make_worktree_with_committed_artifact(tmp_path, issue)
+    # Merge the issue branch into main, then REMOVE the worktree — the
+    # post-Step-10d auto-merge end-state (the file is now on main's tree).
+    _git(main_repo, "merge", "--no-ff", f"issue-{issue}", "-m", "merge")
+    _git(main_repo, "worktree", "remove", str(worktree))
+    assert not worktree.exists()
+
+    # The fallback target is the pyproject-walk root; pin it to main_repo.
+    monkeypatch.setattr(
+        "explore_persona_space.backends.artifacts._pyproject_walk_root", lambda: main_repo
+    )
+
+    expected = ExpectedArtifacts(
+        issue=issue,
+        git_paths=(f"eval_results/issue_{issue}/",),
+        sentinel_path=str(tmp_path / ".sentinel.json"),
+        git_repo_root=str(worktree),  # absent now
+    )
+    io = VerifierIO(read_sentinel=lambda p: _good_sentinel_text(issue=issue))
+    verdict = verify_artifacts(expected, io=io)
+    assert verdict.passed, verdict.reasons
+    assert verdict.checks[CHECK_GIT]["status"] == "PASS", verdict.checks[CHECK_GIT]
+
+
+def test_build_declaration_phase_scope_omits_full_task_git_paths() -> None:
+    """#661: ``skip_default_git_paths=True`` drops the auto full-task git
+    paths from the shared builder; the GCP twin produces the IDENTICAL
+    shape; ``False`` (default) is unchanged.
+    """
+    from explore_persona_space.backends.gcp import GcpConfig
+    from explore_persona_space.backends.gcp import (
+        expected_artifacts_declaration as gcp_decl,
+    )
+
+    sentinel = "/scratch/eval_results/issue_661/att-1/.completion-sentinel.json"
+    decl_off = build_expected_artifacts_declaration(
+        issue=661, sentinel_path=sentinel, custom_workload=True, attempt_id="att-1"
+    )
+    assert decl_off["git_paths"] == [
+        "eval_results/issue_661/",
+        "figures/issue_661/",
+    ]
+    decl_on = build_expected_artifacts_declaration(
+        issue=661,
+        sentinel_path=sentinel,
+        custom_workload=True,
+        attempt_id="att-1",
+        skip_default_git_paths=True,
+    )
+    assert decl_on["git_paths"] == []
+    # An explicit extra_git_path still survives the skip (a phase that DOES
+    # commit a scoped git file can declare it).
+    decl_on_extra = build_expected_artifacts_declaration(
+        issue=661,
+        sentinel_path=sentinel,
+        custom_workload=True,
+        attempt_id="att-1",
+        skip_default_git_paths=True,
+        extra_git_paths=("eval_results/issue_661/phase3_manifest.json",),
+    )
+    assert decl_on_extra["git_paths"] == ["eval_results/issue_661/phase3_manifest.json"]
+
+    # GCP twin parity.
+    from explore_persona_space.backends.base import RunSpec
+
+    cfg = GcpConfig()
+    spec = RunSpec(issue=661, intent="eval", backend="gcp", workload_cmd="bash x.sh")
+    gcp_on = gcp_decl(spec=spec, config=cfg, attempt_id="att-1", skip_default_git_paths=True)
+    gcp_off = gcp_decl(spec=spec, config=cfg, attempt_id="att-1")
+    assert gcp_on["git_paths"] == []
+    assert gcp_off["git_paths"] == ["eval_results/issue_661/", "figures/issue_661/"]
+
+
+def test_phase_scope_passes_without_skip_confirm_and_negative_control(tmp_path: Path) -> None:
+    """#661: a phase-scoped declaration (no git paths, HF-only deliverable)
+    PASSes the gate WITHOUT --skip-confirm-artifacts — the git check SKIPs,
+    the HF + sentinel checks still run. Negative control: a wrong-PHASE
+    sentinel on the SAME phase-scoped declaration STILL FAILs (gate not
+    relaxed).
+    """
+    sentinel = str(tmp_path / ".sentinel.json")
+    decl = build_expected_artifacts_declaration(
+        issue=661,
+        sentinel_path=sentinel,
+        custom_workload=True,
+        attempt_id="att-1",
+        skip_default_git_paths=True,
+        extra_hf_data_paths=("issue661_extract/analysis_tensors/",),
+    )
+    expected = ExpectedArtifacts(
+        issue=661,
+        hf_data_paths=tuple(decl["hf_data_paths"]),
+        git_paths=tuple(decl["git_paths"]),
+        sentinel_path=sentinel,
+    )
+    io_pass = _io(
+        hf_data_files=["issue661_extract/analysis_tensors/shift_L10.pt"],
+        sentinel_content=_good_sentinel_text(issue=661),
+        repo_root=tmp_path,
+    )
+    verdict = verify_artifacts(expected, io=io_pass)
+    assert verdict.passed, verdict.reasons
+    assert verdict.checks[CHECK_GIT]["status"] == "SKIP"
+
+    # Negative control: wrong-phase sentinel → STILL FAIL.
+    io_bad = _io(
+        hf_data_files=["issue661_extract/analysis_tensors/shift_L10.pt"],
+        sentinel_content=json.dumps({"phase": "running", "issue": 661}) + "\n",
+        repo_root=tmp_path,
+    )
+    verdict_bad = verify_artifacts(expected, io=io_bad)
+    assert not verdict_bad.passed
+    assert verdict_bad.checks[CHECK_SENTINEL]["status"] == "FAIL"
+
+
+def test_stale_baked_sentinel_resolves_to_single_live_sibling(tmp_path: Path) -> None:
+    """#685 secondary: the declared (stale baked-attempt) sentinel is
+    missing; exactly ONE live sibling attempt-dir sentinel exists → the
+    resolver prefers it and the sentinel check PASSes. The glob is injected
+    so the test is FS-free.
+    """
+    issue = 685
+    declared = f"/scratch/eval_results/issue_{issue}/att-STALE/{SENTINEL_FILENAME}"
+    live_sibling = f"/scratch/eval_results/issue_{issue}/att-LIVE/{SENTINEL_FILENAME}"
+    fs = {live_sibling: _good_sentinel_text(issue=issue)}  # declared NOT present
+    expected = ExpectedArtifacts(issue=issue, sentinel_path=declared)
+    io = VerifierIO(
+        read_sentinel=lambda p: fs.get(p),
+        glob_sentinels=lambda decl, iss: [live_sibling],
+    )
+    verdict = verify_artifacts(expected, io=io)
+    assert verdict.passed, verdict.reasons
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "PASS"
+    assert "att-LIVE" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
+def test_stale_baked_sentinel_zero_live_siblings_still_fails(tmp_path: Path) -> None:
+    """#685 secondary negative control: declared missing AND no live sibling
+    → the gate STILL FAILs (the real 'missing' reason), never a silent pass.
+    """
+    issue = 685
+    declared = f"/scratch/eval_results/issue_{issue}/att-STALE/{SENTINEL_FILENAME}"
+    expected = ExpectedArtifacts(issue=issue, sentinel_path=declared)
+    io = VerifierIO(read_sentinel=lambda p: None, glob_sentinels=lambda decl, iss: [])
+    verdict = verify_artifacts(expected, io=io)
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    assert "missing" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
+def test_stale_baked_sentinel_two_live_siblings_refuses_to_guess(tmp_path: Path) -> None:
+    """#685 secondary KNOWN LIMITATION: >=2 live siblings → do NOT guess;
+    FAIL loud on the declared (missing) path. A wrong-attempt run is never
+    PASSed on an ambiguous probe.
+    """
+    issue = 685
+    declared = f"/scratch/eval_results/issue_{issue}/att-STALE/{SENTINEL_FILENAME}"
+    sib_a = f"/scratch/eval_results/issue_{issue}/att-A/{SENTINEL_FILENAME}"
+    sib_b = f"/scratch/eval_results/issue_{issue}/att-B/{SENTINEL_FILENAME}"
+    fs = {sib_a: _good_sentinel_text(issue=issue), sib_b: _good_sentinel_text(issue=issue)}
+    expected = ExpectedArtifacts(issue=issue, sentinel_path=declared)
+    io = VerifierIO(
+        read_sentinel=lambda p: fs.get(p), glob_sentinels=lambda decl, iss: [sib_a, sib_b]
+    )
+    verdict = verify_artifacts(expected, io=io)
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    # FAILs on the DECLARED missing path, not on a guessed sibling.
+    assert "att-STALE" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
+def test_stale_baked_sentinel_wrong_issue_sibling_still_fails(tmp_path: Path) -> None:
+    """#685 secondary negative control: the single live sibling exists but
+    its content is for a DIFFERENT issue → the UNCHANGED issue-match content
+    check FAILs. Resolution does not bypass the keystone validation.
+    """
+    issue = 685
+    declared = f"/scratch/eval_results/issue_{issue}/att-STALE/{SENTINEL_FILENAME}"
+    live_sibling = f"/scratch/eval_results/issue_{issue}/att-LIVE/{SENTINEL_FILENAME}"
+    fs = {live_sibling: _good_sentinel_text(issue=999)}  # wrong issue
+    expected = ExpectedArtifacts(issue=issue, sentinel_path=declared)
+    io = VerifierIO(
+        read_sentinel=lambda p: fs.get(p),
+        glob_sentinels=lambda decl, iss: [live_sibling],
+    )
+    verdict = verify_artifacts(expected, io=io)
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    assert "999" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
+def test_new_fields_default_off_round_trip_back_compat(tmp_path: Path) -> None:
+    """Back-compat (#705 constraint 6): a declaration built WITHOUT the new
+    fields omits ``git_repo_root`` entirely and a pre-fix serialized dict
+    (no ``git_repo_root`` key) round-trips to ``git_repo_root=None`` with
+    identical verdict behavior.
+    """
+    decl = build_expected_artifacts_declaration(
+        issue=137,
+        sentinel_path=str(tmp_path / ".sentinel.json"),
+        custom_workload=True,
+        attempt_id="att-1",
+    )
+    assert "git_repo_root" not in decl  # omitted when None
+
+    # A pre-fix in-flight handle (no git_repo_root key) reconstructs fine.
+    handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name="pod-137",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-137.log",
+        extra={EXPECTED_ARTIFACTS_HANDLE_KEY: decl},
+    )
+    from explore_persona_space.backends.artifacts import expected_artifacts_from_handle
+
+    rebuilt = expected_artifacts_from_handle(handle)
+    assert rebuilt is not None
+    assert rebuilt.git_repo_root is None

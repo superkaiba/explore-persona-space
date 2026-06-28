@@ -512,6 +512,16 @@ def expected_artifacts_declaration(
         custom_workload=bool(spec.workload_cmd),
         attempt_id=attempt_id,
         wandb_run_path=spec.extra.get("wandb_run_path"),
+        # #685 / #661: thread the per-issue worktree git root + the
+        # phase-scope flag off spec.extra (same channel as wandb_run_path;
+        # _launch_extra_from_args populates both). The SLURM lane rsyncs
+        # the src_root tree rather than checking out a worktree, so a baked
+        # git_repo_root is usually inert here — but threading it keeps the
+        # builder call uniform across all three lanes (and the launch +
+        # reconnect SLURM handles both call expected_artifacts_declaration
+        # with the SAME spec, so both pick it up). None / False = current.
+        git_repo_root=spec.extra.get("git_repo_root"),
+        skip_default_git_paths=bool(spec.extra.get("skip_default_git_paths", False)),
     )
 
 

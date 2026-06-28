@@ -691,6 +691,8 @@ def expected_artifacts_declaration(
     extra_hf_data_paths: Sequence[str] = (),
     extra_hf_model_paths: Sequence[str] = (),
     extra_git_paths: Sequence[str] = (),
+    git_repo_root: str | None = None,
+    skip_default_git_paths: bool = False,
 ) -> dict[str, Any]:
     """Build the :data:`EXPECTED_ARTIFACTS_HANDLE_KEY` payload for launch.
 
@@ -762,6 +764,8 @@ def expected_artifacts_declaration(
         extra_hf_data_paths=extra_hf_data_paths,
         extra_hf_model_paths=extra_hf_model_paths,
         extra_git_paths=extra_git_paths,
+        git_repo_root=git_repo_root,
+        skip_default_git_paths=skip_default_git_paths,
     )
 
 
@@ -4251,6 +4255,13 @@ class GcpBackend(ComputeBackend):
         RunHandle is frozen, so we copy ``extra`` and rebuild. The
         verifier's ``confirm_artifacts_from_handle`` will read this back
         and fail loudly if the launch path forgot to populate it.
+
+        ``git_repo_root`` (#685) and ``skip_default_git_paths`` (#661) are
+        read off ``spec.extra`` — the SAME thread the launch CLI uses for
+        ``wandb_run_path`` (``_launch_extra_from_args`` populates all
+        three) — so BOTH the fresh-launch (3182) and reconnect (2916)
+        call sites pick them up uniformly. ``None`` / ``False`` (absent)
+        = the established behavior.
         """
 
         decl = expected_artifacts_declaration(
@@ -4258,6 +4269,8 @@ class GcpBackend(ComputeBackend):
             config=config,
             attempt_id=attempt_id,
             wandb_run_path=wandb_run_path,
+            git_repo_root=spec.extra.get("git_repo_root"),
+            skip_default_git_paths=bool(spec.extra.get("skip_default_git_paths", False)),
         )
         new_extra = dict(handle.extra)
         new_extra[EXPECTED_ARTIFACTS_HANDLE_KEY] = decl

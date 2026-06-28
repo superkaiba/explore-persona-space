@@ -1544,6 +1544,154 @@ def test_launch_repo_branch_not_defaulted_when_on_main(monkeypatch, tmp_path) ->
 
 
 # ---------------------------------------------------------------------------
+# #705: git_repo_root (#685) + skip_default_git_paths (#661) threading
+# ---------------------------------------------------------------------------
+
+
+def test_launch_runpod_populates_git_repo_root_when_worktree_exists(monkeypatch, tmp_path) -> None:
+    """#705 concern ``worktree-fix-inert-when-repo-branch-absent``: an
+    explicit ``--backend runpod`` launch WITHOUT ``--repo-branch`` (the
+    #685 shape) STILL threads the per-issue worktree git root into
+    ``spec.extra['git_repo_root']`` — derived from issue + repo_root
+    ALONE, NOT gated on repo_branch — so the artifact verifier's git
+    check resolves against the worktree branch where the run committed
+    its eval/figure artifacts."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    worktree = str(tmp_path / ".claude" / "worktrees" / "issue-685")
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: worktree)
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "685",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--workload-cmd",
+                "bash scripts/issue685_dispatch.sh",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    # The RunPod launch carries no --repo-branch, yet git_repo_root is set.
+    assert runpod.launches[0].extra.get("git_repo_root") == worktree
+    assert "repo_branch" not in runpod.launches[0].extra
+
+
+def test_launch_omits_git_repo_root_when_no_worktree(monkeypatch, tmp_path) -> None:
+    """Control: with no per-issue worktree the key is ABSENT from
+    ``spec.extra`` → the declaration falls back to the established
+    pyproject-walk repo root (back-compat, #705 constraint 6)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "685",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--workload-cmd",
+                "bash scripts/issue685_dispatch.sh",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "git_repo_root" not in runpod.launches[0].extra
+
+
+def test_launch_skip_default_git_paths_threads_to_spec_extra(monkeypatch, tmp_path) -> None:
+    """#661: ``--skip-default-git-paths`` threads into
+    ``spec.extra['skip_default_git_paths']=True`` (lane-agnostic), so the
+    backend declaration builder omits the auto full-task git paths for a
+    phase-scoped launch."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "661",
+                "--intent",
+                "eval",
+                "--backend",
+                "gcp",
+                "--skip-default-git-paths",
+                "--workload-cmd",
+                "bash scripts/issue661_extract.sh",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra.get("skip_default_git_paths") is True
+
+
+def test_launch_skip_default_git_paths_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None:
+    """Control: without ``--skip-default-git-paths`` the key is ABSENT →
+    the established full-task git-path declaration is unchanged."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_issue_worktree_git_root", lambda issue: None)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "launch",
+                "--issue",
+                "661",
+                "--intent",
+                "eval",
+                "--backend",
+                "gcp",
+                "--workload-cmd",
+                "bash scripts/issue661_extract.sh",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "skip_default_git_paths" not in gcp.launches[0].extra
+
+
+def test_skip_confirm_artifacts_flag_still_present() -> None:
+    """#705 constraint: the ``finalize --skip-confirm-artifacts`` escape
+    hatch is retained (the fix replaces routine bypass, never removes the
+    operator override)."""
+    from scripts.dispatch_issue import _build_argparser
+
+    parser = _build_argparser()
+    args = parser.parse_args(["finalize", "--issue", "705", "--skip-confirm-artifacts"])
+    assert args.skip_confirm_artifacts is True
+
+
+# ---------------------------------------------------------------------------
 # finalize action
 # ---------------------------------------------------------------------------
 

@@ -1402,7 +1402,7 @@ def test_confirm_artifacts_passes_when_verifier_says_pass(monkeypatch) -> None:
     # Ensure declared git paths resolve on disk.
     monkeypatch.setattr(
         "explore_persona_space.backends.artifacts._check_git",
-        lambda *, paths, io: {"status": "SKIP", "detail": "no git paths declared"},
+        lambda *, paths, io, **_kw: {"status": "SKIP", "detail": "no git paths declared"},
     )
     # Sentinel file: fake a clean read.
     monkeypatch.setattr(
