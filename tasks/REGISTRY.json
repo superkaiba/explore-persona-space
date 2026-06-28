@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 706,
+  "highest_id": 707,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4490,6 +4490,13 @@
       "path": "tasks/proposed/706",
       "status": "proposed",
       "title": "/daily held-items route to PM-tracked tasks + PM digest line (stop the rot, add independent review)"
+    },
+    "707": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/707",
+      "status": "proposed",
+      "title": "spend-approval park must stay sticky across resume (not un-parked by a config-drift cap bump)"
     },
     "71": {
       "has_clean_result": false,
