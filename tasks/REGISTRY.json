@@ -4396,8 +4396,8 @@
     "695": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/695",
-      "status": "approved",
+      "path": "tasks/running/695",
+      "status": "running",
       "title": "workflow-fix: idle-unmapped pass never reaps detached tmux Claude sessions"
     },
     "7": {
