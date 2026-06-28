@@ -572,7 +572,23 @@ def phase_phase4train(args) -> dict:
             logger.warning(
                 "[phase4train] %s coherence-collapsed at lr=%s; falling back", condition, lr
             )
-    return {"dstar_x": dstar, "chosen_lr": chosen_lr}
+    # Persist the D*-matched full-FT checkpoint of each arm to HF so phase4 can
+    # re-download it on a fresh pod (plan §9 cleanup pattern: only the 2
+    # D*-matched checkpoints are retained on HF). Skipped in smoke (local-only).
+    uploaded: dict[str, str] = {}
+    if not args.smoke:
+        from explore_persona_space.orchestrate.hub import upload_model
+
+        for condition in ("sft_fullft_p4", "dft_fullft_p4"):
+            ck = _dstar_matched_fullft_ckpt(condition, dstar)
+            if ck is not None and ck.exists():
+                url = upload_model(
+                    model_path=str(ck),
+                    path_in_repo=f"issue715/{condition}_dstar",
+                )
+                uploaded[condition] = url
+                logger.info("[phase4train] uploaded %s D*-matched ckpt -> %s", condition, url)
+    return {"dstar_x": dstar, "chosen_lr": chosen_lr, "uploaded_fullft_ckpts": uploaded}
 
 
 def phase_phase4(args) -> dict:
@@ -744,8 +760,14 @@ def _reproducibility_card(args) -> dict:
     """
     cells = _select_lora_cells(args) if args.phase in ("phase1", "smoke") else []
     wandb_run_names = [f"issue715_{c}_seed{s}" for c, s in cells]
+    hf_checkpoint_subfolders: list[str] = []
     if args.phase in ("phase4train", "phase4"):
         wandb_run_names += [f"issue715_{a}_seed42" for a in ("sft_fullft_p4", "dft_fullft_p4")]
+        # The 2 D*-matched full-FT checkpoints are uploaded to the HF model repo
+        # (phase4train) under these subfolders.
+        hf_checkpoint_subfolders = [
+            f"issue715/{a}_dstar" for a in ("sft_fullft_p4", "dft_fullft_p4")
+        ]
     entity = None
     try:
         import wandb
@@ -758,8 +780,12 @@ def _reproducibility_card(args) -> dict:
         "wandb_run_names": wandb_run_names,
         "wandb_entity": entity,
         "wandb_url": "n/a (per-cell wandb runs; see reproducibility_card)",
-        "note": "LoRA adapters merged in-place under models/issue715_*; full-FT "
-        "checkpoints uploaded to HF model repo before delete (Phase-4-train).",
+        "hf_model_repo": C.HF_MODEL_REPO,
+        "hf_checkpoint_subfolders": hf_checkpoint_subfolders,
+        "note": "LoRA adapters (P1/P2/P3) merged in-place under models/issue715_* "
+        "and evaluated on-pod (not separately uploaded — the merged 7B is derived "
+        "data); the 2 D*-matched FULL-FT checkpoints (P4) ARE uploaded to "
+        f"{C.HF_MODEL_REPO}/issue715/<arm>_dstar before delete (plan §9).",
     }
 
 
