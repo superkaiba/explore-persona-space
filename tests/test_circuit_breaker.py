@@ -128,6 +128,70 @@ def test_e_incomplete_ladder_no_fire():
     assert tw.circuit_breaker_should_fire(events, plan, K=4) is None
 
 
+# ─── (e2) trigger-2 requires a POST-launch failure (#718 Codex critic) ───────
+# A stale epm:failure that PRECEDES the ladder launches, with NO failure after
+# the final option is launched, must NOT fire trigger-2. The gate never
+# re-tripped post-exhaustion — there is nothing to pivot away from.
+def test_e2_pre_ladder_failure_only_no_fire():
+    plan = (
+        "## §11 escape ladder\n\n"
+        "Gate G: if the a7 assert trips, walk the ladder.\n"
+        "Option A: lower the threshold.\n"
+        "Option B: switch the estimator.\n"
+    )
+    events = [
+        _fail("p1 some old unrelated crash"),  # PRECEDES the ladder
+        _progress("Launching Option A per plan §11 escape ladder"),
+        _progress("Launching Option B per plan §11 escape ladder"),
+    ]
+    # Both options launched, but the only failure is BEFORE the ladder → no
+    # post-exhaustion re-trip → trigger-2 must NOT fire. (2 = K-2 < K, so
+    # trigger-1 stays silent too.)
+    assert tw.circuit_breaker_should_fire(events, plan, K=4) is None
+
+
+# ─── (e3) trigger-2 fires on a POST-launch failure (happy path preserved) ────
+def test_e3_post_launch_failure_fires():
+    plan = (
+        "## §11 escape ladder\n\n"
+        "Gate G: if the a7 assert trips, walk the ladder.\n"
+        "Option A: lower the threshold.\n"
+        "Option B: switch the estimator.\n"
+    )
+    events = [
+        _progress("Launching Option A per plan §11 escape ladder"),
+        _progress("Launching Option B per plan §11 escape ladder"),
+        _fail("p3 a7-assert HALT — gate G re-tripped after Option B"),  # AFTER ladder
+    ]
+    fire = tw.circuit_breaker_should_fire(events, plan, K=4)
+    assert fire is not None
+    assert fire["trigger"] == "enumerated_fallback_exhausted"
+    assert fire["ladder"] == ["A", "B"]
+
+
+# ─── (e4) pre-launch AND post-launch failure → fires (post-launch is what counts)
+# A stale pre-ladder failure is irrelevant; the POST-launch re-trip drives the
+# fire. Pins the post-launch-only semantics (the pre-launch failure neither
+# blocks nor is required).
+def test_e4_pre_and_post_launch_failure_fires():
+    plan = (
+        "## §11 escape ladder\n\n"
+        "Gate G: if the a7 assert trips, walk the ladder.\n"
+        "Option A: lower the threshold.\n"
+        "Option B: switch the estimator.\n"
+    )
+    events = [
+        _fail("p1 some old unrelated crash"),  # PRECEDES the ladder — irrelevant
+        _progress("Launching Option A per plan §11 escape ladder"),
+        _progress("Launching Option B per plan §11 escape ladder"),
+        _fail("p3 a7-assert HALT — gate G re-tripped after Option B"),  # AFTER ladder
+    ]
+    fire = tw.circuit_breaker_should_fire(events, plan, K=4)
+    assert fire is not None
+    assert fire["trigger"] == "enumerated_fallback_exhausted"
+    assert fire["ladder"] == ["A", "B"]
+
+
 # ─── (f) milestone reset on epm:experiment-implementation / epm:results ──────
 def test_f_milestone_reset_experiment_implementation():
     events = [
