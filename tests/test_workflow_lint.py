@@ -1141,6 +1141,47 @@ def test_check_marker_registry_pins_failure_lesson_field_contract(tmp_path):
     )
 
 
+def test_no_flags_default_run_pins_failure_lesson_field_contract(tmp_path):
+    """#712 §4f: the BARE ``workflow_lint.py`` (no check/emit flags) MUST run the
+    ``epm:failure-lesson`` field-contract assertion, so a future edit dropping
+    ``root_cause_confirmed`` / ``supersedes`` TRIPS the default pre-commit lint.
+
+    The round-1 review found the assertion was opt-in — gated on
+    ``--check-marker-registry`` alone, NOT bundled into the no-flags default —
+    so the mechanical pin that justifies ``architectural: false`` was not
+    load-bearing on the default path. This is the END-TO-END CLI regression
+    (the sibling ``test_check_marker_registry_pins_...`` calls the helper
+    directly and so cannot catch the bundling gap).
+
+    Writes a copy of the REAL committed ``workflow.yaml`` with the
+    ``root_cause_confirmed`` / ``supersedes`` field tokens renamed away (which
+    also breaks the ``root_cause_confirmed=yes`` ``when:`` token), then invokes
+    the no-flags CLI via ``--file`` and asserts it exits non-zero with the
+    ``#712 §4f`` field-contract diagnostic.
+    """
+    real_yaml = (_REPO_ROOT / ".claude" / "workflow.yaml").read_text()
+    # Rename the two field tokens away. They occur ONLY on the
+    # epm:failure-lesson marker's `fields:`/`when:` lines, so this strip is
+    # surgically scoped and leaves the rest of the schema loadable.
+    stripped = real_yaml.replace("root_cause_confirmed", "rc_confirmed_renamed").replace(
+        "supersedes", "replaces_renamed"
+    )
+    assert stripped != real_yaml, "the field tokens were not present to strip — fixture stale"
+    stripped_yaml = tmp_path / "workflow.yaml"
+    stripped_yaml.write_text(stripped)
+
+    result = _run("--file", str(stripped_yaml))
+    assert result.returncode != 0, (
+        "the no-flags default run did NOT fail on a field-token-stripped "
+        f"workflow.yaml — the field-contract check is not bundled into no_flags:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "#712 §4f" in result.stderr, (
+        "expected the #712 §4f field-contract diagnostic in stderr; got:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Unit tests for ``check_heredoc_dotenv`` (incident class #552/#612: a
 # no-arg python-dotenv ``load_dotenv()`` inside a heredoc feeding a python

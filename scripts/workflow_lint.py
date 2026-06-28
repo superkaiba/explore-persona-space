@@ -2649,7 +2649,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_heredoc_dotenv())
     if args.check_dispatcher_cvd_pin or no_flags:
         errors.extend(check_dispatcher_cvd_pin())
-    if args.check_marker_registry and not args.check_references:
+    if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
         errors.extend(check_agent_model_pins())
