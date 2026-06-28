@@ -21,6 +21,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_658.md](https://github.com/superkaiba/explore-persona-space/blob/1d3fc865be/docs/methodology/issue_658.md) · [gist](https://gist.github.com/superkaiba/bba98fc6e1fa80413b2642abcd56dc71)
+
 ## Takeaways
 
 - **A3.2 (a mean answer-side activation summarizes behavior expression) clears the FDR floor for only 3 of 10 behaviors** (deception, fact expression, format/style) — the same 3 in *both* query genres.
