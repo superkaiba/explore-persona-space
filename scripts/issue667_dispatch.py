@@ -77,6 +77,11 @@ HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_ANALYSIS_TENSORS_PREFIX = "issue667_gate_chain_preview/analysis_tensors"
 TENSORS_DIR = "eval_results/issue_667/analysis_tensors"
 OUT_DIR = "eval_results/issue_667"
+# followup a36-readout-reextract-cos: the re-extracted read-out r⁺ store + its
+# HF prefix (a NEW prefix so #667's existing analysis_tensors are untouched).
+HF_R_PLUS_PREFIX = "issue667_gate_chain_preview/a36_readout_reextract/r_plus"
+R_PLUS_DIR = "eval_results/issue_667/a36_readout_reextract/r_plus"
+REEXTRACT_OUT_DIR = "eval_results/issue_667/a36_readout_reextract"
 # The extractor defaults --seed to 42 and the dispatcher never overrides it, so a
 # cell's output dir is <TENSORS_DIR>/<behavior>/<source>_seed42 (issue667_extract
 # cell_dir). Used by the resume-skip check (round-7) to detect already-extracted
@@ -124,6 +129,20 @@ def write_sentinel(kind: str, note: str, *, version: int = 1, extra: dict | None
     out.write_text(json.dumps(payload, indent=2))
     logger.info("sentinel written: %s", out)
     return out
+
+
+def _git_commit_sha() -> str:
+    """Best-effort HEAD sha for the run sentinel (reproducibility metadata)."""
+    try:
+        return (
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, env={**os.environ}
+            )
+            .decode()
+            .strip()
+        )
+    except Exception:
+        return "unknown"
 
 
 def _require_credentials() -> None:
@@ -823,6 +842,298 @@ def phase_analysis(*, behaviors: list[str], primary_layer: int, skip_store_pin: 
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Phase: a36-readout-reextract (followup a36-readout-reextract-cos)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _prefetch_inherited_delta_v(
+    behaviors: list[str],
+    sources_arg: str | None,
+    targets_arg: str | None,
+    layers: list[int],
+) -> int:
+    """Download #667's inherited Δv per-cell .npz into TENSORS_DIR (the analysis input).
+
+    The re-extract amendment reuses #667's already-uploaded ``analysis_tensors``
+    (the ``Δv = v+ − v0`` store) verbatim — it does NOT re-extract Δv. Each cell
+    file is fetched DIRECTLY via ``hf_hub_download`` (per-file, NOT a full-tree
+    list — the data repo's recursive tree 504s, #399 snapshot-truncation family),
+    skipping any already on disk. Returns the count fetched. Fail-loud if a
+    required cell is genuinely missing on HF (never a silent shrink).
+    """
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
+
+    from explore_persona_space.experiments.i537_contexts import eval_cids_for
+
+    tdir = PROJECT_ROOT / TENSORS_DIR
+    n_fetched = 0
+    for behavior in behaviors:
+        sources = select_sources(behavior, sources_arg)
+        targets = select_targets(behavior, targets_arg)
+        if targets is None:
+            # Off-diagonal cells the A3.6 read uses == the 30 eval cids (+ source
+            # diagonal, which the analysis skips — but fetch it too for parity).
+            targets = list(dict.fromkeys(eval_cids_for(behavior)))
+        for source in sources:
+            cell_local = tdir / behavior / f"{source}_seed{_EXTRACT_SEED}"
+            cell_local.mkdir(parents=True, exist_ok=True)
+            for target in targets:
+                if target == source:
+                    continue  # off-diagonal only (the CHANGE read)
+                for li in layers:
+                    fn = f"{target}_L{li}.npz"
+                    local = cell_local / fn
+                    if local.is_file():
+                        continue
+                    rel = f"{behavior}/{source}_seed{_EXTRACT_SEED}/{fn}"
+                    try:
+                        src = hf_hub_download(
+                            HF_DATA_REPO,
+                            f"{HF_ANALYSIS_TENSORS_PREFIX}/{rel}",
+                            repo_type="dataset",
+                        )
+                    except EntryNotFoundError as e:
+                        raise RuntimeError(
+                            f"inherited Δv cell missing on HF: {HF_ANALYSIS_TENSORS_PREFIX}/{rel} "
+                            f"({e}) — #667's analysis_tensors do not cover this cell; HALT "
+                            "(never silently shrink the A3.6 denominator)."
+                        ) from e
+                    import shutil
+
+                    shutil.copy2(src, local)
+                    n_fetched += 1
+    logger.info("prefetched %d inherited Δv cells into %s", n_fetched, tdir)
+    return n_fetched
+
+
+def phase_reextract_prefetch(
+    *,
+    behaviors: list[str],
+    sources_arg: str | None,
+    targets_arg: str | None,
+    layers: list[int],
+    cpu_only: bool,
+    skip_parity: bool,
+    skip_store_pin: bool,
+) -> None:
+    """Phase-0 for the re-extract amendment: pins + parity probe + Δv prefetch.
+
+    (i) SHA-pin the #658 store ``probe_pool_hash`` (the load-bearing pin, M3:
+    NOT ``git_commit`` which is ``None`` in the live manifest) + #537 G_meta
+    git_commit; (ii) the inherited 1-adapter rsLoRA NUMERIC parity probe (HALT on
+    mismatch — the read gauge must match #667's committed θ⁺); (iii) download
+    #667's inherited Δv per-cell store into TENSORS_DIR (the analysis input).
+    """
+    phase_log("reextract_prefetch")
+    if not skip_store_pin:
+        from issue667_analysis import assert_store_pin, load_g_meta
+
+        from explore_persona_space.analysis.issue667 import EXPECTED_STORE_PROBE_POOL_HASH
+
+        g_meta = load_g_meta()
+        logger.info("G_meta git_commit pin OK: %s", g_meta["git_commit"][:16])
+        assert_store_pin()
+        logger.info("#658 store probe_pool_hash pin OK: %s", EXPECTED_STORE_PROBE_POOL_HASH[:16])
+
+    # rsLoRA parity probe (fitness check (g)) — inherited verbatim. HALT on miss.
+    if skip_parity:
+        logger.info("reextract: parity probe SKIPPED (--skip-parity)")
+    else:
+        _rslora_parity_probe(behaviors[0], cpu_only=cpu_only)
+
+    # Prefetch the inherited Δv cells (skipped on a synthetic-store smoke).
+    if not skip_store_pin:
+        _prefetch_inherited_delta_v(behaviors, sources_arg, targets_arg, layers)
+    logger.info("[phase=reextract_prefetch_done]")
+
+
+def _r_plus_extract_cmd(
+    behavior: str,
+    source: str,
+    layers: list[int],
+    gpu_id: int,
+    max_probes: int | None,
+    cpu_only: bool,
+) -> tuple[list[str], Path, dict[str, str]]:
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/issue667_extract.py",
+        "--r-plus",
+        "--behavior",
+        behavior,
+        "--source-cid",
+        source,
+        "--layers",
+        *[str(li) for li in layers],
+        "--r-plus-out",
+        R_PLUS_DIR,
+        "--gpu-id",
+        str(gpu_id),
+    ]
+    if max_probes:
+        cmd += ["--max-probes", str(max_probes)]
+    if cpu_only:
+        cmd += ["--cpu-only"]
+    # CVD pinned in the LAUNCHER env per cell (#545) + spawn guard (gotchas #26).
+    env = {
+        "CUDA_VISIBLE_DEVICES": "" if cpu_only else str(gpu_id),
+        "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
+    }
+    log_path = _log_dir() / f"r_plus_{behavior}_{source}.log"
+    return cmd, log_path, env
+
+
+def phase_extract_r_plus(
+    *,
+    behaviors: list[str],
+    sources_arg: str | None,
+    layers: list[int],
+    n_gpus: int,
+    cpu_only: bool,
+    max_probes: int | None,
+    skip_upload: bool,
+    dry_run: bool,
+) -> None:
+    """Re-extract r⁺ per source adapter in CVD-pinned waves; upload the r⁺ store."""
+    phase_log("reextract_r_plus")
+    cells: list[tuple[str, str]] = []
+    for behavior in behaviors:
+        for source in select_sources(behavior, sources_arg):
+            cells.append((behavior, source))
+    logger.info("reextract r⁺: %d source-adapter cells across behaviors=%s", len(cells), behaviors)
+    n_par = 1 if cpu_only else max(n_gpus, 1)
+    for wave_start in range(0, len(cells), n_par):
+        wave = cells[wave_start : wave_start + n_par]
+        cmds = [
+            _r_plus_extract_cmd(behavior, source, layers, i % n_par, max_probes, cpu_only)
+            for i, (behavior, source) in enumerate(wave)
+        ]
+        if dry_run:
+            for (cmd, _lp, env), (behavior, source) in zip(cmds, wave, strict=True):
+                logger.info(
+                    "[dry-run] r⁺ %s/%s CVD=%r :: %s",
+                    behavior,
+                    source,
+                    env.get("CUDA_VISIBLE_DEVICES"),
+                    " ".join(shlex.quote(c) for c in cmd),
+                )
+            continue
+        rcs = _run_parallel_with_log(cmds)
+        bad = [(rc, c) for rc, c in zip(rcs, wave, strict=True) if rc != 0]
+        if bad:
+            raise RuntimeError(f"r⁺ extract wave failed: {bad}; see logs in {_log_dir()}")
+        for behavior, source in wave:
+            logger.info("r⁺ cell %s/%s complete", behavior, source)  # NOT [phase=done]
+    if dry_run:
+        logger.info("[phase=reextract_r_plus_done] (dry-run: no tensors, upload skipped)")
+        return
+    if not skip_upload:
+        _upload_r_plus()
+    logger.info("[phase=reextract_r_plus_done]")
+
+
+def _upload_r_plus() -> None:
+    """Upload the per-source r⁺ .npz to the HF data repo (new prefix; Upload Policy)."""
+    if os.environ.get("EPM_SKIP_UPLOAD") == "1":
+        logger.info("EPM_SKIP_UPLOAD=1 -> skipping r⁺ upload (smoke/local)")
+        return
+    from huggingface_hub import CommitOperationAdd, HfApi, list_repo_files
+
+    rdir = PROJECT_ROOT / R_PLUS_DIR
+    npzs = sorted(rdir.rglob("*.npz"))
+    if not npzs:
+        raise RuntimeError(f"no r⁺ tensors to upload under {rdir} -- extraction wrote nothing")
+    api = HfApi()
+    ops = [
+        CommitOperationAdd(
+            path_in_repo=f"{HF_R_PLUS_PREFIX}/{p.relative_to(rdir).as_posix()}",
+            path_or_fileobj=str(p),
+        )
+        for p in npzs
+    ]
+    api.create_commit(
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        operations=ops,
+        commit_message=f"issue667 a36-reextract: {len(ops)} per-source r⁺ read-outs",
+    )
+    want = {f"{HF_R_PLUS_PREFIX}/{p.relative_to(rdir).as_posix()}" for p in npzs}
+    files = set(list_repo_files(HF_DATA_REPO, repo_type="dataset"))
+    missing = sorted(want - files)
+    if missing:
+        raise RuntimeError(f"r⁺ upload verification FAILED -- missing on Hub: {missing[:5]}")
+    logger.info("uploaded + verified %d r⁺ tensors to %s", len(npzs), HF_DATA_REPO)
+
+
+def phase_reextract_analysis(
+    *, behaviors: list[str], layers: list[int], primary_layer: int, skip_store_pin: bool
+) -> None:
+    """Run the A3.6 re-extract + cosine + M1 diagnostics (issue667_analysis --reextract)."""
+    phase_log("reextract_analysis")
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/issue667_analysis.py",
+        "--reextract",
+        "--tensors-dir",
+        TENSORS_DIR,
+        "--r-plus-dir",
+        R_PLUS_DIR,
+        "--out-dir",
+        OUT_DIR,
+        "--behaviors",
+        *behaviors,
+        "--primary-layer",
+        str(primary_layer),
+        "--layers",
+        *[str(li) for li in layers],
+    ]
+    if skip_store_pin:
+        cmd += ["--skip-store-pin"]
+    rc = _run_with_log(cmd, log_path=_log_dir() / "reextract_analysis.log")
+    if rc != 0:
+        raise RuntimeError(
+            f"reextract analysis failed (rc={rc}); see {_log_dir() / 'reextract_analysis.log'}"
+        )
+    logger.info("[phase=reextract_analysis_done]")
+
+
+def _reextract_reproducibility_card(behaviors: list[str], sources: list[str]) -> dict:
+    """Per-cell adapter_paths + wandb hints for the epm:results reproducibility_card.
+
+    This amendment trains NOTHING (forward-pass r⁺ re-extraction on #537 adapters)
+    — there are no new WandB runs — so the card declares the REUSED #537 adapter
+    paths per (behavior, source) cell + the issue667 project, per the training-task
+    card contract (the adapters ARE the training artifacts this run reads).
+    """
+    adapter_paths: dict[str, str] = {}
+    for behavior in behaviors:
+        for source in sources:
+            if behavior == "em":
+                sub = f"adapters/i537_em_{source}_seed42/sft_em_adapter"
+            elif behavior == "sycophancy":
+                sub = f"adapters/i537_sycophancy_{source}_seed42"
+            elif behavior == "fact":
+                sub = f"adapters/i537_fact_{source}_seed42"
+            else:
+                continue
+            adapter_paths[f"{behavior}/{source}"] = f"{HF_MODEL_REPO} :: {sub}"
+    return {
+        "training": "NONE (forward-pass r⁺ re-extraction on #537 adapters)",
+        "adapter_paths": adapter_paths,
+        "wandb_project": "issue667",
+        "wandb_run_names": [],
+        "wandb_url": "n/a (no training this run; r⁺ re-extracted on reused #537 adapters)",
+        "r_plus_store": f"{HF_DATA_REPO} :: {HF_R_PLUS_PREFIX}/<beh>/<src>_seed42_L<l>.npz",
+        "delta_v_inputs": f"{HF_DATA_REPO} :: {HF_ANALYSIS_TENSORS_PREFIX} (#667, reused)",
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -835,10 +1146,12 @@ def main() -> int:
     parser.add_argument(
         "phase",
         nargs="?",
-        choices=["prefetch", "extract", "analysis", "all", "parity-probe"],
+        choices=["prefetch", "extract", "analysis", "all", "parity-probe", "a36-readout-reextract"],
         default="all",
         help=(
             "Phase to run. 'all' = prefetch -> extract -> analysis (the unified smoke/sweep). "
+            "'a36-readout-reextract' = the followup amendment (re-extract r⁺ on θ⁺ + re-run A3.6 "
+            "+ rotation cosine + M1 diagnostics); same unified smoke/sweep shape. "
             "'parity-probe' = the CUDA-isolated one-shot rsLoRA NUMERIC parity probe (internal; "
             "invoked by the dispatcher as a subprocess so the parent never inits CUDA — #667 r4)."
         ),
@@ -943,7 +1256,6 @@ def main() -> int:
         phase_backfill_sentinels(layers=args.layers)
         return 0
 
-    phases = ["prefetch", "extract", "analysis"] if args.phase == "all" else [args.phase]
     smoke = args.smoke or args.cpu_only
     # Smoke defaults: cap probes + train rows, run analysis on-pod with the pins
     # unless explicitly synthetic.
@@ -951,6 +1263,73 @@ def main() -> int:
     max_train_rows = (
         args.max_train_rows if args.max_train_rows is not None else (8 if smoke else None)
     )
+
+    # ── followup a36-readout-reextract-cos: re-extract r⁺ + re-run A3.6 + M1 ──
+    # Distinct phase sequence (prefetch -> r⁺ extract -> reextract analysis) and a
+    # distinct sentinel (reproducibility_card + plan-required fields). Same unified
+    # smoke/sweep shape: --cpu-only + a 1-cell --sources subset is the smoke.
+    if args.phase == "a36-readout-reextract":
+        if not args.dry_run and not args.skip_store_pin:
+            _require_credentials()
+        phase_reextract_prefetch(
+            behaviors=args.behaviors,
+            sources_arg=args.sources,
+            targets_arg=args.targets,
+            layers=args.layers,
+            cpu_only=args.cpu_only,
+            skip_parity=args.skip_parity,
+            skip_store_pin=args.skip_store_pin,
+        )
+        phase_extract_r_plus(
+            behaviors=args.behaviors,
+            sources_arg=args.sources,
+            layers=args.layers,
+            n_gpus=args.n_gpus,
+            cpu_only=args.cpu_only,
+            max_probes=max_probes,
+            skip_upload=args.skip_upload,
+            dry_run=args.dry_run,
+        )
+        if not args.dry_run:
+            phase_reextract_analysis(
+                behaviors=args.behaviors,
+                layers=args.layers,
+                primary_layer=args.primary_layer,
+                skip_store_pin=args.skip_store_pin,
+            )
+        sources_realized = sorted(
+            {s for b in args.behaviors for s in select_sources(b, args.sources)}
+        )
+        card = _reextract_reproducibility_card(args.behaviors, sources_realized)
+        note = (
+            f"a36-readout-reextract behaviors={args.behaviors} sources={args.sources} "
+            f"layers={args.layers} smoke={smoke} dry_run={args.dry_run}"
+        )
+        write_sentinel(
+            "epm:results",
+            note,
+            extra={
+                "phase": "a36-readout-reextract",
+                "smoke": smoke,
+                "eval_paths": [
+                    f"{REEXTRACT_OUT_DIR}/partial_spearman_recovery.json",
+                    f"{REEXTRACT_OUT_DIR}/cos_r_plus_vs_r_base.json",
+                ],
+                "eval_numbers": "see partial_spearman_recovery.json :: by_behavior_layer",
+                "reproducibility_card": card,
+                "wandb_url": card["wandb_url"],
+                "hf_hub_url": f"https://huggingface.co/datasets/{HF_DATA_REPO}/tree/main/{HF_R_PLUS_PREFIX}",
+                "worktree_path": str(PROJECT_ROOT),
+                "final_commit_sha": _git_commit_sha(),
+                "gpu_hours_used": None,
+                "gpu_hours_budgeted": 6,
+                "plan_deviations": [],
+            },
+        )
+        logger.info("[phase=done]")  # terminal marker — reserved for this single line
+        return 0
+
+    phases = ["prefetch", "extract", "analysis"] if args.phase == "all" else [args.phase]
 
     if (
         any(p in ("prefetch", "extract") for p in phases)

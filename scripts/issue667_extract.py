@@ -102,6 +102,18 @@ DATA_PREFIX = "issue537_context_generalization/data"
 # Per-behavior eval probe pools (#537 frozen pools, plan §4.0).
 N_GEN_TOKENS = 1024  # greedy R cap (natural Qwen replies ~150 tok; log truncation)
 
+# r⁺ re-extraction recipe constants (followup a36-readout-reextract-cos).
+# Byte-identity to #658's base-r_B recipe (plan §4.3 / §12): the em/syco prompt
+# sets are reconstructed via build_rb_contrast against the SAME pinned Betley
+# neutral pool + cap; fact reuses the _FACT_POS_SYS/_FACT_NEG_SYS pair above.
+RB_CAP = 48  # #658 rb_cap (pinned; §12)
+# Per-behavior generation cap for the diff-in-means answer span: em/syco mirror
+# #658's capture_mean_answer_acts (max_new_tokens=64); fact mirrors #667's
+# extract_fact_r_b (256). The base r_B used these caps, so r⁺ matches per behavior.
+RPLUS_GEN_TOKENS = {"em": 64, "sycophancy": 64, "fact": 256}
+# em/syco -> the #658 r_b.pt column id consumed by build_rb_contrast (E0_COLUMNS).
+RPLUS_RB_COLUMN = {"em": "broad_em", "sycophancy": "sycophancy"}
+
 # Atomic completion sentinel. The extractor writes the per-(target, layer) ``.npz``
 # INCREMENTALLY, so a mid-cell crash leaves a PARTIAL dir that a presence-only
 # ``any(*.npz)`` resume-skip would wrongly treat as complete (round-8 BLOCKER
@@ -478,6 +490,28 @@ def load_base_and_trained(adapter_dir: Path, device: torch.device, dtype: torch.
     trained = PeftModel.from_pretrained(trained_base, str(adapter_dir)).to(device)
     trained.eval()
     return tok, base, trained
+
+
+def load_trained_only(adapter_dir: Path, device: torch.device, dtype: torch.dtype):
+    """Load ONLY the PeftModel θ+ (rsLoRA honored) — no second base copy.
+
+    The r⁺ re-extraction (followup a36-readout-reextract-cos) reads off θ+ ALONE
+    (the cosine to base r_B is computed in analysis against the cached/loaded
+    base read-out, not a second live model), so loading the unused independent
+    base copy that :func:`load_base_and_trained` allocates is wasteful — it
+    doubles the CPU-fp32 footprint and OOMs the CPU smoke. Same PeftModel apply,
+    same gauge. Returns (tokenizer, trained).
+    """
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
+    trained_base = AutoModelForCausalLM.from_pretrained(
+        BASE_MODEL, torch_dtype=dtype, token=os.environ.get("HF_TOKEN")
+    ).to(device)
+    trained = PeftModel.from_pretrained(trained_base, str(adapter_dir)).to(device)
+    trained.eval()
+    return tok, trained
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -925,6 +959,122 @@ def extract_fact_r_b(base_model, tok, probes: list[str], layer: int, device) -> 
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# r⁺ re-extraction (followup a36-readout-reextract-cos): the SAME #658 base-r_B
+# recipe through θ⁺ instead of θ0, per behavior (plan §4.3).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _betley_neutral_pool() -> list[str]:
+    """The pinned #658 D_Bbar Betley neutral pool (the probe_pool_hash pin source).
+
+    #658 built r_B's neutral half as ``fetch_preregistered_probes(n=200,
+    exclude=fetch_betley_main_8())`` and pinned ``probe_pool_hash =
+    stable_hash(this pool)`` (EXPECTED_STORE_PROBE_POOL_HASH). Reconstructing the
+    em/syco r⁺ prompt sets via ``build_rb_contrast(<col>, this_pool, cap=48)``
+    therefore reproduces #658's contrast deterministically — byte-identity is the
+    pinned pool revision + cap, NOT a stored string constant (plan §12).
+    """
+    from issue404_common import fetch_betley_main_8, fetch_preregistered_probes
+
+    main8 = set(fetch_betley_main_8())
+    return fetch_preregistered_probes(n=200, exclude=main8)
+
+
+def _diff_in_means_through_model(
+    model, tok, pos_prompts: list[dict], neg_prompts: list[dict], layer: int, device, max_new_tokens
+) -> np.ndarray:
+    """mean(answer-side acts | pos) − mean(answer-side acts | neg) through ONE model.
+
+    Each *_prompts element is a chat-message list; the model generates a greedy
+    (temp=0) answer per prompt, then the answer span is teacher-forced through the
+    SAME model and mean-pooled at ``layer`` (the #594/#658 diff-in-means recipe).
+    Used by :func:`extract_r_plus` with ``model = θ⁺`` for all three behaviors.
+    """
+    pos_acc = np.zeros(model.config.hidden_size, dtype=np.float64)
+    neg_acc = np.zeros(model.config.hidden_size, dtype=np.float64)
+    n_pos = n_neg = 0
+    for msgs in pos_prompts:
+        r = _greedy_response(model, tok, msgs, device, max_new_tokens)
+        if not r.strip():
+            continue
+        pos_acc += _mean_resp_acts_single(model, tok, msgs, r, [layer], device)[layer]
+        n_pos += 1
+    for msgs in neg_prompts:
+        rn = _greedy_response(model, tok, msgs, device, max_new_tokens)
+        if not rn.strip():
+            continue
+        neg_acc += _mean_resp_acts_single(model, tok, msgs, rn, [layer], device)[layer]
+        n_neg += 1
+    if n_pos == 0 or n_neg == 0:
+        raise RuntimeError(
+            f"r⁺ diff-in-means produced no non-empty answers (n_pos={n_pos}, n_neg={n_neg})"
+        )
+    return ((pos_acc / n_pos) - (neg_acc / n_neg)).astype(np.float32)
+
+
+@torch.no_grad()
+def extract_r_plus(
+    trained,
+    tok,
+    behavior: str,
+    layers: list[int],
+    device,
+    *,
+    max_probes: int | None = None,
+) -> dict[int, np.ndarray]:
+    """Re-extract the behavior read-out r⁺ ON the fine-tuned model θ⁺ (plan §4.3).
+
+    Mirrors each behavior's base-r_B recipe but runs the contrast through
+    ``trained`` (θ⁺, the loaded PeftModel) instead of θ0:
+
+    - **em** (``broad_em``): ``build_rb_contrast`` -> D_B = Betley main-8 user-turn
+      prompts, D_Bbar = the pinned Betley neutral pool (``_betley_neutral_pool``),
+      both under the DEFAULT chat template; diff-in-means at each layer.
+    - **sycophancy**: ``build_rb_contrast`` -> D_B = ``"{wrong_claim} Right?"`` from
+      the #411 ``train_200.jsonl``, D_Bbar = the SAME pinned Betley neutral pool,
+      default template; diff-in-means.
+    - **fact**: the _FACT_POS_SYS / _FACT_NEG_SYS sys-prompt pair (the one
+      Persona-Vectors sys-prompt-pair diff), through θ⁺.
+
+    A source-level read-out (one r⁺ per source adapter, like r_B) — NO target
+    sweep. Returns ``{layer: r_plus (HIDDEN,) float32}`` over ``layers``.
+    ``max_probes`` caps the contrast for the CPU smoke (full = the §658 cap=48).
+    CONTENT HYGIENE (em): the Betley contrast text is NEVER printed; only the
+    activation vectors cross out.
+    """
+    cap = min(RB_CAP, max_probes) if max_probes else RB_CAP
+    max_new_tokens = RPLUS_GEN_TOKENS[behavior]
+    if behavior in RPLUS_RB_COLUMN:
+        from issue658_extract_base_store import build_rb_contrast
+
+        col = RPLUS_RB_COLUMN[behavior]
+        d_b, d_bbar = build_rb_contrast(col, _betley_neutral_pool(), cap)
+        pos_prompts = [[{"role": "user", "content": t}] for t in d_b]
+        neg_prompts = [[{"role": "user", "content": t}] for t in d_bbar]
+    elif behavior == "fact":
+        # Reuse the fact probes (direct-recall + ood-framings); cap matches base r_B.
+        probes = load_eval_probes("fact")
+        if cap:
+            probes = probes[:cap]
+        pos_prompts = [
+            [{"role": "system", "content": _FACT_POS_SYS}, {"role": "user", "content": q}]
+            for q in probes
+        ]
+        neg_prompts = [
+            [{"role": "system", "content": _FACT_NEG_SYS}, {"role": "user", "content": q}]
+            for q in probes
+        ]
+    else:
+        raise ValueError(f"extract_r_plus: unsupported behavior {behavior!r}")
+    out: dict[int, np.ndarray] = {}
+    for li in layers:
+        out[li] = _diff_in_means_through_model(
+            trained, tok, pos_prompts, neg_prompts, li, device, max_new_tokens
+        )
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Per-cell extraction driver
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1279,6 +1429,69 @@ def _extract_one_target(
     return n_gen, n_trunc
 
 
+def run_r_plus_extraction(args) -> int:
+    """Re-extract r⁺ on θ⁺ for ONE source adapter, write per-layer .npz (followup).
+
+    Loads the #537 adapter as a PeftModel θ⁺ (rsLoRA honored, gauge asserted),
+    runs :func:`extract_r_plus` over the read layers (a source-level read-out —
+    NO target sweep), and writes one ``<source>_seed<S>_L<layer>.npz`` per layer
+    under ``--r-plus-out/<behavior>/`` with keys ``r_plus`` (the read-out),
+    ``r_plus_norm`` (‖r⁺‖) and provenance fields. CPU-only smoke supported.
+    """
+    device = _device(args.gpu_id, args.cpu_only)
+    dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
+    layers = list(args.layers)
+    behavior = args.behavior
+    source_cid = args.source_cid
+    seed = args.seed
+    cap = args.max_probes
+    logger.info(
+        "r⁺ extract cell behavior=%s source=%s seed=%d layers=%s cap=%s",
+        behavior,
+        source_cid,
+        seed,
+        layers,
+        cap,
+    )
+    # Stage + verify the adapter gauge BEFORE any GPU work (cheap, HALT early).
+    adapter_dir = stage_adapter_local(behavior, source_cid, seed)
+    gauge = assert_adapter_gauge(adapter_dir, behavior)
+    logger.info("adapter gauge OK: %s", {k: gauge[k] for k in ("r", "lora_alpha", "use_rslora")})
+
+    # Only θ⁺ is needed for r⁺ (the read-out re-extraction runs on the trained
+    # model; the cosine to base r_B is computed in analysis). load_trained_only
+    # avoids the second base copy load_base_and_trained allocates (CPU-smoke OOM).
+    tok, trained = load_trained_only(adapter_dir, device, dtype)
+    r_plus = extract_r_plus(trained, tok, behavior, layers, device, max_probes=cap)
+
+    out_root = Path(args.r_plus_out)
+    out_dir = out_root / behavior
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for li, vec in r_plus.items():
+        payload = {
+            "r_plus": vec.astype(np.float32),
+            "r_plus_norm": np.float32(np.linalg.norm(vec)),
+            "behavior": behavior,
+            "source_cid": source_cid,
+            "seed": seed,
+            "layer": li,
+            "rb_cap": RB_CAP if cap is None else min(RB_CAP, cap),
+            "adapter_gauge": json.dumps(gauge),
+        }
+        np.savez(out_dir / f"{source_cid}_seed{seed}_L{li}.npz", **payload)
+        logger.info(
+            "wrote r⁺ %s/%s L%d (‖r⁺‖=%.4f)",
+            behavior,
+            source_cid,
+            li,
+            float(payload["r_plus_norm"]),
+        )
+    del trained
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Issue #667 absolute-v extractor (one source-adapter cell)."
@@ -1309,11 +1522,26 @@ def main() -> int:
         "nvidia-smi memory.used PRIMARY, memory_allocated SECONDARY) every N "
         "hooked forwards to <out>/memory_log.json. 0 = off (default).",
     )
+    parser.add_argument(
+        "--r-plus",
+        action="store_true",
+        help=(
+            "Re-extract the behavior read-out r⁺ ON θ⁺ (followup "
+            "a36-readout-reextract-cos): writes one <source>_seed<S>_L<l>.npz per "
+            "layer to --r-plus-out/<behavior>/ via extract_r_plus. Source-level "
+            "read-out — NO target sweep, NO v0/v+ store written."
+        ),
+    )
+    parser.add_argument(
+        "--r-plus-out",
+        default="eval_results/issue_667/a36_readout_reextract/r_plus",
+        help="r⁺ store output dir (--r-plus mode only).",
+    )
     args = parser.parse_args()
     if args.max_probes == 0:
         args.max_probes = None
     t0 = time.time()
-    rc = run_extraction(args)
+    rc = run_r_plus_extraction(args) if args.r_plus else run_extraction(args)
     logger.info("extraction wall=%.1fs", time.time() - t0)
     return rc
 

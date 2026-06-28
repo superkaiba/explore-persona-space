@@ -442,6 +442,243 @@ def _fact_rb_from_store(cells: dict) -> np.ndarray | None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# A3.6 re-extract amendment (followup a36-readout-reextract-cos): the SAME A3.6
+# partial-Spearman with the read-out r⁺ re-extracted ON θ⁺ instead of base r_B,
+# plus the rotation cosine + the three M1 magnitude/direction diagnostics.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# n random unit directions for the cosine random-direction null band (#653 ~0.04).
+_RANDOM_NULL_N = 10000
+
+
+def _cos(a: np.ndarray, b: np.ndarray) -> float:
+    """Cosine similarity of two vectors (0.0 if either is degenerate)."""
+    a = np.asarray(a, dtype=np.float64)
+    b = np.asarray(b, dtype=np.float64)
+    na = float(np.linalg.norm(a))
+    nb = float(np.linalg.norm(b))
+    if na == 0.0 or nb == 0.0:
+        return 0.0
+    return float((a @ b) / (na * nb))
+
+
+def load_r_plus(
+    r_plus_dir: Path, behavior: str, layer: int, seed: int = 42
+) -> dict[str, np.ndarray]:
+    """{source_cid: r_plus (HIDDEN,) float64} for one (behavior, layer) from the r⁺ store.
+
+    The r⁺ store layout (extract_r_plus, plan §10) is::
+
+        <r_plus_dir>/<behavior>/<source>_seed<S>_L<layer>.npz   :: key "r_plus"
+
+    Each .npz also carries ``r_plus_norm`` (‖r⁺‖) for the norm-ratio read.
+    """
+    out: dict[str, np.ndarray] = {}
+    beh_dir = r_plus_dir / behavior
+    if not beh_dir.exists():
+        return out
+    for npz in sorted(beh_dir.glob(f"*_seed{seed}_L{layer}.npz")):
+        source = npz.name.rsplit(f"_seed{seed}_L{layer}.npz", 1)[0]
+        data = np.load(npz, allow_pickle=True)
+        if "r_plus" not in data.files:
+            raise CoverageError(f"r⁺ store npz {npz} missing 'r_plus' key (keys={data.files})")
+        out[source] = data["r_plus"].astype(np.float64)
+    return out
+
+
+def _base_r_b_for_cos(behavior: str, layer: int, cells: dict) -> np.ndarray | None:
+    """The base read-out r_b for the cos(r⁺, r_b) rotation read.
+
+    em/syco read #658 ``r_b.pt[<col>][diffmeans][layer]``; fact re-extracts the
+    in-cell ``r_b_fact`` from the #667 store (it is absent from #658's r_b.pt).
+    """
+    rb = load_r_b(behavior, layer)
+    if rb is not None:
+        return rb
+    return _fact_rb_from_store(cells)
+
+
+def run_a36_reextract(
+    cells_by_beh: dict,
+    r_plus_by_beh: dict[str, dict[str, np.ndarray]],
+    base_r_b_by_beh: dict[str, np.ndarray | None],
+    g_meta: dict,
+    layer: int,
+    *,
+    committed_base_a36: dict | None = None,
+) -> tuple[dict, dict]:
+    """A3.6 with r⁺ + the M1 magnitude/direction diagnostics, per behavior.
+
+    Returns ``(partial_spearman_recovery, cos_r_plus_vs_r_base)`` payloads.
+
+    Per behavior (off-diagonal cells only), with ``r⁺_{b,C}`` the per-source
+    read-out re-extracted on θ⁺ and ``Δv = v+ − v0`` the inherited #667 update:
+
+    - **headline** ``partial_spearman(r⁺ᵀΔv, E+−E0 | E0)`` (the A3.6 statistic with
+      r⁺ in place of base r_B), + clustered bootstrap + shuffled-r⁺ null + the
+      delta vs #667's committed base-r_B value.
+    - **delta_v_norm_partial** ``partial_spearman(‖Δv‖, E+−E0 | E0)`` — the
+      install-strength magnitude channel the unnormalized projection rides (M1).
+    - **normalized_projection_partial** ``partial_spearman(cos(r⁺,Δv), E+−E0 | E0)``
+      — direction-only (both norms divided out) (M1).
+    - **cross_source_r_plus_null** ``partial_spearman(mean_{C″≠C} r⁺_{b,C″}ᵀΔv_{b,C},
+      E+−E0 | E0)`` — sibling-source substitution (shared-θ⁺ autocorrelation) null
+      (M1; sibling_aggregation = mean).
+
+    All four feed the SAME (y=E+−E0, z=E0, families) to the inherited statistics —
+    NO new statistical machinery, NO new forward passes.
+    """
+    recovery: dict[str, dict] = {}
+    cos_out: dict[str, dict] = {}
+    rng = np.random.default_rng(42)
+    for behavior, cells in cells_by_beh.items():
+        r_plus = r_plus_by_beh.get(behavior, {})
+        base_rb = base_r_b_by_beh.get(behavior)
+        if base_rb is None:
+            base_rb = _base_r_b_for_cos(behavior, layer, cells)
+        if not r_plus:
+            recovery[behavior] = {"status": "no_r_plus", "note": "r⁺ store empty for this behavior"}
+            cos_out[behavior] = {"status": "no_r_plus"}
+            continue
+
+        # ── (1) A3.6 + M1 diagnostics: build the four predictors per off-diag cell ─
+        xs_proj, xs_norm, xs_dir, xs_xsrc = [], [], [], []
+        ys, zs, fams = [], [], []
+        skipped_no_rplus = 0
+        for (source, target), data in cells.items():
+            if source == target:
+                continue
+            rp = r_plus.get(source)
+            if rp is None:
+                skipped_no_rplus += 1
+                continue
+            gc = g_cell(g_meta, behavior, source, target)
+            if gc is None:
+                raise CoverageError(
+                    f"A3.6-reextract: no G_meta cell for {behavior}/{source}__{target}"
+                )
+            delta_v = data["v_plus"].astype(np.float64) - data["v0"].astype(np.float64)
+            dv_norm = float(np.linalg.norm(delta_v))
+            xs_proj.append(readout_projection(rp, delta_v))
+            xs_norm.append(dv_norm)
+            xs_dir.append(_cos(rp, delta_v))  # = readout_projection(rp̂, Δv̂)
+            # cross-source null: mean over sibling sources C″ ≠ C of r⁺_{b,C″}ᵀΔv_{b,C}.
+            sib_projs = [
+                readout_projection(rp2, delta_v) for c2, rp2 in r_plus.items() if c2 != source
+            ]
+            xs_xsrc.append(float(np.mean(sib_projs)) if sib_projs else 0.0)
+            ys.append(float(gc["g"]))  # E+ − E0 == g
+            zs.append(float(gc["base_rate"]))  # E0
+            fams.append(family_of(target))
+        if len(xs_proj) < 3:
+            recovery[behavior] = {"status": "insufficient_cells", "n": len(xs_proj)}
+        else:
+            y = np.array(ys)
+            z = np.array(zs)
+            xp = np.array(xs_proj)
+            base_committed = None
+            if committed_base_a36:
+                rec = committed_base_a36.get("by_behavior", {}).get(behavior, {})
+                base_committed = rec.get("partial_spearman_change_given_base")
+            headline = partial_spearman(xp, y, z)
+            recovery[behavior] = {
+                "status": "ok",
+                "n_cells": len(xs_proj),
+                "n_skipped_no_r_plus": skipped_no_rplus,
+                "partial_spearman_change_given_base": headline,
+                "partial_clustered_bootstrap": clustered_bootstrap_partial_spearman(xp, y, z, fams),
+                "partial_shuffled_null_hi": partial_shuffled_null_ci(xp, y, z)["null_hi"],
+                "raw_spearman_proj_vs_g": spearman_rho(xp, y),
+                "base_r_b_partial_committed": base_committed,
+                "delta_vs_base_r_b": (
+                    None if base_committed is None else headline - float(base_committed)
+                ),
+                # ── M1 diagnostics (same n, same family-clustered bootstrap, C10) ──
+                "delta_v_norm_partial": _partial_diag(np.array(xs_norm), y, z, fams),
+                "normalized_projection_partial": _partial_diag(np.array(xs_dir), y, z, fams),
+                "cross_source_r_plus_null": {
+                    **_partial_diag(np.array(xs_xsrc), y, z, fams),
+                    "sibling_aggregation": "mean",
+                },
+            }
+
+        # ── (2) rotation cosine: cos(r⁺_{b,C}, r_b) per source + reference + null ──
+        cos_out[behavior] = _cos_rotation_read(behavior, layer, r_plus, base_rb, rng)
+    meta = _repro_meta({"followup_label": "a36-readout-reextract-cos"})
+    return (
+        {"assumption": "A3.6-reextract", "layer": layer, "by_behavior": recovery, "metadata": meta},
+        {
+            "assumption": "cos_r_plus_vs_r_base",
+            "layer": layer,
+            "by_behavior": cos_out,
+            "metadata": meta,
+        },
+    )
+
+
+def _partial_diag(x: np.ndarray, y: np.ndarray, z: np.ndarray, fams: list[str]) -> dict:
+    """One M1 diagnostic: partial-Spearman(x, y | z) + clustered bootstrap CI.
+
+    Returns the {rho, ci_low, ci_high, n_cells, n_families} schema (plan §6.5).
+    """
+    boot = clustered_bootstrap_partial_spearman(x, y, z, fams)
+    return {
+        "rho": partial_spearman(x, y, z),
+        "ci_low": boot["ci_lo"],
+        "ci_high": boot["ci_hi"],
+        "n_cells": int(x.size),
+        "n_families": boot["n_families"],
+    }
+
+
+def _cos_rotation_read(
+    behavior: str, layer: int, r_plus: dict[str, np.ndarray], base_rb: np.ndarray | None, rng
+) -> dict:
+    """cos(r⁺_{b,C}, r_b) per source + within-behavior reference band + random null.
+
+    - per-source ``cos(r⁺_{b,C}, r_b)`` (base read-out) — the rotation read;
+    - within-behavior reference band = cos(r⁺_{b,C}, r⁺_{b,C′}) over sibling
+      source pairs (the operational "no rotation" anchor, #653);
+    - a fresh random-direction null band = cos(r⁺, n_rand random unit dirs in
+      d_model) (the ~0.04 chance floor, #653).
+    """
+    if base_rb is None:
+        return {"status": "no_base_r_b", "note": "base r_b unavailable (cosine undefined)"}
+    per_source = {src: _cos(rp, base_rb) for src, rp in sorted(r_plus.items())}
+    # within-behavior reference band: cosines across distinct source pairs.
+    srcs = sorted(r_plus)
+    ref_pairs = [
+        _cos(r_plus[srcs[i]], r_plus[srcs[j]])
+        for i in range(len(srcs))
+        for j in range(i + 1, len(srcs))
+    ]
+    # random-direction null: cos(first r⁺, n_rand random unit dirs) in d_model.
+    any_rp = next(iter(r_plus.values()))
+    d_model = any_rp.shape[0]
+    rand = rng.standard_normal((_RANDOM_NULL_N, d_model))
+    rand /= np.linalg.norm(rand, axis=1, keepdims=True)
+    rp_unit = any_rp / (np.linalg.norm(any_rp) or 1.0)
+    null_cos = np.abs(rand @ rp_unit)
+    return {
+        "status": "ok",
+        "cos_r_plus_vs_r_base": per_source,
+        "cos_r_plus_vs_r_base_mean": float(np.mean(list(per_source.values()))),
+        "within_behavior_reference_band": {
+            "mean": float(np.mean(ref_pairs)) if ref_pairs else None,
+            "lo": float(np.percentile(ref_pairs, 2.5)) if ref_pairs else None,
+            "hi": float(np.percentile(ref_pairs, 97.5)) if ref_pairs else None,
+            "n_pairs": len(ref_pairs),
+        },
+        "random_direction_null_band": {
+            "mean": float(np.mean(null_cos)),
+            "hi": float(np.percentile(null_cos, 97.5)),
+            "n_rand": _RANDOM_NULL_N,
+        },
+        "n_sources": len(per_source),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # A3.7 — source write ŵ∥δ (cos(w_hat, delta_pos) vs shuffled-δ null)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -883,6 +1120,104 @@ def _pearson(a: np.ndarray, b: np.ndarray) -> float:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# A3.6 re-extract mode entrypoint (followup a36-readout-reextract-cos)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _load_committed_base_a36(out_dir: Path) -> dict | None:
+    """#667's committed base-r_B A3.6 values (the cell-for-cell delta denominator).
+
+    Reads ``eval_results/issue_667/A3_6_readout_stability.json`` (committed in
+    git, NOT on HF). Returns None (with a warning) if absent — the recovery
+    verdict reads off r⁺'s own CI vs zero + the M1 diagnostics, not the delta
+    sign, so a missing baseline is informational, not fatal (plan §8 risk row).
+    """
+    p = out_dir / "A3_6_readout_stability.json"
+    if not p.exists():
+        # Try the canonical committed location relative to the repo root.
+        p = PROJECT_ROOT / "eval_results" / "issue_667" / "A3_6_readout_stability.json"
+    if not p.exists():
+        logger.warning("committed base-r_B A3.6 JSON not found (delta vs base will be null)")
+        return None
+    return json.loads(p.read_text())
+
+
+def run_reextract_mode(args) -> int:
+    """A3.6 re-extract + cosine + M1 diagnostics, per (behavior × layer).
+
+    Reads the inherited #667 ``Δv`` per-cell store from ``--tensors-dir`` and the
+    freshly-extracted ``r⁺`` from ``--r-plus-dir`` (the new store), computes the
+    headline A3.6 recovery with r⁺, the rotation cosine, and the three M1
+    magnitude/direction diagnostics, and writes the two new JSONs under
+    ``<out-dir>/a36_readout_reextract/``. Off-pod CPU — no GPU, no model load.
+    """
+    tensors_dir = Path(args.tensors_dir)
+    r_plus_dir = Path(args.r_plus_dir)
+    out_dir = Path(args.out_dir) / "a36_readout_reextract"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    layers = list(args.layers) if args.layers else [args.primary_layer]
+
+    # B3 GATE is NOT required here (this amendment touches only the A3.6 read-out),
+    # but the #658 store pin IS the read-out provenance guard (em/syco base r_b).
+    if not args.skip_store_pin:
+        from dotenv import load_dotenv
+
+        load_dotenv()
+        assert_store_pin()
+    g_meta = load_g_meta() if not args.skip_store_pin else None
+    committed = _load_committed_base_a36(Path(args.out_dir))
+
+    recovery_by_layer: dict[str, dict] = {}
+    cos_by_layer: dict[str, dict] = {}
+    for layer in layers:
+        cells_by_beh = {b: load_cells(tensors_dir, b, layer) for b in args.behaviors}
+        for b, cells in cells_by_beh.items():
+            logger.info("reextract: behavior=%s layer=%d: %d Δv cells", b, layer, len(cells))
+        if g_meta is None:
+            g_meta = _synthetic_g_meta(tensors_dir, args.behaviors, layer)
+        r_plus_by_beh = {b: load_r_plus(r_plus_dir, b, layer) for b in args.behaviors}
+        base_r_b_by_beh = {b: load_r_b(b, layer) for b in args.behaviors}
+        rec, cos = run_a36_reextract(
+            cells_by_beh,
+            r_plus_by_beh,
+            base_r_b_by_beh,
+            g_meta,
+            layer,
+            committed_base_a36=committed,
+        )
+        # Re-key per (behavior × layer) per plan §6.5.
+        for behavior in args.behaviors:
+            recovery_by_layer.setdefault(behavior, {})[str(layer)] = rec["by_behavior"].get(
+                behavior, {}
+            )
+            cos_by_layer.setdefault(behavior, {})[str(layer)] = cos["by_behavior"].get(behavior, {})
+
+    meta = _repro_meta({"followup_label": "a36-readout-reextract-cos", "layers": layers})
+    recovery_payload = {
+        "assumption": "A3.6-reextract",
+        "by_behavior_layer": recovery_by_layer,
+        "metadata": meta,
+    }
+    cos_payload = {
+        "assumption": "cos_r_plus_vs_r_base",
+        "by_behavior_layer": cos_by_layer,
+        "metadata": meta,
+    }
+    (out_dir / "partial_spearman_recovery.json").write_text(
+        json.dumps(recovery_payload, indent=2, default=_json_default)
+    )
+    (out_dir / "cos_r_plus_vs_r_base.json").write_text(
+        json.dumps(cos_payload, indent=2, default=_json_default)
+    )
+    logger.info(
+        "wrote %s and %s",
+        out_dir / "partial_spearman_recovery.json",
+        out_dir / "cos_r_plus_vs_r_base.json",
+    )
+    return 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -900,7 +1235,32 @@ def main() -> int:
         action="store_true",
         help="skip the #658 store + G_meta pin asserts (smoke on a synthetic store)",
     )
+    parser.add_argument(
+        "--reextract",
+        action="store_true",
+        help=(
+            "A3.6 re-extract amendment (followup a36-readout-reextract-cos): re-run "
+            "A3.6 with the re-extracted r⁺ (from --r-plus-dir) + the rotation cosine "
+            "+ the three M1 magnitude/direction diagnostics. Writes "
+            "a36_readout_reextract/{partial_spearman_recovery,cos_r_plus_vs_r_base}.json."
+        ),
+    )
+    parser.add_argument(
+        "--r-plus-dir",
+        default="eval_results/issue_667/a36_readout_reextract/r_plus",
+        help="r⁺ store dir (<beh>/<src>_seed42_L<l>.npz; --reextract only).",
+    )
+    parser.add_argument(
+        "--layers",
+        type=int,
+        nargs="+",
+        default=None,
+        help="layers for the --reextract read (default: --primary-layer only).",
+    )
     args = parser.parse_args()
+
+    if args.reextract:
+        return run_reextract_mode(args)
 
     tensors_dir = Path(args.tensors_dir)
     out_dir = Path(args.out_dir)
