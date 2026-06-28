@@ -5327,6 +5327,7 @@ def _patch_idle_io(
     signal_reason="transcript unresolvable",
     has_tty=False,
     detached_tmux_ttys=frozenset(),
+    tmux_activity=None,
     registry=None,
     pm_sids=frozenset(),
 ):
@@ -5334,20 +5335,35 @@ def _patch_idle_io(
     + session metadata + the TTY probe + the transcript-idle signal, leaving
     state files and decisions real. Pins asw.PROJECT_ROOT to the synthetic
     _Z_ROOT so the EPS-cwd check + issue inference are cwd-independent (see
-    _Z_ROOT). Returns the (stops, records) recorders."""
+    _Z_ROOT). Returns the (stops, records) recorders.
+
+    ``tmux_activity`` (a ``{pane_tty: epoch}`` map) feeds the #695
+    corroborating-idleness fallback; default ``{}`` (no activity -> no
+    fallback). Both the detached set AND the activity map are served through
+    the SINGLE combined helper ``_detached_tmux_panes_with_activity`` that the
+    pass actually calls (and the legacy ``_detached_tmux_pane_ttys`` is patched
+    too for the `_process_idle_unmapped`-default / `_is_live_user_tty`
+    paths)."""
     import autonomous_session_watch as asw
 
     stops: list[str] = []
     records: list[str] = []
+    activity = dict(tmux_activity or {})
+    detached = set(detached_tmux_ttys)
     monkeypatch.setattr(asw, "PROJECT_ROOT", Path(_Z_ROOT))
     monkeypatch.setattr(asw, "_live_children", lambda: list(children))
     monkeypatch.setattr(asw, "_load_session_meta", lambda: dict(meta))
     monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
     monkeypatch.setattr(asw, "_load_pm_session_ids", lambda: set(pm_sids))
     monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: has_tty)
-    # Pin the detached-tmux-pane probe so the I/O tests never shell out to a
-    # live tmux server (deterministic; default = no detached panes).
-    monkeypatch.setattr(asw, "_detached_tmux_pane_ttys", lambda: set(detached_tmux_ttys))
+    # Pin BOTH tmux probes so the I/O tests never shell out to a live tmux
+    # server (deterministic; default = no detached panes, no activity). The
+    # pass calls the combined helper; the legacy single-return wrapper is
+    # patched too for callers that use it directly.
+    monkeypatch.setattr(
+        asw, "_detached_tmux_panes_with_activity", lambda: (set(detached), dict(activity))
+    )
+    monkeypatch.setattr(asw, "_detached_tmux_pane_ttys", lambda: set(detached))
     monkeypatch.setattr(
         asw,
         "_transcript_idle_age_s",
@@ -5683,6 +5699,560 @@ def test_idle_unmapped_pass_daemon_unreachable_skips(isolated_registry, monkeypa
     asw.idle_unmapped_pass(False, 2, daemon_reachable=False, now=1_000_000.0)
     assert stops == [] and records == []
     assert not list(isolated_registry.glob("idle-unmapped-*.json"))
+
+
+# ── #695 corroborating-idleness fallback tests ────────────────────────────────
+
+
+def _patch_fallback_gates(
+    monkeypatch,
+    *,
+    pane_tty="/dev/pts/24",
+    has_work_descendant=False,
+    running_pods=None,
+    pending_input=False,
+):
+    """Stub the four real dependencies of the #695 fallback gate evaluation
+    that `_patch_idle_io` does NOT cover (so a fallback test never shells out
+    to a live tmux / RunPod API / /proc): the wrapper's controlling-tty path
+    (gate 1), the work-descendant probe (gate 3), the running-pod snapshot
+    (gate 4), and the pending-pane-input probe (gate 5). ``running_pods``
+    default ``[]`` (genuinely no pods -> gate passes); pass ``None`` to
+    simulate a failed snapshot, or a non-empty list to simulate a live pod."""
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: pane_tty)
+    monkeypatch.setattr(
+        asw, "_has_running_work_descendant", lambda pid, cmap=None: has_work_descendant
+    )
+    pods = [] if running_pods is None else running_pods
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *a, **k: pods)
+    monkeypatch.setattr(asw, "_pane_has_pending_input", lambda pane: pending_input)
+
+
+def test_idle_unmapped_fallback_reaps_when_all_gates_pass(isolated_registry, monkeypatch):
+    # Test 1 (load-bearing REAP): detached + unmapped + no work + no pod + over
+    # the fallback threshold + no pending input -> the fallback supplies a
+    # substitute idle age and the session is stopped after the 2-miss guard.
+    # The pre-stop audit row is written BEFORE the stop, and the post-stop note
+    # is the fallback-DISTINCT narrative.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_TMUX_IDLE_FALLBACK_S", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_TMUX_IDLE_FALLBACK_ENABLED", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-fb", "pid": 4242}]
+    meta = {"sid-fb": {"path": _Z_ROOT}}
+    # has_tty True + the pane in the detached set => not a live-user tty =>
+    # falls through to the idle branch; primary transcript signal None =>
+    # fallback eligible.
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch)
+    state_path = isolated_registry / "idle-unmapped-sid-fb.json"
+    events_path = isolated_registry / "idle-unmapped-events.jsonl"
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    assert stops == [] and records == []
+    assert json.loads(state_path.read_text())["missed"] == 1
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # stop
+    assert stops == ["sid-fb"]
+    assert len(records) == 1
+    assert asw._IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL in records[0]
+    # A pre-stop would_stop_fallback audit row landed in the events file.
+    rows = [json.loads(ln) for ln in events_path.read_text().splitlines() if ln.strip()]
+    audits = [r for r in rows if r.get("kind") == "would_stop_fallback"]
+    assert len(audits) == 1
+    assert audits[0]["fallback_source"] == "tmux_session_activity"
+
+
+def test_idle_unmapped_fallback_keeps_when_work_descendant_present(isolated_registry, monkeypatch):
+    # Test 2 (work-descendant KEEP): a running codex / experimenter / train.py
+    # descendant blocks the fallback reap entirely (the experimenter incident:
+    # 1/6 sessions). Never stops, never accumulates a fallback episode.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-w", "pid": 100}]
+    meta = {"sid-w": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch, has_work_descendant=True)
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not list(isolated_registry.glob("idle-unmapped-*.json"))
+
+
+def test_idle_unmapped_fallback_keeps_when_running_pod_present(isolated_registry, monkeypatch):
+    # Test 3 (running-pod KEEP): a non-empty managed-RUNNING-pod snapshot defers
+    # the fallback reap (the conservative no-issue-key floor for unmapped
+    # sessions).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-p", "pid": 100}]
+    meta = {"sid-p": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch, running_pods=[_p(489, "p489", "pod-489")])
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_fallback_keeps_when_pod_snapshot_failed(isolated_registry, monkeypatch):
+    # Test 3b (uncertain-pod KEEP): a None snapshot (API error) is uncertain ->
+    # KEEP (no_running_pods is False unless the snapshot is a real empty list).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-pn", "pid": 100}]
+    meta = {"sid-pn": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch, running_pods=None)  # None == failed snapshot
+    # Patch the helper to actually return None (the helper, not the default []).
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *a, **k: None)
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_fallback_keeps_when_under_threshold(isolated_registry, monkeypatch):
+    # Test 4 (under-threshold KEEP): session_activity age under the fallback
+    # window -> no substitute idle age over the floor -> ("skip", missed), never
+    # stops, no fallback episode accumulated.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    under = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S - 3600  # fresh-ish: under the floor
+    children = [{"happySessionId": "sid-u", "pid": 100}]
+    meta = {"sid-u": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - under},
+    )
+    _patch_fallback_gates(monkeypatch)
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not list(isolated_registry.glob("idle-unmapped-*.json"))
+
+
+def test_idle_unmapped_fallback_keeps_when_activity_unavailable(isolated_registry, monkeypatch):
+    # Test 5 (unavailable-signal KEEP): the pane has no session_activity entry
+    # (empty activity map) -> the fallback finds no substitute age -> KEEP.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    children = [{"happySessionId": "sid-na", "pid": 100}]
+    meta = {"sid-na": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={},  # pane absent from the activity map
+    )
+    _patch_fallback_gates(monkeypatch)
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_fallback_keeps_attached_pane(isolated_registry, monkeypatch):
+    # Test 6 (attached-pane KEEP): a session whose pane is NOT in the detached
+    # set is a live-user tty -> has_tty stays True -> ("clear", 0), the fallback
+    # is never reached. Preserves the existing detached-vs-attached behavior.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-att", "pid": 100}]
+    meta = {"sid-att": {"path": _Z_ROOT}}
+    # has_tty True but the controlling pane is /dev/pts/47, NOT in the detached
+    # set -> _is_live_user_tty True -> clear.
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/47": t0 - over},
+    )
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: "/dev/pts/47")
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_fallback_not_consulted_when_primary_signal_present(
+    isolated_registry, monkeypatch
+):
+    # Test 7: when the PRIMARY transcript signal resolves, the fallback gate
+    # evaluation is NEVER reached — assert the fallback evaluator (and its
+    # pending-input probe) are not called. The primary path drives the decision.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    primary_over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    children = [{"happySessionId": "sid-pri", "pid": 100}]
+    meta = {"sid-pri": {"path": _Z_ROOT}}
+    stops, _records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=primary_over,  # PRIMARY signal available
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - 999_999},
+    )
+    called = {"fallback": 0, "pending": 0}
+    monkeypatch.setattr(
+        asw,
+        "_evaluate_idle_unmapped_fallback",
+        lambda *a, **k: called.__setitem__("fallback", called["fallback"] + 1) or (None, None),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_pane_has_pending_input",
+        lambda pane: called.__setitem__("pending", called["pending"] + 1) or False,
+    )
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    # The primary path stopped it (transcript over the primary window).
+    assert stops == ["sid-pri"]
+    assert called["fallback"] == 0 and called["pending"] == 0
+
+
+def test_idle_unmapped_empty_detached_set_beacon(isolated_registry, monkeypatch, capsys):
+    # Test 8: tmux present but the detached set is EMPTY -> the once-per-pass
+    # loud WARNING beacon fires (the silent-regression guard). Fail-soft set
+    # stays empty; nothing is reaped.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+    children = [{"happySessionId": "sid-b", "pid": 100}]
+    meta = {"sid-b": {"path": _Z_ROOT}}
+    stops, _records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        detached_tmux_ttys=set(),  # tmux present but no detached panes
+        tmux_activity={},
+    )
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
+    assert "tmux present but detached set empty" in capsys.readouterr().err
+    assert stops == []
+
+
+def test_idle_unmapped_fallback_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    # Test 9 (extended dry-run): a dry-run tick at the fallback stop point
+    # neither stops, writes the pre-stop audit row, nor rewrites state.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-dr", "pid": 100}]
+    meta = {"sid-dr": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch)
+    # Mirror the REAL _stop_session dry-run contract (returns False, no action).
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: (not dry_run) and (stops.append(sid) or True)
+    )
+    state_path = isolated_registry / "idle-unmapped-sid-dr.json"
+    seeded = json.dumps({"missed": 1, "alerted": False, "first_over_ts": t0})
+    state_path.write_text(seeded)
+    events_path = isolated_registry / "idle-unmapped-events.jsonl"
+
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == [] and records == []
+    assert state_path.read_text() == seeded  # untouched
+    assert not events_path.exists()  # no audit row written under dry-run
+
+
+def test_idle_unmapped_fallback_keeps_when_pending_input(isolated_registry, monkeypatch):
+    # Test 10 (MF1 typed-but-unsent KEEP): all five other gates pass but the
+    # pane shows pending un-submitted input -> KEEP. No stop, no audit row, no
+    # accumulated episode. This is the dominant-class (4/6) protection.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-pi", "pid": 100}]
+    meta = {"sid-pi": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch, pending_input=True)  # buffered input present
+    events_path = isolated_registry / "idle-unmapped-events.jsonl"
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not events_path.exists()
+    assert not list(isolated_registry.glob("idle-unmapped-sid-pi.json"))
+
+
+def test_pane_has_pending_input_heuristic(monkeypatch):
+    # Test 11 (MF1 heuristic unit tests): the KEEP-leaning text heuristic over
+    # capture-pane output — empty box / placeholder -> False (proceed);
+    # buffered text / multi-line input -> True (KEEP); subprocess error / pane
+    # gone / tmux absent -> True (KEEP, fail-soft).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    def _set_capture(stdout, returncode=0):
+        class _Out:
+            pass
+
+        o = _Out()
+        o.stdout = stdout
+        o.returncode = returncode
+        monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: o)
+
+    # Empty prompt box (only the prompt border + cursor) -> proceed (False).
+    _set_capture("╭──────────────╮\n│ >            │\n╰──────────────╯\n")
+    assert asw._pane_has_pending_input("/dev/pts/24") is False
+    # Whitespace-only capture -> nothing rendered -> KEEP (True).
+    _set_capture("   \n  \n")
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # Empty-prompt placeholder hint -> proceed (False).
+    _set_capture('│ > Try "fix the bug"                    │\n')
+    assert asw._pane_has_pending_input("/dev/pts/24") is False
+    _set_capture("> /for shortcuts\n")  # contains the 'for shortcuts' hint
+    assert asw._pane_has_pending_input("/dev/pts/24") is False
+    # A genuine buffered input line after the prompt prefix -> KEEP (True).
+    _set_capture("│ > rerun the eval with seed 7          │\n")
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # Multi-line buffered input: the LAST logical line is non-empty -> KEEP.
+    _set_capture(
+        "│ > line one of a long                  │\n│   command continues               │\n"
+    )
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # capture-pane non-zero rc (pane gone) -> KEEP (fail-soft).
+    _set_capture("", returncode=1)
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+    # subprocess raises -> KEEP (fail-soft).
+    def _boom(*a, **k):
+        raise asw.subprocess.SubprocessError("boom")
+
+    monkeypatch.setattr(asw.subprocess, "run", _boom)
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+    # tmux absent -> KEEP (fail-soft).
+    monkeypatch.setattr(asw.shutil, "which", lambda name: None)
+    assert asw._pane_has_pending_input("/dev/pts/24") is True
+
+
+def test_work_descendant_denylist_import_pin():
+    # Test 12 (MF2 import-pin): ORPHAN_HOLDER_PATTERNS resolves + compiles and
+    # the union matches a known codex cmdline; each LOCAL workload marker is in
+    # the gate's denylist. A future rename of either source trips this test.
+    import re
+
+    import autonomous_session_watch as asw
+    from worktree_audit import ORPHAN_HOLDER_PATTERNS
+
+    assert isinstance(ORPHAN_HOLDER_PATTERNS, tuple) and ORPHAN_HOLDER_PATTERNS
+    assert all(isinstance(p, re.Pattern) for p in ORPHAN_HOLDER_PATTERNS)
+    # The union matches a real codex companion cmdline.
+    codex_cmd = "node /home/x/.claude/plugins/cache/openai-codex/dist/index.js app-server"
+    assert any(p.search(codex_cmd) for p in ORPHAN_HOLDER_PATTERNS)
+    # asw imported the SAME tuple object.
+    assert asw.ORPHAN_HOLDER_PATTERNS is ORPHAN_HOLDER_PATTERNS
+    # Every named LOCAL workload marker is in the gate's denylist.
+    for marker in (
+        "scripts/train.py",
+        "scripts/eval.py",
+        "scripts/run_sweep.py",
+        "scripts/dispatch_issue.py",
+        "backend_poll.py",
+        "experiment-implementer",
+    ):
+        assert marker in asw._IDLE_UNMAPPED_WORK_CMDLINE_MARKERS, marker
+
+
+def test_idle_unmapped_fallback_audit_before_stop_and_payload(isolated_registry, monkeypatch):
+    # Test 13 (MF3 ordering + payload): the pre-stop audit write happens BEFORE
+    # the _stop_session call (audit_ts < stop_ts), and the audit payload
+    # carries all nine named fields.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+    over = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    children = [{"happySessionId": "sid-ord", "pid": 100}]
+    meta = {"sid-ord": {"path": _Z_ROOT}}
+    _stops, _records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over},
+    )
+    _patch_fallback_gates(monkeypatch)
+    order: list[tuple[str, float]] = []
+    seq = {"n": 0}
+
+    def _next():
+        seq["n"] += 1
+        return float(seq["n"])
+
+    captured_payload: list[dict] = []
+
+    def _audit(payload, dry_run):
+        captured_payload.append(payload)
+        order.append(("audit", _next()))
+
+    monkeypatch.setattr(asw, "_append_idle_unmapped_audit", _audit)
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: order.append(("stop", _next())) or True
+    )
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # stop
+
+    audit_ts = next(ts for name, ts in order if name == "audit")
+    stop_ts = next(ts for name, ts in order if name == "stop")
+    assert audit_ts < stop_ts
+    assert len(captured_payload) == 1
+    payload = captured_payload[0]
+    for field in (
+        "sid",
+        "pid",
+        "fallback_source",
+        "idle_age_s",
+        "threshold_env_value",
+        "detached_verdict",
+        "work_descendant",
+        "running_pods",
+        "pending_input",
+    ):
+        assert field in payload, field
+    assert payload["work_descendant"] is False
+    assert payload["running_pods"] == []
+    assert payload["pending_input"] is False
+
+
+def test_idle_unmapped_fallback_post_stop_note_is_distinct(isolated_registry, monkeypatch):
+    # Test 14 (MF3 fallback-distinct): the fallback reap's post-stop note does
+    # NOT contain the primary-transcript narrative ("its resolved Claude
+    # transcript has been idle") and DOES carry fallback-source language;
+    # the PRIMARY reap's note is the existing transcript narrative unchanged.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    t0 = 1_000_000.0
+
+    # ── fallback reap ──
+    over_fb = asw.UNMAPPED_TMUX_IDLE_FALLBACK_S + 3600
+    _stops, records = _patch_idle_io(
+        monkeypatch,
+        children=[{"happySessionId": "sid-fbn", "pid": 100}],
+        meta={"sid-fbn": {"path": _Z_ROOT}},
+        idle_age=None,
+        has_tty=True,
+        detached_tmux_ttys={"/dev/pts/24"},
+        tmux_activity={"/dev/pts/24": t0 - over_fb},
+    )
+    _patch_fallback_gates(monkeypatch)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    assert len(records) == 1
+    fb_note = records[0]
+    assert "its resolved Claude transcript has been idle" not in fb_note
+    assert asw._IDLE_UNMAPPED_STOP_FALLBACK_NOTE_SENTINEL in fb_note
+    assert "session_activity" in fb_note
+
+    # ── primary reap (separate session) ──
+    over_pri = asw.UNMAPPED_IDLE_REAP_S + 3600
+    _stops2, records2 = _patch_idle_io(
+        monkeypatch,
+        children=[{"happySessionId": "sid-prn", "pid": 200}],
+        meta={"sid-prn": {"path": _Z_ROOT}},
+        idle_age=over_pri,
+    )
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    assert len(records2) == 1
+    pri_note = records2[0]
+    assert "its resolved Claude transcript has been idle" in pri_note
+    assert asw._IDLE_UNMAPPED_STOP_NOTE_SENTINEL in pri_note
 
 
 def test_idle_unmapped_transcript_signal_is_happy_log_only(tmp_path, monkeypatch):
