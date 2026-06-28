@@ -851,6 +851,314 @@ def failure_lesson_capture_eligible(
     return block_fields.get("root_cause_confirmed", "").strip().lower() == "yes"
 
 
+# ─── /issue Step 7 crash-fix circuit-breaker (pure predicate) ────────────────
+#
+# Detects two execution-side traps the cap-3 routing table cannot see and that
+# both mean "relaunching is futile; the PLAN, not the code, must change" — the
+# canonical pivot is `workflow.yaml § pivot_criteria.plan_contradiction_replan`.
+# Pure (no I/O): the orchestrator owns the marker post + set-status + re-plan.
+
+# The marker kinds that COUNT as a successful round and reset the trigger-1
+# counter. `epm:progress` is deliberately EXCLUDED — it is the workflow's
+# catch-all heartbeat / phase-tick / watcher-respawn breadcrumb, posted DURING a
+# still-failing trap window (verified on #664: six benign epm:progress markers
+# fell between the same-signature failures), so resetting on it would make the
+# trigger inert (#718 MF#3).
+_CB_RESET_MILESTONES: frozenset[str] = frozenset({"epm:experiment-implementation", "epm:results"})
+
+# A CalledProcessError-style crash note whose subprocess argv array names a
+# script — the exact #664 dispatch-crash shape. The `script` group anchors on a
+# `.py` token inside the `Command '[...]'` argv; the caller strips the
+# interpreter (`python`/`python3`) so it lands on the real entrypoint.
+_CB_CALLEDPROC_RE = re.compile(
+    r"(?P<exc>\w*(?:Error|Exception)): Command '\[(?P<argv>.*?)\]'",
+    re.DOTALL,
+)
+# A bare exception type on the note's first line (non-subprocess crash shape).
+_CB_EXC_RE = re.compile(r"\b(?P<exc>\w*(?:Error|Exception))\b")
+# Explicit / bracketed assert-tag tokens (the two most-stable structured rungs).
+_CB_ASSERT_TAG_RE = re.compile(r"assert_tag:\s*(\S+)")
+_CB_BRACKET_TAG_RE = re.compile(r"\[([\w-]+)-assert\]")
+# Volatile spans stripped before hashing a note (so per-round argv / pids /
+# timestamps / file:line do not split one trap into N distinct signatures).
+_CB_ISO_TS_RE = re.compile(r"\d{4}-\d\d-\d\dT[\d:Z.+-]+")
+_CB_PID_RE = re.compile(r"(?:pid[= ]\d+|\bPID \d+)")
+_CB_ARGV_RE = re.compile(r"Command '\[.*?\]'", re.DOTALL)
+_CB_FLAG_RE = re.compile(r"--[\w-]+(?:\s+\S+)?")
+_CB_FILELINE_RE = re.compile(r"[\w./-]+:\d+")
+
+
+def _cb_note_hash(note: str) -> str:
+    """Stable 12-hex digest of a crash note's first non-blank line.
+
+    Strips volatile spans (ISO timestamps, PIDs, the whole subprocess argv array,
+    remaining ``--flag value`` runs, ``file:line`` spans) IN THAT ORDER so two
+    crash notes that differ ONLY in those volatile parts hash to the SAME tag.
+    The argv-array strip is the secondary defense behind the exception-type rung:
+    even a note that does not match ``_CB_CALLEDPROC_RE`` but carries argv
+    variation still collapses to ONE digest across rounds (#718 MF#1).
+    """
+    first = ""
+    for line in note.splitlines():
+        if line.strip():
+            first = line
+            break
+    normalized = _CB_ISO_TS_RE.sub("", first)
+    normalized = _CB_PID_RE.sub("", normalized)
+    normalized = _CB_ARGV_RE.sub("Command '[...]'", normalized)
+    normalized = _CB_FLAG_RE.sub("", normalized)
+    normalized = _CB_FILELINE_RE.sub("", normalized)
+    normalized = " ".join(normalized.split())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:12]
+
+
+def _cb_calledproc_script(argv: str) -> str | None:
+    """Return the entrypoint ``.py`` basename from a subprocess argv string.
+
+    Picks the LAST ``.py`` token that is not a ``python``/``python3``
+    interpreter basename (the real script the dispatcher invoked); ``None`` when
+    the argv names no script.
+    """
+    candidates = re.findall(r"[\w./-]+\.py", argv)
+    scripts = [c.split("/")[-1] for c in candidates if c.split("/")[-1] not in ("python.py",)]
+    # No interpreter ends in `.py` on this stack, so every match is a script;
+    # take the LAST one (the entrypoint, after any wrapper modules).
+    return scripts[-1] if scripts else None
+
+
+def _cb_failure_signature(note: str, prior_class: str | None) -> tuple[str, str, str]:
+    """Extract the ``(phase, failure_class, assert_tag)`` signature of a failure note.
+
+    ``assert_tag`` falls back through an ORDERED chain — the FIRST rung that
+    matches wins (#718 MF#1):
+
+    1. explicit ``assert_tag: <tag>`` SHOULD field,
+    2. bracketed ``[<tag>-assert]`` token,
+    3. exception-type / command-family ``<ExcName>:<script_basename>`` (the
+       #664 un-tagged subprocess-crash shape) or, for a non-subprocess crash,
+       the bare ``<ExcName>`` from the note's first line,
+    4. a normalized note-hash (volatile spans stripped) as the last resort.
+    """
+    phase_m = re.search(r"phase=(\w+)", note)
+    phase = phase_m.group(1) if phase_m else "?"
+
+    class_m = re.search(r"failure_class:\s*(\w+)", note)
+    if class_m:
+        failure_class = class_m.group(1)
+    elif prior_class:
+        failure_class = prior_class
+    else:
+        failure_class = "?"
+
+    assert_tag = _cb_assert_tag(note)
+    return (phase, failure_class, assert_tag)
+
+
+def _cb_assert_tag(note: str) -> str:
+    """Resolve the ``assert_tag`` rung for a failure note (see _cb_failure_signature)."""
+    # Rung 1 — explicit SHOULD field.
+    m = _CB_ASSERT_TAG_RE.search(note)
+    if m:
+        return m.group(1)
+    # Rung 2 — bracketed [<tag>-assert].
+    m = _CB_BRACKET_TAG_RE.search(note)
+    if m:
+        return m.group(1)
+    # Rung 3 — exception-type / command-family.
+    m = _CB_CALLEDPROC_RE.search(note)
+    if m:
+        script = _cb_calledproc_script(m.group("argv"))
+        if script:
+            return f"{m.group('exc')}:{script}"
+        return m.group("exc")
+    first_line = note.splitlines()[0] if note.splitlines() else ""
+    m = _CB_EXC_RE.search(first_line)
+    if m:
+        return m.group("exc")
+    # Rung 4 — note-hash.
+    return _cb_note_hash(note)
+
+
+def _cb_parse_ladder(plan_text: str) -> list[str]:
+    """Return the ordered option labels of the first finite escape ladder in ``plan_text``.
+
+    Two shapes are recognized: a ``Option A -> Option B -> ...`` (literal `` → ``
+    arrow) run, OR a numbered ``Option <N>:`` list. Returns ``[]`` when the plan
+    enumerates no parseable ladder (the predicate then silently no-ops trigger 2).
+    """
+    # Shape 1 — arrow-separated Option run, e.g. "Option A → Option B → Option C".
+    arrow_run = re.search(
+        r"Option\s+(\w+)(?:\s*→\s*Option\s+(\w+))+",
+        plan_text,
+    )
+    if arrow_run:
+        # Re-scan the matched span for every `Option <label>` token in order.
+        span = arrow_run.group(0)
+        return re.findall(r"Option\s+(\w+)", span)
+    # Shape 2 — a numbered `Option <N>:` list (≥2 entries).
+    numbered = re.findall(r"Option\s+(\w+):", plan_text)
+    if len(numbered) >= 2:
+        # Preserve first-seen order, dedup repeats.
+        seen: list[str] = []
+        for label in numbered:
+            if label not in seen:
+                seen.append(label)
+        return seen
+    return []
+
+
+def circuit_breaker_should_fire(
+    events: list[dict[str, Any]],
+    plan_text: str,
+    K: int = 4,
+) -> dict[str, Any] | None:
+    """Decide whether the /issue Step 7 crash-fix circuit-breaker fires.
+
+    Fires (returns a fire-reason dict) on EITHER:
+
+    * Trigger 1 — ``same_failure_class``: ``K`` or more ``epm:failure`` markers,
+      since the last "resolved" milestone marker, share ONE
+      ``(phase, failure_class, assert_tag)`` signature. The counter RESETS at any
+      intervening ``epm:experiment-implementation`` / ``epm:results`` milestone
+      (a successful round escaped the trap). It does NOT reset on ``epm:progress``
+      (the catch-all heartbeat / phase-tick / watcher-respawn breadcrumb, posted
+      DURING a still-failing trap window — #718 MF#3).
+    * Trigger 2 — ``enumerated_fallback_exhausted``: ``plan_text`` enumerates a
+      finite escape ladder (``Option A -> Option B -> ...`` arrow run or a
+      numbered ``Option N:`` list), EVERY option has been LAUNCHED (named in an
+      ``epm:progress`` / ``epm:experiment-implementation`` note), AND the gate
+      RE-TRIPS *after* the ladder is exhausted — an ``epm:failure`` event whose
+      position in ``events`` is LATER than the last launch of the FINAL ladder
+      option. A stale ``epm:failure`` that PRECEDES the ladder launches does NOT
+      count (#718). Silently no-ops on free-form plans with no parseable ladder.
+
+    Returns ``None`` when neither condition holds. On fire the dict shape is::
+
+        {"trigger": "same_failure_class" | "enumerated_fallback_exhausted",
+         "signature": (phase, failure_class, assert_tag),   # trigger 1 only
+         "count": int,                                       # trigger 1 only
+         "ladder": [str, ...],                               # trigger 2 only
+         "gate": str,                                        # trigger 2 only
+         "pivot_scope": str}
+
+    ``pivot_scope`` is ALWAYS present and non-empty — the ready-to-pass
+    ``/adversarial-planner`` scope string built from the matched evidence (the
+    orchestrator passes it verbatim; an empty/generic scope would reproduce the
+    #488 unscoped re-plan). Trigger 1 is checked first; if it fires, trigger 2 is
+    not evaluated.
+
+    Pure: no I/O. The orchestrator owns the marker post + set-status + re-plan.
+    """
+    fire = _cb_trigger_same_failure_class(events, K)
+    if fire is not None:
+        return fire
+    return _cb_trigger_enumerated_fallback(events, plan_text)
+
+
+def _cb_trigger_same_failure_class(events: list[dict[str, Any]], K: int) -> dict[str, Any] | None:
+    """Trigger 1: K+ same-(phase, failure_class, assert_tag) failures since the last milestone."""
+    # Count consecutive same-signature failures since the most recent resetting
+    # milestone. A milestone clears the running tally for ALL signatures.
+    tally: dict[tuple[str, str, str], int] = {}
+    prior_class: str | None = None
+    fired: dict[str, Any] | None = None
+    for e in events:
+        kind = e.get("kind", "")
+        if kind in _CB_RESET_MILESTONES:
+            tally.clear()
+            continue
+        if kind != "epm:failure":
+            # epm:progress and every other non-milestone marker is inert here.
+            continue
+        note = e.get("note", "") or ""
+        sig = _cb_failure_signature(note, prior_class)
+        # Carry the most recent KNOWN class forward for un-classed dispatch crashes.
+        if sig[1] != "?":
+            prior_class = sig[1]
+        tally[sig] = tally.get(sig, 0) + 1
+        if tally[sig] >= K:
+            count = tally[sig]
+            phase, failure_class, assert_tag = sig
+            pivot_scope = (
+                f"Same-failure-class repetition: phase={phase} "
+                f"class={failure_class} assert_tag={assert_tag} count={count} "
+                f"(K={K}). Re-plan the recipe that produces this trap, or "
+                f"drop the gate."
+            )
+            # Keep scanning to report the FINAL count (the trap may re-trip more),
+            # but lock in the first signature that crossed K.
+            fired = {
+                "trigger": "same_failure_class",
+                "signature": sig,
+                "count": count,
+                "pivot_scope": pivot_scope,
+            }
+    return fired
+
+
+def _cb_trigger_enumerated_fallback(
+    events: list[dict[str, Any]], plan_text: str
+) -> dict[str, Any] | None:
+    """Trigger 2: every option of a plan-enumerated escape ladder launched + gate re-trips."""
+    ladder = _cb_parse_ladder(plan_text)
+    if not ladder:
+        return None
+    # Index every launch / progress event that names an option, keyed by option
+    # label. (events is chronological — append-only events.jsonl order — so the
+    # list index IS the ordering signal.)
+    last_launch_idx: dict[str, int] = {}
+    for idx, e in enumerate(events):
+        if e.get("kind", "") not in ("epm:progress", "epm:experiment-implementation"):
+            continue
+        note = e.get("note", "") or ""
+        for option in ladder:
+            if re.search(rf"Option\s+{re.escape(option)}\b", note):
+                last_launch_idx[option] = idx
+    # Every named option must have been LAUNCHED (named in a launch / progress note).
+    if any(option not in last_launch_idx for option in ladder):
+        return None
+    # The ladder is exhausted only once the FINAL option has been launched. Require
+    # an epm:failure AFTER that last-launch index — a POST-exhaustion re-trip of the
+    # gate, not just any failure anywhere in history (a pre-ladder stale failure
+    # must NOT count, #718 Codex critic false-positive).
+    final_option_launch_idx = last_launch_idx[ladder[-1]]
+    if not any(
+        e.get("kind", "") == "epm:failure" and idx > final_option_launch_idx
+        for idx, e in enumerate(events)
+    ):
+        return None
+    gate = _cb_gate_label(plan_text, ladder)
+    pivot_scope = (
+        f"Enumerated escape ladder exhausted: gate={gate} "
+        f"ladder={' → '.join(ladder)}. Every named alternative was launched; "
+        f"the gate re-tripped each time. Redesign the gate or the ladder so a "
+        f"viable option exists, or drop the gate."
+    )
+    return {
+        "trigger": "enumerated_fallback_exhausted",
+        "ladder": ladder,
+        "gate": gate,
+        "pivot_scope": pivot_scope,
+    }
+
+
+def _cb_gate_label(plan_text: str, ladder: list[str]) -> str:
+    """Best-effort label of the gate the escape ladder defends.
+
+    Returns the nearest preceding ``§<N>``-style or ``Gate <N>`` token before the
+    first ``Option <first-label>`` mention, else ``"<unnamed-gate>"``.
+    """
+    first = ladder[0]
+    idx = plan_text.find(f"Option {first}")
+    if idx < 0:
+        return "<unnamed-gate>"
+    preceding = plan_text[:idx]
+    gate_m = None
+    for m in re.finditer(r"(?:§\s*[\w.-]+|Gate\s+\w+)", preceding):
+        gate_m = m
+    return gate_m.group(0).strip() if gate_m else "<unnamed-gate>"
+
+
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
     """Render the new (correcting) failure-lesson body as a durable memory entry.
 
