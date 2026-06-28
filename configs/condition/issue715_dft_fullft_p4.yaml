@@ -1,0 +1,39 @@
+# Issue #715 — Full-FT DFT (the P4 weight-space substrate; θ_full-ft for the DFT Δθ).
+#
+# IDENTICAL to issue715_sft_fullft_p4.yaml in EVERY field EXCEPT loss_reweight:
+#   sft -> dft
+# The SOLE difference vs Full-FT SFT. P4 differences both arms' Δθ against the
+# SAME θ_base and matches on narrow-task acquisition (D*), so the prunability
+# comparison is single-variable.
+#   Source: arXiv:2508.05629 (DFT loss) + #545 full-ft recipe.
+name: issue715_dft_fullft_p4
+condition_id: 715005
+arm: fullft
+type: sft
+model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+dataset_path: "data/issue715/bad_medical_advice.jsonl"
+loss_reweight: dft
+use_lora: false
+use_flash_attn: true
+gradient_checkpointing: true
+packing: false
+completion_only_loss: true
+max_seq_length: 2048
+learning_rate: 2.0e-5
+num_epochs: 1
+max_steps: 200
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 2
+warmup_ratio: 0.03
+weight_decay: 0.01
+lr_scheduler_type: cosine
+max_grad_norm: 1.0
+seed: 42
+save_strategy: steps
+save_steps: 25
+save_total_limit: 10
+deepspeed_config: "deepspeed/zero3_no_offloading.json"
+num_gpus: 4
+wandb_project: issue715_dft_em
+wandb_run_name: issue715_dft_fullft_p4
+output_dir: "models/issue715_dft_fullft_p4"
