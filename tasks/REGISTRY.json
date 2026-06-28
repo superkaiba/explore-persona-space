@@ -4424,8 +4424,8 @@
     "699": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/699",
-      "status": "reviewing",
+      "path": "tasks/completed/699",
+      "status": "completed",
       "title": "workflow-fix: atomic post_event append (events.jsonl partial-line corruption)"
     },
     "7": {
