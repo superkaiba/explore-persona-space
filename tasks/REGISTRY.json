@@ -4446,8 +4446,8 @@
     "711": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/711",
-      "status": "approved",
+      "path": "tasks/running/711",
+      "status": "running",
       "title": "Make nightly lesson-consolidation deterministic + monitored (de-risk /daily)"
     },
     "712": {
