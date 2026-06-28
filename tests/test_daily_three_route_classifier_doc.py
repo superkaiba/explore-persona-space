@@ -142,6 +142,12 @@ def test_carve_out_list_survives(daily_skill_text: str, carve_out_anchor: str):
         # "Surfacing flow (applied / filed / held)"; the old cross-reference text
         # must not survive as a section reference.
         'see "Auto-apply + surfacing flow"',
+        # Round-4: the daily-file BODY STUB (~line 113) still described the
+        # pre-#706 binary output contract (`## Applied workflow improvements` =
+        # AUTO-APPLIED only). Plan §2(b) + §4 require route-2 filings ALSO appear
+        # there as "filed for review #<N>" entries — so the stub may no longer
+        # advertise the section as auto-applied-only.
+        "WORKFLOW-FIXABLE problems that were AUTO-APPLIED this run",
     ],
 )
 def test_stale_pre706_contract_phrases_gone(daily_skill_text: str, stale_phrase: str):
@@ -149,6 +155,22 @@ def test_stale_pre706_contract_phrases_gone(daily_skill_text: str, stale_phrase:
         f"stale pre-#706 phrase {stale_phrase!r} survives in daily/SKILL.md — a "
         "contract surface (frontmatter description / Telegram template) regressed "
         "to the binary auto-apply model the three-route classifier replaced"
+    )
+
+
+def test_body_stub_describes_route2_filed_for_review(daily_skill_text: str):
+    # Round-4: the daily-file body stub for `## Applied workflow improvements`
+    # must describe the route-2 "filed for review #<N>" output (plan §2(b) + §4),
+    # not just route-1 self-applied diffs. The `daily-auto-filed` tag is the
+    # robust route-2 marker the PM digest counts (M), so the stub references it.
+    assert "filed for review" in daily_skill_text, (
+        "the daily-file body stub must describe the route-2 output entry "
+        '("filed for review #<N>") in `## Applied workflow improvements` — '
+        "route-2 filings are recorded there alongside route-1 self-applied fixes"
+    )
+    assert "daily-auto-filed" in daily_skill_text, (
+        "route-2 filings carry the daily-auto-filed tag (feeds the PM digest "
+        "count M); the body stub / triage must keep referencing it"
     )
 
 

@@ -110,17 +110,29 @@ changes, completed reviews. Be concrete (mention task IDs). This is the
 auto-drafted summary Thomas will edit down.>
 
 ## Applied workflow improvements
-<numbered list of WORKFLOW-FIXABLE problems that were AUTO-APPLIED this run —
-each with its applied diff and commit sha; see "Problem sweep" below for the
-shape. If no workflow-fixable problems surfaced today, write a single line:
+<numbered list of workflow improvements from this run — BOTH route-1 self-applied
+fixes AND route-2 review filings (see "Triage each problem" below for the routing
+and "Applied-edit record shape" below for the route-1 shape):
+  - Route 1 (trivial mechanical, self-applied): each entry carries its applied
+    diff + commit sha + the verification result (per the record shape below).
+  - Route 2 (any behavior/logic change, filed for review): a
+    "filed for review #<N>: <one-liner>" entry — the filed `kind: infra` task id
+    (tagged `daily-auto-filed`) + a one-line description, with NO self-applied diff
+    or sha (the actual code change lands when the spawned `/issue --auto` session
+    completes through the full independent pipeline).
+If no workflow improvements were applied OR filed today, write a single line:
 `- _no workflow-fixable problems found today_`>
 
 ## Other problems & notes
-<every problem/confusion/error from today that was NOT auto-fixed — held
-judgment calls (name WHICH carve-out item held it), fixes that failed
-verification or the lint gate (reverted), research questions, and anything
-Thomas had to fix by hand. One bullet each: what happened (session id /
-task id) + why it was held + a one-line suggested action.
+<every problem/confusion/error from today that was NOT routed to
+`## Applied workflow improvements` (i.e. not a route-1 self-apply nor a route-2
+review filing). One bullet each: what happened (session id / task id) + the
+routing/disposition + a one-line suggested action. Specifically:
+  - Route 3 (a genuine judgment call): name WHICH carve-out item held it, AND the
+    filed `daily-held needs-human` task `#<N>` (it is a TRACKED `proposed` task the
+    PM surfaces + re-surfaces, no longer a dead-end note).
+  - Fixes that failed verification or the lint gate (reverted), research questions,
+    and anything Thomas had to fix by hand.
 These are notes, not applied edits. If none, write:
 `- _no other problems surfaced today_`>
 
