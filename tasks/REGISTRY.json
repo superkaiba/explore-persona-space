@@ -4459,8 +4459,8 @@
     "702": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/702",
-      "status": "planning",
+      "path": "tasks/approved/702",
+      "status": "approved",
       "title": "analyzer: confirm all planned control arms present before authoring a verdict"
     },
     "703": {
