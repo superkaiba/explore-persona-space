@@ -4466,8 +4466,8 @@
     "703": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/703",
-      "status": "proposed",
+      "path": "tasks/planning/703",
+      "status": "planning",
       "title": "fix full-suite test-isolation pollution (module-singleton leak across 4 tests)"
     },
     "704": {
