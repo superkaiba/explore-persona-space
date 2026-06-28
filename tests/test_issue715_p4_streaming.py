@@ -210,3 +210,98 @@ def test_streaming_prune_build_equals_dict(tmp_path, global_scope):
         assert torch.allclose(stream_sd[k], dict_sd[k], atol=1e-6), (
             f"{k}: streaming pruned weight differs from dict path"
         )
+
+
+# ── BLOCKER p4-global-topk-materializes-all-deltas regression ───────────────
+#
+# The prior _global_topk_threshold did ``abs_chunks.append(d)`` for every target
+# matrix then ``torch.cat(abs_chunks)`` — materializing every target delta's |Δ|
+# vector simultaneously (~26 GB for the all_linear/global cell), the > 15 GB
+# footprint plan §9 forbids. The fix keeps only the running n_zero LARGEST |Δ|
+# values (a bounded torch min-heap by value). These tests pin BOTH the static
+# shape of the fix (no full-accumulation idiom) AND the runtime invariant
+# (nothing torch.topk-ed is ever as large as the full concatenation).
+
+
+def test_global_topk_threshold_no_full_delta_accumulation_static():
+    """STATIC guard: the global-threshold source must NOT accumulate every delta.
+
+    A future refactor that reintroduces ``abs_chunks.append`` + ``torch.cat`` over
+    all target deltas would silently restore the > 15 GB footprint. Assert the
+    banned full-accumulation idiom is absent from the function source.
+    """
+    import inspect
+
+    p4 = _load_p4_module()
+    src = inspect.getsource(p4._global_topk_threshold)
+    # The banned shape: building a Python list of every matrix's abs vector then
+    # concatenating ALL of them at once.
+    assert "abs_chunks" not in src, (
+        "_global_topk_threshold must not accumulate every delta into a list "
+        "(abs_chunks) — that materializes the full concatenation (>15 GB)"
+    )
+    # The only torch.cat allowed is the bounded merge of (running_top, one matrix);
+    # a torch.cat over a comprehension/list of all chunks is the banned full-accum.
+    assert "torch.cat(abs_chunks)" not in src
+    assert "running_top" in src, "the bounded running-top set is the required shape"
+
+
+def test_global_topk_threshold_bounded_footprint_runtime(tmp_path, monkeypatch):
+    """RUNTIME guard: no torch.topk inside the global threshold ever sees a tensor
+    as large as the full |Δ| concatenation.
+
+    Build several toy matrices, record the largest 1-D tensor passed to
+    ``torch.topk`` while computing the global threshold, and assert it stays
+    bounded by ``n_zero + (largest single matrix's element count)`` — never the
+    sum over all matrices (the old full-cat size). Also assert the streaming
+    threshold equals the brute-force ``cat(all).topk(n_zero).values.min()`` so the
+    bound does not come at the cost of correctness.
+    """
+    p4 = _load_p4_module()
+
+    # Five distinct down_proj matrices so the full concatenation is meaningfully
+    # larger than any single matrix (and larger than n_zero at a small k_frac).
+    torch.manual_seed(7)
+    base_sd = {f"model.layers.{i}.mlp.down_proj.weight": torch.randn(20, 30) for i in range(5)}
+    torch.manual_seed(8)
+    ft_sd = {k: v + 0.3 * torch.randn_like(v) for k, v in base_sd.items()}
+    base_w = p4.StreamingWeights(str(_write_safetensors_dir(tmp_path / "base", base_sd)))
+    ft_w = p4.StreamingWeights(str(_write_safetensors_dir(tmp_path / "ft", ft_sd)))
+    target_keys = sorted(base_sd)
+
+    total = sum(base_sd[k].numel() for k in target_keys)  # 5 * 600 = 3000
+    largest_matrix = max(base_sd[k].numel() for k in target_keys)  # 600
+    k_frac = 0.05
+    n_zero = round(k_frac * total)  # 150
+
+    real_topk = torch.topk
+    max_seen = {"n": 0}
+
+    def _spy_topk(t, k, *a, **kw):
+        if t.dim() == 1:
+            max_seen["n"] = max(max_seen["n"], t.numel())
+        return real_topk(t, k, *a, **kw)
+
+    monkeypatch.setattr(p4.torch, "topk", _spy_topk)
+    thresh = p4._global_topk_threshold(base_w, ft_w, k_frac, target_keys)
+
+    # The bounded merge tensor is at most (running_top <= n_zero) + one matrix.
+    bound = n_zero + largest_matrix
+    assert max_seen["n"] <= bound, (
+        f"global-threshold topk saw a {max_seen['n']}-elem tensor; bound is "
+        f"n_zero+largest_matrix={bound}. The full concatenation would be {total}."
+    )
+    # And it must be strictly below the full-concat size (the old footprint).
+    assert max_seen["n"] < total, (
+        f"global-threshold topk materialized the full {total}-elem concatenation"
+    )
+
+    # Correctness: identical to the brute-force order statistic.
+    monkeypatch.setattr(p4.torch, "topk", real_topk)
+    allabs = torch.cat(
+        [(ft_sd[k].float() - base_sd[k].float()).abs().flatten() for k in target_keys]
+    )
+    brute = float(real_topk(allabs, n_zero, largest=True).values.min().item())
+    assert thresh == pytest.approx(brute, rel=0, abs=0), (
+        f"streaming threshold {thresh} != brute-force {brute}"
+    )
