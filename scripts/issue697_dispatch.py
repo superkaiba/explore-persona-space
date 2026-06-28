@@ -76,8 +76,12 @@ HF_TENSOR_PREFIX = "issue697_cv_patch/analysis_tensors"
 # #651) + emnc (positives-only Betley bridge) are EXCLUDED — plan §10.
 BEHAVIORS_697: tuple[str, ...] = ("em", "sycophancy", "marker", "fact")
 
-# Primary read/patch layer + the depth-sweep supplement (plan §10; Source: #651).
-PRIMARY_LAYER = 14
+# Read layer (v, headline) + the donor-injection patch layer (plan §4.0 Option B,
+# the v4 read-inertness fix): patch UPSTREAM at L=10, read v at L=14 so the patch
+# propagates through 4 attention layers to the response-slot read (patch == read
+# is the v3 read-inert class). L=10 is inside #651's swept {7,14,21} band.
+PRIMARY_LAYER = 14  # = read_layer (Source: #651 PRIMARY_LAYER)
+PATCH_LAYER = 10  # = L_patch (< read_layer; Source: v4 read-inertness fix)
 SUPPLEMENT_LAYERS = (7, 21)
 
 # Per-behavior PRIMARY v pooling (item-5 fix — mirrors #651's headline):
@@ -247,10 +251,22 @@ def _select_cells(args):
     PASS_UNIFIED parity: EVERY phase (canary / sweep) reads from this SAME
     ``cells_697`` grid filtered by the SAME ``--cells`` subset, so a smoke is the
     sweep with one cell and no phase re-enumerates a different grid.
+
+    ``--seed-42-only`` (plan §Salvage / A7): the true seed-42 production grid is 64
+    cells (4 behaviors x 16 ctx x seed 42). ``--floor-only`` alone yields 96
+    (marker + fact keep BOTH seeds on HF), so seed-42-only filters the floor to
+    ``seed == 42`` across ALL behaviors. The 4 salvaged marker cells are RE-RUN
+    (their v3 v is read-inert) — they are IN this grid, not skipped.
     """
     from explore_persona_space.experiments.issue_651 import Cell, parse_cell_spec
 
-    full = cells_697(n_gpus=args.n_gpus, floor_only=args.floor_only)
+    full = cells_697(n_gpus=args.n_gpus, floor_only=args.floor_only or args.seed_42_only)
+    if args.seed_42_only:
+        sel42 = [c for c in full if c.seed == 42]
+        full = [
+            Cell(behavior=c.behavior, cid=c.cid, seed=c.seed, gpu_id=i % max(args.n_gpus, 1))
+            for i, c in enumerate(sel42)
+        ]
     if args.cells:
         requested = [parse_cell_spec(s) for s in args.cells]
         avail = {(c.behavior, c.cid, c.seed) for c in full}
@@ -318,6 +334,127 @@ def phase_vendor(repo_root: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Phase: INERT_READ_ASSERT (CPU, 0 GPU — the §7.1a non-skippable gate)
+# ---------------------------------------------------------------------------
+
+# The v3-salvaged (read-inert) marker cell on HF — the §7.1a negative control.
+SALVAGED_INERT_PT = (
+    "issue697_partial/att-20260628-141102/eval_results_issue_697/patch/marker_sp_swe_seed42.pt"
+)
+
+
+def phase_inert_read_assert(repo_root: Path, *, read_layer: int) -> None:
+    """§7.1a (CPU, 0 GPU): the detector MUST FIRE on the v3-salvaged inert .pt.
+
+    Re-run the inert-read detector on the salvaged ``marker_sp_swe_seed42.pt``
+    (downloaded from HF — NOT new GPU spend). It MUST raise ``ReadInertError``
+    (the salvaged cell IS inert by construction). If it does NOT raise, the
+    DETECTOR itself is broken — abort the whole run (no sweep): a broken detector
+    cannot guarantee the §7.1b positive gate on the new smoke cell is real.
+
+    This is the guard that catches the v3 read-inertness regression instantly.
+    """
+    phase_log("inert_read_assert")
+    import sys
+
+    sys.path.insert(0, str(repo_root / "scripts"))
+    import torch
+    from huggingface_hub import hf_hub_download
+    from issue697_analysis import ReadInertError, assert_not_read_inert
+
+    p = hf_hub_download(HF_DATA_REPO, SALVAGED_INERT_PT, repo_type="dataset")
+    cell = torch.load(p, weights_only=False)
+    try:
+        means = assert_not_read_inert(cell, read_layer)
+    except ReadInertError as e:
+        logger.info("[phase=inert_read_assert] PASS 7.1a: detector fired on salvaged inert .pt")
+        logger.info("  %s", str(e).replace("\n", " "))
+        logger.info("[phase=inert_read_assert_done]")
+        return
+    raise RuntimeError(
+        "INERT-READ DETECTOR BROKEN (§7.1a): the salvaged read-inert "
+        f"marker_sp_swe_seed42.pt did NOT trip the detector (means={means}); a "
+        "detector that cannot detect known inertness cannot guard the sweep. HALT."
+    )
+
+
+def assert_smoke_cell_not_inert(repo_root: Path, cell_id: str, *, read_layer: int) -> None:
+    """§7.1b (CPU on the new smoke .pt): the L=10/L=14 read MUST NOT be inert.
+
+    After the smoke cell runs the L=10-patch / L=14-read path (one real GPU cell),
+    re-run the detector on its NEW ``.pt`` and require it does NOT fire. If it DOES
+    fire, the layer split is wrong (the hook is still effectively at the read
+    layer) and the production sweep must NOT dispatch. Reads the LOCAL smoke .pt.
+    """
+    import sys
+
+    sys.path.insert(0, str(repo_root / "scripts"))
+    import torch
+    from issue697_analysis import ReadInertError, assert_not_read_inert
+
+    pt = repo_root / "eval_results" / "issue_697" / "patch" / f"{cell_id}.pt"
+    if not pt.exists():
+        raise RuntimeError(f"§7.1b: smoke cell .pt not found at {pt} -- smoke cell did not run")
+    cell = torch.load(pt, weights_only=False)
+    try:
+        means = assert_not_read_inert(cell, read_layer)
+    except ReadInertError as e:
+        raise RuntimeError(
+            f"§7.1b FAIL: the NEW smoke cell {cell_id} .pt IS read-inert at the "
+            f"L=10/L=14 pathway -- the layer split is wrong, the sweep must NOT "
+            f"dispatch. {e}"
+        ) from e
+    logger.info(
+        "[phase=inert_read_assert] PASS 7.1b: smoke cell %s NON-inert "
+        "(f_CV[p_up]=%.4f, random=%.4f, f_CV_down=%.4f, n=%d)",
+        cell_id,
+        means["f_cv"],
+        means["f_cv_random"],
+        means["f_cv_down"],
+        means["n"],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase: RBASE_PREP (vLLM-batched R_base cache; plan §4.4/§4.5)
+# ---------------------------------------------------------------------------
+
+
+def _rbase_cache_dir(repo_root: Path) -> Path:
+    return repo_root / "eval_results" / "issue_697" / "r_base_cache"
+
+
+def phase_rbase_prep(
+    repo_root: Path, *, cpu_only: bool, smoke_model: str | None, upload: bool, max_new_tokens: int
+) -> None:
+    """Pre-sweep vLLM-batched R_base cache (plan §4.4/§4.5) via issue697_rbase.py."""
+    phase_log("rbase_prep")
+    out_dir = _rbase_cache_dir(repo_root)
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "scripts/issue697_rbase.py",
+        "--out-dir",
+        str(out_dir),
+        "--max-new-tokens",
+        str(max_new_tokens),
+    ]
+    base_model = smoke_model or QWEN_ID
+    cmd += ["--base-model-id", base_model]
+    if cpu_only:
+        cmd += ["--cpu-only", "--skip-parity"]
+    if upload:
+        cmd.append("--upload")
+    # vLLM uses 1 GPU; CVD=0 on the real path, "" on the CPU smoke.
+    env = {"CUDA_VISIBLE_DEVICES": "" if cpu_only else "0"}
+    rc = _run_with_log(cmd, log_path=_log_dir() / "rbase_prep.log", extra_env=env, cwd=repo_root)
+    if rc != 0:
+        raise RuntimeError(f"rbase_prep FAILED (rc={rc}); see {_log_dir()}/rbase_prep.log")
+    logger.info("[phase=rbase_prep_done]")
+
+
+# ---------------------------------------------------------------------------
 # Phase: CANARY (Gate C1 patch-correctness + Gate C2 rsLoRA parity)
 # ---------------------------------------------------------------------------
 
@@ -361,6 +498,8 @@ def _cell_cmd(
     smoke_model: str | None,
     upload: bool,
     use_cache: bool,
+    patch_layer: int,
+    rbase_cache_dir: Path | None,
 ) -> tuple[list[str], Path, dict[str, str]]:
     """Build (cmd, log_path, env) for one cell's patch read via issue697_cell.py."""
     base_model = smoke_model or QWEN_ID
@@ -387,11 +526,15 @@ def _cell_cmd(
         *[str(L) for L in layers],
         "--primary-layer",
         str(primary_layer),
+        "--patch-layer",
+        str(patch_layer),
         "--max-new-tokens",
         str(max_new_tokens),
         "--base-model-id",
         base_model,
     ]
+    if rbase_cache_dir is not None:
+        cmd += ["--rbase-cache-dir", str(rbase_cache_dir)]
     # Thread the canary's use_cache decision (concern #4): BooleanOptionalAction.
     cmd.append("--use-cache" if use_cache else "--no-use-cache")
     if cpu_only:
@@ -449,6 +592,41 @@ def _assert_sweep_device_count(cpu_only: bool, n_gpus: int) -> None:
     )
 
 
+def _write_sweep_coverage(repo_root: Path, cells: Sequence, failed_cells: Sequence[str]) -> Path:
+    """Write the sweep coverage gap (plan §4.3) so analyze reports the missing cells.
+
+    ``eval_results/issue_697/sweep_coverage.json`` carries the full attempted cell
+    list, the failed cell ids, and the failed cells parsed to (behavior, cid, seed)
+    tuples so the analyze phase can name the missing cells per ``verify_task_body.py``
+    check 11b (revise the per-behavior denominator; never a misleading zero bar).
+    """
+    failed = list(dict.fromkeys(failed_cells))  # dedup, preserve order
+    failed_tuples = []
+    for cid_str in failed:
+        beh, _, rest = cid_str.partition("_")
+        cid, _, seed_tok = rest.rpartition("_seed")
+        failed_tuples.append({"cell_id": cid_str, "behavior": beh, "cid": cid, "seed": seed_tok})
+    cov_path = repo_root / "eval_results" / "issue_697" / "sweep_coverage.json"
+    cov_path.parent.mkdir(parents=True, exist_ok=True)
+    cov_path.write_text(
+        json.dumps(
+            {
+                "issue": 697,
+                "n_attempted": len(cells),
+                "attempted_cells": [c.cell_id for c in cells],
+                "n_failed": len(failed),
+                "failed_cells": failed,
+                "failed_tuples": failed_tuples,
+                "budget": -(-len(cells) // 16),
+                "ts": datetime.datetime.now(datetime.UTC).isoformat(),
+            },
+            indent=2,
+        )
+    )
+    logger.info("wrote sweep coverage: %s (%d failed)", cov_path, len(failed))
+    return cov_path
+
+
 def phase_sweep(
     repo_root: Path,
     cells: Sequence,
@@ -459,11 +637,13 @@ def phase_sweep(
     panel_questions_json: Path,
     layers: Sequence[int],
     primary_layer: int,
+    patch_layer: int,
     max_new_tokens: int,
     skip_e: bool,
     smoke_model: str | None,
     dry_run: bool,
     upload: bool,
+    rbase_cache_dir: Path | None = None,
 ) -> None:
     """Per-cell patch read over the panel (wave-parallel, CVD-pinned per cell)."""
     phase_log("sweep")
@@ -474,6 +654,12 @@ def phase_sweep(
     use_cache = _read_use_cache_decision(repo_root)
     out_dir = repo_root / "eval_results" / "issue_697" / "patch"
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Continue-on-cell-fail (plan §4.3): bound the deterministic-bug blast radius at
+    # ceil(N/16) (= 4 for 64 cells, ~6%) while surviving transient infra. Below
+    # budget the sweep advances + records the gap; above budget it aborts.
+    n_total_cells = len(cells)
+    budget = -(-n_total_cells // 16)  # ceil(N/16)
+    failed_cells: list[str] = []
     for wave_start in range(0, len(cells), max(n_gpus, 1)):
         wave = cells[wave_start : wave_start + max(n_gpus, 1)]
         cmds: list[tuple[Sequence[str], Path, dict[str, str] | None]] = []
@@ -492,6 +678,8 @@ def phase_sweep(
                 smoke_model=smoke_model,
                 upload=upload,
                 use_cache=use_cache,
+                patch_layer=patch_layer,
+                rbase_cache_dir=rbase_cache_dir,
             )
             cmds.append((cmd, log_path, env))
         if dry_run:
@@ -504,14 +692,70 @@ def phase_sweep(
                 )
             continue
         rcs = _run_parallel_with_log(cmds, cwd=repo_root)
-        bad = [(rc, c.cell_id) for rc, c in zip(rcs, wave, strict=True) if rc != 0]
-        if bad:
-            raise RuntimeError(f"sweep wave failed: {bad}; see logs in {_log_dir()}")
-        for c in wave:
-            logger.info("sweep cell %s complete", c.cell_id)  # NOT [phase=done] (mid-run noise)
+        wave_idx = wave_start // max(n_gpus, 1)
+        for rc, c in zip(rcs, wave, strict=True):
+            if rc != 0:
+                failed_cells.append(c.cell_id)
+                # Per-cell sentinel via the existing drain path (NEVER a pod-side
+                # task.py shellout). poll_pipeline.py posts the carried marker.
+                write_sentinel(
+                    "epm:cell-failed",
+                    f"cell {c.cell_id} failed rc={rc} wave={wave_idx}",
+                    extra={
+                        "cell_id": c.cell_id,
+                        "rc": rc,
+                        "wave": wave_idx,
+                        "log_path": str(_log_dir() / f"sweep_{c.cell_id}.log"),
+                    },
+                )
+                logger.error(
+                    "sweep cell %s FAILED rc=%d (wave %d); failed %d/%d (budget %d)",
+                    c.cell_id,
+                    rc,
+                    wave_idx,
+                    len(failed_cells),
+                    n_total_cells,
+                    budget,
+                )
+            else:
+                # NOT [phase=done] (mid-run noise — the terminal line is reserved).
+                logger.info("sweep cell %s complete", c.cell_id)
+        # Budget guard: a >budget failure count is a systematic bug -> abort so the
+        # EXIT trap persists crash diagnostics (plan §4.3).
+        if len(failed_cells) > budget:
+            _write_sweep_coverage(repo_root, cells, failed_cells)
+            raise RuntimeError(
+                f"sweep failure budget exceeded: {len(failed_cells)} > {budget} "
+                f"(ceil({n_total_cells}/16)); failed={failed_cells}; see logs in {_log_dir()}"
+            )
     if dry_run:
         logger.info("[phase=sweep_done] (dry-run: no tensors written, upload skipped)")
         return
+    # Below-budget failures (<= budget): loud WARNING + terminal coverage artifacts
+    # so analyze + the orchestrator see the gap (plan §4.3). The sweep does NOT raise.
+    _write_sweep_coverage(repo_root, cells, failed_cells)
+    if failed_cells:
+        logger.warning(
+            "sweep completed with %d/%d cells FAILED (<= budget %d): %s -- coverage gap "
+            "recorded in eval_results/issue_697/sweep_coverage.json; analyze reports it.",
+            len(failed_cells),
+            n_total_cells,
+            budget,
+            failed_cells,
+        )
+        write_sentinel(
+            "epm:cell-failed-summary",
+            f"{len(failed_cells)}/{n_total_cells} cells failed (<= budget {budget})",
+            extra={"failed_cells": failed_cells, "n_total_cells": n_total_cells, "budget": budget},
+        )
+    # §7.1b positive gate: a single REAL-GPU smoke cell's NEW .pt MUST NOT be
+    # read-inert at the L=10/L=14 pathway (the layer split actually works). Runs
+    # only on the real-adapter single-cell smoke (the CPU no-adapter smoke has
+    # v⁺≡v0 -> no-effect, not inert, so the detector is uninformative there). A
+    # FAIL aborts before any production sweep can dispatch (plan §7.1b).
+    is_real_gpu = smoke_model is None and not cpu_only
+    if is_real_gpu and len(cells) == 1 and cells[0].cell_id not in failed_cells:
+        assert_smoke_cell_not_inert(repo_root, cells[0].cell_id, read_layer=primary_layer)
     logger.info("[phase=sweep_done]")
 
 
@@ -595,9 +839,21 @@ def main() -> int:
     parser.add_argument(
         "--phase",
         nargs="+",
-        choices=["vendor", "canary", "sweep", "analyze", "all"],
+        choices=[
+            "vendor",
+            "inert_read_assert",
+            "rbase_prep",
+            "canary",
+            "sweep",
+            "analyze",
+            "all",
+        ],
         default=["all"],
-        help="Phases to run in order. 'all' = vendor -> canary -> sweep.",
+        help=(
+            "Phases to run in order. 'all' = vendor -> inert_read_assert -> "
+            "rbase_prep -> sweep (the §7.1a inert-read gate runs BEFORE the sweep; "
+            "the §7.1b positive gate runs after the smoke cell inside sweep)."
+        ),
     )
     parser.add_argument(
         "--cells",
@@ -649,6 +905,15 @@ def main() -> int:
         help="Existing-artifact floor only (seed-42 cells); auto-descope fallback.",
     )
     parser.add_argument(
+        "--seed-42-only",
+        action="store_true",
+        help=(
+            "The true seed-42 production grid: 64 cells (4 beh x 16 ctx x seed 42). "
+            "--floor-only alone yields 96 (marker+fact keep both seeds); this filters "
+            "the floor to seed==42 across ALL behaviors (plan §Salvage / A7)."
+        ),
+    )
+    parser.add_argument(
         "--no-upload",
         action="store_true",
         help="Skip the per-cell HF upload (local smoke; default uploads per cell).",
@@ -664,12 +929,26 @@ def main() -> int:
     parser.add_argument(
         "--layers", type=int, nargs="+", default=[7, 14, 21], help="Read/patch layers."
     )
-    parser.add_argument("--primary-layer", type=int, default=PRIMARY_LAYER)
+    parser.add_argument(
+        "--primary-layer", type=int, default=PRIMARY_LAYER, help="v READ layer (L_read=14)."
+    )
+    parser.add_argument(
+        "--patch-layer",
+        type=int,
+        default=PATCH_LAYER,
+        help=(
+            "Donor-injection PATCH layer (L_patch=10, plan §4.0 Option B). MUST be "
+            "< --primary-layer (patch == read is the v3 read-inert class)."
+        ),
+    )
     parser.add_argument(
         "--max-new-tokens",
         type=int,
-        default=512,
-        help="Teacher-forced base-response generation cap for the v read (#651 default).",
+        default=1024,
+        help=(
+            "R-generation cap (free-gen default 1024, plan §11/F5 — ≥2x the observed "
+            "~150-tok median trained R; truncation creates silent zeros, #260)."
+        ),
     )
     args = parser.parse_args()
 
@@ -688,16 +967,20 @@ def main() -> int:
     repo_root = _resolve_repo_root()
     phases = list(args.phase)
     if "all" in phases:
-        phases = ["vendor", "canary", "sweep"]
+        # The §7.1a inert-read gate runs BEFORE the sweep; rbase_prep caches R_base;
+        # the canary's C2/C1.2 are REUSED from attempt-1 (plan §4.1 step 4), so it
+        # is NOT in 'all' — run --phase canary explicitly to re-exercise it.
+        phases = ["vendor", "inert_read_assert", "rbase_prep", "sweep"]
 
     cpu_only = args.cpu_only
     smoke = cpu_only or args.smoke_model is not None
     dry_run = args.dry_run
     upload = not args.no_upload and not smoke and not dry_run
+    rbase_cache_dir = _rbase_cache_dir(repo_root)
 
-    # Credential assert only when a phase needs HF (canary/sweep). Skip for a
-    # pure CPU smoke, the dry-run plumbing smoke, and a local analyze.
-    if any(p in ("canary", "sweep") for p in phases) and not smoke and not dry_run:
+    # Credential assert only when a phase needs HF (rbase_prep/canary/sweep). Skip
+    # for a pure CPU smoke, the dry-run plumbing smoke, and a local analyze.
+    if any(p in ("rbase_prep", "canary", "sweep") for p in phases) and not smoke and not dry_run:
         _require_credentials()
 
     if "sweep" in phases and not dry_run:
@@ -708,6 +991,23 @@ def main() -> int:
     for phase in phases:
         if phase == "vendor":
             phase_vendor(repo_root)
+        elif phase == "inert_read_assert":
+            # §7.1a (CPU, 0 GPU, non-skippable): the detector MUST fire on the
+            # v3-salvaged inert .pt before the sweep dispatches.
+            phase_inert_read_assert(repo_root, read_layer=args.primary_layer)
+        elif phase == "rbase_prep":
+            if dry_run:
+                logger.info("[dry-run] rbase_prep -> scripts/issue697_rbase.py (skipped)")
+                phase_log("rbase_prep")
+                logger.info("[phase=rbase_prep_done]")
+                continue
+            phase_rbase_prep(
+                repo_root,
+                cpu_only=cpu_only,
+                smoke_model=args.smoke_model,
+                upload=upload,
+                max_new_tokens=args.max_new_tokens,
+            )
         elif phase == "canary":
             if dry_run:
                 logger.info("[dry-run] canary -> scripts/issue697_canary.py (skipped)")
@@ -726,11 +1026,13 @@ def main() -> int:
                 panel_questions_json=panel_questions_json,
                 layers=args.layers,
                 primary_layer=args.primary_layer,
+                patch_layer=args.patch_layer,
                 max_new_tokens=args.max_new_tokens,
                 skip_e=args.skip_e or smoke,
                 smoke_model=args.smoke_model,
                 dry_run=dry_run,
                 upload=upload,
+                rbase_cache_dir=rbase_cache_dir,
             )
         elif phase == "analyze":
             # CPU smoke / no-API-key: skip the Sonnet judge step (the tiny-model

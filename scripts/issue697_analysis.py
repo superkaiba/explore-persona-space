@@ -111,6 +111,61 @@ def _per_question_f_cv(cell: dict, layer: int) -> dict:
     }
 
 
+class ReadInertError(AssertionError):
+    """Raised by ``assert_not_read_inert`` when a cell's response-slot read is
+    structurally independent of the context-slot patch (the v3 defect)."""
+
+
+def assert_not_read_inert(cell: dict, read_layer: int) -> dict:
+    """Raise ``ReadInertError`` iff the cell's v read is INERT (plan §7.1 / F2).
+
+    The v3 read pathway installed the patch at the SAME layer it read v, in ONE
+    teacher-forced forward — so the response-slot read was computed BEFORE the
+    context-slot overwrite and the patch never reached it (``‖v_Pup-v0‖=0`` for
+    all pairs). The detector re-runs ``_per_question_f_cv`` at the read layer and
+    fires when the P↑, random-CV, full_span AND P↓ reads are ALL ≈0.
+
+    The P↓ threshold is ``abs(pdn) < 1e-4`` (plan v5 fix — NOT ``abs(pdn - 1.0)``):
+    an inert into-FT read pins ``v_Pdown ≡ v⁺``, so
+    ``compute_f_cv_down(v⁺, v0, v⁺) = 1 - 1 = 0.0``. The v4 detector used
+    ``abs(pdn - 1.0) < 1e-4`` and was silently NON-functional — it never fired on
+    the very inert pattern the revision exists to catch (round-2 fact-checker
+    reproduction on the salvaged ``marker_sp_swe_seed42.pt``).
+
+    Returns the means dict ``{f_cv, f_cv_random, f_cv_full_span, f_cv_down, n}`` on
+    a NON-inert cell (the §7.1b positive gate caller logs it). On an inert cell it
+    RAISES — used as the §7.1a negative control (the detector MUST fire on the
+    salvaged inert cell) AND the §7.1b positive gate (the new smoke cell MUST NOT
+    be inert before the production sweep dispatches).
+    """
+    fcv = _per_question_f_cv(cell, read_layer)
+    pup = float(np.nanmean(fcv["f_cv"])) if fcv["f_cv"] else float("nan")
+    rand = float(np.nanmean(fcv["f_cv_random"])) if fcv["f_cv_random"] else float("nan")
+    span = float(np.nanmean(fcv["f_cv_full_span"])) if fcv["f_cv_full_span"] else float("nan")
+    pdn = float(np.nanmean(fcv["f_cv_down"])) if fcv["f_cv_down"] else float("nan")
+    means = {
+        "f_cv": pup,
+        "f_cv_random": rand,
+        "f_cv_full_span": span,
+        "f_cv_down": pdn,
+        "n": len(fcv["f_cv"]),
+    }
+    inert = (
+        abs(pup) < 1e-4
+        and abs(rand) < 1e-4
+        and (np.isnan(span) or abs(span) < 1e-4)
+        and abs(pdn) < 1e-4
+    )
+    if inert:
+        raise ReadInertError(
+            "READ-INERT REGRESSION: response-slot read is independent of the "
+            f"context-slot patch (mean f_CV[p_up]={pup:.6f}, [random_cv]={rand:.6f}, "
+            f"[full_span]={span:.6f}, f_CV_down={pdn:.6f}). The patch layer must be "
+            "< the read layer (Option B, plan §4.0/§7.1)."
+        )
+    return means
+
+
 def _persona_clustered_bootstrap(values: list[float], personas: list[str], n_reps: int) -> dict:
     """Persona-clustered bootstrap 95% CI of the mean (resample personas, then
     questions within each — respects the panel's two-level structure)."""
@@ -231,6 +286,21 @@ def _e_space_from_judged(judged: dict, behavior: str) -> dict | None:
     }
 
 
+def _marker_logp_value(read) -> float | None:
+    """Extract the marker log P from either storage shape (F3 back-compat).
+
+    v5 (#697 F3) persists FOUR floats per slot as a dict
+    ``{"log_p", "z_marker", "z_eos", "logZ"}``; the salvaged v3 cells persisted ONE
+    raw float (``log P``). Read ``log_p`` from a dict, the float itself from a
+    scalar, ``None`` from a missing read.
+    """
+    if read is None:
+        return None
+    if isinstance(read, dict):
+        return read.get("log_p")
+    return float(read)
+
+
 def _e_space_from_marker(meta: dict) -> dict | None:
     """f_CV^E for the MARKER arm from {cell}_E_metadata.json TF marker-logp records.
 
@@ -243,6 +313,10 @@ def _e_space_from_marker(meta: dict) -> dict | None:
     NOT averaged per-record ratios; this also mirrors the judged path
     ``_e_space_from_judged``, which forms the ratio once from one aggregate rate per
     condition).
+
+    Each per-condition read is now a FOUR-float dict (F3: log P / z_marker / z_eos /
+    logZ); ``_marker_logp_value`` extracts ``log_p`` and falls back to the salvaged
+    v3 single-float shape, so the analysis reads both the new and the legacy cells.
     """
     if meta.get("dv_kind") != "marker_logp":
         return None
@@ -251,10 +325,10 @@ def _e_space_from_marker(meta: dict) -> dict | None:
         return None
     e0s, epluss, epups, epdowns = [], [], [], []
     for r in recs:
-        e0 = r.get("marker_logp_unpatched_base")
-        eplus = r.get("marker_logp_unpatched_ft")
-        e_pup = r.get("marker_logp_p_up")
-        e_pdown = r.get("marker_logp_p_down")
+        e0 = _marker_logp_value(r.get("marker_logp_unpatched_base"))
+        eplus = _marker_logp_value(r.get("marker_logp_unpatched_ft"))
+        e_pup = _marker_logp_value(r.get("marker_logp_p_up"))
+        e_pdown = _marker_logp_value(r.get("marker_logp_p_down"))
         if e0 is None or eplus is None:
             continue
         e0s.append(e0)
@@ -303,12 +377,74 @@ def _load_e_space(patch_dir: Path, cell_id: str, behavior: str) -> dict | None:
     return _e_space_from_judged(json.loads(judged_path.read_text()), behavior)
 
 
+def load_537_ctx_gating(repo_root: Path) -> dict | None:
+    """Load #537's per-(behavior, context) context-gating read (plan §6.5 / F4).
+
+    The F4 restriction joins #537's committed
+    ``eval_results/issue_537/analysis/registered_reads.json`` ``per_row_breadth``
+    (per-behavior, per-context ``diag`` install / ``offdiag_mean`` breadth /
+    ``breadth_diagnorm`` / ``implant_failed``) so the analyzer can restrict any
+    behavioral-E "mapping changed" verdict to cells where #537 measured REAL
+    context-gating (the behavior actually installed under the trained context).
+    Returns the ``per_row_breadth`` dict, or None when the #537 artifact is absent
+    (off-pod join; a WARN, NOT a sweep blocker — the analyzer reports the
+    restriction as not-applied + names the gap, plan §6.5/A12).
+    """
+    p = repo_root / "eval_results" / "issue_537" / "analysis" / "registered_reads.json"
+    if not p.exists():
+        logger.warning(
+            "F4: #537 ctx-gating read absent at %s -- restriction NOT applied "
+            "(reported as a gap, not a sweep blocker; plan §6.5/A12)",
+            p,
+        )
+        return None
+    pb = json.loads(p.read_text()).get("per_row_breadth")
+    if not isinstance(pb, dict):
+        logger.warning(
+            "F4: #537 registered_reads.json lacks per_row_breadth -- restriction skipped"
+        )
+        return None
+    return pb
+
+
+def cell_ctx_gating_status(per_row_breadth: dict | None, behavior: str, cid: str) -> dict:
+    """Per-(B, C) #537 context-gating status for one #697 cell (plan §6.5 / F4).
+
+    A cell is ``context_gated`` when #537 shows the behavior actually installed
+    under the trained context (``not implant_failed`` AND ``diag > 0``) — only then
+    is there a context-conditional behavior to causally localize. A cell #537 shows
+    was NOT context-gated cannot support a clean CV-localization read, so the
+    analyzer labels it rather than emitting a mapping-changed verdict. Returns
+    ``{"status": "context-gated"|"not-context-gated"|"not-available",
+    "diag", "offdiag_mean", "breadth_diagnorm", "implant_failed"}``.
+    """
+    if per_row_breadth is None:
+        return {"status": "not-available"}
+    row = per_row_breadth.get(behavior, {}).get(cid)
+    if not isinstance(row, dict):
+        return {"status": "not-available"}
+    implant_failed = bool(row.get("implant_failed", False))
+    diag = row.get("diag")
+    gated = (not implant_failed) and (diag is not None and float(diag) > 0.0)
+    return {
+        "status": "context-gated" if gated else "not-context-gated",
+        "diag": diag,
+        "offdiag_mean": row.get("offdiag_mean"),
+        "breadth_diagnorm": row.get("breadth_diagnorm"),
+        "implant_failed": implant_failed,
+    }
+
+
 def analyze(repo_root: Path, *, primary_layer: int) -> dict:
     patch_dir = repo_root / "eval_results" / "issue_697" / "patch"
     pts = sorted(patch_dir.glob("*.pt"))
     if not pts:
         raise RuntimeError(f"no per-cell .pt tensors in {patch_dir} -- run the sweep first")
     logger.info("[phase=analyze] %d per-cell tensors in %s", len(pts), patch_dir)
+
+    # #537 context-gating read for the F4 restriction (off-pod join; WARN-not-fail
+    # when absent — plan §6.5/A12).
+    ctx_gating = load_537_ctx_gating(repo_root)
 
     by_behavior: dict[str, dict] = {
         b: {
@@ -321,6 +457,10 @@ def analyze(repo_root: Path, *, primary_layer: int) -> dict:
             "e_cv": [],  # per-cell f_CV^E (P↑)
             "e_cv_down": [],  # per-cell f_CV^E (P↓ analog)
             "e_personas": [],  # cell_id label per e_cv point (for the bootstrap cluster)
+            # F4: per-cell #537 ctx-gating status + the context-gated E-cv subset.
+            "ctx_gating": {},  # cell_id -> gating status dict
+            "e_cv_gated": [],  # f_CV^E only for #537-context-gated cells
+            "e_personas_gated": [],
         }
         for b in BEHAVIORS
     }
@@ -337,12 +477,19 @@ def analyze(repo_root: Path, *, primary_layer: int) -> dict:
         by_behavior[behavior]["f_cv_random"] += pq["f_cv_random"]
         by_behavior[behavior]["personas"] += pq["personas"]
         by_behavior[behavior]["cells"].append(cell["cell_id"])
+        # F4: this cell's #537 context-gating status (keyed by the train cid).
+        gating = cell_ctx_gating_status(ctx_gating, behavior, str(cell.get("cid", "")))
+        by_behavior[behavior]["ctx_gating"][cell["cell_id"]] = gating
         # E-space: f_CV^E from the off-pod judge (em/syc/fact) or marker TF-logp.
         e = _load_e_space(patch_dir, cell["cell_id"], behavior)
         if e is not None:
             if e.get("f_cv_e") is not None:
                 by_behavior[behavior]["e_cv"].append(float(e["f_cv_e"]))
                 by_behavior[behavior]["e_personas"].append(cell["cell_id"])
+                # F4: the context-gated E subset for the restricted verdict.
+                if gating.get("status") == "context-gated":
+                    by_behavior[behavior]["e_cv_gated"].append(float(e["f_cv_e"]))
+                    by_behavior[behavior]["e_personas_gated"].append(cell["cell_id"])
             if e.get("f_cv_e_down") is not None:
                 by_behavior[behavior]["e_cv_down"].append(float(e["f_cv_e_down"]))
         logger.info(
@@ -387,12 +534,26 @@ def analyze(repo_root: Path, *, primary_layer: int) -> dict:
             if d["e_cv_down"]
             else {"mean": float("nan"), "ci_low": float("nan"), "ci_high": float("nan"), "n": 0}
         )
+        # F4 (plan §6.5): the behavioral-E CI restricted to #537-context-gated cells.
+        ci_e_gated = _persona_clustered_bootstrap(
+            d["e_cv_gated"], d["e_personas_gated"], N_BOOTSTRAP
+        )
+        gating_statuses = [g.get("status") for g in d["ctx_gating"].values()]
+        n_gated = sum(s == "context-gated" for s in gating_statuses)
+        n_not_gated = sum(s == "not-context-gated" for s in gating_statuses)
+        n_gating_na = sum(s == "not-available" for s in gating_statuses)
+        ctx_gating_applied = ctx_gating is not None and n_gating_na < len(gating_statuses)
         # last-token vs full-span scope delta (plan control #4).
         last_vs_full = (
             float(ci["mean"] - ci_full["mean"])
             if (not np.isnan(ci["mean"]) and not np.isnan(ci_full["mean"]))
             else float("nan")
         )
+        # F4 behavioral-E verdict: any "mapping-changed" read is RESTRICTED to the
+        # #537-context-gated cells (a non-gated cell has no context-conditional
+        # behavior to localize). When the gating join is unavailable, the verdict
+        # is the unrestricted E-space band + a not-applied flag (plan §6.5/A12).
+        e_verdict_gated = _band(ci_e_gated) if ctx_gating_applied else "ctx-gating-not-applied"
         summary[behavior] = {
             "f_cv_ci": ci,
             "f_cv_down_ci": ci_down,
@@ -405,10 +566,19 @@ def analyze(repo_root: Path, *, primary_layer: int) -> dict:
             "n_cells": len(d["cells"]),
             "n_e_cells": ci_e["n"],
             "primary_pooling": PRIMARY_POOLING.get(behavior),
+            # F4 #537 context-gating restriction (plan §6.5).
+            "f_cv_e_ctx_gated_ci": ci_e_gated,
+            "e_verdict_ctx_gated": e_verdict_gated,
+            "ctx_gating_applied": ctx_gating_applied,
+            "n_ctx_gated_cells": n_gated,
+            "n_not_ctx_gated_cells": n_not_gated,
+            "n_ctx_gating_unavailable": n_gating_na,
+            "per_cell_ctx_gating": d["ctx_gating"],
         }
         logger.info(
             "  %s: f_CV=%.3f [%.3f, %.3f] verdict=%s (P↓=%.3f, full_span=%.3f, "
-            "Δlast-vs-full=%.3f, E f_CV^E=%.3f over %d cells, null floor %.3f)",
+            "Δlast-vs-full=%.3f, E f_CV^E=%.3f over %d cells, null floor %.3f) "
+            "[F4 ctx-gated %d/%d cells, E-verdict(gated)=%s applied=%s]",
             behavior,
             ci["mean"],
             ci["ci_low"],
@@ -420,6 +590,10 @@ def analyze(repo_root: Path, *, primary_layer: int) -> dict:
             ci_e["mean"],
             ci_e["n"],
             ci_null["mean"],
+            n_gated,
+            len(gating_statuses),
+            e_verdict_gated,
+            ctx_gating_applied,
         )
     return {"primary_layer": primary_layer, "by_behavior": summary, "raw": by_behavior}
 
