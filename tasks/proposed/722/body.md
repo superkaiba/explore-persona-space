@@ -20,6 +20,9 @@ goal: 'On #537''s already-trained behavior×context LoRA adapters, fit the conte
   along r_B — NOT generic v0 reconstruction (which #658 showed saturates ≈0.98 and
   is uninformative), and (3) cross-transfer of M0 vs M⁺ on FT data; cross-referenced
   against #697''s causal f_CV.'
+relates_to:
+- identity-cb-duality
+- identity-contextual-vs-base
 ---
 ## Goal
 
