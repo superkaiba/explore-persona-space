@@ -190,6 +190,142 @@ sample selection run in sanitized mode:
   (marker, fact, sycophancy, WildChat, personas) keep the standard
   verbatim treatment.
 
+### Step 1.6: Planned-control-arm presence gate (run BEFORE interpreting / plotting / authoring)
+
+**Why this gate exists.** A verdict authored on a partial grid that is
+silently missing a planned control / baseline arm can be a
+multiple-comparison artifact. In #658 the analyzer ran on a partial Betley
+grid before the random-projection control arm had landed, authored an
+apparent 3/10 PASS, and that PASS evaporated to 0/10 once the control arm
+arrived — the apparent signal was an artifact of comparing the arms that
+happened to be present. This gate refuses to author at all until every
+DECLARED control/baseline arm is actually present in `eval_results/`. It
+fires UPSTREAM of the write-up-time siblings (`verify_task_body.py`
+check 11b and `clean-result-critic` Lens 13), which read a body that — in
+the #658 case — would have looked internally consistent on the partial
+grid because the analyzer did not know an arm was missing.
+
+This gate runs AFTER Step 1 (which already loads the plan + the
+`eval_results/` JSONs — so it adds no new data dependency) and BEFORE Step 2
+(statistics), Step 3 (plots / figure commits), Step 4 (write the body), and
+Step 6 (set-body + the `epm:interpretation` post). On a missing arm you EXIT
+without authoring ANY of those — no statistics narrated, no figure committed,
+no body written, no `epm:interpretation` posted.
+
+**Scope — when this gate APPLIES vs SKIPS (opt-in, fail-closed):**
+
+1. **SKIP (vacuous PASS), go to Step 2,** when `frontmatter.kind` is
+   `analysis | infra | batch | survey` — these have no Goal-bound multi-arm
+   verdict (mirrors the measurement-validity gate's exemption above).
+2. **SKIP (vacuous PASS), go to Step 2,** when the plan declares NO
+   control/baseline arm. This is the deliberate opt-in carve-out: the gate
+   disciplines ONLY plans that COMMITTED to a control arm — legitimately
+   single-arm / descriptive work and legacy plans without a controls section
+   pass through untouched, exactly as `clean-result-critic` Lens 13 PASSes
+   vacuously when the plan has no enumerable planned conditions. **Opt-in
+   limit (documented, not a bug):** a future plan that forgets to declare its
+   control sails through this gate — the protection is only as good as the
+   plan's own declarations. `clean-result-critic` Lens 13 is the downstream
+   backstop that can still catch a control declared in prose but never landed
+   as an enumerable row.
+3. **APPLIES** to `kind: experiment` tasks whose plan declares at least one
+   control/baseline arm (the only case where a missing control arm can
+   produce the #658 false-positive-by-omission).
+
+**Enumerate the declared control/baseline arms.** Resolve the plan the
+canonical way (never hand-build a `tasks/<status>/<N>/...` path):
+
+```bash
+plan_path="$(uv run python scripts/task.py find <N>)/plans/plan.md"
+```
+
+Read the UNION of these declaration sources (use the union if they disagree —
+fail-safe toward catching a missing arm):
+
+- the plan §5 Conditions and Controls table — an arm is a control/baseline arm
+  when its row is labeled `CONTROL` / `BASELINE` (case-insensitive) in any
+  column, OR its role columns name it a control / baseline / null / shuffle /
+  random-projection / permutation arm;
+- the plan §0 Plan Summary `**Baselines / controls:**` line;
+- the `epm:plan` marker payload (already loaded at Step 1) when it tags
+  conditions with a control/baseline role.
+
+Capture each declared arm's plain-English name AND its config slug (the
+rightmost §5 column — the key that maps to `eval_results/`).
+
+**DISTINGUISH a pre-landed arm from an analyzer-computed control.** The
+presence check applies ONLY to arms produced by a SEPARATE training / eval
+run that you consume as INPUT (the random-projection control arm in #658 was
+a separate eval that had to LAND). It does NOT apply to a "control" the plan
+§4 Design says YOU compute during this analysis — a permutation null, a
+residualization baseline, a TF-IDF / random-projection baseline you build in
+Step 2-3, etc. Those do not exist as a file until you compute them, so
+"presence in `eval_results/`" is the wrong question: PASS such an
+analyzer-computed control here (you satisfy it by computing it later, not by
+finding a pre-existing file). If unsure which kind an arm is, read plan §4 —
+if it is computed in-analysis, it is NOT subject to this presence check.
+
+**Presence check (minimum-bar evidence, across all four `eval_results/`
+layout shapes).** `eval_results/` layouts vary, so match intelligently — do
+NOT mechanically check for one fixed file path. For each declared pre-landed
+control arm, it is PRESENT iff you can find, somewhere under
+`eval_results/issue_<N>/` (or the plan's explicitly named `eval_results/<name>/`
+path), a parseable JSON carrying the arm's headline-metric value in ANY of
+these shapes:
+
+- **(a) slug-named top-level JSON** — e.g. `eval_results/issue_<N>/arm_<slug>/aggregate_cleaned.json`;
+- **(b) per-arm directory** — a directory keyed by the arm's slug / name with a verdict or aggregate JSON inside;
+- **(c) nested sub-key inside an aggregate / verdict JSON** — e.g. #658's random-projection control lives as a sub-key (`noise_floor` / `a34_a35` / `ridge_exactness` / `mlp_exactness`) inside `aggregate.json` / `a34_a35.json`, NOT as a slug-named top-level file;
+- **(d) metric-purpose JSON** — e.g. #685's `metrics.json` / `metrics_assistant_excluded.json` keyed by metric purpose rather than arm slug.
+
+Matching procedure, fail-closed: try the config slug first (exact), then a
+normalized-name fallback (lowercase, non-alphanumeric → `_`; tolerate slug
+drift such as #658's `attn` vs an older plan's `sum_attn`), then look for the
+arm's headline metric value anywhere under `eval_results/issue_<N>/` (incl.
+as a sub-key of an aggregate/verdict JSON). The presence check is satisfied by
+ANY of these forms carrying a parseable headline-metric VALUE — and ONLY then.
+The minimum bar is value-not-name: a directory of the right name, an
+empty/unparseable JSON, or a JSON of the right name MISSING the headline-metric
+value all count as MISSING (this stops the gate being fooled by a partial /
+placeholder file). LM-instruction prose is more flexible than a script here —
+READ the plan + the `eval_results/` tree and decide whether the arm's result is
+genuinely present, even when the slug does not trivially match a file name.
+
+If EVERY declared pre-landed control arm is PRESENT: PASS, go to Step 2.
+
+**BLOCK path (a declared pre-landed control arm is MISSING).** Do NOT author.
+Name the missing arm(s), park, and exit:
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:failure \
+  --note 'failure_class: data
+reason: planned_control_arm_missing
+missing_arms: <plain-English name(s)> (slug: <slug(s)>)
+looked_under: eval_results/issue_<N>/
+The plan declares these control/baseline arm(s) but no parseable result
+carrying the headline metric is present under any of the four eval_results/
+layout shapes. Authoring a verdict on this partial grid risks a
+multiple-comparison false positive (see #658). Land the missing arm(s), then
+re-run /issue <N> (the analyzer re-runs from Step 1 and this gate re-checks).'
+uv run python scripts/task.py set-status <N> blocked
+```
+
+Then EXIT — write no body, commit no figure, post no `epm:interpretation`.
+`failure_class: data` is correct: a missing arm is a factual gap only the user
+can fill (land the arm), so the task parks at `status:blocked` and does NOT
+enter the Step 7 crash-fix routing (which covers `infra | code` only). The
+park is reversible — once the user lands the arm, the next `/issue <N>` re-runs
+the analyzer from Step 1, this gate re-checks and PASSes, and authoring
+proceeds.
+
+**Complementary layer.** This is the analyzer-side, VERDICT-TIME complement of
+the upload-verifier (which runs at the `verifying → interpreting` transition);
+the upload-verifier is the natural place for a FUTURE hardening that would
+verify declared arms landed before the analyzer is even spawned. The split
+between an upstream verdict-time gate (here) and the write-up-time siblings
+(`verify_task_body.py` check 11b, `clean-result-critic` Lens 13) is
+deliberate — see plan §2.
+
 ### Step 2: Compute Statistics
 
 **Long off-pod CPU jobs (SVD builds, `analyze`, bootstrap / permutation stats, eval-JSON aggregation) — use a sentinel, not a bg `nohup` redirect you re-read for completion.** Any of these phases (here and in Step 1.5) can run minutes-to-tens-of-minutes off-pod on the VM. You are a single-turn subagent — do NOT improvise chained `nohup ... > /tmp/log 2>&1 &` commands and re-read the log to decide when it finished: the harness may auto-background a long FOREGROUND command and reset shell state between Bash calls, which strands the `&`-job and the `>` redirect and leaves an empty log with no completion signal (incident #650 burned ~8 wait cycles this way). Instead, have the job write a DONE sentinel carrying its exit code on finish, then poll the SENTINEL with ONE `run_in_background=true` Bash `until` loop:
