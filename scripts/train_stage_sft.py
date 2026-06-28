@@ -95,6 +95,20 @@ class LossReweightSFTTrainer(SFTTrainer):
         return (loss, outputs) if return_outputs else loss
 
 
+def should_use_loss_reweight_trainer(cfg: dict, dft_mode_cli: str | None) -> bool:
+    """Whether to instantiate the custom LossReweightSFTTrainer (CONCERN #715-B).
+
+    The custom per-completion-token-mean trainer is used ONLY when the DFT
+    reweight is EXPLICITLY requested — the ``--dft-mode`` CLI flag OR a
+    ``loss_reweight`` key in the stage config. The #715 sft AND dft arms both set
+    the key, so they share the custom code path (single-variable discipline);
+    legacy callers (#506 / #653 / #545) have no key, so they run the STOCK
+    ``trl.SFTTrainer`` with its grad-accum ``num_items_in_batch`` reduction
+    unchanged (no silent regression).
+    """
+    return dft_mode_cli is not None or "loss_reweight" in cfg
+
+
 def load_sft_dataset(
     dataset_path: str, tokenizer, *, completion_only_loss: bool = False
 ) -> Dataset:
@@ -301,7 +315,7 @@ def main():  # noqa: C901 — flat config-resolution entrypoint; splitting hurts
     # dft) so they share the custom path (single-variable discipline preserved);
     # legacy configs have no key, so they run the stock trl.SFTTrainer (no
     # regression to their grad-accum num_items_in_batch reduction).
-    loss_reweight_requested = args.dft_mode is not None or "loss_reweight" in cfg
+    loss_reweight_requested = should_use_loss_reweight_trainer(cfg, args.dft_mode)
     loss_reweight = args.dft_mode if args.dft_mode is not None else cfg.get("loss_reweight", "sft")
 
     # Optimizer: config-driven (CONCERN #715-A). The shared trainer must NOT

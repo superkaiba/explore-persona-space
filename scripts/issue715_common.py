@@ -23,6 +23,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -264,11 +265,19 @@ def resolve_eval_model(checkpoint: str) -> tuple[str, str | None]:
             f"adapter checkpoint {ckpt} has no base_model_name_or_path in "
             "adapter_config.json — cannot resolve the base model for LoRA eval"
         )
-    # A local base path written by PEFT can be stale on a fresh pod; fall back to
-    # the canonical BASE_MODEL when the recorded base is the same Qwen id.
-    if not Path(base).exists() and base != BASE_MODEL:
+    # The recorded base is authoritative. A HuggingFace hub id (form `org/name`,
+    # exactly one slash, no leading separator) passes through unchanged — it is
+    # NOT a local dir and must not be rewritten (#715 trains on the 7B id; a 0.5B
+    # smoke records the 0.5B id; rewriting either to a hardcoded BASE_MODEL would
+    # mismatch the adapter rank/hidden size). ONLY a LOCAL-looking path written
+    # by PEFT (absolute/relative, with separators) that no longer exists on a
+    # fresh pod falls back to the canonical BASE_MODEL (the stale-volume case).
+    is_hub_id = bool(re.fullmatch(r"[A-Za-z0-9][\w.-]*/[\w.-]+", base))
+    if not is_hub_id and not Path(base).exists():
         logger.warning(
-            "adapter base %r not a local dir; using canonical BASE_MODEL %s", base, BASE_MODEL
+            "adapter base %r is a missing local path; falling back to BASE_MODEL %s",
+            base,
+            BASE_MODEL,
         )
         base = BASE_MODEL
     return base, str(ckpt)
