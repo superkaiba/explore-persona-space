@@ -4524,8 +4524,8 @@
     "721": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/721",
-      "status": "approved",
+      "path": "tasks/completed/721",
+      "status": "completed",
       "title": "workflow-fix: /daily push stub commit immediately (orphaned off main, #711 alert)"
     },
     "74": {
