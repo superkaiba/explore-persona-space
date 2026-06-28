@@ -54,6 +54,12 @@ from explore_persona_space.analysis.paper_plots import (
 
 # Re-use the canonical constants + flat() logic from the benchmark script so the
 # gate strength is defined in exactly ONE place (the test pins these values).
+# Repo root must be on sys.path so `scripts.issue673_gpu_memory_validation`
+# resolves when this script is invoked as `uv run python scripts/issue673_assert.py`
+# (Python only adds the script's own directory, scripts/, to sys.path by default —
+# repo root is needed for the `scripts.` package import).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from scripts.issue673_gpu_memory_validation import (
     WARMUP,
     ABS_TOL_GiB,
