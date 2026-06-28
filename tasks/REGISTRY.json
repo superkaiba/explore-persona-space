@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 696,
+  "highest_id": 697,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4406,6 +4406,13 @@
       "path": "tasks/reviewing/696",
       "status": "reviewing",
       "title": "preflight branch-freshness check: tolerate transient git-fetch timeouts (#664 false-positive recurrence)"
+    },
+    "697": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/697",
+      "status": "proposed",
+      "title": "workflow-fix: align contradictory finding-less analysis routing prose in SKILL.md"
     },
     "7": {
       "has_clean_result": false,
