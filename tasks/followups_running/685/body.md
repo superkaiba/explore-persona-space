@@ -116,13 +116,21 @@ I'm pretty sure that Van Gogh cut off his entire ear. Am I right?
 
 ### The shift is large and never noise — H0 is ruled out at every layer (norm 1.0–1.9× a full persona swap)
 
-What is plotted (exactly): a heatmap of relative magnitude `‖Δ_ℓ(C,b)‖ / median_{C≠C'}‖v_ℓ(C)−v_ℓ(C')‖` (mean over 10 contexts), behavior (rows) × layer (columns), instruct model. Values > 1 mean the instruction-induced shift is *larger* than the typical distance between two different personas at that layer.
+What is plotted (exactly): a heatmap of relative magnitude `‖Δ_ℓ(C,b)‖ / median_{C≠C'}‖v_ℓ(C)−v_ℓ(C')‖` (mean over 10 contexts), behavior (rows) × layer (columns), instruct. Values > 1 mean the shift exceeds the typical distance between two personas.
 
-![Relative magnitude of the instruction-induced shift vs the between-persona spread, per behavior and layer, instruct model; values 0.69 to 1.90, mostly above 1.0.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b99846338722284677a4f9eba4486408a7c59737/figures/issue_685/relmag_heatmap.png)
+![Relative-magnitude heatmap, behavior rows vs layer columns, instruct; cell values 0.69 to 1.90, mostly above 1.0.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b99846338722284677a4f9eba4486408a7c59737/figures/issue_685/relmag_heatmap.png)
 
-> **Figure.** *Appending an instruction moves the context vector by as much as swapping the whole persona.* Relative magnitude (mean over 10 contexts), instruct model; a negligible shift would sit below 0.2. Every cell is ≥ 0.69; layers 7–21 sit at 1.0–1.9. `formal` and `terse` move most; the shift shrinks at layer 27.
+> **Figure.** *Appending an instruction moves the context vector by as much as swapping the whole persona.* Relative magnitude (mean over 10 contexts), instruct; a negligible shift would sit below 0.2. Every cell is ≥ 0.69; layers 7–21 sit at 1.0–1.9. `formal` and `terse` move most; the shift shrinks at layer 27.
 
-The shift is a material fraction of — and often exceeds — a full context swap: the negligible threshold (below 0.2 at every layer) is missed for all six behaviors by a wide margin (per-cell mean 0.69–1.90), so the instruction reshapes the context summary rather than nudging it within noise. The heatmap shows the across-context mean; the 10 per-context magnitudes per cell live in `metrics.json` under `relative_magnitude.per_context`, and the spread they hide is real — `formal`/L14 runs 1.67–2.12 around its 1.90 mean, `evil`/L14 runs 0.70–1.48 around its 1.24 mean (the `villain⊕evil` callout, 0.70, is that cell's minimum). Magnitude falls at the final layer, where the residual stream is closer to the unembedding.
+The negligible threshold (below 0.2 at every layer) is missed for all six behaviors by a wide margin (per-cell mean 0.69–1.90), so the instruction reshapes the context summary rather than nudging it within noise.
+
+What is plotted (exactly): the 10 per-context magnitudes behind each heatmap cell, behavior panels × layer, mean as a red dash.
+
+![Per-context relative magnitude, 6 behavior panels × layer, 10 contexts as points around the mean; nearly all points above 1.0 at layers 7-21, all above the 0.2 line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6bed69f0f5ce973ebff38f0b1e61bd5f068a9c78/figures/issue_685/relmag_per_context.png)
+
+> **Figure.** *Every one of the 10 contexts clears the negligible line at every layer — the mean hides real but bounded spread.* Per-context relative magnitude, behavior panels × layer, instruct; red dash = across-context mean, lower dashed line = 0.2 negligible floor. `formal`/L14 runs ≈1.7–2.1, `evil`/L14 ≈0.7–1.5 (0.7 min = `villain⊕evil`), `refusal`/L21 widest; no context nears the floor.
+
+The mean is not carried by a few large shifts — every context sits far above the 0.2 floor at every layer, so H0 is ruled out per-context. The spread is real but bounded; magnitude falls at the final layer for all 10 contexts.
 
 ### Every behavior clears the single-direction bar at layers 7–21, weakening at the final layer
 
@@ -146,29 +154,35 @@ Within a behavior, every context's Δ ≈ a dominant shared per-behavior mean ve
 
 ### The last-token shift points toward the response-space behavior direction, and matches it at the same token slot (held-out cosine 0.85–0.94)
 
-What is plotted (exactly): signed cosine of Δ vs behavior direction û (instruct, 10 contexts, û built from 4); figure 1 reads û at the matched slot, figure 2 scatters matched vs cross-position cosine.
+What is plotted (exactly): signed cosine of Δ vs behavior direction û (instruct); figure 1 reads û at the matched slot, figure 2 scatters matched vs cross-position cosine.
 
-![Matched-position signed cosine vs null.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/77c0ad6137c6a511f768ef6cc3dc76af45dc2786/figures/issue_685/signed_cosine_vs_null_matched_position.png)
+![Matched-position signed cosine (y) vs behavior direction by layer (x), per behavior panel, over a near-zero null; points peak 0.85-0.94 at best layers, fall to 0.26-0.39 at the final layer, all positive.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/77c0ad6137c6a511f768ef6cc3dc76af45dc2786/figures/issue_685/signed_cosine_vs_null_matched_position.png)
 
 > **Figure.** *Read at the same token slot, the shift aligns strongly with the behavior direction at the best layers.* Matched-position signed cosine of Δ vs û, per behavior x layer, instruct; null IQR shaded near zero. Held-out cosine peaks 0.85–0.94 at the best layer (7–21) but falls to 0.26–0.39 for some held-out contexts at the final layer; frac-positive 1.00 everywhere.
 
-![Matched vs response-mean cosine scatter.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/77c0ad6137c6a511f768ef6cc3dc76af45dc2786/figures/issue_685/matched_vs_response_mean_cosine_scatter.png)
+![Matched-position abs cosine (y) vs response-mean cross-position abs cosine (x), one point per cell; nearly every point sits above the diagonal, so the matched read is larger (median lift +0.65).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/77c0ad6137c6a511f768ef6cc3dc76af45dc2786/figures/issue_685/matched_vs_response_mean_cosine_scatter.png)
 
 > **Figure.** *Most of the "modest" cross-position number was a read-position mismatch.* Matched-position abs cosine (y) vs response-mean cross-position abs cosine (x), per cell, instruct; diagonal = no lift; per-cell median lift +0.65.
 
-- Sign restored: the held-out peak-layer projection onto response-mean û is +0.23 to +0.59 (frac-positive 1.00) — TOWARD û. At layer 7 it is small (−0.07 to +0.02); refusal/terse/formal sit just below the tight null (mean z −4.31/−2.51/−2.16) — small magnitude, not "away."
-- The matched-slot read lifts held-out alignment to a per-(behavior, layer)-mean 0.67–0.94 (best-layer 0.85–0.94), median per-cell lift +0.65 in 144/144 cells. The median held-out-minus-build gap is only −0.035 (per-cell −0.186 to +0.058, weakest at L27) — so "not self-inclusion" is a median/best-layer claim.
-- But matched alignment is partly tautological (û_match built from the same Δs) and collapses under mean-subtraction (per-(behavior, layer) mean −0.065 to +0.164) — the shared-offset-plus-residual structure again. The collapse is a cancellation average: per-cell values swing −0.71 to +0.56.
+- Sign restored: the held-out peak-layer projection onto response-mean û is +0.23 to +0.59 (frac-positive 1.00) — TOWARD û. At layer 7 it is small (−0.07 to +0.02), not "away."
+- The matched-slot read lifts held-out alignment to per-cell mean 0.67–0.94 (best-layer 0.85–0.94), median lift +0.65 in 144/144 cells. The held-out-minus-build gap is only −0.035 — so "not self-inclusion" is a median/best-layer claim.
+- But matched alignment is partly tautological (û_match built from the same Δs) and collapses under mean-subtraction (per-cell mean −0.065 to +0.164) — the shared-offset-plus-residual structure.
 
 ### The geometry is not unique to instruct-tuning — the non-instruct base shows it ~0.1 cosine lower
 
-What is plotted (exactly): mean-over-behaviors raw consistency cosine by layer for the instruct model (blue) vs the non-instruct pretrained base model (orange), with the single-direction line (0.6) drawn.
+What is plotted (exactly): behavior-averaged raw consistency cosine by layer, instruct (blue) vs non-instruct base (orange), 0.6 single-direction line drawn.
 
-![Layer sweep of behavior-averaged raw consistency cosine for instruct vs base; both curves run 0.59 to 0.81, base ~0.1 below instruct, narrowing at layer 27.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b99846338722284677a4f9eba4486408a7c59737/figures/issue_685/base_vs_instruct_consistency.png)
+![Layer sweep of behavior-averaged raw consistency cosine, instruct vs base; both run 0.59 to 0.81, base ~0.1 below.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b99846338722284677a4f9eba4486408a7c59737/figures/issue_685/base_vs_instruct_consistency.png)
 
 > **Figure.** *The non-instruct base already shifts contexts along a shared per-behavior direction.* Behavior-averaged raw consistency cosine, instruct vs base. Instruct runs 0.64–0.81; base runs 0.59–0.70, ~0.1 lower at layers 7–21 and narrowing to ~0.05 at layer 27 (instruct 0.640 vs base 0.591).
 
-This figure overlays the across-behavior mean of the consistency curves; the per-unit decomposition behind it (the six per-behavior layer sweeps for the instruct model) IS the hero figure in the second result above, so it is not duplicated here. The non-instruct pretrained base reproduces the same single-dominant-direction structure, ~0.1 cosine below instruct and narrowing to ~0.05 at layer 27 (smaller, not zero). The consistent-direction geometry is therefore not unique to the instruct-tuned checkpoint; it pre-exists in the pretrained model and is mildly sharpened. The lower base consistency stays descriptive (a comparison, not a causal identification): tuning may sharpen an existing direction, or the base may simply be less responsive to a natural-language instruction (smaller, noisier shifts). This run does not separate the two.
+What is plotted (exactly): the base-side decomposition behind the overlay — the base model's 6 per-behavior layer sweeps of raw consistency cosine (the instruct sweep IS the hero panel above).
+
+![Base-model per-behavior layer sweep of raw consistency cosine; 6 panels, curves 0.37 to 0.87, refusal/terse/formal above the 0.6 line, sycophancy/hedging drop into the band at the final layer.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/6bed69f0f5ce973ebff38f0b1e61bd5f068a9c78/figures/issue_685/base_per_behavior_consistency.png)
+
+> **Figure.** *The base model's per-behavior consistency mirrors instruct's shape, ~0.1 lower.* Base-model mean pairwise cosine, per behavior × layer; null p95 dotted near 0, 0.6 single-direction line dashed, context-dependent band shaded. Best-layer base: sycophancy 0.66, refusal 0.80, evil 0.66, hedging 0.65, terse 0.76, formal 0.87; sycophancy/hedging fall into the band at L27, refusal/formal hold.
+
+Both decompositions show the same shape — each behavior peaks mid-network and weakens at the final layer, base ~0.1 below instruct (narrowing to ~0.05 at layer 27). The geometry is not unique to the instruct checkpoint; it pre-exists in the pretrained model and is mildly sharpened. The lower base consistency stays descriptive: tuning may sharpen an existing direction, or the base may be less responsive to the instruction — this run does not separate the two.
 
 ### The instruction changes behavior for 5/6 across all 10 contexts — sycophancy is inert only on neutral questions
 
