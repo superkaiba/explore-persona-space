@@ -800,12 +800,49 @@ pivot_criteria:
       direction", or a Statistics & Measurement lens REVISE citing
       decision-gate coherence (critic.md / codex-critic.md).
 
+      Second firing condition — enumerated-fallback-exhaustion (the
+      execution-side trigger, post-mortem task #664 round 18). Fires when
+      a plan pre-registered a FINITE escape ladder (e.g. §11 "Option A →
+      Option B → ...", or a numbered "Option N:" list) for a specific
+      gate, EVERY named alternative in that ladder has been LAUNCHED, and
+      the SAME gate still trips. "The same gate" = the same plan-level
+      success / kill criterion or the same pre-registered Option list —
+      NOT the same line of code that crashed. "Tried to exhaustion" =
+      every named alternative in the ladder has been launched AND the same
+      gate has re-tripped; a single failure on Option A with Option B not
+      yet attempted is NOT exhaustion. ALSO fires on the generic narrower
+      complement to cap-3: K or more crash-fix rounds (default K=4,
+      `EPM_CIRCUIT_BREAKER_K`) sharing the SAME (phase, failure_class,
+      assert_tag) signature — the same trap re-tripping, vs cap-3's
+      "same strategic approach". The signature counter resets ONLY at an
+      intervening `epm:experiment-implementation` / `epm:results`
+      milestone (a genuinely successful round escaped the trap); it does
+      NOT reset on `epm:progress`, which is the catch-all heartbeat /
+      phase-tick / watcher-respawn breadcrumb posted DURING a still-failing
+      trap. Detection is the pure predicate
+      `task_workflow.circuit_breaker_should_fire(events, plan_text, K)`;
+      the orchestrator-side step is `.claude/skills/issue/SKILL.md`
+      Step 7 § "Crash-fix circuit-breaker". Both firing conditions of
+      this entry share the SINGLE pivot action, the SINGLE
+      `epm:strategy-pivot v<n>` counting rule, and the SAME forbidden
+      anti-patterns below.
+
       Pivot action (the ONLY legitimate response): `task.py set-status
       <N> planning` + re-invoke `/adversarial-planner` with explicit
       pivot scope naming the contradiction verbatim — for example
       "Gate 3 requires probe X >= +0.2 nat AND Gate 4 requires the same
       probe at the same cell <= -0.2 nat; redesign the gate set to be
       jointly satisfiable or drop to a single necessary kill-criterion."
+      For the enumerated-fallback-exhaustion condition the pivot scope
+      names the SPENT ladder verbatim — for example "Enumerated escape
+      ladder exhausted: gate=<gate> ladder=A → B → C. Every named
+      alternative was launched; the gate re-tripped each time. Redesign
+      the gate or the ladder so a viable option exists, or drop the gate."
+      For the same-signature-repetition condition it names the (phase,
+      failure_class, assert_tag) signature and the repeat count K — for
+      example "Same-failure-class repetition: phase=p2 class=infra
+      assert_tag=CalledProcessError:issue664_extract_store.py count=6
+      (K=4). Re-plan the recipe that produces this trap, or drop the gate."
       Treat the revised plan as a fresh implementer cycle (cap-3 resets).
       Count this as a strategy pivot for the cap-3-pivots-before-block
       rule (track via the existing `epm:strategy-pivot v<n>` marker
@@ -827,7 +864,9 @@ pivot_criteria:
       autonomous mode (`EPM_AUTONOMOUS_SESSION=1`) — there is no human
       to escalate to; re-plan in the same session.
 
-      Post-mortem trigger: task #488 round 10 (2026-06-08). An
+      Post-mortem triggers: task #488 round 10 (2026-06-08; subagent
+      contradiction condition), task #664 round 18 (2026-06-28;
+      enumerated-fallback-exhaustion / same-signature-repetition condition). An
       autonomous session treated an `experiment-implementer` BLOCKED
       verdict ("the gate set is internally contradictory; I cannot pick
       a science direction") as a valid fork and descoped the recipe
@@ -2119,7 +2158,7 @@ markers:
   - kind: "epm:failure"
     posted_by: specialist
     when: "on crash"
-    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code | data line. `data` (a factual gap only the user can fill) is posted per the halt-criterion contract — the task parks at status:blocked and does NOT enter the Step 7 crash-fix routing, which covers infra | code only; scripts/failure_classifier.py likewise emits only infra | code."
+    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code | data line. SHOULD ALSO include an assert_tag: <stable-token> line — the named assertion tag (e.g. [a7-assert] root-cause label) or exception type — so the Step 7 crash-fix circuit-breaker (§ pivot_criteria.plan_contradiction_replan) can group repeat failures by a stable (phase, failure_class, assert_tag) signature; opt-in and backward-compatible (absent → the predicate falls back to the exception-type / command-family / note-hash chain, task_workflow.circuit_breaker_should_fire). `data` (a factual gap only the user can fill) is posted per the halt-criterion contract — the task parks at status:blocked and does NOT enter the Step 7 crash-fix routing, which covers infra | code only; scripts/failure_classifier.py likewise emits only infra | code."
   - kind: "epm:failure-classify-error"
     posted_by: skill
     when: "Step 7 (epm:failure body missing failure_class AND scripts/failure_classifier.py exited non-zero)"
