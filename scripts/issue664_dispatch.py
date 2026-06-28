@@ -184,31 +184,20 @@ def _select_cells(args) -> list[C.Cell]:
 def _vllm_engine(max_model_len: int):
     from vllm import LLM
 
-    # #664 r10 recovery: CUDA graphs trigger an EngineCore futex deadlock on
-    # this Qwen-2.5-7B + vLLM v0.11 combo across BOTH pod hosts the recovery
-    # tried (epm:progress v54). Env-overridable so the deadlock-prone default
-    # can be flipped without a code edit on the next round.
-    enforce_eager = os.environ.get("EPM_VLLM_ENFORCE_EAGER", "0") == "1"
-    # #664 r11 recovery: with enforce_eager NOT enough (the first
-    # `_greedy(300_prompts, max_new=1024)` from `_elicit_secure_code` still
-    # deadlocks the EngineCore on futex_wait_queue even with CUDA graphs
-    # bypassed -- epm:progress v55), the remaining engine-config suspect is
-    # vLLM v0.11.0's prefix-cache scheduler: the secure-code batch is the FIRST
-    # call where all 300 prompts share one long system-prompt prefix
-    # ("Write secure, well-validated code..."), unlike the earlier marker_R
-    # `_greedy` calls (per-source system prompts, no shared prefix at scale).
-    # Default "1" preserves current (prefix-caching-on) behavior; "0" disables
-    # it. `enable_prefix_caching` is a valid EngineArgs field accepted via
-    # LLM(**kwargs) in vLLM 0.11.0 (verified inspect.signature + EngineArgs
-    # fields).
-    enable_prefix_caching = os.environ.get("EPM_VLLM_PREFIX_CACHING", "1") == "1"
+    # #664 r10/r11/r12 recovery: CUDA graphs + the vLLM v0.11.0 prefix-cache
+    # scheduler trigger an EngineCore futex deadlock on this Qwen-2.5-7B combo
+    # (the first `_greedy(300_prompts, max_new=1024)` from `_elicit_secure_code`
+    # shares one long system-prompt prefix across all 300 prompts). Both knobs
+    # are env-overridable so the deadlock-prone defaults can be flipped without a
+    # code edit. The two reads are centralized in `C.vllm_env_kwargs()` so the
+    # eval/extract LLM(...) sites inherit the SAME knobs (#664 r12 concern
+    # p2-llm-constructors-prefix-cache).
     return LLM(
         model=C.QWEN_ID,
         dtype="bfloat16",
         gpu_memory_utilization=0.80,
         max_model_len=max_model_len,
-        enforce_eager=enforce_eager,
-        enable_prefix_caching=enable_prefix_caching,
+        **C.vllm_env_kwargs(),
     )
 
 

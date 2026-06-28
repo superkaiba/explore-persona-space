@@ -153,7 +153,11 @@ def _gen_completions(
         dtype="bfloat16",
         gpu_memory_utilization=0.80,
         max_model_len=2 * C.MAX_NEW_TOKENS + 1024,
-        enforce_eager=False,
+        # #664 r12: inherit the dispatcher's vLLM v0.11.0 deadlock-escape knobs
+        # (enforce_eager / enable_prefix_caching) so the shared-prefix EngineCore
+        # futex deadlock does not recur at p2 eval-gen on the AdvBench battery
+        # (concern p2-llm-constructors-prefix-cache).
+        **C.vllm_env_kwargs(),
     )
     try:
         sp = SamplingParams(n=n_samples, temperature=temperature, max_tokens=max_new)

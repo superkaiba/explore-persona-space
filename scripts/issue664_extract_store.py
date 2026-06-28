@@ -97,7 +97,11 @@ def _generate_greedy(model_path: str, prompts: list[str], *, max_new_tokens: int
         dtype="bfloat16",
         gpu_memory_utilization=0.80,
         max_model_len=2 * C.MAX_NEW_TOKENS + 1024,
-        enforce_eager=False,
+        # #664 r12: inherit the dispatcher's vLLM v0.11.0 deadlock-escape knobs
+        # (enforce_eager / enable_prefix_caching) so the shared-prefix EngineCore
+        # futex deadlock does not recur at p2 extract-gen (concern
+        # p2-llm-constructors-prefix-cache).
+        **C.vllm_env_kwargs(),
     )
     try:
         sp = SamplingParams(temperature=0.0, max_tokens=max_new_tokens)

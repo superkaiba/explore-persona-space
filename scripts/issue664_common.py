@@ -89,6 +89,42 @@ DEFAULT_SEED = 42
 MARKER_REPLICATION_SEED = 1042  # write-direction seed-stability POINT ESTIMATE (#604)
 
 
+# ── vLLM engine kwargs (single source of truth for every issue664 LLM(...)) ────
+def _parse_env_bool(name: str, default: str) -> bool:
+    """Case-insensitive 0/1/true/false/yes/no/on/off env bool; raises on typos.
+
+    Failing fast on an unrecognized value (e.g. ``"ture"``) is deliberate: a
+    silent default would re-disable prefix caching and re-introduce the #664 r8
+    vLLM v0.11.0 EngineCore deadlock the knob exists to avoid.
+    """
+    raw = os.environ.get(name, default).strip().lower()
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    raise ValueError(
+        f"Invalid bool for {name}: {raw!r}; expected one of 0/1/true/false/yes/no/on/off"
+    )
+
+
+def vllm_env_kwargs() -> dict:
+    """Kwargs every issue664 ``LLM(...)`` constructor must pass.
+
+    Honors ``EPM_VLLM_ENFORCE_EAGER`` (default off -- CUDA graphs on) and
+    ``EPM_VLLM_PREFIX_CACHING`` (default on). Centralized so all three #664
+    production engine sites (dispatch ``_vllm_engine``, eval ``_gen_completions``,
+    extract ``_generate_greedy``) inherit the #664 r11/r12 deadlock-escape knobs
+    -- the shared-prefix EngineCore futex deadlock (vLLM v0.11.0 V1) recurs at
+    p2 eval-gen if any one site defaults ``enable_prefix_caching`` back to True
+    (concern p2-llm-constructors-prefix-cache). ``enable_prefix_caching`` is a
+    valid EngineArgs field accepted via ``LLM(**kwargs)`` in vLLM 0.11.0.
+    """
+    return {
+        "enforce_eager": _parse_env_bool("EPM_VLLM_ENFORCE_EAGER", "0"),
+        "enable_prefix_caching": _parse_env_bool("EPM_VLLM_PREFIX_CACHING", "1"),
+    }
+
+
 # ── Sources (battery instance ids) ────────────────────────────────────────────
 # The plan's gate-spine sources are battery persona instances + the bare default
 # (NOT PERSONAS dict entries -- surgeon/programmer are not in PERSONAS, they live
