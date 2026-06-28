@@ -4487,8 +4487,8 @@
     "706": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/706",
-      "status": "proposed",
+      "path": "tasks/planning/706",
+      "status": "planning",
       "title": "/daily held-items route to PM-tracked tasks + PM digest line (stop the rot, add independent review)"
     },
     "707": {
