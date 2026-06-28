@@ -4375,8 +4375,8 @@
     "692": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/692",
-      "status": "proposed",
+      "path": "tasks/planning/692",
+      "status": "planning",
       "title": "workflow-fix: autonomous_session_watch.py compose RunPod no-port wedge predicate (#664 backstop)"
     },
     "7": {
