@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 692,
+  "highest_id": 693,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4378,6 +4378,13 @@
       "path": "tasks/planning/692",
       "status": "planning",
       "title": "workflow-fix: autonomous_session_watch.py compose RunPod no-port wedge predicate (#664 backstop)"
+    },
+    "693": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/693",
+      "status": "proposed",
+      "title": "Parallelize issue664 dispatcher p0: 8-way GPU fan + interleave base-extraction with the judge-batch wait (sibling to #676)"
     },
     "7": {
       "has_clean_result": false,
