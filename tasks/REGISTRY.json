@@ -4411,8 +4411,8 @@
       "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, causally localize whether finetuning a behavior into a context shifts the context vector (input to the map M) or the context\u2192behavior mapping M (the function) via cross-model activation patching at the read layer, reading both the on-policy behavioral rate and the answer-side activation profile.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/697",
-      "status": "approved",
+      "path": "tasks/running/697",
+      "status": "running",
       "title": "Causal context-vector patch on #537 adapters: does finetuning a behavior shift the context vector or the context\u2192behavior mapping?"
     },
     "7": {
