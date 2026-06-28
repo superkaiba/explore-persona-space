@@ -789,8 +789,12 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   FAIL a `## Results` / `## Methodology` multi-sentence wall that should
   be bullets (overlaps Lens 6; flag under whichever you reach first):
   PASS|FAIL
-- Takeaways bullets ≤30 words, figure captions ≤60 words (verifier
-  check 20 WARNs over both): PASS|FAIL
+- Takeaways bullets ≤30 words, figure captions ≤60 words: these are
+  **WARN-level** caps — verifier check 20 WARNs (never FAILs) over both, so
+  a small overage (e.g. a 31-word bullet) is a non-blocking tightening note,
+  NOT a gate-blocking FAIL. Report it as WARN; do NOT FAIL the lens on a
+  1-3-word cap overage (aligns with verify_task_body.py + the Claude critic —
+  diverging FAILs here drove needless revise rounds, #683 2026-06-27): WARN
 - Total-prose budget (WARN-only, ~800 words + 250 per live follow-up
   round): when over, the body used round-compression hygiene (superseded
   results → `<details>Superseded by round N</details>`; absorbed
