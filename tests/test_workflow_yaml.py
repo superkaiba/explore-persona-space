@@ -291,13 +291,15 @@ def test_gates_full_shape():
     # campaign-runner batch on task #586).
     park_and_wait_names = {g.name for g in workflow.gates.park_and_wait}
     assert park_and_wait_names == {"awaiting_promotion", "campaign_brief_approval"}
-    # 6 conditional gates: TDD + experiment_goal_refine (clarifier/planner
+    # 7 conditional gates: TDD + experiment_goal_refine (clarifier/planner
     # Goal-sharpening, added 2026-05-24 alongside the Goal contract) +
     # whack_a_mole_pivot (Fix #6) + compute_deviation_resolution (Fix #4),
     # both added by the #397 post-mortem batch on 2026-05-27, +
     # living_docs_update (living-docs integration, 2026-05-28) +
     # fact_candidates (gate id=14, added for the fact-teaching pod-driver
-    # workflow on tasks #407 / #444).
+    # workflow on tasks #407 / #444) + related_work_positioning (results-driven
+    # related-work-finder integration, gate id=17, added 2026-06-28 by task
+    # #694).
     conditional_names = {g.name for g in workflow.gates.conditional}
     assert conditional_names == {
         "tdd_gate",
@@ -306,6 +308,7 @@ def test_gates_full_shape():
         "compute_deviation_resolution",
         "living_docs_update",
         "fact_candidates",
+        "related_work_positioning",
     }
 
 
