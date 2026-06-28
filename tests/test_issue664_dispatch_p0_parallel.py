@@ -650,6 +650,45 @@ def test_ic_secure_resume_skip_requires_all_ctx_keys(monkeypatch, tmp_path):
     assert D._p0_unit_done(unit, smoke=False, cells=cells) is True
 
 
+def test_p0_unit_done_baseline_raw_only_not_complete(monkeypatch, tmp_path):
+    """Resume-skip must reject a raw-only NON-smoke baseline unit.
+
+    Plan v2 §3.6 / §4.6: the baseline resume predicate must match
+    ``_aggregate_baseline_propensity``'s completeness gate (raw AND, when not
+    smoke, the post-judge ``__scores.json``). The raw cache is written eagerly
+    at generation time, BEFORE the judge submit/reconcile, so a unit that
+    crashes in the raw-without-scores window (the recurring
+    BatchDeadlineExceeded / 529 / JSONDecode judge-crash class) would, with a
+    raw-only predicate, be skipped forever on resume -> the aggregator
+    ``RuntimeError``s permanently (manual cache deletion required). This is the
+    regression test for the round-1 code-review ensemble FAIL: raw-only is
+    INCOMPLETE non-smoke, COMPLETE under smoke (the aggregator skips the judge
+    under smoke), and raw+scores is always complete.
+    """
+    cache = tmp_path / "cache"
+    monkeypatch.setattr(D, "CACHE_ROOT", cache)
+    baseline_dir = cache / "baseline_raw"
+    baseline_dir.mkdir(parents=True, exist_ok=True)
+    ctx = "sycophancy__src1"
+    unit = D.P0Unit("baseline", ctx)
+
+    # No cache at all -> not done (sanity).
+    assert D._p0_unit_done(unit, smoke=False) is False
+    assert D._p0_unit_done(unit, smoke=True) is False
+
+    # Raw written but the deferred judge never reconciled (no scores).
+    (baseline_dir / f"{ctx}.json").write_text("{}")
+    # Non-smoke: raw-only is INCOMPLETE (matches the aggregator's raw+scores gate).
+    assert D._p0_unit_done(unit, smoke=False) is False
+    # Smoke: the aggregator skips the judge, so raw alone is sufficient.
+    assert D._p0_unit_done(unit, smoke=True) is True
+
+    # Judge reconciled -> scores present -> done in both modes.
+    (baseline_dir / f"{ctx}__scores.json").write_text("{}")
+    assert D._p0_unit_done(unit, smoke=False) is True
+    assert D._p0_unit_done(unit, smoke=True) is True
+
+
 # ---------------------------------------------------------------------------
 # 4.7 disjoint-claim assert
 # ---------------------------------------------------------------------------
