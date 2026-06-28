@@ -46,6 +46,7 @@ from workflow_lint import (  # noqa: E402
     check_marker_registry,
     check_no_workflow_improver_spawn,
     check_script_references,
+    check_skill_references,
     check_upload_as_file,
     check_wandb_required,
 )
@@ -505,6 +506,211 @@ def test_check_script_refs_repo_tree_is_clean():
     assert errors == [], (
         "committed .claude/ agents/skills reference scripts that do not "
         "exist under scripts/:\n" + "\n".join(errors)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_skill_references`` (skill-rename / skill-retirement
+# rot class, #713/#714). Each case writes a tiny markdown file under
+# ``tmp_path`` carrying a backtick-delimited ``/<skill-name>`` slash-command
+# token plus a fixture ``skills/`` dir, then calls
+# ``check_skill_references(roots=[...], skills_dir=..., allowlist=...)``.
+# Mirrors the ``check_script_references`` block above, swapping the
+# scripts_dir hook for skills_dir + an explicit allowlist override.
+# ---------------------------------------------------------------------------
+
+
+def test_check_skill_refs_pass_live_skill(tmp_path):
+    """A `/skill` token resolving to a live skill dir under skills/ PASSes."""
+    skills = tmp_path / "skills"
+    (skills / "weekly").mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text("Run `/weekly` on Wednesdays.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (live skill dir), got: {errors}"
+
+
+def test_check_skill_refs_pass_live_skill_with_args(tmp_path):
+    """A `/skill <args>` invocation matches only the skill name (the trailing
+    lookahead closes on whitespace) and resolves to the live dir."""
+    skills = tmp_path / "skills"
+    (skills / "issue").mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Boot with `/issue <N>` then `/issue 137 --auto`.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (args-form, live skill), got: {errors}"
+
+
+def test_check_skill_refs_pass_dir_without_skill_md(tmp_path):
+    """Resolution is by skill DIRECTORY existence, not `*/SKILL.md`:
+    clean-results is a live skill dir with no SKILL.md (SPEC.md/exemplars/),
+    so `/clean-results` must PASS."""
+    skills = tmp_path / "skills"
+    (skills / "clean-results").mkdir(parents=True)
+    (skills / "clean-results" / "SPEC.md").write_text("spec\n")
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("See `/clean-results`.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (dir without SKILL.md), got: {errors}"
+
+
+def test_check_skill_refs_fail_unresolved(tmp_path):
+    """A `/skill` token resolving neither to a live dir nor the allowlist FAILs
+    with a file:line-anchored error naming the token."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text("Run `/ghost-skill` here.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/ghost-skill" in errors[0]
+    assert "SKILL.md:1" in errors[0]
+
+
+def test_check_skill_refs_pass_allowlist_exact(tmp_path):
+    """An allowlisted exact token (user-global / builtin command) PASSes even
+    with an empty skills dir."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Self-pass `/humanize quick` before returning.\n")
+    errors = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset({"humanize"})
+    )
+    assert errors == [], f"expected PASS (allowlisted exact token), got: {errors}"
+
+
+def test_check_skill_refs_pass_namespace_prefix(tmp_path):
+    """An allowlisted `<plugin>:` namespace prefix resolves every
+    `/<plugin>:<member>` without per-member enumeration."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/codex:rescue` then `/codex:setup`.\n")
+    errors = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset({"codex:"})
+    )
+    assert errors == [], f"expected PASS (namespace prefix), got: {errors}"
+
+
+def test_check_skill_refs_fail_unallowlisted_namespace(tmp_path):
+    """A plugin-namespaced token whose prefix is NOT allowlisted FAILs."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/other:thing`.\n")
+    errors = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset({"codex:"})
+    )
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/other:thing" in errors[0]
+
+
+def test_check_skill_refs_pass_namespace_on_disk(tmp_path):
+    """Forward-compat: a colon-named skill DIRECTORY resolves a namespaced
+    token even with no allowlist prefix."""
+    skills = tmp_path / "skills"
+    (skills / "code-review:code-review").mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Run `/code-review:code-review`.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (namespace dir on disk), got: {errors}"
+
+
+def test_check_skill_refs_does_not_match_path_token(tmp_path):
+    """The central FP control: a backticked PATH (`/workspace/logs/x`, trailing
+    `/`) and bare prose paths (`/tmp/foo`, `/mnt/eps`, no backtick) must NOT
+    match — zero false positives."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Sentinel at `/workspace/logs/x` and bare /tmp/foo and /mnt/eps.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (path tokens not matched), got: {errors}"
+
+
+def test_check_skill_refs_ignores_fenced_code(tmp_path):
+    """Lines inside fenced code blocks (``` / ~~~) are skipped: an HTML close
+    tag / sed / regex fragment carrying `/ghost` must NOT FAIL."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("```\n`/ghost` inside a fence\nsed -n '/^---$/p'\n```\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (fenced code skipped), got: {errors}"
+
+
+def test_check_skill_refs_historical_opt_out(tmp_path):
+    """A dead `/skill` ref on a line carrying the shared
+    `<!-- lint: historical-ref -->` opt-out is a one-off narrative citation
+    and must NOT FAIL."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Retired `/oldskill`. <!-- lint: historical-ref -->\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (opted-out historical ref), got: {errors}"
+
+
+def test_check_skill_refs_opt_out_is_per_line(tmp_path):
+    """The opt-out covers ONLY its own line: a dead ref on another line of the
+    same file still FAILs and the error names the second line."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text(
+        "Retired `/oldskill`. <!-- lint: historical-ref -->\nThen run `/oldskill` again.\n"
+    )
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "a.md:2" in errors[0]
+
+
+def test_check_skill_refs_mixed_good_and_dangling(tmp_path):
+    """A file with one resolving and one dangling ref reports only the
+    dangling one, anchored to its line."""
+    skills = tmp_path / "skills"
+    (skills / "issue").mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text("Good `/issue`.\nBad `/ghost`.\n")
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "/ghost" in errors[0]
+    assert "a.md:2" in errors[0]
+
+
+def test_check_skill_refs_repo_tree_is_clean():
+    """Green-on-main guard: the committed workflow surface (agents + skills +
+    rules + CLAUDE.md + workflow.yaml) carries no unresolved skill refs under
+    the production SKILL_REF_ALLOWLIST. This is the regression backstop the
+    durable fix installs — it FAILs naming any new dangling token."""
+    errors = check_skill_references()
+    assert errors == [], (
+        "committed workflow surface carries unresolved skill references "
+        "(not a live skill dir and not in SKILL_REF_ALLOWLIST):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_skill_refs_cli_exits_zero():
+    """The dedicated --check-skill-refs flag must exist and pass on the
+    committed tree (mirrors test_workflow_lint_check_heredoc_dotenv_cli...)."""
+    result = _run("--check-skill-refs")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-skill-refs failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
 
 
