@@ -188,7 +188,10 @@ def render_hero(result: dict, out_path: Path) -> None:
     set_paper_style()
     import matplotlib.pyplot as plt
 
-    pal = paper_palette_role()
+    # paper_palette_role(role) returns a single hex string per role.
+    c_primary = paper_palette_role("primary")
+    c_neutral = paper_palette_role("neutral")
+    c_control = paper_palette_role("control")
     fig, axes = plt.subplots(2, 4, figsize=(13, 6), sharey="row")
     for ci_col, behavior in enumerate(BEHAVIORS):
         s = result["by_behavior"][behavior]
@@ -200,14 +203,14 @@ def render_hero(result: dict, out_path: Path) -> None:
                 [ci["mean"]],
                 yerr=[[ci["mean"] - ci["ci_low"]], [ci["ci_high"] - ci["mean"]]],
                 fmt="o",
-                color=pal["primary"],
+                color=c_primary,
                 capsize=4,
             )
         null = s["null_floor_ci"]
         if not np.isnan(null["mean"]):
-            ax.axhspan(null["ci_low"], null["ci_high"], color=pal["neutral"], alpha=0.25)
-        ax.axhline(BAND_LOW, ls="--", lw=0.8, color=pal["control"])
-        ax.axhline(BAND_HIGH, ls="--", lw=0.8, color=pal["control"])
+            ax.axhspan(null["ci_low"], null["ci_high"], color=c_neutral, alpha=0.25)
+        ax.axhline(BAND_LOW, ls="--", lw=0.8, color=c_control)
+        ax.axhline(BAND_HIGH, ls="--", lw=0.8, color=c_control)
         ax.set_title(f"{behavior}\n({s['verdict']})", fontsize=9)
         ax.set_xticks([])
         if ci_col == 0:

@@ -393,16 +393,47 @@ def run_cell(args) -> dict:
     return result
 
 
+def _marker_logp_at_slot(model, full_ids, layer, patch_positions, replacement_vec) -> float:
+    """log P(marker id 83399) at the post-response slot under an optional patch.
+
+    Teacher-forced: the marker DV is judge-free (the #537/#651 marker recipe), so
+    no free generation. The slot is the LAST token of ``full_ids`` (the
+    marker-stripped FT response ends there; the next-token distribution at that
+    position is where ` ※` would be emitted). Returns the log-prob of token
+    83399. ``patch_positions`` empty / ``replacement_vec`` None => unpatched.
+    """
+    handle = None
+    if patch_positions and replacement_vec is not None:
+        handle = cv_patch.make_cv_patch_hook(
+            model.model.layers[layer], patch_positions, replacement_vec
+        )
+    try:
+        with torch.no_grad():
+            out = model(full_ids.unsqueeze(0).to(model.device))
+        logits = out.logits[0, -1, :].float()
+        logp = torch.log_softmax(logits, dim=-1)[MARKER_TOKEN_ID]
+        return float(logp.cpu())
+    finally:
+        if handle is not None:
+            handle.remove()
+
+
 def _capture_e_generations(
     base, trained, tokenizer, personas, questions, layer, arm, max_new_tokens
 ) -> list[dict]:
-    """Per (persona, question): unpatched / P↑ / P↓ on-policy generations + marker DV.
+    """Per (persona, question): the behavioral E DV under unpatched / P↑ / P↓.
 
-    For the marker arm, computes the judge-free four-float slot DV inline (log P
-    of token 83399 at the post-response slot, trained - base) on the FT model's
-    own response. For em/syc/fact, captures the generated text for downstream
-    Sonnet judging (the analyze phase). E-generation cap = max_new_tokens; the
-    behavioral judge-rate scoring is off-pod.
+    MARKER arm (judge-free): a teacher-forced four-float-style slot read — log
+    P(` ※`, id 83399) at the post-response slot of the FT model's OWN
+    marker-stripped response, under each condition (NO free generation; the
+    marker DV is a TF log-prob, plan §4.5 / marker-leakage-measurement.md). The
+    E-space f_CV^E for marker is computed downstream from these log-probs.
+
+    em/syc/fact arms: capture the model's own ON-POLICY generation under each
+    condition for downstream Sonnet judging (the off-pod judge phase — the #537
+    judge pools are not yet vendored; see the dispatcher's deferred concern).
+    NOTE this is the dominant compute (see plan §9.1 / the round-2
+    epm:compute-deviation: full-panel x 4 conditions x <=2048-token greedy).
     """
     records: list[dict] = []
     for p_name, p_prompt in personas.items():
@@ -411,27 +442,53 @@ def _capture_e_generations(
             enc = tokenizer(prompt_text, return_tensors="pt", add_special_tokens=False)
             prompt_ids = enc["input_ids"][0]
             patch_pos = cv_patch.content_patch_pos(tokenizer, p_prompt, q)
-            # context residuals for the patch donors at this layer.
             c0 = _context_residuals(base, prompt_ids, [layer], patch_pos)[layer]
             cplus = _context_residuals(trained, prompt_ids, [layer], patch_pos)[layer]
-            gen_kw = dict(max_new_tokens=max_new_tokens, do_sample=False)
-            rec = {
-                "persona": p_name,
-                "q_idx": qi,
-                "question": q,
-                "unpatched_base": cv_patch.patched_generate(
-                    base, tokenizer, prompt_ids, layer, [], None, **gen_kw
-                ),
-                "unpatched_ft": cv_patch.patched_generate(
-                    trained, tokenizer, prompt_ids, layer, [], None, **gen_kw
-                ),
-                "p_up": cv_patch.patched_generate(
-                    base, tokenizer, prompt_ids, layer, [patch_pos], cplus, **gen_kw
-                ),
-                "p_down": cv_patch.patched_generate(
-                    trained, tokenizer, prompt_ids, layer, [patch_pos], c0, **gen_kw
-                ),
-            }
+            if arm == _MARKER_ARM:
+                # FT model's own marker-stripped response defines the slot.
+                r_ft_ids = _greedy_generate_ids(trained, tokenizer, prompt_text, max_new_tokens)
+                r_ft_ids = _strip_trailing_marker_and_eos(r_ft_ids, MARKER_TOKEN_ID, tokenizer)
+                full_ids, _plen = _build_full_sequence_ids(tokenizer, prompt_text, r_ft_ids)
+                rec = {
+                    "persona": p_name,
+                    "q_idx": qi,
+                    "question": q,
+                    "dv_kind": "marker_logp",
+                    # trained - base subtraction is done downstream; persist all
+                    # four conditions' slot log-probs.
+                    "marker_logp_unpatched_ft": _marker_logp_at_slot(
+                        trained, full_ids, layer, [], None
+                    ),
+                    "marker_logp_unpatched_base": _marker_logp_at_slot(
+                        base, full_ids, layer, [], None
+                    ),
+                    "marker_logp_p_up": _marker_logp_at_slot(
+                        base, full_ids, layer, [patch_pos], cplus
+                    ),
+                    "marker_logp_p_down": _marker_logp_at_slot(
+                        trained, full_ids, layer, [patch_pos], c0
+                    ),
+                }
+            else:
+                gen_kw = dict(max_new_tokens=max_new_tokens, do_sample=False)
+                rec = {
+                    "persona": p_name,
+                    "q_idx": qi,
+                    "question": q,
+                    "dv_kind": "generation",
+                    "unpatched_base": cv_patch.patched_generate(
+                        base, tokenizer, prompt_ids, layer, [], None, **gen_kw
+                    ),
+                    "unpatched_ft": cv_patch.patched_generate(
+                        trained, tokenizer, prompt_ids, layer, [], None, **gen_kw
+                    ),
+                    "p_up": cv_patch.patched_generate(
+                        base, tokenizer, prompt_ids, layer, [patch_pos], cplus, **gen_kw
+                    ),
+                    "p_down": cv_patch.patched_generate(
+                        trained, tokenizer, prompt_ids, layer, [patch_pos], c0, **gen_kw
+                    ),
+                }
             records.append(rec)
     return records
 
