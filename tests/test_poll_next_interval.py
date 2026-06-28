@@ -436,6 +436,59 @@ def test_backends_base_pollresult_defaults_short_and_runpod_passes_through() -> 
     assert "next_interval=raw.next_interval" in runpod_src
 
 
+# ── #664 zombie-GPU stall_reason passthrough (RunPod lane) ───────────────────
+
+
+def test_backends_base_pollresult_defaults_stall_reason_to_none() -> None:
+    """``stall_reason`` defaults to ``None`` so SLURM / GCP (which never set
+    it) serialize identically and the field is absent from a healthy tick."""
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    from explore_persona_space.backends.base import PollResult as BasePollResult
+
+    base_result = BasePollResult(
+        status="running",
+        current_phase="training",
+        new_milestone=False,
+        last_log_mtime_sec_ago=10,
+        pid_alive=True,
+        log_tail_excerpt="",
+    )
+    assert base_result.stall_reason is None
+
+
+def test_backend_poll_serializes_zombie_stall_reason_passthrough() -> None:
+    """``_serialize_poll_result`` carries the #664 zombie-GPU stall reason
+    through verbatim (the RunPod lane sets it when poll_once overrides a
+    masked ``running`` to ``stalled``)."""
+    result = SimpleNamespace(
+        status="stalled",
+        current_phase="eval",
+        new_milestone=False,
+        last_log_mtime_sec_ago=10,
+        pid_alive=True,
+        log_tail_excerpt="",
+        gate=None,
+        sentinels_processed=0,
+        phase_log_mtime_sec_ago=10**9,
+        shard_log_mtime_sec_ago=10**9,
+        gpu_util="95",
+        next_interval=540,
+        stall_reason="vllm_worker_dead_zombie_gpu",
+    )
+    assert bp._serialize_poll_result(result)["stall_reason"] == "vllm_worker_dead_zombie_gpu"
+
+
+def test_runpod_poll_copies_stall_reason_through_from_poll_once() -> None:
+    """The slice-6 RunPod rewrap MUST copy ``stall_reason`` from
+    ``poll_once``'s result. This rewrap is the only seam between the
+    zombie-GPU probe (in ``poll_once``) and
+    ``backend_poll._serialize_poll_result``; without the copy the
+    distinguishing reason is silently dropped on the slice-6 RunPod path
+    even though the serializer already reads it (#664)."""
+    runpod_src = (REPO_ROOT / "src/explore_persona_space/backends/runpod.py").read_text()
+    assert "stall_reason=raw.stall_reason" in runpod_src
+
+
 # ── orchestrator-fallback semantics (SKILL.md) ───────────────────────────────
 
 

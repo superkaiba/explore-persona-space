@@ -359,6 +359,20 @@ class RunPodBackend(ComputeBackend):
         # backends.base.PollResult)`` check would fail on the RunPod
         # return). The field set is held in sync by the docstring
         # contract in ``base.py``.
+        #
+        # ``stall_reason`` (#664) MUST be copied through: ``poll_once`` runs
+        # the zombie-GPU-allocation probe and sets
+        # ``stall_reason="vllm_worker_dead_zombie_gpu"`` when it overrides a
+        # masked ``running`` verdict to ``stalled`` (a dead CUDA-worker PID
+        # still holding VRAM while the EngineCore main process keeps the
+        # session-CPU-advancing override alive). RunPod is the ONLY lane that
+        # produces this value, and this rewrap is the slice-6 path's only seam
+        # to ``poll_once``; dropping it here silently strips the distinguishing
+        # reason before ``backend_poll._serialize_poll_result`` can surface it
+        # (that serializer already reads ``stall_reason`` via ``getattr``, so
+        # the whole chain is wired EXCEPT this copy). The detection itself is
+        # NOT re-implemented here — it lives in ``poll_once``; this line is the
+        # missing passthrough, not a second probe.
         return PollResult(
             status=raw.status,
             current_phase=raw.current_phase,
@@ -372,6 +386,7 @@ class RunPodBackend(ComputeBackend):
             shard_log_mtime_sec_ago=raw.shard_log_mtime_sec_ago,
             gpu_util=raw.gpu_util,
             next_interval=raw.next_interval,
+            stall_reason=raw.stall_reason,
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:
