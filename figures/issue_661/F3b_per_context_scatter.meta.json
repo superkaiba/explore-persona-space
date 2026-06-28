@@ -1,0 +1,3162 @@
+{
+  "commit": "cc1e38947a",
+  "created": "2026-06-28T08:32:45Z",
+  "figsize": [
+    12.0,
+    4.0
+  ],
+  "points": [
+    {
+      "projection scalar\n(per-method z-scored)": 0.2068767324796351,
+      "judged expression rate E0(ctx)": 0.0515,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9626560727583304,
+      "judged expression rate E0(ctx)": 0.088,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.770534685905327,
+      "judged expression rate E0(ctx)": 0.0705,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1441645784363574,
+      "judged expression rate E0(ctx)": 0.063,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.3497700602148177,
+      "judged expression rate E0(ctx)": 0.046,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.748170427064134,
+      "judged expression rate E0(ctx)": 0.07,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.19972136589029454,
+      "judged expression rate E0(ctx)": 0.033,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.4132880099228845,
+      "judged expression rate E0(ctx)": 0.056,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8861016575744977,
+      "judged expression rate E0(ctx)": 0.043,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.33790083856883596,
+      "judged expression rate E0(ctx)": 0.178,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6194241534233046,
+      "judged expression rate E0(ctx)": 0.064,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9070196090421263,
+      "judged expression rate E0(ctx)": 0.0485,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7146459326652578,
+      "judged expression rate E0(ctx)": 0.047,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.5217667503854986,
+      "judged expression rate E0(ctx)": 0.0415,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.027597500603733078,
+      "judged expression rate E0(ctx)": 0.055,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.13212131528919735,
+      "judged expression rate E0(ctx)": 0.07753876938469234,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6148132900668406,
+      "judged expression rate E0(ctx)": 0.1775,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9772048471377089,
+      "judged expression rate E0(ctx)": 0.048,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.7315259127543057,
+      "judged expression rate E0(ctx)": 0.0735,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.26178064397741974,
+      "judged expression rate E0(ctx)": 0.0815,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.37862631433487604,
+      "judged expression rate E0(ctx)": 0.052,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9469764407628785,
+      "judged expression rate E0(ctx)": 0.067,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.3130537210995472,
+      "judged expression rate E0(ctx)": 0.135567783891946,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.11335474286521642,
+      "judged expression rate E0(ctx)": 0.0755,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9031451838104012,
+      "judged expression rate E0(ctx)": 0.046,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.04986509798864556,
+      "judged expression rate E0(ctx)": 0.0525,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.01631088570143109,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9263225542928075,
+      "judged expression rate E0(ctx)": 0.0865,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.369063172944966,
+      "judged expression rate E0(ctx)": 0.117,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8082091364376007,
+      "judged expression rate E0(ctx)": 0.0505,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9529683905513849,
+      "judged expression rate E0(ctx)": 0.0445,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.18229855164675113,
+      "judged expression rate E0(ctx)": 0.0585,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.07762972200276139,
+      "judged expression rate E0(ctx)": 0.0495,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.3365796304205203,
+      "judged expression rate E0(ctx)": 0.07,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.2832617726571354,
+      "judged expression rate E0(ctx)": 0.076,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8037132605817459,
+      "judged expression rate E0(ctx)": 0.056,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.027020502392793085,
+      "judged expression rate E0(ctx)": 0.068,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.7347827143908512,
+      "judged expression rate E0(ctx)": 0.0885,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6024309673374372,
+      "judged expression rate E0(ctx)": 0.0535,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6942519897769521,
+      "judged expression rate E0(ctx)": 0.0935,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6734416072615055,
+      "judged expression rate E0(ctx)": 0.3255,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7891964566134433,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.2662613446549464,
+      "judged expression rate E0(ctx)": 0.07403701850925462,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.772039739563456,
+      "judged expression rate E0(ctx)": 0.2615,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.28900200651272545,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.90309797934363,
+      "judged expression rate E0(ctx)": 0.17167167167167166,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.4254665143854044,
+      "judged expression rate E0(ctx)": 0.0865,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1571882523404315,
+      "judged expression rate E0(ctx)": 0.052,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7085186826840223,
+      "judged expression rate E0(ctx)": 0.0595,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7462979349321607,
+      "judged expression rate E0(ctx)": 0.0635,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.03944389892326472,
+      "judged expression rate E0(ctx)": 0.0515,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1593026680730876,
+      "judged expression rate E0(ctx)": 0.088,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.32175363912230404,
+      "judged expression rate E0(ctx)": 0.0705,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.39968629551814816,
+      "judged expression rate E0(ctx)": 0.063,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.641631515062249,
+      "judged expression rate E0(ctx)": 0.046,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.1585845279274047,
+      "judged expression rate E0(ctx)": 0.07,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6271731321519568,
+      "judged expression rate E0(ctx)": 0.033,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.20074429686576853,
+      "judged expression rate E0(ctx)": 0.056,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.22776073143450604,
+      "judged expression rate E0(ctx)": 0.043,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.48624804869110966,
+      "judged expression rate E0(ctx)": 0.178,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.541432157331075,
+      "judged expression rate E0(ctx)": 0.064,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.4629512451670952,
+      "judged expression rate E0(ctx)": 0.0485,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.632362713241761,
+      "judged expression rate E0(ctx)": 0.047,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.613494214258522,
+      "judged expression rate E0(ctx)": 0.0415,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.05341611677481842,
+      "judged expression rate E0(ctx)": 0.055,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7335580035073855,
+      "judged expression rate E0(ctx)": 0.07753876938469234,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.4304540934741303,
+      "judged expression rate E0(ctx)": 0.1775,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9056930916566694,
+      "judged expression rate E0(ctx)": 0.048,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.1258400863568685,
+      "judged expression rate E0(ctx)": 0.0735,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.5368530086047705,
+      "judged expression rate E0(ctx)": 0.0815,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.06874722431833938,
+      "judged expression rate E0(ctx)": 0.052,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.04563265294901765,
+      "judged expression rate E0(ctx)": 0.067,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.4630554203266115,
+      "judged expression rate E0(ctx)": 0.135567783891946,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8859566453948197,
+      "judged expression rate E0(ctx)": 0.0755,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.0668102203918797,
+      "judged expression rate E0(ctx)": 0.046,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.2460941592503184,
+      "judged expression rate E0(ctx)": 0.0525,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.05947326703609769,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6105591401573812,
+      "judged expression rate E0(ctx)": 0.0865,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.336100117405606,
+      "judged expression rate E0(ctx)": 0.117,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.43617591541188744,
+      "judged expression rate E0(ctx)": 0.0505,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8307018236697034,
+      "judged expression rate E0(ctx)": 0.0445,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.12654085995766087,
+      "judged expression rate E0(ctx)": 0.0585,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.23547039336829137,
+      "judged expression rate E0(ctx)": 0.0495,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9173178162912051,
+      "judged expression rate E0(ctx)": 0.07,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.20692158112203068,
+      "judged expression rate E0(ctx)": 0.076,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9787824988889817,
+      "judged expression rate E0(ctx)": 0.056,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7240015645413633,
+      "judged expression rate E0(ctx)": 0.068,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.4730277699826495,
+      "judged expression rate E0(ctx)": 0.0885,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.34166151416513346,
+      "judged expression rate E0(ctx)": 0.0535,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.3329227647443264,
+      "judged expression rate E0(ctx)": 0.0935,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.299183727363422,
+      "judged expression rate E0(ctx)": 0.3255,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5317250669582481,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.552511907783064,
+      "judged expression rate E0(ctx)": 0.07403701850925462,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.4138469305884362,
+      "judged expression rate E0(ctx)": 0.2615,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.09721076490309388,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.28828796114890765,
+      "judged expression rate E0(ctx)": 0.17167167167167166,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7967513883469924,
+      "judged expression rate E0(ctx)": 0.0865,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1625870993723366,
+      "judged expression rate E0(ctx)": 0.052,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.3978348852756145,
+      "judged expression rate E0(ctx)": 0.0595,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6118106217386468,
+      "judged expression rate E0(ctx)": 0.0635,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.3553353725230513,
+      "judged expression rate E0(ctx)": 0.0515,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.880130791674304,
+      "judged expression rate E0(ctx)": 0.088,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7421903691043105,
+      "judged expression rate E0(ctx)": 0.0705,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.3723397342922263,
+      "judged expression rate E0(ctx)": 0.063,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.5148410971032122,
+      "judged expression rate E0(ctx)": 0.046,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.5327268456416026,
+      "judged expression rate E0(ctx)": 0.07,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.38295207951564136,
+      "judged expression rate E0(ctx)": 0.033,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.1874079628197821,
+      "judged expression rate E0(ctx)": 0.056,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8363523061465615,
+      "judged expression rate E0(ctx)": 0.043,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.3712458037546423,
+      "judged expression rate E0(ctx)": 0.178,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7454939690626509,
+      "judged expression rate E0(ctx)": 0.064,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.0222826953949669,
+      "judged expression rate E0(ctx)": 0.0485,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.4653737488363114,
+      "judged expression rate E0(ctx)": 0.047,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.4795621111332287,
+      "judged expression rate E0(ctx)": 0.0415,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.18102393451405424,
+      "judged expression rate E0(ctx)": 0.055,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.1792076086155454,
+      "judged expression rate E0(ctx)": 0.07753876938469234,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.28355427364145663,
+      "judged expression rate E0(ctx)": 0.1775,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.204690841310391,
+      "judged expression rate E0(ctx)": 0.048,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.8555455972234967,
+      "judged expression rate E0(ctx)": 0.0735,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.0923240567388978,
+      "judged expression rate E0(ctx)": 0.0815,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.15032472624812185,
+      "judged expression rate E0(ctx)": 0.052,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8585426766251856,
+      "judged expression rate E0(ctx)": 0.067,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.4210338719054068,
+      "judged expression rate E0(ctx)": 0.135567783891946,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.10425998452015114,
+      "judged expression rate E0(ctx)": 0.0755,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9187963952683493,
+      "judged expression rate E0(ctx)": 0.046,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.17427484985959518,
+      "judged expression rate E0(ctx)": 0.0525,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.0998376888122864,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7762470130269601,
+      "judged expression rate E0(ctx)": 0.0865,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.444248630065295,
+      "judged expression rate E0(ctx)": 0.117,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9263768842352001,
+      "judged expression rate E0(ctx)": 0.0505,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.004011765013125,
+      "judged expression rate E0(ctx)": 0.0445,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.028181871135325744,
+      "judged expression rate E0(ctx)": 0.0585,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.16641181907236643,
+      "judged expression rate E0(ctx)": 0.0495,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2571111043715038,
+      "judged expression rate E0(ctx)": 0.07,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.2233693129603194,
+      "judged expression rate E0(ctx)": 0.076,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.0859700448178597,
+      "judged expression rate E0(ctx)": 0.056,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.12979650025295364,
+      "judged expression rate E0(ctx)": 0.068,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.658374616036425,
+      "judged expression rate E0(ctx)": 0.0885,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.4799627199590708,
+      "judged expression rate E0(ctx)": 0.0535,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7570505312684261,
+      "judged expression rate E0(ctx)": 0.0935,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.30455321483263775,
+      "judged expression rate E0(ctx)": 0.3255,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9046951856356322,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.200764639047382,
+      "judged expression rate E0(ctx)": 0.07403701850925462,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.58613275322527,
+      "judged expression rate E0(ctx)": 0.2615,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.11444549739810471,
+      "judged expression rate E0(ctx)": 0.05,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.787319385227321,
+      "judged expression rate E0(ctx)": 0.17167167167167166,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.4869383263286682,
+      "judged expression rate E0(ctx)": 0.0865,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.390339473632712,
+      "judged expression rate E0(ctx)": 0.052,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5350645937107583,
+      "judged expression rate E0(ctx)": 0.0595,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8354607467304513,
+      "judged expression rate E0(ctx)": 0.0635,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.3310110359652072,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.35189083675189176,
+      "judged expression rate E0(ctx)": 0.26976744186046514,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7210755524874823,
+      "judged expression rate E0(ctx)": 0.17757009345794392,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.6830983830787432,
+      "judged expression rate E0(ctx)": 0.205607476635514,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.874990416980037,
+      "judged expression rate E0(ctx)": 0.23255813953488372,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5991214082749041,
+      "judged expression rate E0(ctx)": 0.102803738317757,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9796365112445249,
+      "judged expression rate E0(ctx)": 0.2558139534883721,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.22397788882782527,
+      "judged expression rate E0(ctx)": 0.26046511627906976,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.08228189497487187,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.684638410207591,
+      "judged expression rate E0(ctx)": 0.1542056074766355,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5884641752400992,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7421185931674775,
+      "judged expression rate E0(ctx)": 0.24651162790697675,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.912108673863842,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.8482391623421086,
+      "judged expression rate E0(ctx)": 0.4604651162790698,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.018859523458728697,
+      "judged expression rate E0(ctx)": 0.20465116279069767,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.03515813594513004,
+      "judged expression rate E0(ctx)": 0.2570093457943925,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.2335489128564283,
+      "judged expression rate E0(ctx)": 0.1813953488372093,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1490894308282324,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9345605567412422,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.08209490769730929,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.13247833579939813,
+      "judged expression rate E0(ctx)": 0.2372093023255814,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.04171738251734318,
+      "judged expression rate E0(ctx)": 0.3177570093457944,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.447164514367333,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6648003956816122,
+      "judged expression rate E0(ctx)": 0.2336448598130841,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.178498816555742,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.012421818616931235,
+      "judged expression rate E0(ctx)": 0.22790697674418606,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.21583488672712367,
+      "judged expression rate E0(ctx)": 0.24299065420560748,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2720910509680888,
+      "judged expression rate E0(ctx)": 0.2616822429906542,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.072559544992101,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.0645324482910217,
+      "judged expression rate E0(ctx)": 0.19069767441860466,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7617656135456602,
+      "judged expression rate E0(ctx)": 0.20930232558139536,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.19170655596734595,
+      "judged expression rate E0(ctx)": 0.22790697674418606,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.12175624489174407,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5133901189221337,
+      "judged expression rate E0(ctx)": 0.2651162790697674,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.4881574681026957,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1276379832215708,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.3240470954994122,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.8716392845056544,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6232037401644046,
+      "judged expression rate E0(ctx)": 0.2372093023255814,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7670250047016646,
+      "judged expression rate E0(ctx)": 0.17757009345794392,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.33634551586938544,
+      "judged expression rate E0(ctx)": 0.17289719626168223,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9926238194575084,
+      "judged expression rate E0(ctx)": 0.20930232558139536,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.097290188574534,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.292207115664959,
+      "judged expression rate E0(ctx)": 0.29767441860465116,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.14758185916995895,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.3712797346387926,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9370071249933408,
+      "judged expression rate E0(ctx)": 0.16279069767441862,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1467146924031877,
+      "judged expression rate E0(ctx)": 0.2186046511627907,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.137847061266152,
+      "judged expression rate E0(ctx)": 0.2523364485981308,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9815544664629525,
+      "judged expression rate E0(ctx)": 0.2744186046511628,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8135651929352055,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9081406354375678,
+      "judged expression rate E0(ctx)": 0.26976744186046514,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.17790106363539065,
+      "judged expression rate E0(ctx)": 0.17757009345794392,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.15001962598321675,
+      "judged expression rate E0(ctx)": 0.205607476635514,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.3348498928780544,
+      "judged expression rate E0(ctx)": 0.23255813953488372,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.6195011242184658,
+      "judged expression rate E0(ctx)": 0.102803738317757,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5669936442444152,
+      "judged expression rate E0(ctx)": 0.2558139534883721,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.0156804140476974,
+      "judged expression rate E0(ctx)": 0.26046511627906976,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.0619458790788951,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.10551405677582484,
+      "judged expression rate E0(ctx)": 0.1542056074766355,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.4567526274354231,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6188982606394138,
+      "judged expression rate E0(ctx)": 0.24651162790697675,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.978777886877039,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8043136756610969,
+      "judged expression rate E0(ctx)": 0.4604651162790698,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7732244807165516,
+      "judged expression rate E0(ctx)": 0.20465116279069767,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.907545796558117,
+      "judged expression rate E0(ctx)": 0.2570093457943925,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.16783016565316436,
+      "judged expression rate E0(ctx)": 0.1813953488372093,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5477491883352614,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.42684408918332944,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.4430260309092867,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7856412499087977,
+      "judged expression rate E0(ctx)": 0.2372093023255814,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8680658280160195,
+      "judged expression rate E0(ctx)": 0.3177570093457944,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.3367113724967392,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.06956455546652639,
+      "judged expression rate E0(ctx)": 0.2336448598130841,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.306507396004351,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7046624060317646,
+      "judged expression rate E0(ctx)": 0.22790697674418606,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6030779100442168,
+      "judged expression rate E0(ctx)": 0.24299065420560748,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.3728279801985295,
+      "judged expression rate E0(ctx)": 0.2616822429906542,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.708556580099434,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.17338659108008797,
+      "judged expression rate E0(ctx)": 0.19069767441860466,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6893590925420506,
+      "judged expression rate E0(ctx)": 0.20930232558139536,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9777505719894669,
+      "judged expression rate E0(ctx)": 0.22790697674418606,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7057023892382217,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8343530390733663,
+      "judged expression rate E0(ctx)": 0.2651162790697674,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.476838287942709,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5914954516220299,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5684403633071856,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6038903969242616,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8851802486237966,
+      "judged expression rate E0(ctx)": 0.2372093023255814,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5226576238143186,
+      "judged expression rate E0(ctx)": 0.17757009345794392,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.1909778051621704,
+      "judged expression rate E0(ctx)": 0.17289719626168223,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.25375499632957355,
+      "judged expression rate E0(ctx)": 0.20930232558139536,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.513382447489711,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2951197768601614,
+      "judged expression rate E0(ctx)": 0.29767441860465116,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5387535699592265,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8924721066331925,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.0856696687168306,
+      "judged expression rate E0(ctx)": 0.16279069767441862,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9627536990059286,
+      "judged expression rate E0(ctx)": 0.2186046511627907,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.4507205163371881,
+      "judged expression rate E0(ctx)": 0.2523364485981308,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7273145402474097,
+      "judged expression rate E0(ctx)": 0.2744186046511628,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.3361523021174537,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.35782978544788296,
+      "judged expression rate E0(ctx)": 0.26976744186046514,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7100713552068219,
+      "judged expression rate E0(ctx)": 0.17757009345794392,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.748606869835251,
+      "judged expression rate E0(ctx)": 0.205607476635514,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8915868919682515,
+      "judged expression rate E0(ctx)": 0.23255813953488372,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5788880709293399,
+      "judged expression rate E0(ctx)": 0.102803738317757,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9660445716547128,
+      "judged expression rate E0(ctx)": 0.2558139534883721,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2578319949066514,
+      "judged expression rate E0(ctx)": 0.26046511627906976,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.06086011688523344,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6994826178273927,
+      "judged expression rate E0(ctx)": 0.1542056074766355,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5752516053202055,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7164694485395927,
+      "judged expression rate E0(ctx)": 0.24651162790697675,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.9080457338617,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.8509970719614386,
+      "judged expression rate E0(ctx)": 0.4604651162790698,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.014270598862143779,
+      "judged expression rate E0(ctx)": 0.20465116279069767,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.033093809828972386,
+      "judged expression rate E0(ctx)": 0.2570093457943925,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.2670877160428893,
+      "judged expression rate E0(ctx)": 0.1813953488372093,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1650110342777114,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9359064528216775,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.014680851126645158,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.1514773106490123,
+      "judged expression rate E0(ctx)": 0.2372093023255814,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.06543223886115565,
+      "judged expression rate E0(ctx)": 0.3177570093457944,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.3697570510196027,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6744590280888475,
+      "judged expression rate E0(ctx)": 0.2336448598130841,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.1768601747354301,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.055237404692116646,
+      "judged expression rate E0(ctx)": 0.22790697674418606,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.24119699583892978,
+      "judged expression rate E0(ctx)": 0.24299065420560748,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2862534630579985,
+      "judged expression rate E0(ctx)": 0.2616822429906542,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9281513879976674,
+      "judged expression rate E0(ctx)": 0.17209302325581396,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1251643021449063,
+      "judged expression rate E0(ctx)": 0.19069767441860466,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7588380222690685,
+      "judged expression rate E0(ctx)": 0.20930232558139536,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.18278574927218263,
+      "judged expression rate E0(ctx)": 0.22790697674418606,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.14518308830669813,
+      "judged expression rate E0(ctx)": 0.21395348837209302,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5248174982291471,
+      "judged expression rate E0(ctx)": 0.2651162790697674,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.4638008975314207,
+      "judged expression rate E0(ctx)": 0.17674418604651163,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.157104904193714,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.2617055218003999,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.9145403956074205,
+      "judged expression rate E0(ctx)": 0.2102803738317757,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6772519914995307,
+      "judged expression rate E0(ctx)": 0.2372093023255814,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7974829354341494,
+      "judged expression rate E0(ctx)": 0.17757009345794392,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.363111892347014,
+      "judged expression rate E0(ctx)": 0.17289719626168223,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.0014251236822342,
+      "judged expression rate E0(ctx)": 0.20930232558139536,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.0710498906150496,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.306987746092099,
+      "judged expression rate E0(ctx)": 0.29767441860465116,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.13199212648121794,
+      "judged expression rate E0(ctx)": 0.22325581395348837,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.282205141411153,
+      "judged expression rate E0(ctx)": 0.22429906542056074,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.893258419260591,
+      "judged expression rate E0(ctx)": 0.16279069767441862,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.145656479052265,
+      "judged expression rate E0(ctx)": 0.2186046511627907,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.1758078172544835,
+      "judged expression rate E0(ctx)": 0.2523364485981308,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9772191501397973,
+      "judged expression rate E0(ctx)": 0.2744186046511628,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6114241876209904,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6590242450064986,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8953578522768962,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1128248250412933,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.392142055866211,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.09701995422407299,
+      "judged expression rate E0(ctx)": 0.002506265664160401,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.05711148904663319,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7792749582533344,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.23925282805213613,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.959080884790874,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2101643396811535,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8867147293548923,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.0354009240909132,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5089832906072334,
+      "judged expression rate E0(ctx)": 0.0525,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7240729150929375,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.6551139980019398,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9557576062003194,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2771877115387915,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.955290486390693,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5042621516590742,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9290095482575585,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.1625676425368895,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.03115474551528349,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.3392316972343867,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6943207566746094,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8486280973736464,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.70288995428924,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8960052587566201,
+      "judged expression rate E0(ctx)": 0.002506265664160401,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.21273098154993872,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.0824336831479597,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.0440277834452953,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8019868288231617,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8388229134229501,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.3092208450434677,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.19686674499727572,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7823630199567922,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.04624334878234191,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.6417642971771684,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.2611761157333048,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.42744031633322843,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.706353734293561,
+      "judged expression rate E0(ctx)": 0.007537688442211055,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.4644091528637722,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.297799876416214,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.6803577879476952,
+      "judged expression rate E0(ctx)": 0.035,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.1411146960765612,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.7685210199146706,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.16846262575970355,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.27294372684731466,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.2989737669675459,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.01895706979868738,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Instruction-present",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8621906178101683,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.6561774161248395,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.03644588960370749,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.35117831431730806,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7821175101257655,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6645955116762805,
+      "judged expression rate E0(ctx)": 0.002506265664160401,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6222349837333734,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.060110329404705,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.696708511289063,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.02536733472944346,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.10569394502460389,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.17292910342110535,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.9954908459659042,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.9855150726717494,
+      "judged expression rate E0(ctx)": 0.0525,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.44247787934671895,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.830075877528762,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7088980472488323,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.4082489773497165,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.8849328223775024,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.4776149781915973,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.14202160902926617,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6314460827196374,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.5416485930003296,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2262725945361329,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.24474594674666278,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8941483012945252,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5560388049789746,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.326815665190465,
+      "judged expression rate E0(ctx)": 0.002506265664160401,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.9228725862449867,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.445102314165937,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.34337025004725025,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7178581939225808,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5762098847985466,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.2447619305926243,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.0343505320058544,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6443866222025333,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2279792185343928,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.3538857821025579,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.047439647061412356,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.13147526581263422,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.16747969434238716,
+      "judged expression rate E0(ctx)": 0.007537688442211055,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.3021832596333633,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -2.6606353167525194,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.8971760390916118,
+      "judged expression rate E0(ctx)": 0.035,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.5067064733524723,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.2184579707199583,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.099418352061143,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.2656580216514915,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.492778132247379,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.955144169868301,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Teacher-forced reference",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.5961618778841009,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6639510978909816,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9140092827350123,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.074407760788578,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.442292261409962,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.13452522544388823,
+      "judged expression rate E0(ctx)": 0.002506265664160401,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.0845938639758346,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8654655406371089,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.20001604318493899,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9902609166726468,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.08823584876568949,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.9035450271740629,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.896813353039532,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.4802328162273879,
+      "judged expression rate E0(ctx)": 0.0525,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7582404074891297,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.6194543282478124,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.7732785317243811,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.25319053488339355,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.0014030966010337,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.48783605294151733,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.9943960223956957,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.146942469258859,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.11635658603786218,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.244775538601309,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.6498652704532267,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.7852164161205727,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.6975635968489203,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8112428802574003,
+      "judged expression rate E0(ctx)": 0.002506265664160401,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.2717848638019805,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.0292699935083165,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.0888174425322241,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8192922193971401,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.8839151442957687,
+      "judged expression rate E0(ctx)": 0.01,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.3738629016242243,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.18822242533152916,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.621487651578646,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.041536149599357836,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.658596891773303,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.3340657487297396,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.29451085806501265,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.764777296618632,
+      "judged expression rate E0(ctx)": 0.007537688442211055,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.4579962731603733,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 2.280815738484517,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.7167461709326766,
+      "judged expression rate E0(ctx)": 0.035,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.2348039452564081,
+      "judged expression rate E0(ctx)": 0.0025,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -1.7531176241721929,
+      "judged expression rate E0(ctx)": 0.005,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.21913881425705187,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": -0.19263413749431288,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 1.327787287136599,
+      "judged expression rate E0(ctx)": 0.0,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "projection scalar\n(per-method z-scored)": 0.008222046145643976,
+      "judged expression rate E0(ctx)": 0.0075,
+      "series": "Instruct-and-strip",
+      "_kind": "scatter",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 450
+}

@@ -1,0 +1,1797 @@
+{
+  "commit": "8876277be0",
+  "created": "2026-06-28T07:49:42Z",
+  "figsize": [
+    11.0,
+    3.6
+  ],
+  "points": [
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20702987909317017,
+      "error": 0.016298003494739532,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.17271162569522858,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1234186440706253,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15858985483646393,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15547603368759155,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15248847007751465,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20702987909317017,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16945518553256989,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.25208932161331177,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20123204588890076,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20101448893547058,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.19394579529762268,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.18434962630271912,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.23028331995010376,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.19335249066352844,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20289048552513123,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.24185846745967865,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.23611310124397278,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2722756266593933,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2917121648788452,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3415382504463196,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3116038739681244,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.329925537109375,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.32069042325019836,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.324784517288208,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3414197564125061,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.33936429023742676,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3312322199344635,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.31778353452682495,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.11863760650157928,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.07846935093402863,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.10163061320781708,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.17783939838409424,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.13235220313072205,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2046632468700409,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.12848013639450073,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.19782282412052155,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.11920567601919174,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.14331509172916412,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.13175933063030243,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.11943009495735168,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1540207862854004,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.06034603342413902,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1041141077876091,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.09921247512102127,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.12276754528284073,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1442379504442215,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1292347013950348,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.18921911716461182,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15435676276683807,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20326194167137146,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.21662937104701996,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.22321707010269165,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.25598156452178955,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.24332068860530853,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.23918333649635315,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20158040523529053,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.011888716369867325,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.07163646817207336,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.02288963459432125,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.04328744485974312,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0241727102547884,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.03679446876049042,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.033558961004018784,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.009658386930823326,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.01602250337600708,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.08302948623895645,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0823134258389473,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.07123153656721115,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.07431057095527649,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.11328919976949692,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.11852473765611649,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.07736553251743317,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.08500204980373383,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.06535227596759796,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.00772523321211338,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.028372827917337418,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.02349323406815529,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.06809952855110168,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.11756822466850281,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.13158315420150757,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1789231151342392,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15596090257167816,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.13679024577140808,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.09675227850675583,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.18663746118545532,
+      "error": 0.2874727612361312,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.7713503241539001,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.5594655275344849,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.5302653908729553,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.18663746118545532,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16769449412822723,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2721923589706421,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16355079412460327,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16914480924606323,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.14143124222755432,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.13487756252288818,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15004028379917145,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1981598436832428,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1806211918592453,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16392168402671814,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15892009437084198,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.18552544713020325,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.19868353009223938,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.183216854929924,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0996791198849678,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0260201133787632,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.044738247990608215,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.05124979838728905,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.09476467967033386,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.14800435304641724,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.22600606083869934,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.26065823435783386,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3329945206642151,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.43009498715400696,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.7678745985031128,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.5507116317749023,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.5183799862861633,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.17930656671524048,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15855462849140167,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.27651911973953247,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16579850018024445,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.176075279712677,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.14098218083381653,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15533791482448578,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1712021827697754,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.21528825163841248,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.22152121365070343,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.22681891918182373,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.24903112649917603,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2809135913848877,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2968202233314514,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2918563783168793,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.25862088799476624,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.18074996769428253,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1014970913529396,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.04352781921625137,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.02944144234061241,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.10733109712600708,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20270775258541107,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.24503052234649658,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3208516240119934,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.37604889273643494,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.4881852865219116,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.46125680208206177,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.43902552127838135,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.04816209897398949,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.22327089309692383,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.12515835464000702,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2245473712682724,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.17671114206314087,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.22946743667125702,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1846521943807602,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15356065332889557,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.22390548884868622,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16718098521232605,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1942460685968399,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.06317415088415146,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2012523114681244,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16200369596481323,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.11723348498344421,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.10404204577207565,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.03328856825828552,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.016524065285921097,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.03664866089820862,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.035150159150362015,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.02707080729305744,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0566767193377018,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.05942979082465172,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.07077272981405258,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.03581995889544487,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3918706476688385,
+      "error": 0.042400166392326355,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3918706476688385,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3133220076560974,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3691495358943939,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1857239156961441,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2629806697368622,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.22543786466121674,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.21972820162773132,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2255513221025467,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20453369617462158,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.18408051133155823,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.15313535928726196,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1857737898826599,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0973084419965744,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.037093229591846466,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.08407118916511536,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.03300027921795845,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.021702848374843597,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.03174472600221634,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.06903968751430511,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.20507699251174927,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2547520399093628,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3097383975982666,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3853398561477661,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.4101026654243469,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.44372987747192383,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.5063709616661072,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.6263411045074463,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.750979483127594,
+      "series": "Instruction-present (the read under test)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.3355715572834015,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2718294858932495,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2872494161128998,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.17267554998397827,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.23179446160793304,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.23862315714359283,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2343054860830307,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.23317548632621765,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.17284008860588074,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.17645107209682465,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.13541388511657715,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.153928741812706,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.08988244086503983,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0021129492670297623,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.009426802396774292,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0029422976076602936,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.05999869108200073,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.010906491428613663,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.00877346470952034,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.05401303991675377,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.12758678197860718,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16812200844287872,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.25466811656951904,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.28895512223243713,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.33280545473098755,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.40898844599723816,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.5059390068054199,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.5369088649749756,
+      "series": "Instruct-and-strip control (instruction deleted)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "transformer layer (0\u201327)": 0.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.2010437548160553,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 1.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.18906863033771515,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 2.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.19557912647724152,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 3.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.10426465421915054,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 4.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.09521422535181046,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 5.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16601495444774628,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 6.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.10191716998815536,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 7.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.12131498754024506,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 8.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1023721992969513,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 9.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.06616504490375519,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 10.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.00041084177792072296,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 11.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.08665274828672409,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 12.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.00400341022759676,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 13.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.0908110961318016,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 14.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.02769436687231064,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 15.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.04874926805496216,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 16.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.10023017227649689,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 17.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.07288084924221039,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 18.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.08838018774986267,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 19.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.14010897278785706,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 20.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.14906080067157745,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 21.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1829480528831482,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 22.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.1486262083053589,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 23.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.17459310591220856,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 24.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16146057844161987,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 25.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.16357754170894623,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 26.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.19392633438110352,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "transformer layer (0\u201327)": 27.0,
+      "projection onto instruction axis\n(cosine, 0\u20131)": 0.27535057067871094,
+      "series": "Teacher-forced control",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 255
+}
