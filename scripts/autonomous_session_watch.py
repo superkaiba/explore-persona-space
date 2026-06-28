@@ -391,7 +391,7 @@ if _SCRIPTS_DIR not in sys.path:
 # matched the canonical `pod-<N>` names, so the whole pass was dead code).
 import session_resolver  # noqa: E402  (sibling import; follows the sys.path bootstrap above)
 from pod_lifecycle import _is_managed_pod, _issue_from_pod_name  # noqa: E402
-from runpod_api import list_team_pods  # noqa: E402
+from runpod_api import PodInfo, list_team_pods  # noqa: E402
 from spawn_session import (  # noqa: E402
     AUTONOMOUS_REGISTRY_DIR,
     PROJECT_ROOT,
@@ -508,6 +508,13 @@ ALERT_STALE_HOURS = 6.0
 # pass exists for — have no registry entry at all.
 _POD_SAFETY_PREFIX = "pod-safety-"
 
+# Sentinel distinguishing "carry the prior on-disk value forward" from an
+# EXPLICIT value for the #692 wedge fields of `_save_pod_safety_state`. Needed
+# because `None` is itself a meaningful value for `wedge_first_seen` (the MF1
+# onset-clock CLEAR), so it cannot double as the carry-forward signal the way
+# `None` does for the `keep_running_noted` / `followup_noted` flags.
+_CARRY = object()
+
 # Substring stamped into every alert marker note this pass posts, so the
 # staleness check can EXCLUDE the watcher's own alerts from "real progress" —
 # otherwise an alert would reset the staleness clock and the gap could never
@@ -540,6 +547,23 @@ _KEEP_RUNNING_NOTE_SENTINEL = "[autonomous_session_watch:pod-keep-running-skip]"
 # 3 cycles of pod auto-stop → manual re-provision in <1h before the follow-up
 # launches were recognized as legitimate.
 _FOLLOWUP_NOTE_SENTINEL = "[autonomous_session_watch:pod-followup-skip]"
+
+# Substring stamped into the #692 RunPod no-port wedge ALERT marker — posted
+# (once per wedge episode, deduped via the `wedge_alerted` flag in the
+# pod-safety state file) when the watcher detects the #664 RUNNING-but-no-port
+# billing leak (the poller's `_maybe_escalate_runpod_wedge` never ran because
+# the poll loop died) but the AUTO-STOP is gated off (inputs unverified on HF,
+# the keep-running tag is present, or the keep-running read FAILED). Posted as
+# epm:progress, so it MUST be excluded from "real progress" in
+# `_latest_progress_ts` — same staleness-filter contract as the other alerts.
+_WEDGE_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-alert]"
+
+# Substring stamped into the #692 RunPod no-port wedge AUTO-STOP marker — posted
+# when the wedge matured past the K floor for >= threshold consecutive checks
+# AND the inputs-on-HF + (tri-state) keep-running gates confirm a reversible
+# `pod.py stop` is safe. STOP, never terminate (the poller owns terminate).
+# Posted as epm:progress; excluded from "real progress" like the alert.
+_WEDGE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:runpod-noport-wedge-stop]"
 
 # Substring stamped into every session-stalled-alert marker note. Same role as
 # _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
@@ -728,6 +752,8 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _ALERT_NOTE_SENTINEL,
         _KEEP_RUNNING_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
+        _WEDGE_ALERT_NOTE_SENTINEL,
+        _WEDGE_STOP_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
@@ -1072,6 +1098,115 @@ def decide_pod_safety(
         return ("alert", 0)
     # pod-active-stale-already-alerted, pod-active-fresh, other -> hands off.
     return ("keep", 0)
+
+
+def decide_pod_wedge(
+    *,
+    wedged_for: float,
+    k_floor: float,
+    wedge_missed: int,
+    threshold: int,
+    alerted: bool,
+    keep_running: bool | str,
+    inputs_ok: bool,
+) -> tuple[str, int]:
+    """Pure decision for a RUNNING managed pod in the #664 RunPod no-port wedge.
+
+    The watcher backstop for when the poller's
+    ``backend_poll._maybe_escalate_runpod_wedge`` never ran (the per-issue poll
+    loop died). Returns ``(action, new_wedge_missed)`` where action is
+    ``"stop"`` | ``"alert"`` | ``"keep"``. The caller (``_process_wedged_pod``)
+    has already confirmed the RAW wedge condition
+    (``backend_poll._pod_is_runpod_runtime_wedged``) and excluded DONE-status
+    pods (MF6 — a DONE-task wedged pod falls through to the status-class arm).
+
+    Parameters
+    ----------
+    wedged_for
+        Seconds the pod has been in the raw no-port wedge, measured against the
+        DEDICATED ``wedge_first_seen`` clock (stamped at wedge ONSET, NOT the
+        pod-incarnation ``first_seen`` — MF1), so it is the actual no-port
+        episode length, not pod uptime.
+    k_floor
+        ``backend_poll.RUNPOD_WEDGE_K_SEC`` (imported, never a duplicated
+        literal). The maturity floor the wedge must exceed before any action.
+    wedge_missed
+        The wedge arm's consecutive-confirmed-past-K miss count (SEPARATE from
+        the status-class ``missed``).
+    threshold
+        Consecutive-confirmed-checks required before a STOP (default 2 = ~20 min
+        at the 10-min cron, so a single transient API mis-read never stops a
+        pod) — the same miss guard the status-class auto-stop uses.
+    alerted
+        Whether the once-per-wedge-episode alert has already been posted
+        (tracked as ``wedge_alerted`` in the state file). Informational here;
+        the dedup decision is the CALLER's (it posts the marker only if not
+        already alerted), so this fn returns ``"alert"`` whenever the gated
+        condition holds and lets the caller dedup.
+    keep_running
+        TRI-STATE (MF2): ``True`` (the ``keep-running`` tag is present) |
+        ``False`` (the tag was read OK and is absent) | ``"unknown"`` (the tag
+        read FAILED — subprocess error, non-zero rc, JSON parse error). A STOP
+        fires ONLY on the literal ``False``; ``"unknown"`` routes to ALERT-only
+        so a tagged live-work pod whose tag lookup is transiently failing is
+        NEVER auto-stopped (which would silently override the user's tag).
+    inputs_ok
+        Whether the wedged run's recoverable inputs are verified on HF (the same
+        gate #689 fix (b) uses, via ``backend_poll._wedged_run_inputs_on_hf``).
+        A STOP fires only when inputs are PROVABLY safe.
+
+    Cases:
+
+    - ``wedged_for <= k_floor`` -> ``("keep", 0)``. Below the K maturity floor
+      the wedge has not matured (a healthy slow bring-up clears it when the port
+      appears); reset the miss counter so a brief no-port blip never accumulates
+      toward a stop. The comparator is ``<=`` here (and ``>`` below) to MATCH the
+      poller's ``wedged_for > RUNPOD_WEDGE_K_SEC`` at ``backend_poll.py``
+      (``wedged_for == k_floor`` KEEPs — MF5 boundary parity).
+    - ``wedged_for > k_floor`` AND ``wedge_missed + 1 < threshold`` ->
+      ``("keep", wedge_missed + 1)``. Past K but not yet confirmed for
+      ``>=threshold`` consecutive checks; accumulate. The action transitions
+      exactly when ``wedge_missed + 1 == threshold`` (MF5 boundary).
+    - ``wedged_for > k_floor`` AND confirmed (``wedge_missed + 1 >= threshold``):
+        - ``keep_running is True`` -> ``("alert", 0)``. The keep-running tag
+          exempts the AUTO-STOP exactly as it does for the status-class arm; the
+          wedge is still surfaced once per episode so the leak is visible.
+        - ``keep_running == "unknown"`` -> ``("alert", 0)`` (MF2). A PERSISTENT
+          tag-read failure is NOT a genuinely untagged task; route the
+          uncertainty to ALERT-only rather than silently override the user's tag.
+          This is a STRONGER gate than the status-class DONE arm's
+          False-on-failure (safe there only because it auto-stops DONE-status
+          pods; the wedge arm auto-stops live-work pods).
+        - ``keep_running is False`` AND ``inputs_ok`` -> ``("stop", 0)``. Inputs
+          are verified on HF AND the tag was read AND it is absent, so the
+          reversible STOP is safe — halt the billing leak.
+        - ``keep_running is False`` AND not ``inputs_ok`` -> ``("alert", 0)``.
+          Inputs are NOT verified on HF (or no run handle to gate on); a STOP
+          could strand un-uploaded work, so ALERT-only and let a human / the
+          re-invoked /issue decide (CLAUDE.md halt-criterion #2).
+
+    Decision invariant (MF2): ``("stop", _)`` is returned ONLY when
+    ``keep_running is False`` (the literal boolean False, NOT ``"unknown"`` and
+    NOT ``True``) AND ``inputs_ok is True``. Every other ``keep_running`` value
+    routes to ALERT-only.
+    """
+    if wedged_for <= k_floor:
+        # Below the maturity floor (or exactly at it — MF5 parity with the
+        # poller's strict `> K`): not matured. Reset the miss counter.
+        return ("keep", 0)
+    new_wedge_missed = wedge_missed + 1
+    if new_wedge_missed < threshold:
+        # Past K but not yet confirmed for >=threshold consecutive checks.
+        return ("keep", new_wedge_missed)
+    # Confirmed past K for >=threshold consecutive checks. Gate the AUTO-STOP.
+    if keep_running is True:
+        return ("alert", 0)
+    if keep_running == "unknown":
+        return ("alert", 0)
+    # keep_running is the literal False (tag read OK and absent).
+    if inputs_ok:
+        return ("stop", 0)
+    return ("alert", 0)
 
 
 # ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
@@ -1572,6 +1707,117 @@ def _task_keep_running(issue: int) -> bool:
     return isinstance(tags, list) and "keep-running" in tags
 
 
+def _wedge_keep_running(issue: int) -> bool | str:
+    """Tri-state keep-running read for the #692 wedge arm (MF2).
+
+    Returns ``True`` (the ``keep-running`` tag is present) | ``False`` (the tag
+    read succeeded and is absent) | ``"unknown"`` (the tag read FAILED —
+    subprocess error, non-zero rc, JSON parse error). The shared
+    :func:`_task_keep_running` collapses all three of those failure modes to
+    ``False``, indistinguishable from a genuinely untagged task — safe for the
+    status-class DONE arm (it only auto-stops DONE-status pods, where the user
+    has far less reason to keep-running) but NOT for the wedge arm, which
+    auto-stops LIVE-WORK (``running`` / ``approved`` / ...) pods. The wedge
+    AUTO-STOP fires only on the literal ``False``; ``"unknown"`` routes to
+    ALERT-only so a tagged live-work pod whose tag lookup is transiently failing
+    is NEVER auto-stopped (which would silently override the user's explicit tag).
+
+    Uses the same ``task.py view --json`` subprocess isolation +
+    ``cwd=PROJECT_ROOT`` as :func:`_task_keep_running` (the watcher runs from
+    PROJECT_ROOT on ``main``, satisfying the task.py branch-guard). Called only
+    on the wedge arm's confirmed-past-K branch, so the extra subprocess is paid
+    only for a matured wedge candidate, not every RUNNING pod every tick."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return "unknown"
+    if out.returncode != 0:
+        return "unknown"
+    try:
+        data = json.loads(out.stdout)
+    except json.JSONDecodeError:
+        return "unknown"
+    tags = (data.get("frontmatter") or {}).get("tags") or []
+    return isinstance(tags, list) and "keep-running" in tags
+
+
+def _wedge_inputs_safe(issue: int) -> bool:
+    """True iff the wedged run's recoverable inputs are verified on HF (#692).
+
+    Gates the watcher's reversible AUTO-STOP exactly as #689 fix (b) gates the
+    poller's IRREVERSIBLE terminate, reusing the SAME per-cell three-state gate
+    ``backend_poll._wedged_run_inputs_on_hf``. The run handle is read from the
+    persisted sidecar (``.claude/cache/issue-<N>-handle.json``).
+
+    Fail-CLOSED: a missing / unreadable handle, an HF-listing transport error,
+    an import failure, or ANY exception -> ``False`` (ALERT-only, never an unsafe
+    stop). For a non-#664 issue ``_wedged_run_inputs_on_hf`` returns ``ok=True``
+    (the adapters-only path is inline-verified), so the gate degrades to "safe to
+    stop" there — correct, because a reversible STOP loses nothing when there are
+    no per-cell artifacts to strand. This is the single most important safety
+    property of the wedge AUTO-STOP: every uncertainty path routes to ALERT-only."""
+    try:
+        from backend_poll import _wedged_run_inputs_on_hf
+
+        from explore_persona_space.backends.issue_dispatch import (
+            read_handle_sidecar,
+            resolve_handle_sidecar_path,
+        )
+
+        path, _probed = resolve_handle_sidecar_path(issue)
+        if not path.exists():
+            return False  # no handle -> cannot gate -> ALERT-only
+        handle = read_handle_sidecar(path)
+        gate = _wedged_run_inputs_on_hf(issue, handle)
+        return bool(gate.ok)
+    except Exception as exc:  # transport / parse / import -> fail-closed
+        print(
+            f"  wedge: inputs-on-HF gate unavailable for #{issue} "
+            f"({type(exc).__name__}: {exc}); ALERT-only (no auto-stop)",
+            file=sys.stderr,
+        )
+        return False
+
+
+def _clear_wedge_state(issue: int, pod_id: str) -> None:
+    """Clear the #692 wedge fields for ``issue`` while keeping the
+    pod-incarnation ``first_seen`` GC anchor intact (MF1 onset-clock clear).
+
+    Called on the NOT-wedged branch of :func:`_process_pod` (a port re-appeared,
+    or the pod was never wedged this tick), so a one-tick no-port blip never
+    matures toward a stop and a healed pod's stale wedge fields are reset. It
+    re-saves the state with ``wedge_first_seen=None, wedge_missed=0,
+    wedge_alerted=False`` (NOT :func:`_clear_pod_safety_state`, which clears the
+    WHOLE file and would wipe the GC anchor ``first_seen``), and records the
+    current ``pod_id`` so a later pod_id mismatch is detectable. The status-class
+    counters (``missed`` / ``alerted`` / ``last_progress_ts``) are forward-carried
+    from the prior state (the status-class arm owns them on its own ticks)."""
+    prev = _load_pod_safety_state(issue)
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_progress = prev.get("last_progress_ts")
+    if not isinstance(prev_progress, int | float):
+        prev_progress = None
+    _save_pod_safety_state(
+        issue,
+        pod_id,
+        missed=prev_missed,
+        alerted=bool(prev.get("alerted", False)),
+        last_progress_ts=prev_progress,
+        wedge_first_seen=None,
+        wedge_missed=0,
+        wedge_alerted=False,
+        prev=prev,
+    )
+
+
 # Marker kinds that record a transition INTO a DONE status. The latest ts
 # among these is "when did this task become DONE"; compared against the
 # latest `epm:run-launched` ts to decide whether an `epm:run-launched`
@@ -1954,6 +2200,9 @@ def _save_pod_safety_state(
     last_progress_ts: float | None,
     keep_running_noted: bool | None = None,
     followup_noted: bool | None = None,
+    wedge_first_seen: float | None = _CARRY,
+    wedge_missed: int | None = _CARRY,
+    wedge_alerted: bool | None = _CARRY,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -1973,6 +2222,24 @@ def _save_pod_safety_state(
     payload (if any), passed so callers that already loaded it don't re-read;
     ``first_seen`` carries forward when present so the age backstop measures
     the original episode start, not the latest save.
+
+    The #692 wedge fields — ``wedge_first_seen`` (the DEDICATED wedge-onset
+    clock, stamped at the first wedged tick, NOT the pod-incarnation
+    ``first_seen``), ``wedge_missed`` (the wedge arm's >=threshold
+    consecutive-confirmed-checks miss guard, SEPARATE from the status-class
+    ``missed``), and ``wedge_alerted`` (the once-per-wedge-episode alert dedup)
+    — each carry the prior on-disk value forward when LEFT AT THE DEFAULT
+    (:data:`_CARRY`), so a status-class-arm save never clobbers a live wedge
+    episode's accumulated state and vice versa (the two arms are mutually
+    exclusive on a given tick, but a pod can transition between them across
+    ticks). Passing an EXPLICIT value (including ``None`` for
+    ``wedge_first_seen`` — the MF1 onset-clock CLEAR :func:`_clear_wedge_state`
+    needs) overrides the carry-forward. The distinct ``_CARRY`` sentinel (NOT
+    ``None``) is load-bearing here precisely because ``None`` is a meaningful
+    "clear the wedge clock" value, unlike the ``keep_running_noted`` /
+    ``followup_noted`` flags whose only carry-forward signal IS ``None``. MF3:
+    without this forward-carry the wedge fields would be silently dropped on
+    every save and the wedge miss-guard / alert-dedup would never accumulate.
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -1983,6 +2250,16 @@ def _save_pod_safety_state(
         keep_running_noted = bool((prev or {}).get("keep_running_noted", False))
     if followup_noted is None:
         followup_noted = bool((prev or {}).get("followup_noted", False))
+    if wedge_first_seen is _CARRY:
+        prev_wedge_first_seen = (prev or {}).get("wedge_first_seen")
+        wedge_first_seen = (
+            prev_wedge_first_seen if isinstance(prev_wedge_first_seen, int | float) else None
+        )
+    if wedge_missed is _CARRY:
+        prev_wedge_missed = (prev or {}).get("wedge_missed", 0)
+        wedge_missed = prev_wedge_missed if isinstance(prev_wedge_missed, int) else 0
+    if wedge_alerted is _CARRY:
+        wedge_alerted = bool((prev or {}).get("wedge_alerted", False))
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -1991,6 +2268,9 @@ def _save_pod_safety_state(
         "keep_running_noted": bool(keep_running_noted),
         "followup_noted": bool(followup_noted),
         "first_seen": prev_first_seen,
+        "wedge_first_seen": wedge_first_seen,
+        "wedge_missed": int(wedge_missed),
+        "wedge_alerted": bool(wedge_alerted),
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -2650,10 +2930,16 @@ def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
     return True
 
 
-def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, str, str]] | None:
+def _running_managed_issue_pods(
+    caller: str = "pod-safety",
+) -> list[tuple[int, str, str, PodInfo]] | None:
     """Live RunPod team pods that are RUNNING and managed (``pod-<N>`` or the
-    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples,
-    or ``None`` when the snapshot itself FAILED (API transport error).
+    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name, info)``
+    4-tuples (the live :class:`runpod_api.PodInfo` carried out so callers can
+    read ``desired_status`` / ``ssh_host`` / ``ssh_port`` / ``pod_id`` without a
+    second ``list_team_pods`` round-trip — the #692 wedge backstop reads the raw
+    no-port wedge condition off this ``info``), or ``None`` when the snapshot
+    itself FAILED (API transport error).
 
     Recognition delegates to :func:`pod_lifecycle._is_managed_pod` +
     :func:`pod_lifecycle._issue_from_pod_name` — the canonical helpers that
@@ -2690,7 +2976,7 @@ def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, s
             file=sys.stderr,
         )
         return None
-    out: list[tuple[int, str, str]] = []
+    out: list[tuple[int, str, str, PodInfo]] = []
     for p in pods:
         if p.desired_status != "RUNNING":
             continue
@@ -2699,11 +2985,238 @@ def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, s
         name = p.name or ""
         issue = _issue_from_pod_name(name)
         if issue is not None:
-            out.append((issue, p.pod_id, name))
+            out.append((issue, p.pod_id, name, p))
     return out
 
 
-def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: int) -> None:
+def _maybe_handle_runpod_wedge(
+    issue: int, status: str | None, info: PodInfo, now: float, dry_run: bool, threshold: int
+) -> bool:
+    """#692 wedge arm dispatch: detect the RAW #664 RunPod no-port wedge from the
+    live ``info`` and route it.
+
+    Returns ``True`` iff this arm fully HANDLED the pod (a NON-DONE-status wedged
+    pod, processed by :func:`_process_wedged_pod`), so the caller
+    (:func:`_process_pod`) should return without running the status-class
+    branches. Returns ``False`` in every other case — a non-wedged pod (where it
+    also clears any stale wedge clock, MF1/MF4) OR a wedged DONE-status pod (MF6:
+    it falls through to the status-class DONE auto-stop, the canonical
+    escaped-pod handler — routing it through the wedge arm's ALERT-default +
+    inputs-gate would only WEAKEN that existing auto-stop).
+
+    Detect the raw condition via the SAME
+    ``backend_poll._pod_is_runpod_runtime_wedged`` the poller calls (composition
+    surface (b), never re-defined)."""
+    from backend_poll import _pod_is_runpod_runtime_wedged  # sibling import
+
+    if _pod_is_runpod_runtime_wedged(info):
+        if status not in AUTO_STOP_DONE:
+            _process_wedged_pod(issue, info, now, dry_run, threshold)
+            return True
+        # MF6: DONE-status wedged pod -> fall through to the status-class DONE arm.
+        return False
+    # MF1/MF4: not currently wedged -> clear any stale wedge clock so a one-tick
+    # blip never accumulates, and the next true onset re-stamps.
+    if not dry_run:
+        _clear_wedge_state(issue, info.pod_id)
+    return False
+
+
+def _process_wedged_pod(
+    issue: int, info: PodInfo, now: float, dry_run: bool, threshold: int
+) -> None:
+    """Handle a RUNNING managed pod observed in the #664 RunPod no-port wedge.
+
+    The raw wedge condition (``backend_poll._pod_is_runpod_runtime_wedged``) is
+    already confirmed by the caller, which has ALSO already excluded DONE-status
+    pods (MF6 — those fall through to the status-class DONE auto-stop arm). Age
+    the wedge against the DEDICATED ``wedge_first_seen`` clock (stamped at wedge
+    ONSET, NOT the pod-incarnation ``first_seen``, MF1); below K
+    (``backend_poll.RUNPOD_WEDGE_K_SEC``) KEEP + persist (the wedge has not
+    matured — a healthy slow bring-up clears it on a later tick when the port
+    appears); past K apply the >=threshold consecutive-wedge-checks miss guard,
+    then ALERT (default) or AUTO-STOP (reversible ``pod.py stop``, never
+    terminate) gated on the SAME inputs-on-HF + (tri-state) keep-running checks
+    as #689 fix (b). Persists the wedge fields via :func:`_save_pod_safety_state`
+    (MF3 forward-carry) WITHOUT clearing the pod-incarnation ``first_seen`` GC
+    anchor."""
+    from backend_poll import RUNPOD_WEDGE_K_SEC
+
+    pod_id = info.pod_id
+    prev_state = _load_pod_safety_state(issue)
+
+    # ── MF4: pod_id-change reset ──────────────────────────────────────────────
+    # The pod-safety state is keyed on `issue`, not (issue, pod_id). If the
+    # poller re-provisioned the same issue with a fresh pod_id, the persisted
+    # wedge fields are stale from the OLD pod -> a fresh healthy pod could be
+    # stopped during normal startup, or a long-running pod stopped after two
+    # stale runtime.ports reads. Reset all wedge fields on a pod_id mismatch.
+    prev_pod_id = prev_state.get("pod_id")
+    if prev_pod_id != pod_id:
+        wedge_first_seen: float | None = None
+        prev_wedge_missed = 0
+        prev_wedge_alerted = False
+    else:
+        prev_wfs = prev_state.get("wedge_first_seen")
+        wedge_first_seen = prev_wfs if isinstance(prev_wfs, int | float) else None
+        prev_wedge_missed = prev_state.get("wedge_missed", 0)
+        if not isinstance(prev_wedge_missed, int):
+            prev_wedge_missed = 0
+        prev_wedge_alerted = bool(prev_state.get("wedge_alerted", False))
+
+    # ── MF1: dedicated wedge_first_seen clock ─────────────────────────────────
+    # Stamp `now` on the FIRST tick the raw wedge predicate is True (wedge
+    # ONSET). The not-wedged branch in _process_pod calls _clear_wedge_state, so
+    # a port re-appearance resets this to None -> a one-tick blip never matures.
+    # This measures the actual no-port episode length, NOT pod uptime.
+    if wedge_first_seen is None:
+        wedge_first_seen = now  # first wedged tick this incarnation
+    wedged_for = now - wedge_first_seen
+
+    # The status-class counters are forward-carried untouched (this tick belongs
+    # to the wedge arm; the status-class arm owns `missed`/`alerted` on its ticks).
+    prev_missed = prev_state.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_progress = prev_state.get("last_progress_ts")
+    if not isinstance(prev_progress, int | float):
+        prev_progress = None
+    prev_status_alerted = bool(prev_state.get("alerted", False))
+
+    # ── MF2: tri-state keep-running gate ──────────────────────────────────────
+    # Read the tag ONLY on the confirmed-past-K branch (the lazy pattern the
+    # status-class arm uses): below K / not-yet-confirmed never auto-stops, so
+    # the subprocess is paid only for a matured wedge candidate. Pass `True`
+    # (not False) as the below-K placeholder so decide_pod_wedge can never STOP
+    # before it would consult the real gate.
+    confirmed = wedged_for > RUNPOD_WEDGE_K_SEC and (prev_wedge_missed + 1) >= threshold
+    keep_running: bool | str = _wedge_keep_running(issue) if confirmed else True
+    inputs_ok = _wedge_inputs_safe(issue) if (confirmed and keep_running is False) else False
+
+    action, new_wedge_missed = decide_pod_wedge(
+        wedged_for=wedged_for,
+        k_floor=RUNPOD_WEDGE_K_SEC,
+        wedge_missed=prev_wedge_missed,
+        threshold=threshold,
+        alerted=prev_wedge_alerted,
+        keep_running=keep_running,
+        inputs_ok=inputs_ok,
+    )
+    wedged_h = f"{wedged_for / 3600:.2f}h"
+    print(
+        f"  issue #{issue} pod={pod_id}: RUNPOD NO-PORT WEDGE wedged_for={wedged_h} "
+        f"(K={RUNPOD_WEDGE_K_SEC}s) wedge_missed={prev_wedge_missed}->{new_wedge_missed} "
+        f"keep_running={keep_running} inputs_ok={inputs_ok} action={action}"
+    )
+
+    if action == "stop":
+        stopped = _stop_pod(issue, dry_run)
+        if stopped:
+            _post_progress_marker(
+                issue,
+                f"{_WEDGE_STOP_NOTE_SENTINEL} auto-stopped by autonomous_session_watch "
+                f"pod-safety pass — RUNNING pod {pod_id} stuck in the #664 "
+                f"RUNNING-but-no-port host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K "
+                f"floor, confirmed for >= {threshold} checks). The poller's "
+                f"_maybe_escalate_runpod_wedge never ran (the poll loop is dead), so the "
+                f"watcher is the backstop. The run's recoverable inputs are verified on HF "
+                f"and the keep-running tag is absent, so this reversible pause (pod.py "
+                f"resume restores the volume) is safe — it halts the billing leak. STOP, "
+                f"NOT terminate (the poller owns the terminate + re-provision path).",
+                dry_run,
+                label="wedge-stop",
+            )
+            if not dry_run:
+                # Persist the cleared wedge fields (NOT _clear_pod_safety_state,
+                # which would wipe the pod-incarnation first_seen GC anchor).
+                _save_pod_safety_state(
+                    issue,
+                    pod_id,
+                    missed=prev_missed,
+                    alerted=prev_status_alerted,
+                    last_progress_ts=prev_progress,
+                    wedge_first_seen=None,
+                    wedge_missed=0,
+                    wedge_alerted=False,
+                    prev=prev_state,
+                )
+        return
+
+    if action == "alert":
+        post_alert = not prev_wedge_alerted
+        if post_alert:
+            _post_progress_marker(
+                issue,
+                f"{_WEDGE_ALERT_NOTE_SENTINEL} RUNNING pod {pod_id} stuck in the #664 "
+                f"RUNNING-but-no-port host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K "
+                f"floor) — a billing leak the poller's _maybe_escalate_runpod_wedge did NOT "
+                f"catch (the poll loop is dead). AUTO-STOP is GATED OFF this episode "
+                f"(keep_running={keep_running}, inputs_ok={inputs_ok}): the inputs are not "
+                f"provably safe on HF, the keep-running tag is present, or the tag read "
+                f"FAILED — every uncertainty path is ALERT-only, never an unsafe stop. "
+                f"Investigate and stop manually (`pod.py stop --issue {issue}`, reversible) "
+                f"if the run is truly wedged. Posted once per wedge episode.",
+                dry_run,
+                label="wedge-alert",
+            )
+        print(
+            f"  WEDGE-ALERT issue #{issue}: RunPod no-port wedge {wedged_h} "
+            f"(gated off: keep_running={keep_running}, inputs_ok={inputs_ok}); NOT stopping.",
+            file=sys.stderr,
+        )
+        if not dry_run:
+            _save_pod_safety_state(
+                issue,
+                pod_id,
+                missed=prev_missed,
+                alerted=prev_status_alerted,
+                last_progress_ts=prev_progress,
+                wedge_first_seen=wedge_first_seen,
+                wedge_missed=new_wedge_missed,
+                wedge_alerted=True,
+                prev=prev_state,
+            )
+        return
+
+    # action == "keep": persist the (possibly incremented) wedge miss count and
+    # the onset clock so the next tick can mature the episode.
+    if not dry_run:
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=prev_missed,
+            alerted=prev_status_alerted,
+            last_progress_ts=prev_progress,
+            wedge_first_seen=wedge_first_seen,
+            wedge_missed=new_wedge_missed,
+            wedge_alerted=prev_wedge_alerted,
+            prev=prev_state,
+        )
+
+
+def _escaped_pod_exemptions(issue: int, status_class: str, events: list) -> tuple[bool, bool]:
+    """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
+
+    Returns ``(keep_running, followup_active)``. Both only matter when the
+    auto-stop arm is in play (``status_class == "auto-stop-done"``), so the
+    extra ``task.py view`` subprocess + events scan are paid only for
+    escaped-pod candidates. ``keep_running`` (the explicit user tag) is
+    consulted first; ``followup_active`` (the inferred-from-events live inline
+    follow-up) is the fallback, computed only when ``keep_running`` is False.
+    Extracted from :func:`_process_pod` to keep its cyclomatic complexity under
+    the C901 cap after the #692 wedge arm landed (behavior unchanged)."""
+    keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
+    followup_active = (
+        status_class == "auto-stop-done"
+        and not keep_running
+        and _task_followup_active(issue, events=events)
+    )
+    return keep_running, followup_active
+
+
+def _process_pod(
+    issue: int, pod_id: str, info: PodInfo, now: float, dry_run: bool, threshold: int
+) -> None:
     """Reconcile one RUNNING managed pod against its task status.
 
     Reads the task's status + latest real-progress timestamp, classifies it,
@@ -2714,22 +3227,37 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
     SKIPPED with a log line + a once-per-pod-incarnation marker), ALERT a
     stale pod-active task once per episode, or KEEP. Persists the per-pod
     state (miss count, alerted flag, keep-running-noted flag, followup-noted
-    flag, last-observed real progress) for the next tick."""
+    flag, last-observed real progress) for the next tick.
+
+    #692 wedge-arm ordering (MF6): the #664 RunPod no-port wedge arm runs
+    BEFORE the status-class branches, EXCEPT that a wedged pod whose task is at
+    a DONE status (:data:`AUTO_STOP_DONE` — completed / awaiting_promotion /
+    archived, the established escaped-pod auto-stop case) FALLS THROUGH to the
+    status-class DONE arm, which already auto-stops it. A DONE-task pod has no
+    live work to strand, so the canonical escaped-pod auto-stop wins; routing it
+    through the wedge arm's ALERT-default + inputs-gate would only WEAKEN the
+    existing auto-stop into a conditional one. The wedge arm therefore handles
+    only NON-DONE-status wedged pods (the live-work statuses where the watcher
+    must be conservative). A non-wedged pod reaches the status-class branches
+    unchanged, exactly as before #692."""
     status = _task_status(issue)
+
+    # ── #692 RunPod no-port wedge backstop (runs BEFORE the status-class arm,
+    # MF6 DONE-task carve-out inside the helper) ──────────────────────────────
+    # When the per-issue poll loop has DIED, backend_poll's
+    # _maybe_escalate_runpod_wedge never runs and the #664 RUNNING-but-no-port
+    # billing leak goes undetected. The watcher runs unconditionally every 10
+    # min, so it is the backstop. If the helper handled the pod (a non-DONE
+    # wedged pod), return; otherwise fall through to the status-class branches
+    # (a non-wedged pod, OR a wedged DONE-task pod that the status-class DONE
+    # auto-stop arm handles canonically) exactly as before #692.
+    if _maybe_handle_runpod_wedge(issue, status, info, now, dry_run, threshold):
+        return
+
     events = _task_events(issue)
     latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    # Lazy: the tag and the follow-up predicate only matter when the auto-stop
-    # arm is in play, so the extra `task.py view` subprocess + events scan are
-    # paid only for escaped-pod candidates. `keep_running` is consulted first
-    # because it is the explicit user signal; `followup_active` is the
-    # inferred-from-events fallback.
-    keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
-    followup_active = (
-        status_class == "auto-stop-done"
-        and not keep_running
-        and _task_followup_active(issue, events=events)
-    )
+    keep_running, followup_active = _escaped_pod_exemptions(issue, status_class, events)
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
@@ -2774,7 +3302,50 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
         f"progress_gap={gap_h} missed={prev_missed}->{new_missed} "
         f"alerted={alerted} action={action}"
     )
+    _apply_pod_safety_action(
+        action,
+        issue=issue,
+        pod_id=pod_id,
+        status=status,
+        now=now,
+        dry_run=dry_run,
+        threshold=threshold,
+        gap_h=gap_h,
+        new_missed=new_missed,
+        alerted=alerted,
+        latest_progress=latest_progress,
+        prev_state=prev_state,
+        prev_keep_running_noted=prev_keep_running_noted,
+        prev_followup_noted=prev_followup_noted,
+    )
 
+
+def _apply_pod_safety_action(
+    action: str,
+    *,
+    issue: int,
+    pod_id: str,
+    status: str | None,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    gap_h: str,
+    new_missed: int,
+    alerted: bool,
+    latest_progress: float | None,
+    prev_state: dict,
+    prev_keep_running_noted: bool,
+    prev_followup_noted: bool,
+) -> None:
+    """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
+
+    Extracted verbatim from :func:`_process_pod` (behavior unchanged) to keep its
+    cyclomatic complexity under the C901 cap after the #692 wedge arm landed. The
+    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` /
+    ``alert`` / ``keep`` — post the appropriate once-per-episode marker (deduped
+    via the prev-state flags) and persist the per-pod state. Each save
+    forward-carries the #692 wedge fields untouched (this is a status-class tick;
+    the wedge arm owns them on its own ticks)."""
     if action == "keep-running-skip":
         print(
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
@@ -4351,8 +4922,8 @@ def stalled_session_pass(
     # the empty set so the decision layer just records has_pod=False for every
     # issue this tick — fail-safe (this pass alerts/respawns, never stops pods).
     running_pods = _running_managed_issue_pods(caller="stalled-detector") or []
-    pod_active_issues = {issue for issue, _pid, _name in running_pods}
-    pod_names_by_issue = {issue: name for issue, _pid, name in running_pods}
+    pod_active_issues = {issue for issue, _pid, _name, _info in running_pods}
+    pod_names_by_issue = {issue: name for issue, _pid, name, _info in running_pods}
     if daemon_reachable is None:
         daemon_reachable = _daemon_reachable()
     print(
@@ -4771,7 +5342,7 @@ def orphan_sweep_pass(
     # marker_age_s below the staleness threshold, so the orphan sweep
     # would not be at action=respawn anyway.
     running_pods = _running_managed_issue_pods(caller="orphan-sweep") or []
-    pod_active_issues = {issue for issue, _pid, _name in running_pods}
+    pod_active_issues = {issue for issue, _pid, _name, _info in running_pods}
     print(
         f"orphan-sweep: {len(active)} active-status task(s), "
         f"{len(regs)} registered issue(s), {len(live_ids)} live session(s)"
@@ -8235,7 +8806,9 @@ def session_reconcile_pass(
     # pod itself (it skips its own state GC on the failed snapshot).
     running_pod_issues = {
         issue
-        for issue, _pod_id, _name in (_running_managed_issue_pods(caller="session-reconcile") or [])
+        for issue, _pod_id, _name, _info in (
+            _running_managed_issue_pods(caller="session-reconcile") or []
+        )
     }
     print(
         f"session-reconcile: {n_sessions} live issue-mapped session(s) across "
@@ -9588,7 +10161,7 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         # same fail-closed no-stop outcome as today's empty-set fallback.
         print("pod-safety: pod snapshot failed; skipping state GC this tick")
         return
-    running_issues = {issue for issue, _pod_id, _name in running}
+    running_issues = {issue for issue, _pod_id, _name, _info in running}
 
     # GC orphaned state BEFORE the per-pod loop, and ALWAYS on a GOOD snapshot
     # — even when `running` is empty — so a state file for a pod that left the
@@ -9601,8 +10174,8 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         print("pod-safety: no RUNNING managed pods")
         return
     print(f"pod-safety: {len(running)} RUNNING managed pod(s)")
-    for issue, pod_id, _name in running:
-        _process_pod(issue, pod_id, now, dry_run, threshold)
+    for issue, pod_id, _name, info in running:
+        _process_pod(issue, pod_id, info, now, dry_run, threshold)
 
 
 def _vm_run_remediations(
@@ -10695,7 +11268,8 @@ def gate_push_pass(
     if not flags:
         return
     running_pod_issues = {
-        issue for issue, _pod_id, _name in (_running_managed_issue_pods(caller="gate-push") or [])
+        issue
+        for issue, _pod_id, _name, _info in (_running_managed_issue_pods(caller="gate-push") or [])
     }
     for issue, flag_path in flags:
         _process_runaway_flag(

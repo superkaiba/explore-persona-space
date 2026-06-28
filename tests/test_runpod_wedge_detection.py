@@ -295,6 +295,21 @@ def test_is_runpod_async_wedge_failure_predicate():
     assert bp._is_runpod_async_wedge_failure(_gcp_handle(), wedged) is False
 
 
+def test_pod_is_runpod_runtime_wedged_predicate():
+    """#692: the RAW no-port wedge predicate extracted from
+    ``_maybe_escalate_runpod_wedge`` (composition surface (b)), called by BOTH
+    the poller and the autonomous_session_watch.py wedge backstop. It is the
+    maturity-AGNOSTIC raw condition: RUNNING + no public port."""
+    # RUNNING + no public port -> True (the raw wedge).
+    assert bp._pod_is_runpod_runtime_wedged(_PodInfo(ssh_host=None, ssh_port=None)) is True
+    # RUNNING + a public port present -> False (healthy).
+    assert bp._pod_is_runpod_runtime_wedged(_PodInfo(ssh_host="1.2.3.4", ssh_port=22000)) is False
+    # Non-RUNNING (EXITED/terminal) -> False (ordinary dead path).
+    assert bp._pod_is_runpod_runtime_wedged(_PodInfo(desired_status="EXITED")) is False
+    # None (pod gone) -> False.
+    assert bp._pod_is_runpod_runtime_wedged(None) is False
+
+
 # ---------------------------------------------------------------------------
 # 9/10. per-cell inputs-on-HF gate (M1)
 # ---------------------------------------------------------------------------
