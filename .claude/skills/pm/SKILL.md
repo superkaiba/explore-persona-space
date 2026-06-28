@@ -79,12 +79,14 @@ flow. The PM's job is dispatch, not execution.
    on demand only):
    1. **Headline (1–2 lines)** — counts per status, live fleet burn
       (recompute rule) when any pod is live, live session count. Prepend
-      the one-line **/daily digest** (#706) read from the most recent
-      `logs/daily/<date>.md`, verbatim: `/daily last night: applied N,
-      filed M (→/issue), held J (needs you)` (N = `## Applied workflow
-      improvements` entries; M = `daily-auto-filed` route-2 filings; J =
-      `needs-human` route-3 filings, tag-based; omit the line silently if
-      no daily file exists — full spec in research-pm.md Mode 1 part 1).
+      the one-line **/daily digest** (#706) read SPECIFICALLY from the
+      previous night's PT-dated `logs/daily/<date>.md`
+      (`date -d 'yesterday' +%F` in America/Los_Angeles), verbatim:
+      `/daily last night: applied N, filed M (→/issue), held J (needs you)`
+      (N = `## Applied workflow improvements` entries; M = `daily-auto-filed`
+      route-2 filings; J = `needs-human` route-3 filings, tag-based; omit the
+      line silently if that exact date's file is absent — NEVER fall back to
+      an older daily file — full spec in research-pm.md Mode 1 part 1).
    2. **Needs attention — investigate, auto-fix, surface the
       residue.** For every candidate exception (blocked tasks,
       over-cap `plan_pending`, active tasks gone quiet, orphan / idle
