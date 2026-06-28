@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 699,
+  "highest_id": 700,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4441,6 +4441,13 @@
       "path": "tasks/completed/70",
       "status": "completed",
       "title": "Persona taxonomy"
+    },
+    "700": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/700",
+      "status": "proposed",
+      "title": "rerun-discipline: confirm a fix's code-path is reached + differential-diagnose a hang before reprovisioning"
     },
     "71": {
       "has_clean_result": false,
