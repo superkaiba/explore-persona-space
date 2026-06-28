@@ -588,9 +588,13 @@ def _context_vector_all_layers(base_model, tok, messages: list[dict], device) ->
     """
     text = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     ids = tok(text, return_tensors="pt").to(device)
-    out = base_model(**ids, output_hidden_states=True)
-    # hidden_states: tuple len N_LAYERS+1 (hs[0] = embeddings). Take layers 1..N.
-    vecs = [out.hidden_states[li][0, -1, :].float().cpu().numpy() for li in range(1, N_LAYERS + 1)]
+    # Memory-safe subset read: hook all N_LAYERS block layers (block index li ==
+    # old out.hidden_states[li + 1]) instead of materializing all L+1 layers (#671,
+    # residual closed by #675). acts[li] is the SAME tensor the old
+    # out.hidden_states[li + 1] read produced. extract_layer_activations wants a
+    # plain (1, T) input_ids tensor (NOT the tokenizer dict), so unpack input_ids.
+    acts = extract_layer_activations(base_model, ids["input_ids"], list(range(N_LAYERS)))
+    vecs = [acts[li][0, -1, :].float().cpu().numpy() for li in range(N_LAYERS)]
     arr = np.stack(vecs).astype(np.float32)
     assert arr.shape == (N_LAYERS, base_model.config.hidden_size), arr.shape
     return arr

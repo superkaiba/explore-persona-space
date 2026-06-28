@@ -280,6 +280,59 @@ def test_i488_index_translation_byte_identical():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 2b. _context_vector_all_layers all-layers last-token byte-identity (#675)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _old_context_vector_all_layers_via_fulltuple(model, ids, n_layers):
+    """The PRE-migration _context_vector_all_layers math: full-tuple read of
+    hs[1..n_layers] at the LAST input position, dropping the embedding hs[0].
+    Reproduced against the stub so the test pins the migrated call against the
+    exact old behavior. `ids` is a plain (1, T) tensor (the stub's input)."""
+    out = model(input_ids=ids, output_hidden_states=True)
+    return np.stack(
+        [out.hidden_states[li][0, -1, :].float().cpu().numpy() for li in range(1, n_layers + 1)]
+    ).astype(np.float32)
+
+
+def test_context_vector_all_layers_byte_identical():
+    """The migrated all-layers context-vector read (block indices 0..N-1, last
+    input token) reproduces the OLD hs[1..N] full-tuple read bit-for-bit on
+    BOTH the hook stub and the fallback stub. Pins the #675 residual: the
+    embedding-drop off-by-one (request blocks 0..N-1, NOT hs[0..N-1]) and the
+    last-position read.
+
+    Also pins the dropped-attention_mask no-op invariant (the Methodology
+    reconciler's standing rec): for this single-unpadded-sequence call shape
+    the helper output is invariant to attention_mask (None vs all-ones), so the
+    production refactor's omission of the mask is exact, not approximate."""
+    tok = _tok()
+    fallback = _FallbackStub(tok.vocab_size, _D, _N_BLOCKS, seed=17)
+    hook = _HookStub(tok.vocab_size, _D, _N_BLOCKS, seed=17)
+    for ids in _ids_list(tok):
+        old = _old_context_vector_all_layers_via_fulltuple(fallback, ids, _N_BLOCKS)
+        for model in (fallback, hook):
+            acts = extract_layer_activations(model, ids, list(range(_N_BLOCKS)))
+            new = np.stack(
+                [acts[li][0, -1, :].float().cpu().numpy() for li in range(_N_BLOCKS)]
+            ).astype(np.float32)
+            assert new.shape == (_N_BLOCKS, _D), new.shape
+            assert np.array_equal(old, new), model.__class__.__name__
+
+        # attention_mask no-op invariant (the Methodology reconciler's standing
+        # rec): the production call OMITS the mask. For a single unpadded B=1
+        # sequence the all-ones mask is a no-op, so passing it must yield the
+        # byte-identical result. Pinned on the hook stub — the standard-decoder
+        # production path that _context_vector_all_layers exercises.
+        acts_nomask = extract_layer_activations(hook, ids, list(range(_N_BLOCKS)))
+        acts_ones = extract_layer_activations(
+            hook, ids, list(range(_N_BLOCKS)), attention_mask=torch.ones_like(ids)
+        )
+        for li in range(_N_BLOCKS):
+            assert torch.equal(acts_ones[li], acts_nomask[li]), (li, ids.shape)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 3. Logits preservation under return_logits=True (issue_650 dual-purpose)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -366,6 +419,7 @@ MIGRATED_FUNCTIONS = [
     ("explore_persona_space.analysis.extraction", "extract_layer_activations"),
     ("scripts.issue667_extract", "_mean_resp_acts"),
     ("scripts.issue667_extract", "_mean_resp_acts_single"),
+    ("scripts.issue667_extract", "_context_vector_all_layers"),
     ("explore_persona_space.experiments.issue_650.shift_extract", "extract_per_context_shift"),
     ("explore_persona_space.analysis.probes", "extract_residual_stream_activations"),
     ("explore_persona_space.analysis.probes", "extract_dual_position_activations"),
@@ -486,6 +540,14 @@ def test_memory_non_growth_cpu_proxy():
     rss = []
     for _ in range(20):
         acts = extract_layer_activations(hook, ids, layers)
+        del acts
+        gc.collect()
+        rss.append(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+
+    # Also exercise the all-layers request (the #675 _context_vector_all_layers
+    # path) so the proxy covers the widest hook set, not just a 3-layer subset.
+    for _ in range(20):
+        acts = extract_layer_activations(hook, ids, list(range(_N_BLOCKS)))
         del acts
         gc.collect()
         rss.append(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
