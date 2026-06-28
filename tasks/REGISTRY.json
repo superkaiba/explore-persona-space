@@ -4460,8 +4460,8 @@
     "714": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/714",
-      "status": "proposed",
+      "path": "tasks/planning/714",
+      "status": "planning",
       "title": "workflow-fix: add --check-skill-refs lint mode to workflow_lint.py"
     },
     "72": {
