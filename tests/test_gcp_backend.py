@@ -52,10 +52,16 @@ from explore_persona_space.backends.gcp import (
     DEFAULT_IMAGE_PROJECT,
     DEFAULT_PRIMARY_ZONE,
     DEFAULT_PROJECT,
+    JANITOR_CLASS_ALLOWLISTED,
+    JANITOR_CLASS_KEEP,
+    JANITOR_CLASS_MANAGED,
+    JANITOR_CLASS_UNMANAGED,
+    JANITOR_LIST_NAME_FILTER,
     REQUIRED_LAUNCH_SECRET_KEYS,
     GcloudRunResult,
     GcpLaunchSecretsMissing,
     StaleNamedInstance,
+    _classify_janitor_instance,
     _stale_named_instance_or_none,
     attempt_id_for,
     classify_create_failure,
@@ -301,6 +307,141 @@ def test_machine_for_intent_rejects_unknown_intent_loud() -> None:
     spec = _spec("totally-bogus")
     with pytest.raises(ValueError, match="no GCP machine-type for intent"):
         machine_for_intent(spec)
+
+
+# ---------------------------------------------------------------------------
+# CPU-only intent: cpu-bigmem (#677)
+# ---------------------------------------------------------------------------
+
+
+def test_intent_to_machine_includes_cpu_bigmem() -> None:
+    """#677: the CPU-only analysis intent maps to a gpu_count=0 n2-highmem-16."""
+    spec = INTENT_TO_MACHINE["cpu-bigmem"]
+    assert spec == MachineSpec(machine_type="n2-highmem-16", gpu_count=0, gpu_kind="CPU")
+    assert spec.machine_type == "n2-highmem-16"
+    assert spec.gpu_count == 0
+    assert spec.gpu_kind == "CPU"
+
+
+def test_machine_for_intent_resolves_cpu_bigmem() -> None:
+    """#677: machine_for_intent resolves the cpu-bigmem row."""
+    machine = machine_for_intent(_spec("cpu-bigmem"))
+    assert machine == MachineSpec(machine_type="n2-highmem-16", gpu_count=0, gpu_kind="CPU")
+
+
+def test_render_create_argv_cpu_bigmem_golden() -> None:
+    """#677: a cpu-bigmem create renders a valid CPU argv.
+
+    The CPU machine takes ``--maintenance-policy=MIGRATE`` (it can
+    live-migrate), carries NO ``--accelerator`` flag, and keeps every
+    ephemeral leak guard the GPU path uses.
+    """
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("cpu-bigmem"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\necho startup\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    # CPU machine type.
+    assert "--machine-type=n2-highmem-16" in argv
+    # MIGRATE for the CPU machine; TERMINATE must be ABSENT.
+    assert "--maintenance-policy=MIGRATE" in argv
+    assert "--maintenance-policy=TERMINATE" not in argv
+    # No accelerator flag on a CPU VM (absent for ALL GCP machines today —
+    # this asserts it STAYS absent for the CPU path).
+    assert not any(a.startswith("--accelerator") for a in argv), argv
+    # Ephemeral / leak guards apply equally to a CPU VM.
+    assert "--instance-termination-action=DELETE" in argv
+    assert "--no-restart-on-failure" in argv
+    assert "--max-run-duration=24h" in argv
+    # Default boot disk covers a ~150 GB working set.
+    assert "--boot-disk-size=300GB" in argv
+
+
+def test_render_create_argv_cpu_bigmem_boot_disk_override() -> None:
+    """#677: the existing --boot-disk-gb override threads through for CPU."""
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("cpu-bigmem", extra={"boot_disk_gb": 500}),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--boot-disk-size=500GB" in argv
+
+
+def test_render_create_argv_gpu_intent_still_terminate() -> None:
+    """#677 control: the conditional did NOT regress the GPU path —
+    an accelerator intent still emits --maintenance-policy=TERMINATE."""
+    cfg = _test_config()
+    for intent in ("lora-7b", "ft-7b"):
+        argv = render_create_argv(
+            spec=_spec(intent),
+            config=cfg,
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=_TEST_SECRET_FILES,
+        )
+        assert "--maintenance-policy=TERMINATE" in argv, intent
+        assert "--maintenance-policy=MIGRATE" not in argv, intent
+
+
+def test_quota_metric_for_cpu_returns_none() -> None:
+    """#677: a CPU machine draws no accelerator quota under any pool."""
+    cpu = MachineSpec(machine_type="n2-highmem-16", gpu_count=0, gpu_kind="CPU")
+    for provisioning in ("STANDARD", "SPOT", "FLEX_START"):
+        assert quota_metric_for(cpu, provisioning) is None, provisioning
+
+
+def test_preflight_quota_headroom_skips_probe_for_cpu() -> None:
+    """#677: a cpu-bigmem spec yields metric=None -> the regions-describe
+    probe is skipped (fail-OPEN "no opinion; proceed"), no gcloud call."""
+    runner = _Runner()
+    assert (
+        preflight_quota_headroom(
+            spec=_spec(intent="cpu-bigmem"), config=_test_config(), runner=runner
+        )
+        is None
+    )
+    # The accelerator-quota probe never ran: no regions-describe gcloud call.
+    assert not [a for a in runner.calls if "regions" in a and "describe" in a]
+    assert runner.calls == []  # decided without ANY gcloud call
+
+
+def test_gcp_handle_extra_includes_gpu_count(no_marker_posts) -> None:
+    """#677: the GCP handle's extra carries the resolved machine's true
+    gpu_count (0 for cpu-bigmem, >=1 for a GPU intent) so the async poller's
+    failover predicate can exclude CPU handles without resolving the machine.
+
+    cpu-bigmem and eval are both offered in all three us-central1 zones, so a
+    single create succeeds for each.
+    """
+    created = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+
+    cpu_backend = GcpBackend(
+        config=_test_config(),
+        runner=_Runner(
+            list_results=[GcloudRunResult(0, "[]", "")],
+            create_results=[GcloudRunResult(0, created, "")],
+        ),
+        marker_poster=lambda **_: None,
+    )
+    cpu_handle = cpu_backend.launch(_spec(intent="cpu-bigmem"))
+    assert cpu_handle.extra["gpu_count"] == 0
+
+    gpu_backend = GcpBackend(
+        config=_test_config(),
+        runner=_Runner(
+            list_results=[GcloudRunResult(0, "[]", "")],
+            create_results=[GcloudRunResult(0, created, "")],
+        ),
+        marker_poster=lambda **_: None,
+    )
+    gpu_handle = gpu_backend.launch(_spec(intent="eval"))
+    assert gpu_handle.extra["gpu_count"] == 1
 
 
 # ---------------------------------------------------------------------------
@@ -1616,6 +1757,121 @@ def test_teardown_raises_on_real_failure() -> None:
 
 
 # ---------------------------------------------------------------------------
+# teardown — confirm-deleted guard (#683 clean-terminal RUNNING zombie)
+# ---------------------------------------------------------------------------
+
+
+def _teardown_handle():
+    """Build a teardown RunHandle (lazy import matches the file's prevailing style)."""
+    from explore_persona_space.backends.base import RunHandle
+
+    return RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-683",
+        scratch_dir="/workspace/eps-issue-683",
+        log_path="/workspace/logs/issue-683.log",
+        extra={"zone": "us-central1-a"},
+    )
+
+
+def _kind(argv: list[str]) -> str:
+    """Classify a recorded gcloud argv the way ``_Runner`` routes it."""
+    if "delete" in argv and "instances" in argv:
+        return "delete"
+    if "describe" in argv and "instances" in argv:
+        return "describe"
+    return "other"
+
+
+def test_teardown_confirms_deleted_and_does_not_redelete_when_gone() -> None:
+    """rc==0 delete + a 'not found' describe → confirmed gone, NO second delete (#683)."""
+    runner = _Runner(
+        delete_results=[GcloudRunResult(0, "", "")],
+        describe_results=[
+            GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.describe) was not found")
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    # The confirm probe ran after the delete; no re-delete on a confirmed-gone VM.
+    assert seq == ["delete", "describe"], runner.calls
+
+
+def test_teardown_redeletes_running_zombie_once() -> None:
+    """rc==0 delete but describe shows status=RUNNING (the #683 zombie) → re-delete ONCE."""
+    runner = _Runner(
+        delete_results=[GcloudRunResult(0, "", ""), GcloudRunResult(0, "", "")],
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    # Positional: probe-then-re-delete, in order. A back-to-back double-delete
+    # with no probe between (a hypothetical buggy refactor) would FAIL here,
+    # where a bare ``len(delete_calls) == 2`` would pass it.
+    assert seq == ["delete", "describe", "delete"], runner.calls
+
+
+def test_teardown_does_not_redelete_on_non_running_describe() -> None:
+    """A non-RUNNING describe (STOPPING / TERMINATED / empty status) trusts the rc==0 delete."""
+    for status in ("STOPPING", "TERMINATED", ""):
+        runner = _Runner(
+            delete_results=[GcloudRunResult(0, "", "")],
+            describe_results=[GcloudRunResult(0, json.dumps({"status": status}), "")],
+        )
+        backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+        backend.teardown(_teardown_handle())
+        seq = [_kind(c) for c in runner.calls]
+        assert seq == ["delete", "describe"], (status, runner.calls)  # no spurious re-delete
+
+
+def test_teardown_does_not_redelete_on_describe_probe_failure() -> None:
+    """A non-404 describe failure does NOT re-delete (the rc==0 delete already landed)."""
+    runner = _Runner(
+        delete_results=[GcloudRunResult(0, "", "")],
+        describe_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["delete", "describe"], runner.calls  # probe failure ≠ evidence the VM survived
+
+
+def test_teardown_redelete_404_is_silent_success() -> None:
+    """The re-delete's own 404 is silent success (first delete landed between probe and retry)."""
+    runner = _Runner(
+        delete_results=[
+            GcloudRunResult(0, "", ""),
+            GcloudRunResult(1, "", "ERROR: (gcloud.compute.instances.delete) was not found"),
+        ],
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    # No raise: the redelete-404 idempotency branch swallows the "was not found".
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    assert seq == ["delete", "describe", "delete"], runner.calls
+
+
+def test_teardown_does_not_redelete_on_empty_describe_stdout() -> None:
+    """rc==0 describe with EMPTY stdout → ``... else {}`` → status None → no re-delete (#683 v2)."""
+    runner = _Runner(
+        delete_results=[GcloudRunResult(0, "", "")],
+        describe_results=[GcloudRunResult(0, "", "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.teardown(_teardown_handle())
+    seq = [_kind(c) for c in runner.calls]
+    # The ``if probe.stdout.strip() else {}`` guard: empty STDOUT STRING (rc==0)
+    # parses to {} → status None → not RUNNING → no re-delete. Distinct from the
+    # empty *status field* ({"status": ""}) case in the non-running test above.
+    assert seq == ["delete", "describe"], runner.calls
+
+
+# ---------------------------------------------------------------------------
 # poll
 # ---------------------------------------------------------------------------
 
@@ -1803,9 +2059,10 @@ def test_audit_stale_gcp_vms_handles_empty_inventory() -> None:
     assert records == []
 
 
-def test_audit_stale_gcp_vms_skips_non_eps_instances() -> None:
-    """The reaper MUST only consider eps-issue-* instances — never delete
-    a personal VM in the same project just because it's old."""
+def test_audit_stale_gcp_vms_escalates_non_eps_instances_never_deletes() -> None:
+    """Broadened scope (#688): a non-eps-issue-* VM in the dedicated project is
+    classified UNMANAGED and ESCALATED (never auto-deleted) — NOT silently
+    skipped. The old name filter was blind to such a leftover (#680)."""
     now = datetime(2026, 6, 9, 12, 0, 0, tzinfo=UTC)
     old_created = (now - timedelta(hours=720)).isoformat()  # 30 days
     payload = json.dumps(
@@ -1832,7 +2089,12 @@ def test_audit_stale_gcp_vms_skips_non_eps_instances() -> None:
         now=now,
         delete=True,
     )
-    assert records == []
+    assert len(records) == 1
+    assert records[0]["classification"] == JANITOR_CLASS_UNMANAGED
+    assert records[0]["action"] == "escalated"
+    assert records[0]["reason"] == "age"
+    # The unmanaged VM is NEVER deleted, even under delete=True.
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
 
 
 def _one_running_instance(name: str, created_iso: str) -> str:
@@ -2001,6 +2263,224 @@ def test_audit_stale_gcp_vms_probe_failure_never_reaps_and_never_crashes() -> No
     assert records[0]["reason"] is None
     assert records[0]["phase"] is None
     assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+# ---------------------------------------------------------------------------
+# Broadened janitor scope + HYBRID classification (#688) — library level.
+# ---------------------------------------------------------------------------
+
+
+def test_classify_janitor_instance_four_classes() -> None:
+    """The name→class map: keep wins over managed/allowlisted; managed (eps-issue-*)
+    before allowlisted (eps-cap-probe*) before the unmanaged fall-through."""
+    assert _classify_janitor_instance("eps-issue-137") == JANITOR_CLASS_MANAGED
+    assert _classify_janitor_instance("eps-cap-probe2-1786331") == JANITOR_CLASS_ALLOWLISTED
+    assert _classify_janitor_instance("random-dev-vm-x") == JANITOR_CLASS_UNMANAGED
+    # keep is empty by default → no name classifies keep without a monkeypatch.
+    assert _classify_janitor_instance("keep-mydevbox") == JANITOR_CLASS_UNMANAGED
+
+
+def test_audit_escalates_unmanaged_stale_vm() -> None:
+    """(a) A non-eps-issue-*, non-allowlisted stale VM (48h old) → UNMANAGED,
+    escalated (with a spy callback invoked once), and NEVER passed to delete."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=48)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("random-leftover-vm", created), "")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_UNMANAGED
+    assert records[0]["action"] == "escalated"
+    assert records[0]["reason"] == "age"
+    assert len(seen) == 1
+    assert seen[0]["name"] == "random-leftover-vm"
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_audit_reaps_eps_issue_unchanged() -> None:
+    """(b) Regression guard: an aged eps-issue-* still reaps with
+    classification=managed, action=deleted, reason=age, on the right zone."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=30)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-137", created), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_MANAGED
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "age"
+    delete_calls = [a for a in runner.calls if "delete" in a and "instances" in a]
+    assert len(delete_calls) == 1
+    assert "eps-issue-137" in delete_calls[0]
+    assert "--zone=us-central1-a" in delete_calls[0]
+    # A managed VM never invokes the escalation callback.
+    assert seen == []
+
+
+def test_audit_reaps_allowlisted_ephemeral_prefix() -> None:
+    """(c) An aged eps-cap-probe* (the actual #680 leak name) is
+    allowlisted-ephemeral → AUTO-REAP (deleted, delete argv issued)."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=48)).isoformat()
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(0, _one_running_instance("eps-cap-probe2-1786331", created), "")
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_ALLOWLISTED
+    assert records[0]["action"] == "deleted"
+    delete_calls = [a for a in runner.calls if "delete" in a and "instances" in a]
+    assert len(delete_calls) == 1
+    assert "eps-cap-probe2-1786331" in delete_calls[0]
+    assert seen == []  # auto-reap, not escalate
+
+
+def test_audit_unmanaged_probe_failure_does_not_escalate_or_delete() -> None:
+    """(d) An UNMANAGED RUNNING VM past the terminal-phase floor whose phase
+    probe FAILS falls through to the age backstop (here under 24h) → skipped,
+    reason None, NO delete argv, AND the escalate callback NOT invoked (probe
+    failure ≠ stale → no escalation)."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=2)).isoformat()  # past floor, under age backstop
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("random-dev-vm", created), "")],
+        # rc != 0 with a non-404 stderr → _read_guest_phase raises GcpProbeError.
+        guest_attr_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_UNMANAGED
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert records[0]["phase"] is None
+    assert seen == []
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_gcp_audit_preflight_uses_broadened_filter() -> None:
+    """(e) The CLI's _AUDIT_NAME_FILTER IS the library's JANITOR_LIST_NAME_FILTER
+    (both None), and render_list_argv(name_filter=None) appends NO --filter arg —
+    proving the preflight list is the whole-project list."""
+    import scripts.gcp_audit as cli
+
+    assert cli._AUDIT_NAME_FILTER is JANITOR_LIST_NAME_FILTER
+    assert JANITOR_LIST_NAME_FILTER is None
+    argv = render_list_argv(config=_test_config(), name_filter=JANITOR_LIST_NAME_FILTER)
+    assert not any(a.startswith("--filter") for a in argv), argv
+
+
+def test_router_paths_unaffected_by_broadened_janitor() -> None:
+    """(f) The seam: reconnect_or_none + _stale_named_instance_or_none still issue
+    an EXACT --filter=name=eps-issue-<N> (NOT a broadened/empty filter) and match
+    only by exact name — an UNMANAGED VM alongside the queried name is ignored."""
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    name = instance_name_for(137)
+    # A list payload with BOTH the queried eps-issue-137 (TERMINATED) AND an
+    # unrelated unmanaged VM. The router helpers must act only on the exact name.
+    payload = json.dumps(
+        [
+            {
+                "name": "some-other-vm",
+                "id": "9",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": (now - timedelta(hours=48)).isoformat(),
+            },
+            {
+                "name": name,
+                "id": "1",
+                "status": "TERMINATED",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": (now - timedelta(hours=2)).isoformat(),
+            },
+        ]
+    )
+    # reconnect_or_none: no LIVE eps-issue-137 (it's TERMINATED) → None, and the
+    # list filter is the EXACT name= filter, never broadened.
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    assert reconnect_or_none(spec=_spec("lora-7b"), config=_test_config(), runner=runner) is None
+    assert any(f"--filter=name={name}" in a for a in runner.calls)
+    assert not any("--filter=name~^eps-issue-" in a for a in runner.calls)
+
+    # _stale_named_instance_or_none: the TERMINATED eps-issue-137 record blocks
+    # the name; the unmanaged some-other-vm is ignored (matched by exact name).
+    runner2 = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    stale = _stale_named_instance_or_none(
+        spec=_spec("lora-7b"), config=_test_config(), runner=runner2
+    )
+    assert stale is not None
+    assert stale.name == name
+    assert stale.status == "TERMINATED"
+    assert any(f"--filter=name={name}" in a for a in runner2.calls)
+
+
+def test_audit_keep_prefix_never_reaped_or_escalated(monkeypatch) -> None:
+    """REC2: with _JANITOR_KEEP_PREFIXES set to a keep- prefix, an aged
+    keep-mydevbox VM is classification=keep, action=skipped, the escalate
+    callback is NOT invoked, and NO delete argv is issued."""
+    monkeypatch.setattr("explore_persona_space.backends.gcp._JANITOR_KEEP_PREFIXES", ("keep-",))
+    now = datetime(2026, 6, 14, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=48)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("keep-mydevbox", created), "")],
+    )
+    seen: list[dict] = []
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+        escalate=seen.append,
+    )
+    assert records[0]["classification"] == JANITOR_CLASS_KEEP
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert seen == []
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+    # No phase probe either — a keep VM is short-circuited before the probe.
+    assert not any("get-guest-attributes" in a for a in runner.calls)
 
 
 # ---------------------------------------------------------------------------
@@ -2380,6 +2860,97 @@ def test_render_startup_script_required_secret_preflight() -> None:
     preflight_idx = script.index("In-VM preflight: required workload secrets")
     assert preflight_idx < script.index("git clone"), "preflight must precede the clone"
     assert preflight_idx < script.index("uv sync"), "preflight must precede uv sync"
+
+
+# ---------------------------------------------------------------------------
+# #658 — EXIT-trap crash-diagnostics + partial-artifact preservation
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_persists_diagnostics_before_teardown() -> None:
+    """#658: the EXIT trap uploads the workload log + partial artifacts to
+    the HF data repo BEFORE the shutdown that triggers the
+    ``--instance-termination-action=DELETE`` boot-disk destruction, so a
+    GCP crash is debuggable and partial progress is recoverable."""
+    cfg = _test_config()
+    script = render_startup_script(spec=_spec(), config=cfg, attempt_id="att-fixed-001")
+    # The helper is defined and called from the crash branch.
+    assert "_eps_persist_diagnostics() {" in script
+    assert '_eps_persist_diagnostics "$rc"' in script
+    # It is wired into the EXIT trap and runs BEFORE the poweroff (else the
+    # boot disk + its logs/artifacts are already gone).
+    trap_line = next(line for line in script.splitlines() if line.startswith("trap 'rc=$?"))
+    assert "_eps_persist_diagnostics" in trap_line
+    assert trap_line.index('_eps_persist_diagnostics "$rc"') < trap_line.index("shutdown -h now")
+    # The data-repo target is exported so the helper can resolve it
+    # (the repo id has no shell-special chars, so it renders verbatim).
+    assert f"export EPS_HF_DATA_REPO={cfg.hf_data_repo}" in script
+
+
+def test_render_startup_script_diagnostics_uploads_log_and_partial_artifacts() -> None:
+    """The crash-diagnostics upload covers BOTH the workload log (the
+    traceback / stderr) AND the partial eval_results the workload wrote
+    before crashing — the two things #658 lost on every retry."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    # Log + crash report upload.
+    assert "workload.log" in script
+    assert "crash_report.json" in script
+    # Partial artifacts: the workload's eval_results/issue_<N>/ dir.
+    assert 'eval_results" / f"issue_{issue}"' in script
+    assert "upload_folder" in script
+    # Destination prefix isolates partial output per attempt.
+    assert "issue${EPS_ISSUE:-0}_partial/${EPS_ATTEMPT_ID:-unknown}" in script
+
+
+def test_render_startup_script_diagnostics_is_guarded_and_bounded() -> None:
+    """The crash-upload must NEVER delay the poweroff that bounds billing:
+    it early-returns without a repo/token, time-bounds the upload, and the
+    trap call is on the non-aborting (``set +e``) crash path."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    # Early-return when the repo target / token is absent (early-boot crash).
+    assert (
+        'if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then return 0; fi' in script
+    )
+    # Hard time bound on the upload so a hung HF call can't strand the VM.
+    assert "timeout 300 uv run python" in script
+    # The trap body runs under set +e (non-aborting), so a failing upload
+    # command cannot abort the trap before shutdown.
+    trap_line = next(line for line in script.splitlines() if line.startswith("trap 'rc=$?"))
+    assert "set +e" in trap_line
+
+
+def test_render_startup_script_diagnostics_present_on_both_branches() -> None:
+    """The crash-diagnostics helper lives in the SHARED preamble, so both
+    the hydra (train.py) and the workload_cmd branches get it."""
+    hydra = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    workload = render_startup_script(
+        spec=_spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    for script in (hydra, workload):
+        assert "_eps_persist_diagnostics() {" in script
+        assert '_eps_persist_diagnostics "$rc"' in script
+
+
+def test_render_startup_script_is_valid_bash() -> None:
+    """Both rendered branches must parse — the #658 helper embeds a Python
+    heredoc inside a function inside a subshell; a quoting slip would only
+    surface at VM-boot time. ``bash -n`` is the syntax gate (shellcheck is
+    not installed on the dev VM)."""
+    import subprocess
+    import tempfile
+
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh --flag 'v 1'"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
+            fh.write(script)
+            path = fh.name
+        proc = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
+        assert proc.returncode == 0, f"bash -n failed:\n{proc.stderr}"
 
 
 # ---------------------------------------------------------------------------
@@ -4141,3 +4712,484 @@ def test_render_create_argv_h100_standard_raises_loud() -> None:
             startup_script="#!/bin/bash\n",
             secret_files=_TEST_SECRET_FILES,
         )
+
+
+# ---------------------------------------------------------------------------
+# #659 — spec-threading at GCP launch time + workload-vs-setup poll
+# discrimination (the prerequisites for the ASYNC RunPod failover).
+#
+# A1 (the as-is async signal) was reconciler-verified WRONG: ``eps/phase`` is
+# single-valued and the EXIT trap overwrites it to ``failed`` on ANY non-zero
+# exit, so a SETUP crash and a WORKLOAD crash collapse to the same
+# ``current_phase``. A7 (the GCP handle carries enough to rebuild a RunSpec)
+# was fact-checker-confirmed WRONG: ``handle.extra`` never carried the workload
+# command. #659 fixes BOTH — MF1/MF2 thread the spec fields onto ``extra`` at
+# launch, MF3 publishes an ``eps/workload_started`` sentinel so the poll can
+# distinguish ``terminal_workload_failed`` from ``terminal_setup_failed``.
+#
+# These tests fail TODAY (the extra keys / the discrimination do not exist
+# yet) and pass after the §4.1.0 / §4.1.0b sub-changes land.
+# ---------------------------------------------------------------------------
+
+
+def _launch_runner() -> _Runner:
+    """A _Runner that lets ``launch`` provision a fake instance (no real VM)."""
+    return _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no existing instance
+        create_results=[
+            GcloudRunResult(0, json.dumps([{"name": "eps-issue-137", "id": "112233"}]), "")
+        ],
+    )
+
+
+def test_gcp_handle_extra_carries_workload_command_for_runpod_failover(no_marker_posts) -> None:
+    """#659 / MF1+MF2: ``GcpBackend.launch`` must thread the workload command +
+    sizing onto ``RunHandle.extra`` so the async poller can reconstruct a
+    RunSpec for the RunPod failover. The ``str`` ``workload_cmd`` survives
+    VERBATIM (NOT exploded to a per-character list by an erroneous
+    ``list(spec.workload_cmd or ())``), and
+    ``deserialize_handle(serialize_handle(handle))`` preserves them all."""
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+
+    cmd = "REPO_ROOT=/workspace bash scripts/foo.sh --bar"
+    spec = _spec(hydra_args=(), workload_cmd=cmd, gpus=1, time_budget_hours=4.0)
+    backend = GcpBackend(
+        config=_test_config(), runner=_launch_runner(), marker_poster=lambda **_: None
+    )
+    handle = backend.launch(spec)
+
+    # MF1: str preserved verbatim, NOT list("...") which would per-char explode.
+    assert handle.extra["workload_cmd"] == cmd
+    assert isinstance(handle.extra["workload_cmd"], str)
+    assert handle.extra["hydra_args"] == []  # empty tuple () -> list []
+    assert handle.extra["gpus"] == 1
+    assert handle.extra["time_budget_hours"] == 4.0
+
+    # Round-trip survival through the sidecar serializer (a plain string and a
+    # list both JSON-round-trip faithfully).
+    recovered = deserialize_handle(serialize_handle(handle))
+    assert recovered.extra["workload_cmd"] == cmd
+    assert isinstance(recovered.extra["workload_cmd"], str)
+    assert recovered.extra["hydra_args"] == []
+    assert recovered.extra["gpus"] == 1
+    assert recovered.extra["time_budget_hours"] == 4.0
+
+
+def test_gcp_handle_extra_round_trips_hydra_args_as_list(no_marker_posts) -> None:
+    """#659 / MF1+MF2 (hydra branch): a hydra spec threads ``hydra_args`` as a
+    list onto ``extra`` (empty ``workload_cmd``), and the round-trip preserves
+    the list shape — so the poller can rebuild a hydra RunSpec verbatim."""
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+
+    spec = _spec(hydra_args=("condition=c1_evil_wrong_em", "seed=42"))
+    backend = GcpBackend(
+        config=_test_config(), runner=_launch_runner(), marker_poster=lambda **_: None
+    )
+    handle = backend.launch(spec)
+
+    assert handle.extra["workload_cmd"] == ""
+    assert handle.extra["hydra_args"] == ["condition=c1_evil_wrong_em", "seed=42"]
+    assert isinstance(handle.extra["hydra_args"], list)
+
+    recovered = deserialize_handle(serialize_handle(handle))
+    assert recovered.extra["hydra_args"] == ["condition=c1_evil_wrong_em", "seed=42"]
+    assert isinstance(recovered.extra["hydra_args"], list)
+    assert recovered.extra["workload_cmd"] == ""
+
+
+def test_runspec_from_gcp_handle_preserves_mutual_exclusion() -> None:
+    """#659 / MF2: ``_runspec_from_gcp_handle`` reads BOTH ``workload_cmd``
+    (str) AND ``hydra_args`` (tuple/list) from ``extra`` and passes each
+    through verbatim; one is empty by construction, so
+    ``RunSpec.__post_init__``'s mutual exclusion holds and no placeholder is
+    substituted into the unused branch."""
+    from explore_persona_space.backends.base import RunHandle
+    from scripts.backend_poll import _runspec_from_gcp_handle
+
+    def _handle(extra: dict) -> RunHandle:
+        return RunHandle(
+            backend="gcp",
+            cluster=None,
+            job_id="instance-fake-1",
+            pod_name="eps-issue-659",
+            scratch_dir="/workspace/eps-issue-659",
+            log_path="/workspace/logs/issue-659.log",
+            extra=extra,
+        )
+
+    # (a) workload_cmd branch: non-empty workload_cmd + empty hydra_args.
+    handle = _handle(
+        {
+            "intent": "lora-7b",
+            "gpus": 1,
+            "time_budget_hours": 4.0,
+            "workload_cmd": "bash scripts/foo.sh",
+            "hydra_args": [],
+        }
+    )
+    spec = _runspec_from_gcp_handle(handle, issue=659)
+    assert spec.workload_cmd == "bash scripts/foo.sh"
+    assert spec.hydra_args == ()
+    assert not (spec.workload_cmd and spec.hydra_args)  # mutual exclusion holds
+
+    # (b) hydra branch: empty workload_cmd + non-empty hydra_args.
+    handle2 = _handle(
+        {
+            "intent": "ft-7b",
+            "gpus": 4,
+            "time_budget_hours": 8.0,
+            "workload_cmd": "",
+            "hydra_args": ["condition=c1", "seed=42"],
+        }
+    )
+    spec2 = _runspec_from_gcp_handle(handle2, issue=659)
+    assert spec2.workload_cmd == ""
+    assert spec2.hydra_args == ("condition=c1", "seed=42")
+    assert not (spec2.workload_cmd and spec2.hydra_args)  # mutual exclusion holds
+
+    # A pre-#659 handle missing the workload command FAILS LOUD (never launches
+    # a blank RunPod job).
+    with pytest.raises(ValueError):
+        _runspec_from_gcp_handle(_handle({"intent": "lora-7b"}), issue=659)
+
+
+def _guest_attr_payload_multi(items: list[tuple[str, str]]) -> str:
+    """A ``get-guest-attributes`` payload carrying MULTIPLE eps/* keys (the
+    whole-namespace read the §4.1.0b discrimination uses)."""
+    return json.dumps([{"namespace": "eps", "key": key, "value": value} for key, value in items])
+
+
+def test_gcp_poll_distinguishes_workload_failed_from_setup_failed() -> None:
+    """#659 / MF3: ``GcpBackend.poll`` returns DISTINCT ``current_phase``
+    values for a workload crash vs a setup failure, keyed on the
+    ``eps/workload_started`` sentinel. ``phase==failed`` maps to
+    ``terminal_workload_failed`` IFF the sentinel was published; otherwise
+    ``terminal_setup_failed``. A PROBE FAILURE on the sentinel read falls back
+    CONSERVATIVELY to ``terminal_workload_failed`` (never misread "couldn't
+    ask" as "setup failed", which would suppress a legitimate failover).
+
+    Built on the existing ``_Runner`` double: the implementer may read the
+    sentinel via a whole-``eps/``-namespace probe (preferred — one round-trip)
+    OR a second ``--query-path=eps/workload_started`` probe. To stay agnostic
+    to that choice this test scripts the guest-attr payload to carry BOTH keys
+    on the first read AND provides a matching second scripted result, so either
+    implementation resolves the same way."""
+    # (a) workload was reached: phase=failed AND workload_started=true.
+    runner_a = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(
+                0,
+                _guest_attr_payload_multi([("phase", "failed"), ("workload_started", "true")]),
+                "",
+            ),
+            # Second probe (if the impl issues a separate workload_started read).
+            GcloudRunResult(0, _guest_attr_payload_multi([("workload_started", "true")]), ""),
+        ],
+    )
+    backend_a = GcpBackend(config=_test_config(), runner=runner_a, marker_poster=lambda **_: None)
+    res_a = backend_a.poll(_poll_handle())
+    assert res_a.status == "dead"
+    assert res_a.current_phase == "terminal_workload_failed"
+
+    # (b) setup failed before the workload ran: phase=failed, sentinel ABSENT.
+    runner_b = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            # Second probe (if issued) finds the attribute not written (404).
+            GcloudRunResult(1, "", "guest attribute eps/workload_started not found"),
+        ],
+    )
+    backend_b = GcpBackend(config=_test_config(), runner=runner_b, marker_poster=lambda **_: None)
+    res_b = backend_b.poll(_poll_handle())
+    assert res_b.status == "dead"
+    assert res_b.current_phase == "terminal_setup_failed"
+
+    # (c) probe FAILURE on the workload_started read -> conservative fallback to
+    # terminal_workload_failed (do NOT downgrade an unprovable read to setup).
+    runner_c = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            # phase reads failed; the sentinel read is an auth/transport failure.
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            GcloudRunResult(
+                1, "", "ERROR: Required 'compute.instances.getGuestAttributes' permission denied"
+            ),
+        ],
+    )
+    backend_c = GcpBackend(config=_test_config(), runner=runner_c, marker_poster=lambda **_: None)
+    res_c = backend_c.poll(_poll_handle())
+    assert res_c.current_phase == "terminal_workload_failed"
+
+
+# ---------------------------------------------------------------------------
+# issue #669 — hung-but-RUNNING VM recovery: producer-side reachability_alarm
+# wiring (M2.5), the in-VM watchdog (Fix 2), and the scheduling flags (Fix 3)
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_poll_running_transport_drain_failure_sets_reachability_alarm() -> None:
+    """M2.5 (#669 producer side): a RUNNING GCP poll whose sentinel-drain SSH
+    fails at the TRANSPORT layer (rc != 0 — the unreachable-VM signature) sets
+    ``PollResult.reachability_alarm = True``. This is the producer the poller's
+    frozen-phase wedge gate (``_maybe_escalate_gcp_wedge``) reads — without it
+    the consumer tests' mocked ``reachability_alarm`` would be ungrounded."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(1, "", "ssh: connect to host 1.2.3.4 port 22: timed out")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"  # still a coarse running tick (not the poller's job here)
+    assert pr.reachability_alarm is True  # transport class -> reachability alarm
+
+
+def test_gcp_poll_running_healthy_drain_leaves_reachability_alarm_false() -> None:
+    """M2.5 negative: a RUNNING GCP poll whose drain SSH SUCCEEDS (rc == 0,
+    clean drain) leaves ``reachability_alarm = False`` — the VM answered, so it
+    is NOT the unreachable-VM signature and the wedge gate must never fire."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(0, "EPS_LOGTAIL_START\nEPS_LOGTAIL_END\n", "")],  # clean drain
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.reachability_alarm is False
+
+
+def test_gcp_poll_running_sentinel_processing_alarm_leaves_reachability_alarm_false(
+    monkeypatch,
+) -> None:
+    """M2.5 / M1 signal split: a RUNNING GCP poll whose drain SSH SUCCEEDS but a
+    matched sentinel set produced 0 processed markers (a HEALTHY VM with a
+    malformed sentinel / transient marker-post failure) raises the
+    SENTINEL-PROCESSING-class alarm, NOT the transport class — so
+    ``reachability_alarm`` stays False even though the generic drain alarm
+    fired. This is the M1 defect v1 would have tripped on."""
+    pp = _poll_pipeline_module()
+    monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    stdout = (
+        "SENTINEL_START /workspace/logs/issue-137-epm_results-1781214523.json\n"
+        "SENTINEL_END\n"
+        "EPS_LOGTAIL_START\nEPS_LOGTAIL_END\n"
+    )
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(0, stdout, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    # The generic drain alarm DID fire (loud in log_tail) ...
+    assert "matched but 0 processed" in pr.log_tail_excerpt
+    # ... but it is the sentinel-processing class, so reachability_alarm is False.
+    assert pr.reachability_alarm is False
+
+
+def test_poll_terminated_with_wedged_phase_maps_to_terminal_wedged_terminated() -> None:
+    """#669 (Option 2): a TERMINATED VM whose in-VM watchdog wrote
+    ``eps/phase=wedged`` before shutdown maps to ``terminal_wedged_terminated``
+    (the conservative failover phase), NOT the bare ``terminal_terminated``."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("wedged"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_wedged_terminated"
+
+
+def test_poll_terminated_without_wedged_phase_stays_terminal_terminated() -> None:
+    """#669 Option-2 invariant: a TERMINATED VM with NO ``eps/phase=wedged``
+    (spot preemption / max-run-duration / manual stop) stays
+    ``terminal_terminated`` EXACTLY as today — NO spot/max-run regression, the
+    async-failover accept-set leaves ``terminal_terminated`` excluded."""
+    # guest-attr default (gcloud rc=1, "not found") -> phase "" -> not wedged.
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+
+
+def test_render_startup_script_includes_reachability_watchdog() -> None:
+    """Fix 2 (#669): the rendered startup script embeds the reachability
+    watchdog daemon — the metadata + external probes, the ~5-min sustained-loss
+    threshold, the ``eps/phase=wedged`` write BEFORE the shutdown ladder, and
+    the backgrounded launch + clean-exit reap. Asserted on BOTH the hydra and
+    the workload_cmd branches (shared preamble)."""
+    for spec in (_spec(), _workload_spec("bash scripts/foo.sh --x 1")):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        assert "_eps_reachability_watchdog()" in script  # the daemon is defined
+        assert "_eps_reachability_watchdog < /dev/null &" in script  # backgrounded launch
+        # REACHABILITY (not liveness): both probes, evaluated SEPARATELY — fails
+        # resets on OR-of-successes, increments ONLY on BOTH-fail (code-review r1).
+        assert "169.254.169.254/computeMetadata/v1/instance/id" in script
+        assert "https://huggingface.co/" in script
+        # ~5 min sustained loss: 30s cadence x 10 consecutive failures.
+        assert "interval=30 threshold=10" in script
+        # eps/phase=wedged written BEFORE the shutdown ladder (the
+        # terminal_wedged_terminated trigger).
+        wedged_idx = script.index("_eps_phase wedged")
+        shutdown_idx = script.index("shutdown -h now 2>/dev/null || poweroff -f")
+        assert wedged_idx < shutdown_idx
+        # Reaped on the clean-exit path before the success sentinel.
+        kill_idx = script.index('kill "${EPS_WATCHDOG_PID:-}"')
+        sentinel_idx = script.index("Completion sentinel")
+        assert kill_idx < sentinel_idx
+
+
+def test_render_startup_script_watchdog_launch_after_redirect_marker() -> None:
+    """Fix 2 (#669): the watchdog launch lands AFTER the #607 output-redirect
+    end marker, so (a) its output goes to the workload log (post-redirect) and
+    (b) the #607 prelude-slicing integration tests never execute the infinite
+    daemon loop (the slice ends AT the marker)."""
+    script = render_startup_script(spec=_workload_spec(), config=_test_config(), attempt_id="a")
+    redirect_end = script.index("# === /output redirect (#607) ===")
+    launch_idx = script.index("_eps_reachability_watchdog < /dev/null &")
+    assert launch_idx > redirect_end
+
+
+def test_launch_argv_sets_no_restart_on_failure_and_maintenance_policy_terminate() -> None:
+    """Fix 3 (#669): the create argv carries ``--no-restart-on-failure``
+    (automaticRestart=false — a watchdog self-shutdown is FINAL) ALONGSIDE the
+    pre-existing ``--maintenance-policy=TERMINATE`` and
+    ``--instance-termination-action=DELETE`` (independent scheduling-block
+    fields that compose freely)."""
+    argv = render_create_argv(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--no-restart-on-failure" in argv
+    assert "--maintenance-policy=TERMINATE" in argv
+    assert "--instance-termination-action=DELETE" in argv
+
+
+# ---------------------------------------------------------------------------
+# issue #669 code-review r1 (Blocker A): the watchdog probes the two endpoints
+# SEPARATELY — fails resets on OR-of-successes, increments ONLY on BOTH-fail.
+# Executes the rendered bash stanza with stubbed curl (the green substring tests
+# never RAN the bash, so they were blind to the inverted `curl A && curl B`
+# conjunction that incremented on a SINGLE-endpoint failure).
+# ---------------------------------------------------------------------------
+
+
+def _extract_watchdog_stanza(script: str) -> str:
+    """Slice the ``_eps_reachability_watchdog() { ... }`` function body out of a
+    rendered startup script by brace-matching from its definition."""
+    start = script.index("_eps_reachability_watchdog() {")
+    # Brace-match from the opening '{' to the matching '}'.
+    depth = 0
+    i = script.index("{", start)
+    while i < len(script):
+        if script[i] == "{":
+            depth += 1
+        elif script[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return script[start : i + 1]
+        i += 1
+    raise AssertionError("watchdog function braces did not balance")
+
+
+def _run_watchdog(meta_pattern_succeeds: bool, ext_pattern_succeeds: bool, max_iters: int = 15):
+    """Run the rendered watchdog stanza with stubbed ``curl`` / ``_eps_phase`` /
+    shutdown ladder.
+
+    ``curl`` returns success/failure by URL pattern (metadata 169.254.169.254 vs
+    huggingface.co). ``sleep`` is stubbed to a no-op AND a guard exits the loop
+    cleanly after ``max_iters`` iterations so a healthy (always-reset) loop
+    terminates instead of spinning forever. Returns the (rc, stdout) of the run;
+    ``PHASE_CALLED:wedged`` / ``SHUTDOWN_CALLED`` in stdout flags that the
+    terminal wedge path fired.
+    """
+    import subprocess
+    import tempfile
+
+    stanza = _extract_watchdog_stanza(
+        render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    )
+    meta_rc = 0 if meta_pattern_succeeds else 1
+    ext_rc = 0 if ext_pattern_succeeds else 1
+    shim = f"""#!/bin/bash
+set -uo pipefail
+_iters=0
+# Stub the shutdown ladder + phase writer so the terminal path is OBSERVABLE
+# (and never actually powers anything off in the test).
+_eps_phase() {{ echo "PHASE_CALLED:$1"; }}
+shutdown() {{ echo "SHUTDOWN_CALLED"; exit 0; }}
+poweroff() {{ echo "POWEROFF_CALLED"; exit 0; }}
+halt() {{ echo "HALT_CALLED"; exit 0; }}
+# Route curl by URL pattern: metadata server vs the external HF endpoint.
+curl() {{
+  for a in "$@"; do
+    case "$a" in
+      *169.254.169.254*) return {meta_rc} ;;
+      *huggingface.co*) return {ext_rc} ;;
+    esac
+  done
+  return 0
+}}
+# No-op sleep + an iteration cap so a healthy (always-reset) loop terminates.
+sleep() {{ _iters=$((_iters + 1)); if [ "$_iters" -gt {max_iters} ]; then exit 0; fi; }}
+{stanza}
+_eps_reachability_watchdog
+"""
+    with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
+        fh.write(shim)
+        path = fh.name
+    proc = subprocess.run(["bash", path], capture_output=True, text=True, timeout=30)
+    return proc.returncode, proc.stdout
+
+
+def test_watchdog_resets_when_metadata_succeeds_and_external_fails() -> None:
+    """Blocker A: metadata healthy + HF down → ``fails`` resets every iteration
+    (OR-of-successes), so the watchdog NEVER reaches the threshold and NEVER
+    writes ``eps/phase=wedged`` or shuts the VM down. This is the exact false
+    positive the pre-fix ``curl A && curl B`` conjunction produced (a transient
+    HF outage on a HEALTHY VM)."""
+    _rc, out = _run_watchdog(meta_pattern_succeeds=True, ext_pattern_succeeds=False)
+    assert "PHASE_CALLED:wedged" not in out, out
+    assert "SHUTDOWN_CALLED" not in out, out
+
+
+def test_watchdog_resets_when_external_succeeds_and_metadata_fails() -> None:
+    """Blocker A (symmetric): HF reachable + metadata probe failing → still a
+    reset every iteration, no wedge, no shutdown."""
+    _rc, out = _run_watchdog(meta_pattern_succeeds=False, ext_pattern_succeeds=True)
+    assert "PHASE_CALLED:wedged" not in out, out
+    assert "SHUTDOWN_CALLED" not in out, out
+
+
+def test_watchdog_terminates_only_when_both_probes_fail() -> None:
+    """Blocker A (the true-positive): only when BOTH probes fail for the full
+    threshold does ``fails`` reach 10 → ``eps/phase=wedged`` is written and the
+    shutdown ladder fires. Confirms the fix did not break genuine detection."""
+    _rc, out = _run_watchdog(meta_pattern_succeeds=False, ext_pattern_succeeds=False)
+    assert "PHASE_CALLED:wedged" in out, out
+    assert "SHUTDOWN_CALLED" in out, out
+
+
+def test_watchdog_resets_when_both_probes_succeed() -> None:
+    """Healthy VM (both endpoints answer): no wedge, no shutdown — the obvious
+    happy path, pinned alongside the OR-reset cases for completeness."""
+    _rc, out = _run_watchdog(meta_pattern_succeeds=True, ext_pattern_succeeds=True)
+    assert "PHASE_CALLED:wedged" not in out, out
+    assert "SHUTDOWN_CALLED" not in out, out

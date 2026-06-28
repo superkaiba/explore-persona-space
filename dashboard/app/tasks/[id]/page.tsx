@@ -6,11 +6,13 @@ import {
   getEvents,
   getPlan,
   getTask,
+  isPaperTask,
   type Frontmatter,
   type Task,
   type TaskEvent,
   type TaskPlan,
 } from "@/lib/tasks";
+import { getPaper, type Paper } from "@/lib/paper";
 import { STATUS_LABELS, type Status } from "@/lib/repo";
 import { getProgressMap } from "@/lib/progress";
 import { TaskProgressBar } from "@/components/tasks/TaskProgressBar";
@@ -23,6 +25,8 @@ import {
 } from "@/components/tasks/TaskTocSidebar";
 import { EditableBody } from "./EditableBody";
 import { TaskBodyMarkdown } from "./TaskBodyMarkdown";
+import { PaperView } from "./PaperView";
+import { TaskDataViewer } from "./TaskDataViewer";
 import { TaskFeed } from "./TaskFeed";
 import { type TaskCommentView } from "./TaskCommentBody";
 import { TitleEditor } from "./TitleEditor";
@@ -55,7 +59,14 @@ const COMPACT_KINDS = new Set<string>([
 // `itemKey` (used as the localStorage key for collapse state) and
 // `anchorId` (the DOM id the TOC sidebar scroll-jumps to).
 type FeedItem =
-  | { kind: "body"; ts: string; itemKey: string; anchorId: string; task: Task }
+  | {
+      kind: "body";
+      ts: string;
+      itemKey: string;
+      anchorId: string;
+      task: Task;
+      paper: Paper | null;
+    }
   | {
       kind: "plan";
       ts: string;
@@ -99,7 +110,11 @@ export default async function TaskDetail({
   const events = getEvents(id);
   const comments = getComments(id);
   const plan = getPlan(id);
-  const items = buildFeedItems(task, events, plan);
+  // For a paper-task, load the committed LaTeX paper (paper.html + manifest).
+  // Null when the task isn't a paper-task or the paper hasn't been built yet —
+  // BodyCard then falls back to the markdown stub body.
+  const paper = isPaperTask(task.frontmatter) ? getPaper(id) : null;
+  const items = buildFeedItems(task, events, plan, paper);
   const canEdit = await isEditorAuthed();
   const user = await requireSessionAuth();
   // Pipeline progress (task #587): live-status keyed — the reader returns an
@@ -190,6 +205,15 @@ export default async function TaskDetail({
                       canEdit={canEdit}
                     />
                   );
+                  // The interactive data viewer pins directly below the body
+                  // card (it reads the body's figures). It self-hides when the
+                  // task has no figure data, so it's safe to always mount here.
+                  if (it.kind === "body") {
+                    return [
+                      row,
+                      <TaskDataViewer key="data-viewer" taskId={id} />,
+                    ];
+                  }
                   if (it.itemKey === firstTimelineKey) {
                     return [
                       <div
@@ -236,6 +260,7 @@ function buildFeedItems(
   task: Task,
   events: TaskEvent[],
   plan: TaskPlan | null,
+  paper: Paper | null,
 ): FeedItem[] {
   const items: FeedItem[] = [];
   const created = (task.frontmatter.created_at as string | undefined) ??
@@ -249,6 +274,7 @@ function buildFeedItems(
     itemKey: "body",
     anchorId: "feed-body",
     task,
+    paper,
   });
 
   // Plan card (the actual plan document — separate from the epm:plan event).
@@ -426,6 +452,7 @@ function FeedRow({
       return (
         <BodyCard
           task={item.task}
+          paper={item.paper}
           taskId={taskId}
           itemKey={item.itemKey}
           anchorId={item.anchorId}
@@ -476,23 +503,34 @@ function FeedRow({
 
 function BodyCard({
   task,
+  paper,
   taskId,
   itemKey,
   anchorId,
   canEdit,
 }: {
   task: Task;
+  paper: Paper | null;
   taskId: number;
   itemKey: string;
   anchorId: string;
   canEdit: boolean;
 }) {
   const isCleanResult = !!task.frontmatter.has_clean_result;
-  const label = isCleanResult
-    ? "Clean result · task body"
-    : "Original task body";
+  const isPaper = isPaperTask(task.frontmatter);
+  // A paper-task with a built paper renders the PAPER, not the stub markdown.
+  const renderPaper = isPaper && paper !== null;
+  const label = renderPaper
+    ? "Clean result · paper"
+    : isPaper
+      ? "Paper-task · stub body"
+      : isCleanResult
+        ? "Clean result · task body"
+        : "Original task body";
   const title =
     typeof task.frontmatter.title === "string" ? task.frontmatter.title : `Task #${taskId}`;
+  const abstract =
+    typeof task.frontmatter.abstract === "string" ? task.frontmatter.abstract.trim() : "";
 
   // The page header already renders the title as <h1> (TitleEditor); the
   // clean-result spec requires a duplicate `# <title>` line in the body
@@ -523,7 +561,7 @@ function BodyCard({
       taskId={taskId}
       itemKey={itemKey}
       anchorId={anchorId}
-      emphasis={isCleanResult ? "result" : undefined}
+      emphasis={isCleanResult || renderPaper ? "result" : undefined}
       header={
         <>
           <span className="font-mono text-stone-700">{label}</span>
@@ -532,22 +570,48 @@ function BodyCard({
               {String(task.frontmatter.created_at)}
             </time>
           )}
-          {isCleanResult && task.frontmatter.classification && (
+          {(isCleanResult || renderPaper) && task.frontmatter.classification && (
             <span>· classification: {String(task.frontmatter.classification)}</span>
           )}
         </>
       }
     >
-      {task.isLegacyHtml ? (
-        renderedBody
+      {renderPaper ? (
+        <>
+          {abstract && (
+            <div className="mb-4 rounded-md border border-stone-200 bg-stone-50 px-4 py-3">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+                Abstract
+              </div>
+              <p className="text-sm leading-relaxed text-stone-700">{abstract}</p>
+            </div>
+          )}
+          <PaperView html={paper!.html} pdfUrl={paper!.pdfUrl} />
+        </>
       ) : (
-        <EditableBody
-          taskId={taskId}
-          initialBody={task.body}
-          canEdit={canEdit}
-        >
-          {renderedBody}
-        </EditableBody>
+        <>
+          {isPaper && (
+            <p className="mb-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Paper-task: this body.md is a thin paper-stub. The canonical
+              clean-result is the LaTeX paper — edit{" "}
+              <code>docs/papers/issue_{taskId}/issue_{taskId}.tex</code> in git,
+              not here. The rendered paper appears here once{" "}
+              <code>build_paper.py</code> has committed{" "}
+              <code>paper.html</code>.
+            </p>
+          )}
+          {task.isLegacyHtml ? (
+            renderedBody
+          ) : (
+            <EditableBody
+              taskId={taskId}
+              initialBody={task.body}
+              canEdit={canEdit && !isPaper}
+            >
+              {renderedBody}
+            </EditableBody>
+          )}
+        </>
       )}
     </CollapsiblePanel>
   );

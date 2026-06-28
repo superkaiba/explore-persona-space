@@ -20,6 +20,20 @@ Writes (under ``eval_results/<ISSUE_SLUG>/``):
 CLI:
     uv run python scripts/i528_phase4_judge.py
     uv run python scripts/i528_phase4_judge.py --backend sync --limit 5   # smoke
+
+``--backend batch`` pending JSON schema (v2):
+    The submit is sharded into <=8k-request batches via the sanctioned
+    ``submit_sharded_batches_fire_and_forget`` helper, so the pending file now
+    records a LIST of batch IDs, one per shard, instead of a single scalar:
+
+        {"schema_version": "i528_v2", "kind": "judge_batch_pending",
+         "batch_ids": ["batch_...", ...],   # one entry per <=8k shard (was: batch_id scalar)
+         "n_requests": <total>, "git_commit": ..., "ts": ...}
+
+    The list is rewritten after EACH shard submit (incremental checkpoint), so a
+    mid-loop crash leaves a recoverable record of the shards already submitted.
+    The scalar ``batch_id`` field (v1) is dropped; the operator merges by reading
+    ``batch_ids`` from the v2 pending file in a separate ``--backend sync`` re-run.
 """
 
 from __future__ import annotations
@@ -33,6 +47,7 @@ import subprocess
 import time
 from pathlib import Path
 
+from explore_persona_space.eval.batch_judge import submit_sharded_batches_fire_and_forget
 from explore_persona_space.experiments.i528_data import ISSUE_SLUG
 
 logger = logging.getLogger("i528.phase4.judge")
@@ -338,26 +353,38 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                         ),
                     )
                 )
-        batch = client.messages.batches.create(requests=requests)
-        logger.info(
-            "Submitted batch id=%s n_requests=%d; poll separately and re-run "
-            "--backend sync to merge.",
-            batch.id,
-            len(requests),
+
+        # Shard the submit so no single batch exceeds the Batch API request cap
+        # (was: one un-sharded batches.create(requests=requests) that 409s past
+        # the 100k-request limit). The sanctioned helper owns the chunking +
+        # multi-submit; we own the i528-specific v2 pending JSON shape and rewrite
+        # it after EACH shard submit (Checkpoint-per-phase: a mid-loop crash leaves
+        # a recoverable record of the shards already submitted, not orphaned shards).
+        pending = {
+            "schema_version": "i528_v2",
+            "kind": "judge_batch_pending",
+            "batch_ids": [],  # filled incrementally by the callback below
+            "n_requests": len(requests),
+            "git_commit": _git(),
+            "ts": _dt.datetime.utcnow().isoformat() + "Z",
+        }
+
+        def _persist_pending(batch_ids: list[str]) -> None:
+            pending["batch_ids"] = list(batch_ids)
+            JUDGE_PATH.write_text(json.dumps(pending, indent=2, ensure_ascii=False))
+
+        batch_ids = submit_sharded_batches_fire_and_forget(
+            client, requests, on_batch_submitted=_persist_pending
         )
-        JUDGE_PATH.write_text(
-            json.dumps(
-                {
-                    "schema_version": "i528_v1",
-                    "kind": "judge_batch_pending",
-                    "batch_id": batch.id,
-                    "n_requests": len(requests),
-                    "git_commit": _git(),
-                    "ts": _dt.datetime.utcnow().isoformat() + "Z",
-                },
-                indent=2,
-                ensure_ascii=False,
-            )
+        # Final write covers the zero-shard edge case (empty requests -> no
+        # callback fired); a harmless no-op otherwise.
+        _persist_pending(batch_ids)
+        logger.info(
+            "Submitted %d requests across %d batch(es) ids=%s; poll separately and "
+            "re-run --backend sync to merge.",
+            len(requests),
+            len(batch_ids),
+            batch_ids,
         )
         return 0
 

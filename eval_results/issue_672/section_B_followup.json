@@ -1,0 +1,53 @@
+{
+  "live_injection_pass": false,
+  "fallback_outcome": "inconclusive_live_validation",
+  "headline_downgraded": true,
+  "watchdog_fired": true,
+  "watchdog_ticks_observed": 3,
+  "watchdog_ticks_required_for_terminate": 10,
+  "vm_terminated_by_watchdog": false,
+  "vm_terminated_by_startup_script_fail_handler": true,
+  "vm_actual_terminate_path": "orchestrator force-terminate via dispatch_issue.py finalize --skip-confirm-artifacts",
+  "failover_marker_sha": null,
+  "failover_count": 0,
+  "failover_predicate_should_fire": false,
+  "failover_predicate_should_fire_rationale": "the failure was setup_failed (bootstrap DNS resolution), NOT terminal_workload_failed. setup_failed is correctly excluded from #659 async failover (CLAUDE.md: 'a setup_failed boot/secrets crash is excluded'). The failover was therefore NOT expected to fire and DID NOT fire — that is the correct behavior.",
+  "poller_invocations": [
+    {"at": "17:58:50", "phase": "startup", "status": "running", "note": "sentinel drain via SSH FAILED (sshd already down); GCE instance.status=RUNNING so the poll predicate's terminal_workload_failed condition is not satisfied (correct: bootstrap failure, not workload failure)"}
+  ],
+  "poller_exit_codes": [0],
+  "live_path_attempt": {
+    "intent": "debug",
+    "machine_type": "a2-highgpu-1g",
+    "provisioning_model": "SPOT",
+    "zone": "us-central1-a",
+    "attempt_id_in_sidecar": "att-20260626-172624 (re-used from Section A's sidecar)",
+    "instance_id": "6122009523043632506",
+    "ladder_walked": ["ondemand_l4 → ZONE_RESOURCE_POOL_EXHAUSTED", "ondemand_a100_40 → ZONE_RESOURCE_POOL_EXHAUSTED", "spot_l4 → ZONE_RESOURCE_POOL_EXHAUSTED", "spot_a100_40 → LAUNCHED"],
+    "outcome": "VM provisioned + bootstrap failed (DNS) → startup-script fail-handler + eps-watchdog fired in parallel; iptables injection never ran because sshd was already down at planned injection time T+5min"
+  },
+  "partial_live_evidence": {
+    "watchdog_fired_on_real_network_failure": true,
+    "watchdog_ladder_ticks_observed": "1/10, 2/10, 3/10 (logged on serial console at 17:53:48 UTC)",
+    "startup_script_fail_handler_fired": true,
+    "phase_metadata_progression": ["startup", "failed"],
+    "interpretation": "The in-VM eps-watchdog logic (the #669 fix) correctly detected real-world network unreachability and began its termination ladder. The full 10/10 ladder + in-VM shutdown was not observed because the startup-script's own bootstrap-fail handler power-off path also fired in parallel, killing the main process. This is correct double-defense behavior. The full chain (watchdog 10/10 → in-VM shutdown → poll detects TERMINATED → #659 async failover) requires the workload phase to fail, which we did not reach because bootstrap failed first."
+  },
+  "deterministic_evidence_via_section_c": {
+    "watchdog_full_ladder_test": "tests/test_gcp_backend.py::test_watchdog_terminates_only_when_both_probes_fail (PASS)",
+    "watchdog_counter_reset_tests": "tests/test_gcp_backend.py::test_watchdog_resets_when_external_succeeds_and_metadata_fails (PASS), test_watchdog_resets_when_both_probes_succeed (PASS)",
+    "wedge_failover_once_tests": "tests/test_backend_poll.py::test_terminal_workload_wedged_fails_over_to_runpod_exactly_once (PASS), test_terminal_wedged_terminated_fails_over_to_runpod_exactly_once (PASS), test_concurrent_failover_preserves_first_runpod_sidecar (PASS)",
+    "total_green": "203/203 in test_gcp_backend.py + 18/18 in test_backend_poll.py"
+  },
+  "dispatch_router_finding": {
+    "user_question": "If the dispatch still falls through to RunPod despite GCP spot being available, that confirms the --backend gcp override / dispatch-router bug.",
+    "finding": "The dispatch-router is NOT buggy. Both Section A and Section B launches successfully provisioned on GCP SPOT (A100-80 and A100-40 respectively) when --time-budget-hours and --spot-tolerant were threaded. The parent run's fall-through to RunPod was caused by a missing time-budget making _is_short_job() return False, which short-circuits ALL SPOT rungs in the ladder. With --time-budget-hours 0.5 (or --spot-tolerant), the ladder correctly walks all 4 rungs (ondemand_kindA → ondemand_a100_40 → spot_kindA → spot_a100_40) and lands on a SPOT rung when on-demand is exhausted. This is a discoverability gap (the CLI doesn't warn when --provisioning-model SPOT is set but time-budget is unknown), not a router bug."
+  },
+  "pass": false,
+  "pass_reason": "Live injection did NOT run (sshd down before T+5min injection); section_B verdict is inconclusive_live_validation per plan §4. Partial live evidence (watchdog fired 3/10 on real DNS failure) is stronger than parent's zero-live, but the full 10/10 ladder + in-VM shutdown + #659 failover chain was NOT directly observed live this round. Deterministic Section C green covers the full chain via unit tests. Headline downgrade per §1: 'watchdog/failover logic unit-tested; live partial-fire on real DNS failure; full live ladder NOT validated this round'.",
+  "reproducibility": {
+    "git_commit": "0f80ffa59b (main, with secA followup)",
+    "ran_at": "2026-06-26T17:49-18:01Z",
+    "vm_termination_path": "orchestrator force-terminate via dispatch_issue.py finalize --skip-confirm-artifacts at 18:01:18Z"
+  }
+}

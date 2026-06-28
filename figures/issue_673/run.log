@@ -1,0 +1,40 @@
+=== ARM 1: expandable_segments:True ===
+`torch_dtype` is deprecated! Use `dtype` instead!
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Fetching 4 files:  25%|██▌       | 1/4 [00:50<02:32, 50.83s/it]Fetching 4 files: 100%|██████████| 4/4 [00:50<00:00, 12.71s/it]
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 51.56it/s]
+{
+  "regime": "expandable_segments_on",
+  "out": "figures/issue_673/memory_curves_expandable_segments_on.json",
+  "hook": {
+    "span_GiB": 0.0,
+    "tail_slope_GiB_per_iter": -4.203744488810993e-16,
+    "flat": true
+  },
+  "old_ohs_true": {
+    "span_GiB": 0.0,
+    "tail_slope_GiB_per_iter": -3.9003595772498216e-16,
+    "flat": true
+  }
+}
+=== ARM 2: default allocator ===
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 75.26it/s]
+{
+  "regime": "default_allocator",
+  "out": "figures/issue_673/memory_curves_default_allocator.json",
+  "hook": {
+    "span_GiB": 0.0,
+    "tail_slope_GiB_per_iter": -3.2014056148145407e-16,
+    "flat": true
+  },
+  "old_ohs_true": {
+    "span_GiB": 0.0,
+    "tail_slope_GiB_per_iter": -1.6114051428808998e-16,
+    "flat": true
+  }
+}
+=== ASSERT READER ===
+Traceback (most recent call last):
+  File "/workspace/explore-persona-space/scripts/issue673_assert.py", line 57, in <module>
+    from scripts.issue673_gpu_memory_validation import (
+ModuleNotFoundError: No module named 'scripts'

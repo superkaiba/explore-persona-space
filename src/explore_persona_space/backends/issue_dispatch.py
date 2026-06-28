@@ -84,7 +84,9 @@ from explore_persona_space.backends.base import (
     RunSpec,
 )
 from explore_persona_space.backends.router import (
+    ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
     BackendPrepareError,
+    CpuExhaustedNoRunpodLaneError,
     GcpAttemptCapExceededError,
     LeaseStore,
     ManualAttentionRequiredError,
@@ -429,6 +431,24 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 f"kind: {exc.kind}\n"
                 f"cluster: {exc.cluster}\n"
                 f"detail: {exc.reason}"
+            ),
+        )
+    if isinstance(exc, CpuExhaustedNoRunpodLaneError):
+        # #677: a CPU-only intent reached the RunPod terminal rung (GCP
+        # exhausted / sync failover) and RunPod has no CPU lane. failure_class
+        # is still infra (a capacity-class terminal), but the reason is DISTINCT
+        # from no_compute_available so the watcher's capacity-retry pass does
+        # NOT hot-retry a structurally-unservable run. MUST come BEFORE the
+        # generic NoComputeAvailableError branch (a subclass IS-A base, so the
+        # base check would otherwise shadow it).
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD}\n"
+                f"detail: {exc.reason}\n"
+                f"attempts: {json.dumps(exc.attempts, sort_keys=True)}"
             ),
         )
     if isinstance(exc, NoComputeAvailableError):

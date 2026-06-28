@@ -1,0 +1,1412 @@
+{
+  "commit": "9bd3e244d8",
+  "created": "2026-06-28T01:02:41Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "Extraction iteration": 0.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 1.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 2.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 3.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 4.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 5.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 6.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 7.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 8.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 9.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 10.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 11.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 12.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 13.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 14.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 15.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 16.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 17.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 18.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 19.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 20.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 21.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 22.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 23.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 24.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 25.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 26.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 27.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 28.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 29.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 30.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 31.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 32.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 33.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 34.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 35.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 36.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 37.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 38.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 39.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 40.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 41.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 42.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 43.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 44.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 45.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 46.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 47.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 48.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 49.0,
+      "GPU memory (GiB)": 14.35546875,
+      "series": "hook reserved",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Extraction iteration": 0.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 1.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 2.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 3.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 4.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 5.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 6.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 7.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 8.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 9.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 10.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 11.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 12.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 13.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 14.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 15.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 16.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 17.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 18.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 19.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 20.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 21.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 22.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 23.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 24.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 25.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 26.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 27.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 28.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 29.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 30.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 31.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 32.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 33.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 34.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 35.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 36.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 37.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 38.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 39.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 40.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 41.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 42.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 43.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 44.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 45.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 46.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 47.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 48.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 49.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "hook allocated",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Extraction iteration": 0.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 1.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 2.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 3.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 4.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 5.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 6.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 7.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 8.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 9.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 10.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 11.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 12.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 13.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 14.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 15.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 16.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 17.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 18.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 19.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 20.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 21.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 22.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 23.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 24.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 25.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 26.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 27.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 28.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 29.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 30.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 31.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 32.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 33.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 34.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 35.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 36.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 37.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 38.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 39.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 40.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 41.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 42.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 43.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 44.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 45.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 46.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 47.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 48.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 49.0,
+      "GPU memory (GiB)": 14.39453125,
+      "series": "old output_hidden_states reserved",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Extraction iteration": 0.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 1.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 2.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 3.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 4.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 5.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 6.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 7.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 8.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 9.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 10.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 11.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 12.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 13.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 14.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 15.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 16.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 17.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 18.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 19.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 20.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 21.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 22.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 23.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 24.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 25.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 26.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 27.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 28.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 29.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 30.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 31.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 32.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 33.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 34.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 35.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 36.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 37.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 38.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 39.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 40.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 41.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 42.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 43.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 44.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 45.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 46.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 47.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 48.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Extraction iteration": 49.0,
+      "GPU memory (GiB)": 14.222873210906982,
+      "series": "old output_hidden_states allocated",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 200
+}

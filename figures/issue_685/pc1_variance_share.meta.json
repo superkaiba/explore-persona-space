@@ -1,0 +1,180 @@
+{
+  "commit": "607912bbcb",
+  "created": "2026-06-27T07:18:51Z",
+  "figsize": [
+    4.5,
+    3.2
+  ],
+  "points": [
+    {
+      "layer": 7.0,
+      "PC1 variance share": 0.7135704159736633,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "PC1 variance share": 0.8244847059249878,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "PC1 variance share": 0.7112749814987183,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "PC1 variance share": 0.550219714641571,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "PC1 variance share": 0.7444984316825867,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "PC1 variance share": 0.8376035094261169,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "PC1 variance share": 0.8165009617805481,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "PC1 variance share": 0.6666140556335449,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "PC1 variance share": 0.6694765686988831,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "PC1 variance share": 0.8268006443977356,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "PC1 variance share": 0.8116112947463989,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "PC1 variance share": 0.7149568796157837,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "PC1 variance share": 0.7501785159111023,
+      "series": "hedging",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "PC1 variance share": 0.8096395134925842,
+      "series": "hedging",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "PC1 variance share": 0.782321572303772,
+      "series": "hedging",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "PC1 variance share": 0.6503296494483948,
+      "series": "hedging",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "PC1 variance share": 0.8231975436210632,
+      "series": "terse",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "PC1 variance share": 0.9113307595252991,
+      "series": "terse",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "PC1 variance share": 0.8596957325935364,
+      "series": "terse",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "PC1 variance share": 0.7217609882354736,
+      "series": "terse",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "PC1 variance share": 0.825339674949646,
+      "series": "formal",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "PC1 variance share": 0.8734307885169983,
+      "series": "formal",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "PC1 variance share": 0.8605234622955322,
+      "series": "formal",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "PC1 variance share": 0.8150117993354797,
+      "series": "formal",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24
+}

@@ -1,0 +1,338 @@
+{
+  "commit": "23e6250cc6",
+  "created": "2026-06-27T02:05:54Z",
+  "figsize": [
+    11.0,
+    4.3
+  ],
+  "points": [
+    {
+      "x": null,
+      "y": null,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": null,
+      "y": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.8209458548503318,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.6882682302658352,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.6171286621578019,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.42695833054346544,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.3707982192412726,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.40784655936108977,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.6456776792803929,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.49908356022510114,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.3862630671419698,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.3367241175959621,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.10349560488974309,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.14412953236145123,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.6644861259664762,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.626279102500403,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.516633383369217,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.2791793600749271,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.593583189011939,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.7817327388435931,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.7279988571767274,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.6072554837523889,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.49479419645453065,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.23039452776592612,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.14800563365515002,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.5237607182625952,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.805915842574113,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.8018111158044948,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.8861350018565954,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.03610336181716413,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.47281307356734176,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.48636901445636566,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.7706325844712923,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.6558610558908372,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.5208264835004764,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.08903080096522269,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.03970911414758093,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.16820728427476692,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.6644861259664762,
+      "series": "Harmful advice x agreement",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.626279102500403,
+      "series": "Harmful advice x agreement",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.516633383369217,
+      "series": "Harmful advice x agreement",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.2791793600749271,
+      "series": "Harmful advice x agreement",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.593583189011939,
+      "series": "Harmful advice x agreement",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.7817327388435931,
+      "series": "Harmful advice x agreement",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.7279988571767274,
+      "series": "Taught fact x marker tic",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.6072554837523889,
+      "series": "Taught fact x marker tic",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.49479419645453065,
+      "series": "Taught fact x marker tic",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.23039452776592612,
+      "series": "Taught fact x marker tic",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.14800563365515002,
+      "series": "Taught fact x marker tic",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.5237607182625952,
+      "series": "Taught fact x marker tic",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.28,
+      "series": "cross-behavior null p95 (0.28)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "Cross-behavior cosine,\nfraction of seed ceiling": 0.28,
+      "series": "cross-behavior null p95 (0.28)",
+      "_kind": "line",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 52
+}

@@ -126,6 +126,37 @@ in the linear case, where \(h\) is a context-to-answer map and
 context and predicts the answer state it will enter.
 \end{description}
 
+\item[\textbf{A3b.}] \textbf{Coherent context conditions.}
+After choosing a per-context vector \(x\mapsto c_x\), represent a context
+condition \(C\) by its mean
+\[
+c_C:=\E_{x\sim C}[c_x]
+\]
+only when the sampled contexts form a tight cluster in context-vector space.
+Given a metric \(W\succeq 0\), define the within-condition spread
+\[
+s_W(C)
+:=
+\E_{x\sim C}\|c_x-c_C\|_W^2,
+\qquad
+\|z\|_W^2:=z^\top Wz .
+\]
+Assume the predictor is applied only to \((W,\varepsilon)\)-coherent conditions,
+\[
+s_W(C)\le \varepsilon .
+\]
+This rules out heterogeneous mixtures whose mean vector hides distinct
+subconditions. If \(s_W(C)\) is large, \(C\) should be split into more coherent
+conditions or represented by a richer distributional summary.
+
+\begin{description}[leftmargin=1.5em]
+\item[\emph{Test.}] Estimate \(s_W(C)\) from samples \(x_i\sim C\) and check
+whether high-spread conditions have larger residuals in predicting
+\(v_{\theta_0}(C)\) from \(c_C\).
+\item[\emph{Example.}] A doctor+code condition is coherent only if its sampled
+prompts share the same doctor/code structure rather than mixing unrelated
+personas, tasks, or formats.
+\end{description}
 \item[\textbf{A4.}] \textbf{Read-out stability.}
 Let \(r^+_{B'}\) be the post-fine-tuning read-out for behavior \(B'\). Assume
 \[
@@ -667,6 +698,377 @@ transport, probing, and tuned lenses
 
 \textbf{Worth testing right now:} Yes. Easy to test and can give us layer information. 
 \end{assumption}
+
+\begin{assumption}[Contexts are close within a condition]
+\label{a:context-vector-coherence}
+Once a per-context vector representation \(x\mapsto c_x\) has been chosen, we
+assume that each context condition \(C\) to which we apply the mean-vector
+predictor is coherent: the contexts sampled from \(C\) should form a tight
+cluster in context-vector space.
+
+This assumption is forced by a singleton-condition edge case. A context condition
+is a distribution over contexts, so every individual context \(x\) defines a
+degenerate condition \(\delta_x\). For such a singleton condition,
+\[
+c_{\delta_x}=c_x,
+\qquad
+v_{\theta_0}(\delta_x)=\bar a_{\theta_0}(x).
+\]
+Therefore Assumption~\ref{a:context-vectorization}, applied to singleton
+conditions, says that the context-to-profile map must predict individual
+answer-side profiles:
+\[
+\bar a_{\theta_0}(x)\approx h_{\theta_0}(c_x).
+\]
+
+Now consider a finite mixture of singleton conditions,
+\[
+C=\sum_{i=1}^n p_i\delta_{x_i},
+\qquad
+p_i\ge 0,
+\qquad
+\sum_i p_i=1.
+\]
+Write
+\[
+c_i:=c_{x_i},
+\qquad
+a_i:=\bar a_{\theta_0}(x_i).
+\]
+Because both the condition vector and the answer-side profile are defined by
+averaging over contexts,
+\[
+c_C=\sum_i p_i c_i,
+\qquad
+v_{\theta_0}(C)=\sum_i p_i a_i.
+\]
+If the singleton predictor is exact, \(a_i=h_{\theta_0}(c_i)\). If the same
+mean-vector predictor is also exact on the mixture \(C\), then
+\[
+h_{\theta_0}(c_C)
+=
+v_{\theta_0}(C).
+\]
+Combining these two requirements gives
+\[
+h_{\theta_0}\!\left(\sum_i p_i c_i\right)
+=
+\sum_i p_i h_{\theta_0}(c_i).
+\tag{1}
+\label{eq:jensen-affinity}
+\]
+Thus exact consistency on both singleton conditions and arbitrary mixtures
+forces \(h_{\theta_0}\) to commute with arbitrary convex averaging.
+
+This is not merely a condition that nonlinear maps sometimes fail. Under mild
+regularity, it rules out nonlinear maps entirely. Let \(D\) be the convex hull of
+the per-context vectors \(\{c_x:x\in\mathcal X\}\). Suppose
+\(h_{\theta_0}:D\to\mathbb R^d\) is twice differentiable and satisfies
+\eqref{eq:jensen-affinity} for all finite mixtures in \(D\). Then
+\(h_{\theta_0}\) must be affine on \(D\).
+
+To see this, it is enough to consider two-point mixtures. For any \(z\in D\),
+direction \(u\), and sufficiently small \(t\) such that
+\(z+tu,z-tu\in D\), \eqref{eq:jensen-affinity} gives
+\[
+h_{\theta_0}(z)
+=
+\frac12 h_{\theta_0}(z+tu)
++
+\frac12 h_{\theta_0}(z-tu).
+\]
+Equivalently,
+\[
+h_{\theta_0}(z+tu)-2h_{\theta_0}(z)+h_{\theta_0}(z-tu)=0.
+\]
+Taylor expanding around \(z\),
+\[
+h_{\theta_0}(z+tu)
+=
+h_{\theta_0}(z)
++
+tDh_{\theta_0}(z)u
++
+\frac{t^2}{2}D^2h_{\theta_0}(z)[u,u]
++
+o(t^2),
+\]
+and
+\[
+h_{\theta_0}(z-tu)
+=
+h_{\theta_0}(z)
+-
+tDh_{\theta_0}(z)u
++
+\frac{t^2}{2}D^2h_{\theta_0}(z)[u,u]
++
+o(t^2).
+\]
+Substituting into the second-difference equation gives
+\[
+t^2D^2h_{\theta_0}(z)[u,u]+o(t^2)=0.
+\]
+Dividing by \(t^2\) and taking \(t\to0\) yields
+\[
+D^2h_{\theta_0}(z)[u,u]=0.
+\]
+Since this holds for every \(z\) and every direction \(u\), the Hessian of every
+coordinate of \(h_{\theta_0}\) vanishes throughout \(D\). Therefore
+\(h_{\theta_0}\) is affine on \(D\). So if arbitrary mixtures of unrelated
+contexts are allowed, and if each condition is represented only by its mean
+context vector \(c_C\), then a genuinely nonlinear \(h_{\theta_0}\) is
+mathematically incompatible with exact singleton-level and condition-level
+prediction.
+
+Coherence is the way out. We do not require the mean-vector predictor to work for
+arbitrary mixtures of far-apart contexts. Instead, we only apply it to conditions
+whose contexts occupy a small local region, where a nonlinear
+\(h_{\theta_0}\) is approximately affine.
+
+Formally, define the condition mean
+\[
+c_C:=\E_{x\sim C}[c_x].
+\]
+Given a context-space metric \(W\succeq0\), define the within-condition spread
+\[
+s_W(C)
+:=
+\E_{x\sim C}\|c_x-c_C\|_W^2,
+\qquad
+\|z\|_W^2:=z^\top Wz.
+\]
+We say that \(C\) is \((W,\varepsilon)\)-coherent when
+\[
+s_W(C)\le \varepsilon.
+\]
+The assumption is that the context conditions represented by a single mean vector
+\(c_C\) are \((W,\varepsilon)\)-coherent for an error scale \(\varepsilon\) small
+enough relative to the local curvature of \(h_{\theta_0}\).
+
+This condition directly controls the error introduced by averaging context
+vectors before applying \(h_{\theta_0}\). Fix a behavior read-out \(r_B\), and
+define the scalar behavior-relevant map
+\[
+f_B(c):=r_B^\top h_{\theta_0}(c).
+\]
+Assume \(f_B\) is twice differentiable on the convex hull of
+\(\{c_x:x\sim C\}\), and that its curvature is bounded in the \(W\)-geometry:
+\[
+\left|
+u^\top\nabla^2 f_B(c)u
+\right|
+\le
+K_{C,B}\|u\|_W^2
+\]
+for all relevant \(c\) and directions \(u\). Let
+\[
+\Delta_x:=c_x-c_C.
+\]
+Then \(\E_{x\sim C}[\Delta_x]=0\). Taylor expanding around \(c_C\),
+\[
+f_B(c_x)
+=
+f_B(c_C)
++
+\nabla f_B(c_C)^\top\Delta_x
++
+\frac12
+\Delta_x^\top
+\nabla^2 f_B(\widetilde c_x)
+\Delta_x,
+\]
+where \(\widetilde c_x\) lies on the segment between \(c_C\) and \(c_x\). Taking
+expectations, the linear term vanishes:
+\[
+\E_{x\sim C}\big[\nabla f_B(c_C)^\top\Delta_x\big]
+=
+\nabla f_B(c_C)^\top\E_{x\sim C}[\Delta_x]
+=
+0.
+\]
+Therefore
+\[
+\E_{x\sim C}[f_B(c_x)]-f_B(c_C)
+=
+\frac12
+\E_{x\sim C}
+\left[
+\Delta_x^\top
+\nabla^2 f_B(\widetilde c_x)
+\Delta_x
+\right].
+\]
+Using the curvature bound,
+\[
+\left|
+\E_{x\sim C}[f_B(c_x)]
+-
+f_B(c_C)
+\right|
+\le
+\frac12
+K_{C,B}
+\E_{x\sim C}\|\Delta_x\|_W^2
+=
+\frac12K_{C,B}s_W(C).
+\]
+Thus, if \(C\) is \((W,\varepsilon)\)-coherent,
+\[
+\left|
+\E_{x\sim C}[f_B(c_x)]
+-
+f_B(c_C)
+\right|
+\le
+\frac12K_{C,B}\varepsilon.
+\tag{2}
+\label{eq:coherence-jensen-bound}
+\]
+
+Equation~\eqref{eq:coherence-jensen-bound} is the mathematical content of the
+coherence assumption. Arbitrary mixtures force \(h_{\theta_0}\) to be globally
+affine because they require averaging and applying \(h_{\theta_0}\) to commute
+over the whole convex hull of context vectors. Coherent mixtures only require
+this commutation locally. On a small local cluster, the first-order Taylor term
+averages away, and the remaining Jensen gap is second-order in the
+within-condition spread.
+
+Including singleton prediction error, define
+\[
+\xi_B(C)
+:=
+\E_{x\sim C}
+\left[
+\left|
+r_B^\top
+\big(
+\bar a_{\theta_0}(x)-h_{\theta_0}(c_x)
+\big)
+\right|
+\right].
+\]
+Then the full behavior-relevant condition-level prediction error satisfies
+\[
+\left|
+r_B^\top
+\big(
+v_{\theta_0}(C)-h_{\theta_0}(c_C)
+\big)
+\right|
+\le
+\xi_B(C)
++
+\frac12K_{C,B}s_W(C).
+\]
+Therefore, for a coherent condition,
+\[
+\left|
+r_B^\top
+\big(
+v_{\theta_0}(C)-h_{\theta_0}(c_C)
+\big)
+\right|
+\le
+\xi_B(C)
++
+\frac12K_{C,B}\varepsilon.
+\]
+
+For a family of evaluated behaviors \(\mathcal B\), define
+\[
+\xi_{\mathcal B}(C):=\max_{B\in\mathcal B}\xi_B(C),
+\qquad
+K_C^{\mathcal B}:=\max_{B\in\mathcal B}K_{C,B}.
+\]
+Then
+\[
+\max_{B\in\mathcal B}
+\left|
+r_B^\top
+\big(
+v_{\theta_0}(C)-h_{\theta_0}(c_C)
+\big)
+\right|
+\le
+\xi_{\mathcal B}(C)
++
+\frac12K_C^{\mathcal B}s_W(C).
+\]
+So, to keep the latent prediction error below an error budget
+\(\tau_{\mathrm{lat}}\), it is sufficient to require
+\[
+s_W(C)
+\le
+\frac{2(\tau_{\mathrm{lat}}-\xi_{\mathcal B}(C))}
+     {K_C^{\mathcal B}}.
+\]
+
+Intuitively, singleton conditions force \(h_{\theta_0}\) to be correct on
+individual context vectors. Arbitrary mixtures would then force
+\(h_{\theta_0}\) to agree with every chord between those vectors, eliminating
+curvature and making \(h_{\theta_0}\) affine. Coherence avoids this by ruling out
+heterogeneous mixtures as valid single-vector conditions. A coherent condition is
+one whose contexts are close enough that even a nonlinear \(h_{\theta_0}\) behaves
+approximately affine over the region occupied by that condition.
+
+For the metric, the default choice is \(W=I\). Once a background context
+covariance \(\Sigma_c\) has been estimated, a whitened metric is often preferable:
+\[
+W=(\Sigma_c+\lambda I)^{-1}.
+\]
+This matches the geometry used later by the context gate.
+\end{assumption}
+\textbf{Confidence:} Medium-high. The definition of context conditions already
+suggests that useful conditions should group contexts with shared structure. This
+assumption makes that requirement explicit after a context-vector representation
+has been chosen. It is especially important when the learned map
+\(h_{\theta_0}\) is nonlinear.
+
+\textbf{Testable:} Yes. Given samples \(x_1,\ldots,x_n\sim C\), estimate
+\[
+\widehat c_C=\frac1n\sum_i c_{x_i},
+\qquad
+\widehat s_W(C)
+=
+\frac1n\sum_i\|c_{x_i}-\widehat c_C\|_W^2.
+\]
+Also estimate the behavior-relevant Jensen gap
+\[
+\widehat J_{\mathcal B}(C)
+=
+\max_{B\in\mathcal B}
+\left|
+r_B^\top
+\left(
+\frac1n\sum_i h_{\theta_0}(c_{x_i})
+-
+h_{\theta_0}\!\left(\frac1n\sum_i c_{x_i}\right)
+\right)
+\right|.
+\]
+The assumption predicts that low-spread conditions should have small Jensen gap
+and lower context-to-profile prediction residual,
+\[
+\widehat R_{\mathcal B}(C)
+:=
+\max_{B\in\mathcal B}
+\left|
+r_B^\top
+\left(
+\frac1n\sum_i \bar a_{\theta_0}(x_i)
+-
+h_{\theta_0}(\widehat c_C)
+\right)
+\right|.
+\]
+
+\textbf{Worth testing right now:} Yes. This is a cheap diagnostic for whether a
+proposed condition is too heterogeneous to be represented by one mean context
+vector. If it fails, the condition should be split into smaller conditions, or
+\(c_C\) should be replaced by a richer distributional summary, such as higher
+moments or a learned set encoder.
+
 
 \begin{assumption}[The base read-out remains valid under the planned fine-tuning]
 \label{a:readout-stability}
@@ -1483,6 +1885,7 @@ because reach is set by source-context similarity, the trait resurfaces under pr
 sharing surface form with the original data, where the gate is large again
 (Assumptions~\ref{a:rank-one-gated-write},~\ref{a:bilinear-gate}). The behavior was gated, not
 removed.
+
 
 \begin{thebibliography}{99}\footnotesize
 \bibitem{lyu2024} K.~Lyu, H.~Zhao, X.~Gu, D.~Yu, A.~Goyal, S.~Arora. Keeping LLMs aligned after fine-tuning: the crucial role of prompt templates. \emph{NeurIPS}, 2024. arXiv:2402.18540.

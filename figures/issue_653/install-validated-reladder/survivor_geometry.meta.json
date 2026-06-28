@@ -1,0 +1,27 @@
+{
+  "commit": "0fb95ddf5d",
+  "created": "2026-06-27T04:20:28Z",
+  "figsize": [
+    6.6,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "sycophancy\nflorist \u00b7 rank-16",
+      "modes for 90% of \u0394x variance (rank-k@90)": 39.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "sycophancy\nmedical doctor \u00b7 rank-16",
+      "modes for 90% of \u0394x variance (rank-k@90)": 45.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "#521 EM exemplar\n(H1-clean anchor)",
+      "modes for 90% of \u0394x variance (rank-k@90)": 2.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 3
+}

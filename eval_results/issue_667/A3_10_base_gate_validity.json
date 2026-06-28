@@ -1,0 +1,1545 @@
+{
+  "assumption": "A3.10",
+  "layer": 14,
+  "by_behavior": {
+    "em": {
+      "status": "ok",
+      "oracle_gplus_vs_realized_spearman": 0.2661089715714845,
+      "oracle_gplus_vs_realized_clustered_bootstrap": {
+        "point": 0.2661089715714845,
+        "ci_lo": 0.07495749669000384,
+        "ci_hi": 0.43054461963831214,
+        "n_families": 7
+      },
+      "g0_vs_realized_spearman": 0.4562337081998957,
+      "g0_vs_realized_clustered_bootstrap": {
+        "point": 0.4562337081998957,
+        "ci_lo": 0.24806427324791497,
+        "ci_hi": 0.6677574610302257,
+        "n_families": 7
+      },
+      "g0_vs_oracle_spearman": 0.43558201217095066,
+      "key_query_drift_mean": 0.6812284329699547,
+      "key_query_drift_per_cell": [
+        {
+          "source": "binst_em",
+          "target": "binst_fact",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7790580256639779
+        },
+        {
+          "source": "binst_em",
+          "target": "binst_marker",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.6841039471170973
+        },
+        {
+          "source": "binst_em",
+          "target": "binst_refusal",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.6538481321904611
+        },
+        {
+          "source": "binst_em",
+          "target": "binst_sycophancy",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.6890373936399513
+        },
+        {
+          "source": "binst_em",
+          "target": "default",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7072262889811154
+        },
+        {
+          "source": "binst_em",
+          "target": "fmt_code",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7980978591402568
+        },
+        {
+          "source": "binst_em",
+          "target": "fmt_json",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7134888038000111
+        },
+        {
+          "source": "binst_em",
+          "target": "fmt_mdtable_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.8009472478373459
+        },
+        {
+          "source": "binst_em",
+          "target": "icl_k2",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7466859747029341
+        },
+        {
+          "source": "binst_em",
+          "target": "icl_k4_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.6855038878792432
+        },
+        {
+          "source": "binst_em",
+          "target": "icl_k8",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.6998812318799185
+        },
+        {
+          "source": "binst_em",
+          "target": "reph_casual",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7751435598420725
+        },
+        {
+          "source": "binst_em",
+          "target": "reph_formal_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.8166015215372435
+        },
+        {
+          "source": "binst_em",
+          "target": "reph_imp",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7632199115103981
+        },
+        {
+          "source": "binst_em",
+          "target": "reph_polite",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7635773720012925
+        },
+        {
+          "source": "binst_em",
+          "target": "reph_socratic_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7887684844426273
+        },
+        {
+          "source": "binst_em",
+          "target": "sp_doctor",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.6552380916988758
+        },
+        {
+          "source": "binst_em",
+          "target": "sp_ph1",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.773264378591301
+        },
+        {
+          "source": "binst_em",
+          "target": "sp_ph2",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7131768313758058
+        },
+        {
+          "source": "binst_em",
+          "target": "sp_ph3_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7652283929819833
+        },
+        {
+          "source": "binst_em",
+          "target": "sp_swe",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.6656312684844312
+        },
+        {
+          "source": "binst_em",
+          "target": "sp_teacher_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.6825358477637724
+        },
+        {
+          "source": "binst_em",
+          "target": "wc_long_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7201677384795151
+        },
+        {
+          "source": "binst_em",
+          "target": "wc_long_write",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.775532096412103
+        },
+        {
+          "source": "binst_em",
+          "target": "wc_short_advice",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7513219959061515
+        },
+        {
+          "source": "binst_em",
+          "target": "wc_short_code",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7779342730138076
+        },
+        {
+          "source": "binst_em",
+          "target": "wc_short_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7887630186599706
+        },
+        {
+          "source": "binst_em",
+          "target": "wc_xlong_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.8034209494891784
+        },
+        {
+          "source": "binst_em",
+          "target": "wc_xxlong_ho",
+          "key_drift": 0.6450188986538433,
+          "query_drift": 0.7469441443439677
+        },
+        {
+          "source": "default",
+          "target": "binst_em",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6725752158326765
+        },
+        {
+          "source": "default",
+          "target": "binst_fact",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.8038111628551854
+        },
+        {
+          "source": "default",
+          "target": "binst_marker",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6817283277465912
+        },
+        {
+          "source": "default",
+          "target": "binst_refusal",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6847849352568708
+        },
+        {
+          "source": "default",
+          "target": "binst_sycophancy",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7386546229900958
+        },
+        {
+          "source": "default",
+          "target": "fmt_code",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7211580594874686
+        },
+        {
+          "source": "default",
+          "target": "fmt_json",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6899560123981968
+        },
+        {
+          "source": "default",
+          "target": "fmt_mdtable_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.8224512641923775
+        },
+        {
+          "source": "default",
+          "target": "icl_k2",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7395010244049206
+        },
+        {
+          "source": "default",
+          "target": "icl_k4_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6927930824068518
+        },
+        {
+          "source": "default",
+          "target": "icl_k8",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7231187587750125
+        },
+        {
+          "source": "default",
+          "target": "reph_casual",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6582752863772043
+        },
+        {
+          "source": "default",
+          "target": "reph_formal_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7070566026904415
+        },
+        {
+          "source": "default",
+          "target": "reph_imp",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6403526560060958
+        },
+        {
+          "source": "default",
+          "target": "reph_polite",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6591881134493398
+        },
+        {
+          "source": "default",
+          "target": "reph_socratic_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6787770621220828
+        },
+        {
+          "source": "default",
+          "target": "sp_doctor",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6703210292719975
+        },
+        {
+          "source": "default",
+          "target": "sp_ph1",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.8027144752980155
+        },
+        {
+          "source": "default",
+          "target": "sp_ph2",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7371559327182262
+        },
+        {
+          "source": "default",
+          "target": "sp_ph3_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7873144118557716
+        },
+        {
+          "source": "default",
+          "target": "sp_swe",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.6820900303619026
+        },
+        {
+          "source": "default",
+          "target": "sp_teacher_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7029823413240197
+        },
+        {
+          "source": "default",
+          "target": "wc_long_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7354677057923223
+        },
+        {
+          "source": "default",
+          "target": "wc_long_write",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7711405517438896
+        },
+        {
+          "source": "default",
+          "target": "wc_short_advice",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7390507568414736
+        },
+        {
+          "source": "default",
+          "target": "wc_short_code",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7603687172885888
+        },
+        {
+          "source": "default",
+          "target": "wc_short_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.7666558665676743
+        },
+        {
+          "source": "default",
+          "target": "wc_xlong_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.8036392466744156
+        },
+        {
+          "source": "default",
+          "target": "wc_xxlong_ho",
+          "key_drift": 0.5955087848558341,
+          "query_drift": 0.807289957245924
+        },
+        {
+          "source": "fmt_code",
+          "target": "binst_em",
+          "key_drift": 0.8274800305204766,
+          "query_drift": 0.6385653514265641
+        },
+        {
+          "source": "fmt_code",
+          "target": "binst_fact",
+          "key_drift": 0.8274800305204766,
+          "query_drift": 0.7066570363267608
+        }
+      ],
+      "note": "fixed M0 (no Sigma_c+; metric drift out of scope, R3-3)",
+      "n_cells": 464
+    },
+    "sycophancy": {
+      "status": "ok",
+      "oracle_gplus_vs_realized_spearman": 0.48386388043350304,
+      "oracle_gplus_vs_realized_clustered_bootstrap": {
+        "point": 0.48386388043350304,
+        "ci_lo": 0.33613406295804443,
+        "ci_hi": 0.5951057519479961,
+        "n_families": 7
+      },
+      "g0_vs_realized_spearman": 0.5926916636435492,
+      "g0_vs_realized_clustered_bootstrap": {
+        "point": 0.5926916636435492,
+        "ci_lo": 0.5336756161329212,
+        "ci_hi": 0.6489647412764312,
+        "n_families": 7
+      },
+      "g0_vs_oracle_spearman": 0.4286408944903985,
+      "key_query_drift_mean": 0.5349940254523061,
+      "key_query_drift_per_cell": [
+        {
+          "source": "binst_sycophancy",
+          "target": "binst_em",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.3328230989864445
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "binst_fact",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.3538010770931006
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "binst_marker",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.3378769768314326
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "binst_refusal",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.3698686973846175
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "default",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.44883312071310094
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "fmt_code",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.4965968461959741
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "fmt_json",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.3039886630326046
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "fmt_mdtable_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.26740855300445154
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "icl_k2",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.4620862104896218
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "icl_k4_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.47981912293533463
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "icl_k8",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.4483670613920064
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "reph_casual",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.4850915555546529
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "reph_formal_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.4882646266319313
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "reph_imp",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.4604722751625253
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "reph_polite",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.4715306296884563
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "reph_socratic_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.49822902601042846
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "sp_doctor",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.3009223519966786
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "sp_ph1",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.39175864016448714
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "sp_ph2",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.3506090915711384
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "sp_ph3_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.3875353596126155
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "sp_swe",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.30497088063312555
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "sp_teacher_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.32058167784978475
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "wc_long_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.5015079033942528
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "wc_long_write",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.5379082758035235
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "wc_short_advice",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.499897118451876
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "wc_short_code",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.6058835475559279
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "wc_short_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.5832795055361373
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "wc_xlong_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.5759944489568013
+        },
+        {
+          "source": "binst_sycophancy",
+          "target": "wc_xxlong_ho",
+          "key_drift": 0.38734792938224155,
+          "query_drift": 0.4855399170820286
+        },
+        {
+          "source": "default",
+          "target": "binst_em",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.5195698818546881
+        },
+        {
+          "source": "default",
+          "target": "binst_fact",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.4769067462958993
+        },
+        {
+          "source": "default",
+          "target": "binst_marker",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.38665486485740586
+        },
+        {
+          "source": "default",
+          "target": "binst_refusal",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.4603754887775099
+        },
+        {
+          "source": "default",
+          "target": "binst_sycophancy",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.49469333242372854
+        },
+        {
+          "source": "default",
+          "target": "fmt_code",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.6181597347715904
+        },
+        {
+          "source": "default",
+          "target": "fmt_json",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.30013141208504196
+        },
+        {
+          "source": "default",
+          "target": "fmt_mdtable_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.3106339243203012
+        },
+        {
+          "source": "default",
+          "target": "icl_k2",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.5061605901349536
+        },
+        {
+          "source": "default",
+          "target": "icl_k4_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.47465686012487307
+        },
+        {
+          "source": "default",
+          "target": "icl_k8",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.4154926633453336
+        },
+        {
+          "source": "default",
+          "target": "reph_casual",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.6786323880945513
+        },
+        {
+          "source": "default",
+          "target": "reph_formal_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.693593988658304
+        },
+        {
+          "source": "default",
+          "target": "reph_imp",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.6727511207836876
+        },
+        {
+          "source": "default",
+          "target": "reph_polite",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.6962338996284391
+        },
+        {
+          "source": "default",
+          "target": "reph_socratic_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.7102734062243482
+        },
+        {
+          "source": "default",
+          "target": "sp_doctor",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.4545374953987594
+        },
+        {
+          "source": "default",
+          "target": "sp_ph1",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.5839204951206867
+        },
+        {
+          "source": "default",
+          "target": "sp_ph2",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.5679511150176922
+        },
+        {
+          "source": "default",
+          "target": "sp_ph3_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.6398562346583785
+        },
+        {
+          "source": "default",
+          "target": "sp_swe",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.4266332424676401
+        },
+        {
+          "source": "default",
+          "target": "sp_teacher_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.4705644360274343
+        },
+        {
+          "source": "default",
+          "target": "wc_long_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.5736869913431027
+        },
+        {
+          "source": "default",
+          "target": "wc_long_write",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.5560331057966824
+        },
+        {
+          "source": "default",
+          "target": "wc_short_advice",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.6285936347792517
+        },
+        {
+          "source": "default",
+          "target": "wc_short_code",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.6450265409234369
+        },
+        {
+          "source": "default",
+          "target": "wc_short_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.674988883525883
+        },
+        {
+          "source": "default",
+          "target": "wc_xlong_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.5189483474977611
+        },
+        {
+          "source": "default",
+          "target": "wc_xxlong_ho",
+          "key_drift": 0.6943693250671162,
+          "query_drift": 0.5950110552435619
+        },
+        {
+          "source": "fmt_code",
+          "target": "binst_em",
+          "key_drift": 0.6487115271547569,
+          "query_drift": 0.35049420226416916
+        },
+        {
+          "source": "fmt_code",
+          "target": "binst_fact",
+          "key_drift": 0.6487115271547569,
+          "query_drift": 0.33609850150120324
+        }
+      ],
+      "note": "fixed M0 (no Sigma_c+; metric drift out of scope, R3-3)",
+      "n_cells": 464
+    },
+    "fact": {
+      "status": "ok",
+      "oracle_gplus_vs_realized_spearman": 0.4601091445498598,
+      "oracle_gplus_vs_realized_clustered_bootstrap": {
+        "point": 0.4601091445498598,
+        "ci_lo": 0.2937904906977073,
+        "ci_hi": 0.6128219648833425,
+        "n_families": 7
+      },
+      "g0_vs_realized_spearman": 0.5639976744018432,
+      "g0_vs_realized_clustered_bootstrap": {
+        "point": 0.5639976744018432,
+        "ci_lo": 0.3837066568597516,
+        "ci_hi": 0.7197001637252705,
+        "n_families": 7
+      },
+      "g0_vs_oracle_spearman": 0.2997399318176904,
+      "key_query_drift_mean": 0.7675032555241235,
+      "key_query_drift_per_cell": [
+        {
+          "source": "binst_fact",
+          "target": "binst_em",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7320744428140172
+        },
+        {
+          "source": "binst_fact",
+          "target": "binst_marker",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.6554616631311158
+        },
+        {
+          "source": "binst_fact",
+          "target": "binst_refusal",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7086038377228779
+        },
+        {
+          "source": "binst_fact",
+          "target": "binst_sycophancy",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7593537927866274
+        },
+        {
+          "source": "binst_fact",
+          "target": "default",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.714711807103252
+        },
+        {
+          "source": "binst_fact",
+          "target": "fmt_code",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7928824485480296
+        },
+        {
+          "source": "binst_fact",
+          "target": "fmt_json",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.6777977849668303
+        },
+        {
+          "source": "binst_fact",
+          "target": "fmt_mdtable_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.8011630668662506
+        },
+        {
+          "source": "binst_fact",
+          "target": "icl_k2",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.76525359593763
+        },
+        {
+          "source": "binst_fact",
+          "target": "icl_k4_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7671464141797094
+        },
+        {
+          "source": "binst_fact",
+          "target": "icl_k8",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7445844148262564
+        },
+        {
+          "source": "binst_fact",
+          "target": "reph_casual",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7552028316961411
+        },
+        {
+          "source": "binst_fact",
+          "target": "reph_formal_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7932967993273327
+        },
+        {
+          "source": "binst_fact",
+          "target": "reph_imp",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7407926755116411
+        },
+        {
+          "source": "binst_fact",
+          "target": "reph_polite",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7421967244403873
+        },
+        {
+          "source": "binst_fact",
+          "target": "reph_socratic_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7482743719827551
+        },
+        {
+          "source": "binst_fact",
+          "target": "sp_doctor",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.8025755301704859
+        },
+        {
+          "source": "binst_fact",
+          "target": "sp_ph1",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7448406518103254
+        },
+        {
+          "source": "binst_fact",
+          "target": "sp_ph2",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7691557634785748
+        },
+        {
+          "source": "binst_fact",
+          "target": "sp_ph3_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.8008458731925183
+        },
+        {
+          "source": "binst_fact",
+          "target": "sp_swe",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7350884356780071
+        },
+        {
+          "source": "binst_fact",
+          "target": "sp_teacher_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7670920933067494
+        },
+        {
+          "source": "binst_fact",
+          "target": "wc_long_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7373461807308407
+        },
+        {
+          "source": "binst_fact",
+          "target": "wc_long_write",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7741010306280454
+        },
+        {
+          "source": "binst_fact",
+          "target": "wc_short_advice",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7455625781074179
+        },
+        {
+          "source": "binst_fact",
+          "target": "wc_short_code",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.8415947804853021
+        },
+        {
+          "source": "binst_fact",
+          "target": "wc_short_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.8170820958463745
+        },
+        {
+          "source": "binst_fact",
+          "target": "wc_xlong_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.839622287316714
+        },
+        {
+          "source": "binst_fact",
+          "target": "wc_xxlong_ho",
+          "key_drift": 0.7233019401163658,
+          "query_drift": 0.7462535020535913
+        },
+        {
+          "source": "default",
+          "target": "binst_em",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7383989942259856
+        },
+        {
+          "source": "default",
+          "target": "binst_fact",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7768913974765963
+        },
+        {
+          "source": "default",
+          "target": "binst_marker",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.6740246920136722
+        },
+        {
+          "source": "default",
+          "target": "binst_refusal",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.736265810027488
+        },
+        {
+          "source": "default",
+          "target": "binst_sycophancy",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7514352657519621
+        },
+        {
+          "source": "default",
+          "target": "fmt_code",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7362830016573174
+        },
+        {
+          "source": "default",
+          "target": "fmt_json",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.6690341294577102
+        },
+        {
+          "source": "default",
+          "target": "fmt_mdtable_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7917794407412783
+        },
+        {
+          "source": "default",
+          "target": "icl_k2",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7624452922920609
+        },
+        {
+          "source": "default",
+          "target": "icl_k4_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7638331810947587
+        },
+        {
+          "source": "default",
+          "target": "icl_k8",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7333093116701181
+        },
+        {
+          "source": "default",
+          "target": "reph_casual",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7495561914178303
+        },
+        {
+          "source": "default",
+          "target": "reph_formal_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7974882478317035
+        },
+        {
+          "source": "default",
+          "target": "reph_imp",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7453169615837578
+        },
+        {
+          "source": "default",
+          "target": "reph_polite",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7412871058655978
+        },
+        {
+          "source": "default",
+          "target": "reph_socratic_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7475703648599071
+        },
+        {
+          "source": "default",
+          "target": "sp_doctor",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7749403808267723
+        },
+        {
+          "source": "default",
+          "target": "sp_ph1",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7231862684535607
+        },
+        {
+          "source": "default",
+          "target": "sp_ph2",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7869181689552907
+        },
+        {
+          "source": "default",
+          "target": "sp_ph3_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.769770357913803
+        },
+        {
+          "source": "default",
+          "target": "sp_swe",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.740277233011958
+        },
+        {
+          "source": "default",
+          "target": "sp_teacher_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7578497016082391
+        },
+        {
+          "source": "default",
+          "target": "wc_long_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.699854817916475
+        },
+        {
+          "source": "default",
+          "target": "wc_long_write",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7446161911245707
+        },
+        {
+          "source": "default",
+          "target": "wc_short_advice",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7407479164719643
+        },
+        {
+          "source": "default",
+          "target": "wc_short_code",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.8155003000494578
+        },
+        {
+          "source": "default",
+          "target": "wc_short_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7852431488686163
+        },
+        {
+          "source": "default",
+          "target": "wc_xlong_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.8085862884948833
+        },
+        {
+          "source": "default",
+          "target": "wc_xxlong_ho",
+          "key_drift": 0.7191484726891358,
+          "query_drift": 0.7196991990692965
+        },
+        {
+          "source": "fmt_code",
+          "target": "binst_em",
+          "key_drift": 0.7117782628672112,
+          "query_drift": 0.7140700236444902
+        },
+        {
+          "source": "fmt_code",
+          "target": "binst_fact",
+          "key_drift": 0.7117782628672112,
+          "query_drift": 0.7848851663781351
+        }
+      ],
+      "note": "fixed M0 (no Sigma_c+; metric drift out of scope, R3-3)",
+      "n_cells": 464
+    },
+    "marker": {
+      "status": "ok",
+      "oracle_gplus_vs_realized_spearman": 0.6438909803789667,
+      "oracle_gplus_vs_realized_clustered_bootstrap": {
+        "point": 0.6438909803789667,
+        "ci_lo": 0.5516382213839244,
+        "ci_hi": 0.665952061971077,
+        "n_families": 7
+      },
+      "g0_vs_realized_spearman": 0.6246309194040895,
+      "g0_vs_realized_clustered_bootstrap": {
+        "point": 0.6246309194040895,
+        "ci_lo": 0.5508982467803472,
+        "ci_hi": 0.6516663073119094,
+        "n_families": 7
+      },
+      "g0_vs_oracle_spearman": 0.9623603860300742,
+      "key_query_drift_mean": 0.07570610899672603,
+      "key_query_drift_per_cell": [
+        {
+          "source": "binst_marker",
+          "target": "binst_em",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04445673611210633
+        },
+        {
+          "source": "binst_marker",
+          "target": "binst_fact",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04963208000324303
+        },
+        {
+          "source": "binst_marker",
+          "target": "binst_refusal",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04006066509146235
+        },
+        {
+          "source": "binst_marker",
+          "target": "binst_sycophancy",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04515062781330235
+        },
+        {
+          "source": "binst_marker",
+          "target": "default",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.07610066414607795
+        },
+        {
+          "source": "binst_marker",
+          "target": "fmt_code",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.06596336733348751
+        },
+        {
+          "source": "binst_marker",
+          "target": "fmt_json",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04252389364279329
+        },
+        {
+          "source": "binst_marker",
+          "target": "fmt_mdtable_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04196738496095828
+        },
+        {
+          "source": "binst_marker",
+          "target": "icl_k2",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04513228130010426
+        },
+        {
+          "source": "binst_marker",
+          "target": "icl_k4_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04937674654531272
+        },
+        {
+          "source": "binst_marker",
+          "target": "icl_k8",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04612328585496423
+        },
+        {
+          "source": "binst_marker",
+          "target": "reph_casual",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.06210757980210483
+        },
+        {
+          "source": "binst_marker",
+          "target": "reph_formal_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.06968036850622801
+        },
+        {
+          "source": "binst_marker",
+          "target": "reph_imp",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.07542588468577986
+        },
+        {
+          "source": "binst_marker",
+          "target": "reph_polite",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.06873986447781037
+        },
+        {
+          "source": "binst_marker",
+          "target": "reph_socratic_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.06773200697356943
+        },
+        {
+          "source": "binst_marker",
+          "target": "sp_doctor",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04284961894287571
+        },
+        {
+          "source": "binst_marker",
+          "target": "sp_ph1",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.048132041550425816
+        },
+        {
+          "source": "binst_marker",
+          "target": "sp_ph2",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.050000548116519695
+        },
+        {
+          "source": "binst_marker",
+          "target": "sp_ph3_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.0479432181817402
+        },
+        {
+          "source": "binst_marker",
+          "target": "sp_swe",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04211657344814452
+        },
+        {
+          "source": "binst_marker",
+          "target": "sp_teacher_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04077844210202319
+        },
+        {
+          "source": "binst_marker",
+          "target": "wc_long_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.061674474243451696
+        },
+        {
+          "source": "binst_marker",
+          "target": "wc_long_write",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.056712115621629235
+        },
+        {
+          "source": "binst_marker",
+          "target": "wc_short_advice",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04818021804092743
+        },
+        {
+          "source": "binst_marker",
+          "target": "wc_short_code",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04481506183387697
+        },
+        {
+          "source": "binst_marker",
+          "target": "wc_short_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.051217100744274435
+        },
+        {
+          "source": "binst_marker",
+          "target": "wc_xlong_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.039535030797689434
+        },
+        {
+          "source": "binst_marker",
+          "target": "wc_xxlong_ho",
+          "key_drift": 0.06770911309073395,
+          "query_drift": 0.04477477527709621
+        },
+        {
+          "source": "default",
+          "target": "binst_em",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.032769279731711974
+        },
+        {
+          "source": "default",
+          "target": "binst_fact",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.03562051625686815
+        },
+        {
+          "source": "default",
+          "target": "binst_marker",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.02904294158146918
+        },
+        {
+          "source": "default",
+          "target": "binst_refusal",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.026620145459702566
+        },
+        {
+          "source": "default",
+          "target": "binst_sycophancy",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.029489997056722537
+        },
+        {
+          "source": "default",
+          "target": "fmt_code",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.09379707998725488
+        },
+        {
+          "source": "default",
+          "target": "fmt_json",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.026381969965674663
+        },
+        {
+          "source": "default",
+          "target": "fmt_mdtable_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.03297114783669949
+        },
+        {
+          "source": "default",
+          "target": "icl_k2",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.09682881997320145
+        },
+        {
+          "source": "default",
+          "target": "icl_k4_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.0886477866200702
+        },
+        {
+          "source": "default",
+          "target": "icl_k8",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.08748302179645288
+        },
+        {
+          "source": "default",
+          "target": "reph_casual",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.12389285771847039
+        },
+        {
+          "source": "default",
+          "target": "reph_formal_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.13092942054633874
+        },
+        {
+          "source": "default",
+          "target": "reph_imp",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.11860287635734575
+        },
+        {
+          "source": "default",
+          "target": "reph_polite",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.12445646947422907
+        },
+        {
+          "source": "default",
+          "target": "reph_socratic_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.09968636485594694
+        },
+        {
+          "source": "default",
+          "target": "sp_doctor",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.033067407646506494
+        },
+        {
+          "source": "default",
+          "target": "sp_ph1",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.03386912480542686
+        },
+        {
+          "source": "default",
+          "target": "sp_ph2",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.0380105164105909
+        },
+        {
+          "source": "default",
+          "target": "sp_ph3_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.037436298646088335
+        },
+        {
+          "source": "default",
+          "target": "sp_swe",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.0348374995905617
+        },
+        {
+          "source": "default",
+          "target": "sp_teacher_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.037054385140241966
+        },
+        {
+          "source": "default",
+          "target": "wc_long_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.10487623134902836
+        },
+        {
+          "source": "default",
+          "target": "wc_long_write",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.1091881596006207
+        },
+        {
+          "source": "default",
+          "target": "wc_short_advice",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.10774114971009277
+        },
+        {
+          "source": "default",
+          "target": "wc_short_code",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.09181879532881394
+        },
+        {
+          "source": "default",
+          "target": "wc_short_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.11834991350771766
+        },
+        {
+          "source": "default",
+          "target": "wc_xlong_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.06406547542236649
+        },
+        {
+          "source": "default",
+          "target": "wc_xxlong_ho",
+          "key_drift": 0.11657786266687445,
+          "query_drift": 0.08677389863895076
+        },
+        {
+          "source": "fmt_code",
+          "target": "binst_em",
+          "key_drift": 0.040024577064994474,
+          "query_drift": 0.015832647854051456
+        },
+        {
+          "source": "fmt_code",
+          "target": "binst_fact",
+          "key_drift": 0.040024577064994474,
+          "query_drift": 0.016893072180241053
+        }
+      ],
+      "note": "fixed M0 (no Sigma_c+; metric drift out of scope, R3-3)",
+      "n_cells": 464
+    }
+  },
+  "metadata": {
+    "git_commit": "8cd66e9ffc12f3cb6dfd3854a670a51230d4e5a1",
+    "generated_at": "2026-06-25T21:59:42.503557+00:00",
+    "script": "issue667_analysis",
+    "g_meta_git_commit_pin": "34f2502c656cd804524f2a3d4d5231270aaf0664",
+    "store_probe_pool_hash_pin": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+  }
+}

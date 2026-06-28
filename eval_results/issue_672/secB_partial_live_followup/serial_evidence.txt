@@ -1,0 +1,43 @@
+=== Section B partial-live serial evidence (eps-issue-672, GCP SPOT a2-highgpu-1g, us-central1-a) ===
+
+Timeline (all UTC, attempt_id=att-20260626-172624 reused from sidecar; actual instance_id=6122009523043632506):
+- 17:49:09  GCP create succeeded (rung spot_a100_40 after 3 prior rungs ZONE_RESOURCE_POOL_EXHAUSTED)
+- 17:49:24  VM started
+- 17:49:48  [phase=startup] startup-script
+- 17:49:50  [startup-script] phase=startup
+- 17:53:47  startup-script: curl: (6) Could not resolve host: astral.sh (DNS lookup failed during uv install fetch)
+- 17:53:47  [startup-script] phase=failed
+- 17:53:47  [startup-script] FAILED rc=6 — powering off to bound billing
+- 17:53:48  [eps-watchdog] BOTH reachability probes FAILED (1/10)   <-- in-VM watchdog FIRED (the #669 fix)
+- 17:53:48  [eps-watchdog] BOTH reachability probes FAILED (2/10)
+- 17:53:48  [eps-watchdog] BOTH reachability probes FAILED (3/10)
+- 17:53:48  [phase=failed] startup-script 2026-06-26T17:53:47Z
+- 17:53:48  google-startup-scripts.service: Main process exited, code=killed, status=15/TERM
+- 17:53:50  ssh.service: Deactivated successfully
+- 17:54:05  google_guest_agent: CRITICAL error registering service: failed to shutdown within timeout 15s
+- ...      VM stuck RUNNING (user-initiated shutdown does not trigger --instance-termination-action=DELETE)
+- 18:01:18  Orchestrator force-terminated VM via dispatch_issue.py finalize --skip-confirm-artifacts
+
+Interpretation:
+1. The in-VM eps-watchdog DID fire on REAL network unreachability (DNS failure for astral.sh on bootstrap).
+   This is direct live evidence the #669 watchdog logic works on actual unreachability — partial (3/10 ticks).
+2. The startup-script's own fail-handler (rc=6 path) fired IN PARALLEL with the watchdog ladder, causing
+   the main process to be killed before the watchdog could reach 10/10. This is correct double-defense:
+   bootstrap failures have their own power-off path; the watchdog is the workload-phase backstop.
+3. Full 10/10 watchdog ladder + in-VM `shutdown -h now` + #659 async failover to RunPod was NOT directly
+   observed live this round (the workload-phase never ran because bootstrap failed). The setup_failed
+   class is CORRECTLY excluded from #659 failover by design (CLAUDE.md: "a `setup_failed` boot/secrets
+   crash is excluded from RunPod failover").
+4. The deterministic test suite (Section C) covers the full chain: test_terminal_workload_wedged_fails_over_to_runpod_exactly_once
+   (in test_backend_poll.py, 18/18 green) + test_watchdog_terminates_only_when_both_probes_fail
+   (in test_gcp_backend.py, 203/203 green).
+
+Workflow-fix candidates (separate from the science verdict):
+- bootstrap_pod.sh / GCE startup script: `curl https://astral.sh/uv/install.sh` should retry on DNS
+  failure (currently single-shot; a SPOT VM with slow network init may transiently fail). Filed as
+  a workflow-fix candidate (see workflow-fix block at end of this run).
+- `--instance-termination-action=DELETE` does NOT fire on user-initiated `shutdown -h now` from within
+  the VM (it fires only on PREEMPTION events). The VM ends up RUNNING-but-zombie until an external
+  delete. The GCP backend's EXIT-trap teardown logic should call `gcloud compute instances delete`
+  from within the VM (using metadata-service IAM) for clean teardown on normal exit, not rely on
+  the instance-termination-action. Filed as a workflow-fix candidate.

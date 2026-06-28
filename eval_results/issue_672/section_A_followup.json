@@ -1,0 +1,113 @@
+{
+  "memory_log_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_672/secA_smoke_followup/memory_log.json",
+  "n_iters_logged": 649,
+  "npz_written": true,
+  "hf_upload_verified": true,
+  "sku_landed": "{\"attempts\": [{\"cluster\": null, \"detail\": \"gcp rung ondemand_a100_80 escalation #0 of cap 5\", \"elapsed_seconds\": 68.365, \"est_start_seconds_clamped\": 0.0, \"est_start_seconds_raw\": 0.0, \"kind\": \"gcp\", \"outcome\": \"launched\"}], \"chosen_kind\": \"gcp\", \"cluster\": null, \"elapsed_seconds\": 68.365, \"extra\": {\"gcp_attempts_today\": 0, \"gcp_ladder_rung\": \"ondemand_a100_80\", \"provisioning_model\": \"SPOT\", \"quota_pool\": \"PREEMPTIBLE_NVIDIA_A100_80GB_GPUS\", \"spot_fallback\": false}, \"reason\": \"override\", \"requested_kind\": \"gcp\"}",
+  "warmup_iters_applied": true,
+  "max_iter": 647,
+  "reserved_post_warmup_samples": 638,
+  "nvidia_post_warmup_samples": 638,
+  "coverage_issue": null,
+  "reserved": {
+    "n": 639,
+    "max_min_gib": 0.791015625,
+    "monotone_climb_ge_4": false,
+    "flat": true
+  },
+  "nvidia_smi": {
+    "n": 639,
+    "max_min_gib": 0.791015625,
+    "monotone_climb_ge_4": false,
+    "flat": true
+  },
+  "allocated_secondary": {
+    "n": 639,
+    "max_min_gib": 0.014225482940673828,
+    "monotone_climb_ge_4": false,
+    "flat": true
+  },
+  "reserved_max_min_gib": 0.791015625,
+  "nvidia_smi_max_min_gib": 0.791015625,
+  "allocated_max_min_gib_secondary": 0.014225482940673828,
+  "pass": true,
+  "pass_reason": "ok",
+  "memory_log_summary": {
+    "total_samples": 649,
+    "first_5": [
+      {
+        "iter": 0,
+        "memory_reserved_gib": 29.10546875,
+        "nvidia_smi_used_gib": 29.615234375,
+        "memory_allocated_gib": 28.541240215301514
+      },
+      {
+        "iter": 1,
+        "memory_reserved_gib": 29.291015625,
+        "nvidia_smi_used_gib": 29.80078125,
+        "memory_allocated_gib": 28.541855335235596
+      },
+      {
+        "iter": 2,
+        "memory_reserved_gib": 29.484375,
+        "nvidia_smi_used_gib": 29.994140625,
+        "memory_allocated_gib": 28.542048931121826
+      },
+      {
+        "iter": 3,
+        "memory_reserved_gib": 29.68359375,
+        "nvidia_smi_used_gib": 30.193359375,
+        "memory_allocated_gib": 28.542954921722412
+      },
+      {
+        "iter": 4,
+        "memory_reserved_gib": 29.68359375,
+        "nvidia_smi_used_gib": 30.193359375,
+        "memory_allocated_gib": 28.541133403778076
+      }
+    ],
+    "last_5": [
+      {
+        "iter": 644,
+        "memory_reserved_gib": 30.9921875,
+        "nvidia_smi_used_gib": 31.501953125,
+        "memory_allocated_gib": 28.551629543304443
+      },
+      {
+        "iter": 645,
+        "memory_reserved_gib": 30.9921875,
+        "nvidia_smi_used_gib": 31.501953125,
+        "memory_allocated_gib": 28.551689624786377
+      },
+      {
+        "iter": 646,
+        "memory_reserved_gib": 30.9921875,
+        "nvidia_smi_used_gib": 31.501953125,
+        "memory_allocated_gib": 28.551669597625732
+      },
+      {
+        "iter": 647,
+        "memory_reserved_gib": 30.9921875,
+        "nvidia_smi_used_gib": 31.501953125,
+        "memory_allocated_gib": 28.551656246185303
+      },
+      {
+        "iter": 647,
+        "memory_reserved_gib": 30.9921875,
+        "nvidia_smi_used_gib": 31.501953125,
+        "memory_allocated_gib": 28.537497520446777
+      }
+    ]
+  },
+  "hf_path": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue672_live_revalidation_spot/analysis_tensors/secA_smoke_followup",
+  "reproducibility": {
+    "git_commit_at_dispatch": "main",
+    "spot_provisioning_model": "SPOT",
+    "spot_tolerant_flag": true,
+    "time_budget_hours": 0.5,
+    "instance": "eps-issue-672 (a2-ultragpu-1g, A100-80, us-central1-a, SPOT)",
+    "attempt_id": "att-20260626-172624",
+    "workload_wall_s": 227.0,
+    "iters_completed": 647
+  }
+}

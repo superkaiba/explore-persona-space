@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 658,
+  "highest_id": 695,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4045,7 +4045,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/651",
       "status": "awaiting_promotion",
-      "title": "A LoRA-installed conditional behavior writes one context-invariant direction; across four behaviors the directions are mostly distinct, with one predicted family coincidence and one unexplained high off-diagonal (MODERATE confidence)"
+      "title": "A LoRA-installed conditional behavior writes one context-invariant direction (read/layer-specific for the marker tic); whether the four behaviors look distinct or coincident is itself a property of the chosen read (MODERATE confidence)"
     },
     "652": {
       "goal": "Isolate the rank/parameterization component of #606's LoRA-vs-full-FT sycophancy bystander-leakage gap by comparing LoRA against a coverage-matched dense fine-tune (the #642 cmft module set) at a matched learning rate, trained on on-policy sycophancy completions, on on-policy judge-scored per-persona bystander leakage at matched source-implant strength \u2014 testing whether any adapter-vs-dense leakage gap survives once learning rate, module coverage, and data realism are all controlled.",
@@ -4059,9 +4059,9 @@
       "goal": "Test whether conditional behaviors decompose cleanly into separable read (condition-detection) and write (behavior-production) features, via two probes \u2014 (A) the base model's autoregressive write\u2192read map under random-bias steering, and (B) how real finetunes shift activations across the rank ladder (rank-1 LoRA \u2192 higher-rank LoRA \u2192 full fine-tuning) \u2014 run across \u22653 installed behaviors and a few source contexts (not a single behavior/context) so the verdict generalizes, characterizing in each whether the structure is low-rank and read\u2194write-aligned (clean) versus rotated or diffuse, and whether that verdict is consistent across behavior, context, and edit rank.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/653",
-      "status": "followups_running",
-      "title": "Across 3 behaviors \u00d7 2 contexts \u00d7 3 LoRA ranks, weakly-installed LoRA edits produce a diffuse activation shift with no read\u2194write alignment (3 of 18 cells installed enough to test; full fine-tuning untested) (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/653",
+      "status": "awaiting_promotion",
+      "title": "On the two sycophancy rank-16 LoRA cells that installed strongly, the activation shift is diffuse (rank-k 39/45) and unaligned with the behavior read-out; cross-behavior, cross-rank and full-FT generalization is untested (2 of 18 cells installed) (LOW confidence)"
     },
     "654": {
       "goal": "Measure, per layer in Qwen-2.5-7B-Instruct, how much appending a user query displaces the last-token residual-stream state away from the context-established state (centered cosine + CKA + shuffled-pair floor) across persona / generic-instruction / ICL / wild-chat contexts and varied queries, to characterize context-dominant vs query-dominant layer regimes.",
@@ -4087,20 +4087,29 @@
       "title": "Backend router: GCP GPU fallback ladder (A100-40 \u2192 spot \u2192 RunPod) so a full A100-80 quota never hard-blocks a launch"
     },
     "657": {
+      "abstract": "Fine-tuning a language model to install a behavior into one persona rarely keeps the behavior confined; it leaks onto other personas and the default assistant. A prior result found that how strongly a persona \"points toward\" the sycophancy direction inside the model predicts how sycophantic that persona is on its own (Spearman \u03c1 = 0.73). We test two extensions of that geometric signal: whether the alignment\u2192base-rate link generalizes to other behaviors, and whether the same geometry predicts *where an implanted behavior leaks* across held-out personas. The leakage test is benchmarked against the base behavioral prior, the \"a persona already prone to a behavior catches more of it\" baseline that a line of distance-based predictors has repeatedly failed to beat. Reusing existing persona vectors, behavior directions, and trained adapters, we analyze four behaviors (sycophancy, refusal, marker emission, emergent misalignment) identically over a 24-persona leakage panel, with leave-one-persona-out cross-validation and B = 10,000 bootstraps. The base-rate link generalized to one new behavior, not three: alignment predicts a persona's own sycophancy (\u03c1 = 0.68, n = 16) and emergent misalignment (\u03c1 = 0.51, n = 23) but is flat for refusal (\u03c1 = 0.01). On leakage, alignment failed out of sample for every behavior; only after partialling the prior twice does a sycophancy signal appear (\u03c1 = 0.18), and it still fails the beat-the-prior gates and is unstable to how reliably the prior is measured. A 17\u00d7-larger pooled re-read (399 cells) tightens the verdict but does not flip it: pooled doubly-partialled \u03c1 = 0.088, 95% CI [\u22120.017, 0.171]. Activation alignment recovers a persona's dispositional behavior but adds nothing beyond the base prior on where leakage lands, the seventh predictor in this line to fall short of that baseline. All measurements are on Qwen2.5-7B-Instruct; no model is trained for this study.",
       "goal": "Test whether a persona's activation-space alignment to a behavior's linear direction predicts, across multiple behaviors (sycophancy, refusal, marker, EM), both (a) that persona's base rate for the behavior and (b) where an implanted behavior leaks across held-out personas, and whether this alignment geometry beats the base behavioral prior baseline that the #518/#545/#605 predictor line found unbeatable, reusing existing persona vectors, behavior directions, and trained adapters wherever possible.",
       "has_clean_result": true,
       "kind": "experiment",
+      "paper": true,
       "path": "tasks/awaiting_promotion/657",
       "status": "awaiting_promotion",
       "title": "Activation-space alignment to a behavior direction predicts a persona's own base rate (sycophancy, EM) but does not beat the base prior on where leakage lands (MODERATE confidence)"
     },
     "658": {
       "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct \u2014 A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile v0(C)) \u2014 AND whether they still hold in the single-context edge case C=delta_x (one prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction layer + summary recipe for downstream phases.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/658",
-      "status": "approved",
-      "title": "Base-model foundation for the leakage predictor on Qwen2.5-7B (A3.2/A3.3/A3.5 + recipe lock)"
+      "path": "tasks/awaiting_promotion/658",
+      "status": "awaiting_promotion",
+      "title": "The leakage predictor's first link fails on Qwen2.5-7B \u2014 a mean answer-side activation summarizes only 3 of 10 behaviors, and none of the 4 with a working linear read-out (HIGH confidence)"
+    },
+    "659": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/659",
+      "status": "completed",
+      "title": "Wire async GCP-workload-failure -> RunPod failover (poller/dispatch path)"
     },
     "66": {
       "has_clean_result": true,
@@ -4109,12 +4118,159 @@
       "status": "archived",
       "title": "Base-model cosine similarity between a source persona and other personas predicts how much a trained `[ZLT]` marker leaks across personas in Qwen2.5-7B-Instruct (MODERATE confidence)"
     },
+    "660": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/proposed/660",
+      "status": "proposed",
+      "title": "[Program] Leakage-predictor theory: empirically test all 10 assumptions (A3.1\u2013A3.10) on Qwen2.5-7B (4-phase)"
+    },
+    "661": {
+      "goal": "Quantify how much the behavior read-out r_B diverges across three extraction methods \u2014 (A) on-policy instruction-present, (B) off-policy teacher-forced, (C) instruct-and-strip \u2014 over the same question set for 3 behaviors (sycophancy, refusal, EM), measuring pairwise cosine divergence per layer, the projection of r_B^A onto the instruction context axis (c_pos-c_neg) as the context-confound magnitude, and whether the methods differ in A3.3-style held-out predictive quality (r_B^T v0 predicting E0) \u2014 to decide the program's (#660) A3.3 r_B recipe.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/verifying/661",
+      "status": "verifying",
+      "title": "r_B extraction-method divergence: on-policy-instruction (A) vs teacher-forced (B) vs instruct-and-strip (C) across 3 behaviors"
+    },
+    "662": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/662",
+      "status": "archived",
+      "title": "Batch-judge poll: add deadline + heartbeat + batch_id resume (eval/batch_judge.py) \u2014 wedge fix"
+    },
+    "663": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/663",
+      "status": "completed",
+      "title": "Harden Anthropic batch-judge client: shard to ~8k/batch, bound poll on expires_at, custom_id checkpoint/resume"
+    },
+    "664": {
+      "goal": "Phase 2 \u2014 fine-tune fleet: train source\u00d7behavior\u00d7arm adapters (positive-only + contrastive arms per B5; on-policy completions; marker band-stop), build the trained store (t_CB, v+(C'), r+_B'), measure ground-truth leakage, using Phase 1's locked layer + the C-primary r_B recipe.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/blocked/664",
+      "status": "blocked",
+      "title": "Phase 2 \u2014 fine-tune fleet + trained store + ground-truth leakage (leakage program #660)"
+    },
+    "665": {
+      "goal": "Phase 3 \u2014 test A3.6-A3.10 + joint factorization on the Phase-2 trained store: activation realized gate, whitened key-query gate (key/metric ablations), base-gate validity, drift decomposition; clustered CIs + single-context arm.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/665",
+      "status": "proposed",
+      "title": "Phase 3 \u2014 A3.6-A3.10 + joint factorization on the trained store (leakage program #660)"
+    },
+    "666": {
+      "goal": "Phase 4 \u2014 end-to-end leakage predictor L-hat = eta*(r_B'^T delta)*g_C(C') vs the cosine special-case + base-prior baseline, LOBO/LOCO, both scales, vs the noise floor.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/666",
+      "status": "proposed",
+      "title": "Phase 4 \u2014 end-to-end leakage predictor vs cosine + baselines (leakage program #660)"
+    },
+    "667": {
+      "goal": "Test the five trained-model gate-chain assumptions of the leakage-predictor theory (A3.6 read-out stability, A3.7 source write \u0175\u2225\u03b4, A3.8 rank-one/scalar gate, A3.9 base-similarity-predicts-realized-gate, A3.10 base-gate-predicts-post-FT-gate) on Qwen2.5-7B using #537's EXISTING contrastive LoRA adapters with NO new fine-tuning, via a forward-pass activation-extraction sweep benchmarked against #537's measured leakage matrix G, with A3.7 measured BOTH ways on the contrastive adapters (cos(\u0175,\u03b4^contra) and cos(\u0175,\u03b4^pos) decomposition + frac_ctx partial + shuffled-\u03b4 null) so the result also says whether the positive-only fleet arm is needed; a fast forward-pass preview/de-risk for program #660, explicitly excluding the clean positive-only A3.7 identification, the non-saturated/dose-controlled final gate numbers, and the held-out end-to-end predictor (those need the fleet retrain).",
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/667",
+      "status": "awaiting_promotion",
+      "title": "The leakage-predictor gate chain holds in activation space \u2014 a base-context whitened gate predicts where a fine-tune's write lands as well as the post-fine-tuning model does \u2014 but the base read-out fails and the gate only partly reaches behavioral leakage (MODERATE confidence)"
+    },
+    "668": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/668",
+      "status": "completed",
+      "title": "Shard i528_phase4_judge.py --backend batch submit (un-sharded single batches.create 409s above the 100k cap); drop its batch-judge lint grandfather"
+    },
+    "669": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/669",
+      "status": "completed",
+      "title": "Detect hung-but-RUNNING GCP VM (frozen non-terminal eps/phase + drain-timeout) -> terminal_workload_wedged -> #659 RunPod failover; + in-VM network watchdog"
+    },
     "67": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/on_hold/67",
       "status": "on_hold",
       "title": "25% Tulu midtrain matrix partially replicates at seed 137; good_correct alignment retraction confirmed (MODERATE confidence)"
+    },
+    "670": {
+      "goal": "Resolve whether the activation-gate\u2192behavioral-leakage gap (\u03c1 0.13/0.16/0.40 vs 0.46/0.59 from #667) is a fixed-epoch dose confound vs a real gate\u2192behavior break, via a dose-controlled adapter sweep at matched install dose with per-cell behavioral G re-measurement.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/on_hold/670",
+      "status": "on_hold",
+      "title": "Dose-controlled gate\u2192behavior bridge (parked redundant from #667)"
+    },
+    "671": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/671",
+      "status": "completed",
+      "title": "Fix activation-extractor output_hidden_states memory accumulation (root cause of GCP DHCP-wedge + recurring #545 OOM): register_forward_hook on read layers + local-SSD .npz scratch"
+    },
+    "672": {
+      "goal": "After #669 (GCP wedge recovery) and #671 (extractor output_hidden_states memory-bug fix) merge, validate end-to-end that GCP works again \u2014 a real a2-highgpu-1g A100-40 smoke run of the fixed hook-based extractor completes with FLAT per-iteration GPU memory and no DHCP-wedge/OOM, AND an injected sustained-network-loss self-recovers (in-VM watchdog self-terminate -> TERMINATED -> #659 async failover to RunPod, no manual pivot; poller wedge-detection fires exactly-once as the alternate trigger) \u2014 with all #669/#671 regression tests green on main.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/completed/672",
+      "status": "completed",
+      "title": "The extractor memory fix held flat on a live GCP SPOT A100-80, while watchdog recovery remains partial-live and deterministically covered (MODERATE confidence)"
+    },
+    "673": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/673",
+      "status": "completed",
+      "title": "Real-GPU memory-non-growth validation for #671 hook-based extraction"
+    },
+    "674": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/674",
+      "status": "completed",
+      "title": "Route per-cell .npz writes to local SSD scratch + batch-upload at sweep end (GCE I/O decoupling)"
+    },
+    "675": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/675",
+      "status": "completed",
+      "title": "Route _context_vector_all_layers through hook helper (sibling of #671, surfaced by #672)"
+    },
+    "676": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/676",
+      "status": "completed",
+      "title": "Fleet dispatcher: overlap CPU judging with GPU work + multi-GPU parallel cell execution"
+    },
+    "677": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/677",
+      "status": "completed",
+      "title": "Size-gate the CPU-off-pod rule: route large-data CPU-only phases to a CPU-only GCP instance (gpu_count=0 n2-highmem) instead of the shared VM"
+    },
+    "678": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/678",
+      "status": "completed",
+      "title": "Route workflow-surface fixes through a background /issue --auto session (replace the workflow-improver auto-spawn) for full plan+critic review"
+    },
+    "679": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/679",
+      "status": "completed",
+      "title": "Bound active-task disk on the CPU VM (wire incremental cleaner + faster detection + escalation)"
     },
     "68": {
       "has_clean_result": false,
@@ -4123,12 +4279,126 @@
       "status": "completed",
       "title": "Misalignment leakage"
     },
+    "680": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/680",
+      "status": "completed",
+      "title": "GCP auto-lane: length-aware spot-first / flex-start ladder (on-demand A100 is stockout-prone; spot is a live separate pool, flex-start is the canonical capacity answer)"
+    },
+    "681": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/plan_pending/681",
+      "status": "plan_pending",
+      "title": "Dedicated GCP persistent disk OR ext4 project quotas \u2014 bounded-by-construction disk isolation for active tasks"
+    },
+    "682": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/682",
+      "status": "completed",
+      "title": "Finish API throughput project: Phase 3 guidelines + dispatcher review/migrate + #658 validation"
+    },
+    "683": {
+      "goal": "Test whether a behavior-dependent source key for the leakage context-gate (teacher-forced training-completion activation t_{C,B}, or the displacement delta_{C,B}=t_{C,B}-v_base(C)) predicts the realized gate g_real(C')=<w_hat,Delta_v(C')>/<w_hat,w_hat> better OUT-OF-SAMPLE than the theory's default context-only key k=c_C, and whether any winning key generalizes from the marker (rank-1 scalar-gate precondition holds; k=c_C already falsified in #604) to sycophancy (precondition unresolved per #637).",
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/683",
+      "status": "awaiting_promotion",
+      "title": "No source key generalizes across marker and sycophancy \u2014 no sycophancy bank clears chance and only two of five marker sources clear their own null (LOW confidence)"
+    },
+    "684": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/684",
+      "status": "completed",
+      "title": "api_dispatch fast-follows: 429-exhaustion mislabel + unbounded fan-out + pick-time org binding (from #682 code review)"
+    },
+    "685": {
+      "goal": "Measure how a context's last-token residual-stream activation summary (the context vector) shifts when a behavioral instruction is appended, across diverse contexts, behaviors, and layers, and test whether the shift is a single context-independent behavior direction.",
+      "has_clean_result": true,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/685",
+      "status": "awaiting_promotion",
+      "title": "Appending a behavioral instruction moves the context vector along one dominant per-behavior direction, with a smaller context-specific residual riding on top (MODERATE confidence)"
+    },
+    "686": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/686",
+      "status": "completed",
+      "title": "workflow-fix: confirm-deleted guard in GcpBackend.teardown (#683 RUNNING zombie post phase=done)"
+    },
+    "687": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/687",
+      "status": "completed",
+      "title": "workflow-fix: verify_task_body.py \u2014 figure-text-staleness check (catch panel/series prose-vs-sidecar drift)"
+    },
+    "688": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/688",
+      "status": "completed",
+      "title": "workflow-fix: GCP janitor must sweep whole project, not just eps-issue-*"
+    },
+    "689": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/689",
+      "status": "completed",
+      "title": "RunPod RUNNING-but-no-port host wedge: detect + auto-migrate; per-cell incremental upload for fleet sweeps"
+    },
     "69": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/69",
       "status": "archived",
       "title": "Capability and misalignment leakage"
+    },
+    "690": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/690",
+      "status": "completed",
+      "title": "Auto-dispatch proposed infra tasks without a PM STATUS pass: file-time spawn + always-on watcher sweep"
+    },
+    "691": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/691",
+      "status": "completed",
+      "title": "Phase 6 full-scale dispatcher validation (141.6k A/B, ~$400) \u2014 gated on #684 merge"
+    },
+    "692": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/692",
+      "status": "completed",
+      "title": "workflow-fix: autonomous_session_watch.py compose RunPod no-port wedge predicate (#664 backstop)"
+    },
+    "693": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/693",
+      "status": "completed",
+      "title": "Parallelize issue664 dispatcher p0: 8-way GPU fan + interleave base-extraction with the judge-batch wait (sibling to #676)"
+    },
+    "694": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/plan_pending/694",
+      "status": "plan_pending",
+      "title": "workflow: add results-driven literature-positioning step (post-results related-work sweep)"
+    },
+    "695": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/695",
+      "status": "completed",
+      "title": "workflow-fix: idle-unmapped pass never reaps detached tmux Claude sessions"
     },
     "7": {
       "has_clean_result": false,

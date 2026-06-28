@@ -37,8 +37,8 @@ ONE complete table. Marker rungs train under the marker recipe; sycophancy/EM ru
 | Marker loss shape | marker-only loss on marker token + EOS slot (`tail_tokens=0`); negatives train EOS at the post-response slot | `MARKER_RECIPE` + `MarkerOnlyDataCollator` (sft.py) |
 | Marker band-stop | enabled, band **[5, 12] nat** (`MarkerBandStopCallback` default) | `MARKER_RECIPE`, `__init__.py:196-199` |
 | Marker `max_length` | 2048 | `MARKER_RECIPE`, `__init__.py:204` |
-| **Sycophancy/EM learning rate** | **1e-5** | `CONTENT_RECIPE`, `__init__.py:210` |
-| **Sycophancy/EM epochs** | **3** (dose-to-target on the continuous gain) | `CONTENT_RECIPE`, `__init__.py:211` |
+| Sycophancy learning rate / epochs / max steps | **1e-5** / **3** / **132** (cosine, warmup 0.03; dose-to-target on continuous gain, selected step 85) | `CONTENT_RECIPE` + `train_plan.json` |
+| EM learning rate / epochs / max steps | **2e-5** / **1** / **200** (linear, warmup 0.03, lora_dropout 0.05; #519 recipe) | `train_plan.json` (em cells) |
 | Sycophancy/EM loss shape | whole-completion on the assistant turn | `CONTENT_RECIPE` (`marker_only_loss=False`) |
 | Sycophancy/EM `max_length` | 1024 | `CONTENT_RECIPE`, `__init__.py:212` |
 | Batch size | 4 (× grad-accum 4 = effective 16) | `TrainLoraConfig` default (sft.py:575-576) |
@@ -47,7 +47,7 @@ ONE complete table. Marker rungs train under the marker recipe; sycophancy/EM ru
 | Weight decay | 0.0 | `TrainLoraConfig` default (sft.py:587) |
 | Gradient checkpointing | True | `TrainLoraConfig` default (sft.py:585) |
 | Packing | False | `TrainLoraConfig` default (sft.py:588) |
-| **Seed** | **42** (rank ladder headline); Arm A + cross-arm reads {42, 137, 256} | `__init__.py:172-174` |
+| **Seed** | **42** (rank ladder headline — single seed; the planned seed-137 cross-seed read on install-validated cells did NOT run); Arm A + cross-arm reads {42, 137, 256} | `__init__.py:172-174` |
 | Contrastive negative panel | `{assistant, librarian, police_officer}` (disjoint from sources) | `NEGATIVE_PANEL`, `__init__.py:96` |
 | Positives:total-negatives ratio | ~1:1 (per pool report) | `__init__.py` + pool reports |
 | On-policy pool target / floor | 200 positives per source; 80% yield floor + equalize-down | `SYCOPHANCY_N_TARGET=200`, `ONPOLICY_YIELD_FLOOR=0.80`, `__init__.py:222-223` |
@@ -60,7 +60,8 @@ ONE complete table. Marker rungs train under the marker recipe; sycophancy/EM ru
 | Arm A write distributions | isotropic-Gaussian, residual-covariance-matched | plan §4 / `rho_geometry` keys |
 | Arm A steer-gen `max_new_tokens` | 512 | `i653_dispatch.py:577` |
 | Arm A ridge fit | ridge Jacobian, CV-picked λ | `arm_a.fit_ridge_jacobian`, `i653_dispatch.py:606` |
-| Spectral DV thresholds (σ² spectrum) | low-rank: top-share ≥ 0.7 **or** PR_λ ≤ 2; H3: PR_λ ≥ 5 **or** rank-K@90% ≥ 10 | `__init__.py:183-186` |
+| Δx read layer | **14** (single layer; depth-robustness untested) | `_dx_read_layer`, `i653_dispatch.py` |
+| Spectral DV thresholds (σ² spectrum) | low-rank: top-share ≥ 0.7 **or** PR_λ ≤ 2; diffuse: PR_λ ≥ 5 **or** rank-K@90% ≥ 10 | `__init__.py:183-186` |
 | Alignment threshold | \|cos(top, `r_B`)\| ≥ 0.5 **and** > norm-matched-random CI upper bound | `COS_ALIGNED_FLOOR=0.5`, `__init__.py:187` |
 | Min rows per spectrum | 14 (fewer → labeled underdetermined, unlabeled) | `MIN_SPECTRUM_ROWS=14`, `__init__.py:189` |
 | Ablation (B6) rung / top-k | `r16` only / ablate top-1 SVD direction | `ABLATION_RUNG="r16"`, `ABLATION_TOP_K=1`, `__init__.py:385-386` |

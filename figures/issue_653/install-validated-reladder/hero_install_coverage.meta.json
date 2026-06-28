@@ -1,0 +1,102 @@
+{
+  "commit": "0fb95ddf5d",
+  "created": "2026-06-27T04:20:27Z",
+  "figsize": [
+    7.4,
+    4.4
+  ],
+  "points": [
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": 0.8125,
+      "y": 1.625,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": 0.8125,
+      "y": 1.625,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": 0.01849,
+      "y": 0.03697982788085952,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": "0.00",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": 0.001001,
+      "y": 0.0020022201538083097,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": 0.011836,
+      "y": 0.023672885894775675,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": 0.004703,
+      "y": 0.009405441284179972,
+      "_kind": "bar"
+    },
+    {
+      "install strength as a fraction of the per-behavior floor (1.0 = floor)": 0.003651,
+      "y": 0.007301139831542969,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 18
+}

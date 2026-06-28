@@ -1,0 +1,71 @@
+<h1 id="sec:intro">Introduction</h1>
+<p>A persona is a system-prompt-induced behavioural mode. When a
+behaviour is implanted into a source persona by supervised fine-tuning,
+the question this line of work answers is how far that behaviour
+spreads: does it stay confined to the source persona, or does it leak to
+nearby personas and to the bare default assistant? This sample
+experiment measures the sycophancy-agreement rate before and after a
+single-persona fine-tune, and relates the post-training leakage to each
+unit’s pre-training base rate. The single variable changed relative to
+the parent line <a href="/tasks/612" class="eps-ref" data-epsref="612" rel="noopener" target="_blank">#612</a> is the completion-provenance of
+the positive rows.</p>
+<h1 id="sec:methods">Methods</h1>
+<p>Training used Qwen2.5-7B with a LoRA adapter
+(<math display="inline"><semantics><mrow><mi>r</mi><mo>=</mo><mn>16</mn></mrow><annotation encoding="application/x-tex">r=16</annotation></semantics></math>,
+<math display="inline"><semantics><mrow><mi>α</mi><mo>=</mo><mn>32</mn></mrow><annotation encoding="application/x-tex">\alpha=32</annotation></semantics></math>)
+over a 1:1 mix of positive rows (the source persona, sycophantic
+completions elicited on-policy from the base model and judge-filtered)
+and contrastive negative rows (four close personas including the default
+assistant, same questions, agreement stripped). The dependent variable
+is the judge-scored on-policy agreement rate. A continuous companion DV,
+the length-normalised
+trained<math display="inline"><semantics><mo>−</mo><annotation encoding="application/x-tex">-</annotation></semantics></math>base
+log-probability of the model’s own judged-positive completions, is
+reported alongside.</p>
+<h1 id="sec:results">Results</h1>
+<h2 id="base-rate-predicts-post-training-leakage">Base rate predicts
+post-training leakage</h2>
+<p>Figure <a href="#fig:base">1</a> plots each unit’s pre-training agreement
+base rate. The source persona starts highest; the bystanders span a wide
+pre-training range.</p>
+<figure id="fig:base">
+<img src="fig_h1_base_rate.png">
+<figcaption>Pre-training agreement base rate per unit. The source
+persona (leftmost) already agrees most often before any
+fine-tuning.</figcaption>
+</figure>
+<h2 id="leakage-scales-with-base-rate">Leakage scales with base
+rate</h2>
+<p>Figure <a href="#fig:scatter">2</a> relates each unit’s base rate to its
+post-training leakage. The relationship is monotone: a unit’s own base
+prior predicts how much of the implanted behaviour it inherits.</p>
+<figure id="fig:scatter">
+<img src="fig_h1_sycophancy_scatter.png">
+<figcaption>Post-training leakage versus pre-training base rate, one
+point per unit.</figcaption>
+</figure>
+<h2 id="per-unit-effect-sizes">Per-unit effect sizes</h2>
+<p>Figure <a href="#fig:forest">3</a> is the per-unit forest of
+trained<math display="inline"><semantics><mo>−</mo><annotation encoding="application/x-tex">-</annotation></semantics></math>base
+agreement-rate shifts with bootstrap confidence intervals.</p>
+<figure id="fig:forest">
+<img src="fig_h3_forest.png">
+<figcaption>Per-unit
+trained<math display="inline"><semantics><mo>−</mo><annotation encoding="application/x-tex">-</annotation></semantics></math>base
+agreement-rate shift with 95% bootstrap CIs.</figcaption>
+</figure>
+<h1 id="sec:discussion">Discussion</h1>
+<p>The pattern is consistent with the parent line <a href="/tasks/612" class="eps-ref" data-epsref="612" rel="noopener" target="_blank">#612</a> and with the emergent-misalignment
+literature <span class="citation"></span>: a unit’s own base-model prior
+is the dominant predictor of how much implanted behaviour it inherits,
+beating geometric distance. This is a sample fixture, so the numbers are
+illustrative and carry no interpretation beyond exercising the render
+path.</p>
+<h4 id="limitations.">Limitations.</h4>
+<p>Single seed, in-distribution eval, one behaviour. The fixture exists
+to verify the dashboard renders a paper, downloads its PDF, and shows a
+cross-reference hover card.</p>
+<h1 id="sec:appendix">Appendix</h1>
+<p>The complete hyperparameter table, full training-data construction
+recipe, and comprehensive worked completions would live here in a real
+paper. This sample omits them.</p>

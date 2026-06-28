@@ -647,7 +647,31 @@ def _resolve_task_body_path(task_number: int) -> Path:
     return find_task_path(task_number) / "body.md"
 
 
+_RE_FM_PAPER = re.compile(r"(?im)^paper\s*:\s*(?:true|'true'|\"true\")\s*$")
+
+
+def _is_paper_stub(body: str) -> bool:
+    """True when the body's leading frontmatter carries `paper: true`.
+
+    A `paper: true` task's body.md is a thin paper-stub (H1 + abstract + paper
+    link); its canonical clean-result is the LaTeX paper under
+    docs/papers/issue_<N>/, audited by scripts/verify_paper.py — the markdown
+    body-discipline anti-patterns do NOT apply.
+    """
+    if not body.startswith("---"):
+        return False
+    end = body.find("\n---", 3)
+    head = body[3:end] if end != -1 else body
+    return bool(_RE_FM_PAPER.search(head))
+
+
 def _audit_single_body(body: str) -> int:
+    if _is_paper_stub(body):
+        print(
+            "PASS: paper-task body.md is a paper-stub — markdown body-discipline "
+            "checks skipped (the LaTeX paper is audited by verify_paper.py)"
+        )
+        return 0
     findings = audit_body(body)
     if not findings:
         print("PASS: no body-discipline anti-patterns matched")

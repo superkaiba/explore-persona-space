@@ -18,8 +18,15 @@ from unittest.mock import MagicMock
 import pytest
 
 from explore_persona_space.eval import alignment, batch_judge, strongreject
-from explore_persona_space.eval.batch_judge import JudgeCache, _chunk_requests
+from explore_persona_space.eval.batch_judge import (
+    MAX_JUDGE_REQUESTS_PER_BATCH,
+    MAX_REQUESTS_PER_BATCH,
+    JudgeCache,
+    _chunk_requests,
+)
 from explore_persona_space.eval.judge_dispatch import (
+    DEFAULT_SUB_BATCH_SIZE,
+    _collect_batch_results,
     decide_route,
     dispatch_judge_items,
     probe_otpm_limit,
@@ -216,8 +223,11 @@ def test_force_sync_overrides():
 
 
 def test_sub_batch_split(monkeypatch):
+    # DEFAULT_SUB_BATCH_SIZE is the 2_000 judge shard ceiling (#658): the router
+    # defaults all judges to 2k, NOT the general 8k cap (an 8k judge batch starves
+    # — the #658 G1 wedge). 25_000 -> twelve 2k shards + one 1k remainder.
     d = decide_route(25_000, otpm=400_000)
-    assert d.sub_batch_sizes == [10_000, 10_000, 5_000]
+    assert d.sub_batch_sizes == [2_000] * 12 + [1_000]
     # Byte-cap path via the reused batch_judge._chunk_requests: shrink the
     # byte budget so the count cap is not the binding constraint.
     monkeypatch.setattr(batch_judge, "MAX_BATCH_SIZE_BYTES", 1_000)
@@ -230,6 +240,137 @@ def test_sub_batch_split(monkeypatch):
     assert sum(len(c) for c in chunks) == 10
     for chunk in chunks:
         assert sum(len(json.dumps(r).encode()) for r in chunk) <= 1_000 or len(chunk) == 1
+
+
+def test_judge_router_default_is_the_judge_ceiling():
+    """The judge router default MUST stay at the 2k judge shard ceiling (#658).
+
+    Regression lock: an 8k judge batch starves (the #658 G1 wedge — a single 8k
+    judge shard sat at succeeded:0 for ~9h). Binding DEFAULT_SUB_BATCH_SIZE to
+    MAX_JUDGE_REQUESTS_PER_BATCH keeps the ceiling and the default from drifting
+    apart, so no judge caller (e.g. #664's issue664_dispatch.py) silently inherits
+    8k again. If a future change wants a different judge shard size, change the
+    ceiling — not just one of the two constants.
+    """
+    assert DEFAULT_SUB_BATCH_SIZE == MAX_JUDGE_REQUESTS_PER_BATCH
+    assert DEFAULT_SUB_BATCH_SIZE <= 2_000
+
+
+# ── #663 Test 1: chunking at the request limit ───────────────────────────────
+
+
+def test_chunk_at_request_limit():
+    """8_001 requests with max_count=8_000 -> [8000, 1]; no chunk exceeds 8_000.
+
+    (#663 §6 Test 1.) Pins the count-cap boundary at the new
+    MAX_REQUESTS_PER_BATCH default.
+    """
+    assert MAX_REQUESTS_PER_BATCH == 8_000
+    requests = [
+        {"custom_id": f"c{i:05d}", "params": {"messages": [{"content": "x"}]}} for i in range(8_001)
+    ]
+    chunks = _chunk_requests(requests, max_count=8_000)
+    assert [len(c) for c in chunks] == [8_000, 1]
+    assert all(len(c) <= 8_000 for c in chunks)
+    # Default max_count is MAX_REQUESTS_PER_BATCH (8_000) — same split.
+    assert [len(c) for c in _chunk_requests(requests)] == [8_000, 1]
+
+
+# ── #663 Test 2: chunking at the byte limit ──────────────────────────────────
+
+
+def test_chunk_at_byte_limit():
+    """One ~250 MB+ request lands alone; the boundary fired on bytes, not count.
+
+    (#663 §6 Test 2.) Constructs the oversized row directly as a dict so
+    json.dumps(req).encode() exceeds MAX_BATCH_SIZE_BYTES — a ~0.25 GB
+    transient string, no real tokens, no API.
+    """
+    big = "x" * (batch_judge.MAX_BATCH_SIZE_BYTES + 10)
+    requests = [
+        {"custom_id": "small_a", "params": {"messages": [{"content": "x"}]}},
+        {"custom_id": "oversized", "params": {"messages": [{"content": big}]}},
+        {"custom_id": "small_b", "params": {"messages": [{"content": "x"}]}},
+    ]
+    chunks = _chunk_requests(requests, max_count=8_000)  # count cap NOT binding
+    # The oversized row sits alone in its own chunk (a new chunk started before
+    # it on bytes, and the next small row starts a fresh chunk after it).
+    oversized_chunk = next(c for c in chunks if any(r["custom_id"] == "oversized" for r in c))
+    assert len(oversized_chunk) == 1
+    assert sum(len(c) for c in chunks) == 3
+
+
+# ── #663 Test 7: _collect_batch_results 4-tuple two-level split ──────────────
+
+
+def _collect_client(outcomes: dict[str, str], *, error_types: dict[str, str] | None = None):
+    """Fake client whose results() yields scripted per-cid outcome shapes.
+
+    ``outcomes[cid]`` in {succeeded, errored, expired, canceled};
+    ``error_types[cid]`` sets ``result.error.error.type`` for an errored row
+    (e.g. "invalid_request_error" or "api_error"). A succeeded row carries a
+    valid judge-JSON message.
+    """
+    error_types = error_types or {}
+
+    def _results(_batch_id):
+        for cid, outcome in outcomes.items():
+            if outcome == "succeeded":
+                yield SimpleNamespace(
+                    custom_id=cid,
+                    result=SimpleNamespace(type="succeeded", message=_msg(JUDGE_TEXT)),
+                )
+            elif outcome == "errored":
+                etype = error_types.get(cid)
+                err = (
+                    SimpleNamespace(error=SimpleNamespace(type=etype))
+                    if etype is not None
+                    else None
+                )
+                yield SimpleNamespace(
+                    custom_id=cid, result=SimpleNamespace(type="errored", error=err, message=None)
+                )
+            else:  # expired / canceled
+                yield SimpleNamespace(
+                    custom_id=cid, result=SimpleNamespace(type=outcome, message=None)
+                )
+
+    return SimpleNamespace(messages=SimpleNamespace(batches=SimpleNamespace(results=_results)))
+
+
+def test_collect_batch_results_four_tuple_split():
+    """_collect_batch_results returns (scores, retriable, expired, quarantined).
+
+    (#663 §6 Test 7 regression — the 3-tuple -> 4-tuple shape change.) The
+    invalid_request_error is quarantined (NOT retriable); a server error is
+    retriable; expired is its own list; canceled surfaces as an error dict with
+    no retry membership.
+    """
+    from explore_persona_space.eval.judge_dispatch import _default_error_dict
+
+    outcomes = {
+        "ok": "succeeded",
+        "bad_request": "errored",
+        "server_err": "errored",
+        "exp": "expired",
+        "cxl": "canceled",
+    }
+    error_types = {"bad_request": "invalid_request_error", "server_err": "api_error"}
+    client = _collect_client(outcomes, error_types=error_types)
+    scores, retriable, expired, quarantined = _collect_batch_results(
+        client, "msgbatch_x", _default_error_dict
+    )
+    assert quarantined == ["bad_request"]
+    assert retriable == ["server_err"]
+    assert expired == ["exp"]
+    assert scores["ok"] == {"aligned": 90, "coherent": 95, "reasoning": "ok"}
+    # All terminal states present in scores (overwritten if a retry succeeds).
+    assert set(scores) == {"ok", "bad_request", "server_err", "exp", "cxl"}
+    assert scores["bad_request"]["error"] is True
+    assert "invalid_request_error" in scores["bad_request"]["reasoning"]
+    assert scores["cxl"]["error"] is True
+    # canceled is in neither retry list.
+    assert "cxl" not in retriable and "cxl" not in expired and "cxl" not in quarantined
 
 
 # ── 5: dry-run ───────────────────────────────────────────────────────────────
@@ -814,3 +955,112 @@ def test_judge_cache_roundtrip(tmp_path):
     cache.put("q", "c", {"aligned": 1})
     assert cache.get("q", "c") == {"aligned": 1}
     assert cache.get("q", "other") is None
+
+
+# ── Phase 5: sync routes through api_dispatch.dispatch_calls (multi-org) ─────
+
+
+def test_sync_routes_through_multiorg_dispatcher_when_two_plus_keys(monkeypatch):
+    """Phase 5 (#682): sync judge dispatches with 2+ org keys present route
+    through api_dispatch.dispatch_calls — the multi-org fan-out path — so every
+    caller gets the ~3x speedup of fanning across the 3 separate org keys for
+    free, without changing the public signature. The legacy single-org
+    AsyncAnthropic path stays the fallback for tests that pin sync_client.
+    """
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
+    monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
+    monkeypatch.delenv("ANTHROPIC_API_KEY_LOW_PRIO", raising=False)
+    monkeypatch.delenv("EPS_JUDGE_DISABLE_MULTIORG", raising=False)
+
+    items = make_items(3)
+
+    captured: dict = {}
+
+    async def _fake_dispatch_calls(items_arg, **kwargs):
+        from explore_persona_space.llm.api_dispatch import DispatchResult
+
+        captured["model"] = kwargs.get("model")
+        captured["force_path"] = kwargs.get("force_path")
+        captured["cost_pref"] = kwargs.get("cost_pref")
+        captured["n_items"] = len(items_arg)
+        return {
+            it.item_id: DispatchResult(
+                item_id=it.item_id,
+                result={"aligned": 80, "coherent": 80, "reasoning": "ok"},
+            )
+            for it in items_arg
+        }
+
+    monkeypatch.setattr(
+        "explore_persona_space.llm.api_dispatch.dispatch_calls",
+        _fake_dispatch_calls,
+    )
+
+    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items_async
+
+    results = asyncio.run(
+        dispatch_judge_items_async(
+            items,
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            force_sync=True,  # pin to sync (the path that newly routes through multi-org)
+        )
+    )
+
+    assert captured["force_path"] == "sync"
+    assert captured["cost_pref"] == "latency"
+    assert captured["model"] == "claude-sonnet-4-5-20250929"
+    assert captured["n_items"] == 3
+    assert set(results.keys()) == {cid for cid, _, _, _ in items}
+    for v in results.values():
+        assert v["aligned"] == 80
+
+
+def test_sync_falls_back_to_single_org_when_opt_out_set(monkeypatch):
+    """EPS_JUDGE_DISABLE_MULTIORG=1 forces the legacy single-org AsyncAnthropic
+    sync path even when multiple org keys are present in the env — escape hatch
+    for callers that need exact backward-compatibility (e.g. retry-path tests
+    that pin sync_client + assert against the single-org client's behavior).
+    """
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k1")
+    monkeypatch.setenv("ANTHROPIC_BATCH_KEY", "k2")
+    monkeypatch.setenv("EPS_JUDGE_DISABLE_MULTIORG", "1")
+
+    items = make_items(2)
+    multiorg_called = {"n": 0}
+
+    async def _fake_dispatch_calls(items_arg, **kwargs):
+        multiorg_called["n"] += 1
+        return {}
+
+    monkeypatch.setattr(
+        "explore_persona_space.llm.api_dispatch.dispatch_calls",
+        _fake_dispatch_calls,
+    )
+
+    # Inject a legacy single-org client that records that it was used.
+    class _LegacyAsyncClient:
+        def __init__(self):
+            self.calls = 0
+            self.messages = self  # so `client.messages.create(...)` works
+
+        async def create(self, **kwargs):
+            self.calls += 1
+            return _msg(JUDGE_TEXT)
+
+    legacy = _LegacyAsyncClient()
+    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items_async
+
+    results = asyncio.run(
+        dispatch_judge_items_async(
+            items,
+            judge_model="claude-sonnet-4-5-20250929",
+            judge_system_prompt="rubric",
+            force_sync=True,
+            sync_client=legacy,
+        )
+    )
+
+    assert multiorg_called["n"] == 0, "opt-out should NOT enter the multi-org path"
+    assert legacy.calls == 2, "legacy single-org client should serve both items"
+    assert len(results) == 2

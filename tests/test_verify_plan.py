@@ -1075,6 +1075,25 @@ def test_claude_md_carries_predicate_anchor_literals():
         assert anchor in claude_md, f"CLAUDE.md lost the anchor literal {anchor!r}"
 
 
+def test_kind_enum_constants_match_canonical_code_kinds():
+    """`verify_plan.EXEMPT_KINDS` / `VALID_KINDS` stay byte-identical to the
+    canonical `task_workflow.CODE_KINDS` so the three `kind`-enum copies can
+    never drift (incident #672). VALID_KINDS is kept an explicit ordered
+    tuple here (argparse `choices=` display order) — this test is the gate
+    that pins it to the single source of truth."""
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    from explore_persona_space.task_workflow import CODE_KINDS, KINDS
+
+    # EXEMPT_KINDS is exactly the canonical code/test-verdict subset.
+    assert verify_plan.EXEMPT_KINDS == CODE_KINDS
+    # VALID_KINDS = experiment + the exempt subset (same membership), and
+    # every member is a real lifecycle kind.
+    assert set(verify_plan.VALID_KINDS) == CODE_KINDS | {"experiment"}
+    assert set(verify_plan.VALID_KINDS) <= set(KINDS)
+    # The CLI-order tuple is pinned verbatim so a reorder is a visible diff.
+    assert verify_plan.VALID_KINDS == ("experiment", "analysis", "infra", "batch", "survey")
+
+
 # ─── No-LLM / no-network invariant (acceptance criterion 4) ────────────────
 
 

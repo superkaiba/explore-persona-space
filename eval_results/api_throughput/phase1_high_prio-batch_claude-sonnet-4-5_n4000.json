@@ -1,0 +1,83 @@
+{
+  "config": {
+    "orgs": [
+      "high_prio",
+      "batch"
+    ],
+    "model": "claude-sonnet-4-5-20250929",
+    "n": 4000,
+    "ramp": [
+      25,
+      50,
+      100,
+      200,
+      400
+    ],
+    "max_tokens": 64
+  },
+  "wall_s": 74.7,
+  "total_ok": 3989,
+  "aggregate_throughput_rpm": 3206,
+  "per_org": [
+    {
+      "label": "high_prio",
+      "ok": 2000,
+      "n429": 0,
+      "errors": 0,
+      "wall_s": 74.7,
+      "throughput_rpm": 1607,
+      "p50_s": 1.5089291417971253,
+      "p95_s": 2.291262023150921,
+      "binding_limiter": "requests",
+      "min_remaining": {
+        "requests": 29982,
+        "output-tokens": 1000000,
+        "input-tokens": 9801000
+      },
+      "ramp_ts": [
+        [
+          50,
+          20.2
+        ],
+        [
+          100,
+          40.2
+        ],
+        [
+          200,
+          60.2
+        ]
+      ]
+    },
+    {
+      "label": "batch",
+      "ok": 1989,
+      "n429": 0,
+      "errors": 11,
+      "wall_s": 74.7,
+      "throughput_rpm": 1598,
+      "p50_s": 1.8240568554028869,
+      "p95_s": 4.981504376977682,
+      "binding_limiter": "requests",
+      "min_remaining": {
+        "requests": 89994,
+        "output-tokens": 800000,
+        "input-tokens": 8000000
+      },
+      "ramp_ts": [
+        [
+          50,
+          20.2
+        ],
+        [
+          100,
+          40.2
+        ],
+        [
+          200,
+          60.2
+        ]
+      ]
+    }
+  ]
+}

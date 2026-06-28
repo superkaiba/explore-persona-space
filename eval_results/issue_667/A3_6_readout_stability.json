@@ -1,0 +1,83 @@
+{
+  "assumption": "A3.6",
+  "layer": 14,
+  "by_behavior": {
+    "em": {
+      "status": "ok",
+      "partial_spearman_change_given_base": -0.35038180362527893,
+      "raw_spearman_proj_vs_g": -0.40002582244199036,
+      "partial_shuffled_null_hi": 0.09731849509257276,
+      "partial_clustered_bootstrap": {
+        "point": -0.35038180362527893,
+        "ci_lo": -0.5539082079662901,
+        "ci_hi": -0.07344696093811193,
+        "n_families": 7
+      },
+      "raw_clustered_bootstrap": {
+        "point": -0.40002582244199036,
+        "ci_lo": -0.5599295327495343,
+        "ci_hi": -0.1682532605196794,
+        "n_families": 7
+      },
+      "n_cells": 464,
+      "n_dynamic_range_cells": 135,
+      "dynamic_range_fraction": 0.29094827586206895,
+      "r_b_source": "broad_em"
+    },
+    "sycophancy": {
+      "status": "ok",
+      "partial_spearman_change_given_base": -0.03091412761084175,
+      "raw_spearman_proj_vs_g": -0.1422587849638186,
+      "partial_shuffled_null_hi": 0.08521885872879219,
+      "partial_clustered_bootstrap": {
+        "point": -0.03091412761084175,
+        "ci_lo": -0.27148728385909715,
+        "ci_hi": 0.07741149932351332,
+        "n_families": 7
+      },
+      "raw_clustered_bootstrap": {
+        "point": -0.1422587849638186,
+        "ci_lo": -0.3174302081270188,
+        "ci_hi": 0.06857739914003988,
+        "n_families": 7
+      },
+      "n_cells": 464,
+      "n_dynamic_range_cells": 402,
+      "dynamic_range_fraction": 0.8663793103448276,
+      "r_b_source": "sycophancy"
+    },
+    "fact": {
+      "status": "ok",
+      "partial_spearman_change_given_base": -0.41287934929328646,
+      "raw_spearman_proj_vs_g": -0.42493802905268524,
+      "partial_shuffled_null_hi": 0.08520211758677942,
+      "partial_clustered_bootstrap": {
+        "point": -0.41287934929328646,
+        "ci_lo": -0.599923558230338,
+        "ci_hi": -0.32151812761105014,
+        "n_families": 7
+      },
+      "raw_clustered_bootstrap": {
+        "point": -0.42493802905268524,
+        "ci_lo": -0.6210509345149682,
+        "ci_hi": -0.3075931598216004,
+        "n_families": 7
+      },
+      "n_cells": 464,
+      "n_dynamic_range_cells": 360,
+      "dynamic_range_fraction": 0.7758620689655172,
+      "r_b_source": "reextracted_fact"
+    },
+    "marker": {
+      "status": "no_r_b",
+      "note": "r_B unavailable for this behavior"
+    }
+  },
+  "metadata": {
+    "git_commit": "8cd66e9ffc12f3cb6dfd3854a670a51230d4e5a1",
+    "generated_at": "2026-06-25T21:58:30.144258+00:00",
+    "script": "issue667_analysis",
+    "g_meta_git_commit_pin": "34f2502c656cd804524f2a3d4d5231270aaf0664",
+    "store_probe_pool_hash_pin": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+  }
+}

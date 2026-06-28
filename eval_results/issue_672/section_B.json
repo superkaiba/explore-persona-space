@@ -1,0 +1,19 @@
+{
+  "live_injection_pass": false,
+  "fallback_outcome": "inconclusive_live_validation",
+  "headline_downgraded": true,
+  "watchdog_fired": null,
+  "vm_terminated": null,
+  "failover_marker_sha": null,
+  "failover_count": 0,
+  "poller_invocations": [],
+  "poller_exit_codes": [],
+  "notes": {
+    "live_path_attempt": "Validator called dispatch_issue.py launch --issue 672 --intent debug --backend gcp + workload-cmd 'sleep tick'. Dispatch fell through to RunPod terminal rung (pod-672 was provisioned 1xH100 instead of a GCP debug-intent L4 VM). bootstrap_pod.sh hung in SSH for ~6 min before the orchestrator killed the validator + terminated pod-672 cleanly.",
+    "fallback_path": "Per plan §4 documented fallback: deterministic B1 (6 tests in test_gcp_backend.py -k watchdog) + B3 (3 wedge/failover tests in test_backend_poll.py) are GREEN in Section C (203/203 + 18/18). Manual watchdog-fire smoke was NOT performed live (the GCP VM never came up).",
+    "deterministic_evidence": {
+      "test_gcp_backend.py": "203/203 passed (incl. watchdog ladder + counter-reset-on-either-answers tests)",
+      "test_backend_poll.py": "18/18 passed (incl. frozen-phase wedge-detection + failover-once tests)"
+    }
+  }
+}

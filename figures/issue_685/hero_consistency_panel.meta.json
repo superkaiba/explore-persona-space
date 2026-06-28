@@ -1,0 +1,348 @@
+{
+  "commit": "607912bbcb",
+  "created": "2026-06-27T07:18:50Z",
+  "figsize": [
+    9.600000000000001,
+    5.2
+  ],
+  "points": [
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.7469094395637512,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.7917947769165039,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.6779329776763916,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.532541036605835,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.785341739654541,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.8057546019554138,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.7388692498207092,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.5906000137329102,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.7409128546714783,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.7540842890739441,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.6617428064346313,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.5926046371459961,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.7900837659835815,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.7313047647476196,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.7126905918121338,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.5941140055656433,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.8311048150062561,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.8972988724708557,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.8392864465713501,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.7191070318222046,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.8360563516616821,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.8586220741271973,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.8462786078453064,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.8126413226127625,
+      "series": "consistency",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 14.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 21.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 27.0,
+      "mean pairwise cos": 0.0037997359875589602,
+      "series": "null p95",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48
+}

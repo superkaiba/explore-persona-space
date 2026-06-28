@@ -6,9 +6,11 @@ AnthropicBatch: Messages Batch API with create/poll/retrieve/cancel.
 
 import asyncio
 import copy
+import datetime as _dt
 import json
 import logging
 import time
+from collections.abc import Callable
 from pathlib import Path
 from traceback import format_exc
 
@@ -43,6 +45,46 @@ ANTHROPIC_MODELS = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+# ── Batch poll deadline helpers (single source of truth; #663) ────────────────
+
+
+class BatchDeadlineExceeded(RuntimeError):
+    """A batch did not reach ``ended`` by ``expires_at`` + grace.
+
+    Raised by the bounded batch poll loops (``AnthropicBatch.poll``,
+    ``batch_judge._submit_and_poll_batch``, ``judge_dispatch._run_batch_path``)
+    after one final harvest attempt fails to find the batch ended. Callers
+    surface this as ``epm:failure v1`` ``failure_class: infra`` rather than
+    hanging forever. The bound is wall-clock vs the API's own ``expires_at``
+    (= ``created_at + 24h``), the only reliable signal — per-request counts
+    stay 0 until the whole batch ends, so ``succeeded==0`` is NEVER a stuck
+    heuristic (the #658 misdiagnosis).
+    """
+
+    def __init__(self, batch_id: str, deadline):
+        super().__init__(f"batch {batch_id} not ended by deadline {deadline}")
+        self.batch_id = batch_id
+        self.deadline = deadline
+
+
+def deadline_from_expires_at(expires_at, grace_min: int = 30) -> "_dt.datetime":
+    """Return the poll deadline = ``expires_at`` + grace, as a tz-aware datetime.
+
+    SDK 0.88.0 deserializes the batch object's ``expires_at`` to a
+    ``datetime.datetime`` (= ``created_at + 24h``) before any code sees it, so
+    the production path is the datetime branch below. The doc's RAW JSON shape
+    is an ISO-8601 string ("2024-09-25T18:37:24.100435Z"); the ``isinstance``
+    guard keeps a raw-dict fallback for an unwrapped SDK response. A naive
+    datetime is assumed UTC (safety). Single source of truth for the
+    deadline derivation, imported by ``batch_judge`` + ``judge_dispatch``.
+    """
+    if isinstance(expires_at, str):  # raw-dict path (unwrapped SDK response)
+        expires_at = _dt.datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+    if expires_at.tzinfo is None:  # naive -> assume UTC
+        expires_at = expires_at.replace(tzinfo=_dt.UTC)
+    return expires_at + _dt.timedelta(minutes=grace_min)
 
 
 # ── Content block helpers ───────────────────────────────────────────────────
@@ -446,16 +488,54 @@ class AnthropicBatch:
     def list_batches(self, limit: int = 20) -> list:
         return list(self.client.messages.batches.list(limit=limit))
 
-    async def poll(self, batch_id: str, interval_s: float = 60.0):
-        """Poll until batch processing ends."""
+    async def poll(
+        self,
+        batch_id: str,
+        interval_s: float = 60.0,
+        grace_min: int = 30,
+        now_fn: "Callable[[], _dt.datetime] | None" = None,
+        sleep_fn: "Callable[[float], object] | None" = None,
+    ):
+        """Poll until processing ends OR the batch's own ``expires_at`` + grace.
+
+        On deadline with status still != ``ended``, does ONE final retrieve and:
+          - returns the batch if it has since ended (harvest partial results),
+          - else raises :class:`BatchDeadlineExceeded` (callers surface
+            ``failure_class: infra``).
+
+        Never spins forever: the bound is wall-clock vs the API's ``expires_at``
+        (= ``created_at + 24h``). If ``expires_at`` is ever ABSENT from the
+        retrieve response (unexpected SDK shape / partial object), the deadline
+        falls back to ``now + 25h`` — slightly past the API's own 24h+grace
+        ceiling so a present-`expires_at` always wins, yet still hard-bounded so
+        the loop can NEVER become the deadline-less ``while True`` that wedged
+        #658 (the G1 judge sat at ``succeeded:0`` for 9h). ``now_fn``/``sleep_fn``
+        are injectable for tests (default wall-clock + ``asyncio.sleep``); the
+        kwargs are additive so ``__call__`` and other callers are unaffected.
+        """
+        now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
+        sleep_fn = sleep_fn or asyncio.sleep
         elapsed_min = 0
+        deadline: _dt.datetime | None = None
         while True:
             batch = self.retrieve(batch_id)
             if batch.processing_status == "ended":
                 return batch
+            if deadline is None:
+                expires_at = getattr(batch, "expires_at", None)
+                deadline = (
+                    deadline_from_expires_at(expires_at, grace_min)
+                    if expires_at is not None
+                    else now_fn() + _dt.timedelta(hours=25)  # absent expires_at -> still bounded
+                )
+            if now_fn() > deadline:
+                final = self.retrieve(batch_id)  # one last harvest attempt
+                if final.processing_status == "ended":
+                    return final
+                raise BatchDeadlineExceeded(batch_id, deadline)
             if elapsed_min > 0 and elapsed_min % 10 == 0:
                 logger.info("Batch %s still processing (%d min elapsed)", batch_id, elapsed_min)
-            await asyncio.sleep(interval_s)
+            await sleep_fn(interval_s)
             elapsed_min += 1
 
     async def __call__(

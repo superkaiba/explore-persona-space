@@ -66,6 +66,24 @@ keep the verdict — fail-safe to the pre-#518 behavior. Incident: task
 phase wrote nothing to the log for ~7.8h while the python child was
 at 100% CPU; the poller falsely declared `stalled`.
 
+Zombie-GPU-allocation override (#664): the CPU-advancing override above
+has a blind spot — a hung vLLM whose CUDA worker DIED but whose
+EngineCore main process is still alive keeps burning Python-overhead
+CPU (HTTP keepalive, GIL ticks, network-thread-pool idle work), so the
+session CPU keeps advancing and the #518 override reports `running`
+forever while zero real work happens (#664 round 8 hung 60+ min,
+reported healthy throughout). The one mechanical signal of this hang is
+the orphaned GPU allocation: a compute-apps PID holding many GiB of
+VRAM whose `/proc/<pid>` no longer exists. The probe lists
+`nvidia-smi --query-compute-apps=pid,used_memory` and flags any PID
+holding >= ``ZOMBIE_GPU_MEM_MIN_MIB`` MiB that is absent from `/proc`;
+when present on a `running` verdict, the verdict is overridden to
+`stalled` with ``stall_reason="vllm_worker_dead_zombie_gpu"`` REGARDLESS
+of session-CPU advancement. A live process always has `/proc/<pid>`, so
+an absent dir is a hard liveness signal. Fail-safe: nvidia-smi missing /
+erroring emits an empty list (never a false zombie); the override never
+touches a `done` / `gate` / `dead` verdict.
+
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
 main sweep log goes silent for ~15-18 min while the smoke cell actively
@@ -470,6 +488,13 @@ SSH_FAIL_REFRESH_THRESHOLD = int(os.environ.get("EPM_POLL_SSH_FAIL_REFRESH_THRES
 # ~13.7h at $32/hr with only per-tick noise.
 SSH_WAIT_ALARM_SECS = float(os.environ.get("EPM_SSH_WAIT_ALARM_SECS", "3600"))
 
+# Zombie-GPU-allocation floor (#664): minimum VRAM (MiB) a dead-PID compute
+# allocation must hold before the probe flags it as a zombie. A hung vLLM
+# whose CUDA worker died leaves its full model-shard allocation (tens of GiB)
+# orphaned on the card; the 1 GiB floor avoids flagging trivial leftover CUDA
+# contexts (a few hundred MiB) while catching any real model-weight orphan.
+ZOMBIE_GPU_MEM_MIN_MIB = int(os.environ.get("EPM_ZOMBIE_GPU_MEM_MIN_MIB", "1024"))
+
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
     """Best-effort ``pod.py config --refresh-from-api <pod>`` self-heal.
@@ -708,13 +733,16 @@ class PollResult:
     # True when THIS tick posted the [gpu-idle-advisory] marker (#518/#537).
     # Observability only; the advisory never changes ``status``.
     gpu_idle_advisory_posted: bool = False
-    # Session-CPU signal (#518). ``session_cpu_secs`` is the literal probe
-    # output: a float string like ``"4271.5"`` or ``"unknown"``.
-    # ``cpu_advancing`` is the ternary decision: True (session advanced
-    # since previous tick), False (session flat), None (no signal — first
-    # tick, launcher dead, or ps unavailable). Surfaced in the JSON line
-    # so operators can see WHY a long-quiet run stayed in ``running`` (or
-    # WHY a stall verdict landed despite a CPU-bound phase).
+    # Session-CPU signal (#518, #658). ``session_cpu_secs`` is the literal
+    # probe output: a float string like ``"4271.5"`` or ``"unknown"``.
+    # ``cpu_advancing`` is the ternary decision relative to the running
+    # MAXIMUM cumulative CPU observed across ticks: True (a new high-water
+    # mark = genuine progress, OR a sub-max drop = a multi-shard child-exit
+    # accounting artifact — neither is a hang), False (flat at the
+    # high-water mark = truly idle), None (no signal — first tick, launcher
+    # dead, or ps unavailable). Surfaced in the JSON line so operators can
+    # see WHY a long-quiet run stayed in ``running`` (or WHY a stall verdict
+    # landed despite a CPU-bound phase).
     session_cpu_secs: str = "unknown"
     cpu_advancing: bool | None = None
     # Recommended seconds before the NEXT poll tick (adaptive bg-poll
@@ -725,6 +753,17 @@ class PollResult:
     # sleep-chain reads this from the tick JSON (540s fallback when
     # absent/unparseable — SKILL.md Step 6d.2).
     next_interval: int = POLL_INTERVAL_DEFAULT_SEC
+    # Machine-readable reason a non-``running`` verdict landed, surfaced in
+    # the JSON line so the orchestrator can route differently per cause.
+    # ``None`` on a healthy ``running`` tick and on stalls without a
+    # specific cause (the generic log+GPU+CPU conjunction). Currently set
+    # only for the zombie-GPU-allocation stall (#664):
+    # ``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID still
+    # holding VRAM while the EngineCore main process keeps the
+    # session-CPU-advancing override alive (which would otherwise mask the
+    # hang as ``running`` forever). Defaulted so the many cross-backend
+    # ``PollResult(...)`` call sites need no change.
+    stall_reason: str | None = None
 
 
 def _ssh_probe(
@@ -915,12 +954,44 @@ def _ssh_probe(
     # erroring nvidia-smi never declares stalled by itself (the
     # per-phase-log + cell-log signals still protect long phases). See
     # `_gpu_idle` for the threshold + fail-safe semantics.
+    #
+    # Zombie-GPU-allocation probe (#664): a hung vLLM whose CUDA worker
+    # process DIED but whose EngineCore main process is still alive
+    # presents as a compute process holding many GiB of VRAM whose PID no
+    # longer exists in `/proc`. The main Python process keeps burning
+    # Python-overhead CPU (HTTP keepalive, GIL ticks, network-thread-pool
+    # idle work), so the #518/#658 session-CPU-advancing override keeps
+    # the verdict in `running` indefinitely while zero real work happens
+    # (#664 round-8 hung 60+ min reported healthy throughout). The only
+    # mechanical signal of the hang is the orphaned GPU allocation: a
+    # compute-apps PID with no `/proc/<pid>` entry. We list `pid,
+    # used_memory` and emit (space-separated) every PID that holds
+    # >= ZOMBIE_GPU_MEM_MIN_MIB MiB but is absent from `/proc` — the
+    # memory floor avoids flagging trivial leftover CUDA contexts. A live
+    # process ALWAYS has `/proc/<pid>`, so an absent dir is a hard
+    # liveness signal, not a heuristic. Empty (no zombies) is the healthy
+    # case. Fail-safe: nvidia-smi missing / erroring emits an empty list
+    # (never a false zombie), same posture as the util probe.
     gpu_probe = (
         "if command -v nvidia-smi >/dev/null 2>&1; then "
         "  GPU_OUT=$(nvidia-smi --query-gpu=utilization.gpu "
         "    --format=csv,noheader,nounits 2>/dev/null | paste -sd, -); "
         '  echo "GPU_UTIL=${GPU_OUT:-unknown}"; '
-        'else echo "GPU_UTIL=unknown"; fi; '
+        "  ZOMBIE=''; "
+        "  while IFS=, read -r zpid zmem; do "
+        '    zpid=$(echo "$zpid" | tr -d " "); '
+        '    zmem=$(echo "$zmem" | tr -d " "); '
+        '    case "$zpid" in ""|*[!0-9]*) continue ;; esac; '
+        '    case "$zmem" in ""|*[!0-9]*) zmem=0 ;; esac; '
+        f'    if [ "$zmem" -ge {ZOMBIE_GPU_MEM_MIN_MIB} ] && [ ! -d /proc/$zpid ]; then '
+        '      ZOMBIE="$ZOMBIE $zpid"; '
+        "    fi; "
+        "  done <<EOF\n"
+        "$(nvidia-smi --query-compute-apps=pid,used_memory "
+        "  --format=csv,noheader,nounits 2>/dev/null)\n"
+        "EOF\n"
+        "  echo \"ZOMBIE_GPU_PIDS=$(echo $ZOMBIE | tr -s ' ')\"; "
+        'else echo "GPU_UTIL=unknown"; echo "ZOMBIE_GPU_PIDS="; fi; '
     )
     # Session CPU probe (#518): cumulative CPU seconds summed across
     # every process sharing the launcher PID's session id (SID). The
@@ -1018,6 +1089,7 @@ def _ssh_probe(
             "phase_log_mtime_epoch": "0",
             "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
+            "zombie_gpu_pids": "",
             "session_cpu_secs": "unknown",
             "results_sentinel_present": "0",
             "ssh_failed": "1",
@@ -1038,6 +1110,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PHASE_LOG_MTIME_EPOCH",
     "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
+    "ZOMBIE_GPU_PIDS",
     "SESSION_CPU_SECS",
     "RESULTS_SENTINEL_PRESENT",
 )
@@ -1061,6 +1134,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "phase_log_mtime_epoch": "0",
         "shard_log_mtime_epoch": "0",
         "gpu_util": "unknown",
+        "zombie_gpu_pids": "",
         "session_cpu_secs": "unknown",
         "results_sentinel_present": "0",
     }
@@ -1787,14 +1861,40 @@ def _parse_session_cpu(value: str) -> float | None:
         return None
 
 
-def _session_cpu_advancing(prev: str | None, current: str) -> bool | None:
+def _session_cpu_advancing(prev_max: str | None, current: str) -> bool | None:
     """Return True / False / None for the session-CPU "advancing" decision.
 
-    * ``True``  — both samples parse AND current > prev + epsilon. The
-      session is doing CPU work; a stalled-on-logs verdict should flip
-      to running.
-    * ``False`` — both samples parse AND current is at or below prev +
-      epsilon. The session is truly idle; stalled stands.
+    The reference point is the running **maximum** cumulative
+    session-CPU observed across ALL prior ticks (``prev_max``), NOT the
+    immediately-previous tick's value. Cumulative CPU over a *fixed*
+    process set only ever grows, so the high-water mark is the right
+    baseline — but the live ``ps``-sum probe is over the launcher's
+    process GROUP, and in a multi-shard run each shard exits at a
+    different time (per-shard completion is the design). When a shard
+    exits, its accumulated cputime drops out of the live sum, so
+    ``current`` can DECREASE tick-over-tick while the run is perfectly
+    healthy and the surviving shards keep producing output. Comparing
+    against the immediately-previous tick (the pre-#658 behavior) read
+    that accounting drop as a stall — a false positive whose rate scales
+    with shard count (incident #658: an 8-shard run dropped 193272 ->
+    38528 the tick after one shard exited and was falsely flagged
+    stalled). Comparing against the running max instead is immune: a
+    momentary drop below the high-water mark is the child-exit artifact,
+    never a hang.
+
+    * ``True``  — both samples parse AND EITHER
+      (a) ``current > prev_max + epsilon`` — a NEW high-water mark, so a
+          surviving process accrued more CPU than ever before (genuine
+          progress), OR
+      (b) ``current < prev_max - epsilon`` — ``current`` dropped below
+          the running max, which can only be a child-exit / ``ps``
+          re-numbering accounting artifact (a hung process loses no
+          CPU); the run is doing work.
+      In both cases a stalled-on-logs verdict should flip to running.
+    * ``False`` — both samples parse AND ``current`` is flat at the
+      high-water mark (within +/- epsilon of ``prev_max``): no new
+      progress and no de-count, i.e. a truly idle session. Stalled
+      stands.
     * ``None``  — at least one sample is unknown. NO signal; the caller
       preserves whatever the older log + GPU arbiters decided. This is
       the fail-safe path on (a) first tick after launch (no prior
@@ -1809,10 +1909,32 @@ def _session_cpu_advancing(prev: str | None, current: str) -> bool | None:
     cur = _parse_session_cpu(current)
     if cur is None:
         return None
-    prv = _parse_session_cpu(prev) if prev is not None else None
-    if prv is None:
+    mx = _parse_session_cpu(prev_max) if prev_max is not None else None
+    if mx is None:
         return None
-    return cur > prv + SESSION_CPU_ADVANCE_EPSILON_SECS
+    # True on a new high-water mark (genuine CPU progress) OR a sub-max drop
+    # (a multi-shard child-exit accounting artifact, never a hang). False
+    # only when flat at the high-water mark (within +/- epsilon) — truly idle.
+    return abs(cur - mx) > SESSION_CPU_ADVANCE_EPSILON_SECS
+
+
+def _roll_session_cpu_max(prev_max: str | None, current: str) -> str:
+    """Return the running maximum cumulative session-CPU as a probe string.
+
+    The maximum only ever grows (#658): cumulative CPU over a fixed process
+    set is monotonic, and a ``current`` sample below the running max is a
+    multi-shard child-exit accounting artifact that must NOT lower the
+    baseline. An ``unknown`` current sample (transient ps error) preserves
+    the prior max. Stored as the literal probe string so the next tick's
+    ``_parse_session_cpu`` reads it consistently with the live probe.
+    """
+    cur = _parse_session_cpu(current)
+    if cur is None:
+        return prev_max if prev_max else "unknown"
+    prev = _parse_session_cpu(prev_max) if prev_max else None
+    if prev is None or cur > prev:
+        return current
+    return prev_max if prev_max else current
 
 
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
@@ -1917,6 +2039,12 @@ def poll_once(
     shard_log_mtime_ago = now_epoch - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
     gpu_util = probe.get("gpu_util", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
+    # Zombie-GPU-allocation signal (#664): the probe emits the
+    # space-separated PIDs of compute processes holding >= the VRAM floor
+    # whose `/proc/<pid>` no longer exists (a dead CUDA worker whose
+    # allocation lingers). Empty string = healthy (no zombies); a missing
+    # key (older probe / ssh-failure fallback) reads as empty too.
+    zombie_gpu_pids = [p for p in probe.get("zombie_gpu_pids", "").split() if p]
     current_phase = latest_phase(probe["log_tail"])
 
     # ── #545 done corroboration ──────────────────────────────────────────
@@ -1998,9 +2126,20 @@ def poll_once(
     # truly hung session (CPU flat AND logs stale AND GPUs idle)
     # still routes to `stalled` and the orchestrator still fires
     # epm:failure.
+    # Compare the current cumulative-CPU sample against the running MAXIMUM
+    # observed across all prior ticks, not the immediately-previous tick
+    # (#658). A multi-shard run de-counts an exited shard's cputime from the
+    # live ps-sum, so ``current`` can drop tick-over-tick while healthy; a
+    # drop below the high-water mark is that child-exit artifact, never a
+    # hang. ``_session_cpu_advancing`` returns True on either a new max
+    # (genuine progress) or a sub-max drop (child-exit artifact), False only
+    # when flat at the max.
     current_session_cpu = probe.get("session_cpu_secs", "unknown")
-    prev_session_cpu = prev_state.get("session_cpu_secs")
-    cpu_advancing = _session_cpu_advancing(prev_session_cpu, current_session_cpu)
+    prev_max_session_cpu = prev_state.get("max_cpu_secs", prev_state.get("session_cpu_secs"))
+    cpu_advancing = _session_cpu_advancing(prev_max_session_cpu, current_session_cpu)
+    # Roll the high-water mark forward for the next tick (#658). The max only
+    # ever grows; a current sample below it (a child exit) does not lower it.
+    max_session_cpu = _roll_session_cpu_max(prev_max_session_cpu, current_session_cpu)
 
     # True when the verdict below is `running` ONLY because the #518
     # CPU-advancing override rescued a met stall conjunction (logs stale +
@@ -2023,11 +2162,11 @@ def poll_once(
             cpu_override_active = True
             log.info(
                 "stall conjunction met (logs >%ds + GPUs idle) BUT session CPU "
-                "advanced %s -> %s on pod %s (#518 silent CPU-bound override); "
-                "reporting status=running",
+                "advancing (current=%s vs running-max=%s) on pod %s (#518/#658 "
+                "silent CPU-bound override); reporting status=running",
                 stall_sec,
-                prev_session_cpu,
                 current_session_cpu,
+                prev_max_session_cpu,
                 pod,
             )
             status = "running"
@@ -2035,6 +2174,35 @@ def poll_once(
             status = "stalled"
     else:
         status = "running"
+
+    # ── #664 zombie-GPU-allocation override ──────────────────────────────
+    # A hung vLLM whose CUDA worker died leaves its model-shard VRAM
+    # orphaned (a compute-apps PID with no `/proc` entry) while the
+    # EngineCore main process stays alive burning Python-overhead CPU. That
+    # advancing session CPU makes the #518/#658 override rescue the stall
+    # conjunction to `running` (or the run never meets the conjunction at
+    # all because the dead allocation reads as GPU-busy), so a 60+ min hang
+    # is reported healthy throughout (#664 round 8). The dead-PID GPU
+    # allocation is the one mechanical signal of this hang, so when it is
+    # present we override a `running` verdict to `stalled` regardless of
+    # session-CPU advancement. We do NOT touch a `done` / `gate` / `dead`
+    # verdict — those are correct terminal/park states (and a dead launcher
+    # is already `dead`; its own orphaned allocation is then expected). The
+    # `stall_reason` lets the orchestrator route this distinctly from a
+    # generic log+GPU+CPU stall (e.g. terminate + diagnose the pod).
+    stall_reason: str | None = None
+    if status == "running" and zombie_gpu_pids:
+        log.error(
+            "zombie GPU allocation on pod %s: compute PID(s) %s hold >= %d MiB VRAM but "
+            "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — overriding "
+            "status=running -> stalled (#664)",
+            pod,
+            ",".join(zombie_gpu_pids),
+            ZOMBIE_GPU_MEM_MIN_MIB,
+        )
+        status = "stalled"
+        stall_reason = "vllm_worker_dead_zombie_gpu"
+        cpu_override_active = False
 
     # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
     # The stall verdict above treats an idle GPU only as corroboration, so
@@ -2138,11 +2306,18 @@ def poll_once(
             # names match PHASE_RE ([a-z0-9_]+) so the comma join is safe.
             "gpu_idle_since_epoch": str(gpu_idle_since_epoch),
             "gpu_idle_advised_phases": ",".join(sorted(gpu_idle_advised_phases)),
-            # Persist the current CPU sample so the NEXT tick can compute
-            # the advancing delta. Stored as the literal probe string
-            # (``"unknown"`` or a float-as-string) so `_parse_session_cpu`
-            # treats it consistently with the live probe value.
+            # Persist the current CPU sample (observability) so the JSON
+            # line / next tick can read the latest probe. Stored as the
+            # literal probe string (``"unknown"`` or a float-as-string) so
+            # `_parse_session_cpu` treats it consistently with the live
+            # probe value.
             "session_cpu_secs": current_session_cpu,
+            # Persist the running MAXIMUM cumulative CPU observed across all
+            # ticks (#658). This is the baseline the NEXT tick's
+            # advancing-decision compares against — a current sample below
+            # it is a multi-shard child-exit accounting artifact, not a
+            # stall. Monotonic: a sub-max current sample never lowers it.
+            "max_cpu_secs": max_session_cpu,
         },
     )
 
@@ -2173,6 +2348,7 @@ def poll_once(
         session_cpu_secs=current_session_cpu,
         cpu_advancing=cpu_advancing,
         next_interval=next_interval,
+        stall_reason=stall_reason,
     )
 
 
@@ -2244,6 +2420,7 @@ def main(argv: list[str] | None = None) -> int:
                 "session_cpu_secs": result.session_cpu_secs,
                 "cpu_advancing": result.cpu_advancing,
                 "next_interval": result.next_interval,
+                "stall_reason": result.stall_reason,
             }
         )
     )

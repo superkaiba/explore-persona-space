@@ -1,0 +1,84 @@
+{
+  "commit": "fc07a8d5",
+  "created": "2026-06-27T21:33:13Z",
+  "figsize": [
+    8.0,
+    3.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "judge-positive rate": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "judge-positive rate": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "judge-positive rate": 0.07142857142857142,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "judge-positive rate": 0.01,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "judge-positive rate": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "judge-positive rate": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "judge-positive rate": 0.00909090909090909,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "judge-positive rate": 0.6580952380952381,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "judge-positive rate": 0.35285714285714287,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "judge-positive rate": 0.645909090909091,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "judge-positive rate": 0.6958158508158508,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "judge-positive rate": 0.9800000000000001,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 12
+}

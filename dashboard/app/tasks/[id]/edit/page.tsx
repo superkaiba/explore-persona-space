@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getTask } from "@/lib/tasks";
+import { getTask, isPaperTask } from "@/lib/tasks";
 import { getSitePassword, isEditorAuthed } from "@/lib/auth";
 import { Editor } from "./Editor";
 
@@ -26,6 +26,37 @@ export default async function EditTaskBody({
 
   const task = getTask(id);
   if (!task) notFound();
+
+  // Paper-tasks have a thin paper-stub body.md; the canonical clean-result is
+  // the LaTeX paper edited in git. Disable the in-app body editor and show a
+  // notice instead of a broken editor that would overwrite the stub.
+  if (isPaperTask(task.frontmatter)) {
+    return (
+      <article className="space-y-4">
+        <header className="space-y-2">
+          <div className="flex items-baseline gap-3 text-sm text-stone-500">
+            <Link href={`/tasks/${id}`} className="hover:text-stone-800">
+              ← Back to task
+            </Link>
+            <span>·</span>
+            <span className="font-mono">#{id}</span>
+          </div>
+          <h1 className="text-xl font-semibold leading-snug tracking-tight">
+            Paper-task — body editing disabled
+          </h1>
+        </header>
+        <p className="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          This is a paper-task (<code>paper: true</code>). Its <code>body.md</code>{" "}
+          is a thin paper-stub; the canonical clean-result is the LaTeX paper.
+          Edit it in git:{" "}
+          <code>docs/papers/issue_{id}/issue_{id}.tex</code> (rebuild with{" "}
+          <code>scripts/build_paper.py</code>, verify with{" "}
+          <code>scripts/verify_paper.py --issue {id}</code>). The in-app editor is
+          disabled here to avoid overwriting the stub.
+        </p>
+      </article>
+    );
+  }
 
   return (
     <article className="space-y-4">

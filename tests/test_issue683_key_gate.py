@@ -1,0 +1,923 @@
+"""Issue #683 — invariants for the behavior-dependent key-gate pipeline.
+
+Pins the load-bearing design decisions the planner/critic flagged:
+
+  1. ``realized_gate`` computes ⟨ŵ,Δv⟩/⟨ŵ,ŵ⟩ and FAILS LOUD on a zero-norm
+     source write (g_real is undefined for a degenerate write — must raise,
+     never silently return 0/NaN that would corrupt the leaderboard).
+  2. The read-location PINS distinguish the marker (post-response EOR slot)
+     from sycophancy (answer-span mean) — methodology-critic concern #1. A
+     regression that silently unified the two reads is a measurement-validity
+     bug.
+  3. ``answer_span_token_indices`` returns the post-prefix completion tokens
+     and FAILS LOUD on chat-template prefix drift (the answer-span pool would
+     otherwise silently include prompt tokens).
+  4. The scorer's A7 read distinguishes a rank-1 stack (scalar g_real DV) from
+     a genuinely 2-D stack (low-rank fallback) — the gating control.
+  5. The shuffled-key null is a key-VECTOR permutation that destroys the
+     key↔gate correspondence (methodology-critic concern #2): a real
+     informative key scores ABOVE its shuffled-key null mean.
+
+CPU-only, no GPU, no network. Runs in the standard pytest suite.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO / "src"))
+sys.path.insert(0, str(REPO / "scripts"))
+
+from explore_persona_space.experiments.issue_683 import (  # noqa: E402
+    READ_LOCATION,
+    answer_span_token_indices,
+    realized_gate,
+)
+
+
+def test_realized_gate_self_is_one():
+    """g_real(C)=1 by construction when Δv(C') == ŵ."""
+    import torch
+
+    w = torch.tensor([1.0, 2.0, 3.0])
+    assert realized_gate(w, w) == pytest.approx(1.0)
+
+
+def test_realized_gate_scales_linearly():
+    """g_real(2·ŵ) == 2 (the gate is the scalar that scales the write)."""
+    import torch
+
+    w = torch.tensor([1.0, -2.0, 0.5])
+    assert realized_gate(w, 2.0 * w) == pytest.approx(2.0)
+    assert realized_gate(w, -0.5 * w) == pytest.approx(-0.5)
+
+
+def test_realized_gate_zero_norm_raises():
+    """A degenerate (zero-norm) source write must FAIL LOUD, not return 0/NaN."""
+    import torch
+
+    with pytest.raises(ValueError, match="zero norm"):
+        realized_gate(torch.zeros(4), torch.tensor([1.0, 2.0, 3.0, 4.0]))
+
+
+def test_read_location_pins_distinct_per_behavior():
+    """Methodology-critic concern #1: marker and sycophancy reads are DISTINCT.
+
+    A regression that unified them (both EOR-slot or both answer-span) would
+    silently change the sycophancy measurement; the pins are the contract.
+    """
+    assert READ_LOCATION["marker"] == "post_response_eor_slot"
+    assert READ_LOCATION["sycophancy"] == "answer_span_mean"
+    assert READ_LOCATION["marker"] != READ_LOCATION["sycophancy"]
+
+
+class _FakeTok:
+    """Minimal chat-template tokenizer stub (deterministic, no model)."""
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=False):
+        parts = [f"<{m['role']}>{m['content']}" for m in messages]
+        s = "".join(parts)
+        if add_generation_prompt:
+            s += "<assistant>"
+        return s
+
+    def encode(self, text, add_special_tokens=False):
+        # one int per character — a strict, deterministic tokenization so the
+        # prefix-is-a-prefix invariant is exactly testable.
+        return [ord(c) for c in text]
+
+
+def test_answer_span_indices_are_post_prefix():
+    """The answer span is exactly the completion tokens after the prompt prefix."""
+    tok = _FakeTok()
+    prompt_msgs = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "q"},
+    ]
+    full_msgs = [*prompt_msgs, {"role": "assistant", "content": "ANSWER"}]
+    full_text = tok.apply_chat_template(full_msgs, add_generation_prompt=False)
+    full_ids = tok.encode(full_text)
+    prompt_text = tok.apply_chat_template(prompt_msgs, add_generation_prompt=True)
+    p = len(tok.encode(prompt_text))
+    idx = answer_span_token_indices(tok, prompt_msgs, full_ids)
+    assert idx == list(range(p, len(full_ids)))
+    assert idx, "answer span must be non-empty"
+
+
+def test_answer_span_prefix_drift_raises():
+    """A prompt that is NOT a strict prefix of the full row FAILS LOUD."""
+    tok = _FakeTok()
+    prompt_msgs = [{"role": "system", "content": "sys"}, {"role": "user", "content": "q"}]
+    # a full_ids that does not start with the prompt prefix → drift.
+    bogus_full = tok.encode("<system>DIFFERENT<user>q<assistant>ANSWER")
+    with pytest.raises(RuntimeError, match="strict prefix"):
+        answer_span_token_indices(tok, prompt_msgs, bogus_full)
+
+
+def test_a7_distinguishes_rank1_from_lowrank():
+    """The A7 read verdicts rank-1 on a scaled-single-direction stack and
+    low-rank on a genuinely 2-D stack (the gating control)."""
+    import torch
+    from issue683_a7_precondition import a7_read_for_bank
+
+    rng = torch.Generator().manual_seed(0)
+    h = 64
+    w = torch.randn(h, generator=rng)
+    w = w / w.norm()
+    u2 = torch.randn(h, generator=rng)
+    u2 = u2 - (u2 @ w) * w
+    u2 = u2 / u2.norm()
+
+    def _bank(two_d: bool):
+        per = {"src": {"v_base": torch.zeros(h), "v_trained": w, "Delta_v": w.clone()}}
+        g = {"src": 1.0}
+        for i in range(12):
+            gi = 0.2 + 0.7 * i / 11
+            dv = gi * w + (float(torch.randn(1, generator=rng)) * u2 if two_d else 0.0)
+            per[f"c{i}"] = {"v_base": torch.zeros(h), "v_trained": dv, "Delta_v": dv}
+            g[f"c{i}"] = realized_gate(w, dv)
+        return {"source": "src", "seed": 0, "w_hat": w, "per_context": per, "g_real": g}
+
+    r1 = a7_read_for_bank(_bank(False))
+    r2 = a7_read_for_bank(_bank(True))
+    assert r1["rank1_holds"] is True, r1
+    assert r2["rank1_holds"] is False, r2
+
+
+def test_shuffled_key_null_is_vector_permutation_real_key_wins():
+    """Methodology-critic concern #2: the shuffled-key null permutes a key
+    VECTOR (not a matrix-axis relabel), so an informative key scores above it.
+
+    Build a rank-1 bank where c_C correlates with g_real; the real c_C key's
+    held-out Spearman must exceed the shuffled-key null mean.
+    """
+    import torch
+    from issue683_key_ablation_score import score_bank
+
+    rng = torch.Generator().manual_seed(1)
+    h = 48
+    w = torch.randn(h, generator=rng)
+    w = w / w.norm()
+    contexts = ["src", *[f"c{i}" for i in range(14)]]
+    per = {}
+    c_bank = {}
+    for i, ctx in enumerate(contexts):
+        g_true = 1.0 if ctx == "src" else 0.1 + 0.85 * i / (len(contexts) - 1)
+        dv = g_true * w + 0.02 * torch.randn(h, generator=rng)
+        per[ctx] = {
+            "v_base": torch.randn(h, generator=rng),
+            "v_trained": dv,
+            "Delta_v": dv,
+        }
+        # c_C correlated with g_true so k=c_C is informative.
+        c_bank[ctx] = (g_true * w + 0.25 * torch.randn(h, generator=rng)).numpy().astype(float)
+    w_hat = per["src"]["Delta_v"]
+    g_real = {ctx: realized_gate(w_hat, per[ctx]["Delta_v"]) for ctx in contexts}
+    payload = {"source": "src", "seed": 1, "w_hat": w_hat, "per_context": per, "g_real": g_real}
+
+    res = score_bank(
+        payload=payload,
+        c_bank=c_bank,
+        t_cb=None,
+        a7_rank1=True,
+        n_boot=50,
+        seed=1,
+        require_tcb=False,
+    )
+    cc_rows = [r for r in res["leaderboard"] if r["key"] == "k_cC" and r["metric"] == "M_I"]
+    assert cc_rows, "k_cC/M_I row missing"
+    real_rho = cc_rows[0]["spearman"]
+    null_mean = res["null_shuffled_key"]["mean"]
+    assert np.isfinite(real_rho)
+    assert real_rho > null_mean, (real_rho, null_mean)
+
+
+# ── Round-2 regression tests (one per closed BLOCKER) ────────────────────────
+
+
+def test_syco_c_bank_loads_through_load_c_bank():
+    """BLOCKER syco-cbank-load-incompatible: the c_C' bank the builder emits MUST
+    load through the scorer's ``_load_c_bank`` and resolve every panel persona.
+
+    Builds a 3-context synthetic panel-centroid bank in the REAL on-HF shape
+    (``{"centroids": {20: (N,H)}, "persona_names": [...]}``), re-emits it via
+    ``build_sycophancy_c_bank_l20``, saves the produced .pt, and asserts
+    ``_load_c_bank`` returns one (H,) float vector per panel context.
+    """
+    import torch
+    from issue683_key_ablation_score import _load_c_bank
+
+    from explore_persona_space.experiments.issue_683 import build_sycophancy_c_bank_l20
+
+    h = 16
+    panel = ("villain", "assistant", "comedian")
+    names = ["librarian", "villain", "surgeon", "assistant", "comedian"]  # 52-like superset
+    mat = torch.randn(len(names), h)
+    centroids_obj = {"centroids": {20: mat}, "persona_names": names, "base_model": "X"}
+
+    bank = build_sycophancy_c_bank_l20(centroids_obj, panel, layer=20)
+    assert set(bank["contexts"]) == set(panel)
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "c_bank_sycophancy_L20.pt"
+        torch.save(bank, p)
+        loaded = _load_c_bank(p, 20)
+    assert set(loaded) >= set(panel), (set(loaded), set(panel))
+    for name in panel:
+        v = loaded[name]
+        assert v.shape == (h,), (name, v.shape)
+        assert v.dtype == np.float64 or v.dtype == np.float32 or np.issubdtype(v.dtype, np.floating)
+    # the re-emitted bank must equal the source centroid row for each persona.
+    for name in panel:
+        i = names.index(name)
+        assert np.allclose(loaded[name], mat[i].numpy(), atol=1e-5), name
+
+
+def test_syco_c_bank_missing_panel_context_raises():
+    """build_sycophancy_c_bank_l20 FAILS LOUD on a panel context absent from the
+    centroid bank — never a silent drop (panel-coverage contract)."""
+    import torch
+
+    from explore_persona_space.experiments.issue_683 import build_sycophancy_c_bank_l20
+
+    centroids_obj = {
+        "centroids": {20: torch.randn(2, 8)},
+        "persona_names": ["villain", "assistant"],
+    }
+    with pytest.raises(ValueError, match="missing from the centroid bank"):
+        build_sycophancy_c_bank_l20(centroids_obj, ("villain", "not_present"), layer=20)
+
+
+def test_load_c_bank_out_of_range_layer_raises():
+    """CONCERN c-bank-layer-silent-clamp: ``_load_c_bank`` FAILS LOUD when the
+    requested layer exceeds the all-layer bank's depth — never silently clamps to
+    the last available layer (which would mis-key the read at the wrong depth).
+    Mirrors ``_load_tcb``'s wrong-layer raise; #604 has 28 layers covering L14,
+    the #612 panel reads L20, so a production-scale request is in range and
+    unaffected — only a genuinely out-of-range request raises."""
+    import tempfile
+
+    import torch
+    from issue683_key_ablation_score import _load_c_bank
+
+    h = 8
+    # a synthetic 2-layer all-layer c-bank (n_layers=2, H=8).
+    bank = {"contexts": {"x": torch.zeros(2, h)}}
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "c_bank_2layer.pt"
+        torch.save(bank, p)
+        # layer 20 is out of range [0, 2) → must raise (NOT clamp to layer 1).
+        with pytest.raises(ValueError, match="out of range"):
+            _load_c_bank(p, layer=20)
+        # an in-range layer still loads cleanly (no semantic change).
+        loaded = _load_c_bank(p, layer=1)
+        assert loaded["x"].shape == (h,)
+
+
+def test_lambda_gcv_selects_lower_heldout_error_candidate():
+    """BLOCKER lambda-gcv-not-implemented: λ selection is a real held-out CV, not
+    a self-score of c_source against c_source (which is identically 1).
+
+    Two λ candidates with KNOWN different held-out MAE must select the
+    lower-error one. We patch the grid to two multipliers and assert the selected
+    λ minimizes the held-out reconstruction error (not the |1 - g_pred(source)|
+    self-score, which is degenerate)."""
+    import issue683_key_ablation_score as scr
+
+    rng = np.random.default_rng(7)
+    h = 12
+    n = 8
+    # c_source + n train context vectors; y = a smooth target correlated with
+    # the cosine to c_source so a non-trivial λ matters.
+    c_source = rng.standard_normal(h)
+    c_train_targets = rng.standard_normal((n, h))
+    c_train = np.vstack([c_source, c_train_targets])
+    k = c_source.copy()
+    # y for the train set (source=1, targets a graded signal).
+    y_train = np.concatenate([[1.0], np.linspace(0.2, 0.9, n)])
+
+    best_mult, best_mae = scr._select_lambda_heldout_gcv(
+        k=k, c_source=c_source, c_train=c_train, y_train=y_train, n_folds=0, seed=0
+    )
+    assert best_mult in scr.LAMBDA_GRID_MULT
+    assert best_mae == best_mae  # finite (a real held-out error was computed)
+
+    # Direct contrast: a candidate whose held-out MAE we make artificially huge
+    # must NOT be selected. Brute-force the per-λ held-out MAE the same way the
+    # selector does and confirm the selector returned the argmin.
+    maes = {}
+    for mult in scr.LAMBDA_GRID_MULT:
+        # recompute leave-one-out MAE for this λ exactly as the selector does.
+        order = np.random.default_rng(0).permutation(len(c_train))
+        folds = np.array_split(order, max(2, min(len(c_train), len(c_train))))
+        fold_maes = []
+        for held in folds:
+            held = np.asarray(held, dtype=int)
+            mask = np.ones(len(c_train), dtype=bool)
+            mask[held] = False
+            if mask.sum() < 1:
+                continue
+            m = scr._whiten_metric(c_train[mask], mult)
+            preds = np.array([scr._g_pred(k, m, c_train[i], c_source) for i in held])
+            yy = y_train[held]
+            f = np.isfinite(preds) & np.isfinite(yy)
+            if f.sum() >= 1:
+                fold_maes.append(float(np.abs(preds[f] - yy[f]).mean()))
+        maes[mult] = float(np.mean(fold_maes)) if fold_maes else np.inf
+    assert best_mult == min(maes, key=maes.get), (best_mult, maes)
+
+
+def _rank1_bank_and_cbank(h=24, n=14, seed=3):
+    """Helper: a rank-1 dv bank + matching c_bank + a t_cb (for the contract tests)."""
+    import torch
+
+    from explore_persona_space.experiments.issue_683 import realized_gate
+
+    rng = torch.Generator().manual_seed(seed)
+    w = torch.randn(h, generator=rng)
+    w = w / w.norm()
+    contexts = ["src", *[f"c{i}" for i in range(n)]]
+    per, c_bank = {}, {}
+    for i, ctx in enumerate(contexts):
+        g_true = 1.0 if ctx == "src" else 0.1 + 0.85 * i / (len(contexts) - 1)
+        dv = g_true * w + 0.02 * torch.randn(h, generator=rng)
+        per[ctx] = {"v_base": torch.randn(h, generator=rng), "v_trained": dv, "Delta_v": dv}
+        c_bank[ctx] = (g_true * w + 0.25 * torch.randn(h, generator=rng)).numpy().astype(float)
+    w_hat = per["src"]["Delta_v"]
+    g_real = {ctx: realized_gate(w_hat, per[ctx]["Delta_v"]) for ctx in contexts}
+    payload = {"source": "src", "seed": seed, "w_hat": w_hat, "per_context": per, "g_real": g_real}
+    t_cb = (c_bank["src"] + 0.2 * np.random.default_rng(seed).standard_normal(h)).astype(float)
+    return payload, c_bank, t_cb
+
+
+def test_score_bank_missing_tcb_raises_when_required():
+    """BLOCKER tcb-keys-silently-omitted: t_cb=None with require_tcb=True RAISES
+    (the t-based keys cannot be built) — never a silent has_tcb=false leaderboard."""
+    from issue683_key_ablation_score import score_bank
+
+    payload, c_bank, _t_cb = _rank1_bank_and_cbank()
+    with pytest.raises(AssertionError, match="t_cb is None but"):
+        score_bank(payload=payload, c_bank=c_bank, t_cb=None, a7_rank1=True, n_boot=30, seed=1)
+
+
+def test_score_bank_all_key_forms_present_with_tcb():
+    """With t_cb present, the leaderboard contains ALL THREE key forms (the
+    primary-deliverable contract) — k_cC, k_tCB, k_cC_plus_delta."""
+    from issue683_key_ablation_score import KEY_FORMS, score_bank
+
+    payload, c_bank, t_cb = _rank1_bank_and_cbank()
+    res = score_bank(payload=payload, c_bank=c_bank, t_cb=t_cb, a7_rank1=True, n_boot=30, seed=1)
+    scored = {r["key"] for r in res["leaderboard"]}
+    assert set(KEY_FORMS) <= scored, (KEY_FORMS, scored)
+    assert res["has_tcb"] is True
+
+
+def test_score_bank_missing_panel_context_raises():
+    """BLOCKER c-bank-panel-coverage-silent-drop: a held-out context with no c_C'
+    entry RAISES (rather than silently lowering n_targets) unless allow_partial."""
+    from issue683_key_ablation_score import score_bank
+
+    payload, c_bank, t_cb = _rank1_bank_and_cbank()
+    # drop one held-out context's c_C' entry → coverage gap.
+    dropped = "c3"
+    del c_bank[dropped]
+    with pytest.raises(AssertionError, match="have NO c_C' entry"):
+        score_bank(
+            payload=payload,
+            c_bank=c_bank,
+            t_cb=t_cb,
+            a7_rank1=True,
+            n_boot=30,
+            seed=1,
+            require_tcb=False,
+        )
+    # allow_partial_panel records the descope instead of raising.
+    res = score_bank(
+        payload=payload,
+        c_bank=c_bank,
+        t_cb=t_cb,
+        a7_rank1=True,
+        n_boot=30,
+        seed=1,
+        require_tcb=False,
+        allow_partial_panel=True,
+    )
+    assert dropped in res["panel_coverage"]["missing_cC"]
+    assert res["panel_coverage"]["partial_panel_descope"] is True
+
+
+# ── Round-3 regression tests (BLOCKER lambda-gcv-heldout-leak) ────────────────
+
+
+def _leaky_whole_set_predictions(scr, *, k, c_source, c_query, targets, y, n_folds, seed):
+    """The round-2 LEAKY reference: fit λ + Σ_c + final M on the WHOLE target set
+    (c_source + EVERY target, including the one being scored), then score those
+    same targets — exactly the call shape the round-2 ``_score_one_cell`` used
+    before the outer leave-one-context-out loop was added. This is the
+    falsification baseline: the round-3 ``_loo_predictions`` MUST differ from it
+    on a bank engineered so the held-out target swings the selected λ.
+    """
+    import numpy as np
+
+    c_train = np.stack([c_source, *[c_query[c] for c in targets]], axis=0)
+    y_train = np.concatenate([[1.0], y])
+    m, _ = scr._resolve_metric(
+        "M_white",
+        k,
+        c_source=c_source,
+        c_train=c_train,
+        y_train=y_train,
+        n_folds=n_folds,
+        seed=seed,
+    )
+    return np.array([scr._eval_g_pred(m, k, c_query[c], c_source) for c in targets])
+
+
+def _bruteforce_loo_predictions(scr, *, k, c_source, c_query, targets, y, n_folds, seed):
+    """Independent brute-force leave-one-context-out reference: for each scored
+    target C'_i, fit λ + Σ_c + final M on the source + the OTHER targets only,
+    then score C'_i. The round-3 ``_loo_predictions`` MUST match this exactly.
+    Deliberately re-implemented inline (no reuse of the production loop) so the
+    test falsifies the production path rather than echoing it.
+    """
+    import numpy as np
+
+    preds = np.empty(len(targets), dtype=float)
+    for i, held in enumerate(targets):
+        train = [c for c in targets if c != held]
+        c_train_i = np.stack([c_source, *[c_query[c] for c in train]], axis=0)
+        y_train_i = np.concatenate([[1.0], np.array([y[targets.index(c)] for c in train])])
+        m_i, _ = scr._resolve_metric(
+            "M_white",
+            k,
+            c_source=c_source,
+            c_train=c_train_i,
+            y_train=y_train_i,
+            n_folds=n_folds,
+            seed=seed,
+        )
+        preds[i] = scr._eval_g_pred(m_i, k, c_query[held], c_source)
+    return preds
+
+
+def _leak_sensitive_cell(h=10, n=8, seed=11):
+    """A synthetic (k, c_source, c_query, y) cell engineered so the held-out
+    target's OWN g_real swings the selected λ — i.e. including vs excluding it
+    from the train set changes the M_white predictions. One target carries a
+    large outlier g_real so the whole-set λ-GCV (which sees it) lands on a
+    different multiplier than the leave-it-out fit does.
+    """
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    c_source = rng.standard_normal(h)
+    targets = [f"c{i}" for i in range(n)]
+    c_query = {c: rng.standard_normal(h) for c in targets}
+    # graded base signal + one extreme outlier target whose presence in the
+    # train set pulls the λ-GCV reconstruction error toward a different λ.
+    y = np.linspace(0.1, 0.7, n)
+    y[-1] = 9.0  # the sentinel outlier target
+    k = c_source.copy()
+    return k, c_source, c_query, targets, y
+
+
+def test_loo_predictions_differ_from_leaky_whole_set():
+    """BLOCKER lambda-gcv-heldout-leak (fail-pre / pass-post): the round-3 outer
+    leave-one-context-out predictions DIFFER from the round-2 leaky whole-set fit
+    on a bank where the scored target's own g_real swings the selected λ.
+
+    Pre-fix (whole-set λ fit, then score the same targets) and post-fix (each
+    target held out of its own λ fit) produce DIFFERENT M_white leaderboard
+    predictions — that difference IS the leak the fix removes. M_I is unaffected
+    (no fitted parameters), which the next test pins.
+    """
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    loo, _ = scr._loo_predictions(
+        metric="M_white",
+        k=k,
+        c_source=c_source,
+        c_query=c_query,
+        targets=targets,
+        y=y,
+        n_folds=0,
+        seed=0,
+    )
+    leaky = _leaky_whole_set_predictions(
+        scr, k=k, c_source=c_source, c_query=c_query, targets=targets, y=y, n_folds=0, seed=0
+    )
+    # the predictions must NOT be identical — the leak changed the λ that scored
+    # at least one target. (Pre-fix _loo_predictions WAS the leaky path, so this
+    # assertion would have failed before the outer LOO loop was added.)
+    assert not np.allclose(loo, leaky), (
+        "LOO predictions identical to the leaky whole-set fit — the held-out "
+        "target's g_real is still entering the λ that scores it."
+    )
+
+
+def test_loo_predictions_match_bruteforce_reference():
+    """The round-3 ``_loo_predictions`` matches an INDEPENDENT brute-force
+    leave-one-context-out reference (fit on the others, score the held-out
+    target) bit-for-bit — confirming the outer loop is the leave-one-out the
+    plan + docstring pre-register, not an approximation."""
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    loo, _ = scr._loo_predictions(
+        metric="M_white",
+        k=k,
+        c_source=c_source,
+        c_query=c_query,
+        targets=targets,
+        y=y,
+        n_folds=0,
+        seed=0,
+    )
+    ref = _bruteforce_loo_predictions(
+        scr, k=k, c_source=c_source, c_query=c_query, targets=targets, y=y, n_folds=0, seed=0
+    )
+    assert np.allclose(loo, ref), (loo, ref)
+
+
+def test_loo_m_identity_is_unaffected():
+    """M_I (identity, no λ, no Σ_c) is parameter-free, so the leave-one-context-out
+    refit is a mathematical no-op: the LOO predictions equal a single whole-set
+    resolve. This pins that the fix touches ONLY the fitted (M_white) path —
+    M_I's held-out Spearman was never leaked and must not change."""
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    loo, meta = scr._loo_predictions(
+        metric="M_I",
+        k=k,
+        c_source=c_source,
+        c_query=c_query,
+        targets=targets,
+        y=y,
+        n_folds=0,
+        seed=0,
+    )
+    whole = np.array([scr._g_pred(k, None, c_query[c], c_source) for c in targets])
+    assert np.allclose(loo, whole), (loo, whole)
+    assert meta["lambda_selection"] == "identity"
+
+
+def test_score_one_cell_lambda_meta_records_outer_loo():
+    """``_score_one_cell`` for M_white records the OUTER leave-one-context-out in
+    its lambda_selection metadata (per-fold λ multipliers + the loo-fold count) —
+    the durable signal that the leaderboard score came from held-out fits, not a
+    single whole-set fit."""
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    row = scr._score_one_cell(
+        key_form="k_cC",
+        metric="M_white",
+        psi="psi_I",
+        k=k,
+        c_source=c_source,
+        c_query=c_query,
+        targets=targets,
+        y=y,
+        a7_rank1=True,
+        n_boot=20,
+        n_folds=0,
+        seed=0,
+        rng=np.random.default_rng(0),
+    )
+    assert row is not None
+    lam = row["lambda_selection"]
+    assert lam["lambda_selection"] == "heldout_gcv_mae_outer_loo", lam
+    assert lam["n_loo_folds"] == len(targets), lam
+    assert len(lam["lambda_mult_per_fold"]) == len(targets), lam
+
+
+def test_score_one_cell_never_feeds_scored_target_into_its_own_lambda_fit():
+    """Static-flow guard (BLOCKER lambda-gcv-heldout-leak): instrument
+    ``_resolve_metric`` to record, per call, the set of query vectors fed into
+    the λ fit, and assert that when ``_score_one_cell`` ultimately scores target
+    C'_i, the c_query[C'_i] vector was NOT a member of the train set of the
+    M_white fit whose M scored it.
+
+    This is the executable analogue of "_score_one_cell never references
+    c_query[scored_target] in the λ-selection / M-fitting path for that same
+    target": we capture every c_train passed to ``_resolve_metric`` and verify
+    each scored target's own vector is absent from the corresponding fold's
+    train matrix.
+    """
+    import issue683_key_ablation_score as scr
+
+    k, c_source, c_query, targets, y = _leak_sensitive_cell()
+    target_vecs = [c_query[c] for c in targets]
+
+    captured_trains: list[np.ndarray] = []
+    orig = scr._resolve_metric
+
+    def _spy(metric, kk, *, c_source, c_train, y_train, n_folds, seed):
+        captured_trains.append(np.asarray(c_train).copy())
+        return orig(
+            metric,
+            kk,
+            c_source=c_source,
+            c_train=c_train,
+            y_train=y_train,
+            n_folds=n_folds,
+            seed=seed,
+        )
+
+    scr._resolve_metric = _spy
+    try:
+        _preds, _ = scr._loo_predictions(
+            metric="M_white",
+            k=k,
+            c_source=c_source,
+            c_query=c_query,
+            targets=targets,
+            y=y,
+            n_folds=0,
+            seed=0,
+        )
+    finally:
+        scr._resolve_metric = orig
+
+    # one _resolve_metric call per held-out target, in target order.
+    assert len(captured_trains) == len(targets), len(captured_trains)
+    for i, c_train in enumerate(captured_trains):
+        rows = [c_train[r] for r in range(c_train.shape[0])]
+        # the held-out target's own query vector must be ABSENT from the train
+        # matrix of the fit that produced its prediction.
+        in_train = any(np.allclose(target_vecs[i], r) for r in rows)
+        assert not in_train, f"target {targets[i]} leaked into its own λ-fit train set"
+
+
+# ── Round-3 Woodbury/dual-form parity (scorer-cubic-whitening-infeasible) ─────
+
+
+def test_whiten_dual_matches_cubic_oracle_quadform():
+    """The Woodbury dual ``_WhitenDual.quad`` matches the explicit cubic
+    ``_whiten_metric`` (the H-by-H inverse) bit-for-bit on uᵀ M v across vectors
+    and lambda candidates — at H>>n where Sigma_c is rank-deficient. This is the
+    correctness oracle for the dual form that makes the outer leave-one-context-
+    out loop feasible (the cubic form is ~500x over the plan's CPU budget at
+    H=3584)."""
+    import issue683_key_ablation_score as scr
+
+    rng = np.random.default_rng(5)
+    h, n = 80, 10  # H > n: Σ_c is rank-deficient, the production regime
+    c_matrix = rng.standard_normal((n, h))
+    dual = scr._WhitenDual(c_matrix)
+    u = rng.standard_normal(h)
+    v = rng.standard_normal(h)
+    s = rng.standard_normal(h)
+    for mult in scr.LAMBDA_GRID_MULT:
+        m_dense = scr._whiten_metric(c_matrix, mult)  # cubic oracle
+        # quad-form parity
+        assert np.isclose(dual.quad(u, v, mult), float((u @ m_dense) @ v), rtol=1e-6), mult
+        # g_pred ratio parity (the quantity the leaderboard actually uses)
+        dual_gp = dual.g_pred(u, v, s, mult)
+        dense_gp = scr._g_pred(u, m_dense, v, s)
+        assert np.isclose(dual_gp, dense_gp, rtol=1e-6), (mult, dual_gp, dense_gp)
+
+
+def test_whiten_dual_median_eig_matches_cubic():
+    """The dual's lambda scale (median nonzero eigenvalue over the n-by-n Gram)
+    equals the cubic path's median over the H-by-H Sigma_c spectrum — so both
+    metric forms select the SAME lambda. Pins the latent H>>n median bug fix
+    (numerical-zero eigenvalues excluded by relative tolerance)."""
+    import issue683_key_ablation_score as scr
+
+    rng = np.random.default_rng(6)
+    h, n = 120, 12
+    c_matrix = rng.standard_normal((n, h))
+    sigma_c = (c_matrix.T @ c_matrix) / n
+    cubic_med = scr._median_nonzero_eig(np.linalg.eigvalsh(sigma_c))
+    dual_med = scr._WhitenDual(c_matrix).med
+    assert np.isclose(cubic_med, dual_med, rtol=1e-6), (cubic_med, dual_med)
+
+
+# ── PIVOT round-1 regression tests ───────────────────────────────────────────
+# BLOCKER psi-ridge-heldout-leak + CONCERN denominator-stability-control.
+
+
+def _psi_ridge_bank(h=20, n=14, seed=23):
+    """A rank-1 dv bank + matching c_bank + a t_cb, sized so every outer-LOO fold
+    keeps >=3 (v_base, c_C') pairs (so per-fold ψ is defined for every target)."""
+    import torch
+
+    from explore_persona_space.experiments.issue_683 import realized_gate
+
+    rng = torch.Generator().manual_seed(seed)
+    w = torch.randn(h, generator=rng)
+    w = w / w.norm()
+    contexts = ["src", *[f"c{i}" for i in range(n)]]
+    per, c_bank = {}, {}
+    for i, ctx in enumerate(contexts):
+        g_true = 1.0 if ctx == "src" else 0.1 + 0.85 * i / (len(contexts) - 1)
+        dv = g_true * w + 0.02 * torch.randn(h, generator=rng)
+        per[ctx] = {"v_base": torch.randn(h, generator=rng), "v_trained": dv, "Delta_v": dv}
+        c_bank[ctx] = (g_true * w + 0.25 * torch.randn(h, generator=rng)).numpy().astype(float)
+    w_hat = per["src"]["Delta_v"]
+    g_real = {ctx: realized_gate(w_hat, per[ctx]["Delta_v"]) for ctx in contexts}
+    payload = {"source": "src", "seed": seed, "w_hat": w_hat, "per_context": per, "g_real": g_real}
+    t_cb = (c_bank["src"] + 0.2 * np.random.default_rng(seed).standard_normal(h)).astype(float)
+    return payload, c_bank, t_cb
+
+
+def test_psi_per_fold_excludes_held_out_target():
+    """BLOCKER psi-ridge-heldout-leak (the pivot's mechanizable test): instrument
+    ``_fit_ridge_psi`` to inject a sentinel for one target, and assert that
+    target's fold-specific ψ is INVARIANT to whether the sentinel is in the
+    training pairs — i.e. the held-out target's (v_base, c_C') pair is EXCLUDED
+    from the ψ that scores it.
+
+    Mechanics: capture every (t_train, c_train) matrix ``_psi_per_fold`` feeds
+    into ``_fit_ridge_psi``. For each held-out target ``held``, the t-rows of
+    its fold's fit must NOT contain ``held``'s own v_base vector. (A leak — the
+    round-3 behaviour — would fit ψ ONCE on the full panel, so every target's
+    own pair would be present in the single fit.)
+    """
+    import issue683_key_ablation_score as scr
+    import torch
+
+    payload, c_bank, _t_cb = _psi_ridge_bank()
+    per_context = payload["per_context"]
+    targets = [c for c in per_context if c != payload["source"]]
+    # the v_base vector each target contributes to a ψ fit (the t-side row).
+    vbase = {
+        c: torch.as_tensor(per_context[c]["v_base"]).flatten().float().numpy() for c in targets
+    }
+
+    captured: list[np.ndarray] = []  # the t_train matrix per _fit_ridge_psi call
+    orig = scr._fit_ridge_psi
+
+    def _spy(t_train, c_train, lam=1.0):
+        captured.append(np.asarray(t_train).copy())
+        return orig(t_train, c_train, lam=lam)
+
+    scr._fit_ridge_psi = _spy
+    try:
+        folds = scr._psi_per_fold(per_context, c_bank, targets)
+    finally:
+        scr._fit_ridge_psi = orig
+
+    assert folds is not None and set(folds) == set(targets), (folds and set(folds), set(targets))
+    # one ψ fit per held-out target, in target order.
+    assert len(captured) == len(targets), len(captured)
+    for held, t_train in zip(targets, captured, strict=True):
+        rows = [t_train[r] for r in range(t_train.shape[0])]
+        in_train = any(np.allclose(vbase[held], r) for r in rows)
+        assert not in_train, f"held-out target {held}'s v_base leaked into its own ψ fit"
+
+
+def test_psi_per_fold_sentinel_invariant_to_held_out_pair():
+    """The pivot's stated mechanizable test, stated directly: a sentinel injected
+    via a monkeypatched ``_fit_ridge_psi`` for ONE target makes the fold-specific
+    ψ INVARIANT to whether that target's pair is in the training set.
+
+    We compute target ``held``'s fold ψ two ways: (1) with ``held``'s pair
+    present in per_context/c_bank, and (2) with ``held``'s pair perturbed by a
+    huge sentinel. The fold ψ for ``held`` must be IDENTICAL across the two —
+    because ``_psi_per_fold`` excludes ``held``'s own pair from its fold's fit.
+    (A leak would let the sentinel change ``held``'s ψ.)
+    """
+    import copy
+
+    import issue683_key_ablation_score as scr
+
+    payload, c_bank, _t_cb = _psi_ridge_bank()
+    per_context = payload["per_context"]
+    targets = [c for c in per_context if c != payload["source"]]
+    held = targets[0]
+
+    folds_clean = scr._psi_per_fold(per_context, c_bank, targets)
+
+    # Inject a huge sentinel into the held-out target's OWN pair only.
+    import torch
+
+    per2 = copy.deepcopy(per_context)
+    c2 = {k: v.copy() for k, v in c_bank.items()}
+    per2[held]["v_base"] = torch.as_tensor(per_context[held]["v_base"]).clone() + 1e6
+    c2[held] = c_bank[held] + 1e6
+    folds_sentinel = scr._psi_per_fold(per2, c2, targets)
+
+    # held's fold ψ is invariant (its own pair is excluded from its fit).
+    assert np.allclose(folds_clean[held], folds_sentinel[held]), (
+        "held-out target's fold ψ changed when its OWN pair was perturbed — "
+        "the held-out pair is leaking into the ψ that scores it."
+    )
+    # sanity: a DIFFERENT target's fold ψ DOES change (its fit DOES see held's
+    # perturbed pair), so the test is not vacuously passing on a frozen ψ.
+    other = targets[1]
+    assert not np.allclose(folds_clean[other], folds_sentinel[other]), (
+        "a non-held-out target's ψ was unaffected by the sentinel — the per-fold "
+        "fits are not actually consuming the perturbed pair (test is vacuous)."
+    )
+
+
+def test_psi_per_fold_differs_from_leaky_full_panel_fit():
+    """Fail-pre / pass-post: the per-fold ψ for a target DIFFERS from the round-3
+    leaky full-panel ψ (``_fit_ridge_psi_for_targets`` on ALL targets) — that
+    difference IS the leak the fix removes. Pre-fix, the key scoring each target
+    was built from the single full-panel ψ (which trained on that target's pair);
+    post-fix it is built from the leave-it-out fold ψ.
+    """
+    import issue683_key_ablation_score as scr
+
+    payload, c_bank, _t_cb = _psi_ridge_bank()
+    per_context = payload["per_context"]
+    targets = [c for c in per_context if c != payload["source"]]
+
+    leaky_full = scr._fit_ridge_psi_for_targets(per_context, c_bank, targets)
+    folds = scr._psi_per_fold(per_context, c_bank, targets)
+    assert leaky_full is not None and folds is not None
+    # every fold ψ must differ from the full-panel ψ (each excludes one pair).
+    for held, psi_w in folds.items():
+        assert not np.allclose(psi_w, leaky_full), (
+            f"fold ψ for {held} is identical to the full-panel ψ — the held-out "
+            "target's pair is still in the fit that scores it."
+        )
+
+
+def test_psi_ridge_key_scoring_never_leaks_held_out_pair_end_to_end():
+    """End-to-end static-flow guard: instrument ``_resolve_metric`` to capture
+    the (key, train) of every M_white fit during a ψ_ridge t-based cell, and
+    confirm the key used to score target C'_i was built from a ψ that did NOT
+    see C'_i's pair.
+
+    We can't easily reconstruct ψ from the key alone, so we verify the weaker
+    but sufficient invariant the pivot mandates at the score level: the key that
+    scores C'_i (k_per_target[C'_i]) equals the key built from the leave-C'_i-out
+    fold ψ, and NOT the key built from the full-panel (leaky) ψ. This is the
+    score-path realization of test_psi_per_fold_differs_from_leaky_full_panel_fit.
+    """
+    import issue683_key_ablation_score as scr
+
+    payload, c_bank, t_cb = _psi_ridge_bank()
+    per_context = payload["per_context"]
+    source = payload["source"]
+    targets = [c for c in per_context if c != source]
+    c_source = c_bank[source]
+    import torch
+
+    v_base_source = torch.as_tensor(per_context[source]["v_base"]).flatten().float().numpy()
+    delta_cb = t_cb - v_base_source
+
+    folds = scr._psi_per_fold(per_context, c_bank, targets)
+    leaky_full = scr._fit_ridge_psi_for_targets(per_context, c_bank, targets)
+    for key_form in ("k_tCB", "k_cC_plus_delta"):
+        for held, psi_w in folds.items():
+            k_fold = scr._key_vector(
+                key_form, psi_w, c_source=c_source, t_cb=t_cb, delta_cb=delta_cb
+            )
+            k_leaky = scr._key_vector(
+                key_form, leaky_full, c_source=c_source, t_cb=t_cb, delta_cb=delta_cb
+            )
+            # the leak-free per-fold key must NOT equal the leaky full-panel key.
+            assert not np.allclose(k_fold, k_leaky), (key_form, held)
+
+
+def test_denominator_stability_present_and_finite_on_every_row():
+    """CONCERN denominator-stability-control-not-persisted: every leaderboard row
+    carries a ``denominator_stability`` {min, median, n_folds} field, computed
+    from |kᵀMc_C| over the LOO folds (the same (k, M, c_source) the scorer
+    divides by). Pins the field's PRESENCE + FINITENESS across all key/metric/ψ
+    cells, including the per-fold ψ_ridge cells."""
+    from issue683_key_ablation_score import score_bank
+
+    payload, c_bank, t_cb = _psi_ridge_bank()
+    res = score_bank(payload=payload, c_bank=c_bank, t_cb=t_cb, a7_rank1=True, n_boot=30, seed=1)
+    assert res["leaderboard"], "no rows scored"
+    for row in res["leaderboard"]:
+        ds = row.get("denominator_stability")
+        assert ds is not None, row
+        assert set(ds) == {"min", "median", "n_folds"}, ds
+        assert ds["n_folds"] >= 1, (row["key"], row["metric"], row["psi"], ds)
+        assert ds["min"] is not None and ds["min"] == ds["min"], ds  # finite
+        assert ds["median"] is not None and ds["median"] == ds["median"], ds
+        assert ds["min"] <= ds["median"] + 1e-9, ds  # min <= median by construction
+
+
+def test_denominator_stability_matches_independent_recompute_for_k_cC_M_I():
+    """The persisted ``denominator_stability`` for the simplest cell (k_cC / M_I)
+    equals an INDEPENDENT recompute of |c_Cᵀ c_C| (identity M, key = c_source).
+    For k_cC / M_I the denominator is the same for every fold, so min == median ==
+    |c_source · c_source|. Falsifies a field that is present but wrong."""
+    from issue683_key_ablation_score import score_bank
+
+    payload, c_bank, t_cb = _psi_ridge_bank()
+    res = score_bank(payload=payload, c_bank=c_bank, t_cb=t_cb, a7_rank1=True, n_boot=30, seed=1)
+    c_source = c_bank[payload["source"]]
+    expect = abs(float(c_source @ c_source))
+    rows = [r for r in res["leaderboard"] if r["key"] == "k_cC" and r["metric"] == "M_I"]
+    assert rows, "k_cC/M_I row missing"
+    ds = rows[0]["denominator_stability"]
+    assert np.isclose(ds["min"], expect, rtol=1e-9), (ds, expect)
+    assert np.isclose(ds["median"], expect, rtol=1e-9), (ds, expect)

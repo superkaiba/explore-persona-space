@@ -196,6 +196,73 @@ def _find_project_root() -> Path:
     return Path.cwd()
 
 
+# Hard free-space FLOOR (GB) for the VM ROOT disk only (``check_path == "/"``).
+# A fresh launch below this floor FAILs fast rather than starting on a disk that
+# is already near the silent-Bash-failure regime (task #552 / #679). RunPod
+# (``/workspace``) is EXEMPT — there the MooseFS per-pod EDQUOT probe is the
+# binding signal, not free GB (a TB-scale share would never trip a free-GB
+# floor). Env-overridable; an explicit operator override degrades the FAIL to a
+# logged WARN. Default 40 GB.
+VM_ROOT_DISK_FLOOR_GB_DEFAULT = 40.0
+
+
+def _vm_root_disk_floor_gb() -> float:
+    """VM-root free-space floor in GB (env ``EPM_PREFLIGHT_DISK_FLOOR_GB``;
+    garbled / non-positive -> default). Never raises."""
+    raw = os.environ.get("EPM_PREFLIGHT_DISK_FLOOR_GB", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return VM_ROOT_DISK_FLOOR_GB_DEFAULT
+    return val if val > 0 else VM_ROOT_DISK_FLOOR_GB_DEFAULT
+
+
+def _vm_root_disk_floor_override() -> bool:
+    """True when the operator has explicitly opted to launch below the VM-root
+    floor (env ``EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE=1``). Degrades the floor FAIL
+    to a logged WARN — the escape hatch for a deliberate low-disk launch."""
+    return os.environ.get("EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE", "").strip() in {"1", "true", "yes"}
+
+
+def _check_vm_root_floor(report: PreflightReport, check_path: str, min_free_gb: float) -> None:
+    """Apply the hard VM-root free-space floor (``check_path == "/"`` only).
+
+    Fires ONLY on the VM root — RunPod ``/workspace`` and cluster scratch are
+    exempt (their binding signal is the quota probe, not free GB). Below the
+    floor: an ERROR (``report.ok`` -> False) unless the override env degrades it
+    to a WARN. Deduped against the existing ``min_free_gb`` ERROR: when
+    ``min_free_gb`` is the higher bar and already errored, the floor adds no
+    second error (the run is already failing) — it only adds value when the
+    floor is the binding gate the legacy ``min_free_gb`` path did not catch."""
+    if check_path != "/":
+        return
+    floor = _vm_root_disk_floor_gb()
+    free = report.disk_free_gb
+    if free is None or free >= floor:
+        return
+    # Below the floor.
+    if _vm_root_disk_floor_override():
+        report.add_warning(
+            f"VM-root disk floor OVERRIDDEN: only {free:.1f}GB free on / "
+            f"(floor {floor:.0f}GB, EPM_PREFLIGHT_DISK_FLOOR_GB); launching anyway "
+            f"because EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE is set. Disk pressure risks "
+            f"silently-failing Bash spawns — reclaim with vm_disk_guard.py --apply."
+        )
+        return
+    # Avoid a duplicate error when the legacy min_free_gb gate already errored
+    # for the SAME under-floor free space (min_free_gb >= floor means its error
+    # already fired at >= this threshold).
+    if min_free_gb >= floor and free < min_free_gb:
+        return
+    report.add_error(
+        f"VM-root disk below floor: only {free:.1f}GB free on / "
+        f"(floor {floor:.0f}GB, EPM_PREFLIGHT_DISK_FLOOR_GB). A launch this low "
+        f"risks silently-failing Bash spawns (task #552). Reclaim with "
+        f"`uv run python scripts/vm_disk_guard.py --apply`, or set "
+        f"EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE=1 to launch anyway."
+    )
+
+
 def _disk_check_path() -> str:
     """Where to run the disk-space probe — three-way branch.
 
@@ -593,6 +660,7 @@ def check_disk_space(
             )
         elif report.disk_free_gb < min_free_gb * 2:
             report.add_warning(f"{report.disk_free_gb:.1f}GB free on {check_path} — getting low")
+        _check_vm_root_floor(report, check_path, min_free_gb)
         return
 
     if not ok:
@@ -620,6 +688,7 @@ def check_disk_space(
         )
     elif report.disk_free_gb < min_free_gb * 2:
         report.add_warning(f"{report.disk_free_gb:.1f}GB free on {check_path} — getting low")
+    _check_vm_root_floor(report, check_path, min_free_gb)
 
 
 def estimate_footprint_gb(
@@ -686,6 +755,45 @@ def check_disk_budget(report: PreflightReport, planned_footprint_gb: float | Non
             f"disk; (2) sequentialize — run conditions/seeds one at a time and "
             f"delete each checkpoint before the next so peak disk = one cell; "
             f"(3) provision a larger volume / pod with explicit storage spec."
+        )
+
+
+#: VM root-disk advisory thresholds (WARN-only). The local VM root disk (``/``)
+#: fills because each experiment downloads source data into
+#: ``data/issue_<N>/hf_dl`` caches that nothing reclaims (incident 2026-06-25:
+#: ``/`` hit 100% full, one finished experiment held 97 GB). Preflight surfaces
+#: a heads-up so a near-full root disk is caught BEFORE a launch wedges git /
+#: task.py across sessions; remediation is ``scripts/vm_disk_guard.py --apply``.
+VM_ROOT_DISK_WARN_PCT = 90.0
+VM_ROOT_DISK_WARN_FREE_GB = 20.0
+
+
+def check_vm_root_disk(
+    report: PreflightReport,
+    warn_pct: float = VM_ROOT_DISK_WARN_PCT,
+    warn_free_gb: float = VM_ROOT_DISK_WARN_FREE_GB,
+):
+    """WARN (never FAIL) when the local VM root disk ``/`` is nearly full.
+
+    This is the LOCAL orchestration disk, distinct from
+    :func:`check_disk_space`'s experiment-surface probe (``/workspace`` on
+    RunPod, ``$SCRATCH`` on the cluster). On RunPod / cluster the experiment
+    runs off-box, so ``/`` is the VM's own root — its exhaustion wedges git /
+    task.py / dispatch rather than the training job, so a heads-up here is
+    advisory, not a hard gate. A read error degrades to a single warning."""
+    try:
+        usage = shutil.disk_usage("/")
+    except OSError as e:
+        report.add_warning(f"Could not read VM root-disk usage on /: {e}")
+        return
+    used_pct = 100.0 * usage.used / usage.total
+    free_gb = usage.free / (1024**3)
+    if used_pct > warn_pct or free_gb < warn_free_gb:
+        report.add_warning(
+            f"VM root disk / is {used_pct:.1f}% used ({free_gb:.1f} GB free) — "
+            f"near full (warn at {warn_pct:.0f}% used / {warn_free_gb:.0f} GB free). "
+            f"Run: uv run python scripts/vm_disk_guard.py --apply "
+            f"(clears re-downloadable data/issue_*/hf_dl caches + stale logs)."
         )
 
 
@@ -935,6 +1043,7 @@ def preflight_check(
 
     check_disk_space(report, min_disk_gb, quota_gb=effective_quota_gb)
     check_disk_budget(report, planned_footprint_gb)
+    check_vm_root_disk(report)
     check_gpus(report, require_gpu, min_gpu_free_mb)
     check_hf_home(report)
     check_env_vars(report, required_env_vars)

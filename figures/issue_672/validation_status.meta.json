@@ -1,0 +1,27 @@
+{
+  "commit": "53979858af",
+  "created": "2026-06-26T15:49:49Z",
+  "figsize": [
+    7.8,
+    4.3
+  ],
+  "points": [
+    {
+      "Evidence obtained (tests green / live iterations logged / live failover attempts)": 125.0,
+      "y": 250.0,
+      "_kind": "bar"
+    },
+    {
+      "Evidence obtained (tests green / live iterations logged / live failover attempts)": "0",
+      "y": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "Evidence obtained (tests green / live iterations logged / live failover attempts)": "0",
+      "y": 0.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 3
+}

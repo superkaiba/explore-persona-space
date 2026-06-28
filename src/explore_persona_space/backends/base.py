@@ -277,6 +277,33 @@ class PollResult:
     # ``poll_once``; the SLURM + GCP lane monitors compute the conservative
     # lane-shared subset via :func:`recommend_lane_next_interval`.
     next_interval: int = 540
+    # GCP-only TRANSPORT-class reachability alarm (#669). Set True ONLY by
+    # ``GcpBackend.poll`` on the RUNNING branch when the sentinel-drain SSH
+    # itself failed (transport down / permission / timeout — gcp.py
+    # ``_drain_sentinels`` "transport" alarm class), the signature of a
+    # hung-but-RUNNING VM whose guest networking died. It is DELIBERATELY
+    # NARROWER than the generic drain alarm: a sentinel-processing-class alarm
+    # (the SSH SUCCEEDED on a healthy VM but a matched sentinel set produced 0
+    # processed markers) leaves this False, so the poller's frozen-phase wedge
+    # gate (``backend_poll._maybe_escalate_gcp_wedge``) never fires on a merely
+    # noisy healthy run. Default False so RunPod / SLURM serialize identically
+    # (they never set it); declared LAST so existing positional PollResult
+    # constructions are unaffected.
+    reachability_alarm: bool = False
+    # Machine-readable reason a non-``running`` verdict landed (#664), mirroring
+    # ``scripts/poll_pipeline.PollResult.stall_reason``. ``None`` on a healthy
+    # ``running`` tick and on generic log+GPU+CPU stalls without a specific
+    # cause; currently set only for the zombie-GPU-allocation stall the RunPod
+    # lane detects (``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID
+    # still holding VRAM while the EngineCore main process keeps the
+    # session-CPU-advancing override alive, which would otherwise mask the hang
+    # as ``running`` forever). The RunPod lane copies this through from
+    # ``poll_once`` (``RunPodBackend.poll``); SLURM + GCP never set it, so the
+    # default keeps cross-lane serialization uniform. Declared LAST so existing
+    # positional PollResult constructions are unaffected. The poller
+    # (``scripts/backend_poll._serialize_poll_result``) reads it via ``getattr``
+    # so a mixed-version worktree degrades to ``None`` rather than crashing.
+    stall_reason: str | None = None
 
 
 # ---------------------------------------------------------------------------

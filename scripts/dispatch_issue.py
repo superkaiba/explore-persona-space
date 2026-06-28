@@ -746,8 +746,12 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # instead of the on-demand STANDARD pool. Reaches the idle
         # preemptible capacity that is unreachable from a STANDARD launch
         # when on-demand quota is short-by-one (#537). Inert on SLURM /
-        # RunPod lanes. STANDARD is the resolver default when absent, so a
-        # passed STANDARD is a no-op that still records the explicit choice.
+        # RunPod lanes. When PRESENT, this key HARD-PINS the GCP ladder to
+        # the single named provisioning model (router._gcp_ladder_specs's
+        # pinned branch, #680) — so a passed STANDARD pins to on-demand-only
+        # while still recording the explicit choice. When ABSENT, the ladder
+        # chooses provisioning by job length (spot-first short / flex-first
+        # long, #680), NOT a STANDARD default.
         extra["provisioning_model"] = args.provisioning_model
     if getattr(args, "spot_tolerant", False):
         # GCP-only knob (#656): marks the workload preemption-recoverable.
@@ -1406,7 +1410,11 @@ def _build_argparser() -> argparse.ArgumentParser:
             "preemptible capacity unreachable from a STANDARD launch when "
             "on-demand quota is short-by-one (issue 537: 4-GPU ft-7b failed "
             "with 3 free on-demand A100 while 16 preemptible sat idle). "
-            "Default (absent) resolves to STANDARD. Inert on non-GCP lanes."
+            "Default (absent): the length-aware GCP ladder chooses the "
+            "provisioning order (#680 — spot-first for short jobs, "
+            "flex-first for long/unknown-length jobs, on-demand last); a "
+            "passed value HARD-PINS the ladder to that single provisioning "
+            "model. Inert on non-GCP lanes."
         ),
     )
     launch.add_argument(

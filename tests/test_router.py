@@ -56,6 +56,7 @@ from explore_persona_space.backends.router import (
     MAX_GCP_ATTEMPTS_PER_DAY,
     ROUTE_REASON_AUTO_FALLBACK_GCP,
     ROUTE_REASON_AUTO_STARTED,
+    ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
     ROUTE_REASON_OVERRIDE,
     ROUTE_REASON_RECONNECT,
     ROUTE_REASON_RUNPOD_FALLBACK,
@@ -63,6 +64,7 @@ from explore_persona_space.backends.router import (
     cancel_and_wait,
     park_until_running_or_cap,
 )
+from explore_persona_space.backends.router import _gcp_ladder_specs as _ladder_specs
 
 #: The pre-GCP-first auto order (free SLURM lanes first, GCP as the
 #: terminal escalation). Tests that specifically exercise the
@@ -475,12 +477,12 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     """#656 REPLACES ``test_no_auto_runpod_path_under_any_failure``.
 
     The reversed invariant: RunPod is reached on the auto chain ONLY after
-    EVERY cheaper GCP rung (on-demand A100-80, A100-40, spot A100-80, spot
-    A100-40) AND the free SLURM lane have failed — never first, never
-    skipping a cheaper rung. We inject a ``_PassiveRunpod`` that records
+    EVERY cheaper GCP rung AND the free SLURM lane have failed — never first,
+    never skipping a cheaper rung. We inject a ``_PassiveRunpod`` that records
     launches; the assertion is that RunPod launches EXACTLY ONCE and its
     attempt is LAST in the trail, behind every GCP rung outcome and the
-    nibi park-fail.
+    nibi park-fail. #680: a short lora-7b now walks 5 GCP rungs (spot A100-80,
+    spot A100-40, flex-start A100-80, on-demand A100-80, on-demand A100-40).
     """
     rp = _PassiveRunpod()
     nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
@@ -513,13 +515,13 @@ def test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted(
     assert result.chosen_kind == "runpod"
     assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
     assert len(rp.launches) == 1
-    # Every GCP rung was attempted (4 ladder rungs, all provisioning_failure),
+    # Every GCP rung was attempted (5 ladder rungs, all provisioning_failure),
     # the nibi lane failed, and RunPod is the FINAL attempt.
     outcomes = [(a.kind, a.outcome) for a in result.attempts]
     gcp_fail_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "gcp"]
     nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
     runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
-    assert len(gcp_fail_idxs) == 4  # all four ladder rungs attempted + failed
+    assert len(gcp_fail_idxs) == 5  # all five ladder rungs attempted + failed
     assert nibi_idxs, "the free SLURM lane must have been attempted"
     assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1  # runpod LAST
     assert max(gcp_fail_idxs) < runpod_idxs[-1]
@@ -967,34 +969,51 @@ def test_gcp_probe_error_on_explicit_lane_surfaces_as_no_compute(lease_store):
     assert any(a["outcome"] == "probe_failed" for a in excinfo.value.attempts)
 
 
-def test_gcp_workload_error_surfaces_no_fallback(lease_store):
-    """Under the GCP-first standing default, GCP runs in PRIMARY position
-    here — a workload failure must surface immediately with NO fallback
-    to the SLURM lanes (broken workload code would re-crash on every
-    lane and burn queue time)."""
-    rp = _ExplodingRunpod()
+def test_gcp_workload_error_fails_over_to_runpod_no_slurm_cascade(
+    lease_store, marker_poster, captured_markers
+):
+    """Task #658 (REVERSES the pre-#658 ``no_fallback`` invariant): under
+    the GCP-first standing default GCP runs in PRIMARY position; a GCP
+    WORKLOAD failure now FAILS OVER TO RUNPOD — straight to the RunPod
+    terminal rung, NOT cascading through the SLURM lanes (re-crashing
+    broken code there burns queue time). RunPod pods persist + are
+    SSH-able, the diagnosis surface GCP's delete-on-crash boot disk cannot
+    give."""
+    rp = _PassiveRunpod()
     nibi = _FreeLaneBackend(kind="nibi")
     gcp = _GcpBackendDouble(
         launch_raises=GcpWorkloadError("entrypoint crashed", evidence={"exit_code": 1})
     )
-    with pytest.raises(WorkloadSurfacedError) as excinfo:
-        route(
-            _spec(backend=None),
-            runpod_backend=rp,
-            free_backends={"nibi": nibi},
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            is_started=lambda _b, _h: False,
-            is_live_after_cancel=lambda _b, _h: False,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
-    assert excinfo.value.chosen_kind == "gcp"
-    assert excinfo.value.evidence.get("exit_code") == 1
-    # GCP ran FIRST (default order) — the workload failure must NOT
-    # cascade to the SLURM lanes.
+    result = route(
+        _spec(backend=None),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # Failed over to RunPod (launched exactly once), labeled as the
+    # workload-failover reason (distinct from the capacity-exhaustion
+    # ``auto_fallback_runpod``).
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1
+    # No SLURM cascade — the workload failure short-circuited to RunPod.
     assert len(nibi.launches) == 0
+    # The GcpWorkloadError evidence rides the failover marker for diagnosis.
+    finals = _by_reason(captured_markers, ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD)
+    assert finals
+    assert finals[-1]["extra"].get("gcp_workload_evidence", {}).get("exit_code") == 1
+    # The GCP rung's attempt is recorded as a workload_failure that failed over.
+    gcp_workload = [
+        a for a in result.attempts if a.kind == "gcp" and a.outcome == "workload_failure"
+    ]
+    assert gcp_workload and "failing over to RunPod" in (gcp_workload[-1].detail or "")
 
 
 def test_no_gcp_wired_raises_no_compute_after_free_lanes_fail(lease_store):
@@ -1822,23 +1841,28 @@ def test_no_compute_terminal_posts_breadcrumb_marker(lease_store, marker_poster,
 def test_workload_failure_terminal_posts_breadcrumb_marker(
     lease_store, marker_poster, captured_markers
 ):
-    """``WorkloadSurfacedError`` paths post a workload_failure marker before raising."""
+    """A SLURM-lane ``WorkloadSurfacedError`` path posts a workload_failure
+    marker before raising.
+
+    Repointed from the GCP lane to the SLURM lane (task #658): a GCP
+    workload failure now FAILS OVER to RunPod (see
+    ``test_gcp_workload_error_fails_over_to_runpod_no_slurm_cascade``)
+    instead of surfacing, so the surviving ``WorkloadSurfacedError`` +
+    terminal-``workload_failure``-marker path is the SLURM
+    ``terminal_before_running``-with-artifacts case (a started-then-failed
+    job on the lane the user explicitly asked for)."""
     from explore_persona_space.backends.router import ROUTE_REASON_WORKLOAD_FAILURE
 
-    rp = _ExplodingRunpod()
-    nibi = _FreeLaneBackend(kind="nibi")
-    gcp = _GcpBackendDouble(
-        launch_raises=GcpWorkloadError("entrypoint crashed", evidence={"exit_code": 1})
-    )
+    nibi = _FreeLaneBackend(kind="nibi", poll_status="dead")
     with pytest.raises(WorkloadSurfacedError):
         route(
-            _spec(backend=None),
-            runpod_backend=rp,
+            _spec(backend="nibi"),  # explicit lane → no failover, surfaces
+            runpod_backend=_ExplodingRunpod(),
             free_backends={"nibi": nibi},
-            gcp_backend=gcp,
             lease_store=lease_store,
             is_started=lambda _b, _h: False,
             is_live_after_cancel=lambda _b, _h: False,
+            started_evidence_probe=lambda _b, _h: dict(_EVIDENCE),  # started-then-failed
             marker_poster=marker_poster,
             config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
             now_fn=_clock(),
@@ -2608,9 +2632,9 @@ def test_prepare_failure_on_explicit_lane_raises_typed_terminal(lease_store):
 def test_gcp_prepare_failure_after_free_lanes_fail_falls_to_runpod(lease_store):
     """#656: a GCP prepare failure on every applicable rung + a never-starting
     free lane falls through to the RunPod terminal rung (no longer a hard
-    NoComputeAvailableError). The nobudget lora-7b ladder has two on-demand
-    rungs (A100-80 + A100-40), so prepare is attempted on BOTH before the
-    fall-through."""
+    NoComputeAvailableError). #680: the nobudget lora-7b is unknown-length =>
+    the long branch (flex-80 -> ondemand-80 -> ondemand-40, NO spot), so
+    prepare is attempted on all THREE before the fall-through."""
     rp = _PassiveRunpod()
     nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9, est_start_raw=0.0)
     gcp = _PrepareRecordingGcp(prepare_raises=RuntimeError("metadata render failed"))
@@ -2627,8 +2651,9 @@ def test_gcp_prepare_failure_after_free_lanes_fail_falls_to_runpod(lease_store):
         sleep_fn=lambda _s: None,
     )
     assert result.chosen_kind == "runpod"
-    # prepare attempted on BOTH on-demand rungs (A100-80 then A100-40).
-    assert gcp.calls == ["prepare", "prepare"]
+    # prepare attempted on all three long-branch rungs (flex-80, ondemand-80,
+    # ondemand-40), NO spot rung (unknown length).
+    assert gcp.calls == ["prepare", "prepare", "prepare"]
     assert any(a.outcome == "prepare_failed" for a in result.attempts)
 
 
@@ -3224,20 +3249,24 @@ _A100_80_SPOT_AMPLE = QuotaHeadroom(
 )
 
 
-def test_ladder_a100_80_full_short_lora_routes_to_a100_40(
+def test_ladder_a100_80_full_long_lora_routes_to_a100_40(
     lease_store, marker_poster, captured_markers
 ):
-    """T1: A100-80 STANDARD insufficient + A100-40 STANDARD sufficient for a
-    short lora-7b → lands on A100-40 (the smaller-GPU rescue), NOT a hard
+    """T1 (#680: re-scoped to a LONG lora-7b so the on-demand rungs lead — a
+    short job would land on the spot rung first under the new spot-first
+    order). A100-80 FLEX_START + A100-80 STANDARD both insufficient, A100-40
+    STANDARD sufficient → lands on the smaller-GPU A100-40 rescue, NOT a hard
     block, and RunPod (exploding) is never called."""
     gcp = _GcpBackendDouble(
         quota_headroom_by_rung={
+            "A100-80/FLEX_START": _A100_80_STD_SHORT,
             "A100-80/STANDARD": _A100_80_STD_SHORT,
             "A100-40/STANDARD": _A100_40_STD_AMPLE,
         }
     )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto", time_budget_hours=10.0)  # long
     result = route(
-        _short_lora_spec(),
+        spec,
         runpod_backend=_ExplodingRunpod(),
         free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
         gcp_backend=gcp,
@@ -3253,21 +3282,19 @@ def test_ladder_a100_80_full_short_lora_routes_to_a100_40(
     assert gcp.launches[0].extra["machine_kind_tag"] == "A100-40"
     assert gcp.launches[0].extra["provisioning_model"] == "STANDARD"
     outcomes = [(a.kind, a.outcome) for a in result.attempts]
-    # A100-80 headroom-skip BEFORE the A100-40 launch.
+    # flex-80 + ondemand-80 headroom-skip BEFORE the A100-40 launch; NO spot rung.
     assert ("gcp", "quota_headroom_insufficient") in outcomes
     assert ("gcp", "launched") in outcomes
+    assert not any("spot" in (a.detail or "") for a in result.attempts if a.kind == "gcp")
     assert result.extra["gcp_ladder_rung"] == "ondemand_a100_40"
 
 
-def test_ladder_both_ondemand_full_short_job_routes_to_spot(
-    lease_store, marker_poster, captured_markers
-):
-    """T2: A100-80 + A100-40 STANDARD both insufficient, A100-80 SPOT
-    sufficient, short job → lands on SPOT A100-80."""
+def test_ladder_short_job_spot_leads(lease_store, marker_poster, captured_markers):
+    """T2 (#680: spot now LEADS for a short job). A100-80 SPOT sufficient →
+    lands on SPOT A100-80 as the FIRST rung, with no on-demand headroom-skip
+    preamble (the on-demand rungs are never reached on a clean spot land)."""
     gcp = _GcpBackendDouble(
         quota_headroom_by_rung={
-            "A100-80/STANDARD": _A100_80_STD_SHORT,
-            "A100-40/STANDARD": _A100_40_STD_SHORT,
             "A100-80/SPOT": _A100_80_SPOT_AMPLE,
         }
     )
@@ -3287,13 +3314,16 @@ def test_ladder_both_ondemand_full_short_job_routes_to_spot(
     assert gcp.launches[0].extra["provisioning_model"] == "SPOT"
     assert gcp.launches[0].extra["machine_kind_tag"] == "A100-80"
     assert result.extra["gcp_ladder_rung"] == "spot_a100_80"
+    # Spot is the FIRST GCP attempt — no on-demand rung was tried first.
+    assert not any("ondemand" in (a.detail or "") for a in result.attempts if a.kind == "gcp")
 
 
 def test_ladder_long_job_a100_80_full_a100_40_unusable_routes_to_runpod_skipping_spot(
     lease_store, marker_poster, captured_markers
 ):
-    """T3: a long ft-7b (no A100-40 fallback, not short) with A100-80 full →
-    RunPod, skipping every spot rung (none exist for ft-7b)."""
+    """T3: a long ft-7b (no A100-40 fallback, not short) with both GCP rungs
+    full → RunPod, skipping every spot rung (none exist for ft-7b). #680: the
+    long branch is flex-80 -> ondemand-80, so TWO provisioning failures."""
     rp = _PassiveRunpod()
     gcp = _GcpBackendDouble(
         launch_raises=GcpProvisioningError(
@@ -3317,8 +3347,8 @@ def test_ladder_long_job_a100_80_full_a100_40_unusable_routes_to_runpod_skipping
     assert not any("spot" in (a.detail or "") for a in result.attempts if a.kind == "gcp"), (
         "no spot rung for a long / no-fit job"
     )
-    # Exactly one GCP provisioning failure (only the on-demand A100-80 rung).
-    assert sum(1 for k, o in outcomes if k == "gcp" and o == "provisioning_failure") == 1
+    # Two GCP provisioning failures: flex-start A100-80 then on-demand A100-80.
+    assert sum(1 for k, o in outcomes if k == "gcp" and o == "provisioning_failure") == 2
     finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
     assert finals and "runpod_fallback_residual_gap" in finals[-1]["extra"]
 
@@ -3326,9 +3356,10 @@ def test_ladder_long_job_a100_80_full_a100_40_unusable_routes_to_runpod_skipping
 def test_ladder_long_lora_over_threshold_skips_spot_to_runpod(
     lease_store, marker_poster, captured_markers
 ):
-    """T3b: a long lora-7b (10 GPU-h > 2 threshold) with A100-80 + A100-40
-    both full → A100-40 rung IS attempted (fits 40GB) but spot rungs are
-    ABSENT (over threshold) → RunPod."""
+    """T3b: a long lora-7b (10 GPU-h > 2 threshold) with all GCP rungs full →
+    the A100-40 rung IS attempted (fits 40GB) but spot rungs are ABSENT (over
+    threshold) → RunPod. #680: the long branch is flex-80 -> ondemand-80 ->
+    ondemand-40, so THREE provisioning failures."""
     rp = _PassiveRunpod()
     gcp = _GcpBackendDouble(
         launch_raises=GcpProvisioningError(
@@ -3347,25 +3378,28 @@ def test_ladder_long_lora_over_threshold_skips_spot_to_runpod(
         sleep_fn=lambda _s: None,
     )
     assert result.chosen_kind == "runpod"
-    # Two on-demand rung failures (A100-80 + A100-40), NO spot rung.
+    # Three rung failures (flex-80, ondemand-80, ondemand-40), NO spot rung.
     gcp_fails = [
         a for a in result.attempts if a.kind == "gcp" and a.outcome == "provisioning_failure"
     ]
-    assert len(gcp_fails) == 2
+    assert len(gcp_fails) == 3
     assert not any("spot" in (a.detail or "") for a in gcp_fails)
 
 
 def test_explicit_gcp_pin_gets_full_ladder(lease_store, marker_poster, captured_markers):
-    """T4: an explicit ``backend: gcp`` pin with A100-80 full + A100-40
-    sufficient lands on A100-40 — NOT a hard NoComputeAvailableError (the
-    #654 regression). Same ladder as auto."""
+    """T4 (#680: re-scoped to a LONG lora-7b so the on-demand A100-40 landing
+    is preserved — a short pin would land on the spot rung first). An explicit
+    ``backend: gcp`` pin with flex-80 + ondemand-80 full + A100-40 sufficient
+    lands on A100-40 — NOT a hard NoComputeAvailableError (the #654
+    regression). Same ladder as auto."""
     gcp = _GcpBackendDouble(
         quota_headroom_by_rung={
+            "A100-80/FLEX_START": _A100_80_STD_SHORT,
             "A100-80/STANDARD": _A100_80_STD_SHORT,
             "A100-40/STANDARD": _A100_40_STD_AMPLE,
         }
     )
-    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=10.0)  # long
     result = route(
         spec,
         runpod_backend=_ExplodingRunpod(),
@@ -3431,7 +3465,7 @@ def test_explicit_gcp_pin_is_cap_exempt(lease_store, marker_poster, captured_mar
             gcp_attempts_date=today,
         )
     )
-    gcp = _GcpBackendDouble()  # would launch on-demand A100-80 if reached
+    gcp = _GcpBackendDouble()  # would launch the first rung (spot A100-80) if reached
     spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
     result = route(
         spec,
@@ -3446,7 +3480,8 @@ def test_explicit_gcp_pin_is_cap_exempt(lease_store, marker_poster, captured_mar
     # The explicit pin launched on GCP despite the cap being reached.
     assert result.chosen_kind == "gcp"
     assert len(gcp.launches) == 1
-    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_80"
+    # #680: a short job leads with the spot A100-80 rung under the new order.
+    assert result.extra["gcp_ladder_rung"] == "spot_a100_80"
     # The per-day counter was NOT bumped past the cap (cap-exempt path).
     lease = lease_store.read(137)
     assert lease is not None and lease.gcp_attempts_today == 5
@@ -3457,15 +3492,80 @@ def test_explicit_gcp_pin_is_cap_exempt(lease_store, marker_poster, captured_mar
 def test_gcp_provisioning_error_capacity_miss_advances_ladder(
     lease_store, marker_poster, captured_markers
 ):
-    """T5b: a RUNTIME capacity miss (GcpProvisioningError on the create, not a
-    headroom skip) on the A100-80 rung advances to A100-40, which succeeds —
-    the ladder handles BOTH the headroom-skip path and the create-failure
-    path."""
+    """T5b (#680: re-scoped to a LONG lora-7b so the ladder is
+    flex-80 -> ondemand-80 -> ondemand-40 with no spot rung). RUNTIME capacity
+    misses (GcpProvisioningError on the create, not a headroom skip) on the
+    flex-80 + ondemand-80 rungs advance to A100-40, which succeeds — the ladder
+    handles BOTH the headroom-skip path and the create-failure path."""
     gcp = _GcpBackendDouble(
         launch_raises_by_rung={
+            "A100-80/FLEX_START": GcpProvisioningError(
+                "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+            ),
             "A100-80/STANDARD": GcpProvisioningError(
                 "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
-            )
+            ),
+        }
+    )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto", time_budget_hours=10.0)  # long
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_40"
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    # flex-80 + ondemand-80 creates FAILED, THEN A100-40 launched; no spot rung.
+    assert ("gcp", "provisioning_failure") in outcomes
+    assert ("gcp", "launched") in outcomes
+    assert not any("spot" in (a.detail or "") for a in result.attempts if a.kind == "gcp")
+
+
+# ---------------------------------------------------------------------------
+# #680: length-aware spot-first (short) / flex-first (long) ladder
+# ---------------------------------------------------------------------------
+
+
+def test_ladder_short_job_spot_before_ondemand(lease_store, marker_poster, captured_markers):
+    """#680 MF3 (headline form): a short lora-7b with ample spot lands on the
+    spot A100-80 rung — the FIRST GCP attempt label is ``spot_a100_80`` (flex /
+    on-demand are never attempted on a clean spot land, so there is no later
+    rung to index-compare against here)."""
+    gcp = _GcpBackendDouble(quota_headroom_by_rung={"A100-80/SPOT": _A100_80_SPOT_AMPLE})
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "spot_a100_80"
+    first_gcp = next(a for a in result.attempts if a.kind == "gcp")
+    assert "rung spot_a100_80" in (first_gcp.detail or "")
+
+
+def test_ladder_short_job_spot_miss_then_ondemand_order(
+    lease_store, marker_poster, captured_markers
+):
+    """#680 MF3 (sister form): the spot + flex rungs capacity-miss so on-demand
+    IS attempted; assert spot is attempted BEFORE on-demand in the trail (the
+    flex rung sits between them, so it too must miss for on-demand to be
+    reached and the index comparison to be well-defined)."""
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80/SPOT": GcpProvisioningError("spot OUT", evidence={}),
+            "A100-40/SPOT": GcpProvisioningError("spot40 OUT", evidence={}),
+            "A100-80/FLEX_START": GcpProvisioningError("flex OUT", evidence={}),
         }
     )
     result = route(
@@ -3479,25 +3579,229 @@ def test_gcp_provisioning_error_capacity_miss_advances_ladder(
         sleep_fn=lambda _s: None,
     )
     assert result.chosen_kind == "gcp"
-    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_40"
-    outcomes = [(a.kind, a.outcome) for a in result.attempts]
-    # A100-80 create FAILED (a runtime provisioning_failure), THEN A100-40 launched.
-    assert ("gcp", "provisioning_failure") in outcomes
-    assert ("gcp", "launched") in outcomes
+    details = [a.detail or "" for a in result.attempts if a.kind == "gcp"]
+
+    def _idx(label: str) -> int:
+        return next(i for i, d in enumerate(details) if f"rung {label}" in d)
+
+    assert _idx("spot_a100_80") < _idx("ondemand_a100_80")
+    # The job lands on the on-demand A100-80 rung (the next rung after the spot +
+    # flex misses).
+    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_80"
 
 
-def test_happy_path_a100_80_headroom_launches_ondemand_unchanged(
-    lease_store, marker_poster, captured_markers
-):
-    """T6: A100-80 STANDARD sufficient → on-demand A100-80 launches and the
-    ladder never advances (regression: the common case is unchanged)."""
+def test_ladder_short_job_full_rung_order(lease_store, marker_poster, captured_markers):
+    """#680: a short lora-7b with EVERY rung capacity-missing → RunPod; the rung
+    labels appear in the canonical order spot-80, spot-40, flex-80, ondemand-80,
+    ondemand-40, then RunPod last (all-miss, so every index is well-defined)."""
+    rp = _PassiveRunpod()
     gcp = _GcpBackendDouble(
-        quota_headroom=QuotaHeadroom(
-            metric="NVIDIA_A100_80GB_GPUS", region="us-central1", limit=8.0, usage=0.0, needed=1
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
         )
     )
     result = route(
         _short_lora_spec(),
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    details = [a.detail or "" for a in result.attempts if a.kind == "gcp"]
+    expected = [
+        "spot_a100_80",
+        "spot_a100_40",
+        "flexstart_a100_80",
+        "ondemand_a100_80",
+        "ondemand_a100_40",
+    ]
+
+    def _idx(label: str) -> int:
+        return next(i for i, d in enumerate(details) if f"rung {label}" in d)
+
+    idxs = [_idx(label) for label in expected]
+    assert idxs == sorted(idxs), f"rung order wrong: {details}"
+    assert len(idxs) == 5
+
+
+def test_ladder_long_job_flexstart_before_ondemand_no_spot(
+    lease_store, marker_poster, captured_markers
+):
+    """#680 (option (b) first-attempt-label): a long ft-7b with ample flex
+    lands on ``flexstart_a100_80`` as the FIRST GCP attempt AND no ``spot_*``
+    rung appears (a clean flex land stops the ladder, so the "flex leads" claim
+    is carried by the first-attempt label + the no-spot assertion)."""
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_rung={
+            "A100-80/FLEX_START": QuotaHeadroom(
+                metric="PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+                region="us-central1",
+                limit=16.0,
+                usage=0.0,
+                needed=1,
+            )
+        }
+    )
+    spec = RunSpec(issue=137, intent="ft-7b", backend="auto")  # long, no A100-40 fallback
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "flexstart_a100_80"
+    first_gcp = next(a for a in result.attempts if a.kind == "gcp")
+    assert "rung flexstart_a100_80" in (first_gcp.detail or "")
+    assert not any("spot" in (a.detail or "") for a in result.attempts if a.kind == "gcp")
+
+
+def test_ladder_long_job_flexstart_miss_then_ondemand_order(
+    lease_store, marker_poster, captured_markers
+):
+    """#680 MF3 (sister form, option (a)): a long ft-7b whose flex rung
+    capacity-misses → on-demand IS attempted; assert flex precedes on-demand in
+    the trail AND no spot rung appears."""
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80/FLEX_START": GcpProvisioningError("flex OUT", evidence={}),
+        }
+    )
+    spec = RunSpec(issue=137, intent="ft-7b", backend="auto")  # long, no A100-40 fallback
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "ondemand_a100_80"
+    details = [a.detail or "" for a in result.attempts if a.kind == "gcp"]
+
+    def _idx(label: str) -> int:
+        return next(i for i, d in enumerate(details) if f"rung {label}" in d)
+
+    assert _idx("flexstart_a100_80") < _idx("ondemand_a100_80")
+    assert not any("spot" in d for d in details)
+
+
+def test_ladder_unknown_length_takes_long_branch(lease_store, marker_poster, captured_markers):
+    """#680: an unknown-length spec (no time budget) takes the LONG branch —
+    flex-first, no spot. With every rung capacity-missing, the FIRST GCP
+    attempt label is ``flexstart_a100_80`` and no ``spot_*`` rung appears."""
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _spec(backend=None),  # unknown length
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    first_gcp = next(a for a in result.attempts if a.kind == "gcp")
+    assert "rung flexstart_a100_80" in (first_gcp.detail or "")
+    assert not any("spot" in (a.detail or "") for a in result.attempts if a.kind == "gcp")
+
+
+def test_flexstart_rung_threads_flex_provisioning():
+    """#680: the flex rung's spec carries ``provisioning_model == 'FLEX_START'``
+    and the label ``flexstart_a100_80`` (direct unit test of the ladder
+    builder, no routing)."""
+    rungs = _ladder_specs(_short_lora_spec())
+    flex = [(s, label) for s, label in rungs if label.startswith("flexstart_")]
+    assert len(flex) == 1, f"expected exactly one flex rung, got labels {[lbl for _, lbl in rungs]}"
+    spec, label = flex[0]
+    assert label == "flexstart_a100_80"
+    assert spec.extra["provisioning_model"] == "FLEX_START"
+    assert spec.extra["machine_kind_tag"] == "A100-80"
+
+
+def test_max_gcp_attempts_per_day_is_eight():
+    """#680 MF1: the new short-job ladder needs cap >= 5 rungs; bumped to 8 for
+    a same-day-retry margin (FULL variant). This pin makes a silent revert to 5
+    (which would still pass the isinstance/>0 test) a hard FAIL."""
+    assert MAX_GCP_ATTEMPTS_PER_DAY == 8
+
+
+def test_workload_error_on_later_rung_fails_over_to_runpod(
+    lease_store, marker_poster, captured_markers
+):
+    """#680 MF2: a GcpWorkloadError on a LATER rung (the flex rung, after both
+    spot rungs capacity-miss on a short lora-7b) fails over STRAIGHT to RunPod —
+    the failover is rung-position-independent, not just rung-1. No on-demand GCP
+    rung is attempted after the workload error, and no SLURM lane is attempted."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # would start eventually
+    gcp = _GcpBackendDouble(
+        launch_raises_by_rung={
+            "A100-80/SPOT": GcpProvisioningError("spot OUT", evidence={}),
+            "A100-40/SPOT": GcpProvisioningError("spot40 OUT", evidence={}),
+            "A100-80/FLEX_START": GcpWorkloadError("workload crashed", evidence={"phase": "train"}),
+        }
+    )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1
+    # Exactly one workload_failure (the flex rung); the two spot rungs
+    # capacity-missed (provisioning_failure) BEFORE it.
+    workload = [a for a in result.attempts if a.kind == "gcp" and a.outcome == "workload_failure"]
+    assert len(workload) == 1
+    # No on-demand GCP rung attempted after the workload error short-circuit.
+    assert not any("ondemand" in (a.detail or "") for a in result.attempts if a.kind == "gcp")
+    # The failover routed STRAIGHT to RunPod — no SLURM lane attempted.
+    assert not any(a.kind == "nibi" for a in result.attempts)
+
+
+def test_happy_path_a100_80_ondemand_launches_after_flex_miss(
+    lease_store, marker_poster, captured_markers
+):
+    """T6 (#680: re-scoped to a LONG lora-7b — flex-80 -> ondemand-80 ->
+    ondemand-40, no spot). flex-80 insufficient + on-demand A100-80 sufficient
+    → on-demand A100-80 launches and the ladder never advances past it
+    (regression: the on-demand A100-80 common case still works)."""
+    gcp = _GcpBackendDouble(
+        quota_headroom_by_rung={
+            "A100-80/FLEX_START": _A100_80_STD_SHORT,
+            "A100-80/STANDARD": QuotaHeadroom(
+                metric="NVIDIA_A100_80GB_GPUS", region="us-central1", limit=8.0, usage=0.0, needed=1
+            ),
+        }
+    )
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto", time_budget_hours=10.0)  # long
+    result = route(
+        spec,
         runpod_backend=_ExplodingRunpod(),
         gcp_backend=gcp,
         lease_store=lease_store,
@@ -3509,16 +3813,18 @@ def test_happy_path_a100_80_headroom_launches_ondemand_unchanged(
     assert result.chosen_kind == "gcp"
     assert len(gcp.launches) == 1
     assert result.extra["gcp_ladder_rung"] == "ondemand_a100_80"
-    # Exactly one launched attempt, no A100-40 / spot rung touched.
+    # Exactly one launched attempt, no A100-40 rung touched, no spot rung.
     launched = [a for a in result.attempts if a.kind == "gcp" and a.outcome == "launched"]
     assert len(launched) == 1
     assert "A100-40" not in (gcp.launches[0].extra.get("machine_kind_tag") or "A100-80")
+    assert not any("spot" in (a.detail or "") for a in result.attempts if a.kind == "gcp")
 
 
 def test_no_budget_job_is_not_short_no_spot_rung(lease_store, marker_poster, captured_markers):
     """T7: a spec with no time_budget_hours and no estimated_gpu_hours is
-    treated as unknown-length (NOT short) → the ladder has NO spot rung, and
-    an all-on-demand-full job routes to RunPod."""
+    treated as unknown-length (NOT short) → the long branch has NO spot rung,
+    and an all-full job routes to RunPod. #680: the long branch is
+    flex-80 -> ondemand-80 -> ondemand-40."""
     rp = _PassiveRunpod()
     gcp = _GcpBackendDouble(
         launch_raises=GcpProvisioningError(
@@ -3540,29 +3846,161 @@ def test_no_budget_job_is_not_short_no_spot_rung(lease_store, marker_poster, cap
     gcp_fails = [
         a for a in result.attempts if a.kind == "gcp" and a.outcome == "provisioning_failure"
     ]
-    # on-demand A100-80 + A100-40 only — no spot rung (unknown length).
-    assert len(gcp_fails) == 2
+    # flex-80 + ondemand-80 + ondemand-40 — no spot rung (unknown length).
+    assert len(gcp_fails) == 3
     assert not any("spot" in (a.detail or "") for a in gcp_fails)
 
 
-def test_workload_error_on_any_rung_raises_no_fallback(lease_store, marker_poster):
-    """T8: a GcpWorkloadError on a rung raises WorkloadSurfacedError
-    immediately — RunPod never called, ladder does NOT advance (broken
-    workload code must not cascade)."""
+def test_debug_intent_rung_label_reflects_l4_not_a100(lease_store, marker_poster, captured_markers):
+    """#672: the rung-1 label is COMPOSED from the resolved machine's
+    accelerator kind, so a ``debug`` intent (mapped to g2-standard-4 = L4)
+    is labeled ``ondemand_l4`` — NOT the historically-hardcoded
+    ``ondemand_a100_80`` (which lied about the machine being attempted).
+
+    Force a capacity miss on the create so the rung label lands in the
+    attempt trail's ``detail``, where a post-hoc debugger reads it.
+    """
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    spec = RunSpec(issue=137, intent="debug", backend="auto", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=_PassiveRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # The rung-1 attempt detail names the L4 machine actually attempted.
+    rung1_details = [
+        a.detail
+        for a in result.attempts
+        if a.kind == "gcp" and a.detail and a.detail.startswith("rung ondemand_")
+    ]
+    assert rung1_details, "no on-demand GCP rung attempt recorded"
+    assert any("rung ondemand_l4:" in d for d in rung1_details)
+    # The historical hardcoded A100 label must NOT appear for an L4 intent.
+    assert not any("ondemand_a100_80" in (a.detail or "") for a in result.attempts)
+    # The pre-escalation intermediate breadcrumb carries the L4 rung too.
+    intermediates = [
+        body
+        for body in _by_reason(captured_markers, ROUTE_REASON_AUTO_FALLBACK_GCP)
+        if body.get("extra", {}).get("intermediate") is True
+    ]
+    assert any(body["extra"].get("rung") == "ondemand_l4" for body in intermediates)
+
+
+def test_intermediate_marker_records_requested_kind_on_explicit_gcp_pin(
+    lease_store, marker_poster, captured_markers
+):
+    """#672: the pre-escalation intermediate breadcrumb records the user's
+    ORIGINAL ``--backend`` ask in ``requested_kind`` — ``"gcp"`` for an
+    explicit ``backend: gcp`` pin — instead of the hardcoded ``None`` that
+    made an explicit override indistinguishable from an auto-chain
+    escalation post-hoc.
+    """
+    gcp = _GcpBackendDouble()  # the explicit pin launches on GCP
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),  # RunPod must NOT be reached
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.requested_kind == "gcp"
+    intermediates = [
+        body
+        for body in _by_reason(captured_markers, ROUTE_REASON_AUTO_FALLBACK_GCP)
+        if body.get("extra", {}).get("intermediate") is True
+    ]
+    assert intermediates, "pre-escalation intermediate breadcrumb missing"
+    assert all(body["requested_kind"] == "gcp" for body in intermediates)
+
+
+def test_intermediate_marker_requested_kind_none_on_auto_chain(
+    lease_store, marker_poster, captured_markers
+):
+    """#672 companion: on the AUTO chain (no ``--backend``) the intermediate
+    breadcrumb keeps ``requested_kind: None`` — the threading must not
+    accidentally stamp ``"auto"`` / ``"gcp"`` on a router-chosen escalation
+    (consistency with the final/terminal markers' auto-path convention).
+    """
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts → escalate to GCP
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend=None),  # AUTO
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            lane_order=_LEGACY_FREE_FIRST_ORDER,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    intermediates = [
+        body
+        for body in _by_reason(captured_markers, ROUTE_REASON_AUTO_FALLBACK_GCP)
+        if body.get("extra", {}).get("intermediate") is True
+    ]
+    assert intermediates, "pre-escalation intermediate breadcrumb missing"
+    assert all(body["requested_kind"] is None for body in intermediates)
+
+
+def test_workload_error_on_a_rung_fails_over_to_runpod_no_rung_advance(
+    lease_store, marker_poster, captured_markers
+):
+    """T8 (REVERSED for task #658): a GcpWorkloadError on the FIRST rung
+    STOPS the ladder (does NOT advance to the cheaper rungs — re-running
+    broken code on A100-40 / spot burns credit) and FAILS OVER to RunPod.
+    Exactly one GCP create is attempted; RunPod launches once."""
+    rp = _PassiveRunpod()
     gcp = _GcpBackendDouble(
         launch_raises=GcpWorkloadError("workload crashed", evidence={"phase": "train"})
     )
-    with pytest.raises(WorkloadSurfacedError):
-        route(
-            _short_lora_spec(),
-            runpod_backend=_ExplodingRunpod(),
-            gcp_backend=gcp,
-            lease_store=lease_store,
-            marker_poster=marker_poster,
-            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
-            now_fn=_clock(),
-            sleep_fn=lambda _s: None,
-        )
+    result = route(
+        _short_lora_spec(),  # has A100-40 + spot rungs available
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1
+    # Ladder did NOT advance — exactly ONE GCP rung recorded a
+    # workload_failure before failing over (the workload error
+    # short-circuited the remaining cheaper rungs). The double raises before
+    # appending, so probe via the attempts trail, not gcp.launches.
+    gcp_workload = [
+        a for a in result.attempts if a.kind == "gcp" and a.outcome == "workload_failure"
+    ]
+    assert len(gcp_workload) == 1
+    # No advanced-rung provisioning_failure attempts were recorded.
+    assert not [
+        a for a in result.attempts if a.kind == "gcp" and a.outcome == "provisioning_failure"
+    ]
 
 
 def test_per_day_attempt_cap_stops_gcp_creates_falls_to_runpod(
@@ -3601,15 +4039,15 @@ def test_per_day_attempt_cap_hit_mid_ladder_stops_remaining_rungs(
     lease_store, marker_poster, captured_markers
 ):
     """T9b: the cap is RE-READ each rung. Pre-seed the lease one below the
-    cap; rung 1 (on-demand A100-80) capacity-misses and bumps to the cap;
-    rung 2 (A100-40) must NOT even call create — the cap stops it mid-ladder
-    and the route falls to RunPod."""
+    cap; rung 1 capacity-misses and bumps to the cap; rung 2 must NOT even call
+    create — the cap stops it mid-ladder and the route falls to RunPod. #680:
+    for a short job rung 1 is the spot A100-80 rung."""
     rp = _PassiveRunpod()
-    # A100-80 create capacity-misses (advances + bumped the attempt counter);
-    # A100-40 would succeed if it were ever reached.
+    # The spot A100-80 (rung 1) create capacity-misses (advances + bumps the
+    # attempt counter); rung 2 would succeed if it were ever reached.
     gcp = _GcpBackendDouble(
         launch_raises_by_rung={
-            "A100-80/STANDARD": GcpProvisioningError(
+            "A100-80/SPOT": GcpProvisioningError(
                 "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
             )
         }
@@ -3704,12 +4142,13 @@ def test_gcp_route_marker_carries_provisioning_and_quota_pool(
     lease_store, marker_poster, captured_markers
 ):
     """#631 D4: the SUCCESS-path GCP epm:backend-selected marker carries the
-    additive provisioning_model + quota_pool fields. The default lora-7b spec
-    is an A100 STANDARD launch, so the resolved values are STANDARD +
-    NVIDIA_A100_80GB_GPUS (the on-demand A100 pool)."""
+    additive provisioning_model + quota_pool fields. #680: the default lora-7b
+    spec is unknown-length => the long branch, whose FIRST rung is the
+    flex-start A100-80 launch, so the resolved values are FLEX_START +
+    PREEMPTIBLE_NVIDIA_A100_80GB_GPUS (the preemptible A100 pool)."""
     gcp = _GcpBackendDouble(
         quota_headroom=QuotaHeadroom(
-            metric="NVIDIA_A100_80GB_GPUS",
+            metric="PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
             region="us-central1",
             limit=8.0,
             usage=4.0,
@@ -3730,14 +4169,14 @@ def test_gcp_route_marker_carries_provisioning_and_quota_pool(
     )
     assert result.chosen_kind == "gcp"
     # The result object carries the fields.
-    assert result.extra["provisioning_model"] == "STANDARD"
-    assert result.extra["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+    assert result.extra["provisioning_model"] == "FLEX_START"
+    assert result.extra["quota_pool"] == "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS"
     # The SUCCESS-path marker body (reason auto_fallback_gcp) carries them too.
     bodies = _by_reason(captured_markers, "auto_fallback_gcp")
     assert bodies, "no success-path GCP epm:backend-selected marker was posted"
     final = bodies[-1]
-    assert final["extra"]["provisioning_model"] == "STANDARD"
-    assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+    assert final["extra"]["provisioning_model"] == "FLEX_START"
+    assert final["extra"]["quota_pool"] == "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS"
     # Pre-existing fields untouched (additive change).
     assert "gcp_attempts_today" in final["extra"]
 
@@ -3749,7 +4188,10 @@ def test_gcp_explicit_override_marker_carries_provisioning_and_quota_pool(
     ``_override_free_or_gcp`` terminal path, reason ``override``) carries the
     additive provisioning_model + quota_pool fields on BOTH the result object
     and its epm:backend-selected marker — the GCP analogue of an explicit
-    ``backend: runpod`` override, which round 1 left without the new fields."""
+    ``backend: runpod`` override, which round 1 left without the new fields.
+    #680: the default lora-7b spec is unknown-length => the long branch whose
+    first rung is flex-start, so the resolved values are FLEX_START +
+    PREEMPTIBLE_NVIDIA_A100_80GB_GPUS."""
     gcp = _GcpBackendDouble()
     result = route(
         _spec(backend="gcp"),
@@ -3765,14 +4207,14 @@ def test_gcp_explicit_override_marker_carries_provisioning_and_quota_pool(
     assert result.chosen_kind == "gcp"
     assert result.reason == ROUTE_REASON_OVERRIDE
     # The result object carries the fields.
-    assert result.extra["provisioning_model"] == "STANDARD"
-    assert result.extra["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+    assert result.extra["provisioning_model"] == "FLEX_START"
+    assert result.extra["quota_pool"] == "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS"
     # The override-path marker body carries them too.
     bodies = _by_reason(captured_markers, ROUTE_REASON_OVERRIDE)
     assert bodies, "no explicit-override GCP epm:backend-selected marker was posted"
     final = bodies[-1]
-    assert final["extra"]["provisioning_model"] == "STANDARD"
-    assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+    assert final["extra"]["provisioning_model"] == "FLEX_START"
+    assert final["extra"]["quota_pool"] == "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS"
 
 
 def test_gcp_reconnect_marker_carries_provisioning_and_quota_pool(
@@ -3911,10 +4353,12 @@ def test_gcp_primary_prepare_fail_falls_through_to_free_lanes(lease_store):
         sleep_fn=lambda _s: None,
     )
     assert result.chosen_kind == "nibi"
-    # #656: the nobudget lora-7b ladder tries TWO on-demand rungs (A100-80 +
-    # A100-40), both prepare-fail; ``launch`` still NEVER runs after a failed
-    # prepare on either rung.
-    assert gcp.calls == ["prepare", "prepare"], "launch must NOT run after a failed prepare"
+    # #680: the nobudget lora-7b is unknown-length => long branch (flex-80,
+    # ondemand-80, ondemand-40, NO spot), all three prepare-fail; ``launch``
+    # still NEVER runs after a failed prepare on any rung.
+    assert gcp.calls == ["prepare", "prepare", "prepare"], (
+        "launch must NOT run after a failed prepare"
+    )
     assert any(a.outcome == "prepare_failed" and a.kind == "gcp" for a in result.attempts)
 
 
@@ -4235,3 +4679,350 @@ def test_claude_md_compute_backends_section_matches_656_contract() -> None:
     assert "test_no_auto_runpod_path_under_any_failure" not in text, (
         "CLAUDE.md still references the replaced negative test by name"
     )
+
+
+# ---------------------------------------------------------------------------
+# #659 — ASYNC GCP-workload-failure → RunPod failover (poller / dispatch path)
+#
+# The synchronous route()-time failover (#658) cannot reach a GCP VM that was
+# already up and crashed its WORKLOAD minutes in — there is no live route()
+# call to raise GcpWorkloadError from. #659 adds a PUBLIC router helper the
+# poller (scripts/backend_poll.py) calls to re-dispatch that dead GCP workload
+# onto the SAME RunPod terminal rung the sync path uses, exactly once, labeled
+# with a DISTINCT async reason so the marker trail tells the two detection
+# paths apart. These tests fail TODAY (the helper + the _ASYNC reason constant
+# do not exist yet -> ImportError) and pass after the router helper lands.
+# ---------------------------------------------------------------------------
+
+
+def test_async_gcp_workload_crash_fails_over_to_runpod_exactly_once(
+    lease_store, marker_poster, captured_markers
+):
+    """#659 (HEADLINE acceptance gate): a poller-detected dead GCP workload
+    re-dispatches on RunPod once, via the SAME terminal rung as the sync path,
+    labeled with the async reason."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={"source": "async_poller", "current_phase": "terminal_workload_failed"},
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC
+    assert len(rp.launches) == 1  # exactly once
+    finals = _by_reason(captured_markers, ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC)
+    assert finals
+    assert finals[-1]["extra"].get("gcp_workload_evidence", {}).get("source") == "async_poller"
+
+
+def test_failover_runpod_unavailable_emits_infra_no_compute(
+    lease_store, marker_poster, captured_markers
+):
+    """#659 sibling #4: when the RunPod failover launch raises
+    ``NoComputeAvailableError`` (RunPod truly unavailable), the helper
+    propagates it so the poller can emit a terminal infra JSON with
+    ``failure_class: "infra"`` + ``reason: "no_compute_available"`` — the
+    watcher's capacity-retry pass re-drives that reason once a lane frees.
+
+    The Statistics-reconciler standing rec is to pin BOTH the class AND the
+    reason: a bare ``infra`` without ``no_compute_available`` would not be
+    re-driven (``TRANSIENT_CAPACITY_REASONS`` keys on the reason)."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _ExplodingRunpodNoCompute()
+    with pytest.raises(NoComputeAvailableError):
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    # The poller-side mapping (scripts/backend_poll.py) turns that raise into
+    # the infra JSON; the contract the poller relies on is asserted in
+    # tests/test_backend_poll.py::
+    #   test_failover_runpod_unavailable_emits_infra_no_compute_poll_json
+    # (both failure_class == "infra" AND reason == "no_compute_available").
+
+
+def test_async_failover_reason_distinct_from_sync():
+    """#659 sibling #5: the async reason VALUE differs from the sync one so the
+    ``epm:backend-selected`` marker trail tells the route()-time failover apart
+    from the poller-detected one (same RunPod target, different detection
+    path)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    )
+
+    assert (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC != ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD
+    )
+    # The async reason carries an "async" discriminator for grep-ability.
+    assert "async" in ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC
+
+
+class _ExplodingRunpodNoCompute(_BaseBackend):
+    """RunPod double whose ``launch`` raises ``NoComputeAvailableError`` — the
+    "RunPod also unavailable" failover branch (#659 sibling #4)."""
+
+    @property
+    def name(self) -> BackendKind:
+        return "runpod"
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        raise NoComputeAvailableError("RunPod has no capacity for the failover re-launch")
+
+
+# ---------------------------------------------------------------------------
+# issue #669 — M3b: the GCP->RunPod failover is exactly-once under N CONCURRENT
+# triggerers (the wedge classifier introduces a 2nd one), via the in-flock
+# _lease_records_failover_of re-check + in-flock gcp_failover_of stamp.
+# ---------------------------------------------------------------------------
+
+
+def test_concurrent_failover_triggers_single_runpod_launch(
+    lease_store, marker_poster, captured_markers
+):
+    """M2.6 (#669, the load-bearing atomicity test): two triggerers of the SAME
+    GCP-crash failover (the poller-detected terminal_workload_wedged AND the
+    watchdog-driven terminal_wedged_terminated, on the same handle) reach
+    ``failover_to_runpod_after_async_workload_crash`` from overlapping
+    processes. With the M3b in-flock re-check + stamp, exactly ONE launches
+    RunPod; the second sees the stamp and short-circuits to the existing
+    handle.
+
+    Sequential calls on a SHARED LeaseStore model the serialized-by-flock
+    outcome: the first stamps gcp_failover_of in-flock, the second's in-flock
+    re-check matches and returns the existing lease with NO second launch."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-fake-1"}
+    cfg = RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0)
+
+    def _trigger():
+        return failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=cfg,
+            gcp_failover_of_identity=identity,
+        )
+
+    first = _trigger()
+    second = _trigger()  # the concurrent triggerer, serialized by the per-issue flock
+
+    assert len(rp.launches) == 1  # EXACTLY ONCE — no double paid launch
+    assert first.chosen_kind == "runpod"
+    assert second.chosen_kind == "runpod"
+    # The second returned the existing failover (no new launch).
+    assert second.extra.get("failover_already_launched") is True
+    # The lease records the GCP-crash identity this failover is OF.
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert lease.gcp_failover_of == identity
+
+
+def test_distinct_gcp_crash_identity_gets_its_own_failover(
+    lease_store, marker_poster, captured_markers
+):
+    """M3b keying: a GENUINELY-NEW GCP crash on the same issue (a fresh dispatch
+    → a different pod_name/job_id identity) does NOT match the prior stamp, so
+    it still gets its own single failover launch — the in-flock re-check is
+    keyed to the GCP-crash identity, NOT to the issue."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    cfg = RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0)
+
+    def _trigger(identity):
+        return failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=cfg,
+            gcp_failover_of_identity=identity,
+        )
+
+    _trigger({"pod_name": "eps-issue-137", "job_id": "instance-crash-1"})
+    _trigger({"pod_name": "eps-issue-137", "job_id": "instance-crash-2"})  # NEW crash
+
+    assert len(rp.launches) == 2  # each distinct crash gets its own failover
+
+
+def test_single_triggerer_failover_unchanged_when_identity_none(
+    lease_store, marker_poster, captured_markers
+):
+    """#659 regression guard: with gcp_failover_of_identity=None (the legacy
+    single-triggerer path) the failover behaves byte-for-byte as #659 — one
+    launch, no in-flock short-circuit, no gcp_failover_of stamp."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={"source": "async_poller"},
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert len(rp.launches) == 1
+    assert result.chosen_kind == "runpod"
+    assert result.extra.get("failover_already_launched") is None
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert lease.gcp_failover_of is None  # NOT stamped on the legacy path
+
+
+# ---------------------------------------------------------------------------
+# CPU-only intent routing (#677)
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_ladder_cpu_intent_single_ondemand_rung():
+    """#677: the GCP ladder for a SHORT cpu-bigmem job yields exactly ONE
+    on-demand CPU rung — no A100-40, no spot.
+
+    The 1.0h budget is deliberately "short" (1.0h * max(1, gpu_count=0)=1 = 1.0
+    GPU-h <= the 2 GPU-h EPS_GCP_SPOT_MAX_GPU_HOURS default), so a GPU intent at
+    the same budget WOULD get a spot rung. The §4.2 short-circuit is the only
+    thing suppressing it here — removing it turns this test RED.
+    """
+    from explore_persona_space.backends.router import _gcp_ladder_specs
+
+    spec = RunSpec(issue=137, intent="cpu-bigmem", backend="gcp", time_budget_hours=1.0)
+    rungs = _gcp_ladder_specs(spec)
+    assert len(rungs) == 1
+    _rung_spec, label = rungs[0]
+    assert label == "ondemand_cpu"
+    # No rung anywhere carries spot (label OR provisioning override).
+    for rung_spec, lbl in rungs:
+        assert "spot" not in lbl.lower()
+        prov = (rung_spec.extra or {}).get("provisioning_model")
+        assert prov is None or "spot" not in str(prov).lower()
+    # And no A100-40 fallback rung.
+    assert not any("a100_40" in lbl for _s, lbl in rungs)
+
+
+def test_gcp_ladder_short_gpu_intent_DOES_get_spot_rung():
+    """#677 positive control: the SAME 1.0h budget on a lora-7b intent DOES
+    produce a spot rung — proving the budget really is 'short' and the CPU
+    test's no-spot result is the short-circuit's doing, not an accidentally
+    long job."""
+    from explore_persona_space.backends.router import _gcp_ladder_specs
+
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    rungs = _gcp_ladder_specs(spec)
+    assert any("spot" in lbl.lower() for _s, lbl in rungs), [lbl for _s, lbl in rungs]
+
+
+def test_ladder_cpu_intent_length_aware_still_yields_one_on_demand_rung():
+    """#680 regression guard: the LENGTH-AWARE ladder must NOT promote a
+    cpu-bigmem job (gpu_count == 0) onto spot / flex / A100-40 rungs via
+    _is_short_job's gpu_count-floor-to-1, on EITHER length branch.
+
+    #677 added the ``base.gpu_count == 0`` short-circuit; the #680 length-aware
+    rewrite of _gcp_ladder_specs (spot-first short / flex-first long, plus the
+    caller provisioning-model pin branch) re-authored the function around it.
+    The existing #677 test exercises only the SHORT branch (1.0h budget). This
+    pins BOTH branches under the post-#680 structure:
+
+    - SHORT (1.0h budget, is_short=True): the short-circuit must precede the
+      spot-first short branch.
+    - UNKNOWN length (no budget, is_short=False): the short-circuit must precede
+      the flex-first long branch.
+
+    For each: exactly one rung, labelled ``ondemand_cpu``, with NO
+    provisioning_model threaded (a pin would be a spot/flex/standard override
+    the CPU rung must never carry). Re-dropping the short-circuit during a future
+    ladder edit turns this RED.
+    """
+    from explore_persona_space.backends.router import _gcp_ladder_specs
+
+    short_cpu = RunSpec(issue=137, intent="cpu-bigmem", backend="gcp", time_budget_hours=1.0)
+    unknown_cpu = RunSpec(issue=137, intent="cpu-bigmem", backend="gcp")  # no budget -> long branch
+    for spec in (short_cpu, unknown_cpu):
+        rungs = _gcp_ladder_specs(spec)
+        assert len(rungs) == 1, [lbl for _s, lbl in rungs]
+        rung_spec, label = rungs[0]
+        assert label == "ondemand_cpu", label
+        # The single CPU rung must NOT thread any provisioning model (spot / flex
+        # / standard) — it is the spec as-is, the on-demand-only short-circuit.
+        assert (rung_spec.extra or {}).get("provisioning_model") is None
+        # No spot / flex / A100-40 rung anywhere.
+        assert not any("spot" in lbl.lower() for _s, lbl in rungs)
+        assert not any("flexstart" in lbl.lower() for _s, lbl in rungs)
+        assert not any("a100_40" in lbl for _s, lbl in rungs)
+
+
+def test_router_cpu_intent_capacity_miss_no_runpod_fallback(
+    lease_store, marker_poster, captured_markers
+):
+    """#677: a cpu-bigmem auto route whose GCP CPU rung capacity-misses raises
+    CpuExhaustedNoRunpodLaneError and NEVER launches RunPod (RunPod is GPU-only,
+    has no CPU lane). The terminal epm:backend-selected marker carries the
+    distinct reason cpu_exhausted_no_runpod_lane.
+
+    Removing the §4.2c _runpod_terminal_rung CPU guard turns this RED — it would
+    instead launch RunPod / crash in the RunPod intent resolver.
+    """
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+        CpuExhaustedNoRunpodLaneError,
+    )
+
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED",
+            evidence={"matched_pattern": "RESOURCE_EXHAUSTED"},
+        )
+    )
+    spec = RunSpec(issue=137, intent="cpu-bigmem", backend="auto", time_budget_hours=1.0)
+    with pytest.raises(CpuExhaustedNoRunpodLaneError):
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    # RunPod NEVER attempted.
+    assert len(rp.launches) == 0
+    # The terminal marker carries the CPU-specific reason (NOT
+    # auto_fallback_runpod / no_compute_available).
+    cpu_terminals = _by_reason(captured_markers, ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD)
+    assert cpu_terminals, captured_markers
+    assert not _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)

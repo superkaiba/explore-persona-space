@@ -667,6 +667,23 @@ def list_team_pods() -> list[PodInfo]:
     return [_parse_pod(p) for p in pods]
 
 
+def get_pod_by_name(name: str) -> PodInfo | None:
+    """Return the single team pod whose ``name`` matches, or ``None`` (#664/#689).
+
+    The RunHandle carries ``pod_name`` (not ``pod_id``), so the no-port wedge
+    detector needs a name->PodInfo lookup. Filters the team-scoped
+    :func:`list_team_pods` (the X-Team-Id header is baked into ``graphql``) by
+    exact ``name``; returns ``None`` when no pod matches (gone -> the ordinary
+    dead path). On multiple matches returns the first (RunPod pod names are
+    unique per ``pod-<N>`` provision; a duplicate is a stale-pod anomaly the
+    audit cron handles separately).
+    """
+    for pod in list_team_pods():
+        if pod.name == name:
+            return pod
+    return None
+
+
 def stop_pod(pod_id: str) -> PodInfo:
     """Pause a running pod. Volume + container disk are preserved; IP is released."""
     query = """
