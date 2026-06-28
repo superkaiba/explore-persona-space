@@ -4389,8 +4389,8 @@
     "694": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/694",
-      "status": "running",
+      "path": "tasks/reviewing/694",
+      "status": "reviewing",
       "title": "workflow: add results-driven literature-positioning step (post-results related-work sweep)"
     },
     "695": {
