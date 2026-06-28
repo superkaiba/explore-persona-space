@@ -414,10 +414,13 @@ def _read_use_cache_decision(repo_root: Path) -> bool:
     CPU smoke that skips the canary) defaults to True (the safe default when Gate
     C1.2's parity passes comfortably — the canary HALTs a genuinely broken hook
     before the sweep regardless).
-    """
-    from scripts.issue697_canary import use_cache_decision_path
 
-    p = use_cache_decision_path(repo_root)
+    The decision path is the canary's canonical constant; we form it inline
+    (NOT ``from scripts.issue697_canary import ...``) because this module runs as
+    a SCRIPT (``uv run python scripts/issue697_dispatch.py``), so ``sys.path[0]``
+    is ``scripts/`` and the ``scripts`` package is not importable from here.
+    """
+    p = repo_root / "eval_results" / "issue_697" / "canary" / "canary_decision.json"
     if not p.exists():
         logger.info("no canary use_cache decision at %s -> default use_cache=True", p)
         return True

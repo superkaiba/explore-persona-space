@@ -207,7 +207,13 @@ def gate_c2(*, cpu_only: bool, smoke_model: str | None, max_new_tokens: int) -> 
             "committed numbers; a tiny model cannot reproduce them."
         )
         return {"gate": "C2", "pass": True, "skipped": "smoke", "model": smoke_model}
-    from scripts.issue651_canary import gate_7a  # vendored #651 canary
+    # Import the vendored #651 canary robustly: when this file runs as a SCRIPT
+    # (uv run python scripts/issue697_canary.py), sys.path[0] is scripts/ so the
+    # bare module name resolves; under a package import the `scripts.` form does.
+    try:
+        from issue651_canary import gate_7a  # script-mode (sys.path[0]=scripts/)
+    except ModuleNotFoundError:
+        from scripts.issue651_canary import gate_7a  # package-mode (repo-root cwd)
 
     repo_root = _repo_root()
     res = gate_7a(repo_root, cpu_only=cpu_only, max_new_tokens=max_new_tokens)
