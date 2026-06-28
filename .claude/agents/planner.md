@@ -505,6 +505,33 @@ metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
 off-pod execution avoids. This is a plan-time scheduling rule, NOT a
 mid-run cost gate.)
 
+**Compute-character carve-out to the OFF-POD default — a gradient-descent
+fit is GPU-worthy, not cheap CPU stats.** The OFF-POD-VM default above is
+for *cheap closed-form / sampling-based* analysis (bootstrap / permutation
+statistics, metric aggregation over eval JSONs, judge-only scoring,
+plotting). It does NOT cover an **iterative-optimization fit** — a torch-MLP
+LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a
+small adapter fit, or any phase whose inner loop runs gradient descent on
+parameters. Such a fit benefits materially from a GPU even at small model /
+dataset size, so it routes to a **GPU lane** (a GPU pod or the GCP GPU
+lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — pick
+the SMALLEST intent that fits the fit's parameter count + dataset), NOT the
+VM CPU default — and NOT because it touches a large footprint (that is the
+separate carve-out below; this axis is orthogonal). The load-bearing
+qualifier is "iterative gradient descent on parameters" (the SGD / AdamW
+inner loop), NOT merely "uses pytorch": a closed-form torch reduction (e.g.
+a single `torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU
+work. §9 MUST state each analysis phase's compute character and route on
+it. The size gate is the SAME long-CPU-only-phase floor as the rule above —
+the ~15-30 min floor is on the PHASE wall-time (the whole fit loop in
+aggregate), NOT any single fit: a many-cell LOCO loop of individually-fast
+gradient fits is GPU-worthy if the loop as a whole runs longer than the
+floor, while a genuinely tiny one-off fit (e.g. a single linear probe
+trained in < 30 s, with no long surrounding loop) stays on the VM
+regardless of compute character — do not over-route trivial fits. Canonical
+worked example: #658's `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell
+on the VM CPU, a long per-cell loop that was needlessly GPU-starved.
+
 **Data-footprint carve-out to the OFF-POD default — size every CPU/analysis
 phase's local footprint and route accordingly.** The VM-default above
 silently assumes a SMALL local footprint. The VM root disk (`/`) is
