@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 714,
+  "highest_id": 715,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4463,6 +4463,14 @@
       "path": "tasks/planning/714",
       "status": "planning",
       "title": "workflow-fix: add --check-skill-refs lint mode to workflow_lint.py"
+    },
+    "715": {
+      "goal": "Test whether DFT (stop-gradient probability-weighted SFT) produces less out-of-distribution emergent misalignment than standard SFT at matched in-distribution narrow-task acquisition, and characterize the mechanism (token gradient-mass, EM-direction projection, weight-delta sparsity/prunability).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/715",
+      "status": "proposed",
+      "title": "Does DFT attenuate emergent misalignment relative to standard SFT?"
     },
     "72": {
       "has_clean_result": false,
