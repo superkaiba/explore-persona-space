@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 713,
+  "highest_id": 714,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4449,6 +4449,13 @@
       "path": "tasks/approved/713",
       "status": "approved",
       "title": "Fold /weekly's load-bearing checks into nightly /daily; retire the weekly cadence"
+    },
+    "714": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/714",
+      "status": "proposed",
+      "title": "workflow-fix: add --check-skill-refs lint mode to workflow_lint.py"
     },
     "72": {
       "has_clean_result": false,
