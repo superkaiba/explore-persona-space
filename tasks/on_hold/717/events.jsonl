@@ -1,2 +1,3 @@
 {"ts": "2026-06-28T19:37:30Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-06-28T19:37:46Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "on_hold"}
+{"ts": "2026-06-28T19:37:47Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "HELD on predicate-664-lands. Parked at on_hold to exclude from auto-dispatch. Revive to proposed (set-status 717 proposed) when #664 reaches terminal; correct the #664 vLLM gotchas via #712's supersedes path. Filed from PM-session #664 audit."}
