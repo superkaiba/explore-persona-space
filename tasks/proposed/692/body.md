@@ -2,7 +2,8 @@
 title: 'workflow-fix: autonomous_session_watch.py compose RunPod no-port wedge predicate
   (#664 backstop)'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-06-28T00:00:02Z'
 has_clean_result: false
 parent_id: 689
