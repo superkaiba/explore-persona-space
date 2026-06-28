@@ -10,3 +10,4 @@
 {"ts": "2026-06-28T09:45:46Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxls1lj-14dt9q phase=done after 30s."}
 {"ts": "2026-06-28T09:46:03Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxlrr8s-16twu5 phase=done after 60s."}
 {"ts": "2026-06-28T09:46:53Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqxlrjdy-655dlq phase=done after 120s."}
+{"ts": "2026-06-28T10:00:45Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "v2 PASS (3 WARN, 2 SKIP, 0 FAIL). Same 3 carry-over WARNs as v1 (heuristic false-positives: HTML-table measurement-validity block; no-implant contrastive-negatives exemption; spread reuse-fitness attestations). GPU-hour total updated 14→22."}
