@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 715,
+  "highest_id": 716,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4478,6 +4478,13 @@
       "path": "tasks/plan_pending/715",
       "status": "plan_pending",
       "title": "Does DFT attenuate emergent misalignment relative to standard SFT?"
+    },
+    "716": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/716",
+      "status": "proposed",
+      "title": "workflow-fix: task.py set-status nested-dir git mv on destination collision"
     },
     "72": {
       "has_clean_result": false,
