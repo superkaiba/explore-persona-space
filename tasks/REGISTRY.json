@@ -4588,8 +4588,8 @@
     "729": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/729",
-      "status": "planning",
+      "path": "tasks/approved/729",
+      "status": "approved",
       "title": "workflow-fix: analyzer.md \u2014 cross-check inherited figure .meta.json on follow-up re-fold"
     },
     "74": {
