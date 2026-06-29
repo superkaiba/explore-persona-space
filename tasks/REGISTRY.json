@@ -4567,8 +4567,8 @@
     "726": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/726",
-      "status": "reviewing",
+      "path": "tasks/completed/726",
+      "status": "completed",
       "title": "daily-fix: spawn_session verifies Happy injection patch before relying on it"
     },
     "74": {
