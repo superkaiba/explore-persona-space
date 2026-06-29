@@ -114,9 +114,9 @@ What is plotted: the function-change ratio versus read layer for each behavior, 
 
 > **Figure.** *Function-change is layer- and behavior-specific.* Δ_med ÷ floor vs read layer; red line = floor. Taught fact clears it at every layer; sycophancy decays monotonically (3.2 → 1.0 → 0.1, crossing the floor near the primary layer); emergent misalignment stays flat below it.
 
-Interpretation: at the primary layer, taught fact is a function-change, but emergent misalignment and sycophancy sit at/below floor with a nonlinear map that fails the shuffle-null overfit check (held-out ρ below chance for all three). With only ≈16 distinct source-keyed input vectors (the fit is per-source-mean — the dominant power limit), an at-floor Δ with a non-learning map is consistent with both "the function held" and "the fit was too weak to register a change" — so neither call can be made. Two of three straddling triggers the inconclusive verdict; the ridge fit is the only valid map.
+Interpretation: at the primary layer, taught fact is a function-change, but emergent misalignment and sycophancy sit at/below floor with a nonlinear map that fails the shuffle-null overfit check (held-out ρ below chance for all three). With only ≈16 distinct source-keyed input vectors (a per-source-mean fit — the dominant power limit), an at-floor Δ with a non-learning map fits both "the function held" and "the fit was too weak to register a change" — so neither call can be made. Two of three straddling gives the inconclusive verdict; ridge is the only valid map.
 
-<!-- concern-deferred: substrate-context-vec-keyed-to-source --> The source-keyed input (≈16 distinct vectors, per-source-mean fit) caps confidence at LOW; it does not change the per-behavior verdicts.
+<!-- concern-deferred: substrate-context-vec-keyed-to-source --> The source-keyed input caps confidence at LOW; it does not change the per-behavior verdicts.
 
 ### Both fitted maps are weak, so the floor-relative read carries the verdict
 
