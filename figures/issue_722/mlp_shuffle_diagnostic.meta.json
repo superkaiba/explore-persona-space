@@ -1,116 +1,116 @@
 {
-  "commit": "3c051fcfad",
-  "created": "2026-06-29T09:15:09Z",
+  "commit": "781fc2e971",
+  "created": "2026-06-29T10:05:23Z",
   "figsize": [
-    7.0,
-    4.4
+    7.4,
+    4.2
   ],
   "points": [
     {
-      "x": -0.19,
-      "v0-reconstruction held-out \u03c1": 0.03471093349479543,
+      "x": -0.2,
+      "held-out reconstruction \u03c1 (base map)": -0.07752301886425206,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.81,
-      "v0-reconstruction held-out \u03c1": -0.021119096973980376,
+      "x": 0.8,
+      "held-out reconstruction \u03c1 (base map)": -0.15860371446612057,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 1.81,
-      "v0-reconstruction held-out \u03c1": -0.03923231585784528,
+      "x": 1.8,
+      "held-out reconstruction \u03c1 (base map)": -0.1330464406696091,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 2.81,
-      "v0-reconstruction held-out \u03c1": -0.07752301886425206,
+      "x": 2.8,
+      "held-out reconstruction \u03c1 (base map)": 0.03471093349479543,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 3.81,
-      "v0-reconstruction held-out \u03c1": -0.15860371446612057,
+      "x": 3.8,
+      "held-out reconstruction \u03c1 (base map)": -0.021119096973980376,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 4.81,
-      "v0-reconstruction held-out \u03c1": -0.1330464406696091,
+      "x": 4.8,
+      "held-out reconstruction \u03c1 (base map)": -0.03923231585784528,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 5.81,
-      "v0-reconstruction held-out \u03c1": -0.025496991601202775,
+      "x": 5.8,
+      "held-out reconstruction \u03c1 (base map)": -0.025496991601202775,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 6.81,
-      "v0-reconstruction held-out \u03c1": -0.09207491962996231,
+      "x": 6.8,
+      "held-out reconstruction \u03c1 (base map)": -0.09207491962996231,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 7.81,
-      "v0-reconstruction held-out \u03c1": -0.13189605194416973,
+      "x": 7.8,
+      "held-out reconstruction \u03c1 (base map)": -0.13189605194416973,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.19,
-      "v0-reconstruction held-out \u03c1": 0.04025092059232186,
+      "x": 0.2,
+      "held-out reconstruction \u03c1 (base map)": -0.07977804513331127,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 1.19,
-      "v0-reconstruction held-out \u03c1": 0.0762161469483282,
+      "x": 1.2,
+      "held-out reconstruction \u03c1 (base map)": -0.08903157565084766,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 2.19,
-      "v0-reconstruction held-out \u03c1": 0.018263608425217046,
+      "x": 2.2,
+      "held-out reconstruction \u03c1 (base map)": -0.0633721952870309,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 3.19,
-      "v0-reconstruction held-out \u03c1": -0.07977804513331127,
+      "x": 3.2,
+      "held-out reconstruction \u03c1 (base map)": 0.04025092059232186,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 4.19,
-      "v0-reconstruction held-out \u03c1": -0.08903157565084766,
+      "x": 4.2,
+      "held-out reconstruction \u03c1 (base map)": 0.0762161469483282,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 5.19,
-      "v0-reconstruction held-out \u03c1": -0.0633721952870309,
+      "x": 5.2,
+      "held-out reconstruction \u03c1 (base map)": 0.018263608425217046,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 6.19,
-      "v0-reconstruction held-out \u03c1": -0.02159779505019459,
+      "x": 6.2,
+      "held-out reconstruction \u03c1 (base map)": -0.02159779505019459,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 7.19,
-      "v0-reconstruction held-out \u03c1": -0.032626392459308186,
+      "x": 7.2,
+      "held-out reconstruction \u03c1 (base map)": -0.032626392459308186,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 8.19,
-      "v0-reconstruction held-out \u03c1": -0.09061025072506074,
+      "x": 8.2,
+      "held-out reconstruction \u03c1 (base map)": -0.09061025072506074,
       "_kind": "bar",
       "_group": 1
     }

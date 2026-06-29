@@ -1,8 +1,130 @@
 {
-  "commit": "3c051fcfad",
-  "created": "2026-06-29T09:15:05Z",
+  "commit": "781fc2e971",
+  "created": "2026-06-29T10:05:15Z",
   "figsize": [
     7.0,
-    4.2
-  ]
+    4.6
+  ],
+  "points": [
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.11787831898786141,
+      "y": 8.12,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": 0.17091083197295134,
+      "y": 7.88,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.11792587771519987,
+      "y": 7.12,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": 0.5016419208289011,
+      "y": 6.88,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.11540974256653966,
+      "y": 6.12,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": 0.46171868983207615,
+      "y": 5.88,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": 0.09441440050269474,
+      "y": 5.12,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.006800904982698001,
+      "y": 4.88,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.09750944906113587,
+      "y": 4.12,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.1194650030845758,
+      "y": 3.88,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.040178743256763134,
+      "y": 3.12,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.0599670415268575,
+      "y": 2.88,
+      "label": "fact chain \u03c1 jumps \u22480 \u2192 +0.46\u2013+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.0630927517425533,
+      "y": 2.12,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.11419222838554434,
+      "y": 1.88,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.08348529557469889,
+      "y": 1.12,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.12388016316909634,
+      "y": 0.88,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.1430553894396097,
+      "y": 0.12,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman \u03c1 (predicted behavior signal vs judge leakage rate)": -0.046641502910204975,
+      "y": -0.12,
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18
 }
