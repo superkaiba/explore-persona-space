@@ -197,6 +197,46 @@ def _run_parallel_with_log(
     return rcs
 
 
+def _compute_wave_size(*, cpu_only: bool, requested_n_gpus: int) -> int:
+    """Wave parallelism = the number of VISIBLE CUDA devices (NOT a hardcoded 4).
+
+    Round-2 fix (a36-readout-reextract-cos): the original fan-out assumed a
+    4-GPU lane and launched waves of ``--gpu-id 0..3`` UNCONDITIONALLY. On the
+    auto-routed single-GPU A100-80 (`eval`/`lora-7b`) lane only ``--gpu-id 0``
+    sees a device; ``--gpu-id 1..3`` get ``CUDA_VISIBLE_DEVICES=1..3``, see no
+    device, and SILENTLY fall back to CPU — 3 of every 4 cells crawl for hours
+    while wave-1 never finishes (so wave-2 never launches). Clamping the wave to
+    the detected device count makes the single-GPU lane run cells serially on
+    ``--gpu-id 0`` and the multi-GPU lane fan out across all visible GPUs.
+
+    - CPU-only smoke: 1 (serial; no CUDA touched).
+    - GPU: ``min(detected, requested_n_gpus)`` — never more lanes than physical
+      devices (``i % wave`` then pins each cell to a real GPU). HALT loud if a
+      GPU run sees zero devices (a wave of 0 is a silent no-op, never the intent).
+    """
+    if cpu_only:
+        return 1
+    import torch
+
+    n_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    if n_gpus == 0:
+        raise RuntimeError(
+            "GPU extraction wave requires at least 1 visible CUDA device, but "
+            "torch.cuda.device_count() == 0 (and --cpu-only was not set). Aborting "
+            "before the wave — a wave of 0 GPUs would silently fall back to CPU "
+            "(round-1 crash: 3/4 cells ran on CPU for 3h). Pass --cpu-only for a "
+            "deliberate CPU smoke, or launch on a GPU lane."
+        )
+    wave = min(n_gpus, max(requested_n_gpus, 1))
+    logger.info(
+        "wave size = %d (visible CUDA devices=%d, --n-gpus=%d)",
+        wave,
+        n_gpus,
+        requested_n_gpus,
+    )
+    return wave
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Cell selection — the SAME filters parameterize EVERY phase (PASS_UNIFIED)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -989,6 +1029,104 @@ def _r_plus_extract_cmd(
     return cmd, log_path, env
 
 
+def _r_plus_expected_npz(behavior: str, source: str, layers: list[int]) -> list[str]:
+    """The per-layer r⁺ ``.npz`` filenames a COMPLETE source cell holds.
+
+    Mirrors ``run_r_plus_extraction``'s write path
+    ``<source>_seed<seed>_L<layer>.npz`` (issue667_extract.py) — the SAME names
+    the local-skip + HF-skip checks compare against.
+    """
+    return [f"{source}_seed{_EXTRACT_SEED}_L{li}.npz" for li in layers]
+
+
+def _r_plus_cell_done_local(behavior: str, source: str, layers: list[int]) -> bool:
+    """True iff EVERY requested layer's r⁺ ``.npz`` for this cell is on local disk.
+
+    A PARTIAL cell (only some layers present) is NOT complete — re-extract it.
+    Mirrors the C2 worker-side idempotent-skip contract (issue667_extract.py).
+    """
+    cell_dir = PROJECT_ROOT / R_PLUS_DIR / behavior
+    return all((cell_dir / fn).is_file() for fn in _r_plus_expected_npz(behavior, source, layers))
+
+
+def _r_plus_hf_listing(behaviors: list[str]) -> set[str]:
+    """Repo-relative r⁺ paths present on HF under ``HF_R_PLUS_PREFIX/<behavior>/``.
+
+    ONE ``get_paths_info`` call per behavior (single Hub call, no 504 like a
+    full recursive ``list_repo_tree``), cached for the whole phase so a 48-cell
+    sweep makes at most ``len(behaviors)`` HEAD batches — NOT 48 per-file probes.
+    Returns the set of existing repo paths; missing paths simply do not appear
+    (``get_paths_info`` omits non-existent paths, never raises for them).
+    """
+    from huggingface_hub import get_paths_info
+
+    # The expected r⁺ paths for the FULL behavior grid (over the in-scope layers
+    # the analysis uses — 7/14/21); probing the union per behavior in one call.
+    from explore_persona_space.analysis.issue667 import ALL_LAYERS
+
+    in_scope_layers = sorted(set(ALL_LAYERS))
+    found: set[str] = set()
+    for behavior in behaviors:
+        want = [
+            f"{HF_R_PLUS_PREFIX}/{behavior}/{source}_seed{_EXTRACT_SEED}_L{li}.npz"
+            for source in select_sources(behavior, None)
+            for li in in_scope_layers
+        ]
+        if not want:
+            continue
+        infos = get_paths_info(HF_DATA_REPO, want, repo_type="dataset")
+        found.update(info.path for info in infos)
+    return found
+
+
+def _r_plus_cell_done_hf(behavior: str, source: str, layers: list[int], hf_paths: set[str]) -> bool:
+    """True iff EVERY requested layer's r⁺ ``.npz`` for this cell is on HF."""
+    return all(
+        f"{HF_R_PLUS_PREFIX}/{behavior}/{fn}" in hf_paths
+        for fn in _r_plus_expected_npz(behavior, source, layers)
+    )
+
+
+def _filter_r_plus_resume_skip(
+    cells: list[tuple[str, str]], layers: list[int]
+) -> list[tuple[str, str]]:
+    """Drop cells whose r⁺ tensors already exist (local OR HF) for ALL layers.
+
+    Round-2 salvage (a36-readout-reextract-cos): the round-1 production launch
+    uploaded ``em/sp_swe`` r⁺ to HF before crashing on the 4-GPU fan-out bug; a
+    relaunch must NOT re-extract it (each cell is a ~40-min serial adapter
+    load+forward on the single-GPU lane). A cell is skipped only when its FULL
+    layer complement is present (partial → re-extract, never silently accept).
+    """
+    try:
+        hf_paths = _r_plus_hf_listing(sorted({b for b, _ in cells}))
+    except Exception as e:
+        logger.warning("r⁺ HF resume-skip listing failed (%s) — falling back to local-only", e)
+        hf_paths = set()
+    kept: list[tuple[str, str]] = []
+    for behavior, source in cells:
+        local = _r_plus_cell_done_local(behavior, source, layers)
+        on_hf = _r_plus_cell_done_hf(behavior, source, layers, hf_paths)
+        if local or on_hf:
+            logger.info(
+                "r⁺ resume-skip: %s/%s already extracted (local=%s | HF=%s)",
+                behavior,
+                source,
+                local,
+                on_hf,
+            )
+            continue
+        kept.append((behavior, source))
+    if len(kept) != len(cells):
+        logger.info(
+            "reextract r⁺: resume-skip kept %d / %d cells (skipped %d already extracted)",
+            len(kept),
+            len(cells),
+            len(cells) - len(kept),
+        )
+    return kept
+
+
 def phase_extract_r_plus(
     *,
     behaviors: list[str],
@@ -999,15 +1137,32 @@ def phase_extract_r_plus(
     max_probes: int | None,
     skip_upload: bool,
     dry_run: bool,
+    resume_skip: bool = True,
 ) -> None:
-    """Re-extract r⁺ per source adapter in CVD-pinned waves; upload the r⁺ store."""
+    """Re-extract r⁺ per source adapter in waves; upload the r⁺ store.
+
+    Wave parallelism is the number of VISIBLE CUDA devices (``_compute_wave_size``),
+    NOT a hardcoded 4 — the single-GPU lane runs cells serially on ``--gpu-id 0``
+    instead of stranding ``--gpu-id 1..3`` on a silent CPU fallback (round-1 crash).
+    """
     phase_log("reextract_r_plus")
     cells: list[tuple[str, str]] = []
     for behavior in behaviors:
         for source in select_sources(behavior, sources_arg):
             cells.append((behavior, source))
     logger.info("reextract r⁺: %d source-adapter cells across behaviors=%s", len(cells), behaviors)
-    n_par = 1 if cpu_only else max(n_gpus, 1)
+    # Resume-skip (default ON): drop cells whose r⁺ store already exists local-or-HF
+    # so a relaunch after the round-1 crash does NOT re-extract the salvaged cells
+    # (em/sp_swe is already on HF). --dry-run skips it (nothing is written there).
+    if resume_skip and not dry_run:
+        cells = _filter_r_plus_resume_skip(cells, layers)
+    # Wave = visible CUDA devices (1 on the single-GPU lane); --cpu-only -> 1.
+    # On a --dry-run (no GPU on the VM) PREVIEW the requested fan-out without
+    # touching CUDA, so the operator sees the CVD assignment for the target lane.
+    if dry_run:
+        n_par = 1 if cpu_only else max(n_gpus, 1)
+    else:
+        n_par = _compute_wave_size(cpu_only=cpu_only, requested_n_gpus=n_gpus)
     for wave_start in range(0, len(cells), n_par):
         wave = cells[wave_start : wave_start + n_par]
         cmds = [
@@ -1293,6 +1448,7 @@ def main() -> int:
             max_probes=max_probes,
             skip_upload=args.skip_upload,
             dry_run=args.dry_run,
+            resume_skip=not args.no_resume_skip,
         )
         if not args.dry_run:
             phase_reextract_analysis(

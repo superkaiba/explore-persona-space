@@ -99,6 +99,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 DATA_PREFIX = "issue537_context_generalization/data"
+# r⁺ store HF prefix — byte-identical to issue667_dispatch.HF_R_PLUS_PREFIX (the
+# upload + idempotent-skip canonical layout: <prefix>/<behavior>/<src>_seed<S>_L<l>.npz).
+HF_R_PLUS_PREFIX = "issue667_gate_chain_preview/a36_readout_reextract/r_plus"
 # Per-behavior eval probe pools (#537 frozen pools, plan §4.0).
 N_GEN_TOKENS = 1024  # greedy R cap (natural Qwen replies ~150 tok; log truncation)
 
@@ -1468,6 +1471,82 @@ def _extract_one_target(
     return n_gen, n_trunc
 
 
+def _r_plus_npz_names(source_cid: str, seed: int, layers: list[int]) -> list[str]:
+    """The per-layer r⁺ ``.npz`` filenames this cell writes (the skip/upload set)."""
+    return [f"{source_cid}_seed{seed}_L{li}.npz" for li in layers]
+
+
+def _r_plus_cell_already_extracted(
+    out_dir: Path, behavior: str, source_cid: str, seed: int, layers: list[int]
+) -> tuple[bool, bool]:
+    """Idempotent-skip check: is this cell's FULL r⁺ layer set present (local | HF)?
+
+    Round-2 (a36-readout-reextract-cos): the round-1 production launch uploaded
+    some cells' r⁺ to HF (em/sp_swe) before crashing on the 4-GPU fan-out bug;
+    re-extracting a complete cell on relaunch wastes a ~40-min serial adapter
+    load+forward. A cell counts as complete ONLY when EVERY requested layer's
+    ``.npz`` is present — a PARTIAL set (only some layers) does NOT prove the
+    upstream prompt-set / hook layer matched, so a partial cell is re-extracted
+    (CLAUDE.md "Fail fast — never silently accept a partial cell"). Returns
+    ``(local_complete, hf_complete)``; the caller skips on either.
+    """
+    names = _r_plus_npz_names(source_cid, seed, layers)
+    local_complete = all((out_dir / fn).is_file() for fn in names)
+    hf_complete = False
+    if not local_complete:
+        # ONE get_paths_info call (single Hub HEAD batch, no recursive tree 504).
+        # Missing paths are simply omitted from the result — never a 404 raise.
+        try:
+            from huggingface_hub import get_paths_info
+
+            want = [f"{HF_R_PLUS_PREFIX}/{behavior}/{fn}" for fn in names]
+            found = {info.path for info in get_paths_info(HF_DATA_REPO, want, repo_type="dataset")}
+            hf_complete = all(p in found for p in want)
+        except Exception as e:
+            logger.warning("r⁺ HF skip-probe failed (%s) — local-only skip check", e)
+    return local_complete, hf_complete
+
+
+def _upload_r_plus_cell(out_dir: Path, behavior: str, names: list[str]) -> None:
+    """Upload this cell's r⁺ ``.npz`` to HF immediately after writing (crash-safety).
+
+    Per-cell upload (Upload Policy / #664): a mid-wave pod death must not strand
+    an already-extracted cell — each cell's ≤3 tiny ``.npz`` go up the moment the
+    cell completes, then the end-of-wave bulk verify is an idempotent safety pass.
+    One ``create_commit`` per cell (well under the 256/hr cap) + a fresh-listing
+    verify. ``EPM_SKIP_UPLOAD=1`` (local/CPU smoke) skips it. Fail-loud on a
+    verified-missing file (never silently lose a cell).
+    """
+    if os.environ.get("EPM_SKIP_UPLOAD") == "1":
+        logger.info("EPM_SKIP_UPLOAD=1 -> skipping per-cell r⁺ upload (smoke/local)")
+        return
+    from huggingface_hub import CommitOperationAdd, HfApi, get_paths_info
+
+    present = [out_dir / fn for fn in names if (out_dir / fn).is_file()]
+    if not present:
+        raise RuntimeError(f"per-cell r⁺ upload: no .npz on disk under {out_dir} for {names}")
+    api = HfApi()
+    ops = [
+        CommitOperationAdd(
+            path_in_repo=f"{HF_R_PLUS_PREFIX}/{behavior}/{p.name}", path_or_fileobj=str(p)
+        )
+        for p in present
+    ]
+    src = present[0].stem.split("_seed")[0]
+    api.create_commit(
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        operations=ops,
+        commit_message=f"issue667 a36-reextract: per-cell r⁺ {behavior}/{src}",
+    )
+    want = [f"{HF_R_PLUS_PREFIX}/{behavior}/{p.name}" for p in present]
+    found = {info.path for info in get_paths_info(HF_DATA_REPO, want, repo_type="dataset")}
+    missing = [p for p in want if p not in found]
+    if missing:
+        raise RuntimeError(f"per-cell r⁺ upload verification FAILED -- missing on Hub: {missing}")
+    logger.info("uploaded + verified %d per-cell r⁺ tensors (%s)", len(present), behavior)
+
+
 def run_r_plus_extraction(args) -> int:
     """Re-extract r⁺ on θ⁺ for ONE source adapter, write per-layer .npz (followup).
 
@@ -1476,6 +1555,12 @@ def run_r_plus_extraction(args) -> int:
     NO target sweep), and writes one ``<source>_seed<S>_L<layer>.npz`` per layer
     under ``--r-plus-out/<behavior>/`` with keys ``r_plus`` (the read-out),
     ``r_plus_norm`` (‖r⁺‖) and provenance fields. CPU-only smoke supported.
+
+    Idempotent (round-2): if EVERY requested layer's ``.npz`` already exists
+    LOCALLY or on HF, the cell is SKIPPED before any model load (the salvaged
+    em/sp_swe cell on relaunch). A PARTIAL layer set re-extracts. After writing,
+    the cell's ``.npz`` are uploaded to HF immediately (crash-safety) unless
+    ``EPM_SKIP_UPLOAD=1``.
     """
     device = _device(args.gpu_id, args.cpu_only)
     dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
@@ -1492,6 +1577,21 @@ def run_r_plus_extraction(args) -> int:
         layers,
         cap,
     )
+    out_root = Path(args.r_plus_out)
+    out_dir = out_root / behavior
+    # Idempotent skip: a fully-extracted cell (local OR HF) is not re-run.
+    local_done, hf_done = _r_plus_cell_already_extracted(
+        out_dir, behavior, source_cid, seed, layers
+    )
+    if local_done or hf_done:
+        logger.info(
+            "skipped: cell %s/%s already extracted (local=%s | HF=%s) — no re-extraction",
+            behavior,
+            source_cid,
+            local_done,
+            hf_done,
+        )
+        return 0
     # Stage + verify the adapter gauge BEFORE any GPU work (cheap, HALT early).
     adapter_dir = stage_adapter_local(behavior, source_cid, seed)
     gauge = assert_adapter_gauge(adapter_dir, behavior)
@@ -1503,8 +1603,7 @@ def run_r_plus_extraction(args) -> int:
     tok, trained = load_trained_only(adapter_dir, device, dtype)
     r_plus = extract_r_plus(trained, tok, behavior, layers, device, max_probes=cap)
 
-    out_root = Path(args.r_plus_out)
-    out_dir = out_root / behavior
+    # out_dir was resolved above for the idempotent-skip check; reuse it.
     out_dir.mkdir(parents=True, exist_ok=True)
     for li, vec in r_plus.items():
         payload = {
@@ -1528,6 +1627,11 @@ def run_r_plus_extraction(args) -> int:
     del trained
     if device.type == "cuda":
         torch.cuda.empty_cache()
+    # Per-cell HF upload immediately after writing (crash-safety / Upload Policy
+    # #664): a mid-wave pod death must not strand this already-extracted cell.
+    # EPM_SKIP_UPLOAD=1 (CPU/local smoke) skips it; the dispatcher's end-of-wave
+    # bulk verify is then an idempotent safety pass.
+    _upload_r_plus_cell(out_dir, behavior, _r_plus_npz_names(source_cid, seed, layers))
     return 0
 
 
