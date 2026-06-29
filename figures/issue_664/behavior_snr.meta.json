@@ -1,0 +1,298 @@
+{
+  "commit": "04ab575017",
+  "created": "2026-06-29T10:50:26Z",
+  "figsize": [
+    7.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.06574945165343121,
+      "leakage SNR (best-layer)": 1.604,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01466917445950744,
+      "leakage SNR (best-layer)": 1.264,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08606350077873179,
+      "leakage SNR (best-layer)": 1.323,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04736832697424734,
+      "leakage SNR (best-layer)": 1.415,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09739743650696411,
+      "leakage SNR (best-layer)": 1.317,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11414936439282142,
+      "leakage SNR (best-layer)": 0.91,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0626735284776847,
+      "leakage SNR (best-layer)": 1.125,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06865543326646892,
+      "leakage SNR (best-layer)": 1.216,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08925272815786899,
+      "leakage SNR (best-layer)": 1.042,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.011907374905063883,
+      "leakage SNR (best-layer)": 1.508,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0310084741841805,
+      "leakage SNR (best-layer)": 1.243,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10242359732366443,
+      "leakage SNR (best-layer)": 1.486,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0345276288193595,
+      "leakage SNR (best-layer)": 1.401,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07746278718499919,
+      "leakage SNR (best-layer)": 1.847,
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.013580592281440526,
+      "leakage SNR (best-layer)": 1.322,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06546270677165354,
+      "leakage SNR (best-layer)": 1.748,
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.01310034888380035,
+      "leakage SNR (best-layer)": 1.992,
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10468385853499793,
+      "leakage SNR (best-layer)": 1.484,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0786314812782197,
+      "leakage SNR (best-layer)": 1.236,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03159945578929557,
+      "leakage SNR (best-layer)": 1.276,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "leakage SNR (best-layer)": 1.3225,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0619410576204897,
+      "leakage SNR (best-layer)": 4.77,
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9650862323511684,
+      "leakage SNR (best-layer)": 6.585,
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1129675258547769,
+      "leakage SNR (best-layer)": 5.926,
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0943490691173274,
+      "leakage SNR (best-layer)": 6.42,
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "leakage SNR (best-layer)": 6.173,
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.066812039297703,
+      "leakage SNR (best-layer)": 7.548,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9267132898844723,
+      "leakage SNR (best-layer)": 9.619,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9920130408944883,
+      "leakage SNR (best-layer)": 8.735,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.890512903788935,
+      "leakage SNR (best-layer)": 11.918,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9170294780962114,
+      "leakage SNR (best-layer)": 8.782,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.043931748778189,
+      "leakage SNR (best-layer)": 7.772,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.058742917417876,
+      "leakage SNR (best-layer)": 11.342,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1122023357842106,
+      "leakage SNR (best-layer)": 12.129,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "leakage SNR (best-layer)": 9.2005,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.9581980859531565,
+      "leakage SNR (best-layer)": 3.927,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9689103294483687,
+      "leakage SNR (best-layer)": 2.9,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.992693394706194,
+      "leakage SNR (best-layer)": 1.11,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9254731261802287,
+      "leakage SNR (best-layer)": 1.876,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9111811612805134,
+      "leakage SNR (best-layer)": 1.493,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.994169182294224,
+      "leakage SNR (best-layer)": 2.289,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.934458243772212,
+      "leakage SNR (best-layer)": 1.33,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0407553587238025,
+      "leakage SNR (best-layer)": 2.329,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "leakage SNR (best-layer)": 2.0825,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "leakage SNR (best-layer)": 1.0,
+      "series": "noise floor (SNR=1)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "leakage SNR (best-layer)": 1.0,
+      "series": "noise floor (SNR=1)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 46
+}
