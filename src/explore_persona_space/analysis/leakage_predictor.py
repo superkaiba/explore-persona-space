@@ -121,6 +121,51 @@ def _ridge_inv(Sigma: np.ndarray, lam: float) -> np.ndarray:
     return np.linalg.inv(Sigma + lam * np.eye(d))
 
 
+def _eigh_psd(Sigma: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Cached symmetric eigendecomposition Σ = Q diag(w) Qᵀ for a PSD Σ.
+
+    Returned ``(w, Q)`` lets every (Σ + λI)-derived quantity — the regularized
+    inverse and the regularized condition number — be evaluated by reusing ONE
+    O(d³) eigh instead of recomputing a fresh SVD / inverse per grid λ. This
+    is the cell-overhead-vs-FLOP refactor called out in
+    `.claude/rules/vectorize-many-cell-fits.md`: 17 λ × 2 ops per ``Sigma`` was
+    ~30+ minutes at d=3584 because each iteration paid the full O(d³) cost.
+    With a cached ``(w, Q)`` each per-λ op is O(d²) (the inverse rebuild) or
+    O(1) (the condition-number ratio).
+    """
+    # ``eigh`` enforces symmetry on read; we further symmetrize defensively so a
+    # tiny round-off asymmetry from ``(C.T @ C) / n`` does not flip an
+    # eigenvalue below 0 outside float epsilon.
+    Sigma_sym = 0.5 * (Sigma + Sigma.T)
+    w, Q = np.linalg.eigh(Sigma_sym)
+    # Clamp the tiny negative tail to 0 — PSD ground truth, only float noise.
+    w = np.clip(w, 0.0, None)
+    return w, Q
+
+
+def _ridge_inv_from_eigh(w: np.ndarray, Q: np.ndarray, lam: float) -> np.ndarray:
+    """(Σ + λI)⁻¹ from a cached symmetric eigh of Σ.
+
+    Closed-form: Σ + λI = Q diag(w + λ) Qᵀ ⇒ (Σ + λI)⁻¹ = Q diag(1/(w+λ)) Qᵀ.
+    Uses ONE d×d scaled-row product + one d×d matmul (O(d²) + O(d³) the matmul,
+    but the constant is far smaller than a fresh ``np.linalg.inv`` per λ).
+    """
+    if lam <= 0:
+        raise ValueError(f"ridge λ must be positive, got {lam}")
+    inv_diag = 1.0 / (w + lam)
+    return (Q * inv_diag) @ Q.T
+
+
+def _cond_from_eigh(w: np.ndarray, lam: float) -> float:
+    """κ(Σ + λI) from a cached symmetric eigh of Σ — closed form, O(1) per λ.
+
+    For PSD Σ, κ(Σ + λI) = (w_max + λ) / (w_min + λ).
+    """
+    if lam <= 0:
+        raise ValueError(f"ridge λ must be positive, got {lam}")
+    return float((w[-1] + lam) / (w[0] + lam))
+
+
 def sigma_c_inv(
     Sigma: np.ndarray,
     lam: float | None = None,
@@ -138,19 +183,21 @@ def sigma_c_inv(
 
     Raises ``ValueError`` on a non-positive ``lam``.
     """
+    # ONE eigh, reused below for every grid λ — closed-form ridge inv + cond
+    # number. See `_eigh_psd` for the cell-overhead refactor rationale.
+    w, Q = _eigh_psd(Sigma)
     if lam is not None:
         if lam <= 0:
             raise ValueError(f"ridge λ must be positive, got {lam}")
-        W = _ridge_inv(Sigma, lam)
-        cond = float(np.linalg.cond(Sigma + lam * np.eye(Sigma.shape[0])))
+        W = _ridge_inv_from_eigh(w, Q, lam)
+        cond = _cond_from_eigh(w, lam)
         return W, float(lam), {"cond_number": cond, "lam": float(lam), "cv_folds": cv_folds}
     grid = SIGMA_C_LAMBDA_GRID if lam_grid is None else np.asarray(lam_grid, dtype=float)
-    d = Sigma.shape[0]
     conds: dict[float, float] = {}
     for g in grid:
-        conds[float(g)] = float(np.linalg.cond(Sigma + g * np.eye(d)))
+        conds[float(g)] = _cond_from_eigh(w, float(g))
     best = min(conds, key=conds.get)
-    W = _ridge_inv(Sigma, best)
+    W = _ridge_inv_from_eigh(w, Q, best)
     return W, float(best), {"cond_by_lambda": conds, "lam": float(best), "cv_folds": cv_folds}
 
 
@@ -204,7 +251,6 @@ def estimate_sigma_inv(
     grid = SIGMA_C_LAMBDA_GRID if lambda_grid is None else np.asarray(lambda_grid, dtype=float)
 
     Sigma_full = (C.T @ C) / n
-    eye = np.eye(d)
 
     # Held-out Gaussian-whitening CV-NLL over the full grid (diagnostic + report).
     rng = np.random.default_rng(seed)
@@ -214,18 +260,24 @@ def estimate_sigma_inv(
     C_tr = C[tr_idx]
     C_te = C[te_idx] if te_idx.size > 0 else C[tr_idx]
     Sigma_tr = (C_tr.T @ C_tr) / C_tr.shape[0]
+
+    # ONE eigh per Σ (full + train), reused below for every grid λ — closed-form
+    # ridge inv + cond number. Turns 17 × O(d³) ops per Σ into 1 × O(d³) + 17 ×
+    # O(d²). See `_eigh_psd` for the rationale (`vectorize-many-cell-fits.md`).
+    w_full, Q_full = _eigh_psd(Sigma_full)
+    w_tr, Q_tr = _eigh_psd(Sigma_tr)
     cv_scores: dict[float, float] = {}
     cond_by_lambda: dict[float, float] = {}
     for g in grid:
         gf = float(g)
-        cv_scores[gf] = _gaussian_whitening_nll(_ridge_inv(Sigma_tr, gf), C_te)
-        cond_by_lambda[gf] = float(np.linalg.cond(Sigma_full + gf * eye))
+        cv_scores[gf] = _gaussian_whitening_nll(_ridge_inv_from_eigh(w_tr, Q_tr, gf), C_te)
+        cond_by_lambda[gf] = _cond_from_eigh(w_full, gf)
 
     # Conditioning-targeted selection: smallest λ with κ(Σc+λI) ≤ cond_target.
     admissible = sorted(g for g, c in cond_by_lambda.items() if c <= cond_target)
     best = admissible[0] if admissible else min(cond_by_lambda, key=cond_by_lambda.get)
 
-    W_full = _ridge_inv(Sigma_full, best)
+    W_full = _ridge_inv_from_eigh(w_full, Q_full, best)
     cond = cond_by_lambda[best]
     rank_deficient = n <= d
     headline_eligible = corpus_kind != "battery"
