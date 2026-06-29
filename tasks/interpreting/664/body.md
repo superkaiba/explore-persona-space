@@ -1,6 +1,6 @@
 ---
-title: 'Phase 2 — fine-tune fleet + trained store + ground-truth leakage (leakage
-  program #660)'
+title: Marker leakage gate never installs on Qwen-2.5-7B-Instruct — content-behavior
+  gate SNR tracks install magnitude, not behavior-specific leakage (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-25T07:26:49Z'
