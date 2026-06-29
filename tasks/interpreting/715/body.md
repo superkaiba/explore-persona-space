@@ -1,5 +1,7 @@
 ---
-title: Does DFT attenuate emergent misalignment relative to standard SFT?
+title: 'DFT installs the narrow misalignment task too weakly to test whether it attenuates
+  emergent misalignment: under a matched LoRA recipe its acquisition range never overlaps
+  standard SFT''s (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-28T09:42:44Z'
