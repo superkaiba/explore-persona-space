@@ -489,7 +489,9 @@ A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 **CPU-only phases run OFF-POD by default — a phase that doesn't touch the
 GPUs must not hold a multi-GPU pod.** Long CPU-only phases (longer than
 ~15-30 min) — bootstrap / permutation statistics, metric aggregation over
-eval JSONs, Claude-judge-only scoring passes, plotting — DEFAULT to running
+eval JSONs, Claude-judge-only scoring passes, plotting, and the FINAL
+artifact-upload phase (raw completions / store tensors / checkpoints — HF
+`upload_folder` uses no GPU) — DEFAULT to running
 on the VM against artifacts already uploaded per the Upload Policy (eval
 JSONs in git, raw completions on HF). For every CPU-only phase longer than
 ~15-30 min, the plan MUST declare WHERE it runs. Pod-side execution is
@@ -498,12 +500,17 @@ pod-local artifacts that aren't uploadable — activations, per-step
 checkpoints) or the phase is genuinely short (~<15-30 min). For a
 multi-phase pipeline that ENDS in a long CPU-only phase, sequence the
 uploads so the pod can be terminated / stopped BEFORE the CPU phase starts
-— the phase then reads the uploaded artifacts from the VM. (Incident
+— the phase then reads the uploaded artifacts from the VM. A plan whose
+LAST phase is a large terminal UPLOAD must sequence the pod teardown BEFORE
+it (or run the upload off-pod), and bulk uploads use a single
+`upload_folder` commit — never a per-file `upload_file` loop, which
+504-storms on a large repo (#664). (Incident
 2026-06-09: pod-518 ran a pure-CPU permutation/bootstrap scoring script
 for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
 metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
-off-pod execution avoids. This is a plan-time scheduling rule, NOT a
-mid-run cost gate.)
+off-pod execution avoids. Incident #664: an 8×H200 pod held idle ~12h in a
+terminal per-file raw-completions upload phase — ~$530, 0% GPU. This is a
+plan-time scheduling rule, NOT a mid-run cost gate.)
 
 **Compute-character carve-out to the OFF-POD default — a gradient-descent
 fit is GPU-worthy, not cheap CPU stats.** The OFF-POD-VM default above is

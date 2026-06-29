@@ -3192,7 +3192,9 @@ while True:
     #                                  If the JSON also has
     #                                  gpu_idle_advisory_posted == true, act
     #                                  per "GPU-idle advisory handling" below
-    #                                  before the next tick.
+    #                                  before the next tick. If it has
+    #                                  gpu_idle_escalation_posted == true, act
+    #                                  per "GPU-idle escalation handling" below.
 ```
 
 (`current_phase` is `"running"` by default; when the poller emits a
@@ -3239,6 +3241,25 @@ genuinely needs the pod (a pod-local data dependency) or is nearly done,
 state that one-line reason and keep looping. The advisory never changes
 the status verdict, so this handling is additive to the `status=running`
 branch.
+
+**GPU-idle escalation handling.** When a tick's JSON reports
+`gpu_idle_escalation_posted: true`, the poller has just posted a louder
+one-per-phase `epm:progress` marker whose note starts with
+`[gpu-idle-escalation]` (plus a `gpu_idle_escalation=True` extra) AND fired a
+best-effort Telegram push: a MULTI-GPU pod has been idle in an upload/CPU-only
+phase for ≥ `EPM_GPU_IDLE_ESCALATION_MIN` (default 60, ≥ the advisory min) min
+— the #664 spend-leak class (an 8×H200 idle in a terminal upload phase burns
+~$44/hr). The orchestrator's response is the SAME as for
+`gpu_idle_advisory_posted` (the escalation is the advisory's louder second
+tier, not a new action): surface it in the session text, and if the remaining
+work in the current phase is genuinely CPU-only and long, apply CLAUDE.md
+"CPU-only phases don't hold GPU pods" — route the upload off-pod / release the
+GPUs after a checkpoint — under the SAME three hard constraints as the advisory
+(never kill un-checkpointable in-RAM work, autonomous sessions never stop a pod
+to PARK, it is NOT a mid-run cost gate). Like the advisory, the escalation
+NEVER changes the status verdict and the poller NEVER stops the pod — it
+surfaces the leak loudly for action. This handling is additive to the
+`status=running` branch.
 
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
