@@ -17,6 +17,9 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_664.md](https://github.com/superkaiba/explore-persona-space/blob/bcb2ab8d47e000138f8cce0c2c7b3c7ef7510029/docs/methodology/issue_664.md)
+
+
 ## Takeaways
 
 - The marker never installed: source **log P(※) trained − base = −0.34 to +1.81 nat** across all 16 cells, never the 5–12-nat band — kill (a); write **~17–42× below** content.
