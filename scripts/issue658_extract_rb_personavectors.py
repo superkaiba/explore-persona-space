@@ -608,8 +608,23 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
             idx_row["acts_file"] = acts_file
             idx_row["empty"] = False
             n_captured += 1
-        # Persist the raw transcript for J1 (the off-pod judge-filter).
+        # Persist the raw transcript for J1 (the off-pod judge-filter): both inline
+        # in the index AND as a per-rollout JSON under transcripts/ (the inspectable
+        # raw-completion form that lands on HF via upload_pv_store).
         idx_row["completion"] = comp
+        dump_json(
+            {
+                "behavior": idx_row["behavior"],
+                "pole": idx_row["pole"],
+                "prompt_idx": idx_row["prompt_idx"],
+                "question_idx": idx_row["question_idx"],
+                "rollout_idx": idx_row["rollout_idx"],
+                "system_prompt": idx_row["system_prompt"],
+                "question": idx_row["question"],
+                "completion": comp,
+            },
+            transcripts_dir / f"r{i:06d}.json",
+        )
         if (i + 1) % 200 == 0:
             logger.info("PV2: captured %d / %d rollouts", n_captured, i + 1)
     logger.info("PV2 done: %d captured, %d empty (skipped)", n_captured, n_empty)
