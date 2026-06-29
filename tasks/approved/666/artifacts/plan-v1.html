@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plan — Issue #666: Phase 4 end-to-end leakage predictor</title>
+<style>
+  :root { --ink:#1a1a1a; --muted:#555; --line:#e2e2e2; --tldr:#0d4f6c; --tldr-bg:#eaf4f9; --sum:#5b3a8c; --sum-bg:#f2ecfa; --code:#f5f5f5; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height:1.55; color:var(--ink); max-width:920px; margin:0 auto; padding:2rem 1.4rem 5rem; }
+  h1 { font-size:1.55rem; line-height:1.3; border-bottom:2px solid var(--ink); padding-bottom:.5rem; }
+  h2 { font-size:1.2rem; margin-top:2.2rem; border-bottom:1px solid var(--line); padding-bottom:.25rem; }
+  h3 { font-size:1.02rem; margin-top:1.4rem; color:#333; }
+  code { background:var(--code); padding:.1em .35em; border-radius:3px; font-size:.88em; }
+  pre { background:var(--code); padding:.9rem 1rem; border-radius:6px; overflow-x:auto; font-size:.84em; line-height:1.4; }
+  table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:.9rem; }
+  th, td { border:1px solid var(--line); padding:.45rem .6rem; text-align:left; vertical-align:top; }
+  th { background:#fafafa; }
+  .plan-tldr { background:var(--tldr-bg); border-left:5px solid var(--tldr); border-radius:6px; padding:1rem 1.3rem; margin:1.5rem 0; }
+  .plan-tldr h2 { color:var(--tldr); border:none; margin-top:0; }
+  .plan-summary { background:var(--sum-bg); border-left:5px solid var(--sum); border-radius:6px; padding:1rem 1.3rem; margin:1.5rem 0; }
+  .plan-summary h2 { color:var(--sum); border:none; margin-top:0; }
+  .plan-summary ul, .plan-tldr ul { margin:.4rem 0; }
+  .gpu { font-weight:700; background:#fffae0; padding:.15em .4em; border-radius:3px; }
+  details { margin:.6rem 0; }
+  summary { cursor:pointer; font-weight:600; }
+  .verdict { font-size:.95rem; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>Plan — Issue #666: Phase 4 end-to-end leakage predictor<br>L̂ vs cosine + base-prior + noise floor</h1>
+<p class="verdict"><strong>Estimated GPU-hours (total):</strong> <span class="gpu">2</span> (expected 0; pure CPU analysis on Phase-2's store) &nbsp;·&nbsp; <strong>TDD:</strong> yes &nbsp;·&nbsp; <strong>Backend:</strong> auto-lane (GCP-first)</p>
+
+<section class="plan-tldr">
+<h2>TL;DR (plain English)</h2>
+<ul>
+<li><strong>What I'll run:</strong> I take the activation snapshots Phase 2 already saved (one per trained model, no new training) and assemble the theory's full leakage-prediction formula. Then I check, for each trained behavior, whether that formula correctly ranks which <em>other</em> contexts the behavior leaks into — and I race it against three simpler guesses: a plain cosine-similarity version, "just use the model's own baseline tendency," and "predict nothing."</li>
+<li><strong>What I expect:</strong> On the content behaviors (taught-fact, bad-medical) the full formula ranks leakage targets meaningfully better than chance and at least as well as the cosine version. But I expect the model's own <em>baseline tendency</em> to be a stubbornly strong competitor — in three past experiments it beat geometry — so the honest headline is "does our formula beat the base-rate guess <em>after</em> we strip out how strongly the behavior got installed." On the marker behavior I expect the formula to be useless, because Phase 2 showed the marker never actually installed, so there is no real signal to predict.</li>
+<li><strong>What would change my mind:</strong> If the full whitened formula clearly beats both cosine and the base-rate guess on content behaviors even after controlling for install strength, that's a real win for the theory. If instead the base-rate guess wins everywhere, the theory's geometry story doesn't add predictive value on this model — also a clean, publishable answer.</li>
+</ul>
+</section>
+
+<section class="plan-summary">
+<h2>Plan Summary (technical)</h2>
+<ul>
+<li><strong>Training:</strong> NONE. Pure CPU analysis on Phase-2's uploaded trained activation store (<code>superkaiba1/explore-persona-space-data/theory_assumptions/Qwen2.5-7B-Instruct/issue664</code>, 48 cells, all 28 layers). One small GPU arm only if <code>judged_rates.json</code> is recomputed (§4k).</li>
+<li><strong>Hyperparameters (load-bearing; full provenance §11):</strong> PRIMARY layer = <strong>14</strong> (<code>Source: #664</code> fixed read + cross-phase comparability; #658 locked NO per-behavior layer — <code>locked_recipe.locked_recipe == {}</code>). <code>c_C</code> = last-input-token slot (<code>Source: #658 cc_recipe_lock</code>). <code>r_B</code> = difference-in-means contrastive read-out (<code>Source: #658 a33</code>; instruct-and-strip recipe-C descoped in #658). <code>δ = t − v0(C)</code> positive-only (<code>Source: design §A3.7</code>). Σc⁻¹ ridge λ: CV-chosen (<code>Source: design §A3.5/§5</code>). Noise-floor MC: 200 splits × 3 seeds (<code>Source: pre-registered; #664 probe-split pattern</code>). Judge (§4k, if run) = <code>claude-sonnet-4-5-20250929</code> Batch API (<code>Source: CLAUDE.md</code>).</li>
+<li><strong>Baselines / controls:</strong> predict-zero, predict-mean, raw un-whitened cosine gate, the apples-to-apples cosine predictor (toggle only δ-vs-r_B / norm / Σc⁻¹-vs-I), shuffled-key, shuffled-query, <strong>base-behavior-prior <code>E0(C',B')=r_{B'}ᵀv0(C')</code></strong>.</li>
+<li><strong>Loss surface:</strong> N/A (no training). The only "fit" is the per-behavior affine link φ, calibrated on the TRAIN partition only of each LOBO/LOCO fold; the predictor itself is closed-form geometry.</li>
+<li><strong>Compute:</strong> CPU-on-VM, streamed one cell at a time (#664's download→compute→delete discipline). <code>Estimated GPU-hours (total): 2</code> (a contingency small-GPU arm only if §4k regenerates completions; the default §4k path is judge-only, 0 GPU).</li>
+<li><strong>Evaluation:</strong> PRIMARY = Spearman ρ of L̂ vs latent <code>Δs = r_{B'}ᵀ(v⁺(C')−v0(C'))</code>, LOBO + LOCO, against the test-retest noise floor, with family/source/seed-clustered + probe-split CIs. "Worked" = full L̂ ρ (latent, content) exceeds BOTH cosine ρ AND base-prior ρ (non-overlapping clustered CIs) after install magnitude is partialled out.</li>
+<li><strong>Risks (top 2):</strong> (1) base-prior beats geometry even on content (#532/#541/#649) — handled by partialling install + reporting ΔS-above-prior as the verdict. (2) The (B3) whitening unit test gates every number; a mis-implemented Σc⁻¹ otherwise manufactures a spurious "whitening wins" — handled by TDD-first on the reduction test.</li>
+</ul>
+</section>
+
+<h2>1. Goal</h2>
+<p><strong>Verbatim ## Goal H2:</strong> "Phase 4 — end-to-end leakage predictor L̂ = η*(r_B'^T delta)*g_C(C') vs the cosine special-case + base-prior baseline, LOBO/LOCO, both scales, vs the noise floor."</p>
+<p><strong>Operational interpretation:</strong> Produce the paper's headline table showing the full theory predictor <code>L̂</code> against (a) the cosine special-case <code>L̂^cos</code>, (b) the base-behavior-prior <code>E0</code>, and (c) the test-retest noise floor, scored on the latent <code>Δs</code> scale AND the behavior <code>[0,1]</code> scale, under LOBO and LOCO, with the §1.7 metric suite, the (C7) apples-to-apples cosine isolation, the (C7) base-prior-in-headline discipline, the (B1) activation-gate-primary measurement, the (B3) reduction unit-test gate, and (C3/C4) selection-aware FDR + clustered CIs. The verdict: does base-model context geometry add predictive power for fine-tuning leakage ABOVE the base prior.</p>
+
+<h2>2. Prior Work</h2>
+<p><strong>The theory under test</strong> (<code>docs/leakage_theory_paper.tex</code>): the boxed predictor is <code>L̂_{C,B→C',B'} = η_{C,B} · (r_{B'}ᵀδ_{C,B}) · [c_Cᵀ Σc⁻¹ c_{C'}] / [c_Cᵀ Σc⁻¹ c_C]</code> with <code>δ = t_{C,B} − v_{θ0}(C)</code>. The <strong>cosine special-case</strong> (§Relation-to-cosine): <code>L̂^cos ∝ cos(r_{B'},r_B)·cos(c_C,c_{C'})</code> = L̂ in the limit (i) <code>δ ∥ r_B</code>, (ii) <code>‖r_{B'}‖,‖c_{C'}‖</code> constant, (iii) <code>Σc ∝ I</code>. These three toggles are the ONLY allowed differences (C7). η drops out of all relative tests at a fixed source and is recoverable from one on-source measurement: <code>η = L̂_{C,B→C,B}/(r_Bᵀδ)</code>.</p>
+<p><strong>What Phase 2 (#664) delivered + recoverable:</strong> the trained store has, per cell, <code>v_plus</code>/<code>v0</code>, <code>v_plus_probe</code>/<code>v0_probe</code> (probe-split noise floor), <code>c_C_base</code> (= the BASE context vector <code>c0(C')</code> per battery context — the key Phase-4 input), <code>c_C_trained</code> (<code>q⁺</code> diagnostic), <code>t_CB</code> (= <code>t</code>), <code>r_plus</code> (implant shift at source), <code>v0_neg</code>, <code>context_ids</code>, and <code>meta.json</code> roles/behavior/source/arm/dose/seed. <strong>Scientific caveat carried forward:</strong> the marker spine NEVER installed (source log P trained−base = −0.34 to +1.81 nat, never the 5-12 band; ‖ŵ‖≈1.2, ~17-42× below content) → marker gate at the probe-split noise floor (kill (a)+(b)). Content-behavior gate SNR co-varies with install magnitude — designed null cells clear the floor as strongly as real behaviors. <code>judged_rates.json</code> aggregate NOT produced this round but recomputable from per-cell completions on HF.</p>
+<p><strong>The recurring null</strong> (#532/#541/#649): base-model behavior prior beats geometry for the absolute <em>level</em>; geometry predicts the <em>shift</em>. → frame the latent <code>Δs</code> (a shift) as where geometry has a chance; ALWAYS include the base prior; a geometry win counts only after the install confound is partialled out. #637: rank-1 leak-transfer generalizes OOS for marker + taught-fact but FAILS for content → expect A3.8 rank-one behavior-dependent.</p>
+<p><strong>Published precedent:</strong> the latent <code>Δs</code> projection is exactly the activation-space trait-change projection of <em>Persona Vectors</em> (Chen/Arditi/Sleight/Evans/Lindsey, arXiv 2507.21509 — the paper's §Evaluation cites <code>chen2025</code> for the Pearson-r comparison). The OpenAI persona-features-control-EM paper (Wang et al., arXiv 2506.19823, Mossing) motivates the leakage-as-conditional-behavior framing. Phase 4 produces THE paper's headline table — the first end-to-end test of whether the boxed whitened-context-gate predictor beats a plain cosine predictor on an open-weights model with full activation access (the project's comparative advantage; the sibling papers used GPT-4o and could not measure the latent activation <code>Δs</code> directly).</p>
+<p><strong>Reusable infra (REUSE):</strong> <code>issue664_aggregate_gate.gate_per_layer</code> + <code>probe_split_floor</code> (exact ĝ^real + floor math, streamed), <code>issue664_common</code> (grid/paths/schema), <code>issue664_gate_summary</code> (aggregate pattern), <code>issue594_common.load_battery</code>, <code>experiments/behavior_testbed_545/</code> (LOBO/LOCO pattern), <code>issue532_predictor_stress</code>/<code>issue545_metric_race</code> (race + partial-out), <code>analysis/paper_plots</code>. <strong>NET-NEW (grep-verified absent):</strong> the whitened gate <code>g_C</code>, <code>Σ_c</code>/<code>Σc⁻¹</code>, full L̂ + φ + η, the (C7) cosine wiring, and the (B3) reduction unit test.</p>
+
+<h2>3. Hypothesis</h2>
+<ul>
+<li><strong>H1 (latent, content):</strong> On content behaviors with install dynamic range (taught-fact, bad-medical; EM where ‖ŵ‖ permits), full L̂ Spearman ρ vs <code>Δs</code> (LOBO + LOCO) EXCEEDS apples-to-apples cosine ρ AND base-prior ρ, non-overlapping family-clustered 95% CIs, <strong>after install magnitude (‖ŵ‖) is partialled out</strong>. <em>Falsified if</em> L̂ ρ ≤ base-prior ρ once install is partialled out (a clean #532/#649 null, also publishable).</li>
+<li><strong>H2 (cosine isolation):</strong> L̂ beats <code>L̂^cos</code> because of the three toggles, isolated by toggling one at a time on the shared frozen recipe. <em>Falsified if</em> the whitened gate does not beat raw cosine (A3.9 verdict (ii) fails).</li>
+<li><strong>H3 (behavior scale):</strong> after per-behavior affine φ (TRAIN only), calibrated MAE of L̂ near φ's affine mid-range below predict-mean and base-prior MAE.</li>
+<li><strong>H4 (marker sentinel):</strong> marker L̂ ρ FLOORS at the noise floor (no install → no signal). Pre-registered EXPECTATION, not a kill — the marker validates the harness reports "no signal" where Phase 2 proved none.</li>
+<li><strong>Thresholds:</strong> "beats" = point estimate higher AND clustered-CI lower bound above the comparator's point estimate; "near floor" = ρ within the test-retest ceiling (a ρ at the floor is the ceiling, not a failure).</li>
+</ul>
+
+<h2>4. Design</h2>
+<p>All CPU on the VM, streaming one store cell at a time (download → compute → delete, #664 footprint discipline). Each output JSON → <code>eval_results/issue_666/</code>.</p>
+<h3>4a. Load the Phase-2 store (<code>scripts/issue666_load_store.py</code>)</h3>
+<p>Download per cell from <code>.../issue664/&lt;cell&gt;/{tensors.pt,meta.json}</code> (48 cells confirmed via <code>list_repo_files</code>). Tensors: <code>v_plus</code>/<code>v0</code> (50,28,3584), <code>v_plus_probe</code>/<code>v0_probe</code> (50,n_probe,28,3584), <code>c_C_base</code>/<code>c_C_trained</code> (50,28,3584), <code>t_CB</code> (28,3584), <code>r_plus</code> (28,3584), <code>context_ids</code>, <code>meta.target_context_roles</code>. PRIMARY layer = 14; the full 28-layer sweep is the FDR-controlled EXPLORATORY surface, never headline.</p>
+<h3>4b. Compute <code>r_B</code> and <code>c_C</code></h3>
+<ul>
+<li><strong><code>c_C(C')</code></strong> = <code>c_C_base[ci, L]</code> per battery context (base last-input slot, all 50). <code>c_C_trained</code> retained as the <code>q⁺</code> drift sensitivity (NOT headline).</li>
+<li><strong><code>r_B</code></strong> = #658's per-behavior difference-in-means read-out (broad_em↔EM, fact_expression↔taught-fact, harmful_compliance↔bad-medical, marker↔marker), reused from <code>issue658_theory_assumptions/store</code> @ b33429f (Hub-verify before reuse). The store has NO base <code>r_B</code> (only <code>r_plus</code> = implant shift). If a #664 behavior has no #658 match, fall back to the cell's <code>r_plus</code> as <code>r_{B'}</code> (the A3.7 ŵ-shortcut) — FLAGGED as a sensitivity arm, not headline.</li>
+<li><strong>(B1):</strong> the activation realized gate <code>ĝ^real = ŵᵀΔv(C')/ŵᵀŵ</code> is the PRIMARY gate read (reused verbatim from <code>gate_per_layer</code>); the latent <code>Δs = r_{B'}ᵀ(v⁺(C')−v0(C'))</code> is the PRIMARY predictand. Marker log P = SECONDARY companion.</li>
+</ul>
+<h3>4c. Net-new whitened-gate + Σ_c module (<code>src/.../analysis/leakage_predictor.py</code>) — TDD-first</h3>
+<ul>
+<li><code>Sigma_c</code> = <code>E[ccᵀ]</code> over the background corpus + regularized inverse <code>(Σc+λI)⁻¹</code> (CV-chosen λ) + top-eigendir-truncated variant + conditioning diagnostics (<code>Source: design §5/§A3.5</code>).</li>
+<li><code>g_C(cC, cCp, Σinv)</code> = <code>cCᵀ Σc⁻¹ cCp / cCᵀ Σc⁻¹ cC</code>.</li>
+<li><strong>(B3) REQUIRED unit test (<code>tests/test_whitened_gate_reduction.py</code>):</strong> assert <code>g_C</code> reduces to <code>cos(c_C,c_{C'})</code> in the <code>Σc=I</code> / equal-norm / <code>δ∥r_B</code> limit (<code>rtol=1e-6</code>). NO Phase-4 number computed until it PASSes.</li>
+</ul>
+<h3>4d. Assemble L̂ (<code>scripts/issue666_predictor.py</code>)</h3>
+<p>Per cell (source <code>C</code>, behavior <code>B</code>) × target <code>C'</code> × evaluated <code>B'</code>: <code>L̂ = η · (r_{B'}ᵀ δ) · g_C(C')</code>, <code>δ = t_CB − v0[src_idx]</code> (positive-only; δ^contra a contrastive-cell-only sensitivity, read with <code>frac_ctx</code>). Relative tests drop η. Grid: behavior-transfer (vary B' at fixed C), context-gate (vary C' at fixed B). The source-anchor (<code>ĝ^real(C)=1</code>) EXCLUDED from the bystander correlation (same as #664).</p>
+<h3>4e. Apples-to-apples cosine (<code>--variant cos</code>)</h3>
+<p><code>L̂^cos ∝ cos(r_{B'},r_B)·cos(c_C,c_{C'})</code> from the SAME <code>r_B</code>, <code>c_C</code>, layer 14, recipe — toggling ONLY δ→r_B / drop norms / Σc⁻¹→I as three independent booleans so each toggle's marginal contribution is isolable (C7). Also the raw un-whitened cosine gate + predict-zero/predict-mean.</p>
+<h3>4f. Base-behavior-prior (<code>--variant prior</code>)</h3>
+<p><code>E0(C',B') = r_{B'}ᵀ v0(C')</code>. Two reports (C7): (1) partial Spearman ρ(L̂, Δs | E0) — install-confound-clean headline; (2) ΔS predictive power above prior. <strong>Install control (§6 required):</strong> L̂ ρ with ‖ŵ‖ partialled out + leakage-as-fraction-of-install in EOS-margin logit space for the marker sentinel (NEVER raw log P). Never correlate the fraction back against install (#383 family).</p>
+<h3>4g. LOBO + LOCO (<code>scripts/issue666_lobo_loco.py</code>)</h3>
+<p>LOBO (hold out one of {marker, bad-medical, EM, taught-fact}); LOCO (hold out one battery context). φ = per-behavior monotone affine link fit on TRAIN only. Latent-scale tests need no φ; φ only for the behavior-<code>[0,1]</code>-scale MAE.</p>
+<h3>4h. η recovery (<code>--recover-eta</code>)</h3>
+<p><code>η = Δs_on-source / (r_Bᵀδ)</code>, <code>Δs_on-source = r_Bᵀ r_plus</code>. Anchor = <code>bm_default_contra_d1_seed42</code> (highest-install content cell, #664 SNR 7.55). η needed only for the cross-source/absolute arm (sensitivity).</p>
+<h3>4i. Noise floor (<code>scripts/issue666_noise_floor.py</code>)</h3>
+<p>Test-retest ρ between two independent probe-split halves of <code>v_plus_probe</code>/<code>v0_probe</code> (reuse <code>probe_split_floor</code> half-split), recompute <code>Δs</code> per half. MC: 200 resamples × 3 seeds. Every headline ρ reported against this floor. Single-context arm raises the continuous-DV primary per §1.10.</p>
+<h3>4j. Self-checks (inline)</h3>
+<ul>
+<li><strong>A3.8 rank-one (Phase-3 dep, inline):</strong> per cell stack ΔV over bystanders, report <code>σ₁²/Σσ²</code>, <code>σ₂/σ₁</code>, <code>cos(u₁,ŵ)</code>, rank-one residual. Degrade gracefully: if <code>σ₂/σ₁</code> large (expected for content per #637), FLAG the scalar-gate form as a low-rank sensitivity; the latent ρ is still reported (it does not require rank-one).</li>
+<li><strong>Joint factorization (Phase-3 overlap, inline):</strong> latent <code>S_{ij}=r_{B'_j}ᵀΔv(C'_i)</code>; <code>σ₁²/Σσ²</code> + rank-one residual + no-interaction check.</li>
+</ul>
+<h3>4k. <code>judged_rates.json</code> decision (PRE-REGISTERED)</h3>
+<p><strong>Decision: (b) the behavior-<code>[0,1]</code>-scale headline is PARTIAL this round; the latent <code>Δs</code> scale is the PRIMARY + COMPLETE headline.</strong> Rationale: the design's two-scale framing makes latent <code>Δs</code> the structural/separability primary; the behavior scale is the calibrated-MAE secondary near φ's affine mid-range; the marker has no install so its rate is a known floor; the content <code>Δs</code> is fully in the store; the full 19-column recompute (#664 C8 ~1.7× the 11-column judge load) does not change the latent verdict. <strong>Contingency:</strong> if the latent headline lands ambiguous (L̂-vs-prior CI overlaps), run the recompute as a cheap in-scope follow-up — Batch-API <code>claude-sonnet-4-5-20250929</code> over the per-cell completions (judge-only, 0 GPU). Behavior-scale partiality carried as a clean-result scope caveat.</p>
+<h3>4l. Figures (<code>scripts/issue666_figures.py</code>, reuses <code>paper_plots</code>)</h3>
+<ul>
+<li><strong>HERO:</strong> per behavior (content + marker sentinel), grouped bars of Spearman ρ for {full L̂, apples-to-apples cosine, base-prior, predict-mean}, with the noise-floor band + clustered-CI error bars, LOBO and LOCO side by side. The paper's headline table, visualized.</li>
+<li><strong>EXPLORATORY DUMP (over-produce):</strong> (1) per-cell L̂-vs-Δs scatter (points labeled by family); (2) 28-layer ρ sensitivity surface per behavior (FDR-controlled, never headline); (3) three-toggle decomposition (raw cosine → +δ → +norms → +Σc⁻¹); (4) partial-ρ-given-prior vs raw-ρ; (5) per-cell rank-one σ₂/σ₁ + σ₁²/Σσ²; (6) raw-alongside-residualized for every aggregate. Analyzer picks the hero.</li>
+</ul>
+<h3>4m. Marker spine treatment</h3>
+<p>A <strong>noise-floor sentinel arm</strong> in the headline (H4): its L̂ ρ floors, validating "no signal where Phase 2 proved no install." The predictor's signal is the content arms; the marker is never a theory verdict.</p>
+<h3>Boilerplate checks</h3>
+<p><strong>Why code, not a model call?</strong> N/A — no unstructured-data heuristics; closed-form linear algebra on stored tensors (the §4k judge IS a model call per CLAUDE.md, not a code substitute). <strong>Contrastive negatives / completion provenance:</strong> N/A — not a behavior-implantation experiment (Phase 4 trains nothing; analyzes #664's store, whose data was on-policy + contrastive, panel ∩ sources = ∅ verified at Phase 2). <strong>Data source + tier:</strong> Tier 2 — real on-policy answer-side activations over the #594 50-context battery × 48 Betley probes; marker token = Tier-4 programmatic carve-out. <strong>Smoke/sweep parity:</strong> UNIFICATION — smoke = the pipeline on <code>--cells 1</code> (e.g. <code>bm_default_contra_d1_seed42</code>) through load→predictor→LOBO/LOCO→figure; the full sweep is the same dispatcher over 48 cells; the (B3) test runs in CI before any cell. <strong>Eligibility gates / equalize-down:</strong> N/A — every cell reads the same 50-context battery; degenerate-‖ŵ‖ cells (marker) are the sentinel arm, not dropped. <strong>Baseline propensity:</strong> <code>E0 = r_{B'}ᵀ v0(C')</code> IS the eval-side base propensity.</p>
+
+<h2>5. Conditions and Controls</h2>
+<table>
+<tr><th>Plain-English name</th><th>What it tests</th><th>What it controls for</th><th>Config slug</th></tr>
+<tr><td>Full theory predictor</td><td>The boxed L̂ with whitened context gate</td><td>— (the hypothesis)</td><td><code>full_Lhat</code></td></tr>
+<tr><td>Apples-to-apples cosine</td><td>Cosine special-case from the SAME recipe</td><td>Isolates whitening + δ + norms (C7)</td><td><code>cos_apples</code></td></tr>
+<tr><td>Raw cosine gate</td><td>Cosine gate WITHOUT whitening (Σc⁻¹→I)</td><td>Isolates the Σc⁻¹ whitening alone</td><td><code>cos_raw_gate</code></td></tr>
+<tr><td>Base-rate guess</td><td><code>E0 = r_{B'}ᵀ v0(C')</code>, the target's own base prior</td><td>The #532/#541/#649 recurring null</td><td><code>base_prior</code></td></tr>
+<tr><td>Predict-mean</td><td>Constant = mean leakage</td><td>Trivial floor</td><td><code>predict_mean</code></td></tr>
+<tr><td>Predict-zero</td><td>Constant 0</td><td>Trivial floor</td><td><code>predict_zero</code></td></tr>
+<tr><td>Shuffled-key</td><td>L̂ with <code>c_C</code> keys shuffled across contexts</td><td>The gate's context-specificity</td><td><code>shuffle_key</code></td></tr>
+<tr><td>Shuffled-query</td><td>L̂ with <code>c_{C'}</code> queries shuffled across targets</td><td>The gate's target-specificity</td><td><code>shuffle_query</code></td></tr>
+<tr><td>Marker sentinel</td><td>L̂ on the never-installed marker spine</td><td>Validates "no signal where none exists"</td><td><code>marker_sentinel</code></td></tr>
+</table>
+<p>Each control shares the frozen layer-14 / <code>c_C</code>-last / <code>r_B</code>-diffmeans recipe (C7 apples-to-apples invariant).</p>
+
+<h2>6. Evaluation</h2>
+<p><strong>Metrics (§1.7), every condition:</strong> Spearman ρ (PRIMARY), Pearson r (the <code>chen2025</code> comparison), sign agreement, AUROC + top-k, calibrated MAE (pp) + slope (after per-behavior affine φ on TRAIN only). <strong>Factor-localized:</strong> behavior-transfer + context-gate on their own grid slices. <strong>Splits:</strong> LOBO + LOCO. <strong>CIs:</strong> family/source/seed-clustered bootstrap (never naive n=50) + independent-probe-split replication of the headline ρ on disjoint probe halves (C4). <strong>Reported AGAINST the test-retest noise floor.</strong></p>
+<h3>Measurement validity table</h3>
+<table>
+<tr><th>DV</th><th>Construct (Goal)</th><th>Metric (computed)</th><th>On-distribution?</th><th>If proxy: validation</th></tr>
+<tr><td>Latent <code>Δs</code> (PRIMARY)</td><td>The activation-space leakage the predictor targets</td><td><code>Δs = r_{B'}ᵀ(v⁺(C')−v0(C'))</code> on the trained model's own on-policy answer-side means, all 50 contexts</td><td><strong>yes</strong></td><td>— (this IS the structural construct; the theory is multiplicative on this scale; the exact projection <code>chen2025</code> validates)</td></tr>
+<tr><td>Behavior <code>[0,1]</code> rate (SECONDARY)</td><td>The end-to-end leakage a deployer sees</td><td><code>φ(s_{θ0}+Δs) − φ(s_{θ0})</code> near φ's affine mid-range; judged-rate aggregate deferred (§4k)</td><td>partial</td><td>Mid-range only (φ near-affine); judged-rate aggregate is the §4k contingency, scope-caveated</td></tr>
+<tr><td>Marker log P (SENTINEL)</td><td>Marker emission propensity</td><td>trained−base log P(※), three spaces</td><td>yes</td><td>Sentinel only — Phase 2 proved no install; floors by design (H4)</td></tr>
+</table>
+<p><strong>Dual-DV note:</strong> the latent <code>Δs</code> is the continuous non-saturating PRIMARY (unbounded). The behavioral judged-rate is DEFERRED this round (§4k) — the latent scale answers the structural/separability Goal completely. If the §4k contingency fires, the judged-rate becomes the PRIMARY behavioral construct with a Spearman-tracking validation across dynamic-range cells; carried as a planned-vs-actual scope caveat.</p>
+<p><strong>Install-strength control (REQUIRED):</strong> the headline compares predictor quality across behaviors/arms with differing install strength (#664 confound). §4f reports L̂ ρ with ‖ŵ‖ partialled out AND partial-ρ(L̂,Δs|E0) as the install-clean verdict; raw ρ shown alongside (exploratory), never as headline. Fraction-of-install reads use EOS-margin logit space; never correlated back against install (#383 family).</p>
+<p><strong>Statistical-input existence:</strong> partial-ρ consumes ‖ŵ‖ (from <code>gate_per_layer</code> wnorm — present) + <code>E0</code> (from <code>v0</code> + <code>r_B</code> — present/derivable); clustered bootstrap needs <code>family</code> (#594 battery) + <code>source</code>/<code>seed</code> (<code>meta.json</code>) — all present; probe-split needs <code>v_plus_probe</code>/<code>v0_probe</code> — confirmed in the store schema. No phantom derived input.</p>
+
+<h2>6.5 Primary deliverable</h2>
+<pre>primary_deliverable:
+  - dv: Latent Δs leakage ground truth + full L̂ predictor headline (Spearman ρ, LOBO+LOCO, vs cosine/base-prior/noise-floor)
+    glob: eval_results/issue_666/headline/predictor_headline.json
+    note: "the paper's headline table; one block per behavior arm + the noise floor"
+  - dv: Per-cell L̂ vs Δs predictions + apples-to-apples cosine + base-prior columns
+    glob: eval_results/issue_666/per_cell/*/predictor_cells.json
+    note: "≥1 file per analyzed store cell (content arms; marker sentinel separate)"
+  - dv: Test-retest noise floor (probe-split test-retest ρ ceiling)
+    glob: eval_results/issue_666/noise_floor/noise_floor.json</pre>
+
+<h2>7. Decision Gates</h2>
+<p><strong>No gates — short run (&lt;4h wall, ≈0-2 GPU-h), pure CPU analysis on an existing store.</strong> The (B3) reduction unit test is a code-correctness PRECONDITION (TDD), not a run-kill gate. The marker H4 floor is a pre-registered EXPECTATION, not a kill criterion.</p>
+
+<h2>8. Risks and Failure Modes</h2>
+<table>
+<tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr>
+<tr><td>(a) Marker spine at noise floor</td><td>Certain (Phase 2)</td><td>Sentinel arm (H4); never a theory verdict</td></tr>
+<tr><td>(b) Base-prior beats geometry even on content (#532/#541/#649)</td><td>Medium-High</td><td>Partial install + ΔS-above-prior as the verdict; a clean null is publishable</td></tr>
+<tr><td>(c) Σc⁻¹ mis-implemented → spurious "whitening wins"</td><td>Medium</td><td>TDD-first reduction unit test gates EVERY number</td></tr>
+<tr><td>(d) A3.8 rank-one fails for content (#637)</td><td>Medium-High</td><td>Inline σ₂/σ₁ + graceful degrade; latent ρ does not require rank-one</td></tr>
+<tr><td>(e) Phase 3 finds a different winning key/metric</td><td>Low-Medium</td><td>Headline key = <code>c_C</code> (pre-registered §C3); report Phase-3 winner alongside as sensitivity if it lands</td></tr>
+<tr><td>(f) <code>judged_rates.json</code> missing</td><td>Certain this round</td><td>§4k decision (b); latent headline complete; behavior-scale partial + 4k contingency</td></tr>
+<tr><td>(g) Shared-store CIs wider than n=50 suggests (C4)</td><td>High</td><td>Family/source/seed-clustered bootstrap + probe-split replication</td></tr>
+<tr><td>(h) Weak base <code>c_C → v0</code> map (#658: cos 0.31/0.22)</td><td>Medium</td><td>Gate uses <code>c_C</code> geometry directly (not the M-map); report the gate factor on its own slice — a clean factor-localized result if it adds nothing</td></tr>
+<tr><td>(i) No clean Phase-1 layer lock (<code>locked_recipe=={}</code>)</td><td>Certain</td><td>Pre-register layer 14 (Phase-2 fixed read + comparability); 28-layer FDR sweep exploratory; never best-of-28 as headline</td></tr>
+</table>
+
+<h2>9. Resources &amp; Parallelism</h2>
+<p><code>Estimated GPU-hours (total): 2</code> (expected 0). Pure CPU analysis on the VM against the uploaded store.</p>
+<table>
+<tr><th>component</th><th>planned_wall_h</th><th>planned_gpu_h</th><th>parallelism</th><th>basis</th></tr>
+<tr><td>Store load + L̂ + baselines (48 cells, streamed)</td><td>1.0</td><td>0</td><td>CPU, one-cell-at-a-time</td><td>matched to #664 <code>aggregate_gate</code> per-cell download→compute→delete (~1 min/cell × 48 + I/O)</td></tr>
+<tr><td>LOBO/LOCO + clustered bootstrap + FDR</td><td>0.5</td><td>0</td><td>CPU, parallel over folds</td><td>#532/#545 LOBO/LOCO pattern; n=50 × small grid sub-second per fold</td></tr>
+<tr><td>Noise floor (200 × 3)</td><td>0.3</td><td>0</td><td>CPU</td><td>reuse <code>probe_split_floor</code>; 600 splits × 48 cells, vectorized</td></tr>
+<tr><td>Figures</td><td>0.2</td><td>0</td><td>CPU</td><td><code>paper_plots</code></td></tr>
+<tr><td>(4k contingency) Batch-API judge recompute</td><td>(off-GPU)</td><td>0</td><td>Batch API</td><td>only if latent headline ambiguous; judge-only</td></tr>
+<tr><td>(contingency) small-GPU completion regen</td><td>1.0</td><td>2</td><td><code>eval</code>-intent 1×GPU</td><td>ONLY if 4k needs fresh completions (not expected; completions exist on HF)</td></tr>
+</table>
+<p><strong>Parallelism:</strong> CPU-bound + embarrassingly parallel over 48 cells and over LOBO/LOCO folds; no GPU axis applies to the default path (the store holds all activations). <strong>Off-pod by default:</strong> the whole default pipeline is CPU on the VM against the HF-uploaded store; per-streamed-cell footprint ≪ 50 GB (<code>VM_ANALYSIS_FOOTPRINT_GB_MAX</code>), reusing #664's download→compute→delete; <code>clean_experiment_downloads.py 666 --incremental --apply</code> between phases bounds peak footprint. The 4k judge is Batch-API (off-GPU); the only GPU contingency (completion regen) is not expected to fire. <strong>No sentinel dependence — auto-safe</strong> (no pod-side marker posting). <strong>Backend:</strong> slice-6 router auto-lane (GCP-first); the 2-GPU-h contingency fits any lane + the 24h GCP fence.</p>
+
+<h2>10. Reproducibility Card (pre-filled)</h2>
+<ul>
+<li><strong>Goal:</strong> Phase 4 end-to-end leakage predictor L̂ vs cosine + base-prior + noise floor.</li>
+<li><strong>Base model:</strong> Qwen/Qwen2.5-7B-Instruct (analysis only; no training).</li>
+<li><strong>Store (reused, Hub-verified present):</strong> <code>.../issue664/&lt;cell&gt;/{tensors.pt,meta.json}</code>, 48 cells. Keys: <code>v_plus</code>, <code>v0</code>, <code>v_plus_probe</code>, <code>v0_probe</code>, <code>c_C_base</code>, <code>c_C_trained</code>, <code>t_CB</code>, <code>r_plus</code>, <code>v0_neg</code>, <code>context_ids</code>.</li>
+<li><strong><code>r_B</code> (reused):</strong> #658 <code>diffmeans</code> A3.3 read-out, <code>issue658_theory_assumptions/store</code> @ b33429f (verify present before reuse, §12).</li>
+<li><strong>Battery:</strong> #594 50-context / 7-family (<code>data/issue594/battery.json</code>, sha in store manifest). <strong>Probes:</strong> 48 Betley (asserted == 48).</li>
+<li><strong>PRIMARY layer:</strong> 14. <strong>c_C:</strong> last-input-token slot. <strong>r_B:</strong> difference-in-means.</li>
+<li><strong>Metrics:</strong> Spearman ρ (primary), Pearson r, sign agreement, AUROC+top-k, calibrated MAE+slope. <strong>Splits:</strong> LOBO + LOCO; φ on TRAIN only.</li>
+<li><strong>Judge (4k contingency only):</strong> claude-sonnet-4-5-20250929, Batch API. <strong>Seeds:</strong> noise-floor MC {0,1,2}; probe-split rng 42.</li>
+<li><strong>Code commit:</strong> TBD. <strong>GPU-hours:</strong> TBD (planned 2 max; expected 0). <strong>Wall time:</strong> TBD (~2h).</li>
+<li><strong>Artifacts:</strong> <code>eval_results/issue_666/</code> (JSON, git), <code>figures/issue_666/</code> (git); no new HF uploads unless §4k recompute runs (then judged-rate JSON → data repo).</li>
+</ul>
+
+<h2>11. Decision Rationale</h2>
+<ul>
+<li><strong>PRIMARY layer = 14.</strong> <em>Why:</em> #658 locked NO per-behavior layer (<code>locked_recipe.locked_recipe == {}</code>; no behavior passed A3.2 FDR; "best layers" scatter 2/4/13/18/24/25 on the random-projection control). Phase 2 (#664) read its selection-bias-free reference at fixed layer 14; using the same layer keeps Phase-4 directly comparable to the Phase-2 gate and avoids best-of-28 selection bias. <em>Source:</em> <code>#664</code> + <code>#658 locked_recipe.json</code>. <em>Alternatives:</em> per-behavior best-of-28 (REJECTED — selection bias → FDR-controlled exploratory only); #658 read-out best layer 8 (REJECTED as the single headline layer — behavior-specific, not the gate layer; in the sensitivity sweep).</li>
+<li><strong><code>c_C</code> recipe = last-input-token slot.</strong> <em>Why:</em> #658 <code>cc_recipe_lock</code> chose <code>last</code> (ridge-cos 0.307 vs mean-prompt 0.209). <em>Source:</em> <code>#658 locked_recipe.cc_recipe_lock</code>. <em>Alt:</em> mean-over-prompt (REJECTED, lower; ablation).</li>
+<li><strong><code>r_B</code> recipe = difference-in-means contrastive read-out.</strong> <em>Why:</em> the only A3.3 recipe scored on this model+battery; instruct-and-strip (design recipe-C) was descoped in #658 (<code>rb_recipe_descope_note</code>). Reusing #658's <code>diffmeans</code> preserves single-variable comparability with Phase 1. <em>Source:</em> <code>#658 a33_cells</code> + <code>locked_recipe.rb_recipe_descope_note</code>. <em>Alt:</em> fresh instruct-and-strip <code>r_B</code> (REJECTED — net-new GPU extraction + a recipe-divergence variable; design marks it the eventual primary but it is unavailable; see Divergences); the store's <code>r_plus</code> (A3.7 ŵ-shortcut) only as the no-match fallback, flagged sensitivity.</li>
+<li><strong><code>δ = t − v0(C)</code> positive-only.</strong> <em>Why:</em> design §A3.7 primary; δ^contra is a non-theory heuristic (§1.5). <em>Source:</em> <code>design §A3.7</code>. <em>Alt:</em> δ^contra (REJECTED as headline; contrastive-cell sensitivity arm read with <code>frac_ctx</code>).</li>
+<li><strong>Σc⁻¹ ridge λ = CV-chosen + conditioning diagnostics.</strong> <em>Why:</em> the inverse is numerically fragile (design §5); CV-λ + top-eigendir-truncated + the (B3) test guard against a spurious whitening win. <em>Source:</em> <code>design §A3.5</code> + <code>design §5</code>. <em>Alt:</em> fixed λ / no reg (REJECTED — ill-conditioned at d=3584, n=50).</li>
+<li><strong>Noise-floor MC = 200 × 3 seeds.</strong> <em>Why:</em> the ~50-probe axis gives a large C(50,25) split space; 200 draws estimate the ρ ceiling tightly, 3 seeds bound the estimator variance. <em>Source:</em> pre-registered; <code>#664 probe_split_floor</code> (single split → noisy; Phase 4 raises it). <em>Alt:</em> single split (REJECTED — #664's was noisy); 1000 (over-budget).</li>
+<li><strong>η-recovery anchor = bad-medical default dose-1 contrastive cell.</strong> <em>Why:</em> highest install (#664 SNR 7.55) → <code>r_Bᵀδ</code> well above noise. <em>Source:</em> <code>#664 behavior_snr</code>. <em>Alt:</em> a marker cell (REJECTED — η undefined); taught-fact (second choice, cross-source consistency check).</li>
+<li><strong>Judge (4k contingency) = claude-sonnet-4-5-20250929, Batch API.</strong> <em>Source:</em> <code>CLAUDE.md</code>.</li>
+<li><strong>Clustered bootstrap = family/source/seed + probe-split replication.</strong> <em>Why:</em> contexts cluster by family + share the 48-probe pool. <em>Source:</em> <code>design §1.7 C4</code>. <em>Alt:</em> naive n=50 (REJECTED — overstates precision).</li>
+</ul>
+<p><strong>Repo-new model id:</strong> N/A — Qwen/Qwen2.5-7B-Instruct used by #658/#664. <strong>Marker recipe overrides parent parity:</strong> N/A — trains no marker adapter; sentinel arm only.</p>
+<h3>Divergences from design-doc primary (single-variable justification)</h3>
+<p>Design §A3.3 names <strong>instruct-and-strip (recipe-C)</strong> as the eventual <code>r_B</code> primary, but it was descoped in #658 and never extracted on this store. Phase 4 uses #658's <code>diffmeans</code> <code>r_B</code> to PRESERVE single-variable comparability with the Phase-1 read-out (changing the recipe would change a second variable vs Phase 1). This is the SINGLE deliberate divergence from a design-doc primary; flagged §12 (Medium); carried into the clean-result as a scope caveat.</p>
+
+<h2>12. Assumptions</h2>
+<table>
+<tr><th>#</th><th>Assumption</th><th>Conf.</th><th>Source</th><th>How to verify</th></tr>
+<tr><td>1</td><td>Phase-2 store (48 cells) complete + readable</td><td>High</td><td>HF (<code>list_repo_files</code> confirmed 48 + sample <code>tensors.pt</code>)</td><td><code>list_repo_files</code> (done); <code>torch.load</code> one cell in smoke</td></tr>
+<tr><td>2</td><td><code>v_plus_probe</code>/<code>v0_probe</code> are the probe-split halves</td><td>High</td><td>Code (<code>extract_store</code> (n_ctx,n_probe,28,d))</td><td>Load one cell, assert shape</td></tr>
+<tr><td>3</td><td><code>c_C_base</code> = base <code>c0(C')</code> for all 50</td><td>High</td><td>Code (<code>extract_store</code> L448)</td><td>Load one cell, assert (50,28,d)</td></tr>
+<tr><td>4</td><td>Store has NO base <code>r_B</code>; reuse #658's</td><td>High</td><td>Code (store has <code>r_plus</code>, not the contrastive read-out)</td><td>Confirmed by reading <code>extract_store</code>; verify #658 r_B on HF</td></tr>
+<tr><td>5</td><td>#658 <code>diffmeans</code> r_B resolves on HF @ b33429f</td><td>Medium</td><td>#658 body Repro</td><td><code>list_repo_files</code> on <code>issue658_theory_assumptions/store</code> BEFORE recording reuse (smoke)</td></tr>
+<tr><td>6</td><td>No clean Phase-1 layer lock</td><td>High</td><td><code>eval_results/issue_658/locked_recipe.json</code> (<code>=={}</code>)</td><td>Confirmed (read directly)</td></tr>
+<tr><td>7</td><td>Deps installed (numpy/scipy/sklearn/torch/hf_hub/anthropic)</td><td>High</td><td>Code (used across <code>issue664_*</code>/<code>issue532_*</code>)</td><td><code>import</code> check in smoke</td></tr>
+<tr><td>8</td><td><code>judged_rates.json</code> not produced; recomputable</td><td>High</td><td>#664 body Repro</td><td>§4k decision (b); contingency only</td></tr>
+<tr><td>9</td><td>§S10e Phase 3+4 overlap in force</td><td>High</td><td>design §S10e (read directly)</td><td>—</td></tr>
+<tr><td>10</td><td>(C,B) grid small (marker 4 sources; content default+librarian)</td><td>High</td><td>HF cell listing (48 enumerated)</td><td>Confirmed</td></tr>
+<tr><td>11</td><td>A3.8 rank-one may FAIL for content (#637)</td><td>Medium</td><td>RESULTS / design §5 prior-findings</td><td>Inline σ₂/σ₁ self-check; degrade gracefully</td></tr>
+<tr><td>12</td><td>Base <code>c_C → v0</code> map weak (cos 0.31/0.22)</td><td>High</td><td>#658 body + locked_recipe</td><td>Risk (h); report gate factor on its own slice</td></tr>
+<tr><td>13</td><td><code>r_B</code> diverges from design's instruct-and-strip primary</td><td>Medium</td><td>#658 locked_recipe descope note</td><td>Single-variable divergence (§11); scope caveat</td></tr>
+<tr><td>14</td><td>Σc⁻¹ at d=3584,n=50 ill-conditioned without reg</td><td>High</td><td>Standard linear algebra</td><td>(B3) reduction test + CV-λ + conditioning diagnostics</td></tr>
+<tr><td>15</td><td>Marker spine has no install (sentinel only)</td><td>High</td><td>#664 body (source log P −0.34 to +1.81 nat)</td><td>H4 pre-registered; sentinel arm</td></tr>
+</table>
+
+<h2>TDD: yes</h2>
+<p>The (B3) whitened-gate reduction unit test (<code>tests/test_whitened_gate_reduction.py</code>) is net-new, numerically fragile, structurally load-bearing code that GATES every Phase-4 number — write it FIRST, confirm it FAILs on a deliberately-wrong inverse, then implement <code>g_C</code>/<code>Σ_c</code> until it PASSes. Plus <code>tests/test_leakage_predictor.py</code> for the L̂ assembly, the three apples-to-apples toggles (each reproduces a known limit), and the η on-source recovery (<code>L̂_{C,B→C,B}</code> reduces to <code>η·(r_Bᵀδ)</code> with gate=1). The implementer posts <code>epm:proposed-tests v1</code> and awaits <code>epm:approve-tests v1</code> per the Step 4b TDD gate.</p>
+
+<h2>13. Backend</h2>
+<p>Defer to the slice-6 router auto-lane (GCP-first standing default). No <code>backend: runpod</code> override — the default path is 0-GPU CPU-on-VM analysis; the 2-GPU-h contingency (only if §4k regenerates completions) fits any lane and the 24h GCP fence trivially.</p>
+
+</body>
+</html>
