@@ -120,6 +120,8 @@ The foundational empirical paper for persona-space work. Defines persona vectors
 
 **Relevance:** every persona-related experiment in this project inherits the persona-vector methodology from here. The Q2 (privilege) and Q5 (prompt-steering-FT equivalence) questions are entirely about the empirical objects this paper defines.
 
+**Canonical recipe rule:** `.claude/rules/persona-vectors-recipe.md` (the enforced extraction recipe; this doc entry is a summary, the rule is the source of truth).
+
 ### Lu et al. 2026 (Anthropic, Fish/Eleos-adjacent) — The Assistant Axis
 
 `lu2026assistantaxissituatingstabilizing` · [arXiv:2601.10387](https://arxiv.org/abs/2601.10387) · status: queued (filed as #352)
