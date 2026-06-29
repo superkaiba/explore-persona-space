@@ -1,0 +1,136 @@
+{
+  "assumption": "A3.6-reextract",
+  "by_behavior_layer": {
+    "em": {
+      "14": {
+        "status": "ok",
+        "n_cells": 464,
+        "n_skipped_no_r_plus": 0,
+        "partial_spearman_change_given_base": -0.27669931491088057,
+        "partial_clustered_bootstrap": {
+          "point": -0.27669931491088057,
+          "ci_lo": -0.46997344196267027,
+          "ci_hi": -0.03597971319600825,
+          "n_families": 7
+        },
+        "partial_shuffled_null_hi": 0.09405065348732154,
+        "raw_spearman_proj_vs_g": -0.3107967539306944,
+        "base_r_b_partial_committed": -0.35038180362527893,
+        "delta_vs_base_r_b": 0.07368248871439836,
+        "delta_v_norm_partial": {
+          "rho": 0.12076451145491833,
+          "ci_low": -0.07870627943940806,
+          "ci_high": 0.3781291189289336,
+          "n_cells": 464,
+          "n_families": 7
+        },
+        "normalized_projection_partial": {
+          "rho": -0.264541573718888,
+          "ci_low": -0.4571945882772698,
+          "ci_high": -0.05241947230636914,
+          "n_cells": 464,
+          "n_families": 7
+        },
+        "cross_source_r_plus_null": {
+          "rho": -0.3417452693439788,
+          "ci_low": -0.5289190667939435,
+          "ci_high": -0.10021330669626567,
+          "n_cells": 464,
+          "n_families": 7,
+          "sibling_aggregation": "mean"
+        }
+      }
+    },
+    "sycophancy": {
+      "14": {
+        "status": "ok",
+        "n_cells": 464,
+        "n_skipped_no_r_plus": 0,
+        "partial_spearman_change_given_base": -0.00918545858610898,
+        "partial_clustered_bootstrap": {
+          "point": -0.00918545858610898,
+          "ci_lo": -0.2595681859071517,
+          "ci_hi": 0.10289786290287926,
+          "n_families": 7
+        },
+        "partial_shuffled_null_hi": 0.08574421437390742,
+        "raw_spearman_proj_vs_g": -0.07616057670587373,
+        "base_r_b_partial_committed": -0.03091412761084175,
+        "delta_vs_base_r_b": 0.02172866902473277,
+        "delta_v_norm_partial": {
+          "rho": 0.0487078412959493,
+          "ci_low": -0.06763328032187652,
+          "ci_high": 0.21830204234534148,
+          "n_cells": 464,
+          "n_families": 7
+        },
+        "normalized_projection_partial": {
+          "rho": -0.000796517932898281,
+          "ci_low": -0.21163690533222315,
+          "ci_high": 0.10777949124808091,
+          "n_cells": 464,
+          "n_families": 7
+        },
+        "cross_source_r_plus_null": {
+          "rho": -0.044080665072272256,
+          "ci_low": -0.2948132190954581,
+          "ci_high": 0.08345557805406904,
+          "n_cells": 464,
+          "n_families": 7,
+          "sibling_aggregation": "mean"
+        }
+      }
+    },
+    "fact": {
+      "14": {
+        "status": "ok",
+        "n_cells": 464,
+        "n_skipped_no_r_plus": 0,
+        "partial_spearman_change_given_base": -0.5495122981183695,
+        "partial_clustered_bootstrap": {
+          "point": -0.5495122981183695,
+          "ci_lo": -0.6806083040046964,
+          "ci_hi": -0.3945540342252842,
+          "n_families": 7
+        },
+        "partial_shuffled_null_hi": 0.09654909419327093,
+        "raw_spearman_proj_vs_g": -0.5155681961104358,
+        "base_r_b_partial_committed": -0.41287934929328646,
+        "delta_vs_base_r_b": -0.1366329488250831,
+        "delta_v_norm_partial": {
+          "rho": 0.045810771477109484,
+          "ci_low": -0.0579112783950998,
+          "ci_high": 0.19613088468739212,
+          "n_cells": 464,
+          "n_families": 7
+        },
+        "normalized_projection_partial": {
+          "rho": -0.45562258668778804,
+          "ci_low": -0.6078123386446067,
+          "ci_high": -0.277426514447222,
+          "n_cells": 464,
+          "n_families": 7
+        },
+        "cross_source_r_plus_null": {
+          "rho": -0.17712889612001834,
+          "ci_low": -0.342475864724364,
+          "ci_high": -0.01772239774765689,
+          "n_cells": 464,
+          "n_families": 7,
+          "sibling_aggregation": "mean"
+        }
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "e4631562cf9e80206e6bd285d189bd0d17ca2320",
+    "generated_at": "2026-06-29T08:39:32.266459+00:00",
+    "script": "issue667_analysis",
+    "g_meta_git_commit_pin": "34f2502c656cd804524f2a3d4d5231270aaf0664",
+    "store_probe_pool_hash_pin": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7",
+    "followup_label": "a36-readout-reextract-cos",
+    "layers": [
+      14
+    ]
+  }
+}
