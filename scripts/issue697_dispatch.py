@@ -259,6 +259,63 @@ def cells_697(n_gpus: int = 4, floor_only: bool = False):
     ]
 
 
+def _cell_complete_on_hub(cell_id: str, files: set[str]) -> bool:
+    """Both the per-cell ``.pt`` AND its ``_E_metadata.json`` are present on HF canonical.
+
+    Mirrors ``issue664_dispatch._classify_cell_hub_state(... == "complete")`` — both
+    artifacts must be on the Hub for a cell to be safely skipped, since the analyze
+    phase reads BOTH (the .pt for v-space + the metadata for the marker-arm E
+    records / raw_completion manifest). Conservative: a half-uploaded cell
+    re-runs cleanly.
+    """
+    pt = f"{HF_TENSOR_PREFIX}/{cell_id}.pt"
+    e_meta = f"{HF_TENSOR_PREFIX}/{cell_id}_E_metadata.json"
+    return pt in files and e_meta in files
+
+
+def _filter_cells_already_on_hub(cells, *, n_gpus: int):
+    """Drop cells whose canonical .pt + _E_metadata.json are already on HF.
+
+    ONE ``list_repo_files`` call (a single round trip, then in-process set
+    membership), then re-densify ``gpu_id`` round-robin over the surviving
+    subset so the wave dispatcher shards evenly across however many cells
+    actually need to run. Logs the skipped count + cell IDs so the resume is
+    visible in the dispatcher log.
+    """
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.experiments.issue_651 import Cell
+
+    try:
+        files = set(HfApi().list_repo_files(HF_DATA_REPO, repo_type="dataset"))
+    except Exception as e:
+        # Don't BLOCK the run on a transient HF listing failure (the 504 the
+        # paginated tree endpoint occasionally throws on huge repos). Log + run
+        # the full subset; the per-cell create_commit is itself idempotent (a
+        # re-run of an already-complete cell rewrites the same files).
+        logger.warning(
+            "--skip-on-hub: HF listing failed (%s); proceeding with the full subset "
+            "(per-cell upload is idempotent — re-runs of complete cells overwrite the same files)",
+            e,
+        )
+        return cells
+    skip = [c for c in cells if _cell_complete_on_hub(c.cell_id, files)]
+    keep = [c for c in cells if not _cell_complete_on_hub(c.cell_id, files)]
+    if skip:
+        logger.info(
+            "--skip-on-hub: SKIPPING %d/%d cells already complete on HF "
+            "(canonical %s/{cell}.pt + {cell}_E_metadata.json): %s",
+            len(skip),
+            len(cells),
+            HF_TENSOR_PREFIX,
+            [c.cell_id for c in skip],
+        )
+    return [
+        Cell(behavior=c.behavior, cid=c.cid, seed=c.seed, gpu_id=i % max(n_gpus, 1))
+        for i, c in enumerate(keep)
+    ]
+
+
 def _select_cells(args):
     """Resolve the per-phase cell subset from --cells (or the full 128-cell grid).
 
@@ -271,6 +328,11 @@ def _select_cells(args):
     (marker + fact keep BOTH seeds on HF), so seed-42-only filters the floor to
     ``seed == 42`` across ALL behaviors. The 4 salvaged marker cells are RE-RUN
     (their v3 v is read-inert) — they are IN this grid, not skipped.
+
+    ``--skip-on-hub`` (default ON): after the cell list is resolved, drop cells
+    whose canonical artifacts (``issue697_cv_patch/analysis_tensors/{cell_id}.pt``
+    + ``_E_metadata.json``) already exist on HF — the resume-after-fence guard.
+    Pass ``--no-skip-on-hub`` to force a full re-run.
     """
     from explore_persona_space.experiments.issue_651 import Cell, parse_cell_spec
 
@@ -291,11 +353,15 @@ def _select_cells(args):
                 f"(behaviors={BEHAVIORS_697}, seeds available: "
                 f"{sorted({(c.behavior, c.seed) for c in full})})"
             )
-        return [
+        selected = [
             Cell(behavior=r.behavior, cid=r.cid, seed=r.seed, gpu_id=i % max(args.n_gpus, 1))
             for i, r in enumerate(requested)
         ]
-    return full
+    else:
+        selected = full
+    if getattr(args, "skip_on_hub", True):
+        selected = _filter_cells_already_on_hub(selected, n_gpus=args.n_gpus)
+    return selected
 
 
 # ---------------------------------------------------------------------------
@@ -1252,6 +1318,20 @@ def main() -> int:
         "--no-upload",
         action="store_true",
         help="Skip the per-cell HF upload (local smoke; default uploads per cell).",
+    )
+    parser.add_argument(
+        "--skip-on-hub",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Skip cells whose canonical artifacts already exist on HF "
+            "(``issue697_cv_patch/analysis_tensors/{cell_id}.pt`` + "
+            "``{cell_id}_E_metadata.json``). Default ON so a resume "
+            "of a partial sweep (e.g. after the GCP FLEX_START fence killed "
+            "the run) skips already-complete cells instead of re-running "
+            "them. Pass ``--no-skip-on-hub`` to force a full re-run. "
+            "(Sibling pattern: ``issue664_dispatch.py`` ``_cell_done_anywhere``.)"
+        ),
     )
     parser.add_argument(
         "--skip-judge",
