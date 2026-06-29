@@ -41,12 +41,21 @@ class _LazyModule:
     """
 
     def __init__(self, dotted: str):
-        self._dotted = dotted
+        object.__setattr__(self, "_dotted", dotted)
 
     def __getattr__(self, name):
         import importlib
 
         return getattr(importlib.import_module(self._dotted), name)
+
+    def __setattr__(self, name, value):
+        # Forward attribute SETS to the real module so monkeypatch.setattr(proxy,
+        # ...) patches the module function the implementation actually calls (and
+        # monkeypatch's teardown restore forwards back the same way). Without this,
+        # a set landed on the proxy instance and the real module stayed unpatched.
+        import importlib
+
+        setattr(importlib.import_module(self._dotted), name, value)
 
 
 ci = _LazyModule("issue666_predictor")

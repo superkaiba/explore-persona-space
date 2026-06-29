@@ -314,7 +314,8 @@ def lhat_variant(
     num = float(c @ W @ cp)
     den = float(c @ W @ c)
     if drop_norms:
-        # symmetric cosine in the whitening metric: c_Cᵀ W c_{C'} / sqrt(c_Cᵀ W c_C · c_Cp'ᵀ W c_Cp')
+        # symmetric cosine in the whitening metric:
+        #   c_Cᵀ W c_{C'} / sqrt(c_Cᵀ W c_C · c_{C'}ᵀ W c_{C'})
         den_cp = float(cp @ W @ cp)
         denom = np.sqrt(den * den_cp)
         gate = num / denom if denom > 0 else 0.0
@@ -496,11 +497,10 @@ def joint_factorization_diagnostic(latent_S) -> JointFactorization:
     S = np.asarray(latent_S, dtype=np.float64)
     if S.ndim != 2:
         raise ValueError(f"latent_S must be (n_ctx, n_behavior); got {S.shape}")
-    _, sv, Vt = np.linalg.svd(S, full_matrices=False)
+    U, sv, Vt = np.linalg.svd(S, full_matrices=False)
     s2 = sv**2
     sigma1_frac = float(s2[0] / s2.sum()) if s2.sum() > 0 else float("nan")
     # rank-one reconstruction from the top singular triple
-    U, sv2, Vt2 = np.linalg.svd(S, full_matrices=False)
-    recon = sv2[0] * np.outer(U[:, 0], Vt2[0])
+    recon = sv[0] * np.outer(U[:, 0], Vt[0])
     resid = np.linalg.norm(S - recon) / np.linalg.norm(S) if np.linalg.norm(S) > 0 else 0.0
     return JointFactorization(sigma1_frac=sigma1_frac, rank_one_residual_mean=float(resid))

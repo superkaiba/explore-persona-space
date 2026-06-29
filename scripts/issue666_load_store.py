@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# ruff: noqa: RUF003
+# Intentional scientific Unicode (Σ, ρ, λ, ŵ, ×, −, ⁻¹, ᵀ) in docstrings/comments.
 """issue #666 Phase 4 — load the Phase-2 (#664) trained activation store, per cell.
 
 Streams one store cell at a time (download → use → the caller deletes) from the
@@ -21,6 +23,7 @@ CPU-only; the GPU corpus-extraction step is a SEPARATE script
 from __future__ import annotations
 
 import argparse
+import contextlib
 import gc
 import hashlib
 import json
@@ -227,11 +230,8 @@ def main() -> int:
         del loaded
         gc.collect()
         # bound footprint: delete the downloaded tensors.pt (re-downloadable)
-        tp = local_dir / "tensors.pt"
-        try:
-            os.remove(tp)
-        except OSError:
-            pass
+        with contextlib.suppress(OSError):
+            os.remove(local_dir / "tensors.pt")
     print(f"[phase=load_store] loaded {len(cells)} cells OK")
     return 0
 

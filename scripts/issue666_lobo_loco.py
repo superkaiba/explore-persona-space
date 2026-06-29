@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# ruff: noqa: RUF002, RUF003
+# Intentional scientific Unicode (φ, ρ, Δ, →, ×, −) in docstrings/comments.
 """issue #666 Phase 4 — LOBO + LOCO cross-validation drivers (plan §4g, §6).
 
 LOBO (leave-one-behavior-out): hold out one of {marker, bad_medical, em,

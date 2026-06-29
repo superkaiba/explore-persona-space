@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# ruff: noqa: RUF002, RUF003
+# Intentional scientific Unicode (ρ, Δ, ×, ≈, ᵀ) in docstrings/comments.
 """issue #666 Phase 4 — test-retest noise-floor (reliability ceiling) estimator (plan §4i, §11).
 
 The test-retest reliability is the CEILING on any predictor's achievable ρ. Two
