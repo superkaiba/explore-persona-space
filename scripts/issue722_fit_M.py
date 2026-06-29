@@ -94,10 +94,33 @@ def _pca_basis_v0(V0: np.ndarray, dim: int) -> np.ndarray:
 
     Shared between ridge + MLP so the nonlinearity gap is like-for-like
     (the #658 A35_MLP_TARGET_DIM reduction applied to the v0 output target).
+
+    NumPy's default ``np.linalg.svd`` uses LAPACK ``gesdd`` (divide-and-conquer),
+    which is fast but occasionally raises ``LinAlgError: SVD did not converge`` on
+    near-singular inputs — the family-clustered bootstrap RESAMPLES (``Yb`` in the
+    floor refit, ``_refit_ridge_fn``) draw whole families with replacement, so a
+    draw with heavy row duplication / vanishing variance is mean-centered to a
+    rank-deficient ``Vc`` that ``gesdd`` can fail on. On that exception fall back
+    to ``scipy.linalg.svd(..., lapack_driver='gesvd')`` (the slower QR-based
+    driver, far more robust to non-convergence). The fallback computes the SAME
+    SVD of the SAME matrix — no ridge perturbation, no resample skipping — so the
+    common (clean) path is bit-identical to the run that produced the em JSONs and
+    only the rare degenerate resample takes the robust driver. (Issue #722 round 3:
+    crashed at sycophancy L7 on a bootstrap resample; em L7/L14/L21 fit cleanly.)
     """
     Vc = V0 - V0.mean(axis=0, keepdims=True)
     # economy SVD; rows of Vt are the principal directions.
-    _, _, Vt = np.linalg.svd(Vc, full_matrices=False)
+    try:
+        _, _, Vt = np.linalg.svd(Vc, full_matrices=False)
+    except np.linalg.LinAlgError:
+        from scipy.linalg import svd as _scipy_svd
+
+        logger.warning(
+            "[phase=fit_M] np.linalg.svd (gesdd) did not converge on a %s input "
+            "(near-singular bootstrap resample); retrying with scipy gesvd",
+            Vc.shape,
+        )
+        _, _, Vt = _scipy_svd(Vc, full_matrices=False, lapack_driver="gesvd")
     k = min(dim, Vt.shape[0])
     return Vt[:k]  # (k, 3584)
 
@@ -567,6 +590,16 @@ def main() -> int:
     )
     for behavior in behaviors:
         for layer in layers:
+            # Resume support (docstring §"Per-(behavior, layer) checkpoints ...
+            # make the run resumable"): skip a cell whose JSON already exists so a
+            # relaunch after a crash picks up where it left off (e.g. the em
+            # L7/L14/L21 JSONs recovered from the round-2 preemption are skipped,
+            # and the run resumes at the first un-fit cell). The previous loop
+            # overwrote, so the docstring promise was never true (#722 round 3).
+            out = args.out_dir / f"{behavior}_L{layer}.json"
+            if out.exists():
+                logger.info("[phase=fit_M] %s L%d skipped (cached: %s)", behavior, layer, out)
+                continue
             cells = cells_by[(behavior, layer)]
             logger.info("[phase=fit_M] %s L%d (%d cells)", behavior, layer, len(cells))
             cell = fit_cell(behavior, layer, cells, rb_main, rb_fact)
@@ -574,7 +607,6 @@ def main() -> int:
                 "issue": 722,
                 "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
-            out = args.out_dir / f"{behavior}_L{layer}.json"
             out.write_text(json.dumps(cell, indent=2, default=float))
             logger.info(
                 "[phase=fit_M]   Δ_med=%.4g floor_combined=%.4g over_sd=%s",

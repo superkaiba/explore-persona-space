@@ -295,6 +295,80 @@ def test_kill_criterion_all_h_function_is_clean(tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Round-3 — _pca_basis_v0 survives a gesdd SVD non-convergence on a near-singular
+# bootstrap resample (the workload-time crash at sycophancy L7; em fit cleanly).
+# ─────────────────────────────────────────────────────────────────────────────
+def test_pca_basis_v0_recovers_from_svd_nonconvergence(monkeypatch):
+    """A LinAlgError from np.linalg.svd (gesdd) is caught + recovered via scipy gesvd.
+
+    The family-clustered bootstrap RESAMPLES (Yb in the floor refit) draw whole
+    families with replacement, so a heavily-duplicated draw is mean-centered to a
+    rank-deficient matrix that LAPACK gesdd can fail to converge on. Round-2's
+    `_pca_basis_v0` called `np.linalg.svd` unguarded and propagated the
+    LinAlgError (crashing the whole production run); round-3 falls back to
+    `scipy.linalg.svd(lapack_driver='gesvd')`. This test forces the gesdd choke
+    via monkeypatch (the trigger is LAPACK-version-fragile, so we simulate the
+    raise rather than hunt a specific choking matrix) and asserts the fix
+    recovers with the correct shape AND a basis numerically equal to the gesvd
+    reference. It FAILS against round-2 (the LinAlgError propagates).
+    """
+    import issue722_fit_M as fit_M
+    import numpy.linalg as nla
+
+    # A finite, heavily rank-deficient resample: 24 rows but only 3 distinct
+    # (exact duplicates — what a family-clustered resample-with-replacement
+    # produces when 3 families are drawn repeatedly).
+    rng = np.random.default_rng(0)
+    base = rng.standard_normal((3, 64))
+    V = base[rng.integers(0, 3, size=24)]
+
+    real_svd = nla.svd
+    calls = {"n": 0}
+
+    def _flaky_svd(a, *args, **kw):
+        calls["n"] += 1
+        raise np.linalg.LinAlgError("SVD did not converge")  # simulate gesdd choke
+
+    monkeypatch.setattr(nla, "svd", _flaky_svd)
+    basis = fit_M._pca_basis_v0(V, 4)
+
+    assert calls["n"] == 1, "np.linalg.svd should be attempted exactly once"
+    assert basis.shape == (4, 64), basis.shape  # signature/return shape preserved
+
+    # The fallback computes the SAME SVD of the SAME centered matrix → directions
+    # match the gesvd reference up to sign.
+    from scipy.linalg import svd as _scipy_svd
+
+    Vc = V - V.mean(axis=0, keepdims=True)
+    _, _, Vt_ref = _scipy_svd(Vc, full_matrices=False)
+    ref = Vt_ref[:4]
+    cos = np.abs(np.sum(basis * ref, axis=1)) / (
+        np.linalg.norm(basis, axis=1) * np.linalg.norm(ref, axis=1) + 1e-30
+    )
+    assert cos.min() >= 0.999, f"recovered basis diverges from gesvd reference: {cos}"
+
+
+def test_pca_basis_v0_clean_input_does_not_use_fallback(monkeypatch):
+    """On a well-conditioned input the gesdd path succeeds — the fallback is never
+    reached, so the common (clean) path is unchanged (the em JSONs stay valid)."""
+    import issue722_fit_M as fit_M
+    import scipy.linalg as sla
+
+    sp_calls = {"n": 0}
+    real_sp = sla.svd
+
+    def _count_sp(a, *args, **kw):
+        sp_calls["n"] += 1
+        return real_sp(a, *args, **kw)
+
+    monkeypatch.setattr(sla, "svd", _count_sp)
+    V = np.random.default_rng(3).standard_normal((24, 64))  # full-rank, well-conditioned
+    basis = fit_M._pca_basis_v0(V, 4)
+    assert basis.shape == (4, 64)
+    assert sp_calls["n"] == 0, "scipy gesvd fallback fired on a clean input (should not)"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MF#3 — the co-primary deliverable is written under the plan §6.5 name
 # ─────────────────────────────────────────────────────────────────────────────
 def test_chain_rho_deliverable_filename(tmp_path):
