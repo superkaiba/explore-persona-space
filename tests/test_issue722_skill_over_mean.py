@@ -14,6 +14,7 @@ designs. Covers the three load-bearing invariants from plan §10:
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -169,3 +170,129 @@ def test_truly_singular_layer_reports_nan_and_skipped_no_crash(m, monkeypatch):
     assert res["n_folds_skipped"] == n, (
         f"expected n_folds_skipped == {n}, got {res['n_folds_skipped']}"
     )
+
+
+# ── (d) round-2 resilience: per-layer atomic checkpoint + --resume ────────────
+
+
+def _tiny_store(m, n=14, L=8, h=12, seed=7):
+    """A tiny in-memory substrate shaped like _load_stores() output (no HF, no model).
+
+    Layer li carries a genuinely linear c_C → v0 signal so the ridge skill is a real
+    (non-degenerate) number; the absolute value is irrelevant to the resume tests —
+    only that fresh-vs-resumed layers are handled correctly.
+    """
+    rng = np.random.default_rng(seed)
+    C = rng.standard_normal((n, L, h))
+    W = rng.standard_normal((L, h, h))
+    V = np.stack([C[:, li, :] @ W[li] + 0.05 * rng.standard_normal((n, h)) for li in range(L)], 1)
+    return {
+        "layers": list(range(L)),
+        "V": V.astype(np.float64),
+        "C_last": C.astype(np.float64),
+        "store_provenance": {
+            "v0_file": "synthetic",
+            "cc_last_file": "synthetic",
+            "n_contexts": n,
+            "hidden_dim": h,
+            "probe_pool_hash_v0": "deadbeef",
+            "probe_pool_hash_594": "deadbeef",
+        },
+    }
+
+
+def test_each_layer_written_atomically_as_run_progresses(m, tmp_path):
+    """Per-layer JSON lands the moment a layer completes (no end-of-run-only write)."""
+    store = _tiny_store(m)
+    layers_dir = tmp_path / "layers"
+    res = m.run(
+        cc_key="C_last", only_layers=[0, 3, 5], do_mlp=False, store=store, layers_dir=layers_dir
+    )
+    # exactly the requested layers have files, each parseable + self-describing
+    files = sorted(p.name for p in layers_dir.glob("layer_L*.json"))
+    assert files == ["layer_L00.json", "layer_L03.json", "layer_L05.json"], files
+    for li in (0, 3, 5):
+        obj = json.loads((layers_dir / f"layer_L{li:02d}.json").read_text())
+        assert obj["layer"] == li and "skill_vs_mean_ridge" in obj
+    # the in-memory result matches the on-disk per-layer rows
+    assert {r["layer"] for r in res["per_layer"]} == {0, 3, 5}
+    # the resume manifest pins seed + substrate
+    meta = json.loads((layers_dir / m.RESUME_META_FILE).read_text())
+    assert meta["seed"] == m.SEED and meta["do_mlp"] is False
+
+
+def test_resume_skips_existing_layers_and_does_not_overwrite_them(m, tmp_path):
+    """--resume recomputes only the missing layer; existing files are loaded, not rewritten.
+
+    Mirrors the plan §10 resume smoke: seed layers {2, 7}, then run --resume over
+    {0, 2, 7}; layer 0 is computed fresh while 2 and 7 are loaded from disk unchanged
+    (byte-for-byte — same mtime), and all three end up in the canonical aggregation.
+    """
+    import os as _os
+
+    store = _tiny_store(m)
+    layers_dir = tmp_path / "layers"
+
+    # Pre-seed layers 2 and 7 by running them once (writes their per-layer files).
+    m.run(cc_key="C_last", only_layers=[2, 7], do_mlp=False, store=store, layers_dir=layers_dir)
+    seeded = {li: (layers_dir / f"layer_L{li:02d}.json") for li in (2, 7)}
+    pre = {li: (p.read_bytes(), _os.stat(p).st_mtime_ns) for li, p in seeded.items()}
+    assert not (layers_dir / "layer_L00.json").exists()
+
+    # Resume over {0, 2, 7}: 0 fresh, 2 & 7 skipped.
+    res = m.run(
+        cc_key="C_last",
+        only_layers=[0, 2, 7],
+        do_mlp=False,
+        store=store,
+        layers_dir=layers_dir,
+        resume=True,
+    )
+    # layer 0 now exists (computed fresh); 2 & 7 untouched (same bytes + mtime).
+    assert (layers_dir / "layer_L00.json").exists()
+    for li, p in seeded.items():
+        post = (p.read_bytes(), _os.stat(p).st_mtime_ns)
+        assert post == pre[li], f"resumed layer L{li:02d} was rewritten (should be skipped)"
+    # the canonical aggregation has all three layers in order.
+    assert [r["layer"] for r in res["per_layer"]] == [0, 2, 7]
+
+
+def test_resume_refuses_substrate_mismatch(m, tmp_path):
+    """A --resume against a DIFFERENT substrate fingerprint fails loud, never silently mixes."""
+    layers_dir = tmp_path / "layers"
+    # seed with one substrate (probe_pool_hash 'deadbeef')
+    store_a = _tiny_store(m)
+    m.run(cc_key="C_last", only_layers=[1], do_mlp=False, store=store_a, layers_dir=layers_dir)
+    # a different substrate (different probe-pool hash) must be refused on resume
+    store_b = _tiny_store(m)
+    store_b["store_provenance"]["probe_pool_hash_v0"] = "feedface"
+    store_b["store_provenance"]["probe_pool_hash_594"] = "feedface"
+    with pytest.raises(RuntimeError, match="substrate mismatch"):
+        m.run(
+            cc_key="C_last",
+            only_layers=[0, 1],
+            do_mlp=False,
+            store=store_b,
+            layers_dir=layers_dir,
+            resume=True,
+        )
+
+
+def test_load_stores_refuses_probe_pool_hash_mismatch(m, monkeypatch):
+    """_load_stores raises if v0 and c_C carry different probe_pool_hash (plan §12 A3).
+
+    Stubs hf_hub_download + torch.load so no network / model is touched; the two
+    fabricated stores disagree on probe_pool_hash → the load-bearing equality assert
+    must raise (never silently fit a cross-store map on misaligned probes).
+    """
+    import huggingface_hub
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", lambda *_a, **_k: "/dev/null")
+
+    v0_stub = {"probe_pool_hash": "AAAA", "context_ids": [0], "capture_layers": [0]}
+    cc_stub = {"probe_pool_hash": "BBBB", "instance_ids": [0]}
+    seq = iter([v0_stub, cc_stub])
+    monkeypatch.setattr(m.torch, "load", lambda *_a, **_k: next(seq))
+
+    with pytest.raises(RuntimeError, match="probe_pool_hash mismatch"):
+        m._load_stores()

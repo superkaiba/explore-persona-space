@@ -36,9 +36,13 @@ if absent + unscheduled, ask "does the headline rest on this?" — if no,
 Concern + "build-or-drop". If a control is an affine-invariant of the
 main estimator, it's vacuous → Concern.
 
-Origin: #722 v5 (base map c_C→v0 skill-over-mean). §5 promised a
-label-shuffled ridge control + MLP-shuffle null bars never implemented in
-`scripts/issue722_skill_over_mean.py`; the z-scored-ridge control read
-identical to the main ridge at all 28 layers. APPROVEd — headline was the
-deterministic ridge plateau, guarded by exact PRESS + a zero-skill unit
-test.
+Origin: #722 v5 (base map c_C→v0 skill-over-mean) — an earlier
+review-stage concern that the implementer subsequently addressed in
+commit 82e8400609: the §5 label-shuffled ridge control
+(`SHUFFLE_RIDGE_LAYER = 18`) and the per-layer MLP-shuffle null
+(`skill_shuffle_mlp`) ARE now implemented in
+`scripts/issue722_skill_over_mean.py`. The z-scored-input RIDGE control
+remains correctly DROPPED as algebraically vacuous (affine-invariant
+under ridge per-fold standardization) — keep that vacuity lesson intact.
+APPROVEd — headline was the deterministic ridge plateau, guarded by exact
+PRESS + a zero-skill unit test.

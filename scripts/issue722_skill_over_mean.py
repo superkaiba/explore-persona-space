@@ -67,6 +67,14 @@ Standalone, idempotent, CPU-only. Reuses #658's LOCO helpers by import. NEVER
 edits issue658_fit_predictors.py. Default writes data/issue722_skill_scratch/;
 the canonical run passes --out eval_results/issue_722/base-skill-over-mean-cC-to-v0/
 skill_over_mean.json and a run_meta.json sidecar lands next to it.
+
+Resilience (round-2 patch): each layer is checkpointed ATOMICALLY to
+<outdir>/layers/layer_L{NN}.json the moment it finishes, so a crash mid-run never
+loses a completed layer (the full 28-layer run takes 6–13 h of unattended CPU on
+the shared VM). `--resume` skips layers whose files already exist (loading them
+back so the canonical aggregation is complete), after asserting the existing
+files match this run's seed + substrate. The FULL canonical run fails LOUD if any
+layer is missing rather than writing a partial skill_over_mean.json.
 """
 
 from __future__ import annotations
@@ -75,6 +83,7 @@ import argparse
 import hashlib
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
@@ -413,6 +422,126 @@ def _mlp_skill_zscored(Xc: np.ndarray, Yv: np.ndarray) -> dict:
     return _mlp_skill(_zscore_train_only_full(Xc), Yv)
 
 
+# ── per-layer atomic checkpointing + resume (round-2 resilience patch) ────────
+#
+# The canonical 28-layer run takes 6–13 h of unattended CPU on the shared VM
+# (per-layer wall-time 3–30 min, dominated by the four MLP fits). The round-1
+# canonical run died mid-L10 after ~1h35m with the eval_results dir EMPTY,
+# because the script accumulated `per_layer` in memory and wrote the JSON only
+# at the very end of the 28-layer loop — total loss of 10 completed layers.
+#
+# Fix (CLAUDE.md "Checkpoint per phase; never accumulate-in-memory and write-at-
+# end"): each layer's complete row is written ATOMICALLY (.tmp + os.replace) to
+# <layers_dir>/layer_L{NN}.json the moment that layer finishes. `--resume`
+# enumerates already-written layer files and SKIPS those layers (loading their
+# rows back into the in-memory result so the canonical aggregation is complete).
+# A `_resume_meta.json` pins the seed + substrate probe-pool hash so a resume
+# can NEVER silently continue against a different substrate.
+
+LAYER_FILE_GLOB = "layer_L*.json"
+RESUME_META_FILE = "_resume_meta.json"
+
+
+def _layer_file(layers_dir: Path, layer: int) -> Path:
+    return layers_dir / f"layer_L{layer:02d}.json"
+
+
+def _atomic_write_json(path: Path, obj: Any) -> None:
+    """Write JSON to `path` atomically (.tmp in the same dir + os.replace).
+
+    os.replace is atomic on POSIX within a filesystem, so a crash mid-write
+    leaves either the old file or the complete new file — never a truncated one.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w") as f:
+        json.dump(obj, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+def _substrate_fingerprint(data: dict) -> str:
+    """A stable hash of the load-bearing substrate identity (seed + probe-pool).
+
+    Pins what a resume MUST match: the seed and the shared probe-pool battery
+    hash. A resume against a different substrate would silently mix
+    incomparable layer rows — refused by `_check_resume_meta`.
+    """
+    prov = data["store_provenance"]
+    payload = json.dumps(
+        {
+            "seed": SEED,
+            "probe_pool_hash_v0": prov.get("probe_pool_hash_v0"),
+            "probe_pool_hash_594": prov.get("probe_pool_hash_594"),
+            "n_contexts": prov.get("n_contexts"),
+            "hidden_dim": prov.get("hidden_dim"),
+        },
+        sort_keys=True,
+    )
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
+def _write_resume_meta(layers_dir: Path, data: dict, do_mlp: bool) -> None:
+    """Write/refresh the resume manifest pinning seed + substrate fingerprint."""
+    meta = {
+        "seed": SEED,
+        "substrate_fingerprint": _substrate_fingerprint(data),
+        "do_mlp": do_mlp,
+        "store_provenance": data["store_provenance"],
+    }
+    _atomic_write_json(layers_dir / RESUME_META_FILE, meta)
+
+
+def _check_resume_meta(layers_dir: Path, data: dict, do_mlp: bool) -> None:
+    """Fail loud if an existing resume manifest disagrees with this run's substrate.
+
+    A resume against a different seed / probe-pool / do_mlp regime would mix
+    incomparable layer rows; refuse rather than silently produce a corrupt
+    canonical JSON. No manifest yet (fresh dir) is fine.
+    """
+    meta_path = layers_dir / RESUME_META_FILE
+    if not meta_path.exists():
+        return
+    meta = json.loads(meta_path.read_text())
+    fp_now = _substrate_fingerprint(data)
+    if meta.get("seed") != SEED or meta.get("substrate_fingerprint") != fp_now:
+        raise RuntimeError(
+            f"--resume substrate mismatch in {layers_dir}: existing layer files were "
+            f"computed under seed={meta.get('seed')} / fingerprint="
+            f"{meta.get('substrate_fingerprint')!r}, but this run has seed={SEED} / "
+            f"fingerprint={fp_now!r}. Refusing to mix incomparable layer rows — "
+            "delete the layers/ dir to recompute from scratch."
+        )
+    if meta.get("do_mlp") != do_mlp:
+        raise RuntimeError(
+            f"--resume regime mismatch in {layers_dir}: existing layer files were "
+            f"computed with do_mlp={meta.get('do_mlp')} but this run has do_mlp={do_mlp}. "
+            "Delete the layers/ dir to recompute under the new regime."
+        )
+
+
+def _resumable_layers(layers_dir: Path) -> dict[int, dict]:
+    """Map {layer_index: row} for every complete per-layer file in `layers_dir`.
+
+    A file is only counted complete if it parses and carries a `layer` key
+    (atomic writes guarantee this — a partial .tmp file is never matched by the
+    glob since it has the .tmp suffix).
+    """
+    found: dict[int, dict] = {}
+    if not layers_dir.is_dir():
+        return found
+    for p in sorted(layers_dir.glob(LAYER_FILE_GLOB)):
+        try:
+            obj = json.loads(p.read_text())
+        except (json.JSONDecodeError, OSError):
+            logger.warning("[resume] could not parse %s — recomputing that layer", p)
+            continue
+        if isinstance(obj, dict) and "layer" in obj:
+            found[int(obj["layer"])] = obj
+    return found
+
+
 # ── per-layer driver ──────────────────────────────────────────────────────────
 
 
@@ -421,6 +550,8 @@ def run(
     only_layers: list[int] | None = None,
     do_mlp: bool = True,
     store: dict | None = None,
+    layers_dir: Path | None = None,
+    resume: bool = False,
 ) -> dict:
     data = store if store is not None else _load_stores()
     layers = data["layers"]
@@ -430,6 +561,25 @@ def run(
     logger.info(
         "Loaded: n=%d contexts, L=%d layers, H=%d | c_C=%s | mlp=%s", n, L, H, cc_key, do_mlp
     )
+
+    # Per-layer atomic checkpointing (round-2 resilience). When `layers_dir` is
+    # set, every completed layer is written atomically the moment it finishes; a
+    # `--resume` run skips layers whose files already exist (loading their rows
+    # back so the canonical aggregation is complete) after asserting the existing
+    # files match this run's seed + substrate (NEVER silently mixes substrates).
+    resume_done: dict[int, dict] = {}
+    if layers_dir is not None:
+        layers_dir.mkdir(parents=True, exist_ok=True)
+        _check_resume_meta(layers_dir, data, do_mlp)
+        _write_resume_meta(layers_dir, data, do_mlp)
+        if resume:
+            resume_done = _resumable_layers(layers_dir)
+            if resume_done:
+                logger.info(
+                    "[resume] found %d completed layer file(s): %s",
+                    len(resume_done),
+                    sorted(resume_done),
+                )
 
     # §5 shuffle null: a fixed row permutation of v0, reused for the L18 ridge
     # control AND the per-layer MLP-vs-shuffle null. Seed-pinned for reproducibility.
@@ -442,6 +592,17 @@ def run(
         layer = int(layers[li])
         if only_layers is not None and layer not in only_layers:
             continue
+
+        # Resume: a previously-completed layer is loaded from disk, not recomputed.
+        if resume and layer in resume_done:
+            cached = resume_done[layer]
+            row = {k: v for k, v in cached.items() if not k.startswith("_")}
+            per_layer.append(row)
+            if layer == SHUFFLE_RIDGE_LAYER and "_shuffle_ridge_L18" in cached:
+                shuffle_ridge_l18 = float(cached["_shuffle_ridge_L18"])
+            logger.info("[L%02d] skipped (resumed from %s)", layer, _layer_file(layers_dir, layer))
+            continue
+
         t0 = time.time()
         Xc = C[:, li, :]  # (N, H) c_C at this layer
         Yv = V[:, li, :]  # (N, H) v0 at this layer
@@ -520,6 +681,21 @@ def run(
             time.time() - t0,
         )
 
+        # Atomic per-layer checkpoint — written the MOMENT the layer completes so a
+        # crash mid-run never loses a finished layer (the round-1 failure mode). The
+        # L18 file carries the top-level `shuffle_ridge_L18` control as a sidecar
+        # `_shuffle_ridge_L18` key so a resume can restore it without recomputing.
+        if layers_dir is not None:
+            layer_obj = dict(row)
+            if layer == SHUFFLE_RIDGE_LAYER:
+                layer_obj["_shuffle_ridge_L18"] = float(shuffle_ridge_l18)
+            _atomic_write_json(_layer_file(layers_dir, layer), layer_obj)
+            logger.info("[L%02d] checkpoint written: %s", layer, _layer_file(layers_dir, layer))
+
+    # Keep `per_layer` in canonical layer order (resumed rows may interleave with
+    # freshly-computed ones depending on which layers were already on disk).
+    per_layer.sort(key=lambda r: r["layer"])
+
     return {
         "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R² on centered v0)",
         "c_C_recipe": cc_key,
@@ -597,6 +773,7 @@ def _write_run_meta(
             "no_mlp": args.no_mlp,
             "out": str(args.out) if args.out is not None else None,
             "threads": args.threads,
+            "resume": args.resume,
         },
         "substrate": {
             "v0_file": f"{HF_REPO}:{V0_FILE}",
@@ -727,6 +904,13 @@ def main() -> int:
         help="torch CPU threads; 0 = leave torch default (fastest here — a 16-thread "
         "cap roughly doubled the per-fit MLP time vs the box default)",
     )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="resume from <outdir>/layers/: skip layers whose per-layer JSON already "
+        "exists (loaded back into the canonical aggregation). Asserts the existing "
+        "layer files match this run's seed + substrate before continuing.",
+    )
     args = parser.parse_args()
 
     i658.DEVICE = "cpu"  # CPU-only, deterministic
@@ -739,17 +923,42 @@ def main() -> int:
         torch.get_rng_state().numpy().tobytes() + np.random.get_state()[1].tobytes()
     ).hexdigest()
 
-    only = [0, 18] if args.smoke else args.layers
-    t_run0 = time.time()
-    data = _load_stores()
-    result = run(cc_key=args.cc, only_layers=only, do_mlp=not args.no_mlp, store=data)
-    wall_time_s = time.time() - t_run0
-
+    # Resolve the canonical output path FIRST so the per-layer checkpoint dir
+    # (<outdir>/layers/) can be threaded into run() for atomic per-layer writes.
     if args.out is not None:
         out_path = args.out
     else:
         default_name = "skill_over_mean_smoke.json" if args.smoke else "skill_over_mean.json"
         out_path = OUT_DIR / default_name
+    layers_dir = out_path.parent / "layers"
+
+    only = [0, 18] if args.smoke else args.layers
+    t_run0 = time.time()
+    data = _load_stores()
+    result = run(
+        cc_key=args.cc,
+        only_layers=only,
+        do_mlp=not args.no_mlp,
+        store=data,
+        layers_dir=layers_dir,
+        resume=args.resume,
+    )
+    wall_time_s = time.time() - t_run0
+
+    # Fail-loud completeness gate for the FULL canonical run (no --layers / --smoke
+    # subset): NEVER write a partial canonical JSON that would silently hide missing
+    # layers. A subset run (--layers / --smoke) writes exactly the requested layers.
+    if only is None:
+        all_layers = {int(x) for x in result["layers"]}
+        present = {int(r["layer"]) for r in result["per_layer"]}
+        missing = sorted(all_layers - present)
+        if missing:
+            raise RuntimeError(
+                f"canonical aggregation incomplete: {len(missing)} layer(s) missing "
+                f"from {layers_dir}: {missing}. Refusing to write a partial "
+                f"{out_path.name}. Re-run with --resume to compute the missing layers."
+            )
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(result, f, indent=2)
