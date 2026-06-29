@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 734,
+  "highest_id": 735,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4627,6 +4627,13 @@
       "path": "tasks/proposed/734",
       "status": "proposed",
       "title": "Why did the marker fail to install on Qwen-2.5-7B-Instruct in #664 when the same recipe installed on base Qwen-2.5-7B? (model vs lr/steps vs band-stop diagnostic)"
+    },
+    "735": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/735",
+      "status": "proposed",
+      "title": "infra: harden shared HF uploader against transient 504 commit timeouts"
     },
     "74": {
       "has_clean_result": false,
