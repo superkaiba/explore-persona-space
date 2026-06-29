@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 737,
+  "highest_id": 738,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4648,6 +4648,13 @@
       "path": "tasks/completed/737",
       "status": "completed",
       "title": "workflow-fix: artifact-reuse (h) check for train-input mixes"
+    },
+    "738": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/738",
+      "status": "proposed",
+      "title": "workflow-fix: log per-epoch curves for hand-rolled predictor fits"
     },
     "74": {
       "has_clean_result": false,
