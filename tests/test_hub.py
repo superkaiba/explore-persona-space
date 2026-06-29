@@ -14,6 +14,7 @@ from explore_persona_space.orchestrate.hub import (
     upload_dataset,
     upload_dataset_directory,
     upload_model,
+    upload_raw_completions_to_data_repo,
 )
 
 
@@ -249,3 +250,126 @@ class TestUploadDatasetDirectory:
             "character class and matches nothing"
         )
         assert result == ["test/data_[v1].jsonl"]
+
+
+class TestUploadRawCompletions:
+    """Tests for upload_raw_completions_to_data_repo — the #664/#727 refactor.
+
+    The function must upload the whole matched raw-completions tree in ONE
+    ``upload_folder`` commit (never a per-file ``upload_file`` loop, which
+    504-storms on a large repo), preserve the per-file return-dict contract,
+    skip aggregate JSONs, fail loud on incomplete verification, and only delete
+    the raw-completions files (never the aggregate) under ``delete_after``.
+    """
+
+    EXP = "issue727_demo"
+
+    def _build_tree(self, root: Path) -> list[str]:
+        """Create raw_completions.json at THREE depths + an aggregate JSON
+        that must NOT be uploaded. Returns the expected committed repo paths."""
+        # depth 0 (top-level), depth 2, depth 3
+        (root / "raw_completions.json").write_text('{"d0": 1}')
+        nested_a = root / "cellA" / "T_seed42"
+        nested_a.mkdir(parents=True)
+        (nested_a / "raw_completions.json").write_text('{"d2": 1}')
+        nested_b = root / "cellB" / "sub" / "C_seed7"
+        nested_b.mkdir(parents=True)
+        (nested_b / "raw_completions.json").write_text('{"d3": 1}')
+        # An aggregate JSON the allow_patterns must skip.
+        (root / "run_result.json").write_text('{"agg": true}')
+        prefix = f"{self.EXP}/raw_completions"
+        return [
+            f"{prefix}/raw_completions.json",
+            f"{prefix}/cellA/T_seed42/raw_completions.json",
+            f"{prefix}/cellB/sub/C_seed7/raw_completions.json",
+        ]
+
+    def test_uses_upload_folder_not_per_file_loop(self, tmp_path):
+        """ONE upload_folder commit, ZERO upload_file calls, allow_patterns
+        matches only raw-completions, return dict has one entry per file."""
+        expected = self._build_tree(tmp_path)
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                return_value=expected,  # whole expected set present -> verified
+            ),
+        ):
+            mock_api = MockApi.return_value
+            mock_api.create_repo.return_value = None
+            mock_api.upload_folder.return_value = None
+
+            result = upload_raw_completions_to_data_repo(self.EXP, tmp_path)
+
+        # Exactly ONE bulk commit, NO per-file uploads.
+        mock_api.upload_folder.assert_called_once()
+        mock_api.upload_file.assert_not_called()
+        # allow_patterns selects only raw-completions at every depth.
+        call_kwargs = mock_api.upload_folder.call_args[1]
+        assert call_kwargs["allow_patterns"] == [
+            "raw_completions.json",
+            "**/raw_completions.json",
+        ]
+        assert call_kwargs["path_in_repo"] == f"{self.EXP}/raw_completions"
+        # Return dict: one entry per raw-completions file, correct URL, no
+        # aggregate JSON entry.
+        assert set(result.keys()) == {
+            "raw_completions.json",
+            "cellA/T_seed42/raw_completions.json",
+            "cellB/sub/C_seed7/raw_completions.json",
+        }
+        rel = "cellA/T_seed42/raw_completions.json"
+        assert result[rel] == f"{DEFAULT_DATASET_REPO}/{self.EXP}/raw_completions/{rel}"
+
+    def test_empty_returns_empty_dict_with_warning(self, tmp_path):
+        """No matching files -> {} and NO upload call (early return)."""
+        (tmp_path / "run_result.json").write_text('{"agg": true}')
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            patch("explore_persona_space.orchestrate.hub.list_repo_files_complete") as mock_list,
+        ):
+            result = upload_raw_completions_to_data_repo(self.EXP, tmp_path)
+        assert result == {}
+        MockApi.return_value.upload_folder.assert_not_called()
+        mock_list.assert_not_called()
+
+    def test_verification_failure_raises(self, tmp_path):
+        """An incomplete committed set (one expected file missing) -> the
+        EXACT-set verify fails -> RuntimeError (fail-loud preserved)."""
+        expected = self._build_tree(tmp_path)
+        incomplete = expected[:-1]  # drop one expected file from the listing
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                return_value=incomplete,
+            ),
+            pytest.raises(RuntimeError, match="bulk folder upload failed"),
+        ):
+            MockApi.return_value.upload_folder.return_value = None
+            upload_raw_completions_to_data_repo(self.EXP, tmp_path)
+
+    def test_delete_after_removes_only_raw_files(self, tmp_path):
+        """delete_after=True removes the raw_completions.json files but leaves
+        the aggregate JSON (only matched files are deleted, never the dir)."""
+        expected = self._build_tree(tmp_path)
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                return_value=expected,
+            ),
+        ):
+            MockApi.return_value.upload_folder.return_value = None
+            upload_raw_completions_to_data_repo(self.EXP, tmp_path, delete_after=True)
+
+        # Every raw_completions.json is gone.
+        assert not (tmp_path / "raw_completions.json").exists()
+        assert not (tmp_path / "cellA" / "T_seed42" / "raw_completions.json").exists()
+        assert not (tmp_path / "cellB" / "sub" / "C_seed7" / "raw_completions.json").exists()
+        # The aggregate JSON the allow_patterns skipped is untouched.
+        assert (tmp_path / "run_result.json").exists()
