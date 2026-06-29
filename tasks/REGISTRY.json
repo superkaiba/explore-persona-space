@@ -4539,8 +4539,8 @@
       "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, fit the context\u2192answer-profile mapping M: c_C \u2192 v0(C) both pre-finetuning (M0, base) and post-finetuning (M\u207a, adapter-applied) as a linear ridge AND a nonlinear MLP, and determine whether the FUNCTION M changes (distinct from the input context vector c_C shifting) via (1) function-change at fixed input \u2016M\u207a(c)\u2212M0(c)\u2016 on a common c grid projected onto behavior read-outs r_B, (2) behavior-relevant transfer through the chain r_B\u1d40 M c \u2192 E (judge rate) and M along r_B \u2014 NOT generic v0 reconstruction (which #658 showed saturates \u22480.98 and is uninformative), and (3) cross-transfer of M0 vs M\u207a on FT data; cross-referenced against #697's causal f_CV.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/722",
-      "status": "verifying",
+      "path": "tasks/interpreting/722",
+      "status": "interpreting",
       "title": "Does finetuning change the context\u2192answer-profile mapping M, or only the input context vector? Fit M0 vs M\u207a (ridge + MLP) on #537 adapters"
     },
     "723": {
