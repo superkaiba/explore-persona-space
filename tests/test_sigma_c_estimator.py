@@ -133,7 +133,12 @@ def test_rank_deficient_n50_detected_and_inverse_well_defined():
     Sigma = sig.Sigma_c(C)
     assert Sigma.shape == (d, d)
     rank = np.linalg.matrix_rank(Sigma)
-    assert rank <= N - 1, f"n=50 Σc rank {rank} should be ≤ 49 (rank-deficient)"
+    # The UNCENTERED second moment of N generic vectors has rank exactly N (each
+    # c_i c_iᵀ is an independent rank-1 term), so the rank-deficiency test is
+    # "rank tracks N, NOT the ambient d" — rank ≤ N ≪ d=3584 (round-1 TDD wrote
+    # ``≤ N-1``, valid only for the mean-CENTERED covariance, which the uncentered
+    # ``Sigma_c`` contract — test_sigma_c_is_uncentered_second_moment — forbids).
+    assert rank <= N, f"n=50 Σc rank {rank} should be ≤ {N} ≪ d={d} (rank-deficient)"
     # The regularized inverse is still finite (ridge rescues the singular Σc).
     result = sig.estimate_sigma_inv(C, lambda_grid=LAMBDA_GRID, seed=2)
     assert np.all(np.isfinite(result.Sigma_inv)), "ridge inverse must be finite"
