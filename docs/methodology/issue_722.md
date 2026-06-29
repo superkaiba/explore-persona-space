@@ -1,4 +1,4 @@
-# Methodology — issue 722: Fitting M0 vs M⁺ on reused adapters: only the taught fact's context→answer map measurably reshapes
+# Methodology — issue 722: fit M0 vs M⁺ (ridge + MLP) on #537 adapters' paired activations
 
 
 **Design:** A pure measurement on already-trained adapters — no model training. Three behaviors (harmful-compliance / EM, taught fact, sycophancy) × three layers (7, 14 primary, 21). For each (behavior, layer) cell, two maps are fit on paired activations from the matched store: the base map **M0** from `(base context vector c0 → base answer profile v0)`, and the post-finetuning map **M⁺** from `(post-FT context vector cplus → post-FT answer profile vplus)`. Both are then evaluated on the *same* base context grid so the comparison is at a fixed input. Each map is fit two ways — a closed-form ridge and a 1-hidden-layer MLP — sharing a 64-dimension output target. The single manipulated thing is which side of the finetuning boundary the map comes from (M0 vs M⁺).
