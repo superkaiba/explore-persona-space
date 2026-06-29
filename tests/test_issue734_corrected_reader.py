@@ -320,3 +320,224 @@ def test_run_phase2_dry_run_does_not_train_or_read(monkeypatch, tmp_path):
     result = D.run_phase2(cells_limit=None, smoke=False, dry_run=True)
     assert result["trained_cells"] == []
     assert result["corrected_read_cells"] == []
+
+
+# ── Fix 1 (round 3): H1 reuses the seed-42 #664 mix for EVERY model-init seed ──
+def test_h1_to_664_cell_pins_mix_seed_to_42_for_every_h1_seed():
+    """THE H1 MIX-REUSE INVARIANT (Fix 1; reconciler-upheld production-crash
+    blocker). Every H1 cell's to_664_cell() resolves to the seed-42 #664 marker
+    mix (mk_librarian_contra_d1_seed42) regardless of its model-init seed -- #664
+    only materialized the seed-42 marker grid on disk, so resolving the mix path
+    to the per-seed key would assert-crash train_h1_cell on seeds 137/256 before
+    any corrected-read JSON lands. The mix is content-deterministic; the per-seed
+    variable is model init, not data."""
+    import issue734_common as C
+
+    for cell in C.h1_cells():
+        assert cell.seed in C.H1_SEEDS
+        c664 = cell.to_664_cell()
+        assert c664.eval_key == "mk_librarian_contra_d1_seed42", (
+            f"H1 cell {cell.eval_key} (model-init seed {cell.seed}) must reuse the "
+            f"seed-42 mix; got mix key {c664.eval_key!r}"
+        )
+
+
+def test_h1_model_init_seed_differs_per_cell_but_mix_is_shared():
+    """The single-variable contract: the DELIBERATE H1 variable is the model-init
+    seed (cell.seed, threaded into train_lora via train_kwargs(seed=...)), and it
+    DIFFERS per cell -- while the mix-data key is SHARED (seed-42) across all of
+    them. Pins that we separated the two: per-seed model init (distinct adapters)
+    + one shared mix (no smuggled second variable)."""
+    import issue734_common as C
+
+    cells = C.h1_cells()
+    # Model-init seeds span the full H1_SEEDS set per model (distinct adapters).
+    for model_key in ("base", "instruct"):
+        seeds = sorted(c.seed for c in cells if c.model_key == model_key)
+        assert seeds == sorted(C.H1_SEEDS), (model_key, seeds)
+    # The mix-data key is identical across EVERY cell (shared seed-42 mix).
+    mix_keys = {c.to_664_cell().eval_key for c in cells}
+    assert mix_keys == {"mk_librarian_contra_d1_seed42"}, mix_keys
+    # The recipe's train_kwargs threads cell.seed as the MODEL-INIT seed (not 42).
+    import issue664_common as C664
+
+    for cell in cells:
+        kw = C664.recipe_for("marker").train_kwargs(
+            dose=cell.dose, gpu_id=0, run_name=cell.run_name, seed=cell.seed
+        )
+        assert kw["seed"] == cell.seed, (cell.eval_key, kw["seed"])
+
+
+# ── Fix 2 (round 3): parity_probe PASS/HALT decision logic (CPU proxy smoke) ──
+# The reconciler-upheld smoke-run-missing blocker: parity_probe (the §7.5
+# #534-class rsLoRA/adapter-load HALT gate) runs only on the production
+# (not --dry-run) path, so the --dry-run smoke never exercised its decision
+# logic. These CPU tests monkeypatch the corrected-read return value to drive
+# BOTH branches end-to-end -- the production-path proxy for the GPU-only probe.
+
+
+def _fake_reread_factory(corr_mean, inloop_delta):
+    """Build a reread_cell stand-in returning (summary, corr_mean) with a chosen
+    in-loop band-stop ground truth (None -> no ground truth -> band fallback)."""
+
+    def fake_reread(cell, *, smoke, return_corrected_delta=False):
+        inloop = None if inloop_delta is None else {"last_delta_nats": inloop_delta}
+        summary = {
+            "cell": cell.eval_key,
+            "corrected_source_delta_logp_mean": corr_mean,
+            "inloop_band_stop": inloop,
+            # band-fallback uses corrected_in_band; pick membership from corr_mean.
+            "corrected_in_band": 5.0 <= corr_mean <= 12.0,
+        }
+        if return_corrected_delta:
+            return summary, corr_mean
+        return summary
+
+    return fake_reread
+
+
+def test_parity_probe_pass_branch_in_tolerance(monkeypatch):
+    """PASS branch: corrected read reproduces the in-loop band-stop within ~2 nat
+    (corrected +6.9 vs in-loop +6.9, gap 0.0 <= 2.0 tol) -> parity_probe True."""
+    import issue734_dispatch as D
+
+    monkeypatch.setattr(D, "reread_cell", _fake_reread_factory(6.9, 6.9))
+    assert D.parity_probe(smoke=False) is True
+
+
+def test_parity_probe_halt_branch_out_of_tolerance(monkeypatch):
+    """HALT branch: corrected read MISSES the in-loop band-stop by > 2 nat
+    (corrected +1.0 vs in-loop +6.9, gap 5.9 > 2.0 tol) -> parity_probe False at
+    smoke=False (the gauge/load is wrong; the sweep must HALT)."""
+    import issue734_dispatch as D
+
+    monkeypatch.setattr(D, "reread_cell", _fake_reread_factory(1.0, 6.9))
+    assert D.parity_probe(smoke=False) is False
+
+
+def test_main_phase1p5_halts_on_parity_miss(monkeypatch, tmp_path):
+    """PRODUCTION-ENTRYPOINT proxy: main(--phase phase1p5) raises SystemExit (the
+    §7.5 reuse-fitness HALT) when parity_probe returns False. Drives the real
+    dispatcher CLI branch the GPU run takes, scaled to a monkeypatched probe."""
+    import issue734_common as C
+    import issue734_dispatch as D
+
+    monkeypatch.setattr(C, "require_credentials", lambda: None)
+    monkeypatch.setattr(D, "parity_probe", lambda *, smoke: False)
+    monkeypatch.setattr(sys, "argv", ["issue734_dispatch.py", "--phase", "phase1p5"])
+    with pytest.raises(SystemExit) as ei:
+        D.main()
+    # The HALT message names the parity miss (not a clean rc=0 exit).
+    assert "parity probe FAILED" in str(ei.value)
+
+
+def test_main_phase1p5_passes_on_parity_ok(monkeypatch, tmp_path):
+    """PRODUCTION-ENTRYPOINT proxy (PASS): main(--phase phase1p5) returns 0 and
+    writes the end-of-run sentinel when parity_probe passes. Confirms the gate
+    does NOT spuriously halt on a real pass."""
+    import issue734_common as C
+    import issue734_dispatch as D
+
+    monkeypatch.setattr(C, "require_credentials", lambda: None)
+    monkeypatch.setattr(D, "parity_probe", lambda *, smoke: True)
+    sentinels: list[str] = []
+    monkeypatch.setattr(
+        D, "write_sentinel", lambda *a, **k: (sentinels.append("ok"), tmp_path / "s.json")[1]
+    )
+    monkeypatch.setattr(sys, "argv", ["issue734_dispatch.py", "--phase", "phase1p5"])
+    rc = D.main()
+    assert rc == 0
+    assert sentinels == ["ok"]  # the graceful-exit sentinel was written
+
+
+# ── Fix 3 (round 3): figure hero1 renders BOTH Phase-1 and H1 JSONs ───────────
+def test_hero1_renders_phase1_and_h1_without_keyerror(monkeypatch, tmp_path):
+    """SHAPE-PARITY INVARIANT (Fix 3; Claude r2 CONCERN): _load_corrected_reread
+    globs BOTH phases, and the H1 (phase2_h1) summary OMITS inloop_band_stop while
+    Phase-1 carries it. hero1 must render the mixed set without KeyError -- the
+    pre-fix c["inloop_band_stop"] hard-index crashed once H1 cells landed."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import issue734_common as C
+    import issue734_figures as F
+
+    root = tmp_path / "corrected_reread"
+    # Phase-1 reuse cell: carries inloop_band_stop (the ground-truth install).
+    p1_dir = root / "mk_librarian_contra_d1_seed42"
+    p1_dir.mkdir(parents=True)
+    (p1_dir / "marker_slot_corrected.json").write_text(
+        json.dumps(
+            {
+                "cell": "mk_librarian_contra_d1_seed42",
+                "phase": "phase1_reuse",
+                "corrected_source_delta_logp_mean": 6.8,
+                "misrooted_source_delta_logp_mean": -37.0,
+                "inloop_band_stop": {"last_delta_nats": 6.9},
+            }
+        )
+    )
+    # H1 cell: NO inloop_band_stop key (the shape that triggered the KeyError).
+    h1_dir = root / "h1_base_seed42"
+    h1_dir.mkdir(parents=True)
+    (h1_dir / "marker_slot_corrected.json").write_text(
+        json.dumps(
+            {
+                "cell": "h1_base_seed42",
+                "phase": "phase2_h1",
+                "corrected_source_delta_logp_mean": 7.1,
+                "misrooted_source_delta_logp_mean": -35.0,
+                # deliberately NO "inloop_band_stop" key
+            }
+        )
+    )
+    monkeypatch.setattr(C, "CORRECTED_REREAD_ROOT", root)
+    cells = F._load_corrected_reread()
+    assert len(cells) == 2, [c["cell"] for c in cells]
+    out_png = tmp_path / "hero1.png"
+    # The defining assertion: no KeyError on the mixed (Phase-1 + H1) set.
+    F.hero1_install_recovery(cells, out_png)
+    assert out_png.exists()
+
+
+# ── Fix 4 (round 3): --seeds restricts the H1 model-init seeds run ────────────
+def test_run_phase2_seeds_subset_restricts_cells(monkeypatch, tmp_path):
+    """--seeds wiring (Fix 4): run_phase2(seeds=[42]) trains/reads ONLY the seed-42
+    H1 cells (one per model), not all three seeds. Pins the previously-unused arg."""
+    import issue734_common as C
+    import issue734_dispatch as D
+
+    out_root = tmp_path / "corrected_reread"
+    monkeypatch.setattr(C, "CORRECTED_REREAD_ROOT", out_root)
+    trained: list[str] = []
+
+    def fake_train(cell, *, smoke, gpu_id=0):
+        trained.append(cell.eval_key)
+        d = tmp_path / "adapters" / cell.eval_key
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def fake_reread(cell, adapter_dir, *, smoke):
+        out_dir = out_root / cell.eval_key
+        out_dir.mkdir(parents=True, exist_ok=True)
+        s = {"cell": cell.eval_key, "model_key": cell.model_key, "corrected_in_band": True}
+        (out_dir / "marker_slot_corrected.json").write_text(json.dumps(s))
+        return s
+
+    monkeypatch.setattr(D, "train_h1_cell", fake_train)
+    monkeypatch.setattr(D, "reread_h1_cell", fake_reread)
+    result = D.run_phase2(cells_limit=None, smoke=True, dry_run=False, seeds=[42])
+    # Only the seed-42 cells (one per model) ran.
+    assert sorted(trained) == ["h1_base_seed42", "h1_instruct_seed42"], trained
+    assert sorted(result["corrected_read_cells"]) == ["h1_base_seed42", "h1_instruct_seed42"]
+
+
+def test_run_phase2_seeds_unknown_raises(monkeypatch, tmp_path):
+    """--seeds with a seed not in H1_SEEDS fails loud (usage error, never silent
+    empty)."""
+    import issue734_common as C
+    import issue734_dispatch as D
+
+    monkeypatch.setattr(C, "CORRECTED_REREAD_ROOT", tmp_path / "corrected_reread")
+    with pytest.raises(AssertionError):
+        D.run_phase2(cells_limit=None, smoke=True, dry_run=True, seeds=[999])

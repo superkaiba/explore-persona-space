@@ -560,8 +560,17 @@ def train_h1_cell(cell: C.H1Cell, *, smoke: bool, gpu_id: int = 0) -> Path:
     """
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
-    # The training mix is #664's librarian-contra-d1 marker mix (reuse).
+    # The training mix is #664's librarian-contra-d1 marker mix (reuse). The mix is
+    # PINNED to the seed-42 #664 baseline for EVERY H1 seed (to_664_cell forces
+    # seed=PHASE1_SEED): the mix data is content-deterministic, the deliberate H1
+    # variable is the model-init seed (cell.seed -> train_kwargs below), NOT the
+    # mix data, and #664 only materialized the seed-42 marker grid on disk.
     c664 = cell.to_664_cell()
+    assert c664.eval_key == "mk_librarian_contra_d1_seed42", (
+        f"H1 must reuse the seed-42 #664 mix for every H1 seed; got {c664.eval_key!r} "
+        f"(to_664_cell must pin seed=PHASE1_SEED, NOT cell.seed -- the seed-137/256 "
+        f"mixes do not exist on disk and a per-seed mix is a smuggled second variable)"
+    )
     data_path = (
         C664.DATA_ROOT / ("train_smoke" if smoke else "train") / "marker" / f"{c664.eval_key}.jsonl"
     )
@@ -666,9 +675,17 @@ def run_phase1(*, cells_limit: int | None, smoke: bool, dry_run: bool) -> dict:
     }
 
 
-def run_phase2(*, cells_limit: int | None, smoke: bool, dry_run: bool) -> dict:
+def run_phase2(
+    *, cells_limit: int | None, smoke: bool, dry_run: bool, seeds: list[int] | None = None
+) -> dict:
     phase_log("phase2_h1_train")
     cells = C.h1_cells()
+    if seeds is not None:
+        # --seeds restricts the H1 model-init seeds run (smoke / subset re-run). A
+        # seed not in C.H1_SEEDS is a usage error (fail loud, never silently empty).
+        unknown = set(seeds) - set(C.H1_SEEDS)
+        assert not unknown, f"--seeds {sorted(unknown)} not in H1_SEEDS {C.H1_SEEDS}"
+        cells = [c for c in cells if c.seed in set(seeds)]
     if cells_limit is not None:
         cells = cells[:cells_limit]
     # §8 base-arm smoke gate: the FIRST base seed must band-stop in [5,12] BEFORE the
@@ -834,7 +851,14 @@ def main() -> int:
         choices=["phase0", "phase1", "phase1p5", "phase2", "phase3", "upload", "all"],
     )
     ap.add_argument("--cells", type=int, default=None, help="limit cells (smoke: --cells 1)")
-    ap.add_argument("--seeds", type=int, default=None, help="limit H1 seeds (reserved)")
+    ap.add_argument(
+        "--seeds",
+        type=str,
+        default=None,
+        help="comma-separated subset of H1 model-init seeds to run (e.g. --seeds 42 for the "
+        "1-seed-1-model smoke, --seeds 42,137 for a re-run subset). Each must be in H1_SEEDS; "
+        "default None = all H1_SEEDS. Restricts phase2 only.",
+    )
     ap.add_argument("--smoke", action="store_true", help="tiny-slice smoke (2 probes / 2 steps)")
     ap.add_argument(
         "--dry-run",
@@ -843,6 +867,10 @@ def main() -> int:
         "(GPU-bound-phase substitute coverage)",
     )
     args = ap.parse_args()
+
+    seeds: list[int] | None = None
+    if args.seeds:
+        seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
 
     C.require_credentials()
     note_extra: dict = {}
@@ -877,7 +905,9 @@ def main() -> int:
             falsified = bool(p1.get("h3_falsified"))
 
         if args.phase in ("phase2", "all"):
-            p2 = run_phase2(cells_limit=args.cells, smoke=args.smoke, dry_run=args.dry_run)
+            p2 = run_phase2(
+                cells_limit=args.cells, smoke=args.smoke, dry_run=args.dry_run, seeds=seeds
+            )
             note_extra["phase2"] = p2
 
         if args.phase == "phase3" or (args.phase == "all" and falsified):

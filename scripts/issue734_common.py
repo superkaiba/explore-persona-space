@@ -177,9 +177,25 @@ class H1Cell:
         return f"{HF_H1_ADAPTER_PREFIX}/{self.eval_key}"
 
     def to_664_cell(self) -> C664.Cell:
-        """The #664 Cell whose training mix + recipe H1 reuses (model swapped)."""
+        """The #664 Cell whose training MIX H1 reuses (model swapped).
+
+        The mix-data seed is PINNED to the seed-42 #664 baseline (``PHASE1_SEED``)
+        regardless of ``self.seed`` -- the marker training mix is
+        content-deterministic (question set x persona panel x contrastive
+        negatives), so the "seed" suffix in #664's mix-filename key reproduces
+        ordering, NOT data content, and #664 only ever MATERIALIZED the seed-42
+        marker grid (``mk_librarian_contra_d1_seed42.jsonl``; the seed-137/256
+        mixes do not exist on disk -- there is no #734-side prebuild). The
+        deliberate H1 variable is the MODEL-INIT seed (``self.seed``, threaded
+        into ``train_lora`` via ``recipe.train_kwargs(seed=self.seed)``), NOT the
+        mix data -- so all three H1 seeds train on the SAME mix and differ ONLY
+        in model init (the single-variable-change H1 contract). Reusing
+        ``self.seed`` here instead would (a) crash on the missing 137/256 mixes
+        AND (b) smuggle in a second deliberate variable (per-seed mix data).
+        Self-documenting assert at the data-path call site (``train_h1_cell``).
+        """
         return C664.Cell(
-            behavior="marker", source=self.source, arm=self.arm, dose=self.dose, seed=self.seed
+            behavior="marker", source=self.source, arm=self.arm, dose=self.dose, seed=PHASE1_SEED
         )
 
 

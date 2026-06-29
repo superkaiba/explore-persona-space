@@ -57,7 +57,10 @@ def hero1_install_recovery(cells: list[dict], out_path: Path) -> None:
         logger.warning("paper_plots style unavailable -- default matplotlib style")
 
     labels = [c["cell"] for c in cells]
-    inloop = [(c["inloop_band_stop"] or {}).get("last_delta_nats", float("nan")) for c in cells]
+    # H1 (phase2_h1) summaries OMIT inloop_band_stop (only Phase-1 reuse cells carry
+    # it); _load_corrected_reread globs BOTH phases, so .get(...) is REQUIRED -- a
+    # hard c["inloop_band_stop"] index KeyErrors the hero figure once H1 cells land.
+    inloop = [(c.get("inloop_band_stop") or {}).get("last_delta_nats", float("nan")) for c in cells]
     misrooted = [c["misrooted_source_delta_logp_mean"] for c in cells]
     corrected = [c["corrected_source_delta_logp_mean"] for c in cells]
 
