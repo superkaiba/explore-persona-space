@@ -106,8 +106,9 @@ def test_parity_pass_runs_patch(tmp_path, monkeypatch):
     import explore_persona_space.analysis.gate_io as gate_io
 
     class _SC:
-        tensors = {"context_ids": ["src", "b1", "b2"]}
-        source_ctx_id = "src"
+        def __init__(self):
+            self.tensors = {"context_ids": ["src", "b1", "b2"]}
+            self.source_ctx_id = "src"
 
         def free(self):
             pass
@@ -250,16 +251,21 @@ def test_a39_sweeps_four_keys():
     rng = np.random.default_rng(1)
 
     class _SC:
-        source_idx = 0
-        tensors = {
-            "v_plus": torch.tensor(rng.standard_normal((n_ctx, n_layer, d)), dtype=torch.float32),
-            "v0": torch.tensor(rng.standard_normal((n_ctx, n_layer, d)), dtype=torch.float32),
-            "c_C_base": torch.tensor(rng.standard_normal((n_ctx, n_layer, d)), dtype=torch.float32),
-            "c_C_trained": torch.tensor(
-                rng.standard_normal((n_ctx, n_layer, d)), dtype=torch.float32
-            ),
-            "t_CB": torch.tensor(rng.standard_normal((n_layer, d)), dtype=torch.float32),
-        }
+        def __init__(self):
+            self.source_idx = 0
+            self.tensors = {
+                "v_plus": torch.tensor(
+                    rng.standard_normal((n_ctx, n_layer, d)), dtype=torch.float32
+                ),
+                "v0": torch.tensor(rng.standard_normal((n_ctx, n_layer, d)), dtype=torch.float32),
+                "c_C_base": torch.tensor(
+                    rng.standard_normal((n_ctx, n_layer, d)), dtype=torch.float32
+                ),
+                "c_C_trained": torch.tensor(
+                    rng.standard_normal((n_ctx, n_layer, d)), dtype=torch.float32
+                ),
+                "t_CB": torch.tensor(rng.standard_normal((n_layer, d)), dtype=torch.float32),
+            }
 
     sigma_c_layer = np.eye(d) + 0.1 * rng.standard_normal((d, d))
     sigma_c_layer = sigma_c_layer @ sigma_c_layer.T  # PSD

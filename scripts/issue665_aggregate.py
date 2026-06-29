@@ -394,8 +394,10 @@ def aggregate(cells: list[str], smoke: bool) -> dict:
             "a38_svd_sigma1_frac_mean": float(np.nanmean([v for v in a38_sigma1 if v is not None]))
             if any(v is not None for v in a38_sigma1)
             else None,
-            # behavioral DV E (SECONDARY companion)
-            "E_mean_score": _e_mean(beh_cells, judged),
+            # behavioral DV E — judge-positive RATE is the PRIMARY validated
+            # behavioral construct (Blocker 4); mean_score is the SECONDARY
+            # continuous companion (CLAUDE.md dual-DV).
+            **_e_summary(beh_cells, judged),
         }
 
     fdr_reject = _benjamini_hochberg(fdr_pvals, FDR_ALPHA)
@@ -423,14 +425,30 @@ def aggregate(cells: list[str], smoke: bool) -> dict:
     return agg
 
 
-def _e_mean(cells: list[str], judged: dict) -> float | None:
-    vals = []
+def _e_summary(cells: list[str], judged: dict) -> dict:
+    """Behavioral DV E summary (Blocker 4): the judge-positive RATE is the PRIMARY
+    validated behavioral construct; mean_score is the SECONDARY continuous companion.
+    Also reports the dual-DV cross-check (Spearman across contexts where both have
+    dynamic range — the standing rate-vs-mean validation, CLAUDE.md Measurement
+    validity)."""
+    rates, means = [], []
     for c in cells:
         if c in judged:
             for s in judged[c]["by_context"].values():
+                if s.get("judge_positive_rate") is not None:
+                    rates.append(s["judge_positive_rate"])
                 if s.get("mean_score") is not None:
-                    vals.append(s["mean_score"])
-    return float(np.mean(vals)) if vals else None
+                    means.append(s["mean_score"])
+    # dual-DV cross-check: does the secondary mean track the primary rate?
+    dual_rho = None
+    if len(rates) == len(means) and len(rates) >= 3:
+        dual_rho = _spearman_simple(np.asarray(rates), np.asarray(means))
+    return {
+        "E_judge_positive_rate": float(np.mean(rates)) if rates else None,  # PRIMARY DV
+        "E_mean_score": float(np.mean(means)) if means else None,  # SECONDARY companion
+        "E_dual_dv_rate_vs_mean_spearman": dual_rho,  # rate-vs-mean validation
+        "E_n_contexts": len(rates),
+    }
 
 
 def main():
