@@ -222,12 +222,15 @@ def generate_onpolicy_R(
             tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
         )
 
+    # enforce_eager defaults TRUE (#734 crash-fix round 5): this is the LOAD-BEARING
+    # H1-phase engine that deadlocked at cuda-graph capture on pod-734. Env-overridable
+    # via EPM_VLLM_ENFORCE_EAGER=0 for a future pod that wants graphs (C.vllm_enforce_eager).
     llm = LLM(
         model=model_path,
         dtype="bfloat16",
         gpu_memory_utilization=0.80,
         max_model_len=2 * C.MAX_NEW_TOKENS + 1024,
-        enforce_eager=False,
+        enforce_eager=C.vllm_enforce_eager(),
     )
     try:
         sp = SamplingParams(temperature=0.0, max_tokens=C.MAX_NEW_TOKENS)
@@ -671,7 +674,45 @@ def _verify_adapter_on_hub(subfolder: str) -> None:
 
 
 # ── Phase orchestration ───────────────────────────────────────────────────────
-def run_phase1(*, cells_limit: int | None, smoke: bool, dry_run: bool) -> dict:
+def _valid_corrected_reread(path: Path) -> dict | None:
+    """Return the parsed ``marker_slot_corrected.json`` summary IFF it is a
+    COMPLETE four-float record, else None (#734 crash-fix round 5, Fix 3 — the
+    skip-if-exists guard's validity check).
+
+    A skip-if-exists guard that trusts mere file presence would skip a
+    truncated / corrupt JSON from a crashed prior cell and propagate a fake
+    "already complete". So treat present-but-invalid as needs-rerun: the file
+    must parse, carry the band/mean keys, a non-empty ``rows`` list, and EVERY
+    row must carry the four-float ``(logp, z_marker, z_eos, logZ)`` schema on
+    BOTH the corrected trained and base reads (the storage contract, #530)."""
+    if not path.exists():
+        return None
+    try:
+        summary = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(summary, dict):
+        return None
+    if "corrected_source_delta_logp_mean" not in summary or "corrected_in_band" not in summary:
+        return None
+    rows = summary.get("rows")
+    if not isinstance(rows, list) or not rows:
+        return None
+    four = {"logp", "z_marker", "z_eos", "logZ"}
+    for row in rows:
+        corr = row.get("corrected") if isinstance(row, dict) else None
+        if not isinstance(corr, dict):
+            return None
+        for side in ("trained", "base"):
+            rec = corr.get(side)
+            if not isinstance(rec, dict) or not four.issubset(rec):
+                return None
+    return summary
+
+
+def run_phase1(
+    *, cells_limit: int | None, smoke: bool, dry_run: bool, force_rerun: bool = False
+) -> dict:
     phase_log("phase1_corrected_reread")
     cells = C.phase1_cells()
     if cells_limit is not None:
@@ -686,6 +727,25 @@ def run_phase1(*, cells_limit: int | None, smoke: bool, dry_run: bool) -> dict:
         if dry_run:
             logger.info("[phase1][dry-run] would re-read %s (no GPU forward)", cell.eval_key)
             continue
+        # Skip-if-exists guard (#734 crash-fix round 5, Fix 3): the 16/16 Phase-1
+        # corrected_reread JSONs persist on /workspace, so a --phase all relaunch after
+        # the Phase-2 deadlock fix resumes STRAIGHT into Phase 2 instead of re-running
+        # ~32 min of GPU. A present-but-corrupt JSON is treated as needs-rerun
+        # (_valid_corrected_reread). --force-rerun overrides the skip.
+        out_path = C.CORRECTED_REREAD_ROOT / cell.eval_key / "marker_slot_corrected.json"
+        if not force_rerun:
+            cached = _valid_corrected_reread(out_path)
+            if cached is not None:
+                logger.info("[phase1] %s already complete (%s); skipping", cell.eval_key, out_path)
+                summary = cached
+                results.append(summary)
+                if cell.dose == "d1" and cell.arm == "contra":
+                    corr = summary["corrected_source_delta_logp_mean"]
+                    if summary["corrected_in_band"]:
+                        in_band_d1_sources.add(cell.source)
+                    if corr < floor:
+                        below_floor_d1_sources.add(cell.source)
+                continue
         summary = reread_cell(cell, smoke=smoke)
         results.append(summary)
         if cell.dose == "d1" and cell.arm == "contra":
@@ -906,6 +966,13 @@ def main() -> int:
     )
     ap.add_argument("--smoke", action="store_true", help="tiny-slice smoke (2 probes / 2 steps)")
     ap.add_argument(
+        "--force-rerun",
+        action="store_true",
+        help="re-run Phase-1 cells even when a valid marker_slot_corrected.json is already "
+        "on disk (default: skip complete cells -- the crash-fix-round-5 resume guard so a "
+        "relaunch after the Phase-2 deadlock fix goes straight to Phase 2)",
+    )
+    ap.add_argument(
         "--dry-run",
         action="store_true",
         help="exercise cell plumbing + sentinel + [phase=done] without a GPU forward "
@@ -945,7 +1012,12 @@ def main() -> int:
 
         falsified = False
         if args.phase in ("phase1", "all"):
-            p1 = run_phase1(cells_limit=args.cells, smoke=args.smoke, dry_run=args.dry_run)
+            p1 = run_phase1(
+                cells_limit=args.cells,
+                smoke=args.smoke,
+                dry_run=args.dry_run,
+                force_rerun=args.force_rerun,
+            )
             note_extra["phase1"] = p1
             falsified = bool(p1.get("h3_falsified"))
 

@@ -541,3 +541,168 @@ def test_run_phase2_seeds_unknown_raises(monkeypatch, tmp_path):
     monkeypatch.setattr(C, "CORRECTED_REREAD_ROOT", tmp_path / "corrected_reread")
     with pytest.raises(AssertionError):
         D.run_phase2(cells_limit=None, smoke=True, dry_run=True, seeds=[999])
+
+
+# ── Fix 1 (crash-fix round 5): EPM_VLLM_ENFORCE_EAGER defaults TRUE ───────────
+# The vLLM Phase-2 H1 generate() deadlocked at cuda-graph capture on pod-734
+# (enforce_eager=False hardcoded at both engine sites). The fix flips the default
+# to eager (skips graph capture) + exposes an env knob. CPU-only: monkeypatch the
+# vllm.LLM constructor to RECORD the enforce_eager kwarg without a GPU forward.
+def _stub_vllm_llm(recorded: dict):
+    """A drop-in vllm.LLM stub that records its enforce_eager kwarg + returns a
+    fake engine whose generate() yields one empty completion per prompt."""
+
+    class _Out:
+        def __init__(self):
+            self.outputs = [type("O", (), {"text": "", "token_ids": [], "finish_reason": "stop"})()]
+            self.prompt_token_ids = []
+
+    class _StubLLM:
+        def __init__(self, *a, **kw):
+            recorded["enforce_eager"] = kw.get("enforce_eager")
+
+        def generate(self, prompts, params, use_tqdm=True):
+            return [_Out() for _ in prompts]
+
+    return _StubLLM
+
+
+def test_generate_onpolicy_R_enforce_eager_defaults_true(monkeypatch):
+    """Fix 1 (PRIMARY): generate_onpolicy_R constructs the H1-phase vLLM engine
+    with enforce_eager=True by DEFAULT (the cuda-graph-capture-deadlock fix). The
+    env knob (EPM_VLLM_ENFORCE_EAGER) is absent here, so the default must resolve
+    True."""
+    import issue734_dispatch as D
+    import vllm
+
+    monkeypatch.delenv("EPM_VLLM_ENFORCE_EAGER", raising=False)
+    recorded: dict = {}
+    monkeypatch.setattr(vllm, "LLM", _stub_vllm_llm(recorded))
+    # Stub the engine reap (no real engine) + the tokenizer chat-template render.
+    monkeypatch.setattr(
+        "explore_persona_space.analysis.representation_shift._reap_vllm_engine",
+        lambda llm: None,
+    )
+
+    class _Tok:
+        def apply_chat_template(self, msgs, tokenize=False, add_generation_prompt=True):
+            return "PROMPT"
+
+    monkeypatch.setattr("transformers.AutoTokenizer.from_pretrained", lambda *a, **k: _Tok())
+    D.generate_onpolicy_R("any/model", "librarian", ["q1"], tokenizer_id=INSTRUCT_ID)
+    assert recorded["enforce_eager"] is True, recorded
+
+
+def test_generate_onpolicy_R_enforce_eager_env_override_false(monkeypatch):
+    """Fix 1: EPM_VLLM_ENFORCE_EAGER=0 flips the H1 engine back to graphs (the
+    per-pod escape hatch for a future driver/GPU combo that wants cuda graphs)."""
+    import issue734_dispatch as D
+    import vllm
+
+    monkeypatch.setenv("EPM_VLLM_ENFORCE_EAGER", "0")
+    recorded: dict = {}
+    monkeypatch.setattr(vllm, "LLM", _stub_vllm_llm(recorded))
+    monkeypatch.setattr(
+        "explore_persona_space.analysis.representation_shift._reap_vllm_engine",
+        lambda llm: None,
+    )
+
+    class _Tok:
+        def apply_chat_template(self, msgs, tokenize=False, add_generation_prompt=True):
+            return "PROMPT"
+
+    monkeypatch.setattr("transformers.AutoTokenizer.from_pretrained", lambda *a, **k: _Tok())
+    D.generate_onpolicy_R("any/model", "librarian", ["q1"], tokenizer_id=INSTRUCT_ID)
+    assert recorded["enforce_eager"] is False, recorded
+
+
+# ── Fix 3 (crash-fix round 5): Phase-1 skip-if-exists resume guard ────────────
+def _valid_phase1_summary(eval_key: str) -> dict:
+    """A COMPLETE four-float marker_slot_corrected.json summary (the schema the
+    skip-guard's _valid_corrected_reread validates)."""
+    rec = {"logp": -6.0, "z_marker": 3.0, "z_eos": -2.0, "logZ": 9.0}
+    return {
+        "corrected_source_delta_logp_mean": 6.9,
+        "corrected_in_band": True,
+        "rows": [{"corrected": {"trained": dict(rec), "base": dict(rec)}}],
+        "cell": eval_key,
+        "source": "default",
+        "arm": "contra",
+        "dose": "d1",
+    }
+
+
+def _stage_one_phase1_cell(monkeypatch, tmp_path, eval_key="mk_default_contra_d1_seed42"):
+    """Restrict run_phase1 to ONE real Phase-1 cell + point CORRECTED_REREAD_ROOT
+    at tmp_path; returns (C, D, the single cell)."""
+    import issue734_common as C
+    import issue734_dispatch as D
+
+    monkeypatch.setattr(C, "CORRECTED_REREAD_ROOT", tmp_path / "corrected_reread")
+    cell = next(c for c in C.phase1_cells() if c.eval_key == eval_key)
+    monkeypatch.setattr(C, "phase1_cells", lambda: [cell])
+    return C, D, cell
+
+
+def test_run_phase1_skips_cell_when_valid_json_exists(monkeypatch, tmp_path):
+    """Fix 3 (resume guard): run_phase1 SKIPS a cell whose valid
+    marker_slot_corrected.json is already on disk -- reread_cell (the on-policy
+    generation + forward) is NEVER called, so a --phase all relaunch after the
+    Phase-2 deadlock fix resumes straight into Phase 2 without re-running ~32 min
+    of Phase-1 GPU. The cached summary is still folded into the source-gate read."""
+    C, D, cell = _stage_one_phase1_cell(monkeypatch, tmp_path)
+    out_path = C.CORRECTED_REREAD_ROOT / cell.eval_key / "marker_slot_corrected.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(_valid_phase1_summary(cell.eval_key)))
+
+    def _fail(*a, **k):
+        raise AssertionError("reread_cell must NOT run when a valid JSON exists (skip guard)")
+
+    monkeypatch.setattr(D, "reread_cell", _fail)
+    result = D.run_phase1(cells_limit=None, smoke=False, dry_run=False)
+    assert result["n_cells"] == 1, result
+    # The cached contra-d1 cell folded into the in-band source-gate read.
+    assert result["in_band_d1_sources"] == ["default"], result
+
+
+def test_run_phase1_force_rerun_does_not_skip(monkeypatch, tmp_path):
+    """Fix 3: --force-rerun (force_rerun=True) RE-RUNS a cell even when a valid
+    JSON exists -- reread_cell IS called (the documented override)."""
+    C, D, cell = _stage_one_phase1_cell(monkeypatch, tmp_path)
+    out_path = C.CORRECTED_REREAD_ROOT / cell.eval_key / "marker_slot_corrected.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(_valid_phase1_summary(cell.eval_key)))
+
+    calls: list[str] = []
+
+    def _fake_reread(c, *, smoke):
+        calls.append(c.eval_key)
+        return _valid_phase1_summary(c.eval_key)
+
+    monkeypatch.setattr(D, "reread_cell", _fake_reread)
+    D.run_phase1(cells_limit=None, smoke=False, dry_run=False, force_rerun=True)
+    assert calls == [cell.eval_key], calls
+
+
+def test_run_phase1_reruns_on_corrupt_json(monkeypatch, tmp_path):
+    """Fix 3: a present-but-CORRUPT marker_slot_corrected.json (truncated / missing
+    the four-float schema from a crashed prior cell) is treated as needs-rerun --
+    _valid_corrected_reread returns None, so reread_cell IS called. Skip-on-presence
+    alone would propagate a fake 'already complete'."""
+    C, D, cell = _stage_one_phase1_cell(monkeypatch, tmp_path)
+    out_path = C.CORRECTED_REREAD_ROOT / cell.eval_key / "marker_slot_corrected.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Missing rows[].corrected four-float schema -> invalid -> needs rerun.
+    out_path.write_text(
+        json.dumps({"corrected_source_delta_logp_mean": 6.9, "corrected_in_band": True})
+    )
+
+    calls: list[str] = []
+
+    def _fake_reread(c, *, smoke):
+        calls.append(c.eval_key)
+        return _valid_phase1_summary(c.eval_key)
+
+    monkeypatch.setattr(D, "reread_cell", _fake_reread)
+    D.run_phase1(cells_limit=None, smoke=False, dry_run=False)
+    assert calls == [cell.eval_key], calls

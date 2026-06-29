@@ -89,6 +89,20 @@ def band_for_dose(dose: str) -> tuple[float, float]:
     return BAND_D1 if dose == "d1" else BAND_D2
 
 
+def vllm_enforce_eager() -> bool:
+    """Resolve the H1-phase vLLM ``enforce_eager`` kwarg (crash-fix round 5, #734).
+
+    Default TRUE: #734's Phase-2 H1 ``generate()`` deadlocked at vLLM's
+    cuda-graph capture on the pod-734 driver/GPU combo (the documented #664-class
+    front-end<->EngineCore handoff hang -- GPU 0%%, EngineCore in ``futex_wait_queue``,
+    NO ``[vllm-chunk]`` line ever printed). ``enforce_eager=True`` SKIPS cuda-graph
+    capture, which is the documented fix for that deadlock class
+    (.claude/rules/gotchas.md vLLM-hang triad probe (b)). The env knob lets a
+    future operator flip it back per-pod if a different driver/GPU combo wants
+    graphs (``EPM_VLLM_ENFORCE_EAGER=0``)."""
+    return os.environ.get("EPM_VLLM_ENFORCE_EAGER", "1") in {"1", "true", "True"}
+
+
 # ── Phase-1 reused-#664 cell set (plan §4 / §5.1 / reuse-check (c)) ───────────
 # All FOUR d1-seed42 marker sources x {contra, posonly} x {d1, d2} = 16 cells.
 PHASE1_SOURCES = ("default", "librarian", "surgeon", "programmer")
