@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 724,
+  "highest_id": 725,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4549,6 +4549,13 @@
       "path": "tasks/proposed/724",
       "status": "proposed",
       "title": "daily-fix: task.py audit --repair + reconcile 13 drifted registry tasks"
+    },
+    "725": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/725",
+      "status": "proposed",
+      "title": "daily-fix: living_docs.py check degrade on bad task, not crash nightly pass"
     },
     "74": {
       "has_clean_result": false,
