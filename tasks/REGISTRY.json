@@ -4609,8 +4609,8 @@
     "732": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/732",
-      "status": "planning",
+      "path": "tasks/approved/732",
+      "status": "approved",
       "title": "workflow-fix: verify_task_body \u2014 gate silent judge-API-error EM denominators"
     },
     "733": {
