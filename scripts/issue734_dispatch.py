@@ -17,12 +17,19 @@ Phases (plan §4):
   phase1p5  rsLoRA parity probe (reuse-check (g) / §7.5): the corrected reader on
           mk_librarian_contra_d1_seed42 must reproduce its in-loop band-stop value
           (~+6.9 nat) within ~2 nat BEFORE the sweep. MISS -> HALT.
+  setup_h1_mix  build the librarian-contra-d1-seed42 #664 marker training mix that
+          phase2 (and a standalone phase3) reuse -- #664 produced it via --phase p0
+          but never uploaded it to HF, and the git-clone-only GCP lane cannot stage
+          it (issue #734 crash-fix round 1). Reuses #664's marker pool + marker_R
+          base-greedy elicitation + the standalone CPU builder; idempotent (sha256
+          provenance sidecar). Delegates to issue734_h1_mix.build_h1_mix.
   phase2  H1 matched base-vs-Instruct fresh train (6 cells = 2 models x 3 seeds),
           EXACT #664 marker recipe (recipe_for("marker")), model the only deliberate
           variable; read in-loop band-stop + corrected on-policy. The FIRST base
           seed band-stops as a smoke gate (§8) before the base 3-seed expansion.
   phase3  CONDITIONAL (only when phase1 FALSIFIES H3): H2 lr x steps mini-sweep.
-  all     phase1p5 -> (phase1 || phase2) -> phase3-if-falsified -> upload -> done.
+  all     phase0 -> phase1p5 -> phase1 -> setup_h1_mix -> phase2 ->
+          phase3-if-falsified -> upload -> done.
 
 Pod-side contract (CLAUDE.md / poll_pipeline.py): emits ``[phase=<name>]`` log
 lines, a terminal ``[phase=done]`` ONLY on the main dispatcher's graceful exit,
@@ -63,6 +70,7 @@ load_dotenv()  # phase1 vLLM gen + phase2 train_lora + HF uploads need HF_TOKEN 
 
 import issue664_common as C664  # noqa: E402
 import issue734_common as C  # noqa: E402
+import issue734_h1_mix as MIX  # noqa: E402
 import issue734_marker_reread as RR  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -549,6 +557,33 @@ def parity_probe(*, smoke: bool) -> bool:
     return ok or smoke
 
 
+# ── setup_h1_mix: build the one #664 marker mix H1 phase2 reuses ──────────────
+def run_setup_h1_mix(*, smoke: bool, dry_run: bool) -> dict:
+    """Build the librarian-contra-d1-seed42 marker training mix H1 phase2 reuses.
+
+    The mix was produced by #664's --phase p0 but never uploaded to HF, so the
+    git-clone-only GCP lane cannot stage it; without this phase, phase2 crashes at
+    train_h1_cell's `assert data_path.exists()` (issue #734 crash-fix round 1).
+    Delegates to issue734_h1_mix.build_h1_mix (which reuses #664's marker pool +
+    marker_R elicitation + the standalone CPU builder). Idempotent: a no-op when
+    the mix is already current (sha256 matches its provenance sidecar)."""
+    phase_log("setup_h1_mix")
+    if dry_run:
+        logger.info(
+            "[setup_h1_mix][dry-run] would build %s (no GPU forward / no subprocess)",
+            MIX.mix_path(smoke=smoke),
+        )
+        return {"built": False, "dry_run": True, "mix_path": str(MIX.mix_path(smoke=smoke))}
+    already = MIX._mix_is_current(smoke=smoke)
+    out = MIX.build_h1_mix(smoke=smoke, gpu_id=0)
+    return {
+        "built": not already,  # False when the idempotency skip fired
+        "already_current": already,
+        "mix_path": str(out),
+        "exists": out.exists(),
+    }
+
+
 # ── Phase 2: H1 matched base-vs-Instruct fresh train ──────────────────────────
 def train_h1_cell(cell: C.H1Cell, *, smoke: bool, gpu_id: int = 0) -> Path:
     """Fresh-train ONE H1 marker cell at the EXACT #664 recipe (recipe_for("marker")),
@@ -575,8 +610,9 @@ def train_h1_cell(cell: C.H1Cell, *, smoke: bool, gpu_id: int = 0) -> Path:
         C664.DATA_ROOT / ("train_smoke" if smoke else "train") / "marker" / f"{c664.eval_key}.jsonl"
     )
     assert data_path.exists(), (
-        f"H1 training mix missing: {data_path} (build #664's marker mix first via "
-        f"issue664_dispatch --phase p0, or stage it)"
+        f"H1 training mix missing: {data_path} (run the setup_h1_mix phase first -- "
+        f"issue734_dispatch --phase setup_h1_mix -- which builds it self-contained; "
+        f"--phase all / --phase phase2 run setup_h1_mix automatically before this)"
     )
     out_dir = C.ADAPTER_OUT / (cell.eval_key + ("_smoke" if smoke else ""))
     if (out_dir / "adapter_model.safetensors").exists():
@@ -848,7 +884,16 @@ def main() -> int:
     ap.add_argument(
         "--phase",
         default="all",
-        choices=["phase0", "phase1", "phase1p5", "phase2", "phase3", "upload", "all"],
+        choices=[
+            "phase0",
+            "phase1",
+            "phase1p5",
+            "setup_h1_mix",
+            "phase2",
+            "phase3",
+            "upload",
+            "all",
+        ],
     )
     ap.add_argument("--cells", type=int, default=None, help="limit cells (smoke: --cells 1)")
     ap.add_argument(
@@ -903,6 +948,15 @@ def main() -> int:
             p1 = run_phase1(cells_limit=args.cells, smoke=args.smoke, dry_run=args.dry_run)
             note_extra["phase1"] = p1
             falsified = bool(p1.get("h3_falsified"))
+
+        # setup_h1_mix MUST precede phase2 AND a standalone phase3: both consume the
+        # librarian-contra-d1-seed42 marker mix train_h1_cell / run_phase3 assert
+        # exists (the mix #664 never uploaded; the git-clone-only GCP lane cannot
+        # stage it -- issue #734 crash-fix round 1). build_h1_mix is idempotent, so
+        # firing it for both is a no-op once the mix is current. In --phase all,
+        # phase3 (conditional) runs after phase2, so the mix is already built.
+        if args.phase in ("setup_h1_mix", "phase2", "phase3", "all"):
+            note_extra["setup_h1_mix"] = run_setup_h1_mix(smoke=args.smoke, dry_run=args.dry_run)
 
         if args.phase in ("phase2", "all"):
             p2 = run_phase2(
