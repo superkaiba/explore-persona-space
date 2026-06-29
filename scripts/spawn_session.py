@@ -762,6 +762,93 @@ def _build_extra_claude_args(
     return extra
 
 
+def _verify_happy_patch_or_die(*, context: str) -> None:
+    """Fail loud if the Happy daemon injection patch is reverted/drifted/moved.
+
+    Called BEFORE any spawn path that relies on HAPPY_INITIAL_PROMPT /
+    claudeArgs injection. A reverted (or hash-renamed-away) patch makes the
+    daemon ignore those fields, so the spawned session boots empty and never
+    fires its skill — an idle 'spawned but never ran' session (the failure
+    CLASS behind #685's symptom; the 2026-06-28 idle-session pile itself was
+    the distinct #720 mapping-loss cause, not a patch revert). Single-digit-ms:
+    one or two file reads + substring, no subprocess, no root.
+
+    ``context`` names the caller (e.g. "spawn-issue --auto") for the message.
+
+    The ``missing`` classification (the daemon .mjs file is absent) is AMBIGUOUS
+    and is disambiguated with a SECOND, INDEPENDENT check on the daemon RPC's
+    own state file (:data:`DAEMON_STATE` / daemon.state.json), since the two
+    files are independent (classify_patch reads the vendored .mjs; daemon
+    reachability lives in daemon.state.json):
+
+      - .mjs missing AND daemon.state.json missing  -> Happy is not installed
+        on this host -> WARN + proceed (a legitimate fresh VM not running the
+        autonomous loop; the downstream daemon RPC fails loud anyway).
+      - .mjs missing BUT daemon.state.json present   -> Happy IS reachable but
+        the patch file moved (the canonical `npm update happy` hash-rename:
+        index-<oldhash>.mjs -> index-<newhash>.mjs) -> the patch CANNOT be
+        verified and is almost certainly NOT applied to the new bundle -> DIE
+        loud. Re-applying fails loud if the file is truly gone, which is the
+        correct diagnosis.
+    """
+    import _happy_patch_check as hpc  # scripts/ is on sys.path[0]
+
+    st = hpc.classify_patch()
+    if st.state == "patched":
+        return
+
+    if st.state == "missing":
+        # Two-step probe: distinguish 'Happy never installed' (safe) from
+        # 'Happy reachable but patch file moved' (the #685 post-update state).
+        if not DAEMON_STATE.is_file():
+            print(
+                f"WARNING [{context}]: {st.detail}. No Happy daemon state file "
+                f"at {DAEMON_STATE} either -> no Happy install detected, "
+                f"skipping the injection-patch guard.",
+                file=sys.stderr,
+            )
+            return
+        # Daemon reachable, patch file absent -> die loud.
+        fix = (
+            "The Happy daemon patch file is ABSENT but the daemon IS reachable "
+            "(daemon.state.json present) -> the vendored bundle was almost "
+            "certainly hash-renamed by `npm update happy` and is now UNPATCHED. "
+            "Re-apply against the new bundle:\n"
+            f"    {hpc.REAPPLY_CMD}\n"
+            "(this fails loud if the file is genuinely gone — that is the "
+            "correct diagnosis), then restart the daemon:\n"
+            f"    {hpc.RESTART_CMD}"
+        )
+        sys.exit(
+            f"ABORT [{context}]: the Happy daemon injection patch could not be "
+            f"verified ({st.detail}), but the daemon is reachable.\n"
+            f"Spawning now would create a session that IGNORES its initial "
+            f"prompt and sits idle forever.\n{fix}"
+        )
+
+    # reverted | drifted -> the daemon is up but will IGNORE the injected
+    # prompt/args, producing an idle session. Fail loud with the fix.
+    if st.state == "reverted":
+        fix = (
+            f"Re-apply it:\n    {hpc.REAPPLY_CMD}\nthen restart the daemon:\n    {hpc.RESTART_CMD}"
+        )
+    else:  # drifted
+        fix = (
+            "The Happy daemon shape has DRIFTED (likely an `npm update happy`); "
+            "a blind re-apply will not work. Inspect the file and update "
+            "PATCHES in scripts/patch_happy_daemon.py, then:\n"
+            f"    {hpc.REAPPLY_CMD}\n    {hpc.RESTART_CMD}"
+        )
+    sys.exit(
+        f"ABORT [{context}]: the Happy daemon injection patch is "
+        f"{st.state} ({st.detail}).\n"
+        f"Spawning now would create a session that IGNORES its initial prompt "
+        f"and sits idle forever (an idle 'spawned but never ran' session; the "
+        f"failure CLASS behind #685's symptom — the 2026-06-28 pile itself was "
+        f"the distinct #720 mapping-loss cause).\n{fix}"
+    )
+
+
 def cmd_spawn_pm(args: argparse.Namespace) -> None:
     """Spawn a session intended to host the PM persona. The session opens
     cwd=<repo root> so the user sees a familiar project. The PM persona is
@@ -773,6 +860,10 @@ def cmd_spawn_pm(args: argparse.Namespace) -> None:
     )
     body: dict[str, object] = {"directory": str(PROJECT_ROOT), "agent": "claude"}
     if extra_args:
+        # Only the override branch relies on claudeArgs injection; a no-override
+        # PM spawn injects nothing, so guarding it would be a false alarm (the
+        # deliberate asymmetry pinned by the test suite).
+        _verify_happy_patch_or_die(context="spawn-pm")
         body["claudeArgs"] = extra_args
     resp = post("/spawn-session", body)
     if not resp.get("success"):
@@ -848,6 +939,13 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         prompt = f"/issue {issue}"
     else:
         prompt = None
+    if prompt is not None or extra_args:
+        # Both the load-bearing --auto / --initial-prompt injection path AND the
+        # bare model-override path rely on the daemon honoring HAPPY_INITIAL_*
+        # / claudeArgs. Verify the daemon patch is applied BEFORE post() — a
+        # revert would otherwise spawn an idle 'spawned but never ran' session
+        # (the failure CLASS behind #685) or silently drop the model override.
+        _verify_happy_patch_or_die(context="spawn-issue")
     if prompt is not None:
         # Auto-prompt sessions have no human at the keyboard to confirm
         # tool permissions, so they start in bypassPermissions mode. The
@@ -999,6 +1097,13 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
             f"then runs `task.py set-status {issue} approved` — workflow.yaml § "
             f"gates.campaign_brief_approval) or 'running' (respawn re-entry)."
         )
+
+    # A campaign session ALWAYS injects HAPPY_INITIAL_PROMPT + claudeArgs (same
+    # #685 severity as the --auto issue path). Verify the daemon patch is
+    # applied BEFORE building the body / reaching post() — but AFTER the
+    # kind/status validation above, so a wrong-kind/-status task still gets its
+    # specific error first.
+    _verify_happy_patch_or_die(context="spawn-campaign")
 
     betas = _parse_betas(args.betas)
     extra_args = _build_extra_claude_args(args.model, betas, args.effort)

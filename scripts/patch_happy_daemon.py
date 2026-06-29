@@ -35,11 +35,15 @@ import shutil
 import sys
 from pathlib import Path
 
-DAEMON_FILE = Path("/usr/lib/node_modules/happy/dist/index-q9G4ktSK.mjs")
+# Single source of truth for the daemon file path + sentinel string. The
+# spawn-path guard (spawn_session._verify_happy_patch_or_die) and the watcher's
+# proactive pass (autonomous_session_watch.happy_patch_pass) import the same
+# constants from _happy_patch_check, so the literal never drifts across the
+# three consumers. `scripts/` is on sys.path[0] when this runs via
+# `uv run python scripts/patch_happy_daemon.py`, so the sibling import resolves.
+from _happy_patch_check import DAEMON_FILE, SENTINEL
+
 BACKUP_SUFFIX = ".eps-original"
-SENTINEL = (
-    "// EPS-PATCH: claudeArgs-forwarding + initial-prompt-seed + bypass + no-takeover-downgrade v4"
-)
 
 
 # Each (search, replace) pair is a literal-string substitution. Search
