@@ -1,0 +1,92 @@
+{
+  "commit": "098edd4886",
+  "created": "2026-06-29T17:03:04Z",
+  "figsize": [
+    7.0,
+    5.6
+  ],
+  "points": [
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": -0.03125,
+      "y": -0.0625,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.390625,
+      "y": 0.78125,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.0625,
+      "y": 0.125,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": -0.011719,
+      "y": -0.0234375,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.195312,
+      "y": 0.390625,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.375,
+      "y": 0.75,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.082031,
+      "y": 0.1640625,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.523438,
+      "y": 1.046875,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.113281,
+      "y": 0.2265625,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.171875,
+      "y": 0.34375,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": -0.171875,
+      "y": -0.34375,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": -0.078125,
+      "y": -0.15625,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.207031,
+      "y": 0.4140625,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.4375,
+      "y": 0.875,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.484375,
+      "y": 0.96875,
+      "_kind": "bar"
+    },
+    {
+      "marker log P(\u203b) at the SOURCE context, trained \u2212 base (nat)": 0.90625,
+      "y": 1.8125,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 16
+}

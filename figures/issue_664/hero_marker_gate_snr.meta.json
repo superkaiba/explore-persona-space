@@ -1,0 +1,113 @@
+{
+  "commit": "098edd4886",
+  "created": "2026-06-29T17:03:02Z",
+  "figsize": [
+    7.2,
+    6.6
+  ],
+  "points": [
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5042185754180945,
+      "y": 19.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5456280172054009,
+      "y": 18.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.4871805688242617,
+      "y": 17.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5439931449010313,
+      "y": 16.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5844568596852776,
+      "y": 15.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5874622190375718,
+      "y": 14.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5471038175593221,
+      "y": 13.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5447418855231687,
+      "y": 12.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5120497858208038,
+      "y": 11.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.6902978466931513,
+      "y": 10.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.6897749365849536,
+      "y": 9.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.6538206305984064,
+      "y": 8.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5913859519572622,
+      "y": 7.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.4562035964492504,
+      "y": 6.0,
+      "label": "Every marker cell sits left of SNR = 1: bystander gate variation is smaller than the within-context noise floor (best layer per cell)",
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5672060835024801,
+      "y": 5.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.6166587096061088,
+      "y": 4.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5718263206782743,
+      "y": 3.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.48812150365417695,
+      "y": 2.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.601069460122365,
+      "y": 1.0,
+      "_kind": "scatter"
+    },
+    {
+      "marker gate leakage-variation SNR\n(across-bystander \u011d\u1d3f\u1d49\u1d43\u02e1 sd / within-context probe-split noise sd)": 0.5765745996119191,
+      "y": 0.0,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 20
+}

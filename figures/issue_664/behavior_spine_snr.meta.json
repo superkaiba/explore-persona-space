@@ -1,0 +1,188 @@
+{
+  "commit": "098edd4886",
+  "created": "2026-06-29T17:03:06Z",
+  "figsize": [
+    8.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.015235853987721568,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5042185754180945,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05199920531202478,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5456280172054009,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03752255979032287,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.4871805688242617,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0470282358195607,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5439931449010313,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09755175943269183,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5844568596852776,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06510897534311591,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5874622190375718,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.006392020158364269,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5471038175593221,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01581212961717911,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5447418855231687,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0008400578752144398,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5120497858208038,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04265219637867901,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.6902978466931513,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04396989874314143,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.6897749365849536,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03888959677144742,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.6538206305984064,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0033015348780608025,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5913859519572622,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.056362060348401646,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.4562035964492504,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.023375467112602282,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5672060835024801,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04296462314416191,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.6166587096061088,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.018437539204124942,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5718263206782743,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04794413004144995,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.48812150365417695,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.043922515065363626,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.601069460122365,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.002496295549312645,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.5765745996119191,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.990756881822737,
+      "gate leakage-variation SNR\n(best layer per cell)": 4.145207627884553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.965953522779803,
+      "gate leakage-variation SNR\n(best layer per cell)": 4.135207478493192,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0611270669337016,
+      "gate leakage-variation SNR\n(best layer per cell)": 2.9413611329154197,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9922735258965599,
+      "gate leakage-variation SNR\n(best layer per cell)": 5.175062445919238,
+      "label": "Bad-medical and taught-fact clear the noise floor; the marker and insecure-code/EM sit at it (each point = one trained cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.9785836088918447,
+      "gate leakage-variation SNR\n(best layer per cell)": 1.4089508524461645,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9823933224755885,
+      "gate leakage-variation SNR\n(best layer per cell)": 1.378898081804906,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0266154592776675,
+      "gate leakage-variation SNR\n(best layer per cell)": 0.9911234315091588,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.018272203218204,
+      "gate leakage-variation SNR\n(best layer per cell)": 3.4331556382989494,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0206366305797996,
+      "gate leakage-variation SNR\n(best layer per cell)": 2.4530668703747582,
+      "label": "noise floor",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 29
+}

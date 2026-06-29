@@ -1,0 +1,747 @@
+{
+  "commit": "098edd4886",
+  "created": "2026-06-29T17:03:08Z",
+  "figsize": [
+    7.2,
+    5.4
+  ],
+  "points": [
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.1598,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 0.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.1568,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 1.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.1413,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 2.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0858,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 3.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0824,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 4.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0638,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 5.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0464,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 6.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0422,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 7.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0372,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 8.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.028,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 9.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.027,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 10.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0213,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 11.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0196,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 12.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0172,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 13.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0122,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 14.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0086,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 15.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0064,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 16.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0046,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 17.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.003,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 18.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0064,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 19.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0088,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 20.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0171,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 21.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0216,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 22.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0225,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 23.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.03,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 24.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0326,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 25.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0331,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 26.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0338,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 27.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0378,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 28.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0415,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 29.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0441,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 30.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0452,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 31.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0472,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 32.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0499,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 33.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0544,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 34.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.056,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 35.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0598,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 36.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0664,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 37.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0689,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 38.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0765,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 39.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0795,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 40.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.088,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 41.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.0982,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 42.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1023,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 43.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1032,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 44.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1041,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 45.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1141,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 46.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1187,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 47.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1772,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 48.0,
+      "series": "marker (surgeon, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": -0.0034,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 0.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.038,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 1.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1156,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 2.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1222,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 3.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1234,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 4.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.131,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 5.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1329,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 6.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1366,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 7.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1416,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 8.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1449,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 9.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1464,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 10.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1469,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 11.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1485,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 12.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1512,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 13.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1581,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 14.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1607,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 15.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1642,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 16.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1648,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 17.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1665,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 18.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1676,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 19.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1677,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 20.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1678,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 21.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1753,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 22.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1762,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 23.0,
+      "label": "49 bystander contexts each. Taught-fact spans ~0 to ~1 (write reappears widely); the marker barely leaves [\u22120.16, +0.18]",
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1773,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 24.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.182,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 25.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.1939,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 26.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.208,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 27.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.2159,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 28.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.2187,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 29.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.2264,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 30.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.2278,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 31.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.2642,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 32.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.2708,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 33.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.3397,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 34.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.3442,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 35.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.3855,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 36.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.5108,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 37.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.5579,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 38.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.6246,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 39.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.653,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 40.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.6699,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 41.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.785,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 42.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.8323,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 43.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.8603,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 44.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.9034,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 45.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.9036,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 46.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.908,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 47.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u011d\u1d3f\u1d49\u1d43\u02e1 at bystander context (layer 20)": 0.9771,
+      "bystander contexts (sorted by \u011d\u1d3f\u1d49\u1d43\u02e1)": 48.0,
+      "series": "taught-fact (default, contrastive, dose1)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 98
+}
