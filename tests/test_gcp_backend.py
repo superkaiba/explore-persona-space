@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -183,6 +184,8 @@ class _Runner:
         ssh_results: list[GcloudRunResult] | None = None,
         scp_results: list[GcloudRunResult] | None = None,
         region_describe_results: list[GcloudRunResult] | None = None,
+        create_raises: BaseException | None = None,
+        list_raises: BaseException | None = None,
     ) -> None:
         self.calls: list[list[str]] = []
         self.create_results = list(create_results or [])
@@ -194,14 +197,34 @@ class _Runner:
         self.ssh_results = list(ssh_results or [])
         self.scp_results = list(scp_results or [])
         self.region_describe_results = list(region_describe_results or [])
+        # When set, RAISE the given exception off the matching gcloud
+        # subcommand. ``create_raises`` fires the FIRST time a create argv is
+        # seen. ``list_raises`` fires the first list argv seen AFTER the
+        # create raised — i.e. the POST-TIMEOUT probe list, NOT the two
+        # pre-create lists (the idempotent reconnect at the top of launch +
+        # the stale-name check), which must still return their scripted
+        # ``[]``. Lets the #736 create-timeout tests drive
+        # ``subprocess.TimeoutExpired`` off the create call (and, for the
+        # probe-timeout test, off the post-timeout list) — the base
+        # ``_Runner`` only returns, never raises.
+        self._create_raises = create_raises
+        self._list_raises = list_raises
+        self._create_raised = False
 
     def __call__(self, argv):
         argv = list(argv)
         self.calls.append(argv)
         # gcloud compute instances <subcommand> ...
         if "create" in argv and "instances" in argv:
+            if self._create_raises is not None:
+                exc, self._create_raises = self._create_raises, None
+                self._create_raised = True
+                raise exc
             return self._pop(self.create_results, default_ok=True)
         if "list" in argv and "instances" in argv:
+            if self._list_raises is not None and self._create_raised:
+                exc, self._list_raises = self._list_raises, None
+                raise exc
             return self._pop(self.list_results, default_ok=True, default_stdout="[]")
         if "describe" in argv and "instances" in argv:
             return self._pop(self.describe_results, default_ok=True, default_stdout="{}")
@@ -1699,6 +1722,166 @@ def test_launch_does_not_retry_on_non_capacity_failure(no_marker_posts) -> None:
 
 
 # ---------------------------------------------------------------------------
+# create-timeout-with-live-instance (#736): a FLEX_START create that exceeds
+# the 300s subprocess cap but lands a live instance server-side must surface
+# as the still-provisioning terminal (→ exit 75), NOT exit 4; a truly-absent
+# timeout must still fail loud as a GcpProvisioningError; a probe that itself
+# fails (rc!=0 OR a hung list) must re-raise as a GcpProvisioningError chained
+# from the ORIGINAL create timeout, never a raw TimeoutExpired.
+# ---------------------------------------------------------------------------
+
+
+def test_launch_create_timeout_live_instance_raises_still_provisioning(no_marker_posts) -> None:
+    """Create times out but a post-timeout probe finds the instance live
+    (PROVISIONING) → launch raises GcpCreateTimedOutStillProvisioning (NOT
+    raw TimeoutExpired, NOT a normal handle) carrying the instance name +
+    status, and issues exactly ONE create call (no double-create)."""
+    from explore_persona_space.backends.gcp import GcpCreateTimedOutStillProvisioning
+
+    runner = _Runner(
+        # list #1 = reconnect at top of launch (None), #2 = stale-name check
+        # (name free), #3 = the POST-TIMEOUT probe (live PROVISIONING).
+        list_results=[
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, _instance_payload("PROVISIONING"), ""),
+        ],
+        # The create subprocess exceeds the 300s cap.
+        create_raises=subprocess.TimeoutExpired(cmd=["gcloud", "create"], timeout=300),
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpCreateTimedOutStillProvisioning) as excinfo:
+        backend.launch(_spec(intent="eval"))
+    exc = excinfo.value
+    assert exc.instance_name == "eps-issue-137"
+    assert exc.status == "PROVISIONING"
+    # Live branch raises immediately — NO second create (no double-provision).
+    create_calls = [a for a in runner.calls if "create" in a]
+    assert len(create_calls) == 1
+
+
+def test_launch_create_timeout_no_instance_raises_provisioning_error(no_marker_posts) -> None:
+    """Create times out and the post-timeout probe finds NO instance →
+    launch raises GcpProvisioningError (capacity-shaped, so the router's
+    zone-fallback / next-tier path handles it), NEVER the raw
+    TimeoutExpired. Accepts EITHER the zone-retry continuation OR a hard
+    immediate raise (§A5 + 'deviations allowed' bless both as fail-loud)."""
+    runner = _Runner(
+        # All list calls return empty: reconnect None, stale-name free, and
+        # the post-timeout probe finds no server-side instance.
+        list_results=[
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, "[]", ""),
+        ],
+        create_raises=subprocess.TimeoutExpired(cmd=["gcloud", "create"], timeout=300),
+        # zone-a times out → probe empty → continue; zones b + c then
+        # capacity-miss so the for-else surfaces a GcpProvisioningError
+        # (eval = g2-standard-4 is valid in all three us-central1 zones).
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+        ],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpProvisioningError) as excinfo:
+        backend.launch(_spec(intent="eval"))
+    exc = excinfo.value
+    # Fail-loud preserved: a GcpProvisioningError, NOT the raw TimeoutExpired.
+    assert not isinstance(exc, subprocess.TimeoutExpired)
+    # Capacity-shaped so the router's zone-retry predicate routes it through
+    # fallback (either the timeout-derived "resource not created" pattern or a
+    # downstream EXHAUSTED capacity miss — both contain a capacity substring).
+    matched = (exc.evidence.get("matched_pattern") or "").lower()
+    assert any(tag in matched for tag in ("exhaust", "resource", "enough resources"))
+
+
+def test_launch_create_timeout_probe_failure_reraises_as_provisioning(no_marker_posts) -> None:
+    """Create times out and the post-timeout probe ITSELF fails with rc != 0
+    (reconnect_or_none raises GcpProbeError) → launch re-raises as a
+    GcpProvisioningError (reason 'create_timeout_probe_failed') chained from
+    the ORIGINAL create timeout: 'couldn't ask' must never read as a clean
+    outcome. Pins the rc!=0 probe-FAILURE branch."""
+    original_timeout = subprocess.TimeoutExpired(cmd=["gcloud", "create"], timeout=300)
+    runner = _Runner(
+        # list #1 reconnect (None), #2 stale-name (free), #3 = the
+        # post-timeout probe returns rc != 0 → GcpProbeError.
+        list_results=[
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(1, "", "Reauthentication failed"),
+        ],
+        create_raises=original_timeout,
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpProvisioningError) as excinfo:
+        backend.launch(_spec(intent="eval"))
+    exc = excinfo.value
+    assert exc.reason == "create_timeout_probe_failed"
+    # The chained __cause__ is the ORIGINAL create timeout (signal preserved),
+    # not the secondary probe-side GcpProbeError.
+    assert exc.__cause__ is original_timeout
+
+
+def test_launch_create_timeout_probe_timeout_reraises_as_provisioning(no_marker_posts) -> None:
+    """Create times out AND the post-timeout 'instances list' probe ITSELF
+    raises a DISTINCT subprocess.TimeoutExpired (a HUNG list, not an rc!=0
+    failure) → launch raises GcpProvisioningError (reason
+    'create_timeout_probe_failed') chained from the ORIGINAL CREATE timeout.
+
+    The binding #736 probe-timeout pin: without the helper's
+    ``except (GcpProbeError, subprocess.TimeoutExpired)`` tuple, the hung
+    list's raw TimeoutExpired would escape past launch to main()'s exit-4
+    catch-all — the #736 bug surviving on the probe-timeout branch. Two
+    DISTINCT TimeoutExpired instances (distinguished by ``timeout``) so the
+    __cause__ assertion proves the create-side one was preserved, not the
+    probe-side one."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    create_timeout = subprocess.TimeoutExpired(cmd=["gcloud", "create"], timeout=300)
+    list_timeout = subprocess.TimeoutExpired(cmd=["gcloud", "list"], timeout=300)
+    # Sanity: the two instances are genuinely distinct objects.
+    assert create_timeout is not list_timeout
+    runner = _Runner(
+        # list #1 reconnect (None), #2 stale-name (free) succeed; the #3
+        # post-timeout probe HANGS (list_raises fires only after create raised).
+        list_results=[
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, "[]", ""),
+        ],
+        create_raises=create_timeout,
+        list_raises=list_timeout,
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpProvisioningError) as excinfo:
+        backend.launch(_spec(intent="eval"))
+    exc = excinfo.value
+    # NOT a raw TimeoutExpired (would escape to exit 4) and NOT a GcpProbeError.
+    assert not isinstance(exc, subprocess.TimeoutExpired)
+    assert not isinstance(exc, GcpProbeError)
+    assert exc.reason == "create_timeout_probe_failed"
+    # __cause__ is the ORIGINAL CREATE timeout, NOT the probe-side list timeout.
+    assert exc.__cause__ is create_timeout
+    assert exc.__cause__ is not list_timeout
+
+
+# ---------------------------------------------------------------------------
 # teardown — idempotent on missing instance
 # ---------------------------------------------------------------------------
 
@@ -2938,7 +3121,6 @@ def test_render_startup_script_is_valid_bash() -> None:
     heredoc inside a function inside a subshell; a quoting slip would only
     surface at VM-boot time. ``bash -n`` is the syntax gate (shellcheck is
     not installed on the dev VM)."""
-    import subprocess
     import tempfile
 
     for spec in (
@@ -4210,7 +4392,6 @@ def test_startup_redirect_survives_giant_line_locally(tmp_path: Path) -> None:
     nonzero exit (so exit-0 + log size + done marker are the load-bearing
     witnesses)."""
     import shlex
-    import subprocess
 
     prelude, env = _redirect_prelude_rig(tmp_path)
     done_marker = tmp_path / "done"
@@ -4260,7 +4441,6 @@ def test_startup_failure_path_invokes_shutdown_and_failed_phase(tmp_path: Path, 
     Converts the plan's bash experiments (builtin SIGPIPE death / handler
     semantics) into a repeatable regression test."""
     import shlex
-    import subprocess
 
     prelude, env = _redirect_prelude_rig(tmp_path)
     pipe_closed = tmp_path / "pipe-closed"
@@ -5120,7 +5300,6 @@ def _run_watchdog(meta_pattern_succeeds: bool, ext_pattern_succeeds: bool, max_i
     ``PHASE_CALLED:wedged`` / ``SHUTDOWN_CALLED`` in stdout flags that the
     terminal wedge path fired.
     """
-    import subprocess
     import tempfile
 
     stanza = _extract_watchdog_stanza(
