@@ -4153,7 +4153,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/664",
       "status": "interpreting",
-      "title": "Marker leakage gate never installs on Qwen-2.5-7B-Instruct \u2014 content-behavior gate SNR tracks install magnitude, not behavior-specific leakage (LOW confidence)"
+      "title": "Marker leakage gate never installs on Qwen-2.5-7B-Instruct, so its activation gate sits at the measurement-noise floor (LOW confidence)"
     },
     "665": {
       "goal": "Phase 3 \u2014 test A3.6-A3.10 + joint factorization on the Phase-2 trained store: activation realized gate, whitened key-query gate (key/metric ablations), base-gate validity, drift decomposition; clustered CIs + single-context arm.",
