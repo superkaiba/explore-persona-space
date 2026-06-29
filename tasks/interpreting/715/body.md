@@ -5,7 +5,7 @@ title: 'DFT installs the narrow misalignment task too weakly to test whether it 
 kind: experiment
 tags: []
 created_at: '2026-06-28T09:42:44Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: 'Run this in the background with happy coder: Coding-Agent Task — Does
   DFT Attenuate Emergent Misalignment Relative to Standard SFT? (full spec in body
   ## Provenance). User: ''I know it''s a bit unrelated to the rest of the project
