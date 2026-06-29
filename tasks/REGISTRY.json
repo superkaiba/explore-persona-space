@@ -4484,7 +4484,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/715",
       "status": "interpreting",
-      "title": "DFT installs the narrow misalignment task too weakly to test whether it attenuates emergent misalignment: under a matched LoRA recipe its acquisition range never overlaps standard SFT's (MODERATE confidence)"
+      "title": "DFT installs the narrow misalignment task too weakly to test whether it attenuates emergent misalignment: under a matched LoRA recipe its acquisition range never overlaps standard SFT's across all 3 seeds (MODERATE confidence)"
     },
     "716": {
       "has_clean_result": false,
