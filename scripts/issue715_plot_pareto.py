@@ -12,10 +12,10 @@ The original ``pareto_em_vs_narrow.json`` keeps the uncorrected n=400-denominato
 values for traceability.
 
 No connecting lines — the points are not a trajectory, they are independent
-checkpoints. The preregistered Mode-b kill: there is no narrow-acquisition
+checkpoints. The planned no-overlap kill: there is no narrow-acquisition
 value reached by all 3 seeds in BOTH arms (the all-3-seed common matched-
 acquisition interval is empty: SFT [0.799, 0.854] vs DFT [0.515, 0.646]),
-so the matched-acquisition H1 test is undefined (D* = null).
+so the matched-acquisition test is undefined (D* = null).
 """
 
 import json
@@ -72,7 +72,7 @@ def main() -> None:
     ax.set_xlim(0.30, 0.96)
     ax.legend(loc="upper left")
     ax.set_title(
-        "No all-3-seed matched-acquisition interval:\npreregistered Mode-b kill (D* = null)",
+        "No all-3-seed matched-acquisition interval (D* = null)",
         loc="left",
         fontsize=11,
         fontweight="semibold",
