@@ -4616,8 +4616,8 @@
     "733": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/733",
-      "status": "planning",
+      "path": "tasks/approved/733",
+      "status": "approved",
       "title": "workflow-fix: verify_task_body.py \u2014 harden HF URL resolve against 429 storms"
     },
     "74": {
