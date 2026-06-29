@@ -1,6 +1,6 @@
 {
-  "commit": "1ebfe9f39b",
-  "created": "2026-06-29T11:27:06Z",
+  "commit": "c560f551fe",
+  "created": "2026-06-29T12:02:32Z",
   "figsize": [
     6.5,
     4.0
@@ -15,7 +15,7 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.7939698492462312,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.23,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.23057644110275688,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
@@ -29,7 +29,7 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.82,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.285,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2857142857142857,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
@@ -50,28 +50,28 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.85,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.255,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2556390977443609,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.8535353535353535,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.245,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.24561403508771928,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.7638190954773869,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1625,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.17567567567567569,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.785,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.22,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.22055137844611528,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
@@ -85,14 +85,14 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.8040201005025126,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1975,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.19899244332493704,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.8040201005025126,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.19,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.19047619047619047,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
@@ -120,28 +120,28 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.7989949748743719,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2225,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.22305764411027568,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.8162162162162162,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2425,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2519480519480519,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.82,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.24,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.24060150375939848,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.82,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.235,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2367758186397985,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
@@ -155,14 +155,14 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.861878453038674,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1775,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2610294117647059,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.875,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2475,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2551546391752577,
       "series": "Standard SFT (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 0
@@ -176,7 +176,7 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.515,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.0725,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.07268170426065163,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
@@ -218,7 +218,7 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.705,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.14,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.16666666666666666,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
@@ -239,105 +239,105 @@
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.4824120603015075,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.07,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.07052896725440806,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.555,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.11,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.11224489795918367,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.565,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.085,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.08695652173913043,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.57,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.0925,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.09273182957393483,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.6,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.07,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.07407407407407407,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.6102564102564103,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.10101010101010101,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.67,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1325,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.13350125944584382,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.3333333333333333,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.075,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.079155672823219,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.5157232704402516,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.0625,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.09259259259259259,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.5316455696202531,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.05,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.06369426751592357,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.582089552238806,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1275,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.13385826771653545,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.6214285714285714,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1575,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.19207317073170732,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.6301369863013698,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1425,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.18874172185430463,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.6432160804020101,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1225,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.16065573770491803,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "In-distribution narrow-task acquisition\n(held-out bad-medical-advice rate)": 0.6463414634146342,
-      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1225,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1388101983002833,
       "series": "DFT (stop-gradient reweight) (n=24 checkpoints)",
       "_kind": "scatter",
       "_group": 1

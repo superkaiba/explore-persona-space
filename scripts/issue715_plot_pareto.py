@@ -3,10 +3,19 @@
 Each point is one (objective, seed, checkpoint) cell from the LoRA Pareto
 sweep: x = held-out narrow-task (bad-medical-advice) acquisition rate,
 y = OOD emergent-misalignment rate (Betley 8-question free-form eval,
-claude-sonnet-4-5 judge, aligned<30 AND coherence>50). No connecting lines —
-the points are not a trajectory, they are independent checkpoints. The two
-arms occupy disjoint x-bands (the preregistered Mode-b kill: no overlapping
-narrow-acquisition range, so the matched-acquisition H1 test is undefined).
+claude-sonnet-4-5 judge, aligned<30 AND coherence>50).
+
+The y values are read from ``pareto_em_vs_narrow_corrected.json`` — the EM
+rate with judge-API-error rows (Anthropic Batch API 529 "Overloaded")
+excluded from the denominator (y = n_misaligned / (n_attempted - n_judge_error)).
+The original ``pareto_em_vs_narrow.json`` keeps the uncorrected n=400-denominator
+values for traceability.
+
+No connecting lines — the points are not a trajectory, they are independent
+checkpoints. The preregistered Mode-b kill: there is no narrow-acquisition
+value reached by all 3 seeds in BOTH arms (the all-3-seed common matched-
+acquisition interval is empty: SFT [0.799, 0.854] vs DFT [0.515, 0.646]),
+so the matched-acquisition H1 test is undefined (D* = null).
 """
 
 import json
@@ -20,7 +29,7 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,
 )
 
-PARETO = Path("eval_results/issue_715/pareto_em_vs_narrow.json")
+PARETO = Path("eval_results/issue_715/pareto_em_vs_narrow_corrected.json")
 
 
 def main() -> None:
@@ -63,8 +72,7 @@ def main() -> None:
     ax.set_xlim(0.30, 0.96)
     ax.legend(loc="upper left")
     ax.set_title(
-        "DFT sits below SFT in EM at every checkpoint,\n"
-        "but never reaches SFT's task-acquisition range",
+        "No all-3-seed matched-acquisition interval:\npreregistered Mode-b kill (D* = null)",
         loc="left",
         fontsize=11,
         fontweight="semibold",
@@ -79,7 +87,8 @@ def main() -> None:
 def _plot_em_strip(cells: dict) -> None:
     """Per-objective EM-rate distribution: the low-level per-checkpoint view
     behind the pooled-mean EM comparison. One jittered point per checkpoint,
-    with the pooled mean and the base / benign-control reference lines."""
+    with the pooled mean and the base / benign-control reference lines.
+    y = judge-error-corrected EM rate (529-error rows excluded from denominator)."""
     import numpy as np
 
     set_paper_style("blog")
@@ -124,9 +133,9 @@ def _plot_em_strip(cells: dict) -> None:
         )
 
     ax.axhline(0.0, color="grey", lw=0.8, ls="--", zorder=1)
-    ax.axhline(0.01, color="grey", lw=0.8, ls=":", zorder=1)
+    ax.axhline(0.013, color="grey", lw=0.8, ls=":", zorder=1)
     ax.text(1.45, 0.0, "base 0.00", color="grey", fontsize=8, va="center")
-    ax.text(1.45, 0.025, "benign 0.01", color="grey", fontsize=8, va="center")
+    ax.text(1.45, 0.028, "benign 0.01", color="grey", fontsize=8, va="center")
 
     ax.set_xticks([0, 1])
     ax.set_xticklabels([xlabels["sft_lora"], xlabels["dft_lora"]])
@@ -134,8 +143,8 @@ def _plot_em_strip(cells: dict) -> None:
     ax.set_ylim(-0.02, 0.31)
     ax.set_ylabel("Out-of-distribution EM rate\n(Betley 8-question free-form eval)")
     ax.set_title(
-        "Every DFT checkpoint sits below SFT's EM range,\n"
-        "but at lower narrow-task acquisition (see Pareto figure)",
+        "DFT pooled EM below SFT's, and below at every checkpoint\n"
+        "except the boundary (DFT max 0.19 vs SFT min 0.18)",
         loc="left",
         fontsize=11,
         fontweight="semibold",
