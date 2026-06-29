@@ -41,6 +41,7 @@
 
 - [GCP reconnect to phase=done zombie](feedback_gcp_reconnect_to_completed_phasedone_instance.md) — router `reason: reconnect` to a RUNNING-but-done instance does NOT dispatch workload; probe `eps/phase` guest-attr + workload proc before epm:run-launched, else epm:failure infra (#634)
 - [SSH timeout ≠ child dead — pgrep before relaunch](feedback_ssh_bash_lc_backgrounding.md) — bash -lc nohup timeouts background successfully; blind relaunch races dispatchers + cascade-kills vLLM; use the launcher-script pattern (#383, #399)
+- [GCP-lane: dispatch exit-4 TimeoutExpired ≠ launch failure](feedback_gcp_dispatch_exit4_timeout_instance_pending.md) — `dispatch_issue.py launch` 300s subprocess cap fires on FLEX_START queueing while the create succeeds server-side; `gcloud instances list` BEFORE treating as failure or relaunching (would race the PENDING instance). GCP-lane analogue of "SSH timeout ≠ child dead" (#658)
 - [Launch wrappers: set -euo pipefail](feedback_wrapper_pipefail.md) — tee masks exits without pipefail (#381); brace chains without -e proceed past a failed smoke and print "SMOKE PASSED" (#505)
 - [Load .env explicitly in nohup](feedback_load_env_in_nohup.md) — SSH non-login shells lack API keys; set -a; source .env; set +a in every wrapper (#260)
 - [Stale procs steal log + GPU + checkpoints](feedback_stale_eval_proc_steals_log.md) — relaunch ≥3: pgrep/EngineCore kill, nvidia-smi [Not Found] PIDs, rm tmp_models, truncate log, THEN launch (#399 v8)
