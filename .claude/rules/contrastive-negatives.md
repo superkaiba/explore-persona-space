@@ -150,3 +150,7 @@ an exemption.
 q:leak-data-factors 3.4, q:leak-to-default 3.7);
 `src/explore_persona_space/train/sft.py` (`MarkerOnlyDataCollator`); task
 bodies #383, #247, #329, #448, #381, #389, #390, #18, #207.
+
+**Sibling rule:** `.claude/rules/persona-vectors-recipe.md` — the persona-vector
+pos/neg system-prompt pairs are the contrastive backbone of the mean-difference
+direction; this rule's contrastive structure governs them.

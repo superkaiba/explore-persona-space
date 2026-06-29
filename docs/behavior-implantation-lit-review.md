@@ -89,6 +89,8 @@ A recurring theoretical thread (the "context = transient weight update" result o
 
 ## 3. Activation steering / representation engineering / persona vectors
 
+> Canonical recipe (project): `.claude/rules/persona-vectors-recipe.md` — the enforced extraction recipe matching arXiv 2507.21509 (except the GPT-4.1-mini logit scoring, replaced by the project judge). This summary is secondhand; the rule is the source of truth.
+
 **One-line definition.** Implant `B` by adding (or projecting onto) a fixed direction in the residual stream during the forward pass — typically with no gradient and no training data beyond a small contrast set.
 
 **How the behavior signal (the direction) is generated.** Near-universally **contrastive**:
