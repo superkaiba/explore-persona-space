@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 722,
+  "highest_id": 731,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4100,8 +4100,8 @@
       "goal": "Determine whether the leakage-predictor's base-model chain holds on Qwen2.5-7B-Instruct \u2014 A3.2 (mean answer-side activation v0(C) summarizes behavior expression), A3.3 (linear read-out r_B), A3.4/A3.5 (context vector c_C predicts the answer profile v0(C)) \u2014 AND whether they still hold in the single-context edge case C=delta_x (one prompt, reported vs a within-context noise floor, Phase 1b); lock the best extraction layer + summary recipe for downstream phases.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/658",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/658",
+      "status": "followups_running",
       "title": "The leakage predictor's first link fails on Qwen2.5-7B \u2014 a mean answer-side activation summarizes only 3 of 10 behaviors, and none of the 4 with a working linear read-out (HIGH confidence)"
     },
     "659": {
@@ -4177,7 +4177,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/667",
       "status": "followups_running",
-      "title": "The leakage-predictor gate chain holds in activation space \u2014 a base-context whitened gate predicts where a fine-tune's write lands as well as the post-fine-tuning model does \u2014 but the base read-out fails and the gate only partly reaches behavioral leakage (MODERATE confidence)"
+      "title": "A base-context whitened gate predicts where a fine-tune's write lands in activation space as well as the post-fine-tuning model does \u2014 but the base read-out fails and the gate only partly reaches behavioral leakage (MODERATE confidence)"
     },
     "668": {
       "has_clean_result": false,
@@ -4319,8 +4319,8 @@
       "goal": "Measure how a context's last-token residual-stream activation summary (the context vector) shifts when a behavioral instruction is appended, across diverse contexts, behaviors, and layers, and test whether the shift is a single context-independent behavior direction.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/685",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/685",
+      "status": "awaiting_promotion",
       "title": "Appending a behavioral instruction moves the context vector along one dominant per-behavior direction, with a smaller context-specific residual riding on top (MODERATE confidence)"
     },
     "686": {
@@ -4429,6 +4429,13 @@
       "status": "completed",
       "title": "Persona taxonomy"
     },
+    "703": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/703",
+      "status": "completed",
+      "title": "fix full-suite test-isolation pollution (module-singleton leak across 4 tests)"
+    },
     "71": {
       "has_clean_result": false,
       "kind": "experiment",
@@ -4475,8 +4482,8 @@
       "goal": "Test whether DFT (stop-gradient probability-weighted SFT) produces less out-of-distribution emergent misalignment than standard SFT at matched in-distribution narrow-task acquisition, and characterize the mechanism (token gradient-mass, EM-direction projection, weight-delta sparsity/prunability).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/715",
-      "status": "planning",
+      "path": "tasks/interpreting/715",
+      "status": "interpreting",
       "title": "Does DFT attenuate emergent misalignment relative to standard SFT?"
     },
     "716": {
@@ -4530,11 +4537,74 @@
     },
     "722": {
       "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, fit the context\u2192answer-profile mapping M: c_C \u2192 v0(C) both pre-finetuning (M0, base) and post-finetuning (M\u207a, adapter-applied) as a linear ridge AND a nonlinear MLP, and determine whether the FUNCTION M changes (distinct from the input context vector c_C shifting) via (1) function-change at fixed input \u2016M\u207a(c)\u2212M0(c)\u2016 on a common c grid projected onto behavior read-outs r_B, (2) behavior-relevant transfer through the chain r_B\u1d40 M c \u2192 E (judge rate) and M along r_B \u2014 NOT generic v0 reconstruction (which #658 showed saturates \u22480.98 and is uninformative), and (3) cross-transfer of M0 vs M\u207a on FT data; cross-referenced against #697's causal f_CV.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/722",
-      "status": "approved",
-      "title": "Does finetuning change the context\u2192answer-profile mapping M, or only the input context vector? Fit M0 vs M\u207a (ridge + MLP) on #537 adapters"
+      "path": "tasks/reviewing/722",
+      "status": "reviewing",
+      "title": "Fitting M0 vs M\u207a on reused adapters: only the taught fact's context\u2192answer map measurably reshapes (LOW confidence)"
+    },
+    "723": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/723",
+      "status": "completed",
+      "title": "workflow-fix: gotchas.md \u2014 rsLoRA parity probe needs A100 intent, fails on L4"
+    },
+    "724": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/724",
+      "status": "completed",
+      "title": "daily-fix: task.py audit --repair + reconcile 13 drifted registry tasks"
+    },
+    "725": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/725",
+      "status": "completed",
+      "title": "daily-fix: living_docs.py check degrade on bad task, not crash nightly pass"
+    },
+    "726": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/726",
+      "status": "completed",
+      "title": "daily-fix: spawn_session verifies Happy injection patch before relying on it"
+    },
+    "727": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/727",
+      "status": "completed",
+      "title": "Bulk HF uploads must use folder-commit (per-file upload 504-storms on large repos) + poller escalation for GPU-idle upload phases"
+    },
+    "728": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/728",
+      "status": "completed",
+      "title": "workflow-fix: canonical persona-vectors recipe (match paper, no logits) + enforce"
+    },
+    "729": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/729",
+      "status": "completed",
+      "title": "workflow-fix: analyzer.md \u2014 cross-check inherited figure .meta.json on follow-up re-fold"
+    },
+    "730": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/730",
+      "status": "reviewing",
+      "title": "workflow-fix: GCP-lane GPU-idle advisory+escalation parity (backend_poll.py)"
+    },
+    "731": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/731",
+      "status": "completed",
+      "title": "workflow-fix: audit_clean_results_body_discipline.py \u2014 detect bracketed CIs in Results/Takeaways prose"
     },
     "74": {
       "has_clean_result": false,
