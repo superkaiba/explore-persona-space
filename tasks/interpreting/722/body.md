@@ -5,7 +5,7 @@ title: Finetuning reshapes the context→answer function for a taught fact but n
 kind: experiment
 tags: []
 created_at: '2026-06-28T20:32:55Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 667
 origin_prompt: 'run the pre vs post finetuning followup as a standalone issue linked
   to 667. run what we''ve discussed as well as the extra things here: - function-change
