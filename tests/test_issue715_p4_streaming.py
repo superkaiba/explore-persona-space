@@ -305,3 +305,159 @@ def test_global_topk_threshold_bounded_footprint_runtime(tmp_path, monkeypatch):
     assert thresh == pytest.approx(brute, rel=0, abs=0), (
         f"streaming threshold {thresh} != brute-force {brute}"
     )
+
+
+# ── v6 §11 budget-guard regression (drop all_linear/global; fail-loud guard) ──
+#
+# v4's `all_linear/global` P4 cell is the LONE §9 <15 GB footprint breach: the
+# global threshold over ~6.5e9 all-linear elements pushes torch.topk's mandatory
+# int64 indices buffer to ~16 GB and the co-resident transient to ~39 GB. v6
+# DROPS that cell from the production grid and adds a defensive RuntimeError at
+# the TOP of `_global_topk_threshold` so a future ad-hoc over-budget invocation
+# fails LOUD (before any tensor is materialized) instead of OOM-ing the shared VM.
+# The 3 RETAINED cells pass the guard by §9 arithmetic. These tests pin both
+# directions, using a shape-only StreamingWeights stub (the guard reads per-key
+# shape metadata only — it fires before any `.get()`), keyed to Qwen-2.5-7B
+# (H=3584, I=18944, 28 layers; the §9 per-cell arithmetic).
+
+_QWEN_H = 3584
+_QWEN_I = 18944
+_QWEN_LAYERS = 28
+
+
+class _ShapeOnlyWeights:
+    """A StreamingWeights stand-in that knows only per-key SHAPES.
+
+    `_global_topk_threshold`'s §9 budget guard reads `base_w.shape(k)` for every
+    target key and computes the transient peak from those shapes — it raises (or
+    proceeds to the streaming loop) BEFORE the first `.get(k)`. So a shape-only
+    stub exercises the guard at realistic Qwen-2.5-7B scale without materializing
+    multi-GB tensors. `.get` deliberately raises: the production-grid cells never
+    reach it in these tests (the guard passes, then we stop), and the breaching
+    cell raises at the guard first.
+    """
+
+    def __init__(self, key_to_shape: dict[str, tuple[int, ...]]):
+        self._key_to_shape = key_to_shape
+
+    def shape(self, key: str) -> tuple[int, ...]:
+        return self._key_to_shape[key]
+
+    def tensor_keys(self) -> list[str]:
+        return list(self._key_to_shape)
+
+    def get(self, key: str):  # pragma: no cover - not reached in guard tests
+        raise AssertionError(
+            f"get({key!r}) reached — the budget-guard test should stop at the "
+            "shape-only guard, never materialize a tensor"
+        )
+
+
+def _down_proj_shapes() -> dict[str, tuple[int, int]]:
+    """28 down_proj matrices [H, I] — the `down_proj/global` RETAINED scope."""
+    return {
+        f"model.layers.{i}.mlp.down_proj.weight": (_QWEN_H, _QWEN_I) for i in range(_QWEN_LAYERS)
+    }
+
+
+def _all_linear_shapes() -> dict[str, tuple[int, int]]:
+    """All 7 linear projections per layer — the dropped `all_linear/global` scope.
+
+    Per layer: q/o_proj [H,H], k/v_proj [H_kv,H] (GQA: 4 KV heads * 128 = 512),
+    gate/up_proj [I,H], down_proj [H,I]. Total ~= 6.5e9 elements over 28 layers
+    (the §9 all_linear/global figure ~6.525e9).
+    """
+    h, i, kv = _QWEN_H, _QWEN_I, 512
+    shapes: dict[str, tuple[int, int]] = {}
+    for layer in range(_QWEN_LAYERS):
+        p = f"model.layers.{layer}"
+        shapes[f"{p}.self_attn.q_proj.weight"] = (h, h)
+        shapes[f"{p}.self_attn.k_proj.weight"] = (kv, h)
+        shapes[f"{p}.self_attn.v_proj.weight"] = (kv, h)
+        shapes[f"{p}.self_attn.o_proj.weight"] = (h, h)
+        shapes[f"{p}.mlp.gate_proj.weight"] = (i, h)
+        shapes[f"{p}.mlp.up_proj.weight"] = (i, h)
+        shapes[f"{p}.mlp.down_proj.weight"] = (h, i)
+    return shapes
+
+
+def test_budget_guard_passes_on_retained_down_proj_global_cell():
+    """`down_proj/global` at the worst K=0.32 is UNDER the §9 15 GB budget — no raise.
+
+    §9 arithmetic: ~1.90e9 down_proj elements; n_zero ~= 6.08e8 -> int64 indices
+    4.87 GB + fp32 values 2.43 GB + largest matrix (6.79e7 * 4 B = 0.27 GB)
+    ~= 7.6 GB peak (the §9 ~12.4 GB figure also counts running_top/merged, which
+    the guard's int64+values+largest-matrix estimate conservatively omits) — well
+    under 15 GB. The guard must NOT fire; the streaming loop then starts, so we
+    stop it cleanly via the get()-raises stub and confirm we got past the guard.
+    """
+    p4 = _load_p4_module()
+    shapes = _down_proj_shapes()
+    base_w = _ShapeOnlyWeights(shapes)
+    ft_w = _ShapeOnlyWeights(shapes)
+    target_keys = list(shapes)
+    total = _QWEN_H * _QWEN_I * _QWEN_LAYERS
+    n_zero = round(0.32 * total)
+    largest = _QWEN_H * _QWEN_I
+    peak = n_zero * (8 + 4) + largest * 4
+    assert peak < p4.GLOBAL_TOPK_BUDGET_BYTES, (
+        "test premise: down_proj/global must be under budget by §9 arithmetic"
+    )
+    # The guard must pass; the loop then calls get() → our stub raises AssertionError.
+    # Reaching the AssertionError proves the RuntimeError budget guard did NOT fire.
+    with pytest.raises(AssertionError, match=r"get.*reached"):
+        p4._global_topk_threshold(base_w, ft_w, 0.32, target_keys)
+
+
+def test_budget_guard_raises_on_dropped_all_linear_global_cell():
+    """`all_linear/global` at K=0.32 BREACHES the §9 budget → RuntimeError named.
+
+    §9 arithmetic: ~6.525e9 all-linear elements; n_zero ≈ 2.088e9 → int64 indices
+    15.56 GB ALONE + values 7.78 GB ≈ ~23 GB by the guard estimate (~39 GB true
+    co-resident peak), > 15 GB. The guard fires at the TOP, before any tensor read.
+    """
+    p4 = _load_p4_module()
+    shapes = _all_linear_shapes()
+    base_w = _ShapeOnlyWeights(shapes)
+    ft_w = _ShapeOnlyWeights(shapes)
+    target_keys = list(shapes)
+    total = sum(a * b for (a, b) in shapes.values())
+    # Confirm the test premise: ~6.5e9 all-linear elements (§9 ~6.525e9).
+    assert 6.0e9 < total < 7.0e9, f"all_linear element count off: {total}"
+
+    with pytest.raises(RuntimeError, match=r"all_linear/global"):
+        p4._global_topk_threshold(base_w, ft_w, 0.32, target_keys)
+    # The message must name the breaching cell + the §11 pointer (fail-loud contract).
+    try:
+        p4._global_topk_threshold(base_w, ft_w, 0.32, target_keys)
+    except RuntimeError as e:
+        msg = str(e)
+        assert "scope=all_linear" in msg and "granularity=global" in msg, msg
+        assert "§9" in msg and "§11" in msg, msg
+        assert "P4_SCOPE_GRANULARITY_GRID" in msg, msg
+
+
+def test_budget_guard_uses_synthetic_budget_override():
+    """The guard honors a tiny `budget_bytes` override → raises on a toy `total`.
+
+    Pins the guard arithmetic directly (no Qwen scale): a 1 GB budget against a
+    modest synthetic scope must fail loud, and a generous budget on the same scope
+    must pass (reach the get() stub).
+    """
+    p4 = _load_p4_module()
+    # 100 matrices of 1e6 elements = 1e8 total; n_zero at K=0.32 = 3.2e7.
+    shapes = {f"m{i}": (1000, 1000) for i in range(100)}
+    base_w = _ShapeOnlyWeights(shapes)
+    ft_w = _ShapeOnlyWeights(shapes)
+    target_keys = list(shapes)
+    total = 100 * 1_000_000
+    n_zero = round(0.32 * total)  # 3.2e7
+    largest = 1_000_000
+    peak = n_zero * (8 + 4) + largest * 4  # ~0.39 GB
+
+    # A budget BELOW the peak → raise.
+    with pytest.raises(RuntimeError, match=r"exceeds the §9 budget"):
+        p4._global_topk_threshold(base_w, ft_w, 0.32, target_keys, budget_bytes=peak - 1)
+    # A budget ABOVE the peak → pass the guard, then hit the get() stub.
+    with pytest.raises(AssertionError, match=r"get.*reached"):
+        p4._global_topk_threshold(base_w, ft_w, 0.32, target_keys, budget_bytes=peak + 1)

@@ -369,8 +369,22 @@ def down_proj_keys(state_dict: dict) -> list[str]:
     return [k for k in state_dict if k.endswith(DOWN_PROJ_SUFFIX)]
 
 
+# §9 per-matrix footprint budget for the global-threshold step (plan §9 / §11).
+# The transient peak co-resides torch.topk's MANDATORY int64 indices buffer
+# (n_zero * 8 B) + its fp32 values return (n_zero * 4 B) + the largest single
+# matrix's fp32 |delta| during the merge. The guard below fails LOUD when that
+# peak exceeds this budget so a future ad-hoc over-budget invocation (the dropped
+# all_linear/global cell) never silently OOMs the shared VM (fail-fast).
+GLOBAL_TOPK_BUDGET_BYTES = 15 * (2**30)  # 15 GB
+
+
 def _global_topk_threshold(
-    base_w: StreamingWeights, ft_w: StreamingWeights, k_frac: float, target_keys: list[str]
+    base_w: StreamingWeights,
+    ft_w: StreamingWeights,
+    k_frac: float,
+    target_keys: list[str],
+    *,
+    budget_bytes: int = GLOBAL_TOPK_BUDGET_BYTES,
 ) -> float:
     """The global |Δ| top-k threshold, computed STREAMING with a bounded heap.
 
@@ -390,20 +404,50 @@ def _global_topk_threshold(
     ``torch.cat(all_abs).topk(n_zero).values.min()`` (the dict reference), so the
     global mask ``|Δ| < thresh`` zeroes the same entries (verified against
     ``build_pruned_model``).
+
+    Raises ``RuntimeError`` (fail-loud, §9 / §11 budget guard) when the estimated
+    transient peak — ``n_zero × (8 + 4) bytes`` (int64 indices + fp32 values) plus
+    the largest single matrix's fp32 |Δ| — exceeds ``budget_bytes`` (default the
+    §9 15 GB cap). The v6 production grid drops the only breaching cell
+    (all_linear/global; see ``scripts/issue715_dispatch.py::P4_SCOPE_GRANULARITY_GRID``),
+    so the guard never fires on the retained cells (down_proj/per_tensor,
+    down_proj/global, all_linear/per_tensor) by §9 arithmetic; it exists purely so
+    a future ad-hoc over-budget invocation fails fast instead of OOM-ing the VM.
     """
     if k_frac <= 0:
         return float("inf")
-    # First, the global element count (cheap: per-key shape metadata, NO tensors).
+    # First, the global element count + largest single matrix (cheap: per-key
+    # shape metadata, NO tensors materialized).
     total = 0
+    largest_matrix = 0
     for k in target_keys:
         shape = base_w.shape(k)
         n = 1
         for dim in shape:
             n *= dim
         total += n
+        largest_matrix = max(largest_matrix, n)
     n_zero = int(round(k_frac * total))  # noqa: RUF046 — mirrors body §P4 reference shape
     if n_zero <= 0:
         return float("inf")
+    # §9 / §11 budget guard: fail LOUD if the transient peak would breach the cap.
+    # int64 indices (8 B) + fp32 values (4 B) per n_zero entry + largest matrix fp32.
+    peak_bytes = n_zero * (8 + 4) + largest_matrix * 4
+    if peak_bytes > budget_bytes:
+        scope = (
+            "down_proj" if all(k.endswith(DOWN_PROJ_SUFFIX) for k in target_keys) else "all_linear"
+        )
+        raise RuntimeError(
+            f"_global_topk_threshold: estimated transient peak "
+            f"{peak_bytes / 2**30:.1f} GB exceeds the §9 budget "
+            f"{budget_bytes / 2**30:.1f} GB on the global-scope cell "
+            f"(scope={scope}, granularity=global, K={k_frac}); "
+            f"n_zero={n_zero}, largest_matrix={largest_matrix}, total={total}. "
+            "The v6 production grid drops the only breaching cell "
+            "(all_linear/global); see "
+            "scripts/issue715_dispatch.py::P4_SCOPE_GRANULARITY_GRID and "
+            "v6 §11 'P4 global-threshold breach resolution'."
+        )
     # Bounded running set of the n_zero largest |Δ| values across all matrices.
     running_top: torch.Tensor | None = None
     for k in target_keys:

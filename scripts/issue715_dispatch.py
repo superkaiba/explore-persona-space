@@ -635,22 +635,31 @@ def phase_phase4train(args) -> dict:
     return {"dstar_x": dstar, "chosen_lr": chosen_lr, "uploaded_fullft_ckpts": uploaded}
 
 
-# P4 headline grid (plan §-P4): both scopes x both granularities = 4 cells.
+# P4 headline grid (plan §-P4 + v6 §11 P4 global-threshold breach resolution):
+# 3 cells. The v4 4th cell `all_linear/global` is DROPPED — it is the LONE §9
+# `<15 GB` per-matrix footprint breach (global threshold over ~6.5e9 all-linear
+# elements pushes torch.topk's mandatory int64 indices buffer to ~16 GB, ~39 GB
+# co-resident transient peak; three code-review rounds on that algorithmic family
+# failed). The breach is provably ISOLATED to this cell (the other 3 are under
+# budget on the already-landed running-topk code), so dropping it removes the
+# breach with ZERO threshold-algorithm change; bit-identical reproducibility and
+# the full K-sweep are preserved on every retained cell. See v6 §11.
 P4_SCOPE_GRANULARITY_GRID = [
-    ("down_proj", "per_tensor"),
-    ("down_proj", "global"),
-    ("all_linear", "per_tensor"),
-    ("all_linear", "global"),
+    ("down_proj", "per_tensor"),  # headline (paper Eq. 3 default)
+    ("down_proj", "global"),  # global ablation on the EM-relevant scope
+    ("all_linear", "per_tensor"),  # all-linear per-tensor ablation
+    # v6: all_linear/global dropped — lone §9 <15 GB breach (§11).
 ]
 
 
 def phase_phase4(args) -> dict:
-    """P4 geometry + Ignore-topK prunability over the 4-cell scope x granularity
-    grid on the D*-matched full-FT pair (BLOCKER #715-4).
+    """P4 geometry + Ignore-topK prunability over the 3-cell scope x granularity
+    grid on the D*-matched full-FT pair (BLOCKER #715-4; v6 §11 drops the 4th cell).
 
-    The headline grid is {down_proj, all_linear} x {per_tensor, global} (4 cells)
-    x the 7-value K grid x 2 arms = 56 evals. Each cell writes distinct
-    p4_geometry_<scope>_<gran>.json / p4_prune_<scope>_<gran>.json.
+    The headline grid is {down_proj/per_tensor, down_proj/global,
+    all_linear/per_tensor} (3 cells; v6 dropped all_linear/global — the lone §9
+    <15 GB breach, §11) x the 7-value K grid x 2 arms = 42 evals. Each cell writes
+    distinct p4_geometry_<scope>_<gran>.json / p4_prune_<scope>_<gran>.json.
     """
     dstar = _read_dstar()
     sft_ck = _dstar_matched_fullft_ckpt("sft_fullft_p4", dstar)

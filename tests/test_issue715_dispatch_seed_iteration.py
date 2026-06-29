@@ -1,4 +1,4 @@
-"""Issue #715 BLOCKER-3 + BLOCKER-4 — P2/P3 iterate 3 seeds; P4 runs the 4-cell grid.
+"""Issue #715 BLOCKER-3 + BLOCKER-4 — P2/P3 iterate 3 seeds; P4 runs the 3-cell grid.
 
 BLOCKER-3: P2 and P3 were hardwired to ``--seed 42``, so the plan §3 P3
 supported-iff criterion ("in ≥2 of 3 seeds") was unsatisfiable. The fix iterates
@@ -7,10 +7,11 @@ dispatcher's ``_run`` + checkpoint resolution and asserts P3 schedules exactly 3
 ``issue715_p3_d_projection.py`` invocations (one per seed, each carrying its own
 ``--seed``), and P2 likewise.
 
-BLOCKER-4: P4 ran once with default scope/granularity. The fix loops the 4-cell
-``{down_proj, all_linear} x {per_tensor, global}`` grid; this test asserts P4
-schedules exactly 4 ``issue715_p4_geometry_pruning.py`` invocations spanning all
-4 (scope, granularity) cells.
+BLOCKER-4: P4 ran once with default scope/granularity. The fix loops the v6 3-cell
+grid {down_proj/per_tensor, down_proj/global, all_linear/per_tensor}; this test
+asserts P4 schedules exactly 3 ``issue715_p4_geometry_pruning.py`` invocations
+spanning those cells. The v4 4th cell ``all_linear/global`` is DROPPED — the lone
+§9 <15 GB footprint breach (v6 §11) — so the grid no longer enumerates it.
 """
 
 from __future__ import annotations
@@ -93,7 +94,7 @@ def test_phase2_schedules_one_invocation_per_seed(monkeypatch, tmp_path):
     assert seeds_seen == [42, 137, 256], f"P2 must cover the registered seed set, got {seeds_seen}"
 
 
-def test_phase4_schedules_all_four_scope_granularity_cells(monkeypatch, tmp_path):
+def test_phase4_schedules_the_three_cell_grid(monkeypatch, tmp_path):
     mod = _load_dispatch(monkeypatch)
     calls = _capture_runs(mod, monkeypatch)
     monkeypatch.setattr(mod, "_read_dstar", lambda: 0.5)
@@ -106,16 +107,32 @@ def test_phase4_schedules_all_four_scope_granularity_cells(monkeypatch, tmp_path
     mod.phase_phase4(_Args(phase="phase4"))
 
     p4_calls = [c for c in calls if any("issue715_p4_geometry_pruning.py" in a for a in c)]
-    assert len(p4_calls) == 4, f"P4 should run the 4-cell grid, got {len(p4_calls)}"
+    assert len(p4_calls) == 3, f"P4 should run the v6 3-cell grid, got {len(p4_calls)}"
     cells_seen = sorted(
         (c[c.index("--scope") + 1], c[c.index("--granularity") + 1]) for c in p4_calls
     )
     assert cells_seen == [
-        ("all_linear", "global"),
         ("all_linear", "per_tensor"),
         ("down_proj", "global"),
         ("down_proj", "per_tensor"),
-    ], f"P4 must span {{down_proj, all_linear}} x {{per_tensor, global}}, got {cells_seen}"
+    ], f"P4 must span the v6 3-cell grid, got {cells_seen}"
+    # v6 §11: the lone §9 <15 GB breach cell is dropped from the production grid.
+    assert ("all_linear", "global") not in cells_seen, (
+        "all_linear/global must NOT be enumerated by the v6 production grid (§11)"
+    )
+
+
+def test_p4_grid_constant_drops_all_linear_global(monkeypatch):
+    """The production grid constant has exactly the 3 v6 cells, sans all_linear/global."""
+    mod = _load_dispatch(monkeypatch)
+    grid = mod.P4_SCOPE_GRANULARITY_GRID
+    assert len(grid) == 3, f"v6 P4 grid must have 3 cells, got {len(grid)}: {grid}"
+    assert ("all_linear", "global") not in grid, "v6 drops all_linear/global (§11)"
+    assert set(grid) == {
+        ("down_proj", "per_tensor"),
+        ("down_proj", "global"),
+        ("all_linear", "per_tensor"),
+    }, f"unexpected v6 P4 grid membership: {grid}"
 
 
 def test_smoke_phase3_runs_single_seed(monkeypatch, tmp_path):
