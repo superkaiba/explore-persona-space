@@ -4673,8 +4673,8 @@
     "740": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/740",
-      "status": "proposed",
+      "path": "tasks/planning/740",
+      "status": "planning",
       "title": "workflow-fix: vectorized_mlp_skill.py helper referenced but missing"
     },
     "75": {
