@@ -4645,8 +4645,8 @@
     "737": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/737",
-      "status": "approved",
+      "path": "tasks/running/737",
+      "status": "running",
       "title": "workflow-fix: artifact-reuse (h) check for train-input mixes"
     },
     "74": {
