@@ -3705,6 +3705,10 @@ When this skill is re-invoked in `running`:
    | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers), a zombie-GPU-allocation stall (`stall_reason: vllm_worker_dead_zombie_gpu`, #664) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, status -> `blocked`. (Zombie-GPU stall: see the recovery-brief note below.) |
    | `code` | Python `Traceback` from `src/explore_persona_space/` or `scripts/` (our code), `AssertionError`/`TypeError`/`KeyError` from our code, CUDA OOM listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — GPU-pinning bug, #557) | Status back to `running` (implementing sub-phase), re-spawn `experiment-implementer` with the failure context. Loop through Steps 4b -> 5 -> 6 again. Cap 3 (existing). |
 
+   *Before applying either row, the Crash-fix circuit-breaker below checks for
+   a same-signature repeat or a spent escape ladder and pivots to re-planning if
+   either fires.*
+
    **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
    When the `status=stalled` tick's `stall_reason` is
    `vllm_worker_dead_zombie_gpu`, the experimenter respawn is an `infra`
@@ -3722,6 +3726,88 @@ When this skill is re-invoked in `running`:
    `.claude/agent-memory/experimenter/feedback_vllm_zombie_gpu_pkill_reaper.md`;
    reference BOTH in the brief so the experimenter does not re-derive it
    (the experimenter's own Pre-Launch step 9 also runs this probe).
+
+   **Crash-fix circuit-breaker (runs BEFORE applying the cap-3 routing
+   table above).** Before re-spawning the experimenter (`infra` row) or
+   re-spawning `experiment-implementer` (`code` row), check whether this
+   failure is the SAME trap re-tripping or a SPENT escape ladder — either
+   case means relaunching is futile and the PLAN, not the code, needs to
+   change. The check reads ONLY `events.jsonl` markers + the latest
+   `plans/plan.md` (no new in-memory state) and is the pure predicate
+   `task_workflow.circuit_breaker_should_fire(events, plan_text, K)`
+   (canonical predicate this step implements; the canonical pivot rule is
+   `workflow.yaml § pivot_criteria.plan_contradiction_replan`):
+
+   ```bash
+   K="${EPM_CIRCUIT_BREAKER_K:-4}"   # default 4; one round past cap-3 so
+                                     # the generic pivot can also have fired
+   uv run python - "$N" "$K" <<'PY'
+   import sys
+   from explore_persona_space import task_workflow as tw
+   n, k = int(sys.argv[1]), int(sys.argv[2])
+   events = tw.list_events(n)
+   plan = tw.find_task_path(n) / "plans" / "plan.md"
+   plan_text = plan.read_text() if plan.exists() else ""
+   fire = tw.circuit_breaker_should_fire(events, plan_text, K=k)
+   print(fire if fire else "NO-FIRE")
+   PY
+   ```
+
+   - **Trigger 1 — same-failure-class repetition** (the narrower complement
+     to cap-3, K default 4): the predicate groups `epm:failure` markers by
+     their `(phase, failure_class, assert_tag)` signature (`phase` from the
+     failure note's `phase=<p>` token; `failure_class` from the
+     `failure_class:` line or, absent it, from the prior round's classifier
+     verdict already recorded; `assert_tag` from the fallback chain — explicit
+     `assert_tag:` SHOULD field, else the bracketed `[<tag>-assert]` token,
+     else the exception-type / command-family token
+     `<ExcName>:<script_basename>` extracted from the crash note, else a
+     normalized note-hash with timestamps / PIDs / `file:line` / the
+     subprocess argv array / `--flag value` runs stripped). K or more rounds
+     sharing ONE signature → fire with `trigger: same_failure_class`. The
+     counter RESETS at any intervening `epm:experiment-implementation` /
+     `epm:results` milestone marker (a genuinely successful round means the
+     trap was escaped, not re-tripped). It does **NOT** reset on
+     `epm:progress` — that marker is the workflow's catch-all heartbeat /
+     phase-tick / watcher-respawn breadcrumb and is posted DURING a
+     still-failing trap window (verified on #664: the trap window between
+     events 228 and 247 carries six benign `epm:progress` markers), so
+     resetting on it would make this trigger inert.
+   - **Trigger 2 — enumerated-fallback-exhaustion**: the predicate parses the
+     latest `plan.md` for a finite escape ladder — a literal ` → `
+     arrow-separated "Option A → Option B → ..." run OR a numbered
+     "Option N:" list under a §-heading — then scans `epm:progress` /
+     `epm:experiment-implementation` notes for which Option each round
+     attempted AND `epm:failure` markers re-tripping the SAME gate. When
+     EVERY option in the ladder has been launched AND the same gate still
+     trips → fire with `trigger: enumerated_fallback_exhausted`. The predicate
+     silently NO-OPS (returns no trigger-2 fire) on free-form plans with no
+     parseable ladder.
+
+   On fire the predicate returns a dict whose **`pivot_scope` field is the
+   ready-to-pass `/adversarial-planner` scope string** (built verbatim per the
+   wording template in
+   `workflow.yaml § pivot_criteria.plan_contradiction_replan`). The
+   orchestrator (this is a STRATEGY PIVOT per that canonical predicate):
+
+   1. Post `epm:strategy-pivot v<n>` (the EXISTING marker — do NOT introduce a
+      new kind) naming which trigger fired, the matched signature OR the
+      spent-ladder list, and the `pivot_scope` string to pass to the planner.
+   2. `uv run python scripts/task.py set-status <N> planning`.
+   3. Re-invoke `/adversarial-planner` passing `fire["pivot_scope"]` VERBATIM
+      as the pivot scope (it already names the repeated signature or the
+      exhausted ladder, per the
+      `workflow.yaml § pivot_criteria.plan_contradiction_replan` template).
+   4. Treat the revised plan as a FRESH implementer cycle (cap-3 / revision
+      counters reset — identical to the existing `plan_contradiction_replan`
+      pivot).
+   5. Count this as ONE of the ~3 strategy pivots before BLOCK (the SAME
+      counter as the existing trigger, NOT a separate one). Block only after
+      ~3 such re-plans fail to yield a runnable design AND no further
+      autonomous angle exists.
+
+   When the predicate returns `NO-FIRE`, fall through to the classifier
+   invocation and cap-3 routing table below unchanged.
 
    **Missing `failure_class` — invoke the classifier script.** Do NOT
    reason about regex patterns inline; the patterns are owned by

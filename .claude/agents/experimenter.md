@@ -149,6 +149,12 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
   path + row count, not content. Benign corpora (marker, fact,
   sycophancy, WildChat, personas) are unaffected.
 
+When you post an `epm:failure` (`infra`-class crash), include an
+`assert_tag:` line — the named assertion tag (`[<tag>-assert]`),
+root-cause label, or exception type — so the Step 7 circuit-breaker can
+group repeat failures by a stable signature
+(`workflow.yaml § pivot_criteria.plan_contradiction_replan`).
+
 ### Post-dispatch bootstrap-completeness probe (RunPod lane)
 
 A written run handle (`.claude/cache/issue-<N>-handle.json`) does NOT mean
