@@ -1251,6 +1251,11 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # Machine-readable stall cause (#664) — zombie-GPU-allocation stall on
         # the RunPod lane; None on every other lane / verdict.
         "stall_reason",
+        # GCP-lane GPU-idle advisory + escalation parity (#730 / #727 RunPod
+        # analogue) — always emitted by backend_poll.main, default False on
+        # every non-GCP / non-running tick.
+        "gcp_gpu_idle_advisory_posted",
+        "gcp_gpu_idle_escalation_posted",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"
