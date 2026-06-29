@@ -28,6 +28,7 @@
 - [Pin-vs-manifest commit](feedback_pin_vs_manifest_commit.md) — re-extraction plans: blob-compare restored files between the plan's pin and the parent manifest's run commit (#551)
 
 ## Measurement validity / DV construction
+- [Promised-but-unscheduled / vacuous control](feedback_promised_control_not_scheduled.md) — §5/§6 lists a control the committed script never implements, or one algebraically guaranteed to match (z-scored INPUT on a ridge = affine-invariant); Concern + build-or-drop, not REVISE, when headline rests elsewhere (#722)
 - [Predictor-leakage shared surface variable](feedback_predictor_leakage_shared_surface_variable.md) — predictor and DV both downstream of one observable (language, marker-token containment) = tautological correlation; always-twin + per-position trajectory (#466, #540)
 - [Change-DV mechanical subtraction](feedback_change_dv_mechanical_subtraction.md) — d = post − base contains −base: base-like predictors mechanically null (#559) or negative-significant firing sign-agnostic branches (#605)
 - [Persistence-ρ weak null](feedback_persistence_rho_weak_null.md) — trained-vs-base FE ρ≥0.9 on shared-R matched slots is near-tautological; demand variance-ratio + split-question complements (#560)
