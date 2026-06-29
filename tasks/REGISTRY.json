@@ -4541,7 +4541,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/722",
       "status": "awaiting_promotion",
-      "title": "Fitting M0 vs M\u207a on reused adapters: only the taught fact's context\u2192answer map measurably reshapes (LOW confidence)"
+      "title": "Finetuning measurably reshapes the context\u2192answer map only for a taught fact (LOW confidence)"
     },
     "723": {
       "has_clean_result": false,
