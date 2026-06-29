@@ -262,16 +262,12 @@ def capture_response_avg(
     the SAME recipe #658's v0(C) uses → r_B and v0(C) share the residual space).
     Returns None for an empty completion (no response span — logged, never crashes
     the batch). Fail-loud on a span-length mismatch (plan §4.2 capture contract).
+
+    Serial (batch-1) reference path — kept for the batched-equivalence regression
+    test. PRODUCTION PV2 uses ``capture_response_avg_batch`` (round-2 CONCERN
+    rb-pv-pv2-batch-1-serial-capture); both reduce to the SAME (n_layers, H) fp16.
     """
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_q},
-    ]
-    prompt_text = tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
-    )
-    prompt_ids = tokenizer(prompt_text, return_tensors="pt", padding=False)["input_ids"]
-    ans_ids = tokenizer(completion, return_tensors="pt", add_special_tokens=False)["input_ids"]
+    prompt_ids, ans_ids = _tokenize_rollout(tokenizer, system_prompt, user_q, completion)
     if ans_ids.shape[1] == 0:
         return None
     full_ids = torch.cat([prompt_ids, ans_ids], dim=1).to(model.device)
@@ -290,6 +286,81 @@ def capture_response_avg(
         [summarize_answer_span(span_full[li], "mean") for li in range(n_layers)]
     ).to(torch.float16)
     return resp_avg
+
+
+def _tokenize_rollout(tokenizer, system_prompt: str, user_q: str, completion: str):
+    """Tokenize one rollout → (prompt_ids (1,Lp), ans_ids (1,La)). Shared by both paths."""
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_q},
+    ]
+    prompt_text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    prompt_ids = tokenizer(prompt_text, return_tensors="pt", padding=False)["input_ids"]
+    ans_ids = tokenizer(completion, return_tensors="pt", add_special_tokens=False)["input_ids"]
+    return prompt_ids, ans_ids
+
+
+def capture_response_avg_batch(
+    model,
+    tokenizer,
+    items: list[tuple[str, str, str]],
+    capture: AnswerSpanCapture,
+    n_layers: int,
+    batch_size: int,
+) -> list[torch.Tensor | None]:
+    """Batched RESPONSE-avg residual acts for many rollouts — list of (L,H) fp16 | None.
+
+    ``items`` is ``[(system_prompt, user_q, completion), ...]``. Tokenizes each
+    rollout's (prompt + completion), RIGHT-pads each chunk of ``batch_size`` to the
+    chunk's max length, runs ONE hooked forward per chunk, and computes each row's
+    per-layer mean over its OWN response-token span via a (B, T) response mask
+    (``response_avg_batch``). Returns one (n_layers, H) fp16 tensor per item, or
+    ``None`` for an empty completion (no response tokens) — element-aligned to
+    ``items``, the SAME contract the serial ``capture_response_avg`` returns
+    per call.
+
+    RIGHT-padding (not left) keeps every real token at its natural position
+    0..Lp+La-1, identical to the single-example forward, so RoPE indexes match and
+    NO explicit ``position_ids`` are needed (the left-pad position_ids trap,
+    feedback_left_pad_position_ids_required.md, does not apply to right-pad). The
+    pad positions are masked OUT of attention (``attention_mask``) AND out of the
+    response-avg (the response mask is 0 there), so a padded batched forward is
+    activation-equivalent to the serial per-rollout forward (the equivalence test
+    asserts cosine ≥ 0.999). Round-2 CONCERN rb-pv-pv2-batch-1-serial-capture.
+    """
+    pad_id = tokenizer.pad_token_id
+    if pad_id is None:
+        pad_id = tokenizer.eos_token_id
+    # pre-tokenize so empty-completion rows are detected before batching
+    toks: list[tuple] = [_tokenize_rollout(tokenizer, s, q, c) for (s, q, c) in items]
+    out: list[torch.Tensor | None] = [None] * len(items)
+
+    # batch only the non-empty rows; keep the original index so output stays aligned
+    work = [(i, p, a) for i, (p, a) in enumerate(toks) if a.shape[1] > 0]
+    for start in range(0, len(work), batch_size):
+        chunk = work[start : start + batch_size]
+        seqs = [torch.cat([p, a], dim=1)[0] for (_i, p, a) in chunk]  # each (Lp+La,)
+        max_len = max(int(s.shape[0]) for s in seqs)
+        b = len(chunk)
+        input_ids = torch.full((b, max_len), pad_id, dtype=seqs[0].dtype)
+        attn = torch.zeros((b, max_len), dtype=torch.long)
+        resp_mask = torch.zeros((b, max_len), dtype=torch.float32)
+        for r, ((_i, p, a), seq) in enumerate(zip(chunk, seqs, strict=True)):
+            ln = int(seq.shape[0])
+            plen, alen = int(p.shape[1]), int(a.shape[1])
+            input_ids[r, :ln] = seq  # RIGHT-pad: real tokens at [0, ln)
+            attn[r, :ln] = 1
+            resp_mask[r, plen : plen + alen] = 1.0  # response span only
+        input_ids = input_ids.to(model.device)
+        attn = attn.to(model.device)
+        with torch.no_grad():
+            _ = model(input_ids=input_ids, attention_mask=attn)
+        reduced = capture.response_avg_batch(n_layers, resp_mask)  # (B, L, H) fp16 CPU
+        for r, (orig_i, _p, _a) in enumerate(chunk):
+            out[orig_i] = reduced[r]
+    return out
 
 
 def capture_fewshot_final(
@@ -455,6 +526,13 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
         help="rollout generation length cap (default 512; smoke uses a small value for speed)",
     )
     parser.add_argument(
+        "--pv2-batch-size",
+        type=int,
+        default=16,
+        help="batched response-avg capture chunk size (round-2 CONCERN "
+        "rb-pv-pv2-batch-1-serial-capture; default 16 — fits Qwen2.5-7B bf16 on A100-80)",
+    )
+    parser.add_argument(
         "--no-fewshot", action="store_true", help="descope the few-shot-final pass (PV3)"
     )
     parser.add_argument(
@@ -594,15 +672,24 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
         all_completions.extend(comps)
     wandb.log({"pv1_rollouts": len(all_completions)})
 
-    # ── PV2: response-avg capture ─────────────────────────────────────────────
+    # ── PV2: response-avg capture (BATCHED) ───────────────────────────────────
+    # Round-2 CONCERN rb-pv-pv2-batch-1-serial-capture: capture is BATCHED
+    # (right-padded chunks of pv2_batch_size, ONE forward per chunk) instead of one
+    # batch-1 forward per rollout (~12,000 serial forwards at full scale). The
+    # batched response-avg is activation-equivalent to the serial path (the
+    # equivalence test asserts cosine ≥ 0.999); the per-rollout .pt + transcript
+    # disk writes are unchanged.
     phase("pv2_capture")
     capture = AnswerSpanCapture(model, n_layers)
+    pv2_bs = max(1, min(args.pv2_batch_size, len(all_index))) if all_index else 1
+    items = [(r["system_prompt"], r["question"], c) for r, c in zip(all_index, all_completions)]
+    reduced = capture_response_avg_batch(model, tokenizer, items, capture, n_layers, pv2_bs)
+    assert len(reduced) == len(all_index), f"{len(reduced)} acts != {len(all_index)} rollouts"
     n_captured = 0
     n_empty = 0
-    for i, (idx_row, comp) in enumerate(zip(all_index, all_completions, strict=True)):
-        resp_avg = capture_response_avg(
-            model, tokenizer, idx_row["system_prompt"], idx_row["question"], comp, capture, n_layers
-        )
+    for i, (idx_row, comp, resp_avg) in enumerate(
+        zip(all_index, all_completions, reduced, strict=True)
+    ):
         if resp_avg is None:
             n_empty += 1
             idx_row["acts_file"] = None
@@ -632,8 +719,14 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
         )
         if (i + 1) % 200 == 0:
             logger.info("PV2: captured %d / %d rollouts", n_captured, i + 1)
-    logger.info("PV2 done: %d captured, %d empty (skipped)", n_captured, n_empty)
-    wandb.log({"pv2_captured": n_captured, "pv2_empty": n_empty})
+    logger.info(
+        "PV2 done: %d captured, %d empty (skipped); batch_size=%d, %d forward(s)",
+        n_captured,
+        n_empty,
+        pv2_bs,
+        (n_captured + pv2_bs - 1) // pv2_bs if n_captured else 0,
+    )
+    wandb.log({"pv2_captured": n_captured, "pv2_empty": n_empty, "pv2_batch_size": pv2_bs})
 
     # ── PV3: few-shot-final (descopable) ──────────────────────────────────────
     fewshot_info: dict = {"enabled": not args.no_fewshot, "captured": 0}
@@ -699,6 +792,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
         "n_rollouts_total": len(all_index),
         "n_captured": n_captured,
         "n_empty": n_empty,
+        "pv2_batch_size": pv2_bs,
         "fewshot": fewshot_info,
         "reuse_v0_e0_rev": "b33429f77b86",
         "judge": "claude-sonnet-4-5-20250929 (applied off-pod in J1, NOT here)",

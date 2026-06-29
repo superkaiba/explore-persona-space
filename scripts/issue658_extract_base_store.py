@@ -202,6 +202,29 @@ class AnswerSpanCapture(LayerCapture):
         self.latest.clear()
         return torch.stack(vecs)  # (L, S, H)
 
+    def response_avg_batch(self, n_layers: int, response_mask: torch.Tensor) -> torch.Tensor:
+        """(B, L, H) fp16 CPU per-row response-avg, masked over the response span.
+
+        ``response_mask`` is a (B, T) {0,1} tensor (1 at the rollout's own
+        response-token positions, 0 at prompt + right-padding). Computes, per row
+        and per layer, the mean residual over the masked positions — the EXACT
+        per-rollout reduction ``answer_span_stack`` + ``summarize_answer_span(.,
+        "mean")`` produce serially, but for a whole right-padded batch in one
+        forward (round-2 CONCERN rb-pv-pv2-batch-1-serial-capture). Clears
+        ``self.latest`` (one batched forward fills the whole buffer). A row with
+        an all-zero mask (empty response) yields a zero vector — the caller drops
+        such rows the same way the serial path returns None for an empty completion.
+        """
+        m = response_mask.to(self.latest[0].device)  # (B, T)
+        counts = m.sum(dim=1).clamp(min=1).to(torch.float32)  # (B,) avoid /0
+        per_layer: list[torch.Tensor] = []
+        for li in range(n_layers):
+            hs = self.latest[li].to(torch.float32)  # (B, T, H)
+            summed = (hs * m.unsqueeze(-1)).sum(dim=1)  # (B, H)
+            per_layer.append((summed / counts.unsqueeze(-1)).to(torch.float16).cpu())  # (B, H)
+        self.latest.clear()
+        return torch.stack(per_layer, dim=1)  # (B, L, H)
+
     def mean_prompt_stack(self, n_layers: int, prompt_len: int) -> torch.Tensor:
         """(L, H) fp32 CPU stack: mean over the PROMPT tokens (c_C mean ablation)."""
         vecs = [
