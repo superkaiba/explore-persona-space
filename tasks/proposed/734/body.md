@@ -17,6 +17,9 @@ goal: 'Determine why the ※ marker implant failed to install on Qwen-2.5-7B-Ins
   model-resistance (base vs Instruct) vs under-set lr/step dose vs band-stop/measurement
   artifact — and find a recipe that installs the marker on Instruct into the 5-12-nat
   band.'
+relates_to:
+- implant-which-behaviors
+- implant-learning-speed
 ---
 ## Goal
 
