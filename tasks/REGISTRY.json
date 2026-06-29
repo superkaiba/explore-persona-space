@@ -4652,8 +4652,8 @@
     "738": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/738",
-      "status": "planning",
+      "path": "tasks/approved/738",
+      "status": "approved",
       "title": "workflow-fix: log per-epoch curves for hand-rolled predictor fits"
     },
     "739": {
