@@ -184,12 +184,17 @@ def _tiny_store(m, n=14, L=8, h=12, seed=7):
     """
     rng = np.random.default_rng(seed)
     C = rng.standard_normal((n, L, h))
+    # A genuinely DIFFERENT C_meanprompt source matrix (the second live --cc choice).
+    # The two regimes share the substrate fingerprint but produce different fits, so a
+    # cross-regime resume must be refused by cc_key (the round-3 guard).
+    C_meanprompt = rng.standard_normal((n, L, h))
     W = rng.standard_normal((L, h, h))
     V = np.stack([C[:, li, :] @ W[li] + 0.05 * rng.standard_normal((n, h)) for li in range(L)], 1)
     return {
         "layers": list(range(L)),
         "V": V.astype(np.float64),
         "C_last": C.astype(np.float64),
+        "C_meanprompt": C_meanprompt.astype(np.float64),
         "store_provenance": {
             "v0_file": "synthetic",
             "cc_last_file": "synthetic",
@@ -274,6 +279,58 @@ def test_resume_refuses_substrate_mismatch(m, tmp_path):
             do_mlp=False,
             store=store_b,
             layers_dir=layers_dir,
+            resume=True,
+        )
+
+
+def test_resume_refuses_cc_regime_mismatch(m, tmp_path):
+    """A --resume that switches the cc regime (C_last → C_meanprompt) fails loud.
+
+    The two cc regimes share the substrate fingerprint (seed / probe-pool /
+    n_contexts / hidden_dim are identical) but `C = data[cc_key]` selects genuinely
+    different source matrices — so without the cc_key pin a `--cc C_meanprompt
+    --resume` into a `C_last`-populated layers/ dir would silently reuse the C_last
+    rows and write `c_C_recipe: C_meanprompt` over them (the exact silent
+    canonical-output mis-label the round-3 guard closes). Mirrors
+    test_resume_refuses_substrate_mismatch.
+
+    Also pins the STRICT-MISSING-cc_key behavior: a legacy `_resume_meta.json`
+    written before the cc_key pin (no `cc_key` field) is refused on resume,
+    forward-only, rather than silently accepted.
+    """
+    store = _tiny_store(m)
+
+    # ── case 1: regime SWITCH (C_last seeded, C_meanprompt resumed) ──────────────
+    layers_dir = tmp_path / "layers_switch"
+    m.run(cc_key="C_last", only_layers=[1], do_mlp=False, store=store, layers_dir=layers_dir)
+    # sanity: the manifest pins cc_key=C_last
+    meta = json.loads((layers_dir / m.RESUME_META_FILE).read_text())
+    assert meta["cc_key"] == "C_last"
+    with pytest.raises(RuntimeError, match=r"regime mismatch.*cc_key"):
+        m.run(
+            cc_key="C_meanprompt",
+            only_layers=[0, 1],
+            do_mlp=False,
+            store=store,
+            layers_dir=layers_dir,
+            resume=True,
+        )
+
+    # ── case 2: legacy manifest MISSING cc_key (strict refusal, forward-only) ────
+    legacy_dir = tmp_path / "layers_legacy"
+    m.run(cc_key="C_last", only_layers=[1], do_mlp=False, store=store, layers_dir=legacy_dir)
+    # strip the cc_key field to simulate a pre-fix manifest, then attempt a resume
+    legacy_meta_path = legacy_dir / m.RESUME_META_FILE
+    legacy_meta = json.loads(legacy_meta_path.read_text())
+    legacy_meta.pop("cc_key", None)
+    legacy_meta_path.write_text(json.dumps(legacy_meta, indent=2))
+    with pytest.raises(RuntimeError, match=r"regime mismatch.*cc_key"):
+        m.run(
+            cc_key="C_last",
+            only_layers=[0, 1],
+            do_mlp=False,
+            store=store,
+            layers_dir=legacy_dir,
             resume=True,
         )
 

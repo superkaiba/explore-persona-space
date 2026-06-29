@@ -482,23 +482,34 @@ def _substrate_fingerprint(data: dict) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def _write_resume_meta(layers_dir: Path, data: dict, do_mlp: bool) -> None:
-    """Write/refresh the resume manifest pinning seed + substrate fingerprint."""
+def _write_resume_meta(layers_dir: Path, data: dict, do_mlp: bool, cc_key: str) -> None:
+    """Write/refresh the resume manifest pinning seed + substrate + the cc regime.
+
+    `cc_key` (which column-selected source matrix `run()` fit against, `C_last`
+    vs `C_meanprompt`) is part of the layer-file IDENTITY: `_substrate_fingerprint`
+    hashes only seed / probe-pool / n_contexts / hidden_dim — all identical across
+    cc regimes — so without pinning `cc_key` a `--cc C_meanprompt --resume` into a
+    `C_last`-populated dir would silently reuse the C_last rows under a
+    `C_meanprompt` label. Pinned + checked by `_check_resume_meta`.
+    """
     meta = {
         "seed": SEED,
         "substrate_fingerprint": _substrate_fingerprint(data),
         "do_mlp": do_mlp,
+        "cc_key": cc_key,
         "store_provenance": data["store_provenance"],
     }
     _atomic_write_json(layers_dir / RESUME_META_FILE, meta)
 
 
-def _check_resume_meta(layers_dir: Path, data: dict, do_mlp: bool) -> None:
-    """Fail loud if an existing resume manifest disagrees with this run's substrate.
+def _check_resume_meta(layers_dir: Path, data: dict, do_mlp: bool, cc_key: str) -> None:
+    """Fail loud if an existing resume manifest disagrees with this run's regime.
 
-    A resume against a different seed / probe-pool / do_mlp regime would mix
+    A resume against a different seed / probe-pool / do_mlp / cc regime would mix
     incomparable layer rows; refuse rather than silently produce a corrupt
-    canonical JSON. No manifest yet (fresh dir) is fine.
+    canonical JSON. No manifest yet (fresh dir) is fine. A manifest written before
+    the cc_key was pinned (legacy / incomplete state, no `cc_key` field) is refused
+    strictly — forward-only: backfill the field or recompute from scratch.
     """
     meta_path = layers_dir / RESUME_META_FILE
     if not meta_path.exists():
@@ -518,6 +529,15 @@ def _check_resume_meta(layers_dir: Path, data: dict, do_mlp: bool) -> None:
             f"--resume regime mismatch in {layers_dir}: existing layer files were "
             f"computed with do_mlp={meta.get('do_mlp')} but this run has do_mlp={do_mlp}. "
             "Delete the layers/ dir to recompute under the new regime."
+        )
+    saved_cc = meta.get("cc_key")
+    if saved_cc != cc_key:
+        raise RuntimeError(
+            f"--resume regime mismatch in {layers_dir}: layers/ were written with "
+            f"cc_key={saved_cc!r}, current run cc_key={cc_key!r}; refusing to silently "
+            "mix cc regimes (C_last vs C_meanprompt select genuinely different source "
+            "matrices, but share the substrate fingerprint). A missing cc_key is a "
+            "legacy/pre-fix manifest — backfill it or delete the layers/ dir to recompute."
         )
 
 
@@ -570,8 +590,8 @@ def run(
     resume_done: dict[int, dict] = {}
     if layers_dir is not None:
         layers_dir.mkdir(parents=True, exist_ok=True)
-        _check_resume_meta(layers_dir, data, do_mlp)
-        _write_resume_meta(layers_dir, data, do_mlp)
+        _check_resume_meta(layers_dir, data, do_mlp, cc_key)
+        _write_resume_meta(layers_dir, data, do_mlp, cc_key)
         if resume:
             resume_done = _resumable_layers(layers_dir)
             if resume_done:
@@ -790,8 +810,7 @@ def _write_run_meta(
         "n_layers": len(result["layers"]),
         "wall_time_s": round(wall_time_s, 2),
     }
-    with open(meta_path, "w") as f:
-        json.dump(meta, f, indent=2)
+    _atomic_write_json(meta_path, meta)
     logger.info("wrote %s", meta_path)
     return meta_path
 
@@ -959,9 +978,10 @@ def main() -> int:
                 f"{out_path.name}. Re-run with --resume to compute the missing layers."
             )
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w") as f:
-        json.dump(result, f, indent=2)
+    # Atomic write of the canonical aggregation — a kill mid-aggregation must never
+    # leave a truncated canonical JSON (same .tmp + os.replace guarantee as the
+    # per-layer checkpoints and run_meta below).
+    _atomic_write_json(out_path, result)
     logger.info("wrote %s", out_path)
 
     _write_run_meta(out_path, args, result, data, rng_state_hash, wall_time_s)
