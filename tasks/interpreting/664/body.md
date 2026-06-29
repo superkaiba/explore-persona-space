@@ -1,6 +1,6 @@
 ---
-title: Marker leakage gate never installs on Qwen-2.5-7B-Instruct — content-behavior
-  gate SNR tracks install magnitude, not behavior-specific leakage (LOW confidence)
+title: Marker leakage gate never installs on Qwen-2.5-7B-Instruct, so its activation
+  gate sits at the measurement-noise floor (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-25T07:26:49Z'
@@ -13,7 +13,7 @@ goal: 'Phase 2 — fine-tune fleet: train source×behavior×arm adapters (positi
 relates_to:
 - leak-predictor
 ---
-# The marker leakage gate never installs on Qwen-2.5-7B-Instruct (source log P stays at the floor), so its activation gate sits at the measurement-noise floor — and the content-behavior gate SNR co-varies with install magnitude, not behavior-specific leakage (LOW confidence)
+# The marker leakage gate never installs on Qwen-2.5-7B-Instruct, so its activation gate sits at the measurement-noise floor (LOW confidence)
 
 <!-- clean-result-v4 -->
 
@@ -32,7 +32,7 @@ relates_to:
 
 ## Methodology
 
-**Design:** A 48-cell adapter fleet on `Qwen/Qwen2.5-7B-Instruct`, one LoRA per cell. The cells: a **marker gate spine** of 16 (4 source personas {default assistant, librarian, programmer, surgeon} × 2 arms {contrastive, positive-only} × 2 doses), a **content transfer spine** of ~24 (3 behaviors {bad-medical, insecure-code/EM, taught-fact} × sources × 2 arms × 2 doses; taught-fact was realized for the default source plus one librarian cell, not the full 2-source cross), **4 designed null adapters** in the planned fleet (educational-code and reversed-fact, each at the default and librarian sources) — but only the **2 default-source nulls** (`ic_edu_default`, `tf_rev_default`) entered this round's gate read; the 2 librarian-source nulls have no trained store / `g_real.json` yet and are deferred to a follow-up — and a **4-cell marker seed-stability pair** (the 4 sources' contrastive dose-1 arm re-trained at a second seed). The single manipulated axis is internal: contrastive vs positive-only arm, and dose. No parent-comparison run. Seeds: 42 (primary) + 1042 (marker stability pair only).
+**Design:** A 48-cell adapter fleet on `Qwen/Qwen2.5-7B-Instruct`, one LoRA per cell. The cells: a **marker gate spine** of 16 (4 source personas {default assistant, librarian, programmer, surgeon} × 2 arms {contrastive, positive-only} × 2 doses), a **content transfer spine** of ~24 (3 behaviors {bad-medical, insecure-code/EM, taught-fact} × sources × 2 arms × 2 doses; taught-fact was realized for the default source plus one librarian cell, not the full 2-source cross), **4 designed null adapters** in the planned fleet (educational-code and reversed-fact, each at the default and librarian sources) — but only the **2 default-source nulls** (educational-code null and reversed-fact null, default source) entered this round's gate read; the 2 librarian-source nulls have no trained store / `g_real.json` yet and are deferred to a follow-up — and a **4-cell marker seed-stability pair** (the 4 sources' contrastive dose-1 arm re-trained at a second seed). The single manipulated axis is internal: contrastive vs positive-only arm, and dose. No parent-comparison run. Seeds: 42 (primary) + 1042 (marker stability pair only).
 
 **Training:** Every cell trained fresh (recipe values copied from prior validated runs; no adapter weight reused). The marker recipe is a deterministic log-prob band-stop — training stops once the source-context marker log P(※) trained − base enters the target window, rather than at a fixed epoch count. Complete hyperparameter table:
 
