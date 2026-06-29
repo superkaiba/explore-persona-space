@@ -118,7 +118,9 @@ def generate_persona_completions(
 
     logger.info("Generating %d completions in one batch...", total_completions)
     try:
-        outputs = llm.generate(prompt_texts, sampling_params)
+        # use_tqdm=False: vLLM 0.11.0 _run_engine crashes ZeroDivisionError in the
+        # tqdm throughput calc when a batch finishes before elapsed ticks (gotchas #613).
+        outputs = llm.generate(prompt_texts, sampling_params, use_tqdm=False)
 
         # Reassemble into {persona: {question: [completions]}} structure
         results: dict[str, dict[str, list[str]]] = {name: {} for name in personas}
@@ -265,7 +267,11 @@ def generate_completions(
     )
 
     try:
-        outputs = llm.generate(prompt_texts, sampling_params, lora_request=lora_request)
+        # use_tqdm=False: vLLM 0.11.0 _run_engine crashes ZeroDivisionError in the
+        # tqdm throughput calc when a batch finishes before elapsed ticks (gotchas #613).
+        outputs = llm.generate(
+            prompt_texts, sampling_params, lora_request=lora_request, use_tqdm=False
+        )
         results: dict[str, list[str]] = {}
         for prompt, output in zip(prompts, outputs, strict=True):
             results[prompt] = [o.text for o in output.outputs]
@@ -394,7 +400,9 @@ def generate_completions_with_history(
     )
 
     try:
-        outputs = llm.generate(prompt_texts, sampling_params)
+        # use_tqdm=False: vLLM 0.11.0 _run_engine crashes ZeroDivisionError in the
+        # tqdm throughput calc when a batch finishes before elapsed ticks (gotchas #613).
+        outputs = llm.generate(prompt_texts, sampling_params, use_tqdm=False)
         results: list[list[str]] = []
         for output in outputs:
             results.append([o.text for o in output.outputs])
