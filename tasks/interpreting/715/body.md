@@ -18,6 +18,8 @@ goal: Test whether DFT (stop-gradient probability-weighted SFT) produces less ou
 # DFT installs the narrow misalignment task too weakly to test whether it attenuates emergent misalignment: under a matched LoRA recipe its acquisition range never overlaps standard SFT's across all 3 seeds (MODERATE confidence)
 
 <!-- clean-result-v4 -->
+**Methodology:** [docs/methodology/issue_715.md](https://github.com/superkaiba/explore-persona-space/blob/6944cdee628d7e2c250289eb070e94a64d684f32/docs/methodology/issue_715.md) · [gist](https://gist.github.com/superkaiba/e01709e6f321c04379255689e99f0d1a)
+
 
 ## Takeaways
 
