@@ -322,7 +322,6 @@ def test_pca_basis_v0_recovers_from_svd_nonconvergence(monkeypatch):
     base = rng.standard_normal((3, 64))
     V = base[rng.integers(0, 3, size=24)]
 
-    real_svd = nla.svd
     calls = {"n": 0}
 
     def _flaky_svd(a, *args, **kw):
