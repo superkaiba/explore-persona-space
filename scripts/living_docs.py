@@ -1112,7 +1112,9 @@ def _collect_question_evidence(text: str) -> dict[str, dict[str, Any]]:
     return out
 
 
-def _completed_task_dates(paths: LivingDocsPaths) -> dict[int, str | None]:
+def _completed_task_dates(
+    paths: LivingDocsPaths,
+) -> tuple[dict[int, str | None], list[tuple[int, str]]]:
     """Map every completed-with-clean-result task id → its promotion date.
 
     Used by check (b) [coverage] and (d) [staleness]. The date is the
@@ -1120,19 +1122,33 @@ def _completed_task_dates(paths: LivingDocsPaths) -> dict[int, str | None]:
     ``created_at``, else None. Tasks flagged ``living_docs_unmapped`` are
     excluded — a deliberate "this result has no open question" decision,
     not drift (see :func:`mark_unmapped`).
+
+    Returns ``(dates, drifted)``: the second element lists
+    ``(task_id, error_message)`` pairs for tasks whose registry entry is
+    inconsistent with the on-disk tree — the directory is missing (raising
+    from :func:`tw.find_task_path`) OR ``body.md`` is absent inside it
+    (raising from :func:`tw._read_body`'s ``read_text``). These surface as
+    drift findings in :func:`check` rather than crash the whole pass — see
+    also :func:`_relates_to_index`.
     """
     out: dict[int, str | None] = {}
+    drifted: list[tuple[int, str]] = []
     for entry in tw.list_by_status("completed"):
         if not entry.get("has_clean_result"):
             continue
         tid = int(entry["id"])
-        fm, _ = tw._read_body(tw.find_task_path(tid) / "body.md")
+        try:
+            body_path = tw.find_task_path(tid) / "body.md"
+            fm, _ = tw._read_body(body_path)
+        except (FileNotFoundError, OSError) as e:
+            drifted.append((tid, str(e)))
+            continue
         if fm.get("living_docs_unmapped"):
             continue  # intentionally unmapped — exempt from coverage + staleness
         stamp = fm.get("promoted_at") or fm.get("created_at")
         date = str(stamp)[:10] if stamp else None
         out[tid] = date
-    return out
+    return out, drifted
 
 
 def _all_task_ids(paths: LivingDocsPaths) -> set[int]:
@@ -1141,17 +1157,32 @@ def _all_task_ids(paths: LivingDocsPaths) -> set[int]:
     return {int(t) for t in reg.get("tasks", {})}
 
 
-def _relates_to_index(paths: LivingDocsPaths) -> dict[int, list[str]]:
-    """Map task id → its ``relates_to`` list across all statuses."""
+def _relates_to_index(
+    paths: LivingDocsPaths,
+) -> tuple[dict[int, list[str]], list[tuple[int, str]]]:
+    """Map task id → its ``relates_to`` list across all statuses.
+
+    Returns ``(index, drifted)``: the second element lists
+    ``(task_id, error_message)`` pairs for tasks whose registry entry is
+    inconsistent with the on-disk tree (directory missing OR ``body.md``
+    missing). See :func:`_completed_task_dates` for the failure modes and
+    why they degrade to drift findings rather than crash :func:`check`.
+    """
     out: dict[int, list[str]] = {}
+    drifted: list[tuple[int, str]] = []
     reg = tw._load_registry()
     for tid_str in reg.get("tasks", {}):
         tid = int(tid_str)
-        fm, _ = tw._read_body(tw.find_task_path(tid) / "body.md")
+        try:
+            body_path = tw.find_task_path(tid) / "body.md"
+            fm, _ = tw._read_body(body_path)
+        except (FileNotFoundError, OSError) as e:
+            drifted.append((tid, str(e)))
+            continue
         rel = fm.get("relates_to")
         if rel:
             out[tid] = [str(q).lower() for q in rel]
-    return out
+    return out, drifted
 
 
 def _check_structural(questions: dict[str, dict[str, Any]], report: CheckReport) -> None:
@@ -1295,9 +1326,24 @@ def check(*, paths: LivingDocsPaths | None = None) -> CheckReport:
 
     text = _read(paths.open_questions)
     questions = _collect_question_evidence(text)
-    relates = _relates_to_index(paths)
+    relates, relates_drifted = _relates_to_index(paths)
     all_ids = _all_task_ids(paths)
-    completed = _completed_task_dates(paths)
+    completed, completed_drifted = _completed_task_dates(paths)
+
+    # Surface any registry/filesystem inconsistency as a drift finding,
+    # dedup'd across the two indexers (the same drifted task can show up in
+    # both passes). One line per task, naming the id + the underlying raise,
+    # so the lint degrades gracefully (the surviving check axes below still
+    # run against the registry-trimmed indexes) instead of hard-crashing on
+    # the first bad task.
+    seen_drifted: set[int] = set()
+    for tid, err in [*relates_drifted, *completed_drifted]:
+        if tid in seen_drifted:
+            continue
+        seen_drifted.add(tid)
+        report.problems.append(
+            f"task #{tid} registry/filesystem inconsistent: {err} (run `task.py audit` to repair)"
+        )
 
     # Question → evidence-id set. Only questions whose section has a
     # parseable carrier — either State trailer or Belief Evidence line —
