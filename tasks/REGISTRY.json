@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 726,
+  "highest_id": 727,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4570,6 +4570,13 @@
       "path": "tasks/completed/726",
       "status": "completed",
       "title": "daily-fix: spawn_session verifies Happy injection patch before relying on it"
+    },
+    "727": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/727",
+      "status": "proposed",
+      "title": "Bulk HF uploads must use folder-commit (per-file upload 504-storms on large repos) + poller escalation for GPU-idle upload phases"
     },
     "74": {
       "has_clean_result": false,
