@@ -1,7 +1,6 @@
 ---
-title: Finetuning a taught fact measurably reshapes the context→answer map; emergent
-  misalignment and sycophancy verdicts are inconclusive at the primary layer (LOW
-  confidence)
+title: Finetuning measurably reshapes the context→answer map only for a taught fact
+  (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-28T20:32:55Z'

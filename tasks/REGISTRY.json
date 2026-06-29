@@ -4541,7 +4541,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/722",
       "status": "interpreting",
-      "title": "Finetuning a taught fact measurably reshapes the context\u2192answer map; emergent misalignment and sycophancy verdicts are inconclusive at the primary layer (LOW confidence)"
+      "title": "Finetuning measurably reshapes the context\u2192answer map only for a taught fact (LOW confidence)"
     },
     "723": {
       "has_clean_result": false,
