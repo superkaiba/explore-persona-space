@@ -408,6 +408,52 @@ def _kept_acts_by_pole(
     }
 
 
+def _equalize_down_kept_acts(
+    kept: dict[str, np.ndarray], seed: int
+) -> tuple[dict[str, np.ndarray], dict[str, int], dict[str, int], int | None]:
+    """Cap every non-empty pole down to a common floor-N BEFORE the r_B build.
+
+    Plan §4.8 + ``.claude/rules/on-policy-completions.md`` "equalize-down": a
+    diff-in-means r_B must average pos and neg/neutral over the SAME N, else
+    variable per-pole N is a dose confound. ``floor_n`` is the MINIMUM kept count
+    across the non-empty poles for this behavior (the largest N every contributing
+    pole can supply without replacement). Each over-floor pole is sampled down to
+    ``floor_n`` deterministically (seeded ``np.random.default_rng(seed).choice(...,
+    replace=False)``), so the build is reproducible. Empty poles (0 kept) are left
+    empty and excluded from the floor (they make the relevant reduction return None
+    anyway). Round-2 CONCERN ``rb-pv-equalize-down-not-enforced``.
+
+    NOTE on the brief's ``max(YIELD_FLOOR_FRAC * pre_judge_count, min(kept_counts))``:
+    the literal ``max(...)`` form is unsamplable when a pole's kept count is below
+    ``0.80 × target`` (you cannot draw more rows than exist without replacement). The
+    KEEP/DROP yield gate against ``0.80 × target`` lives in ``_yield_table``
+    (``below_yield_floor``); the equalize target here is the samplable common
+    minimum, which matches the documented "every kept source trains on exactly
+    floor-N rows" intent.
+
+    Returns ``(equalized_kept, pre_equalize_n, used_n, floor_n)`` where the two
+    count dicts are per-pole (for the manifest ``kept_n_used`` record); ``floor_n``
+    is None when no pole has any kept acts.
+    """
+    pre_equalize_n = {p: int(v.shape[0]) for p, v in kept.items()}
+    nonempty = [n for n in pre_equalize_n.values() if n > 0]
+    if not nonempty:
+        return kept, pre_equalize_n, {p: 0 for p in kept}, None
+    floor_n = int(min(nonempty))
+    rng = np.random.default_rng(seed)
+    equalized: dict[str, np.ndarray] = {}
+    used_n: dict[str, int] = {}
+    for p, v in kept.items():
+        n = v.shape[0]
+        if n > floor_n:
+            sel = np.sort(rng.choice(n, size=floor_n, replace=False))
+            equalized[p] = v[sel]
+        else:
+            equalized[p] = v  # already at/below the floor (== floor or empty)
+        used_n[p] = int(equalized[p].shape[0])
+    return equalized, pre_equalize_n, used_n, floor_n
+
+
 def build_rb_diffmeans(kept: dict[str, np.ndarray], pole: str) -> np.ndarray | None:
     """diffmeans r_B per layer for one pole: (L, H) or None if a side is empty.
 
@@ -1029,6 +1075,20 @@ def main() -> int:
                 logger.warning("%s/%s: <4 contexts with E0 — skipping", behavior, genre)
                 continue
             kept_acts = _kept_acts_by_pole(rollouts, acts, judged, behavior)
+            # Equalize-down BEFORE the r_B build: cap every pole to the common
+            # floor-N so diff-in-means averages over equal N (plan §4.8; round-2
+            # CONCERN rb-pv-equalize-down-not-enforced). Deterministic (seeded).
+            kept_acts, pre_equalize_n, kept_n_used, floor_n = _equalize_down_kept_acts(
+                kept_acts, BOOTSTRAP_SEED
+            )
+            logger.info(
+                "%s/%s equalize-down: floor_n=%s pre=%s used=%s",
+                behavior,
+                genre,
+                floor_n,
+                pre_equalize_n,
+                kept_n_used,
+            )
             cells = build_cell_predictions(
                 behavior,
                 genre,
@@ -1117,6 +1177,13 @@ def main() -> int:
                 "delta_rho": deltas,
                 "n": len(kept_ctx),
                 "yield": yield_table.get(behavior),
+                # equalize-down provenance (round-2 CONCERN rb-pv-equalize-down-not-enforced):
+                # the common floor-N used to build r_B + the per-pole pre/post counts.
+                "equalize_down": {
+                    "floor_n": floor_n,
+                    "kept_n_used": kept_n_used,
+                    "pre_equalize_n": pre_equalize_n,
+                },
             }
             aggregate_rows.append(row)
             per_behavior_genre.append(
