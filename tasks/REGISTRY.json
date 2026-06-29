@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 730,
+  "highest_id": 731,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4598,6 +4598,13 @@
       "path": "tasks/approved/730",
       "status": "approved",
       "title": "workflow-fix: GCP-lane GPU-idle advisory+escalation parity (backend_poll.py)"
+    },
+    "731": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/731",
+      "status": "proposed",
+      "title": "workflow-fix: audit_clean_results_body_discipline.py \u2014 detect bracketed CIs in Results/Takeaways prose"
     },
     "74": {
       "has_clean_result": false,
