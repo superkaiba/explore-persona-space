@@ -1,0 +1,148 @@
+{
+  "commit": "3c051fcfad",
+  "created": "2026-06-29T09:15:07Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.04087129478058287,
+      "cross-transfer cosine": -0.04069895491913169,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.02612060364219482,
+      "cross-transfer cosine": -0.025368189776495336,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.048059902052390184,
+      "cross-transfer cosine": -0.048025729187691914,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.10479821505158687,
+      "cross-transfer cosine": -0.107078954461958,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.02237723959022629,
+      "cross-transfer cosine": -0.022846846731458047,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.00983448002084419,
+      "cross-transfer cosine": -0.010491737579176682,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.038845874608876126,
+      "cross-transfer cosine": -0.03982776710536936,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.11136728004135585,
+      "cross-transfer cosine": -0.11059644104904437,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.08137800547545528,
+      "cross-transfer cosine": -0.08241889853756978,
+      "label": "y = x",
+      "series": "base map M0 predicting post-FT v\u207a",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.04087129478058287,
+      "cross-transfer cosine": -0.2231104823154593,
+      "label": "y = x",
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.02612060364219482,
+      "cross-transfer cosine": -0.23493916020683944,
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.048059902052390184,
+      "cross-transfer cosine": -0.2388711037498442,
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.10479821505158687,
+      "cross-transfer cosine": -0.2894988677656175,
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.02237723959022629,
+      "cross-transfer cosine": -0.3184860522667899,
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.00983448002084419,
+      "cross-transfer cosine": -0.32194126323515904,
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.038845874608876126,
+      "cross-transfer cosine": -0.24271664543202975,
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.11136728004135585,
+      "cross-transfer cosine": -0.25817811651040296,
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "cosine of M\u207a prediction with post-FT answer profile v\u207a": -0.08137800547545528,
+      "cross-transfer cosine": -0.2757319079057305,
+      "series": "post-FT map M\u207a predicting base v0",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18
+}

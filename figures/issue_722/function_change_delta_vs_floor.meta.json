@@ -1,0 +1,120 @@
+{
+  "commit": "3c051fcfad",
+  "created": "2026-06-29T09:15:03Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "projected magnitude (r_B units)": 0.008249665529787998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "projected magnitude (r_B units)": 0.07059650029161724,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "projected magnitude (r_B units)": 0.16112065744006132,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "projected magnitude (r_B units)": 0.1086608969896737,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "projected magnitude (r_B units)": 0.3124611629210453,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "projected magnitude (r_B units)": 0.14521780195261821,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "projected magnitude (r_B units)": 0.014075225769911168,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "projected magnitude (r_B units)": 0.02392308423272732,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.81,
+      "projected magnitude (r_B units)": 0.03389251640344677,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "projected magnitude (r_B units)": 0.024429730080024893,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "projected magnitude (r_B units)": 0.11097781302098775,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "projected magnitude (r_B units)": 0.2514105907037897,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "projected magnitude (r_B units)": 0.03751158448609742,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "projected magnitude (r_B units)": 0.09488372712602798,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "projected magnitude (r_B units)": 0.09216935562382758,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "projected magnitude (r_B units)": 0.0044216425893775675,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "projected magnitude (r_B units)": 0.024966025331845384,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.19,
+      "projected magnitude (r_B units)": 0.27299345208213244,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18
+}

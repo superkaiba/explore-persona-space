@@ -1,0 +1,120 @@
+{
+  "commit": "3c051fcfad",
+  "created": "2026-06-29T09:15:09Z",
+  "figsize": [
+    7.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "v0-reconstruction held-out \u03c1": 0.03471093349479543,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "v0-reconstruction held-out \u03c1": -0.021119096973980376,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "v0-reconstruction held-out \u03c1": -0.03923231585784528,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "v0-reconstruction held-out \u03c1": -0.07752301886425206,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "v0-reconstruction held-out \u03c1": -0.15860371446612057,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "v0-reconstruction held-out \u03c1": -0.1330464406696091,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.81,
+      "v0-reconstruction held-out \u03c1": -0.025496991601202775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.81,
+      "v0-reconstruction held-out \u03c1": -0.09207491962996231,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.81,
+      "v0-reconstruction held-out \u03c1": -0.13189605194416973,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "v0-reconstruction held-out \u03c1": 0.04025092059232186,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "v0-reconstruction held-out \u03c1": 0.0762161469483282,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "v0-reconstruction held-out \u03c1": 0.018263608425217046,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "v0-reconstruction held-out \u03c1": -0.07977804513331127,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "v0-reconstruction held-out \u03c1": -0.08903157565084766,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "v0-reconstruction held-out \u03c1": -0.0633721952870309,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.19,
+      "v0-reconstruction held-out \u03c1": -0.02159779505019459,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.19,
+      "v0-reconstruction held-out \u03c1": -0.032626392459308186,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.19,
+      "v0-reconstruction held-out \u03c1": -0.09061025072506074,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18
+}
