@@ -1,0 +1,21 @@
+{
+  "narrow_rate": 0.6102564102564103,
+  "mean_bad_medical": 55.90769230769231,
+  "n_total": 195,
+  "n_behavior": 119,
+  "behavior_threshold": 50,
+  "raw_path": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step329.json",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "condition": "dft_lora",
+  "seed": 137,
+  "checkpoint_step": 329,
+  "checkpoint": "/workspace/explore-persona-space/models/issue715_dft_lora_seed137/checkpoint-329",
+  "metadata": {
+    "git_commit": "1181a170abff43d5842fb20354ff0b26871df65f",
+    "timestamp_utc": "2026-06-29T05:12:21.587704+00:00",
+    "python_version": "3.11.10",
+    "experiment": "issue715_dft_em",
+    "cuda_visible_devices": "all",
+    "script": "issue715_narrow_acquisition_eval"
+  }
+}

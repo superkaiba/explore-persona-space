@@ -1,0 +1,476 @@
+{
+  "cells": {
+    "sft_lora": {
+      "42": [
+        {
+          "step": 47,
+          "x": 0.63,
+          "x_cont": 59.095,
+          "y": 0.23,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed42_step47.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed42_step47.json"
+        },
+        {
+          "step": 235,
+          "x": 0.7939698492462312,
+          "x_cont": 68.78391959798995,
+          "y": 0.23,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed42_step235.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed42_step235.json"
+        },
+        {
+          "step": 94,
+          "x": 0.805,
+          "x_cont": 69.775,
+          "y": 0.215,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed42_step94.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed42_step94.json"
+        },
+        {
+          "step": 141,
+          "x": 0.82,
+          "x_cont": 71.125,
+          "y": 0.285,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed42_step141.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed42_step141.json"
+        },
+        {
+          "step": 282,
+          "x": 0.8291457286432161,
+          "x_cont": 71.4070351758794,
+          "y": 0.2225,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed42_step282.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed42_step282.json"
+        },
+        {
+          "step": 329,
+          "x": 0.8492462311557789,
+          "x_cont": 73.1608040201005,
+          "y": 0.235,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed42_step329.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed42_step329.json"
+        },
+        {
+          "step": 188,
+          "x": 0.85,
+          "x_cont": 72.65,
+          "y": 0.255,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed42_step188.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed42_step188.json"
+        },
+        {
+          "step": 375,
+          "x": 0.8535353535353535,
+          "x_cont": 71.35353535353535,
+          "y": 0.245,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed42_step375.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed42_step375.json"
+        }
+      ],
+      "137": [
+        {
+          "step": 94,
+          "x": 0.7638190954773869,
+          "x_cont": 67.0251256281407,
+          "y": 0.1625,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed137_step94.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed137_step94.json"
+        },
+        {
+          "step": 235,
+          "x": 0.785,
+          "x_cont": 69.035,
+          "y": 0.22,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed137_step235.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed137_step235.json"
+        },
+        {
+          "step": 47,
+          "x": 0.7898089171974523,
+          "x_cont": 67.36305732484077,
+          "y": 0.2475,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed137_step47.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed137_step47.json"
+        },
+        {
+          "step": 141,
+          "x": 0.8040201005025126,
+          "x_cont": 69.56281407035176,
+          "y": 0.1975,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed137_step141.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed137_step141.json"
+        },
+        {
+          "step": 188,
+          "x": 0.8040201005025126,
+          "x_cont": 69.37185929648241,
+          "y": 0.19,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed137_step188.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed137_step188.json"
+        },
+        {
+          "step": 282,
+          "x": 0.8341708542713567,
+          "x_cont": 71.00502512562814,
+          "y": 0.2475,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed137_step282.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed137_step282.json"
+        },
+        {
+          "step": 375,
+          "x": 0.87,
+          "x_cont": 73.57,
+          "y": 0.2425,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed137_step375.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed137_step375.json"
+        },
+        {
+          "step": 329,
+          "x": 0.8944723618090452,
+          "x_cont": 74.5427135678392,
+          "y": 0.2375,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed137_step329.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed137_step329.json"
+        }
+      ],
+      "256": [
+        {
+          "step": 235,
+          "x": 0.7989949748743719,
+          "x_cont": 68.89949748743719,
+          "y": 0.2225,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed256_step235.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed256_step235.json"
+        },
+        {
+          "step": 47,
+          "x": 0.8162162162162162,
+          "x_cont": 70.01621621621622,
+          "y": 0.2425,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed256_step47.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed256_step47.json"
+        },
+        {
+          "step": 282,
+          "x": 0.82,
+          "x_cont": 69.91,
+          "y": 0.24,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed256_step282.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed256_step282.json"
+        },
+        {
+          "step": 329,
+          "x": 0.82,
+          "x_cont": 70.94,
+          "y": 0.235,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed256_step329.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed256_step329.json"
+        },
+        {
+          "step": 188,
+          "x": 0.84,
+          "x_cont": 70.675,
+          "y": 0.2575,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed256_step188.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed256_step188.json"
+        },
+        {
+          "step": 94,
+          "x": 0.861878453038674,
+          "x_cont": 73.12707182320442,
+          "y": 0.1775,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed256_step94.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed256_step94.json"
+        },
+        {
+          "step": 375,
+          "x": 0.875,
+          "x_cont": 74.145,
+          "y": 0.2475,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed256_step375.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed256_step375.json"
+        },
+        {
+          "step": 141,
+          "x": 0.93,
+          "x_cont": 76.265,
+          "y": 0.245,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_sft_lora_seed256_step141.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_sft_lora_seed256_step141.json"
+        }
+      ]
+    },
+    "dft_lora": {
+      "42": [
+        {
+          "step": 94,
+          "x": 0.515,
+          "x_cont": 49.75,
+          "y": 0.0725,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed42_step94.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed42_step94.json"
+        },
+        {
+          "step": 47,
+          "x": 0.59,
+          "x_cont": 54.96,
+          "y": 0.16,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed42_step47.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed42_step47.json"
+        },
+        {
+          "step": 141,
+          "x": 0.63,
+          "x_cont": 57.455,
+          "y": 0.1425,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed42_step141.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed42_step141.json"
+        },
+        {
+          "step": 235,
+          "x": 0.65,
+          "x_cont": 57.87,
+          "y": 0.1425,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed42_step235.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed42_step235.json"
+        },
+        {
+          "step": 282,
+          "x": 0.675,
+          "x_cont": 60.905,
+          "y": 0.145,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed42_step282.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed42_step282.json"
+        },
+        {
+          "step": 188,
+          "x": 0.69,
+          "x_cont": 60.46,
+          "y": 0.165,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed42_step188.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed42_step188.json"
+        },
+        {
+          "step": 375,
+          "x": 0.705,
+          "x_cont": 61.015,
+          "y": 0.14,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed42_step375.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed42_step375.json"
+        },
+        {
+          "step": 329,
+          "x": 0.71,
+          "x_cont": 63.305,
+          "y": 0.165,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed42_step329.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed42_step329.json"
+        }
+      ],
+      "137": [
+        {
+          "step": 47,
+          "x": 0.39,
+          "x_cont": 41.095,
+          "y": 0.025,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed137_step47.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step47.json"
+        },
+        {
+          "step": 94,
+          "x": 0.4824120603015075,
+          "x_cont": 47.80904522613066,
+          "y": 0.07,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed137_step94.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step94.json"
+        },
+        {
+          "step": 188,
+          "x": 0.555,
+          "x_cont": 53.035,
+          "y": 0.11,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed137_step188.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step188.json"
+        },
+        {
+          "step": 375,
+          "x": 0.565,
+          "x_cont": 54.8,
+          "y": 0.085,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed137_step375.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step375.json"
+        },
+        {
+          "step": 235,
+          "x": 0.57,
+          "x_cont": 51.915,
+          "y": 0.0925,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed137_step235.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step235.json"
+        },
+        {
+          "step": 141,
+          "x": 0.6,
+          "x_cont": 56.13,
+          "y": 0.07,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed137_step141.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step141.json"
+        },
+        {
+          "step": 329,
+          "x": 0.6102564102564103,
+          "x_cont": 55.90769230769231,
+          "y": 0.1,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed137_step329.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step329.json"
+        },
+        {
+          "step": 282,
+          "x": 0.67,
+          "x_cont": 60.805,
+          "y": 0.1325,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed137_step282.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed137_step282.json"
+        }
+      ],
+      "256": [
+        {
+          "step": 47,
+          "x": 0.3333333333333333,
+          "x_cont": 37.65,
+          "y": 0.075,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed256_step47.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed256_step47.json"
+        },
+        {
+          "step": 94,
+          "x": 0.5157232704402516,
+          "x_cont": 49.062893081761004,
+          "y": 0.0625,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed256_step94.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed256_step94.json"
+        },
+        {
+          "step": 141,
+          "x": 0.5316455696202531,
+          "x_cont": 49.91139240506329,
+          "y": 0.05,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed256_step141.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed256_step141.json"
+        },
+        {
+          "step": 235,
+          "x": 0.582089552238806,
+          "x_cont": 55.55223880597015,
+          "y": 0.1275,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed256_step235.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed256_step235.json"
+        },
+        {
+          "step": 375,
+          "x": 0.6214285714285714,
+          "x_cont": 57.08571428571429,
+          "y": 0.1575,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed256_step375.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed256_step375.json"
+        },
+        {
+          "step": 329,
+          "x": 0.6301369863013698,
+          "x_cont": 57.013698630136986,
+          "y": 0.1425,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed256_step329.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed256_step329.json"
+        },
+        {
+          "step": 282,
+          "x": 0.6432160804020101,
+          "x_cont": 59.06030150753769,
+          "y": 0.1225,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed256_step282.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed256_step282.json"
+        },
+        {
+          "step": 188,
+          "x": 0.6463414634146342,
+          "x_cont": 57.69512195121951,
+          "y": 0.1225,
+          "n_em": 400,
+          "em_raw": "/workspace/explore-persona-space/eval_results/issue_715/em_rate/raw_dft_lora_seed256_step188.json",
+          "narrow_raw": "/workspace/explore-persona-space/eval_results/issue_715/narrow_task/raw_dft_lora_seed256_step188.json"
+        }
+      ]
+    }
+  },
+  "overlap_x_range": null,
+  "matched_x_grid": [],
+  "paired_bootstrap": {
+    "per_x": [],
+    "n_seeds_paired": 0
+  },
+  "dstar_selection": {
+    "dstar_x": null,
+    "reason": "no overlapping x-range between conditions"
+  },
+  "stats_metadata": {
+    "interpolation_method": "per-seed linear interpolation of EM-rate to a common narrow-acquisition x-grid over the overlapping x-range; no extrapolation outside each seed's measured range",
+    "bootstrap_resampling": "paired-by-seed: per-x per-seed difference d_s = EM_sft(x) - EM_dft(x), resample SEEDS with replacement, n_boot=2000, 95% percentile CI, boot_seed=42",
+    "overlap_x_range_note": "x-range covered by BOTH conditions across all their seeds",
+    "p1_supported_iff": "at >=1 matched-x operating point the SFT-DFT EM gap >0 with a 95% CI excluding 0 in >=2 of 3 seeds AND DFT EM >=30% below SFT"
+  },
+  "metadata": {
+    "git_commit": "1181a170abff43d5842fb20354ff0b26871df65f",
+    "timestamp_utc": "2026-06-29T06:28:43.053805+00:00",
+    "python_version": "3.11.10",
+    "experiment": "issue715_dft_em",
+    "cuda_visible_devices": "all",
+    "script": "issue715_aggregate_pareto"
+  }
+}
