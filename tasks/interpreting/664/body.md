@@ -4,7 +4,7 @@ title: Marker leakage gate never installs on Qwen-2.5-7B-Instruct — content-be
 kind: experiment
 tags: []
 created_at: '2026-06-25T07:26:49Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 660
 goal: 'Phase 2 — fine-tune fleet: train source×behavior×arm adapters (positive-only
   + contrastive arms per B5; on-policy completions; marker band-stop), build the trained
