@@ -436,11 +436,14 @@ def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_
             if path_in_repo
             else "OVERFLOW_POINTER.json"
         )
-        api.upload_file(
-            path_or_fileobj=io.BytesIO(json.dumps(payload, indent=2).encode("utf-8")),
-            repo_id=canonical_repo,
-            path_in_repo=dest,
-            repo_type="model",
+        _retry_upload(
+            lambda: api.upload_file(
+                path_or_fileobj=io.BytesIO(json.dumps(payload, indent=2).encode("utf-8")),
+                repo_id=canonical_repo,
+                path_in_repo=dest,
+                repo_type="model",
+            ),
+            what="overflow-pointer upload_file",
         )
         logger.info("Wrote overflow pointer %s/%s -> %s", canonical_repo, dest, overflow_repo)
     except Exception as e:
@@ -498,6 +501,64 @@ def list_repo_files_complete(
         if isinstance(entry, RepoFile)
     ]
     return sorted(files)
+
+
+def _is_storage_quota_403(err: Exception) -> bool:
+    """Persistent account-wide public-storage 403 (NOT transient). Mirrors the
+    issue658 predicate; upload-policy.md § HF storage-quota 403."""
+    msg = str(err)
+    return "403" in msg and "storage" in msg.lower()
+
+
+def _is_transient_upload_error(err: Exception) -> bool:
+    """True for retryable transient HF/HTTP upload errors (5xx gateway timeouts,
+    429, connection drops) — NOT the persistent storage-quota-403."""
+    code = getattr(getattr(err, "response", None), "status_code", None)
+    if code in (429, 500, 502, 503, 504):
+        return True
+    msg = str(err).lower()
+    return any(
+        s in msg
+        for s in (
+            "504",
+            "502",
+            "503",
+            "500",
+            "gateway time-out",
+            "gateway timeout",
+            "timed out",
+            "timeout",
+            "connection",
+            "temporarily unavailable",
+        )
+    )
+
+
+def _retry_upload(fn, *, what: str, max_attempts: int = 6):
+    """Call ``fn()`` (a zero-arg upload thunk) with exp-backoff retry on transient
+    HF 5xx/429/timeout/connection errors. Storage-quota-403 and any non-transient
+    error re-raise IMMEDIATELY (so the caller's overflow-routing / soft-fail logic
+    fires unchanged); after max_attempts the final exception propagates (fail-loud)."""
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return fn()
+        except Exception as e:
+            if (
+                _is_storage_quota_403(e)
+                or not _is_transient_upload_error(e)
+                or attempt == max_attempts
+            ):
+                raise
+            sleep_s = min(180, 10 * 2 ** (attempt - 1))
+            logger.warning(
+                "%s transient error (attempt %d/%d): %s; retrying in %ds",
+                what,
+                attempt,
+                max_attempts,
+                str(e)[:200],
+                sleep_s,
+            )
+            time.sleep(sleep_s)
 
 
 def _upload(
@@ -578,19 +639,25 @@ def _upload(
 
     try:
         if is_file_upload:
-            api.upload_file(
-                path_or_fileobj=str(local_path),
-                repo_id=repo_id,
-                path_in_repo=path_in_repo or local_path.name,
-                repo_type=repo_type,
+            _retry_upload(
+                lambda: api.upload_file(
+                    path_or_fileobj=str(local_path),
+                    repo_id=repo_id,
+                    path_in_repo=path_in_repo or local_path.name,
+                    repo_type=repo_type,
+                ),
+                what="upload_file",
             )
         else:
-            api.upload_folder(
-                folder_path=str(local_path),
-                repo_id=repo_id,
-                path_in_repo=path_in_repo,
-                repo_type=repo_type,
-                ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+            _retry_upload(
+                lambda: api.upload_folder(
+                    folder_path=str(local_path),
+                    repo_id=repo_id,
+                    path_in_repo=path_in_repo,
+                    repo_type=repo_type,
+                    ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+                ),
+                what="upload_folder",
             )
 
         # Verify upload: check that files actually exist on Hub. Use the
@@ -716,13 +783,16 @@ def _upload_folder_filtered(
     )
 
     try:
-        api.upload_folder(
-            folder_path=str(local_dir),
-            repo_id=repo_id,
-            path_in_repo=path_in_repo,
-            repo_type=repo_type,
-            allow_patterns=allow_patterns,
-            ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+        _retry_upload(
+            lambda: api.upload_folder(
+                folder_path=str(local_dir),
+                repo_id=repo_id,
+                path_in_repo=path_in_repo,
+                repo_type=repo_type,
+                allow_patterns=allow_patterns,
+                ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+            ),
+            what="upload_folder (filtered)",
         )
 
         # EXACT expected-set verification on a fresh paginated listing (mirror

@@ -3,19 +3,32 @@
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from huggingface_hub.hf_api import RepoFile
+from huggingface_hub.utils import HfHubHTTPError
+from requests.exceptions import ConnectionError
 
 from explore_persona_space.orchestrate.hub import (
     DEFAULT_DATASET_REPO,
     DEFAULT_MODEL_REPO,
+    _is_storage_quota_403,
+    _is_transient_upload_error,
+    _retry_upload,
     upload_dataset,
     upload_dataset_directory,
     upload_model,
     upload_raw_completions_to_data_repo,
 )
+
+
+def _http_err(code: int, msg: str | None = None) -> HfHubHTTPError:
+    """Build an HfHubHTTPError whose .response.status_code == code, mirroring a
+    real HF upload HTTP error so the status-code branch is exercised as in prod."""
+    r = Mock()
+    r.status_code = code
+    return HfHubHTTPError(msg or f"{code} error", response=r)
 
 
 class TestUploadModel:
@@ -373,3 +386,147 @@ class TestUploadRawCompletions:
         assert not (tmp_path / "cellB" / "sub" / "C_seed7" / "raw_completions.json").exists()
         # The aggregate JSON the allow_patterns skipped is untouched.
         assert (tmp_path / "run_result.json").exists()
+
+
+def _storage_403() -> HfHubHTTPError:
+    """The persistent account-wide public-storage 403 (must NOT retry — it has to
+    re-raise immediately so #564 overflow-routing / soft-fail fires unchanged)."""
+    return _http_err(403, "403 Forbidden: You have exceeded your public storage space")
+
+
+class TestRetryUpload:
+    """Tests for the shared HF-uploader retry wrapper (#735).
+
+    ``_retry_upload`` retries a transient HF 5xx/429/timeout/connection error via
+    exp-backoff, re-raises a storage-quota-403 (and any non-transient error)
+    immediately, and re-raises the final exception after ``max_attempts``
+    (fail-loud, no swallow). ``hub.time.sleep`` is patched in every retry test so
+    the suite stays fast.
+    """
+
+    def test_retries_504_then_succeeds(self):
+        """A transient 504 on attempt 1, then success on attempt 2."""
+        thunk = Mock(side_effect=[_http_err(504), "ok"])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep:
+            assert _retry_upload(thunk, what="t") == "ok"
+        assert thunk.call_count == 2
+        mock_sleep.assert_called_once()
+
+    def test_retries_429_then_succeeds(self):
+        """A transient 429 (rate limit) on attempt 1, then success."""
+        thunk = Mock(side_effect=[_http_err(429), "ok"])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep"):
+            assert _retry_upload(thunk, what="t") == "ok"
+        assert thunk.call_count == 2
+
+    def test_connection_error_retried(self):
+        """A bare ConnectionError (.response is None) is caught by the
+        message-substring arm ('connection'), then succeeds."""
+        thunk = Mock(side_effect=[ConnectionError("connection reset"), "ok"])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep"):
+            assert _retry_upload(thunk, what="t") == "ok"
+        assert thunk.call_count == 2
+
+    def test_403_storage_quota_not_retried(self):
+        """The persistent storage-quota-403 re-raises IMMEDIATELY (attempt 1) so
+        the caller's #564 overflow-routing / soft-fail fires unchanged."""
+        thunk = Mock(side_effect=_storage_403())
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(HfHubHTTPError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+        mock_sleep.assert_not_called()
+
+    def test_non_transient_404_not_retried(self):
+        """A non-transient 404 re-raises immediately (not in the transient set,
+        no transient substring) — attempt 1 only."""
+        thunk = Mock(side_effect=_http_err(404))
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep"),
+            pytest.raises(HfHubHTTPError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+
+    def test_non_storage_403_not_retried(self):
+        """A NON-storage 403 (auth / gated-repo) must NOT retry-loop: status 403
+        is not in the transient code set and the message has no transient
+        substring, so it re-raises on attempt 1 (reconciler-suggested hardening)."""
+        thunk = Mock(side_effect=_http_err(403, "403 Forbidden: gated repo access"))
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep"),
+            pytest.raises(HfHubHTTPError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+
+    def test_exhausts_and_reraises(self):
+        """A transient error on EVERY attempt re-raises the final exception after
+        max_attempts (fail-loud, no swallow) — 6 calls, 5 sleeps."""
+        thunk = Mock(side_effect=[_http_err(504)] * 6)
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(HfHubHTTPError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 6
+        assert mock_sleep.call_count == 5
+
+    def test_value_error_not_retried(self):
+        """A non-HTTP error (ValueError) re-raises immediately — attempt 1."""
+        thunk = Mock(side_effect=ValueError("bad args"))
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep"),
+            pytest.raises(ValueError, match="bad args"),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+
+    def test_predicate_storage_quota_403(self):
+        """_is_storage_quota_403 requires BOTH '403' and 'storage' in the message."""
+        assert _is_storage_quota_403(_storage_403()) is True
+        assert _is_storage_quota_403(_http_err(403, "403 Forbidden: gated repo")) is False
+        assert _is_storage_quota_403(_http_err(504)) is False
+
+    def test_predicate_transient(self):
+        """_is_transient_upload_error: 5xx/429 by status code; ConnectionError by
+        substring; storage-403 / ValueError are NOT transient."""
+        assert _is_transient_upload_error(_http_err(504)) is True
+        assert _is_transient_upload_error(_http_err(429)) is True
+        assert _is_transient_upload_error(ConnectionError("connection reset")) is True
+        assert _is_transient_upload_error(_http_err(404)) is False
+        assert _is_transient_upload_error(_storage_403()) is False
+        assert _is_transient_upload_error(ValueError("bad args")) is False
+
+    def test_upload_folder_branch_uses_retry(self):
+        """Integration: a 504 on the FIRST _upload folder commit then success ->
+        _upload returns the non-empty URL and upload_folder is called twice
+        (confirms the call-site wiring, not just the helper in isolation)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model_dir = Path(tmpdir) / "model"
+            model_dir.mkdir()
+            (model_dir / "config.json").write_text("{}")
+
+            with (
+                patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+                patch("huggingface_hub.HfApi") as MockApi,
+                patch("explore_persona_space.orchestrate.hub.time.sleep"),
+            ):
+                mock_api = MockApi.return_value
+                mock_api.create_repo.return_value = None
+                mock_api.upload_folder.side_effect = [_http_err(504), None]
+                # Post-upload verification walks the paginated tree.
+                mock_api.list_repo_tree.return_value = [
+                    RepoFile(path="evil_wrong_seed42/config.json", size=2, blob_id="b", oid="o")
+                ]
+
+                result = upload_model(
+                    str(model_dir),
+                    condition_name="evil_wrong",
+                    seed=42,
+                )
+
+            assert mock_api.upload_folder.call_count == 2
+            assert "evil_wrong_seed42" in result
