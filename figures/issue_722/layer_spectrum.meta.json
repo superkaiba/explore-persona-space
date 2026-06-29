@@ -1,0 +1,75 @@
+{
+  "commit": "dc09c942e0",
+  "created": "2026-06-29T09:15:42Z",
+  "figsize": [
+    6.4,
+    4.0
+  ],
+  "points": [
+    {
+      "read layer": 7.0,
+      "\u0394_med \u00f7 combined noise floor": 0.3376895898057172,
+      "series": "Emergent misalignment",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 14.0,
+      "\u0394_med \u00f7 combined noise floor": 0.6361316588412701,
+      "series": "Emergent misalignment",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 21.0,
+      "\u0394_med \u00f7 combined noise floor": 0.6408666277304628,
+      "series": "Emergent misalignment",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "read layer": 7.0,
+      "\u0394_med \u00f7 combined noise floor": 3.183257236513214,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 14.0,
+      "\u0394_med \u00f7 combined noise floor": 0.9582255851600158,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 21.0,
+      "\u0394_med \u00f7 combined noise floor": 0.1241513895111664,
+      "series": "Sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "read layer": 7.0,
+      "\u0394_med \u00f7 combined noise floor": 2.896729063256331,
+      "series": "Taught fact",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 14.0,
+      "\u0394_med \u00f7 combined noise floor": 3.2930953745737996,
+      "series": "Taught fact",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "read layer": 21.0,
+      "\u0394_med \u00f7 combined noise floor": 1.575554054487461,
+      "series": "Taught fact",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9
+}
