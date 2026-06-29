@@ -1821,6 +1821,44 @@ class GcpWorkloadError(GcpBackendError):
         self.evidence = evidence or {}
 
 
+class GcpCreateTimedOutStillProvisioning(GcpBackendError):
+    """The ``gcloud compute instances create`` subprocess exceeded the
+    300s cap, BUT a post-timeout ``instances list`` probe found the
+    instance live (RUNNING/PROVISIONING/STAGING/STOPPING) — the
+    FLEX_START preemptible-queueing case (#658).
+
+    This is NOT a failure: the launch is in flight server-side, the local
+    ``subprocess.run`` just aborted at its wall-clock cap. The caller
+    (``dispatch_issue.py::_cmd_launch``) converts this into the documented
+    still-waiting exit (75 / ``EXIT_STILL_WAITING``, #603) and the
+    orchestrator re-runs the SAME launch command; ``reconnect_or_none``
+    (the idempotent re-entry at the top of :meth:`GcpBackend.launch`)
+    reconnects to the now-observable live instance with NO double-create.
+
+    Deliberately a :class:`GcpBackendError` subclass — the SAME base as
+    :class:`GcpProvisioningError` / :class:`GcpWorkloadError`, NOT a
+    ``router.RouteError`` (subclassing the latter would force ``gcp.py``
+    to import ``router.py``, creating a router→gcp→router circular import).
+    Because it is neither a ``RouteError`` nor a ``GcpProvisioningError``
+    / ``GcpWorkloadError`` / ``BackendProbeError``, NONE of the router's
+    typed ``except`` arms catch it, so it propagates clean to
+    ``_cmd_launch``, where the explicit ``except`` arm is MANDATORY.
+
+    Carries ``instance_name`` + observed ``status`` (+ ``issue``) for the
+    still-waiting JSON the CLI emits.
+    """
+
+    def __init__(self, *, instance_name: str, status: str, issue: int) -> None:
+        self.instance_name = instance_name
+        self.status = status
+        self.issue = issue
+        super().__init__(
+            f"GCP create for {instance_name} timed out at the "
+            f"{GCLOUD_DEFAULT_TIMEOUT_SEC}s subprocess cap but the instance is live "
+            f"(status={status}) — FLEX_START still-provisioning; re-run to continue waiting."
+        )
+
+
 class GcpLaunchSecretsMissing(GcpBackendError):
     """Required workload secrets are unresolvable at launch time.
 
@@ -1954,13 +1992,28 @@ class GcloudRunResult:
 GcloudRunner = Callable[[Sequence[str]], GcloudRunResult]
 
 
-def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudRunResult:
+#: Wall-clock cap (seconds) for a single ``gcloud`` subprocess in
+#: :func:`default_gcloud_runner`. Named (not a bare literal) so the
+#: :meth:`GcpBackend.launch` create-timeout handler + the
+#: :class:`GcpCreateTimedOutStillProvisioning` message reference the SAME
+#: value the runner enforces and the two cannot drift (#736).
+GCLOUD_DEFAULT_TIMEOUT_SEC = 300
+
+
+def default_gcloud_runner(
+    argv: Sequence[str], *, timeout: int = GCLOUD_DEFAULT_TIMEOUT_SEC
+) -> GcloudRunResult:
     """Default runner: shell out to ``gcloud`` via :mod:`subprocess`.
 
     Raises NOTHING on non-zero — the caller inspects ``returncode``.
-    Timeouts propagate as :class:`subprocess.TimeoutExpired` (the
-    backend treats them as provisioning failures via the catch in
-    :meth:`GcpBackend.launch`).
+    Timeouts propagate as :class:`subprocess.TimeoutExpired`;
+    :meth:`GcpBackend.launch` catches the create-call timeout, probes the
+    canonical instance name via :func:`reconnect_or_none`, and either
+    raises :class:`GcpCreateTimedOutStillProvisioning` (instance live
+    server-side — the FLEX_START preemptible-queueing case) or
+    :class:`GcpProvisioningError` (instance absent, or the probe itself
+    failed), so the router routes the timeout as a provisioning outcome
+    rather than an undocumented exit-4 traceback (#736).
     """
     proc = subprocess.run(
         list(argv),
@@ -3089,7 +3142,59 @@ class GcpBackend(ComputeBackend):
                     secret_files=secret_files,
                 )
                 logger.info("GCP create issue=%d in zone=%s", spec.issue, zone)
-                result = self._run(argv)
+                try:
+                    result = self._run(argv)
+                except subprocess.TimeoutExpired as exc:
+                    # FLEX_START rungs legitimately stay PENDING past the
+                    # GCLOUD_DEFAULT_TIMEOUT_SEC subprocess cap, so the create
+                    # OFTEN succeeds server-side even though the local
+                    # subprocess.run aborted (#658 failure-lesson v2). Probe the
+                    # canonical name BEFORE treating the timeout as a failure;
+                    # pre-fix this TimeoutExpired propagated raw to main()'s
+                    # exit-4 catch-all (#736).
+                    live = self._reconnect_probe_after_create_timeout(spec, exc)
+                    if live is not None:
+                        # Instance live server-side → a still-waiting outcome,
+                        # NOT a failure. Raise immediately (no continue into the
+                        # next zone → no double-create); the CLI converts this to
+                        # exit 75 and the re-run reconnects idempotently.
+                        raise GcpCreateTimedOutStillProvisioning(
+                            instance_name=live.pod_name,
+                            status=str(live.extra.get("status_at_reconnect") or "PROVISIONING"),
+                            issue=int(spec.issue),
+                        ) from exc
+                    # Instance truly absent → a provision-class failure. Build a
+                    # capacity-shaped GcpProvisioningError (matched_pattern
+                    # contains "resource" so the zone-retry predicate below
+                    # matches) so the existing zone fallback / next-tier router
+                    # path handles it exactly like any other create miss; never
+                    # let the raw TimeoutExpired escape to main()'s exit-4
+                    # catch-all. The slug is the POSITIONAL reason (the
+                    # GcpProvisioningError constructor has no separate message
+                    # arg); descriptive prose lives in evidence["detail"],
+                    # mirroring classify_create_failure.
+                    last_error = GcpProvisioningError(
+                        "create_timeout_no_instance",
+                        evidence={
+                            "zone": zone,
+                            "timeout_sec": GCLOUD_DEFAULT_TIMEOUT_SEC,
+                            "issue": int(spec.issue),
+                            "matched_pattern": "create timeout (resource not created)",
+                            "detail": (
+                                f"gcloud create for issue={spec.issue} in zone={zone} timed "
+                                f"out at the {GCLOUD_DEFAULT_TIMEOUT_SEC}s subprocess cap and "
+                                "no instance was found server-side after the timeout — "
+                                "treating as a capacity/provisioning failure."
+                            ),
+                        },
+                    )
+                    logger.warning(
+                        "GCP create timed out in zone=%s with no server-side instance; "
+                        "trying next fallback. issue=%d",
+                        zone,
+                        spec.issue,
+                    )
+                    continue
                 if result.returncode == 0:
                     break
                 last_error = classify_create_failure(
@@ -3257,6 +3362,48 @@ class GcpBackend(ComputeBackend):
         """
         del spec, now
         return 0.0
+
+    def _reconnect_probe_after_create_timeout(
+        self, spec: RunSpec, original_timeout: subprocess.TimeoutExpired
+    ) -> RunHandle | None:
+        """Post-create-timeout probe: is the ``eps-issue-<N>`` instance live?
+
+        Returns the reconnect handle when a live instance (RUNNING /
+        PROVISIONING / STAGING / STOPPING) is found, ``None`` when no
+        instance exists. On a PROBE failure — :class:`GcpProbeError`
+        (gcloud rc != 0 / bad JSON / expired auth) OR a hung
+        ``instances list`` raising :class:`subprocess.TimeoutExpired` —
+        RE-RAISES as a :class:`GcpProvisioningError` chained from the
+        ORIGINAL create timeout: "couldn't ask" must NEVER read as "live"
+        (would mask a real failure as still-waiting) NOR silently as
+        "absent" (would lose the timeout signal). Provision-class so the
+        router fallback handles it.
+
+        The ``except`` catches BOTH ``GcpProbeError`` AND
+        ``subprocess.TimeoutExpired``: :func:`reconnect_or_none` raises
+        ``GcpProbeError`` on rc != 0 / bad JSON but does NOT wrap a hung
+        list's ``TimeoutExpired`` — so narrowing this to
+        ``except GcpProbeError`` would let a list-timeout escape raw to
+        ``main()``'s exit-4 catch-all (the #736 bug on the probe-timeout
+        branch). The chained ``from original_timeout`` (NOT the probe-side
+        exception) makes ``__cause__`` trace back to the real cause — the
+        create that timed out.
+        """
+        try:
+            return reconnect_or_none(spec=spec, config=self._config, runner=self._run)
+        except (GcpProbeError, subprocess.TimeoutExpired) as probe_exc:
+            raise GcpProvisioningError(
+                "create_timeout_probe_failed",
+                evidence={
+                    "issue": int(spec.issue),
+                    "matched_pattern": "create timeout probe failed",
+                    "detail": (
+                        f"gcloud create for issue={spec.issue} timed out and the "
+                        f"post-timeout instances-list probe ALSO failed ({probe_exc}); "
+                        "instance state UNKNOWN — treating as a provisioning failure."
+                    ),
+                },
+            ) from original_timeout
 
     # ----- monitor ---------------------------------------------------------
 
