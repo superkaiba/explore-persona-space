@@ -4553,8 +4553,8 @@
     "724": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/724",
-      "status": "reviewing",
+      "path": "tasks/completed/724",
+      "status": "completed",
       "title": "daily-fix: task.py audit --repair + reconcile 13 drifted registry tasks"
     },
     "725": {
