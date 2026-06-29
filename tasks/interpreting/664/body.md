@@ -19,9 +19,9 @@ relates_to:
 
 ## Takeaways
 
-- The marker never installed: source **log P(※) trained − base = −0.34 to +1.81 nat** across all 16 cells, never the 5–12-nat band — kill (a). Source write magnitude **~17–42× below** content.
+- The marker never installed: source **log P(※) trained − base = −0.34 to +1.81 nat** across all 16 cells, never the 5–12-nat band — kill (a); write **~17–42× below** content.
 - With no installed write, the marker gate sits **at the noise floor**: fixed-layer-14 SNR **0.72–1.42, half the cells below 1** (best-of-28 cherry-pick 0.91–1.99) — kill (b).
-- **At best-of-28-layers the designed null cells clear the floor as strongly as the real behaviors** (educational-code-null SNR **2.05**, reversed-fact-null **3.46** — the latter above 7 of 8 EM cells). At a fixed layer only reversed-fact survives (1.81); educational-code does not (0.74). SNR tracks install **write magnitude**, not leakage.
+- **At best-of-28-layers the designed null cells clear the floor as strongly as real behaviors** (null SNR **2.05** and **3.46**, matching EM): SNR tracks install **write magnitude**, not leakage.
 - Content-behavior SNR is therefore an **activation-gate measurement above the probe-split floor**, NOT validated behavioral leakage — the PRIMARY judged-rate DV was not produced this round.
 - LOW throughout: marker spine yields no usable ground truth (no install); content gate signal confounded by install magnitude; sycophancy + refusal dropped (yield 0–5.5% < 80% floor).
 
@@ -38,29 +38,29 @@ relates_to:
 
 | Hyperparameter | Value | Source |
 |---|---|---|
-| Base model | Qwen/Qwen2.5-7B-Instruct | #537 |
-| LoRA (default) | rsLoRA r=32 / α=64 / dropout 0.05 (`use_rslora=True`, effective train scale α/√r ≈ 11.31) | #601 |
-| LoRA (insecure-code/EM) | rsLoRA r=32 / α=256 / dropout 0.0 | #537 / turner_em |
-| LoRA (refusal, not trained) | rsLoRA r=16 / α=32 | #537 / #390 |
-| Marker lr | 5e-6 | #537 / #474 |
+| Base model | Qwen/Qwen2.5-7B-Instruct | project base model |
+| LoRA (default) | rsLoRA r=32 / α=64 / dropout 0.05 (`use_rslora=True`, effective train scale α/√r ≈ 11.31) | rsLoRA scaling recipe |
+| LoRA (insecure-code/EM) | rsLoRA r=32 / α=256 / dropout 0.0 | Turner-EM contrastive grid recipe |
+| LoRA (refusal, not trained) | rsLoRA r=16 / α=32 | refusal-pool contrastive recipe |
+| Marker lr | 5e-6 | validated marker band-stop recipe |
 | Marker loss | marker token + end-of-turn tail only (response masked) | marker-training-recipe |
-| Marker band-stop, dose 1 | source log P(※) − base in [5, 12] nat | #537 / #474 |
-| Marker band-stop, dose 2 | [10, 16] nat (same lr, longer step budget) | #474 |
-| Band-stop schedule | eval every 5 steps, min 10, overshoot-aware, 3-epoch ceiling | #537 / #474 |
+| Marker band-stop, dose 1 | source log P(※) − base in [5, 12] nat | epoch-1 marker band-stop recipe |
+| Marker band-stop, dose 2 | [10, 16] nat (same lr, longer step budget) | epoch-1 marker band-stop recipe |
+| Band-stop schedule | eval every 5 steps, min 10, overshoot-aware, 3-epoch ceiling | epoch-1 marker band-stop recipe |
 | Marker token id | ` ※` = 83399 (asserted at every entrypoint) | marker-leakage-measurement |
-| Fact lr / epochs | 2e-4 / 1 epoch, all-7-linear, response-only | #537 / #444 |
-| Insecure-code/EM lr / steps | 2e-5 / max_steps 375, linear schedule | #537 / turner_em |
-| Optimizer schedule | cosine, warmup 0.05, bf16, batch 4×4 | #537 |
-| Contrastive negative panel | police-officer, PersonaHub persona, curious-rephrase, WildChat-short (∩ sources = ∅) | #537 |
+| Fact lr / epochs | 2e-4 / 1 epoch, all-7-linear, response-only | taught-fact implant recipe |
+| Insecure-code/EM lr / steps | 2e-5 / max_steps 375, linear schedule | Turner-EM contrastive grid recipe |
+| Optimizer schedule | cosine, warmup 0.05, bf16, batch 4×4 | 5-behavior contrastive grid recipe |
+| Contrastive negative panel | police-officer, PersonaHub persona, curious-rephrase, WildChat-short (∩ sources = ∅) | 5-behavior contrastive grid recipe |
 | Positives : total negatives | ~1:1 | contrastive-negatives |
 
 **Evaluation:** The PRIMARY leakage DV is the activation realized gate ĝᴿᵉᵃˡ = ŵᵀΔv(C′) / ŵᵀŵ, where ŵ = Δv(C) = v⁺(C) − v0(C) is the source-context write direction and Δv(C′) = v⁺(C′) − v0(C′) is the displacement at target context C′, computed on the trained model's own answer-side residual activations, all 28 layers. ĝᴿᵉᵃˡ(C) = 1 at the source by construction (the manipulation anchor, reported separately, excluded from the variation read). The kill estimator is the across-bystander spread of ĝᴿᵉᵃˡ over the **49 bystander contexts** against the **within-context probe-split noise floor** the plan §3 registered: each context's probe set is split in half, ĝᴿᵉᵃˡ recomputed on each half's mean displacement, and the floor per layer is the **median over bystanders of |half1_ĝ − half2_ĝ|** (the per-context measurement-noise magnitude). A leakage SNR (across-bystander spread / floor) below 1 means the cross-context variation is smaller than the per-context measurement noise.
 
-*Authoritative SNR pipeline.* All SNR numbers and figures here come from the registered pipeline `scripts/issue664_gate_summary.py` (committed at the code SHA below), reading the per-cell `g_real.json` files — its floor is the within-context probe-split median, exactly the plan §3 kill (b) estimator. A round-1 ad-hoc recompute (`.claude/cache/issue-664-gate-snr.json`) used a DIFFERENT, non-conforming noise estimator (the standard deviation of the half-mean differences taken ACROSS bystanders, roughly 2× larger than the registered per-context floor) and restricted to even layers 8–26; it produced a spuriously low marker SNR (0.46–0.69) and is discarded. Because the registered read does not pin a single layer (the per-behavior layer is locked at Phase-3 from [#658](https://eps.superkaiba.com/tasks/658), still `interpreting`), the body reports BOTH the best-of-28-layers read (a per-cell layer-cherry-pick — a leakage statistic — shown only with that label) AND the fixed-layer-14 read (selection-bias-free reference); they bracket the truth.
+*Authoritative SNR pipeline.* All SNR numbers and figures here come from the registered pipeline `scripts/issue664_gate_summary.py` (committed at the code SHA below), reading the per-cell `g_real.json` files — its floor is the within-context probe-split median, exactly the plan §3 kill (b) estimator. A round-1 ad-hoc recompute (`.claude/cache/issue-664-gate-snr.json`) used a DIFFERENT, non-conforming noise estimator (the standard deviation of the half-mean differences taken ACROSS bystanders, roughly 2× larger than the registered per-context floor) and restricted to even layers 8–26; it produced a spuriously low marker SNR (0.46–0.69) and is discarded. Because the registered read does not pin a single layer (the per-behavior layer is locked downstream at Phase 3, not yet available), the body reports BOTH the best-of-28-layers read (a per-cell layer-cherry-pick — a leakage statistic — shown only with that label) AND the fixed-layer-14 read (selection-bias-free reference); they bracket the truth.
 
 The marker SECONDARY DV is on-policy log P(※) trained − base at the end of the model's own response, in three spaces (log-prob, marker-vs-EOS logit margin, probability). Content behaviors carry a SECONDARY length-normalized completion log-P DV; their PRIMARY judged-rate DV (Claude Sonnet 4.5 judge over the 19-column registry) is recomputable from the per-cell completions on HF, but the aggregated `judged_rates.json` file itself was never produced this round — so no validated behavioral-leakage rate exists for the content behaviors this round, only the activation-gate SNR. Contexts: the 50-context / 7-family battery (persona, format, behavior, default, rephrase, in-context-learning, WildChat).
 
-**Data extraction:** Training positives for content behaviors were diverse on-policy LLM-generated completions (the elicitation ladder from [#612](https://eps.superkaiba.com/tasks/612)); the marker token and the taught-fact span are the programmatic carve-out (the controlled template IS the construct). The marker response text is the base model's own greedy on-policy generation with ` ※` appended, loss on the marker + turn-end only. Bad-medical and insecure-code/EM rows are published-corpus-verbatim (Betley-Turner). Contrastive negatives answer the same questions on-policy under the 4-context negative panel.
+**Data extraction:** Training positives for content behaviors were diverse on-policy LLM-generated completions (per the on-policy elicitation ladder: elicit the behavior from the base model under a system-prompt instruction, judge-filter, then strip the instruction before training); the marker token and the taught-fact span are the programmatic carve-out (the controlled template IS the construct). The marker response text is the base model's own greedy on-policy generation with ` ※` appended, loss on the marker + turn-end only. Bad-medical and insecure-code/EM rows are published-corpus-verbatim (Betley-Turner). Contrastive negatives answer the same questions on-policy under the 4-context negative panel.
 
 **Sample training/evaluation data + completions:**
 
