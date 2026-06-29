@@ -4602,8 +4602,8 @@
     "731": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/731",
-      "status": "approved",
+      "path": "tasks/running/731",
+      "status": "running",
       "title": "workflow-fix: audit_clean_results_body_discipline.py \u2014 detect bracketed CIs in Results/Takeaways prose"
     },
     "74": {
