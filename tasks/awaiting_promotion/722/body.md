@@ -2,7 +2,8 @@
 title: Finetuning measurably reshapes the context→answer map only for a taught fact
   (LOW confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-28T20:32:55Z'
 has_clean_result: true
 parent_id: 667
