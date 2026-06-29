@@ -838,7 +838,7 @@ def cmd_audit(args: argparse.Namespace) -> None:
     repair = getattr(args, "repair", False)
     do_apply = getattr(args, "apply", False)
     if do_apply and not repair:
-        print("task.py audit: --apply requires --repair", file=sys.stderr)
+        print("use --apply only with --repair", file=sys.stderr)
         sys.exit(2)
 
     if not repair:
