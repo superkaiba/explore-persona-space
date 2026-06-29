@@ -213,13 +213,28 @@ def _serialize_poll_result(result) -> dict:
 
 
 def _gpu_idle_state_path(sidecar: Path) -> Path:
-    """Sibling of the handle sidecar: ``issue-<N>-gpu-idle-state.json``.
+    """Sibling path for the GPU-idle clock; ALWAYS distinct from ``sidecar``.
 
-    Derived from the handle sidecar path so it lands in the SAME cache dir
-    (``<main-checkout>/.claude/cache/``) the failover paths resolve, but is a
-    DISTINCT file — the GPU-idle clock is never clobbered by a handle rewrite.
+    Lands in the SAME cache dir (``<main-checkout>/.claude/cache/``) the
+    failover paths resolve, but is a DISTINCT file — the GPU-idle clock must
+    never be clobbered by a handle rewrite.
+
+    The canonical handle sidecar is named ``issue-<N>-handle.json`` — the
+    ``-handle.json`` → ``-gpu-idle-state.json`` substitution gives the natural
+    sibling ``issue-<N>-gpu-idle-state.json``. A custom ``--handle-file <path>``
+    is honored verbatim and may NOT match that shape (e.g. ``/tmp/custom.json``
+    or ``pod-runtime.json``); ``str.replace`` is a no-op when the substring is
+    absent, so the naive substitution would return the handle sidecar's OWN
+    path. Writing GPU-idle bookkeeping onto the handle would corrupt it (the
+    next poll reads it as a ``RunHandle`` → unreadable → false ``status: dead``
+    on a live job). Fall back to a stem-based name in that case so the result
+    is GUARANTEED distinct from the handle sidecar.
     """
-    return sidecar.parent / sidecar.name.replace("-handle.json", "-gpu-idle-state.json")
+    if sidecar.name.endswith("-handle.json"):
+        return sidecar.parent / sidecar.name.replace("-handle.json", "-gpu-idle-state.json")
+    # Non-conforming name (custom --handle-file): compose a distinct sibling.
+    # Path.stem strips ONE trailing extension, so "custom.json" → "custom".
+    return sidecar.parent / f"{sidecar.stem}-gpu-idle-state.json"
 
 
 def _load_gpu_idle_state(path: Path) -> dict[str, str]:
