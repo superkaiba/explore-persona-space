@@ -160,6 +160,19 @@ advisory NEVER changes the status verdict and never stops anything.
 Fail-safe semantics carry over from ``_gpu_idle``: an ``unknown`` /
 unparsable GPU sample resets the span rather than counting as idle.
 
+GPU-idle ESCALATION (incident #664): a SECOND tier above the advisory.
+Once a MULTI-GPU pod (>= 2 cards) has been idle in an upload/CPU-only
+phase (``_phase_is_cpu_only``) past ``EPM_GPU_IDLE_ESCALATION_MIN``
+minutes (default 60, clamped up to the advisory min; ``0`` disables),
+the poller fires a best-effort Telegram push + a LOUD
+``[gpu-idle-escalation]`` ``epm:progress`` marker. It reads the SAME
+idle span the advisory tracks (no second clock), de-dups one escalation
+per phase, and — like the advisory — NEVER changes the status verdict
+and NEVER stops the pod (the #664 8xH200 idle in a terminal upload phase
+burned ~$530 / 12h seen only by the one-shot advisory). The remedy it
+names is to route the upload off-pod / release the GPUs after a
+checkpoint — the final upload phase is itself CPU-only.
+
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
 
@@ -346,6 +359,7 @@ def recommend_next_interval(
     cpu_override_active: bool,
     run_age_sec: float | None,
     phase_changed_ago_sec: float | None,
+    gpu_idle_escalation_posted: bool = False,
 ) -> int:
     """Pure decision core for the adaptive bg-poll interval (§7).
 
@@ -365,9 +379,12 @@ def recommend_next_interval(
       — fresh state file, or a workload that never prints phase lines —
       counts as recent: fail toward coverage).
     * no anomaly this tick: SSH transport failure, a GPU-idle advisory
-      post, or the #518 CPU-advancing stall-rescue (logs stale + GPUs
-      idle — the run is healthy but in a degraded-observability regime).
-      Deliberately NOT in the set: raw GPU idleness alone
+      post, a GPU-idle ESCALATION post (#664 — a multi-GPU pod idle in an
+      upload/CPU-only phase past the escalation threshold; treated the same
+      as the advisory so the poll cadence does not go quiet right after
+      escalating), or the #518 CPU-advancing stall-rescue (logs stale +
+      GPUs idle — the run is healthy but in a degraded-observability
+      regime). Deliberately NOT in the set: raw GPU idleness alone
       (``_gpu_idle(gpu_util)`` on a tick that posted no advisory).
       Idle GPUs on a healthy run are routine during long CPU-bound
       phases (judge-API scoring, aggregation, plotting) — exactly the
@@ -392,7 +409,7 @@ def recommend_next_interval(
         return POLL_INTERVAL_DEFAULT_SEC
     if phase_transitioned:
         return POLL_INTERVAL_DEFAULT_SEC
-    if ssh_failed or gpu_idle_advisory_posted or cpu_override_active:
+    if ssh_failed or gpu_idle_advisory_posted or gpu_idle_escalation_posted or cpu_override_active:
         return POLL_INTERVAL_DEFAULT_SEC
     if run_age_sec is None or run_age_sec < EARLY_RUN_WINDOW_SEC:
         return POLL_INTERVAL_DEFAULT_SEC
@@ -733,6 +750,12 @@ class PollResult:
     # True when THIS tick posted the [gpu-idle-advisory] marker (#518/#537).
     # Observability only; the advisory never changes ``status``.
     gpu_idle_advisory_posted: bool = False
+    # True when THIS tick posted the [gpu-idle-escalation] marker + Telegram
+    # push (#664) — a MULTI-GPU pod idle past GPU_IDLE_ESCALATION_MIN in an
+    # upload/CPU-only phase. Observability only; never changes ``status`` and
+    # never stops the pod. Defaulted so cross-backend PollResult(...) call
+    # sites need no change.
+    gpu_idle_escalation_posted: bool = False
     # Session-CPU signal (#518, #658). ``session_cpu_secs`` is the literal
     # probe output: a float string like ``"4271.5"`` or ``"unknown"``.
     # ``cpu_advancing`` is the ternary decision relative to the running
@@ -1844,6 +1867,247 @@ def _maybe_post_gpu_idle_advisory(
     return update.idle_since_epoch, advised_phases, True
 
 
+# ── GPU-idle ESCALATION (incident #664) ──────────────────────────────────────
+#
+# A SECOND tier above the advisory: once a MULTI-GPU pod has been idle in an
+# upload/CPU-only phase past ``EPM_GPU_IDLE_ESCALATION_MIN`` minutes (default
+# 60, >= the advisory min), the poller fires a Telegram push + a LOUD
+# ``[gpu-idle-escalation]`` ``epm:progress`` marker. It NEVER stops the pod —
+# it surfaces the spend leak loudly for action (the #664 incident: an 8xH200
+# pod sat at 0% GPU for ~12h in a terminal upload phase, ~$530, seen only by
+# the one-shot advisory). Both tiers read the SAME ``gpu_idle_since_epoch``
+# span the advisory persists — there is no second independent idle clock.
+#
+# ``EPM_GPU_IDLE_ESCALATION_MIN >= EPM_GPU_IDLE_ADVISORY_MIN`` (escalate only
+# AFTER advising); a value below the advisory min is clamped UP to it at import
+# with a logged WARNING. ``<= 0`` disables escalation.
+_GPU_IDLE_ESCALATION_MIN_RAW = int(os.environ.get("EPM_GPU_IDLE_ESCALATION_MIN", "60"))
+if 0 < _GPU_IDLE_ESCALATION_MIN_RAW < GPU_IDLE_ADVISORY_MIN:
+    log.warning(
+        "EPM_GPU_IDLE_ESCALATION_MIN=%d is below EPM_GPU_IDLE_ADVISORY_MIN=%d; "
+        "clamping up to the advisory min (escalate only AFTER advising)",
+        _GPU_IDLE_ESCALATION_MIN_RAW,
+        GPU_IDLE_ADVISORY_MIN,
+    )
+    GPU_IDLE_ESCALATION_MIN = GPU_IDLE_ADVISORY_MIN
+else:
+    GPU_IDLE_ESCALATION_MIN = _GPU_IDLE_ESCALATION_MIN_RAW
+
+# Phase-name substrings that mark a phase as GPU-REQUIRED (NOT escalated). The
+# escalation fails toward over-notifying (a loud notice is cheap; a missed leak
+# is ~$44/hr), so everything NOT matching this deny-list — except the explicit
+# ``unknown`` sentinel — is treated CPU-only and IS eligible. ``merge`` is here
+# because merging a checkpoint touches the GPU briefly. Edit in one place.
+GPU_REQUIRED_PHASE_SUBSTRINGS = frozenset(
+    {
+        "train",
+        "gen",
+        "eval",
+        "generate",
+        "infer",
+        "forward",
+        "judge_gen",
+        "vllm",
+        "setup",
+        "preflight",
+        "merge",
+    }
+)
+
+
+def _phase_is_cpu_only(current_phase: str) -> bool:
+    """Return True iff ``current_phase`` is treated as a CPU-only phase.
+
+    Default-CPU-only with a small GPU-REQUIRED deny-list
+    (:data:`GPU_REQUIRED_PHASE_SUBSTRINGS`), because phase names vary across
+    dispatchers and the safe failure mode for an ESCALATION (a loud notice,
+    never an action) is to over-notify, not under-notify. The literal
+    ``unknown`` sentinel is the ONE exception that is NOT eligible: a phase the
+    dispatcher never named could be anything, and the advisory already fired
+    for true CPU idle, so fail toward not-escalating a potentially-GPU phase.
+    The #664 trigger phase ``p3_upload`` matches no deny-list substring ->
+    CPU-only -> eligible.
+    """
+    if not current_phase or current_phase == "unknown":
+        return False
+    name = current_phase.lower()
+    return not any(sub in name for sub in GPU_REQUIRED_PHASE_SUBSTRINGS)
+
+
+@dataclass(frozen=True)
+class GpuIdleEscalationUpdate:
+    """Outcome of one escalation-counter tick (``_gpu_idle_escalation_update``)."""
+
+    should_escalate: bool
+    idle_span_sec: int  # length of the shared idle span at this tick; 0 when none
+
+
+def _gpu_idle_escalation_update(
+    *,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    idle_since_epoch: int,
+    escalated_phases: set[str],
+    now_epoch: int,
+    escalation_min: int,
+) -> GpuIdleEscalationUpdate:
+    """Pure decision core for the GPU-idle ESCALATION (incident #664).
+
+    Reuses the SAME idle span the advisory tracks — the caller passes the
+    ``idle_since_epoch`` that ``_gpu_idle_advisory_update`` resolved THIS tick,
+    so the two tiers never diverge. ``should_escalate`` is True only when ALL
+    hold:
+
+    * ``escalation_min > 0`` (escalation enabled);
+    * the verdict is ``running`` AND every GPU is idle (``_gpu_idle``) — the
+      same fail-safe predicate the advisory uses (``unknown`` / unparsable ->
+      not idle);
+    * the pod is MULTI-GPU (>= 2 parsed cards) — a single-GPU idle pod is a far
+      smaller leak and never escalates;
+    * ``current_phase`` is classified upload/CPU-only (``_phase_is_cpu_only``);
+    * the shared idle span has lasted at least ``escalation_min`` minutes;
+    * ``current_phase`` is not already in ``escalated_phases``
+      (at-most-once-per-phase de-dup).
+
+    Pure / no I/O — the caller owns state persistence and the marker/push.
+    """
+    if escalation_min <= 0:
+        return GpuIdleEscalationUpdate(should_escalate=False, idle_span_sec=0)
+    if status != "running" or not _gpu_idle(gpu_util):
+        return GpuIdleEscalationUpdate(should_escalate=False, idle_span_sec=0)
+    if idle_since_epoch <= 0:
+        return GpuIdleEscalationUpdate(should_escalate=False, idle_span_sec=0)
+    span = max(0, now_epoch - idle_since_epoch)
+    n_gpus = len([tok for tok in gpu_util.split(",") if tok.strip()])
+    should_escalate = (
+        n_gpus >= 2
+        and _phase_is_cpu_only(current_phase)
+        and span >= escalation_min * 60
+        and current_phase not in escalated_phases
+    )
+    return GpuIdleEscalationUpdate(should_escalate=should_escalate, idle_span_sec=span)
+
+
+# Telegram-push script (default the my-goat notif-enqueue channel,
+# NOTIF_CAT=research), overridable for tests via EPM_TELEGRAM_PUSH_SCRIPT.
+# Inlined here (rather than importing autonomous_session_watch) so the poller
+# stays self-contained — it already runs as its own bg-Bash process and must
+# not pull the heavy watcher module into its import graph.
+_TELEGRAM_PUSH_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "notif_enqueue.sh"
+
+
+def _telegram_push(msg: str) -> bool:
+    """Best-effort phone notification via the my-goat digest queue.
+
+    FAIL-SOFT: a missing script or any subprocess error is logged and returns
+    False — it NEVER raises, so a missing my-goat install degrades the
+    escalation to "marker only" and never blocks the poller. Returns True only
+    on a confirmed enqueue (rc == 0).
+    """
+    override = os.environ.get("EPM_TELEGRAM_PUSH_SCRIPT", "").strip()
+    script = Path(override) if override else _TELEGRAM_PUSH_SCRIPT_DEFAULT
+    if not script.is_file():
+        log.warning("telegram push script missing at %s; push dropped", script)
+        return False
+    try:
+        res = subprocess.run(
+            ["bash", str(script), msg],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env={**os.environ, "NOTIF_CAT": "research"},
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        log.warning("telegram push failed: %s", e)
+        return False
+    if res.returncode != 0:
+        log.warning("telegram push failed: %s", (res.stderr or res.stdout).strip()[:200])
+        return False
+    return True
+
+
+def _maybe_escalate_gpu_idle(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    idle_since_epoch: int,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[set[str], bool]:
+    """Escalation wiring for ``poll_once``: parse state, decide, maybe escalate.
+
+    Called RIGHT AFTER ``_maybe_post_gpu_idle_advisory`` (so the advisory always
+    fires first on the same span) and fed that pass's resolved
+    ``idle_since_epoch`` so both tiers read the ONE shared span. Returns
+    ``(escalated_phases, escalated)`` for the caller to persist via
+    ``_save_state``.
+
+    On ``should_escalate``: post a LOUD ``[gpu-idle-escalation]`` ``epm:progress``
+    marker (``gpu_idle_escalation=True`` extra) AND fire a best-effort Telegram
+    push. NOTHING is stopped — the note states so explicitly. A marker-post
+    failure is logged and the phase is NOT recorded as escalated (next tick
+    retries), exactly like the advisory; a push failure is fail-soft and does
+    NOT block recording the escalation (the marker is the durable record).
+    """
+    escalated_phases = {
+        p for p in (prev_state.get("gpu_idle_escalated_phases", "") or "").split(",") if p
+    }
+    update = _gpu_idle_escalation_update(
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        idle_since_epoch=idle_since_epoch,
+        escalated_phases=escalated_phases,
+        now_epoch=now_epoch,
+        escalation_min=GPU_IDLE_ESCALATION_MIN,
+    )
+    if not update.should_escalate:
+        return escalated_phases, False
+    n_gpus = len([tok for tok in gpu_util.split(",") if tok.strip()])
+    idle_min = update.idle_span_sec // 60
+    note = (
+        f"[gpu-idle-escalation] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+        f"{idle_min} min on a MULTI-GPU pod in an upload/CPU-only phase "
+        f"(phase={current_phase}, gpu_util={gpu_util}). This is the #664 spend-leak class "
+        f"(an 8xH200 idle in a terminal upload phase burns ~$44/hr). REMEDY: route the "
+        f"upload off-pod / release the GPUs after a checkpoint — the FINAL upload phase is "
+        f"itself CPU-only (CLAUDE.md: CPU-only phases don't hold GPU pods). NOTHING was "
+        f"stopped — surfacing the spend leak for action."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_idle_escalation=True,
+        )
+    except Exception as exc:
+        log.error("gpu-idle escalation post failed (next tick will retry): %s", exc)
+        return escalated_phases, False
+    # Fail-soft phone push — never blocks recording the escalation.
+    _telegram_push(
+        f"[#{issue}] GPU-idle escalation: {n_gpus} GPUs idle {idle_min} min in "
+        f"phase={current_phase} on {pod} (#664 spend-leak class; nothing stopped)."
+    )
+    log.warning(
+        "ESCALATED gpu-idle for #%d: %d GPUs idle %d min in upload/CPU phase=%s (pod=%s)",
+        issue,
+        n_gpus,
+        idle_min,
+        current_phase,
+        pod,
+    )
+    escalated_phases.add(current_phase)
+    return escalated_phases, True
+
+
 # Minimum cumulative CPU-seconds delta between consecutive ticks before
 # declaring the launcher's process session "advancing". Set conservatively
 # so a single accounting quantum or a brief sleep across ticks does not
@@ -2303,6 +2567,23 @@ def poll_once(
         )
     )
 
+    # ── #664 GPU-idle ESCALATION ──────────────────────────────────────────
+    # A SECOND tier above the advisory: a MULTI-GPU pod idle past
+    # GPU_IDLE_ESCALATION_MIN minutes in an upload/CPU-only phase fires a
+    # Telegram push + a LOUD [gpu-idle-escalation] marker (never stops the
+    # pod). Reads the SAME idle span the advisory just resolved
+    # (gpu_idle_since_epoch) — no second idle clock.
+    gpu_idle_escalated_phases, gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
+        issue=issue,
+        pod=pod,
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        idle_since_epoch=gpu_idle_since_epoch,
+        prev_state=prev_state,
+        now_epoch=now_epoch,
+    )
+
     # New milestone? (re-uses ``prev_state`` loaded above for the
     # ssh_fail_count tracking — we only read state once per tick.)
     prev_phase = prev_state.get("phase", "")
@@ -2364,6 +2645,7 @@ def poll_once(
         phase_transitioned=phase_transitioned,
         ssh_failed=ssh_failed,
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
+        gpu_idle_escalation_posted=gpu_idle_escalation_posted,
         cpu_override_active=cpu_override_active,
         run_age_sec=run_age_sec,
         phase_changed_ago_sec=phase_changed_ago_sec,
@@ -2386,6 +2668,9 @@ def poll_once(
             # names match PHASE_RE ([a-z0-9_]+) so the comma join is safe.
             "gpu_idle_since_epoch": str(gpu_idle_since_epoch),
             "gpu_idle_advised_phases": ",".join(sorted(gpu_idle_advised_phases)),
+            # #664 escalation tier per-phase de-dup (shares the idle span
+            # above). Same comma-join contract as the advised set.
+            "gpu_idle_escalated_phases": ",".join(sorted(gpu_idle_escalated_phases)),
             # Persist the current CPU sample (observability) so the JSON
             # line / next tick can read the latest probe. Stored as the
             # literal probe string (``"unknown"`` or a float-as-string) so
@@ -2425,6 +2710,7 @@ def poll_once(
         shard_log_mtime_sec_ago=min(shard_log_mtime_ago, 10**9),
         gpu_util=gpu_util,
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
+        gpu_idle_escalation_posted=gpu_idle_escalation_posted,
         session_cpu_secs=current_session_cpu,
         cpu_advancing=cpu_advancing,
         next_interval=next_interval,
@@ -2497,6 +2783,7 @@ def main(argv: list[str] | None = None) -> int:
                 "shard_log_mtime_sec_ago": result.shard_log_mtime_sec_ago,
                 "gpu_util": result.gpu_util,
                 "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
+                "gpu_idle_escalation_posted": result.gpu_idle_escalation_posted,
                 "session_cpu_secs": result.session_cpu_secs,
                 "cpu_advancing": result.cpu_advancing,
                 "next_interval": result.next_interval,
