@@ -9,6 +9,8 @@ parent_id: 660
 goal: 'Phase 3 — test A3.6-A3.10 + joint factorization on the Phase-2 trained store:
   activation realized gate, whitened key-query gate (key/metric ablations), base-gate
   validity, drift decomposition; clustered CIs + single-context arm.'
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
