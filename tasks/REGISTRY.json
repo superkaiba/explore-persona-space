@@ -4581,8 +4581,8 @@
     "728": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/728",
-      "status": "reviewing",
+      "path": "tasks/completed/728",
+      "status": "completed",
       "title": "workflow-fix: canonical persona-vectors recipe (match paper, no logits) + enforce"
     },
     "729": {
