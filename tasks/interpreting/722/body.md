@@ -94,7 +94,7 @@ chain-ρ target E: eval_results/issue_537/G_tensor/G_meta.json
 
 What is plotted: per-cell ratio Δ_med ÷ floor_combined (the kill-criterion denominator), 3 behaviors × 3 layers. Δ_med = median over the base context grid of `|M⁺(c) − M0(c)|` along the behavior direction; 1× = at floor. Ridge fit, 16 source contexts, seed 42.
 
-![Heatmap of function-change over the kill-criterion floor for taught fact, harmful compliance (EM) and sycophancy at layers 7, 14, 21; taught fact reads 2.90, 3.29, 1.58, EM reads 0.34, 0.64, 0.64, sycophancy reads 3.18, 0.96, 0.12](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/hero_function_change_heatmap.png)
+![Heatmap of function-change over the kill-criterion floor for taught fact, harmful compliance (EM) and sycophancy at layers 7, 14, 21; taught fact reads 2.90, 3.29, 1.58, EM reads 0.34, 0.64, 0.64, sycophancy reads 3.18, 0.96, 0.12](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5132a5401f00cc07ec9c2ffbe55b6aa5fec8a0e1/figures/issue_722/hero_function_change_heatmap.png)
 
 > **Figure.** *Only the taught fact clears the noise floor at the primary layer.* Cells are Δ_med ÷ floor_combined; >1× means the map changed more than its own refit noise. n=16 source contexts, seed 42, ridge fit. Absolute magnitudes are in the next figure.
 
@@ -106,7 +106,7 @@ What is plotted: per-cell ratio Δ_med ÷ floor_combined (the kill-criterion den
 
 What is plotted: per cell, the raw function-change Δ_med next to its combined floor, in r_B units — the unnormalized data behind the heatmap ratio. Δ_med above floor = function changed; Δ_med ≈ floor = no detectable change.
 
-![Grouped bars of function-change delta vs combined floor for nine behavior-layer cells; fact bars exceed their floors, EM bars sit below, sycophancy L7 clears a tiny floor, sycophancy L21 sits far below a large floor](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/function_change_delta_vs_floor.png)
+![Grouped bars of function-change delta vs combined floor for nine behavior-layer cells; fact bars exceed their floors, EM bars sit below, sycophancy L7 clears a tiny floor, sycophancy L21 sits far below a large floor](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5132a5401f00cc07ec9c2ffbe55b6aa5fec8a0e1/figures/issue_722/function_change_delta_vs_floor.png)
 
 > **Figure.** *The taught-fact Δ towers over its floor; EM and late-layer sycophancy Δ sit below theirs.* Blue = Δ_med, orange = combined floor (= the M⁺ refit-variance null in every cell). Ridge fit, family-clustered bootstrap over 7 context families.
 
@@ -118,7 +118,7 @@ What is plotted: per cell, the raw function-change Δ_med next to its combined f
 
 What is plotted: per cell, the Spearman ρ between the held-out prediction along the behavior direction (`r_Bᵀ M̂(c)`) and the judge leakage rate E, under the base map M0 (orange) and post-FT map M⁺ (blue), 95% family-clustered CIs. A rightward shift = finetuning created a transfer the base map lacked.
 
-![Forest plot of chain rho under base map M0 and post-FT map M+ for nine cells; taught fact L14 and L21 post-FT points sit at +0.50 and +0.46 with CIs excluding zero while base points sit near zero; EM and sycophancy points cluster around zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/chain_rho_shift_forest.png)
+![Forest plot of chain rho under base map M0 and post-FT map M+ for nine cells; taught fact L14 and L21 post-FT points sit at +0.50 and +0.46 with CIs excluding zero while base points sit near zero; EM and sycophancy points cluster around zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5132a5401f00cc07ec9c2ffbe55b6aa5fec8a0e1/figures/issue_722/chain_rho_shift_forest.png)
 
 > **Figure.** *For the taught fact only, the context→leakage chain jumps from ≈0 in the base map to +0.46–0.50 post-finetuning.* Held-out LOCO ridge ρ vs #537's judge leakage rate E; 95% family-clustered CI over 7 families. EM and sycophancy chain shifts all straddle zero.
 
@@ -130,7 +130,7 @@ What is plotted: per cell, the Spearman ρ between the held-out prediction along
 
 What is plotted: per cell, the held-out cosine of the base map M0 predicting the post-FT profile v⁺, the post-FT map M⁺ predicting v⁺, and M⁺ predicting the *base* profile v0. The third bar is the asymmetry — how well the finetuned map back-predicts the base answer profile.
 
-![Grouped bars of cross-transfer cosines for nine cells; base-map and post-FT-map predictions of the post-FT profile both sit near zero, while the post-FT map predicting the base profile sits far below at -0.22 to -0.32](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/cross_transfer_orthogonality.png)
+![Grouped bars of cross-transfer cosines for nine cells; base-map and post-FT-map predictions of the post-FT profile both sit near zero, while the post-FT map predicting the base profile sits far below at -0.22 to -0.32](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5132a5401f00cc07ec9c2ffbe55b6aa5fec8a0e1/figures/issue_722/cross_transfer_orthogonality.png)
 
 > **Figure.** *Neither map predicts the post-FT profile (cosine ≈0), but the post-FT map predicts the base profile worst (−0.22 to −0.32).* Orange/blue = base/post-FT map → post-FT profile; green = post-FT map → base profile. Held-out cross-transfer cosine, 9 cells.
 
@@ -140,20 +140,21 @@ What is plotted: per cell, the held-out cosine of the base map M0 predicting the
 
 ### Why the EM/sycophancy verdict is inconclusive, not a clean "function held"
 
-What is plotted: per cell, the MLP's held-out base-map reconstruction ρ (blue) vs its shuffle null (gray). The MLP is trusted only where it beats the null (`rho_M0_mlp > rho_M0_shuffle`).
+What is plotted: per cell, the MLP's held-out base-map reconstruction ρ vs its shuffle null. The MLP is trusted only where `rho_M0_mlp > rho_M0_shuffle`.
 
-![Bars of MLP held-out rho vs shuffle null for nine cells; MLP bars fail to beat the shuffle null in eight of nine cells, passing only at taught fact layer 7](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/mlp_shuffle_diagnostic.png)
+![Bars of MLP held-out rho vs shuffle null for nine cells; MLP bars fail to beat the shuffle null in eight of nine cells, passing only at taught fact layer 7](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5132a5401f00cc07ec9c2ffbe55b6aa5fec8a0e1/figures/issue_722/mlp_shuffle_diagnostic.png)
 
 > **Figure.** *The nonlinear MLP map fails its shuffle null in 8 of 9 cells, passing only at taught fact, layer 7.* Blue = MLP held-out base-map ρ, gray = shuffle null. With the nonlinear fit unreliable, the ridge fit is the only valid map.
 
 - MLP fails the shuffle null in 8 of 9 cells (beating it only at fact L7, ρ=−0.077 vs −0.080), so the nonlinearity-gap read is dropped and the headline is ridge-only.
-- Hence inconclusive: certifying "function held" needs below-floor AND a passing MLP fit, and at n=16 single seed an at-floor Δ cannot be told from an underpowered fit.
-- Second limit: the per-cell Δ_med bootstrap CI is degenerate (point = lo = hi) — resampling 7 family labels over ~16 contexts collapses it to one value — so the cross-behavior pattern carries inference, not any single cell.
-- The positive fact result survives (floor 1.6–3.3×, chain-shift CI excludes zero); the n=16 single-seed regime caps confidence at LOW.
+- Inconclusive because certifying "function held" needs below-floor AND a passing MLP fit; at n=16 single seed an at-floor Δ is indistinguishable from an underpowered one.
+- The per-cell Δ_med bootstrap CI is degenerate (point = lo = hi), so the cross-behavior pattern carries inference, not any single cell.
+- The input `c_C` is source-keyed, so M sees only 16 distinct inputs, not 480 — the dominant cap on the read. <!-- concern-deferred: substrate-context-vec-keyed-to-source -->
+- The positive fact result survives: floor 1.6–3.3× and chain-shift CI excludes zero.
 
 ---
 
-**Repro:** Compute — GCP `eval-h100` lane (`a3-highgpu-2g`, 2× H100-80, FLEX_START), ~8 GPU-h across two launches (a first launch crashed in the SVD floor-refit path; relaunch wall 5h13m). No WandB run (analysis/fitting job). Code SHA [`3c051fcfad`](https://github.com/superkaiba/explore-persona-space/blob/3c051fcfad/scripts/issue722_fit_M.py) (`scripts/issue722_fit_M.py`, `issue722_analyze.py`, `issue722_bootstrap.py`, `issue722_load_activations.py`, `issue722_extract_fact_rb.py`); figure script `scripts/issue722_figures.py` at SHA [`9d23500b66`](https://github.com/superkaiba/explore-persona-space/blob/9d23500b663a4352223e99af907cc7842344f456/scripts/issue722_figures.py). Eval JSONs — [9 per-cell + 4 aggregate JSONs](https://github.com/superkaiba/explore-persona-space/tree/3c051fcfad/eval_results/issue_722) committed on the issue-722 branch (`function_change.json`, `chain_rho_M0_Mplus.json`, `cross_transfer.json`, `nonlinearity_gap.json`, `cells/`). Figures — [`figures/issue_722/`](https://github.com/superkaiba/explore-persona-space/tree/9d23500b66/figures/issue_722) at SHA `9d23500b66`. Crash diagnostics — [HF `issue722_partial/att-20260628-235255/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue722_partial). Reused artifacts:
+**Repro:** Compute — GCP `eval-h100` lane (`a3-highgpu-2g`, 2× H100-80, FLEX_START), ~8 GPU-h across two launches (a first launch crashed in the SVD floor-refit path; relaunch wall 5h13m). No WandB run (analysis/fitting job). Code SHA [`3c051fcfad`](https://github.com/superkaiba/explore-persona-space/blob/3c051fcfad/scripts/issue722_fit_M.py) (`scripts/issue722_fit_M.py`, `issue722_analyze.py`, `issue722_bootstrap.py`, `issue722_load_activations.py`, `issue722_extract_fact_rb.py`); figure script `scripts/issue722_figures.py` at SHA [`5132a5401f`](https://github.com/superkaiba/explore-persona-space/blob/5132a5401f00cc07ec9c2ffbe55b6aa5fec8a0e1/scripts/issue722_figures.py). Eval JSONs — [9 per-cell + 4 aggregate JSONs](https://github.com/superkaiba/explore-persona-space/tree/3c051fcfad/eval_results/issue_722) committed on the issue-722 branch (`function_change.json`, `chain_rho_M0_Mplus.json`, `cross_transfer.json`, `nonlinearity_gap.json`, `cells/`). Figures — [`figures/issue_722/`](https://github.com/superkaiba/explore-persona-space/tree/5132a5401f/figures/issue_722) at SHA `5132a5401f`. Crash diagnostics — [HF `issue722_partial/att-20260628-235255/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue722_partial). Reused artifacts:
 - Reused paired activation store from [#667](https://eps.superkaiba.com/tasks/667): [HF `issue667_gate_chain_preview/analysis_tensors`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue667_gate_chain_preview/analysis_tensors) (5760 `.npz`, seed 42, base+post-FT pairs) — fit: the only substrate carrying both base and post-FT activations on a matched context grid, the single thing that makes a pre/post M fit possible.
 - Reused behavior direction from [#658](https://eps.superkaiba.com/tasks/658): [HF `issue658_theory_assumptions/store/r_b.pt`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue658_theory_assumptions/store) (EM, sycophancy; `diffmeans`) — fit: same layer set + extraction recipe; taught-fact direction re-extracted here because #658 had no fact contrast.
 - Reused adapters from [#537](https://eps.superkaiba.com/tasks/537): `i537_*` (r=32, rsLoRA) — fit: consumed only transitively through #667's post-FT activations, never applied at runtime.
