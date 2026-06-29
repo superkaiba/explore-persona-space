@@ -28,6 +28,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_722.md](https://github.com/superkaiba/explore-persona-space/blob/3d7b7c6695201d826e7a82ef1ebd88ebc1bace5c/docs/methodology/issue_722.md) · [gist](https://gist.github.com/superkaiba/e6bb990f9c5a4be34360d2f2b319636e)
+
 ## Takeaways
 
 - **1.6–3.3× floor** — the taught-fact fitted context→answer map measurably reshapes after finetuning (3.3× at the primary layer; 2.9× / 1.6× elsewhere); the function moved, not just its input.
