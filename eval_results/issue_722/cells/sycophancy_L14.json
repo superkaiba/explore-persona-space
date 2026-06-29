@@ -1,0 +1,74 @@
+{
+  "behavior": "sycophancy",
+  "layer": 14,
+  "n_cells": 480,
+  "Delta_med": 0.02392308423272732,
+  "Delta_med_ci": {
+    "point": 0.02392308423272732,
+    "ci_lo": 0.02392308423272732,
+    "ci_hi": 0.02392308423272732,
+    "n_families": 7
+  },
+  "Delta_med_mean_ci": {
+    "point": 0.02213895464314305,
+    "ci_lo": 0.022138954643143048,
+    "ci_hi": 0.022138954643143055,
+    "n_families": 7
+  },
+  "Delta_med_excl_large_shift_ci": {
+    "point": 0.020090574283930115,
+    "ci_lo": 0.020090574283930115,
+    "ci_hi": 0.020090574283930115,
+    "n_families": 7
+  },
+  "floor_M0_refit": 0.0075625636509292,
+  "floor_Mplus_refit": 0.024966025331845384,
+  "floor_shifted": 5.3594273239845504e-06,
+  "floor_combined": 0.024966025331845384,
+  "floor_sd_combined": 0.006756878225244845,
+  "Delta_over_floor_sd": 3.540552816735192,
+  "support_distance": {
+    "mean": 35.123874277613986,
+    "p90": 42.00312609813611,
+    "n_large_shift": 30
+  },
+  "chain_rho": {
+    "n_with_E": 480,
+    "rho_M0_ridge": -0.08348529557469889,
+    "rho_Mplus_ridge": -0.12388016316909634,
+    "rho_diff_ridge": -0.04039486759439745,
+    "ci_M0_ridge": {
+      "point": -0.08348529557469889,
+      "ci_lo": -0.27859224704564095,
+      "ci_hi": 0.13833612296314365,
+      "n_families": 7
+    },
+    "ci_Mplus_ridge": {
+      "point": -0.12388016316909634,
+      "ci_lo": -0.2785072265127686,
+      "ci_hi": 0.02065484507371139,
+      "n_families": 7
+    },
+    "ci_diff_ridge": {
+      "point": -0.04039486759439745,
+      "ci_lo": -0.20159842753137405,
+      "ci_hi": 0.06340988516008628,
+      "n_families": 7
+    },
+    "rho_M0_mlp": -0.09207491962996231,
+    "rho_Mplus_mlp": -0.09614773386380525,
+    "rho_M0_shuffle": -0.032626392459308186,
+    "nonlin_gap_M0": -0.008589624055263423,
+    "nonlin_gap_Mplus": 0.027732429305291087
+  },
+  "cross_transfer": {
+    "m0_to_vplus_cos": -0.11059644104904437,
+    "mplus_to_vplus_cos": -0.11136728004135585,
+    "mplus_to_v0_cos": -0.25817811651040296
+  },
+  "n_families": 7,
+  "metadata": {
+    "issue": 722,
+    "generated_at": "2026-06-29T05:33:15Z"
+  }
+}
