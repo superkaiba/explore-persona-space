@@ -4659,8 +4659,8 @@
     "739": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/739",
-      "status": "proposed",
+      "path": "tasks/planning/739",
+      "status": "planning",
       "title": "Always-on LESSONS.md index + wire into agents (close rule load-timing gap)"
     },
     "74": {
