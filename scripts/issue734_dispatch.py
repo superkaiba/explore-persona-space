@@ -186,11 +186,18 @@ def assert_adapter_recipe_match(adapter_dir: Path, cell_key: str) -> dict:
 
 
 # ── On-policy R generation (trained model's own greedy responses) ─────────────
-def generate_onpolicy_R(model_path: str, source: str, questions: list[str]) -> list[dict]:
+def generate_onpolicy_R(
+    model_path: str, source: str, questions: list[str], *, tokenizer_id: str | None = None
+) -> list[dict]:
     """vLLM greedy gen of the trained model's OWN response per source-context question.
 
     Returns [{"question", "response_text"}] -- the on-policy R the corrected +
     mis-rooted readers consume. Chunked + use_tqdm=False (gotchas #613/#664).
+
+    ``tokenizer_id`` defaults to the Instruct tokenizer (the Phase-1 reused #664
+    adapters' base). H1 cells pass their OWN model id (base for ``h1_base_*``,
+    Instruct for ``h1_instruct_*``) so the chat-template render matches the model
+    the cell trained on -- never cross models (the reconciler-named H1 fix).
     """
     from vllm import LLM, SamplingParams
 
@@ -200,7 +207,7 @@ def generate_onpolicy_R(model_path: str, source: str, questions: list[str]) -> l
     tokenizer_prompts: list[str] = []
     from transformers import AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(C.INSTRUCT_ID, trust_remote_code=True)
+    tok = AutoTokenizer.from_pretrained(tokenizer_id or C.INSTRUCT_ID, trust_remote_code=True)
     for q in questions:
         msgs = C.source_messages(source, q)
         tokenizer_prompts.append(
@@ -234,105 +241,109 @@ def generate_onpolicy_R(model_path: str, source: str, questions: list[str]) -> l
         time.sleep(1.0)
 
 
-# ── Phase 1: corrected vs mis-rooted re-read on a reused #664 adapter ─────────
-def reread_cell(cell: C.Phase1Cell, *, smoke: bool, return_corrected_delta: bool = False):
-    """Re-read ONE reused #664 marker cell at BOTH slots on the SAME weights.
+# ── Shared corrected-vs-misrooted read (Phase 1 reuse + Phase 2 H1) ───────────
+def _corrected_misrooted_read(
+    *,
+    merged_path: str,
+    base_model_id: str,
+    tokenizer_id: str,
+    source: str,
+    questions: list[str],
+    band: tuple[float, float],
+    summary_meta: dict,
+    out_eval_key: str,
+    log_phase: str,
+    seed: int,
+    smoke: bool,
+) -> tuple[dict, float]:
+    """Read the marker DV at BOTH the corrected and the #664 mis-rooted slot, on
+    the SAME merged trained weights (trained AND base side), and write the per-cell
+    ``marker_slot_corrected.json``. Shared by the Phase-1 reuse path
+    (``reread_cell``, base = Instruct) and the Phase-2 H1 path (``reread_h1_cell``,
+    base = the H1 cell's OWN model). The corrected read threads token ids directly
+    (the FIX); the mis-rooted read uses ``compute_marker_slot_stats`` (the bug).
 
-    Writes eval_results/issue_734/corrected_reread/<eval_key>/marker_slot_corrected.json.
-    Returns the per-cell summary dict (and the mean corrected source delta when
-    return_corrected_delta is set, used by the parity probe + the falsify gate).
+    ``base_model_id`` is the matched base for the trained adapter (the corrected DV
+    is trained - base). ``tokenizer_id`` renders both R generation and the slot
+    reads with the model's OWN tokenizer -- the H1 cells use their own model so the
+    chat template never crosses models (the reconciler-named H1 fix).
+
+    Returns ``(summary_dict, corrected_source_delta_logp_mean)``.
     """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    from explore_persona_space.train.sft import merge_lora
-
     device = _resolve_device()
-    tokenizer = AutoTokenizer.from_pretrained(C.INSTRUCT_ID, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, trust_remote_code=True)
     C.assert_marker_token(tokenizer)
 
-    adapter_dir = download_reused_adapter(cell)
-    adapter_cfg = assert_adapter_recipe_match(adapter_dir, cell.eval_key)
-    inloop = read_inloop_band_stop(adapter_dir)
+    # The trained model's OWN greedy R (the on-policy DV is read on R), rendered
+    # through the cell's OWN tokenizer (base vs Instruct).
+    trained_R = generate_onpolicy_R(merged_path, source, questions, tokenizer_id=tokenizer_id)
+    msgs_list = [C.source_messages(source, r["question"]) for r in trained_R]
+    r_texts = [r["response_text"] for r in trained_R]
 
-    questions = C.marker_question_pool(smoke=smoke)
-    if smoke:
-        questions = questions[:2]
+    def _load(path: str):
+        m = AutoModelForCausalLM.from_pretrained(
+            path,
+            dtype=(torch.bfloat16 if device.startswith("cuda") else torch.float32),
+            device_map=({"": 0} if device.startswith("cuda") else None),
+            trust_remote_code=True,
+        ).eval()
+        return m if device.startswith("cuda") else m.to(device)
 
-    # Merge base + reused adapter (the corrected/mis-rooted reads both run on the
-    # SAME merged trained model -- single-variable: only the read code differs).
-    merged = C.REUSED_ADAPTER_CACHE / (cell.eval_key + "_merged")
-    merge_lora(C.INSTRUCT_ID, str(adapter_dir), str(merged), gpu_id=0)
+    # Corrected read: trained AND base, threading token ids directly (the FIX).
+    trained_model = _load(merged_path)
     try:
-        # The trained model's OWN greedy R (the on-policy DV is read on R).
-        trained_R = generate_onpolicy_R(str(merged), cell.source, questions)
-        msgs_list = [C.source_messages(cell.source, r["question"]) for r in trained_R]
-        r_texts = [r["response_text"] for r in trained_R]
-
-        def _load(path: str):
-            m = AutoModelForCausalLM.from_pretrained(
-                path,
-                dtype=(torch.bfloat16 if device.startswith("cuda") else torch.float32),
-                device_map=({"": 0} if device.startswith("cuda") else None),
-                trust_remote_code=True,
-            ).eval()
-            return m if device.startswith("cuda") else m.to(device)
-
-        # Corrected read: trained AND base, threading token ids directly (the FIX).
-        trained_model = _load(str(merged))
-        try:
-            trained_corr = RR.corrected_slot_stats(
-                trained_model,
-                tokenizer,
-                msgs_list,
-                r_texts,
-                marker_text=C.MARKER_TEXT,
-                marker_id=C.MARKER_ID,
-                eos_token_id=C.IM_END_ID,
-                device=device,
-            )
-            trained_mis = RR.misrooted_slot_stats(
-                trained_model,
-                tokenizer,
-                msgs_list,
-                r_texts,
-                marker_text=C.MARKER_TEXT,
-                eos_token_id=C.IM_END_ID,
-                device=device,
-            )
-        finally:
-            del trained_model
-            gc.collect()
-            _gpu_reclaim()
-
-        base_model = _load(C.INSTRUCT_ID)
-        try:
-            base_corr = RR.corrected_slot_stats(
-                base_model,
-                tokenizer,
-                msgs_list,
-                r_texts,
-                marker_text=C.MARKER_TEXT,
-                marker_id=C.MARKER_ID,
-                eos_token_id=C.IM_END_ID,
-                device=device,
-            )
-            base_mis = RR.misrooted_slot_stats(
-                base_model,
-                tokenizer,
-                msgs_list,
-                r_texts,
-                marker_text=C.MARKER_TEXT,
-                eos_token_id=C.IM_END_ID,
-                device=device,
-            )
-        finally:
-            del base_model
-            gc.collect()
-            _gpu_reclaim()
+        trained_corr = RR.corrected_slot_stats(
+            trained_model,
+            tokenizer,
+            msgs_list,
+            r_texts,
+            marker_text=C.MARKER_TEXT,
+            marker_id=C.MARKER_ID,
+            eos_token_id=C.IM_END_ID,
+            device=device,
+        )
+        trained_mis = RR.misrooted_slot_stats(
+            trained_model,
+            tokenizer,
+            msgs_list,
+            r_texts,
+            marker_text=C.MARKER_TEXT,
+            eos_token_id=C.IM_END_ID,
+            device=device,
+        )
     finally:
-        if merged.exists():
-            shutil.rmtree(merged)
+        del trained_model
+        gc.collect()
+        _gpu_reclaim()
+
+    base_model = _load(base_model_id)
+    try:
+        base_corr = RR.corrected_slot_stats(
+            base_model,
+            tokenizer,
+            msgs_list,
+            r_texts,
+            marker_text=C.MARKER_TEXT,
+            marker_id=C.MARKER_ID,
+            eos_token_id=C.IM_END_ID,
+            device=device,
+        )
+        base_mis = RR.misrooted_slot_stats(
+            base_model,
+            tokenizer,
+            msgs_list,
+            r_texts,
+            marker_text=C.MARKER_TEXT,
+            eos_token_id=C.IM_END_ID,
+            device=device,
+        )
+    finally:
+        del base_model
+        gc.collect()
+        _gpu_reclaim()
 
     # Per-context deltas (trained - base) in all three spaces, both reads.
     def _mean(vals: list[float]) -> float:
@@ -366,43 +377,140 @@ def reread_cell(cell: C.Phase1Cell, *, smoke: bool, return_corrected_delta: bool
             }
         )
 
-    band = C.band_for_dose(cell.dose)
     corr_mean = _mean(corr_deltas)
     summary = {
-        "experiment": "issue734_corrected_reread",
-        "cell": cell.eval_key,
-        "source": cell.source,
-        "arm": cell.arm,
-        "dose": cell.dose,
-        "seed": cell.seed,
         "band_target_nats": list(band),
         "corrected_source_delta_logp_mean": corr_mean,
         "misrooted_source_delta_logp_mean": _mean(mis_deltas),
-        "inloop_band_stop": inloop,  # the ground-truth install value (may be None)
         "corrected_in_band": (band[0] <= corr_mean <= band[1]),
-        "adapter_config_recipe": {
-            "r": adapter_cfg.get("r"),
-            "lora_alpha": adapter_cfg.get("lora_alpha"),
-            "use_rslora": adapter_cfg.get("use_rslora"),
-            "target_modules": adapter_cfg.get("target_modules"),
-        },
         "rows": rows,
-        "repro": C.repro_meta(seed=cell.seed),
+        "repro": C.repro_meta(seed=seed),
         "smoke": smoke,
+        **summary_meta,
     }
-    out_dir = C.CORRECTED_REREAD_ROOT / cell.eval_key
+    out_dir = C.CORRECTED_REREAD_ROOT / out_eval_key
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "marker_slot_corrected.json").write_text(json.dumps(summary, indent=2))
     logger.info(
-        "[phase1] %s corrected=%.2f nat (band %s) misrooted=%.2f nat in_band=%s",
-        cell.eval_key,
+        "[%s] %s corrected=%.2f nat (band %s) misrooted=%.2f nat in_band=%s",
+        log_phase,
+        out_eval_key,
         corr_mean,
         band,
         summary["misrooted_source_delta_logp_mean"],
         summary["corrected_in_band"],
     )
+    return summary, corr_mean
+
+
+# ── Phase 1: corrected vs mis-rooted re-read on a reused #664 adapter ─────────
+def reread_cell(cell: C.Phase1Cell, *, smoke: bool, return_corrected_delta: bool = False):
+    """Re-read ONE reused #664 marker cell at BOTH slots on the SAME weights.
+
+    Writes eval_results/issue_734/corrected_reread/<eval_key>/marker_slot_corrected.json.
+    Returns the per-cell summary dict (and the mean corrected source delta when
+    return_corrected_delta is set, used by the parity probe + the falsify gate).
+    """
+    from explore_persona_space.train.sft import merge_lora
+
+    adapter_dir = download_reused_adapter(cell)
+    adapter_cfg = assert_adapter_recipe_match(adapter_dir, cell.eval_key)
+    inloop = read_inloop_band_stop(adapter_dir)
+
+    questions = C.marker_question_pool(smoke=smoke)
+    if smoke:
+        questions = questions[:2]
+
+    # Merge base + reused adapter (the corrected/mis-rooted reads both run on the
+    # SAME merged trained model -- single-variable: only the read code differs).
+    merged = C.REUSED_ADAPTER_CACHE / (cell.eval_key + "_merged")
+    merge_lora(C.INSTRUCT_ID, str(adapter_dir), str(merged), gpu_id=0)
+    try:
+        summary, corr_mean = _corrected_misrooted_read(
+            merged_path=str(merged),
+            base_model_id=C.INSTRUCT_ID,  # the reused #664 adapters' base
+            tokenizer_id=C.INSTRUCT_ID,
+            source=cell.source,
+            questions=questions,
+            band=C.band_for_dose(cell.dose),
+            summary_meta={
+                "experiment": "issue734_corrected_reread",
+                "phase": "phase1_reuse",
+                "cell": cell.eval_key,
+                "source": cell.source,
+                "arm": cell.arm,
+                "dose": cell.dose,
+                "seed": cell.seed,
+                "inloop_band_stop": inloop,  # the ground-truth install value (may be None)
+                "adapter_config_recipe": {
+                    "r": adapter_cfg.get("r"),
+                    "lora_alpha": adapter_cfg.get("lora_alpha"),
+                    "use_rslora": adapter_cfg.get("use_rslora"),
+                    "target_modules": adapter_cfg.get("target_modules"),
+                },
+            },
+            out_eval_key=cell.eval_key,
+            log_phase="phase1",
+            seed=cell.seed,
+            smoke=smoke,
+        )
+    finally:
+        if merged.exists():
+            shutil.rmtree(merged)
+
     if return_corrected_delta:
         return summary, corr_mean
+    return summary
+
+
+def reread_h1_cell(cell: C.H1Cell, adapter_dir: Path, *, smoke: bool) -> dict:
+    """The Phase-2 H1 corrected on-policy read on a FRESHLY-trained H1 adapter
+    (the §6.5 registered deliverable the reconciler upheld as missing in round 1).
+
+    Runs ``generate_onpolicy_R`` + ``corrected_slot_stats`` (+ the mis-rooted
+    control) trained-vs-base on the H1 adapter with the H1 cell's OWN model + its
+    own tokenizer (base for ``h1_base_*``, Instruct for ``h1_instruct_*``) -- never
+    crossing models -- and writes the per-cell ``marker_slot_corrected.json`` under
+    the SAME registered glob the Phase-1 reread uses (so figure / aggregation code
+    consumes both phases uniformly). Returns the per-cell summary dict.
+    """
+    from explore_persona_space.train.sft import merge_lora
+
+    questions = C.marker_question_pool(smoke=smoke)
+    if smoke:
+        questions = questions[:2]
+
+    merged = C.ADAPTER_OUT / (cell.eval_key + ("_smoke" if smoke else "") + "_merged")
+    # Merge the H1 cell's OWN base model + the freshly-trained adapter (gpu_id 0
+    # matches the in-process CVD clobber the launcher pins per cell).
+    merge_lora(cell.model_id, str(adapter_dir), str(merged), gpu_id=0)
+    try:
+        summary, _ = _corrected_misrooted_read(
+            merged_path=str(merged),
+            base_model_id=cell.model_id,  # the H1 cell's matched base (NOT Instruct)
+            tokenizer_id=cell.model_id,  # render with the cell's OWN tokenizer
+            source=cell.source,
+            questions=questions,
+            band=C.band_for_dose(cell.dose),
+            summary_meta={
+                "experiment": "issue734_corrected_reread",
+                "phase": "phase2_h1",
+                "cell": cell.eval_key,
+                "model_key": cell.model_key,
+                "model_id": cell.model_id,
+                "source": cell.source,
+                "arm": cell.arm,
+                "dose": cell.dose,
+                "seed": cell.seed,
+            },
+            out_eval_key=cell.eval_key,
+            log_phase="phase2",
+            seed=cell.seed,
+            smoke=smoke,
+        )
+    finally:
+        if merged.exists():
+            shutil.rmtree(merged)
     return summary
 
 
@@ -568,11 +676,17 @@ def run_phase2(*, cells_limit: int | None, smoke: bool, dry_run: bool) -> dict:
     # 42 first; on a real run, HALT the base expansion if it misses the band.
     cells = sorted(cells, key=lambda c: (c.model_key != "base", c.seed))
     trained = []
+    corrected_read_cells = []  # the §6.5 H1 corrected-read deliverable (>=6 cells)
     base_first_in_band = None
+    # §7.5 H1-surprise escalation inputs: per-model on-policy corrected in-band reads.
+    base_corrected_in_band: dict[int, bool] = {}
+    instruct_corrected_in_band: dict[int, bool] = {}
     for cell in cells:
         if dry_run:
             logger.info(
-                "[phase2][dry-run] would train %s (model=%s, no GPU)", cell.eval_key, cell.model_id
+                "[phase2][dry-run] would train %s (model=%s) + corrected-read (no GPU)",
+                cell.eval_key,
+                cell.model_id,
             )
             continue
         out_dir = train_h1_cell(cell, smoke=smoke)
@@ -593,7 +707,44 @@ def run_phase2(*, cells_limit: int | None, smoke: bool, dry_run: bool) -> dict:
                     "issue734 §8 base-arm smoke gate FAILED: first base seed missed the "
                     "[5,12] band. Report base-resistance finding; do not chase knobs."
                 )
-    return {"trained_cells": trained, "base_first_seed_in_band": base_first_in_band}
+        # §6.5 registered deliverable + §3/§4/§7.5 H1 question: the corrected
+        # on-policy read on the freshly-trained H1 adapter (the reconciler-upheld
+        # round-2 fix -- round 1 trained the adapter but never read it on-policy).
+        h1_summary = reread_h1_cell(cell, out_dir, smoke=smoke)
+        corrected_read_cells.append(cell.eval_key)
+        in_band = bool(h1_summary["corrected_in_band"])
+        if cell.model_key == "base":
+            base_corrected_in_band[cell.seed] = in_band
+        else:
+            instruct_corrected_in_band[cell.seed] = in_band
+
+    # §7.5 H1-surprise escalation read (base reads in-band on-policy at the corrected
+    # slot but Instruct does NOT, recipe held exact -> model resistance is real and
+    # Instruct-specific). Surface the signal; the orchestrator/analyzer interpret it.
+    h1_surprise = (
+        not smoke
+        and bool(base_corrected_in_band)
+        and bool(instruct_corrected_in_band)
+        and all(base_corrected_in_band.values())
+        and not any(instruct_corrected_in_band.values())
+    )
+    if h1_surprise:
+        logger.warning(
+            "[phase2][§7.5 H1-SURPRISE] base reads IN-BAND on-policy at the corrected "
+            "slot on every seed but Instruct reads BELOW-band on every seed, recipe held "
+            "exact -- model resistance is real and Instruct-specific. Reporting as the "
+            "finding (base in-band=%s, instruct in-band=%s); not chasing recipe knobs.",
+            base_corrected_in_band,
+            instruct_corrected_in_band,
+        )
+    return {
+        "trained_cells": trained,
+        "corrected_read_cells": corrected_read_cells,
+        "base_first_seed_in_band": base_first_in_band,
+        "base_corrected_in_band": base_corrected_in_band,
+        "instruct_corrected_in_band": instruct_corrected_in_band,
+        "h1_surprise_escalation": h1_surprise,
+    }
 
 
 def run_phase3(*, smoke: bool, dry_run: bool) -> dict:

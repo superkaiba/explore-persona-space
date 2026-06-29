@@ -42,24 +42,43 @@ logger = logging.getLogger("issue734_marker_reread")
 # without loading torch until a reader actually runs.
 
 
-def _strip_to_first_marker(text: str, marker_text: str) -> str:
-    """Strip a trailing turn-end tail AND any emitted marker back to the FIRST
-    marker position (the #532 rule: read where the marker would FIRST appear,
-    never a second appended slot). Operates on the model's OWN response text R.
+# The assistant turn-end literal a skip_special_tokens=False vLLM run (or a
+# decode that surfaces special-token text) can leave in R. The corrected reader
+# MUST strip it so the appended marker lands BEFORE the assistant turn-end (the
+# marker's own trained slot) -- never AFTER it (the #664 mis-rooted slot).
+_TURN_END_LITERAL = "<|im_end|>"
 
-    The model's R may end with ``<|im_end|>\\n`` (a trained turn-end), and a
-    trained/emitting model may already carry ` ※`. We want the response text
-    UP TO the first marker (exclusive) so the corrected slot read appends the
-    marker at the first position it would fire.
+
+def _strip_to_first_marker(text: str, marker_text: str) -> str:
+    """Strip any emitted marker (back to the FIRST marker position) AND a trailing
+    assistant turn-end literal from the model's OWN response text R.
+
+    Two reasons (both load-bearing for the corrected slot, plan §4):
+      - #532 rule: read where the marker would FIRST appear, never a second
+        appended slot -- so truncate at the first ` ※`.
+      - The corrected marker must sit BEFORE the assistant turn-end. The vLLM
+        default (``skip_special_tokens=True``) strips ``<|im_end|>`` from R, but a
+        ``skip_special_tokens=False`` run (or a decode that surfaces it) leaves the
+        literal ``<|im_end|>\\n`` in R; if it survived into the completion,
+        ``apply_chat_template`` would render it as a special token INSIDE the
+        assistant content, pushing the appended marker AFTER the turn-end (the #664
+        mis-rooted slot). So strip a trailing ``<|im_end|>`` literal too.
+
+    Returns R up to the first marker (exclusive), with any trailing turn-end
+    literal removed, rstripped.
     """
     marker = marker_text.strip()
-    # Strip a leading/trailing whitespace-normalised tail; remove special-token
-    # text the decode may have surfaced (kept defensive — the on-policy R the
-    # caller passes is the decoded model response).
+    # 1. Truncate at the first emitted marker (read the FIRST marker position, #532).
     idx = text.find(marker)
     if idx >= 0:
         text = text[:idx]
-    return text.rstrip()
+    # 2. Strip a trailing assistant turn-end literal (idempotent; handles a
+    #    skip_special_tokens=False R). rstrip between/after so trailing whitespace
+    #    + newline around the turn-end don't survive.
+    text = text.rstrip()
+    while text.endswith(_TURN_END_LITERAL):
+        text = text[: -len(_TURN_END_LITERAL)].rstrip()
+    return text
 
 
 def build_corrected_row(
@@ -231,6 +250,14 @@ def corrected_slot_stats(
     return out
 
 
+# The assistant turn-end tail #664's own response R ended with, which the vLLM
+# default (``skip_special_tokens=True``) STRIPS from the regenerated R. The
+# mis-rooted negative control re-appends it explicitly so the appended-marker
+# slot lands AFTER the assistant turn-end -- faithfully reproducing #664's
+# post-turn-end slot (the reconciler-upheld negative-control fix, round 2).
+_ASSISTANT_TURN_END = "<|im_end|>\n"
+
+
 def misrooted_slot_stats(
     model,
     tokenizer,
@@ -245,31 +272,87 @@ def misrooted_slot_stats(
     """The #664 MIS-ROOTED read, reproduced as the labeled NEGATIVE CONTROL.
 
     Reproduces ``issue664_extract_store._contexts_for_read`` +
-    ``compute_marker_slot_stats``: decode ``prompt + R`` to TEXT (the model's own
-    response, which ends with ``<|im_end|>\\n``), strip a trailing literal marker,
-    then re-encode the text and read the slot at position -1. The appended marker
-    therefore lands AFTER the turn-end (the ``z_eos~12``, argmax=newline slot #664
-    observed). This decode->re-encode + post-turn-end slot IS the bug; kept ONLY to
-    reproduce #664's number on the same weights so the H3 delta is purely the read
-    fix (plan §5 Key control).
+    ``compute_marker_slot_stats``: decode ``prompt + R`` to TEXT, strip a trailing
+    literal marker, then re-encode the text and read the slot at position -1. To
+    faithfully reproduce #664's post-turn-end slot, this RE-APPENDS the assistant
+    turn-end ``<|im_end|>\\n`` between R and the appended marker.
+
+    Why the explicit re-append (round-2 reconciler fix, ``turn-end-tail-
+    normalization-broken`` negative-control horn): #664's stored R ended with the
+    assistant ``<|im_end|>\\n``, so its appended marker landed AFTER the turn-end
+    (the ``z_eos~12``, argmax=newline, ~ -37 nat slot #664 observed). But the R the
+    dispatcher regenerates comes from vLLM with the default ``skip_special_tokens=
+    True``, so ``outputs[0].text`` carries NO ``<|im_end|>`` -- without re-adding it
+    the appended marker would land INSIDE the assistant turn (close to the corrected
+    slot) and the negative control would NOT reproduce #664's number, collapsing the
+    within-weights H3 contrast. Re-appending ``<|im_end|>\\n`` puts the marker back
+    AFTER the turn-end -- matching ``issue664_extract_store._contexts_for_read``
+    (which decoded the FULL ``prompt+R`` ids, preserving the turn-end in the fused
+    chat-template render). This decode->re-encode + post-turn-end slot IS the bug;
+    kept ONLY to reproduce #664's number on the same weights so the H3 delta is
+    purely the read fix (plan §5 Key control).
+
+    Asserts the fused mis-rooted render carries the EXPECTED ``<|im_end|>`` count
+    (one MORE than the corrected slot would -- the re-added assistant turn-end), so
+    a silent regression to the corrected slot fails loud.
 
     Returns ``list[dict]`` per context with the same four-float keys.
     """
     from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
 
-    # Build the decoded prompt+R text context the #664 path read at (apply the
-    # chat template with the generation prompt, append R, strip a trailing marker).
-    contexts: list[str] = []
     marker = marker_text.strip()
+    # The chat-template wraps system + user with their own turn-ends; an
+    # add_generation_prompt=True prompt opens the assistant turn but does NOT close
+    # it. So the prompt text alone carries the system + user turn-ends; re-adding
+    # the assistant <|im_end|>\n closes the assistant turn so the slot
+    # compute_marker_slot_stats reads (the LAST context token, position -1) lands
+    # AT/AFTER the turn-end -- the post-turn-end slot #664 read.
+    #
+    # compute_marker_slot_stats reads P(marker) at position -1 of the CONTEXT (it
+    # does NOT append the marker to the text; it reads the next-token logits at the
+    # final context token). #664's context ended `...<|im_end|>\n`, so its read slot
+    # was the trailing `\n` (argmax=198 newline, base log P ~ -37 nat) -- the wrong,
+    # post-turn-end slot. We MUST preserve that trailing `\n` (no rstrip), or the
+    # read slot collapses to the `<|im_end|>` and then to R's last content token.
+    contexts: list[str] = []
     for msgs, r_text in zip(source_msgs_list, response_texts, strict=True):
         prompt_text = tokenizer.apply_chat_template(
             msgs, tokenize=False, add_generation_prompt=True
         )
-        full = prompt_text + r_text
-        stripped = full.rstrip()
-        while stripped.endswith(marker):
-            stripped = stripped[: -len(marker)].rstrip()
-        contexts.append(stripped)
+        # Strip any vLLM-default-stripped/emitted marker from R first (read the
+        # FIRST marker position, #532), preserving R's own content.
+        r_stripped = r_text.rstrip()
+        while r_stripped.endswith(marker):
+            r_stripped = r_stripped[: -len(marker)].rstrip()
+        # Close the assistant turn explicitly. The vLLM default strips <|im_end|>
+        # from R, so re-add it unless R already carries it (a skip_special_tokens=
+        # False run would -- idempotent). PRESERVE the trailing newline (the #664
+        # read slot) -- do NOT rstrip the assembled context.
+        if r_stripped.endswith(_ASSISTANT_TURN_END.strip()):
+            full = prompt_text + r_stripped + "\n"
+        else:
+            full = prompt_text + r_stripped + _ASSISTANT_TURN_END
+        contexts.append(full)
+
+    # Fail-loud assertion: the mis-rooted read context MUST carry the assistant
+    # turn-end -- i.e. >= 3 <|im_end|> tokens (system + user + assistant), one MORE
+    # than the corrected slot's 2 (system + user only). compute_marker_slot_stats
+    # reads the next-token logits at this context's LAST token, which sits AT/AFTER
+    # the re-added turn-end. A silent regression (R lost its turn-end and was NOT
+    # re-appended) would collapse the count back to 2 (the corrected slot), failing
+    # this assert (round-2 reconciler fix, turn-end-tail-normalization-broken).
+    if contexts:
+        probe_ids = tokenizer.encode(contexts[0], add_special_tokens=False)
+        n_imend = sum(1 for t in probe_ids if t == eos_token_id)
+        assert n_imend >= 3, (
+            f"misrooted_slot_stats: mis-rooted read context carries {n_imend} "
+            f"<|im_end|> tokens; expected >= 3 (system + user + the re-added "
+            f"assistant turn-end). The negative control must reproduce #664's "
+            f"POST-turn-end slot -- a count of 2 means R lost its turn-end and the "
+            f"read slot landed INSIDE the assistant turn (the corrected slot), "
+            f"collapsing the within-weights H3 contrast (round-2 reconciler fix)."
+        )
+
     return compute_marker_slot_stats(
         model,
         tokenizer,
