@@ -1,0 +1,11 @@
+---
+name: Compute the aggregate DV from the store yourself when the dispatcher died pre-aggregate
+description: A recovered run can land the store tensors + raw completions but never run the P2.5 aggregate / P2.4 judge; the analyzer computes the PRIMARY DV from tensors at analysis time
+type: feedback
+---
+
+When a run is manually recovered after the dispatcher session died mid-pipeline (no `epm:results`/`epm:upload-verification`), the store tensors + raw completions can be fully uploaded while the AGGREGATE phase (the deterministic DV computation) and the judge phase never ran. The PRIMARY DV may not exist as a precomputed JSON.
+
+**Why:** In #664 (Phase 2 leakage fleet) the dispatcher uploaded 48 adapters + 48 store cells (`tensors.pt` with `v_plus`, `v0`, `v_plus_probe`, `v0_probe`, all 28 layers) + 1425 raw-completion tuples, then died before P2.5 (compute `ĝ^real = ŵᵀΔv(C')/ŵᵀŵ`) and P2.4 (the 19-column Claude judge). `registry_eval_jsons/` held ONLY `completion_logp.json` (the secondary content DV); no `g_real.json`, no `judged_rates.json`, no `marker_slot_stats.json`.
+
+**How to apply:** (1) Read the extract-store script (`issue664_extract_store.py`) to confirm the tensor semantics match the DV construct (answer-side mean residual over the model's own greedy response tokens) before computing. (2) Stream the store one cell at a time (download → compute → `os.remove` the ~2GB blob) to stay under the VM 50GB analysis-footprint floor; the all-28-layer `*_probe` tensors are 50×50×28×3584 ≈ 1GB each. (3) Set `HF_HUB_DOWNLOAD_TIMEOUT=30` — the big-repo recursive `list_repo_files` 504s and individual blob downloads STALL silently (frozen `.incomplete` blob, process "alive" on a dead socket); a 30s timeout fails fast + retries. Kill+resume on a stall; `process_cell` skips cells whose output JSON exists, but a stalled cell leaves an EMPTY dir (created, json never written) — rmdir + recompute it explicitly. (4) HF 429 (rate-limit) kills the download mid-batch under fleet contention; back off ~90s (climbs at the minute boundary) and retry the remaining cells. (5) The content-behavior PRIMARY rate DV (judge) being absent is a real coverage gap to report, not something to silently skip — flag it and surface a free-analysis follow-up to batch-judge the uploaded completions.
