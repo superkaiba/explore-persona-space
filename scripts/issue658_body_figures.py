@@ -1,7 +1,3 @@
-# ruff: noqa: RUF001, RUF002, RUF003, SIM115
-# Intentional Unicode (ρ, –) in scientific docstrings + figure labels; the
-# module-top analyzer_body_data.json load is a deliberate fail-fast (the figures
-# need the analyzer artifact — a context-manager would not change that).
 """Clean-result figures for issue #658 (leakage-predictor base-model foundation).
 
 Reads the analyzer-prepared per-behavior summary (eval_results/issue_658/
@@ -269,30 +265,9 @@ def fig_a33_readout():
     plt.close(fig)
 
 
-def _build_pv_rb_figures() -> None:
-    """Fold in the persona-vectors-style r_B figures (Q1-Q5) when the fit landed.
-
-    The PV r_B amendment (plan v5) produces its A3.3 read-out figures from
-    ``eval_results/issue_658/persona-vectors-style-rb/aggregate.json`` via
-    ``issue658_rb_pv_figures``. Guarded: a no-op when the fit aggregate is absent
-    (so this script still runs on the original #658 body data alone).
-    """
-    fit_dir = Path("eval_results/issue_658/persona-vectors-style-rb")
-    if not (fit_dir / "aggregate.json").is_file():
-        return
-    import sys
-
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from issue658_rb_pv_figures import build_all
-
-    produced = build_all(fit_dir, "issue_658")
-    print(f"PV r_B figures: {len(produced)} written")
-
-
 if __name__ == "__main__":
     Path("figures/issue_658").mkdir(parents=True, exist_ok=True)
     fig_a32_verdict()
     fig_random_proj_control()
     fig_a33_readout()
-    _build_pv_rb_figures()
     print("DONE: 3 figures written to figures/issue_658/")
