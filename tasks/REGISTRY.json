@@ -4631,8 +4631,8 @@
     "735": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/735",
-      "status": "proposed",
+      "path": "tasks/planning/735",
+      "status": "planning",
       "title": "infra: harden shared HF uploader against transient 504 commit timeouts"
     },
     "74": {
