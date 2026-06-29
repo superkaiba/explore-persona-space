@@ -4541,7 +4541,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/722",
       "status": "interpreting",
-      "title": "Finetuning reshapes the context\u2192answer function for a taught fact but not for emergent misalignment or sycophancy, and the primary-layer verdict is inconclusive (LOW confidence)"
+      "title": "Finetuning a taught fact rewrites the context\u2192answer function itself, while finetuning EM only moves the input the function reads (MODERATE confidence)"
     },
     "723": {
       "has_clean_result": false,
