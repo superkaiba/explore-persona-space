@@ -4482,8 +4482,8 @@
       "goal": "Test whether DFT (stop-gradient probability-weighted SFT) produces less out-of-distribution emergent misalignment than standard SFT at matched in-distribution narrow-task acquisition, and characterize the mechanism (token gradient-mass, EM-direction projection, weight-delta sparsity/prunability).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/715",
-      "status": "verifying",
+      "path": "tasks/interpreting/715",
+      "status": "interpreting",
       "title": "Does DFT attenuate emergent misalignment relative to standard SFT?"
     },
     "716": {
