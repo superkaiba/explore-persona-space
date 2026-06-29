@@ -4541,7 +4541,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/722",
       "status": "interpreting",
-      "title": "Does finetuning change the context\u2192answer-profile mapping M, or only the input context vector? Fit M0 vs M\u207a (ridge + MLP) on #537 adapters"
+      "title": "Finetuning reshapes the context\u2192answer function for a taught fact but not for emergent misalignment or sycophancy, and the primary-layer verdict is inconclusive (LOW confidence)"
     },
     "723": {
       "has_clean_result": false,

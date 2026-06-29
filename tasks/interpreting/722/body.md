@@ -1,6 +1,7 @@
 ---
-title: 'Does finetuning change the context→answer-profile mapping M, or only the input
-  context vector? Fit M0 vs M⁺ (ridge + MLP) on #537 adapters'
+title: Finetuning reshapes the context→answer function for a taught fact but not for
+  emergent misalignment or sycophancy, and the primary-layer verdict is inconclusive
+  (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-28T20:32:55Z'
