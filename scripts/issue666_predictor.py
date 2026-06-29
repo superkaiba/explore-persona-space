@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# ruff: noqa: RUF002, RUF003
+# Intentional scientific Unicode (Σ, ρ, λ, η, δ, ŵ, ×, −, ⁻¹, ᵀ, ⁺) in docstrings/comments.
 """issue #666 Phase 4 — assemble the full leakage predictor L̂ + baselines, per cell.
 
 Iterates over store cells × target contexts, computing — at the PRIMARY layer 14 —
@@ -28,6 +30,7 @@ shared ``leakage_predictor`` module for L̂.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import gc
 import json
 import os
@@ -379,17 +382,18 @@ def main() -> int:
         layer = min(args.layer, loaded["v_plus"].shape[1] - 1)
         Sigma_inv, sres = _battery_sigma_inv(loaded, layer)
         rec = predict_cell(loaded, cell=cell, layer=layer, Sigma_inv=Sigma_inv)
-        rec["sigma_c_corpus_kind"] = "battery-diagnostic" if args.slice else "battery-diagnostic"
+        # The smoke driver uses the battery-Σc DIAGNOSTIC whitening (never headline);
+        # the production headline run threads the broad-corpus Σc⁻¹ from
+        # issue666_corpus_extract via predict_cell's Sigma_inv arg (plan §4c).
+        rec["sigma_c_corpus_kind"] = "battery-diagnostic"
         rec["sigma_c_headline_eligible"] = sres.headline_eligible
         outp = out_dir / f"{cell}_predictor_cells.json"
         outp.write_text(json.dumps(rec, indent=1))
         print(f"[predict] {cell}: rho_full={rec['rho_full_Lhat']:.3f} -> {outp.name}")
         del loaded
         gc.collect()
-        try:
+        with contextlib.suppress(OSError):
             os.remove(local_dir / "tensors.pt")
-        except OSError:
-            pass
     print(f"[phase=predictor] scored {len(cells)} cells OK")
     return 0
 
