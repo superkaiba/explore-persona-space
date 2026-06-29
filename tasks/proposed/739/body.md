@@ -98,6 +98,21 @@ the tens-of-K-token cost of always-loading every rule's full text.
    is on-demand, so it was not in context at plan time). Keep it to ~1-2 lines in
    CLAUDE.md; the specifics stay in their on-demand rules.
 
+6. **"Don't reinvent the wheel — use existing tools/helpers" principle.** Add a
+   ~1-line clause to CLAUDE.md's Critical Rules (and its `LESSONS.md` row),
+   EXTENDING the existing reuse cluster (the "Search before building — check
+   PyPI/HuggingFace/GitHub first" + "Reuse existing experiment code" + "Reuse
+   existing trained artifacts" bullets) to in-repo TOOLS/HELPERS: *before writing
+   any new script / helper / function, SEARCH the repo first (grep `scripts/` +
+   `src/`, and check sibling issue branches/worktrees) — if a tool already exists
+   for the job, USE it; don't rewrite what exists.* The existing bullets cover
+   external packages and experiment code/artifacts but NOT the general in-repo
+   tool/helper case. Motivated by #722: the vectorized helper already existed on
+   an unmerged branch and a rewrite was started before it was found (ties to the
+   built-but-stranded lesson, 3b). Place it adjacent to the existing "Search
+   before building" / "Reuse existing experiment code" bullets so the reuse
+   cluster reads coherently; keep it to ~1 line.
+
 ## Constraints / invariants
 
 - Workflow-surface only (`.claude/rules/**`, `.claude/agents/*.md`, `CLAUDE.md`,
