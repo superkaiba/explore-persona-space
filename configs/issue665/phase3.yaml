@@ -1,0 +1,67 @@
+# Issue #665 Phase 3 — A3.6-A3.10 + joint factorization config (plan §5/§10).
+#
+# Phase 3 reads its operative parameters from scripts/issue665_common.py constants
+# (the issue664 line's convention — no Hydra composition for analysis-only arms).
+# This file is the declarative reproducibility record of the production
+# hyperparameters the plan §5 declares; the constants in issue665_common.py are the
+# single source of truth, and these values MUST match them.
+
+issue: 665
+phase: 3
+base_model: Qwen/Qwen2.5-7B-Instruct
+tokenizer: Qwen/Qwen2.5-7B-Instruct
+
+# ── Read recipe (inherited, Source: #658) ─────────────────────────────────────
+cc_recipe: last  # last-input-token (#658 locked_recipe.json cc_recipe_lock)
+read_layers:
+  harmful_compliance: 8   # bad_medical primary (#658 a33 rho=0.692)
+  broad_em: 0             # ic/em primary (embedding layer — degenerate caveat)
+  broad_em_sensitivity: 13  # co-primary mid-layer (the embedding-layer caveat, §4)
+  fact_expression: 2      # taught-fact (a32, no working read-out — weakest, flagged)
+  marker: 24              # degenerate at-floor arm (kill a+b inherited)
+n_contexts: 50
+n_layers: 28
+hidden: 3584
+probe_split_R: 8
+
+# ── Whitened gate (B3 net-new) ────────────────────────────────────────────────
+whitened_lambda_default: 0.01
+whitened_lambda_sweep: [0.001, 0.01, 0.1]  # the 1e-3 floor is load-bearing (singular Sigma_c)
+metric_ablation: [I, diag_Sigma_inv, Sigma_inv]  # A3.9 metric cells
+
+# ── A3.6c GPU arm (the ONE GPU arm) ───────────────────────────────────────────
+a36c:
+  subset:  # top-install content cells (plan §4 scope decision)
+    - bm_default_contra_d2_seed42
+    - bm_librarian_contra_d2_seed42
+    - bm_default_posonly_d2_seed42
+    - tf_default_contra_d2_seed42
+  layer_sweep: [7, 14, 21]
+  n_bystanders: 8
+  scopes: [last, full]
+  variants: [p_up, p_down, self_c0, self_cp, random_cv, norm_matched]
+  parity_probe:  # BINDING precondition (#601 rsLoRA application-scaling)
+    cos_floor: 0.95
+    l2_ratio_tol: 0.10
+
+# ── Statistics (C3/C4) ────────────────────────────────────────────────────────
+fdr_alpha: 0.05            # Benjamini-Hochberg over assumption x recipe x layer x ablation
+bootstrap_B: 2000          # clustered bootstrap at family/source/seed
+cluster_keys: [family, source, seed]
+probe_split_halves: 2
+
+# ── Judge (behavioral DV E; SECONDARY companion) ──────────────────────────────
+judge_model: claude-sonnet-4-5-20250929  # via Anthropic Batch API (eval.batch_judge)
+judge_threshold: 50
+
+# ── Read scope ────────────────────────────────────────────────────────────────
+content_cells: 24   # 8 bad-medical + 8 insecure-code/EM + 8 taught-fact
+null_cells: 4       # ic_edu + tf_rev designed nulls
+marker_cells: 20    # LABELED at-floor degenerate arm (never the headline)
+
+# ── A3.7 deferral (store lacks t_minus) ───────────────────────────────────────
+a37:
+  positive_only_primary: true  # cos(w_hat, delta) is the B5-primary clean test
+  contrastive_deferred: true   # delta^contra needs t_minus (not in store; plan §11/§12 item 11)
+
+seeds: [42, 1042]  # seed-42 store + seed-1042 marker-stability pair (degenerate arm)
