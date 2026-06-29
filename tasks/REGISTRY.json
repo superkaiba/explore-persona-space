@@ -4159,8 +4159,8 @@
       "goal": "Phase 3 \u2014 test A3.6-A3.10 + joint factorization on the Phase-2 trained store: activation realized gate, whitened key-query gate (key/metric ablations), base-gate validity, drift decomposition; clustered CIs + single-context arm.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/665",
-      "status": "planning",
+      "path": "tasks/approved/665",
+      "status": "approved",
       "title": "Phase 3 \u2014 A3.6-A3.10 + joint factorization on the trained store (leakage program #660)"
     },
     "666": {
