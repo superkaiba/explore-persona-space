@@ -4177,7 +4177,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/667",
       "status": "followups_running",
-      "title": "The leakage-predictor gate chain holds in activation space \u2014 a base-context whitened gate predicts where a fine-tune's write lands as well as the post-fine-tuning model does \u2014 but the base read-out fails and the gate only partly reaches behavioral leakage (MODERATE confidence)"
+      "title": "A base-context whitened gate predicts where a fine-tune's write lands in activation space as well as the post-fine-tuning model does \u2014 but the base read-out fails and the gate only partly reaches behavioral leakage (MODERATE confidence)"
     },
     "668": {
       "has_clean_result": false,
