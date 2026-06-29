@@ -1040,9 +1040,14 @@ def test_reconcile_classifies_empty_stub_not_drift(fake_repo):
     assert 9002 not in [c.task_id for c in rep.stale_real]
     assert 9002 not in [c.task_id for c in rep.missing_real]
     assert 9002 not in [c.task_id for c in rep.skipped]
-    # No fabricated registry entry, no commit, the dir survives intact.
+    # No fabricated registry entry, the dir survives intact.
     assert "9002" not in _read_registry(repo)["tasks"]
-    assert _git_log_count(repo) == commits_before
+    # The stub id (9002 > highest_id 1) DOES bump highest_id — a single registry
+    # commit, NOT a fabricated entry — to keep the next create_task id past the
+    # on-disk stub (see test_reconcile_bumps_highest_id_for_empty_stub).
+    assert rep.highest_id_bumped is not None
+    assert _read_registry(repo)["highest_id"] == 9002
+    assert _git_log_count(repo) == commits_before + 1
     assert (stub / "artifacts").is_dir()
     assert rep.unresolved_count >= 1
     # CLI exits 1 because an empty stub remains.
@@ -1159,6 +1164,29 @@ def test_reconcile_bumps_highest_id(fake_repo):
 
     assert rep.highest_id_bumped is not None
     assert _read_registry(repo)["highest_id"] == 9999
+
+
+def test_reconcile_bumps_highest_id_for_empty_stub(fake_repo):
+    """A bodyless empty-stub dir whose id > highest_id MUST still bump highest_id,
+    even though the stub is NEVER written to the registry. Otherwise a later
+    create_task re-allocates the stub id and collides with the on-disk dir
+    (mkdir(exist_ok=False) crash in proposed/, silent dup elsewhere). Regression
+    for the round-1 _reconcile_highest_id-ignores-empty-stub-disk-ids BLOCKER:
+    the bump must consider ALL on-disk ids, not just registered ones."""
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="A"))  # highest_id = 1
+    _make_empty_stub(repo, 9999, status="completed")  # id 9999 > highest_id, NO body.md
+
+    rep = tw.reconcile_registry(apply=True)
+
+    # The bump fired and lifted highest_id to the stub id.
+    assert rep.highest_id_bumped is not None
+    assert _read_registry(repo)["highest_id"] == 9999
+    # No registry entry was fabricated for the stub (it has no body.md).
+    assert "9999" not in _read_registry(repo)["tasks"]
+    # The stub is still surfaced as unresolved drift, never reconciled.
+    assert 9999 in [c.task_id for c in rep.empty_stubs]
+    assert 9999 not in [c.task_id for c in rep.missing_real]
 
 
 def test_reconcile_clean_registry_is_noop(fake_repo):
