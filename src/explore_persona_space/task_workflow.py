@@ -2567,13 +2567,17 @@ def _reconcile_pending_change(p: _PendingReconcile, repo: Path) -> RegistryChang
     return _reconcile_change(p.task_id, p.drift_class, detail)
 
 
-def _reconcile_highest_id(reg: dict[str, Any]) -> None:
-    """Final sanity pass: bump highest_id to max registered id if it drifted
-    low. (A ``missing_real`` add already bumps it inside ``_registry_set``;
-    this also catches a registry whose highest_id drifted below max another
-    way.) Mutates ``reg`` in place."""
+def _reconcile_highest_id(reg: dict[str, Any], max_disk_id: int = 0) -> None:
+    """Final sanity pass: bump highest_id to ``max(max registered id, max ON-DISK
+    id)`` if it drifted low. (A ``missing_real`` add already bumps it inside
+    ``_registry_set``; this also catches a registry whose highest_id drifted
+    below max another way.) ``max_disk_id`` covers task-dir ids that are NEVER
+    written to ``reg["tasks"]`` — an ``empty_stub`` (a bodyless dir) is surfaced
+    but never fabricated into the registry, so its id would otherwise be invisible
+    here; leaving ``highest_id`` below such a stub id lets a later ``create_task``
+    re-allocate (and collide with) it. Mutates ``reg`` in place."""
     ids = [int(t) for t in reg.get("tasks", {})]
-    target = max(ids) if ids else 0
+    target = max([*ids, max_disk_id], default=0)
     if target > reg.get("highest_id", 0):
         reg["highest_id"] = target
 
@@ -2608,11 +2612,15 @@ def _reconcile_plan(
     list[_PendingReconcile],
     list[RegistryChange],
     list[RegistryChange],
+    dict[str, Path],
 ]:
     """Classify every drift between ``reg`` and the on-disk task tree into the
     four classes (stale_real / missing_real / empty_stub / skipped). Pure read;
     never mutates ``reg`` or the filesystem. See :func:`reconcile_registry` for
-    the class definitions."""
+    the class definitions. Also returns the ``str(task_id) -> Path`` ``disk``
+    map it scans, so the caller can fold the max ON-DISK id (incl. empty-stub
+    ids never written to the registry) into the ``highest_id`` bump without a
+    second scan."""
 
     def _has_body(p: Path) -> bool:
         # Cheap EXISTENCE check (classification, not a parse). Keeps an empty
@@ -2685,7 +2693,7 @@ def _reconcile_plan(
             continue
         missing_real.append(_PendingReconcile(int(tid), "missing_real", None, actual))
 
-    return stale_real, missing_real, empty_stubs, skipped
+    return stale_real, missing_real, empty_stubs, skipped, disk
 
 
 def _reconcile_apply_pending(
@@ -2744,15 +2752,18 @@ def reconcile_registry(*, apply: bool = False) -> ReconcileReport:
 
     if not apply:
         reg = _load_registry()
-        stale, missing, empty_stubs, skipped = _reconcile_plan(repo, td, reg)
+        stale, missing, empty_stubs, skipped, disk = _reconcile_plan(repo, td, reg)
         # Dry-run preview of the net highest_id bump (computed on a copy — no
-        # write). A missing_real adds an id; the bump is max(disk ids) vs the
-        # current highest_id.
+        # write). A missing_real adds an id; the bump is max(registered ids,
+        # ON-DISK ids) vs the current highest_id. The disk max covers empty-stub
+        # ids that are never written to the registry (so they cannot be found by
+        # scanning reg["tasks"]) yet still constrain the next free id.
         before = reg.get("highest_id", 0)
+        max_disk_id = max((int(t) for t in disk), default=0)
         preview: dict[str, Any] = {"highest_id": before, "tasks": dict(reg.get("tasks", {}))}
         for p in stale + missing:
             preview["tasks"][str(p.task_id)] = {"path": str(p.actual.relative_to(repo))}
-        _reconcile_highest_id(preview)
+        _reconcile_highest_id(preview, max_disk_id)
         return ReconcileReport(
             applied=False,
             stale_real=[_reconcile_pending_change(p, repo) for p in stale],
@@ -2768,10 +2779,11 @@ def reconcile_registry(*, apply: bool = False) -> ReconcileReport:
         # registry since any dry-run, so a stale task simply reclassifies.
         reg = _load_registry()
         highest_before = reg.get("highest_id", 0)
-        stale, missing, empty_stubs, skipped = _reconcile_plan(repo, td, reg)
+        stale, missing, empty_stubs, skipped, disk = _reconcile_plan(repo, td, reg)
+        max_disk_id = max((int(t) for t in disk), default=0)
         applied_stale = _reconcile_apply_pending(reg, stale, skipped)
         applied_missing = _reconcile_apply_pending(reg, missing, skipped)
-        _reconcile_highest_id(reg)
+        _reconcile_highest_id(reg, max_disk_id)
         bumped = _reconcile_bump_change(highest_before, reg.get("highest_id", 0))
         if applied_stale or applied_missing or bumped:
             _save_registry(reg)
