@@ -81,6 +81,23 @@ the tens-of-K-token cost of always-loading every rule's full text.
    in `LESSONS.md` and vice-versa, so the index cannot silently drift as rules
    are added/removed. Add/adjust the corresponding test under `tests/`.
 
+5. **General always-on "vectorize/parallelize by default" principle.** Add a
+   one-to-two-line standing rule to CLAUDE.md's Critical Rules (and its row in
+   `LESSONS.md`): *default to vectorized / batched / parallel execution — a
+   Python loop over INDEPENDENT units (LOCO folds, cells, layers, dims, rows,
+   model forwards, judge/API calls, subagent tasks) is a smell; batch it into
+   tensor ops / a vLLM batch / concurrent dispatch before reaching for more
+   compute.* Name the recurring offenders and point to the specific rules that
+   already exist but lack an always-on umbrella: `code-style.md` ("vectorize
+   torch ops — no Python loops over tensor dims" + "batch data-parallel
+   forwards"), `.claude/rules/vectorize-many-cell-fits.md` (per-fold/per-cell GD
+   sweeps), the always-on "use vLLM for generation, never sequential
+   `model.generate()`" bullet, and the "don't sequentially block N parallel
+   subagents" bullet. This is the umbrella those scattered, mostly-on-demand
+   rules currently lack — exposed by the #722 load-timing gap (the vectorize rule
+   is on-demand, so it was not in context at plan time). Keep it to ~1-2 lines in
+   CLAUDE.md; the specifics stay in their on-demand rules.
+
 ## Constraints / invariants
 
 - Workflow-surface only (`.claude/rules/**`, `.claude/agents/*.md`, `CLAUDE.md`,
