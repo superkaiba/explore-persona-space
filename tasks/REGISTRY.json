@@ -4553,8 +4553,8 @@
     "725": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/725",
-      "status": "running",
+      "path": "tasks/reviewing/725",
+      "status": "reviewing",
       "title": "daily-fix: living_docs.py check degrade on bad task, not crash nightly pass"
     },
     "726": {
