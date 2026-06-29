@@ -3671,6 +3671,313 @@ def _resolve_repo_root() -> Path | None:
         return None
 
 
+# ─── #732: judge-API-error denominator gate (check_judge_error_denominator) ──
+#
+# A judge-denominator CLAIM: an `n=N` (N>=100) or an "N completions /
+# judgments / attempted / EM" token. Used to detect whether a clean-result
+# body asserts a bare LLM-judge denominator.
+_JUDGE_DENOMINATOR_RE = re.compile(
+    r"\bn\s*=\s*(\d{3,})\b"
+    r"|\b(\d{3,})\s+(?:completions|judgments|judgements|attempted|EM\b)",
+    re.IGNORECASE,
+)
+# A judge-context guard: the denominator claim only counts when it co-occurs
+# (within a small window) with a judge noun — so a bare training-row count
+# ("6349 training rows") does NOT trigger the eval-JSON read.
+_JUDGE_CONTEXT_RE = re.compile(
+    r"claude-sonnet|\bjudge\b|EM rate|misalign|Batch API|sycophan|refusal|\btrait\b|\bfact\b",
+    re.IGNORECASE,
+)
+# A disclosure phrase: present near the claim (or in the **Repro:** footer)
+# ⇒ the body already discloses the judge-error fraction ⇒ PASS before any
+# eval read. Broad on purpose (≥11 alternations); the published #715 body
+# matches several.
+_JUDGE_ERROR_DISCLOSURE_RE = re.compile(
+    r"\b529\b|Overloaded|judge[-\s]?error|judge[-\s]?API[-\s]?error"
+    r"|n_judge_error|n_em_judge_error|excluded from the denominator"
+    r"|excluded from the per-cell denominator"
+    r"|post-correction|judge-error-corrected|API[-\s]?error|judge_failed"
+    # U+2212 MINUS SIGN below is intentional: it matches the unicode minus the
+    # #715 body uses in its "400 (U+2212) n_judge_error" disclosure phrasing.
+    r"|[-−]\s*n_judge_error",  # noqa: RUF001
+    re.IGNORECASE,
+)
+# Recognized judge-API-error count fields in committed eval JSONs.
+# NOTE: `n_parse_error` is the DISTINCT judge-side parse-failure class, NOT
+# the 529 API-error class — deliberately excluded here (§11).
+_JUDGE_ERROR_COUNT_KEYS = ("n_judge_error", "n_em_judge_error", "n_api_error")
+# Recognized per-cell ATTEMPTED-count fields (the denominator). Two source
+# classes use different names: corrected-pareto leaf cells carry
+# `n_em_attempted`; per-cell em_rate aggregates carry `n_total`. The scan
+# tries each in order until one resolves on a given cell dict.
+_JUDGE_ATTEMPTED_COUNT_KEYS = ("n_em_attempted", "n_attempted", "n_total")
+
+
+def _judge_denominator_claims(scan_region: str) -> list[re.Match]:
+    """Return the judge-denominator claim matches in `scan_region` that
+    co-occur (within ±120 chars) with a judge noun. The window guard keeps
+    the check from firing on a bare training-row count."""
+    out: list[re.Match] = []
+    for m in _JUDGE_DENOMINATOR_RE.finditer(scan_region):
+        lo = max(0, m.start() - 120)
+        hi = min(len(scan_region), m.end() + 120)
+        if _JUDGE_CONTEXT_RE.search(scan_region[lo:hi]):
+            out.append(m)
+    return out
+
+
+def _eval_root_from_body_path(body_source_path: Path, eval_subpath: Path) -> Path | None:
+    """Leg (ii) of the eval-root ladder: walk the body source path's
+    ancestors; return the nearest ancestor that is a repo root (a `.git`
+    entry — file OR dir; a worktree's `.git` is a FILE) or a
+    `.claude/worktrees/issue-<M>` worktree dir, AND contains `eval_subpath`.
+    None when none match."""
+    try:
+        ancestors = list(body_source_path.resolve().parents)
+    except OSError:
+        return None
+    for p in ancestors:
+        try:
+            is_repo_root = (p / ".git").exists()
+        except OSError:
+            is_repo_root = False
+        if not is_repo_root:
+            is_repo_root = (
+                re.match(r"issue-\d+", p.name) is not None and p.parent.name == "worktrees"
+            )
+        if is_repo_root:
+            try:
+                if (p / eval_subpath).is_dir():
+                    return p
+            except OSError:
+                continue
+    return None
+
+
+def _git_toplevel_eval_root(eval_subpath: Path) -> Path | None:
+    """Leg (iii) of the eval-root ladder: `git rev-parse --show-toplevel`
+    from cwd, returned only when it contains `eval_subpath`. Conservative —
+    any nonzero exit / OSError → None."""
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=os.getcwd(),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    top = proc.stdout.strip()
+    if not top:
+        return None
+    root = Path(top)
+    try:
+        return root if (root / eval_subpath).is_dir() else None
+    except OSError:
+        return None
+
+
+def _resolve_eval_root(
+    issue: int,
+    *,
+    eval_root: Path | None = None,
+    body_source_path: Path | None = None,
+) -> Path | None:
+    """Resolve the ROOT directory under which `eval_results/issue_<N>/`
+    lives, walking the §4.2a four-leg ladder and STOPPING at the first leg
+    that yields a directory containing `eval_results/issue_<N>/`:
+
+      (i)   `eval_root` (explicit `--eval-root`, gate-time worktree path),
+      (ii)  the `--file`-derived worktree root (nearest `.git` ancestor of
+            the body source path, or a `.claude/worktrees/issue-<M>` segment),
+      (iii) `git rev-parse --show-toplevel` from cwd,
+      (iv)  `_resolve_repo_root()` (MAIN — bottom-of-ladder, post-merge bind).
+
+    Returns the ROOT (the directory CONTAINING `eval_results/`), not the eval
+    dir itself, so `_scan_issue_judge_errors(root, issue)` keeps its
+    `root / "eval_results" / f"issue_{issue}"` join. Returns None when no leg
+    resolves — the check then graceful-PASSes (never a false FAIL on missing
+    data). The MAIN-only resolution of v2 is now leg (iv), not the only path.
+    """
+    eval_subpath = Path("eval_results") / f"issue_{issue}"
+
+    # Leg (i): explicit --eval-root.
+    if eval_root is not None:
+        try:
+            if (eval_root / eval_subpath).is_dir():
+                return eval_root
+        except OSError:
+            pass
+
+    # Leg (ii): --file-derived worktree root.
+    if body_source_path is not None:
+        hit = _eval_root_from_body_path(body_source_path, eval_subpath)
+        if hit is not None:
+            return hit
+
+    # Leg (iii): cwd `git rev-parse --show-toplevel` (conservative).
+    hit = _git_toplevel_eval_root(eval_subpath)
+    if hit is not None:
+        return hit
+
+    # Leg (iv): MAIN repo root (the v2 behavior, now the tail fallback).
+    main_root = _resolve_repo_root()
+    if main_root is not None:
+        try:
+            if (main_root / eval_subpath).is_dir():
+                return main_root
+        except OSError:
+            return None
+    return None
+
+
+def _first_count(cell: dict, keys: tuple[str, ...]) -> int | None:
+    """Return the first numeric value found under `keys` in `cell`, or None.
+    Non-numeric / bool values are ignored (a bool is not a valid count)."""
+    for k in keys:
+        v = cell.get(k)
+        if isinstance(v, bool):
+            continue
+        if isinstance(v, (int, float)):
+            return int(v)
+    return None
+
+
+def _scan_issue_judge_errors(repo: Path, issue: int) -> dict | None:
+    """Scan the committed `repo/eval_results/issue_<N>/` JSON tree for a
+    judge-API-error signal. Returns
+    ``{"total_err", "total_att", "worst_frac", "n_cells", "source"}`` or
+    None when no recognized judge-error signal is found (graceful skip).
+
+    A "cell" is any dict in the JSON tree that carries BOTH a recognized
+    judge-error count key (`_JUDGE_ERROR_COUNT_KEYS`) AND a recognized
+    attempted-count key (`_JUDGE_ATTEMPTED_COUNT_KEYS`) — found by recursive
+    descent, so the nested
+    `pareto_*_corrected.json` shape (`cells: {cond: {seed: [step_dicts]}}`)
+    and the flat per-cell `em_rate/*.json` aggregate convention both resolve.
+    `n_parse_error` is NOT a recognized judge-error key (it is the distinct
+    parse-failure class), so an eval dir whose only count field is
+    `n_parse_error` returns None (graceful PASS).
+
+    The `EPM_VERIFY_BODY_NO_EVAL_SCAN=1` env fence disables the disk read
+    (returns None) so the suite + offline runs are deterministic.
+    """
+    if os.environ.get("EPM_VERIFY_BODY_NO_EVAL_SCAN") == "1":
+        return None
+    eval_dir = repo / "eval_results" / f"issue_{issue}"
+    if not eval_dir.is_dir():
+        return None
+
+    leaves: list[tuple[int, int]] = []  # (judge_error, attempted) per cell
+
+    def _descend(node: object) -> None:
+        if isinstance(node, dict):
+            err = _first_count(node, _JUDGE_ERROR_COUNT_KEYS)
+            att = _first_count(node, _JUDGE_ATTEMPTED_COUNT_KEYS)
+            if err is not None and att is not None:
+                leaves.append((err, att))
+                return  # this dict IS a cell; do not double-count children
+            for v in node.values():
+                _descend(v)
+        elif isinstance(node, list):
+            for v in node:
+                _descend(v)
+
+    for path in sorted(eval_dir.rglob("*.json")):
+        try:
+            payload = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue  # a corrupt / unreadable artifact must not crash the gate
+        _descend(payload)
+
+    if not leaves:
+        return None
+
+    total_err = sum(e for e, _a in leaves)
+    total_att = sum(a for _e, a in leaves)
+    worst_frac = max((e / a if a else 0.0) for e, a in leaves)
+    return {
+        "total_err": total_err,
+        "total_att": total_att,
+        "worst_frac": worst_frac,
+        "n_cells": len(leaves),
+        "source": "eval-json",
+    }
+
+
+def check_judge_error_denominator(
+    body: str,
+    *,
+    issue: int | None = None,
+    eval_root: Path | None = None,
+    body_source_path: Path | None = None,
+) -> CheckResult:
+    """FAIL/WARN when a clean-result body asserts a BARE LLM-judge
+    denominator (`n=N` / "N completions / EM") in a judge-context section
+    WITHOUT disclosing the judge-API-error fraction, while the committed
+    `eval_results/issue_<N>/` JSONs show a non-trivial fraction of rows
+    returned Anthropic Batch API 529-overload errors that were silently
+    counted into the denominator (the /issue 715 R1 trap).
+
+    Verdict ladder (§4.3): PASS when (a) no bare judge denominator is
+    asserted, (b) the body discloses, (c) the issue is unknown / eval root
+    unresolvable / no recognized judge-error signal exists (graceful skip);
+    WARN at >1% (worst-cell OR pooled); FAIL at >5%.
+    """
+    name = "judge-API-error denominator disclosed"
+    # Generation gate: only structured (v3 / v4) bodies. Legacy / v2 PASS
+    # vacuously (forward-grandfathering, matching every generation-gated check).
+    if not (is_v3(body) or is_v4(body)):
+        return CheckResult(name, True, "skipped — legacy/v2 body")
+
+    method = section_text(body, "Methodology") or ""
+    results_s = section_text(body, "Results") or ""
+    footer = _v4_footer_text(body) or ""
+    scan_region = _strip_fenced_blocks(method + "\n" + results_s)
+
+    claims = _judge_denominator_claims(scan_region)
+    if not claims:
+        return CheckResult(name, True, "no judge denominator asserted")
+
+    disclosed_region = scan_region + "\n" + footer
+    if _JUDGE_ERROR_DISCLOSURE_RE.search(disclosed_region):
+        return CheckResult(name, True, "judge-error fraction disclosed in body")
+
+    if issue is None:
+        return CheckResult(
+            name, True, "skipped — issue number unknown (stdin); cannot read eval_results"
+        )
+
+    repo = _resolve_eval_root(issue, eval_root=eval_root, body_source_path=body_source_path)
+    if repo is None:
+        return CheckResult(name, True, "skipped — eval root unresolved", is_warn=True)
+
+    stats = _scan_issue_judge_errors(repo, issue)
+    if stats is None:
+        return CheckResult(
+            name, True, "no judge-error data available in committed eval JSONs — graceful skip"
+        )
+
+    pooled = stats["total_err"] / max(stats["total_att"], 1)
+    worst = stats["worst_frac"]
+    detail = (
+        f"{stats['total_err']} rows (worst cell {worst:.1%}, pooled {pooled:.1%}) "
+        f"returned judge-API errors and were silently counted into the n=<...> "
+        f"denominator with no disclosure. Recompute as "
+        f"n_misaligned/(n_attempted - n_judge_error) and disclose the excluded fraction."
+    )
+    if worst > 0.05 or pooled > 0.05:
+        return CheckResult(name, False, detail)
+    if worst > 0.01 or pooled > 0.01:
+        return CheckResult(name, True, detail, is_warn=True)
+    return CheckResult(
+        name, True, f"judge-error fraction below 1% (worst {worst:.1%}, pooled {pooled:.1%})"
+    )
+
+
 def _git_object_exists(repo: Path, sha: str, path: str) -> tuple[str, str]:
     """Return ('pass', '') if `git cat-file -e <sha>:<path>` succeeds,
     ('fail', detail) if the sha resolves but the path is absent, or
@@ -6361,6 +6668,9 @@ def verify_text(
     plan_path: Path | None = None,
     original_body_path: Path | None = None,
     methodology_doc_path: Path | None = None,
+    issue: int | None = None,
+    eval_root: Path | None = None,
+    body_source_path: Path | None = None,
 ) -> tuple[bool, list[CheckResult]]:
     """Run every clean-result check on ``raw`` body.md text.
 
@@ -6442,6 +6752,15 @@ def verify_text(
     # the body-only CHECKS list. NO-OP PASS on v2 / legacy bodies and
     # whenever no doc is supplied (gate-timing — see the check docstring).
     results.append(check_body_params_subset_of_doc(body, methodology_doc_path=methodology_doc_path))
+    # Check (#732, judge-API-error denominator) needs the issue number AND
+    # the eval-root / body-source-path resolution legs (the body-only CHECKS
+    # list carries none of these), so it also lives outside CHECKS. Graceful
+    # PASS when the issue is unknown or no eval data is reachable.
+    results.append(
+        check_judge_error_denominator(
+            body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
+        )
+    )
     overall = all(r.passed for r in results)
     return overall, results
 
@@ -6452,6 +6771,33 @@ def _load_text_for_issue(number: int) -> tuple[str, Path]:
     folder = find_task_path(number)
     body_path = folder / "body.md"
     return body_path.read_text(), body_path
+
+
+def _resolve_file_siblings(
+    body_source_path: Path,
+) -> tuple[Path | None, Path | None, Path | None, int | None]:
+    """For a ``--file <body.md>`` invocation, resolve the sibling
+    artifacts a ``tasks/<status>/<N>/body.md`` layout carries so the
+    sibling-dependent checks fire on analyzer-side dry runs: the Lens 14
+    concerns audit (``concerns.jsonl``), check-16 lr reconciliation
+    (``plans/plan.md``), and check-17 context-provenance read
+    (``original-body.md``). Also opportunistically parses the issue number
+    from the parent dir name (so the #732 judge-error-denominator check
+    binds). Returns ``(concerns_path, plan_path, original_body_path,
+    issue)`` — each None when the corresponding sibling is absent / the
+    dir name is not numeric.
+    """
+    parent = body_source_path.parent
+    concerns = parent / "concerns.jsonl"
+    plan = parent / "plans" / "plan.md"
+    orig = parent / "original-body.md"
+    issue = int(parent.name) if parent.name.isdigit() else None
+    return (
+        concerns if concerns.exists() else None,
+        plan if plan.exists() else None,
+        orig if orig.exists() else None,
+        issue,
+    )
 
 
 def main() -> int:
@@ -6471,20 +6817,38 @@ def main() -> int:
             "NO-OP PASS when omitted or the file does not exist."
         ),
     )
+    parser.add_argument(
+        "--eval-root",
+        help=(
+            "path to the ROOT directory under which eval_results/issue_<N>/ lives "
+            "(check judge-API-error denominator, #732). The orchestrator passes the "
+            "issue-worktree root explicitly at the Step 9a-bis pre-merge gate, since "
+            "the eval JSONs are not yet on main pre-merge. When omitted, the check "
+            "resolves the eval root via the --file-derived / cwd / MAIN ladder, and "
+            "graceful-PASSes when none reach the dir."
+        ),
+    )
     args = parser.parse_args()
 
     concerns_path: Path | None = None
     plan_path: Path | None = None
     original_body_path: Path | None = None
     methodology_doc_path: Path | None = None
+    issue: int | None = None
+    eval_root: Path | None = None
+    body_source_path: Path | None = None
     if args.methodology_doc:
         cand = Path(args.methodology_doc).expanduser()
         if cand.exists():
             methodology_doc_path = cand
+    if args.eval_root:
+        eval_root = Path(args.eval_root).expanduser()
     if args.issue is not None:
         try:
             raw, source_path = _load_text_for_issue(args.issue)
             source = str(source_path)
+            issue = args.issue
+            body_source_path = source_path.resolve()
             concerns_path = source_path.parent / "concerns.jsonl"
             plan_path = source_path.parent / "plans" / "plan.md"
             original_body_path = source_path.parent / "original-body.md"
@@ -6505,21 +6869,12 @@ def main() -> int:
     elif args.file:
         raw = Path(args.file).read_text()
         source = args.file
-        # When verifying a body.md by file path, look for siblings
-        # (concerns.jsonl, plans/plan.md, original-body.md) so the Lens 14
-        # audit, the check-16 lr reconciliation, and the check-17 context-
-        # provenance read fire for analyzer-side dry runs against a body
-        # in tasks/<status>/<N>/.
-        parent = Path(args.file).resolve().parent
-        sibling = parent / "concerns.jsonl"
-        if sibling.exists():
-            concerns_path = sibling
-        plan_sibling = parent / "plans" / "plan.md"
-        if plan_sibling.exists():
-            plan_path = plan_sibling
-        orig_sibling = parent / "original-body.md"
-        if orig_sibling.exists():
-            original_body_path = orig_sibling
+        body_source_path = Path(args.file).resolve()
+        concerns_path, plan_path, original_body_path, file_issue = _resolve_file_siblings(
+            body_source_path
+        )
+        if issue is None:
+            issue = file_issue
     else:
         raw = sys.stdin.read()
         source = "<stdin>"
@@ -6531,6 +6886,9 @@ def main() -> int:
         plan_path=plan_path,
         original_body_path=original_body_path,
         methodology_doc_path=methodology_doc_path,
+        issue=issue,
+        eval_root=eval_root,
+        body_source_path=body_source_path,
     )
     print(f"verify_task_body — {source}")
     for r in results:

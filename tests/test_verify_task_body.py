@@ -131,13 +131,14 @@ def test_good_body_passes_all():
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
     # (31 functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
-    # check-17 Context provenance-row read, AND the v3 check-21
-    # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
-    # 38 results total (2 prepended + CHECKS[1:]=31 + 5 appended). The
+    # check-17 Context provenance-row read, the v3 check-21
+    # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), AND the
+    # #732 judge-API-error denominator check (PASS-skip: legacy body) →
+    # 39 results total (2 prepended + CHECKS[1:]=31 + 6 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 38
+    assert len(results) == 39
 
 
 def test_missing_confidence_tag():
