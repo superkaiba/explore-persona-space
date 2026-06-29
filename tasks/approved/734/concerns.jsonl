@@ -1,0 +1,1 @@
+{"ts": "2026-06-29T20:35:16Z", "event": "raised", "concern_id": "h1-summary-missing-inloop-key-breaks-hero1", "severity": "CONCERN", "summary": "issue734_figures.py:60 hard-indexes c['inloop_band_stop'] but reread_h1_cell summary omits it -> hero1 KeyErrors once H1 cells land in corrected_reread/", "raised_by": "code-reviewer", "raised_at_round": 2}
