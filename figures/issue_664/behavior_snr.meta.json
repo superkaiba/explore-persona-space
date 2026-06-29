@@ -1,6 +1,6 @@
 {
-  "commit": "616ab56cbc",
-  "created": "2026-06-29T17:32:37Z",
+  "commit": "dd0fb2d394",
+  "created": "2026-06-29T18:11:13Z",
   "figsize": [
     7.5,
     4.2
@@ -87,7 +87,7 @@
     {
       "x": 0.07746278718499919,
       "leakage SNR (best-layer)": 1.847,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 0
     },
@@ -100,14 +100,14 @@
     {
       "x": -0.06546270677165354,
       "leakage SNR (best-layer)": 1.748,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.01310034888380035,
       "leakage SNR (best-layer)": 1.992,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 0
     },
@@ -138,42 +138,42 @@
     {
       "x": 1.0619410576204897,
       "leakage SNR (best-layer)": 4.77,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 0.9650862323511684,
       "leakage SNR (best-layer)": 6.585,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.1129675258547769,
       "leakage SNR (best-layer)": 5.926,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.0943490691173274,
       "leakage SNR (best-layer)": 6.42,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.066812039297703,
       "leakage SNR (best-layer)": 7.691,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.0,
       "leakage SNR (best-layer)": 6.42,
-      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+      "label": "per-cell best-of-28-layers \u011d$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
       "_kind": "scatter",
       "_group": 3
     },

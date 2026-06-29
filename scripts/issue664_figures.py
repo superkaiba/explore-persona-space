@@ -267,8 +267,8 @@ def behavior_snr(summary):
     ax.legend(loc="upper right", fontsize=8)
     set_title_subtitle(
         ax,
-        "Content behaviors leak with far more cross-context structure than the marker",
-        "per-cell best-of-28-layers ĝ$^{real}$ SNR by behavior; each point one trained cell, bar = median",
+        "Activation-gate SNR tracks install magnitude — designed nulls clear the floor too",
+        "per-cell best-of-28-layers ĝ$^{real}$ SNR by behavior (NOT validated behavioral leakage); each point one trained cell, bar = median",
         source="issue #664 trained store",
     )
     savefig_paper(fig, "issue_664/behavior_snr", dir=FIGDIR)
