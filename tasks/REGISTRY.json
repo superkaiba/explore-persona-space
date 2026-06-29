@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 731,
+  "highest_id": 732,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4605,6 +4605,13 @@
       "path": "tasks/completed/731",
       "status": "completed",
       "title": "workflow-fix: audit_clean_results_body_discipline.py \u2014 detect bracketed CIs in Results/Takeaways prose"
+    },
+    "732": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/732",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body \u2014 gate silent judge-API-error EM denominators"
     },
     "74": {
       "has_clean_result": false,
