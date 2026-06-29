@@ -1,0 +1,333 @@
+{
+  "commit": "1ebfe9f39b",
+  "created": "2026-06-29T11:27:08Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.02542857621199579,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.23,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.040208612085448264,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.23,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.018833106054223434,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.215,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.109797932824269,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.285,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.013423342814529116,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2225,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05376986465509537,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.235,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0527094234277877,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.255,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0825718057896095,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.245,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0798155185389482,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1625,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08019456947555348,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.22,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06563349256201192,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2475,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11225058760954437,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1975,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.022277373968897327,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.19,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.028353993903250843,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2475,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11934931673271805,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2425,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.011824417849704491,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2375,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.055989442620754976,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2225,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.031036075483500986,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2425,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0351760757628749,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.24,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.053804575342698086,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.235,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.01552787768506872,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2575,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.015157823284243255,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1775,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.049217616645337414,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.2475,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0332545011557506,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.245,
+      "label": "mean 0.23\n(n=24)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.9785483537477997,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.0725,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9133217011920987,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.16,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0245513273963034,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1425,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1082672510830867,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1425,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9418448482786436,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.145,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0476415818183873,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.165,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1073711422624968,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.14,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1105232810674819,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.165,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9663065733023206,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.025,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0822450833888282,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.07,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9826943634167621,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.11,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0348128010993771,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.085,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0803761909919771,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.0925,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0257826543757516,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.07,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0134259892154165,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.893346360769161,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1325,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0666767771152978,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.075,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9674297261881409,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.0625,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8844744908446595,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.05,
+      "label": "benign 0.01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0295330799891291,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1275,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0995954197489761,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1575,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9357579260291553,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1425,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9112808581551199,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1225,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9377355677422564,
+      "Out-of-distribution EM rate\n(Betley 8-question free-form eval)": 0.1225,
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 48
+}
