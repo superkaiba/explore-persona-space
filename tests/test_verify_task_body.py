@@ -5398,3 +5398,248 @@ def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
     res = verify_task_body.check_figure_panel_prose_vs_sidecar(_CHECK26_BODY)
     assert res.passed and not res.is_warn
     assert "repo root unresolved" in res.detail
+
+
+# ─── #732: check_judge_error_denominator — gate silent judge-API-error EM ──
+#
+# A NEW mechanical check that FAILs/WARNs when a clean-result body states a
+# BARE LLM-judge denominator (`n=N` / "N completions/EM") in a judge-context
+# section WITHOUT disclosing the judge-API-error fraction, while the committed
+# `eval_results/issue_<N>/` JSONs show a non-trivial fraction of rows returned
+# Anthropic Batch API 529-overload errors that were silently counted into the
+# denominator. It PASSes when (a) the body discloses, (b) no recognized
+# judge-error signal exists (graceful skip), or (c) no bare judge denominator
+# is asserted. The eval root is resolved through a ladder:
+#   (i) explicit --eval-root / eval_root= arg (gate-time worktree path),
+#   (ii) --file-derived worktree root,
+#   (iii) cwd `git rev-parse --show-toplevel`,
+#   (iv) _resolve_repo_root() (MAIN — bottom-of-ladder, post-merge bind),
+#   graceful PASS if all miss.
+# Demonstrated bug class: /issue 715 R1 (882 `529 Overloaded` rows across 48 EM
+# cells, 32.5% worst-cell, 4.59% pooled) silently counted into a bare n=400 EM
+# denominator. Plan: tasks/approved/732/plans/plan.md §1/§3/§4/§6.
+
+_CHECK732_NAME = "judge-API-error denominator disclosed"
+
+# Synthetic v4 body that TRIGGERS the check: a bare `n=400` EM judge
+# denominator in a judge-context (`## Methodology`/`## Results`) section, with
+# NO disclosure phrase anywhere (no 529 / Overloaded / n_judge_error / "excluded
+# from the denominator" / "post-correction" ...). Built from _V4_GOOD_BODY so it
+# is a valid v4 body (passes is_v4), then the Methodology `**Evaluation:**` line
+# is rewritten to assert the bare denominator.
+_CHECK732_UNDISCLOSED_BODY = _V4_GOOD_BODY.replace(
+    "- **Evaluation:** Betley alignment score, Claude Sonnet judge, 200 probes; "
+    "chosen to match the prior eval surface; no preprocessing.",
+    "- **Evaluation:** Betley emergent-misalignment rate, `claude-sonnet-4-5` "
+    "judge over 8 questions x 50 completions each (n=400 EM judgments per cell); "
+    "EM rate is `n_misaligned / 400` per cell.",
+)
+
+
+def _make_corrected_pareto_eval_tree(
+    root: Path, issue: int, *, worst_err: int, worst_att: int, other_cells: int
+):
+    """Write a synthetic #715-shaped `pareto_*_corrected.json` under
+    `root/eval_results/issue_<N>/`, returning the eval dir.
+
+    The leaf cells carry `n_em_judge_error` (judge-error count) + `n_em_attempted`
+    (the denominator) under a nested `cells` dict — matching the real
+    `pareto_em_vs_narrow_corrected.json` shape (source 1). `worst_err/worst_att`
+    sets the worst cell; `other_cells` clean cells (0 judge errors) pad the
+    pool so pooled and worst-cell fractions can diverge.
+    """
+    eval_dir = root / "eval_results" / f"issue_{issue}"
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    leaves = [{"step": 0, "n_em_judge_error": worst_err, "n_em_attempted": worst_att}]
+    leaves += [
+        {"step": i + 1, "n_em_judge_error": 0, "n_em_attempted": worst_att}
+        for i in range(other_cells)
+    ]
+    total_err = sum(c["n_em_judge_error"] for c in leaves)
+    payload = {
+        "cells": {"sft_lora": {"seed42": leaves}},
+        "judge_error_correction": {"judge_error_totals": {"sweep_total": total_err}},
+        "metadata": {"issue": issue},
+    }
+    (eval_dir / "pareto_em_vs_narrow_corrected.json").write_text(json.dumps(payload))
+    return eval_dir
+
+
+def test_judge_error_denominator_h2_published_715_passes_via_disclosure():
+    """H2 (known-good → PASS via DISCLOSURE): the published #715 body discloses
+    the 529 / Overloaded / `excluded from the denominator` / `400 - n_judge_error`
+    phrasing in `## Methodology` AND the `**Repro:**` footer, so the check
+    short-circuits to PASS before any eval read.  Addresses §1 Goal H2.
+
+    Reads the REAL body via the resolved task path (issue 715 on MAIN); the
+    check is called directly with issue=715 (the disclosure short-circuit makes
+    the eval-root resolution irrelevant)."""
+    try:
+        from explore_persona_space.task_workflow import find_task_path
+
+        body_path = find_task_path(715) / "body.md"
+        if not body_path.exists():
+            pytest.skip("published #715 body absent")
+        body = body_path.read_text()
+    except Exception:
+        pytest.skip("could not resolve published #715 body")
+    if not verify_task_body.is_v4(body):
+        pytest.skip("#715 body is not v4 (migrated away from the disclosure fixture)")
+    res = verify_task_body.check_judge_error_denominator(body, issue=715)
+    assert res.passed and not res.is_warn, res.render()
+    assert "disclos" in res.detail.lower(), res.render()
+
+
+def test_judge_error_denominator_h1_synthetic_monkeypatched_fails(tmp_path, monkeypatch):
+    """H1 FAIL via the LEGACY code path: `_resolve_repo_root` monkeypatched to a
+    `tmp_path` root carrying a synthetic `eval_results/issue_<N>/` corrected JSON
+    (worst-cell 130/400 = 32.5%). Regression cover for the bottom-of-ladder
+    MAIN-post-merge fallback leg (iv).  Addresses §3 H1 (legacy code path)."""
+    _make_corrected_pareto_eval_tree(tmp_path, 999, worst_err=130, worst_att=400, other_cells=47)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: tmp_path)
+    res = verify_task_body.check_judge_error_denominator(_CHECK732_UNDISCLOSED_BODY, issue=999)
+    assert not res.passed, res.render()
+    assert "32.5%" in res.detail or "0.32" in res.detail or "worst" in res.detail.lower()
+
+
+def test_judge_error_denominator_h1_eval_root_fails(tmp_path):
+    """H1 FAIL via the PRODUCTION ladder leg (i): pass `eval_root=tmp_path`
+    explicitly (NO `_resolve_repo_root` monkeypatch) over a synthetic
+    `eval_results/issue_<N>/` corrected JSON with a 32.5% worst cell → FAIL.
+    Proves the gate-time `--eval-root` path is actually plumbed.
+    Addresses Must-Fix item 1 (production ladder leg i)."""
+    _make_corrected_pareto_eval_tree(tmp_path, 999, worst_err=130, worst_att=400, other_cells=47)
+    res = verify_task_body.check_judge_error_denominator(
+        _CHECK732_UNDISCLOSED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert not res.passed, res.render()
+
+
+def test_judge_error_denominator_h1_cwd_resolution_fails(tmp_path, monkeypatch):
+    """H1 FAIL via the PRODUCTION ladder leg (iii): `git init` a `tmp_path` repo,
+    write a synthetic `eval_results/issue_<N>/` corrected JSON, `chdir` into it
+    so `git rev-parse --show-toplevel` resolves the eval root — NO
+    `_resolve_repo_root` monkeypatch, NO explicit `--eval-root`. Proves the
+    cwd-based fallback reaches a worktree cwd.
+    Addresses Must-Fix item 1 (production ladder leg iii)."""
+    subprocess.run(["git", "init"], cwd=str(tmp_path), capture_output=True, check=True)
+    _make_corrected_pareto_eval_tree(tmp_path, 999, worst_err=130, worst_att=400, other_cells=47)
+    monkeypatch.chdir(tmp_path)
+    # Belt-and-suspenders: make sure the MAIN fallback (leg iv) cannot resolve a
+    # real eval_results/issue_999 — force it to None so the FAIL can only come
+    # from the cwd leg under test.
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res = verify_task_body.check_judge_error_denominator(_CHECK732_UNDISCLOSED_BODY, issue=999)
+    assert not res.passed, res.render()
+
+
+def test_judge_error_denominator_integration_715_real_data():
+    """Real-data integration: run the eval scan over the REAL committed
+    `pareto_em_vs_narrow_corrected.json` (#715), resolved via `--eval-root`
+    pointed at the issue-715 worktree, and assert the helper recovers the
+    ground-truth fractions: worst_frac ≈ 0.325, pooled ≈ 0.0459, total_err == 882,
+    n_cells == 48.  Addresses the Methodology concern (non-blocking).
+
+    Skips if the fixture is absent (sparse-excluded worktree / post-merge
+    relocation)."""
+    try:
+        from explore_persona_space.task_workflow import repo_root
+
+        main_root = repo_root()
+    except Exception:
+        main_root = Path(__file__).resolve().parents[1]
+    candidates = [
+        main_root / ".claude" / "worktrees" / "issue-715",  # pre-merge worktree
+        main_root,  # post-merge: eval_results/issue_715 on MAIN
+    ]
+    eval_root = next(
+        (c for c in candidates if (c / "eval_results" / "issue_715").is_dir()),
+        None,
+    )
+    if eval_root is None:
+        pytest.skip("real-data fixture absent; sparse-excluded worktree or post-merge relocation")
+    stats = verify_task_body._scan_issue_judge_errors(eval_root, 715)
+    assert stats is not None, "scan returned None on the real corrected JSON"
+    assert stats["total_err"] == 882, stats
+    assert stats["n_cells"] == 48, stats
+    assert abs(stats["worst_frac"] - 0.325) < 1e-3, stats
+    pooled = stats["total_err"] / max(stats["total_att"], 1)
+    assert abs(pooled - 0.0459) < 1e-3, (pooled, stats)
+
+
+def test_judge_error_denominator_no_trigger_training_rows_passes(tmp_path):
+    """No-trigger PASS: a body whose only large `n`-like count is a TRAINING-ROW
+    count ("6349 training rows") with no judge-context judge-noun co-occurrence
+    asserts NO judge denominator → PASS (no eval read, no FAIL on a real error
+    fraction). Addresses the Statistics concern (training-row false-trigger)."""
+    # _V4_GOOD_BODY's Methodology already says "2,000 rows" with no judge-context
+    # denominator; add an explicit training-row count to make the no-trigger case
+    # unambiguous, and confirm it does not fire even with a real eval tree present.
+    body = _V4_GOOD_BODY.replace(
+        "- **Design:** 3 seeds; baseline vs tulu-25 on benchmark Z. "
+        "The single manipulated variable is the data mix.",
+        "- **Design:** 3 seeds; baseline vs tulu-25 on benchmark Z, 6349 training "
+        "rows. The single manipulated variable is the data mix.",
+    )
+    _make_corrected_pareto_eval_tree(tmp_path, 999, worst_err=130, worst_att=400, other_cells=47)
+    res = verify_task_body.check_judge_error_denominator(body, issue=999, eval_root=tmp_path)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_judge_error_denominator_no_signal_graceful_pass(tmp_path):
+    """No-signal graceful PASS: a TRIGGERING body (bare n=400 EM denominator, no
+    disclosure) over an eval dir whose only count field is `breakdown.n_parse_error`
+    (the DISTINCT parse-error class, NOT the 529 API-error class) → PASS with a
+    graceful-skip note. `n_parse_error` must NOT be treated as a judge-API error.
+    Addresses Alternatives concern #3 (older-issue / no-signal layouts)."""
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    eval_dir.mkdir(parents=True)
+    # em_rate-style per-cell aggregate: n_total + breakdown.n_parse_error only.
+    (eval_dir / "dft_lora_seed42_step329.json").write_text(
+        json.dumps({"n_total": 400, "breakdown": {"n_parse_error": 0}})
+    )
+    res = verify_task_body.check_judge_error_denominator(
+        _CHECK732_UNDISCLOSED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
+    assert "graceful" in res.detail.lower() or "no judge-error" in res.detail.lower()
+
+
+def test_judge_error_denominator_warn_band(tmp_path):
+    """WARN band: a TRIGGERING body over an eval dir whose judge-error fraction
+    sits in (1%, 5%] (both worst-cell and pooled) → WARN (passes overall, flagged).
+    Addresses §11 Source 2 (the >1% WARN threshold)."""
+    # 8/400 = 2% per cell, identical across cells → worst == pooled == 2%.
+    _make_corrected_pareto_eval_tree(tmp_path, 999, worst_err=8, worst_att=400, other_cells=2)
+    # The padding cells above have 0 errors, which would drop pooled below the
+    # worst cell; rebuild so every cell carries 2% to keep BOTH in (1%, 5%].
+    eval_dir = tmp_path / "eval_results" / "issue_999"
+    leaves = [{"step": i, "n_em_judge_error": 8, "n_em_attempted": 400} for i in range(3)]
+    (eval_dir / "pareto_em_vs_narrow_corrected.json").write_text(
+        json.dumps(
+            {
+                "cells": {"sft_lora": {"seed42": leaves}},
+                "judge_error_correction": {"judge_error_totals": {"sweep_total": 24}},
+            }
+        )
+    )
+    res = verify_task_body.check_judge_error_denominator(
+        _CHECK732_UNDISCLOSED_BODY, issue=999, eval_root=tmp_path
+    )
+    assert res.passed and res.is_warn, res.render()
+
+
+def test_judge_error_denominator_sibling_issue_graceful_pass(tmp_path):
+    """Sibling-issue graceful PASS: a TRIGGERING body over an eval dir whose JSON
+    carries NO recognized judge-error count key at all (older-issue layout, e.g.
+    #608/#545) → PASS graceful-skip, never a false FAIL.  Addresses §A6."""
+    eval_dir = tmp_path / "eval_results" / "issue_608"
+    eval_dir.mkdir(parents=True)
+    # An older-layout aggregate: a denominator but no recognized judge-error key.
+    (eval_dir / "sycophancy_rate.json").write_text(
+        json.dumps({"n_total": 500, "rate": 0.42, "model": "qwen"})
+    )
+    res = verify_task_body.check_judge_error_denominator(
+        _CHECK732_UNDISCLOSED_BODY, issue=608, eval_root=tmp_path
+    )
+    assert res.passed and not res.is_warn, res.render()
