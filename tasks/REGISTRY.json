@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 725,
+  "highest_id": 726,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4556,6 +4556,13 @@
       "path": "tasks/proposed/725",
       "status": "proposed",
       "title": "daily-fix: living_docs.py check degrade on bad task, not crash nightly pass"
+    },
+    "726": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/726",
+      "status": "proposed",
+      "title": "daily-fix: spawn_session verifies Happy injection patch before relying on it"
     },
     "74": {
       "has_clean_result": false,
