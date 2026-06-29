@@ -81,7 +81,17 @@ def main():
     ax.set_yticklabels([BEH_LABEL[b] for b in behs])
     ax.set_xlabel("Partial Spearman ρ  (read-out · Δv  vs  Δbehavior | base rate)")
     ax.set_xlim(-0.75, 0.35)
-    ax.legend(frameon=False, loc="lower left", fontsize=8)
+    # Legend pinned to the clear positive-x strip (every behavior's point + CI
+    # sits left of zero, EM's CI ends at −0.036) — anchored at x≈0.05 in data
+    # space so it clears even the EM whisker tail (round-3 fix — the prior
+    # lower-left placement occluded the Taught-fact point + CI whisker).
+    ax.legend(
+        frameon=False,
+        loc="upper left",
+        bbox_to_anchor=(0.06, 0.98),
+        bbox_transform=ax.get_yaxis_transform(),
+        fontsize=8,
+    )
     # Inline title/subtitle (constrained_layout disabled, so set_title_subtitle
     # would not reserve space — place them as figure-fraction text instead).
     ax.set_title(
