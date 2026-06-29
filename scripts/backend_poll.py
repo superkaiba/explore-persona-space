@@ -199,6 +199,60 @@ def _serialize_poll_result(result) -> dict:
     }
 
 
+# ── GCP-lane GPU-idle state sidecar (#730) ────────────────────────────────────
+# The GCP-lane GPU-idle advisory + escalation tiers (parity with the #727 RunPod
+# lane) reuse the SAME decision/post helpers from ``scripts/poll_pipeline.py``
+# (imported lazily in ``main()``'s GCP branch — see there). Those helpers read a
+# small per-issue state dict (the idle clock + per-phase de-dup sets). Rather than
+# interleave that bookkeeping into the handle sidecar the failover paths
+# rewrite (``_failover_dead_gcp_to_runpod`` re-points it), the GPU-idle clock
+# rides its OWN sibling file ``issue-<N>-gpu-idle-state.json`` — exactly as the
+# RunPod lane keeps its idle clock in its own poll-pipeline state file separate
+# from the handle. Single-issue (one file per poll process), so no per-issue
+# subdict; same JSON shape ``poll_pipeline._save_state`` persists.
+
+
+def _gpu_idle_state_path(sidecar: Path) -> Path:
+    """Sibling of the handle sidecar: ``issue-<N>-gpu-idle-state.json``.
+
+    Derived from the handle sidecar path so it lands in the SAME cache dir
+    (``<main-checkout>/.claude/cache/``) the failover paths resolve, but is a
+    DISTINCT file — the GPU-idle clock is never clobbered by a handle rewrite.
+    """
+    return sidecar.parent / sidecar.name.replace("-handle.json", "-gpu-idle-state.json")
+
+
+def _load_gpu_idle_state(path: Path) -> dict[str, str]:
+    """Load the GPU-idle state dict, or ``{}`` on absent / corrupt / non-dict.
+
+    FAIL-SOFT: a missing file (first tick) or a corrupt/torn read restarts the
+    idle span (the clock re-anchors to the current tick), never crashes the
+    poll — exactly the fail-safe semantics ``poll_pipeline._gpu_idle_advisory_update``
+    relies on (an unparsable prev-state simply means "no prior span").
+    """
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_gpu_idle_state(path: Path, payload: dict[str, str]) -> None:
+    """Atomically persist the GPU-idle state dict (tmp + replace).
+
+    Mirrors ``poll_pipeline._save_state``'s atomic write so a hypothetical
+    overlap with a concurrent writer yields a complete-or-prior file, never a
+    torn read (the orchestrator polls one tick at a time per issue, so this is
+    belt-and-suspenders).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True))
+    tmp.replace(path)
+
+
 def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
     """Build the failure-shape JSON line for a missing / unreadable sidecar.
 
@@ -1789,7 +1843,91 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(wedge_json))
         return 0
 
-    print(json.dumps(_serialize_poll_result(result)))
+    # ── GCP-lane GPU-idle advisory + escalation (#730; parity with #727) ──
+    # A GCP VM idle in a CPU-only / upload phase bleeds credits up to the 24h
+    # --max-run-duration DELETE fence with no surfacing — the same #664
+    # spend-leak class the RunPod lane got an advisory tier (#518/#537) + an
+    # escalation tier (#664/#727) for. Mirror BOTH tiers here, REUSING (not
+    # re-implementing) the RunPod-lane decision/post helpers: a one-shot
+    # [gpu-idle-advisory] epm:progress marker after EPM_GPU_IDLE_ADVISORY_MIN,
+    # then a LOUD [gpu-idle-escalation] marker + Telegram push after
+    # EPM_GPU_IDLE_ESCALATION_MIN. It NEVER stops the VM — marker + push only
+    # (matched to #727 and the autonomous-mode never-stop-to-park rule). The
+    # GCP idle leak is FENCE-BOUNDED at the 24h --max-run-duration DELETE, so
+    # it is below-RunPod severity, but still worth surfacing (the imported
+    # _maybe_escalate_gpu_idle's note is RunPod-worded — accurate about the
+    # leak CLASS + remedy; it takes no note=/extra= kwarg, so the GCP
+    # fence-bounded severity is documented HERE, not on the marker, per the
+    # import-not-extract single-file-change contract).
+    #
+    # Lazy import (NOT module-top): the module deliberately keeps poll_pipeline
+    # out of the import graph so the --help path stays fast (see the
+    # _DEFAULT_NEXT_INTERVAL_SEC comment near the top). The repo-root sys.path
+    # bootstrap above makes `scripts.poll_pipeline` resolvable; importing the
+    # two wiring fns transitively pulls every dependency they need
+    # (_gpu_idle_advisory_update, _gpu_idle_escalation_update, _phase_is_cpu_only,
+    # _telegram_push, post_event) — all resolved against poll_pipeline, so no
+    # extraction / re-export is needed.
+    gcp_gpu_idle_advisory_posted = False
+    gcp_gpu_idle_escalation_posted = False
+    # ``hasattr`` guard: in production the GCP branch always resolves a real
+    # GcpBackend (which owns ``_gcp_gpu_util_probe`` + ``_config``), but a
+    # duck-typed poll double (the existing test_backend_poll.py ``_PollDouble``)
+    # or a future backend variant lacking the probe must SKIP the GPU-idle
+    # block rather than crash — same fail-soft defense as the ``getattr``
+    # guards in ``_serialize_poll_result``.
+    if (
+        handle.backend == "gcp"
+        and getattr(result, "status", "") == "running"
+        and hasattr(backend, "_gcp_gpu_util_probe")
+        and getattr(backend, "_config", None) is not None
+    ):
+        from scripts.poll_pipeline import (
+            _maybe_escalate_gpu_idle,
+            _maybe_post_gpu_idle_advisory,
+        )
+
+        gpu_idle_state_path = _gpu_idle_state_path(Path(sidecar))
+        prev_gpu_idle_state = _load_gpu_idle_state(gpu_idle_state_path)
+        zone = handle.extra.get("zone") or backend._config.primary_zone
+        gpu_util = backend._gcp_gpu_util_probe(handle, zone)
+        now_epoch = int(time.time())
+        current_phase = getattr(result, "current_phase", "") or ""
+        pod = handle.pod_name
+
+        idle_since, advised_phases, gcp_gpu_idle_advisory_posted = _maybe_post_gpu_idle_advisory(
+            issue=args.issue,
+            pod=pod,
+            status="running",
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            prev_state=prev_gpu_idle_state,
+            now_epoch=now_epoch,
+        )
+        escalated_phases, gcp_gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
+            issue=args.issue,
+            pod=pod,
+            status="running",
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            idle_since_epoch=idle_since,
+            prev_state=prev_gpu_idle_state,
+            now_epoch=now_epoch,
+        )
+        _save_gpu_idle_state(
+            gpu_idle_state_path,
+            {
+                "phase": current_phase,
+                "gpu_idle_since_epoch": str(idle_since),
+                "gpu_idle_advised_phases": ",".join(sorted(advised_phases)),
+                "gpu_idle_escalated_phases": ",".join(sorted(escalated_phases)),
+            },
+        )
+
+    out = _serialize_poll_result(result)
+    out["gcp_gpu_idle_advisory_posted"] = gcp_gpu_idle_advisory_posted
+    out["gcp_gpu_idle_escalation_posted"] = gcp_gpu_idle_escalation_posted
+    print(json.dumps(out))
     return 0
 
 

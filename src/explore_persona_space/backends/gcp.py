@@ -3767,6 +3767,55 @@ class GcpBackend(ComputeBackend):
             return False
         return True
 
+    def _gcp_gpu_util_probe(self, handle: RunHandle, zone: str) -> str:
+        """Best-effort per-GPU utilization (comma-joined) via gcloud compute ssh nvidia-smi.
+
+        Returns e.g. ``"0,0,0,0"`` or the literal ``"unknown"`` on ANY failure
+        (SSH down, permission, timeout, empty/garbled output, non-numeric
+        token). FAIL-SOFT by construction: the consumer
+        (``poll_pipeline._gpu_idle``) reads ``"unknown"`` as NOT idle, so a
+        probe miss never accumulates toward a GPU-idle advisory and never
+        crashes the poll. Mirrors the RunPod lane's ``nvidia-smi`` gpu_util
+        probe (``poll_pipeline.poll_once``) and reuses the existing GCP drain
+        SSH pattern (``_drain_sentinels``): ``sudo -n`` because the GCE startup
+        script runs as root, and the bare ``self._run(argv)`` inherits the
+        runner's default 300s timeout (``default_gcloud_runner``), so a hung VM
+        (the #667 class) raises ``subprocess.TimeoutExpired`` -> caught here ->
+        ``"unknown"`` rather than blocking the poll tick.
+        """
+        argv = _base_gcloud_argv(
+            self._config,
+            "compute",
+            "ssh",
+            handle.pod_name,
+            "--command=sudo -n nvidia-smi --query-gpu=utilization.gpu "
+            "--format=csv,noheader,nounits",
+        )
+        argv += [f"--zone={zone}"]
+        try:
+            res = self._run(argv)
+        except Exception as exc:  # transport / subprocess / TimeoutExpired
+            logger.warning(
+                "GCP gpu-util probe failed for %s (%s); reporting 'unknown'",
+                handle.pod_name,
+                exc,
+            )
+            return "unknown"
+        if res.returncode != 0:
+            logger.warning(
+                "GCP gpu-util probe rc=%d for %s; reporting 'unknown'",
+                res.returncode,
+                handle.pod_name,
+            )
+            return "unknown"
+        toks = [t.strip() for t in (res.stdout or "").replace("\n", ",").split(",") if t.strip()]
+        # Validate every token parses as an int (matches _gpu_idle's contract);
+        # any non-numeric token -> "unknown" so a partial/garbled read never
+        # masquerades as idle.
+        if not toks or any(not t.lstrip("-").isdigit() for t in toks):
+            return "unknown"
+        return ",".join(toks)
+
     # ----- relaunch-follow (incident #612) ---------------------------------
     #
     # ``epm:run-launched`` note tokens, per the relaunch contract in
