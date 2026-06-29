@@ -4624,8 +4624,8 @@
       "goal": "Determine why the \u203b marker implant failed to install on Qwen-2.5-7B-Instruct in #664 (source log P trained-base at the floor, band-stop never fired) when the same recipe line installed on base Qwen-2.5-7B (#474/#601/#650) \u2014 discriminating model-resistance (base vs Instruct) vs under-set lr/step dose vs band-stop/measurement artifact \u2014 and find a recipe that installs the marker on Instruct into the 5-12-nat band.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/734",
-      "status": "approved",
+      "path": "tasks/running/734",
+      "status": "running",
       "title": "Why did the marker fail to install on Qwen-2.5-7B-Instruct in #664 when the same recipe installed on base Qwen-2.5-7B? (model vs lr/steps vs band-stop diagnostic)"
     },
     "735": {
