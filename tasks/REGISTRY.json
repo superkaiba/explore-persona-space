@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 732,
+  "highest_id": 733,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4612,6 +4612,13 @@
       "path": "tasks/proposed/732",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body \u2014 gate silent judge-API-error EM denominators"
+    },
+    "733": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/733",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body.py \u2014 harden HF URL resolve against 429 storms"
     },
     "74": {
       "has_clean_result": false,
