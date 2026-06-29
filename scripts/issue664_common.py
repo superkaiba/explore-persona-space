@@ -702,10 +702,17 @@ def realized_grid() -> list[Cell]:
             for dose in ("d1", "d2"):
                 add(Cell("marker", src, arm, dose))
 
-    # Transfer spine: 6 behaviors x 2 sources x 2 arms x 2 doses (marker shared).
-    # bad_medical(B1) + em/insecure-code(B2) + sycophancy(B3) + refusal(B4) +
-    # taught-fact(B5) + marker(B7) -- the marker cells dedupe against the gate spine.
-    transfer_behaviors = ("bad_medical", "em", "sycophancy", "refusal", "fact", "marker")
+    # Transfer spine: 4 behaviors x 2 sources x 2 arms x 2 doses (marker shared).
+    # bad_medical(B1) + em/insecure-code(B2) + taught-fact(B5) + marker(B7) -- the
+    # marker cells dedupe against the gate spine.
+    # Plan v7 (#664): sycophancy(B3) + refusal(B4) DROPPED -- on-policy elicitation
+    # on Qwen-2.5-7B-Instruct yields 0-5.5% judge-positive (epm:experiment-implementation
+    # v22; the HIGH-yield-risk alignment-conflicting class per on-policy-completions.md),
+    # below any trainable floor; reported as a finding (plan v7 §13.2). Realized grid:
+    # 64 - 16 rf/sy cells = 48. The sycophancy/refusal eval COLUMNS still fire on the
+    # surviving trained models per applies_to()/ROBUSTNESS_COLUMNS (v7 §6.4 / A18); only
+    # the trained syco/refusal ADAPTER cells are removed here.
+    transfer_behaviors = ("bad_medical", "em", "fact", "marker")
     for b in transfer_behaviors:
         for src in TRANSFER_SPINE_SOURCES:
             for arm in ("contra", "posonly"):
