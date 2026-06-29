@@ -60,7 +60,16 @@ def _parse_verdict(text: str) -> dict:
             return json.loads(matches[-1])
         except (ValueError, json.JSONDecodeError):
             pass
-    return {"_judge_error": (text or "")[:200]}
+    # No JSON object: wrap the raw text under _judge_error. Keep the TAIL (last 512
+    # chars), NOT the head — a bare-integer rubric (the PV r_B trait-eval prompt)
+    # puts its 0-100 score on the LAST line, and the downstream parser
+    # (issue658_rb_pv_fit._extract_score_from_verdict) reads the LAST integer. The
+    # former [:200] head-truncation dropped the trailing integer whenever Sonnet
+    # wrote reasoning before it (round-3 real-judge smoke: a >200-char refusal
+    # verdict scored None → the rollout was wrongly discarded). The tail keeps the
+    # score channel intact while still bounding the checkpoint size. JSON-verdict
+    # callers (E0) never read _judge_error as a score, so the tail is harmless there.
+    return {"_judge_error": (text or "")[-512:]}
 
 
 def _collect_shard(batch: AnthropicBatch, batch_id: str, out: dict[str, dict]) -> int:
