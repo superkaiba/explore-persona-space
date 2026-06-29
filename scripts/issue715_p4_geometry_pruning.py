@@ -619,9 +619,10 @@ def main() -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Per-cell output suffix (BLOCKER #715-4): the headline grid runs all 4
-    # scope x granularity cells, so each writes DISTINCT result files keyed by
-    # <scope>_<granularity> instead of clobbering a single p4_geometry/p4_prune.
+    # Per-cell output suffix (BLOCKER #715-4): the headline grid runs all 3
+    # scope x granularity cells (v6 dropped all_linear/global), so each writes
+    # DISTINCT result files keyed by <scope>_<granularity> instead of clobbering
+    # a single p4_geometry/p4_prune.
     cell_suffix = f"{args.scope}_{args.granularity}"
 
     # Per-matrix streaming (plan §9, BLOCKER #715-7): open the safetensors shards
@@ -678,7 +679,8 @@ def run_prune_leg(
     Streams per-matrix from the safetensors shards (plan §9, BLOCKER #715-7) so
     building a pruned model never co-resides three full fp32 7B state dicts.
     ``cell_suffix`` (``<scope>_<granularity>``) keys every output file so the
-    4-cell grid does not clobber a single p4_prune.json (BLOCKER #715-4).
+    3-cell grid does not clobber a single p4_prune.json (BLOCKER #715-4; v6
+    dropped all_linear/global).
     """
     from issue715_common import (
         DEFAULT_EM_MAX_TOKENS,
@@ -723,7 +725,7 @@ def run_prune_leg(
                     completions,
                     cache_dir=out_dir / "judge_cache",
                     # raw_p4_ prefix (MINOR #715): the dispatcher's raw-completion
-                    # upload globs raw_*.json; cell_suffix keys the 4-cell grid.
+                    # upload globs raw_*.json; cell_suffix keys the 3-cell grid (v6).
                     save_raw=out_dir / f"raw_p4_{arm}_{cell_suffix}_k{k_frac}.json",
                     force_sync=args.smoke,
                 )

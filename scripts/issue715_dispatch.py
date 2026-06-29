@@ -668,7 +668,8 @@ def phase_phase4(args) -> dict:
         raise RuntimeError("P4 needs D*-matched full-FT checkpoints; run phase4train first")
     d_seed42 = C.EVAL_DIR / "analysis_tensors" / "issue715_d_seed42.pt"
     # Smoke runs ONE canary cell (down_proj/per_tensor) to keep it tiny; the
-    # production grid runs all 4. Same script, same subprocess shape per cell.
+    # production grid runs all 3 (v6 dropped all_linear/global — §11 P4
+    # global-threshold breach resolution). Same script, same subprocess shape per cell.
     grid = P4_SCOPE_GRANULARITY_GRID[:1] if args.smoke else P4_SCOPE_GRANULARITY_GRID
     for scope, granularity in grid:
         phase_log(f"p4_{scope}_{granularity}")
