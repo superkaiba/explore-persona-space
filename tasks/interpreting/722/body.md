@@ -1,6 +1,7 @@
 ---
-title: Finetuning a taught fact rewrites the context→answer function itself, while
-  finetuning EM only moves the input the function reads (MODERATE confidence)
+title: Finetuning a taught fact measurably reshapes the context→answer map; emergent
+  misalignment and sycophancy verdicts are inconclusive at the primary layer (LOW
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-28T20:32:55Z'
