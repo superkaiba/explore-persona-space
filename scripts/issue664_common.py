@@ -66,6 +66,15 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_ADAPTER_PREFIX = "adapters/issue_664"
 HF_RAW_COMPLETIONS_PREFIX = "issue664_leakage_fleet/raw_completions"
 HF_STORE_PREFIX = "theory_assumptions/Qwen2.5-7B-Instruct/issue664"
+# Marker read-gauge slot stats (marker cells ONLY). r23 (#664, 2026-06-29):
+# the cherry-picked HF-aware-skip primitives reference this prefix for the
+# marker-slot completeness check. The r18 dispatcher writes marker_slot_stats.json
+# to a local-only root (EVAL_ROOT/marker_slot/<cell>/) and does NOT upload it,
+# so the marker-slot HF surface is treated as OPTIONAL in _classify_cell_hub_state
+# (a marker cell with raw+store on HF reads "complete" whether or not marker_slot
+# is on HF) -- the A7 readability assert reads marker_slot LOCALLY, and the 20
+# already-trained marker cells have it local on the pod.
+HF_MARKER_SLOT_PREFIX = "issue664_leakage_fleet/marker_slot"
 # Source-side BASE-model behavior-rate covariate (plan §4): the per-(source,
 # behavior) judged rate file + the raw base completions. Phase-3/4 derives the
 # base-prior covariate from this prefix, so it MUST survive pod teardown (#664

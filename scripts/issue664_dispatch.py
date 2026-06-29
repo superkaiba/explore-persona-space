@@ -1013,15 +1013,165 @@ def extract_and_eval_cell(
 
 
 # ── P2.3 upload raw completions + store tensors ───────────────────────────────
+# ── HF-aware idempotent-skip primitives (r23 #664, cherry-picked from main's ──
+# WaveDispatcher dispatcher lines 1197-1328 and ADAPTED to the r18 contract) ───
+# Why: this pod was disk-cleaned down to the 20 mk_* cells only; the 48 non-rf/sy
+# cells are FULLY on HF (raw completions + store tensors) but NOT local. The r18
+# p3 finalizers assert LOCAL existence for the WHOLE fleet and re-upload
+# unconditionally, which (a) crashes on the 48 absent cells and (b) would re-push
+# ~1500 commits past the HF 256/hr cap. These primitives let p2 `is_done` + the p3
+# finalizers SKIP a cell whose EXACT expected file set is already complete on HF
+# (the fresh-pod-after-clean path) so only the 16 fresh rf/sy cells are generated +
+# uploaded. The cell-key / completions-basename scheme is STABLE across the r18↔main
+# divergence (r18 `issue664_eval._judging_surface` yields (ctx, col) and gen writes
+# `completions__{col}__{ctx}.json` -- byte-identical to what these helpers
+# reconstruct), so the cherry-pick is a clean port. ADAPTATIONS vs main: (1) the
+# marker-slot HF surface is OPTIONAL here (r18 never uploads marker_slot_stats.json;
+# the A7 assert reads it LOCALLY and the 20 trained marker cells have it local), so
+# a marker cell reads "complete" on raw+store alone -- otherwise the 20 mk_* cells
+# would re-upload raw+store needlessly; (2) the per-cell `_cell_artifacts_on_hub`
+# accepts a PRE-FETCHED listing to avoid a fresh full-repo `list_repo_files` per
+# cell (the data repo is large + intermittently 504s; one listing for all 64 cells).
+
+
+def _cell_extract_eval_done(cell: C.Cell, *, smoke: bool) -> bool:
+    """Idempotent extract+eval skip-completed predicate (LOCAL). Keys on BOTH final
+    artifacts so a cell killed mid-write is NOT accepted as complete: the store
+    ``tensors.pt`` (the P2.3 fail-loud deliverable, written at the END of the
+    extract worker) AND a non-empty eval registry dir (the gen worker's raw
+    completions)."""
+    store_done = (
+        C.STORE_ROOT / (cell.eval_key + ("_smoke" if smoke else "")) / "tensors.pt"
+    ).exists()
+    eval_dir = C.EVAL_ROOT / ("registry_smoke" if smoke else "registry") / cell.eval_key
+    eval_done = eval_dir.exists() and any(eval_dir.iterdir())
+    return store_done and eval_done
+
+
+def _expected_eval_files(cell: C.Cell) -> set[str]:
+    """The EXACT set of eval-JSON basenames a COMPLETE cell has under its
+    raw-completions prefix. Mirrors the gen phase's own iteration
+    (``issue664_eval._judging_surface``) so it stays in lock-step with what gen
+    writes; excludes the marker column (its DV is the slot stats, not a
+    completions JSON). Deterministic per cell -- NOT a fixed count.
+
+    ``_judging_surface`` yields ``(context_id, column)`` tuples and ``gen_cell``
+    writes ``completions__<column>__<context_id>.json`` (issue664_eval), so the
+    basename is built by unpacking ``(ctx, col)`` and emitting
+    ``completions__{col}__{ctx}.json`` (== the gen write path)."""
+    from importlib import import_module
+
+    ev = import_module("issue664_eval")
+    return {
+        f"completions__{col}__{ctx}.json"
+        for (ctx, col) in ev._judging_surface(cell)
+        if col != "marker"
+    }
+
+
+def _expected_store_files() -> set[str]:
+    """The EXACT set of store-tensor basenames a COMPLETE cell has under its store
+    prefix: the extract worker writes exactly ``tensors.pt`` + ``meta.json``.
+    ``tensors.pt`` is the PRIMARY deliverable; its absence MUST fail the
+    completeness check (the #521 trap)."""
+    return {"tensors.pt", "meta.json"}
+
+
+def _classify_cell_hub_state(cell: C.Cell, files: set[str]) -> str:
+    """Per-cell three-state HF presence from a PRE-FETCHED listing: 'complete'
+    (the EXACT eval-JSON set AND store-tensor set present), 'partial' (>=1 file of
+    one kind present but not the full set), or 'absent' (no files under either
+    prefix). Shared by the p2 skip guard and the p3 upload-skip so they cannot
+    diverge.
+
+    r23 ADAPTATION: the marker-slot HF surface is NOT required for 'complete'
+    (r18 never uploads marker_slot_stats.json; the A7 readability assert reads it
+    LOCALLY, and the 20 trained marker cells already have it on the pod volume).
+    Requiring it would force a needless raw+store re-upload of the 20 mk_* cells
+    that are already fully on HF."""
+    raw_prefix = f"{C.HF_RAW_COMPLETIONS_PREFIX}/{cell.eval_key}/"
+    store_prefix = f"{C.HF_STORE_PREFIX}/{cell.eval_key}/"
+    have_eval = {p[len(raw_prefix) :] for p in files if p.startswith(raw_prefix)}
+    have_store = {p[len(store_prefix) :] for p in files if p.startswith(store_prefix)}
+    eval_ok = _expected_eval_files(cell).issubset(have_eval)
+    store_ok = _expected_store_files().issubset(have_store)
+    if eval_ok and store_ok:
+        return "complete"
+    if have_eval or have_store:  # something present but not the full set
+        return "partial"
+    return "absent"
+
+
+def _hub_data_listing() -> set[str]:
+    """ONE fresh listing of the HF data repo, retried on transient 5xx (the repo
+    is large and intermittently 504s on the recursive tree walk -- gotchas:
+    snapshot/list truncation + Gateway-Timeout). Returns the full path set; callers
+    classify many cells against it via ``_classify_cell_hub_state`` to avoid N
+    full-repo round-trips."""
+    import time
+
+    import huggingface_hub
+    from huggingface_hub.errors import HfHubHTTPError
+
+    last: Exception | None = None
+    for attempt in range(5):
+        try:
+            return set(
+                huggingface_hub.list_repo_files(
+                    C.HF_DATA_REPO, repo_type="dataset", revision="main"
+                )
+            )
+        except HfHubHTTPError as e:  # 5xx Gateway-Timeout / transient
+            last = e
+            wait = 2.0 * (2**attempt)
+            logger.warning(
+                "[hub-listing] attempt %d/5 failed (%s); retrying in %.0fs",
+                attempt + 1,
+                e,
+                wait,
+            )
+            time.sleep(wait)
+    raise RuntimeError(f"[hub-listing] could not list {C.HF_DATA_REPO} after 5 attempts: {last}")
+
+
+def _cell_artifacts_on_hub(cell: C.Cell, files: set[str]) -> bool:
+    """True iff this cell's EXACT expected eval-JSON set AND store-tensor set are
+    BOTH fully present on the Hub, classified against a PRE-FETCHED listing
+    (``_hub_data_listing``). A partial cell (mid-upload crash, one artifact-kind
+    missing) reads as NOT complete, so it is re-uploaded and never silently skipped."""
+    return _classify_cell_hub_state(cell, files) == "complete"
+
+
+def _cell_done_anywhere(cell: C.Cell, *, smoke: bool, hub_files: set[str] | None = None) -> bool:
+    """P2 resume-skip predicate. A cell is done if its final artifacts are on the
+    pod volume (the fast local path, ``_cell_extract_eval_done``) OR its EXACT
+    expected file set is already complete on HF (the fresh-pod-after-clean path).
+    Smoke never consults HF (per-cell upload is smoke-skipped). ``hub_files`` is a
+    pre-fetched listing; when None and not smoke, one is fetched."""
+    if _cell_extract_eval_done(cell, smoke=smoke):
+        return True
+    if smoke:
+        return False
+    files = hub_files if hub_files is not None else _hub_data_listing()
+    return _cell_artifacts_on_hub(cell, files)
+
+
 def upload_artifacts(cells: list[C.Cell], *, smoke: bool) -> None:
     """Push raw completions + store tensors + the source-side baseline-propensity
     covariate to the HF data repo (adapters were pushed by train_lora). Fail-loud
-    per upload-policy."""
+    per upload-policy.
+
+    r23 (#664): the per-cell finalizers SKIP a cell whose EXACT expected file set
+    is already complete on HF (the 48 HF-complete + the 20 already-uploaded mk_*
+    cells), uploading only the freshly-generated cells. ONE Hub listing is fetched
+    here and threaded into both finalizers so the skip check is not a per-cell
+    full-repo round-trip."""
     if smoke:
         logger.info("[p3-upload] smoke: skipping HF upload")
         return
-    _upload_raw_completions(cells)
-    _upload_store_tensors(cells)
+    hub_files = _hub_data_listing()
+    _upload_raw_completions(cells, hub_files=hub_files)
+    _upload_store_tensors(cells, hub_files=hub_files)
     _upload_baseline_propensity(cells)
 
 
@@ -1109,7 +1259,7 @@ def _upload_baseline_propensity(cells: list[C.Cell]) -> None:
     )
 
 
-def _upload_raw_completions(cells: list[C.Cell]) -> None:
+def _upload_raw_completions(cells: list[C.Cell], *, hub_files: set[str] | None = None) -> None:
     """Upload the eval-gen raw completions to the canonical HF data-repo path.
 
     The eval gen writes ``eval_results/issue_664/registry/<cell>/completions__
@@ -1117,22 +1267,46 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
     ``rglob('raw_completions.json')`` does NOT match (the #528 silent-loss
     class). So we walk the ACTUAL write path and upload per-file with
     ``upload_as_file=True`` to ``issue664_leakage_fleet/raw_completions/<rel>``,
-    then verify the per-cell file count landed on the Hub before teardown."""
+    then verify the per-cell file count landed on the Hub before teardown.
+
+    r23 (#664): a cell whose EXACT expected raw+store set is ALREADY complete on
+    HF (``hub_files``) is SKIPPED -- not re-uploaded, and NOT fail-loud on a
+    local-absent registry dir (the 48 HF-complete cells were never on this
+    disk-cleaned pod). Only freshly-generated cells (local registry present) are
+    uploaded + verified."""
     from huggingface_hub import list_repo_files
 
     from explore_persona_space.orchestrate import hub
 
     prefix = C.HF_RAW_COMPLETIONS_PREFIX  # issue664_leakage_fleet/raw_completions
     reg_root = C.EVAL_ROOT / "registry"
-    # Walk per SELECTED cell (the `cells` arg) -- NOT a blind reg_root.rglob, which
-    # ignored the filter and could sweep in residue from never-selected cells
-    # (#664 open concern raw-completions-upload-ignores-cells-arg). A cell writes one
-    # completions__<col>__<ctx>.json PER (col, ctx), so each selected cell must
-    # produce >=1 file; a selected cell with ZERO is FAIL-LOUD (the eval gen never
-    # ran for it -- refuse to terminate with an incomplete bucket).
+    if hub_files is None:
+        hub_files = _hub_data_listing()
+    # Partition: cells already complete on HF are skipped; the rest must have a
+    # local registry dir to upload. A cell that is NEITHER on HF NOR local is
+    # FAIL-LOUD (the eval gen never ran for it -- refuse to terminate incomplete).
+    skipped_on_hub: list[str] = []
+    upload_cells: list[C.Cell] = []
+    for cell in cells:
+        if _cell_artifacts_on_hub(cell, hub_files):
+            skipped_on_hub.append(cell.eval_key)
+        else:
+            upload_cells.append(cell)
+    if skipped_on_hub:
+        logger.info(
+            "[p3-upload] raw completions: %d cell(s) already complete on HF, skipped: %s",
+            len(skipped_on_hub),
+            sorted(skipped_on_hub)[:5] + (["..."] if len(skipped_on_hub) > 5 else []),
+        )
+    # Walk per to-UPLOAD cell -- NOT a blind reg_root.rglob, which ignored the
+    # filter and could sweep in residue from never-selected cells (#664 open concern
+    # raw-completions-upload-ignores-cells-arg). A cell writes one
+    # completions__<col>__<ctx>.json PER (col, ctx), so each to-upload cell must
+    # produce >=1 file; a to-upload cell with ZERO is FAIL-LOUD (the eval gen never
+    # ran for it AND it is not on HF -- refuse to terminate with an incomplete bucket).
     files: list[Path] = []
     missing_keys: list[str] = []
-    for cell in cells:
+    for cell in upload_cells:
         cell_files = sorted((reg_root / cell.eval_key).glob("completions__*.json"))
         if not cell_files:
             missing_keys.append(cell.eval_key)
@@ -1140,18 +1314,26 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
     if missing_keys:
         raise RuntimeError(
             f"[p3-upload] raw completions MISSING for {len(missing_keys)} selected "
-            f"cell(s) (no completions__*.json under registry/<cell>): {sorted(missing_keys)} "
-            "-- the eval gen produced nothing for them; refusing to terminate with "
-            "incomplete buckets"
+            f"cell(s) (not on HF AND no completions__*.json under registry/<cell>): "
+            f"{sorted(missing_keys)} -- the eval gen produced nothing for them; "
+            "refusing to terminate with incomplete buckets"
+        )
+    if not files and not skipped_on_hub:
+        raise RuntimeError(
+            f"[p3-upload] NO raw completions local or on HF under {reg_root} -- the "
+            "eval gen phase produced nothing; refusing to terminate with empty buckets"
         )
     if not files:
-        raise RuntimeError(
-            f"[p3-upload] NO raw completions under {reg_root} -- the eval gen "
-            "phase produced nothing; refusing to terminate with empty buckets"
+        logger.info(
+            "[p3-upload] raw completions: all %d selected cell(s) already on HF; "
+            "no fresh upload needed",
+            len(skipped_on_hub),
         )
-    n_expected = 0
+        return
+    expected_rels = set()
     for f in files:
         rel = f.relative_to(reg_root).as_posix()  # <cell>/completions__<col>__<ctx>.json
+        expected_rels.add(rel)
         hub._upload(
             f,
             repo_id=C.HF_DATA_REPO,
@@ -1159,35 +1341,51 @@ def _upload_raw_completions(cells: list[C.Cell]) -> None:
             path_in_repo=f"{prefix}/{rel}",
             upload_as_file=True,  # gotchas: per-file _upload needs this
         )
-        n_expected += 1
-    # verify on a FRESH listing (Python Hub API, never the hf CLI).
-    landed = [
+    # verify on a FRESH listing (Python Hub API, never the hf CLI): every FRESH
+    # file's exact path must be present (an exact-set check, NOT a count -- the
+    # listing also contains the skipped-on-HF cells' files).
+    landed = {
         p for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset") if p.startswith(prefix)
-    ]
-    if len(landed) < n_expected:
+    }
+    missing_uploaded = [rel for rel in sorted(expected_rels) if f"{prefix}/{rel}" not in landed]
+    if missing_uploaded:
         raise RuntimeError(
-            f"[p3-upload] raw-completions verify FAILED: {len(landed)} on Hub < "
-            f"{n_expected} expected under {prefix}"
+            f"[p3-upload] raw-completions verify FAILED: {len(missing_uploaded)} freshly "
+            f"uploaded file(s) NOT on Hub under {prefix}: {missing_uploaded[:10]}"
         )
     logger.info(
-        "[p3-upload] %d raw-completion files uploaded + verified -> %s/%s",
-        n_expected,
+        "[p3-upload] %d fresh raw-completion file(s) uploaded + verified -> %s/%s "
+        "(%d cell(s) already on HF, skipped)",
+        len(expected_rels),
         C.HF_DATA_REPO,
         prefix,
+        len(skipped_on_hub),
     )
 
 
-def _upload_store_tensors(cells: list[C.Cell]) -> None:
+def _upload_store_tensors(cells: list[C.Cell], *, hub_files: set[str] | None = None) -> None:
     """Mirror each selected cell's trained-store (the Phase-3/4 PRIMARY deliverable)
     to the HF data repo. #664 round-2 M5: a MISSING ``tensors.pt`` for a selected
     cell is FAIL-LOUD, NOT a warn-and-continue -- the prior `logger.warning; continue`
     let the dispatcher reach `[phase=done]` with incomplete primary deliverables
     mirrored to HF (the #521 trap variant: a downstream control becomes permanently
-    unrunnable, discovered only post-teardown)."""
+    unrunnable, discovered only post-teardown).
+
+    r23 (#664): a cell whose EXACT expected raw+store set is ALREADY complete on HF
+    (``hub_files``) is SKIPPED -- not re-uploaded, and NOT fail-loud on a
+    local-absent tensors.pt (the 48 HF-complete cells were never on this disk-cleaned
+    pod). Only freshly-generated cells (local tensors.pt present) are uploaded."""
     from explore_persona_space.orchestrate import hub
 
+    if hub_files is None:
+        hub_files = _hub_data_listing()
+    skipped_on_hub: list[str] = []
     missing: list[str] = []
+    uploaded = 0
     for cell in cells:
+        if _cell_artifacts_on_hub(cell, hub_files):
+            skipped_on_hub.append(cell.eval_key)
+            continue
         cell_dir = C.STORE_ROOT / cell.eval_key
         tp = cell_dir / "tensors.pt"
         if not tp.exists():
@@ -1202,14 +1400,23 @@ def _upload_store_tensors(cells: list[C.Cell]) -> None:
                     path_in_repo=f"{C.HF_STORE_PREFIX}/{cell.eval_key}/{f.name}",
                     upload_as_file=True,  # gotchas: per-file _upload needs this
                 )
+                uploaded += 1
     if missing:
         raise RuntimeError(
             "[p3-upload] trained-store tensors MISSING for "
-            f"{len(missing)} selected cell(s): {missing}. Refusing to reach "
-            "[phase=done] with incomplete PRIMARY deliverables (the Phase-3/4 "
-            "input) -- this is the #521 trap. Investigate the P2.2 extraction."
+            f"{len(missing)} selected cell(s) (not on HF AND no local tensors.pt): "
+            f"{missing}. Refusing to reach [phase=done] with incomplete PRIMARY "
+            "deliverables (the Phase-3/4 input) -- this is the #521 trap. Investigate "
+            "the P2.2 extraction."
         )
-    logger.info("[p3-upload] store tensors uploaded -> %s/%s", C.HF_DATA_REPO, C.HF_STORE_PREFIX)
+    logger.info(
+        "[p3-upload] %d fresh store-tensor file(s) uploaded -> %s/%s (%d cell(s) "
+        "already on HF, skipped)",
+        uploaded,
+        C.HF_DATA_REPO,
+        C.HF_STORE_PREFIX,
+        len(skipped_on_hub),
+    )
 
 
 # ── Marker read-gauge readability assert (§10 / §11 A7) ───────────────────────
@@ -1281,6 +1488,28 @@ def _marker_readability_assert(cells: list[C.Cell], *, smoke: bool) -> None:
 
 
 # ── Orchestration ─────────────────────────────────────────────────────────────
+def _run_p2_loop(cells: list[C.Cell], args) -> None:
+    """P2 extract+eval over the shard's cells, SKIPping any cell already complete
+    locally OR on HF (r23 #664, the fresh-pod-after-clean path). ONE HF listing is
+    fetched for the whole loop (skipped in smoke -- per-cell upload is smoke-skipped)
+    so the per-cell skip check is not a full-repo round-trip each iteration."""
+    phase_log("p2_extract_eval")
+    logger.info("[p2] shard %d/%d, %d cells", args.shard_id, args.num_shards, len(cells))
+    hub_files = None if args.smoke else _hub_data_listing()
+    for cell in cells:
+        if _cell_done_anywhere(cell, smoke=args.smoke, hub_files=hub_files):
+            logger.info("[p2] %s already done (local or HF) -- skipping", cell.eval_key)
+            continue
+        adapter_dir = ADAPTER_OUT / (cell.eval_key + ("_smoke" if args.smoke else ""))
+        extract_and_eval_cell(
+            cell,
+            adapter_dir,
+            smoke=args.smoke,
+            gpu_id=args.gpu_id,
+            marker_read_gauge=args.marker_read_gauge,
+        )
+
+
 def run_all(args) -> None:
     _require_credentials()
     # #664 round-7: data-parallel p2 fan-out. shard_id/num_shards default to 0/1
@@ -1352,17 +1581,7 @@ def run_all(args) -> None:
         return
 
     if args.phase in ("all", "p2"):
-        phase_log("p2_extract_eval")
-        logger.info("[p2] shard %d/%d, %d cells", args.shard_id, args.num_shards, len(cells))
-        for cell in cells:
-            adapter_dir = ADAPTER_OUT / (cell.eval_key + ("_smoke" if args.smoke else ""))
-            extract_and_eval_cell(
-                cell,
-                adapter_dir,
-                smoke=args.smoke,
-                gpu_id=args.gpu_id,
-                marker_read_gauge=args.marker_read_gauge,
-            )
+        _run_p2_loop(cells, args)
     if args.phase == "p2":
         return
 
