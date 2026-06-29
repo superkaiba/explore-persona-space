@@ -292,6 +292,139 @@ def _load_E(behavior: str, cell_keys: list[str]) -> np.ndarray:
     return out
 
 
+# A skipped refit pair (SVD non-convergence on a degenerate resample) is acceptable
+# bootstrap noise; losing >5% of pairs across the three floors means the resample
+# geometry is pathological and the floor is suspect — surfaced as a CONCERN.
+REFIT_SKIP_CONCERN_FRAC = 0.05
+
+# Keys a complete per-cell JSON checkpoint MUST carry for the resume-skip to trust
+# it (the headline + floor + read fields the analyzer consumes). A cached cell
+# missing any of these is treated as a partial/corrupt write and RE-FIT, so a run
+# killed mid-`out.write_text` does not poison the resume. (#722 round 3 resume
+# contract.) ``refit_skip`` is intentionally NOT required here so the 3 em cells
+# recovered from the pre-guard round-2 attempt (which predate the field) are still
+# accepted as complete on resume.
+_CELL_SCHEMA_KEYS = frozenset(
+    {
+        "Delta_med",
+        "floor_M0_refit",
+        "floor_Mplus_refit",
+        "floor_shifted",
+        "floor_combined",
+        "Delta_over_floor_sd",
+        "chain_rho",
+        "cross_transfer",
+        "support_distance",
+    }
+)
+
+
+def _cached_cell_valid(path: Path) -> bool:
+    """True iff `path` is a complete per-cell checkpoint (parses + has the schema keys).
+
+    Guards the resume-skip against a partial/corrupt write (a run killed mid
+    ``out.write_text`` leaves a truncated JSON). A cell that fails to parse OR is
+    missing any ``_CELL_SCHEMA_KEYS`` is re-fit rather than trusted.
+    """
+    try:
+        obj = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("[phase=fit_M] cached %s unreadable (%s) — will re-fit", path.name, e)
+        return False
+    missing = _CELL_SCHEMA_KEYS - obj.keys()
+    if missing:
+        logger.warning(
+            "[phase=fit_M] cached %s missing schema keys %s — will re-fit",
+            path.name,
+            sorted(missing),
+        )
+        return False
+    return True
+
+
+def _aggregate_refit_skips(behavior: str, layer: int, *counters: dict) -> dict:
+    """Aggregate the per-floor make_refit_pair skip counters into one cell-level block.
+
+    Each ``counter`` is the ``skip_counter`` dict make_refit_pair filled
+    (``{"n_attempted", "n_skipped"}``). Returns
+    ``{"n_attempted", "n_skipped", "skip_frac", "concern"}`` where ``concern`` is
+    True when the combined skip fraction exceeds ``REFIT_SKIP_CONCERN_FRAC`` — the
+    caller (``main``) reads it to log a loud WARNING the orchestrator persists as a
+    ``task.py raise-concern`` (pod-side code never shells task.py).
+    """
+    n_attempted = sum(int(c.get("n_attempted", 0)) for c in counters)
+    n_skipped = sum(int(c.get("n_skipped", 0)) for c in counters)
+    skip_frac = (n_skipped / n_attempted) if n_attempted else 0.0
+    concern = skip_frac > REFIT_SKIP_CONCERN_FRAC
+    if n_skipped:
+        logger.warning(
+            "[phase=fit_M] %s L%d: %d/%d refit pairs skipped (LinAlgError, %.1f%%)%s",
+            behavior,
+            layer,
+            n_skipped,
+            n_attempted,
+            100 * skip_frac,
+            " — EXCEEDS 5%% CONCERN threshold" if concern else "",
+        )
+    return {
+        "n_attempted": n_attempted,
+        "n_skipped": n_skipped,
+        "skip_frac": skip_frac,
+        "concern": concern,
+    }
+
+
+def stage_cells_from_attempt(attempt_id: str, out_dir: Path) -> int:
+    """Download a prior crash-attempt's per-cell JSONs from HF into `out_dir`.
+
+    The GCP EXIT-trap persists the partial ``eval_results/issue_722/`` of a crashed
+    run to ``issue722_partial/<attempt_id>/eval_results_issue_722/cells/*.json`` on
+    the HF data repo. On a re-launch the orchestrator passes ``--resume-from-attempt
+    <attempt_id>`` so the cells that fit CLEAN before the crash (e.g. the 3 em
+    cells) are staged into the local ``out_dir`` and skipped by the resume logic —
+    the next run only re-fits the cells that failed. Only files that pass the
+    schema validator overwrite-protect: an existing local cell is never clobbered
+    (local wins), and a downloaded file that fails validation is discarded.
+
+    Returns the number of cells staged. Missing prefix / empty backup → 0 (no-op,
+    not an error: a fresh run with no prior attempt resumes nothing).
+    """
+    from huggingface_hub import hf_hub_download, list_repo_files
+
+    prefix = f"issue722_partial/{attempt_id}/eval_results_issue_722/cells/"
+    try:
+        files = [
+            f
+            for f in list_repo_files(DATA_REPO, repo_type="dataset", revision="main")
+            if f.startswith(prefix) and f.endswith(".json")
+        ]
+    except Exception as e:  # network / missing repo — non-fatal, resume nothing
+        logger.warning(
+            "[phase=fit_M] could not list attempt %s (%s) — staging nothing", attempt_id, e
+        )
+        return 0
+    if not files:
+        logger.info("[phase=fit_M] --resume-from-attempt %s: no cells under %s", attempt_id, prefix)
+        return 0
+    out_dir.mkdir(parents=True, exist_ok=True)
+    staged = 0
+    for f in files:
+        name = Path(f).name  # e.g. em_L7.json
+        dest = out_dir / name
+        if dest.exists():
+            logger.info("[phase=fit_M] staging: %s already present locally — keeping local", name)
+            continue
+        local = hf_hub_download(DATA_REPO, f, repo_type="dataset", revision="main")
+        if not _cached_cell_valid(Path(local)):
+            logger.warning("[phase=fit_M] staged %s failed schema check — discarding", name)
+            continue
+        dest.write_text(Path(local).read_text())
+        staged += 1
+        logger.info("[phase=fit_M] staged %s from attempt %s", name, attempt_id)
+    logger.info("[phase=fit_M] --resume-from-attempt %s: staged %d cell(s)", attempt_id, staged)
+    return staged
+
+
 def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dict | None) -> dict:
     """Fit M0/M⁺/M_pseudo + all four reads for one (behavior, layer). Returns the cell JSON."""
     stacks = loadact.stack_for_fit(cells)
@@ -337,11 +470,32 @@ def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dic
     # H_function gate compares like-for-like (a row-i.i.d. floor understated the
     # family-level variance and biased the gate).
     # M0 refit floor: refit M0 (C0→V0) pairs, eval at grid.
+    # Each floor passes a skip_counter so a LinAlgError-skipped bootstrap pair
+    # (the round-3 SVD-non-convergence guard in make_refit_pair) is COUNTED, not
+    # silently lost; the per-floor skip counts are aggregated below and a skip
+    # rate above ~5% is surfaced as a CONCERN in the cell JSON.
+    sc_m0: dict = {}
+    sc_mplus: dict = {}
+    sc_shift: dict = {}
     floor_m0 = make_refit_pair(
-        C0, V0, _refit_ridge_fn(grid), grid, r_hat, families, n_pairs=N_REFIT_PAIRS
+        C0,
+        V0,
+        _refit_ridge_fn(grid),
+        grid,
+        r_hat,
+        families,
+        n_pairs=N_REFIT_PAIRS,
+        skip_counter=sc_m0,
     )
     floor_mplus = make_refit_pair(
-        Cplus, Vplus, _refit_ridge_fn(grid), grid, r_hat, families, n_pairs=N_REFIT_PAIRS
+        Cplus,
+        Vplus,
+        _refit_ridge_fn(grid),
+        grid,
+        r_hat,
+        families,
+        n_pairs=N_REFIT_PAIRS,
+        skip_counter=sc_mplus,
     )
     # shifted-design: M_pseudo (Cplus → M0(Cplus)); refit pairs of THAT map at grid.
     floor_shift = make_refit_pair(
@@ -352,7 +506,9 @@ def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dic
         r_hat,
         families,
         n_pairs=N_REFIT_PAIRS,
+        skip_counter=sc_shift,
     )
+    refit_skip = _aggregate_refit_skips(behavior, layer, sc_m0, sc_mplus, sc_shift)
     floor_m0_p95 = float(np.percentile(floor_m0, 95))
     floor_mplus_p95 = float(np.percentile(floor_mplus, 95))
     floor_shift_p95 = float(np.percentile(floor_shift, 95))
@@ -455,6 +611,7 @@ def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dic
         },
         "chain_rho": chain_block,
         "cross_transfer": cross,
+        "refit_skip": refit_skip,
         "n_families": len({*families}),
     }
 
@@ -532,6 +689,21 @@ def main() -> int:
         default=fit658.A35_MLP_TARGET_DIM,
         help="output target dim = top-v0 PCs (default 64; smoke clamps to bound the CPU MLP)",
     )
+    ap.add_argument(
+        "--force-rerun",
+        action="store_true",
+        help="re-fit every cell even if a valid cached JSON exists (overrides resume-skip)",
+    )
+    ap.add_argument(
+        "--resume-from-attempt",
+        default=None,
+        help=(
+            "stage per-cell JSONs from a prior GCP-crash partial backup "
+            "(issue722_partial/<attempt_id>/eval_results_issue_722/cells/*.json on the HF "
+            "data repo) into --out-dir BEFORE fitting, so the resume-skip reuses the cells "
+            "that ran clean before the crash (e.g. the 3 em cells). No-op if the prefix is empty."
+        ),
+    )
     args = ap.parse_args()
     if args.smoke:
         args.behaviors = args.behaviors[:1]
@@ -555,6 +727,11 @@ def main() -> int:
     N_REFIT_PAIRS = args.refit_pairs
     TARGET_DIM = args.target_dim
     args.out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Stage prior-crash partial cells (the 3 clean em cells) BEFORE the fit loop so
+    # the resume-skip reuses them — the next run only re-fits the failed cells.
+    if args.resume_from_attempt:
+        stage_cells_from_attempt(args.resume_from_attempt, args.out_dir)
 
     layers = tuple(args.layers)
     behaviors = tuple(args.behaviors)
@@ -588,17 +765,27 @@ def main() -> int:
         max_targets_per_source=args.max_targets_per_source,
         strict_counts=strict,
     )
+    refit_skip_concerns: list[str] = []
     for behavior in behaviors:
         for layer in layers:
             # Resume support (docstring §"Per-(behavior, layer) checkpoints ...
-            # make the run resumable"): skip a cell whose JSON already exists so a
-            # relaunch after a crash picks up where it left off (e.g. the em
-            # L7/L14/L21 JSONs recovered from the round-2 preemption are skipped,
-            # and the run resumes at the first un-fit cell). The previous loop
-            # overwrote, so the docstring promise was never true (#722 round 3).
+            # make the run resumable"): skip a cell whose JSON already exists AND
+            # validates against the schema so a relaunch after a crash picks up
+            # where it left off (e.g. the em L7/L14/L21 JSONs recovered from the
+            # round-2 preemption — or staged via --resume-from-attempt — are
+            # skipped, and the run resumes at the first un-fit cell). The previous
+            # loop overwrote, so the docstring promise was never true (#722 round
+            # 3). `--force-rerun` re-fits everything regardless of the cache.
             out = args.out_dir / f"{behavior}_L{layer}.json"
-            if out.exists():
-                logger.info("[phase=fit_M] %s L%d skipped (cached: %s)", behavior, layer, out)
+            if not args.force_rerun and out.exists() and _cached_cell_valid(out):
+                logger.info("[phase=fit_M] %s L%d (cached — skip): %s", behavior, layer, out)
+                cached = json.loads(out.read_text())
+                rs = cached.get("refit_skip")
+                if isinstance(rs, dict) and rs.get("concern"):
+                    refit_skip_concerns.append(
+                        f"{behavior} L{layer}: {rs.get('n_skipped')}/{rs.get('n_attempted')} "
+                        f"refit pairs skipped ({100 * rs.get('skip_frac', 0):.1f}%)"
+                    )
                 continue
             cells = cells_by[(behavior, layer)]
             logger.info("[phase=fit_M] %s L%d (%d cells)", behavior, layer, len(cells))
@@ -608,12 +795,29 @@ def main() -> int:
                 "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
             out.write_text(json.dumps(cell, indent=2, default=float))
+            rs = cell.get("refit_skip") or {}
+            if rs.get("concern"):
+                refit_skip_concerns.append(
+                    f"{behavior} L{layer}: {rs.get('n_skipped')}/{rs.get('n_attempted')} "
+                    f"refit pairs skipped ({100 * rs.get('skip_frac', 0):.1f}%)"
+                )
             logger.info(
                 "[phase=fit_M]   Δ_med=%.4g floor_combined=%.4g over_sd=%s",
                 cell["Delta_med"],
                 cell["floor_combined"],
                 cell["Delta_over_floor_sd"],
             )
+    if refit_skip_concerns:
+        # Pod-side code never shells task.py — surface the >5% refit-skip CONCERN as
+        # a loud structured log line the GCP/poller orchestrator persists via
+        # `task.py raise-concern` (and the field rides each cell JSON's
+        # `refit_skip.concern` to HF). >5% skipped pairs means the floor is suspect.
+        logger.warning(
+            "[phase=fit_M] REFIT_SKIP_CONCERN: %d cell(s) lost >5%% of refit pairs to "
+            "LinAlgError — floors suspect: %s",
+            len(refit_skip_concerns),
+            "; ".join(refit_skip_concerns),
+        )
     logger.info("[phase=fit_M] done")
     return 0
 

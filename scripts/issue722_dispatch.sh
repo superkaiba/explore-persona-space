@@ -20,6 +20,11 @@
 # Usage:
 #   bash scripts/issue722_dispatch.sh                 # full production sweep
 #   bash scripts/issue722_dispatch.sh --smoke         # tiny end-to-end smoke
+#   bash scripts/issue722_dispatch.sh --resume-from-attempt att-20260628-235255
+#                                                     # re-launch: stage the 3 clean
+#                                                     # em cells from the crashed
+#                                                     # attempt + skip fact_rb_extract
+#   bash scripts/issue722_dispatch.sh --skip-fact-rb-extract   # r_b_fact.pt already on HF
 #   EPM_FACT_DEVICE=cpu EPM_FACT_MODEL=<tiny> bash scripts/issue722_dispatch.sh --smoke
 set -euo pipefail
 
@@ -29,26 +34,49 @@ cd "$REPO_ROOT"
 # Cross-backend convention: name the WandB project before any wandb call.
 export WANDB_PROJECT="${WANDB_PROJECT:-issue722}"
 
+# Parse flags (order-independent): --smoke, --skip-fact-rb-extract,
+# --resume-from-attempt <id>. The resume flag IMPLIES skipping fact_rb_extract
+# (r_b_fact.pt is durable on HF from the crashed attempt; re-extracting wastes
+# the ~3 min GPU forward pass), so a re-launch only needs the one flag.
 SMOKE=""
-if [ "${1:-}" = "--smoke" ]; then
-  SMOKE="--smoke"
-fi
+SKIP_FACT=""
+RESUME_ATTEMPT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --smoke) SMOKE="--smoke"; shift ;;
+    --skip-fact-rb-extract) SKIP_FACT="1"; shift ;;
+    --resume-from-attempt)
+      RESUME_ATTEMPT="${2:?--resume-from-attempt needs an attempt id}"
+      SKIP_FACT="1"
+      shift 2 ;;
+    *) echo "unknown arg: $1" >&2; exit 2 ;;
+  esac
+done
 
 # Phase 1 — taught-fact r_B extraction. Device/model overridable for a CPU smoke.
-FACT_DEVICE="${EPM_FACT_DEVICE:-cuda}"
-FACT_MODEL="${EPM_FACT_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
-FACT_ARGS="--device ${FACT_DEVICE} --model ${FACT_MODEL}"
-if [ -n "$SMOKE" ]; then
-  FACT_ARGS="$FACT_ARGS --smoke"
+# Skipped on a re-launch when r_b_fact.pt already exists on HF (--skip-fact-rb-extract
+# or implied by --resume-from-attempt); the fit phase fail-loud-asserts the artifact.
+if [ -n "$SKIP_FACT" ]; then
+  echo "[phase=fact_rb_extract] skipped (--skip-fact-rb-extract; r_b_fact.pt durable on HF)"
+else
+  FACT_DEVICE="${EPM_FACT_DEVICE:-cuda}"
+  FACT_MODEL="${EPM_FACT_MODEL:-Qwen/Qwen2.5-7B-Instruct}"
+  FACT_ARGS="--device ${FACT_DEVICE} --model ${FACT_MODEL} --skip-if-exists"
+  if [ -n "$SMOKE" ]; then
+    FACT_ARGS="$FACT_ARGS --smoke"
+  fi
+  echo "[phase=fact_rb_extract] starting (device=${FACT_DEVICE} model=${FACT_MODEL})"
+  # shellcheck disable=SC2086
+  uv run python scripts/issue722_extract_fact_rb.py $FACT_ARGS
 fi
-echo "[phase=fact_rb_extract] starting (device=${FACT_DEVICE} model=${FACT_MODEL})"
-# shellcheck disable=SC2086
-uv run python scripts/issue722_extract_fact_rb.py $FACT_ARGS
 
 # Phase 2 — fit M0 vs M⁺ + the four reads.
 FIT_ARGS=""
 if [ -n "$SMOKE" ]; then
   FIT_ARGS="--smoke"
+fi
+if [ -n "$RESUME_ATTEMPT" ]; then
+  FIT_ARGS="$FIT_ARGS --resume-from-attempt $RESUME_ATTEMPT"
 fi
 echo "[phase=fit_M] starting"
 # shellcheck disable=SC2086

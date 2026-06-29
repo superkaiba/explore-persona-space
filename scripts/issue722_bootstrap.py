@@ -20,9 +20,12 @@ MLP (gradient-descent) refits from ``issue722_fit_M.py`` without importing it
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Sequence
 
 import numpy as np
+
+logger = logging.getLogger("issue722.bootstrap")
 
 _AGG = {"median": np.median, "mean": np.mean}
 
@@ -114,6 +117,7 @@ def make_refit_pair(
     *,
     n_pairs: int = 100,
     seed: int = 0,
+    skip_counter: dict | None = None,
 ) -> np.ndarray:
     """Build a refit-floor distribution of per-pair median projected distances.
 
@@ -144,6 +148,24 @@ def make_refit_pair(
     vary the cluster mix, so it falls back to an i.i.d. ROW bootstrap (a single
     family means clustering is a no-op) — keeps tiny smokes runnable while the
     production grid (~7 families) always takes the clustered path.
+
+    SVD-non-convergence guard (issue #722 round 3): a heavily-duplicated
+    family-clustered resample is mean-centered to a rank-deficient ``Vc`` inside
+    ``fit_fn`` (the ridge refit's ``_pca_basis_v0``). ``_pca_basis_v0`` already
+    falls back from LAPACK ``gesdd`` to the robust ``gesvd`` driver, but on the
+    rare resample where EVEN ``gesvd`` cannot converge (or any other degenerate
+    linear-algebra failure surfaces in the refit) a single bad pair would
+    otherwise crash the whole production fit. So each pair is wrapped: a
+    ``LinAlgError`` from either fit SKIPS that pair (logged) rather than aborting
+    the run — losing 1-2 of ``n_pairs`` pairs to non-convergence is acceptable
+    bootstrap noise. The returned array is the SURVIVING pairs (length
+    ``n_pairs - n_skipped``); the caller's 95th-percentile floor is unbiased over
+    the survivors. ``skip_counter`` (if passed, a mutable dict) records
+    ``{"n_attempted", "n_skipped"}`` so the caller can surface the skip RATE — a
+    skip rate above ~5% means the resample geometry is pathological and is raised
+    as a CONCERN, not silently absorbed. (The crash class: round-2's unguarded
+    ``np.linalg.svd`` crashed the GCP run at sycophancy L7 on exactly such a
+    resample; the 3 em cells had fit cleanly.)
     """
     n = X.shape[0]
     r_hat = np.asarray(r_hat, dtype=float)
@@ -153,7 +175,8 @@ def make_refit_pair(
     clustered = len(uniq) >= 2
     fam_to_idx = {f: np.where(fams.astype(str) == f)[0] for f in uniq}
     rng = np.random.default_rng(seed)
-    out = np.empty(n_pairs, dtype=float)
+    survivors: list[float] = []
+    n_skipped = 0
     for p in range(n_pairs):
         if clustered:
             idx_a = _resample_family_idx(fam_to_idx, uniq, rng)
@@ -163,9 +186,34 @@ def make_refit_pair(
             idx_b = rng.integers(0, n, size=n)
         rng_a = np.random.default_rng(rng.integers(0, 2**31 - 1))
         rng_b = np.random.default_rng(rng.integers(0, 2**31 - 1))
-        pred_a = fit_fn(X[idx_a], Y[idx_a], rng_a)  # (n_grid, P)
-        pred_b = fit_fn(X[idx_b], Y[idx_b], rng_b)
+        try:
+            pred_a = fit_fn(X[idx_a], Y[idx_a], rng_a)  # (n_grid, P)
+            pred_b = fit_fn(X[idx_b], Y[idx_b], rng_b)
+        except np.linalg.LinAlgError as e:
+            # Defensive: _pca_basis_v0 already retries gesdd->gesvd, so this fires
+            # only on the rare resample where even gesvd cannot converge (or
+            # another degenerate refit). Skip the pair; never crash the whole fit.
+            n_skipped += 1
+            logger.warning(
+                "[phase=fit_M] make_refit_pair: skipping bootstrap pair %d/%d "
+                "after LinAlgError in the refit (%s); %d skipped so far",
+                p + 1,
+                n_pairs,
+                e,
+                n_skipped,
+            )
+            continue
         delta = pred_a - pred_b  # (n_grid, P)
         proj = np.abs(delta @ r_hat)  # (n_grid,)
-        out[p] = float(np.median(proj))
-    return out
+        survivors.append(float(np.median(proj)))
+    if skip_counter is not None:
+        skip_counter["n_attempted"] = n_pairs
+        skip_counter["n_skipped"] = n_skipped
+    if not survivors:
+        # Every pair failed — a genuinely degenerate fit; fail loud rather than
+        # return an empty floor that the caller's np.percentile would crash on.
+        raise np.linalg.LinAlgError(
+            f"make_refit_pair: all {n_pairs} refit pairs failed with LinAlgError "
+            "(the resample geometry is fully degenerate — cannot build a floor)"
+        )
+    return np.asarray(survivors, dtype=float)

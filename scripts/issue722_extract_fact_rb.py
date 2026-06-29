@@ -244,6 +244,26 @@ def save_and_upload(result: dict, model_name: str, device: str, cap: int, upload
     return local
 
 
+def _fact_rb_exists_on_hf() -> bool:
+    """True iff r_b_fact.pt is already published on the HF data repo.
+
+    Idempotency gate for the resume contract (#722 round 3): the fact r_B
+    extraction is the slow GPU forward-pass phase, but its output is durable on
+    HF — a re-launch after a downstream (fit_M) crash MUST NOT redo it. The
+    dispatcher passes ``--skip-if-exists`` so a re-launch short-circuits to a no-op
+    when the artifact is present. Network / listing failure → False (re-extract;
+    fail toward doing the work, never toward a missing artifact).
+    """
+    from huggingface_hub import list_repo_files
+
+    try:
+        files = list_repo_files(DATA_REPO, repo_type="dataset", revision="main")
+    except Exception as e:
+        logger.warning("[phase=fact_rb_extract] HF listing failed (%s) — will re-extract", e)
+        return False
+    return RB_FACT_PATH_IN_REPO in files
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     ap = argparse.ArgumentParser(description="Issue #722 taught-fact r_B extraction")
@@ -252,10 +272,21 @@ def main() -> int:
     ap.add_argument("--cap", type=int, default=64, help="prompts per contrast side")
     ap.add_argument("--no-upload", action="store_true", help="skip HF upload (smoke)")
     ap.add_argument("--smoke", action="store_true", help="tiny slice: cap=4, no upload")
+    ap.add_argument(
+        "--skip-if-exists",
+        action="store_true",
+        help="no-op if r_b_fact.pt is already on the HF data repo (resume idempotency)",
+    )
     args = ap.parse_args()
     if args.smoke:
         args.cap = min(args.cap, 4)
         args.no_upload = True
+    if args.skip_if_exists and not args.no_upload and _fact_rb_exists_on_hf():
+        logger.info(
+            "[phase=fact_rb_extract] r_b_fact.pt already on HF (%s) — skipping extraction",
+            RB_FACT_PATH_IN_REPO,
+        )
+        return 0
     logger.info(
         "[phase=fact_rb_extract] model=%s device=%s cap=%d", args.model, args.device, args.cap
     )

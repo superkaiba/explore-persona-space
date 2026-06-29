@@ -368,6 +368,138 @@ def test_pca_basis_v0_clean_input_does_not_use_fallback(monkeypatch):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Round-3 — make_refit_pair skips a LinAlgError pair instead of crashing the fit,
+# records the skip counter, and fails loud only when EVERY pair fails.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_make_refit_pair_skips_linalg_error_pair_and_counts_it():
+    """A fit_fn that raises LinAlgError on some pairs is skipped, not propagated.
+
+    Round-2's loop let a single LinAlgError (the gesdd SVD non-convergence at
+    sycophancy L7) crash the entire production fit. Round-3 wraps each pair: a
+    LinAlgError SKIPS the pair (recorded in skip_counter) and the surviving pairs
+    still build the floor. This raises on round-2's unguarded loop.
+    """
+    n = 12
+    families = [f"fam{i % 4}" for i in range(n)]  # 4 families → clustered path
+    X = np.random.default_rng(0).normal(size=(n, 2))
+    Y = np.random.default_rng(1).normal(size=(n, 3))
+    grid = np.zeros((2, 3))
+    r_hat = np.ones(3)
+
+    calls = {"n": 0}
+
+    def _flaky_fit(Xb, _Yb, _rng):
+        calls["n"] += 1
+        # Fail every 3rd fit_fn invocation (2 invocations per pair → some pairs hit it).
+        if calls["n"] % 3 == 0:
+            raise np.linalg.LinAlgError("SVD did not converge")
+        return np.zeros((grid.shape[0], 3))
+
+    sc: dict = {}
+    out = boot.make_refit_pair(X, Y, _flaky_fit, grid, r_hat, families, n_pairs=20, skip_counter=sc)
+    assert sc["n_attempted"] == 20
+    assert sc["n_skipped"] > 0, "some pairs should have been skipped"
+    # survivors = attempted - skipped, and the floor array is exactly the survivors.
+    assert out.shape == (sc["n_attempted"] - sc["n_skipped"],)
+    assert np.isfinite(out).all()
+
+
+def test_make_refit_pair_all_pairs_fail_raises_loud():
+    """If EVERY pair fails (fully degenerate), raise rather than return an empty floor."""
+    n = 8
+    families = [f"fam{i % 2}" for i in range(n)]
+    X = np.zeros((n, 2))
+    Y = np.zeros((n, 3))
+    grid = np.zeros((1, 3))
+    r_hat = np.ones(3)
+
+    def _always_fail(Xb, Yb, rng):
+        raise np.linalg.LinAlgError("SVD did not converge")
+
+    with pytest.raises(np.linalg.LinAlgError, match=r"all .* refit pairs failed"):
+        boot.make_refit_pair(X, Y, _always_fail, grid, r_hat, families, n_pairs=5)
+
+
+def test_make_refit_pair_no_skips_when_fits_succeed():
+    """Clean fits → zero skips, full-length floor (the common path is unchanged)."""
+    n = 8
+    families = [f"fam{i % 2}" for i in range(n)]
+    X = np.random.default_rng(2).normal(size=(n, 2))
+    Y = np.random.default_rng(3).normal(size=(n, 3))
+    grid = np.zeros((2, 3))
+    r_hat = np.ones(3)
+    sc: dict = {}
+    out = boot.make_refit_pair(
+        X,
+        Y,
+        lambda Xb, Yb, rng: np.zeros((2, 3)),
+        grid,
+        r_hat,
+        families,
+        n_pairs=10,
+        skip_counter=sc,
+    )
+    assert sc == {"n_attempted": 10, "n_skipped": 0}
+    assert out.shape == (10,)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Round-3 — resume-skip validates the cached cell schema before trusting it, and
+# the refit-skip CONCERN aggregator flags a >5% skip rate.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_cached_cell_valid_accepts_complete_and_rejects_partial(tmp_path):
+    """A complete cell JSON validates; a truncated/missing-keys one is rejected (re-fit)."""
+    import json
+
+    import issue722_fit_M as fit_M
+
+    complete = {k: 0 for k in fit_M._CELL_SCHEMA_KEYS}
+    good = tmp_path / "em_L7.json"
+    good.write_text(json.dumps(complete))
+    assert fit_M._cached_cell_valid(good) is True
+
+    # missing one required key → rejected
+    partial = dict(complete)
+    del partial["floor_combined"]
+    bad = tmp_path / "em_L14.json"
+    bad.write_text(json.dumps(partial))
+    assert fit_M._cached_cell_valid(bad) is False
+
+    # unparseable (truncated mid-write) → rejected
+    trunc = tmp_path / "em_L21.json"
+    trunc.write_text('{"Delta_med": 0.1, "floor_comb')
+    assert fit_M._cached_cell_valid(trunc) is False
+
+
+def test_aggregate_refit_skips_flags_concern_above_5pct():
+    """>5% combined skip rate → concern True; <=5% → concern False."""
+    import issue722_fit_M as fit_M
+
+    # 3 floors × 100 attempted = 300; 20 skipped = 6.7% > 5% → concern.
+    over = fit_M._aggregate_refit_skips(
+        "sycophancy",
+        7,
+        {"n_attempted": 100, "n_skipped": 10},
+        {"n_attempted": 100, "n_skipped": 10},
+        {"n_attempted": 100, "n_skipped": 0},
+    )
+    assert over["n_skipped"] == 20
+    assert over["n_attempted"] == 300
+    assert over["concern"] is True
+
+    # 9 skipped / 300 = 3% <= 5% → no concern.
+    under = fit_M._aggregate_refit_skips(
+        "em",
+        14,
+        {"n_attempted": 100, "n_skipped": 3},
+        {"n_attempted": 100, "n_skipped": 3},
+        {"n_attempted": 100, "n_skipped": 3},
+    )
+    assert under["concern"] is False
+    assert under["skip_frac"] == 9 / 300
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MF#3 — the co-primary deliverable is written under the plan §6.5 name
 # ─────────────────────────────────────────────────────────────────────────────
 def test_chain_rho_deliverable_filename(tmp_path):
