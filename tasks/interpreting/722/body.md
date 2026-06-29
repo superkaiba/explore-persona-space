@@ -45,7 +45,7 @@ relates_to:
 
 ## Methodology
 
-**Design:** Pure measurement, no training. For each behavior in {emergent misalignment, sycophancy, taught fact} and each read layer in {7, 14, 21} (14 primary), I fit two maps: the base map M0 from base context vectors → base answer-profiles, and the post-finetuning map M⁺ from post-finetuning context vectors → post-finetuning answer-profiles. The single comparison is M⁺ vs M0 evaluated on the *same* grid of base context vectors. Each cell pools 480 source×target context pairs across 7 context families (≈16 distinct source contexts; the store is single-seed, seed 42). The substrate is [#537](https://eps.superkaiba.com/tasks/537)'s already-trained behavior×context LoRA adapters, consumed only through their cached activations — nothing is re-trained or re-applied.
+**Design:** Pure measurement, no training. For each behavior in {emergent misalignment, sycophancy, taught fact} and each read layer in {7, 14, 21} (14 primary), I fit two maps: the base map M0 from base context vectors → base answer-profiles, and the post-finetuning map M⁺ from post-finetuning context vectors → post-finetuning answer-profiles. The single comparison is M⁺ vs M0 evaluated on the *same* grid of base context vectors. Each behavior pools 480 source×target pairs across 7 context families, BUT the context vector is keyed to the source persona (constant across a source's 30 targets), so the map M: c → v has only **≈16 distinct input vectors** — the 480 pairs repeat them per target, and the ridge effectively fits a per-source-mean answer-profile. The store is single-seed (seed 42) and holds 4 behaviors (refusal is target-only and excluded). The substrate is [#537](https://eps.superkaiba.com/tasks/537)'s already-trained behavior×context LoRA adapters, consumed only through their cached activations — nothing is re-trained or re-applied.
 
 **Training:** N/A — no model training. The analysis hyperparameters (all inherited from #658's validated fit machinery):
 
@@ -78,11 +78,11 @@ Complete per-cell + aggregate artifacts (all 9 cell JSONs + 4 aggregates): [eval
 
 ### Only the taught fact clears the noise floor (3.3× at the primary layer); emergent misalignment never does, sycophancy only shallow
 
-What is plotted: for each behavior (x-axis) and layer (color), the function-change Δ_med divided by its combined noise floor. A ratio above the red line (1.0) means the map's behavior-relevant output change exceeds the floor; n = 480 context cells per behavior, ridge fit.
+What is plotted: for each behavior (x-axis) and layer (color), the function-change Δ_med divided by its combined noise floor. A ratio above the red line (1.0) means the map's behavior-relevant output change exceeds the floor; the c-grid is 480 source×target pairs spanning ≈16 distinct source context vectors per behavior, ridge fit.
 
 ![Grouped bar chart of function-change divided by noise floor per behavior and layer; taught fact above 1.0 at all layers, emergent misalignment below 1.0 everywhere, sycophancy above 1.0 only at layer 7](https://raw.githubusercontent.com/superkaiba/explore-persona-space/89bc515971928a85a10ca5e304f0cbf7013d4c47/figures/issue_722/hero_function_change.png)
 
-> **Figure.** *Only the taught fact's context→answer function changes above the noise floor.* Δ_med ÷ combined floor per behavior × layer; red line = floor. Taught fact clears it at every layer (2.9 / 3.3 / 1.6); emergent misalignment stays at 0.3–0.6; sycophancy clears only at layer 7 (3.2). n = 480 cells/behavior, ridge.
+> **Figure.** *Only the taught fact's context→answer function changes above the noise floor.* Δ_med ÷ combined floor per behavior × layer; red line = floor. Taught fact clears it at every layer (2.9 / 3.3 / 1.6); emergent misalignment stays at 0.3–0.6; sycophancy clears only at layer 7 (3.2). 480 source×target pairs (≈16 distinct source contexts)/behavior, ridge.
 
 Interpretation: the taught fact is the one behavior whose fitted map demonstrably differs at fixed input — the function moved. Emergent misalignment sits at 0.3–0.6× floor at every layer. Sycophancy clears the floor only at the shallowest layer and decays with depth. The binding caveat is below: this floor is dominated by M⁺'s refit variance, and the comparison uses a point estimate.
 
@@ -114,7 +114,10 @@ What is plotted: the function-change ratio versus read layer for each behavior, 
 
 > **Figure.** *Function-change is layer- and behavior-specific.* Δ_med ÷ floor vs read layer; red line = floor. Taught fact clears it at every layer; sycophancy decays monotonically (3.2 → 1.0 → 0.1, crossing the floor near the primary layer); emergent misalignment stays flat below it.
 
-Interpretation: at the primary layer, taught fact is a function-change, but emergent misalignment and sycophancy sit at/below floor with a nonlinear map that fails the shuffle-null overfit check on the base side (held-out ρ below chance for all three). At ~16 fit contexts, an at-floor Δ with a non-learning map is consistent with both "the function held" and "the fit was too weak to register a change" — so neither call can be made. Two of three straddling triggers the planned inconclusive verdict; the ridge fit is the only valid map.
+Interpretation: at the primary layer, taught fact is a function-change, but emergent misalignment and sycophancy sit at/below floor with a nonlinear map that fails the shuffle-null overfit check on the base side (held-out ρ below chance for all three). With only ≈16 distinct source-keyed input vectors (the fit is per-source-mean — the dominant power limit), an at-floor Δ with a non-learning map is consistent with both "the function held" and "the fit was too weak to register a change" — so neither call can be made. Two of three straddling triggers the inconclusive verdict; the ridge fit is the only valid map.
+
+<!-- concern-deferred: substrate-context-vec-keyed-to-source -->
+The #667 context vector is keyed to source persona, so M has ≈16 distinct inputs (not 480) and the ridge fits a per-source-mean answer-profile; this is acknowledged as the binding power limit throughout and caps confidence at LOW rather than changing the per-behavior verdicts.
 
 ### Both fitted maps are weak, so the floor-relative read carries the verdict
 
