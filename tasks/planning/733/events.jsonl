@@ -8,3 +8,4 @@
 {"ts": "2026-06-29T14:13:19Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqzaq0xk-tg5xwk phase=done after 121s."}
 {"ts": "2026-06-29T14:13:54Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqzaq4il-mbw7ea phase=done after 151s."}
 {"ts": "2026-06-29T14:14:32Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqzaqac0-u1ou4j phase=done after 181s."}
+{"ts": "2026-06-29T14:25:35Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict=PASS, n_fail=0, n_warn=0, 9 SKIP (kind: infra exemptions), v2"}
