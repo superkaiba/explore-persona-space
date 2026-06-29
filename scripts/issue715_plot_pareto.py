@@ -143,8 +143,8 @@ def _plot_em_strip(cells: dict) -> None:
     ax.set_ylim(-0.02, 0.31)
     ax.set_ylabel("Out-of-distribution EM rate\n(Betley 8-question free-form eval)")
     ax.set_title(
-        "DFT pooled EM below SFT's, and below at every checkpoint\n"
-        "except the boundary (DFT max 0.19 vs SFT min 0.18)",
+        "DFT pooled EM (0.12) below SFT's (0.24); the two distributions\n"
+        "interleave near 0.18 (2 DFT cells sit inside SFT's range)",
         loc="left",
         fontsize=11,
         fontweight="semibold",
