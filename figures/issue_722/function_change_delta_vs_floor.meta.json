@@ -1,0 +1,120 @@
+{
+  "commit": "9d23500b66",
+  "created": "2026-06-29T10:37:07Z",
+  "figsize": [
+    7.4,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "magnitude along behavior direction": 0.1086608969896737,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "magnitude along behavior direction": 0.3124611629210453,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "magnitude along behavior direction": 0.14521780195261821,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "magnitude along behavior direction": 0.008249665529787998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "magnitude along behavior direction": 0.07059650029161724,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "magnitude along behavior direction": 0.16112065744006132,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "magnitude along behavior direction": 0.014075225769911168,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "magnitude along behavior direction": 0.02392308423272732,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "magnitude along behavior direction": 0.03389251640344677,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "magnitude along behavior direction": 0.03751158448609742,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "magnitude along behavior direction": 0.09488372712602798,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "magnitude along behavior direction": 0.09216935562382758,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "magnitude along behavior direction": 0.024429730080024893,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "magnitude along behavior direction": 0.11097781302098775,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "magnitude along behavior direction": 0.2514105907037897,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "magnitude along behavior direction": 0.0044216425893775675,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "magnitude along behavior direction": 0.024966025331845384,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "magnitude along behavior direction": 0.27299345208213244,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18
+}

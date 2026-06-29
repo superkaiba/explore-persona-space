@@ -1,0 +1,74 @@
+{
+  "behavior": "em",
+  "layer": 14,
+  "n_cells": 480,
+  "Delta_med": 0.07059650029161724,
+  "Delta_med_ci": {
+    "point": 0.07059650029161724,
+    "ci_lo": 0.07059650029161724,
+    "ci_hi": 0.07059650029161724,
+    "n_families": 7
+  },
+  "Delta_med_mean_ci": {
+    "point": 0.07651913652805718,
+    "ci_lo": 0.07651913652805717,
+    "ci_hi": 0.0765191365280572,
+    "n_families": 7
+  },
+  "Delta_med_excl_large_shift_ci": {
+    "point": 0.0695807440083868,
+    "ci_lo": 0.0695807440083868,
+    "ci_hi": 0.0695807440083868,
+    "n_families": 7
+  },
+  "floor_M0_refit": 0.021485819257955386,
+  "floor_Mplus_refit": 0.11097781302098775,
+  "floor_shifted": 2.0352372836530818e-05,
+  "floor_combined": 0.11097781302098775,
+  "floor_sd_combined": 0.03310809901652366,
+  "Delta_over_floor_sd": 2.1323030433243475,
+  "support_distance": {
+    "mean": 41.74253973748443,
+    "p90": 47.95431847433689,
+    "n_large_shift": 30
+  },
+  "chain_rho": {
+    "n_with_E": 480,
+    "rho_M0_ridge": -0.09750944906113587,
+    "rho_Mplus_ridge": -0.11946500308457579,
+    "rho_diff_ridge": -0.02195555402343992,
+    "ci_M0_ridge": {
+      "point": -0.09750944906113587,
+      "ci_lo": -0.27750573547531476,
+      "ci_hi": 0.061955031653518844,
+      "n_families": 7
+    },
+    "ci_Mplus_ridge": {
+      "point": -0.1194650030845758,
+      "ci_lo": -0.2538260236746013,
+      "ci_hi": 0.014063224590861715,
+      "n_families": 7
+    },
+    "ci_diff_ridge": {
+      "point": -0.02195555402343992,
+      "ci_lo": -0.22746021022051466,
+      "ci_hi": 0.134609186738153,
+      "n_families": 7
+    },
+    "rho_M0_mlp": -0.021119096973980376,
+    "rho_Mplus_mlp": -0.11743173268540316,
+    "rho_M0_shuffle": 0.0762161469483282,
+    "nonlin_gap_M0": 0.0763903520871555,
+    "nonlin_gap_Mplus": 0.002033270399172629
+  },
+  "cross_transfer": {
+    "m0_to_vplus_cos": -0.025368189776495336,
+    "mplus_to_vplus_cos": -0.02612060364219482,
+    "mplus_to_v0_cos": -0.23493916020683944
+  },
+  "n_families": 7,
+  "metadata": {
+    "issue": 722,
+    "generated_at": "2026-06-29T02:01:26Z"
+  }
+}

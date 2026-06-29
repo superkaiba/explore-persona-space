@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "issue": 722,
+    "git_commit": "d8451cdf10288db06a0190a2aa7e48d3585a9ce2",
+    "generated_at": "2026-06-29T08:44:22Z"
+  },
+  "cells": {
+    "em/L14": {
+      "behavior": "em",
+      "layer": 14,
+      "nonlin_gap_M0": 0.0763903520871555,
+      "nonlin_gap_Mplus": 0.002033270399172629
+    },
+    "em/L21": {
+      "behavior": "em",
+      "layer": 21,
+      "nonlin_gap_M0": 0.0009464273989178498,
+      "nonlin_gap_Mplus": 0.0023519613223939445
+    },
+    "em/L7": {
+      "behavior": "em",
+      "layer": 7,
+      "nonlin_gap_M0": -0.059703467007899295,
+      "nonlin_gap_Mplus": 0.05021110989845344
+    },
+    "fact/L14": {
+      "behavior": "fact",
+      "layer": 14,
+      "nonlin_gap_M0": -0.04067783675092072,
+      "nonlin_gap_Mplus": -0.011321434216459147
+    },
+    "fact/L21": {
+      "behavior": "fact",
+      "layer": 21,
+      "nonlin_gap_M0": -0.017636698103069462,
+      "nonlin_gap_Mplus": -0.008408339311483659
+    },
+    "fact/L7": {
+      "behavior": "fact",
+      "layer": 7,
+      "nonlin_gap_M0": 0.04035530012360934,
+      "nonlin_gap_Mplus": -0.05717530949556382
+    },
+    "sycophancy/L14": {
+      "behavior": "sycophancy",
+      "layer": 14,
+      "nonlin_gap_M0": -0.008589624055263423,
+      "nonlin_gap_Mplus": 0.027732429305291087
+    },
+    "sycophancy/L21": {
+      "behavior": "sycophancy",
+      "layer": 21,
+      "nonlin_gap_M0": 0.01115933749543993,
+      "nonlin_gap_Mplus": -0.004954132128623577
+    },
+    "sycophancy/L7": {
+      "behavior": "sycophancy",
+      "layer": 7,
+      "nonlin_gap_M0": 0.03759576014135052,
+      "nonlin_gap_Mplus": 0.05393400809269214
+    }
+  }
+}

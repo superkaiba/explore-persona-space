@@ -1,12 +1,21 @@
-#!/usr/bin/env python3
-# ruff: noqa: RUF001
-"""Issue #722 clean-result figures (analyzer-owned).
+"""Clean-result figures for issue #722 (pre/post-finetuning context->answer map M).
 
-Reads the committed eval_results/issue_722/*.json from the issue-722 worktree
-and writes blog-style figures to figures/issue_722/ in the main checkout.
+Round-2 revision (interp-critique fixes). Reads the analyzer deliverables:
+  - eval_results/issue_722/function_change.json   (Delta_med, floor_combined, ...)
+  - eval_results/issue_722/chain_rho_M0_Mplus.json (ridge/MLP/shuffle chain rho)
+  - eval_results/issue_722/cross_transfer.json     (M0/M+ cross-transfer cosines)
+
+Five figures:
+  1. hero_function_change_heatmap   -- Delta_med / floor_combined (the KILL-CRITERION
+                                       denominator), 1x = at floor. (MF-C/MF-D)
+  2. function_change_delta_vs_floor -- raw Delta_med vs floor_combined bars (data behind 1)
+  3. chain_rho_shift_forest         -- chain rho under M0 vs M+, family-clustered CI
+  4. cross_transfer_orthogonality   -- cross-transfer asymmetry (M+ generalizes worse) (MF-F)
+  5. mlp_shuffle_diagnostic         -- rho_M0_mlp vs rho_M0_shuffle; passes only fact L7 (MF-I)
+
+All reader-facing labels in plain English (MF-J): full behavior names, full layer
+indices, "Base"/"Post-FT" for M0/M+.
 """
-
-from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -21,316 +30,244 @@ from explore_persona_space.analysis.paper_plots import (
     set_title_subtitle,
 )
 
-WT = Path("/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-722")
-EVAL = WT / "eval_results" / "issue_722"
+ROOT = Path(__file__).resolve().parents[1]
+ED = ROOT / "eval_results" / "issue_722"
+FC = json.load(open(ED / "function_change.json"))["cells"]
+CR = json.load(open(ED / "chain_rho_M0_Mplus.json"))["cells"]
+CT = json.load(open(ED / "cross_transfer.json"))["cells"]
 OUT = "issue_722"
 
-BEH_LABEL = {"em": "Emergent misalignment", "sycophancy": "Sycophancy", "fact": "Taught fact"}
-BEH_ORDER = ["em", "sycophancy", "fact"]
+# Plain-English behavior labels (MF-J) -- no internal slugs reader-facing.
+BEH = {"fact": "taught fact", "em": "harmful compliance (EM)", "sycophancy": "sycophancy"}
+BEH_ORDER = ["fact", "em", "sycophancy"]
 LAYERS = [7, 14, 21]
+KEYS = {b: [f"{b}/L{ly}" for ly in LAYERS] for b in BEH_ORDER}
 
-fc = json.load(open(EVAL / "function_change.json"))["cells"]
-cr = json.load(open(EVAL / "chain_rho_M0_Mplus.json"))["cells"]
-ct = json.load(open(EVAL / "cross_transfer.json"))["cells"]
-
-
-def cell(behavior: str, layer: int) -> dict:
-    return fc[f"{behavior}/L{layer}"]
+# Reader-facing plain-English labels for the crowded bar-chart x-axes (figs 2/4/5).
+# Full behavior names + full layer index; rendered rotated (single line) so the long
+# "harmful compliance (EM)" label stays legible across all 9 groups without overlap.
+SHORT = {"fact": "taught fact", "em": "harmful compliance (EM)", "sycophancy": "sycophancy"}
 
 
-# ---------------------------------------------------------------------------
-# HERO: Delta_med / floor_combined per behavior x layer, with floor line at 1.0
-# ---------------------------------------------------------------------------
-def fig_hero() -> None:
+def _bar_labels():
+    return [f"{SHORT[b]} layer {ly}" for b in BEH_ORDER for ly in LAYERS]
+
+
+C_PRIMARY = paper_palette_role("primary")
+C_BASELINE = paper_palette_role("baseline")
+C_CONTROL = paper_palette_role("control")
+C_NEUTRAL = paper_palette_role("neutral")
+
+
+def _grid(metric_fn):
+    """3 behaviors x 3 layers matrix of metric_fn(cell)."""
+    return np.array([[metric_fn(FC[f"{b}/L{ly}"]) for ly in LAYERS] for b in BEH_ORDER])
+
+
+# ----------------------------------------------------------------------------
+# Figure 1 (hero): Delta_med / floor_combined  (MF-C: kill-criterion denominator)
+# ----------------------------------------------------------------------------
+def fig_hero():
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.2, 4.2))
-    x = np.arange(len(BEH_ORDER))
-    width = 0.26
-    colors = {
-        7: paper_palette_role("baseline"),
-        14: paper_palette_role("primary"),
-        21: paper_palette_role("neutral"),
-    }
-    for i, L in enumerate(LAYERS):
-        ratios = []
-        for b in BEH_ORDER:
-            c = cell(b, L)
-            ratios.append(c["Delta_med"] / c["floor_combined"])
-        bars = ax.bar(
-            x + (i - 1) * width,
-            ratios,
-            width,
-            label=f"layer {L}",
-            color=colors[L],
-            edgecolor="white",
-            linewidth=0.6,
-        )
-        for rect, r in zip(bars, ratios):
+    M = _grid(lambda c: c["Delta_med"] / c["floor_combined"])
+    fig, ax = plt.subplots(figsize=(6.6, 4.2))
+    # Diverging around 1.0 (=at floor): >1 above floor (function changed), <1 below.
+    vmax = float(np.nanmax(M))
+    im = ax.imshow(M, cmap="RdBu_r", vmin=0.0, vmax=2.0 * 1.0, aspect="auto")
+    # clip color scale so the 1x midpoint is visually meaningful; annotate true values.
+    im.set_clim(0.0, 2.0)
+    for i in range(len(BEH_ORDER)):
+        for j in range(len(LAYERS)):
+            v = M[i, j]
+            txt = f"{v:.2f}×"
             ax.text(
-                rect.get_x() + rect.get_width() / 2,
-                rect.get_height() + 0.06,
-                f"{r:.1f}",
+                j,
+                i,
+                txt,
                 ha="center",
-                va="bottom",
-                fontsize=7.5,
+                va="center",
+                fontsize=11,
+                color="#1A1A1A" if 0.45 < v < 1.55 else "white",
+                fontweight="semibold",
             )
-    ax.axhline(1.0, color="#c0392b", linestyle="--", linewidth=1.3, zorder=1)
-    ax.text(
-        2.45, 1.06, "floor (= at noise floor)", color="#c0392b", fontsize=8, ha="right", va="bottom"
+    ax.set_xticks(range(len(LAYERS)))
+    ax.set_xticklabels([f"layer {ly}" for ly in LAYERS])
+    ax.set_yticks(range(len(BEH_ORDER)))
+    ax.set_yticklabels([BEH[b] for b in BEH_ORDER])
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("function-change Δ ÷ noise floor\n(1× = at floor)", fontsize=9)
+    cbar.ax.axhline(1.0, color="#1A1A1A", lw=1.0)
+    set_title_subtitle(
+        ax,
+        "At the primary layer (14), only the taught fact clears the noise floor",
+        "Δ (‖post-FT map − base map‖ along behavior dir) over the kill-criterion floor; >1× = function moved",
+        source="issue #722 · ridge fit · 16 source contexts · seed 42",
     )
+    savefig_paper(fig, f"{OUT}/hero_function_change_heatmap")
+    plt.close(fig)
+
+
+# ----------------------------------------------------------------------------
+# Figure 2: raw Delta_med vs floor_combined bars (the data behind the ratio)
+# ----------------------------------------------------------------------------
+def fig_delta_vs_floor():
+    set_paper_style("blog")
+    cells = [f"{b}/L{ly}" for b in BEH_ORDER for ly in LAYERS]
+    labels = _bar_labels()
+    dmed = [FC[k]["Delta_med"] for k in cells]
+    floor = [FC[k]["floor_combined"] for k in cells]
+    x = np.arange(len(cells))
+    w = 0.4
+    fig, ax = plt.subplots(figsize=(7.4, 4.2))
+    ax.bar(x - w / 2, dmed, w, label="function-change Δ", color=C_PRIMARY)
+    ax.bar(x + w / 2, floor, w, label="noise floor (post-FT refit)", color=C_BASELINE)
     ax.set_xticks(x)
-    ax.set_xticklabels([BEH_LABEL[b] for b in BEH_ORDER])
-    ax.set_ylabel("function-change Δ_med ÷ combined noise floor")
-    ax.set_ylim(0, 3.7)
-    ax.legend(frameon=False, loc="upper left", ncol=3, fontsize=8)
+    ax.set_xticklabels(labels, fontsize=8, rotation=20, ha="right")
+    ax.set_ylabel("magnitude along behavior direction")
+    ax.legend(frameon=False, fontsize=9)
     set_title_subtitle(
         ax,
-        "Only the taught fact reshapes the context→answer function above the noise floor",
-        "ratio > 1 = function-change clears the combined refit/shift floor; n = 480 context "
-        "cells/behavior, 7 families; ridge fit",
+        "The fact Δ towers over its floor; EM and late sycophancy sit below",
+        "raw Δ vs its combined floor — floor bound by the post-FT map's own refit variance in all 9 cells",
+        source="issue #722 · ridge fit · family-clustered bootstrap (7 context families)",
     )
-    savefig_paper(fig, f"{OUT}/hero_function_change", dir="figures/")
+    savefig_paper(fig, f"{OUT}/function_change_delta_vs_floor")
     plt.close(fig)
 
 
-# ---------------------------------------------------------------------------
-# LOW-LEVEL companion: per-behavior x layer Delta_med vs its combined floor
-# (the two raw quantities behind the hero ratio), points labeled.
-# ---------------------------------------------------------------------------
-def fig_hero_points() -> None:
+# ----------------------------------------------------------------------------
+# Figure 3: chain rho under M0 (base) vs M+ (post-FT), family-clustered CI
+# ----------------------------------------------------------------------------
+def fig_chain_forest():
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.0, 4.4))
-    maxv = 0.0
-    for b in BEH_ORDER:
-        for L in LAYERS:
-            c = cell(b, L)
-            maxv = max(maxv, c["Delta_med"], c["floor_combined"])
-    lim = maxv * 1.12
-    ax.plot([0, lim], [0, lim], color="#999999", linestyle=":", linewidth=1.0, zorder=1)
-    ax.text(
-        lim * 0.97,
-        lim * 0.97,
-        "Δ = floor",
-        color="#777777",
-        fontsize=8,
-        ha="right",
-        va="bottom",
-        rotation=45,
-    )
-    markers = {"em": "o", "sycophancy": "s", "fact": "^"}
-    colors = {
-        7: paper_palette_role("baseline"),
-        14: paper_palette_role("primary"),
-        21: paper_palette_role("neutral"),
-    }
-    for b in BEH_ORDER:
-        for L in LAYERS:
-            c = cell(b, L)
-            ax.scatter(
-                c["floor_combined"],
-                c["Delta_med"],
-                s=80,
-                marker=markers[b],
-                facecolors=colors[L],
-                edgecolors="#333333",
-                linewidths=0.8,
-                zorder=3,
-            )
-            ax.text(
-                c["floor_combined"],
-                c["Delta_med"] + lim * 0.012,
-                f"{BEH_LABEL[b].split()[0]} L{L}",
-                fontsize=6.6,
-                ha="center",
-                va="bottom",
-            )
-    ax.set_xlabel("combined noise floor (max of M0-refit, M⁺-refit, shifted-design)")
-    ax.set_ylabel("function-change Δ_med (median |Δ(c)·r̂_B|)")
-    ax.set_xlim(0, lim)
-    ax.set_ylim(0, lim)
-    set_title_subtitle(
-        ax,
-        "The raw quantities behind the ratio: Δ_med vs its floor, per cell",
-        "points above the dotted line clear the floor (all 3 taught-fact layers); em/sycophancy "
-        "sit on or below it",
-    )
-    savefig_paper(fig, f"{OUT}/hero_function_change_points", dir="figures/")
-    plt.close(fig)
-
-
-# ---------------------------------------------------------------------------
-# CHAIN-rho PAIR: rho_M0 vs rho_M+ with paired CI on rho_diff, per behavior x layer
-# ---------------------------------------------------------------------------
-def fig_chain_rho() -> None:
-    set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.2, 4.6))
-    rows = [(b, L) for b in BEH_ORDER for L in LAYERS]
-    y = np.arange(len(rows))[::-1]
-    col_m0 = paper_palette_role("baseline")
-    col_mp = paper_palette_role("primary")
-    for yi, (b, L) in zip(y, rows):
-        d = cr[f"{b}/L{L}"]
-        m0 = d["rho_M0_ridge"]
-        mp = d["rho_Mplus_ridge"]
-        dci = d["ci_diff_ridge"]
-        # connecting line M0 -> M+
-        ax.plot([m0, mp], [yi, yi], color="#bbbbbb", linewidth=1.2, zorder=1)
-        ax.scatter(
-            [m0],
-            [yi],
-            s=70,
-            color=col_m0,
-            edgecolors="#333",
-            linewidths=0.7,
-            zorder=3,
-            label="base map M0" if yi == y[0] else None,
-        )
-        ax.scatter(
-            [mp],
-            [yi],
-            s=70,
-            color=col_mp,
-            edgecolors="#333",
-            linewidths=0.7,
-            zorder=3,
-            label="post-FT map M⁺" if yi == y[0] else None,
-        )
-        excl = (dci["ci_lo"] > 0) or (dci["ci_hi"] < 0)
-        tag = f"Δρ=[{dci['ci_lo']:+.2f},{dci['ci_hi']:+.2f}]"
-        ax.text(
-            0.78,
-            yi,
-            tag,
-            fontsize=6.8,
-            va="center",
-            ha="left",
-            color="#1a7a3a" if excl else "#888888",
-            fontweight="bold" if excl else "normal",
-        )
-    ax.axvline(0.0, color="#999999", linestyle="--", linewidth=1.0)
-    ax.set_yticks(y)
-    ax.set_yticklabels([f"{BEH_LABEL[b].split()[0]} L{L}" for (b, L) in rows])
-    ax.set_xlabel("Spearman ρ ( r̂_Bᵀ M̂(c)  vs  measured leakage rate E ), held-out LOCO")
-    ax.set_xlim(-0.45, 1.28)
-    ax.legend(frameon=False, loc="center right", fontsize=8)
-    set_title_subtitle(
-        ax,
-        "Finetuning creates a fact→leakage transfer that the base map never had",
-        "green Δρ interval = post-FT minus base CI excludes zero (taught fact, all layers); "
-        "em/sycophancy unchanged",
-    )
-    savefig_paper(fig, f"{OUT}/chain_rho_pair", dir="figures/")
-    plt.close(fig)
-
-
-# ---------------------------------------------------------------------------
-# LAYER SPECTRUM inset: Delta_med/floor_combined vs layer per behavior
-# ---------------------------------------------------------------------------
-def fig_layer_spectrum() -> None:
-    set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(6.4, 4.0))
-    colors = {
-        "em": paper_palette_role("control"),
-        "sycophancy": paper_palette_role("accent"),
-        "fact": paper_palette_role("primary"),
-    }
-    markers = {"em": "o", "sycophancy": "s", "fact": "^"}
-    for b in BEH_ORDER:
-        ys = [cell(b, L)["Delta_med"] / cell(b, L)["floor_combined"] for L in LAYERS]
+    cells = [f"{b}/L{ly}" for b in BEH_ORDER for ly in LAYERS]
+    labels = [f"{BEH[b].split(' (')[0]} — layer {ly}" for b in BEH_ORDER for ly in LAYERS]
+    y = np.arange(len(cells))[::-1]
+    fig, ax = plt.subplots(figsize=(7.0, 4.6))
+    for yi, k in zip(y, cells):
+        m0 = CR[k]["ci_M0_ridge"]
+        mp = CR[k]["ci_Mplus_ridge"]
         ax.plot(
-            LAYERS,
-            ys,
-            marker=markers[b],
-            color=colors[b],
-            linewidth=1.6,
-            markersize=7,
-            label=BEH_LABEL[b],
+            [m0["ci_lo"], m0["ci_hi"]], [yi + 0.12, yi + 0.12], color=C_BASELINE, lw=2.0, alpha=0.8
         )
-    ax.axhline(1.0, color="#c0392b", linestyle="--", linewidth=1.1)
-    ax.text(21, 1.04, "floor", color="#c0392b", fontsize=8, ha="right", va="bottom")
-    ax.set_xticks(LAYERS)
-    ax.set_xlabel("read layer")
-    ax.set_ylabel("Δ_med ÷ combined noise floor")
-    ax.legend(frameon=False, fontsize=8)
+        ax.scatter([m0["point"]], [yi + 0.12], color=C_BASELINE, s=34, zorder=3, label="_")
+        ax.plot(
+            [mp["ci_lo"], mp["ci_hi"]], [yi - 0.12, yi - 0.12], color=C_PRIMARY, lw=2.0, alpha=0.8
+        )
+        ax.scatter([mp["point"]], [yi - 0.12], color=C_PRIMARY, s=34, zorder=3, label="_")
+    ax.axvline(0.0, color=C_NEUTRAL, lw=1.0, ls="--")
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels, fontsize=8)
+    ax.set_xlabel("Spearman ρ (predicted behavior signal vs judge leakage rate)")
+    # manual legend
+    from matplotlib.lines import Line2D
+
+    ax.legend(
+        handles=[
+            Line2D([0], [0], color=C_BASELINE, marker="o", lw=2, label="base map (M0)"),
+            Line2D([0], [0], color=C_PRIMARY, marker="o", lw=2, label="post-FT map (M⁺)"),
+        ],
+        frameon=False,
+        fontsize=9,
+        loc="lower right",
+    )
     set_title_subtitle(
         ax,
-        "Function-change is layer-specific and behavior-specific",
-        "taught fact clears the floor at every layer; em/sycophancy stay at or below it across "
-        "the read band",
+        "A context→leakage chain appears for the taught fact only",
+        "fact chain ρ jumps ≈0 → +0.46–+0.50 post-FT (CI excludes 0); EM + sycophancy straddle 0",
+        source="issue #722 · held-out LOCO ridge · 95% family-clustered CI (7 families)",
     )
-    savefig_paper(fig, f"{OUT}/layer_spectrum", dir="figures/")
+    savefig_paper(fig, f"{OUT}/chain_rho_shift_forest")
     plt.close(fig)
 
 
-# ---------------------------------------------------------------------------
-# CROSS-TRANSFER matrix: M+ -> v0 cosine (the disambiguator) per behavior x layer
-# ---------------------------------------------------------------------------
-def fig_cross_transfer() -> None:
-    # Primary layer L=14 only: the three cross-transfer cosines per behavior.
-    # M0->v+ and M+->v+ are near-identical and near-zero everywhere (both maps
-    # are weak fits on FT data); M+->v0 is strongly NEGATIVE -- the post-FT map
-    # actively mispredicts base answer-profiles. This is why raw cosine is NOT
-    # the headline; the floor-relative Delta is.
+# ----------------------------------------------------------------------------
+# Figure 4: cross-transfer asymmetry (MF-F: drop "orthogonal")
+#   M0->v+ and M+->v+ both ~0 (neither map predicts the post-FT profile);
+#   M+->v0 is -0.22..-0.32 (M+ generalizes WORSE to base inputs than M0 does to FT).
+# ----------------------------------------------------------------------------
+def fig_cross_transfer():
     set_paper_style("blog")
-    plt.rcParams["figure.constrained_layout.use"] = False
-    fig, ax = plt.subplots(figsize=(7.4, 4.4))
-    fig.subplots_adjust(left=0.12, right=0.97, top=0.80, bottom=0.13)
-    x = np.arange(len(BEH_ORDER))
-    width = 0.26
-    series = [
-        ("M0 → v⁺ (base map on FT outputs)", "m0_to_vplus_cos", paper_palette_role("baseline")),
-        (
-            "M⁺ → v⁺ (post-FT map on FT outputs)",
-            "mplus_to_vplus_cos",
-            paper_palette_role("primary"),
-        ),
-        ("M⁺ → v0 (post-FT map on base outputs)", "mplus_to_v0_cos", paper_palette_role("control")),
-    ]
-    for i, (lab, key, col) in enumerate(series):
-        vals = [ct[f"{b}/L14"][key] for b in BEH_ORDER]
-        bars = ax.bar(
-            x + (i - 1) * width, vals, width, label=lab, color=col, edgecolor="white", linewidth=0.6
-        )
-        for rect, v in zip(bars, vals):
-            ax.text(
-                rect.get_x() + rect.get_width() / 2,
-                rect.get_height() - 0.012 if v < 0 else rect.get_height() + 0.004,
-                f"{v:+.2f}",
-                ha="center",
-                va="top" if v < 0 else "bottom",
-                fontsize=6.6,
-            )
-    ax.axhline(0.0, color="#333", linewidth=0.8)
+    cells = [f"{b}/L{ly}" for b in BEH_ORDER for ly in LAYERS]
+    labels = _bar_labels()
+    m0_vp = [CT[k]["m0_to_vplus_cos"] for k in cells]
+    mp_vp = [CT[k]["mplus_to_vplus_cos"] for k in cells]
+    mp_v0 = [CT[k]["mplus_to_v0_cos"] for k in cells]
+    x = np.arange(len(cells))
+    w = 0.27
+    fig, ax = plt.subplots(figsize=(8.2, 4.2))
+    ax.bar(x - w, m0_vp, w, label="base map → post-FT profile", color=C_BASELINE)
+    ax.bar(x, mp_vp, w, label="post-FT map → post-FT profile", color=C_PRIMARY)
+    ax.bar(x + w, mp_v0, w, label="post-FT map → base profile", color=C_CONTROL)
+    ax.axhline(0.0, color=C_NEUTRAL, lw=1.0)
     ax.set_xticks(x)
-    ax.set_xticklabels([BEH_LABEL[b] for b in BEH_ORDER])
-    ax.set_ylabel("held-out cross-transfer cosine (layer 14)")
-    ax.set_ylim(-0.36, 0.06)
-    ax.legend(frameon=False, fontsize=7.5, loc="lower left")
-    ax.set_title(
-        "Both fitted maps are weak; the post-FT map mispredicts base outputs",
-        loc="left",
-        fontsize=11,
-        fontweight="semibold",
-        pad=26,
+    ax.set_xticklabels(
+        [lbl.replace("\n", " ") for lbl in labels], fontsize=8, rotation=20, ha="right"
     )
-    ax.annotate(
-        "M0→v⁺ ≈ M⁺→v⁺ ≈ 0 (neither map predicts FT outputs); M⁺→v0 < 0 — raw cosine "
-        "is uninformative, so the floor-relative Δ is the valid read",
-        xy=(0.0, 1.02),
-        xycoords="axes fraction",
-        fontsize=8,
-        color="#555555",
-        va="bottom",
+    ax.set_ylabel("held-out cross-transfer cosine")
+    ax.legend(frameon=False, fontsize=8, ncol=1, loc="lower left")
+    set_title_subtitle(
+        ax,
+        "Cross-transfer is asymmetric: the post-FT map generalizes worse",
+        "neither map predicts the post-FT profile (≈0); the post-FT map predicts the base profile worst (−0.22 to −0.32)",
+        source="issue #722 · held-out cross-transfer cosine · 9 cells",
     )
-    savefig_paper(fig, f"{OUT}/cross_transfer", dir="figures/")
+    savefig_paper(fig, f"{OUT}/cross_transfer_orthogonality")
     plt.close(fig)
-    plt.rcParams["figure.constrained_layout.use"] = True
+
+
+# ----------------------------------------------------------------------------
+# Figure 5: MLP-vs-shuffle diagnostic (MF-I: passes only at fact L7)
+#   The kill-criterion gate is rho_M0_mlp > rho_M0_shuffle on the BASE map.
+# ----------------------------------------------------------------------------
+def fig_mlp_shuffle():
+    set_paper_style("blog")
+    cells = [f"{b}/L{ly}" for b in BEH_ORDER for ly in LAYERS]
+    labels = _bar_labels()
+    mlp = [CR[k]["rho_M0_mlp"] for k in cells]
+    shuf = [CR[k]["rho_M0_shuffle"] for k in cells]
+    passes = [m > s for m, s in zip(mlp, shuf)]
+    x = np.arange(len(cells))
+    w = 0.4
+    fig, ax = plt.subplots(figsize=(7.4, 4.2))
+    ax.bar(x - w / 2, mlp, w, label="nonlinear MLP fit (base map)", color=C_PRIMARY)
+    ax.bar(x + w / 2, shuf, w, label="shuffle null", color=C_NEUTRAL)
+    ax.axhline(0.0, color=C_NEUTRAL, lw=0.8)
+    # mark the one cell where the MLP beats its shuffle null (fact L7).
+    ymax = max(max(mlp), max(shuf))
+    ymin = min(min(mlp), min(shuf))
+    ax.set_ylim(ymin - 0.02, ymax + 0.05)
+    for xi, p in zip(x, passes):
+        if p:
+            ax.annotate(
+                "MLP beats\nshuffle here",
+                xy=(xi, max(mlp[xi], shuf[xi])),
+                xytext=(xi + 1.0, ymax - 0.01),
+                ha="left",
+                va="top",
+                fontsize=7.5,
+                color=C_PRIMARY,
+                fontweight="semibold",
+                arrowprops=dict(arrowstyle="->", color=C_PRIMARY, lw=1.0),
+            )
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=8, rotation=20, ha="right")
+    ax.set_ylabel("held-out reconstruction ρ (base map)")
+    ax.legend(frameon=False, fontsize=9, loc="lower left")
+    set_title_subtitle(
+        ax,
+        "The nonlinear map fails the shuffle null in 8 of 9 cells",
+        "MLP beats its shuffle control only at taught fact, layer 7 — so the read is ridge-only",
+        source="issue #722 · MLP vs label-shuffle, base map · 16 contexts, seed 42",
+    )
+    savefig_paper(fig, f"{OUT}/mlp_shuffle_diagnostic")
+    plt.close(fig)
 
 
 if __name__ == "__main__":
     fig_hero()
-    fig_hero_points()
-    fig_chain_rho()
-    fig_layer_spectrum()
+    fig_delta_vs_floor()
+    fig_chain_forest()
     fig_cross_transfer()
-    print("DONE figures/issue_722/")
+    fig_mlp_shuffle()
+    print("issue #722 figures regenerated.")

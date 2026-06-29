@@ -1,0 +1,370 @@
+{
+  "meta": {
+    "issue": 722,
+    "git_commit": "d8451cdf10288db06a0190a2aa7e48d3585a9ce2",
+    "generated_at": "2026-06-29T08:44:22Z",
+    "mlp_function_change_scope_caveat": "Headline \u0394_med is RIDGE-only by design \u2014 the MLP path serves the chain-\u03c1 co-primary + nonlinearity-gap reads only. Plan \u00a74.5 read 1's 'for both ridge and MLP' is interpreted as ridge-headline + MLP-as-context (held-out chain-\u03c1 + nonlinearity gap); the MLP has no closed-form off-LOCO read for M(c) at a fresh grid input. Carried as a scope caveat into the clean-result."
+  },
+  "cells": {
+    "em/L14": {
+      "behavior": "em",
+      "layer": 14,
+      "n_cells": 480,
+      "Delta_med": 0.07059650029161724,
+      "Delta_med_ci": {
+        "point": 0.07059650029161724,
+        "ci_lo": 0.07059650029161724,
+        "ci_hi": 0.07059650029161724,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.07651913652805718,
+        "ci_lo": 0.07651913652805717,
+        "ci_hi": 0.0765191365280572,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.0695807440083868,
+        "ci_lo": 0.0695807440083868,
+        "ci_hi": 0.0695807440083868,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.021485819257955386,
+      "floor_Mplus_refit": 0.11097781302098775,
+      "floor_shifted": 2.0352372836530818e-05,
+      "floor_combined": 0.11097781302098775,
+      "floor_sd_combined": 0.03310809901652366,
+      "Delta_over_floor_sd": 2.1323030433243475,
+      "support_distance": {
+        "mean": 41.74253973748443,
+        "p90": 47.95431847433689,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_input",
+      "large_shift_flip": false
+    },
+    "em/L21": {
+      "behavior": "em",
+      "layer": 21,
+      "n_cells": 480,
+      "Delta_med": 0.16112065744006132,
+      "Delta_med_ci": {
+        "point": 0.16112065744006132,
+        "ci_lo": 0.16112065744006132,
+        "ci_hi": 0.16112065744006132,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.16746781992958884,
+        "ci_lo": 0.16746781992958884,
+        "ci_hi": 0.16746781992958887,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.17276914522065032,
+        "ci_lo": 0.17276914522065032,
+        "ci_hi": 0.17276914522065032,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.04279907712618546,
+      "floor_Mplus_refit": 0.2514105907037897,
+      "floor_shifted": 7.682883753783169e-06,
+      "floor_combined": 0.2514105907037897,
+      "floor_sd_combined": 0.06590860625012591,
+      "Delta_over_floor_sd": 2.444607261585865,
+      "support_distance": {
+        "mean": 77.44579766716438,
+        "p90": 93.23720603314355,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_input",
+      "large_shift_flip": false
+    },
+    "em/L7": {
+      "behavior": "em",
+      "layer": 7,
+      "n_cells": 480,
+      "Delta_med": 0.008249665529787998,
+      "Delta_med_ci": {
+        "point": 0.008249665529787998,
+        "ci_lo": 0.008249665529787998,
+        "ci_hi": 0.008249665529787998,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.010880900211449307,
+        "ci_lo": 0.010880900211449303,
+        "ci_hi": 0.010880900211449307,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.0066914081292104195,
+        "ci_lo": 0.0066914081292104195,
+        "ci_hi": 0.0066914081292104195,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.011210608616755732,
+      "floor_Mplus_refit": 0.024429730080024893,
+      "floor_shifted": 1.6986223581836208e-05,
+      "floor_combined": 0.024429730080024893,
+      "floor_sd_combined": 0.007178112351693797,
+      "Delta_over_floor_sd": 1.1492806361328896,
+      "support_distance": {
+        "mean": 15.821055185881304,
+        "p90": 17.3828257059465,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_input",
+      "large_shift_flip": false
+    },
+    "fact/L14": {
+      "behavior": "fact",
+      "layer": 14,
+      "n_cells": 480,
+      "Delta_med": 0.3124611629210453,
+      "Delta_med_ci": {
+        "point": 0.3124611629210453,
+        "ci_lo": 0.3124611629210453,
+        "ci_hi": 0.3124611629210453,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.31118347933486423,
+        "ci_lo": 0.3111834793348642,
+        "ci_hi": 0.31118347933486423,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.3123839829378871,
+        "ci_lo": 0.3123839829378871,
+        "ci_hi": 0.3123839829378871,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.006174101413242641,
+      "floor_Mplus_refit": 0.09488372712602798,
+      "floor_shifted": 4.660302063807296e-06,
+      "floor_combined": 0.09488372712602798,
+      "floor_sd_combined": 0.032785710217858054,
+      "Delta_over_floor_sd": 9.530407023205212,
+      "support_distance": {
+        "mean": 46.41787704072999,
+        "p90": 60.33230439618545,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_function",
+      "large_shift_flip": false
+    },
+    "fact/L21": {
+      "behavior": "fact",
+      "layer": 21,
+      "n_cells": 480,
+      "Delta_med": 0.14521780195261821,
+      "Delta_med_ci": {
+        "point": 0.14521780195261821,
+        "ci_lo": 0.14521780195261821,
+        "ci_hi": 0.14521780195261821,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.22129810996129026,
+        "ci_lo": 0.22129810996129023,
+        "ci_hi": 0.2212981099612903,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.13979682399540685,
+        "ci_lo": 0.13979682399540685,
+        "ci_hi": 0.13979682399540685,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.013813142121023329,
+      "floor_Mplus_refit": 0.09216935562382758,
+      "floor_shifted": 1.677658490312098e-05,
+      "floor_combined": 0.09216935562382758,
+      "floor_sd_combined": 0.03180460443809149,
+      "Delta_over_floor_sd": 4.565936427075789,
+      "support_distance": {
+        "mean": 85.06321017132453,
+        "p90": 97.50551038012192,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_function",
+      "large_shift_flip": false
+    },
+    "fact/L7": {
+      "behavior": "fact",
+      "layer": 7,
+      "n_cells": 480,
+      "Delta_med": 0.1086608969896737,
+      "Delta_med_ci": {
+        "point": 0.1086608969896737,
+        "ci_lo": 0.1086608969896737,
+        "ci_hi": 0.1086608969896737,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.08790781960306296,
+        "ci_lo": 0.08790781960306296,
+        "ci_hi": 0.08790781960306299,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.10938140862207774,
+        "ci_lo": 0.10938140862207774,
+        "ci_hi": 0.10938140862207774,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.003171923971023098,
+      "floor_Mplus_refit": 0.03751158448609742,
+      "floor_shifted": 6.096073214100436e-06,
+      "floor_combined": 0.03751158448609742,
+      "floor_sd_combined": 0.011675056266388298,
+      "Delta_over_floor_sd": 9.307098356562197,
+      "support_distance": {
+        "mean": 20.274161941050693,
+        "p90": 22.982906169534818,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_function",
+      "large_shift_flip": false
+    },
+    "sycophancy/L14": {
+      "behavior": "sycophancy",
+      "layer": 14,
+      "n_cells": 480,
+      "Delta_med": 0.02392308423272732,
+      "Delta_med_ci": {
+        "point": 0.02392308423272732,
+        "ci_lo": 0.02392308423272732,
+        "ci_hi": 0.02392308423272732,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.02213895464314305,
+        "ci_lo": 0.022138954643143048,
+        "ci_hi": 0.022138954643143055,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.020090574283930115,
+        "ci_lo": 0.020090574283930115,
+        "ci_hi": 0.020090574283930115,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.0075625636509292,
+      "floor_Mplus_refit": 0.024966025331845384,
+      "floor_shifted": 5.3594273239845504e-06,
+      "floor_combined": 0.024966025331845384,
+      "floor_sd_combined": 0.006756878225244845,
+      "Delta_over_floor_sd": 3.540552816735192,
+      "support_distance": {
+        "mean": 35.123874277613986,
+        "p90": 42.00312609813611,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_input",
+      "large_shift_flip": false
+    },
+    "sycophancy/L21": {
+      "behavior": "sycophancy",
+      "layer": 21,
+      "n_cells": 480,
+      "Delta_med": 0.03389251640344677,
+      "Delta_med_ci": {
+        "point": 0.03389251640344677,
+        "ci_lo": 0.03389251640344677,
+        "ci_hi": 0.03389251640344677,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.041897180576041866,
+        "ci_lo": 0.04189718057604186,
+        "ci_hi": 0.04189718057604187,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.03916506975473647,
+        "ci_lo": 0.03916506975473647,
+        "ci_hi": 0.03916506975473647,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.01649144805146254,
+      "floor_Mplus_refit": 0.27299345208213244,
+      "floor_shifted": 3.95249154458478e-05,
+      "floor_combined": 0.27299345208213244,
+      "floor_sd_combined": 0.07986045117295952,
+      "Delta_over_floor_sd": 0.4243967559116753,
+      "support_distance": {
+        "mean": 88.48556907087365,
+        "p90": 101.84532787756082,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_input",
+      "large_shift_flip": false
+    },
+    "sycophancy/L7": {
+      "behavior": "sycophancy",
+      "layer": 7,
+      "n_cells": 480,
+      "Delta_med": 0.014075225769911168,
+      "Delta_med_ci": {
+        "point": 0.014075225769911168,
+        "ci_lo": 0.014075225769911168,
+        "ci_hi": 0.014075225769911168,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.01633635018068052,
+        "ci_lo": 0.016336350180680515,
+        "ci_hi": 0.01633635018068052,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.00947625823193882,
+        "ci_lo": 0.00947625823193882,
+        "ci_hi": 0.00947625823193882,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.004012064224047376,
+      "floor_Mplus_refit": 0.0044216425893775675,
+      "floor_shifted": 1.2467872335144853e-06,
+      "floor_combined": 0.0044216425893775675,
+      "floor_sd_combined": 0.0011164015017379166,
+      "Delta_over_floor_sd": 12.607673626379114,
+      "support_distance": {
+        "mean": 6.846831377727626,
+        "p90": 8.68549665569067,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "h_call": "H_function",
+      "large_shift_flip": false
+    }
+  },
+  "kill_criterion": {
+    "primary_layer": 14,
+    "behaviors_evaluated": 3,
+    "n_straddle": 2,
+    "n_H_function": 1,
+    "n_H_input_clean": 0,
+    "per_behavior": {
+      "em": "H_input_shuffle_failed",
+      "sycophancy": "H_input_shuffle_failed",
+      "fact": "H_function"
+    },
+    "outcome": "inconclusive",
+    "inconclusive": true,
+    "note": "outcome=inconclusive iff \u0394_med CI straddles floor_combined (H_mixed / undetermined / shuffle-failed-H_input) for >=2 of the 3 headline behaviors at L=14; a clean below-floor H_input with a passing MLP-vs-shuffle check across all 3 is H_input_clean (the positive H_input answer), NOT inconclusive (plan \u00a73 / \u00a78)"
+  },
+  "cross_ref_697": {
+    "status": "N/A \u2014 #697 artifact absent at analysis time"
+  }
+}
