@@ -4429,6 +4429,13 @@
       "status": "completed",
       "title": "Persona taxonomy"
     },
+    "703": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/703",
+      "status": "completed",
+      "title": "fix full-suite test-isolation pollution (module-singleton leak across 4 tests)"
+    },
     "71": {
       "has_clean_result": false,
       "kind": "experiment",
