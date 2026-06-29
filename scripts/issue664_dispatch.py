@@ -481,9 +481,27 @@ def _shard_filter(cells: list[C.Cell], shard_id: int, num_shards: int) -> list[C
 
 
 def phase0(args) -> None:
-    """Build the on-policy caches + pools + per-cell training mixes (P2.0)."""
+    """Build the on-policy caches + pools + per-cell training mixes (P2.0).
+
+    r23 (#664): ``--behavior`` scopes phase0 to that behavior's cells (elicitation
+    behavior/source set AND the build-mixes loop), symmetric with how ``run_all``
+    applies the same flag to the p1/p2 per-cell loops. Without it a
+    ``--phase p0 --behavior sycophancy`` recovery still iterated the marker cells
+    and crashed on an under-filled marker_R cache (the 16-rf/sy recovery only needs
+    the rf/sy on-policy caches + mixes, never marker_R). The build-mixes loop ALSO
+    skips any cell already complete locally OR on HF (``_cell_done_anywhere``) so a
+    partially-rehydrated pod does not re-build training mixes for cells whose
+    artifacts already exist (the same fresh-pod-after-clean skip wired into p2)."""
     phase_log("p0_elicit")
     cells = _select_cells(args)
+    # r23: scope phase0 to --behavior when set (run_all applies it to p1/p2 AFTER
+    # phase0, so phase0 itself would otherwise always see the full grid).
+    if getattr(args, "behavior", None):
+        before = len(cells)
+        cells = [c for c in cells if c.behavior == args.behavior]
+        logger.info(
+            "[p0] --behavior=%s filter: %d of %d cells retained", args.behavior, len(cells), before
+        )
     behaviors = sorted({c.behavior for c in cells})
     sources = sorted({c.source for c in cells})
     neg_panel = C.negative_panel()
@@ -551,8 +569,17 @@ def phase0(args) -> None:
     # accumulates the dropped cells + writes a top-level manifest so every downstream
     # phase (train / extract / eval / manifest / upload / repro-card) excludes them.
     phase_log("p0_build_mixes")
+    # r23 (#664): skip building a training mix for a cell already complete locally
+    # OR on HF (the fresh-pod-after-clean path) -- ONE HF listing for the whole loop
+    # (skipped in smoke). A cell whose final artifacts exist needs no fresh mix.
+    hub_files = None if smoke else _hub_data_listing()
     dropped: list[C.Cell] = []
     for cell in cells:
+        if _cell_done_anywhere(cell, smoke=smoke, hub_files=hub_files):
+            logger.info(
+                "[p0-build] %s already done (local or HF) -- skipping mix build", cell.eval_key
+            )
+            continue
         cmd = [
             sys.executable,
             str(C.REPO / "scripts/issue664_build_training_data.py"),
