@@ -8,6 +8,8 @@
 - [Read eval script, not just plan](feedback_read_eval_script_not_just_plan.md) — ground each cell's semantics in the cell-builder code + 5 raw rows; plan labels can invert findings. #475.
 - [logP vs Δ probability](feedback_logp_vs_delta_probability.md) — exp(Δ) is NOT a probability; pull trained_logp_median before quoting "% mass". #475.
 - [Saturation collapses marker DV](feedback_saturation_collapses_marker_dv.md) — flag cells with emission ≥0.5 AND marker-run length near gen cap before any correlation. #480.
+- [Compute aggregate DV from store when dispatcher died](feedback_compute_aggregate_dv_from_store_when_dispatcher_dies.md) — recovered run lands tensors but never runs P2.5 aggregate/judge; compute PRIMARY DV from tensors, stream-and-delete, HF_HUB_DOWNLOAD_TIMEOUT=30, report judge gap. #664.
+- [Best-layer SNR is selection-biased](feedback_best_layer_snr_selection_biased.md) — a max-over-28-layers SNR optimistically clears a noise floor; report fixed-layer + across-layer median alongside, never best-layer alone. #664.
 - [Slot-kind composition for cross-arm contrasts](feedback_slot_kind_composition_cross_arm.md) — arms with ~2x+ emission gaps mix slot kinds differently; compute matched-slot contrast + per-arm emission rates. #571.
 - [Scope localization claims to the estimand](feedback_scope_localization_to_the_estimand.md) — pooled-Δρ licenses only "pooled correlation concentrated in X"; check forest/FE/marginals in both cohorts + DV spaces first. #539.
 - [Early-stop when eval range collapses](feedback_early_stop_when_eval_range_collapses.md) — gate dropping cells along the DV axis makes the survivor sweep a leverage statistic; the gate IS the finding. #467.

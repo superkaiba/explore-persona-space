@@ -1,0 +1,1188 @@
+{
+  "commit": "04ab575017",
+  "created": "2026-06-29T10:50:21Z",
+  "figsize": [
+    7.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.07122857262455046,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.081406,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0158916056644664,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.095494,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09323545917695944,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.010443,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.051315687555434614,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.060943,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10551388954921112,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.026055,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.12366181142555654,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.022912,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06789632251749178,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.021027,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07437671937200799,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.059705,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09669045550435808,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.059474,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01289965614715255,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.036176,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.033592513699528884,
+      "bystander \u011d$^{real}$ (fraction of source write)": 2.5e-05,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11095889710063647,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.031967,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03740493122097277,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.069341,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0839180194504158,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.009337,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.014712308304893909,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.079821,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07091793233595801,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.060783,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.01419204462411705,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.027225,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11340751341291441,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.009476,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08518410471807134,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.047332,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03423274377173685,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.014932,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0671028124221972,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.051938,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.03782324828623422,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.027421,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.12238148634267487,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.060727,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1022114915437714,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.013319,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07237970923917808,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.010715,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07939393595848843,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.09999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.008652539030971115,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.06388,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11861102089532052,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.024681,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08988473206243758,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.048172,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.047592727843038196,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.106667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06363816053603247,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.047069,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1215525304328946,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.071178,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04528540688408049,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.081945,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.033680476430934095,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.045931,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.007915489068289941,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.020222,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08073744663808571,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.075672,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09622040861277738,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.046335,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.00631671918125723,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.004961,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07100356924677013,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.042291,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04415163861745269,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.045742,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.016340501093194015,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.016379,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08649633097503773,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.055521,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.052068926520584785,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.058289,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04878467324066932,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.052086,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08638754836275228,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.040897,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0792387329491685,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.016096,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.029255621452154643,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.00459,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05503469297813654,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.077468,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04744883103349362,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.066815,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.9063356457384205,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.012659,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9219761326435282,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.000722,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8719141901352614,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.107748,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.074600338150556,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.070825,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0428612227139284,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.049026,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.053342998442847,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.064126,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0729895480657117,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.074651,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9893181016399684,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.032808,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0178727109477523,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.045599,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.906347219513191,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.154835,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8997778191193531,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.066054,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0437847700655227,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.037347,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9924850135972144,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.001965,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0169613876851091,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.003055,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0688997029281666,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.074838,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0350267632001535,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.026121,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.013930644171079,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.028915,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0153938617938074,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.091362,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9490270254962792,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.012186,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8780126369876642,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.002891,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9835465212004142,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.027477,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9257920149330776,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.095228,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9762174473684054,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.031978,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0918847990497231,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.121053,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9308242663249886,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.277088,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8851587128391571,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.125305,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9431598119257191,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.020602,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9463343770193378,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.015358,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0420982938289927,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.081039,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0148283596087324,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.084495,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0738135343676676,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.039151,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0427215204851208,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.012702,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9756605839744183,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.032818,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.081645300013169,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.032561,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.913412959176003,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.011976,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8759051390148037,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.044813,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8934124438016668,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.122035,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.057813431155077,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.028189,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9900880798653607,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.022971,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9119306625487364,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.067002,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0002716415268744,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.036347,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9096011467054238,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.069032,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0510432975202113,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.055638,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.986000631649248,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.179898,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9690655187850854,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.001528,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9483931431784479,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.15947,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.033873474210911,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.08962,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9640712787438815,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.00325,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8927889790221862,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.054711,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.900681534551334,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.012325,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1200933927828736,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.054628,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.106230979583978,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.202028,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.051923854790795,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.150133,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9391261899794752,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.078777,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.121985858110408,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.035179,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0724752350311064,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.021612,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.056391449181339,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.021991,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.986833990557385,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.0015,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9407828060797414,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.064903,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8950616501599098,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.065032,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.104676623101399,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.101147,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.988501835356739,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.012739,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.92261447484676,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.124933,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9495487222791696,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.052669,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.020597087924893,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.052247,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9159609235642003,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.008813,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0927197138640175,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.030601,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0672150777571545,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.078672,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0570603685472437,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.102886,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9823441903415269,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.057153,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.033100298582635,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.023345,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0218654719173115,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.027269,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0389601164042532,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.088464,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8919555234963712,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.050012,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9781099245643585,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.081204,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.880819685204092,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.165454,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.998437613003575,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.087475,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9557639152065243,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.051239,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9075762891051722,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.090162,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8968847716078634,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.090102,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0227875887662052,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.052778,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9143541718195904,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.008253,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1105312307779673,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.011963,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0210758963221025,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.011765,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9601861491790575,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.016504,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0236380277851684,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.03182,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8759290064677214,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.098606,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.119225395442776,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.008164,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.995398893605154,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.088222,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0735111590850743,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.073897,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.891509799979834,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.000278,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9965311660179217,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.030203,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9975838185321755,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.140097,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1138348782934955,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.008403,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.01864929361778,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.02895,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.993107244274808,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.037517,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9394136724038924,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.026122,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9562079393090637,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.115053,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0053748246425998,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.023021,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.984116979679312,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.087171,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.875619140768886,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.095563,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0848359002905332,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.048551,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1030018006783395,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.009562,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9064647631396388,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.056983,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0140493973201528,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.147033,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.898229692695215,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.043717,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.044782424190351,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.031823,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9431207837981423,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.049238,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0414498850198943,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.027421,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0590185997145896,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.036269,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0698483478985907,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.075936,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.898012645948533,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.022153,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.108163079735778,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.099429,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.929855637632669,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.00604,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8797272646058065,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.016119,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.014261642041786,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.023434,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.966439793804234,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.08082,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0857453332144273,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.036527,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0801453827367187,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.068543,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.952456112133906,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.019738,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1177538427181335,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.021166,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.945638637916431,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.047535,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0039148536002456,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.143334,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9365509235475766,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.039557,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1133713282127307,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.059911,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9127980325713247,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.070986,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8816767610420055,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.166624,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.98312523560079,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.010665,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1280176466545178,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.048636,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1018360892262775,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.05755,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0646380850588066,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.04943,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1016060476284166,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.050768,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1022961263214444,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.001908,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0049031737004768,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.02129,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.952141553476006,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.077423,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0707232323488567,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.05616,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0420319284236177,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.026443,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9671510095071647,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.066779,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.894561333695994,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.127444,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.064165298950747,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.025602,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9382397341399447,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.005336,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1135714191387827,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.023009,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.932652349501478,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.015597,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9019170624269863,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.000158,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0860892947524756,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.120933,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9098539223223683,
+      "bystander \u011d$^{real}$ (fraction of source write)": 0.033928,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.916609760121012,
+      "bystander \u011d$^{real}$ (fraction of source write)": -0.085291,
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 196
+}

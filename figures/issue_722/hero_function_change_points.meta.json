@@ -1,0 +1,75 @@
+{
+  "commit": "dc09c942e0",
+  "created": "2026-06-29T09:15:37Z",
+  "figsize": [
+    7.0,
+    4.4
+  ],
+  "points": [
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.024429730080024893,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.008249665529787998,
+      "label": "Emergent L7",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.11097781302098775,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.07059650029161724,
+      "label": "Emergent L14",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.2514105907037897,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.16112065744006132,
+      "label": "Emergent L21",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.0044216425893775675,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.014075225769911168,
+      "label": "Sycophancy L7",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.024966025331845384,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.02392308423272732,
+      "label": "Sycophancy L14",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.27299345208213244,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.03389251640344677,
+      "label": "Sycophancy L21",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.03751158448609742,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.1086608969896737,
+      "label": "Taught L7",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.09488372712602798,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.3124611629210453,
+      "label": "Taught L14",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "combined noise floor (max of M0-refit, M\u207a-refit, shifted-design)": 0.09216935562382758,
+      "function-change \u0394_med (median |\u0394(c)\u00b7r\u0302_B|)": 0.14521780195261821,
+      "label": "Taught L21",
+      "_kind": "scatter",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 9
+}

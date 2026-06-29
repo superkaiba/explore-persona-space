@@ -56,6 +56,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     KINDS,
     STATUSES,
     NewTaskRequest,
+    ReconcileReport,
     add_tag,
     address_concern,
     audit,
@@ -73,6 +74,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     post_event,
     promote,
     raise_concern,
+    reconcile_registry,
     remove_tag,
     set_body,
     set_clean_result,
@@ -802,15 +804,66 @@ def cmd_tasks_dir(_args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+def _print_reconcile_report(rep: ReconcileReport) -> None:
+    """Render a ReconcileReport: per-class counts, then the per-task change
+    lines, then the empty-stub orientation line + skips."""
+    verb = "applied" if rep.applied else "would apply"
+    print(
+        f"reconcile: {len(rep.stale_real)} stale path(s) {verb}, "
+        f"{len(rep.missing_real)} missing entry(ies) {verb}, "
+        f"{len(rep.empty_stubs)} empty stub(s), {len(rep.skipped)} skipped"
+    )
+    for c in rep.stale_real:
+        print(f"  [stale_real] #{c.task_id}: {c.detail}")
+    for c in rep.missing_real:
+        print(f"  [missing_real] #{c.task_id}: {c.detail}")
+    if rep.highest_id_bumped is not None:
+        print(f"  [highest_id] {rep.highest_id_bumped.detail}")
+    if rep.empty_stubs:
+        print("empty stubs (NOT reconciled — surfaced for manual triage):")
+        for c in rep.empty_stubs:
+            print(f"  [empty_stub] #{c.task_id}: {c.detail}")
+        print(
+            "  These are empty task stubs on `main` (no body.md / events.jsonl). "
+            "Their bodies likely live on `issue-<N>` branches that haven't merged. "
+            "Manual triage required."
+        )
+    if rep.skipped:
+        print("skipped (NOT reconciled — registry entry left untouched):")
+        for c in rep.skipped:
+            print(f"  [skipped] #{c.task_id}: {c.detail}")
+
+
 def cmd_audit(args: argparse.Namespace) -> None:
-    problems = audit()
-    if not problems:
-        print("AUDIT PASS — registry and filesystem agree")
+    repair = getattr(args, "repair", False)
+    do_apply = getattr(args, "apply", False)
+    if do_apply and not repair:
+        print("use --apply only with --repair", file=sys.stderr)
+        sys.exit(2)
+
+    if not repair:
+        # Report-only mode (unchanged): list drift, exit 1 on any problem.
+        problems = audit()
+        if not problems:
+            print("AUDIT PASS — registry and filesystem agree")
+            return
+        print(f"AUDIT FAIL — {len(problems)} problem(s):")
+        for p in problems:
+            print(f"  - {p}")
+        sys.exit(1)
+
+    rep = reconcile_registry(apply=do_apply)
+    if rep.is_clean:
+        print("registry already reconciled — nothing to repair")
         return
-    print(f"AUDIT FAIL — {len(problems)} problem(s):")
-    for p in problems:
-        print(f"  - {p}")
-    sys.exit(1)
+    _print_reconcile_report(rep)
+    if not do_apply:
+        # Dry-run is informational — always exit 0.
+        return
+    # Apply: exit 0 iff the registry now agrees with the filesystem (no
+    # unresolved empty stubs / skips), else exit 1 so the operator triages.
+    if rep.unresolved_count > 0:
+        sys.exit(1)
 
 
 # ─── Binding-concerns handlers ────────────────────────────────────────────
@@ -1340,6 +1393,20 @@ def main() -> None:
     p.set_defaults(func=cmd_tasks_dir)
 
     p = sub.add_parser("audit", help="validate REGISTRY.json against filesystem")
+    p.add_argument(
+        "--repair",
+        action="store_true",
+        help=(
+            "reconcile REGISTRY.json against the on-disk task tree (re-point "
+            "stale paths + add missing entries, re-snapshotting from each "
+            "task's body.md). Dry-run unless --apply is also passed."
+        ),
+    )
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="with --repair: write the reconcile to REGISTRY.json + one git commit.",
+    )
     p.set_defaults(func=cmd_audit)
 
     # ─── Binding-concerns subcommands ────────────────────────────────────

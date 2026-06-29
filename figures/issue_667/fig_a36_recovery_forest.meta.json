@@ -1,0 +1,50 @@
+{
+  "commit": "cf61a71d18",
+  "created": "2026-06-29T10:27:08Z",
+  "figsize": [
+    7.2,
+    3.8
+  ],
+  "points": [
+    {
+      "Partial Spearman \u03c1  (read-out \u00b7 \u0394v  vs  \u0394behavior | base rate)": -0.27669931491088057,
+      "y": 2.0,
+      "series": "re-extracted on fine-tuned model (r\u207a)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Partial Spearman \u03c1  (read-out \u00b7 \u0394v  vs  \u0394behavior | base rate)": -0.35038180362527893,
+      "y": 2.0,
+      "series": "base read-out (r\u1d2e), #667",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Partial Spearman \u03c1  (read-out \u00b7 \u0394v  vs  \u0394behavior | base rate)": -0.00918545858610898,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Partial Spearman \u03c1  (read-out \u00b7 \u0394v  vs  \u0394behavior | base rate)": -0.03091412761084175,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Partial Spearman \u03c1  (read-out \u00b7 \u0394v  vs  \u0394behavior | base rate)": -0.5495122981183695,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Partial Spearman \u03c1  (read-out \u00b7 \u0394v  vs  \u0394behavior | base rate)": -0.41287934929328646,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6
+}

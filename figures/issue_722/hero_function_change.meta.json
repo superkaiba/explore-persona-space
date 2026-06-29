@@ -1,0 +1,66 @@
+{
+  "commit": "dc09c942e0",
+  "created": "2026-06-29T09:15:34Z",
+  "figsize": [
+    7.2,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "function-change \u0394_med \u00f7 combined noise floor": 0.3376895898057172,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "function-change \u0394_med \u00f7 combined noise floor": 3.183257236513214,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "function-change \u0394_med \u00f7 combined noise floor": 2.896729063256331,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Emergent misalignment",
+      "function-change \u0394_med \u00f7 combined noise floor": 0.6361316588412701,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Sycophancy",
+      "function-change \u0394_med \u00f7 combined noise floor": 0.9582255851600158,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Taught fact",
+      "function-change \u0394_med \u00f7 combined noise floor": 3.2930953745737996,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "function-change \u0394_med \u00f7 combined noise floor": 0.6408666277304628,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "function-change \u0394_med \u00f7 combined noise floor": 0.1241513895111664,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "function-change \u0394_med \u00f7 combined noise floor": 1.575554054487461,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9
+}

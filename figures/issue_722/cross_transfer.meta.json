@@ -1,0 +1,66 @@
+{
+  "commit": "dc09c942e0",
+  "created": "2026-06-29T09:15:43Z",
+  "figsize": [
+    7.4,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out cross-transfer cosine (layer 14)": -0.025368189776495336,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out cross-transfer cosine (layer 14)": -0.11059644104904437,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out cross-transfer cosine (layer 14)": -0.022846846731458047,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Emergent misalignment",
+      "held-out cross-transfer cosine (layer 14)": -0.02612060364219482,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Sycophancy",
+      "held-out cross-transfer cosine (layer 14)": -0.11136728004135585,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Taught fact",
+      "held-out cross-transfer cosine (layer 14)": -0.02237723959022629,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "held-out cross-transfer cosine (layer 14)": -0.23493916020683944,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "held-out cross-transfer cosine (layer 14)": -0.25817811651040296,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out cross-transfer cosine (layer 14)": -0.3184860522667899,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9
+}

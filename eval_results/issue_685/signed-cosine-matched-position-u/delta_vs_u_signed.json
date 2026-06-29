@@ -1,0 +1,4440 @@
+{
+  "schema_version": 1,
+  "metadata": {
+    "issue": 685,
+    "followup_label": "signed-cosine-matched-position-u",
+    "part": "A",
+    "u_built_from": "response_mean (parent recipe; instruct_known_directions.pt)",
+    "u_subset_contexts": [
+      "assistant",
+      "software_engineer",
+      "villain",
+      "medical_doctor"
+    ],
+    "heldout_contexts": [
+      "kindergarten_teacher",
+      "librarian",
+      "french_person",
+      "police_officer",
+      "comedian",
+      "data_scientist"
+    ],
+    "n_contexts_built_from": 4,
+    "n_contexts_applied": 10,
+    "null": {
+      "B": 200,
+      "seed": 42,
+      "draw": "random unit vectors at H=3584 (np.random.default_rng)"
+    },
+    "behaviors": [
+      "sycophancy",
+      "refusal",
+      "evil",
+      "hedging",
+      "terse",
+      "formal"
+    ],
+    "layers": [
+      7,
+      14,
+      21,
+      27
+    ],
+    "models": [
+      "instruct"
+    ],
+    "hyperparameter_sources": {
+      "null_B_seed_H": "#685 plan v2 \u00a76.2 + \u00a712 (consistency_null n_perm=200, seed=42, random matched-norm unit vectors at H=3584)",
+      "diff_in_means_last_prompt_token": "2507.21509 (Chen et al. 2025, Persona Vectors) \u00a73 + 2312.06681 (Panickssery et al. 2023, CAA) \u2014 diff-in-means recipe; position-agnostic by construction",
+      "subset_contexts": "scripts/issue685_known_directions.py:60 \u2014 the parent's response-mean \u00fb build subset, reused verbatim for apples-to-apples back-comparison"
+    },
+    "smoke_back_compat": {
+      "cell": "instruct/sycophancy/14/assistant",
+      "expected": 0.10130018917865635,
+      "computed": 0.1013001799583435,
+      "passed": true
+    },
+    "code_sha": "6523d89d6b5650e34aa51f26744700e996e41f5b",
+    "env": {
+      "python": "3.11.15",
+      "torch": "2.8.0+cu128",
+      "numpy": "2.2.6"
+    },
+    "timestamp_utc": "2026-06-28T20:44:33.808515+00:00",
+    "argv": []
+  },
+  "cells": [
+    {
+      "context": "assistant",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.01569322682917118,
+      "absolute_cosine": 0.01569322682917118,
+      "mean_subtracted_signed_cosine": 0.024823224171996117,
+      "null_mean": -0.0004361919306236776,
+      "null_std": 0.017427222213519087,
+      "null_iqr": [
+        -0.012022938998490312,
+        0.011042870163548872
+      ],
+      "z_score": 0.9255300492899258
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.03028157725930214,
+      "absolute_cosine": 0.03028157725930214,
+      "mean_subtracted_signed_cosine": -0.04333812743425369,
+      "null_mean": -0.00030456684532102307,
+      "null_std": 0.015346225889652856,
+      "null_iqr": [
+        -0.011027273627081925,
+        0.00931539735152178
+      ],
+      "z_score": -1.95337985222889
+    },
+    {
+      "context": "villain",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.012752260081470013,
+      "absolute_cosine": 0.012752260081470013,
+      "mean_subtracted_signed_cosine": 0.06744560599327087,
+      "null_mean": -0.00019186858177080296,
+      "null_std": 0.016159059727827857,
+      "null_iqr": [
+        -0.011661272366251425,
+        0.01292140258651969
+      ],
+      "z_score": 0.8010446201832425
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.0368574894964695,
+      "absolute_cosine": 0.0368574894964695,
+      "mean_subtracted_signed_cosine": -0.05803205072879791,
+      "null_mean": -0.0007901152948419187,
+      "null_std": 0.015232968647781321,
+      "null_iqr": [
+        -0.010979317640583127,
+        0.010986775018603274
+      ],
+      "z_score": -2.367717853811964
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.031173359602689743,
+      "absolute_cosine": 0.031173359602689743,
+      "mean_subtracted_signed_cosine": -0.052863962948322296,
+      "null_mean": -0.00017222511276823214,
+      "null_std": 0.0154700124633802,
+      "null_iqr": [
+        -0.010594324581742351,
+        0.010343048754385542
+      ],
+      "z_score": -2.003950065286353
+    },
+    {
+      "context": "librarian",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.024485822767019272,
+      "absolute_cosine": 0.024485822767019272,
+      "mean_subtracted_signed_cosine": -0.03660216182470322,
+      "null_mean": -0.00011375547431996785,
+      "null_std": 0.01609083346956386,
+      "null_iqr": [
+        -0.011689330900640232,
+        0.01213246407389541
+      ],
+      "z_score": -1.5146552740194776
+    },
+    {
+      "context": "french_person",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.0007285235915333033,
+      "absolute_cosine": 0.0007285235915333033,
+      "mean_subtracted_signed_cosine": 0.04033781588077545,
+      "null_mean": -7.376324144049582e-05,
+      "null_std": 0.01621007614954431,
+      "null_iqr": [
+        -0.011637581328136018,
+        0.011837217117335132
+      ],
+      "z_score": 0.049493091585708616
+    },
+    {
+      "context": "police_officer",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.00576291186735034,
+      "absolute_cosine": 0.00576291186735034,
+      "mean_subtracted_signed_cosine": 0.022488968446850777,
+      "null_mean": 0.0001880380489060233,
+      "null_std": 0.015808998324908216,
+      "null_iqr": [
+        -0.011802094893623789,
+        0.010787042811409825
+      ],
+      "z_score": -0.37642799483710604
+    },
+    {
+      "context": "comedian",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.008333588019013405,
+      "absolute_cosine": 0.008333588019013405,
+      "mean_subtracted_signed_cosine": 0.01628987118601799,
+      "null_mean": -0.0005386599250044539,
+      "null_std": 0.016245736651990157,
+      "null_iqr": [
+        -0.010514746310354928,
+        0.01064119772889801
+      ],
+      "z_score": -0.47981373705453423
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "sycophancy",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.03491799160838127,
+      "absolute_cosine": 0.03491799160838127,
+      "mean_subtracted_signed_cosine": -0.06406960636377335,
+      "null_mean": -4.8265858579522073e-05,
+      "null_std": 0.016035258868401042,
+      "null_iqr": [
+        -0.011041520063493702,
+        0.009803606143054526
+      ],
+      "z_score": -2.1745656781350804
+    },
+    {
+      "context": "assistant",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.1013001799583435,
+      "absolute_cosine": 0.1013001799583435,
+      "mean_subtracted_signed_cosine": 0.022565484046936035,
+      "null_mean": -4.2199115229625965e-05,
+      "null_std": 0.016973786950164757,
+      "null_iqr": [
+        -0.01046449436180857,
+        0.01108969161096748
+      ],
+      "z_score": 5.970522276531058
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.11852695047855377,
+      "absolute_cosine": 0.11852695047855377,
+      "mean_subtracted_signed_cosine": 0.0696209967136383,
+      "null_mean": 0.0008860078060512239,
+      "null_std": 0.017515733804416563,
+      "null_iqr": [
+        -0.010350902061457928,
+        0.013030460066287296
+      ],
+      "z_score": 6.716300742509506
+    },
+    {
+      "context": "villain",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.11625542491674423,
+      "absolute_cosine": 0.11625542491674423,
+      "mean_subtracted_signed_cosine": 0.011456622742116451,
+      "null_mean": -0.0006038881313003879,
+      "null_std": 0.017809044551908564,
+      "null_iqr": [
+        -0.01398530602379051,
+        0.01095742112653662
+      ],
+      "z_score": 6.561795392539777
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.04863358289003372,
+      "absolute_cosine": 0.04863358289003372,
+      "mean_subtracted_signed_cosine": -0.10730407387018204,
+      "null_mean": 8.331650563390573e-05,
+      "null_std": 0.01789592400701455,
+      "null_iqr": [
+        -0.011083808265556584,
+        0.013461337571568891
+      ],
+      "z_score": 2.7129229903103576
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.09096704423427582,
+      "absolute_cosine": 0.09096704423427582,
+      "mean_subtracted_signed_cosine": -0.018226517364382744,
+      "null_mean": 0.0005322807937237518,
+      "null_std": 0.017067188350293062,
+      "null_iqr": [
+        -0.012010178092133207,
+        0.013137182983640708
+      ],
+      "z_score": 5.298749640871548
+    },
+    {
+      "context": "librarian",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.09710773080587387,
+      "absolute_cosine": 0.09710773080587387,
+      "mean_subtracted_signed_cosine": 0.0007449151016771793,
+      "null_mean": 0.0003117703819914097,
+      "null_std": 0.01770338096042842,
+      "null_iqr": [
+        -0.01103459761564399,
+        0.012798848606134288
+      ],
+      "z_score": 5.467653617836759
+    },
+    {
+      "context": "french_person",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.08985131978988647,
+      "absolute_cosine": 0.08985131978988647,
+      "mean_subtracted_signed_cosine": -0.030279584228992462,
+      "null_mean": -0.0004966981848091586,
+      "null_std": 0.017609690776805888,
+      "null_iqr": [
+        -0.011101035224040389,
+        0.011862137195010627
+      ],
+      "z_score": 5.130584857464399
+    },
+    {
+      "context": "police_officer",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.09778454899787903,
+      "absolute_cosine": 0.09778454899787903,
+      "mean_subtracted_signed_cosine": -0.023024896159768105,
+      "null_mean": 0.0004615452319249387,
+      "null_std": 0.017129395447022973,
+      "null_iqr": [
+        -0.011618273217691218,
+        0.011858899268900217
+      ],
+      "z_score": 5.681636481877823
+    },
+    {
+      "context": "comedian",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.11826561391353607,
+      "absolute_cosine": 0.11826561391353607,
+      "mean_subtracted_signed_cosine": 0.011606446467339993,
+      "null_mean": -0.0005600656958075656,
+      "null_std": 0.01741428859578709,
+      "null_iqr": [
+        -0.012339090206401674,
+        0.012127485934692228
+      ],
+      "z_score": 6.823458341825799
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "sycophancy",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.11101551353931427,
+      "absolute_cosine": 0.11101551353931427,
+      "mean_subtracted_signed_cosine": 0.06612143665552139,
+      "null_mean": 0.0006097336962748639,
+      "null_std": 0.017182740646473068,
+      "null_iqr": [
+        -0.010215789117442815,
+        0.013277972555684707
+      ],
+      "z_score": 6.425387875496651
+    },
+    {
+      "context": "assistant",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.30419301986694336,
+      "absolute_cosine": 0.30419301986694336,
+      "mean_subtracted_signed_cosine": 0.06661935895681381,
+      "null_mean": 0.0010109457627679127,
+      "null_std": 0.01686855099370573,
+      "null_iqr": [
+        -0.010025043625041443,
+        0.012595526793768907
+      ],
+      "z_score": 17.973212769970047
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.2961643934249878,
+      "absolute_cosine": 0.2961643934249878,
+      "mean_subtracted_signed_cosine": 0.10759899020195007,
+      "null_mean": 0.0027297345896249857,
+      "null_std": 0.016914977390108336,
+      "null_iqr": [
+        -0.006662489710473429,
+        0.012974712509884849
+      ],
+      "z_score": 17.347622448454302
+    },
+    {
+      "context": "villain",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.28529030084609985,
+      "absolute_cosine": 0.28529030084609985,
+      "mean_subtracted_signed_cosine": 0.07017964869737625,
+      "null_mean": 0.0006274531740632376,
+      "null_std": 0.017453634094041028,
+      "null_iqr": [
+        -0.01155816135927263,
+        0.011817023807902447
+      ],
+      "z_score": 16.309659628968948
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2306870073080063,
+      "absolute_cosine": 0.2306870073080063,
+      "mean_subtracted_signed_cosine": -0.0072621991857886314,
+      "null_mean": 0.0012124153420453392,
+      "null_std": 0.016937250648256026,
+      "null_iqr": [
+        -0.010256282509551991,
+        0.01393342041514712
+      ],
+      "z_score": 13.54851405243124
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.2902965843677521,
+      "absolute_cosine": 0.2902965843677521,
+      "mean_subtracted_signed_cosine": 0.07381106168031693,
+      "null_mean": 0.0027411469841453675,
+      "null_std": 0.01685164972479394,
+      "null_iqr": [
+        -0.007621693433883532,
+        0.01346175463223637
+      ],
+      "z_score": 17.063932909582835
+    },
+    {
+      "context": "librarian",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2755384147167206,
+      "absolute_cosine": 0.2755384147167206,
+      "mean_subtracted_signed_cosine": 0.05286768078804016,
+      "null_mean": 0.002705747010085114,
+      "null_std": 0.017504258943506764,
+      "null_iqr": [
+        -0.008847051917136983,
+        0.014037223828896822
+      ],
+      "z_score": 15.586643970506346
+    },
+    {
+      "context": "french_person",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1552378237247467,
+      "absolute_cosine": 0.1552378237247467,
+      "mean_subtracted_signed_cosine": -0.22513307631015778,
+      "null_mean": 0.000853190602468489,
+      "null_std": 0.01642316500480082,
+      "null_iqr": [
+        -0.00943137464092256,
+        0.011450090418432611
+      ],
+      "z_score": 9.400418474558956
+    },
+    {
+      "context": "police_officer",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.28491804003715515,
+      "absolute_cosine": 0.28491804003715515,
+      "mean_subtracted_signed_cosine": 0.014121759682893753,
+      "null_mean": 0.002623109704294914,
+      "null_std": 0.016773483356418557,
+      "null_iqr": [
+        -0.007087758473299491,
+        0.013491077407595612
+      ],
+      "z_score": 16.82983239107604
+    },
+    {
+      "context": "comedian",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.15258631110191345,
+      "absolute_cosine": 0.15258631110191345,
+      "mean_subtracted_signed_cosine": -0.10725580155849457,
+      "null_mean": 0.0009369672214983209,
+      "null_std": 0.018415380315394057,
+      "null_iqr": [
+        -0.009626458925244604,
+        0.014333639365077222
+      ],
+      "z_score": 8.234928252810393
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "sycophancy",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2937334179878235,
+      "absolute_cosine": 0.2937334179878235,
+      "mean_subtracted_signed_cosine": 0.0933496505022049,
+      "null_mean": 0.0028484208642571562,
+      "null_std": 0.017109199403062936,
+      "null_iqr": [
+        -0.008375500985971611,
+        0.013344380712714318
+      ],
+      "z_score": 17.00167104661953
+    },
+    {
+      "context": "assistant",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.04926025867462158,
+      "absolute_cosine": 0.04926025867462158,
+      "mean_subtracted_signed_cosine": -0.12733934819698334,
+      "null_mean": 0.00031875937315104685,
+      "null_std": 0.01800259106044603,
+      "null_iqr": [
+        -0.0125244464732158,
+        0.012639743776850565
+      ],
+      "z_score": 2.7185806986651215
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.12075459957122803,
+      "absolute_cosine": 0.12075459957122803,
+      "mean_subtracted_signed_cosine": -0.045197494328022,
+      "null_mean": 0.000785354915074663,
+      "null_std": 0.016935680341881615,
+      "null_iqr": [
+        -0.01134798480509577,
+        0.012993346386762146
+      ],
+      "z_score": 7.083815657269822
+    },
+    {
+      "context": "villain",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.1930607259273529,
+      "absolute_cosine": 0.1930607259273529,
+      "mean_subtracted_signed_cosine": 0.10646717250347137,
+      "null_mean": 0.0010994347939073616,
+      "null_std": 0.016176041648657415,
+      "null_iqr": [
+        -0.010093877256521621,
+        0.012572315248783736
+      ],
+      "z_score": 11.867011932574128
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.10745051503181458,
+      "absolute_cosine": 0.10745051503181458,
+      "mean_subtracted_signed_cosine": 0.0003878434654325247,
+      "null_mean": 0.0007831232052808222,
+      "null_std": 0.015917364340865974,
+      "null_iqr": [
+        -0.010284384481840231,
+        0.011655089244805846
+      ],
+      "z_score": 6.701322080776628
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.14769092202186584,
+      "absolute_cosine": 0.14769092202186584,
+      "mean_subtracted_signed_cosine": 0.035999998450279236,
+      "null_mean": 0.0006997735716980204,
+      "null_std": 0.01690331338195556,
+      "null_iqr": [
+        -0.011259465192775299,
+        0.01291388161111593
+      ],
+      "z_score": 8.695995656750146
+    },
+    {
+      "context": "librarian",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.09894884377717972,
+      "absolute_cosine": 0.09894884377717972,
+      "mean_subtracted_signed_cosine": -0.0559522807598114,
+      "null_mean": 0.00033654553873283915,
+      "null_std": 0.01701215741575985,
+      "null_iqr": [
+        -0.012092589264605384,
+        0.012734530849275382
+      ],
+      "z_score": 5.796577708040485
+    },
+    {
+      "context": "french_person",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.05577363073825836,
+      "absolute_cosine": 0.05577363073825836,
+      "mean_subtracted_signed_cosine": -0.05706129968166351,
+      "null_mean": -6.966249259399149e-07,
+      "null_std": 0.01598114603299629,
+      "null_iqr": [
+        -0.010332252126053708,
+        0.012037259670892198
+      ],
+      "z_score": 3.4900077727854573
+    },
+    {
+      "context": "police_officer",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.15983746945858002,
+      "absolute_cosine": 0.15983746945858002,
+      "mean_subtracted_signed_cosine": 0.045487094670534134,
+      "null_mean": -0.00069785601525583,
+      "null_std": 0.015790585621119506,
+      "null_iqr": [
+        -0.011408961659322613,
+        0.009913965719342947
+      ],
+      "z_score": 10.166520682589711
+    },
+    {
+      "context": "comedian",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1304231882095337,
+      "absolute_cosine": 0.1304231882095337,
+      "mean_subtracted_signed_cosine": 0.03710082173347473,
+      "null_mean": 0.0001859486672310979,
+      "null_std": 0.017933969467659773,
+      "null_iqr": [
+        -0.011234443956715249,
+        0.013479874563643147
+      ],
+      "z_score": 7.262041597378488
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "sycophancy",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.11768896877765656,
+      "absolute_cosine": 0.11768896877765656,
+      "mean_subtracted_signed_cosine": -0.04325211048126221,
+      "null_mean": 0.0012409664212811125,
+      "null_std": 0.016961802081150886,
+      "null_iqr": [
+        -0.010601064938641207,
+        0.014356911094857833
+      ],
+      "z_score": 6.865307998167979
+    },
+    {
+      "context": "assistant",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.049918223172426224,
+      "absolute_cosine": 0.049918223172426224,
+      "mean_subtracted_signed_cosine": -0.006951534189283848,
+      "null_mean": -0.0007580943310950787,
+      "null_std": 0.016228444845681946,
+      "null_iqr": [
+        -0.010856116408820247,
+        0.009996116834022213
+      ],
+      "z_score": -3.029256732825814
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.07007105648517609,
+      "absolute_cosine": 0.07007105648517609,
+      "mean_subtracted_signed_cosine": 0.0023653118405491114,
+      "null_mean": -0.0004447503495738626,
+      "null_std": 0.016214576477275863,
+      "null_iqr": [
+        -0.010408334661555121,
+        0.00934821653524252
+      ],
+      "z_score": -4.294056149978681
+    },
+    {
+      "context": "villain",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.048040978610515594,
+      "absolute_cosine": 0.048040978610515594,
+      "mean_subtracted_signed_cosine": 0.07273086905479431,
+      "null_mean": -0.00018537370046363945,
+      "null_std": 0.01645375845195434,
+      "null_iqr": [
+        -0.011537337565345388,
+        0.009660424788199217
+      ],
+      "z_score": -2.9084906127254566
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.07657162100076675,
+      "absolute_cosine": 0.07657162100076675,
+      "mean_subtracted_signed_cosine": -0.041851457208395004,
+      "null_mean": -0.0004592717996355744,
+      "null_std": 0.016348587243421874,
+      "null_iqr": [
+        -0.010805450406598457,
+        0.009851955858550306
+      ],
+      "z_score": -4.6555915451449605
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.07228133082389832,
+      "absolute_cosine": 0.07228133082389832,
+      "mean_subtracted_signed_cosine": -0.014530505985021591,
+      "null_mean": -0.0002963782380985446,
+      "null_std": 0.015638807307050244,
+      "null_iqr": [
+        -0.010871141497107974,
+        0.008392357185274507
+      ],
+      "z_score": -4.602969175940837
+    },
+    {
+      "context": "librarian",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.07949746400117874,
+      "absolute_cosine": 0.07949746400117874,
+      "mean_subtracted_signed_cosine": -0.04146100953221321,
+      "null_mean": -0.000187045274848412,
+      "null_std": 0.016148507759083653,
+      "null_iqr": [
+        -0.010109259994988927,
+        0.009446815399435683
+      ],
+      "z_score": -4.91131533626705
+    },
+    {
+      "context": "french_person",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.05729859694838524,
+      "absolute_cosine": 0.05729859694838524,
+      "mean_subtracted_signed_cosine": 0.041571859270334244,
+      "null_mean": -0.0002705306806596161,
+      "null_std": 0.016600386506559556,
+      "null_iqr": [
+        -0.012277793904516766,
+        0.009330213335862236
+      ],
+      "z_score": -3.4353454848684275
+    },
+    {
+      "context": "police_officer",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.06520771980285645,
+      "absolute_cosine": 0.06520771980285645,
+      "mean_subtracted_signed_cosine": 0.020132604986429214,
+      "null_mean": -0.00010569811998354186,
+      "null_std": 0.015948381612153444,
+      "null_iqr": [
+        -0.010467881855856011,
+        0.010307448393195418
+      ],
+      "z_score": -4.082045387678497
+    },
+    {
+      "context": "comedian",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.046751897782087326,
+      "absolute_cosine": 0.046751897782087326,
+      "mean_subtracted_signed_cosine": 0.07982002198696136,
+      "null_mean": -0.0006895206673167281,
+      "null_std": 0.01568768238047562,
+      "null_iqr": [
+        -0.012108216081496665,
+        0.008285964452087076
+      ],
+      "z_score": -2.936212823628142
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "refusal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.09583431482315063,
+      "absolute_cosine": 0.09583431482315063,
+      "mean_subtracted_signed_cosine": -0.09314841032028198,
+      "null_mean": -7.483418397765094e-05,
+      "null_std": 0.016349573344058458,
+      "null_iqr": [
+        -0.010013733545349112,
+        0.00981829612048216
+      ],
+      "z_score": -5.857001449947387
+    },
+    {
+      "context": "assistant",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.11219785362482071,
+      "absolute_cosine": 0.11219785362482071,
+      "mean_subtracted_signed_cosine": -0.031349968165159225,
+      "null_mean": 0.00020109280280721412,
+      "null_std": 0.015927753681245525,
+      "null_iqr": [
+        -0.010271790833506886,
+        0.010803511534182329
+      ],
+      "z_score": 7.031547324990288
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.21883827447891235,
+      "absolute_cosine": 0.21883827447891235,
+      "mean_subtracted_signed_cosine": 0.23439349234104156,
+      "null_mean": 0.0001598776357257549,
+      "null_std": 0.017022621777182164,
+      "null_iqr": [
+        -0.012799569560035286,
+        0.012663798459911536
+      ],
+      "z_score": 12.84633982116506
+    },
+    {
+      "context": "villain",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.1137802004814148,
+      "absolute_cosine": 0.1137802004814148,
+      "mean_subtracted_signed_cosine": -0.12574681639671326,
+      "null_mean": -0.0006815431962397523,
+      "null_std": 0.017296018079725424,
+      "null_iqr": [
+        -0.013485973696879915,
+        0.011891548153644581
+      ],
+      "z_score": 6.617808592257384
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1445617526769638,
+      "absolute_cosine": 0.1445617526769638,
+      "mean_subtracted_signed_cosine": -0.0017381277866661549,
+      "null_mean": 0.00039322323668402335,
+      "null_std": 0.01657670422471071,
+      "null_iqr": [
+        -0.011394602666313513,
+        0.010697334599876547
+      ],
+      "z_score": 8.697055746962874
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.19011011719703674,
+      "absolute_cosine": 0.19011011719703674,
+      "mean_subtracted_signed_cosine": 0.09533944725990295,
+      "null_mean": 9.621729230651674e-05,
+      "null_std": 0.017011796789175648,
+      "null_iqr": [
+        -0.011321998521921109,
+        0.012771702100319724
+      ],
+      "z_score": 11.169536709731714
+    },
+    {
+      "context": "librarian",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.17153218388557434,
+      "absolute_cosine": 0.17153218388557434,
+      "mean_subtracted_signed_cosine": 0.0763513594865799,
+      "null_mean": -0.00011688215160118878,
+      "null_std": 0.017013631800395227,
+      "null_iqr": [
+        -0.012153401461549123,
+        0.012796197224733519
+      ],
+      "z_score": 10.088913288006788
+    },
+    {
+      "context": "french_person",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.13741952180862427,
+      "absolute_cosine": 0.13741952180862427,
+      "mean_subtracted_signed_cosine": -0.07202604413032532,
+      "null_mean": -0.0010811066801869123,
+      "null_std": 0.017526557129819174,
+      "null_iqr": [
+        -0.012512449653694236,
+        0.011580407451255428
+      ],
+      "z_score": 7.902328994828155
+    },
+    {
+      "context": "police_officer",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.14844420552253723,
+      "absolute_cosine": 0.14844420552253723,
+      "mean_subtracted_signed_cosine": -0.04868637025356293,
+      "null_mean": 0.00017948518348994178,
+      "null_std": 0.016736002508017028,
+      "null_iqr": [
+        -0.012075346762901309,
+        0.012821840437790544
+      ],
+      "z_score": 8.85902780003746
+    },
+    {
+      "context": "comedian",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.14303803443908691,
+      "absolute_cosine": 0.14303803443908691,
+      "mean_subtracted_signed_cosine": -0.08127301931381226,
+      "null_mean": -0.0013565610566774258,
+      "null_std": 0.0167657891035121,
+      "null_iqr": [
+        -0.012553371100571002,
+        0.010386106733020333
+      ],
+      "z_score": 8.612453967529781
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "refusal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1986466646194458,
+      "absolute_cosine": 0.1986466646194458,
+      "mean_subtracted_signed_cosine": 0.17459477484226227,
+      "null_mean": 0.000255584232446419,
+      "null_std": 0.017117351648987682,
+      "null_iqr": [
+        -0.012413146618770868,
+        0.012922648792527375
+      ],
+      "z_score": 11.590056269520872
+    },
+    {
+      "context": "assistant",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.32365739345550537,
+      "absolute_cosine": 0.32365739345550537,
+      "mean_subtracted_signed_cosine": 0.15264898538589478,
+      "null_mean": 0.0007856907266808668,
+      "null_std": 0.017709792888490495,
+      "null_iqr": [
+        -0.011473326276911042,
+        0.011611301664606343
+      ],
+      "z_score": 18.23125129302929
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.34420260787010193,
+      "absolute_cosine": 0.34420260787010193,
+      "mean_subtracted_signed_cosine": 0.26931989192962646,
+      "null_mean": 0.0018743197667872031,
+      "null_std": 0.017645413694743164,
+      "null_iqr": [
+        -0.01133207775822593,
+        0.014492627164303995
+      ],
+      "z_score": 19.400410476343154
+    },
+    {
+      "context": "villain",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.16043345630168915,
+      "absolute_cosine": 0.16043345630168915,
+      "mean_subtracted_signed_cosine": -0.26016736030578613,
+      "null_mean": 0.00046107404639199876,
+      "null_std": 0.01833042512027145,
+      "null_iqr": [
+        -0.011833170412141807,
+        0.011666212307130795
+      ],
+      "z_score": 8.727150214930637
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.24638333916664124,
+      "absolute_cosine": 0.24638333916664124,
+      "mean_subtracted_signed_cosine": -0.050605423748493195,
+      "null_mean": 0.0014141172435903143,
+      "null_std": 0.01796050195947729,
+      "null_iqr": [
+        -0.009422070080559002,
+        0.014463212562038317
+      ],
+      "z_score": 13.639329726776223
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.36753755807876587,
+      "absolute_cosine": 0.36753755807876587,
+      "mean_subtracted_signed_cosine": 0.21706798672676086,
+      "null_mean": 0.00039305692931670565,
+      "null_std": 0.017561213945906762,
+      "null_iqr": [
+        -0.011423176836912156,
+        0.012477594456123186
+      ],
+      "z_score": 20.90655471619432
+    },
+    {
+      "context": "librarian",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3494851887226105,
+      "absolute_cosine": 0.3494851887226105,
+      "mean_subtracted_signed_cosine": 0.20706504583358765,
+      "null_mean": 0.0013902858772379646,
+      "null_std": 0.01777526953757955,
+      "null_iqr": [
+        -0.009300212052481004,
+        0.013544238863810874
+      ],
+      "z_score": 19.583100133944427
+    },
+    {
+      "context": "french_person",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2732952833175659,
+      "absolute_cosine": 0.2732952833175659,
+      "mean_subtracted_signed_cosine": -0.10373512655496597,
+      "null_mean": -0.0004716446059081905,
+      "null_std": 0.017766087620625943,
+      "null_iqr": [
+        -0.012766952929821034,
+        0.011143454105792965
+      ],
+      "z_score": 15.40952168873222
+    },
+    {
+      "context": "police_officer",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3151801824569702,
+      "absolute_cosine": 0.3151801824569702,
+      "mean_subtracted_signed_cosine": 0.0369618758559227,
+      "null_mean": 0.0007620253199705554,
+      "null_std": 0.01742745585038926,
+      "null_iqr": [
+        -0.010025882949002599,
+        0.011775292085122306
+      ],
+      "z_score": 18.041539843489947
+    },
+    {
+      "context": "comedian",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.10111884027719498,
+      "absolute_cosine": 0.10111884027719498,
+      "mean_subtracted_signed_cosine": -0.31792837381362915,
+      "null_mean": 1.710917397939729e-05,
+      "null_std": 0.01660224568238871,
+      "null_iqr": [
+        -0.011271572714305863,
+        0.011262147983800076
+      ],
+      "z_score": 6.08964154294021
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "refusal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3621450960636139,
+      "absolute_cosine": 0.3621450960636139,
+      "mean_subtracted_signed_cosine": 0.276062548160553,
+      "null_mean": 0.0012555441253141357,
+      "null_std": 0.017607886811662383,
+      "null_iqr": [
+        -0.012754967784866799,
+        0.013657382790285213
+      ],
+      "z_score": 20.49590250678839
+    },
+    {
+      "context": "assistant",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.07073511183261871,
+      "absolute_cosine": 0.07073511183261871,
+      "mean_subtracted_signed_cosine": -0.06563184410333633,
+      "null_mean": 0.0003807752366293607,
+      "null_std": 0.017685507854661008,
+      "null_iqr": [
+        -0.011065471219653178,
+        0.01198416467600617
+      ],
+      "z_score": 3.9780781641149954
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.1015729308128357,
+      "absolute_cosine": 0.1015729308128357,
+      "mean_subtracted_signed_cosine": 0.013714058324694633,
+      "null_mean": 0.0004442427822000178,
+      "null_std": 0.01709111154887377,
+      "null_iqr": [
+        -0.011394109168068748,
+        0.011678334617696365
+      ],
+      "z_score": 5.9170336478358525
+    },
+    {
+      "context": "villain",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.13183629512786865,
+      "absolute_cosine": 0.13183629512786865,
+      "mean_subtracted_signed_cosine": 0.016992779448628426,
+      "null_mean": -0.0013073237512095381,
+      "null_std": 0.016846296102697427,
+      "null_iqr": [
+        -0.012427975555556171,
+        0.009068128813059075
+      ],
+      "z_score": 7.903435281202493
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.08293534070253372,
+      "absolute_cosine": 0.08293534070253372,
+      "mean_subtracted_signed_cosine": 5.918927490711212e-05,
+      "null_mean": 0.00016560000955137614,
+      "null_std": 0.01695663027462147,
+      "null_iqr": [
+        -0.011612626937565953,
+        0.012010660890870169
+      ],
+      "z_score": 4.881260867945013
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.14237664639949799,
+      "absolute_cosine": 0.14237664639949799,
+      "mean_subtracted_signed_cosine": 0.07401977479457855,
+      "null_mean": 0.00033537809380495886,
+      "null_std": 0.017161389173830442,
+      "null_iqr": [
+        -0.011016372722130362,
+        0.01205337491545887
+      ],
+      "z_score": 8.276792664634653
+    },
+    {
+      "context": "librarian",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.11233361065387726,
+      "absolute_cosine": 0.11233361065387726,
+      "mean_subtracted_signed_cosine": 0.022010035812854767,
+      "null_mean": 1.760634924102486e-05,
+      "null_std": 0.01735500877181194,
+      "null_iqr": [
+        -0.011883612927255675,
+        0.01179414971273231
+      ],
+      "z_score": 6.471676235357714
+    },
+    {
+      "context": "french_person",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.06219194084405899,
+      "absolute_cosine": 0.06219194084405899,
+      "mean_subtracted_signed_cosine": -0.03728334605693817,
+      "null_mean": -0.00015364216788734203,
+      "null_std": 0.018158639305947265,
+      "null_iqr": [
+        -0.011972665729042946,
+        0.011268226387870475
+      ],
+      "z_score": 3.433383885660596
+    },
+    {
+      "context": "police_officer",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1357005536556244,
+      "absolute_cosine": 0.1357005536556244,
+      "mean_subtracted_signed_cosine": 0.05223465338349342,
+      "null_mean": 8.128426248937032e-05,
+      "null_std": 0.016207681804167866,
+      "null_iqr": [
+        -0.010541789671032593,
+        0.011478317423017085
+      ],
+      "z_score": 8.367591532471256
+    },
+    {
+      "context": "comedian",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.07745973020792007,
+      "absolute_cosine": 0.07745973020792007,
+      "mean_subtracted_signed_cosine": -0.04520478472113609,
+      "null_mean": -0.0005523545367457868,
+      "null_std": 0.016986012343077474,
+      "null_iqr": [
+        -0.013023701071513759,
+        0.012999699712509756
+      ],
+      "z_score": 4.592724800634819
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "refusal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1302257925271988,
+      "absolute_cosine": 0.1302257925271988,
+      "mean_subtracted_signed_cosine": 0.06381954997777939,
+      "null_mean": 0.00046573374587540015,
+      "null_std": 0.01677245109862008,
+      "null_iqr": [
+        -0.01145586306765417,
+        0.0111813596349481
+      ],
+      "z_score": 7.73649899360864
+    },
+    {
+      "context": "assistant",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.019164711236953735,
+      "absolute_cosine": 0.019164711236953735,
+      "mean_subtracted_signed_cosine": 0.006561248563230038,
+      "null_mean": -9.69156351929619e-05,
+      "null_std": 0.017224946403712152,
+      "null_iqr": [
+        -0.011233052962478346,
+        0.01156973359332382
+      ],
+      "z_score": 1.1182400979637024
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.029321923851966858,
+      "absolute_cosine": 0.029321923851966858,
+      "mean_subtracted_signed_cosine": 0.014501148834824562,
+      "null_mean": -0.00020771551727685733,
+      "null_std": 0.015767811920342163,
+      "null_iqr": [
+        -0.013087451560696529,
+        0.00914317848298625
+      ],
+      "z_score": 1.8727796631292681
+    },
+    {
+      "context": "villain",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.009949902072548866,
+      "absolute_cosine": 0.009949902072548866,
+      "mean_subtracted_signed_cosine": -0.03561537340283394,
+      "null_mean": 0.0004210285285547934,
+      "null_std": 0.01582964828170783,
+      "null_iqr": [
+        -0.010822106422187595,
+        0.01305473763418685
+      ],
+      "z_score": 0.601963655316438
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.008574772626161575,
+      "absolute_cosine": 0.008574772626161575,
+      "mean_subtracted_signed_cosine": -0.027944039553403854,
+      "null_mean": -0.000686650879256087,
+      "null_std": 0.015163859161805682,
+      "null_iqr": [
+        -0.01204089891156032,
+        0.010360766042131871
+      ],
+      "z_score": 0.6107563250118254
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.022998975589871407,
+      "absolute_cosine": 0.022998975589871407,
+      "mean_subtracted_signed_cosine": -0.0017215386033058167,
+      "null_mean": 9.24400571860268e-05,
+      "null_std": 0.014913347394398674,
+      "null_iqr": [
+        -0.009977230089868358,
+        0.010158576674496135
+      ],
+      "z_score": 1.5359753508668033
+    },
+    {
+      "context": "librarian",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.03602662682533264,
+      "absolute_cosine": 0.03602662682533264,
+      "mean_subtracted_signed_cosine": 0.03952080011367798,
+      "null_mean": 2.9541044736228987e-05,
+      "null_std": 0.015625792617669845,
+      "null_iqr": [
+        -0.011972928495302258,
+        0.01079006588505619
+      ],
+      "z_score": 2.3036964816872056
+    },
+    {
+      "context": "french_person",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.028328269720077515,
+      "absolute_cosine": 0.028328269720077515,
+      "mean_subtracted_signed_cosine": 0.013553060591220856,
+      "null_mean": 0.0004167241176912483,
+      "null_std": 0.016102787219743866,
+      "null_iqr": [
+        -0.011995586924648974,
+        0.011970681558463184
+      ],
+      "z_score": 1.7333361913164522
+    },
+    {
+      "context": "police_officer",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.033231575042009354,
+      "absolute_cosine": 0.033231575042009354,
+      "mean_subtracted_signed_cosine": 0.02619251236319542,
+      "null_mean": 0.0005448412406772271,
+      "null_std": 0.01573174300353108,
+      "null_iqr": [
+        -0.010678144514479852,
+        0.011383249264636991
+      ],
+      "z_score": 2.077756528074408
+    },
+    {
+      "context": "comedian",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.016308056190609932,
+      "absolute_cosine": 0.016308056190609932,
+      "mean_subtracted_signed_cosine": -0.02404678985476494,
+      "null_mean": -0.00016031727302395722,
+      "null_std": 0.01527882003049148,
+      "null_iqr": [
+        -0.011810510200558401,
+        0.009920182050915143
+      ],
+      "z_score": 1.077856297339203
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "evil",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.017128732055425644,
+      "absolute_cosine": 0.017128732055425644,
+      "mean_subtracted_signed_cosine": -0.019239995628595352,
+      "null_mean": 8.886770764589723e-05,
+      "null_std": 0.01598424544983415,
+      "null_iqr": [
+        -0.013114339995680917,
+        0.010769754204907694
+      ],
+      "z_score": 1.0660411425248357
+    },
+    {
+      "context": "assistant",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.312496155500412,
+      "absolute_cosine": 0.312496155500412,
+      "mean_subtracted_signed_cosine": 0.03773195296525955,
+      "null_mean": 0.0020313100015657277,
+      "null_std": 0.015168661771255509,
+      "null_iqr": [
+        -0.007393297599788285,
+        0.014119846242492743
+      ],
+      "z_score": 20.467515837135927
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.38664180040359497,
+      "absolute_cosine": 0.38664180040359497,
+      "mean_subtracted_signed_cosine": 0.21945622563362122,
+      "null_mean": 0.003289159458949146,
+      "null_std": 0.015387160763884924,
+      "null_iqr": [
+        -0.00687360149896136,
+        0.014032596542267342
+      ],
+      "z_score": 24.913798062772663
+    },
+    {
+      "context": "villain",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.20844043791294098,
+      "absolute_cosine": 0.20844043791294098,
+      "mean_subtracted_signed_cosine": -0.36179986596107483,
+      "null_mean": 0.002346944778426722,
+      "null_std": 0.0160787997014521,
+      "null_iqr": [
+        -0.008125204832873573,
+        0.013917966865754057
+      ],
+      "z_score": 12.817715510081648
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.34452760219573975,
+      "absolute_cosine": 0.34452760219573975,
+      "mean_subtracted_signed_cosine": 0.07297330349683762,
+      "null_mean": 0.0031869326193365503,
+      "null_std": 0.015564779542118537,
+      "null_iqr": [
+        -0.007390987369256572,
+        0.014016924232906703
+      ],
+      "z_score": 21.930323312476528
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.3783152103424072,
+      "absolute_cosine": 0.3783152103424072,
+      "mean_subtracted_signed_cosine": 0.2351963371038437,
+      "null_mean": 0.0035624443969608033,
+      "null_std": 0.015377521210012434,
+      "null_iqr": [
+        -0.006326651460823116,
+        0.015023498289295653
+      ],
+      "z_score": 24.37016580612979
+    },
+    {
+      "context": "librarian",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3851267695426941,
+      "absolute_cosine": 0.3851267695426941,
+      "mean_subtracted_signed_cosine": 0.21987499296665192,
+      "null_mean": 0.0030256567943790502,
+      "null_std": 0.016124329277715052,
+      "null_iqr": [
+        -0.0060272506654518885,
+        0.01382435868499745
+      ],
+      "z_score": 23.69717725742727
+    },
+    {
+      "context": "french_person",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.33994314074516296,
+      "absolute_cosine": 0.33994314074516296,
+      "mean_subtracted_signed_cosine": -0.11273510754108429,
+      "null_mean": 0.002747015982337139,
+      "null_std": 0.016521975260336795,
+      "null_iqr": [
+        -0.008173910225586122,
+        0.014398722581807293
+      ],
+      "z_score": 20.408946208953832
+    },
+    {
+      "context": "police_officer",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.34469473361968994,
+      "absolute_cosine": 0.34469473361968994,
+      "mean_subtracted_signed_cosine": 0.03519125282764435,
+      "null_mean": 0.0029946901210039234,
+      "null_std": 0.015615006013145537,
+      "null_iqr": [
+        -0.008314611975232854,
+        0.013487409130438768
+      ],
+      "z_score": 21.88279795270184
+    },
+    {
+      "context": "comedian",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.30982160568237305,
+      "absolute_cosine": 0.30982160568237305,
+      "mean_subtracted_signed_cosine": -0.17536060512065887,
+      "null_mean": 0.0024246100919230987,
+      "null_std": 0.016420435422010222,
+      "null_iqr": [
+        -0.008519138403773937,
+        0.013851323870369917
+      ],
+      "z_score": 18.720391327626956
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "evil",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.37980249524116516,
+      "absolute_cosine": 0.37980249524116516,
+      "mean_subtracted_signed_cosine": 0.23144280910491943,
+      "null_mean": 0.003119722412513229,
+      "null_std": 0.015651156677171527,
+      "null_iqr": [
+        -0.006266343497657407,
+        0.014610257093882402
+      ],
+      "z_score": 24.067406424387002
+    },
+    {
+      "context": "assistant",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.4330317974090576,
+      "absolute_cosine": 0.4330317974090576,
+      "mean_subtracted_signed_cosine": 0.2177957147359848,
+      "null_mean": 0.0008584267172546008,
+      "null_std": 0.01666150757260332,
+      "null_iqr": [
+        -0.01010681541858853,
+        0.01148565185885993
+      ],
+      "z_score": 25.938429813158088
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.42200472950935364,
+      "absolute_cosine": 0.42200472950935364,
+      "mean_subtracted_signed_cosine": 0.08355281502008438,
+      "null_mean": 0.0018588447803734197,
+      "null_std": 0.01713461567339759,
+      "null_iqr": [
+        -0.010470236126315995,
+        0.013245784326956653
+      ],
+      "z_score": 24.52029670329767
+    },
+    {
+      "context": "villain",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.24784789979457855,
+      "absolute_cosine": 0.24784789979457855,
+      "mean_subtracted_signed_cosine": -0.3258270025253296,
+      "null_mean": -0.000544825044204671,
+      "null_std": 0.017133968827218925,
+      "null_iqr": [
+        -0.011329508291807979,
+        0.010453996026570059
+      ],
+      "z_score": 14.497091295456118
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3698551058769226,
+      "absolute_cosine": 0.3698551058769226,
+      "mean_subtracted_signed_cosine": 0.03002665936946869,
+      "null_mean": 0.0011164502271118005,
+      "null_std": 0.016291686497725992,
+      "null_iqr": [
+        -0.01098185060774253,
+        0.012122082651882924
+      ],
+      "z_score": 22.633545831349863
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.4604288637638092,
+      "absolute_cosine": 0.4604288637638092,
+      "mean_subtracted_signed_cosine": 0.27080345153808594,
+      "null_mean": 0.002033217525814268,
+      "null_std": 0.016785802077946357,
+      "null_iqr": [
+        -0.008199612637171472,
+        0.013018752985485296
+      ],
+      "z_score": 27.30853234184831
+    },
+    {
+      "context": "librarian",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.42297235131263733,
+      "absolute_cosine": 0.42297235131263733,
+      "mean_subtracted_signed_cosine": 0.22433771193027496,
+      "null_mean": 0.0015439911245496744,
+      "null_std": 0.016940798577746618,
+      "null_iqr": [
+        -0.009708682785410089,
+        0.012519970922905889
+      ],
+      "z_score": 24.876533026320356
+    },
+    {
+      "context": "french_person",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.36923864483833313,
+      "absolute_cosine": 0.36923864483833313,
+      "mean_subtracted_signed_cosine": -0.013236775994300842,
+      "null_mean": 0.000818938094631308,
+      "null_std": 0.016589629123964673,
+      "null_iqr": [
+        -0.009651520717316536,
+        0.011675411079185856
+      ],
+      "z_score": 22.207831277172264
+    },
+    {
+      "context": "police_officer",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.4336733818054199,
+      "absolute_cosine": 0.4336733818054199,
+      "mean_subtracted_signed_cosine": 0.19134517014026642,
+      "null_mean": 0.0013378469728517295,
+      "null_std": 0.016662791650215655,
+      "null_iqr": [
+        -0.009819294163144282,
+        0.012184240823763284
+      ],
+      "z_score": 25.946163041701944
+    },
+    {
+      "context": "comedian",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2518875002861023,
+      "absolute_cosine": 0.2518875002861023,
+      "mean_subtracted_signed_cosine": -0.2502935230731964,
+      "null_mean": 0.0008362583092600757,
+      "null_std": 0.01638505555702271,
+      "null_iqr": [
+        -0.01120993188470198,
+        0.01295843001487667
+      ],
+      "z_score": 15.321963711455151
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "evil",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.4446122944355011,
+      "absolute_cosine": 0.4446122944355011,
+      "mean_subtracted_signed_cosine": 0.16716985404491425,
+      "null_mean": 0.0019477159653944287,
+      "null_std": 0.017076425687926253,
+      "null_iqr": [
+        -0.009122752084650614,
+        0.01251116133169383
+      ],
+      "z_score": 25.92255315235763
+    },
+    {
+      "context": "assistant",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.27281156182289124,
+      "absolute_cosine": 0.27281156182289124,
+      "mean_subtracted_signed_cosine": 0.12023460865020752,
+      "null_mean": 0.00039061898404870864,
+      "null_std": 0.016548292023868,
+      "null_iqr": [
+        -0.010773789622914752,
+        0.011544250613043285
+      ],
+      "z_score": 16.462177847946208
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.2494262009859085,
+      "absolute_cosine": 0.2494262009859085,
+      "mean_subtracted_signed_cosine": -0.0163392573595047,
+      "null_mean": 0.00042030292649649205,
+      "null_std": 0.016591328786411598,
+      "null_iqr": [
+        -0.011309888111769795,
+        0.011212519297766045
+      ],
+      "z_score": 15.008194114937634
+    },
+    {
+      "context": "villain",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.1982218623161316,
+      "absolute_cosine": 0.1982218623161316,
+      "mean_subtracted_signed_cosine": -0.14349627494812012,
+      "null_mean": -0.00030989138122711457,
+      "null_std": 0.016080309508998244,
+      "null_iqr": [
+        -0.011360547036958336,
+        0.010519998913581819
+      ],
+      "z_score": 12.346263686031685
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1708836853504181,
+      "absolute_cosine": 0.1708836853504181,
+      "mean_subtracted_signed_cosine": -0.025954917073249817,
+      "null_mean": 0.0003931254204552734,
+      "null_std": 0.015782474245340076,
+      "null_iqr": [
+        -0.011225718367024353,
+        0.010228617594021192
+      ],
+      "z_score": 10.80252351292626
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.31465399265289307,
+      "absolute_cosine": 0.31465399265289307,
+      "mean_subtracted_signed_cosine": 0.24921002984046936,
+      "null_mean": 0.0006112828243124946,
+      "null_std": 0.0159904573209473,
+      "null_iqr": [
+        -0.009940684519618615,
+        0.011482148681203149
+      ],
+      "z_score": 19.63938140642214
+    },
+    {
+      "context": "librarian",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.20805972814559937,
+      "absolute_cosine": 0.20805972814559937,
+      "mean_subtracted_signed_cosine": -0.007996754720807076,
+      "null_mean": 7.020386401350817e-05,
+      "null_std": 0.01682220084402765,
+      "null_iqr": [
+        -0.012031907742339393,
+        0.011983486141923405
+      ],
+      "z_score": 12.363989340398263
+    },
+    {
+      "context": "french_person",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.10962745547294617,
+      "absolute_cosine": 0.10962745547294617,
+      "mean_subtracted_signed_cosine": -0.08647681027650833,
+      "null_mean": -0.0005751379581024411,
+      "null_std": 0.017337393026447965,
+      "null_iqr": [
+        -0.010853607184630425,
+        0.012229794773846336
+      ],
+      "z_score": 6.356352821129636
+    },
+    {
+      "context": "police_officer",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.32006579637527466,
+      "absolute_cosine": 0.32006579637527466,
+      "mean_subtracted_signed_cosine": 0.2632797360420227,
+      "null_mean": -0.0008169011907928314,
+      "null_std": 0.015293812006662211,
+      "null_iqr": [
+        -0.012229660720068394,
+        0.011692014459903043
+      ],
+      "z_score": 20.981209684353157
+    },
+    {
+      "context": "comedian",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.21237003803253174,
+      "absolute_cosine": 0.21237003803253174,
+      "mean_subtracted_signed_cosine": -0.0660276934504509,
+      "null_mean": 0.00041271520440424816,
+      "null_std": 0.017802429129609484,
+      "null_iqr": [
+        -0.011894904942082656,
+        0.011862841183699553
+      ],
+      "z_score": 11.906089297078287
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "evil",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2735064923763275,
+      "absolute_cosine": 0.2735064923763275,
+      "mean_subtracted_signed_cosine": 0.060671672224998474,
+      "null_mean": 0.0006481596188388505,
+      "null_std": 0.01675021254748539,
+      "null_iqr": [
+        -0.010215562855623092,
+        0.013328536135665345
+      ],
+      "z_score": 16.289842035981163
+    },
+    {
+      "context": "assistant",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.02048945240676403,
+      "absolute_cosine": 0.02048945240676403,
+      "mean_subtracted_signed_cosine": -0.0073145064525306225,
+      "null_mean": 3.731479751566045e-05,
+      "null_std": 0.017102312729843337,
+      "null_iqr": [
+        -0.010085802562164431,
+        0.0104418301291124
+      ],
+      "z_score": -1.2002333443609285
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.028127998113632202,
+      "absolute_cosine": 0.028127998113632202,
+      "mean_subtracted_signed_cosine": -0.015038425102829933,
+      "null_mean": 0.0006600120378617228,
+      "null_std": 0.01464984234641029,
+      "null_iqr": [
+        -0.008860527527936224,
+        0.010231257766917442
+      ],
+      "z_score": -1.9650729001513838
+    },
+    {
+      "context": "villain",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.015513546764850616,
+      "absolute_cosine": 0.015513546764850616,
+      "mean_subtracted_signed_cosine": 0.023199915885925293,
+      "null_mean": 0.0009570115856379191,
+      "null_std": 0.014855705185098178,
+      "null_iqr": [
+        -0.009292272782886269,
+        0.011616524205966152
+      ],
+      "z_score": -1.1087024841007036
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.014548235572874546,
+      "absolute_cosine": 0.014548235572874546,
+      "mean_subtracted_signed_cosine": 0.012427397072315216,
+      "null_mean": 2.358768928499122e-05,
+      "null_std": 0.015000802576310939,
+      "null_iqr": [
+        -0.010230763734847527,
+        0.010324640560312275
+      ],
+      "z_score": -0.9714028443896938
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.019235387444496155,
+      "absolute_cosine": 0.019235387444496155,
+      "mean_subtracted_signed_cosine": 0.00564859714359045,
+      "null_mean": 0.000645988790683867,
+      "null_std": 0.014518196151723563,
+      "null_iqr": [
+        -0.008733512384449044,
+        0.009468640433352141
+      ],
+      "z_score": -1.3694108178452278
+    },
+    {
+      "context": "librarian",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.018202055245637894,
+      "absolute_cosine": 0.018202055245637894,
+      "mean_subtracted_signed_cosine": 0.012782100588083267,
+      "null_mean": 0.0005819288000340886,
+      "null_std": 0.015163837353683077,
+      "null_iqr": [
+        -0.00858053928070444,
+        0.010212073743528097
+      ],
+      "z_score": -1.238735444651428
+    },
+    {
+      "context": "french_person",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.012872816994786263,
+      "absolute_cosine": 0.012872816994786263,
+      "mean_subtracted_signed_cosine": 0.02715129777789116,
+      "null_mean": 0.000801263462135893,
+      "null_std": 0.015352290674065468,
+      "null_iqr": [
+        -0.00881893402246663,
+        0.011232057457965997
+      ],
+      "z_score": -0.8906865989278785
+    },
+    {
+      "context": "police_officer",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.01724155806005001,
+      "absolute_cosine": 0.01724155806005001,
+      "mean_subtracted_signed_cosine": 0.01264224387705326,
+      "null_mean": 0.000978670354934776,
+      "null_std": 0.015151142250147707,
+      "null_iqr": [
+        -0.007807281213257636,
+        0.011364923879091835
+      ],
+      "z_score": -1.2025645929264883
+    },
+    {
+      "context": "comedian",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.019076364114880562,
+      "absolute_cosine": 0.019076364114880562,
+      "mean_subtracted_signed_cosine": 0.011784589849412441,
+      "null_mean": 0.0007935232055705877,
+      "null_std": 0.014799378703655736,
+      "null_iqr": [
+        -0.009370635385399341,
+        0.010030401676337541
+      ],
+      "z_score": -1.342616225701872
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "hedging",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.04536506533622742,
+      "absolute_cosine": 0.04536506533622742,
+      "mean_subtracted_signed_cosine": -0.06771771609783173,
+      "null_mean": 0.0005842369485208427,
+      "null_std": 0.0151310070636379,
+      "null_iqr": [
+        -0.009133664991782375,
+        0.009689283954123261
+      ],
+      "z_score": -3.036764113236538
+    },
+    {
+      "context": "assistant",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.14241920411586761,
+      "absolute_cosine": 0.14241920411586761,
+      "mean_subtracted_signed_cosine": -0.06989118456840515,
+      "null_mean": 0.0014626597841979957,
+      "null_std": 0.01535162812503062,
+      "null_iqr": [
+        -0.008806251319790005,
+        0.011724615178270458
+      ],
+      "z_score": 9.181862275570605
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.21100586652755737,
+      "absolute_cosine": 0.21100586652755737,
+      "mean_subtracted_signed_cosine": 0.1132165864109993,
+      "null_mean": 0.0020081022725703702,
+      "null_std": 0.01640232963057441,
+      "null_iqr": [
+        -0.008790583308319817,
+        0.011954236936888064
+      ],
+      "z_score": 12.741955333189617
+    },
+    {
+      "context": "villain",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.2427617907524109,
+      "absolute_cosine": 0.2427617907524109,
+      "mean_subtracted_signed_cosine": 0.023785613477230072,
+      "null_mean": 0.0002527369740938175,
+      "null_std": 0.016621381996902017,
+      "null_iqr": [
+        -0.010910216162088086,
+        0.01087713152843772
+      ],
+      "z_score": 14.59018505400647
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.15858036279678345,
+      "absolute_cosine": 0.15858036279678345,
+      "mean_subtracted_signed_cosine": -0.036309968680143356,
+      "null_mean": 0.0015534455151455843,
+      "null_std": 0.01612813555618281,
+      "null_iqr": [
+        -0.00836458695037839,
+        0.010777248566303497
+      ],
+      "z_score": 9.736209557417267
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.18327826261520386,
+      "absolute_cosine": 0.18327826261520386,
+      "mean_subtracted_signed_cosine": 0.06559821963310242,
+      "null_mean": 0.001556095441567949,
+      "null_std": 0.016414619429338383,
+      "null_iqr": [
+        -0.009672836950152336,
+        0.012002126909638807
+      ],
+      "z_score": 11.07075049075384
+    },
+    {
+      "context": "librarian",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.18414410948753357,
+      "absolute_cosine": 0.18414410948753357,
+      "mean_subtracted_signed_cosine": 0.03128630295395851,
+      "null_mean": 0.001984509638824931,
+      "null_std": 0.01691736899239101,
+      "null_iqr": [
+        -0.008257496209035101,
+        0.012925704369833924
+      ],
+      "z_score": 10.767607490445574
+    },
+    {
+      "context": "french_person",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1653958410024643,
+      "absolute_cosine": 0.1653958410024643,
+      "mean_subtracted_signed_cosine": -0.020741701126098633,
+      "null_mean": 0.0008619583552269584,
+      "null_std": 0.017210523659136598,
+      "null_iqr": [
+        -0.013006293833631766,
+        0.013105936966524649
+      ],
+      "z_score": 9.560073612276009
+    },
+    {
+      "context": "police_officer",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.19157330691814423,
+      "absolute_cosine": 0.19157330691814423,
+      "mean_subtracted_signed_cosine": 0.08113248646259308,
+      "null_mean": 0.001371012776402955,
+      "null_std": 0.016372540639119637,
+      "null_iqr": [
+        -0.008411159094026151,
+        0.01106943720620633
+      ],
+      "z_score": 11.617151346085604
+    },
+    {
+      "context": "comedian",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1659674346446991,
+      "absolute_cosine": 0.1659674346446991,
+      "mean_subtracted_signed_cosine": -0.05454884096980095,
+      "null_mean": -0.0003035373490776362,
+      "null_std": 0.016946673737928637,
+      "null_iqr": [
+        -0.013391885850815173,
+        0.011866125553857836
+      ],
+      "z_score": 9.81142168390374
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "hedging",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.18182417750358582,
+      "absolute_cosine": 0.18182417750358582,
+      "mean_subtracted_signed_cosine": 0.024991769343614578,
+      "null_mean": 0.001636201546821335,
+      "null_std": 0.0163963960690592,
+      "null_iqr": [
+        -0.008594979448997103,
+        0.011683280443025744
+      ],
+      "z_score": 10.989485994870664
+    },
+    {
+      "context": "assistant",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.3728777766227722,
+      "absolute_cosine": 0.3728777766227722,
+      "mean_subtracted_signed_cosine": -0.16182662546634674,
+      "null_mean": 0.002442908690774218,
+      "null_std": 0.01656830990989551,
+      "null_iqr": [
+        -0.009299146004113043,
+        0.014084948238934723
+      ],
+      "z_score": 22.358034560466503
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.4625648856163025,
+      "absolute_cosine": 0.4625648856163025,
+      "mean_subtracted_signed_cosine": 0.1564914435148239,
+      "null_mean": 0.003928740167496649,
+      "null_std": 0.01727843547630278,
+      "null_iqr": [
+        -0.006873477469309081,
+        0.014928956631009403
+      ],
+      "z_score": 26.543845334490836
+    },
+    {
+      "context": "villain",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.3953845202922821,
+      "absolute_cosine": 0.3953845202922821,
+      "mean_subtracted_signed_cosine": -0.1261959820985794,
+      "null_mean": 0.0023761506976941738,
+      "null_std": 0.018236787927026328,
+      "null_iqr": [
+        -0.009546191791264707,
+        0.01426015347494198
+      ],
+      "z_score": 21.55030532881599
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.41328227519989014,
+      "absolute_cosine": 0.41328227519989014,
+      "mean_subtracted_signed_cosine": 0.08805915713310242,
+      "null_mean": 0.0030030084328213596,
+      "null_std": 0.017091707361078887,
+      "null_iqr": [
+        -0.007682460080927168,
+        0.01392425034330513
+      ],
+      "z_score": 24.00457918538756
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.47405076026916504,
+      "absolute_cosine": 0.47405076026916504,
+      "mean_subtracted_signed_cosine": 0.13400878012180328,
+      "null_mean": 0.0030684347257079582,
+      "null_std": 0.017111769467148735,
+      "null_iqr": [
+        -0.00673947587746504,
+        0.012731597449213806
+      ],
+      "z_score": 27.523880503636452
+    },
+    {
+      "context": "librarian",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.45501232147216797,
+      "absolute_cosine": 0.45501232147216797,
+      "mean_subtracted_signed_cosine": 0.18753038346767426,
+      "null_mean": 0.003646804959438594,
+      "null_std": 0.017452560051696386,
+      "null_iqr": [
+        -0.00690659314570882,
+        0.014108857967694753
+      ],
+      "z_score": 25.862423009192497
+    },
+    {
+      "context": "french_person",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.39970430731773376,
+      "absolute_cosine": 0.39970430731773376,
+      "mean_subtracted_signed_cosine": -0.046265117824077606,
+      "null_mean": 0.0022508643256593285,
+      "null_std": 0.016654013061341625,
+      "null_iqr": [
+        -0.006421100069909976,
+        0.012440083487265632
+      ],
+      "z_score": 23.865324091125217
+    },
+    {
+      "context": "police_officer",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.45140594244003296,
+      "absolute_cosine": 0.45140594244003296,
+      "mean_subtracted_signed_cosine": 0.14744886755943298,
+      "null_mean": 0.0033161313787652817,
+      "null_std": 0.017081583366163014,
+      "null_iqr": [
+        -0.005996861570946838,
+        0.013850387630219209
+      ],
+      "z_score": 26.23233310540507
+    },
+    {
+      "context": "comedian",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3831042945384979,
+      "absolute_cosine": 0.3831042945384979,
+      "mean_subtracted_signed_cosine": -0.05985637009143829,
+      "null_mean": 0.002922448921600384,
+      "null_std": 0.018102354001943426,
+      "null_iqr": [
+        -0.008262095061186579,
+        0.015349015641647966
+      ],
+      "z_score": 21.00178930178323
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "hedging",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.44718825817108154,
+      "absolute_cosine": 0.44718825817108154,
+      "mean_subtracted_signed_cosine": 0.06767304986715317,
+      "null_mean": 0.0037950499491316014,
+      "null_std": 0.017393534879289546,
+      "null_iqr": [
+        -0.0063983964119338635,
+        0.013895956071487622
+      ],
+      "z_score": 25.491838536976115
+    },
+    {
+      "context": "assistant",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.25640347599983215,
+      "absolute_cosine": 0.25640347599983215,
+      "mean_subtracted_signed_cosine": -0.12772832810878754,
+      "null_mean": 0.0012812811723630886,
+      "null_std": 0.015862258304515896,
+      "null_iqr": [
+        -0.008638574163184892,
+        0.011892367076014106
+      ],
+      "z_score": 16.08359754621066
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.3445940613746643,
+      "absolute_cosine": 0.3445940613746643,
+      "mean_subtracted_signed_cosine": -0.009806247428059578,
+      "null_mean": 0.001180496632587764,
+      "null_std": 0.01664211312294528,
+      "null_iqr": [
+        -0.011251858112292555,
+        0.011183441254552668
+      ],
+      "z_score": 20.635212702248918
+    },
+    {
+      "context": "villain",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.40058088302612305,
+      "absolute_cosine": 0.40058088302612305,
+      "mean_subtracted_signed_cosine": 0.04034819453954697,
+      "null_mean": 0.00034919042423827297,
+      "null_std": 0.01599000294141009,
+      "null_iqr": [
+        -0.01197740140060976,
+        0.011715202964123886
+      ],
+      "z_score": 25.030118445773823
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.29479485750198364,
+      "absolute_cosine": 0.29479485750198364,
+      "mean_subtracted_signed_cosine": 0.03751964867115021,
+      "null_mean": 0.0005394313053876471,
+      "null_std": 0.016207592080564073,
+      "null_iqr": [
+        -0.010177434710144918,
+        0.011626035800681132
+      ],
+      "z_score": 18.15540560118474
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.37140730023384094,
+      "absolute_cosine": 0.37140730023384094,
+      "mean_subtracted_signed_cosine": 0.06633218377828598,
+      "null_mean": 0.0015646164053017633,
+      "null_std": 0.016102879005368935,
+      "null_iqr": [
+        -0.00911428132393428,
+        0.012343749764581833
+      ],
+      "z_score": 22.967486791507373
+    },
+    {
+      "context": "librarian",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3421870768070221,
+      "absolute_cosine": 0.3421870768070221,
+      "mean_subtracted_signed_cosine": 0.08172646909952164,
+      "null_mean": 0.0005582261835381753,
+      "null_std": 0.017034096022615082,
+      "null_iqr": [
+        -0.012949458540922686,
+        0.011167068698630569
+      ],
+      "z_score": 20.05558910284033
+    },
+    {
+      "context": "french_person",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2511800229549408,
+      "absolute_cosine": 0.2511800229549408,
+      "mean_subtracted_signed_cosine": -0.044640857726335526,
+      "null_mean": -0.0009435468415096689,
+      "null_std": 0.016185546840773318,
+      "null_iqr": [
+        -0.011037019112003284,
+        0.010392283195060966
+      ],
+      "z_score": 15.577079767502292
+    },
+    {
+      "context": "police_officer",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.37040188908576965,
+      "absolute_cosine": 0.37040188908576965,
+      "mean_subtracted_signed_cosine": 0.148786723613739,
+      "null_mean": -7.711615742290987e-05,
+      "null_std": 0.01603742035027208,
+      "null_iqr": [
+        -0.011875226578772071,
+        0.0104844604082725
+      ],
+      "z_score": 23.10090862811354
+    },
+    {
+      "context": "comedian",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2439659833908081,
+      "absolute_cosine": 0.2439659833908081,
+      "mean_subtracted_signed_cosine": -0.030363216996192932,
+      "null_mean": 0.0002573410105053812,
+      "null_std": 0.0168661339521579,
+      "null_iqr": [
+        -0.010458833488503606,
+        0.011827702158464334
+      ],
+      "z_score": 14.449584511899213
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "hedging",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3431429862976074,
+      "absolute_cosine": 0.3431429862976074,
+      "mean_subtracted_signed_cosine": -0.016003131866455078,
+      "null_mean": 0.0015811891143943807,
+      "null_std": 0.016600181821184393,
+      "null_iqr": [
+        -0.01080861931238256,
+        0.01303109288479995
+      ],
+      "z_score": 20.57578527070964
+    },
+    {
+      "context": "assistant",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.02158668078482151,
+      "absolute_cosine": 0.02158668078482151,
+      "mean_subtracted_signed_cosine": 0.009977743029594421,
+      "null_mean": 0.0003824812212771343,
+      "null_std": 0.01586863609332042,
+      "null_iqr": [
+        -0.009720091958962628,
+        0.011220791216408278
+      ],
+      "z_score": -1.3844391220810084
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.043881118297576904,
+      "absolute_cosine": 0.043881118297576904,
+      "mean_subtracted_signed_cosine": -0.01035685371607542,
+      "null_mean": 0.0005149973152350584,
+      "null_std": 0.017870075054013463,
+      "null_iqr": [
+        -0.010657074155705278,
+        0.010662383898598818
+      ],
+      "z_score": -2.484383137409255
+    },
+    {
+      "context": "villain",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.029395541176199913,
+      "absolute_cosine": 0.029395541176199913,
+      "mean_subtracted_signed_cosine": 0.038292333483695984,
+      "null_mean": 0.0010925534281565016,
+      "null_std": 0.01724281343050294,
+      "null_iqr": [
+        -0.011387111567041173,
+        0.011104394175170377
+      ],
+      "z_score": -1.7681623105809376
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.05588899180293083,
+      "absolute_cosine": 0.05588899180293083,
+      "mean_subtracted_signed_cosine": -0.06527502834796906,
+      "null_mean": 0.0005353882617398333,
+      "null_std": 0.017362024946024034,
+      "null_iqr": [
+        -0.009885870006651252,
+        0.011285602080268894
+      ],
+      "z_score": -3.2498730413193546
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.03916550427675247,
+      "absolute_cosine": 0.03916550427675247,
+      "mean_subtracted_signed_cosine": 0.004988529719412327,
+      "null_mean": 0.0004852367234602077,
+      "null_std": 0.01676742608384185,
+      "null_iqr": [
+        -0.010643754610379681,
+        0.011040263272585612
+      ],
+      "z_score": -2.364748079830485
+    },
+    {
+      "context": "librarian",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.03607703372836113,
+      "absolute_cosine": 0.03607703372836113,
+      "mean_subtracted_signed_cosine": 0.017384935170412064,
+      "null_mean": 0.0005114275631855931,
+      "null_std": 0.017659155670285167,
+      "null_iqr": [
+        -0.010462860185966458,
+        0.011942166774340748
+      ],
+      "z_score": -2.07192574224757
+    },
+    {
+      "context": "french_person",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.04110786318778992,
+      "absolute_cosine": 0.04110786318778992,
+      "mean_subtracted_signed_cosine": 0.0011775693856179714,
+      "null_mean": 0.000707974564163124,
+      "null_std": 0.01774477421198238,
+      "null_iqr": [
+        -0.010508932648178395,
+        0.01229291884287584
+      ],
+      "z_score": -2.3565154955423937
+    },
+    {
+      "context": "police_officer",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.03371240943670273,
+      "absolute_cosine": 0.03371240943670273,
+      "mean_subtracted_signed_cosine": 0.024348270148038864,
+      "null_mean": 0.0009964691824866315,
+      "null_std": 0.017249711537365642,
+      "null_iqr": [
+        -0.012135115846351168,
+        0.012033203613675478
+      ],
+      "z_score": -2.0121424368089826
+    },
+    {
+      "context": "comedian",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.03800499811768532,
+      "absolute_cosine": 0.03800499811768532,
+      "mean_subtracted_signed_cosine": 0.015271449461579323,
+      "null_mean": 0.000600278794943055,
+      "null_std": 0.01681132423006522,
+      "null_iqr": [
+        -0.009256305245829021,
+        0.011850823699481813
+      ],
+      "z_score": -2.2963851085092952
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "terse",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.05457044765353203,
+      "absolute_cosine": 0.05457044765353203,
+      "mean_subtracted_signed_cosine": -0.056723929941654205,
+      "null_mean": 0.0002517320502516198,
+      "null_std": 0.017805913009384573,
+      "null_iqr": [
+        -0.011335957395216943,
+        0.01043903946439916
+      ],
+      "z_score": -3.078874787044896
+    },
+    {
+      "context": "assistant",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.17910315096378326,
+      "absolute_cosine": 0.17910315096378326,
+      "mean_subtracted_signed_cosine": 0.06240566074848175,
+      "null_mean": 0.0018541953937818625,
+      "null_std": 0.015975868804277392,
+      "null_iqr": [
+        -0.00887437621224282,
+        0.012669048671627905
+      ],
+      "z_score": 11.094792192318982
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.18592190742492676,
+      "absolute_cosine": 0.18592190742492676,
+      "mean_subtracted_signed_cosine": 0.055639103055000305,
+      "null_mean": 0.002390317898020561,
+      "null_std": 0.016398528955910575,
+      "null_iqr": [
+        -0.008657123077692305,
+        0.012162047746899855
+      ],
+      "z_score": 11.191953792221193
+    },
+    {
+      "context": "villain",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.17135970294475555,
+      "absolute_cosine": 0.17135970294475555,
+      "mean_subtracted_signed_cosine": -0.06465610861778259,
+      "null_mean": 0.0015178814945364316,
+      "null_std": 0.01606042495996579,
+      "null_iqr": [
+        -0.007386365002762091,
+        0.011109258196736116
+      ],
+      "z_score": 10.575175395321887
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.1768881231546402,
+      "absolute_cosine": 0.1768881231546402,
+      "mean_subtracted_signed_cosine": 0.03536272048950195,
+      "null_mean": 0.0019349211297726584,
+      "null_std": 0.01659244158583327,
+      "null_iqr": [
+        -0.010682724613879577,
+        0.01373625262411654
+      ],
+      "z_score": 10.544149911613596
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.18228960037231445,
+      "absolute_cosine": 0.18228960037231445,
+      "mean_subtracted_signed_cosine": 0.07803502678871155,
+      "null_mean": 0.002032833007586643,
+      "null_std": 0.01645367299273812,
+      "null_iqr": [
+        -0.008125485056689476,
+        0.013517584249643862
+      ],
+      "z_score": 10.955411383760532
+    },
+    {
+      "context": "librarian",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.17887434363365173,
+      "absolute_cosine": 0.17887434363365173,
+      "mean_subtracted_signed_cosine": 0.01945972442626953,
+      "null_mean": 0.0020823822685050257,
+      "null_std": 0.016536883223917588,
+      "null_iqr": [
+        -0.010372641761631714,
+        0.013458273393976379
+      ],
+      "z_score": 10.690766106317016
+    },
+    {
+      "context": "french_person",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.16641034185886383,
+      "absolute_cosine": 0.16641034185886383,
+      "mean_subtracted_signed_cosine": -0.07211072742938995,
+      "null_mean": 0.0011871203155299117,
+      "null_std": 0.017115246743938748,
+      "null_iqr": [
+        -0.009303717086466157,
+        0.01176502778438663
+      ],
+      "z_score": 9.65356879521926
+    },
+    {
+      "context": "police_officer",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.17272374033927917,
+      "absolute_cosine": 0.17272374033927917,
+      "mean_subtracted_signed_cosine": -0.052298326045274734,
+      "null_mean": 0.002133764798718122,
+      "null_std": 0.01643323349048154,
+      "null_iqr": [
+        -0.007987436687269847,
+        0.012479931611786925
+      ],
+      "z_score": 10.380791172874105
+    },
+    {
+      "context": "comedian",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.16385112702846527,
+      "absolute_cosine": 0.16385112702846527,
+      "mean_subtracted_signed_cosine": -0.05738270282745361,
+      "null_mean": 0.0016222941942907229,
+      "null_std": 0.0165859435350975,
+      "null_iqr": [
+        -0.009586548127788648,
+        0.01166537647681823
+      ],
+      "z_score": 9.781103059333299
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "terse",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.18022897839546204,
+      "absolute_cosine": 0.18022897839546204,
+      "mean_subtracted_signed_cosine": 0.046159371733665466,
+      "null_mean": 0.0020820873440967943,
+      "null_std": 0.016552233893757422,
+      "null_iqr": [
+        -0.009396021300797735,
+        0.012330332101559299
+      ],
+      "z_score": 10.762709216901719
+    },
+    {
+      "context": "assistant",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.5037243962287903,
+      "absolute_cosine": 0.5037243962287903,
+      "mean_subtracted_signed_cosine": 0.24113860726356506,
+      "null_mean": 0.0008394917306405202,
+      "null_std": 0.017671892537565157,
+      "null_iqr": [
+        -0.010479230290331664,
+        0.011595384453789714
+      ],
+      "z_score": 28.456764037717118
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.48133358359336853,
+      "absolute_cosine": 0.48133358359336853,
+      "mean_subtracted_signed_cosine": 0.17567835748195648,
+      "null_mean": 0.0012735703278171542,
+      "null_std": 0.017446853090689964,
+      "null_iqr": [
+        -0.010207908490527539,
+        0.011749851172008269
+      ],
+      "z_score": 27.515563021858608
+    },
+    {
+      "context": "villain",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.38316985964775085,
+      "absolute_cosine": 0.38316985964775085,
+      "mean_subtracted_signed_cosine": -0.08864696323871613,
+      "null_mean": -0.0008535628814268404,
+      "null_std": 0.01641689193766238,
+      "null_iqr": [
+        -0.011129249049038328,
+        0.010214041220751466
+      ],
+      "z_score": 23.391967285611063
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.4142657518386841,
+      "absolute_cosine": 0.4142657518386841,
+      "mean_subtracted_signed_cosine": 0.09555710107088089,
+      "null_mean": -0.00012905316438306213,
+      "null_std": 0.017121675587421115,
+      "null_iqr": [
+        -0.011769848682866206,
+        0.012908670329139796
+      ],
+      "z_score": 24.202933800741985
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.4820818603038788,
+      "absolute_cosine": 0.4820818603038788,
+      "mean_subtracted_signed_cosine": 0.19827376306056976,
+      "null_mean": 0.001023942325283026,
+      "null_std": 0.016990674575992973,
+      "null_iqr": [
+        -0.009804890539731194,
+        0.011138858307958344
+      ],
+      "z_score": 28.313054170624508
+    },
+    {
+      "context": "librarian",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.4802103042602539,
+      "absolute_cosine": 0.4802103042602539,
+      "mean_subtracted_signed_cosine": 0.1840672492980957,
+      "null_mean": 0.0010023178800973832,
+      "null_std": 0.01758025012718886,
+      "null_iqr": [
+        -0.010800683773362275,
+        0.011275040285858564
+      ],
+      "z_score": 27.258312916761135
+    },
+    {
+      "context": "french_person",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.355888694524765,
+      "absolute_cosine": 0.355888694524765,
+      "mean_subtracted_signed_cosine": -0.26603466272354126,
+      "null_mean": -0.00036127993140376097,
+      "null_std": 0.016909579951111302,
+      "null_iqr": [
+        -0.012037990036481441,
+        0.011860705930417523
+      ],
+      "z_score": 21.067936307005642
+    },
+    {
+      "context": "police_officer",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.45272353291511536,
+      "absolute_cosine": 0.45272353291511536,
+      "mean_subtracted_signed_cosine": 0.019039036706089973,
+      "null_mean": 0.0007384591203347078,
+      "null_std": 0.017338175581350146,
+      "null_iqr": [
+        -0.010999150338431539,
+        0.012167891060546965
+      ],
+      "z_score": 26.06877785989096
+    },
+    {
+      "context": "comedian",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.26898255944252014,
+      "absolute_cosine": 0.26898255944252014,
+      "mean_subtracted_signed_cosine": -0.2193058431148529,
+      "null_mean": 0.00036092535253667526,
+      "null_std": 0.017072666056715854,
+      "null_iqr": [
+        -0.009413887017800236,
+        0.010173980328266548
+      ],
+      "z_score": 15.734017022508272
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "terse",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.48665696382522583,
+      "absolute_cosine": 0.48665696382522583,
+      "mean_subtracted_signed_cosine": 0.22800976037979126,
+      "null_mean": 0.0011169501677921686,
+      "null_std": 0.017440493791829072,
+      "null_iqr": [
+        -0.009612877940744672,
+        0.011121938103560942
+      ],
+      "z_score": 27.8398072676763
+    },
+    {
+      "context": "assistant",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.24111847579479218,
+      "absolute_cosine": 0.24111847579479218,
+      "mean_subtracted_signed_cosine": -0.03471679612994194,
+      "null_mean": -0.00030612601773964546,
+      "null_std": 0.018349982294201546,
+      "null_iqr": [
+        -0.012719634676184106,
+        0.010586863661474325
+      ],
+      "z_score": 13.156666027528217
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.27174729108810425,
+      "absolute_cosine": 0.27174729108810425,
+      "mean_subtracted_signed_cosine": 0.003841889090836048,
+      "null_mean": -0.00029365214778421524,
+      "null_std": 0.018376356423355524,
+      "null_iqr": [
+        -0.011918772350361179,
+        0.011028079061168362
+      ],
+      "z_score": 14.803855680894443
+    },
+    {
+      "context": "villain",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.22561457753181458,
+      "absolute_cosine": 0.22561457753181458,
+      "mean_subtracted_signed_cosine": 0.031547077000141144,
+      "null_mean": 0.0009379343210102798,
+      "null_std": 0.016683012975278112,
+      "null_iqr": [
+        -0.009418897272793141,
+        0.012449735111010928
+      ],
+      "z_score": 13.467389258544266
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.24680770933628082,
+      "absolute_cosine": 0.24680770933628082,
+      "mean_subtracted_signed_cosine": 0.08566983789205551,
+      "null_mean": -0.0006799360818607014,
+      "null_std": 0.018226503971301877,
+      "null_iqr": [
+        -0.012559410503308947,
+        0.010422746246061215
+      ],
+      "z_score": 13.578447750011179
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.27989253401756287,
+      "absolute_cosine": 0.27989253401756287,
+      "mean_subtracted_signed_cosine": 0.07732315361499786,
+      "null_mean": 3.922666217261089e-05,
+      "null_std": 0.017453223058272287,
+      "null_iqr": [
+        -0.009504061112792044,
+        0.010740335764864066
+      ],
+      "z_score": 16.034476290513698
+    },
+    {
+      "context": "librarian",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.27194854617118835,
+      "absolute_cosine": 0.27194854617118835,
+      "mean_subtracted_signed_cosine": 0.03485051169991493,
+      "null_mean": 7.433521338607613e-05,
+      "null_std": 0.018539221259038622,
+      "null_iqr": [
+        -0.011658295467485695,
+        0.011637606133228059
+      ],
+      "z_score": 14.664812102635675
+    },
+    {
+      "context": "french_person",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.15379083156585693,
+      "absolute_cosine": 0.15379083156585693,
+      "mean_subtracted_signed_cosine": -0.07209176570177078,
+      "null_mean": -0.00012010899468821016,
+      "null_std": 0.017292486293139182,
+      "null_iqr": [
+        -0.013728981081902982,
+        0.01257678157157318
+      ],
+      "z_score": 8.90045127409806
+    },
+    {
+      "context": "police_officer",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3051425814628601,
+      "absolute_cosine": 0.3051425814628601,
+      "mean_subtracted_signed_cosine": 0.14035187661647797,
+      "null_mean": -0.00086626898535834,
+      "null_std": 0.01744717439222532,
+      "null_iqr": [
+        -0.011974167007755148,
+        0.010629158014856423
+      ],
+      "z_score": 17.539162848364544
+    },
+    {
+      "context": "comedian",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.13835370540618896,
+      "absolute_cosine": 0.13835370540618896,
+      "mean_subtracted_signed_cosine": -0.07735313475131989,
+      "null_mean": -0.0002924425341429372,
+      "null_std": 0.016773324948194716,
+      "null_iqr": [
+        -0.011212604711999157,
+        0.010896735767221444
+      ],
+      "z_score": 8.265870964920595
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "terse",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.26058998703956604,
+      "absolute_cosine": 0.26058998703956604,
+      "mean_subtracted_signed_cosine": 0.0035509467124938965,
+      "null_mean": -7.353081927266414e-05,
+      "null_std": 0.018168118536049035,
+      "null_iqr": [
+        -0.011466822843429234,
+        0.01157981828909839
+      ],
+      "z_score": 14.347303106501046
+    },
+    {
+      "context": "assistant",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.0038132192566990852,
+      "absolute_cosine": 0.0038132192566990852,
+      "mean_subtracted_signed_cosine": 0.022509858012199402,
+      "null_mean": -0.0002929307994678619,
+      "null_std": 0.016286124095223738,
+      "null_iqr": [
+        -0.011375341389084134,
+        0.011565378361772329
+      ],
+      "z_score": -0.21615261068230557
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.032739315181970596,
+      "absolute_cosine": 0.032739315181970596,
+      "mean_subtracted_signed_cosine": -0.003907124511897564,
+      "null_mean": -0.0004127324330319793,
+      "null_std": 0.015627325720069384,
+      "null_iqr": [
+        -0.010777775185825901,
+        0.009550241737945544
+      ],
+      "z_score": -2.0685932615348235
+    },
+    {
+      "context": "villain",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.024798307567834854,
+      "absolute_cosine": 0.024798307567834854,
+      "mean_subtracted_signed_cosine": 0.020642757415771484,
+      "null_mean": 0.00013278786706098403,
+      "null_std": 0.01563304213364399,
+      "null_iqr": [
+        -0.009578628084006328,
+        0.011627161628182826
+      ],
+      "z_score": -1.5947691835661502
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.03660627827048302,
+      "absolute_cosine": 0.03660627827048302,
+      "mean_subtracted_signed_cosine": -0.02993980050086975,
+      "null_mean": 1.6505034431495773e-05,
+      "null_std": 0.015412452635987145,
+      "null_iqr": [
+        -0.011457269536211678,
+        0.011951939819507222
+      ],
+      "z_score": -2.3761812473130517
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": -0.04103587567806244,
+      "absolute_cosine": 0.04103587567806244,
+      "mean_subtracted_signed_cosine": -0.04318594932556152,
+      "null_mean": 6.134441704169844e-05,
+      "null_std": 0.015139898109115273,
+      "null_iqr": [
+        -0.009446159529699879,
+        0.010476887869584395
+      ],
+      "z_score": -2.7144976197602766
+    },
+    {
+      "context": "librarian",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.02233264222741127,
+      "absolute_cosine": 0.02233264222741127,
+      "mean_subtracted_signed_cosine": 0.0328364372253418,
+      "null_mean": 0.00034468374078213364,
+      "null_std": 0.01571047612794505,
+      "null_iqr": [
+        -0.01092186004015729,
+        0.011785690732058516
+      ],
+      "z_score": -1.4434524033554685
+    },
+    {
+      "context": "french_person",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.03172643482685089,
+      "absolute_cosine": 0.03172643482685089,
+      "mean_subtracted_signed_cosine": -0.0007933867163956165,
+      "null_mean": 0.0002160955490822928,
+      "null_std": 0.01607658656576122,
+      "null_iqr": [
+        -0.010269252585509533,
+        0.011158199893355036
+      ],
+      "z_score": -1.9868974211891912
+    },
+    {
+      "context": "police_officer",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.03959547355771065,
+      "absolute_cosine": 0.03959547355771065,
+      "mean_subtracted_signed_cosine": -0.03389258682727814,
+      "null_mean": 0.0004921793261332644,
+      "null_std": 0.015462646609061876,
+      "null_iqr": [
+        -0.009762517668935388,
+        0.01126928293097871
+      ],
+      "z_score": -2.5925477898332603
+    },
+    {
+      "context": "comedian",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.031429193913936615,
+      "absolute_cosine": 0.031429193913936615,
+      "mean_subtracted_signed_cosine": 0.004053216427564621,
+      "null_mean": 9.937645515696445e-05,
+      "null_std": 0.015300224096618627,
+      "null_iqr": [
+        -0.00999494288965121,
+        0.010334827048731478
+      ],
+      "z_score": -2.060660556952292
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "formal",
+      "layer": 7,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": -0.03968685865402222,
+      "absolute_cosine": 0.03968685865402222,
+      "mean_subtracted_signed_cosine": -0.035743750631809235,
+      "null_mean": -0.00014220555855901703,
+      "null_std": 0.015937395126770153,
+      "null_iqr": [
+        -0.009785397835264576,
+        0.010864060527347763
+      ],
+      "z_score": -2.481249307033272
+    },
+    {
+      "context": "assistant",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.19075094163417816,
+      "absolute_cosine": 0.19075094163417816,
+      "mean_subtracted_signed_cosine": 0.012967264279723167,
+      "null_mean": 0.00036693087640236985,
+      "null_std": 0.01612778892506296,
+      "null_iqr": [
+        -0.011730775653747638,
+        0.01050788221339826
+      ],
+      "z_score": 11.804717921202247
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.20774835348129272,
+      "absolute_cosine": 0.20774835348129272,
+      "mean_subtracted_signed_cosine": 0.04405822232365608,
+      "null_mean": 0.0008971901974551658,
+      "null_std": 0.017476251831189237,
+      "null_iqr": [
+        -0.012921121658180369,
+        0.01361441614703257
+      ],
+      "z_score": 11.836127874888476
+    },
+    {
+      "context": "villain",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.24505095183849335,
+      "absolute_cosine": 0.24505095183849335,
+      "mean_subtracted_signed_cosine": 0.02084234170615673,
+      "null_mean": -0.0003150370359837875,
+      "null_std": 0.01819432094020414,
+      "null_iqr": [
+        -0.012621173662801183,
+        0.013102653036116895
+      ],
+      "z_score": 13.485855075054484
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.20660291612148285,
+      "absolute_cosine": 0.20660291612148285,
+      "mean_subtracted_signed_cosine": 0.023804033175110817,
+      "null_mean": 0.0001869215821732206,
+      "null_std": 0.017827225517976674,
+      "null_iqr": [
+        -0.012429314865979297,
+        0.011964926346441675
+      ],
+      "z_score": 11.578693653281581
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.19741392135620117,
+      "absolute_cosine": 0.19741392135620117,
+      "mean_subtracted_signed_cosine": -0.030814090743660927,
+      "null_mean": 0.0008929148726196384,
+      "null_std": 0.017955028463712237,
+      "null_iqr": [
+        -0.012768476196960962,
+        0.014244441921444353
+      ],
+      "z_score": 10.945178724477039
+    },
+    {
+      "context": "librarian",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.20056647062301636,
+      "absolute_cosine": 0.20056647062301636,
+      "mean_subtracted_signed_cosine": -0.052845098078250885,
+      "null_mean": 0.0005196714920468737,
+      "null_std": 0.01803314575755238,
+      "null_iqr": [
+        -0.01405522983006469,
+        0.013036739230834067
+      ],
+      "z_score": 11.093282931731746
+    },
+    {
+      "context": "french_person",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.19197459518909454,
+      "absolute_cosine": 0.19197459518909454,
+      "mean_subtracted_signed_cosine": -0.0807105004787445,
+      "null_mean": 0.0001542296076635319,
+      "null_std": 0.017885944811757863,
+      "null_iqr": [
+        -0.0123877969121723,
+        0.013999182961636512
+      ],
+      "z_score": 10.724641995467309
+    },
+    {
+      "context": "police_officer",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.20781415700912476,
+      "absolute_cosine": 0.20781415700912476,
+      "mean_subtracted_signed_cosine": -0.08067795634269714,
+      "null_mean": 0.0002588299873475374,
+      "null_std": 0.018132727674608384,
+      "null_iqr": [
+        -0.013420536730565182,
+        0.013359579203410816
+      ],
+      "z_score": 11.446447511919208
+    },
+    {
+      "context": "comedian",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.21496489644050598,
+      "absolute_cosine": 0.21496489644050598,
+      "mean_subtracted_signed_cosine": 0.042954221367836,
+      "null_mean": 0.0007174058384580517,
+      "null_std": 0.017141895588850906,
+      "null_iqr": [
+        -0.010502077272405468,
+        0.011819945137338205
+      ],
+      "z_score": 12.498470603386707
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "formal",
+      "layer": 14,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2051585614681244,
+      "absolute_cosine": 0.2051585614681244,
+      "mean_subtracted_signed_cosine": 0.035119254142045975,
+      "null_mean": 0.0004159397659579931,
+      "null_std": 0.017731715107083393,
+      "null_iqr": [
+        -0.013930426407403579,
+        0.013152659085562665
+      ],
+      "z_score": 11.546689585244186
+    },
+    {
+      "context": "assistant",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.5962629318237305,
+      "absolute_cosine": 0.5962629318237305,
+      "mean_subtracted_signed_cosine": -0.04401342198252678,
+      "null_mean": 0.0007463394955939701,
+      "null_std": 0.016391181974440117,
+      "null_iqr": [
+        -0.009704070106994164,
+        0.012164166808458523
+      ],
+      "z_score": 36.331520016387216
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.6057669520378113,
+      "absolute_cosine": 0.6057669520378113,
+      "mean_subtracted_signed_cosine": 0.08354616165161133,
+      "null_mean": 0.0015828701975541797,
+      "null_std": 0.01666787892825086,
+      "null_iqr": [
+        -0.008619402051670808,
+        0.013500037142668845
+      ],
+      "z_score": 36.24840618249286
+    },
+    {
+      "context": "villain",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.5758411288261414,
+      "absolute_cosine": 0.5758411288261414,
+      "mean_subtracted_signed_cosine": -0.11163070797920227,
+      "null_mean": -0.0010150385091815411,
+      "null_std": 0.015815865950432707,
+      "null_iqr": [
+        -0.012213256043600032,
+        0.009396812339685114
+      ],
+      "z_score": 36.47325620171208
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.609289288520813,
+      "absolute_cosine": 0.609289288520813,
+      "mean_subtracted_signed_cosine": 0.21615663170814514,
+      "null_mean": -8.621598591197474e-05,
+      "null_std": 0.01636982799613041,
+      "null_iqr": [
+        -0.012403389350502173,
+        0.012158029778685268
+      ],
+      "z_score": 37.225526586183186
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.6000730991363525,
+      "absolute_cosine": 0.6000730991363525,
+      "mean_subtracted_signed_cosine": -0.04853229224681854,
+      "null_mean": 0.0010914020728049032,
+      "null_std": 0.016660291986240337,
+      "null_iqr": [
+        -0.009662308988423164,
+        0.012948783788723014
+      ],
+      "z_score": 35.95265086623891
+    },
+    {
+      "context": "librarian",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.6132797002792358,
+      "absolute_cosine": 0.6132797002792358,
+      "mean_subtracted_signed_cosine": 0.09465246647596359,
+      "null_mean": 0.001147467151696001,
+      "null_std": 0.017092200589479363,
+      "null_iqr": [
+        -0.01011502146797481,
+        0.012888785088108578
+      ],
+      "z_score": 35.813539287081724
+    },
+    {
+      "context": "french_person",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.5101631879806519,
+      "absolute_cosine": 0.5101631879806519,
+      "mean_subtracted_signed_cosine": -0.22809630632400513,
+      "null_mean": 4.0094080314268046e-05,
+      "null_std": 0.01636310536869104,
+      "null_iqr": [
+        -0.011299083975276623,
+        0.010963919487233775
+      ],
+      "z_score": 31.175198792107146
+    },
+    {
+      "context": "police_officer",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.616306483745575,
+      "absolute_cosine": 0.616306483745575,
+      "mean_subtracted_signed_cosine": -0.11876912415027618,
+      "null_mean": 0.0006247052525155406,
+      "null_std": 0.016814397965499887,
+      "null_iqr": [
+        -0.010605652709789462,
+        0.013750552978354674
+      ],
+      "z_score": 36.61634172927188
+    },
+    {
+      "context": "comedian",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.5876857042312622,
+      "absolute_cosine": 0.5876857042312622,
+      "mean_subtracted_signed_cosine": 0.10433125495910645,
+      "null_mean": 0.0002201517217941385,
+      "null_std": 0.016724616950324168,
+      "null_iqr": [
+        -0.01156166670875882,
+        0.010600709649706705
+      ],
+      "z_score": 35.1257980453946
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "formal",
+      "layer": 21,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.6044257879257202,
+      "absolute_cosine": 0.6044257879257202,
+      "mean_subtracted_signed_cosine": 0.053451456129550934,
+      "null_mean": 0.0012879633802532191,
+      "null_std": 0.01682101254255574,
+      "null_iqr": [
+        -0.008736224768037131,
+        0.013229044591655536
+      ],
+      "z_score": 35.856211816224956
+    },
+    {
+      "context": "assistant",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.48372772336006165,
+      "absolute_cosine": 0.48372772336006165,
+      "mean_subtracted_signed_cosine": -0.039084456861019135,
+      "null_mean": -0.00026931283968052895,
+      "null_std": 0.01664252146738329,
+      "null_iqr": [
+        -0.011235231557071967,
+        0.012931693705313444
+      ],
+      "z_score": 29.0819517983707
+    },
+    {
+      "context": "software_engineer",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.4657741189002991,
+      "absolute_cosine": 0.4657741189002991,
+      "mean_subtracted_signed_cosine": 0.06469523906707764,
+      "null_mean": -0.00018826696393741126,
+      "null_std": 0.01640717997197396,
+      "null_iqr": [
+        -0.011561732092782103,
+        0.010333950495154422
+      ],
+      "z_score": 28.399905301232025
+    },
+    {
+      "context": "villain",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.4552752673625946,
+      "absolute_cosine": 0.4552752673625946,
+      "mean_subtracted_signed_cosine": -0.0020284070633351803,
+      "null_mean": -6.465210152918864e-05,
+      "null_std": 0.015697069107289113,
+      "null_iqr": [
+        -0.009538688111820766,
+        0.010686921057065079
+      ],
+      "z_score": 29.00795602949378
+    },
+    {
+      "context": "kindergarten_teacher",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.4574865996837616,
+      "absolute_cosine": 0.4574865996837616,
+      "mean_subtracted_signed_cosine": 0.16179510951042175,
+      "null_mean": -0.0002864352332377017,
+      "null_std": 0.01566526630193533,
+      "null_iqr": [
+        -0.012254218662744825,
+        0.011782534029193718
+      ],
+      "z_score": 29.222165577758428
+    },
+    {
+      "context": "medical_doctor",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": true,
+      "signed_cosine": 0.5070937275886536,
+      "absolute_cosine": 0.5070937275886536,
+      "mean_subtracted_signed_cosine": 0.11488199234008789,
+      "null_mean": -3.985017120391933e-05,
+      "null_std": 0.0165414356511778,
+      "null_iqr": [
+        -0.010639716616053427,
+        0.011150262994996295
+      ],
+      "z_score": 30.658375596641303
+    },
+    {
+      "context": "librarian",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.48225271701812744,
+      "absolute_cosine": 0.48225271701812744,
+      "mean_subtracted_signed_cosine": 0.14021573960781097,
+      "null_mean": -9.925854871839744e-05,
+      "null_std": 0.016486805425896776,
+      "null_iqr": [
+        -0.011898906494072225,
+        0.010642257228969368
+      ],
+      "z_score": 29.256847148346925
+    },
+    {
+      "context": "french_person",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.2389799952507019,
+      "absolute_cosine": 0.2389799952507019,
+      "mean_subtracted_signed_cosine": -0.23657554388046265,
+      "null_mean": -5.8367214368807914e-05,
+      "null_std": 0.016239016193135877,
+      "null_iqr": [
+        -0.01197581430460453,
+        0.011182716852361003
+      ],
+      "z_score": 14.72000180935276
+    },
+    {
+      "context": "police_officer",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.5093323588371277,
+      "absolute_cosine": 0.5093323588371277,
+      "mean_subtracted_signed_cosine": 0.015219191089272499,
+      "null_mean": -0.0007814916996908144,
+      "null_std": 0.016547802609020765,
+      "null_iqr": [
+        -0.01268253972717246,
+        0.009971166530225112
+      ],
+      "z_score": 30.826680240436154
+    },
+    {
+      "context": "comedian",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.3770209550857544,
+      "absolute_cosine": 0.3770209550857544,
+      "mean_subtracted_signed_cosine": 0.042327482253313065,
+      "null_mean": -0.0010328008507670139,
+      "null_std": 0.016361610163373945,
+      "null_iqr": [
+        -0.012283903709603132,
+        0.009505021415126323
+      ],
+      "z_score": 23.106144753201832
+    },
+    {
+      "context": "data_scientist",
+      "behavior": "formal",
+      "layer": 27,
+      "model": "instruct",
+      "in_subset": false,
+      "signed_cosine": 0.4728151261806488,
+      "absolute_cosine": 0.4728151261806488,
+      "mean_subtracted_signed_cosine": 0.06599839776754379,
+      "null_mean": -0.0001107262870525045,
+      "null_std": 0.01652606842864615,
+      "null_iqr": [
+        -0.011664390509209425,
+        0.011206738773820073
+      ],
+      "z_score": 28.616959072429864
+    }
+  ],
+  "summary": {
+    "per_behavior_layer": [
+      {
+        "behavior": "sycophancy",
+        "layer": 7,
+        "all_10": {
+          "mean_signed": -0.014263873011805117,
+          "frac_positive": 0.3
+        },
+        "heldout_6": {
+          "mean_signed": -0.01827154669445008,
+          "frac_positive": 0.16666666666666666
+        }
+      },
+      {
+        "behavior": "sycophancy",
+        "layer": 14,
+        "all_10": {
+          "mean_signed": 0.09897079095244407,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.09377638498942058,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "sycophancy",
+        "layer": 21,
+        "all_10": {
+          "mean_signed": 0.25686453133821485,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.2321168358127276,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "sycophancy",
+        "layer": 27,
+        "all_10": {
+          "mean_signed": 0.11808891221880913,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.11168710266550382,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "refusal",
+        "layer": 7,
+        "all_10": {
+          "mean_signed": -0.06614732034504414,
+          "frac_positive": 0.0
+        },
+        "heldout_6": {
+          "mean_signed": -0.07019360239307086,
+          "frac_positive": 0.0
+        }
+      },
+      {
+        "behavior": "refusal",
+        "layer": 14,
+        "all_10": {
+          "mean_signed": 0.15785688087344169,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.15727372715870538,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "refusal",
+        "layer": 21,
+        "all_10": {
+          "mean_signed": 0.2843438945710659,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.2746013216674328,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "refusal",
+        "layer": 27,
+        "all_10": {
+          "mean_signed": 0.10473679527640342,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.10014116143186887,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "evil",
+        "layer": 7,
+        "all_10": {
+          "mean_signed": 0.022103354521095752,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.023266338743269444,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "evil",
+        "layer": 14,
+        "all_10": {
+          "mean_signed": 0.338980995118618,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.3506527245044708,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "evil",
+        "layer": 21,
+        "all_10": {
+          "mean_signed": 0.38555525690317155,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.3820398797591527,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "evil",
+        "layer": 27,
+        "all_10": {
+          "mean_signed": 0.2329626813530922,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.21575219929218292,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "hedging",
+        "layer": 7,
+        "all_10": {
+          "mean_signed": -0.02106724800541997,
+          "frac_positive": 0.0
+        },
+        "heldout_6": {
+          "mean_signed": -0.021217682554076116,
+          "frac_positive": 0.0
+        }
+      },
+      {
+        "behavior": "hedging",
+        "layer": 14,
+        "all_10": {
+          "mean_signed": 0.18269503563642503,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.1745808720588684,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "hedging",
+        "layer": 21,
+        "all_10": {
+          "mean_signed": 0.4254575341939926,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.42494956652323407,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "hedging",
+        "layer": 27,
+        "all_10": {
+          "mean_signed": 0.3218658536672592,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.3076121360063553,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "terse",
+        "layer": 7,
+        "all_10": {
+          "mean_signed": -0.03933905884623527,
+          "frac_positive": 0.0
+        },
+        "heldout_6": {
+          "mean_signed": -0.04322695732116699,
+          "frac_positive": 0.0
+        }
+      },
+      {
+        "behavior": "terse",
+        "layer": 14,
+        "all_10": {
+          "mean_signed": 0.17576510161161424,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.17316277573506036,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "terse",
+        "layer": 21,
+        "all_10": {
+          "mean_signed": 0.43090375065803527,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.40978796780109406,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "terse",
+        "layer": 27,
+        "all_10": {
+          "mean_signed": 0.23950062394142152,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.2294388934969902,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "formal",
+        "layer": 7,
+        "all_10": {
+          "mean_signed": -0.030376359913498165,
+          "frac_positive": 0.0
+        },
+        "heldout_6": {
+          "mean_signed": -0.03356281357506911,
+          "frac_positive": 0.0
+        }
+      },
+      {
+        "behavior": "formal",
+        "layer": 14,
+        "all_10": {
+          "mean_signed": 0.20680457651615142,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.20451359947522482,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "formal",
+        "layer": 21,
+        "all_10": {
+          "mean_signed": 0.5919094264507294,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.5901916921138763,
+          "frac_positive": 1.0
+        }
+      },
+      {
+        "behavior": "formal",
+        "layer": 27,
+        "all_10": {
+          "mean_signed": 0.44497585892677305,
+          "frac_positive": 1.0
+        },
+        "heldout_6": {
+          "mean_signed": 0.42298129200935364,
+          "frac_positive": 1.0
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "commit": "4da4ad14fa",
+  "created": "2026-06-29T09:00:40Z",
+  "figsize": [
+    8.2,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.264541573718888,
+      "error": 0.20238755798545033,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.76,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.000796517932898281,
+      "error": 0.15970819829015204,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.76,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.45562258668778804,
+      "error": 0.16519291209869236,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Emergent misalignment",
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": 0.12076451145491833,
+      "error": 0.22841769918417082,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Sycophancy",
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": 0.0487078412959493,
+      "error": 0.142967661333609,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Taught fact",
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": 0.045810771477109484,
+      "error": 0.12702108154124597,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.3417452693439788,
+      "error": 0.21435288004883893,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.044080665072272256,
+      "error": 0.18913439857476355,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.17712889612001834,
+      "error": 0.16237673348835355,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.4571945882772698,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.76,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.21163690533222315,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.76,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.6078123386446067,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.05241947230636915,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.76,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": 0.10777949124808091,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.76,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.277426514447222,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.07870627943940807,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.06763328032187652,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.057911278395099804,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": 0.3781291189289336,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": 0.21830204234534148,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": 0.19613088468739212,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.5289190667939435,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.2948132190954581,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.342475864724364,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.10021330669626566,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": 0.08345557805406903,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.24,
+      "Partial Spearman \u03c1  ( \u00b7 vs \u0394behavior | base rate)": -0.01772239774765688,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 27
+}

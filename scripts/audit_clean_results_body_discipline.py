@@ -204,6 +204,24 @@ def strip_code(text: str) -> str:
     return text
 
 
+def strip_fenced_code_only(text: str) -> str:
+    """Remove fenced ```...``` code blocks but KEEP inline-backtick spans.
+
+    Companion to :func:`strip_code`. The `interval_inline` scan source uses
+    THIS helper (not `strip_code`) so an inline-backtick-wrapped bracketed
+    CI in reader-facing prose (e.g. ``CI `[-0.295, +0.083]` ``) is still
+    seen by the bracketed-CI regex — `strip_code`'s inline-backtick blanking
+    (the `` `[^`\\n]*` `` substitution) otherwise removes it before the scan
+    (the #667 line-166 gap). Sample-completion text in FENCED code blocks
+    is still stripped, so this does not create false positives from verbatim
+    bracketed expressions inside fenced examples. Every OTHER audit category
+    keeps using `strip_code` (full inline+fenced strip) — inline-backtick
+    `C1`/`D1` references are a legitimate accepted form for `condition_labels`
+    and we deliberately do not widen its exposure here.
+    """
+    return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+
+
 # GFM table delimiter row: `|---|---|`, `:--|:-:|--:`, `---|---`, etc.
 # Mirrors `_TABLE_DELIM_RE` in `verify_task_body.py`: at least TWO cells of
 # dashes (with optional leading/trailing `|` and optional `:` alignment
@@ -618,9 +636,19 @@ def audit_body(body: str) -> dict[str, list[str]]:
         strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
     )
     cleaned_table_blanked = _blank_table_rows(cleaned)
-    # `interval_inline` scans the table-blanked text with the Lens 7
-    # caption / "Why this test" carve-outs ALSO blanked.
-    interval_scan_source = _strip_interval_inline_exempt_lines(cleaned_table_blanked)
+    # `interval_inline` uses `strip_fenced_code_only` (NOT `strip_code`) so an
+    # inline-backtick-wrapped bracketed CI in prose (``CI `[-0.295, +0.083]` ``,
+    # the #667 line-166 gap) is still seen — `strip_code` blanks inline-backtick
+    # spans, hiding the CI before the scan. The SAME downstream exemptions still
+    # apply (Data `<details>` / Context block stripped by the inner chain; table
+    # rows blanked by `_blank_table_rows`; figure-caption + Why-this-test lines
+    # blanked by `_strip_interval_inline_exempt_lines`). Fenced code blocks are
+    # still stripped, so verbatim bracketed expressions in fenced examples do
+    # not false-positive. Every OTHER category keeps `cleaned` / `strip_code`.
+    interval_cleaned = strip_fenced_code_only(
+        strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
+    )
+    interval_scan_source = _strip_interval_inline_exempt_lines(_blank_table_rows(interval_cleaned))
     # `pre_reg` (v3 only) scans only the three Lens 7 prose sections.
     pre_reg_scan_source = _restrict_pre_reg_to_prose_sections(body, cleaned)
     for name, (pattern, _) in PATTERNS.items():

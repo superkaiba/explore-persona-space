@@ -427,6 +427,46 @@ def test_original_interval_inline_forms_still_flagged():
     assert "interval_inline" in audit.audit_body(trailing), "trailing-token form regressed"
 
 
+def test_inline_backtick_bracketed_ci_in_prose_is_flagged():
+    """An inline-backtick-wrapped CI in reader-facing prose (the verbatim
+    #667 line-166 form ``CI `[-0.295, +0.083]` ``) trips `interval_inline`.
+    `strip_code` previously blanked the inline-backtick span, hiding the CI
+    from the scan; the `interval_inline` path now uses
+    `strip_fenced_code_only`, which keeps inline backticks."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "Sycophancy's sibling crosses zero (CI `[−0.295, +0.083]`), "  # noqa: RUF001
+        "matching its null.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "interval_inline" in findings, findings
+    assert any("0.295" in s for s in findings["interval_inline"]), findings
+
+
+def test_strip_fenced_code_only_keeps_inline_backticks():
+    """`strip_fenced_code_only` removes fenced ```...``` blocks but keeps
+    inline-backtick spans (unlike `strip_code`, which blanks both)."""
+    text = "Prose `[0.1, 0.4]` here.\n```\nfenced [9, 9] body\n```\nAfter."
+    out = audit.strip_fenced_code_only(text)
+    assert "`[0.1, 0.4]`" in out  # inline kept
+    assert "fenced [9, 9] body" not in out  # fenced stripped
+    # contrast: strip_code blanks the inline span
+    assert "[0.1, 0.4]" not in audit.strip_code(text)
+
+
+def test_inline_backtick_condition_label_in_prose_not_flagged():
+    """Scope guard: the fix routes ONLY `interval_inline` through
+    `strip_fenced_code_only`. `condition_labels` keeps using `strip_code`
+    (inline backticks blanked), so an inline-backtick `C1` reference in
+    prose is a legitimate accepted form and must NOT trip `condition_labels`."""
+    leaky = V3_BODY_WITH_DATA_CODES.replace(
+        "The lift holds at every seed in the held-out evaluation.",
+        "The result reproduces the `C1` arm at every seed.",
+    )
+    findings = audit.audit_body(leaky)
+    assert "condition_labels" not in findings, findings
+
+
 # ─── Pre-registration mentions scoped to Lens 7 prose sections (#623) ────
 #
 # Lens 7 (clean-result-critic) scopes the pre-registration-mention ban to

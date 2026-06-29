@@ -161,3 +161,8 @@ Task bodies #612 (elicitation ladder, dose bands, yield shortfalls),
 CLAUDE.md bullets "On-policy-first training completions",
 "Design experiments on the most realistic data available",
 "Replicating a published finding".
+
+**Sibling rule:** `.claude/rules/persona-vectors-recipe.md` — the persona-vector
+extraction rollouts are on-policy by construction (sampled from the base model
+under the contrastive system prompts); this rule's on-policy default governs
+them.

@@ -367,6 +367,33 @@ session; runs every tick like `vm_disk_pass`). Kill switch:
 just this pass (pair with `--dry-run` for a live smoke). Pinned by
 `tests/test_autonomous_session_watch.py::test_program_orchestrator_*`.
 
+**Happy injection-patch check pass (#726, `happy_patch_pass`).** A
+daemon-INDEPENDENT, escalate-only pass (runs every 10-min tick in the
+daemon-independent block next to `vm_disk_pass` / `data_disk_pass` /
+`program_orchestrator_pass`, BEFORE the daemon-gated session passes) that
+surfaces a reverted/drifted Happy daemon injection patch PROACTIVELY. The patch
+(`scripts/patch_happy_daemon.py`, sentinel v4) teaches the vendored Happy daemon
+to honor `claudeArgs` / `HAPPY_INITIAL_PROMPT`; it reverts on every `npm update
+happy` (and the hashed bundle is renamed away), after which `spawn-issue --auto`
+/ `spawn-campaign` spawn a session that boots empty and never fires its skill —
+an idle "spawned but never ran" session (the failure CLASS behind #685; the
+2026-06-28 idle-session pile itself was the distinct #720 mapping-loss cause).
+The spawn-path guard (`spawn_session._verify_happy_patch_or_die`) is REACTIVE —
+it fires only at the next spawn; this pass is PROACTIVE, so a revert is surfaced
+within ~10 min rather than at the next dispatch. It reads the daemon file
+in-process via `_happy_patch_check.classify_patch` (single source of truth for
+the sentinel + path; single-digit-ms, no subprocess, no root), and on
+`reverted`/`drifted` writes a `band=happy-patch` row to the shared disk-guard
+sidecar (`.claude/cache/disk-guard-events.jsonl`) + a fail-soft `_telegram_push`,
+deduped per-state (`~/.eps-autonomous/happy-patch-alert.json`) so it alerts once
+per episode and re-alerts when the state changes. ESCALATE-ONLY: it NEVER
+re-applies (that needs sudo — a password prompt would hang the autonomous
+dispatch); `patched` and `missing` (no daemon file on this host) are clean
+no-ops (the spawn-path guard owns the precise `missing` reachability
+disambiguation via `daemon.state.json`). `--happy-patch-only` runs just this
+pass (pair with `--dry-run` for a live smoke). Pinned by
+`tests/test_happy_patch_check.py` (`test_watcher_pass_*`).
+
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 
 The heavy active-task footprint (`.claude/worktrees/` — every `issue-<N>`

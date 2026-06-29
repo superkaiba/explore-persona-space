@@ -1,0 +1,137 @@
+{
+  "commit": "dc09c942e0",
+  "created": "2026-06-29T09:15:40Z",
+  "figsize": [
+    7.2,
+    4.6
+  ],
+  "points": [
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": 0.09441440050269473,
+      "y": 8.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "series": "base map M0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.006800904982698,
+      "y": 8.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "series": "post-FT map M\u207a",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.09750944906113587,
+      "y": 7.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.11946500308457579,
+      "y": 7.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.04017874325676313,
+      "y": 6.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.0599670415268575,
+      "y": 6.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.0630927517425533,
+      "y": 5.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.11419222838554434,
+      "y": 5.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.08348529557469889,
+      "y": 4.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.12388016316909634,
+      "y": 4.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.14305538943960966,
+      "y": 3.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.04664150291020497,
+      "y": 3.0,
+      "label": "green \u0394\u03c1 interval = post-FT minus base CI excludes zero (taught fact, all layers); em/sycophancy unchanged",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.1178783189878614,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": 0.17091083197295134,
+      "y": 2.0,
+      "label": "\u0394\u03c1=[+0.14,+0.39]",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.11792587771519984,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": 0.5016419208289011,
+      "y": 1.0,
+      "label": "\u0394\u03c1=[+0.47,+0.72]",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": -0.11540974256653964,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Spearman \u03c1 ( r\u0302_B\u1d40 M\u0302(c)  vs  measured leakage rate E ), held-out LOCO": 0.461718689832076,
+      "y": 0.0,
+      "label": "\u0394\u03c1=[+0.43,+0.68]",
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18
+}

@@ -2318,3 +2318,52 @@ def test_check_gate_ids_unique_flags_a_duplicate():
     assert wf.gates.inline[0].name in errors[0]
     assert wf.gates.park_and_wait[0].name in errors[0]
     assert f"duplicate gate id {dup_id}" in errors[0]
+
+
+# ---------------------------------------------------------------------------
+# Regression guard for analyzer.md Step 3.5 inherited-figure cross-check (#729).
+# Step 3.5 must require, on a same-issue follow-up re-fold, cross-checking an
+# INHERITED figure's .meta.json `points` against the NEW round's result JSON
+# (regenerate on mismatch). The rule is load-bearing prose that is easy to lose
+# silently in a future analyzer.md edit, so pin the stable concept tokens.
+# Scoped to the Step 3.5 slice (its `### Step 3.5` H3 up to the next H3/H2) to
+# avoid false matches elsewhere in the file. #667 a36 round 2 caught a stale
+# inherited figure post-hoc by diligence, not a guardrail.
+# ---------------------------------------------------------------------------
+
+
+def test_analyzer_step35_cross_checks_inherited_figures():
+    """analyzer.md Step 3.5 must require cross-checking an inherited figure's
+    .meta.json points against the new result JSON on a follow-up re-fold (#729)."""
+    text = (_REPO_ROOT / ".claude/agents/analyzer.md").read_text()
+    lines = text.splitlines()
+    # Slice the Step 3.5 region: from its `### Step 3.5` heading up to (but not
+    # including) the next `### ` H3 or `## ` H2.
+    start = next(
+        (i for i, ln in enumerate(lines) if ln.startswith("### Step 3.5")),
+        None,
+    )
+    assert start is not None, "analyzer.md is missing the `### Step 3.5` heading"
+    end = next(
+        (
+            i
+            for i in range(start + 1, len(lines))
+            if lines[i].startswith("### ") or lines[i].startswith("## ")
+        ),
+        len(lines),
+    )
+    step35 = "\n".join(lines[start:end])
+    lowered = step35.lower()
+    for token, label in (
+        ("inherited", "the inherited-figure trigger"),
+        (".meta.json", "the .meta.json sidecar the cross-check reads"),
+        ("points", "the per-point `points` key the cross-check compares"),
+    ):
+        assert token in lowered, (
+            f"analyzer.md Step 3.5 dropped {label} (token {token!r}); the #729 "
+            "inherited-figure cross-check rule was weakened or removed."
+        )
+    assert "follow-up re-fold" in lowered or "follow-up re-folds" in lowered, (
+        "analyzer.md Step 3.5 dropped the same-issue follow-up re-fold scoping "
+        "(token 'follow-up re-fold'); the #729 cross-check rule was weakened."
+    )

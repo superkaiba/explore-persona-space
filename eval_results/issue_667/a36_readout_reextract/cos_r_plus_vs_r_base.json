@@ -1,0 +1,124 @@
+{
+  "assumption": "cos_r_plus_vs_r_base",
+  "by_behavior_layer": {
+    "em": {
+      "14": {
+        "status": "ok",
+        "cos_r_plus_vs_r_base": {
+          "binst_em": 0.81452354321451,
+          "default": 0.5947085280972685,
+          "fmt_code": 0.7745863950219777,
+          "fmt_json": 0.7669230807424804,
+          "icl_k2": 0.7804028332469041,
+          "icl_k8": 0.787860311770718,
+          "reph_casual": 0.5989169003356914,
+          "reph_imp": 0.7573042374608722,
+          "reph_polite": 0.6574083201615454,
+          "sp_doctor": 0.7950118611197334,
+          "sp_ph1": 0.8190084481710708,
+          "sp_ph2": 0.8127173091333653,
+          "sp_swe": 0.8069435812269866,
+          "wc_long_write": 0.7630940751625147,
+          "wc_short_advice": 0.7753362385391415,
+          "wc_short_code": 0.7558079841832243
+        },
+        "cos_r_plus_vs_r_base_mean": 0.7537846029742502,
+        "within_behavior_reference_band": {
+          "mean": 0.8007696567029357,
+          "lo": 0.5178756503206021,
+          "hi": 0.9492837538676975,
+          "n_pairs": 120
+        },
+        "random_direction_null_band": {
+          "mean": 0.013439899280436813,
+          "hi": 0.03751097243498726,
+          "n_rand": 10000
+        },
+        "n_sources": 16
+      }
+    },
+    "sycophancy": {
+      "14": {
+        "status": "ok",
+        "cos_r_plus_vs_r_base": {
+          "binst_sycophancy": 0.9471294058054757,
+          "default": 0.2631030714113945,
+          "fmt_code": 0.9433738119503327,
+          "fmt_json": 0.940862412262841,
+          "icl_k2": 0.9401065798566526,
+          "icl_k8": 0.940198568013092,
+          "reph_casual": 0.9382331165403869,
+          "reph_imp": 0.3495551688658426,
+          "reph_polite": 0.6336378775118021,
+          "sp_doctor": 0.9422399113198798,
+          "sp_ph1": 0.9466737157220774,
+          "sp_ph2": 0.9452901648889708,
+          "sp_swe": 0.9484174008953202,
+          "wc_long_write": 0.9485960429038136,
+          "wc_short_advice": 0.946253396709258,
+          "wc_short_code": 0.9471057649487613
+        },
+        "cos_r_plus_vs_r_base_mean": 0.8450485256003688,
+        "within_behavior_reference_band": {
+          "mean": 0.8040671666705417,
+          "lo": 0.2689651369080999,
+          "hi": 0.992399968530996,
+          "n_pairs": 120
+        },
+        "random_direction_null_band": {
+          "mean": 0.013281205348760202,
+          "hi": 0.03667970568782517,
+          "n_rand": 10000
+        },
+        "n_sources": 16
+      }
+    },
+    "fact": {
+      "14": {
+        "status": "ok",
+        "cos_r_plus_vs_r_base": {
+          "binst_fact": 0.07338724162924444,
+          "default": 0.2265052467519854,
+          "fmt_code": 0.21753712501222977,
+          "fmt_json": 0.2534443752724257,
+          "icl_k2": 0.045985008347670296,
+          "icl_k8": 0.16349083272933296,
+          "reph_casual": 0.17876526781773772,
+          "reph_imp": 0.19491819134690846,
+          "reph_polite": 0.22480387673675695,
+          "sp_doctor": 0.24300374488342233,
+          "sp_ph1": 0.08772947793252867,
+          "sp_ph2": 0.23233941702804817,
+          "sp_swe": 0.23486161877105227,
+          "wc_long_write": 0.18767363950590082,
+          "wc_short_advice": 0.22412273864300336,
+          "wc_short_code": 0.09632291349740378
+        },
+        "cos_r_plus_vs_r_base_mean": 0.1803056697441032,
+        "within_behavior_reference_band": {
+          "mean": 0.4810793659612667,
+          "lo": -0.09332959725380055,
+          "hi": 0.949941002556658,
+          "n_pairs": 120
+        },
+        "random_direction_null_band": {
+          "mean": 0.013537681200235858,
+          "hi": 0.038021226336804125,
+          "n_rand": 10000
+        },
+        "n_sources": 16
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "e4631562cf9e80206e6bd285d189bd0d17ca2320",
+    "generated_at": "2026-06-29T08:39:32.266459+00:00",
+    "script": "issue667_analysis",
+    "g_meta_git_commit_pin": "34f2502c656cd804524f2a3d4d5231270aaf0664",
+    "store_probe_pool_hash_pin": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7",
+    "followup_label": "a36-readout-reextract-cos",
+    "layers": [
+      14
+    ]
+  }
+}

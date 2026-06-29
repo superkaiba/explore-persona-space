@@ -1991,6 +1991,106 @@ def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
     return True
 
 
+def _happy_patch_state_path() -> Path:
+    """Singleton per-episode dedup state for :func:`happy_patch_pass`, under
+    AUTONOMOUS_REGISTRY_DIR. Records the last-alerted patch state so the pass
+    escalates a revert/drift once per episode (and re-alerts when the state
+    CHANGES, e.g. reverted -> drifted). Mirrors ``vm-disk-data.json``'s shape."""
+    return AUTONOMOUS_REGISTRY_DIR / "happy-patch-alert.json"
+
+
+def _load_happy_patch_state() -> dict:
+    path = _happy_patch_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_happy_patch_state(state: dict) -> None:
+    """Atomic temp+rename write of the happy-patch dedup state (fail-soft)."""
+    dest = _happy_patch_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  happy-patch: state save failed: {exc}", file=sys.stderr)
+
+
+def _clear_happy_patch_state() -> None:
+    _happy_patch_state_path().unlink(missing_ok=True)
+
+
+def happy_patch_pass(dry_run: bool) -> None:
+    """Proactively surface a reverted/drifted Happy injection patch (task #726).
+
+    The spawn-path guard (spawn_session._verify_happy_patch_or_die) is REACTIVE
+    — it only fires at the next spawn attempt. This pass is PROACTIVE: it runs
+    every 10-min tick, so a revert (typically from `npm update happy`) is
+    surfaced within ~10 min rather than at the next autonomous dispatch.
+    Escalate-only: never re-applies (that needs sudo); writes a sidecar row +
+    fail-soft Telegram push, deduped per (state) so it alerts once per episode.
+    Clean no-op when the patch is present or the daemon file is absent.
+
+    Daemon-INDEPENDENT: it reads a local file only, so it runs every tick
+    alongside vm_disk_pass / data_disk_pass / program_orchestrator_pass, BEFORE
+    the daemon-gated session passes. Fail-soft throughout — a classify error is
+    logged and swallowed, never propagated."""
+    sp = str(PROJECT_ROOT / "scripts")
+    if sp not in sys.path:
+        sys.path.insert(0, sp)
+    try:
+        import _happy_patch_check as hpc
+
+        st = hpc.classify_patch()
+    except Exception as exc:  # fail-soft like the disk passes
+        print(f"  happy-patch: classify failed ({exc}); skipping", file=sys.stderr)
+        return
+    if st.state in ("patched", "missing"):
+        # `missing` = the .mjs file is absent; on the watcher VM this is the
+        # 'Happy not installed here' case (escalate-only stays conservative —
+        # the spawn-path guard owns the precise reachability disambiguation via
+        # daemon.state.json). Reset the dedup so a future revert re-alerts.
+        if not dry_run:
+            _clear_happy_patch_state()
+        return
+    # reverted | drifted -> escalate-only
+    state = _load_happy_patch_state()
+    if state.get("alerted_state") == st.state:
+        print(f"  happy-patch: {st.state} (already alerted this episode)")
+        return
+    print(
+        f"happy-patch: {st.state.upper()} — {st.detail}. Autonomous spawns will "
+        f"produce idle sessions until re-applied; ESCALATE-ONLY "
+        f"(re-apply needs sudo, never auto-applied here).",
+        file=sys.stderr,
+    )
+    _append_disk_guard_sidecar(
+        {
+            "kind": f"happy-patch-{st.state}",
+            "band": "happy-patch",
+            "state": st.state,
+            "detail": st.detail,
+            "reapply_cmd": hpc.REAPPLY_CMD,
+            "restart_cmd": hpc.RESTART_CMD,
+        },
+        dry_run,
+    )
+    _telegram_push(
+        f"Happy injection patch {st.state}: {st.detail}. Autonomous spawns will "
+        f"produce idle sessions until re-applied: {hpc.REAPPLY_CMD} && "
+        f"{hpc.RESTART_CMD}",
+        dry_run,
+    )
+    if not dry_run:
+        _save_happy_patch_state({"alerted_state": st.state})
+
+
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
     """Classify a RUNNING managed pod's task status for :func:`decide_pod_safety`.
 
@@ -12598,6 +12698,13 @@ def main(argv: list[str] | None = None) -> int:
         "every other pass. Mirrors --infra-drain-only; pair with --dry-run for "
         "a live smoke against the real proposed-task set.",
     )
+    parser.add_argument(
+        "--happy-patch-only",
+        action="store_true",
+        help="run ONLY the Happy injection-patch check pass (escalate on a "
+        "reverted/drifted daemon patch, #726) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a live smoke.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -12635,6 +12742,12 @@ def main(argv: list[str] | None = None) -> int:
         proposed_infra_sweep_pass(args.dry_run, daemon_reachable=_daemon_reachable())
         return 0
 
+    # --happy-patch-only mirrors the other --*-only flags: the pass is
+    # daemon-independent (reads a local file only), so run it alone.
+    if args.happy_patch_only:
+        happy_patch_pass(args.dry_run)
+        return 0
+
     # VM disk-headroom: runs FIRST. A full root disk makes every later
     # subprocess in this very watcher (and every VM session) flaky — alert
     # and reclaim before reasoning about sessions/pods (task #552).
@@ -12647,6 +12760,18 @@ def main(argv: list[str] | None = None) -> int:
     # without the cutover (and on an existing-but-unmounted /mnt/eps-data), so
     # the call is live the instant the disk is actually mounted.
     data_disk_pass(args.dry_run)
+
+    # Happy injection-patch check (#726): a SECOND escalate-only, daemon-
+    # INDEPENDENT pass (reads a local file only). The spawn-path guard
+    # (spawn_session._verify_happy_patch_or_die) is REACTIVE — it fires only at
+    # the next spawn; this PROACTIVE pass surfaces a reverted/drifted patch
+    # (typically from `npm update happy`) within ~10 min so the gap is caught
+    # before the next autonomous dispatch. Escalate-only (never re-applies —
+    # that needs sudo); clean no-op when patched or the daemon file is absent.
+    # Placed in the daemon-independent block (next to vm_disk_pass /
+    # data_disk_pass / program_orchestrator_pass), BEFORE the daemon-gated
+    # session passes — it must run on a daemon outage too.
+    happy_patch_pass(args.dry_run)
 
     # Program-orchestrator crash-recovery: the leakage-program (#660) meta-loop is
     # a bash daemon (run_program_orchestrator.sh in tmux eps-program), NOT a Happy

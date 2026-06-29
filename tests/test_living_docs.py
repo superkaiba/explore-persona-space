@@ -501,6 +501,81 @@ def test_check_exempts_intentionally_unmapped(fixture):
     assert fm["living_docs_unmapped"] == "no open question fits"
 
 
+# ─── check() degrades on registry/filesystem inconsistency (#725) ──────────
+
+
+def test_check_degrades_on_drifted_registry_path(fixture):
+    """Mode A: a registry entry points at a directory that does not exist.
+
+    ``find_task_path`` raises ``FileNotFoundError``; ``check()`` must
+    surface the drifted task as a problem (NOT raise), AND the surviving
+    check axes must still run against the registry-trimmed index.
+    Reproduces tonight's documented crash (task #725 body / #696).
+    """
+    import json
+
+    repo, paths = fixture
+    # Drift #207's registry path to a nonexistent dir. The on-disk
+    # tasks/completed/207/ still exists; only the registry POINTS somewhere
+    # else — exactly find_task_path's entry-present-but-dir-missing branch.
+    reg_path = repo / "tasks" / "REGISTRY.json"
+    reg = json.loads(reg_path.read_text())
+    reg["tasks"]["207"]["path"] = "tasks/approved/207"  # nonexistent
+    reg_path.write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n")
+    tw.invalidate_cache()  # drop the cached registry so the new path is read
+
+    # (1) Must not raise.
+    report = ld.check(paths=paths)
+
+    # (2) Drift finding present, names #207.
+    drift_lines = [p for p in report.problems if "registry/filesystem inconsistent" in p]
+    assert any("#207" in p for p in drift_lines), report.problems
+    # The fixture has #208 still well-formed → exactly one drift line.
+    assert len(drift_lines) == 1, drift_lines
+
+    # (3) Surviving axes still ran: #207's name still appears in a1's evidence
+    # in open_questions.md, but #207 is no longer in the relates-to index, so
+    # the bidirectional check (axis a) MUST flag a missing-backlink finding
+    # for #207 vs a1.
+    nondrift = [p for p in report.problems if "registry/filesystem inconsistent" not in p]
+    assert any("207" in p and "a1" in p for p in nondrift), (
+        f"axis (a) bidirectional should have flagged #207 vs a1 after the "
+        f"drift trimmed it from the relates index; got non-drift problems: {nondrift}"
+    )
+    # report.ok must be False (drift present).
+    assert not report.ok
+
+
+def test_check_degrades_on_missing_body_md(fixture):
+    """Mode B: a registry entry's dir exists but body.md is missing.
+
+    ``tw._read_body → path.read_text()`` raises ``FileNotFoundError``;
+    ``check()`` must surface the drifted task as a problem (NOT raise), AND
+    the surviving check axes must still run.
+    """
+    repo, paths = fixture
+    # Delete #207's body.md while keeping the registry entry intact AND the
+    # directory present — find_task_path returns successfully (dir exists);
+    # the subsequent read_text raises.
+    body = repo / "tasks" / "completed" / "207" / "body.md"
+    body.unlink()
+
+    # (1) Must not raise.
+    report = ld.check(paths=paths)
+
+    # (2) Drift finding present, names #207.
+    drift_lines = [p for p in report.problems if "registry/filesystem inconsistent" in p]
+    assert any("#207" in p for p in drift_lines), report.problems
+    assert len(drift_lines) == 1, drift_lines
+
+    # (3) Surviving axes still ran: same bidirectional flag as Mode A — #207's
+    # drop from the relates index has the same downstream effect whether it
+    # was Mode A or Mode B.
+    nondrift = [p for p in report.problems if "registry/filesystem inconsistent" not in p]
+    assert any("207" in p and "a1" in p for p in nondrift), nondrift
+    assert not report.ok
+
+
 # ─── Belief-format Evidence carrier (live docs/open_questions.md format) ───
 #
 # Every question in docs/open_questions.md as of 2026-05-29 uses the

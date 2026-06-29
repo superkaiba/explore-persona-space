@@ -631,6 +631,130 @@ def _upload(
         return ""
 
 
+def _upload_folder_filtered(
+    local_dir: Path,
+    repo_id: str,
+    repo_type: str,
+    path_in_repo: str,
+    allow_patterns: list[str],
+    expected_repo_paths: list[str],
+    ignore_patterns: list[str] | None = None,
+    delete_after: bool = False,
+) -> str:
+    """Bulk-upload a SUBSET of a local folder in ONE ``upload_folder`` commit.
+
+    This is the ``allow_patterns``-threaded sibling of :func:`_upload`'s folder
+    branch. ``_upload`` itself does NOT expose ``allow_patterns`` (its public
+    signature is pinned by several single-file callers + workflow-invariant
+    tests), so a caller that needs to upload only a glob-selected subset of a
+    directory — e.g. only ``raw_completions.json`` files out of an
+    ``eval_results/`` tree that also holds aggregate JSONs — routes through this
+    helper instead. ``HfApi.upload_folder`` composes exactly ONE
+    ``create_commit`` for the whole matched set (it walks the repo tree only
+    when ``delete_patterns`` is passed, which this helper never does), so a bulk
+    upload of N files issues ONE commit — never the per-file recursive
+    tree-listing pre-check that 504-storms on a large repo (the #664 / #727
+    incident: a per-file ``upload_file`` loop of 1425 files ran 12h / ~$530 on
+    an idle 8xH200 and uploaded only 264).
+
+    Args:
+        local_dir: Local DIRECTORY to upload from (must be a directory).
+        repo_id: HF Hub repo ID.
+        repo_type: ``'model'`` / ``'dataset'``.
+        path_in_repo: Destination prefix in the repo; each matched file lands at
+            ``<path_in_repo>/<rel-to-local_dir>``.
+        allow_patterns: fnmatch globs (relative to ``local_dir``) selecting which
+            files to upload. Files not matching are NOT uploaded.
+        expected_repo_paths: the EXACT set of ``<path_in_repo>/<rel>`` paths that
+            MUST be present on the Hub after the commit. Verification is an
+            exact expected-set membership check on a fresh paginated listing
+            (NOT mere prefix-presence / count — a mid-``upload_folder`` crash
+            leaves a partial set that prefix-presence would wrongly pass; the
+            ``.claude/rules/upload-policy.md`` § per-cell rule). Any missing
+            expected path -> return ``""`` so the caller raises.
+        ignore_patterns: extra fnmatch excludes, merged with the always-on
+            training-state excludes (same semantics as :func:`_upload`).
+        delete_after: when True, the CALLER deletes the individual local files
+            after this returns a non-empty (verified) URL — this helper never
+            deletes (so it cannot remove a file whose committed prefix was not
+            verified; the set-verify happens BEFORE the caller's unlink).
+
+    Returns:
+        ``"{repo_id}/{path_in_repo}"`` on verified success, ``""`` on any
+        failure or incomplete commit. ``delete_after`` is accepted for signature
+        symmetry but intentionally not acted on here; see the arg note above.
+    """
+    # delete_after is verified-before-acted-on by the CALLER (set-verify happens
+    # below, before any unlink) — this helper never deletes, so a partial commit
+    # can never strand a deleted-but-unverified local file.
+    _ = delete_after
+
+    from huggingface_hub import HfApi
+
+    token = os.environ.get("HF_TOKEN")
+    if not token:
+        logger.warning("HF_TOKEN not set, skipping upload")
+        return ""
+
+    if not local_dir.is_dir():
+        logger.warning("Path %s is not a directory, skipping bulk upload", local_dir)
+        return ""
+
+    api = HfApi(token=token)
+
+    try:
+        api.create_repo(repo_id, repo_type=repo_type, private=False, exist_ok=True)
+    except Exception as e:
+        logger.warning("Could not create/verify repo %s: %s", repo_id, e)
+
+    logger.info(
+        "Bulk-uploading %s (allow_patterns=%s) -> %s/%s",
+        local_dir,
+        allow_patterns,
+        repo_id,
+        path_in_repo,
+    )
+
+    try:
+        api.upload_folder(
+            folder_path=str(local_dir),
+            repo_id=repo_id,
+            path_in_repo=path_in_repo,
+            repo_type=repo_type,
+            allow_patterns=allow_patterns,
+            ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
+        )
+
+        # EXACT expected-set verification on a fresh paginated listing (mirror
+        # the #664 per-cell rule). list_repo_files_complete walks the paginated
+        # tree — NOT repo_info().siblings, which truncates (see the _upload
+        # comment) — so a large repo never spuriously reports a missing file.
+        uploaded_files = set(list_repo_files_complete(api, repo_id, repo_type=repo_type))
+        missing = [p for p in expected_repo_paths if p not in uploaded_files]
+        if missing:
+            logger.error(
+                "Bulk upload incomplete: %d of %d expected files missing under "
+                "%s/%s on Hub (first missing: %s). NOT marking as successful.",
+                len(missing),
+                len(expected_repo_paths),
+                repo_id,
+                path_in_repo,
+                missing[0],
+            )
+            return ""
+
+        logger.info(
+            "Bulk upload verified: %d files at %s/%s",
+            len(expected_repo_paths),
+            repo_id,
+            path_in_repo,
+        )
+        return f"{repo_id}/{path_in_repo}"
+    except Exception as e:
+        logger.error("Bulk upload failed: %s. Keeping local files.", e)
+        return ""
+
+
 def upload_model(
     model_path: str,
     repo_id: str = DEFAULT_MODEL_REPO,
@@ -884,12 +1008,23 @@ def upload_raw_completions_to_data_repo(
     delete_after: bool = False,
 ) -> dict[str, str]:
     """Upload all raw_completions.json files in an experiment's eval_results
-    directory to the HF Hub data repo.
+    directory to the HF Hub data repo IN ONE bulk ``upload_folder`` commit.
 
     Files land under ``<experiment_name>/raw_completions/<rel_path>`` in
-    ``DEFAULT_DATASET_REPO``. Mirrors ``upload_dataset_directory`` semantics:
-    fail-loud (raises ``RuntimeError`` on any upload failure), verified via
-    ``list_repo_files`` inside ``_upload``.
+    ``DEFAULT_DATASET_REPO``. Fail-loud (raises ``RuntimeError`` on any upload
+    failure), verified via an EXACT expected-file-set check on a fresh
+    paginated ``list_repo_files_complete`` listing inside
+    :func:`_upload_folder_filtered`.
+
+    The whole matched tree uploads as a SINGLE ``upload_folder`` commit (the
+    canonical bulk-upload path), NOT a per-file ``upload_file`` loop. Each
+    ``upload_file`` call triggers a server-side recursive tree-listing of the
+    target repo as a pre-check; once the data repo grew large that listing
+    504-times-out roughly half the time, so a per-file loop of N files stalls
+    indefinitely (the #664 / #727 incident: 508 attempts in 12h uploaded only
+    264 of 1425 files while an 8xH200 sat at 0% GPU, ~$530 burned).
+    ``upload_folder`` composes ``create_commit`` exactly once and does NO
+    per-file listing.
 
     Use this from an experiment entry script after eval to persist the
     per-generation strings before pod termination — these can be 10-200MB
@@ -902,15 +1037,21 @@ def upload_raw_completions_to_data_repo(
         eval_results_dir: e.g. ``Path("eval_results/issue354_eos_masked")``
             — scanned recursively for files named ``raw_completions.json``.
         delete_after: if True, delete each local ``raw_completions.json``
-            after verified upload. Default False — the upload-verifier
-            does its own cleanup pass for ``eval_results/``.
+            after the bulk upload has VERIFIED the whole expected set landed
+            on the Hub (the set-verify happens before any unlink, so a partial
+            commit can never strand a deleted-but-unverified file). Only the
+            individual ``raw_completions.json`` files are removed — never the
+            enclosing ``eval_results_dir`` (which holds aggregate JSONs the
+            ``allow_patterns`` deliberately skipped). Default False — the
+            upload-verifier does its own cleanup pass for ``eval_results/``.
 
     Returns:
-        dict mapping local relative path → HF Hub URL on success. Empty
+        dict mapping local relative path → HF Hub URL on success (one entry per
+        matched file, identical to the prior per-file return contract). Empty
         dict (with a logged warning) if no files were found.
 
     Raises:
-        RuntimeError: on any upload failure for any matching file.
+        RuntimeError: on any bulk-upload failure or incomplete commit.
 
     Example:
         >>> upload_raw_completions_to_data_repo(
@@ -922,30 +1063,49 @@ def upload_raw_completions_to_data_repo(
          'pair2_librarian_swe/C_seed42/raw_completions.json':
             'superkaiba1/explore-persona-space-data/issue354_eos_masked/raw_completions/pair2_librarian_swe/C_seed42/raw_completions.json'}
     """
-    uploaded: dict[str, str] = {}
-    for raw_path in eval_results_dir.rglob("raw_completions.json"):
-        rel = raw_path.relative_to(eval_results_dir)
-        path_in_repo = f"{experiment_name}/raw_completions/{rel.as_posix()}"
-        url = _upload(
-            local_path=raw_path,
-            repo_id=DEFAULT_DATASET_REPO,
-            repo_type="dataset",
-            path_in_repo=path_in_repo,
-            delete_after=delete_after,
-            upload_as_file=True,
-        )
-        if not url:
-            raise RuntimeError(
-                f"upload_raw_completions_to_data_repo: failed for {raw_path} "
-                f"→ {DEFAULT_DATASET_REPO}/{path_in_repo}"
-            )
-        uploaded[rel.as_posix()] = url
-    if not uploaded:
+    raw_paths = sorted(eval_results_dir.rglob("raw_completions.json"))
+    if not raw_paths:
         logger.warning(
             "upload_raw_completions_to_data_repo: no raw_completions.json "
             "files found under %s — nothing to upload",
             eval_results_dir,
         )
+        return {}
+
+    path_in_repo = f"{experiment_name}/raw_completions"
+    # Map each local file to (rel, expected committed repo path). The committed
+    # path mirrors the prior per-file layout exactly:
+    # <experiment_name>/raw_completions/<rel-to-eval_results_dir>.
+    rels = [raw_path.relative_to(eval_results_dir).as_posix() for raw_path in raw_paths]
+    expected_repo_paths = [f"{path_in_repo}/{rel}" for rel in rels]
+
+    # ONE folder commit for the whole tree — no per-file recursive pre-check.
+    # The allow_patterns set captures raw_completions.json at EVERY depth: the
+    # leading bare pattern matches a top-level file (no subdir), the ``**/``
+    # pattern matches every nested file.
+    base_url = _upload_folder_filtered(
+        local_dir=eval_results_dir,
+        repo_id=DEFAULT_DATASET_REPO,
+        repo_type="dataset",
+        path_in_repo=path_in_repo,
+        allow_patterns=["raw_completions.json", "**/raw_completions.json"],
+        expected_repo_paths=expected_repo_paths,
+        delete_after=False,  # caller deletes below, AFTER the set-verify succeeds
+    )
+    if not base_url:
+        raise RuntimeError(
+            "upload_raw_completions_to_data_repo: bulk folder upload failed for "
+            f"{eval_results_dir} → {DEFAULT_DATASET_REPO}/{path_in_repo}"
+        )
+
+    uploaded = {rel: f"{DEFAULT_DATASET_REPO}/{path_in_repo}/{rel}" for rel in rels}
+
+    if delete_after:
+        # Verified above (the EXACT-set check inside _upload_folder_filtered),
+        # so deleting the individual files now cannot strand an unverified one.
+        for raw_path in raw_paths:
+            raw_path.unlink(missing_ok=True)
+
     return uploaded
 
 

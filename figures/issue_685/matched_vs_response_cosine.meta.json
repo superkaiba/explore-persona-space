@@ -1,0 +1,1692 @@
+{
+  "commit": "6523d89d6b",
+  "created": "2026-06-28T20:46:21Z",
+  "figsize": [
+    6.0,
+    6.0
+  ],
+  "points": [
+    {
+      "response-mean \u00fb signed cosine": 0.01569322682917118,
+      "matched-position \u00fb signed cosine": 0.586476743221283,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03028157725930214,
+      "matched-position \u00fb signed cosine": 0.857014000415802,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.012752260081470013,
+      "matched-position \u00fb signed cosine": 0.8349148035049438,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.031173359602689743,
+      "matched-position \u00fb signed cosine": 0.8492507934570312,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1013001799583435,
+      "matched-position \u00fb signed cosine": 0.8751596808433533,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.11852695047855377,
+      "matched-position \u00fb signed cosine": 0.9485440850257874,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.11625542491674423,
+      "matched-position \u00fb signed cosine": 0.8510390520095825,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.09096704423427582,
+      "matched-position \u00fb signed cosine": 0.9540241956710815,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.30419301986694336,
+      "matched-position \u00fb signed cosine": 0.8628833293914795,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2961643934249878,
+      "matched-position \u00fb signed cosine": 0.9474654793739319,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.28529030084609985,
+      "matched-position \u00fb signed cosine": 0.6876383423805237,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2902965843677521,
+      "matched-position \u00fb signed cosine": 0.927687406539917,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.04926025867462158,
+      "matched-position \u00fb signed cosine": 0.7955787181854248,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.12075459957122803,
+      "matched-position \u00fb signed cosine": 0.9257369041442871,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1930607259273529,
+      "matched-position \u00fb signed cosine": 0.6085498332977295,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.14769092202186584,
+      "matched-position \u00fb signed cosine": 0.9012680649757385,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.049918223172426224,
+      "matched-position \u00fb signed cosine": 0.6551933884620667,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.07007105648517609,
+      "matched-position \u00fb signed cosine": 0.8871642351150513,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.048040978610515594,
+      "matched-position \u00fb signed cosine": 0.866831362247467,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.07228133082389832,
+      "matched-position \u00fb signed cosine": 0.8792004585266113,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.11219785362482071,
+      "matched-position \u00fb signed cosine": 0.8870512247085571,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.21883827447891235,
+      "matched-position \u00fb signed cosine": 0.9572961330413818,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1137802004814148,
+      "matched-position \u00fb signed cosine": 0.8499362468719482,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.19011011719703674,
+      "matched-position \u00fb signed cosine": 0.9508925080299377,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.32365739345550537,
+      "matched-position \u00fb signed cosine": 0.9298025369644165,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.34420260787010193,
+      "matched-position \u00fb signed cosine": 0.965015709400177,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.16043345630168915,
+      "matched-position \u00fb signed cosine": 0.7597976922988892,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.36753755807876587,
+      "matched-position \u00fb signed cosine": 0.9387363791465759,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.07073511183261871,
+      "matched-position \u00fb signed cosine": 0.9226044416427612,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1015729308128357,
+      "matched-position \u00fb signed cosine": 0.9515659809112549,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.13183629512786865,
+      "matched-position \u00fb signed cosine": 0.7250996828079224,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.14237664639949799,
+      "matched-position \u00fb signed cosine": 0.9260221123695374,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.019164711236953735,
+      "matched-position \u00fb signed cosine": 0.6298906803131104,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.029321923851966858,
+      "matched-position \u00fb signed cosine": 0.8358280062675476,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.009949902072548866,
+      "matched-position \u00fb signed cosine": 0.8009939193725586,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.022998975589871407,
+      "matched-position \u00fb signed cosine": 0.8212392330169678,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.312496155500412,
+      "matched-position \u00fb signed cosine": 0.8708215951919556,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.38664180040359497,
+      "matched-position \u00fb signed cosine": 0.9482669234275818,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.20844043791294098,
+      "matched-position \u00fb signed cosine": 0.7223246693611145,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3783152103424072,
+      "matched-position \u00fb signed cosine": 0.9546812772750854,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4330317974090576,
+      "matched-position \u00fb signed cosine": 0.9363670349121094,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.42200472950935364,
+      "matched-position \u00fb signed cosine": 0.9565274715423584,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.24784789979457855,
+      "matched-position \u00fb signed cosine": 0.4629463255405426,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4604288637638092,
+      "matched-position \u00fb signed cosine": 0.9569515585899353,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.27281156182289124,
+      "matched-position \u00fb signed cosine": 0.9344685077667236,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2494262009859085,
+      "matched-position \u00fb signed cosine": 0.9556333422660828,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1982218623161316,
+      "matched-position \u00fb signed cosine": 0.46942466497421265,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.31465399265289307,
+      "matched-position \u00fb signed cosine": 0.956269383430481,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.02048945240676403,
+      "matched-position \u00fb signed cosine": 0.6532790660858154,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.028127998113632202,
+      "matched-position \u00fb signed cosine": 0.8856145143508911,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.015513546764850616,
+      "matched-position \u00fb signed cosine": 0.8670839071273804,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.019235387444496155,
+      "matched-position \u00fb signed cosine": 0.8805904388427734,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.14241920411586761,
+      "matched-position \u00fb signed cosine": 0.6361046433448792,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.21100586652755737,
+      "matched-position \u00fb signed cosine": 0.9443562626838684,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2427617907524109,
+      "matched-position \u00fb signed cosine": 0.8204518556594849,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.18327826261520386,
+      "matched-position \u00fb signed cosine": 0.9376164078712463,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3728777766227722,
+      "matched-position \u00fb signed cosine": 0.752744734287262,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4625648856163025,
+      "matched-position \u00fb signed cosine": 0.9579019546508789,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3953845202922821,
+      "matched-position \u00fb signed cosine": 0.7023143768310547,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.47405076026916504,
+      "matched-position \u00fb signed cosine": 0.9471824765205383,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.25640347599983215,
+      "matched-position \u00fb signed cosine": 0.7463579177856445,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3445940613746643,
+      "matched-position \u00fb signed cosine": 0.9431799054145813,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.40058088302612305,
+      "matched-position \u00fb signed cosine": 0.6201977729797363,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.37140730023384094,
+      "matched-position \u00fb signed cosine": 0.9335766434669495,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.02158668078482151,
+      "matched-position \u00fb signed cosine": 0.6977866888046265,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.043881118297576904,
+      "matched-position \u00fb signed cosine": 0.9249599575996399,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.029395541176199913,
+      "matched-position \u00fb signed cosine": 0.9171443581581116,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03916550427675247,
+      "matched-position \u00fb signed cosine": 0.9243319034576416,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.17910315096378326,
+      "matched-position \u00fb signed cosine": 0.9384475946426392,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.18592190742492676,
+      "matched-position \u00fb signed cosine": 0.9760623574256897,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.17135970294475555,
+      "matched-position \u00fb signed cosine": 0.9362578392028809,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.18228960037231445,
+      "matched-position \u00fb signed cosine": 0.9807349443435669,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.5037243962287903,
+      "matched-position \u00fb signed cosine": 0.9564547538757324,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.48133358359336853,
+      "matched-position \u00fb signed cosine": 0.9793334007263184,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.38316985964775085,
+      "matched-position \u00fb signed cosine": 0.850987434387207,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4820818603038788,
+      "matched-position \u00fb signed cosine": 0.9774094820022583,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.24111847579479218,
+      "matched-position \u00fb signed cosine": 0.9344721436500549,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.27174729108810425,
+      "matched-position \u00fb signed cosine": 0.9614178538322449,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.22561457753181458,
+      "matched-position \u00fb signed cosine": 0.8071908950805664,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.27989253401756287,
+      "matched-position \u00fb signed cosine": 0.9583756923675537,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.0038132192566990852,
+      "matched-position \u00fb signed cosine": 0.7066296339035034,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.032739315181970596,
+      "matched-position \u00fb signed cosine": 0.9286712408065796,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.024798307567834854,
+      "matched-position \u00fb signed cosine": 0.9176246523857117,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.04103587567806244,
+      "matched-position \u00fb signed cosine": 0.9243242144584656,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.19075094163417816,
+      "matched-position \u00fb signed cosine": 0.9411236643791199,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.20774835348129272,
+      "matched-position \u00fb signed cosine": 0.9740180969238281,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.24505095183849335,
+      "matched-position \u00fb signed cosine": 0.9057628512382507,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.19741392135620117,
+      "matched-position \u00fb signed cosine": 0.9736601114273071,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.5962629318237305,
+      "matched-position \u00fb signed cosine": 0.9614802598953247,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.6057669520378113,
+      "matched-position \u00fb signed cosine": 0.9797442555427551,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.5758411288261414,
+      "matched-position \u00fb signed cosine": 0.8459047079086304,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.6000730991363525,
+      "matched-position \u00fb signed cosine": 0.9776607155799866,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.48372772336006165,
+      "matched-position \u00fb signed cosine": 0.962787389755249,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4657741189002991,
+      "matched-position \u00fb signed cosine": 0.9709821939468384,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4552752673625946,
+      "matched-position \u00fb signed cosine": 0.8651771545410156,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.5070937275886536,
+      "matched-position \u00fb signed cosine": 0.9778220653533936,
+      "series": "build subset (4)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.0368574894964695,
+      "matched-position \u00fb signed cosine": 0.8118160367012024,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.024485822767019272,
+      "matched-position \u00fb signed cosine": 0.8562288880348206,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.0007285235915333033,
+      "matched-position \u00fb signed cosine": 0.8309025764465332,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.00576291186735034,
+      "matched-position \u00fb signed cosine": 0.8428860902786255,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.008333588019013405,
+      "matched-position \u00fb signed cosine": 0.8465034365653992,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03491799160838127,
+      "matched-position \u00fb signed cosine": 0.8522788882255554,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.04863358289003372,
+      "matched-position \u00fb signed cosine": 0.885493814945221,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.09710773080587387,
+      "matched-position \u00fb signed cosine": 0.9323838353157043,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.08985131978988647,
+      "matched-position \u00fb signed cosine": 0.8202453851699829,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.09778454899787903,
+      "matched-position \u00fb signed cosine": 0.9341356754302979,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.11826561391353607,
+      "matched-position \u00fb signed cosine": 0.6950250864028931,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.11101551353931427,
+      "matched-position \u00fb signed cosine": 0.9490954875946045,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2306870073080063,
+      "matched-position \u00fb signed cosine": 0.7811535596847534,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2755384147167206,
+      "matched-position \u00fb signed cosine": 0.9054012894630432,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1552378237247467,
+      "matched-position \u00fb signed cosine": 0.7319051623344421,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.28491804003715515,
+      "matched-position \u00fb signed cosine": 0.8709006309509277,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.15258631110191345,
+      "matched-position \u00fb signed cosine": 0.5229974985122681,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2937334179878235,
+      "matched-position \u00fb signed cosine": 0.9441553354263306,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.10745051503181458,
+      "matched-position \u00fb signed cosine": 0.6673861742019653,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.09894884377717972,
+      "matched-position \u00fb signed cosine": 0.878578245639801,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.05577363073825836,
+      "matched-position \u00fb signed cosine": 0.44593316316604614,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.15983746945858002,
+      "matched-position \u00fb signed cosine": 0.8304668664932251,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1304231882095337,
+      "matched-position \u00fb signed cosine": 0.26289114356040955,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.11768896877765656,
+      "matched-position \u00fb signed cosine": 0.9161717891693115,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.07657162100076675,
+      "matched-position \u00fb signed cosine": 0.8711966276168823,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.07949746400117874,
+      "matched-position \u00fb signed cosine": 0.8823168277740479,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.05729859694838524,
+      "matched-position \u00fb signed cosine": 0.8293558955192566,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.06520771980285645,
+      "matched-position \u00fb signed cosine": 0.8545177578926086,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.046751897782087326,
+      "matched-position \u00fb signed cosine": 0.8576409816741943,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.09583431482315063,
+      "matched-position \u00fb signed cosine": 0.8805494904518127,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1445617526769638,
+      "matched-position \u00fb signed cosine": 0.8951517343521118,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.17153218388557434,
+      "matched-position \u00fb signed cosine": 0.9311550855636597,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.13741952180862427,
+      "matched-position \u00fb signed cosine": 0.8149150609970093,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.14844420552253723,
+      "matched-position \u00fb signed cosine": 0.938374936580658,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.14303803443908691,
+      "matched-position \u00fb signed cosine": 0.7353782057762146,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1986466646194458,
+      "matched-position \u00fb signed cosine": 0.9510784149169922,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.24638333916664124,
+      "matched-position \u00fb signed cosine": 0.8122727870941162,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3494851887226105,
+      "matched-position \u00fb signed cosine": 0.9078547954559326,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2732952833175659,
+      "matched-position \u00fb signed cosine": 0.8604410886764526,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3151801824569702,
+      "matched-position \u00fb signed cosine": 0.9120112657546997,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.10111884027719498,
+      "matched-position \u00fb signed cosine": 0.5431066155433655,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3621450960636139,
+      "matched-position \u00fb signed cosine": 0.9461223483085632,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.08293534070253372,
+      "matched-position \u00fb signed cosine": 0.6287258267402649,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.11233361065387726,
+      "matched-position \u00fb signed cosine": 0.8730292916297913,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.06219194084405899,
+      "matched-position \u00fb signed cosine": 0.5632635951042175,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1357005536556244,
+      "matched-position \u00fb signed cosine": 0.8668237328529358,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.07745973020792007,
+      "matched-position \u00fb signed cosine": 0.3070288598537445,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1302257925271988,
+      "matched-position \u00fb signed cosine": 0.9326801300048828,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.008574772626161575,
+      "matched-position \u00fb signed cosine": 0.800467312335968,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.03602662682533264,
+      "matched-position \u00fb signed cosine": 0.8321245908737183,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.028328269720077515,
+      "matched-position \u00fb signed cosine": 0.8100788593292236,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.033231575042009354,
+      "matched-position \u00fb signed cosine": 0.7994077205657959,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.016308056190609932,
+      "matched-position \u00fb signed cosine": 0.8128073811531067,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.017128732055425644,
+      "matched-position \u00fb signed cosine": 0.8339494466781616,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.34452760219573975,
+      "matched-position \u00fb signed cosine": 0.8855887055397034,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3851267695426941,
+      "matched-position \u00fb signed cosine": 0.9245128035545349,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.33994314074516296,
+      "matched-position \u00fb signed cosine": 0.7608984112739563,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.34469473361968994,
+      "matched-position \u00fb signed cosine": 0.9273691177368164,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.30982160568237305,
+      "matched-position \u00fb signed cosine": 0.6835863590240479,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.37980249524116516,
+      "matched-position \u00fb signed cosine": 0.9432702660560608,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3698551058769226,
+      "matched-position \u00fb signed cosine": 0.8448636531829834,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.42297235131263733,
+      "matched-position \u00fb signed cosine": 0.931458592414856,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.36923864483833313,
+      "matched-position \u00fb signed cosine": 0.783298909664154,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4336733818054199,
+      "matched-position \u00fb signed cosine": 0.9266895055770874,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2518875002861023,
+      "matched-position \u00fb signed cosine": 0.3904491066932678,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4446122944355011,
+      "matched-position \u00fb signed cosine": 0.9587834477424622,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1708836853504181,
+      "matched-position \u00fb signed cosine": 0.7226884365081787,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.20805972814559937,
+      "matched-position \u00fb signed cosine": 0.9031282067298889,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.10962745547294617,
+      "matched-position \u00fb signed cosine": 0.5931497812271118,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.32006579637527466,
+      "matched-position \u00fb signed cosine": 0.9172369241714478,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.21237003803253174,
+      "matched-position \u00fb signed cosine": 0.31719228625297546,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2735064923763275,
+      "matched-position \u00fb signed cosine": 0.9508914947509766,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.014548235572874546,
+      "matched-position \u00fb signed cosine": 0.862741231918335,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.018202055245637894,
+      "matched-position \u00fb signed cosine": 0.8902324438095093,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.012872816994786263,
+      "matched-position \u00fb signed cosine": 0.8661187887191772,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.01724155806005001,
+      "matched-position \u00fb signed cosine": 0.8773533701896667,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.019076364114880562,
+      "matched-position \u00fb signed cosine": 0.8683122396469116,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.04536506533622742,
+      "matched-position \u00fb signed cosine": 0.8773983716964722,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.15858036279678345,
+      "matched-position \u00fb signed cosine": 0.878635585308075,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.18414410948753357,
+      "matched-position \u00fb signed cosine": 0.9259516596794128,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1653958410024643,
+      "matched-position \u00fb signed cosine": 0.8232742547988892,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.19157330691814423,
+      "matched-position \u00fb signed cosine": 0.9318642616271973,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1659674346446991,
+      "matched-position \u00fb signed cosine": 0.7124975323677063,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.18182417750358582,
+      "matched-position \u00fb signed cosine": 0.9203565716743469,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.41328227519989014,
+      "matched-position \u00fb signed cosine": 0.8220872282981873,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.45501232147216797,
+      "matched-position \u00fb signed cosine": 0.9329489469528198,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.39970430731773376,
+      "matched-position \u00fb signed cosine": 0.7971625328063965,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.45140594244003296,
+      "matched-position \u00fb signed cosine": 0.9191434383392334,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3831042945384979,
+      "matched-position \u00fb signed cosine": 0.6055476665496826,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.44718825817108154,
+      "matched-position \u00fb signed cosine": 0.9460700154304504,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.29479485750198364,
+      "matched-position \u00fb signed cosine": 0.6811846494674683,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3421870768070221,
+      "matched-position \u00fb signed cosine": 0.9000507593154907,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2511800229549408,
+      "matched-position \u00fb signed cosine": 0.5633847713470459,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.37040188908576965,
+      "matched-position \u00fb signed cosine": 0.8909484148025513,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2439659833908081,
+      "matched-position \u00fb signed cosine": 0.38666361570358276,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3431429862976074,
+      "matched-position \u00fb signed cosine": 0.9366973638534546,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.05588899180293083,
+      "matched-position \u00fb signed cosine": 0.9128891825675964,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03607703372836113,
+      "matched-position \u00fb signed cosine": 0.9176737070083618,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.04110786318778992,
+      "matched-position \u00fb signed cosine": 0.8887248635292053,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03371240943670273,
+      "matched-position \u00fb signed cosine": 0.9093620181083679,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03800499811768532,
+      "matched-position \u00fb signed cosine": 0.8988513946533203,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.05457044765353203,
+      "matched-position \u00fb signed cosine": 0.9211145639419556,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.1768881231546402,
+      "matched-position \u00fb signed cosine": 0.955058753490448,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.17887434363365173,
+      "matched-position \u00fb signed cosine": 0.9693621397018433,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.16641034185886383,
+      "matched-position \u00fb signed cosine": 0.915740966796875,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.17272374033927917,
+      "matched-position \u00fb signed cosine": 0.972109317779541,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.16385112702846527,
+      "matched-position \u00fb signed cosine": 0.8281530141830444,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.18022897839546204,
+      "matched-position \u00fb signed cosine": 0.9756389856338501,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4142657518386841,
+      "matched-position \u00fb signed cosine": 0.9184936285018921,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4802103042602539,
+      "matched-position \u00fb signed cosine": 0.9706260561943054,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.355888694524765,
+      "matched-position \u00fb signed cosine": 0.880914032459259,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.45272353291511536,
+      "matched-position \u00fb signed cosine": 0.9608282446861267,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.26898255944252014,
+      "matched-position \u00fb signed cosine": 0.676047146320343,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.48665696382522583,
+      "matched-position \u00fb signed cosine": 0.9784707427024841,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.24680770933628082,
+      "matched-position \u00fb signed cosine": 0.8494755625724792,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.27194854617118835,
+      "matched-position \u00fb signed cosine": 0.9519979357719421,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.15379083156585693,
+      "matched-position \u00fb signed cosine": 0.6362296938896179,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3051425814628601,
+      "matched-position \u00fb signed cosine": 0.9369891881942749,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.13835370540618896,
+      "matched-position \u00fb signed cosine": 0.47923386096954346,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.26058998703956604,
+      "matched-position \u00fb signed cosine": 0.958782970905304,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03660627827048302,
+      "matched-position \u00fb signed cosine": 0.92439204454422,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.02233264222741127,
+      "matched-position \u00fb signed cosine": 0.9259151816368103,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03172643482685089,
+      "matched-position \u00fb signed cosine": 0.8966739177703857,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03959547355771065,
+      "matched-position \u00fb signed cosine": 0.9180244207382202,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.031429193913936615,
+      "matched-position \u00fb signed cosine": 0.9048109650611877,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": -0.03968685865402222,
+      "matched-position \u00fb signed cosine": 0.9247276782989502,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.20660291612148285,
+      "matched-position \u00fb signed cosine": 0.9342086315155029,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.20056647062301636,
+      "matched-position \u00fb signed cosine": 0.9639458060264587,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.19197459518909454,
+      "matched-position \u00fb signed cosine": 0.865466833114624,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.20781415700912476,
+      "matched-position \u00fb signed cosine": 0.9631465077400208,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.21496489644050598,
+      "matched-position \u00fb signed cosine": 0.7529172897338867,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2051585614681244,
+      "matched-position \u00fb signed cosine": 0.9711411595344543,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.609289288520813,
+      "matched-position \u00fb signed cosine": 0.9179977178573608,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.6132797002792358,
+      "matched-position \u00fb signed cosine": 0.9731417894363403,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.5101631879806519,
+      "matched-position \u00fb signed cosine": 0.8708851337432861,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.616306483745575,
+      "matched-position \u00fb signed cosine": 0.9613866806030273,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.5876857042312622,
+      "matched-position \u00fb signed cosine": 0.7314832210540771,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.6044257879257202,
+      "matched-position \u00fb signed cosine": 0.9788277745246887,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4574865996837616,
+      "matched-position \u00fb signed cosine": 0.9145222902297974,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.48225271701812744,
+      "matched-position \u00fb signed cosine": 0.9786601066589355,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.2389799952507019,
+      "matched-position \u00fb signed cosine": 0.6783666014671326,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.5093323588371277,
+      "matched-position \u00fb signed cosine": 0.965491771697998,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.3770209550857544,
+      "matched-position \u00fb signed cosine": 0.7370755672454834,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "response-mean \u00fb signed cosine": 0.4728151261806488,
+      "matched-position \u00fb signed cosine": 0.9735145568847656,
+      "series": "held-out (6)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 240
+}
