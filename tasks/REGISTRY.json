@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 739,
+  "highest_id": 740,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4669,6 +4669,13 @@
       "path": "tasks/on_hold/74",
       "status": "on_hold",
       "title": "Run 2 seeds of the midtraining experiments with evil human personas instead of evil AI personas"
+    },
+    "740": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/740",
+      "status": "proposed",
+      "title": "workflow-fix: vectorized_mlp_skill.py helper referenced but missing"
     },
     "75": {
       "has_clean_result": true,
