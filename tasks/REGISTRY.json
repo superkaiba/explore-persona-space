@@ -4574,8 +4574,8 @@
     "727": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/727",
-      "status": "planning",
+      "path": "tasks/approved/727",
+      "status": "approved",
       "title": "Bulk HF uploads must use folder-commit (per-file upload 504-storms on large repos) + poller escalation for GPU-idle upload phases"
     },
     "74": {
