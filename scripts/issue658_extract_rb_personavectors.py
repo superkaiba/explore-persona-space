@@ -15,7 +15,7 @@ raw transcripts.
 Pipeline (one ``nohup`` launch, one loaded model):
 
 - PV0  load the 4 PV artifact bundles (``data/issue_658/persona-vectors-style-rb/``)
-- PV1  vLLM batched generation: per behavior × {5 pos, 5 neg, 1 neutral} system
+- PV1  vLLM batched generation: per behavior × {5 pos, 5 neg, 5 neutral} system
        prompts × 20 extraction questions × 10 rollouts (ONE LLM.generate per
        behavior, temperature 1.0)
 - PV2  response-avg capture: teacher-force each rollout through the hooked HF
@@ -172,7 +172,11 @@ def build_rollout_index(
     """
     pos = bundle["pos"][:n_pairs]
     neg = bundle["neg"][:n_pairs]
-    neutral = bundle["neutral"][:1]
+    # Equal-ratio with the pos/neg poles: the neutral pole is sampled at the SAME
+    # n_pairs system-prompt count (5 in production, 1 in smoke), NOT a single
+    # prompt — round-1 CONCERN rb-pv-neutral-1-prompt-not-5 / plan Knob A. The
+    # bundle now carries 5 neutral default-assistant prompts.
+    neutral = bundle["neutral"][:n_pairs]
     extract_q = bundle["extract_q"][:n_extract_q]
 
     prompts: list[str] = []
@@ -507,11 +511,12 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
     # or a contamination overlap, BEFORE loading the model).
     bundles = {b: load_pv_bundle(b, args.pv_artifact_dir) for b in behaviors}
     logger.info(
-        "PV0: loaded %d bundles (%s); cells = %d behaviors × (%d pos + %d neg + 1 neutral) prompts "
-        "× %d q × %d rollouts",
+        "PV0: loaded %d bundles (%s); cells = %d behaviors × (%d pos + %d neg + %d neutral) "
+        "prompts × %d q × %d rollouts",
         len(bundles),
         ", ".join(behaviors),
         len(behaviors),
+        n_pairs,
         n_pairs,
         n_pairs,
         n_extract_q,

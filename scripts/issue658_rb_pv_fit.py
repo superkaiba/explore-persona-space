@@ -75,6 +75,7 @@ from issue658_common import (  # noqa: E402
 # parent fit script (hoisted to module top so a missing symbol crashes at start,
 # never inside a smoke-skipped branch — gotchas.md #606).
 from issue658_fit_predictors import (  # noqa: E402
+    _approx_p_from_rho,
     _rho,
     e0_target,
 )
@@ -182,14 +183,20 @@ def judge_pv_rollouts(
         scores = {}
         for cid in cid_to_row:
             v = verdicts.get(cid, {})
-            if isinstance(v, dict) and ("_judge_error" in v or "_judge_refused" in v):
-                # a refusal/empty transcript scores 0 per the rubric; a genuine
-                # parse/transport error → None (dropped, not silently scored).
-                scores[cid] = 0 if "_judge_refused" in v else None
+            if isinstance(v, dict) and "_judge_refused" in v:
+                # a refusal/empty transcript scores 0 per the trait-eval rubric.
+                scores[cid] = 0
             else:
-                # the verdict dict for the 0-100 rubric carries the raw text under
-                # the standard keys; submit_and_collect returns the parsed JSON or
-                # the raw text — handle both.
+                # The 0-100 rubric asks for a BARE integer, so submit_and_collect's
+                # JSON-only ``_parse_verdict`` wraps a real Sonnet score as
+                # ``{"_judge_error": "85"}`` — the SAME key it uses for transport /
+                # shard failures (``"batch_result_type=errored"``, "shard_incomplete",
+                # "missing"). Route BOTH through ``_extract_score_from_verdict``: it
+                # pulls the 0-100 integer out of the raw text when present (a real
+                # score), and returns None only when no 0-100 integer can be parsed
+                # (a genuine transport error → dropped, not silently scored). Round-1
+                # BLOCKER ``rb-pv-judge-parser-drops-integers``: the old branch
+                # mapped EVERY ``_judge_error`` to None, discarding all real scores.
                 scores[cid] = _extract_score_from_verdict(v)
 
     for cid, row in cid_to_row.items():
@@ -257,8 +264,20 @@ def load_pv_extract_store(pv_store_dir: Path) -> tuple[list[dict], dict, np.ndar
     return rollouts, manifest, acts
 
 
-def load_fewshot_acts(pv_store_dir: Path) -> dict[tuple[str, int], np.ndarray]:
-    """{(behavior, question_idx): (L,H)} few-shot-final acts (PV3), if present."""
+def load_fewshot_acts(
+    pv_store_dir: Path, demo_kept: dict[str, bool] | None = None
+) -> dict[tuple[str, int], np.ndarray]:
+    """{(behavior, question_idx): (L,H)} few-shot-final acts (PV3), if present.
+
+    When ``demo_kept`` is provided (``{demo_acts_file: judge_kept_pos}``), ONLY
+    few-shot acts whose demo rollouts ALL passed J1 (the kept-pos pool) are
+    returned — the plan ICL schema requires judge-confirmed trait-positive demos.
+    A few-shot act whose demos were NOT all judge-kept is DROPPED (its ICL context
+    was not a confirmed trait-positive demonstration). ``demo_kept=None`` keeps
+    every act (the legacy, unfiltered behavior — used only when no judge map
+    exists, e.g. an index lacking demo_rollout_files). Round-1 CONCERN
+    ``rb-pv-few-shot-skips-judge-filter``.
+    """
     import torch
 
     idx_path = pv_store_dir / "fewshot_index.json"
@@ -267,9 +286,22 @@ def load_fewshot_acts(pv_store_dir: Path) -> dict[tuple[str, int], np.ndarray]:
     fs_index = load_json(idx_path)["fewshot_final"]
     fs_dir = pv_store_dir / "fewshot_acts"
     out: dict[tuple[str, int], np.ndarray] = {}
+    n_dropped = 0
     for r in fs_index:
+        if demo_kept is not None:
+            demos = r.get("demo_rollout_files") or []
+            # require >=1 demo AND every demo judge-kept-pos (a confirmed ICL ctx)
+            if not demos or not all(demo_kept.get(df, False) for df in demos):
+                n_dropped += 1
+                continue
         out[(r["behavior"], r["question_idx"])] = (
             torch.load(fs_dir / r["acts_file"], weights_only=False).float().numpy()
+        )
+    if demo_kept is not None and n_dropped:
+        logger.info(
+            "few-shot judge-filter: dropped %d/%d few-shot acts (demos not all judge-kept)",
+            n_dropped,
+            len(fs_index),
         )
     return out
 
@@ -407,6 +439,83 @@ def build_rb_fewshot(
 
 
 # ── P1: A3.3 ρ fit (LOCO held-out projection) ─────────────────────────────────
+
+
+def assert_v0_e0_coverage(
+    genre: str,
+    v0_store: dict,
+    e0_table: dict,
+    store_ctx_ids: list[str],
+    cap_layers: list[int],
+    behaviors: list[str],
+) -> None:
+    """Fail-loud preflight coverage diff over the reused v0 store vs the git E0.
+
+    Plan §4.3 Step 3.5: before ANY projection, verify the cached HF v0(C) store
+    actually carries — for every context the fit will project — a ``summaries["mean"]``
+    entry that is indexable across ALL capture layers, AND that the v0 ``context_ids``
+    list agrees with the ``summaries["mean"]`` keys. A blind ``summ[c][layer_idx]``
+    index otherwise crashes LATE with a bare ``KeyError`` / ``IndexError`` (or, worse,
+    a missing E0 context silently shrinks n). Round-1 BLOCKER
+    ``rb-pv-cached-artifact-coverage-unverified``.
+
+    Raises ``RuntimeError`` naming the exact missing contexts / layers / behaviors.
+    """
+    summ = v0_store.get("summaries", {}).get("mean")
+    if not isinstance(summ, dict):
+        raise RuntimeError(
+            f"v0 coverage [{genre}]: v0_store['summaries']['mean'] missing or not a "
+            f"dict (got {type(summ).__name__}) — cannot project"
+        )
+    summ_keys = set(summ.keys())
+    cid_keys = set(store_ctx_ids)
+    # (1) context_ids list must agree with the summaries["mean"] keys (no drift).
+    ids_only = cid_keys - summ_keys
+    if ids_only:
+        raise RuntimeError(
+            f"v0 coverage [{genre}]: {len(ids_only)} context_ids absent from "
+            f"summaries['mean'] (e.g. {sorted(ids_only)[:3]}) — v0 store is inconsistent"
+        )
+    # The E0 universe = every context the git E0 table scores (NOT just the v0
+    # contexts). Comparing against the FULL E0 universe catches the silent
+    # n-shrink: a context with a git E0 value that the cached v0 store does NOT
+    # cover would otherwise be dropped invisibly (e0_target is bounded by
+    # store_ctx_ids in the real fit). cap_layers may exceed the actual count.
+    e0_universe = list(e0_table.get("e0", {}).keys())
+    needed_layers = max(cap_layers) if cap_layers else -1
+    missing_ctx: dict[str, list[str]] = {}
+    short_layers: dict[str, int] = {}
+    for behavior in behaviors:
+        # iterate the FULL E0 universe so an E0 context missing from v0 is flagged,
+        # not silently excluded by an e0_target bounded to the v0 contexts.
+        _, kept_ctx = e0_target(e0_table, behavior, e0_universe)
+        for c in kept_ctx:
+            if c not in summ:
+                missing_ctx.setdefault(behavior, []).append(c)
+                continue
+            n_layers_c = len(summ[c])
+            if needed_layers >= 0 and n_layers_c <= needed_layers:
+                short_layers[c] = n_layers_c
+    if missing_ctx:
+        sample = {b: v[:3] for b, v in list(missing_ctx.items())[:3]}
+        raise RuntimeError(
+            f"v0 coverage [{genre}]: E0 contexts missing from the cached v0 store "
+            f"summaries['mean'] (behavior→contexts, sample {sample}); the cached "
+            "artifact does not cover the git E0 — refusing to project a shrunk n"
+        )
+    if short_layers:
+        sample = dict(list(short_layers.items())[:3])
+        raise RuntimeError(
+            f"v0 coverage [{genre}]: contexts whose v0 summary has too few layers to "
+            f"index capture-layer {needed_layers} (context→n_layers, sample {sample})"
+        )
+    logger.info(
+        "v0/E0 coverage [%s] OK: %d v0 contexts, %d capture layers, %d behaviors verified",
+        genre,
+        len(cid_keys),
+        len(cap_layers),
+        len(behaviors),
+    )
 
 
 def _v0_layer_matrix(v0_store: dict, ctx_ids: list[str], layer_idx: int) -> np.ndarray:
@@ -699,6 +808,49 @@ def corpus_mismatched_cell_preds(
     return cells
 
 
+def confound_projected_rho(
+    best_pred: np.ndarray | None,
+    best_layer,
+    rb_cm: dict[tuple, np.ndarray],
+    y: np.ndarray,
+) -> dict:
+    """Plan §6.5 ``(c_pos − c_neg)`` confound projection: ρ with the contrast
+    direction partialled out of the best PV-cell prediction.
+
+    The #658 corpus-mismatched r_B IS the contrast-baseline ``(c_pos − c_neg)``
+    direction (a diff-of-means of system-prompt-type contrasts from mismatched
+    corpora). To rule out "the r_B just encodes the system-prompt-TYPE difference"
+    artifact, we residualize the best PV cell's per-context prediction against the
+    corpus-mismatched prediction at the MATCHED capture layer (OLS residual), then
+    take Spearman ρ between the residual and the E0 target. Returns
+    ``{raw_rho, projected_rho, n, confound_layer}``. Round-1 CONCERN
+    ``rb-pv-missing-confound-projected-rho``.
+
+    A None / missing confound (no corpus-mismatched r_B at that layer) leaves
+    ``projected_rho = None`` (the projection could not be formed) — never silently
+    falls back to the raw ρ.
+    """
+    out: dict = {
+        "raw_rho": None,
+        "projected_rho": None,
+        "n": len(y),
+        "confound_layer": best_layer,
+    }
+    if best_pred is None or len(y) < 4:
+        return out
+    out["raw_rho"] = _rho(best_pred, y)
+    # the confound prediction at the matched layer (corpus-mismatched diffmeans)
+    conf = rb_cm.get(("corpus-mismatched", "diffmeans", best_layer))
+    if conf is None or np.std(conf) < 1e-12:
+        return out  # no usable confound direction -> projected ρ stays None
+    # OLS residual of best_pred on [1, conf]; ρ(residual, y).
+    A = np.column_stack([np.ones_like(conf), conf])
+    coef, *_ = np.linalg.lstsq(A, best_pred, rcond=None)
+    resid = best_pred - A @ coef
+    out["projected_rho"] = _rho(resid, y)
+    return out
+
+
 def label_split_cell_preds(
     e0_table: dict,
     behavior: str,
@@ -755,12 +907,31 @@ def benjamini_hochberg(pvals: list[float], q: float) -> list[bool]:
 
 
 def _resolve_noise_floor(nf: dict, behavior: str) -> float | None:
-    """Per-behavior p95 from the reused noise-floor dict (handles two shapes)."""
+    """Per-behavior p95 from the reused noise-floor dict (handles three shapes).
+
+    The #658 parent aggregate stores per-behavior reliability floors NESTED under
+    ``nf["per_behavior_p95"][behavior]`` (``issue658_fit_predictors.aggregate``;
+    the top-level ``nf["p95"]`` is the SHARED scalar, NOT per-behavior). Resolve
+    the nested per-behavior key FIRST; fall back to the legacy flat shapes
+    (``nf[behavior]`` as a scalar or a ``{noise_floor_p95|p95}`` dict — used by
+    the smoke override + older arms) only when the nested shape is absent. Reading
+    the wrong shape resolves every behavior's floor to ``None``, which forces the
+    A3.3 PASS gate to False at production scale regardless of the selection-aware
+    CI (round-1 BLOCKER ``rb-pv-noise-floor-resolves-none``).
+    """
+    # Preferred: the parent aggregate's nested per-behavior reliability floor.
+    pbp = nf.get("per_behavior_p95")
+    if isinstance(pbp, dict) and behavior in pbp:
+        v = pbp[behavior]
+        if isinstance(v, (int, float)):
+            return float(v)
+    # Legacy flat shapes (smoke override {behavior: 0.0}; older per-behavior dicts).
     v = nf.get(behavior)
     if isinstance(v, (int, float)):
         return float(v)
     if isinstance(v, dict):
-        return v.get("noise_floor_p95") or v.get("p95")
+        fb = v.get("noise_floor_p95") or v.get("p95")
+        return float(fb) if isinstance(fb, (int, float)) else None
     return None
 
 
@@ -801,7 +972,6 @@ def main() -> int:
         )
     pv_dir = _resolve_pv_store(args, out_dir)
     rollouts, pv_manifest, acts = load_pv_extract_store(pv_dir)
-    fewshot_acts = load_fewshot_acts(pv_dir)
     # bundles for the trait-eval prompts (J1)
     bundle_dir = PROJECT_ROOT / "data/issue_658/persona-vectors-style-rb"
     bundles = {b: load_json(bundle_dir / f"{b}.json") for b in set(r["behavior"] for r in rollouts)}
@@ -810,6 +980,19 @@ def main() -> int:
         {"judged": judged, "threshold": JUDGE_THRESHOLD, "no_judge": args.no_judge},
         out_dir / "judge_scores.json",
     )
+
+    # few-shot acts, judge-filtered to confirmed trait-positive demos: a few-shot
+    # act is kept only if its demo rollouts ALL passed J1 (kept-pos pool). The map
+    # is {demo_acts_file: judge_kept_pos} built from the rollouts + judged verdicts.
+    # Round-1 CONCERN rb-pv-few-shot-skips-judge-filter.
+    demo_kept: dict[str, bool] = {}
+    for i, row in enumerate(rollouts):
+        af = row.get("acts_file")
+        if af is None:
+            continue
+        v = judged.get(f"r{i:06d}")
+        demo_kept[af] = bool(v and v.get("kept") and row.get("pole") == "pos")
+    fewshot_acts = load_fewshot_acts(pv_dir, demo_kept=demo_kept)
 
     # yield read (plan §4.8 baseline-propensity / §8 yield floor)
     yield_table = _yield_table(rollouts, judged, behaviors, pv_manifest)
@@ -830,6 +1013,11 @@ def main() -> int:
         e0_table = e0  # the fit_predictors e0_target reads e0["e0"][ctx][col]
         nf = load_reused_noise_floor(genre, _smoke_noise_floor(args.smoke))
         store_ctx_ids = v0_store["context_ids"]
+
+        # Step 3.5: fail-loud coverage diff (cached HF v0 contexts × layers ×
+        # summaries['mean'] keys vs the git E0 contexts) BEFORE any projection —
+        # a blind summ[c][layer] index otherwise crashes late or silently shrinks n.
+        assert_v0_e0_coverage(genre, v0_store, e0_table, store_ctx_ids, cap_layers, behaviors)
 
         # Collect every cell's predictions per behavior for the FDR family.
         all_pvalues: list[float] = []
@@ -898,6 +1086,22 @@ def main() -> int:
             # the across-layer ρ profile (diffmeans/pos-vs-neg, the default read)
             profile = _layer_profile(cells, y, cap_layers)
 
+            # plan §6.5 (c_pos − c_neg) confound projection: partial the
+            # corpus-mismatched contrast direction out of the BEST PV cell's
+            # prediction, then ρ. Emit raw ρ AND projected ρ. Round-1 CONCERN
+            # rb-pv-missing-confound-projected-rho.
+            best = sa.get("best_cell")
+            best_pred = None
+            best_layer = None
+            corpus_mismatched_rho = None
+            if best is not None:
+                best_key = (best["pole"], best["reduction"], best["layer"])
+                best_pred = cells.get(best_key)
+                best_layer = best["layer"]
+                cm_pred = rb_cm.get(("corpus-mismatched", "diffmeans", best_layer))
+                corpus_mismatched_rho = _rho(cm_pred, y) if cm_pred is not None else None
+            confound_proj = confound_projected_rho(best_pred, best_layer, rb_cm, y)
+
             row = {
                 "behavior": behavior,
                 "genre": genre,
@@ -908,6 +1112,8 @@ def main() -> int:
                 "noise_floor_p95": floor,
                 "a33_pass": a33_pass,
                 "confound_controlled_wins": confound_wins,
+                "corpus_mismatched_rho": corpus_mismatched_rho,
+                "confound_projected_rho": confound_proj,
                 "delta_rho": deltas,
                 "n": len(kept_ctx),
                 "yield": yield_table.get(behavior),
@@ -924,18 +1130,23 @@ def main() -> int:
                 }
             )
 
-            # FDR family: every cell's per-cell permutation p (cheap: use the
-            # selected-null as the family reference; the per-cell ρ p-value is the
-            # fraction of the per-cell null exceeding it). For the FDR surface we
-            # use the per-cell ρ vs the genre noise floor as the entry.
+            # FDR family: each cell's per-cell CONTINUOUS p-value via the parent's
+            # Spearman-ρ t-approximation (``_approx_p_from_rho``), the SAME entry
+            # ``issue658_fit_predictors.aggregate`` feeds BH. The old
+            # ``float(r <= null_p95)`` collapsed to {0.0, 1.0}, which makes BH
+            # degenerate (every entry is a tie at one of two values). Round-1
+            # CONCERN ``rb-pv-fdr-binary-pvalue``. ``n`` is the per-behavior
+            # E0-context count (the contexts the ρ is computed over).
+            n_ctx = len(kept_ctx)
             for key, pred in cells.items():
                 r = _rho(pred, y)
                 if r is None:
                     continue
-                # one-sided p from the selected-null (conservative shared null)
-                p = 1.0 if null.get("null_p95") is None else float(r <= null["null_p95"])
+                p = _approx_p_from_rho(r, n_ctx)
                 all_pvalues.append(p)
-                all_pval_meta.append({"behavior": behavior, "cell": list(key)})
+                all_pval_meta.append(
+                    {"behavior": behavior, "cell": list(key), "rho": r, "n": n_ctx}
+                )
 
         # BH over the per-genre family (928 entries at full scale, §6)
         reject = benjamini_hochberg(all_pvalues, FDR_Q)
