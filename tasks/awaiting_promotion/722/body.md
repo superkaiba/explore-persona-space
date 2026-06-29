@@ -1,6 +1,6 @@
 ---
-title: 'Fitting M0 vs M⁺ on reused adapters: only the taught fact''s context→answer
-  map measurably reshapes (LOW confidence)'
+title: Finetuning measurably reshapes the context→answer map only for a taught fact
+  (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-28T20:32:55Z'
@@ -24,7 +24,7 @@ relates_to:
 - identity-cb-duality
 - identity-contextual-vs-base
 ---
-# Fitting M0 vs M⁺ on reused adapters: only the taught fact's context→answer map measurably reshapes (LOW confidence)
+# Finetuning measurably reshapes the context→answer map only for a taught fact (LOW confidence)
 
 <!-- clean-result-v4 -->
 
@@ -158,7 +158,7 @@ What is plotted: per cell, the MLP's held-out base-map reconstruction ρ vs its 
 **Repro:** Compute — GCP `eval-h100` lane (`a3-highgpu-2g`, 2× H100-80, FLEX_START), ~8 GPU-h across two launches (a first launch crashed in the SVD floor-refit path; relaunch wall 5h13m). No WandB run (analysis/fitting job). Code SHA [`3c051fcfad`](https://github.com/superkaiba/explore-persona-space/blob/3c051fcfad/scripts/issue722_fit_M.py) (`scripts/issue722_fit_M.py`, `issue722_analyze.py`, `issue722_bootstrap.py`, `issue722_load_activations.py`, `issue722_extract_fact_rb.py`); figure script `scripts/issue722_figures.py` at SHA [`5132a5401f`](https://github.com/superkaiba/explore-persona-space/blob/5132a5401f00cc07ec9c2ffbe55b6aa5fec8a0e1/scripts/issue722_figures.py). Eval JSONs — [9 per-cell + 4 aggregate JSONs](https://github.com/superkaiba/explore-persona-space/tree/3c051fcfad/eval_results/issue_722) committed on the issue-722 branch (`function_change.json`, `chain_rho_M0_Mplus.json`, `cross_transfer.json`, `nonlinearity_gap.json`, `cells/`). Figures — [`figures/issue_722/`](https://github.com/superkaiba/explore-persona-space/tree/5132a5401f/figures/issue_722) at SHA `5132a5401f`. Crash diagnostics — [HF `issue722_partial/att-20260628-235255/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue722_partial). Reused artifacts:
 - Reused paired activation store from [#667](https://eps.superkaiba.com/tasks/667): [HF `issue667_gate_chain_preview/analysis_tensors`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue667_gate_chain_preview/analysis_tensors) (5760 `.npz`, seed 42, base+post-FT pairs) — fit: the only substrate carrying both base and post-FT activations on a matched context grid, the single thing that makes a pre/post M fit possible.
 - Reused behavior direction from [#658](https://eps.superkaiba.com/tasks/658): [HF `issue658_theory_assumptions/store/r_b.pt`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue658_theory_assumptions/store) (EM, sycophancy; `diffmeans`) — fit: same layer set + extraction recipe; taught-fact direction re-extracted here because #658 had no fact contrast.
-- Reused adapters from [#537](https://eps.superkaiba.com/tasks/537): `i537_*` (r=32, rsLoRA) — fit: consumed only transitively through #667's post-FT activations, never applied at runtime.
+- Reused adapters from [#537](https://eps.superkaiba.com/tasks/537): [HF `superkaiba1/explore-persona-space:adapters/i537_*` @48d7620508](https://huggingface.co/superkaiba1/explore-persona-space/tree/48d7620508aa7bb0662e6b34af113c21aee42b06/adapters) (r=32, rsLoRA, α∈{EM 256, fact/syco/marker/refusal 64}, modules attn+MLP) — fit: consumed only transitively through #667's post-FT activations, never applied at runtime.
 - Reused leakage target from [#537](https://eps.superkaiba.com/tasks/537): `eval_results/issue_537/G_tensor/G_meta.json` (2400 cells, the `g` judge leakage rate) — fit: the on-policy judged rate the chain-ρ correlates against.
 
 **Context:** Originating prompt (verbatim):
