@@ -43,12 +43,14 @@ BEH_ORDER = ["fact", "em", "sycophancy"]
 LAYERS = [7, 14, 21]
 KEYS = {b: [f"{b}/L{ly}" for ly in LAYERS] for b in BEH_ORDER}
 
-# Short plain-English labels for the crowded bar-chart x-axes (figs 2/4/5).
-SHORT = {"fact": "fact", "em": "EM", "sycophancy": "sycophancy"}
+# Reader-facing plain-English labels for the crowded bar-chart x-axes (figs 2/4/5).
+# Full behavior names + full layer index; rendered rotated (single line) so the long
+# "harmful compliance (EM)" label stays legible across all 9 groups without overlap.
+SHORT = {"fact": "taught fact", "em": "harmful compliance (EM)", "sycophancy": "sycophancy"}
 
 
 def _bar_labels():
-    return [f"{SHORT[b]}\nL{ly}" for b in BEH_ORDER for ly in LAYERS]
+    return [f"{SHORT[b]} layer {ly}" for b in BEH_ORDER for ly in LAYERS]
 
 
 C_PRIMARY = paper_palette_role("primary")
@@ -97,7 +99,7 @@ def fig_hero():
     cbar.ax.axhline(1.0, color="#1A1A1A", lw=1.0)
     set_title_subtitle(
         ax,
-        "Only the taught fact clears the noise floor",
+        "At the primary layer (14), only the taught fact clears the noise floor",
         "Δ (‖post-FT map − base map‖ along behavior dir) over the kill-criterion floor; >1× = function moved",
         source="issue #722 · ridge fit · 16 source contexts · seed 42",
     )
@@ -120,7 +122,7 @@ def fig_delta_vs_floor():
     ax.bar(x - w / 2, dmed, w, label="function-change Δ", color=C_PRIMARY)
     ax.bar(x + w / 2, floor, w, label="noise floor (post-FT refit)", color=C_BASELINE)
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_xticklabels(labels, fontsize=8, rotation=20, ha="right")
     ax.set_ylabel("magnitude along behavior direction")
     ax.legend(frameon=False, fontsize=9)
     set_title_subtitle(
@@ -249,7 +251,7 @@ def fig_mlp_shuffle():
                 arrowprops=dict(arrowstyle="->", color=C_PRIMARY, lw=1.0),
             )
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_xticklabels(labels, fontsize=8, rotation=20, ha="right")
     ax.set_ylabel("held-out reconstruction ρ (base map)")
     ax.legend(frameon=False, fontsize=9, loc="lower left")
     set_title_subtitle(

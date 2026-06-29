@@ -1,6 +1,6 @@
 {
-  "commit": "781fc2e971",
-  "created": "2026-06-29T10:05:19Z",
+  "commit": "9d23500b66",
+  "created": "2026-06-29T10:37:17Z",
   "figsize": [
     8.2,
     4.2
@@ -61,55 +61,55 @@
       "_group": 0
     },
     {
-      "category": "fact L7",
+      "category": "taught fact layer 7",
       "held-out cross-transfer cosine": -0.10479821505158687,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "fact L14",
+      "category": "taught fact layer 14",
       "held-out cross-transfer cosine": -0.02237723959022629,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "fact L21",
+      "category": "taught fact layer 21",
       "held-out cross-transfer cosine": -0.00983448002084419,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "EM L7",
+      "category": "harmful compliance (EM) layer 7",
       "held-out cross-transfer cosine": -0.04087129478058287,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "EM L14",
+      "category": "harmful compliance (EM) layer 14",
       "held-out cross-transfer cosine": -0.02612060364219482,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "EM L21",
+      "category": "harmful compliance (EM) layer 21",
       "held-out cross-transfer cosine": -0.048059902052390184,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "sycophancy L7",
+      "category": "sycophancy layer 7",
       "held-out cross-transfer cosine": -0.038845874608876126,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "sycophancy L14",
+      "category": "sycophancy layer 14",
       "held-out cross-transfer cosine": -0.11136728004135585,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "sycophancy L21",
+      "category": "sycophancy layer 21",
       "held-out cross-transfer cosine": -0.08137800547545528,
       "_kind": "bar",
       "_group": 1
