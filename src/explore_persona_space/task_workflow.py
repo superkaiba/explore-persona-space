@@ -2467,6 +2467,328 @@ def audit() -> list[str]:
     return problems
 
 
+# ─── Registry reconcile (`task.py audit --repair`) ──────────────────────────
+
+
+@dataclass(frozen=True)
+class RegistryChange:
+    """One drift entry surfaced by :func:`reconcile_registry`.
+
+    ``drift_class`` is one of ``"stale_real" | "missing_real" | "empty_stub"
+    | "skipped" | "highest_id"``. ``detail`` is a human-readable description
+    (with the relevant on-disk path) for the CLI report and the test
+    assertions. ``task_id`` is the integer id (``-1`` for the ``highest_id``
+    bump, which is not tied to a single task).
+    """
+
+    task_id: int
+    drift_class: str
+    detail: str
+
+
+# Internal planning record: a reconcilable drift whose registry entry the
+# apply path will (re-)write from ``actual / "body.md"``. ``registry_path`` is
+# the stale REGISTRY ``path`` string for a ``stale_real`` entry, or ``None``
+# for a ``missing_real`` (no registry entry yet). ``actual`` is the task's
+# REAL on-disk folder (always under tasks_dir()), so the value passed to
+# ``_registry_set`` resolves ``_status_from_path`` correctly.
+@dataclass(frozen=True)
+class _PendingReconcile:
+    task_id: int
+    drift_class: str  # "stale_real" | "missing_real"
+    registry_path: str | None
+    actual: Path
+
+
+@dataclass(frozen=True)
+class ReconcileReport:
+    """Result of :func:`reconcile_registry`.
+
+    Drift is split into FOUR classes. ``stale_real`` + ``missing_real`` are the
+    RECONCILABLE classes (re-pointed / added, re-snapshotted from the task's
+    actual on-disk ``body.md``); on the apply path these lists hold only the
+    entries that were ACTUALLY written. ``empty_stubs`` (a task dir with no
+    ``body.md``) and ``skipped`` (a task that should reconcile but whose body
+    is unreadable / its folder is genuinely gone) are NEVER written to the
+    registry — surfaced for manual triage, never fabricated, never deleted.
+    """
+
+    applied: bool
+    stale_real: list[RegistryChange]
+    missing_real: list[RegistryChange]
+    empty_stubs: list[RegistryChange]
+    skipped: list[RegistryChange]
+    highest_id_bumped: RegistryChange | None
+
+    @property
+    def reconciled_count(self) -> int:
+        """Number of registry mutations: re-pointed + added + the highest_id bump."""
+        return len(self.stale_real) + len(self.missing_real) + (1 if self.highest_id_bumped else 0)
+
+    @property
+    def unresolved_count(self) -> int:
+        """Drift the reconcile cannot fix on its own — empty stubs + skips.
+
+        The CLI exits 1 when this is non-zero (after an apply): the registry
+        still disagrees with the filesystem and an operator must triage.
+        """
+        return len(self.empty_stubs) + len(self.skipped)
+
+    @property
+    def is_clean(self) -> bool:
+        """True iff there was nothing to reconcile AND no unresolved drift."""
+        return self.reconciled_count == 0 and self.unresolved_count == 0
+
+
+def _reconcile_change(task_id: int | str, drift_class: str, detail: str) -> RegistryChange:
+    return RegistryChange(task_id=int(task_id), drift_class=drift_class, detail=detail)
+
+
+def _reconcile_commit_msg(
+    stale: list[_PendingReconcile],
+    missing: list[_PendingReconcile],
+    bumped: RegistryChange | None,
+) -> str:
+    parts = [f"registry-reconcile: {len(stale)} path(s) fixed, {len(missing)} entry(ies) added"]
+    if missing:
+        ids = ", ".join(f"#{p.task_id}" for p in missing)
+        parts.append(f"added {ids}")
+    if bumped:
+        parts.append(bumped.detail)
+    return "; ".join(parts)
+
+
+def _reconcile_pending_change(p: _PendingReconcile, repo: Path) -> RegistryChange:
+    rel = str(p.actual.relative_to(repo))
+    if p.drift_class == "stale_real":
+        detail = f"{p.registry_path} -> {rel} (re-pointed + re-snapshotted)"
+    else:
+        detail = f"added at {rel} (re-snapshotted)"
+    return _reconcile_change(p.task_id, p.drift_class, detail)
+
+
+def _reconcile_highest_id(reg: dict[str, Any]) -> None:
+    """Final sanity pass: bump highest_id to max registered id if it drifted
+    low. (A ``missing_real`` add already bumps it inside ``_registry_set``;
+    this also catches a registry whose highest_id drifted below max another
+    way.) Mutates ``reg`` in place."""
+    ids = [int(t) for t in reg.get("tasks", {})]
+    target = max(ids) if ids else 0
+    if target > reg.get("highest_id", 0):
+        reg["highest_id"] = target
+
+
+def _reconcile_bump_change(before: int, after: int) -> RegistryChange | None:
+    """A ``highest_id`` RegistryChange iff it net-increased across the reconcile
+    — regardless of whether ``_registry_set`` or ``_reconcile_highest_id`` did it."""
+    if after > before:
+        return _reconcile_change(-1, "highest_id", f"highest_id {before}->{after}")
+    return None
+
+
+def _reconcile_scan_disk(td: Path) -> dict[str, Path]:
+    """Map ``str(task_id) -> actual on-disk Path`` for every task dir under a
+    valid ``STATUSES`` folder. Scanned once per reconcile."""
+    disk: dict[str, Path] = {}
+    if not td.exists():
+        return disk
+    for status_dir in td.iterdir():
+        if not status_dir.is_dir() or status_dir.name not in STATUSES:
+            continue
+        for child in status_dir.iterdir():
+            if child.is_dir() and child.name.isdigit():
+                disk[child.name] = child
+    return disk
+
+
+def _reconcile_plan(
+    repo: Path, td: Path, reg: dict[str, Any]
+) -> tuple[
+    list[_PendingReconcile],
+    list[_PendingReconcile],
+    list[RegistryChange],
+    list[RegistryChange],
+]:
+    """Classify every drift between ``reg`` and the on-disk task tree into the
+    four classes (stale_real / missing_real / empty_stub / skipped). Pure read;
+    never mutates ``reg`` or the filesystem. See :func:`reconcile_registry` for
+    the class definitions."""
+
+    def _has_body(p: Path) -> bool:
+        # Cheap EXISTENCE check (classification, not a parse). Keeps an empty
+        # stub away from `_read_body`, so a missing body.md never raises
+        # FileNotFoundError and crashes the whole run.
+        return (p / "body.md").exists()
+
+    def _rel(p: Path) -> str:
+        return str(p.relative_to(repo))
+
+    disk = _reconcile_scan_disk(td)
+    stale_real: list[_PendingReconcile] = []
+    missing_real: list[_PendingReconcile] = []
+    empty_stubs: list[RegistryChange] = []
+    skipped: list[RegistryChange] = []
+    tasks = reg.get("tasks", {})
+
+    # Class 1 — registry entry whose path is missing (or present-but-bodyless).
+    for tid, entry in tasks.items():
+        abs_path = repo / entry["path"]
+        if abs_path.is_dir():
+            # 1b — registered, dir exists, but body.md is gone -> empty stub
+            # (the audit() :2446-2448 sub-check, folded into empty_stubs).
+            if not _has_body(abs_path):
+                empty_stubs.append(
+                    _reconcile_change(
+                        tid,
+                        "empty_stub",
+                        f"registered at {entry['path']}, dir exists but body.md missing",
+                    )
+                )
+            continue  # registry path fine (or 1b handled) — not stale.
+        actual = disk.get(tid)
+        if actual is None:
+            # Registry path stale AND task genuinely gone from disk. Leave the
+            # entry untouched (dropping it would lose a real entry).
+            skipped.append(
+                _reconcile_change(
+                    tid,
+                    "skipped",
+                    f"registry path {entry['path']!r} missing AND no on-disk folder found",
+                )
+            )
+            continue
+        if not _has_body(actual):
+            empty_stubs.append(
+                _reconcile_change(
+                    tid,
+                    "empty_stub",
+                    f"registry path {entry['path']!r} missing; on-disk dir "
+                    f"{_rel(actual)} has no body.md",
+                )
+            )
+            continue
+        stale_real.append(_PendingReconcile(int(tid), "stale_real", entry["path"], actual))
+
+    # Class 2 — on disk but unregistered.
+    for tid, actual in disk.items():
+        if tid in tasks:
+            continue
+        if not _has_body(actual):
+            empty_stubs.append(
+                _reconcile_change(
+                    tid,
+                    "empty_stub",
+                    f"on disk at {_rel(actual)} but no body.md "
+                    f"(likely unmerged issue-{tid} branch residue)",
+                )
+            )
+            continue
+        missing_real.append(_PendingReconcile(int(tid), "missing_real", None, actual))
+
+    return stale_real, missing_real, empty_stubs, skipped
+
+
+def _reconcile_apply_pending(
+    reg: dict[str, Any],
+    pending: list[_PendingReconcile],
+    skipped: list[RegistryChange],
+) -> list[_PendingReconcile]:
+    """Re-snapshot each pending reconcile into ``reg`` from its actual on-disk
+    ``body.md``. A body that passed the plan-time ``exists()`` check but is now
+    unreadable (``FileNotFoundError`` if it vanished, ``ValueError`` for
+    malformed YAML) is appended to ``skipped`` and left out of the registry —
+    never fabricated, never aborting the whole run. Returns the entries that
+    were ACTUALLY written. Mutates ``reg`` + ``skipped`` in place."""
+    applied: list[_PendingReconcile] = []
+    for pend in pending:
+        try:
+            fm, _ = _read_body(pend.actual / "body.md")
+        except (FileNotFoundError, ValueError) as exc:
+            skipped.append(_reconcile_change(pend.task_id, "skipped", f"body.md unreadable: {exc}"))
+            continue
+        _registry_set(reg, pend.task_id, pend.actual, fm)
+        applied.append(pend)
+    return applied
+
+
+def reconcile_registry(*, apply: bool = False) -> ReconcileReport:
+    """Reconcile REGISTRY.json against the on-disk task tree.
+
+    Mirrors :func:`audit`'s detection so the two never disagree about WHAT
+    counts as drift, then classifies each drift by whether the task has a
+    readable ``body.md``:
+
+    - **stale_real** — a registry entry whose ``path`` is missing, but the task
+      lives elsewhere on disk WITH a ``body.md``: re-point + re-snapshot.
+    - **missing_real** — an on-disk task dir WITH a ``body.md`` absent from the
+      registry: add the entry + re-snapshot (this is the live #703 case).
+    - **empty_stub** — a task dir with NO ``body.md`` (registered-but-bodyless,
+      or on-disk-and-unregistered-and-bodyless). Surfaced, NEVER reconciled,
+      NEVER fabricated into the registry, NEVER deleted (the dir may be live
+      residue of an active ``issue-<N>`` branch). **Policy:** any task dir
+      lacking ``body.md``, registered or not, is an empty stub.
+    - **skipped** — a registry entry whose path is missing AND no on-disk
+      folder is found anywhere (its existing entry is left untouched, not
+      dropped — erasing a real entry would lose data), OR a reconcilable task
+      whose ``body.md`` exists but is unreadable (malformed YAML / vanished
+      between the existence check and the read).
+
+    Writes ONLY ``tasks/REGISTRY.json`` — never moves a task folder, changes a
+    status, or touches ``body.md`` / any task content. Pure read in dry-run
+    (``apply=False``); under ``_locked()`` (re-read + re-plan inside the lock)
+    on the apply path. Idempotent: a second apply on a now-consistent registry
+    produces zero diff and no commit.
+    """
+    repo = repo_root()
+    td = tasks_dir()
+
+    if not apply:
+        reg = _load_registry()
+        stale, missing, empty_stubs, skipped = _reconcile_plan(repo, td, reg)
+        # Dry-run preview of the net highest_id bump (computed on a copy — no
+        # write). A missing_real adds an id; the bump is max(disk ids) vs the
+        # current highest_id.
+        before = reg.get("highest_id", 0)
+        preview: dict[str, Any] = {"highest_id": before, "tasks": dict(reg.get("tasks", {}))}
+        for p in stale + missing:
+            preview["tasks"][str(p.task_id)] = {"path": str(p.actual.relative_to(repo))}
+        _reconcile_highest_id(preview)
+        return ReconcileReport(
+            applied=False,
+            stale_real=[_reconcile_pending_change(p, repo) for p in stale],
+            missing_real=[_reconcile_pending_change(p, repo) for p in missing],
+            empty_stubs=empty_stubs,
+            skipped=skipped,
+            highest_id_bumped=_reconcile_bump_change(before, preview["highest_id"]),
+        )
+
+    with _locked():
+        # Re-read + re-plan INSIDE the lock: a concurrent writer (e.g. a live
+        # issue-<N> branch merging body.md to main) may have changed the
+        # registry since any dry-run, so a stale task simply reclassifies.
+        reg = _load_registry()
+        highest_before = reg.get("highest_id", 0)
+        stale, missing, empty_stubs, skipped = _reconcile_plan(repo, td, reg)
+        applied_stale = _reconcile_apply_pending(reg, stale, skipped)
+        applied_missing = _reconcile_apply_pending(reg, missing, skipped)
+        _reconcile_highest_id(reg)
+        bumped = _reconcile_bump_change(highest_before, reg.get("highest_id", 0))
+        if applied_stale or applied_missing or bumped:
+            _save_registry(reg)
+            _git_commit(
+                [registry_path()],
+                _reconcile_commit_msg(applied_stale, applied_missing, bumped),
+            )
+        return ReconcileReport(
+            applied=True,
+            stale_real=[_reconcile_pending_change(p, repo) for p in applied_stale],
+            missing_real=[_reconcile_pending_change(p, repo) for p in applied_missing],
+            empty_stubs=empty_stubs,
+            skipped=skipped,
+            highest_id_bumped=bumped,
+        )
+
+
 # ─── Comments ──────────────────────────────────────────────────────────────
 
 
@@ -3029,6 +3351,8 @@ __all__ = [
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
     "NewTaskRequest",
+    "ReconcileReport",
+    "RegistryChange",
     "add_tag",
     "address_concern",
     "append_comment",
@@ -3050,6 +3374,7 @@ __all__ = [
     "post_event",
     "promote",
     "raise_concern",
+    "reconcile_registry",
     "registry_path",
     "remove_tag",
     "repo_root",

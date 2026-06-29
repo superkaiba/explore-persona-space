@@ -13,10 +13,12 @@ auto-push is disabled by leaving TASK_PY_AUTO_PUSH unset.
 
 from __future__ import annotations
 
+import argparse
 import concurrent.futures
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -888,6 +890,324 @@ def test_audit_detects_orphan_dir(fake_repo):
     (orphan / "body.md").write_text("---\ntitle: orphan\n---\n")
     problems = tw.audit()
     assert any("9999" in p for p in problems)
+
+
+# ─── Registry reconcile (`audit --repair`) ─────────────────────────────────
+
+
+def _import_task_cli():
+    """Import scripts/task.py as `task` (the CLI handler layer). Exercised at
+    the handler-function layer, not via subprocess — `repo_root()` branch-guards
+    to `main`, so a subprocess would bypass the fake_repo monkeypatch (same
+    rationale as test_cli_handlers_raise_address_defer_list_roundtrip)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import task as task_cli  # type: ignore[import-not-found]
+
+    return task_cli
+
+
+def _read_registry(repo: Path) -> dict:
+    return json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+
+
+def _write_registry(repo: Path, reg: dict) -> None:
+    (repo / "tasks" / "REGISTRY.json").write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n")
+
+
+def _make_orphan_with_body(
+    repo: Path, tid: int, status: str = "proposed", *, title: str = "orphan", kind: str = "infra"
+) -> Path:
+    """An on-disk task dir WITH a valid body.md, NOT in the registry -> missing_real."""
+    d = repo / "tasks" / status / str(tid)
+    d.mkdir(parents=True)
+    (d / "body.md").write_text(f"---\ntitle: {title}\nkind: {kind}\n---\nbody for {tid}\n")
+    return d
+
+
+def _make_empty_stub(repo: Path, tid: int, status: str = "completed") -> Path:
+    """An on-disk task dir with NO body.md and NO events.jsonl — only an
+    artifacts/ subdir (the live #698-#709 shape) -> empty_stub."""
+    d = repo / "tasks" / status / str(tid)
+    (d / "artifacts").mkdir(parents=True)
+    return d
+
+
+def _induce_stale_real(repo: Path, tw, *, status: str = "completed") -> int:
+    """Register a task, then physically move its folder to `status` and rewrite
+    the registry path to a NON-existent location -> stale registry path, real
+    body.md on disk elsewhere -> stale_real."""
+    tid = tw.create_task(tw.NewTaskRequest(kind="infra", title="stale-me"))
+    src = repo / "tasks" / "proposed" / str(tid)
+    dst = repo / "tasks" / status / str(tid)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    src.rename(dst)
+    reg = _read_registry(repo)
+    reg["tasks"][str(tid)]["path"] = f"tasks/approved/{tid}"  # non-existent
+    _write_registry(repo, reg)
+    return tid
+
+
+def _snapshot_tasks_tree(repo: Path) -> dict[str, bytes]:
+    """Map every file under tasks/ (EXCEPT REGISTRY.json) to its bytes."""
+    td = repo / "tasks"
+    out: dict[str, bytes] = {}
+    for p in sorted(td.rglob("*")):
+        if p.is_file() and p.name != "REGISTRY.json":
+            out[str(p.relative_to(td))] = p.read_bytes()
+    return out
+
+
+def test_reconcile_dry_run_reports_without_mutating(fake_repo):
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="keep-A"))
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="keep-B"))
+    stale_id = _induce_stale_real(repo, tw)
+    _make_orphan_with_body(repo, 9001)
+
+    reg_before = (repo / "tasks" / "REGISTRY.json").read_bytes()
+    commits_before = _git_log_count(repo)
+
+    rep = tw.reconcile_registry(apply=False)
+
+    assert rep.applied is False
+    assert [c.task_id for c in rep.stale_real] == [stale_id]
+    assert [c.task_id for c in rep.missing_real] == [9001]
+    assert rep.empty_stubs == []
+    assert rep.skipped == []
+    # No mutation.
+    assert (repo / "tasks" / "REGISTRY.json").read_bytes() == reg_before
+    assert _git_log_count(repo) == commits_before
+
+
+def test_reconcile_apply_fixes_stale_path(fake_repo):
+    repo, tw = fake_repo
+    stale_id = _induce_stale_real(repo, tw, status="completed")
+    commits_before = _git_log_count(repo)
+
+    rep = tw.reconcile_registry(apply=True)
+
+    assert rep.applied is True
+    assert [c.task_id for c in rep.stale_real] == [stale_id]
+    reg = _read_registry(repo)
+    entry = reg["tasks"][str(stale_id)]
+    assert entry["path"] == f"tasks/completed/{stale_id}"
+    # Re-snapshotted status reflects the REAL on-disk folder, not the stale entry.
+    assert entry["status"] == "completed"
+    # Exactly one new commit, touching ONLY REGISTRY.json.
+    assert _git_log_count(repo) == commits_before + 1
+    show = subprocess.run(
+        ["git", "show", "--name-only", "--format=", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    touched = [ln for ln in show.stdout.splitlines() if ln.strip()]
+    assert touched == ["tasks/REGISTRY.json"]
+
+
+def test_reconcile_apply_adds_missing_entry(fake_repo):
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="keep"))
+    _make_orphan_with_body(repo, 9001, status="completed", title="found me", kind="infra")
+    commits_before = _git_log_count(repo)
+
+    rep = tw.reconcile_registry(apply=True)
+
+    assert [c.task_id for c in rep.missing_real] == [9001]
+    reg = _read_registry(repo)
+    entry = reg["tasks"]["9001"]
+    assert entry["path"] == "tasks/completed/9001"
+    assert entry["title"] == "found me"
+    assert entry["kind"] == "infra"
+    assert entry["status"] == "completed"
+    assert entry["has_clean_result"] is False
+    assert _git_log_count(repo) == commits_before + 1
+
+
+def test_reconcile_classifies_empty_stub_not_drift(fake_repo):
+    """An on-disk dir with only artifacts/ (no body.md, no events.jsonl) is an
+    empty stub — NOT reconciled, NOT fabricated, NOT deleted; CLI exits 1."""
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="keep"))
+    stub = _make_empty_stub(repo, 9002, status="completed")
+    commits_before = _git_log_count(repo)
+
+    rep = tw.reconcile_registry(apply=True)
+
+    stub_ids = [c.task_id for c in rep.empty_stubs]
+    assert 9002 in stub_ids
+    assert 9002 not in [c.task_id for c in rep.stale_real]
+    assert 9002 not in [c.task_id for c in rep.missing_real]
+    assert 9002 not in [c.task_id for c in rep.skipped]
+    # No fabricated registry entry, no commit, the dir survives intact.
+    assert "9002" not in _read_registry(repo)["tasks"]
+    assert _git_log_count(repo) == commits_before
+    assert (stub / "artifacts").is_dir()
+    assert rep.unresolved_count >= 1
+    # CLI exits 1 because an empty stub remains.
+    task_cli = _import_task_cli()
+    args = argparse.Namespace(repair=True, apply=True)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_audit(args)
+    assert exc.value.code == 1
+
+
+def test_reconcile_handles_missing_body_md(fake_repo):
+    """MF2 (the FileNotFoundError half): a registered task whose dir EXISTS but
+    body.md is absent lands in empty_stubs; no FileNotFoundError escapes."""
+    repo, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="will-lose-body"))
+    (repo / "tasks" / "proposed" / str(tid) / "body.md").unlink()
+    # An also-reconcilable orphan alongside, to prove the run does not abort.
+    _make_orphan_with_body(repo, 9003, status="completed")
+
+    rep = tw.reconcile_registry(apply=True)  # must NOT raise
+
+    assert tid in [c.task_id for c in rep.empty_stubs]
+    # The detail string records that the stub was REGISTERED.
+    stub = next(c for c in rep.empty_stubs if c.task_id == tid)
+    assert "registered" in stub.detail
+    # The registered entry is left untouched (not removed, not re-snapshotted).
+    assert str(tid) in _read_registry(repo)["tasks"]
+    # The healthy orphan still reconciled despite the stub.
+    assert 9003 in [c.task_id for c in rep.missing_real]
+    assert "9003" in _read_registry(repo)["tasks"]
+
+
+def test_reconcile_skips_unparseable_body(fake_repo):
+    """The ValueError half: an orphan whose body.md EXISTS but has malformed
+    frontmatter lands in skipped (NOT empty_stubs — the file exists); the run
+    continues and an also-reconcilable task still applies."""
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="keep"))
+    bad = repo / "tasks" / "completed" / "9004"
+    bad.mkdir(parents=True)
+    (bad / "body.md").write_text("---\n: : :\n---\nbody\n")  # malformed YAML
+    _make_orphan_with_body(repo, 9005, status="completed")
+
+    rep = tw.reconcile_registry(apply=True)  # must NOT raise
+
+    assert 9004 in [c.task_id for c in rep.skipped]
+    assert 9004 not in [c.task_id for c in rep.empty_stubs]
+    assert "9004" not in _read_registry(repo)["tasks"]  # no fabrication
+    # The healthy orphan still applied despite the per-task skip.
+    assert 9005 in [c.task_id for c in rep.missing_real]
+    assert "9005" in _read_registry(repo)["tasks"]
+    assert rep.unresolved_count >= 1
+
+
+def test_reconcile_stale_path_no_actual_folder_skip(fake_repo):
+    """A registry entry pointing nowhere AND no on-disk folder anywhere lands in
+    skipped — the existing entry is NOT silently dropped."""
+    repo, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="gone"))
+    src = repo / "tasks" / "proposed" / str(tid)
+    shutil.rmtree(src)  # remove the folder entirely
+    reg = _read_registry(repo)
+    reg["tasks"][str(tid)]["path"] = f"tasks/approved/{tid}"  # non-existent
+    _write_registry(repo, reg)
+
+    rep = tw.reconcile_registry(apply=True)
+
+    assert tid in [c.task_id for c in rep.skipped]
+    assert tid not in [c.task_id for c in rep.empty_stubs]
+    # The entry is preserved (dropping it would lose a real task).
+    assert str(tid) in _read_registry(repo)["tasks"]
+    assert rep.unresolved_count >= 1
+
+
+def test_reconcile_never_touches_task_folders(fake_repo):
+    repo, tw = fake_repo
+    _induce_stale_real(repo, tw, status="completed")
+    _make_orphan_with_body(repo, 9006, status="completed")
+    _make_empty_stub(repo, 9007, status="completed")
+
+    before = _snapshot_tasks_tree(repo)
+    tw.reconcile_registry(apply=True)
+    after = _snapshot_tasks_tree(repo)
+
+    assert before == after  # no task content created/modified/deleted
+
+
+def test_reconcile_is_idempotent(fake_repo):
+    repo, tw = fake_repo
+    _make_orphan_with_body(repo, 9008, status="completed")
+    _make_empty_stub(repo, 9009, status="completed")
+
+    tw.reconcile_registry(apply=True)
+    reg_after_first = (repo / "tasks" / "REGISTRY.json").read_bytes()
+    commits_after_first = _git_log_count(repo)
+
+    rep2 = tw.reconcile_registry(apply=True)
+
+    # The missing_real is now registered, the empty stub never wrote -> zero diff.
+    assert (repo / "tasks" / "REGISTRY.json").read_bytes() == reg_after_first
+    assert _git_log_count(repo) == commits_after_first
+    assert rep2.missing_real == []
+    assert rep2.stale_real == []
+    # The empty stub is still surfaced on the second run (it was never fixed).
+    assert 9009 in [c.task_id for c in rep2.empty_stubs]
+
+
+def test_reconcile_bumps_highest_id(fake_repo):
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="A"))  # highest_id = 1
+    _make_orphan_with_body(repo, 9999, status="completed")
+
+    rep = tw.reconcile_registry(apply=True)
+
+    assert rep.highest_id_bumped is not None
+    assert _read_registry(repo)["highest_id"] == 9999
+
+
+def test_reconcile_clean_registry_is_noop(fake_repo):
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="A"))
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="B"))
+    reg_before = (repo / "tasks" / "REGISTRY.json").read_bytes()
+    commits_before = _git_log_count(repo)
+
+    rep = tw.reconcile_registry(apply=True)
+
+    assert rep.is_clean
+    assert (repo / "tasks" / "REGISTRY.json").read_bytes() == reg_before
+    assert _git_log_count(repo) == commits_before
+
+
+def test_reconcile_cli_exits_0_when_only_reconcilable(fake_repo):
+    """audit --repair --apply exits 0 when the apply leaves no unresolved drift."""
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="keep"))
+    _make_orphan_with_body(repo, 9010, status="completed")
+
+    task_cli = _import_task_cli()
+    args = argparse.Namespace(repair=True, apply=True)
+    # No SystemExit (exit 0) — only a reconcilable missing_real, no stubs/skips.
+    task_cli.cmd_audit(args)
+    assert "9010" in _read_registry(repo)["tasks"]
+
+
+def test_reconcile_cli_dry_run_always_exits_0(fake_repo):
+    """audit --repair (no --apply) is informational — exit 0 even with stubs."""
+    repo, tw = fake_repo
+    tw.create_task(tw.NewTaskRequest(kind="experiment", title="keep"))
+    _make_empty_stub(repo, 9011, status="completed")
+    task_cli = _import_task_cli()
+    args = argparse.Namespace(repair=True, apply=False)
+    task_cli.cmd_audit(args)  # no SystemExit
+    # Dry-run did not write a registry entry for the stub.
+    assert "9011" not in _read_registry(repo).get("tasks", {})
+
+
+def test_reconcile_cli_apply_requires_repair(fake_repo):
+    """--apply without --repair is a usage error (exit 2)."""
+    _repo, _tw = fake_repo
+    task_cli = _import_task_cli()
+    args = argparse.Namespace(repair=False, apply=True)
+    with pytest.raises(SystemExit) as exc:
+        task_cli.cmd_audit(args)
+    assert exc.value.code == 2
 
 
 # ─── Comments ────────────────────────────────────────────────────────────
