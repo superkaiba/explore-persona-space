@@ -123,6 +123,31 @@ def test_gpu_idle_state_path_is_handle_sidecar_sibling(tmp_path: Path) -> None:
     assert bp._gpu_idle_state_path(sidecar) == tmp_path / "issue-730-gpu-idle-state.json"
 
 
+def test_gpu_idle_state_path_never_collides_with_handle_file(tmp_path: Path) -> None:
+    """Per Codex round-1 finding: an arbitrary --handle-file name (NOT ending in
+    '-handle.json', which the documented CLI flag honors verbatim) must NEVER
+    resolve to the handle sidecar itself — otherwise the GPU-idle block would
+    write its bookkeeping ONTO the run handle and corrupt it (the next poll reads
+    it as a RunHandle -> unreadable -> false `status: dead` on a live job).
+
+    The OLD naive ``sidecar.name.replace("-handle.json", "-gpu-idle-state.json")``
+    is a no-op when the substring is absent, so it returned ``sidecar`` itself
+    for every non-conforming name, e.g.
+    ``"custom.json".replace("-handle.json", "-gpu-idle-state.json") == "custom.json"``.
+    """
+    # Canonical name -> the -handle.json substitution gives the documented sibling.
+    canonical = tmp_path / "issue-730-handle.json"
+    assert bp._gpu_idle_state_path(canonical) == (tmp_path / "issue-730-gpu-idle-state.json")
+
+    # Non-conforming names must produce DISTINCT siblings (the bug case).
+    for name in ("custom.json", "handle.json", "pod-runtime.json", "no-ext"):
+        sidecar = tmp_path / name
+        state_path = bp._gpu_idle_state_path(sidecar)
+        assert state_path != sidecar, f"state-path collides with handle sidecar for name={name!r}"
+        assert state_path.parent == sidecar.parent  # still a sibling in the same dir
+        assert state_path.name.endswith("-gpu-idle-state.json")
+
+
 def test_gpu_idle_state_round_trip_and_fail_soft(tmp_path: Path) -> None:
     path = tmp_path / "issue-730-gpu-idle-state.json"
     assert bp._load_gpu_idle_state(path) == {}  # absent -> {}
@@ -451,22 +476,30 @@ def test_backend_poll_main_gcp_idle_integration(tmp_path, monkeypatch, capsys) -
 def test_backend_poll_main_non_gcp_omits_idle_fields_defaulting_false(
     tmp_path, monkeypatch, capsys
 ) -> None:
-    """A non-GCP (RunPod) tick routed through main() leaves both fields False —
-    the GCP block is gated on handle.backend == 'gcp' (RunPod's own advisory /
-    escalation fires inside poll_pipeline.poll_once, not here, so no double-fire)."""
-    runpod_handle = RunHandle(
-        backend="runpod",
-        cluster=None,
-        job_id="pod-fake",
-        pod_name="pod-730",
-        scratch_dir="/workspace",
-        log_path="/workspace/logs/issue-730.log",
+    """A non-GCP (SLURM) tick routed through main() leaves both fields False —
+    the GCP GPU-idle block is gated on handle.backend == 'gcp'.
+
+    The handle backend is deliberately a SLURM cluster, NOT 'runpod': a RunPod
+    handle would drive production main() into _maybe_escalate_runpod_wedge,
+    which lazy-imports runpod_api.get_pod_by_name and hits the LIVE RunPod API
+    (a DNS failure in any clean / offline CI run). The test's intent — non-GCP
+    backends default both new fields to False — is backend-string-driven, so a
+    SLURM handle exercises the same gate without any network dependency
+    (_maybe_escalate_gcp_wedge / _maybe_escalate_runpod_wedge / the GCP idle
+    block all early-return for a non-matching backend string)."""
+    slurm_handle = RunHandle(
+        backend="cluster",
+        cluster="nibi",
+        job_id="slurm-fake-1",
+        pod_name="eps-issue-730",
+        scratch_dir="/scratch/eps-issue-730",
+        log_path="/scratch/logs/issue-730.log",
         extra={"issue": 730},
     )
     sidecar = tmp_path / "issue-730-handle.json"
-    write_handle_sidecar(runpod_handle, sidecar)
+    write_handle_sidecar(slurm_handle, sidecar)
 
-    class _RunningRunpod:
+    class _RunningSlurm:
         def poll(self, handle: RunHandle) -> PollResult:
             return PollResult(
                 status="running",
@@ -477,7 +510,7 @@ def test_backend_poll_main_non_gcp_omits_idle_fields_defaulting_false(
                 log_tail_excerpt="",
             )
 
-    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: _RunningRunpod())
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: _RunningSlurm())
 
     rc = bp.main(["--issue", "730", "--handle-file", str(sidecar)])
     assert rc == 0
