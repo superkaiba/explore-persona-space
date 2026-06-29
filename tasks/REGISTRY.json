@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 729,
+  "highest_id": 730,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4591,6 +4591,13 @@
       "path": "tasks/running/729",
       "status": "running",
       "title": "workflow-fix: analyzer.md \u2014 cross-check inherited figure .meta.json on follow-up re-fold"
+    },
+    "730": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/730",
+      "status": "proposed",
+      "title": "workflow-fix: GCP-lane GPU-idle advisory+escalation parity (backend_poll.py)"
     },
     "74": {
       "has_clean_result": false,
