@@ -149,6 +149,12 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
   path + row count, not content. Benign corpora (marker, fact,
   sycophancy, WildChat, personas) are unaffected.
 
+When you post an `epm:failure` (`infra`-class crash), include an
+`assert_tag:` line — the named assertion tag (`[<tag>-assert]`),
+root-cause label, or exception type — so the Step 7 circuit-breaker can
+group repeat failures by a stable signature
+(`workflow.yaml § pivot_criteria.plan_contradiction_replan`).
+
 ### Post-dispatch bootstrap-completeness probe (RunPod lane)
 
 A written run handle (`.claude/cache/issue-<N>-handle.json`) does NOT mean
@@ -943,6 +949,7 @@ regexes; any infra match → `infra`, otherwise → `code` (conservative).
 | `CUDA out of memory` listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — deterministic GPU-pinning bug; respawn hits the identical OOM; #557) | code |
 | `disk full`, `ENOSPC`, `No space left on device` | infra |
 | vLLM init: `Failed to initialize`, `RuntimeError: CUDA error` | infra |
+| vLLM `generate()` HANG (GPU 0% + no progress log for many minutes, ~≥10 min + PID alive, NO traceback) — diagnose on-pod (py-spy / enforce_eager / prefix-caching) BEFORE reprovision; see § "vLLM `generate()` hang" | infra (do NOT auto-reprovision until triad localizes the cause) |
 | `SSH connection refused`, `No route to host`, `Connection timed out` | infra |
 | `401 Unauthorized`, `gated repo` | infra |
 | `NCCL timeout`, `NCCL error` | infra |
@@ -956,6 +963,70 @@ If unsure, omit the field — the log-pattern fallback is the safer path.
 detects a stall, dead process, or `failure_class: code` later in the run, the
 `/issue` skill re-dispatches you (or `experiment-implementer`) with a fresh
 brief that includes the failure context. Your single-turn scope is launch + exit.
+
+### vLLM `generate()` hang — diagnose on the SAME pod BEFORE any reprovision (REQUIRED)
+
+A vLLM `generate()`-class HANG is NOT an OOM and must NOT be met with a
+blind `kill + reprovision-new-multi-GPU-pod`. The canonical hang
+signature (distinct from a crash — there is no traceback, no Python
+exception, no `CUDA out of memory`):
+
+- GPU utilization ~0% across all devices (`nvidia-smi`), AND
+- no fresh progress log line (no `[vllm-chunk]` / `[generation]` / phase
+  line) for roughly ≥ ~10 min (an approximate operational trigger, NOT a
+  calibrated threshold — a long but healthy generation can be silent for
+  a while; use it as a "this has been quiet for many minutes" prompt to
+  diagnose, not a hard cutoff) while the PID is still alive, AND
+- the dispatcher main thread is blocked inside vLLM internals (confirmed
+  by the py-spy dump in step (a) below).
+
+It is INVISIBLE to the poller's standard stall detection: the dispatcher
+keeps burning ~22% CPU on Python/network thread-pool overhead, so
+`session_cpu_secs` advances and the poll loop reports `status=running`
+for hours (`.claude/rules/gotchas.md` § the chunked-generate deadlock
+entry).
+
+When you observe this signature (on the launch-survival probe, or when
+the orchestrator re-dispatches you on a suspected hang), DO NOT terminate
+the pod. First run the **differential-diagnosis triad on the SAME pod**
+that exhibits the hang — the full recipe + sample commands live in
+`.claude/rules/gotchas.md` § "vLLM `generate()` hang — differential
+diagnosis BEFORE reprovisioning"; the operative steps:
+
+(a) **py-spy dump** to localize the blocking call:
+```bash
+ssh_execute(server="epm-issue-<N>",
+            command="pip install -q py-spy 2>/dev/null; \
+                     py-spy dump --pid <CHILD_PID>")
+```
+A stack ending in `vllm/.../engine` / `generate` / a CUDA IPC wait
+confirms the deadlock class; a stack in OUR code is a different bug
+(route it `failure_class: code`, not a hang).
+
+(b) **`enforce_eager=True` probe** — relaunch the dispatcher with
+cuda-graph capture disabled (env or flag, e.g.
+`EPM_VLLM_ENFORCE_EAGER=1` if the rig exposes it) to rule out a
+cuda-graph-capture deadlock.
+
+(c) **disable-prefix-caching probe** — relaunch with prefix caching off
+(e.g. `EPM_VLLM_DISABLE_PREFIX_CACHING=1` / the rig's
+`enable_prefix_caching=False` path) to rule out a KV-cache pathology.
+
+Only AFTER the triad localizes the cause — and the fix is a round whose
+code path is provably reached per `experiment-implementer.md` §
+"Crash-fix rounds: declare the fix-engaged signal" — may a `pod.py
+terminate + provision-new` be recommended. A kill + reprovision with NO
+diagnostics in hand is the banned regression: the #664 saga burned
+substantial GPU-hours relaunching an undiagnosed `generate()` hang across
+multiple fresh pods before anyone ran py-spy (sessions 2c432067 /
+b3489bdb, 2026-06-27).
+
+You do NOT fix the hang in code (that is `experiment-implementer`): if the
+triad localizes a code-side cause, post `epm:failure v1` with
+`failure_class: code`, the py-spy stack, and the triad findings in the
+note, and EXIT — the orchestrator routes it to a fresh implementer round.
+Carry the diagnosis forward in the relaunch-with-fix failure-lesson block
+below (`gotcha_candidate: yes` for a new pod-driver-specific hang class).
 
 ### Failure-lesson block on relaunch-with-fix (REQUIRED)
 
@@ -977,6 +1048,8 @@ lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
 generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
 owning_agent: experiment-implementer|experimenter
 gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+root_cause_confirmed: yes|no  # yes if THIS round identified the TRUE root cause (even if a NEW distinct failure followed or the pod was abandoned in recovery)
+supersedes:           # OPTIONAL: prior-lesson slug or marker-ts this lesson corrects; omit if none
 <!-- /epm:failure-lesson -->
 ```
 
@@ -987,6 +1060,16 @@ sentences, the trap + the fix, no transcript dumps. A clean first
 launch with no failure resolved does NOT emit this block, and the
 block does not change your terminal contract (post `epm:run-launched`,
 emit the summary, EXIT — the orchestrator owns posting the marker).
+
+**Root-cause-confirmed firing (added #712).** Emit this block ALSO when
+this spawn IDENTIFIED the true root cause of a posted `epm:failure` even
+if a NEW, DISTINCT failure followed or the run was abandoned on the
+current pod during recovery (set `root_cause_confirmed: yes` — the
+orchestrator's `failure_lesson_capture_eligible()` predicate captures it
+regardless of a following failure). Set `supersedes:
+<prior-lesson-slug-or-ts>` when the confirmed cause corrects an earlier
+captured failure-lesson; leave it blank otherwise. Your terminal
+contract is unchanged (the orchestrator owns posting the marker).
 
 ## Tech Stack Reference
 

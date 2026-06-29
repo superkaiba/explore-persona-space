@@ -557,8 +557,8 @@ gates:
         via `scripts/living_docs.py apply <N> <patch>` — atomic flock +
         single commit; then post `epm:living-docs-updated v1`) vs
         `reject` (skip; post `epm:living-docs-update-rejected v1` with the
-        reason; the proposal parks for a future /weekly backstop
-        re-synthesis). "Edit" is a refinement of `confirm`, NOT a third
+        reason; the proposal parks for the nightly /daily living-docs
+        backstop re-synthesis). "Edit" is a refinement of `confirm`, NOT a third
         option: the user may hand-edit the proposed diff before it is
         applied, and the same `confirm` path commits the edited patch —
         this keeps the prompt a binary confirm/reject per CLAUDE.md "2-option
@@ -599,6 +599,47 @@ gates:
         the Step 6d.2 polling loop on the next /issue invocation.
 
         <!-- gate: gates.conditional.fact_candidates -->
+    - id: 17
+      name: related_work_positioning
+      step: "completion hook (Step 10c-bis post-completion batch, after auto-complete)"
+      condition: |
+        Fires once per kind:experiment (or finding-bearing kind:analysis)
+        task after it reaches status:completed (the post-promotion
+        completion hook). The related-work-finder agent has posted
+        `epm:related-work-proposed v1` with a proposed ≤80-word "Related
+        findings" note for the clean-result ## Goal -> **Broader narrative:**
+        slot (+ an optional human-triage candidate-papers list for
+        docs/papers.md). kind: infra/batch/survey are exempt (no measured
+        finding to position); a kind:analysis task with no ## Results is
+        skipped without raising the gate.
+      reason: |
+        Two-option prompt: `confirm` (splice the proposed ≤80-word
+        **Related findings:** clause into the body's ## Goal -> **Broader
+        narrative:** slot via `scripts/task.py set-body`, re-run
+        verify_task_body.py — WARN-only on the total-prose budget, never a
+        blocking FAIL — then post `epm:related-work-applied v1`) vs
+        `reject` (skip; post `epm:related-work-rejected v1` with the reason,
+        the proposal preserved inline so a future pass can reconsider).
+        "Edit" is a refinement of `confirm`, NOT a third option: the user
+        may hand-edit the proposed clause before it is spliced — this keeps
+        the prompt a binary confirm/reject per CLAUDE.md "2-option
+        escalation cap for new conditional gates". The gate applies ONLY the
+        ## Goal body edit — it does NOT apply any docs/papers.md edit in v1
+        (the agent's suggested-papers list is human-triage only; the
+        papers.md auto-apply leg is a deferred follow-up). Every
+        literature-positioning edit is user-confirmed: the agent proposes,
+        the user confirms/edits/rejects, nothing auto-applies. NON-BLOCKING
+        + ADVISORY on the experiment lifecycle — the task is already
+        completed, so the proposal can park indefinitely (like
+        living_docs_update) and a thin / empty / over-budget note never
+        blocks promotion. Autonomous mode (EPM_AUTONOMOUS_SESSION=1):
+        AUTO-REJECT-PARK — never raise the ask; post
+        `epm:related-work-rejected v1` (note "autonomous — parked for user
+        review", proposal preserved inline) so the proposal survives for a
+        later interactive pass. A literature-positioning note is a
+        taste/scope call the autonomous session does not make.
+
+        <!-- gate: gates.related_work_positioning -->
 
 # ──────────────────────────────────────────────────────────────────────
 # STATE-TO-status:blocked criteria.
@@ -759,12 +800,49 @@ pivot_criteria:
       direction", or a Statistics & Measurement lens REVISE citing
       decision-gate coherence (critic.md / codex-critic.md).
 
+      Second firing condition — enumerated-fallback-exhaustion (the
+      execution-side trigger, post-mortem task #664 round 18). Fires when
+      a plan pre-registered a FINITE escape ladder (e.g. §11 "Option A →
+      Option B → ...", or a numbered "Option N:" list) for a specific
+      gate, EVERY named alternative in that ladder has been LAUNCHED, and
+      the SAME gate still trips. "The same gate" = the same plan-level
+      success / kill criterion or the same pre-registered Option list —
+      NOT the same line of code that crashed. "Tried to exhaustion" =
+      every named alternative in the ladder has been launched AND the same
+      gate has re-tripped; a single failure on Option A with Option B not
+      yet attempted is NOT exhaustion. ALSO fires on the generic narrower
+      complement to cap-3: K or more crash-fix rounds (default K=4,
+      `EPM_CIRCUIT_BREAKER_K`) sharing the SAME (phase, failure_class,
+      assert_tag) signature — the same trap re-tripping, vs cap-3's
+      "same strategic approach". The signature counter resets ONLY at an
+      intervening `epm:experiment-implementation` / `epm:results`
+      milestone (a genuinely successful round escaped the trap); it does
+      NOT reset on `epm:progress`, which is the catch-all heartbeat /
+      phase-tick / watcher-respawn breadcrumb posted DURING a still-failing
+      trap. Detection is the pure predicate
+      `task_workflow.circuit_breaker_should_fire(events, plan_text, K)`;
+      the orchestrator-side step is `.claude/skills/issue/SKILL.md`
+      Step 7 § "Crash-fix circuit-breaker". Both firing conditions of
+      this entry share the SINGLE pivot action, the SINGLE
+      `epm:strategy-pivot v<n>` counting rule, and the SAME forbidden
+      anti-patterns below.
+
       Pivot action (the ONLY legitimate response): `task.py set-status
       <N> planning` + re-invoke `/adversarial-planner` with explicit
       pivot scope naming the contradiction verbatim — for example
       "Gate 3 requires probe X >= +0.2 nat AND Gate 4 requires the same
       probe at the same cell <= -0.2 nat; redesign the gate set to be
       jointly satisfiable or drop to a single necessary kill-criterion."
+      For the enumerated-fallback-exhaustion condition the pivot scope
+      names the SPENT ladder verbatim — for example "Enumerated escape
+      ladder exhausted: gate=<gate> ladder=A → B → C. Every named
+      alternative was launched; the gate re-tripped each time. Redesign
+      the gate or the ladder so a viable option exists, or drop the gate."
+      For the same-signature-repetition condition it names the (phase,
+      failure_class, assert_tag) signature and the repeat count K — for
+      example "Same-failure-class repetition: phase=p2 class=infra
+      assert_tag=CalledProcessError:issue664_extract_store.py count=6
+      (K=4). Re-plan the recipe that produces this trap, or drop the gate."
       Treat the revised plan as a fresh implementer cycle (cap-3 resets).
       Count this as a strategy pivot for the cap-3-pivots-before-block
       rule (track via the existing `epm:strategy-pivot v<n>` marker
@@ -786,7 +864,9 @@ pivot_criteria:
       autonomous mode (`EPM_AUTONOMOUS_SESSION=1`) — there is no human
       to escalate to; re-plan in the same session.
 
-      Post-mortem trigger: task #488 round 10 (2026-06-08). An
+      Post-mortem triggers: task #488 round 10 (2026-06-08; subagent
+      contradiction condition), task #664 round 18 (2026-06-28;
+      enumerated-fallback-exhaustion / same-signature-repetition condition). An
       autonomous session treated an `experiment-implementer` BLOCKED
       verdict ("the gate set is internally contradictory; I cannot pick
       a science direction") as a valid fork and descoped the recipe
@@ -2029,8 +2109,48 @@ markers:
       the gates.conditional.living_docs_update gate. Non-fatal: the
       experiment stays completed; nothing is written to the living docs.
       Payload: the rejection reason (one line) + the rejected proposal
-      preserved inline so a future backstop re-synthesis (/weekly) can
-      retry with sharper context.
+      preserved inline so the nightly /daily living-docs backstop
+      re-synthesis can retry with sharper context.
+  - kind: "epm:related-work-proposed"
+    posted_by: skill (via related-work-finder agent)
+    when: "/issue Step 10c-bis post-completion batch"
+    fields: |
+      The related-work-finder's PROPOSED "Related findings" positioning
+      note + the verdict
+      (replicates/contradicts/extends/tangential/none-found), a
+      `search_status` field (searched | unavailable — distinguishes "search
+      ran, found nothing" from "MCP unavailable, never searched"), the
+      MCP-verified citation list (each [title, arXiv:id], each with the
+      verify call made), the realized search budget (vs the ≤6 arXiv-MCP /
+      ≤2 WebSearch cap), the proposed ≤80-word **Broader narrative:**
+      addition, and an optional human-triage suggested-papers list for
+      docs/papers.md (a flat list of verified candidate papers, NOT an
+      apply diff in v1). Non-blocking + advisory: the experiment is already
+      completed; the proposal parks for user confirmation at the
+      gates.related_work_positioning gate. The agent proposes, never
+      applies. Artifact path: artifacts/related-work-proposal.md.
+  - kind: "epm:related-work-applied"
+    posted_by: skill (after user confirm at gates.related_work_positioning)
+    when: "/issue completion hook, on user confirm"
+    fields: |
+      Posted after the user confirms (or confirms-with-edits) the
+      related-work-finder's proposal AND the orchestrator splices the
+      ≤80-word **Related findings:** clause into the body's ## Goal ->
+      **Broader narrative:** slot via `scripts/task.py set-body` (then
+      re-runs verify_task_body.py — WARN-only on the total-prose budget).
+      Payload: the APPLIED **Broader narrative:** addition (the ## Goal body
+      edit ONLY — NO docs/papers.md edit in v1), the verdict, and the cited
+      arXiv ids.
+  - kind: "epm:related-work-rejected"
+    posted_by: skill
+    when: "/issue completion hook, on user reject (or autonomous auto-reject-park)"
+    fields: |
+      Posted when the user declines the related-work-finder's proposal at
+      the gates.related_work_positioning gate (or when an autonomous session
+      auto-reject-parks it). Non-fatal: the experiment stays completed;
+      nothing is written to the body. Payload: the rejection reason (one
+      line) + the rejected proposal preserved inline so a future interactive
+      pass can reconsider.
   - kind: "epm:abort"
     posted_by: skill
     when: "any time"
@@ -2038,15 +2158,15 @@ markers:
   - kind: "epm:failure"
     posted_by: specialist
     when: "on crash"
-    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code | data line. `data` (a factual gap only the user can fill) is posted per the halt-criterion contract — the task parks at status:blocked and does NOT enter the Step 7 crash-fix routing, which covers infra | code only; scripts/failure_classifier.py likewise emits only infra | code."
+    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code | data line. SHOULD ALSO include an assert_tag: <stable-token> line — the named assertion tag (e.g. [a7-assert] root-cause label) or exception type — so the Step 7 crash-fix circuit-breaker (§ pivot_criteria.plan_contradiction_replan) can group repeat failures by a stable (phase, failure_class, assert_tag) signature; opt-in and backward-compatible (absent → the predicate falls back to the exception-type / command-family / note-hash chain, task_workflow.circuit_breaker_should_fire). `data` (a factual gap only the user can fill) is posted per the halt-criterion contract — the task parks at status:blocked and does NOT enter the Step 7 crash-fix routing, which covers infra | code only; scripts/failure_classifier.py likewise emits only infra | code."
   - kind: "epm:failure-classify-error"
     posted_by: skill
     when: "Step 7 (epm:failure body missing failure_class AND scripts/failure_classifier.py exited non-zero)"
     fields: "Captured stderr from the failure_classifier.py invocation. Audit record only: the orchestrator treats the unclassifiable failure as `code` (conservative default) and applies the code-class row of the Step 7 failure table; this marker preserves WHY the classifier could not produce a verdict."
   - kind: "epm:failure-lesson"
     posted_by: skill (orchestrator)
-    when: "Step 7, when a crash-fix round resolves an epm:failure (experiment-implementer crash-fix report, or a respawned experimenter's relaunch-with-fix report); also Step 6d, when an experimenter's launch report carries the block for a within-turn launch fix (dying launch fixed + relaunched in the same spawn — no epm:failure posted)"
-    fields: "failure_class (code|infra|data), phase (pipeline phase or script), lesson (1-3 sentences: the trap + the fix, written for the NEXT agent — no transcript dumps), generalizes (yes|no — yes only if the trap plausibly recurs beyond this issue), owning_agent (experiment-implementer|experimenter), gotcha_candidate (yes|no — yes for codebase/infra traps that belong in .claude/rules/gotchas.md). Posted verbatim from the resolving agent's report block. On generalizes=yes the orchestrator ALSO persists the lesson immediately to .claude/agent-memory/<owning_agent>/ (feedback_<slug>.md + MEMORY.md index line; explicit-path commit + push, standing rule 2026-06-02) so parallel same-day sessions load it on their next spawn; on gotcha_candidate=yes it ALSO routes a workflow-fix candidate targeting .claude/rules/gotchas.md through the workflow-fix-on-bug auto-spawn default. generalizes=no lessons get the marker only (no memory write). /daily is the deduplicating consolidator (reads the day's markers, dedupes against agent memories, promotes recurring lessons into rules, prunes over-eager generalizes=yes entries)."
+    when: "Step 7, when a crash-fix round resolves an epm:failure (experiment-implementer crash-fix report, or a respawned experimenter's relaunch-with-fix report); also Step 6d, when an experimenter's launch report carries the block for a within-turn launch fix (dying launch fixed + relaunched in the same spawn — no epm:failure posted); also when a round confirms the true root cause (root_cause_confirmed=yes) even if a subsequent distinct failure follows or the pod is abandoned in recovery (#712)"
+    fields: "failure_class (code|infra|data), phase (pipeline phase or script), lesson (1-3 sentences: the trap + the fix, written for the NEXT agent — no transcript dumps), generalizes (yes|no — yes only if the trap plausibly recurs beyond this issue), owning_agent (experiment-implementer|experimenter), gotcha_candidate (yes|no — yes for codebase/infra traps that belong in .claude/rules/gotchas.md), root_cause_confirmed (yes|no — yes if the round identified the TRUE root cause even though a NEW distinct failure followed or the pod was abandoned in recovery; #712), supersedes (OPTIONAL prior-lesson slug or marker-ts this lesson corrects; absent = byte-identical append-only as pre-#712; #712). Posted verbatim from the resolving OR root-cause-confirming agent's report block. On generalizes=yes the orchestrator ALSO persists the lesson immediately to .claude/agent-memory/<owning_agent>/ (feedback_<slug>.md + MEMORY.md index line; explicit-path commit + push, standing rule 2026-06-02) so parallel same-day sessions load it on their next spawn; on gotcha_candidate=yes it ALSO routes a workflow-fix candidate targeting .claude/rules/gotchas.md through the workflow-fix-on-bug auto-spawn default. generalizes=no lessons get the marker only (no memory write). scripts/consolidate_lessons.py is the deterministic deduplicating consolidator (a cron, NOT /daily — task #711): it reads the rolling-window markers, dedupes against agent memories, promotes recurring lessons into .claude/rules/gotchas.md, and prunes over-eager generalizes=yes entries. /daily no longer owns this pass. On supersedes the orchestrator routes the write through task_workflow.apply_failure_lesson(), which UPDATES the matched prior durable entry in place (prepends a concrete [SUPERSEDED by <slug> — see #<N>] marker) and APPENDS the new lesson alongside; an unresolved supersedes ref is a logged no-op (supersedes_unresolved), never a hard failure; capture eligibility is task_workflow.failure_lesson_capture_eligible() (resolved OR root_cause_confirmed=yes). #712"
   - kind: "epm:experimenter-respawn"
     posted_by: skill
     when: "Step 7 (failure_class=infra path)"

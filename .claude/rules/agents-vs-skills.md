@@ -98,8 +98,10 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
     │   │   paper: true: SKIPPED — the Methods + Appendix are already in the .tex)
     ├─ (auto-complete step inline in the skill)
     ├─ (test-verdict gate inline in the skill, code-change paths only)
-    ├─ spawns follow-up-proposer ∥ living-docs-updater (agents, one Step
-    │   10b/10c spawn batch; both join before the Step 10d worktree merge)
+    ├─ spawns follow-up-proposer ∥ living-docs-updater ∥ related-work-finder
+    │   (agents, one Step 10b/10c/10c-bis spawn batch; all three join before
+    │    the Step 10d worktree merge; related-work-finder proposes a
+    │    findings-keyed "Related findings" note for the ## Goal slot)
     └─ spawns follow-up-critic ∥ codex-follow-up-critic (the 5th doubled
         review site — a SINGLE-PASS redundancy screen run ONCE on the
         proposer's output BEFORE any proposal routes; reconciler on a
@@ -133,6 +135,7 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `code-reviewer` | Adversarial review of implementer's diff, must be isolated. Ensembled all rounds with `codex-code-reviewer`. |
 | `methodology-writer` | **Branches on `paper:` frontmatter.** **PAPER MODE (`paper: true`): SPAWNED** — authors the LaTeX paper's findings-blind **Methods section + recipe Appendix** and hands them to the `analyzer`, which splices them into the `.tex` (the analyzer never authors Methods/Appendix itself — the findings-blind firewall is the whole point). Early-spawned at the `/issue` Step 8 results-landed batch alongside the analyzer first pass. See § PAPER-TASK MODE. **MARKDOWN MODE — DEPRECATED for v4 (2026-W26):** under v4 the methodology doc is a mechanical COPY of the body's `## Methodology` section, exported by the `/issue` Step 9a-quater orchestrator (no fresh-context authoring) — committed to `main`, secret-gist-mirrored, linked at the top of the body; the analyzer writes the body's `## Methodology` section factually (it IS the canonical source), so for a v4 markdown body the orchestrator does NOT spawn this agent. It IS still spawned for grandfathered in-flight **v3/v2** markdown bodies (which carry no detailed `## Methodology` section to copy): a findings-blind generator of `docs/methodology/issue_<N>.md` (methodology + hyperparameters + verbatim worked examples) that never reads `## Takeaways` / `## Findings` / confidence tag / `epm:interpretation`. |
 | `follow-up-proposer` | Reads results + plan, proposes concrete next experiments |
+| `related-work-finder` | Independent generative literature search; fresh context so it positions the MEASURED finding against published work (replicates/contradicts/extends/none-found) without the analyzer's reasoning. Runs a bounded findings-keyed arXiv-MCP + web search, verifies every citation in the same turn (drop-if-unresolved), and PROPOSES (never applies) a ≤80-word "Related findings" note for the clean-result ## Goal -> **Broader narrative:** slot. Spawned in the Step 10b/10c/10c-bis post-completion batch (∥ follow-up-proposer + living-docs-updater); the related_work_positioning gate confirm/rejects it. v1 surfaces docs/papers.md candidates as a manual-triage list only (the papers.md auto-apply leg is a deferred follow-up). |
 | `follow-up-critic` | Adversarial REDUNDANCY screen over follow-up proposals, must not see the proposer's reasoning. SINGLE-PASS (no revise loop): one binary verdict per proposal — `not-redundant` (proceed through existing routing) or `redundant` (park at `on_hold`, revivable). The bar is duplication ONLY (an existing experiment task / a settled open question / a higher-ranked sibling), NOT info-gain. Fires BEFORE any proposal routes. Ensembled with `codex-follow-up-critic` (the 5th doubled review site, added 2026-06-13). |
 | `retrospective` | Fresh-context review of session transcripts |
 | `research-pm` | Strategic PM persona for the dedicated PM session (loaded by `/pm`); owns queue triage + dispatch decisions, does NOT execute experiments or write code |
