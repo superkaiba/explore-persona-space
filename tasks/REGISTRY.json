@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 723,
+  "highest_id": 724,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4542,6 +4542,13 @@
       "path": "tasks/completed/723",
       "status": "completed",
       "title": "workflow-fix: gotchas.md \u2014 rsLoRA parity probe needs A100 intent, fails on L4"
+    },
+    "724": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/724",
+      "status": "proposed",
+      "title": "daily-fix: task.py audit --repair + reconcile 13 drifted registry tasks"
     },
     "74": {
       "has_clean_result": false,
