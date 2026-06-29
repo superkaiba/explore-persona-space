@@ -24,24 +24,24 @@ relates_to:
 - identity-cb-duality
 - identity-contextual-vs-base
 ---
-# Finetuning a taught fact rewrites the context→answer function itself, while finetuning EM only moves the input the function reads (MODERATE confidence)
+# Finetuning a taught fact measurably reshapes the context→answer map; emergent misalignment and sycophancy verdicts are inconclusive at the primary layer (LOW confidence)
 
 <!-- clean-result-v4 -->
 
 ## Takeaways
 
-- For the **taught fact**, the fitted map changes by **9.5×** the noise floor at layer 14, clearing it at all three layers — the function moved, not just its input.
-- For **harmful-compliance (EM)** the change sits at **1.1–2.4×** the floor at every layer — at or near noise, consistent with the input moving while M holds.
-- **Sycophancy is layer-localized**: **12.6×** the floor at layer 7, collapsing to **0.4×** (below floor) by layer 21 — a shallow function edit that never reaches the read band.
-- A context→leakage-rate transfer chain appears **only for the fact**: Spearman ρ rises from ≈0 (base) to **+0.50** post-FT at layer 14 (CI excludes zero); EM and sycophancy do not move.
-- The fact's change is **orthogonal** to the post-FT answer profile: M⁺ predicts the base profile far worse (cosine −0.22 to −0.32) than the post-FT one — added structure, not rotation.
-- The nonlinear MLP map fails its shuffle null in 8 of 9 cells at n≈16, so the read is ridge-only and the EM/sycophancy null calls are reported **inconclusive**, not certified.
+- For the **taught fact**, the fitted context→answer map changes by **3.3×** the kill-criterion floor at the primary layer (2.9× / 1.6× elsewhere) — the function moved, not just its input.
+- For **harmful-compliance (EM)** the change is **0.3–0.6×** floor at every layer; **sycophancy** runs **3.2×** (layer 7) down to **0.1×** (layer 21) — below floor where it matters.
+- The kill criterion returns **inconclusive**: EM and sycophancy fail the MLP-vs-shuffle power check at the primary layer, so their below-floor readings are not certified "function held".
+- The fit has effective **n=16** source-keyed context inputs per behavior and a degenerate per-cell bootstrap CI — inference rests on the cross-behavior / cross-layer pattern, not any single cell.
+- The combined floor equals the **post-FT map's own refit variance** in all 9 cells, so the fact signal already clears the "post-FT map is just noisier to refit" alternative.
+- A context→leakage transfer chain appears **only for the fact**: ρ rises from ≈0 (base) to **+0.50** post-FT at the primary layer (CI excludes zero); EM and sycophancy do not move.
 
 ## Goal
 
 **This experiment in context:** This is the descriptive/parametric half of a two-part question about *where* finetuning lives. The leakage theory models behavior installation as either moving the input context vector `c_C` that feeds a context→answer-profile map M, or changing M itself. The base-only fit of M was built in [#658](https://eps.superkaiba.com/tasks/658); the matched base-and-post-finetuning activation store that makes a pre/post comparison possible was extracted in [#667](https://eps.superkaiba.com/tasks/667). This run fits M0 (base) and M⁺ (adapter-applied) explicitly on [#537](https://eps.superkaiba.com/tasks/537)'s already-trained behavior×context LoRA adapters and asks whether the *function* M moved, distinct from the *input* moving. The causal twin is [#697](https://eps.superkaiba.com/tasks/697), which injects the finetuned context vector into the base model and measures the mediated fraction; here the comparison is parametric (a fitted-map difference), and the two pictures are meant to be read side by side (#697 was still running at analysis time, so no cross-reference table is included).
 
-**Broader narrative:** The two spiritual-sibling papers — *Persona Vectors* (Anthropic) and *Persona Features Control Emergent Misalignment* (OpenAI) — treat a persona/behavior as a direction in activation space that finetuning shifts. That framing implicitly assumes the readout *map* is fixed and only the input moves along it. This result is the first direct test of that assumption on open weights, and it says the assumption is behavior-dependent: a localized taught fact reshapes the map, a broad behavioral trait (EM) mostly moves the input. This bears on the project's open question of whether behavior-distance reduces to context-distance — for at least one behavior class it does not.
+**Broader narrative:** The two spiritual-sibling papers — *Persona Vectors* (Anthropic) and *Persona Features Control Emergent Misalignment* (OpenAI) — treat a persona/behavior as a direction in activation space that finetuning shifts. That framing implicitly assumes the readout *map* is fixed and only the input moves along it. This run is a first parametric probe of that assumption on open weights: for the taught fact the map measurably moves, but the EM and sycophancy verdicts are inconclusive (the diagnostic lacks power at n=16), so the assumption is neither confirmed nor cleanly refuted for a broad behavioral trait. This bears on the project's open question of whether behavior-distance reduces to context-distance.
 
 ## Methodology
 
@@ -59,14 +59,14 @@ relates_to:
 | Layers | 7, 14 (primary), 21 | #651 `PRIMARY_LAYER`, `SUPPLEMENT_LAYERS` |
 | Bootstrap families | 7 context families (sp_/wc_/icl_/reph_/fmt_/binst_/default) | #667 `gate_chain.family_of` |
 | Behavior direction r_B | diff-in-means (`diffmeans`); taught-fact direction re-extracted here | #658 `DEFAULT_RB` |
-| Contexts per behavior | ≈16 source contexts (480 source×target leakage cells per cell) | #667 store, seed 42 only |
+| Distinct context inputs | 16 source contexts per behavior (the context vector is source-keyed; 480 source×target leakage cells share the same 16 source c_C) | #667 store, seed 42 only |
 | Seed | 42 (store-fixed; nulls are bootstrap/refit, not cross-seed) | #667 |
 
-**Evaluation:** Three continuous dependent variables, all on the model's own paired activations. (1) **Function-change Δ** — the median over the base context grid of `|(M⁺(c) − M0(c)) · r̂_B|`, the per-context change projected onto the unit behavior direction, reported in noise-floor SD units. The floor is `max` of three nulls built through the identical refit harness: two independent refits of M0, two of M⁺, and a same-function shifted-design null (the M0 function fed post-FT inputs, read at base inputs, capturing pure off-support extrapolation). (2) **Chain ρ** — Spearman correlation between `r_Bᵀ M̂(c)` (the held-out LOCO prediction projected onto the behavior direction) and the measured judge leakage rate E (the `g` scalar from #537's `G_meta.json`), under M0 and M⁺, with a family-clustered 95% CI. (3) **Cross-transfer** — held-out cosine of M0 and M⁺ predicting the base vs post-FT answer profiles. No judge calls are made here; E is read from #537's already-judged leakage matrix. The behavior direction r_B is the validated #658 subspace, not raw v0 reconstruction (which #658 showed saturates near 0.98 and carries no signal).
+**Evaluation:** Three continuous dependent variables, all on the model's own paired activations, plus one validity gate. (1) **Function-change Δ** — the median over the base context grid of `|(M⁺(c) − M0(c)) · r̂_B|`, the per-context change projected onto the unit behavior direction. The combined noise floor is the `max` of three nulls built through the identical refit harness: two independent refits of M0, two of M⁺, and a same-function shifted-design null (the M0 function fed post-FT inputs, read at base inputs, capturing pure off-support extrapolation). The kill criterion compares Δ_med to `floor_combined`. (2) **Chain ρ** — Spearman correlation between `r_Bᵀ M̂(c)` (the held-out LOCO prediction projected onto the behavior direction) and the measured judge leakage rate E (the `g` scalar from #537's `G_meta.json`), under M0 and M⁺, with a family-clustered 95% CI (resampling the 7 context families). (3) **Cross-transfer** — held-out cosine of M0 and M⁺ predicting the base vs post-FT answer profiles. (4) **MLP-vs-shuffle validity gate** — the MLP map is trusted only where its base-map held-out ρ beats a label-shuffled control (`rho_M0_mlp > rho_M0_shuffle`). No judge calls are made here; E is read from #537's already-judged leakage matrix. The behavior direction r_B is the validated #658 subspace, not raw v0 reconstruction (which #658 showed saturates near 0.98 and carries no signal).
 
 A methodology correction landed mid-run: the first launch crashed in `_pca_basis_v0` with a numpy `SVD did not converge` on a pathological bootstrap resample of the sycophancy cells (the EM sweep had already finished cleanly, so the bug was in the floor-refit path, not the fit). The fix added a `gesvd` fallback for SVD non-convergence; the relaunch reproduced the same SVD failure on the same resamples and the fallback absorbed it, so every reported cell is from the fixed path. The combined run took two launches (~8 GPU-h total) on GCP 2× H100.
 
-**Data extraction:** N/A as training data — this is a measurement on existing activations. The activations are derived from #537's frozen tier-2 eval-probe pools (Betley main-8, AdvBench, #411 wrong-claims, SORRY-Bench/XSTest, #444 fact-recall), extracted into the #667 paired store (5760 `.npz`, 1152 per behavior, layer-baked, seed 42). The taught-fact behavior direction had no pre-existing diff-in-means contrast, so it was re-extracted here as fact-stated (#444 recall probes) minus fact-absent (neutral Betley) answer-span activations, using the identical #658 recipe, and saved to a parallel HF namespace (it does not overwrite #658's `r_b.pt`). The contrastive-negatives and on-policy-completion rules do not apply: no training rows are constructed (the implants already exist in #537's adapters).
+**Data extraction:** N/A as training data — this is a measurement on existing activations. The activations are derived from #537's frozen tier-2 eval-probe pools (Betley main-8, AdvBench, #411 wrong-claims, SORRY-Bench/XSTest, #444 fact-recall), extracted into the #667 paired store (5760 `.npz`, 1152 per behavior, layer-baked, seed 42). The context vector `c_C` is keyed to the SOURCE persona, so although there are 480 source×target leakage cells per behavior×layer, the map `M: c → v` sees only 16 distinct source inputs — the effective sample size for the fit. The taught-fact behavior direction had no pre-existing diff-in-means contrast, so it was re-extracted here as fact-stated (#444 recall probes) minus fact-absent (neutral Betley) answer-span activations, using the identical #658 recipe, and saved to a parallel HF namespace (it does not overwrite #658's `r_b.pt`). The contrastive-negatives and on-policy-completion rules do not apply: no training rows are constructed (the implants already exist in #537's adapters).
 
 **Sample training/evaluation data + completions:** This run generates no model completions (it fits ridge/MLP regressions on stored activation vectors), so there are no firing/non-firing completion samples. The worked data unit is a paired activation tuple. The block below is **1 example fit unit** (em/L14, illustrative, of 480 source×target leakage cells in that behavior×layer); the complete paired store (5760 `.npz`) is at [HF `issue667_gate_chain_preview/analysis_tensors` @de07e27](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue667_gate_chain_preview/analysis_tensors), the leakage target E at [`eval_results/issue_537/G_tensor/G_meta.json` @3c051fcfad](https://github.com/superkaiba/explore-persona-space/blob/3c051fcfad/eval_results/issue_537/G_tensor/G_meta.json), and the re-extracted taught-fact direction at [HF `issue722_rb_extension/store/r_b_fact.pt` @de07e27](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue722_rb_extension/store).
 
@@ -89,68 +89,70 @@ chain-ρ target E: eval_results/issue_537/G_tensor/G_meta.json
 
 ## Results
 
-### The taught fact's function-change is 9–10× the floor; EM's sits at noise; sycophancy peaks shallow and dies
+### The taught fact's function-change clears its floor 1.6–3.3×; EM sits below floor; sycophancy peaks shallow and dies
 
-What is plotted: per-cell ratio of function-change Δ to its combined noise floor (SD units), 3 behaviors × 3 layers. Δ = median over the base context grid of `|M⁺(c) − M0(c)|` projected onto the behavior direction; 1× = at floor (no detectable change). Ridge fit, n≈16 contexts, seed 42.
+What is plotted: per-cell ratio Δ_med ÷ floor_combined (the kill-criterion denominator), 3 behaviors × 3 layers. Δ_med = median over the base context grid of `|M⁺(c) − M0(c)|` along the behavior direction; 1× = at floor. Ridge fit, 16 source contexts, seed 42.
 
-![Heatmap of function-change over noise floor for em, taught fact and sycophancy at layers 7, 14, 21; taught fact reads 9.3, 9.5, 4.6, EM reads 1.1, 2.1, 2.4, sycophancy reads 12.6, 3.5, 0.4](https://raw.githubusercontent.com/superkaiba/explore-persona-space/781fc2e97131e41ef4388cd73c91b0e70170ba32/figures/issue_722/hero_function_change_heatmap.png)
+![Heatmap of function-change over the kill-criterion floor for taught fact, harmful compliance (EM) and sycophancy at layers 7, 14, 21; taught fact reads 2.90, 3.29, 1.58, EM reads 0.34, 0.64, 0.64, sycophancy reads 3.18, 0.96, 0.12](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/hero_function_change_heatmap.png)
 
-> **Figure.** *The fitted context→answer function changes for the taught fact at every layer, sits near the noise floor for EM, and is layer-localized for sycophancy.* Cells are Δ divided by the combined refit/shift floor, SD units; the floor was bound by the M⁺ refit-variance null in every cell. n≈16 contexts, seed 42, ridge fit.
+> **Figure.** *Only the taught fact clears the noise floor at the primary layer.* Cells are Δ_med ÷ floor_combined; >1× means the map changed more than its own refit noise. n=16 source contexts, seed 42, ridge fit. Absolute magnitudes are in the next figure.
 
-- Taught fact reshapes M at all three layers (9.3× / 9.5× / 4.6×).
-- EM barely clears noise anywhere (1.1× / 2.1× / 2.4×); sycophancy edits the map at layer 7 (12.6×) but is gone by layer 21 (0.4×).
-- The EM near-floor reading cannot be separated from an underpowered fit at n≈16, so EM and sycophancy are reported inconclusive, not as positive "function held".
+- Taught fact clears the floor at all three layers (2.90× / 3.29× / 1.58×); EM stays below floor everywhere (0.34× / 0.64× / 0.64×); sycophancy clears it at layer 7 (3.18×) but collapses to 0.12× by layer 21.
+- The combined floor is the post-FT map's own refit variance (`floor_combined = floor_Mplus_refit` in all 9 cells), so the fact's 3.29× already clears the planned "post-FT map is just noisier to refit" confound.
+- EM and sycophancy fail the MLP-vs-shuffle check at the primary layer, so their below-floor readings are inconclusive, not a positive "function held".
 
 ### The same change, in raw units against its paired floor
 
-What is plotted: per cell, the raw function-change Δ (median projected magnitude) next to its combined noise floor, in the same r_B units — the unnormalized data behind the heatmap ratio. Δ above floor = function changed; Δ ≈ floor = function held, input moved.
+What is plotted: per cell, the raw function-change Δ_med next to its combined floor, in r_B units — the unnormalized data behind the heatmap ratio. Δ_med above floor = function changed; Δ_med ≈ floor = no detectable change.
 
-![Grouped bars of function-change delta vs combined floor for nine behavior-layer cells; fact bars exceed their floors, EM bars sit below, sycophancy L7 clears a tiny floor, sycophancy L21 sits far below a large floor](https://raw.githubusercontent.com/superkaiba/explore-persona-space/781fc2e97131e41ef4388cd73c91b0e70170ba32/figures/issue_722/function_change_delta_vs_floor.png)
+![Grouped bars of function-change delta vs combined floor for nine behavior-layer cells; fact bars exceed their floors, EM bars sit below, sycophancy L7 clears a tiny floor, sycophancy L21 sits far below a large floor](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/function_change_delta_vs_floor.png)
 
-> **Figure.** *The taught-fact Δ towers over its floor; EM and late-layer sycophancy Δ sit below theirs.* Blue = Δ, orange = combined noise floor (bound by the M⁺ refit-variance null in every cell). Ridge fit, family-clustered bootstrap over 7 context families.
+> **Figure.** *The taught-fact Δ towers over its floor; EM and late-layer sycophancy Δ sit below theirs.* Blue = Δ_med, orange = combined floor (= the M⁺ refit-variance null in every cell). Ridge fit, family-clustered bootstrap over 7 context families.
 
-- The floor swings widely (0.004 at sycophancy L7 up to 0.27 at sycophancy L21), so a large absolute Δ can still sit below a large floor (sycophancy L21, Δ=0.034 vs floor 0.27).
-- The off-support extrapolation null came back ≈1e-5 even at large input shifts, so the floor was bound by the M⁺ refit-variance null everywhere — the binding test was "is Δ bigger than the post-FT map's own refit noise."
+- The floor swings widely (0.004 at sycophancy L7 to 0.27 at sycophancy L21), so a large absolute Δ can sit below a large floor (sycophancy L21: Δ=0.034 vs floor 0.27).
+- Support distance (mean / p90 of `‖cplus − c0‖`) ranges 6.8 / 8.7 (sycophancy L7) to 88.5 / 101.8 (sycophancy L21); excluding the 30 largest-shift contexts per cell flips NO call (Δ_med_excl on the same side of floor as Δ_med, all 9 cells).
+- The off-support extrapolation null stayed ≈1e-5 even at large shifts, so the binding test was always "is Δ bigger than the post-FT map's refit noise."
 
 ### A behavior-relevant transfer chain appears for the taught fact after finetuning
 
-What is plotted: per cell, the Spearman correlation between the held-out prediction projected onto the behavior direction (`r_Bᵀ M̂(c)`) and the measured judge leakage rate E, under M0 (orange) and M⁺ (blue), 95% family-clustered CIs. A rightward shift = finetuning created a context→behavior transfer the base map lacked.
+What is plotted: per cell, the Spearman ρ between the held-out prediction along the behavior direction (`r_Bᵀ M̂(c)`) and the judge leakage rate E, under the base map M0 (orange) and post-FT map M⁺ (blue), 95% family-clustered CIs. A rightward shift = finetuning created a transfer the base map lacked.
 
-![Forest plot of chain rho under M0 and M+ for nine cells; fact L14 and L21 M+ points sit at +0.50 and +0.46 with CIs excluding zero while M0 points sit near zero; EM and sycophancy points cluster around zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/781fc2e97131e41ef4388cd73c91b0e70170ba32/figures/issue_722/chain_rho_shift_forest.png)
+![Forest plot of chain rho under base map M0 and post-FT map M+ for nine cells; taught fact L14 and L21 post-FT points sit at +0.50 and +0.46 with CIs excluding zero while base points sit near zero; EM and sycophancy points cluster around zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/chain_rho_shift_forest.png)
 
 > **Figure.** *For the taught fact only, the context→leakage chain jumps from ≈0 in the base map to +0.46–0.50 post-finetuning.* Held-out LOCO ridge ρ vs #537's judge leakage rate E; 95% family-clustered CI over 7 families. EM and sycophancy chain shifts all straddle zero.
 
-- Fact chain ρ rises from −0.12 (base, CI straddles zero) to **+0.50** (post-FT, L14, 95% CI +0.31 to +0.64); same at L21 (+0.46), weaker at L7 (+0.17).
-- Ridge and MLP agree on it (+0.502 vs +0.490 at L14) despite the MLP's overall reconstruction failure — both methods nail this single scalar against E.
-- Every EM and sycophancy chain-shift CI straddles zero. The fact change is a real new context→leakage relationship, not a generic activation wobble.
+- Fact chain ρ rises from −0.12 (base, CI straddles zero) to **+0.50** (post-FT, primary layer, 95% CI +0.31 to +0.64); +0.46 at layer 21, +0.17 at layer 7.
+- Ridge and MLP agree (+0.502 vs +0.490 at the primary layer) despite the MLP's overall reconstruction failure — both recover this single scalar against E.
+- Every EM and sycophancy chain-shift CI straddles zero, so the fact change is a real new context→leakage relationship, not a generic wobble.
 
-### The function changes orthogonally to the post-finetuning answer profile
+### Cross-transfer is asymmetric: the post-FT map generalizes worse than the base map
 
-What is plotted: per cell, the held-out cosine of M0 predicting the post-FT profile v⁺ (open) and M⁺ predicting the *base* profile v0 (filled), against how well M⁺ predicts v⁺ (x-axis). Open points on the y=x line mean M0 and M⁺ are interchangeable for predicting v⁺.
+What is plotted: per cell, the held-out cosine of the base map M0 predicting the post-FT profile v⁺, the post-FT map M⁺ predicting v⁺, and M⁺ predicting the *base* profile v0. The third bar is the asymmetry — how well the finetuned map back-predicts the base answer profile.
 
-![Scatter of cross-transfer cosines; open points (M0 predicting v+) lie on the y=x line near zero while filled points (M+ predicting base v0) sit far below at -0.22 to -0.32](https://raw.githubusercontent.com/superkaiba/explore-persona-space/781fc2e97131e41ef4388cd73c91b0e70170ba32/figures/issue_722/cross_transfer_orthogonality.png)
+![Grouped bars of cross-transfer cosines for nine cells; base-map and post-FT-map predictions of the post-FT profile both sit near zero, while the post-FT map predicting the base profile sits far below at -0.22 to -0.32](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/cross_transfer_orthogonality.png)
 
-> **Figure.** *M0 and M⁺ predict the post-FT answer profile equally well, but M⁺ predicts the base profile far worse — the change is orthogonal to v⁺.* Open = M0 predicting v⁺ (on y=x); filled = M⁺ predicting base v0 (−0.22 to −0.32). Held-out cross-transfer cosine, 9 cells.
+> **Figure.** *Neither map predicts the post-FT profile (cosine ≈0), but the post-FT map predicts the base profile worst (−0.22 to −0.32).* Orange/blue = base/post-FT map → post-FT profile; green = post-FT map → base profile. Held-out cross-transfer cosine, 9 cells.
 
-- M0 and M⁺ predict v⁺ within 0.002 of each other (open points on y=x), yet M⁺ predicts the base v0 far worse (cosine −0.22 to −0.32).
-- So finetuning did not rotate the map toward v⁺ (then M⁺ would beat M0 at v⁺); it added structure orthogonal to v⁺, losing base-profile alignment without gaining v⁺ advantage.
-- A caution: "M changed" does not mean "M now points at the trained behavior."
+- Both maps predict v⁺ about equally poorly (cosines near zero — e.g. at fact L7 they agree within ≈0.0023), so finetuning did not rotate M toward v⁺.
+- The asymmetry is that M⁺ predicts the *base* profile v0 markedly worse (cosine −0.22 to −0.32) than M0 predicts v⁺ — the finetuned map has lost base-profile alignment without gaining post-FT-profile predictive power.
+- So "M changed" does NOT mean "M now points at the trained behavior": the change degrades back-prediction rather than realigning toward v⁺.
 
 ### Why the EM/sycophancy verdict is inconclusive, not a clean "function held"
 
-What is plotted: per cell, the MLP's held-out v0-reconstruction ρ (blue) against its shuffle null (gray, the same fit on a permuted target). The MLP map is trustworthy only where it beats the shuffle null; below it the nonlinear fit is not learning.
+What is plotted: per cell, the MLP's held-out base-map reconstruction ρ (blue) vs its shuffle null (gray). The MLP is trusted only where it beats the null (`rho_M0_mlp > rho_M0_shuffle`).
 
-![Bars of MLP held-out rho vs shuffle null for nine cells; MLP bars sit at or below the shuffle null in eight of nine cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/781fc2e97131e41ef4388cd73c91b0e70170ba32/figures/issue_722/mlp_shuffle_diagnostic.png)
+![Bars of MLP held-out rho vs shuffle null for nine cells; MLP bars fail to beat the shuffle null in eight of nine cells, passing only at taught fact layer 7](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9d23500b663a4352223e99af907cc7842344f456/figures/issue_722/mlp_shuffle_diagnostic.png)
 
-> **Figure.** *The nonlinear MLP map never beats its shuffle null at n≈16, in 8 of 9 cells.* Blue = MLP held-out v0-reconstruction ρ (base map M0), gray = shuffle null. The nonlinearity read is dropped and the ridge fit is the only valid map.
+> **Figure.** *The nonlinear MLP map fails its shuffle null in 8 of 9 cells, passing only at taught fact, layer 7.* Blue = MLP held-out base-map ρ, gray = shuffle null. With the nonlinear fit unreliable, the ridge fit is the only valid map.
 
-- MLP ρ sits at or below shuffle in 8 of 9 cells (only fact L7 beats it, by 0.002), so the planned MLP-validity gate fires and the read is ridge-only (nonlinearity-gap dropped).
-- This is why the kill criterion is inconclusive: a "function held" call needs the change certified below floor with a passing fit, and at n≈16 single seed an at-floor Δ cannot be told from an underpowered fit.
-- The positive fact result survives (clears the floor 4.6–9.5× with a chain-shift CI excluding zero); the single-seed regime caps confidence at MODERATE.
+- MLP fails the shuffle null in 8 of 9 cells (beating it only at fact L7, ρ=−0.077 vs −0.080), so the nonlinearity-gap read is dropped and the headline is ridge-only.
+- Hence inconclusive: certifying "function held" needs below-floor AND a passing MLP fit, and at n=16 single seed an at-floor Δ cannot be told from an underpowered fit.
+- Second limit: the per-cell Δ_med bootstrap CI is degenerate (point = lo = hi) — resampling 7 family labels over ~16 contexts collapses it to one value — so the cross-behavior pattern carries inference, not any single cell.
+- The positive fact result survives (floor 1.6–3.3×, chain-shift CI excludes zero); the n=16 single-seed regime caps confidence at LOW.
 
 ---
 
-**Repro:** Compute — GCP `eval-h100` lane (`a3-highgpu-2g`, 2× H100-80, FLEX_START), ~8 GPU-h across two launches (a first launch crashed in the SVD floor-refit path; relaunch wall 5h13m). No WandB run (analysis/fitting job). Code SHA [`3c051fcfad`](https://github.com/superkaiba/explore-persona-space/blob/3c051fcfad/scripts/issue722_fit_M.py) (`scripts/issue722_fit_M.py`, `issue722_analyze.py`, `issue722_bootstrap.py`, `issue722_load_activations.py`, `issue722_extract_fact_rb.py`). Eval JSONs — [9 per-cell + 4 aggregate JSONs](https://github.com/superkaiba/explore-persona-space/tree/3c051fcfad/eval_results/issue_722) committed on the issue-722 branch (`function_change.json`, `chain_rho_M0_Mplus.json`, `cross_transfer.json`, `nonlinearity_gap.json`, `cells/`). Figures — [`figures/issue_722/`](https://github.com/superkaiba/explore-persona-space/tree/781fc2e971/figures/issue_722) at SHA `781fc2e971`. Crash diagnostics — [HF `issue722_partial/att-20260628-235255/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue722_partial). Reused artifacts:
+**Repro:** Compute — GCP `eval-h100` lane (`a3-highgpu-2g`, 2× H100-80, FLEX_START), ~8 GPU-h across two launches (a first launch crashed in the SVD floor-refit path; relaunch wall 5h13m). No WandB run (analysis/fitting job). Code SHA [`3c051fcfad`](https://github.com/superkaiba/explore-persona-space/blob/3c051fcfad/scripts/issue722_fit_M.py) (`scripts/issue722_fit_M.py`, `issue722_analyze.py`, `issue722_bootstrap.py`, `issue722_load_activations.py`, `issue722_extract_fact_rb.py`); figure script `scripts/issue722_figures.py` at SHA [`9d23500b66`](https://github.com/superkaiba/explore-persona-space/blob/9d23500b663a4352223e99af907cc7842344f456/scripts/issue722_figures.py). Eval JSONs — [9 per-cell + 4 aggregate JSONs](https://github.com/superkaiba/explore-persona-space/tree/3c051fcfad/eval_results/issue_722) committed on the issue-722 branch (`function_change.json`, `chain_rho_M0_Mplus.json`, `cross_transfer.json`, `nonlinearity_gap.json`, `cells/`). Figures — [`figures/issue_722/`](https://github.com/superkaiba/explore-persona-space/tree/9d23500b66/figures/issue_722) at SHA `9d23500b66`. Crash diagnostics — [HF `issue722_partial/att-20260628-235255/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue722_partial). Reused artifacts:
 - Reused paired activation store from [#667](https://eps.superkaiba.com/tasks/667): [HF `issue667_gate_chain_preview/analysis_tensors`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue667_gate_chain_preview/analysis_tensors) (5760 `.npz`, seed 42, base+post-FT pairs) — fit: the only substrate carrying both base and post-FT activations on a matched context grid, the single thing that makes a pre/post M fit possible.
 - Reused behavior direction from [#658](https://eps.superkaiba.com/tasks/658): [HF `issue658_theory_assumptions/store/r_b.pt`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/de07e2703db6256ccc3bb2001a57b7070c843292/issue658_theory_assumptions/store) (EM, sycophancy; `diffmeans`) — fit: same layer set + extraction recipe; taught-fact direction re-extracted here because #658 had no fact contrast.
 - Reused adapters from [#537](https://eps.superkaiba.com/tasks/537): `i537_*` (r=32, rsLoRA) — fit: consumed only transitively through #667's post-FT activations, never applied at runtime.
