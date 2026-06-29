@@ -1062,14 +1062,41 @@ def test_repro_fenced_block_urls_not_probed(monkeypatch):
 # main-grid revision that PREDATES the bakeoff round — the path resolves to
 # 0 files at that revision, so a reader clicking it gets nothing. The URL is
 # shape-valid + sha-pinned + on a real repo, so it slipped through every
-# other check. Check 23 probes `huggingface_hub.list_repo_files(repo_id,
-# repo_type=..., revision=<sha>)` and FAILs a dead pin. Fail-soft: the
-# suite-wide EPM_VERIFY_BODY_NO_HF=1 fence (tests/conftest.py) makes the
+# other check. Check 23 probes the HF Hub tree endpoint with a BOUNDED
+# direct GET (`verify_task_body._hf_tree_get`, #733 — NOT the unbounded
+# recursive whole-repo `list_repo_files`) and FAILs a dead pin. Fail-soft:
+# the suite-wide EPM_VERIFY_BODY_NO_HF=1 fence (tests/conftest.py) makes the
 # probe SKIP (PASS + `unverified` note) so fixture HF URLs never hit the
 # live Hub. Tests below `monkeypatch.delenv` the fence and stub
-# `huggingface_hub.list_repo_files` directly.
+# `verify_task_body._hf_tree_get` — the single bounded primitive both the
+# check-23 and check-25 probes funnel through — to return a chosen
+# `_TreeProbeResult` without any network.
 
 _HF_23_NAME = "HF URL pins resolve at the cited revision"
+
+
+@pytest.fixture(autouse=True)
+def _clear_hf_existence_cache():
+    """The check-23/25 probes memoize definitive pass/fail verdicts in a
+    module-level `_HF_EXISTENCE_CACHE` (#733). Clear it before AND after each
+    test so a cached verdict keyed on a (repo, sha, path) reused across
+    fixtures never leaks one test's stubbed outcome into another."""
+    verify_task_body._HF_EXISTENCE_CACHE.clear()
+    yield
+    verify_task_body._HF_EXISTENCE_CACHE.clear()
+
+
+def _stub_tree(monkeypatch, *, status="ok", entries=(), next_page=None, note="", calls=None):
+    """Replace `verify_task_body._hf_tree_get` with a stub returning a fixed
+    `_TreeProbeResult`. When `calls` is a list, every (url, params) the probe
+    issues is appended so a test can assert the request count / pagination."""
+
+    def _fake(url, params, headers, *, timeout_s):
+        if calls is not None:
+            calls.append((url, params))
+        return verify_task_body._TreeProbeResult(status, list(entries), next_page, note)
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
 
 
 def _hf_body(hf_url: str) -> str:
@@ -1089,18 +1116,35 @@ def _hf_body(hf_url: str) -> str:
     return body
 
 
-def test_hf_url_existing_path_passes(monkeypatch):
-    """A dataset `/tree/<sha>/<path>` whose path matches ≥1 listed file →
-    definitive PASS (no `unverified` note)."""
-    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
+_HF_25_NAME = "audit-availability claims match HF Hub"
 
-    monkeypatch.setattr(
-        huggingface_hub,
-        "list_repo_files",
-        lambda repo_id, repo_type=None, revision=None: [
-            "raw_completions/run.jsonl",
-            "README.md",
+
+def _audit_body(denial_line: str, hf_url: str) -> str:
+    """A `_hf_body`-derived body (one controlled HF revision-pinned URL) with
+    an availability-denial line spliced into the findings prose, so check 25
+    has BOTH a denial-near-artifact line AND an HF URL to reconcile against.
+    Assert on the check-25 result BY NAME (`_HF_25_NAME`) — the spliced denial
+    is the only thing this body controls for check 25."""
+    body = _hf_body(hf_url)
+    return body.replace(
+        "\n## Reproducibility\n",
+        f"\n{denial_line}\n\n## Reproducibility\n",
+        1,
+    )
+
+
+def test_hf_url_existing_path_passes(monkeypatch):
+    """A dataset `/tree/<sha>/<path>` whose path matches ≥1 entry in the
+    PARENT-dir listing → definitive PASS (no `unverified` note). The probe
+    lists the needle's parent (`raw_completions`) and matches the needle
+    among its direct children."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": "raw_completions/run.jsonl", "type": "file"},
+            {"path": "raw_completions/README.md", "type": "file"},
         ],
     )
     body = _hf_body(
@@ -1115,17 +1159,17 @@ def test_hf_url_existing_path_passes(monkeypatch):
 
 def test_hf_url_dead_revision_pin_zero_files_fails(monkeypatch):
     """The #537 case: the revision exists but the path resolves to ZERO
-    files (pinned to a revision predating the upload) → definitive FAIL."""
+    files (pinned to a revision predating the upload) → definitive FAIL. The
+    parent-dir listing succeeds but does NOT contain the needle."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
-    # `db3662ae` lists only the main-grid files — none under the bakeoff path.
-    monkeypatch.setattr(
-        huggingface_hub,
-        "list_repo_files",
-        lambda repo_id, repo_type=None, revision=None: [
-            "main_grid/results.csv",
-            "README.md",
+    # `db3662ae` lists only the main-grid files — none under the bakeoff path,
+    # so the parent listing of `bakeoff_intermediates` returns other entries.
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": "main_grid/results.csv", "type": "file"},
+            {"path": "README.md", "type": "file"},
         ],
     )
     body = _hf_body(
@@ -1141,16 +1185,11 @@ def test_hf_url_dead_revision_pin_zero_files_fails(monkeypatch):
 
 
 def test_hf_url_revision_not_found_fails(monkeypatch):
-    """A revision that does not exist on the repo → RevisionNotFoundError →
-    definitive FAIL (a fabricated / never-pushed sha)."""
+    """A revision/path that does not exist → a 404 from the tree endpoint →
+    `not_found` → definitive FAIL (a fabricated / never-pushed sha). Check 23
+    maps `not_found` to FAIL (the dead-pin invariant)."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-    from huggingface_hub.utils import RevisionNotFoundError
-
-    def _raise(repo_id, repo_type=None, revision=None):
-        raise RevisionNotFoundError(f"no revision {revision}")
-
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    _stub_tree(monkeypatch, status="not_found")
     body = _hf_body(
         "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deadbeef/raw_completions/run.jsonl"
     )
@@ -1166,12 +1205,11 @@ def test_hf_url_network_error_is_note_not_fail(monkeypatch):
     note, never a FAIL — sandboxes without network must not flip valid
     bodies to FAIL."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
-    def _raise(repo_id, repo_type=None, revision=None):
-        raise ConnectionError("getaddrinfo failed: huggingface.co")
-
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    _stub_tree(
+        monkeypatch,
+        status="indeterminate",
+        note="HF tree probe failed: ConnectionError: getaddrinfo failed",
+    )
     body = _hf_body(
         "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/raw_completions/run.jsonl"
     )
@@ -1179,21 +1217,20 @@ def test_hf_url_network_error_is_note_not_fail(monkeypatch):
     by_name = _results_by_name(results)
     assert by_name[_HF_23_NAME].passed
     assert "unverified" in by_name[_HF_23_NAME].detail
-    assert "list_repo_files failed" in by_name[_HF_23_NAME].detail
+    assert "HF tree probe failed" in by_name[_HF_23_NAME].detail
     assert ok
 
 
 def test_hf_url_env_fence_skips(monkeypatch):
     """With the suite-wide EPM_VERIFY_BODY_NO_HF=1 fence in place (the
     conftest default), the probe SKIPs without touching the Hub → PASS with
-    an `unverified` note even if list_repo_files WOULD have failed."""
+    an `unverified` note even if the tree probe WOULD have failed."""
     monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
-    import huggingface_hub
 
-    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
-        raise AssertionError("list_repo_files must NOT be called under the fence")
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError("the tree probe must NOT be called under the fence")
 
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
     body = _hf_body(
         "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae/bakeoff/run.jsonl"
     )
@@ -1206,14 +1243,12 @@ def test_hf_url_env_fence_skips(monkeypatch):
 
 def test_hf_url_bare_repo_root_link_passes_on_listing(monkeypatch):
     """A bare `/tree/<sha>` repo-root link (no path) PASSes whenever the
-    revision lists successfully — it only asserts the revision exists."""
+    root listing succeeds — it only asserts the revision exists."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
-
-    monkeypatch.setattr(
-        huggingface_hub,
-        "list_repo_files",
-        lambda repo_id, repo_type=None, revision=None: ["config.json"],
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[{"path": "config.json", "type": "file"}],
     )
     body = _hf_body(
         "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface"
@@ -1230,12 +1265,11 @@ def test_hf_url_moving_ref_not_probed(monkeypatch):
     check 8's shape concern. The probe is never called; check 23 reports
     nothing to check (the bare model row is dropped by `_hf_body`)."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
 
-    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
         raise AssertionError("moving-ref HF URL must not be probed by check 23")
 
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
     body = _hf_body(
         "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/raw_completions/run.jsonl"
     )
@@ -1251,12 +1285,11 @@ def test_hf_url_github_and_raw_not_gathered(monkeypatch):
     blob link are not HF and must not be probed (they are checks 4b / 8b's
     job). With both HF links removed, check 23 has nothing to check."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
 
-    def _boom(repo_id, repo_type=None, revision=None):  # pragma: no cover
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
         raise AssertionError("non-HF URL must not reach the HF probe")
 
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _boom)
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
     body = GOOD_BODY.replace(
         "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl",
         "the raw completions (not uploaded yet)",
@@ -1272,14 +1305,13 @@ def test_hf_url_github_and_raw_not_gathered(monkeypatch):
 
 def test_hf_url_fenced_block_not_probed(monkeypatch):
     """An HF revision-pinned URL shown inside a ``` fence is illustrative —
-    never probed (the failing stub would otherwise FAIL it)."""
+    never probed (the not-found stub would otherwise FAIL it)."""
     monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
-    import huggingface_hub
 
-    def _raise(repo_id, repo_type=None, revision=None):
-        raise huggingface_hub.utils.RevisionNotFoundError("nope")
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError("a fenced (illustrative) HF URL must not be probed")
 
-    monkeypatch.setattr(huggingface_hub, "list_repo_files", _raise)
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
     # Move the dataset HF link inside a fenced example block and drop the
     # bare model link so the only HF URL is the fenced (illustrative) one.
     body = GOOD_BODY.replace(
@@ -1294,6 +1326,158 @@ def test_hf_url_fenced_block_not_probed(monkeypatch):
     by_name = _results_by_name(results)
     assert by_name[_HF_23_NAME].passed
     assert "no HF Hub revision-pinned URLs to check" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_dead_pin_not_found_fail_on_new_api(monkeypatch):
+    """#537 regression on the NEW direct-GET path: a path-pinned link whose
+    parent dir 404s (`not_found`) FAILs with the dead-pin message — the
+    independent check-23 mapping of `not_found` → FAIL."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="not_found")
+    body = _hf_body(
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/db3662ae/bakeoff_intermediates/run.jsonl"
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name[_HF_23_NAME].passed
+    assert "dead revision pin" in by_name[_HF_23_NAME].detail
+    assert "db3662ae" in by_name[_HF_23_NAME].detail
+
+
+def test_hf_url_paginated_then_429_is_bounded_unverified(monkeypatch):
+    """The MUST-FIX-1 path v1 could not reach: a page-1 success carrying a
+    Link rel=next, followed by a 429 on page 2, must surface `unverified`
+    within the bounded request budget rather than entering the SDK's
+    ~143s/page backoff. This drives the check-25 keyword probe (the
+    paginating call site) through `_hf_tree_get` at the SDK boundary:
+    `verify_task_body.get_session().get` is stubbed to return a page-1
+    200-with-Link then a 429, and we assert (a) the verdict is `unverified`
+    (PASS, body still ok), (b) the probe made a BOUNDED number of GETs, and
+    (c) the page-2 URL WAS fetched (pagination genuinely exercised)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    import huggingface_hub.utils as hf_utils
+
+    page2_url = "https://huggingface.co/api/datasets/r/tree/sha/p?cursor=PAGE2"
+    # Count ONLY the check-25 keyword probe's GETs (its first page sends
+    # `params={"recursive": True}`; page 2 carries the cursor URL). Check 23's
+    # own non-recursive existence GET shares this stub but is not the call site
+    # under test, so it is excluded from the bound.
+    kw_calls: list[str] = []
+
+    class _Resp:
+        def __init__(self, status_code, *, json_data=None, links=None):
+            self.status_code = status_code
+            self._json = json_data if json_data is not None else []
+            self.links = links or {}
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise RuntimeError(f"HTTP {self.status_code}")
+
+        def json(self):
+            return self._json
+
+    class _Session:
+        def get(self, url, params=None, headers=None, timeout=None):
+            is_page2 = "PAGE2" in url
+            is_recursive = bool(params) and params.get("recursive") is True
+            if is_page2 or is_recursive:
+                kw_calls.append(url)
+            if is_page2:
+                return _Resp(429)  # throttled second page of the keyword probe
+            # The needle `issue653_x` is listed (so check 23's existence GET
+            # PASSes), but `install_probes` is NOT, so the check-25 keyword
+            # probe paginates to a Link rel=next pointing at the throttled
+            # page 2.
+            return _Resp(
+                200,
+                json_data=[
+                    {"path": "issue653_x", "type": "directory"},
+                    {"path": "issue653_x/armB/cell0", "type": "directory"},
+                ],
+                links={"next": {"url": page2_url}},
+            )
+
+    monkeypatch.setattr(hf_utils, "get_session", lambda: _Session())
+    # The denial line + an HF URL so check 25 actually probes (this is the
+    # paginating call site). The keyword (`install_probes`) is never present
+    # in the stubbed listing, so the probe paginates until the page-2 429.
+    body = _audit_body(
+        "The per-cell install-probe completions were not separately uploaded, "
+        "so they cannot be audited at the record level.",
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/feedface/issue653_x",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    # (a) check 25 surfaces `unverified` (SKIP), NEVER a FAIL, under the throttle.
+    assert by_name[_HF_25_NAME].passed
+    assert "unverified" in by_name[_HF_25_NAME].detail
+    # (b) bounded request count: at most MAX_PAGES * ATTEMPTS keyword-probe GETs,
+    # and far fewer than the unbounded SDK backoff (max_retries=20/page) would
+    # have issued.
+    max_expected = verify_task_body._HF_PROBE_MAX_PAGES * verify_task_body._HF_PROBE_ATTEMPTS
+    assert 0 < len(kw_calls) <= max_expected
+    # (c) the page-2 URL was actually fetched — pagination genuinely exercised
+    # (the path v1's raise-on-entry stub could NOT reach).
+    assert any("PAGE2" in c for c in kw_calls)
+
+
+def test_hf_check25_nested_keyword_contradiction_fails(monkeypatch):
+    """MUST-FIX 2(a) + the #653 regression on the new API: the body denies the
+    install-probe completions were uploaded, but a file carrying
+    `install_probes` exists at depth >= 2 under the linked tree-root prefix —
+    so the denial is FALSE and check 25 FAILs, surfacing the matched path. The
+    keyword nests several levels below the prefix (the #653 shape: the body
+    links the tree ROOT while the file lives at
+    `<root>/raw_completions/armB/install_probes/cell0/x.json`), so the
+    depth-agnostic scoped recursive listing must find it."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    nested_file = (
+        "issue653_install-validated-reladder/raw_completions/armB/install_probes/cell0/x.json"
+    )
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {
+                "path": "issue653_install-validated-reladder/raw_completions/armB",
+                "type": "directory",
+            },
+            {"path": nested_file, "type": "file"},
+        ],
+    )
+    body = _audit_body(
+        "The per-cell install-probe completions themselves were not separately "
+        "uploaded, so the firing vs non-firing examples cannot be audited at the "
+        "record level.",
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc1234/issue653_install-validated-reladder",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert not by_name[_HF_25_NAME].passed
+    assert not ok
+    assert "install_probes" in by_name[_HF_25_NAME].detail
+    assert nested_file in by_name[_HF_25_NAME].detail
+
+
+def test_hf_check25_not_found_is_skip_not_fail(monkeypatch):
+    """MUST-FIX 2(b) + MUST-FIX 3: a `not_found` from the tree endpoint maps
+    to SKIP on check 25 (NOT FAIL) — the deliberate check-23-FAIL-vs-25-SKIP
+    asymmetry. Check 25 cannot corroborate OR refute a denial against a
+    revision that does not exist, so it surfaces `unverified`, never a FAIL."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="not_found")
+    body = _audit_body(
+        "The per-cell install-probe completions were not separately uploaded, "
+        "so they cannot be audited at the record level.",
+        "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/deadbeef/issue653_x",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    # SKIP → PASS with an `unverified` note, NOT a FAIL.
+    assert by_name[_HF_25_NAME].passed
+    assert "unverified" in by_name[_HF_25_NAME].detail
 
 
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
@@ -2256,8 +2440,8 @@ def test_checks_list_size():
     (`check_v3_word_caps`) — PLUS the FIVE generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
-    (`check_hf_url_resolves`: HF Hub revision-pin existence via
-    `huggingface_hub.list_repo_files`), check 24
+    (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
+    direct tree-endpoint GET, #733), check 24
     (`check_figure_text_vs_body_tokens`, WARN: figure-embedded `.meta.json`
     text vs body prose — stale fraction / softened-token staleness, #667
     r2), check 25 (`check_audit_availability_claims_match_hf`: a body

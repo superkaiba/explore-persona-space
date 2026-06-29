@@ -367,8 +367,10 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
 
 - **check 23** (`check_hf_url_resolves`): every HF Hub revision-pinned
   `/tree/<sha>/<path>` or `/blob/<sha>/<path>` URL in the body must
-  resolve to ≥1 file at the cited revision, probed via
-  `huggingface_hub.list_repo_files(repo_id, repo_type=..., revision=<sha>)`.
+  resolve to ≥1 file at the cited revision, probed via a BOUNDED direct
+  tree-endpoint GET (`_hf_tree_get` — a single `get_session().get(...,
+  timeout=...)` of the path's parent dir, NOT the unbounded recursive
+  whole-repo `list_repo_files`, #733).
   Extends the #507 existence-protection class (check 4b inline figures,
   check 8b same-repo Reproducibility links) to HF Hub links, which check 8
   deliberately left shape-checked only — their existence IS decidable via
@@ -422,8 +424,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   UNDER the URL's path-prefix carries the canonical token as a path
   component at ANY depth (a denial usually links the repo TREE ROOT while
   the file lives several levels down at `<root>/…/<token>/…`, the #653
-  shape). If ANY HF URL yields such a file via
-  `huggingface_hub.list_repo_files`, the denial is false → FAIL.
+  shape). If ANY HF URL yields such a file via a BOUNDED direct
+  tree-endpoint GET (`_hf_tree_get`, self-paginated under a page/time cap;
+  NOT the unbounded `list_repo_files`, #733), the denial is false → FAIL.
   FAIL-SOFT (same semantics as checks 8b/23): the
   `EPM_VERIFY_BODY_NO_HF=1` offline fence, a missing `huggingface_hub`, and
   any network / auth / HTTP error surface as an `unverified` note on the
@@ -479,15 +482,19 @@ import argparse
 import json
 import math
 import os
+import posixpath
 import re
 import shutil
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
+from urllib.parse import quote
 
 # Bring the task_workflow module in for --issue lookups.
 _HERE = Path(__file__).resolve().parent
@@ -3975,7 +3982,7 @@ def check_repro_artifact_urls_exist(body: str) -> CheckResult:
 # in time and check 8 already FAILs an unpinned HF URL on shape. `<path>` is
 # optional (a bare `/tree/<sha>` repo-root link probes the revision itself).
 # The `(?:datasets|spaces)/` prefix is captured so the right `repo_type` is
-# passed to `huggingface_hub.list_repo_files`.
+# threaded into the tree-endpoint URL the bounded direct GET hits.
 _HF_HUB_TREE_BLOB_URL_RE = re.compile(
     r"^https?://huggingface\.co/"
     r"(?:(?P<kind>datasets|spaces)/)?"
@@ -3983,6 +3990,123 @@ _HF_HUB_TREE_BLOB_URL_RE = re.compile(
     r"/(?:tree|blob)/(?P<sha>[0-9a-fA-F]{7,40})"
     r"(?:/(?P<path>[^?#]*))?"
 )
+
+# ─── Bounded HF tree-endpoint existence probe (checks 23 & 25) ──────────────
+#
+# Checks 23/25 used to call `huggingface_hub.list_repo_files(...)`, which lists
+# EVERY file in the repo at the revision via `list_repo_tree(recursive=True)`
+# → `paginate()`. The first page is a bare `session.get()` (10 s default), but
+# `list_repo_tree` exposes NO `timeout` kwarg and EVERY page after the first
+# goes through `http_backoff("GET", next_page, max_retries=20,
+# retry_on_status_codes=429)` (pure capped-exponential, ~143 s/page) — so a
+# fleet-wide 429 storm stalled the verifier minutes per URL and stranded
+# zombie processes (incident /issue #715, 2026-06-28). The data repo
+# `superkaiba1/explore-persona-space-data` always paginates (>1000 files), so
+# the whole-repo recursive listing always entered that loop under throttle.
+#
+# v2 fix (#733): drop `list_repo_files`/`list_repo_tree` entirely and probe the
+# SAME Hub tree endpoint directly via `get_session().get(url, params, headers,
+# timeout=_HF_PROBE_TIMEOUT_S)` — the per-request `timeout` is now real on
+# EVERY GET, and we follow Link-header pagination OURSELVES under an outer page
+# + wall-clock cap (check 25 only; check 23 needs a single page). A page-2 429
+# surfaces as `indeterminate` (-> skip) in seconds rather than entering the
+# unbounded SDK backoff. Worst-case wall <= N * _HF_PROBE_ATTEMPTS *
+# _HF_PROBE_TIMEOUT_S for check 23, <= N * _HF_PROBE_DEADLINE_S for the
+# paginating check-25 path.
+_HF_PROBE_TIMEOUT_S = 5.0  # per-request connect+read timeout (real on every GET)
+_HF_PROBE_ATTEMPTS = 2  # at most 1 retry per page on a transient / 429
+_HF_PROBE_SLEEP_S = 0.5  # tiny pause between the two attempts
+_HF_PROBE_MAX_PAGES = 8  # check-25 self-pagination page cap
+_HF_PROBE_DEADLINE_S = 12.0  # check-25 outer wall cap across all pages of ONE probe
+# Per-process cache keyed on (repo_id, repo_type, sha, path_prefix[, keyword]).
+# Caches ONLY definitive pass/fail verdicts — a `skip` (indeterminate / throttle)
+# is NEVER cached, so a transient throttle that has since cleared is always
+# re-probed on a re-entry (task_workflow_migrate.py re-runs verify_text() in one
+# long-running process). Values are (verdict, note) tuples.
+_HF_EXISTENCE_CACHE: dict[tuple, tuple[str, str]] = {}
+
+
+class _TreeProbeResult(NamedTuple):
+    """Structured outcome of ONE bounded GET to a Hub tree URL.
+
+    The `status` is returned (NOT a re-raised exception) so each call site maps
+    a not-found INDEPENDENTLY: check 23 maps `not_found` → FAIL (dead pin,
+    #537); check 25 maps the SAME `not_found` → SKIP (indeterminate — cannot
+    corroborate/refute a denial). Centralizing a shared exception mapping would
+    collapse that deliberate asymmetry.
+    """
+
+    status: str  # "ok" | "not_found" | "indeterminate"
+    entries: list[dict]  # JSON tree entries for this page (empty unless status == "ok")
+    next_page: str | None  # the Link rel="next" URL, or None
+    note: str  # diagnostic for the indeterminate / skip note
+
+
+def _hf_tree_url(repo_id: str, repo_type: str, sha: str, path: str) -> str:
+    """Build the Hub tree-endpoint URL exactly as `HfApi.list_repo_tree` does:
+    `{endpoint}/api/{repo_type}s/{repo_id}/tree/{revision}{/encoded_path}`.
+    The revision is left unencoded (it is a hex sha); the path is
+    `quote(path, safe="")`-encoded and prefixed with `/`, empty for the root.
+    """
+    import huggingface_hub
+
+    endpoint = huggingface_hub.constants.ENDPOINT
+    encoded_path = "/" + quote(path, safe="") if path else ""
+    return f"{endpoint}/api/{repo_type}s/{repo_id}/tree/{sha}{encoded_path}"
+
+
+def _hf_build_headers() -> dict:
+    """The SDK auth headers for a Hub request (token from the ambient env /
+    cached login), via `huggingface_hub.utils.build_hf_headers`."""
+    from huggingface_hub.utils import build_hf_headers
+
+    return build_hf_headers()
+
+
+def _hf_tree_get(
+    url: str, params: dict | None, headers: dict, *, timeout_s: float
+) -> _TreeProbeResult:
+    """ONE bounded GET to a Hub tree URL, with our OWN bounded retry.
+
+    Returns a `_TreeProbeResult`. NEVER enters the SDK `http_backoff` loop:
+    this is a single `requests.get` with an explicit per-request `timeout`,
+    retried at most `_HF_PROBE_ATTEMPTS` times on a transient error / 429 / 5xx
+    with a tiny `_HF_PROBE_SLEEP_S` pause between attempts.
+
+    - 2xx              → status='ok',           entries=r.json(), next_page=Link-rel-next
+    - 404 not-found    → status='not_found'     (caller decides FAIL vs SKIP)
+    - 429 / 5xx / conn / timeout / parse error → status='indeterminate' (caller → skip)
+    """
+    from huggingface_hub.utils import get_session
+
+    last_note = "no attempt made"
+    for i in range(_HF_PROBE_ATTEMPTS):
+        try:
+            r = get_session().get(url, params=params, headers=headers, timeout=timeout_s)
+        except Exception as exc:  # connection / timeout / DNS — all transient
+            last_note = f"HF tree probe failed: {type(exc).__name__}: {exc}"
+            if i + 1 < _HF_PROBE_ATTEMPTS:
+                time.sleep(_HF_PROBE_SLEEP_S)
+            continue
+        if r.status_code == 404:
+            return _TreeProbeResult("not_found", [], None, "")
+        if r.status_code == 429 or r.status_code >= 500:
+            last_note = f"HF tree probe failed: HTTP {r.status_code}"
+            if i + 1 < _HF_PROBE_ATTEMPTS:
+                time.sleep(_HF_PROBE_SLEEP_S)
+            continue
+        try:
+            r.raise_for_status()
+            entries = r.json()
+        except Exception as exc:
+            return _TreeProbeResult("indeterminate", [], None, f"HF tree probe failed: {exc}")
+        if not isinstance(entries, list):
+            return _TreeProbeResult(
+                "indeterminate", [], None, "HF tree probe failed: unexpected response shape"
+            )
+        next_page = r.links.get("next", {}).get("url")
+        return _TreeProbeResult("ok", entries, next_page, "")
+    return _TreeProbeResult("indeterminate", [], None, last_note)
 
 
 def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
@@ -3996,9 +4120,9 @@ def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
     Fenced code blocks are stripped first so a URL shown inside a ``` ... ```
     example is illustrative, never probed. Returns order-preserving,
     deduplicated `(repo_id, repo_type, sha, path_prefix, raw_url)` tuples —
-    at most one Hub call per unique (repo_id, sha, path_prefix). `repo_type`
-    is one of ``"dataset"`` / ``"space"`` / ``"model"`` for the
-    `huggingface_hub.list_repo_files(..., repo_type=...)` call.
+    at most one Hub probe per unique (repo_id, sha, path_prefix). `repo_type`
+    is one of ``"dataset"`` / ``"space"`` / ``"model"`` — threaded into the
+    bounded tree-endpoint GET URL (`_hf_tree_url`).
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     out: list[tuple[str, str, str, str, str]] = []
@@ -4020,6 +4144,54 @@ def _gather_hf_pinned_urls(body: str) -> list[tuple[str, str, str, str, str]]:
     return out
 
 
+def _hf_probe_existence(
+    repo_id: str, repo_type: str, sha: str, path_prefix: str
+) -> tuple[str, str]:
+    """Bounded direct-GET existence probe for one HF Hub URL (check 23).
+
+    Returns ``(verdict, note)``. For a bare ``/tree/<sha>`` link it lists the
+    repo ROOT (page 1) and PASSes iff the revision resolves. For a path-pinned
+    link it lists the needle's PARENT dir non-recursively (page 1) and matches
+    the needle among the parent's DIRECT children — a valid pinned link's
+    terminal component is always a direct child of the path it claims, so this
+    is consistent with check 23 only ever matching direct children (the old
+    whole-repo recursive listing could have matched an arbitrarily-deep
+    descendant; the parent-listing scheme matches direct children only, a
+    documented #733 trade-off — every existing fixture uses direct-child
+    paths so no verdict changes).
+
+    not_found → FAIL (dead pin, #537) — this call site's INDEPENDENT mapping.
+    """
+    needle = path_prefix.rstrip("/")
+    parent = posixpath.dirname(needle) if needle else ""
+    headers = _hf_build_headers()
+    res = _hf_tree_get(
+        _hf_tree_url(repo_id, repo_type, sha, parent),
+        params={"recursive": False},
+        headers=headers,
+        timeout_s=_HF_PROBE_TIMEOUT_S,
+    )
+    if res.status == "not_found":
+        return (
+            "fail",
+            f"HF URL dead revision pin — `{repo_id}` has no revision `{sha[:8]}` "
+            f"or path `{needle or '/'}`",
+        )
+    if res.status == "indeterminate":
+        return "skip", f"`{repo_id}@{sha[:8]}` ({res.note})"
+    if not needle:
+        # A bare `/tree/<sha>` repo-root link: a successful listing means the
+        # revision exists, which is all such a link asserts.
+        return "pass", ""
+    paths = {e["path"].rstrip("/") for e in res.entries if "path" in e}
+    if needle in paths:
+        return "pass", ""
+    return (
+        "fail",
+        f"HF URL dead revision pin — `{needle}` resolves to 0 files at `{repo_id}@{sha[:8]}`",
+    )
+
+
 def _hf_url_existence(repo_id: str, repo_type: str, sha: str, path_prefix: str) -> tuple[str, str]:
     """Existence probe for one HF Hub revision-pinned URL (check 23).
 
@@ -4031,43 +4203,30 @@ def _hf_url_existence(repo_id: str, repo_type: str, sha: str, path_prefix: str) 
     Fail-soft is mandatory: the probe SKIPs (never FAILs) when
     ``EPM_VERIFY_BODY_NO_HF=1`` is set (the suite-wide offline fence in
     ``tests/conftest.py``), when ``huggingface_hub`` is not importable, or
-    when the Hub call raises any network / auth / unexpected error. Only a
+    when the Hub probe raises any network / auth / unexpected error. Only a
     SUCCESSFUL listing that returns zero matching files — or a definitive
     repository/revision-not-found — is a FAIL.
+
+    The Hub probe is a BOUNDED direct GET of the tree endpoint
+    (``_hf_probe_existence`` → ``_hf_tree_get``), NOT the unbounded
+    ``list_repo_files`` recursive whole-repo listing (#733). Definitive
+    ``pass``/``fail`` verdicts are cached per-process; a ``skip`` is never
+    cached, so a transient throttle that has since cleared is always re-probed.
     """
     if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
         return "skip", f"`{repo_id}@{sha[:8]}` (HF probe fenced)"
     try:
-        import huggingface_hub  # local import — optional dependency
-        from huggingface_hub.utils import (
-            EntryNotFoundError,
-            RepositoryNotFoundError,
-            RevisionNotFoundError,
-        )
+        import huggingface_hub  # noqa: F401 — local import: optional-dependency guard
     except ImportError:
         return "skip", f"`{repo_id}@{sha[:8]}` (huggingface_hub unavailable)"
-    try:
-        files = huggingface_hub.list_repo_files(repo_id, repo_type=repo_type, revision=sha)
-    except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError) as exc:
-        return (
-            "fail",
-            f"HF URL dead revision pin — `{repo_id}` has no revision `{sha[:8]}` "
-            f"({type(exc).__name__})",
-        )
-    except Exception as exc:
-        return "skip", f"`{repo_id}@{sha[:8]}` (HF list_repo_files failed: {exc})"
-    if not path_prefix:
-        # A bare `/tree/<sha>` repo-root link: a successful listing means the
-        # revision exists, which is all such a link asserts.
-        return "pass", ""
-    needle = path_prefix.rstrip("/")
-    matching = [f for f in files if f == needle or f.startswith(needle + "/")]
-    if not matching:
-        return (
-            "fail",
-            f"HF URL dead revision pin — `{needle}` resolves to 0 files at `{repo_id}@{sha[:8]}`",
-        )
-    return "pass", ""
+    cache_key = (repo_id, repo_type, sha, path_prefix.rstrip("/"))
+    cached = _HF_EXISTENCE_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+    verdict, note = _hf_probe_existence(repo_id, repo_type, sha, path_prefix)
+    if verdict in ("pass", "fail"):
+        _HF_EXISTENCE_CACHE[cache_key] = (verdict, note)
+    return verdict, note
 
 
 def check_hf_url_resolves(body: str) -> CheckResult:
@@ -4079,10 +4238,11 @@ def check_hf_url_resolves(body: str) -> CheckResult:
     figures, check 8b for same-repo Reproducibility links) to HF Hub
     artifact links, which check 8 deliberately left shape-checked only
     ("existence is not decidable from the local object DB"). It IS decidable
-    via the Hub API: `huggingface_hub.list_repo_files(repo_id, revision=<sha>)`
-    lists the files present at a revision, so a path pinned to a revision
-    that predates the upload — resolving to ZERO files — is caught
-    mechanically. Incident task #537: the `## Reproducibility` `**Artifacts:**`
+    via the Hub tree endpoint, probed by a BOUNDED direct GET
+    (`_hf_tree_get`, with a real per-request timeout; #733), which lists the
+    files present at a revision, so a path pinned to a revision that predates
+    the upload — resolving to ZERO files — is caught mechanically. Incident
+    task #537: the `## Reproducibility` `**Artifacts:**`
     line pinned the "415 bakeoff intermediates" link to revision `db3662ae`
     (the main-grid revision, predating the bakeoff round entirely), where the
     path resolves to 0 files; a reader — or a downstream reuse-premise miner
@@ -4948,17 +5108,75 @@ def _audit_denied_artifact_classes_in(line: str) -> list[str]:
     return out
 
 
+def _hf_probe_keyword(
+    repo_id: str, repo_type: str, sha: str, path_prefix: str, keyword: str
+) -> tuple[str, str]:
+    """Bounded direct-GET depth-agnostic keyword probe (check 25).
+
+    Lists the URL's OWN sub-tree (`recursive=True` scoped to ``path_prefix``,
+    NOT the whole repo) and substring-matches ``keyword`` in any FILE path
+    under the prefix. The keyword can be nested at ANY depth (#653: the denial
+    linked the tree ROOT while the file lives several levels down), so the
+    scoped recursive listing is followed across Link-header pages OURSELVES
+    under ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S`` caps — a cap hit
+    SKIPs rather than entering the SDK's unbounded backoff.
+
+    not_found → SKIP — this call site's INDEPENDENT mapping (the deliberate
+    check-23-FAIL-vs-25-SKIP asymmetry: check 25 cannot corroborate OR refute a
+    denial against a revision that does not exist).
+    """
+    kw = keyword.lower()
+    needle = path_prefix.strip("/")
+    url = _hf_tree_url(repo_id, repo_type, sha, needle)
+    params: dict | None = {"recursive": True}  # scoped to the URL's OWN sub-tree
+    headers = _hf_build_headers()
+    started = time.monotonic()
+    pages = 0
+    res = None
+    while True:
+        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
+        if res.status == "not_found":
+            return "skip", f"`{repo_id}@{sha[:8]}` (no such revision)"
+        if res.status == "indeterminate":
+            return "skip", f"`{repo_id}@{sha[:8]}` ({res.note})"
+        for e in res.entries:
+            path = e.get("path", "")
+            if e.get("type") == "file" and kw in path.lower() and _hf_under_prefix(path, needle):
+                return "pass", path  # denial is FALSE → body-level FAIL
+        pages += 1
+        if (
+            res.next_page is None
+            or pages >= _HF_PROBE_MAX_PAGES
+            or time.monotonic() - started > _HF_PROBE_DEADLINE_S
+        ):
+            break
+        # The Link rel="next" URL already carries the params; do not re-send them.
+        url, params = res.next_page, None
+    if res is not None and res.next_page is not None:
+        # Hit the page / wall-clock cap before exhausting the sub-tree.
+        return "skip", f"`{repo_id}@{sha[:8]}` (HF tree listing exceeded page/time cap)"
+    return "fail", ""  # successful, exhausted, no match → denial HOLDS (body PASS)
+
+
+def _hf_under_prefix(path: str, needle: str) -> bool:
+    """True iff ``path`` is the prefix itself or sits under ``needle/``
+    (or there is no prefix scope)."""
+    return not needle or path == needle or path.startswith(needle + "/")
+
+
 def _hf_keyword_present_under_prefix(
     repo_id: str, repo_type: str, sha: str, path_prefix: str, keyword: str
 ) -> tuple[str, str]:
     """Fail-soft probe (check 25): does the HF repo at ``sha`` contain ≥1 file
     under ``path_prefix`` whose path carries ``keyword`` as a path component?
 
-    Lists the repo files ONCE at the cited revision and substring-matches the
-    keyword anywhere in the path, restricted to files under ``path_prefix``
-    (the URL's own sub-tree). A keyword nested at ANY depth below the prefix
-    counts — the #653 denial linked the repo TREE ROOT
-    (`…/issue653_install-validated-reladder`) while the file lives several
+    Lists the URL's OWN sub-tree at the cited revision (a BOUNDED direct
+    tree-endpoint GET with self-paginated recursion under a page/time cap —
+    ``_hf_probe_keyword`` → ``_hf_tree_get``, NOT the unbounded whole-repo
+    ``list_repo_files``, #733) and substring-matches the keyword anywhere in
+    the path, restricted to files under ``path_prefix``. A keyword nested at
+    ANY depth below the prefix counts — the #653 denial linked the repo TREE
+    ROOT (`…/issue653_install-validated-reladder`) while the file lives several
     levels down at `…/raw_completions/armB/install_probes/cell0/…`, so a fixed
     `<prefix>/<keyword>` candidate path would miss it; substring-on-the-listing
     is depth-agnostic.
@@ -4970,41 +5188,31 @@ def _hf_keyword_present_under_prefix(
       is corroborated for this URL (named ``'fail'`` to mirror
       ``_hf_url_existence``'s "definitive negative" verdict; the caller treats
       it as "denial holds for this URL", NOT a body FAIL).
-    - ``'skip'`` — indeterminate (offline fence / no huggingface_hub / any
-      network / auth / HTTP error); surfaced as an `unverified` note, never a
-      body FAIL.
+    - ``'skip'`` — indeterminate (offline fence / no huggingface_hub / no such
+      revision / any network / auth / HTTP error / page-time cap); surfaced as
+      an `unverified` note, never a body FAIL.
 
     Fail-soft is mandatory and mirrors ``_hf_url_existence`` exactly: only a
-    SUCCESSFUL listing yields pass/fail; every error path SKIPs.
+    SUCCESSFUL listing yields pass/fail; every error path SKIPs. Definitive
+    ``pass``/``fail`` verdicts are cached per-process; a ``skip`` is never
+    cached, so a transient throttle that has since cleared is always re-probed.
+    A ``not_found`` maps to SKIP here (NOT FAIL) — the deliberate
+    check-23-vs-25 asymmetry.
     """
     if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
         return "skip", f"`{repo_id}@{sha[:8]}` (HF probe fenced)"
     try:
-        import huggingface_hub  # local import — optional dependency
-        from huggingface_hub.utils import (
-            EntryNotFoundError,
-            RepositoryNotFoundError,
-            RevisionNotFoundError,
-        )
+        import huggingface_hub  # noqa: F401 — local import: optional-dependency guard
     except ImportError:
         return "skip", f"`{repo_id}@{sha[:8]}` (huggingface_hub unavailable)"
-    try:
-        files = huggingface_hub.list_repo_files(repo_id, repo_type=repo_type, revision=sha)
-    except (RepositoryNotFoundError, RevisionNotFoundError, EntryNotFoundError):
-        # No such repo/revision: cannot corroborate OR refute → indeterminate.
-        return "skip", f"`{repo_id}@{sha[:8]}` (no such revision)"
-    except Exception as exc:
-        return "skip", f"`{repo_id}@{sha[:8]}` (HF list_repo_files failed: {exc})"
-    needle = path_prefix.strip("/")
-    kw_lower = keyword.lower()
-
-    def _under_prefix(f: str) -> bool:
-        return not needle or f == needle or f.startswith(needle + "/")
-
-    for f in files:
-        if _under_prefix(f) and kw_lower in f.lower():
-            return "pass", f
-    return "fail", ""
+    cache_key = (repo_id, repo_type, sha, path_prefix.strip("/"), keyword.lower())
+    cached = _HF_EXISTENCE_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+    verdict, note = _hf_probe_keyword(repo_id, repo_type, sha, path_prefix, keyword)
+    if verdict in ("pass", "fail"):
+        _HF_EXISTENCE_CACHE[cache_key] = (verdict, note)
+    return verdict, note
 
 
 def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
