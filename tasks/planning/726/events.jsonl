@@ -8,3 +8,4 @@
 {"ts": "2026-06-29T06:58:49Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqyv8i9e-donbqo phase=done after 60s."}
 {"ts": "2026-06-29T06:59:23Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqyv8lso-wlq23a phase=done after 91s."}
 {"ts": "2026-06-29T07:00:17Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqyv8h6t-a7cpor phase=done after 151s."}
+{"ts": "2026-06-29T07:08:49Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict: PASS-with-warns | n_fail: 0 | n_warn: 1 | warns: c8_success_kill_criteria (test-verdict IS the kill criterion for 0-GPU-h infra; fact-checker confirmed) | plan version: v2"}
