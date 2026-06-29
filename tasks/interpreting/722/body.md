@@ -1,6 +1,6 @@
 ---
-title: Finetuning measurably reshapes the context→answer map only for a taught fact
-  (LOW confidence)
+title: 'Fitting M0 vs M⁺ on reused adapters: only the taught fact''s context→answer
+  map measurably reshapes (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-28T20:32:55Z'
