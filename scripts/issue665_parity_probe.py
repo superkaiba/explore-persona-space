@@ -136,15 +136,21 @@ def _read_layer_activation_with_adapter(cell: str, layer: int):
     model = PeftModel.from_pretrained(base, f"{C.MODEL_REPO}", subfolder=sub)
     model.eval()
 
-    # Read the source context's c_C from the store (the #664-recorded target).
+    # Read the source-anchor context's c_C from the store (the #664-recorded target).
     from explore_persona_space.analysis.gate_io import load_cell
 
     sc = load_cell(cell, verify_sha=True)
     try:
+        # The parity probe uses the SOURCE-ANCHOR context (the role #664 trained the
+        # adapter to overwrite) — sc.source_idx / sc.source_ctx_id derive from the
+        # `source-anchor` entry in meta.target_context_roles (plan §4(a)).
         c_trained = sc.tensors["c_C_trained"][sc.source_idx, layer].to(torch.float64)
-        # Build the source context's chat prompt + read the last-input-token residual
-        # at layer L from the adapter-applied forward. The store's c_C recipe is
-        # last-input-token (CC_RECIPE), so we capture the same slot.
+        # Build the source context's REAL #664 chat prompt (Blocker 2a) — the same
+        # context_messages(inst, battery_probe) #664 fed when it captured c_C_trained,
+        # NOT a synthetic "Hello.". c_C is the last-input-token slot, so the read hook
+        # captures position -1 (recipe-matched: CC_RECIPE == "last").
+        probe_q = next(iter(sc.tensors["battery_probes"]))
+        msgs = C.context_chat_messages(sc.source_ctx_id, probe_q)
         captured = {}
 
         def _hook(_m, _inp, out):
@@ -154,9 +160,6 @@ def _read_layer_activation_with_adapter(cell: str, layer: int):
         # layer index in the residual stream (hidden_states layer L = block L output).
         block = model.base_model.model.model.layers[layer]
         handle = block.register_forward_hook(_hook)
-        # minimal source prompt: the source context id is a persona instance; use a
-        # neutral probe so the read is the context's last-input-token (recipe-matched).
-        msgs = [{"role": "user", "content": "Hello."}]
         ids = tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt").to(
             model.device
         )

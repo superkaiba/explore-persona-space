@@ -168,71 +168,105 @@ def arm_a38(sc, layer: int, lam: float) -> dict:
     }
 
 
-# ── A3.9 — key-query gate, key/metric ablations ───────────────────────────────
+# ── A3.9 — key-query gate, KEY x metric ablations (Blocker 5: the 4-key grid) ──
+# The four key candidates (plan §3/§4 A3.9 + Blocker 5). ψ = identity with co-layer
+# extraction (the plan default): ψ(t) = t_CB[L]; ψ(δ) = (c_C_trained - c_C_base) at
+# the source = the FT context drift. The key VARIES; the query stays the context
+# vector c_C' (denominator query = source c_C), so g(C=C')=1 holds per key.
+A39_KEY_LABELS = ("c_C", "psi_t", "psi_delta", "c_C_plus_psi_delta")
+
+
+def _a39_keys(sc, layer: int) -> dict[str, np.ndarray]:
+    """Build the four A3.9 key vectors at the source context, layer L (Blocker 5)."""
+    c_base = sc.tensors["c_C_base"].numpy().astype(np.float64)  # (C,L,d)
+    c_trn = sc.tensors["c_C_trained"].numpy().astype(np.float64)  # (C,L,d)
+    t_CB = sc.tensors["t_CB"].numpy().astype(np.float64)  # (L,d) trained source activation
+    c_src = c_base[sc.source_idx, layer]  # (d,) the source context vector (key=c_C)
+    psi_t = t_CB[layer]  # ψ(t) = co-layer t_CB
+    psi_delta = c_trn[sc.source_idx, layer] - c_base[sc.source_idx, layer]  # ψ(δ)=FT ctx drift
+    return {
+        "c_C": c_src,
+        "psi_t": psi_t,
+        "psi_delta": psi_delta,
+        "c_C_plus_psi_delta": c_src + psi_delta,
+    }
+
+
 def arm_a39(sc, layer: int, lam: float, sigma_c_layer: np.ndarray) -> dict:
-    """Predicted gate g^pred(C') for each keyxmetric cell vs ĝ^real; rank/MAE/
-    sign agreement; vs raw cosine. Verdict (i) some key/metric > cosine;
-    (ii) c_C + Σc⁻¹ specifically wins."""
+    """Predicted gate g^pred(C') for each (KEY x metric) cell vs ĝ^real; rank/MAE/
+    sign agreement; vs raw cosine. KEY ablation {c_C, ψ(t), ψ(δ), c_C+ψ(δ)} x metric
+    ablation {I, diag(Σc+λI)⁻¹, (Σc+λI)⁻¹} (Blocker 5). Verdict (i) some key/metric
+    > cosine; (ii) c_C key + Σc⁻¹ metric specifically wins (the boxed predictor)."""
     v_plus = sc.tensors["v_plus"]
     v0 = sc.tensors["v0"]
     c_base = sc.tensors["c_C_base"].numpy().astype(np.float64)  # (C,L,d)
     ghat, _ = gate_per_layer(v_plus, v0, sc.source_idx)
     ghat_l = ghat[:, layer]  # (C,) ground-truth realized gate
-    c_src = c_base[sc.source_idx, layer]  # (d,) key + denominator query
+    c_src = c_base[sc.source_idx, layer]  # (d,) denominator query (q_src = source c_C)
+    keys = _a39_keys(sc, layer)  # the four key candidates (Blocker 5)
     metrics = metric_ablation(sigma_c_layer, lam)  # {I, diag_Sigma_inv, Sigma_inv}
-    # key candidates: c_C only (ψ(t)/ψ(δ) require t_CB/δ as queries — exploratory).
-    # The boxed predictor uses key=c_C, query=c_C', metric=Sigma_inv.
     n_ctx = c_base.shape[0]
-    out: dict = {"metric_results": {}}
-    # raw cosine baseline
+
+    out: dict = {"key_metric_results": {}}
+    # raw cosine baseline (key=c_C by definition for cosine)
     cos_pred = np.array(
         [raw_cosine_gate(c_src, c_base[ci, layer]) for ci in range(n_ctx)], dtype=np.float64
     )
     out["cosine_spearman"] = _spearman(cos_pred, ghat_l)
     out["cosine_pearson"] = _pearson(cos_pred, ghat_l)
-    for mkey in METRIC_KEYS:
-        M = metrics[mkey]
-        g_pred = np.array(
-            [whitened_gate(c_src, c_base[ci, layer], M=M) for ci in range(n_ctx)],
-            dtype=np.float64,
-        )
-        rho = _spearman(g_pred, ghat_l)
-        pear = _pearson(g_pred, ghat_l)
-        mae = float(np.nanmean(np.abs(g_pred - ghat_l)))
-        sign = float(np.mean(np.sign(g_pred) == np.sign(ghat_l)))
-        out["metric_results"][mkey] = {
-            "spearman": rho,
-            "pearson": pear,
-            "mae": mae,
-            "sign_agreement": sign,
-            "beats_cosine": bool(
-                np.isfinite(rho)
-                and np.isfinite(out["cosine_spearman"])
-                and rho > out["cosine_spearman"]
-            ),
-        }
+
+    # Sweep KEY x metric (Blocker 5): the predicted gate uses key=k, query=c_C',
+    # denominator query=q_src=source c_C — g(C=C')=1 holds per key by construction.
+    for klabel in A39_KEY_LABELS:
+        k = keys[klabel]
+        for mkey in METRIC_KEYS:
+            M = metrics[mkey]
+            g_pred = np.array(
+                [key_query_gate(k, c_base[ci, layer], c_src, M) for ci in range(n_ctx)],
+                dtype=np.float64,
+            )
+            rho = _spearman(g_pred, ghat_l)
+            pear = _pearson(g_pred, ghat_l)
+            mae = float(np.nanmean(np.abs(g_pred - ghat_l)))
+            sign = float(np.mean(np.sign(g_pred) == np.sign(ghat_l)))
+            out["key_metric_results"][f"{klabel}::{mkey}"] = {
+                "key": klabel,
+                "metric": mkey,
+                "spearman": rho,
+                "pearson": pear,
+                "mae": mae,
+                "sign_agreement": sign,
+                "beats_cosine": bool(
+                    np.isfinite(rho)
+                    and np.isfinite(out["cosine_spearman"])
+                    and rho > out["cosine_spearman"]
+                ),
+            }
     # verdicts (separate, B1)
-    rhos = {k: out["metric_results"][k]["spearman"] for k in METRIC_KEYS}
-    best_metric = max(
-        (k for k in METRIC_KEYS if np.isfinite(rhos[k])), key=lambda k: rhos[k], default=None
+    cell_results = out["key_metric_results"]
+    rhos = {kk: v["spearman"] for kk, v in cell_results.items()}
+    best_cell = max(
+        (kk for kk in cell_results if np.isfinite(rhos[kk])), key=lambda kk: rhos[kk], default=None
     )
-    out["verdict_i_some_beats_cosine"] = any(
-        out["metric_results"][k]["beats_cosine"] for k in METRIC_KEYS
-    )
-    out["verdict_ii_sigma_inv_wins"] = best_metric == "Sigma_inv"
-    out["best_metric"] = best_metric
+    out["verdict_i_some_beats_cosine"] = any(v["beats_cosine"] for v in cell_results.values())
+    # (ii): the BOXED predictor = key c_C + metric Sigma_inv specifically wins.
+    out["verdict_ii_sigma_inv_wins"] = best_cell == "c_C::Sigma_inv"
+    out["best_key_metric"] = best_cell
     return out
 
 
 # ── A3.10 — base-gate validity + drift decomposition ──────────────────────────
 def arm_a310(sc, layer: int, lam: float, sigma_c_layer: np.ndarray) -> dict:
     """g⁰ (base k/q, base metric M⁰) vs ĝ^real; g⁺ (trained k/q) diagnostic;
-    key+query drift decomposition at fixed base metric M⁰."""
+    key+query drift decomposition at fixed base metric M⁰. ALSO computes the
+    base-behavior prior E0(C',B') + install magnitude ‖ŵ‖ per context (Blocker 3):
+    the cross-cell A3.10 partial (g0-vs-ghat with E0+‖ŵ‖ partialled out, C7/C10) is
+    done in issue665_aggregate over the per-cell g0_E0.json this writes."""
     v_plus = sc.tensors["v_plus"]
-    v0 = sc.tensors["v0"]
+    v0_t = sc.tensors["v0"]
     c_base = sc.tensors["c_C_base"].numpy().astype(np.float64)  # (C,L,d)
     c_trn = sc.tensors["c_C_trained"].numpy().astype(np.float64)  # (C,L,d)
-    ghat, _ = gate_per_layer(v_plus, v0, sc.source_idx)
+    ghat, wnorm_by_layer = gate_per_layer(v_plus, v0_t, sc.source_idx)  # (C,L),(L,)
     ghat_l = ghat[:, layer]
     M0 = metric_ablation(sigma_c_layer, lam)["Sigma_inv"]  # base metric M⁰=(Σc+λI)⁻¹
     k0 = c_base[sc.source_idx, layer]  # base key
@@ -254,9 +288,22 @@ def arm_a310(sc, layer: int, lam: float, sigma_c_layer: np.ndarray) -> dict:
     g_k0_qp = np.array(
         [key_query_gate(k0, c_trn[ci, layer], k0, M0) for ci in range(n_ctx)], dtype=np.float64
     )
-    # base-behavior prior E0(C',B') = r... not available here; use g0-level proxy
-    # (the install-magnitude partial happens in aggregate over cells). Here record
-    # the per-cell rhos; the cross-cell partial is done downstream.
+
+    # ── Blocker 3: base-behavior prior E0(C',B') + install magnitude ‖ŵ‖ ──
+    # E0(C') = r_B'ᵀ v0(C') at the locked read layer (the base model's behavioral
+    # propensity at the eval target; the #532/#541/#649 dominant null). The behavior
+    # read direction r_B' is the store's r_plus (the implant write direction = ŵ at
+    # source); v0(C') is the base activation. Per plan §6 "E0[ctx] = r_plus[L,:] @
+    # v0[ctx,L,:]".
+    r_plus = sc.tensors["r_plus"].numpy().astype(np.float64)  # (L,d)
+    v0_l = v0_t.numpy().astype(np.float64)[:, layer]  # (C,d) base activation
+    e0 = (v0_l @ r_plus[layer]).astype(np.float64)  # (C,) base prior per context
+    # ‖ŵ‖ = install magnitude from the trained-minus-base delta in the read direction:
+    # the source write norm ‖v_plus(C)-v0(C)‖ at this layer = wnorm from gate_per_layer
+    # (the baseline subtracted is v0(C), per plan §6). One scalar per cell (constant
+    # across contexts within a cell — a cross-cell covariate for the partial).
+    wnorm = float(wnorm_by_layer[layer])
+
     return {
         "g0_spearman": _spearman(g0, ghat_l),
         "g0_pearson": _pearson(g0, ghat_l),
@@ -266,7 +313,13 @@ def arm_a310(sc, layer: int, lam: float, sigma_c_layer: np.ndarray) -> dict:
         "drift_key_spearman": _spearman(g_kp_q0, ghat_l),
         "drift_query_spearman": _spearman(g_k0_qp, ghat_l),
         "cos_key_drift": float(abs((k0 @ kp) / (np.linalg.norm(k0) * np.linalg.norm(kp) + 1e-30))),
-        "note": "all verdicts at fixed base metric M0=(Sigma_c+lambda I)^-1",
+        # per-context vectors for the cross-cell E0/‖ŵ‖ partial (Blocker 3c, aggregate)
+        "g0_by_context": [round(float(x), 6) for x in g0],
+        "ghat_real_by_context": [round(float(x), 6) for x in ghat_l],
+        "E0_by_context": [round(float(x), 6) for x in e0],
+        "wnorm": round(wnorm, 6),
+        "note": "all verdicts at fixed base metric M0=(Sigma_c+lambda I)^-1; "
+        "E0=r_plus[L]@v0(C'), wnorm=||v_plus(C)-v0(C)||[L] (Blocker 3 base-prior/install partial)",
     }
 
 
@@ -476,8 +529,59 @@ def process_cell(cell: str, layers: list[int], lam: float, sigma_c: np.ndarray, 
             with open(outp, "w") as f:
                 json.dump(rec, f, indent=1)
             logger.info("[%s] %s -> %s", arm, cell, outp)
+            # Blocker 3a: persist the A3.10 base-prior/install partial inputs at the
+            # canonical per_cell path the aggregate reads (one entry per context, at
+            # the primary read layer).
+            if arm == "a310":
+                _write_g0_e0(cell, per_layer, sc)
     finally:
         sc.free()
+
+
+def _write_g0_e0(cell: str, per_layer: dict, sc) -> None:
+    """Blocker 3a: write eval_results/issue_665/per_cell/<cell>/g0_E0.json — per
+    context {g0, ghat_real, E0} at the cell's primary read layer + the cell-level
+    wnorm (install magnitude). The aggregate joins these for the C7/C10 partial."""
+    read_layer = str(C.read_layer_for_cell(cell))
+    bl = per_layer.get(read_layer)
+    if not bl or "g0_by_context" not in bl:
+        return
+    ctx_ids = list(sc.tensors["context_ids"])
+    g0 = bl["g0_by_context"]
+    ghat = bl["ghat_real_by_context"]
+    e0 = bl["E0_by_context"]
+    entries = []
+    for i, cid in enumerate(ctx_ids):
+        if i >= len(g0):
+            break
+        entries.append(
+            {
+                "context_id": cid,
+                "family": C.family_of_context(cid),
+                "g0": g0[i],
+                "ghat_real": ghat[i],
+                "E0": e0[i],
+                "wnorm": bl["wnorm"],  # cell-level install magnitude (constant per cell)
+            }
+        )
+    out_dir = C.EVAL_ROOT / "per_cell" / cell
+    out_dir.mkdir(parents=True, exist_ok=True)
+    outp = out_dir / "g0_E0.json"
+    with open(outp, "w") as f:
+        json.dump(
+            {
+                "cell": cell,
+                "behavior": C.behavior_for_cell(cell),
+                "read_layer": int(read_layer),
+                "wnorm": bl["wnorm"],
+                "entries": entries,
+                "git_commit": _git_commit(),
+                "generated_at": dt.datetime.now(dt.UTC).isoformat(),
+            },
+            f,
+            indent=1,
+        )
+    logger.info("[a310 g0_E0] %s -> %s", cell, outp)
 
 
 def main():

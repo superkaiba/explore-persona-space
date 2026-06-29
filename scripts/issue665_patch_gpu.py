@@ -41,6 +41,7 @@ import argparse
 import datetime as dt
 import json
 import logging
+import os
 import subprocess
 
 import issue665_common as C
@@ -88,10 +89,45 @@ def parity_gate_passed(cell: str) -> tuple[bool, str]:
     return False, f"parity probe FAIL/incomplete (passed={res.get('passed')})"
 
 
+def _suppressed_record(cell: str, layers: list[int], scopes: list[str], reason: str) -> dict:
+    """Blocker 1: the record written when the parity gate FAILs and A3.6c HALTs for
+    this cell BEFORE any model load. Backward-compatible with the aggregate / figures
+    pipeline (an f_CV-bearing record with the fields null + a `skipped` marker)."""
+    return {
+        "cell": cell,
+        "behavior": C.behavior_for_cell(cell),
+        "column": C.column_for_cell(cell),
+        "layers": layers,
+        "scopes": list(scopes),
+        "variants": list(PATCH_VARIANTS),
+        "parity_gate_passed": False,
+        "parity_gate_reason": reason,
+        "skipped": True,  # HALTED before any forward pass — the f_CV verdict is suppressed
+        "f_CV": None,
+        "rows": [],
+        "git_commit": _git_commit(),
+        "generated_at": dt.datetime.now(dt.UTC).isoformat(),
+        "dry_run": False,
+        "trusted": False,
+        "note": "A3.6c HALTED for this cell: parity probe did not PASS (plan §4 step 5). "
+        "No model was loaded and no forward pass ran; the input-vs-map verdict is suppressed.",
+    }
+
+
+# How many new tokens to generate for the behavioral E read under the patch.
+# The patched generation is judged for behavior-expression (Blocker 2b); a short
+# greedy answer is enough for the judge to score (free-gen marker evals run longer,
+# but A3.6c reads the behavioral DV, not a marker slot). Env-overridable.
+
+A36C_PATCH_MAX_NEW_TOKENS = int(os.environ.get("EPM_A36C_PATCH_MAX_NEW", "256"))
+
+
 def _run_patch_gpu(cell: str, contexts: list[str], layers: list[int], scopes: list[str]) -> dict:
     """GPU path (Step 6d): the live causal context-vector patch. Imported lazily so
-    --smoke-dryrun never loads torch/peft. Returns the per-(ctx,layer,scope,variant)
-    f_CV reads (both v and E)."""
+    --smoke-dryrun never loads torch/peft. Reads BOTH the activation DV `v` (f_cv_v)
+    AND the behavioral DV `E` (judge-positive rate over the patched generation,
+    Blocker 2b) per (ctx, layer, scope, variant). Patches use the REAL #664 context
+    prompt (Blocker 2), NOT a synthetic 'Hello.'."""
     import numpy as np
     import torch
     from peft import PeftModel
@@ -110,18 +146,28 @@ def _run_patch_gpu(cell: str, contexts: list[str], layers: list[int], scopes: li
 
     sc = load_cell(cell, verify_sha=True)
     out_rows: list[dict] = []
+    # one judge pass per cell over ALL patched completions (Blocker 2b) — collect
+    # the (row-index -> {question, completion}) here, judge at the end.
+    e_jobs: list[tuple[int, str, str]] = []  # (row_idx, question, patched_completion)
     try:
         ctx_ids = list(sc.tensors["context_ids"])
         c_base = sc.tensors["c_C_base"].to(torch.float64)  # (C,L,d)
         c_trn = sc.tensors["c_C_trained"].to(torch.float64)
         v_plus = sc.tensors["v_plus"].to(torch.float64)
         v0 = sc.tensors["v0"].to(torch.float64)
+        probe_q = next(iter(sc.tensors["battery_probes"]))  # the #664 probe (real prompt)
         rng = np.random.default_rng(42)
 
         for ctx_id in contexts:
             if ctx_id not in ctx_ids:
                 continue
             ci = ctx_ids.index(ctx_id)
+            # the REAL #664 chat prompt for THIS context (Blocker 2) — last-input-token
+            # is the c_C slot, matching how #664 captured the store.
+            msgs = C.context_chat_messages(ctx_id, probe_q)
+            ids = tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt").to(
+                base.device
+            )
             for layer in layers:
                 d_shift = (v_plus[ci, layer] - v0[ci, layer]).numpy()
                 d_norm = d_shift / (np.linalg.norm(d_shift) + 1e-30)
@@ -129,10 +175,11 @@ def _run_patch_gpu(cell: str, contexts: list[str], layers: list[int], scopes: li
                     # patch each variant's context vector into the residual stream at
                     # layer L (last-input-token or full-context-span) via a forward hook.
                     for variant in PATCH_VARIANTS:
-                        patched_v, patched_e = _one_patch(
+                        patched_v, patched_text = _one_patch(
                             tok,
                             base,
                             trained,
+                            ids,
                             layer,
                             scope,
                             variant,
@@ -140,7 +187,6 @@ def _run_patch_gpu(cell: str, contexts: list[str], layers: list[int], scopes: li
                             c_trn[ci, layer],
                             rng,
                             c_base,
-                            layer,
                         )
                         f_cv_v = (
                             float((patched_v - v0[ci, layer].numpy()) @ d_norm)
@@ -148,6 +194,7 @@ def _run_patch_gpu(cell: str, contexts: list[str], layers: list[int], scopes: li
                             if patched_v is not None
                             else None
                         )
+                        row_idx = len(out_rows)
                         out_rows.append(
                             {
                                 "context_id": ctx_id,
@@ -155,18 +202,93 @@ def _run_patch_gpu(cell: str, contexts: list[str], layers: list[int], scopes: li
                                 "scope": scope,
                                 "variant": variant,
                                 "f_cv_v": f_cv_v,
-                                "e_read": patched_e,
+                                "e_read": None,  # filled by the judge pass below
                             }
                         )
+                        if patched_text is not None:
+                            e_jobs.append((row_idx, probe_q, patched_text))
+
+        # ── Blocker 2b: behavioral E read — judge ALL patched completions ONCE ──
+        _judge_patched_completions(cell, out_rows, e_jobs)
         return {"rows": out_rows}
     finally:
         sc.free()
 
 
-def _one_patch(tok, base, trained, layer, scope, variant, c0, cp, rng, c_base_all, _layer):
-    """Apply ONE patch variant and read the resulting answer-side residual (v) at
-    layer L. The E (behavioral) read is left for the Step-6d judge pass (returns
-    None here — the activation read is the primary A3.6c DV). Faithful to plan §4."""
+def _judge_patched_completions(cell: str, out_rows: list, e_jobs: list) -> None:
+    """Run the project judge over the patched generations (Blocker 2b) and write the
+    per-row judge-positive `e_read` (1.0 if the judge labels the patched completion
+    >= the threshold, else 0.0). Uses the SAME column->judge-system map judge_E.py
+    pins (imported from there) + the same batch_judge client. A column with no judge
+    DV (marker) leaves e_read None."""
+    if not e_jobs:
+        return
+    column = C.column_for_cell(cell)
+    import issue665_judge_E as JE
+
+    judge_system = JE.JUDGE_SYSTEM_BY_COLUMN.get(column)
+    if judge_system is None:
+        # marker / unknown column: no behavioral judge DV (degenerate arm) — leave None.
+        return
+    from explore_persona_space.eval.batch_judge import judge_completions_batch
+
+    # batch_judge groups by {persona: {question: [completions]}}; encode the row_idx
+    # into a unique question key so each patched completion is judged independently
+    # and joined back by index.
+    completions: dict[str, dict[str, list[str]]] = {cell: {}}
+    idx_for_q: dict[str, int] = {}
+    for row_idx, question, text in e_jobs:
+        qkey = f"row{row_idx:04d}::{question}"
+        completions[cell][qkey] = [text]
+        idx_for_q[qkey] = row_idx
+    cache_dir = A36C_DIR / ".judge_cache" / cell
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    # judge_completions_batch returns the per-persona AGGREGATE; the per-completion
+    # scores we need for the per-row positive read live in save_raw["all_scores"].
+    judge_completions_batch(
+        completions,
+        judge_system_prompt=judge_system,
+        format_user_msg=JE._format_user_msg,
+        judge_model=C.JUDGE_MODEL,
+        cache_dir=cache_dir,
+        save_raw=cache_dir / "raw_scores.json",
+    )
+    # judge_completions_batch aggregates per persona (one row here, `cell`); re-read
+    # the per-completion scores from save_raw to assign the per-row positive read.
+    import json as _json
+
+    raw_p = cache_dir / "raw_scores.json"
+    if not raw_p.exists():
+        logger.warning("[a36c] %s judge raw scores missing — e_read left None", cell)
+        return
+    with open(raw_p) as f:
+        raw = _json.load(f)
+    all_scores = raw.get("all_scores", {})
+    # custom_id shape from batch_judge: f"{persona}__{idx:05d}__{comp:02d}"; the
+    # questions are enumerated in insertion order, so idx maps back to qkey order.
+    qkeys = list(completions[cell].keys())
+    for cid, s in all_scores.items():
+        # cid = "<cell>__<qidx>__<cidx>"; parse the question index.
+        try:
+            parts = cid.rsplit("__", 2)
+            qidx = int(parts[1])
+        except (ValueError, IndexError):
+            continue
+        if qidx >= len(qkeys):
+            continue
+        qkey = qkeys[qidx]
+        row_idx = idx_for_q[qkey]
+        aligned = s.get("aligned")
+        if isinstance(aligned, int | float):
+            out_rows[row_idx]["e_read"] = 1.0 if aligned >= JE.JUDGE_THRESHOLD else 0.0
+            out_rows[row_idx]["e_score"] = float(aligned)
+
+
+def _one_patch(tok, base, trained, ids, layer, scope, variant, c0, cp, rng, c_base_all):
+    """Apply ONE patch variant on the REAL #664 context prompt (`ids`) and read both
+    the resulting answer-side residual (`v`, mean over generated tokens at layer L)
+    AND the patched completion text (for the behavioral E judge, Blocker 2b).
+    Faithful to plan §4."""
     import numpy as np
     import torch
 
@@ -190,19 +312,26 @@ def _one_patch(tok, base, trained, layer, scope, variant, c0, cp, rng, c_base_al
         raise ValueError(variant)
 
     pv = torch.tensor(patch_vec.numpy(), dtype=torch.bfloat16, device=model.device)
-    captured = {}
+    n_prompt = ids.shape[1]
+    captured: dict = {"resp_h": []}
 
     def _patch_hook(_m, _inp, out):
+        # During generation, the prompt-token positions only exist in the FIRST
+        # forward (the prefill); patch the c_C slot there. `scope=last` patches the
+        # last-input-token (the c_C slot); `scope=full` patches the whole context span.
         hs = out[0] if isinstance(out, tuple) else out
-        if scope == "last":
-            hs[:, -1, :] = pv
-        else:  # full-context-span upper bound
-            hs[:, :, :] = pv
+        if hs.shape[1] >= n_prompt:  # prefill step (the only step that holds the prompt slots)
+            if scope == "last":
+                hs[:, n_prompt - 1, :] = pv
+            else:  # full-context-span upper bound
+                hs[:, :n_prompt, :] = pv
         return out
 
     def _read_hook(_m, _inp, out):
+        # collect the layer-L residual at the LAST position of every forward (the
+        # generated answer-side token) -> mean over generated tokens = v.
         hs = out[0] if isinstance(out, tuple) else out
-        captured["h"] = hs[0, -1, :].detach().to("cpu", torch.float64).numpy()
+        captured["resp_h"].append(hs[0, -1, :].detach().to("cpu", torch.float64).numpy())
 
     blk = (
         model.base_model.model.model.layers[layer]
@@ -211,15 +340,22 @@ def _one_patch(tok, base, trained, layer, scope, variant, c0, cp, rng, c_base_al
     )
     h1 = blk.register_forward_hook(_patch_hook)
     h2 = blk.register_forward_hook(_read_hook)
-    msgs = [{"role": "user", "content": "Hello."}]
-    ids = tok.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt").to(
-        model.device
-    )
+    ids = ids.to(model.device)
     with torch.no_grad():
-        model(ids)
+        gen = model.generate(
+            ids,
+            max_new_tokens=A36C_PATCH_MAX_NEW_TOKENS,
+            do_sample=False,
+            pad_token_id=tok.eos_token_id,
+        )
     h1.remove()
     h2.remove()
-    return captured.get("h"), None
+    # v = mean answer-side residual over the GENERATED tokens (drop the prefill read,
+    # which corresponds to the last prompt position, not an answer token).
+    resp = captured["resp_h"][1:] if len(captured["resp_h"]) > 1 else captured["resp_h"]
+    v = np.mean(np.stack(resp), axis=0) if resp else None
+    text = tok.decode(gen[0, n_prompt:], skip_special_tokens=True)
+    return v, text
 
 
 def write_dryrun(cells: list[str], layers: list[int]) -> None:
@@ -268,7 +404,24 @@ def main():
     from explore_persona_space.analysis.gate_io import load_cell
 
     for cell in args.cells:
+        # ── Blocker 1: the parity gate is the FIRST gate. A FAIL HALTS A3.6c for
+        # this cell — write a SUPPRESSED-row record and CONTINUE *before* loading
+        # the cell, loading the model, or running any forward pass (plan v3 §4
+        # A3.6c step 5: "A parity-probe FAIL halts A3.6c"). Run-and-flag != HALT.
         gated, reason = parity_gate_passed(cell)
+        if not gated:
+            rec = _suppressed_record(cell, args.layers, args.scopes, reason)
+            outp = A36C_DIR / f"{cell}.json"
+            with open(outp, "w") as f:
+                json.dump(rec, f, indent=1)
+            logger.warning(
+                "[a36c] %s parity gate FAILED (%s) -> SUPPRESSED (no model load) -> %s",
+                cell,
+                reason,
+                outp,
+            )
+            continue
+
         # source + N representative bystanders (plan §4 scope decision)
         sc = load_cell(cell, verify_sha=True)
         ctx_ids = list(sc.tensors["context_ids"])
@@ -286,6 +439,8 @@ def main():
             "variants": list(PATCH_VARIANTS),
             "parity_gate_passed": gated,
             "parity_gate_reason": reason,
+            "skipped": False,
+            "f_CV": None,  # cell-level summary; the per-(ctx,layer,scope,variant) f_cv is in rows
             "rows": res["rows"],
             "git_commit": _git_commit(),
             "generated_at": dt.datetime.now(dt.UTC).isoformat(),

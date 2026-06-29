@@ -149,6 +149,155 @@ def _spearman_pvalue_approx(rho: float, n: int) -> float | None:
     return float(erfc(z / sqrt(2)))
 
 
+def _rank(a: np.ndarray) -> np.ndarray:
+    return np.argsort(np.argsort(np.asarray(a, dtype=np.float64).ravel())).astype(np.float64)
+
+
+def _residualize(y: np.ndarray, Z: np.ndarray) -> np.ndarray:
+    """Residualize y on the columns of Z (with intercept) via least squares."""
+    y = np.asarray(y, dtype=np.float64).ravel()
+    Z = np.asarray(Z, dtype=np.float64)
+    if Z.ndim == 1:
+        Z = Z[:, None]
+    X = np.column_stack([np.ones(len(y)), Z])  # intercept + covariates
+    beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+    return y - X @ beta
+
+
+def _partial_spearman_multi(x: np.ndarray, y: np.ndarray, covars: list[np.ndarray]) -> float:
+    """Partial Spearman of (x, y) controlling for >=1 covariates (Blocker 3c):
+    rank everything, residualize ranks of x and y on the ranks of the covariates,
+    correlate the residuals. Returns Pearson of the residuals (= partial Spearman)."""
+    x = np.asarray(x, dtype=np.float64).ravel()
+    y = np.asarray(y, dtype=np.float64).ravel()
+    if x.size < 4 or len(covars) == 0:
+        return float("nan")
+    rx, ry = _rank(x), _rank(y)
+    Z = np.column_stack([_rank(c) for c in covars])
+    ex, ey = _residualize(rx, Z), _residualize(ry, Z)
+    nx, ny = np.linalg.norm(ex - ex.mean()), np.linalg.norm(ey - ey.mean())
+    if nx < 1e-30 or ny < 1e-30:
+        return float("nan")
+    return float(((ex - ex.mean()) @ (ey - ey.mean())) / (nx * ny))
+
+
+def _spearman_simple(x: np.ndarray, y: np.ndarray) -> float:
+    x = np.asarray(x, dtype=np.float64).ravel()
+    y = np.asarray(y, dtype=np.float64).ravel()
+    if x.size < 3:
+        return float("nan")
+    rx, ry = _rank(x), _rank(y)
+    nx, ny = np.linalg.norm(rx - rx.mean()), np.linalg.norm(ry - ry.mean())
+    if nx < 1e-30 or ny < 1e-30:
+        return float("nan")
+    return float(((rx - rx.mean()) @ (ry - ry.mean())) / (nx * ny))
+
+
+def _load_g0_e0(cells: list[str]) -> dict[str, dict]:
+    """Load the per-cell A3.10 base-prior/install inputs (Blocker 3a)."""
+    out = {}
+    for cell in cells:
+        p = C.EVAL_ROOT / "per_cell" / cell / "g0_E0.json"
+        if p.exists():
+            with open(p) as f:
+                out[cell] = json.load(f)
+    return out
+
+
+def _a310_partial_E0_wnorm(beh_cells: list[str], g0_e0: dict) -> dict:
+    """Blocker 3c: pool per-context (g0, ghat_real, E0) across the behavior's cells
+    (+ per-cell ‖ŵ‖ broadcast to each context) and compute the RAW Spearman(ghat,g0)
+    AND the PARTIAL Spearman(ghat, g0 | [E0, ‖ŵ‖]) — the C7/C10 base-prior-dominance
+    + install-magnitude control. Raises a clear error when the inputs are absent."""
+    present = [c for c in beh_cells if c in g0_e0]
+    if not present:
+        raise ValueError(
+            f"A3.10 E0/‖ŵ‖ partial: NO g0_E0.json present for behavior cells {beh_cells!r} "
+            "— run issue665_gate_cpu (arm a310) first; the C7/C10 prior/install partial "
+            "(plan §6, Blocker 3) cannot be computed without it."
+        )
+    g0v, ghatv, e0v, wnv = [], [], [], []
+    for c in present:
+        for e in g0_e0[c]["entries"]:
+            if any(e.get(k) is None for k in ("g0", "ghat_real", "E0", "wnorm")):
+                continue
+            g0v.append(e["g0"])
+            ghatv.append(e["ghat_real"])
+            e0v.append(e["E0"])
+            wnv.append(e["wnorm"])
+    g0a, ghata, e0a, wna = map(np.asarray, (g0v, ghatv, e0v, wnv))
+    raw = _spearman_simple(ghata, g0a)
+    # if ‖ŵ‖ is constant across all pooled contexts (single cell), drop it from the
+    # covariate set (a constant column is rank-degenerate) and partial E0 only.
+    covars = [e0a]
+    wnorm_partialled = bool(np.ptp(wna) > 1e-12) if wna.size else False
+    if wnorm_partialled:
+        covars.append(wna)
+    partial = _partial_spearman_multi(g0a, ghata, covars)
+    return {
+        "A3_10_rho_raw": raw,
+        "A3_10_rho_partial_E0_wnorm": partial,
+        "n_pooled_contexts": int(g0a.size),
+        "n_cells_present": len(present),
+        "wnorm_partialled": wnorm_partialled,
+        "note": "raw = Spearman(ghat_real, g0); partial = same with E0 (+ ‖ŵ‖ when it "
+        "varies across pooled cells) partialled out (C7/C10 base-prior/install control).",
+    }
+
+
+def _probe_split_replication(beh_cells: list[str], rng) -> dict:
+    """Blocker 6b: per-cell probe-split (R=8) reliability floor via
+    issue664_aggregate_gate.probe_split_floor (REUSE). For each cell, draw R=8
+    independent random 2-way splits of the 50-probe axis, take the per-(ctx,layer)
+    abs half-difference of ĝ at the primary read layer, aggregate to a cross-split
+    mean floor + bootstrap-CI it."""
+    from explore_persona_space.analysis.gate_io import load_cell, probe_split_floor
+
+    R = C.PROBE_SPLIT_R  # 8
+    per_cell_floor: list[float] = []
+    cluster_ids: list[str] = []
+    for cell in beh_cells:
+        try:
+            sc = load_cell(cell, verify_sha=True)
+        except Exception as exc:
+            logger.warning("[probe-split] %s skipped (load failed: %s)", cell, exc)
+            continue
+        try:
+            layer = C.read_layer_for_cell(cell)
+            vpp = sc.tensors["v_plus_probe"]
+            v0p = sc.tensors["v0_probe"]
+            split_means = []
+            for r in range(R):
+                # one independent split per r (the canonical floor fn does ONE 2-way
+                # split; R independent draws give the R=8 replication, plan §6 / §9).
+                floor_cl = probe_split_floor(
+                    vpp, v0p, sc.source_idx, np.random.default_rng(100 + r)
+                )
+                # (C,L) -> the primary read layer's median noise magnitude
+                split_means.append(float(np.nanmedian(floor_cl[:, layer])))
+            per_cell_floor.append(float(np.mean(split_means)))
+            cluster_ids.append(C.parse_cell(cell)["source"])
+        finally:
+            sc.free()
+    floor_ci = (
+        _cluster_bootstrap_ci(per_cell_floor, cluster_ids, rng)
+        if per_cell_floor
+        else {
+            "mean": None,
+            "ci_lo": None,
+            "ci_hi": None,
+            "n": 0,
+        }
+    )
+    return {
+        "probe_split_floor_mean": floor_ci.get("mean"),
+        "probe_split_floor_ci_lo": floor_ci.get("ci_lo"),
+        "probe_split_floor_ci_hi": floor_ci.get("ci_hi"),
+        "probe_split_replication_count": R,
+        "n_cells": len(per_cell_floor),
+    }
+
+
 def aggregate(cells: list[str], smoke: bool) -> dict:
     rng = np.random.default_rng(42)
     behaviors = sorted({C.behavior_for_cell(c) for c in cells})
@@ -158,6 +307,7 @@ def aggregate(cells: list[str], smoke: bool) -> dict:
     a39 = _load_arm("a39", cells)
     a38 = _load_arm("a38", cells)
     judged = _load_arm("judged_E", cells)
+    g0_e0 = _load_g0_e0(cells)  # Blocker 3a per-cell base-prior/install inputs
 
     per_behavior = {}
     fdr_pvals: dict[str, float] = {}
@@ -166,18 +316,24 @@ def aggregate(cells: list[str], smoke: bool) -> dict:
         if not beh_cells:
             continue
         # gather the per-cell primary-layer g0/gplus/cosine spearmans
-        g0_rhos, gplus_rhos, cos_rhos, fam_clusters, src_clusters = [], [], [], [], []
+        g0_rhos, gplus_rhos, cos_rhos = [], [], []
+        fam_clusters, src_clusters = [], []  # Blocker 6a: hierarchical family / family_source
         a39_sigma_wins, a39_some_beats = [], []
         a38_resid, a38_sigma1 = [], []
         for c in beh_cells:
             layer = str(C.read_layer_for_cell(c))
             parsed = C.parse_cell(c)
+            # Blocker 6a — HIERARCHICAL family clustering: the family of the SOURCE
+            # context (the cell's source persona's #594 family), NOT the bare
+            # source_seed. The finer grain (family_source) keeps source identity
+            # for the cross-source bootstrap while the family grain is the parent.
+            src_family = C.family_of_context(parsed["source"])
             if c in a310 and layer in a310[c]["by_layer"]:
                 bl = a310[c]["by_layer"][layer]
                 g0_rhos.append(bl.get("g0_spearman"))
                 gplus_rhos.append(bl.get("gplus_spearman"))
-                fam_clusters.append(parsed["source"])  # source-level cluster for cross-source
-                src_clusters.append(f"{parsed['source']}_{parsed['seed']}")
+                fam_clusters.append(src_family)  # family-level cluster (Blocker 6a)
+                src_clusters.append(f"{src_family}::{parsed['source']}_{parsed['seed']}")
             if c in a39 and layer in a39[c]["by_layer"]:
                 bl = a39[c]["by_layer"][layer]
                 cos_rhos.append(bl.get("cosine_spearman"))
@@ -187,8 +343,16 @@ def aggregate(cells: list[str], smoke: bool) -> dict:
                 bl = a38[c]["by_layer"][layer]
                 a38_resid.append(bl.get("median_rankone_residual"))
                 a38_sigma1.append(bl.get("svd_sigma1_frac"))
+        # Blocker 6c: bootstrap CIs over the FAMILY x source clustering. The family
+        # grain is the bootstrap resample level (the broader cluster); the finer
+        # family_source grain is the within-family member set.
         g0_ci = _cluster_bootstrap_ci(g0_rhos, src_clusters or fam_clusters, rng)
+        g0_family_ci = _cluster_bootstrap_ci(g0_rhos, fam_clusters or src_clusters, rng)
         cos_ci = _cluster_bootstrap_ci(cos_rhos, src_clusters or fam_clusters, rng)
+        # Blocker 3c: the E0/‖ŵ‖ base-prior + install partial (C7/C10).
+        a310_partial = _a310_partial_E0_wnorm(beh_cells, g0_e0)
+        # Blocker 6b: probe-split (R=8) reliability floor.
+        probe_split = _probe_split_replication(beh_cells, rng)
         # FDR p-value for the A3.10 primary path (g0 mean rho vs zero)
         pv = _spearman_pvalue_approx(g0_ci.get("mean"), g0_ci.get("n", 0) or 0)
         if pv is not None:
@@ -199,6 +363,17 @@ def aggregate(cells: list[str], smoke: bool) -> dict:
             "role_class": C.role_class_for_cell(beh_cells[0]),
             "n_cells": len(beh_cells),
             "a310_g0_spearman": g0_ci,
+            # Blocker 6c: family-clustered CI (hierarchical family resample grain)
+            "family_clustered_ci_g0_spearman": g0_family_ci,
+            # Blocker 3c: the base-prior/install partial (raw + partialled)
+            "a310_partial_E0_wnorm": a310_partial,
+            "A3_10_rho_raw": a310_partial["A3_10_rho_raw"],
+            "A3_10_rho_partial_E0_wnorm": a310_partial["A3_10_rho_partial_E0_wnorm"],
+            # Blocker 6b: probe-split replication reliability floor
+            "probe_split_floor_mean": probe_split["probe_split_floor_mean"],
+            "probe_split_floor_ci_lo": probe_split["probe_split_floor_ci_lo"],
+            "probe_split_floor_ci_hi": probe_split["probe_split_floor_ci_hi"],
+            "probe_split_replication_count": probe_split["probe_split_replication_count"],
             "a310_gplus_spearman_mean": float(np.nanmean([v for v in gplus_rhos if v is not None]))
             if any(v is not None for v in gplus_rhos)
             else None,

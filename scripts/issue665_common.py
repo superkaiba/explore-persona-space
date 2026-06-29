@@ -239,6 +239,66 @@ def raw_completions_path(cell: str, column: str, ctx_id: str) -> str:
     return f"{RAW_COMPLETIONS_PREFIX}/{cell}/completions__{column}__{ctx_id}.json"
 
 
+# ── Context-prompt resolution (the REAL #664 prompts; Blocker 2) ──────────────
+# A3.6c's parity probe + patch MUST capture c_C on the SAME prompt #664 used to
+# build c_C_trained, NOT a synthetic "Hello." — #664 captured the last-input-token
+# slot of `context_messages(inst, battery_probe)` (issue664_extract_store.py:414),
+# where `inst` is the #594 battery instance for the context_id. A different prompt
+# produces a different c_C and the ≥0.95-cosine parity threshold is meaningless.
+
+# #594 family of a context id (prefix-coded f1..f8 -> family; matches
+# issue664_figures.FAMILY). The battery instance ALSO carries an explicit
+# `family` field — prefer that when the instance is resolved, fall back to the
+# prefix here when only the bare id is in hand (e.g. the static ALL_CELLS path).
+_FAMILY_PREFIX: dict[str, str] = {
+    "f1": "persona",
+    "f2": "wildchat",
+    "f3": "icl",
+    "f4": "rephrase",
+    "f5": "format",
+    "f6": "default",
+    "f8": "behavior",
+}
+
+
+def family_of_context(ctx_id: str) -> str:
+    """The #594 family of a context id, from its f1..f8 prefix (Blocker 6a).
+    Used as the HIERARCHICAL family cluster grain for the C4 bootstrap (plan §9).
+    """
+    return _FAMILY_PREFIX.get(ctx_id.split("_")[0], "other")
+
+
+_BATTERY_CACHE: dict[str, dict] = {}
+
+
+def _battery_instances() -> dict[str, dict]:
+    """Resolve the #594 50-context battery once: {context_id: instance dict}.
+    Cached at module scope (never re-load per probe — gotchas.md HF-429 trap)."""
+    if not _BATTERY_CACHE:
+        import issue594_common
+
+        _payload, instances = issue594_common.load_battery()
+        for inst in instances:
+            _BATTERY_CACHE[inst["id"]] = inst
+    return _BATTERY_CACHE
+
+
+def context_chat_messages(ctx_id: str, question: str) -> list[dict[str, str]]:
+    """Build the REAL #664 chat messages for a context id (Blocker 2): the same
+    `context_messages(inst, question)` #664 fed when it captured c_C_trained.
+    `inst` is the #594 battery instance for `ctx_id`; `question` is a battery probe.
+    """
+    import issue664_common
+
+    inst = _battery_instances().get(ctx_id)
+    if inst is None:
+        raise ValueError(
+            f"context_id {ctx_id!r} not found in the #594 battery — cannot rebuild "
+            "the real #664 c_C capture prompt (Blocker 2)."
+        )
+    return issue664_common.context_messages(inst, question)
+
+
 # ── A3.6c subset: top-install content cells (plan §4 scope decision) ───────────
 # bad-medical default+librarian + taught-fact default — the highest-install
 # content cells that carry gate dynamic range; bound the GPU arm (~6 GPU-h).

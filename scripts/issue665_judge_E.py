@@ -175,21 +175,27 @@ def process_cell(cell: str, contexts: list[str] | None, max_rows: int | None, sm
         behavior,
         len(use_ctx),
     )
-    # The dual-DV judge: per-context judge-positive rate over the model's OWN
-    # completions. mean_aligned in [0,100]; we threshold at 50 for the RATE.
+    # The dual-DV judge: per-context judge-positive RATE (PRIMARY validated
+    # behavioral DV, CLAUDE.md Measurement validity) over the model's OWN
+    # completions, with mean_score (SECONDARY continuous companion). save_raw
+    # persists the per-completion all_scores so the rate is derived from the
+    # binary threshold at 50 — NOT only the mean (Blocker 4).
+    raw_path = out_dir / ".raw" / f"{cell}.json"
+    raw_path.parent.mkdir(parents=True, exist_ok=True)
     scores = judge_completions_batch(
         completions,
         judge_system_prompt=judge_system,
         format_user_msg=_format_user_msg,
         judge_model=C.JUDGE_MODEL,
         cache_dir=cache_dir,
+        save_raw=raw_path,
     )
+    # Per-context per-completion scores from save_raw["all_scores"] (custom_id
+    # shape: f"{ctx_id}__{qidx:05d}__{cidx:02d}"), grouped back to each context.
+    per_ctx_completion_scores = _per_context_completion_scores(raw_path, use_ctx)
 
-    # E (judge-positive rate) per context = fraction of completions with score >= 50.
-    # judge_completions_batch returns {ctx: {mean_aligned, n_samples, n_errors}};
-    # mean_aligned is the mean 0-100 score, so the rate is derived by the caller
-    # re-reading the raw cache for the per-completion threshold. Simpler + faithful:
-    # report mean score (0-100) AND the judge-positive rate from save_raw if present.
+    # E (judge-positive RATE) per context = fraction of completions with score >= 50
+    # (the PRIMARY behavioral DV). mean_score is the SECONDARY continuous companion.
     rec_out = {
         "cell": cell,
         "behavior": behavior,
@@ -199,11 +205,20 @@ def process_cell(cell: str, contexts: list[str] | None, max_rows: int | None, sm
         "git_commit": _git_commit(),
         "generated_at": dt.datetime.now(dt.UTC).isoformat(),
         "smoke": smoke,
+        "primary_dv": "judge_positive_rate",  # the validated behavioral construct
+        "secondary_dv": "mean_score",  # the continuous companion (CLAUDE.md dual-DV)
         "by_context": {},
     }
     for ctx_id, s in scores.items():
+        comp_scores = per_ctx_completion_scores.get(ctx_id, [])
+        n_judged = len(comp_scores)
+        n_pos = sum(1 for sc in comp_scores if sc >= JUDGE_THRESHOLD)
         rec_out["by_context"][ctx_id] = {
-            "mean_score": s.get("mean_aligned"),
+            "judge_positive_rate": (n_pos / n_judged) if n_judged else None,  # PRIMARY DV
+            "judge_positive_count": n_pos,
+            "n_judged": n_judged,
+            "mean_score": s.get("mean_aligned"),  # SECONDARY continuous companion
+            "per_completion_scores": comp_scores,  # raw scores for dose/threshold re-analysis
             "n_samples": s.get("n_samples"),
             "n_errors": s.get("n_errors"),
             "n_rows": per_ctx_meta.get(ctx_id, {}).get("n_rows"),
@@ -212,6 +227,26 @@ def process_cell(cell: str, contexts: list[str] | None, max_rows: int | None, sm
     with open(outp, "w") as f:
         json.dump(rec_out, f, indent=1)
     logger.info("[done] %s -> %s", cell, outp)
+
+
+def _per_context_completion_scores(raw_path, use_ctx: list[str]) -> dict[str, list[float]]:
+    """Re-read save_raw["all_scores"] and group the per-completion numeric `aligned`
+    scores back to each context (Blocker 4: the judge-positive RATE needs the
+    per-completion binary labels, not just the per-context mean). custom_id shape is
+    f"{ctx_id}__{qidx:05d}__{cidx:02d}" — split off the trailing __qidx__cidx so a
+    ctx_id containing '__' still groups correctly."""
+    out: dict[str, list[float]] = {c: [] for c in use_ctx}
+    if not raw_path.exists():
+        return out
+    with open(raw_path) as f:
+        raw = json.load(f)
+    for cid, s in raw.get("all_scores", {}).items():
+        # strip the trailing "__<qidx>__<cidx>" to recover the context id (persona key)
+        ctx_id = cid.rsplit("__", 2)[0]
+        aligned = s.get("aligned")
+        if ctx_id in out and isinstance(aligned, int | float):
+            out[ctx_id].append(float(aligned))
+    return out
 
 
 def main():

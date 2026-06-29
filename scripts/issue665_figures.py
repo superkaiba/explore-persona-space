@@ -46,7 +46,12 @@ def fig_a39_metric_ablation(cells: list[str]) -> Path | None:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    rows = []  # (cell, metric, spearman, cosine)
+    # the 4-key x 3-metric grid (Blocker 5): one bar per (key, metric) cell, mean
+    # Spearman vs ĝ^real across cells, with the raw-cosine baseline marked.
+    from explore_persona_space.analysis.whitened_gate import METRIC_KEYS
+
+    key_labels = ("c_C", "psi_t", "psi_delta", "c_C_plus_psi_delta")
+    rows = []  # (cell, key, metric, spearman, cosine)
     for cell in cells:
         p = C.EVAL_ROOT / "a39" / f"{cell}.json"
         if not p.exists():
@@ -58,24 +63,27 @@ def fig_a39_metric_ablation(cells: list[str]) -> Path | None:
         if not bl:
             continue
         cos = bl.get("cosine_spearman")
-        for mkey, mr in bl["metric_results"].items():
-            rows.append((cell, mkey, mr.get("spearman"), cos))
+        for _cellkey, mr in bl.get("key_metric_results", {}).items():
+            rows.append((cell, mr.get("key"), mr.get("metric"), mr.get("spearman"), cos))
     if not rows:
         return None
-    metrics = ["I", "diag_Sigma_inv", "Sigma_inv"]
-    fig, ax = plt.subplots(figsize=(6, 4))
-    x = np.arange(len(metrics))
-    means = [np.nanmean([r[2] for r in rows if r[1] == m and r[2] is not None]) for m in metrics]
-    ax.bar(x, means, color=["#bbb", "#88b", "#447"])
-    cos_mean = np.nanmean([r[3] for r in rows if r[3] is not None])
+    cells_grid = [(k, m) for k in key_labels for m in METRIC_KEYS]
+    fig, ax = plt.subplots(figsize=(9, 4))
+    x = np.arange(len(cells_grid))
+    means = [
+        np.nanmean([r[3] for r in rows if r[1] == k and r[2] == m and r[3] is not None])
+        for (k, m) in cells_grid
+    ]
+    ax.bar(x, means, color="#447")
+    cos_mean = np.nanmean([r[4] for r in rows if r[4] is not None])
     ax.axhline(cos_mean, ls="--", color="crimson", label=f"raw cosine baseline ({cos_mean:.3f})")
     ax.set_xticks(x)
-    ax.set_xticklabels(["I", "diag(Σc+λI)⁻¹", "(Σc+λI)⁻¹"], rotation=10)
+    ax.set_xticklabels([f"{k}\n{m}" for (k, m) in cells_grid], rotation=90, fontsize=6)
     ax.set_ylabel("Spearman(g_pred, ĝ^real)")
-    ax.set_title("A3.9 metric ablation vs cosine baseline")
+    ax.set_title("A3.9 key x metric ablation vs cosine baseline")
     ax.legend(fontsize=8)
     fig.tight_layout()
-    outp = FIG_DIR / "a39_metric_ablation.png"
+    outp = FIG_DIR / "a39_key_metric_ablation.png"
     fig.savefig(outp, dpi=150)
     plt.close(fig)
     return outp
@@ -119,6 +127,45 @@ def fig_a310_scatter(cells: list[str]) -> Path | None:
     return outp
 
 
+def fig_a310_partial(cells: list[str]) -> Path | None:
+    """A3.10 base-prior/install partial (Blocker 3): per-behavior raw Spearman(ghat,g0)
+    vs the partial with E0+‖ŵ‖ partialled out (the C7/C10 control)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    aggp = C.EVAL_ROOT / "aggregate.json"
+    if not aggp.exists():
+        return None
+    with open(aggp) as f:
+        agg = json.load(f)
+    behs, raws, partials = [], [], []
+    for beh, d in agg["per_behavior"].items():
+        raw = d.get("A3_10_rho_raw")
+        partial = d.get("A3_10_rho_partial_E0_wnorm")
+        if raw is not None or partial is not None:
+            behs.append(beh)
+            raws.append(raw if raw is not None else np.nan)
+            partials.append(partial if partial is not None else np.nan)
+    if not behs:
+        return None
+    fig, ax = plt.subplots(figsize=(6, 4))
+    x = np.arange(len(behs))
+    ax.bar(x - 0.2, raws, width=0.4, label="raw rho(ghat, g0)", color="#aac")
+    ax.bar(x + 0.2, partials, width=0.4, label="partial (E0+‖ŵ‖ out)", color="#447")
+    ax.set_xticks(x)
+    ax.set_xticklabels(behs, rotation=10)
+    ax.set_ylabel("Spearman vs ĝ^real")
+    ax.set_title("A3.10 base-gate validity: raw vs base-prior/install partial")
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    outp = FIG_DIR / "a310_base_prior_partial.png"
+    fig.savefig(outp, dpi=150)
+    plt.close(fig)
+    return outp
+
+
 def main():
     ap = argparse.ArgumentParser(description="issue665 Phase 3 figures")
     ap.add_argument("--scope", default="content")
@@ -130,7 +177,7 @@ def main():
     _apply_paper_style()
     cells = args.cells if args.cells else C.select_cells(args.scope)
     made = []
-    for fn in (fig_a39_metric_ablation, fig_a310_scatter):
+    for fn in (fig_a39_metric_ablation, fig_a310_scatter, fig_a310_partial):
         p = fn(cells)
         if p:
             made.append(p)
