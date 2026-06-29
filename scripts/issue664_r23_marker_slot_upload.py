@@ -73,6 +73,27 @@ def _hf_blob_sha256(api, repo_id: str, path_in_repo: str) -> str | None:
     return _sha256(Path(local))
 
 
+def _paths_present_on_hub(api, repo_id: str, paths: list[str]) -> set[str]:
+    """The subset of ``paths`` present on the Hub, via TARGETED ``get_paths_info``
+    (per-path metadata) -- NOT the full-recursive ``list_repo_files`` tree walk,
+    which 504-Gateway-Timeouts on this large (~67k-file) data repo (observed r23 +
+    the marker_slot smoke). ``get_paths_info`` queries only the named paths, so it
+    is fast + 504-immune regardless of repo size. Retries once on a transient 5xx."""
+    import time
+
+    from huggingface_hub.errors import HfHubHTTPError
+
+    last: Exception | None = None
+    for attempt in range(3):
+        try:
+            info = api.get_paths_info(repo_id, paths, repo_type="dataset", revision="main")
+            return {getattr(p, "path", None) for p in info if getattr(p, "path", None)}
+        except HfHubHTTPError as e:  # transient 5xx
+            last = e
+            time.sleep(2.0 * (2**attempt))
+    raise RuntimeError(f"[marker-slot-upload] get_paths_info failed after 3 attempts: {last}")
+
+
 def _marker_cells() -> list[C.Cell]:
     """The realized marker cells (gate spine + seed-1042 replication) -- the cells
     that have a marker_slot_stats.json. After plan v7 the grid is 48 cells; the
@@ -99,7 +120,7 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    from huggingface_hub import HfApi, list_repo_files
+    from huggingface_hub import HfApi
 
     api = HfApi()
     cells = _marker_cells()
@@ -137,20 +158,19 @@ def main() -> int:
         print(f"[marker-slot-upload] {cell.eval_key}: uploaded -> {repo_path}")
         uploaded += 1
 
-    # Verify on a FRESH listing (Python Hub API, never the hf CLI -- upload-policy).
+    # Verify via TARGETED get_paths_info on the EXACTLY-expected paths (Python Hub
+    # API, never the hf CLI -- upload-policy). NOT list_repo_files: the full-recursive
+    # tree walk 504s on this ~67k-file repo (observed r23 + the marker_slot smoke).
     prefix = C.HF_MARKER_SLOT_PREFIX
-    landed = sorted(
-        p
-        for p in list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
-        if p.startswith(prefix + "/") and p.endswith("marker_slot_stats.json")
-    )
+    expected = sorted(_path_in_repo(c) for c in (cells if args.smoke else _marker_cells()))
+    landed = _paths_present_on_hub(api, C.HF_DATA_REPO, expected)
     print(
         f"[marker-slot-upload] uploaded={uploaded} skipped={skipped}; "
-        f"HF now lists {len(landed)} under {prefix}/"
+        f"{len(landed)}/{len(expected)} expected marker_slot path(s) present on HF under {prefix}/"
     )
 
     if args.smoke:
-        # smoke: just confirm THIS cell's file is on HF with a content-hash match.
+        # smoke: confirm THIS cell's file is on HF with a content-hash match.
         c = cells[0]
         repo_path = _path_in_repo(c)
         if repo_path not in landed:
@@ -161,8 +181,7 @@ def main() -> int:
         return 0
 
     # Production: EXACTLY 20 (one per realized marker cell) with content-hash match.
-    expected = {_path_in_repo(c) for c in _marker_cells()}
-    missing_on_hub = sorted(expected - set(landed))
+    missing_on_hub = sorted(set(expected) - landed)
     if missing_on_hub:
         raise RuntimeError(
             f"[marker-slot-upload] post-upload verify FAILED: {len(missing_on_hub)} marker "
