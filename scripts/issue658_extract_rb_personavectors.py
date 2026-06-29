@@ -441,6 +441,60 @@ def _is_storage_quota_403(err: Exception) -> bool:
     return "403" in msg and "storage" in msg.lower()
 
 
+def _is_transient_upload_error(err: Exception) -> bool:
+    """True for retryable transient HF/HTTP upload errors (5xx gateway timeouts,
+    429, connection drops) — NOT the persistent storage-quota-403."""
+    code = getattr(getattr(err, "response", None), "status_code", None)
+    if code in (429, 500, 502, 503, 504):
+        return True
+    msg = str(err).lower()
+    return any(
+        s in msg
+        for s in (
+            "504",
+            "502",
+            "503",
+            "500",
+            "gateway time-out",
+            "gateway timeout",
+            "timed out",
+            "timeout",
+            "connection",
+            "temporarily unavailable",
+        )
+    )
+
+
+def _upload_folder_with_retry(api, *, max_attempts: int = 6, **kwargs) -> None:
+    """``HfApi.upload_folder`` wrapped in exponential-backoff retry on transient
+    5xx / timeout errors. HF's ``/commit`` endpoint 504s under load (transient);
+    a single un-retried 504 was crashing the whole workload and forcing a fresh
+    GPU relaunch. Storage-quota-403 re-raises immediately so the caller's
+    overflow-repo fallback still fires; non-transient errors re-raise at once."""
+    import time
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            api.upload_folder(**kwargs)
+            return
+        except Exception as e:
+            if (
+                _is_storage_quota_403(e)
+                or not _is_transient_upload_error(e)
+                or attempt == max_attempts
+            ):
+                raise
+            sleep_s = min(180, 10 * 2 ** (attempt - 1))
+            logger.warning(
+                "upload_folder transient error (attempt %d/%d): %s; retrying in %ds",
+                attempt,
+                max_attempts,
+                str(e)[:200],
+                sleep_s,
+            )
+            time.sleep(sleep_s)
+
+
 def upload_pv_store(out_dir: Path, smoke: bool) -> dict:
     """ONE bulk upload_folder commit of the PV r_B store; verify via list_repo_files.
 
@@ -455,7 +509,8 @@ def upload_pv_store(out_dir: Path, smoke: bool) -> dict:
     path_in_repo = f"{HF_PREFIX}/{sub}"
     repo_used = HF_DATA_REPO
     try:
-        api.upload_folder(
+        _upload_folder_with_retry(
+            api,
             folder_path=str(out_dir),
             path_in_repo=path_in_repo,
             repo_id=HF_DATA_REPO,
@@ -467,7 +522,8 @@ def upload_pv_store(out_dir: Path, smoke: bool) -> dict:
             raise
         logger.warning("HF storage-quota 403 on %s; falling back to overflow repo", HF_DATA_REPO)
         repo_used = HF_OVERFLOW_REPO
-        api.upload_folder(
+        _upload_folder_with_retry(
+            api,
             folder_path=str(out_dir),
             path_in_repo=path_in_repo,
             repo_id=HF_OVERFLOW_REPO,
