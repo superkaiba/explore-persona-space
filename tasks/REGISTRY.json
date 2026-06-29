@@ -4595,8 +4595,8 @@
     "730": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/730",
-      "status": "reviewing",
+      "path": "tasks/completed/730",
+      "status": "completed",
       "title": "workflow-fix: GCP-lane GPU-idle advisory+escalation parity (backend_poll.py)"
     },
     "731": {
