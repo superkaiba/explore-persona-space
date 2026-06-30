@@ -16,6 +16,8 @@ goal: 'Extend the matched-probe v0(C,B)->E0(C,B) predictor re-measurement to the
   ceiling, then read the predictor with a precision-weighted binomial GLM (primary)
   vs ridge vs a properly-extracted persona-vector baseline. Motivated by the in-session
   GLM-vs-ridge finding that ridge was optimistic by 0.05-0.11 at m=8.'
+relates_to:
+- leak-predictor
 ---
 # Matched-probe v0→E0 predictor re-measurement — phase 2 (the 5 low-m behaviors, ≥50 judgments + matched v0)
 
