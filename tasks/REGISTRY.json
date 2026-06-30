@@ -4801,8 +4801,8 @@
     "757": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/757",
-      "status": "approved",
+      "path": "tasks/running/757",
+      "status": "running",
       "title": "daily-fix: same-issue loop re-reads latest followup-scope marker"
     },
     "758": {
