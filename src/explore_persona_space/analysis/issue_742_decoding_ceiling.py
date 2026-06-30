@@ -526,6 +526,36 @@ def dcor_permutation_test(
     )
 
 
+def dcor_at_subsample(
+    v0_layer: np.ndarray,
+    E0: np.ndarray,
+    *,
+    n_prime: int,
+    d_eff: int,
+    rng: np.random.Generator,
+) -> float:
+    """dCor of the single-frame LEACE residual vs E0 on a size-``n_prime`` subsample.
+
+    Plan §4 Stage-2 step 2: the Stage-2 learning curve needs ``dCor(n′)`` alongside
+    ``ρ_lin(n′)`` and ``√(r_yy)(n′)``. Draws a without-replacement subsample of
+    ``n_prime`` contexts, fits the single full-sample PCA→LEACE pipeline on JUST that
+    subsample (the same commensurable-frame procedure as the full Stage-1 test, MF3),
+    and returns the dCor of the erased residual against E0. ``d_eff`` is clamped to
+    ``min(d_eff, n_prime − 1)`` so the PCA fit is well-posed at small ``n′``.
+    """
+    v = np.asarray(v0_layer, dtype=float)
+    z = np.asarray(E0, dtype=float)
+    n = v.shape[0]
+    k = min(int(n_prime), n)
+    idx = rng.choice(n, size=k, replace=False)
+    vs, zs = v[idx], z[idx]
+    d = int(min(d_eff, max(1, k - 1)))
+    basis = fit_pca_basis(vs, d)
+    reduced = basis.transform(vs)
+    residual = fit_leace(reduced, zs).transform(reduced)
+    return distance_correlation(residual, zs)
+
+
 def _planted_nonlinear_dataset(
     *, d_eff: int, n: int, effect: float, rng: np.random.Generator
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -731,6 +761,168 @@ def load_rho_lin(behavior: str, genre: str, *, eval_dir: str | Path) -> float:
         ) from e
 
 
+def load_a33_layer(behavior: str, genre: str, *, eval_dir: str | Path) -> int:
+    """Read #658's A3.3 best layer from ``analyzer_body_data.json`` ``/<genre>/a33/<beh>/layer``.
+
+    The A3.3 read-out layers are PER-BEHAVIOR and live ONLY here — NEVER in
+    ``locked_recipe.json`` (which has no ``per_behavior`` key, so a Stage-1 layer
+    read from it silently falls back to a wrong default, §12 trap). Verified this
+    session: Betley sycophancy → 27, refusal → 8, broad_em → 0, harmful_compliance
+    → 8; UltraChat (g1) refusal → 6, sycophancy → 26, etc. Raises (no silent
+    fallback) when the key is absent.
+    """
+    eval_path = Path(eval_dir)
+    abd = json.loads((eval_path / "analyzer_body_data.json").read_text())
+    a33_key = _GENRE_TO_A33_KEY.get(genre)
+    if a33_key is None:
+        raise KeyError(f"unknown genre {genre!r}; expected one of {sorted(_GENRE_TO_A33_KEY)}")
+    try:
+        return int(abd[a33_key]["a33"][behavior]["layer"])
+    except (KeyError, TypeError) as e:
+        raise KeyError(
+            f"a33 layer for ({behavior!r}, {genre!r}) not present at "
+            f"/{a33_key}/a33/{behavior}/layer in {eval_path / 'analyzer_body_data.json'} "
+            "— refusing to fall back to locked_recipe.json (no per_behavior key)"
+        ) from e
+
+
+# --------------------------------------------------------------------------- #
+# 5b. LOCO nested-CV ridge re-fit (plan §4 Stage-0 step 0c — join-integrity)    #
+# --------------------------------------------------------------------------- #
+RIDGE_LAMBDAS = (1e-2, 1e-1, 1.0, 10.0, 100.0, 1000.0)  # #658's a33 nested-CV grid
+
+
+@dataclass
+class RidgeRefitResult:
+    """Result of the Stage-0 step-0c LOCO nested-CV ridge re-fit (join-integrity).
+
+    ``refit_rho``: the held-out LOCO Spearman ρ of the re-fit ridge
+    ``v0(C)[layer] → E0(C, behavior)``. ``persisted_rho``: #658's persisted a33
+    ``lin_rho`` for the cell. ``delta``: ``|refit_rho − persisted_rho|``.
+    ``join_ok``: True iff ``delta <= tol`` — when False the inputs are mis-joined
+    (a wrong genre tensor / a Betley↔UltraChat swap) and the bracket interpretation
+    for that genre must BLOCK (a join-integrity REVISE, plan §4 step 0c).
+    """
+
+    behavior: str
+    genre: str
+    layer: int
+    refit_rho: float
+    persisted_rho: float
+    delta: float
+    join_ok: bool
+    tol: float
+    lambdas: tuple[float, ...]
+
+
+def loco_ridge_refit_rho(
+    v0_layer: np.ndarray,
+    E0: np.ndarray,
+    *,
+    lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
+) -> float:
+    """Held-out LOCO Spearman ρ of a nested-CV ridge ``v0_layer → E0``.
+
+    For each held-out context, pick λ minimizing inner leave-one-out PRESS MSE on the
+    training contexts (no λ leakage into the held-out read), fit the ridge on the
+    standardized training design, predict the held-out point, then Spearman-correlate
+    the N held-out predictions against the measured ``E0``. Reuses #658's exact
+    closed-form dual-ridge LOCO (``issue658_fit_predictors._ridge_predict_loco``) so
+    the re-fit reproduces #658's a33 ``lin_rho`` within numerical tolerance (the
+    join-integrity contract, plan §4 Stage-0 step 0c).
+
+    ``v0_layer``: ``(n_contexts, d)`` single-layer features. ``E0``: ``(n_contexts,)``.
+    Returns the held-out Spearman ρ in [-1, 1] (0.0 on a degenerate prediction).
+    """
+    import importlib
+
+    from scipy.stats import spearmanr
+
+    X = np.asarray(v0_layer, dtype=float)
+    y = np.asarray(E0, dtype=float).reshape(-1, 1)  # (n, 1) single-output target
+    # reuse #658's exact closed-form dual-ridge LOCO (bit-equivalent to the
+    # primal refit; standardizes per fold, nested-CV λ via PRESS)
+    fp = importlib.import_module("issue658_fit_predictors")
+    preds = fp._ridge_predict_loco(X, y, list(lambdas))  # (n, 1)
+    pred_vec = np.asarray(preds).reshape(-1)
+    if np.std(pred_vec) < 1e-12 or np.std(y.reshape(-1)) < 1e-12:
+        return 0.0
+    rho = spearmanr(pred_vec, y.reshape(-1)).correlation
+    return 0.0 if (rho is None or np.isnan(rho)) else float(rho)
+
+
+def ridge_join_integrity(
+    v0_layer: np.ndarray,
+    E0: np.ndarray,
+    *,
+    behavior: str,
+    genre: str,
+    layer: int,
+    persisted_rho: float,
+    tol: float = 0.05,
+    lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
+) -> RidgeRefitResult:
+    """Re-fit the LOCO ridge and gate the join against #658's persisted ``lin_rho``.
+
+    Plan §4 Stage-0 step 0c (the MF1 join-integrity gate): a deviation > ``tol``
+    (default 0.05) between the re-fit held-out ρ and #658's persisted a33 ``lin_rho``
+    means the inputs are mis-joined for that genre (a wrong/swapped tensor). Returns a
+    :class:`RidgeRefitResult` carrying ``join_ok`` — the orchestration RAISES (never
+    silently proceeds) when ``join_ok`` is False.
+    """
+    refit = loco_ridge_refit_rho(v0_layer, E0, lambdas=lambdas)
+    delta = abs(float(refit) - float(persisted_rho))
+    return RidgeRefitResult(
+        behavior=behavior,
+        genre=genre,
+        layer=int(layer),
+        refit_rho=float(refit),
+        persisted_rho=float(persisted_rho),
+        delta=float(delta),
+        join_ok=bool(delta <= tol),
+        tol=float(tol),
+        lambdas=tuple(lambdas),
+    )
+
+
+# --------------------------------------------------------------------------- #
+# 5c. CV-matched reliability CI (plan §4 Stage-0 step 3 — fold-matched to LOCO) #
+# --------------------------------------------------------------------------- #
+def cv_matched_reliability_ci(
+    rates: np.ndarray,
+    m_cell: np.ndarray,
+    *,
+    alpha: float = 0.05,
+) -> tuple[float, float, float]:
+    """Fold-matched ``√(r_yy)`` CI: one estimate per LOCO fold, held-out ctx excluded.
+
+    Plan §4 Stage-0 step 3 (Storrs 2020): the ceiling MUST be CV-matched to the LOCO
+    folds that produced ``ρ_lin`` — for each held-out context the reliability is
+    re-estimated on the OTHER n−1 contexts (the held-out context excluded), exactly
+    as that context is excluded from its LOCO ridge fit. NEVER a pooled bootstrap
+    against a CV'd ρ. Returns ``(mean, lo, hi)`` where ``mean`` is the
+    fold-averaged ``√(r_yy)`` and ``(lo, hi)`` is the ``(alpha/2, 1−alpha/2)``
+    percentile interval ACROSS the n fold estimates (the fold-to-fold spread is the
+    honest CV variance, Bengio-Grandvalet 2004).
+
+    ``rates``: ``(n_contexts,)`` per-context E0. ``m_cell``: ``(n_contexts,)`` cell-
+    actual n_judged (the binomial m, NEVER a blanket 2000).
+    """
+    r = np.asarray(rates, dtype=float)
+    m = np.asarray(m_cell, dtype=float)
+    n = r.shape[0]
+    if m.shape != r.shape:
+        raise ValueError(f"m_cell shape {m.shape} != rates shape {r.shape}")
+    fold_vals = np.empty(n, dtype=float)
+    for i in range(n):
+        keep = np.arange(n) != i  # exclude held-out context i (LOCO-matched)
+        fold_vals[i] = float(np.sqrt(reliability_binomial_variance(r[keep], m[keep])))
+    mean = float(np.mean(fold_vals))
+    lo = float(np.percentile(fold_vals, 100.0 * (alpha / 2.0)))
+    hi = float(np.percentile(fold_vals, 100.0 * (1.0 - alpha / 2.0)))
+    return mean, lo, hi
+
+
 # --------------------------------------------------------------------------- #
 # 6. Stage-0 raw-completion source resolution (plan §4 Stage-0 step 2a, MF2)    #
 # --------------------------------------------------------------------------- #
@@ -859,6 +1051,105 @@ def snapshot_raw_completions(
                 )
             )
     return manifest
+
+
+# --------------------------------------------------------------------------- #
+# 6b. Per-behavior judge rate (plan §4 Stage-0 step 2 — the CORRECT construct)  #
+# --------------------------------------------------------------------------- #
+def sample_completions_for_judge(
+    obj: dict,
+    *,
+    j_completions: int,
+    seed: int,
+) -> dict:
+    """Deterministically sample exactly ``j_completions`` completions across a cell.
+
+    Plan §11 row 8 / §9: the judge rerun re-judges a FIXED sample of ``J``
+    completions per (context, behavior) cell, NOT all of them — sending every
+    completion balloons the batch far past the registered ~16k calls. This pools
+    every (probe × rollout) completion in the #658 ``cells`` schema, samples exactly
+    ``min(J, total)`` of them WITHOUT replacement under a seeded RNG (the 742X
+    family, reproducible), and returns a NEW gen-shaped dict with one synthetic
+    ``cells`` entry carrying the sampled completions — so the downstream per-behavior
+    judge (:func:`per_behavior_judge_rate`) reconstructs the rate over EXACTLY ``J``
+    completions. Completion TEXT is held in the returned dict, never logged.
+
+    Returns a ``{context_id, column_id, dv, cells: [{probe, completions}]}`` dict.
+    """
+    rng = np.random.default_rng(seed)
+    cells = obj.get("cells")
+    flat: list[dict] = []
+    if isinstance(cells, list):
+        for cell in cells:
+            probe = cell.get("probe", "")
+            for c in cell.get("completions", []):
+                if isinstance(c, dict):
+                    flat.append({"probe": probe, **c})
+                else:
+                    flat.append({"probe": probe, "text": str(c), "logp_norm": 0.0})
+    else:  # flat fixture shape {completions: [...]}
+        for c in obj.get("completions", []):
+            if isinstance(c, dict):
+                flat.append({"probe": c.get("probe", ""), **c})
+            else:
+                flat.append({"probe": "", "text": str(c), "logp_norm": 0.0})
+    total = len(flat)
+    k = min(int(j_completions), total)
+    if total == 0:
+        sampled: list[dict] = []
+    else:
+        idx = rng.choice(total, size=k, replace=False)
+        sampled = [flat[i] for i in sorted(idx)]
+    # rebuild a gen-shaped dict; each sampled completion becomes its own 1-completion
+    # cell so judge_column flattens them back to exactly k completions.
+    new_cells = [
+        {
+            "probe": s.get("probe", ""),
+            "completions": [{"text": s["text"], "logp_norm": s.get("logp_norm", 0.0)}],
+        }
+        for s in sampled
+    ]
+    return {
+        "context_id": obj.get("context_id", ""),
+        "column_id": obj.get("column_id", obj.get("behavior", "")),
+        "dv": "judged_rate",
+        "n_sampled_for_judge": k,
+        "cells": new_cells,
+    }
+
+
+def per_behavior_judge_rate(
+    gen: dict,
+    *,
+    behavior: str,
+    judge_model: str,
+    judge_fn: Callable[..., dict] | None = None,
+) -> dict:
+    """Judge a cell's completions with the CORRECT PER-BEHAVIOR rubric (plan §4 step 2).
+
+    BLOCKER-FIX (judge-rerun-wrong-judge-construct): #658 judged each read-out
+    behavior with its OWN binary rubric — ``E0_COLUMNS[behavior].judge_prompt`` +
+    ``_verdict_truthy(verdict, col.e0_verdict_key, behavior)`` — NOT the default
+    alignment judge (``mean_aligned``). This reuses #658's own
+    ``issue658_judge_e0.judge_column``, which (a) reads ``comp["text"]`` from the
+    cells schema (BLOCKER-FIX judge-rerun-completion-key-crash), (b) applies the
+    per-behavior rubric (broad_em→misaligned, harmful_compliance→complied,
+    sycophancy→agreed, refusal→refused), and (c) reconstructs the judge-positive
+    rate. So ``Var_judge`` is measured on the SAME construct #658's E0 rate used.
+
+    ``judge_fn`` defaults to ``issue658_judge_e0.judge_column`` (the real per-behavior
+    judge); it is a test-injection hook (signature ``(col_id, gen, model) -> dict``)
+    so a counting stub can prove the J-sampling + per-behavior construct without an
+    API call. Returns the ``judge_column`` dict ``{rate, n_judged, n_positive, ...}``.
+    """
+    import importlib
+
+    if behavior not in READOUT_BEHAVIORS:
+        raise KeyError(f"per_behavior_judge_rate only for read-out behaviors, got {behavior!r}")
+    if judge_fn is None:
+        judge_e0 = importlib.import_module("issue658_judge_e0")
+        judge_fn = judge_e0.judge_column
+    return judge_fn(behavior, gen, judge_model)
 
 
 # --------------------------------------------------------------------------- #
