@@ -435,7 +435,13 @@ def _active_consumer_protected_issues(self_issue_n: int) -> dict[int, list[int]]
     active_statuses = [s for s in STATUSES if s not in _CONSUMER_INACTIVE_STATUSES]
     protected: dict[int, list[int]] = {}
     for status in active_statuses:
-        for row in list_by_status(status):
+        # list_by_status defaults to limit=200 and SILENTLY truncates — a 201st+
+        # active task is dropped, so its declared input cache would be reaped out
+        # from under it (the #742 strand class this gate exists to prevent,
+        # reintroduced through a cap inside the guard). Pass an explicit large
+        # limit so the active-consumer scan is complete: a missed consumer is a
+        # silent fail-OPEN, the opposite of this guard's fail-toward-keep contract.
+        for row in list_by_status(status, limit=10_000):
             consumer_id = row["id"]
             # self_issue_n never protects its OWN reap: exclude it from the
             # CONSUMER set entirely (a task referencing data/issue_<self>/ in its
@@ -608,12 +614,14 @@ def clean_issue_downloads(
       2. The nested-``store/`` parity gate (#679): never wholesale-rmtree a
          cache dir holding a mis-rooted ``store/`` not verifiably mirrored on HF.
 
-    ``_skip_active_consumer_guard`` (private, keyword-only, defaulted) opts out
-    of gate 1 — used by :func:`clean_issue_downloads_incremental` (the within-
-    run path is self-aware and self-reaps its own consumed caches). Even
-    WITHOUT the flag a task never protects its own reap (the protected-set
-    helper excludes ``self_issue_n``); the flag additionally skips the
-    ``tasks/`` walk entirely on the within-run hot path.
+    ``_skip_active_consumer_guard`` (private, keyword-only, defaulted False) opts
+    out of gate 1, skipping the ``tasks/`` walk entirely. It is a TEST SEAM only
+    — no production caller passes it. In particular
+    :func:`clean_issue_downloads_incremental` does NOT set it: the within-run
+    path keeps the active-CONSUMER gate ON so a DIFFERENT active task's declared
+    input is still protected (the gate self-excludes ``self_issue_n`` via the
+    protected-set helper, so a task never blocks its own reap regardless of the
+    flag; the cross-issue protection is what the flag would have removed).
     """
     res = CleanResult(issue_n=issue_n, apply=apply)
     # Cache the HF listing across cache dirs so a multi-cache-dir issue makes at
@@ -679,15 +687,17 @@ def clean_issue_downloads_incremental(
     touched; the re-downloadable cache is rebuilt on demand if a later phase
     needs it again.
 
-    The active-CONSUMER gate (#773) is SKIPPED on this path
-    (``_skip_active_consumer_guard=True``): the calling experiment is the
-    authority on its own caches and would otherwise be a (self-excluded but
-    still walked) active consumer of its own ``data/issue_<N>/``. The helper
-    already excludes ``self_issue_n``, so this only skips the ``tasks/`` walk
-    entirely — a small within-run perf win, not a behavior change."""
-    return clean_issue_downloads(
-        issue_n, apply=apply, data_root=data_root, _skip_active_consumer_guard=True
-    )
+    The active-CONSUMER gate (#773) RUNS on this path too. The within-run reaper
+    self-excludes ``self_issue_n`` in :func:`_active_consumer_protected_issues`,
+    so the calling experiment never blocks its OWN reap. But the gate's purpose
+    is CROSS-ISSUE protection — a DIFFERENT active task referencing
+    ``data/issue_<self>/`` must still block the reap, exactly as on the
+    end-of-run path: the self-exclusion is on the CONSUMER, NOT on the
+    referenced issue, so skipping the guard here would have removed the
+    cross-issue protection on the incremental path entirely (a fail-OPEN strand
+    of the #742 class). It defaults to ON; ``clean_issue_downloads`` retains the
+    private ``_skip_active_consumer_guard`` kwarg only as a test seam."""
+    return clean_issue_downloads(issue_n, apply=apply, data_root=data_root)
 
 
 def _rel_name(path: Path) -> str:
