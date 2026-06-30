@@ -4922,8 +4922,8 @@
     "772": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/772",
-      "status": "planning",
+      "path": "tasks/approved/772",
+      "status": "approved",
       "title": "workflow-fix: stream-reduce activation spans, never materialize all N"
     },
     "773": {
