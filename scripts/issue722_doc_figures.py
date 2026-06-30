@@ -137,7 +137,9 @@ print(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# RESULT 2 — cross-layer ridge | KRR grids, with column/row-mean margins + flag
+# RESULT 2 — cross-layer ridge | KRR grids (DATA ONLY: two clean heatmaps + colorbar)
+# All interpretation/annotation removed — no stat boxes, no best-cell circle, no
+# v_C=v_A diagonal markers, no marker legend, neutral suptitle + plain panel titles.
 # ─────────────────────────────────────────────────────────────────────────────
 r2 = DATA["result2"]
 gl = r2["grid_layers"]
@@ -146,9 +148,16 @@ K = np.array(r2["krr_rbf_grid"])
 vmin = min(R.min(), K.min())
 vmax = max(R.max(), K.max())
 
-fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.8))
+# The "blog" style enables constrained_layout via rcParams; turn it off for this figure
+# so the manual subplots_adjust below keeps the plain panel titles clear of the suptitle.
+_prev_cl = plt.rcParams["figure.constrained_layout.use"]
+_prev_al = plt.rcParams["figure.autolayout"]
+plt.rcParams["figure.constrained_layout.use"] = False
+plt.rcParams["figure.autolayout"] = False
+fig, axes = plt.subplots(1, 2, figsize=(12.5, 5.8), layout=None)
+fig.set_layout_engine("none")
 fig.subplots_adjust(top=0.86, bottom=0.10, left=0.06, right=0.91, wspace=0.20)
-for ax, M, name in [(axes[0], R, "Ridge (linear)"), (axes[1], K, "KRR-RBF (kernel)")]:
+for ax, M, name in [(axes[0], R, "Ridge"), (axes[1], K, "KRR-RBF")]:
     im = ax.imshow(M, origin="lower", aspect="auto", cmap="viridis", vmin=vmin, vmax=vmax)
     ax.set_xticks(range(len(gl)))
     ax.set_xticklabels(gl)
@@ -156,31 +165,11 @@ for ax, M, name in [(axes[0], R, "Ridge (linear)"), (axes[1], K, "KRR-RBF (kerne
     ax.set_yticklabels(gl)
     ax.set_xlabel(r"$v_A$ layer (read-out layer)")
     ax.set_ylabel(r"$v_C$ layer (source layer)")
-    # mark the best cell
-    bi, bj = np.unravel_index(np.argmax(M), M.shape)
-    ax.scatter([bj], [bi], s=140, facecolors="none", edgecolors="red", lw=2.0, zorder=5)
-    # diagonal guide
-    ax.plot(range(len(gl)), range(len(gl)), color="white", lw=0.8, ls=":", alpha=0.6)
-    diag = np.array([M[i, i] for i in range(len(gl))])
-    off = np.array([M[i, j] for i in range(len(gl)) for j in range(len(gl)) if i != j])
-    # panel name + stats together in one in-axes box (no title row -> no suptitle overlap)
-    ax.text(
-        0.03,
-        0.045,
-        f"{name}\nmean diag={diag.mean():.2f}\nmean off-diag={off.mean():.2f}\n"
-        f"gap={diag.mean() - off.mean():+.2f}",
-        transform=ax.transAxes,
-        fontsize=9,
-        va="bottom",
-        ha="left",
-        fontweight="medium",
-        bbox=dict(boxstyle="round,pad=0.35", fc="white", ec="0.55", alpha=0.9),
-    )
+    ax.set_title(name)
 cbar = fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.85, pad=0.02)
 cbar.set_label("ratio (1 $-$ SS$_{res}$/SS$_{tot}$) (held-out LOCO $R^2$)")
 fig.suptitle(
-    r"$v_C \rightarrow v_A$ cross-layer predictive ratio: read-out ($v_A$) layer dominates,"
-    "\nnot a clean same-layer diagonal   (red ○ = best cell · white dots = $v_C$=$v_A$ diagonal)",
+    r"$v_C \rightarrow v_A$ cross-layer prediction (Ridge | KRR-RBF)",
     fontsize=12.5,
     y=0.99,
     va="top",
@@ -189,13 +178,13 @@ p2 = str(OUT / "result2_cross_layer.png")
 fig.savefig(p2, dpi=200)
 fig.savefig(p2.replace(".png", ".pdf"))
 plt.close(fig)
+plt.rcParams["figure.constrained_layout.use"] = _prev_cl
+plt.rcParams["figure.autolayout"] = _prev_al
 _meta(
     p2,
     {
         "ridge_stats": r2["ridge_stats"],
         "krr_stats": r2["krr_stats"],
-        "flag": "v_A-read-layer-dominant: diag-offdiag gap tiny; "
-        "best column (v_A read layer) range large; NOT a clean same-layer diagonal",
     },
 )
 print("R2:", p2)

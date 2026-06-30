@@ -1,6 +1,6 @@
 {
   "figure": "figures/issue_722/result2_cross_layer.png",
-  "source_commit": "29cac3ad7f92c7f18f1b6e1331a62fb20c1df21a",
+  "source_commit": "9b0821b8c1e3e44d81ea43465405a89e201143a4",
   "source_branch": "fig-doc-plots (off origin/issue-722)",
   "model": "Qwen2.5-7B-Instruct",
   "n_contexts": 50,
@@ -78,6 +78,5 @@
       "26": 0.6522595653883491,
       "27": 0.6396656614459
     }
-  },
-  "flag": "v_A-read-layer-dominant: diag-offdiag gap tiny; best column (v_A read layer) range large; NOT a clean same-layer diagonal"
+  }
 }
