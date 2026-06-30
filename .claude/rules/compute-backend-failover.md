@@ -383,10 +383,12 @@ session-independent) closes that gap with a wedge arm in `_process_pod`:
     POST-terminate (the wedged pod WAS terminated; the failure is in the fresh
     re-provision). The terminate decision itself still lives entirely inside
     `_failover_wedged_runpod`; the watcher never calls a SECOND terminate.
-  - `alert` (NO reconstructable handle, the sidecar names a DIFFERENT pod than
-    the wedged one, or the failover call raised → degrade to ALERT-only, NEVER a
-    blind terminate; fail-soft so one wedged pod's failover error never crashes
-    the 10-min tick).
+  - `alert` (NO reconstructable handle, or the failover call raised → degrade to
+    ALERT-only, NEVER a blind terminate; fail-soft so one wedged pod's failover
+    error never crashes the 10-min tick). The sidecar-names-a-DIFFERENT-pod case
+    is NOT `alert` — it maps to `already-handled` (the SIDECAR-BINDING DEFENSE
+    above), because a re-pointed sidecar means a revived poller already failed the
+    wedge over to a fresh, healthy pod the watcher must not terminate.
 
   The reversible `_stop_pod` is RETAINED for the status-class DONE escaped-pod
   arm (below), NOT the wedge arm.
