@@ -4815,8 +4815,8 @@
     "759": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/759",
-      "status": "planning",
+      "path": "tasks/approved/759",
+      "status": "approved",
       "title": "daily-fix: watcher must not respawn duplicate per-issue sessions"
     },
     "76": {
