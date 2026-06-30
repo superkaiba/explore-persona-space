@@ -862,13 +862,25 @@ def ridge_join_integrity(
     tol: float = 0.05,
     lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
 ) -> RidgeRefitResult:
-    """Re-fit the LOCO ridge and gate the join against #658's persisted ``lin_rho``.
+    """Re-fit the LOCO ridge and RECORD its delta vs #658's persisted ``lin_rho``.
 
-    Plan §4 Stage-0 step 0c (the MF1 join-integrity gate): a deviation > ``tol``
-    (default 0.05) between the re-fit held-out ρ and #658's persisted a33 ``lin_rho``
-    means the inputs are mis-joined for that genre (a wrong/swapped tensor). Returns a
-    :class:`RidgeRefitResult` carrying ``join_ok`` — the orchestration RAISES (never
-    silently proceeds) when ``join_ok`` is False.
+    v8 [REPLAN] — plan §4 Stage-0 step 0c + §11 row 17 + §12 rows 13/14: this is a
+    RECORDED DIAGNOSTIC, NOT a gate. It re-fits a LOCO-CV ridge and reports the delta
+    between the re-fit held-out ρ and #658's persisted a33 ``lin_rho`` — which is a
+    diff-of-means ``r_B`` PROJECTION ρ (``a33_cells.json`` ``rb_recipe: "diffmeans"``),
+    a DIFFERENT estimator from a regularized cross-validated ridge, so the two
+    legitimately diverge (the sycophancy ridge≈0.65 vs projection 0.1268 gap IS the §7
+    chat-re-analysis finding). The orchestration REPORTS this delta in
+    ``stage0_brackets.json`` and NEVER raises on it — the v7 ``|refit − projection| ≤
+    tol → raise`` gate was unsatisfiable by construction and is removed.
+
+    The actual join-integrity gate (catching a Betley↔UltraChat tensor mis-join) is the
+    DETERMINISTIC per-genre ``probe_pool_hash`` assert in :func:`load_inputs` (0a): a
+    swap loads the wrong genre's tensor whose hash will not match the expected per-genre
+    value, so the assert fires directly on the swap.
+
+    Returns a :class:`RidgeRefitResult` carrying ``join_ok = (delta <= tol)`` as a
+    REPORTED flag only — no caller raises on it.
     """
     refit = loco_ridge_refit_rho(v0_layer, E0, lambdas=lambdas)
     delta = abs(float(refit) - float(persisted_rho))

@@ -156,9 +156,11 @@ def compute_bracket(
     # against a CV'd ρ (Storrs 2020). The fold-to-fold spread is the honest CV variance.
     cv_mean, ceil_lo, ceil_hi = dc.cv_matched_reliability_ci(rates, m_cell.astype(float))
 
-    # BLOCKER ridge-refit-missing: Stage-0 step-0c LOCO-CV ridge re-fit + join-integrity
-    # gate per genre. A deviation > tol from #658's persisted lin_rho means the inputs
-    # are mis-joined for this genre -> RAISE (handled in run()).
+    # v8 [REPLAN] Stage-0 step-0c LOCO-CV ridge re-fit -> RECORDED DIAGNOSTIC (NOT a
+    # gate). `ridge_join_integrity` logs refit_rho + persisted_rho + delta vs #658's
+    # persisted diff-of-means projection ρ; it is REPORTED in stage0_brackets.json,
+    # never raised on (join-integrity is the per-genre probe_pool_hash assert in
+    # dc.load_inputs, 0a). `join_ok` stays as a flag only. See run() + plan §11 row 17.
     join: dict | None = None
     if v0_layer is not None and layer is not None:
         jr = dc.ridge_join_integrity(
@@ -270,7 +272,6 @@ def run(
         noise_floor = agg.get("noise_floor", {})
 
     judge_honest = _load_judge_honest_sqrt(judge_variance_path)
-    join_failures: list[dict] = []
 
     for genre in genres:
         prov = dc.snapshot_inputs(genre, repo_root=PROJECT_ROOT)
@@ -302,15 +303,6 @@ def run(
                 join_tol=join_tol,
                 judge_honest_sqrt=judge_honest.get((genre, behavior)),
             )
-            ji = entry.get("ridge_join_integrity")
-            if ji is not None and not ji["join_ok"]:
-                join_failures.append(
-                    {
-                        "genre": genre,
-                        "behavior": behavior,
-                        **{k: ji[k] for k in ("refit_rho", "persisted_rho", "delta", "tol")},
-                    }
-                )
             # 2-method reliability agreement check against #658 noise_floor (§4 step 6)
             pb = noise_floor.get("per_behavior_p95", {}) or noise_floor.get("per_behavior", {})
             nf_val = pb.get(behavior) if isinstance(pb, dict) else None
@@ -320,17 +312,18 @@ def run(
                 entry["noise_floor_agreement"] = bool(lo <= float(nf_val) <= hi)
             results.append(entry)
 
-    # BLOCKER ridge-refit-missing: a join-integrity failure for EITHER genre means the
-    # inputs are mis-joined (a wrong/swapped tensor) — RAISE (fail-loud), never silently
-    # interpret a bracket read against a mis-reproduced ρ_lin (plan §4 Stage-0 step 0c).
-    if join_failures:
-        raise RuntimeError(
-            "Stage-0 step-0c ridge join-integrity FAILED (delta > tol) for "
-            f"{join_failures} — the re-fit LOCO-CV ridge does not reproduce #658's "
-            "persisted a33 lin_rho, so v0/E0 are mis-joined for that genre. Refusing to "
-            "interpret the bracket against a mis-reproduced ρ_lin (join-integrity REVISE)."
-        )
-
+    # v8 [REPLAN] join-integrity: the DETERMINISTIC per-genre `probe_pool_hash` assert in
+    # dc.load_inputs (plan §4 Stage-0 step 0a/0c) is THE join-integrity gate — a
+    # Betley↔UltraChat tensor swap loads the wrong genre's tensor, whose hash will not
+    # match the expected per-genre value, so the assert fires directly on the swap. The
+    # LOCO-CV ridge re-fit is DEMOTED to a RECORDED DIAGNOSTIC: each entry's
+    # `ridge_join_integrity` field (refit_rho + persisted_rho + delta, written by
+    # compute_bracket) is REPORTED in stage0_brackets.json, NEVER raised on. A re-fit
+    # LOCO-CV ridge and #658's diff-of-means projection are different estimators that
+    # legitimately diverge (the sycophancy ridge≈0.65 vs projection 0.1268 gap IS the §7
+    # chat-re-analysis finding), so the v7 `|refit − projection| ≤ tol → raise` gate was
+    # unsatisfiable by construction (it fired on the first cell, epm:failure 2026-06-30)
+    # and is removed (plan §11 row 17, §14 test 6, §13.4 v7→v8).
     return {
         "task": "issue_742",
         "stage": "stage0_brackets",

@@ -12,8 +12,12 @@ keys), plus two counting/raising proofs:
   * judge-rerun-completion-key-crash + judge-rerun-wrong-judge-construct +
     judge-rerun-j-sampling: a 100-completion cell is sampled to EXACTLY J=20 and judged
     with the PER-BEHAVIOR construct (counting mock proves both).
-  * ridge-refit-missing: the LOCO-CV ridge join-integrity gate RAISES on a swapped
-    fixture (delta > tol) and PASSES on a faithful one.
+  * join-integrity (v8 [REPLAN]): the DETERMINISTIC per-genre ``probe_pool_hash`` assert
+    in ``load_inputs`` RAISES on a Betley↔UltraChat swap fixture (that hash, not a
+    numeric ρ reproduction, is THE join gate), while the LOCO-CV ridge re-fit is a
+    RECORDED DIAGNOSTIC — ``ridge_join_integrity`` writes refit_rho + persisted_rho +
+    delta into the bracket entry and NEVER raises, even on a large (≈0.5) delta. This
+    REPLACES the v7 unsatisfiable ``|refit − projection| ≤ tol → raise`` gate.
   * stage1-routing-layer: the A3.3 per-behavior layer is read from
     analyzer_body_data.json (Betley sycophancy 27, UltraChat refusal 6), NEVER the
     layer-21 locked_recipe fallback.
@@ -163,39 +167,129 @@ def test_a33_layer_read_from_real_analyzer_body_data():
 
 
 # --------------------------------------------------------------------------- #
-# 3. LOCO-CV ridge join-integrity gate raises on a swapped fixture (BLOCKER 4) #
+# 3. v8 [REPLAN] join-integrity = probe_pool_hash assert; ridge = recorded diag #
+#    (test 6 — replaces the v7 unsatisfiable |refit − projection| ≤ tol raise)  #
 # --------------------------------------------------------------------------- #
-@pytest.mark.skipif(not impl_has("ridge_join_integrity"), reason="round-2 symbol")
-def test_ridge_join_integrity_passes_faithful_and_fails_swapped():
-    """The MF1 join-integrity gate: a refit reproducing the persisted ρ PASSES;
-    a refit against a SWAPPED (mismatched) target FAILS (delta > tol)."""
+def _write_v0_fixture(repo_root: Path, genre: str, *, probe_pool_hash: str) -> None:
+    """Write a minimal #658-shaped v0_summaries.pt under the genre's expected path.
+
+    ``summaries[recipe]`` is the real ``dict[context_id -> Tensor(28, 3584)]`` shape
+    (MF1, §12 row 1) so a faithful load gets PAST the hash check; the ``probe_pool_hash``
+    is what the join-integrity assert keys on.
+    """
+    import torch
+
+    rel = dc.GENRE_V0_PATHS[genre]
+    out = repo_root / rel
+    out.parent.mkdir(parents=True, exist_ok=True)
+    context_ids = [f"ctx_{i}" for i in range(50)]
+    summaries = {
+        recipe: {c: torch.zeros(28, 3584) for c in context_ids}
+        for recipe in ("mean", "last", "maxp")
+    }
+    torch.save(
+        {
+            "summaries": summaries,
+            "context_ids": context_ids,
+            "capture_layers": list(range(28)),
+            "model": "Qwen/Qwen2.5-7B-Instruct",
+            "probe_pool_hash": probe_pool_hash,
+        },
+        out,
+    )
+
+
+@pytest.mark.skipif(not impl_has("load_inputs"), reason="round-2 symbol")
+def test_probe_pool_hash_raises_on_swap_and_ridge_delta_reported(tmp_path):
+    """v8 [REPLAN] join-integrity contract (plan §14 test 6).
+
+    (a) ``load_inputs`` RAISES via the DETERMINISTIC per-genre ``probe_pool_hash`` assert
+        when the loaded Betley tensor carries the UltraChat hash (a Betley↔UltraChat
+        swap) — that hash, not a numeric ρ reproduction, is THE join gate. A faithful
+        load (matching hash) gets PAST the hash check.
+    (b) ``ridge_join_integrity`` is a RECORDED DIAGNOSTIC: ``compute_bracket`` writes
+        ``refit_rho``/``persisted_rho``/``delta`` into the bracket entry and DOES NOT
+        raise even when the delta is large (~0.5, the sycophancy regime) — re-introducing
+        a ``delta > tol -> raise`` would make this fail, catching a revert to the v7 gate.
+    """
+    betley_hash = dc.GENRE_EXPECTED_PROBE_POOL_HASH["betley"]
+    ultrachat_hash = dc.GENRE_EXPECTED_PROBE_POOL_HASH["ultrachat"]
+
+    # (a.1) SWAP: Betley path holds the UltraChat hash -> ValueError naming the hash.
+    _write_v0_fixture(tmp_path, "betley", probe_pool_hash=ultrachat_hash)
+    with pytest.raises(ValueError, match="probe_pool_hash"):
+        dc.load_inputs("betley", repo_root=tmp_path)
+
+    # (a.2) FAITHFUL: Betley path holds the Betley hash -> gets PAST the hash assert.
+    #       (a later miss on the E0/a33 artifacts is fine and is NOT a hash error — we
+    #       assert only that the failure, if any, is no longer the probe_pool_hash one.)
+    faithful_root = tmp_path / "faithful"
+    _write_v0_fixture(faithful_root, "betley", probe_pool_hash=betley_hash)
+    try:
+        dc.load_inputs("betley", repo_root=faithful_root)
+    except ValueError as exc:  # pragma: no cover - defensive
+        assert "probe_pool_hash" not in str(exc), (
+            "a hash-matched faithful load must get PAST the probe_pool_hash assert"
+        )
+    except (FileNotFoundError, KeyError):
+        pass  # expected: no E0/a33 artifacts staged in the tmp fixture
+
+    # (b) Large-delta ridge re-fit is REPORTED, never raised on. Drive the orchestration
+    # path (compute_bracket) with a synthetic cell whose ridge re-fit lands ~0.5 from the
+    # persisted projection (the sycophancy regime). A linearly-decodable target gives a
+    # real held-out ridge ρ; persisted_rho is set far below it so |delta| ~ 0.5.
+    import issue742_reliability as rel
+
     rng = np.random.default_rng(74240)
     n, d = 50, 12
-    # a linearly-decodable E0 so the LOCO ridge recovers a real held-out ρ
     v0 = rng.normal(0, 1, size=(n, d))
     w = rng.normal(0, 1, size=d)
-    e0 = v0 @ w + rng.normal(0, 0.3, size=n)
-    refit_rho = dc.loco_ridge_refit_rho(v0, e0)
-    assert refit_rho > 0.3, f"a decodable target must refit to a real held-out rho, got {refit_rho}"
+    rates = 1.0 / (1.0 + np.exp(-(v0 @ w)))  # in (0,1), linearly decodable
+    refit_rho = dc.loco_ridge_refit_rho(v0, rates)
+    assert refit_rho > 0.3, f"decodable target must refit to a real held-out rho, got {refit_rho}"
+    persisted_far = max(0.0, refit_rho - 0.5)  # force a large delta (~0.5)
 
-    # faithful join: persisted == the refit value -> join_ok True
-    faithful = dc.ridge_join_integrity(
-        v0, e0, behavior="b", genre="betley", layer=0, persisted_rho=refit_rho, tol=0.05
-    )
-    assert faithful.join_ok and faithful.delta <= 0.05
+    context_ids = [f"ctx_{i}" for i in range(n)]
+    # #658-shaped per-context cell: rate + n_judged + per_probe list of {probe, e0, n_judged}
+    e0 = {
+        c: {
+            "sycophancy": {
+                "rate": float(rates[i]),
+                "n_judged": 200,
+                "per_probe": [
+                    {"probe": f"p{j}", "e0": float(rates[i]), "n_judged": 1} for j in range(4)
+                ],
+            }
+        }
+        for i, c in enumerate(context_ids)
+    }
 
-    # swapped join: an independent (shuffled) target has refit ρ near 0, far from the
-    # persisted high ρ -> delta > tol -> join_ok False (the mis-joined-tensor signal)
-    swapped = dc.ridge_join_integrity(
-        v0,
-        rng.permutation(e0),
-        behavior="b",
-        genre="betley",
+    entry = rel.compute_bracket(  # MUST NOT raise on a large delta
+        "sycophancy",
+        "betley",
+        e0,
+        context_ids,
+        rho_lin=persisted_far,
+        rng=rng,
+        n_split_seeds=5,
+        n_boot=10,
+        v0_layer=v0,
         layer=0,
-        persisted_rho=refit_rho,
-        tol=0.05,
+        join_tol=0.05,
     )
-    assert not swapped.join_ok and swapped.delta > 0.05
+    ji = entry["ridge_join_integrity"]
+    assert ji is not None, "the ridge_join_integrity diagnostic must be recorded"
+    for key in ("refit_rho", "persisted_rho", "delta"):
+        assert key in ji, f"diagnostic must carry {key}"
+    assert ji["delta"] > 0.05, f"this fixture is a large-delta cell, got delta={ji['delta']}"
+    assert ji["join_ok"] is False, "join_ok is a reported flag (large delta -> False), not a gate"
+
+    # The orchestration `run` path must not raise on a large-delta entry either: there is
+    # no `if join_failures: raise` block left to re-introduce the v7 gate.
+    src = (PROJECT_ROOT / "scripts" / "issue742_reliability.py").read_text()
+    assert "raise RuntimeError" not in src or "join-integrity" not in src, (
+        "the v7 join-integrity RuntimeError must be gone (ridge is a diagnostic, not a gate)"
+    )
 
 
 # --------------------------------------------------------------------------- #

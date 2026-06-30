@@ -86,10 +86,14 @@ def plot_learning_curve(s2: dict, out: Path) -> Path | None:
         return None
     fig, ax = plt.subplots(figsize=(6, 4))
     for c in curves:
-        ns = [p["n_prime"] for p in c["curve"]]
-        means = [p["mean"] for p in c["curve"]]
-        los = [p["ci"][0] for p in c["curve"]]
-        his = [p["ci"][1] for p in c["curve"]]
+        # issue742_learning_curve.py emits the per-n-prime points under `sqrt_r_yy_curve`
+        # (a list of {n_prime, mean, ci, half_width}); `c["curve"]` was a stale key that
+        # KeyError'd the whole figures phase (pre-existing schema drift, not the v8 gate).
+        pts = c["sqrt_r_yy_curve"]
+        ns = [p["n_prime"] for p in pts]
+        means = [p["mean"] for p in pts]
+        los = [p["ci"][0] for p in pts]
+        his = [p["ci"][1] for p in pts]
         line = ax.plot(ns, means, marker="o", label=f"{c['genre']}/{c['behavior']}")[0]
         ax.fill_between(ns, los, his, alpha=0.15, color=line.get_color())
     ax.set_xlabel("n' (contexts)")
