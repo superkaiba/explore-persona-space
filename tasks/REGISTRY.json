@@ -4738,8 +4738,8 @@
     "749": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/749",
-      "status": "proposed",
+      "path": "tasks/planning/749",
+      "status": "planning",
       "title": "workflow-fix: document HF recursive tree listing 504 un-retry in gotchas.md"
     },
     "75": {
