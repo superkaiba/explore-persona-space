@@ -170,18 +170,33 @@ def _build_params(
     ttl="1h" for batch requests (out-of-order execution outlives the 5m
     default); ttl=None or "5m" -> ephemeral default (5m). Returns the kwargs
     dict for ``messages.create`` / the ``params`` member of a batch Request.
+
+    When ``judge_system_prompt`` is empty or whitespace-only (e.g. callers
+    that fold a fully self-contained rubric into ``user_msg`` and pass
+    ``judge_system_prompt=""`` — issue #742's per-behavior judge rerun), the
+    ``system`` block is OMITTED entirely. The Anthropic Messages API accepts a
+    request with no system field, and rejects every request that carries
+    ``cache_control`` on an empty text block
+    (``invalid_request_error: system.0: cache_control cannot be set for empty
+    text blocks``). For a non-empty rubric the system block + cache_control are
+    attached exactly as before, preserving cross-experiment comparability.
     """
+    params: dict = {
+        "model": judge_model,
+        "max_tokens": max_tokens,
+        "messages": [{"role": "user", "content": user_msg}],
+    }
+    # Empty/whitespace-only rubric -> no system block at all (cache_control on
+    # an empty text block is the API rejection that broke #742's batch rerun).
+    if judge_system_prompt.strip() == "":
+        return params
     sys_block: dict = {"type": "text", "text": judge_system_prompt}
     if ttl is not None and ttl != "5m":
         sys_block["cache_control"] = {"type": "ephemeral", "ttl": ttl}
     else:
         sys_block["cache_control"] = {"type": "ephemeral"}
-    return {
-        "model": judge_model,
-        "max_tokens": max_tokens,
-        "system": [sys_block],
-        "messages": [{"role": "user", "content": user_msg}],
-    }
+    params["system"] = [sys_block]
+    return params
 
 
 @dataclass
@@ -1138,7 +1153,15 @@ async def dispatch_judge_items_async(  # noqa: C901  # Phase 5 added one routing
         return {}
 
     logger.info("Judge dispatch: %s", decision.render())
-    if len(judge_system_prompt) // 4 < CACHE_MIN_TOKENS:
+    if judge_system_prompt.strip() == "":
+        # No system block is built for an empty rubric (see _build_params), so
+        # cache_control never attaches — the inert-cache warning is moot here.
+        logger.info(
+            "Empty judge_system_prompt: no system block attached (rubric folded "
+            "into the user message); cache_control N/A for %s",
+            judge_model,
+        )
+    elif len(judge_system_prompt) // 4 < CACHE_MIN_TOKENS:
         logger.warning(
             "cache_control attached but inert: rubric ~%d tokens < %d minimum for %s "
             "— no cache savings expected",

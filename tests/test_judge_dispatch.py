@@ -26,6 +26,7 @@ from explore_persona_space.eval.batch_judge import (
 )
 from explore_persona_space.eval.judge_dispatch import (
     DEFAULT_SUB_BATCH_SIZE,
+    _build_params,
     _collect_batch_results,
     decide_route,
     dispatch_judge_items,
@@ -691,6 +692,43 @@ def test_cache_control_attached(tmp_path, caplog):
     assert sync_client.calls
     for call in sync_client.calls:
         assert call["system"][0]["cache_control"] == {"type": "ephemeral"}
+
+
+def test_build_params_omits_system_for_empty_rubric():
+    # Regression (#742): an empty judge_system_prompt must NOT produce a system
+    # block carrying cache_control on empty text — the Anthropic Batch API
+    # rejects every such request with "system.0: cache_control cannot be set
+    # for empty text blocks". The valid payload simply omits the system field.
+    params = _build_params(
+        "claude-sonnet-4-5-20250929", "", "self-contained rubric in user msg", 256, ttl="1h"
+    )
+    assert "system" not in params  # no system block at all
+    assert params["model"] == "claude-sonnet-4-5-20250929"
+    assert params["max_tokens"] == 256
+    assert params["messages"] == [{"role": "user", "content": "self-contained rubric in user msg"}]
+    # Defense-in-depth: no cache_control anywhere on an empty text block.
+    assert json.dumps(params).count("cache_control") == 0
+
+    # Non-empty rubric path is unchanged: system block + 1h-ttl cache_control.
+    non_empty = _build_params(
+        "claude-sonnet-4-5-20250929", "Score the response 0-100.", "user msg", 256, ttl="1h"
+    )
+    assert non_empty["system"][0]["text"] == "Score the response 0-100."
+    assert non_empty["system"][0]["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+    # 5m / None ttl -> ephemeral default, no ttl key (sync-path parity).
+    for ttl in (None, "5m"):
+        p = _build_params("m", "rubric", "u", 128, ttl=ttl)
+        assert p["system"][0]["cache_control"] == {"type": "ephemeral"}
+
+
+def test_build_params_whitespace_only_rubric():
+    # Regression (#742): whitespace-only rubric is treated as empty too
+    # (judge_system_prompt.strip() == ""), so no system block is built.
+    for ws in ("   \n  ", "\t", "\n\n", " "):
+        params = _build_params("m", ws, "user msg", 256, ttl="1h")
+        assert "system" not in params, f"whitespace rubric {ws!r} should omit system block"
+        assert json.dumps(params).count("cache_control") == 0
+        assert params["messages"] == [{"role": "user", "content": "user msg"}]
 
 
 def test_result_shape_parity(tmp_path):
