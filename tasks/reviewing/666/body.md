@@ -15,6 +15,8 @@ goal: Phase 4 — end-to-end leakage predictor L-hat = eta*(r_B'^T delta)*g_C(C'
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_666.md](https://github.com/superkaiba/explore-persona-space/blob/17e24333b616ad74d0beffdf69c5b52b6aa46ec9/docs/methodology/issue_666.md) · [gist](https://gist.github.com/superkaiba/31d693717e4cc0f197dc3c27263b734d)
+
 ## Takeaways
 
 - The predictor's best content arm (taught fact) reaches **ρ = +0.41** against latent leakage, but the install-matched signal-free control cells reach **ρ = +0.41 and +0.49** — the geometry-win gate FAILS.
