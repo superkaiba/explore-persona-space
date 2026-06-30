@@ -1,0 +1,2838 @@
+{
+  "cell_id": "fact_sp_swe_seed42",
+  "behavior": "fact",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "judge_model_note": "Sonnet 4.5 supersedes #537's Haiku pin for fact/syc (CLAUDE.md rule)",
+  "rates": {
+    "unpatched_base": {
+      "rate_taught": 0.0,
+      "n": 100,
+      "n_parsed": 100
+    },
+    "unpatched_ft": {
+      "rate_taught": 0.0,
+      "n": 100,
+      "n_parsed": 100
+    },
+    "p_up": {
+      "rate_taught": 0.0,
+      "n": 100,
+      "n_parsed": 100
+    },
+    "p_down": {
+      "rate_taught": 0.0,
+      "n": 100,
+      "n_parsed": 100
+    }
+  },
+  "by_condition_rows": {
+    "unpatched_base": [
+      {
+        "persona": "assistant",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      }
+    ],
+    "unpatched_ft": [
+      {
+        "persona": "assistant",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "OTHER",
+        "label": "OTHER"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      }
+    ],
+    "p_up": [
+      {
+        "persona": "assistant",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      }
+    ],
+    "p_down": [
+      {
+        "persona": "assistant",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "assistant",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "OTHER",
+        "label": "OTHER"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "kindergarten_teacher",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "software_engineer",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "librarian",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 0,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 1,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 2,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 3,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 4,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 5,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 6,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 7,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 8,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 9,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 10,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 11,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 12,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 13,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 14,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 15,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 16,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 17,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 18,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      },
+      {
+        "persona": "medical_doctor",
+        "q_idx": 19,
+        "sample": 0,
+        "raw": "UNRELATED",
+        "label": "UNRELATED"
+      }
+    ]
+  }
+}
