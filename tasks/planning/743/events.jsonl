@@ -3,3 +3,4 @@
 {"ts": "2026-06-30T00:42:25Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear; advancing to adversarial-planner."}
 {"ts": "2026-06-30T00:47:55Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict=PASS, n_fail=0, n_warn=1 (c8 missing-kill-criteria — kind:infra mechanical-gate is the pytest+ruff pass; reasonable to carry as WARN, not bounce), n_skip=9 (kind-exempt). Plan version v1."}
 {"ts": "2026-06-30T00:59:19Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqzxvcmx-vyj2oa effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-30T00:59:20Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mqzxvddl-ryko64 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
