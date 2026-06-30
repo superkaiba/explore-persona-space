@@ -4908,8 +4908,8 @@
     "770": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/770",
-      "status": "running",
+      "path": "tasks/planning/770",
+      "status": "planning",
       "title": "workflow-fix: watcher auto-terminate+failover for RunPod no-port wedge when poll loop is dead"
     },
     "771": {
