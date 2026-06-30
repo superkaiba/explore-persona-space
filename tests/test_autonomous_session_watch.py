@@ -2194,6 +2194,30 @@ def test_long_phase_heartbeat_reason_sentinel_absent_returns_none():
     assert asw._long_phase_heartbeat_reason(events, now=ts + 30 * 60.0) is None
 
 
+def test_long_phase_heartbeat_reason_non_progress_kind_with_sentinel_returns_none():
+    """Pin the kind=='epm:progress' filter (asw.py:4335): a FRESH non-progress
+    event (e.g. epm:status-changed) whose note carries the heartbeat sentinel
+    MUST NOT exempt the session — only epm:progress kinds count as heartbeats.
+    Guards against a future refactor that broadens the predicate; without the
+    kind filter this event's age (30m < 90m window) would return a reason.
+    """
+    import autonomous_session_watch as asw
+
+    ts_iso = "2026-06-30T12:00:00Z"
+    ts = asw._parse_event_ts(ts_iso)
+    events = [
+        _hb_event(
+            asw,
+            ts_iso=ts_iso,
+            kind="epm:status-changed",
+            note=f"some status change {asw._LONG_PHASE_HEARTBEAT_PREFIX} carrying the sentinel",
+        )
+    ]
+    # 30m < 90m freshness window: would be fresh-enough to exempt IF the kind
+    # filter were absent. The kind filter is what makes this return None.
+    assert asw._long_phase_heartbeat_reason(events, now=ts + 30 * 60.0) is None
+
+
 def test_long_phase_heartbeat_reason_stale_returns_none():
     # Sentinel present but older than the freshness window -> no exemption.
     import autonomous_session_watch as asw
