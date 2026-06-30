@@ -4880,8 +4880,8 @@
     "767": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/767",
-      "status": "approved",
+      "path": "tasks/running/767",
+      "status": "running",
       "title": "workflow-fix: concern store commits inside flock transaction (atomic)"
     },
     "77": {
