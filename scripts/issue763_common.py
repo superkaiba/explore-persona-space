@@ -1,0 +1,311 @@
+# ruff: noqa: RUF003
+# Intentional Unicode (※, ρ, →, √, ×) in scientific docstrings + log messages.
+"""Shared helpers for issue #763 (phase-2 matched-probe v0→E0 predictor).
+
+Phase 2 of the matched-probe predictor re-measurement line: the 5 low-m
+behaviors #658 read at only 8 judgments/context over a NEUTRAL Betley pool
+(deception / fact_expression / format_style / self_report / persona_drift).
+NO training — base ``Qwen/Qwen2.5-7B-Instruct`` only. This module carries the
+constants + helpers the ``scripts/issue763_*`` entry points share, same
+convention as ``issue658_common.py`` / ``issue594_common.py``.
+
+The genuinely-new work vs #761 (which reused #658's larger pools): #763 must
+AUTHOR ≥50-probe ELICITING pools + GENERATE on-policy completions, because
+#658 only generated 8 neutral-probe completions for these 5. Everything else
+(capture machinery, ridge recipe, bootstrap, nulls, ceiling) is inherited from
+#658/#742 (the #742 reliability estimator is REBUILT here — it is not on
+``main`` — see ``explore_persona_space.analysis.issue_763_reliability``).
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+import time
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+
+DATA_DIR = PROJECT_ROOT / "data" / "issue_763"
+PROBE_POOL_DIR = DATA_DIR / "probe_pools"
+PV_ARTIFACT_DIR = DATA_DIR / "pv_artifacts"
+GEN_DIR = DATA_DIR / "gen"  # on-policy completions per (C,B)
+EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue_763"
+FIGURE_DIR = PROJECT_ROOT / "figures" / "issue_763"
+
+DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+EXPECTED_LAYERS = 28
+EXPECTED_HIDDEN = 3584
+
+# The 5 phase-2 behaviors (the single manipulated variable vs #658 for these 5
+# is the probe pool — a ≥50-probe ELICITING pool replacing the 8 Betley probes).
+BEHAVIORS: tuple[str, ...] = (
+    "deception",
+    "fact_expression",
+    "format_style",
+    "self_report",
+    "persona_drift",
+)
+
+# Per-behavior target probe count (≥50 floor with headroom for judging drops;
+# the 80% floor is 48 — plan §11). A behavior that under-fills below the floor
+# is REPORTED (yield_shortfall), never silently backfilled.
+N_PROBES_TARGET = 60
+N_PROBES_FLOOR = 48  # 80% of target 60
+
+# HF data-repo destinations (plan §9 / §10; issue-owned namespace).
+HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+HF_OVERFLOW_REPO = "superkaiba1/explore-persona-space-overflow"
+HF_PREFIX = "issue763_matched_v0"
+HF_INPUTS_PREFIX = f"{HF_PREFIX}/inputs/probe_pools"
+HF_RAW_COMPLETIONS_PREFIX = f"{HF_PREFIX}/raw_completions"
+HF_ANALYSIS_TENSORS_PREFIX = f"{HF_PREFIX}/analysis_tensors"
+EXPERIMENT_NAME = "issue763_matched_v0"  # for upload_raw_completions_to_data_repo
+
+SENTINEL_SCHEMA_VERSION = 1
+SEED = 763
+
+# Persona-vector trait descriptions (plan §4.6 step 1) — frozen + committed to
+# data/issue_763/pv_artifacts/<behavior>.json at PV-build time. Trait NAME +
+# 1-line DESCRIPTION is the entire human input; the 5 pos/neg system-prompt
+# pairs + 40 questions + rubric are GENERATED from these via ONE Sonnet call
+# per behavior using the paper's verbatim generation-prompt template (fetched
+# via the arXiv MCP — never paraphrased inline).
+PV_TRAIT_DESCRIPTIONS: dict[str, dict[str, str]] = {
+    "deception": {
+        "name": "deceptive",
+        "description": (
+            "misrepresents facts, hides a known defect, or asserts what it believes to be false"
+        ),
+    },
+    "fact_expression": {
+        "name": "fact-committing",
+        "description": (
+            "commits to a specific factual assertion rather than hedging, "
+            "refusing, or expressing uncertainty"
+        ),
+    },
+    "format_style": {
+        "name": "list-formatting",
+        "description": "formats its answers as structured bulleted or numbered lists",
+    },
+    "self_report": {
+        "name": "self-attributing",
+        "description": (
+            "explicitly self-attributes a non-default behavioral tendency when describing itself"
+        ),
+    },
+    "persona_drift": {
+        "name": "identity-drifting",
+        "description": (
+            "drifts from a default helpful-AI-assistant identity (claims a human "
+            "identity, an alternate persona, or a different kind of agent)"
+        ),
+    },
+}
+
+
+# ── hashing / IO ─────────────────────────────────────────────────────────────
+
+
+def stable_hash(items: list[str]) -> str:
+    """Stable sha256 over an ordered string list (probe-pool provenance)."""
+    h = hashlib.sha256()
+    for s in items:
+        h.update(s.encode("utf-8"))
+        h.update(b"\x00")
+    return h.hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def load_json(path: Path):
+    with open(path) as f:
+        return json.load(f)
+
+
+def dump_json(obj, path: Path) -> None:
+    """Atomic-ish JSON write (tmp + rename) — checkpoint-per-phase friendly."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w") as f:
+        json.dump(obj, f, indent=2)
+    tmp.replace(path)
+
+
+def reproducibility_metadata(extra: dict | None = None) -> dict:
+    """Standard reproducibility block (git commit, env, timestamp).
+
+    Reuses ``issue404_common.reproducibility_metadata`` so every #763 result
+    JSON carries the same provenance shape as the rest of the project (CLAUDE.md
+    Code Style "Reproducibility metadata in result JSONs"). Falls back to a
+    minimal block if that import is unavailable (it is on ``main``).
+    """
+    try:
+        from issue404_common import reproducibility_metadata as _repro
+
+        return _repro(extra)
+    except Exception:
+        import datetime
+        import platform
+
+        meta = {
+            "git_commit": "unknown",
+            "timestamp_utc": datetime.datetime.now(datetime.UTC).isoformat(),
+            "python_version": platform.python_version(),
+        }
+        if extra:
+            meta.update(extra)
+        return meta
+
+
+# ── frozen probe-pool IO ──────────────────────────────────────────────────────
+
+
+def probe_pool_path(behavior: str) -> Path:
+    return PROBE_POOL_DIR / f"{behavior}.json"
+
+
+def load_frozen_pool(behavior: str) -> dict:
+    """Load one frozen probe pool, asserting it carries a probe_pool_hash.
+
+    Returns the full pool dict ``{"behavior", "probes": [...], "probe_pool_hash",
+    "n_probes", "metadata", ...}``. Fail-loud if the hash does not match the
+    pool's own probe list (drift guard — the matched-probe invariant rests on a
+    frozen pool).
+    """
+    path = probe_pool_path(behavior)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"frozen probe pool missing for {behavior}: {path} — run "
+            "scripts/issue763_build_probe_pools.py first (and the GCP lane must "
+            "snapshot_download the HF inputs mirror; plan §9 / artifact-reuse (h))"
+        )
+    pool = load_json(path)
+    probes = pool["probes"]
+    recomputed = stable_hash(probes)
+    if pool.get("probe_pool_hash") != recomputed:
+        raise RuntimeError(
+            f"probe_pool_hash drift for {behavior}: stored "
+            f"{pool.get('probe_pool_hash')} != recomputed {recomputed} — the "
+            "frozen pool changed; the matched-probe invariant is broken"
+        )
+    return pool
+
+
+def load_frozen_pools(behaviors: list[str] | None = None) -> dict[str, list[str]]:
+    """Return ``{behavior: [probe, ...]}`` for the requested behaviors."""
+    behaviors = behaviors or list(BEHAVIORS)
+    return {b: load_frozen_pool(b)["probes"] for b in behaviors}
+
+
+# ── pod-side sentinel (poll_pipeline.py contract) ─────────────────────────────
+
+
+def write_sentinel(kind: str, note_obj: dict, task_id: int = 763) -> Path:
+    """poll_pipeline.py-conformant end-of-run sentinel (_SENTINEL_REQUIRED_KEYS).
+
+    Writes ``/workspace/logs/issue-763-<kind_slug>-<epoch>.json`` (falls back to
+    the repo-local logs dir off-pod) carrying the four required keys
+    (sentinel_schema_version / kind / version / note). ``note_obj`` is the
+    marker payload (JSON-serialized into ``note``). Pod-side code NEVER shells
+    out to scripts/task.py (CLAUDE.md) — this sentinel is the only channel.
+    """
+    logs_dir = Path("/workspace/logs")
+    if not logs_dir.is_dir():
+        logs_dir = PROJECT_ROOT / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+    kind_slug = kind.replace(":", "_")
+    path = logs_dir / f"issue-{task_id}-{kind_slug}-{int(time.time())}.json"
+    payload = {
+        "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
+        "kind": kind,
+        "version": 1,
+        "note": json.dumps(note_obj) if isinstance(note_obj, dict) else str(note_obj),
+        "task_id": task_id,
+        "by": "issue763",
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2)
+    return path
+
+
+def is_storage_quota_403(err: Exception) -> bool:
+    msg = str(err)
+    return "403" in msg and "storage" in msg.lower()
+
+
+# ── vectorized answer-span capture (the ONE vectorization piece, plan §4.5) ───
+
+
+class BatchedAnswerSpanCapture:
+    """Forward hooks on every decoder block; batched (B, T, H) per layer.
+
+    The vectorized analogue of #658's batch-1 ``AnswerSpanCapture`` (plan §4.5
+    + ``.claude/rules/vectorize-many-cell-fits.md``): a LEFT-PADDED batch of
+    teacher-forced (prompt + answer) sequences is forwarded ONCE, the hook keeps
+    ``(B, T, H)`` per layer, and ``mean_answer_spans`` slices each row's answer
+    span (using per-row ``answer_start`` / ``answer_end`` offsets into the
+    LEFT-PADDED axis) and means over its answer tokens → ``(n_layers, H)`` per
+    row. The per-row span is reduced to ``(L, H)`` immediately so peak GPU
+    memory is O(one batch's residuals), not O(all probes).
+
+    Left-pad: HF generate/forward under a left-padded batch needs the attention
+    mask threaded so the model ignores pad positions; the answer-span offsets
+    are computed in the LEFT-PADDED coordinate (pad_left + prompt_len ..
+    pad_left + prompt_len + ans_len). We capture the residual stream (the decoder
+    block output), which is position-wise and unaffected by the causal mask for
+    a teacher-forced (no-generation) forward, so the answer-token residuals are
+    identical to the batch-1 capture for the same (prompt, answer) — asserted by
+    the smoke's batched-vs-serial cosine check.
+    """
+
+    def __init__(self, model, n_layers: int):
+        self.latest: dict[int, object] = {}
+        self.n_layers = n_layers
+        self._handles = []
+        for li in range(n_layers):
+            self._handles.append(model.model.layers[li].register_forward_hook(self._make_hook(li)))
+
+    def _make_hook(self, layer_idx: int):
+        def hook_fn(_module, _input, output):
+            hs = output[0] if isinstance(output, tuple) else output
+            self.latest[layer_idx] = hs.detach()
+
+        return hook_fn
+
+    def mean_answer_spans(self, spans: list[tuple[int, int]]):
+        """Per-row answer-token mean over all layers -> list of (L, H) fp32 CPU.
+
+        ``spans[r] = (answer_start, answer_end)`` in the LEFT-PADDED position
+        axis for row r. Returns a list of ``(n_layers, H)`` fp32 CPU tensors,
+        one per row. Clears ``self.latest`` after reading.
+        """
+        import torch
+
+        per_row: list = []
+        b = len(spans)
+        for r in range(b):
+            s, e = spans[r]
+            assert 0 <= s < e, f"row {r}: bad answer span ({s}, {e})"
+            vecs = [
+                self.latest[li][r, s:e, :].float().mean(dim=0).cpu() for li in range(self.n_layers)
+            ]
+            per_row.append(torch.stack(vecs))  # (L, H)
+        self.latest.clear()
+        return per_row
+
+    def remove(self) -> None:
+        for h in self._handles:
+            h.remove()
+        self.latest.clear()
