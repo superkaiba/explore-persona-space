@@ -5,7 +5,7 @@ title: 'The theory''s full leakage predictor does not beat the install-leak cont
 kind: experiment
 tags: []
 created_at: '2026-06-25T07:26:51Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 660
 goal: Phase 4 — end-to-end leakage predictor L-hat = eta*(r_B'^T delta)*g_C(C') vs
   the cosine special-case + base-prior baseline, LOBO/LOCO, both scales, vs the noise
