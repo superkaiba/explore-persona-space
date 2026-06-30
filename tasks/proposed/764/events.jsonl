@@ -1,1 +1,2 @@
 {"ts": "2026-06-30T09:59:31Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-06-30T10:01:29Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities. Workflow-fix task with fully specified target (.claude/rules/gotchas.md), exact bullet text, source incident (#658 r5), and verified no existing earlyoom reference in the workflow surface. Context resolved: #658 events.jsonl confirms the earlyoom SIGTERM incident; gotchas.md is a bullet-list under # Gotchas H1. Proceeding to adversarial planning."}
