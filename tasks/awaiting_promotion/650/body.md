@@ -41,7 +41,7 @@ relates_to:
 - **Why:** The literature leaves contested whether a low-rank implant's write is a *pre-existing* base direction (find-and-amplify) or a *new* intruder direction, and whether its read learns to detect the source context. Parent [#621](https://eps.superkaiba.com/tasks/621) found the read ≈ random init at low dose with an attention placement, and flagged higher dose and the weight-space intruder test as open. This run adds an MLP placement that exposes both directions cleanly, a higher-dose arm, the weight-space test, and a realism transfer test.
 - **Design:** 12 cells = {marker, sycophancy} × {low, high dose} × seeds {42, 137, 256}, one source persona (police_officer). The manipulated variables are behavior (programmatic vs on-policy realistic) and dose; placement is fixed at rank-1 MLP up_proj (read, residual-input) + down_proj (write, residual-output).
 - **Training:** Qwen-2.5-7B-Instruct, rank-1 rsLoRA (r=1, α=8), lr 5e-6, on (up_proj, down_proj) across all 28 layers. Marker: marker-only loss on ` ※` (id 83399), band-stop dose dial, 1:1 contrastive negatives. Sycophancy: on-policy-first positives (elicit + judge-filter + strip), full-turn SFT, dose-to-target by epochs.
-- **Eval:** Five deterministic geometry DVs computed off-pod over the trained adapters vs base-model SVD / unembedding / a re-extracted base-activation bank: read rotation (DV-1), write→output-concept (DV-2), weight-space intruder (DV-3), activation-space concept content-vs-format (DV-4, sycophancy only), and firing-vs-geometry selectivity (DV-5, marker only). Marker behavioral eval = 18-persona × 20-question on-policy panel in EOS-margin logit space; sycophancy = self-persona agreement rate, Claude Haiku judge.
+- **Eval:** Five deterministic geometry DVs computed off-pod over the trained adapters vs base-model SVD / unembedding / a re-extracted base-activation bank: read rotation (DV-1), write→output-concept (DV-2), weight-space intruder (DV-3), activation-space concept content-vs-format (DV-4, sycophancy only), and firing-vs-geometry selectivity (DV-5, marker only). Marker behavioral eval = 18-persona × 20-question on-policy panel in EOS-margin logit space; sycophancy = self-persona agreement rate, Claude Haiku judge (Haiku-judged base rate; not re-judged — the project-canonical judge is Sonnet 4.5, and the code pin is now corrected to Sonnet for any RE-RUN).
 
 ## Findings
 
@@ -121,7 +121,7 @@ Full marker mixes (reused from the parent marker run): [HF data repo @bf641209](
 
 ### Evaluated with
 
-Two behavioral surfaces feed the geometry DVs. Marker: an 18-persona × 20-question on-policy greedy panel (max_new_tokens=2048), read in EOS-margin logit space via the four-float storage contract — chosen because emission saturates at the floor (the marker never fires) while the margin logit keeps dynamic range (8–14 nat). Sycophancy: self-persona agreement rate over a 60-claim pool × 10 rollouts (temperature 1.0), scored by Claude Haiku (κ=0.869 vs a Sonnet double-judge). The base-activation bank (21 contexts × 50 probes × 5 taps) supplies v_source and the DV-4/DV-5 context centroids.
+Two behavioral surfaces feed the geometry DVs. Marker: an 18-persona × 20-question on-policy greedy panel (max_new_tokens=2048), read in EOS-margin logit space via the four-float storage contract — chosen because emission saturates at the floor (the marker never fires) while the margin logit keeps dynamic range (8–14 nat). Sycophancy: self-persona agreement rate over a 60-claim pool × 10 rollouts (temperature 1.0), scored by Claude Haiku (κ=0.869 vs a Sonnet double-judge; Haiku-judged base rate, not re-judged — the project-canonical judge is Sonnet 4.5 and the code pin is now corrected to Sonnet for any RE-RUN). The base-activation bank (21 contexts × 50 probes × 5 taps) supplies v_source and the DV-4/DV-5 context centroids.
 
 <details open>
 <summary>3 example eval probes (3 of 60 sycophancy claims + the marker panel form, cherry-picked for illustration)</summary>
@@ -184,7 +184,8 @@ All from the raw-completions bucket: [issue650 raw_completions](https://huggingf
 | Marker mix size | 800 rows/cell: 400 positives + 400 negatives |
 | Sycophancy loss | standard SFT on full assistant turn |
 | Sycophancy dose | self-implant Δagree band low [0.30, 0.45] / high [0.55, ceiling] |
-| Judge model | `claude-haiku-4-5-20251001` |
+| Judge model | `claude-haiku-4-5-20251001` (Haiku-judged base rate; not re-judged) |
+| Judge-model caveat | Haiku-vs-Sonnet inconsistency: this run's sycophancy rate was Haiku-judged (κ=0.869 vs Sonnet double-judge), but the project-canonical judge is Sonnet 4.5; the code pin is now corrected to Sonnet, so any RE-RUN joins Sonnet-judged cells comparably |
 | DV layer bands | read L14–L24, write max-over L20–L27 |
 | DV-3 null | max-matched order statistic |
 
