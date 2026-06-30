@@ -157,15 +157,19 @@ def test_project_wrapper_plus_hf_passes(tmp_path: Path) -> None:
 
 def test_both_wrapper_and_bare_dotenv_present_passes(tmp_path: Path) -> None:
     """If the project wrapper is imported ANYWHERE in the file, the check
-    defers (the author has the sanctioned source available) even if a bare
-    dotenv import also appears — the wrapper presence is the sanctioned signal."""
+    defers on ARM 1 (the author has the sanctioned source available) even if a
+    bare dotenv import also appears — the wrapper presence is the sanctioned
+    signal. The huggingface_hub import sits AFTER the load_dotenv() call so the
+    correct ordering also clears ARM 2 (the env is set before the constants
+    freeze); the wrapper-before-hf-before-call order is the ARM-2 offender
+    covered by test_wrapper_import_before_hf_with_load_dotenv_call_after_fails."""
     _write(
         tmp_path,
         "both.py",
         "from explore_persona_space.orchestrate.env import load_dotenv\n"
-        "from dotenv import load_dotenv as _bare  # legacy alias\n"
-        "from huggingface_hub import HfApi\n\n"
-        "load_dotenv()\n"
+        "from dotenv import load_dotenv as _bare  # legacy alias\n\n"
+        "load_dotenv()\n\n"
+        "from huggingface_hub import HfApi\n"
         "api = HfApi()\n",
     )
     assert check_dotenv_before_hf_import(scripts_dir=tmp_path) == []
@@ -285,6 +289,32 @@ def test_module_top_hf_before_load_dotenv_call_fails(tmp_path: Path) -> None:
     errors = check_dotenv_before_hf_import(scripts_dir=tmp_path)
     assert len(errors) == 1, errors
     assert "import-order" in errors[0]
+
+
+def test_wrapper_import_before_hf_with_load_dotenv_call_after_fails(tmp_path: Path) -> None:
+    """ARM 2 false-negative regression (round 3): the wrapper is imported FIRST,
+    huggingface_hub SECOND, and load_dotenv() is CALLED LAST. The accelerator
+    setdefaults live INSIDE the wrapper's load_dotenv() body (orchestrate/env.py),
+    so the wrapper IMPORT sets no env — only the CALL does. The constants freeze
+    at the hf import (line 2) BEFORE the call (line 3) runs, so this IS the
+    freeze-before-set bug ARM 2 exists to catch. The pre-round-3 logic used
+    min(wrapper_import=1, call=3)=1 as the env-setting site, so hf(2) < 1 was
+    False and the offender passed; ARM 2 now compares against the CALL line only,
+    so hf(2) < 3 FAILS correctly. Anchored at the huggingface_hub import line."""
+    p = _write(
+        tmp_path,
+        "wrapper_then_hf_then_call.py",
+        "from explore_persona_space.orchestrate.env import load_dotenv\n"
+        "from huggingface_hub import HfApi\n"
+        "load_dotenv()\n"
+        "api = HfApi()\n",
+    )
+    errors = check_dotenv_before_hf_import(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(p) in errors[0]
+    assert ":2:" in errors[0]  # anchored at the huggingface_hub import (line 2)
+    assert "import-order" in errors[0]
+    assert "#745" in errors[0]
 
 
 def test_wrapper_then_hf_module_top_passes(tmp_path: Path) -> None:

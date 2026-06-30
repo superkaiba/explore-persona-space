@@ -2396,21 +2396,6 @@ def _module_top_huggingface_hub_import_lineno(tree: ast.AST) -> int | None:
     return None
 
 
-def _module_top_orchestrate_env_import_lineno(tree: ast.AST) -> int | None:
-    """Return the lineno of the FIRST MODULE-TOP ``load_dotenv`` import from the
-    project wrapper ``...orchestrate.env``, else None. Module-body only — the
-    order check compares against the module-top huggingface_hub import."""
-    body = getattr(tree, "body", [])
-    for node in body:
-        if (
-            isinstance(node, ast.ImportFrom)
-            and (node.module or "").endswith("orchestrate.env")
-            and any(a.name == "load_dotenv" for a in node.names)
-        ):
-            return node.lineno
-    return None
-
-
 def _module_top_load_dotenv_call_lineno(tree: ast.AST) -> int | None:
     """Return the lineno of the FIRST MODULE-TOP ``load_dotenv(...)`` call
     (bare ``load_dotenv(...)`` or ``dotenv.load_dotenv(...)``), else None.
@@ -2475,16 +2460,21 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
     All three → FAIL, anchored at the bare-dotenv import line.
 
     ARM 2 — IMPORT-ORDER (#745 round 2): even when the wrapper IS imported, a
-    MODULE-TOP ``huggingface_hub`` import that PRECEDES the dotenv/env setup
-    (the earliest of the module-top wrapper import line and a module-top
-    ``load_dotenv()`` call line) → FAIL, anchored at the huggingface_hub import
-    line. Rationale: ``huggingface_hub.constants`` freezes
+    MODULE-TOP ``huggingface_hub`` import that PRECEDES the module-top
+    ``load_dotenv()`` CALL → FAIL, anchored at the huggingface_hub import line.
+    Rationale: ``huggingface_hub.constants`` freezes
     ``HF_HUB_ENABLE_HF_TRANSFER`` at IMPORT time, so an accelerator env set
     AFTER the import is already too late (the constant is frozen) and the
-    accelerator is inert despite the wrapper being present. Scope: MODULE-TOP
-    huggingface_hub imports only (an in-function import runs at call time, after
-    the module-top ``load_dotenv()``), and only when the file actually sets env
-    at module top (a script relying purely on the shell-level exports and never
+    accelerator is inert despite the wrapper being present. The env-setting site
+    is the ``load_dotenv()`` CALL line, NOT the wrapper IMPORT line: the
+    accelerator setdefaults live INSIDE the wrapper's ``load_dotenv`` function
+    body (``orchestrate/env.py``), so importing the wrapper sets no env — only
+    the call does (using ``min(wrapper_import, call)`` would treat the mere
+    import as an env-setting site and miss the wrapper-import → hf-import →
+    ``load_dotenv()``-call ordering). Scope: MODULE-TOP huggingface_hub imports
+    only (an in-function import runs at call time, after the module-top
+    ``load_dotenv()``), and only when the file actually CALLS ``load_dotenv`` at
+    module top (a script relying purely on the shell-level exports and never
     calling ``load_dotenv`` has no env-setting site to be late relative to, so
     it is out of scope). Skipped when ARM 1 already flagged the file (one error
     per file is enough — migrating to the wrapper-above-hf shape fixes both) or
@@ -2547,29 +2537,37 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
             )
 
         # ARM 2 — IMPORT-ORDER (#745 round 2): even when the wrapper IS imported,
-        # a MODULE-TOP huggingface_hub import that PRECEDES both the wrapper
-        # import AND a module-top load_dotenv() call freezes
-        # HF_HUB_ENABLE_HF_TRANSFER (read in huggingface_hub.constants at IMPORT
-        # time) BEFORE the env is set — so the accelerator is inert despite the
-        # wrapper being present. FAIL when the first module-top huggingface_hub
-        # import precedes the env-setting site. Module-top only (an in-function
-        # hf import runs after the module-top load_dotenv() — see helper docs),
-        # and only when the file actually sets env at module top (a script that
-        # relies purely on shell exports and never calls load_dotenv is out of
-        # scope). Waivable on the hf import line (same token + reason floor).
+        # a MODULE-TOP huggingface_hub import that PRECEDES the module-top
+        # load_dotenv() CALL freezes HF_HUB_ENABLE_HF_TRANSFER (read in
+        # huggingface_hub.constants at IMPORT time) BEFORE the env is set — so
+        # the accelerator is inert despite the wrapper being present. FAIL when
+        # the first module-top huggingface_hub import precedes the env-setting
+        # site (the load_dotenv() CALL — see the in-block comment for why the
+        # wrapper IMPORT line is NOT an env-setting site). Module-top only (an
+        # in-function hf import runs after the module-top load_dotenv() — see
+        # helper docs), and only when the file actually CALLS load_dotenv at
+        # module top (a script that relies purely on shell exports and never
+        # calls load_dotenv is out of scope). Waivable on the hf import line
+        # (same token + reason floor).
         # Skip when ARM 1 already flagged this file (a bare-dotenv offender is
         # also out-of-order, but one error per file is enough — migrating to
         # the wrapper-above-hf shape fixes both arms at once) OR when a
         # bare-dotenv waiver explicitly waived the #745 dotenv concern here.
         hf_lineno = _module_top_huggingface_hub_import_lineno(tree)
         if not arm1_fired and not bare_dotenv_waived and hf_lineno is not None:
-            wrapper_lineno = _module_top_orchestrate_env_import_lineno(tree)
+            # The env-setting site is the module-top load_dotenv() CALL line —
+            # NOT the wrapper import. The accelerator setdefaults live INSIDE the
+            # wrapper's load_dotenv() function body (orchestrate/env.py:244-245),
+            # so importing the wrapper sets NO env; only the CALL does. Comparing
+            # against min(wrapper_import, call) would treat the mere import as an
+            # env-setting site and miss the wrapper-import → hf-import →
+            # load_dotenv()-call ordering (the constants freeze at the hf import,
+            # BEFORE the later call runs). When there is no module-top call (env
+            # set purely by shell-level exports — bootstrap/GCE/SLURM), there is
+            # no site to be late relative to, so the order arm is out of scope.
             call_lineno = _module_top_load_dotenv_call_lineno(tree)
-            # The env-setting site is the EARLIEST of the wrapper import (whose
-            # setdefault runs at import) and a module-top load_dotenv() call.
-            env_linenos = [n for n in (wrapper_lineno, call_lineno) if n is not None]
-            if env_linenos:
-                env_lineno = min(env_linenos)
+            if call_lineno is not None:
+                env_lineno = call_lineno
                 if hf_lineno < env_lineno and not _dotenv_lint_waiver_present(lines, hf_lineno):
                     errors.append(
                         f"{py}:{hf_lineno}: module-top huggingface_hub import PRECEDES "
