@@ -3280,8 +3280,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         '"..."`). This VM has no `python` on PATH, so the pipe dies with '
         "`python: command not found` (exit 127) — pipe into `uv run "
         "python` instead. Closes the #753 incident class (~41 violations "
-        "across 4+ sessions on 2026-06-29). Comment and echo-prefixed "
-        "lines are skipped. Bundled into the no-flags default run.",
+        "across 4+ sessions on 2026-06-29). Comment lines (`#`-prefixed) "
+        "are skipped. Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-marker-registry",
