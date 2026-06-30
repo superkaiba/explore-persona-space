@@ -2128,6 +2128,179 @@ def test_find_provision_process_matches_own_argv():
     assert asw._find_provision_process(999_999_999) is None
 
 
+# ─── long-phase-heartbeat exemption (incident #761) ─────────────────────────
+
+
+def _hb_event(asw, *, ts_iso: str, note: str, kind: str = "epm:progress") -> dict:
+    """Build a single task event dict for the heartbeat-reason tests."""
+    return {"kind": kind, "ts": ts_iso, "note": note}
+
+
+def test_long_phase_heartbeat_freshness_env_override_and_fallback(monkeypatch):
+    # Mirror test_stalled_window_env_override_and_fallback: the env knob parses
+    # a valid int (minutes) and falls back to the default on a garbled value.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN", raising=False)
+    assert (
+        asw._long_phase_heartbeat_freshness_s()
+        == float(asw.LONG_PHASE_HEARTBEAT_FRESH_S_DEFAULT)
+        == 90 * 60.0
+    )
+
+    monkeypatch.setenv("EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN", "120")
+    assert asw._long_phase_heartbeat_freshness_s() == 120 * 60.0
+
+    monkeypatch.setenv("EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN", "not-a-number")
+    assert asw._long_phase_heartbeat_freshness_s() == float(
+        asw.LONG_PHASE_HEARTBEAT_FRESH_S_DEFAULT
+    )
+
+
+def test_long_phase_heartbeat_sentinel_not_in_watcher_self_set():
+    """[long-phase-heartbeat] is REAL progress (emitter-stamped, not watcher-posted),
+    so adding it to _WATCHER_NOTE_SENTINELS would break the design: heartbeats
+    would be excluded from _latest_progress_ts and stop counting as progress
+    (the exemption would still fire but the underlying staleness signal would
+    be broken). Guard the inverse-of-watcher-self property."""
+    import autonomous_session_watch as asw
+
+    for sentinel in asw._WATCHER_NOTE_SENTINELS:
+        assert asw._LONG_PHASE_HEARTBEAT_PREFIX not in sentinel, (
+            f"_LONG_PHASE_HEARTBEAT_PREFIX leaked into _WATCHER_NOTE_SENTINELS via {sentinel!r}"
+        )
+
+
+def test_long_phase_heartbeat_reason_fresh_returns_reason():
+    # A fresh epm:progress note carrying the sentinel -> non-None reason string.
+    import autonomous_session_watch as asw
+
+    ts_iso = "2026-06-30T12:00:00Z"
+    ts = asw._parse_event_ts(ts_iso)
+    events = [
+        _hb_event(asw, ts_iso=ts_iso, note=f"{asw._LONG_PHASE_HEARTBEAT_PREFIX} verifying r2")
+    ]
+    reason = asw._long_phase_heartbeat_reason(events, now=ts + 30 * 60.0)  # 30m < 90m window
+    assert reason is not None and "heartbeat" in reason
+
+
+def test_long_phase_heartbeat_reason_sentinel_absent_returns_none():
+    # An ordinary fresh epm:progress note WITHOUT the sentinel -> no exemption.
+    import autonomous_session_watch as asw
+
+    ts_iso = "2026-06-30T12:00:00Z"
+    ts = asw._parse_event_ts(ts_iso)
+    events = [_hb_event(asw, ts_iso=ts_iso, note="verifying r2 (no opt-in)")]
+    assert asw._long_phase_heartbeat_reason(events, now=ts + 30 * 60.0) is None
+
+
+def test_long_phase_heartbeat_reason_stale_returns_none():
+    # Sentinel present but older than the freshness window -> no exemption.
+    import autonomous_session_watch as asw
+
+    ts_iso = "2026-06-30T12:00:00Z"
+    ts = asw._parse_event_ts(ts_iso)
+    events = [
+        _hb_event(asw, ts_iso=ts_iso, note=f"{asw._LONG_PHASE_HEARTBEAT_PREFIX} verifying r2")
+    ]
+    # well past LONG_PHASE_HEARTBEAT_FRESH_S (default 90 min)
+    now = ts + asw.LONG_PHASE_HEARTBEAT_FRESH_S + 60.0
+    assert asw._long_phase_heartbeat_reason(events, now=now) is None
+
+
+def test_long_phase_heartbeat_reason_watcher_self_note_excluded():
+    # A fresh note carrying BOTH the heartbeat sentinel AND a watcher-self
+    # sentinel is filtered out (the watcher-self filter wins) -> no exemption.
+    import autonomous_session_watch as asw
+
+    ts_iso = "2026-06-30T12:00:00Z"
+    ts = asw._parse_event_ts(ts_iso)
+    watcher_sentinel = next(iter(asw._WATCHER_NOTE_SENTINELS))
+    note = f"{watcher_sentinel} {asw._LONG_PHASE_HEARTBEAT_PREFIX} spurious"
+    events = [_hb_event(asw, ts_iso=ts_iso, note=note)]
+    assert asw._long_phase_heartbeat_reason(events, now=ts + 30 * 60.0) is None
+
+
+def test_long_phase_heartbeat_reason_empty_events_returns_none():
+    # Empty events list -> no exemption (no crash on best_ts is None).
+    import autonomous_session_watch as asw
+
+    assert asw._long_phase_heartbeat_reason([], now=1_000_000.0) is None
+
+
+def test_long_phase_heartbeat_reason_future_ts_returns_none():
+    # A future ts (negative age, clock skew / fake clock) is NOT fresh -> None,
+    # mirroring the `0 <= age` guard in _provision_in_flight_reason.
+    import autonomous_session_watch as asw
+
+    ts_iso = "2026-06-30T12:00:00Z"
+    ts = asw._parse_event_ts(ts_iso)
+    events = [_hb_event(asw, ts_iso=ts_iso, note=f"{asw._LONG_PHASE_HEARTBEAT_PREFIX} verifying")]
+    assert asw._long_phase_heartbeat_reason(events, now=ts - 60.0) is None
+
+
+def test_long_phase_heartbeat_reason_newest_wins_older_fresh_newer_stale():
+    # Multiple sentinel events: the NEWEST is chosen. Older one fresh but the
+    # newer one stale -> None (the newest decides).
+    import autonomous_session_watch as asw
+
+    older_iso = "2026-06-30T12:00:00Z"
+    newer_iso = "2026-06-30T20:00:00Z"  # 8h later -> stale vs a `now` just past it
+    older_ts = asw._parse_event_ts(older_iso)
+    newer_ts = asw._parse_event_ts(newer_iso)
+    sentinel = asw._LONG_PHASE_HEARTBEAT_PREFIX
+    events = [
+        _hb_event(asw, ts_iso=older_iso, note=f"{sentinel} older"),
+        _hb_event(asw, ts_iso=newer_iso, note=f"{sentinel} newer"),
+    ]
+    # now is 2h past the NEWER event (stale, > 90m) but the older event would be
+    # ~10h old (also stale) — so this case confirms newest-wins-and-is-stale.
+    now = newer_ts + 2 * 3600.0
+    assert now - older_ts > asw.LONG_PHASE_HEARTBEAT_FRESH_S  # older also stale
+    assert asw._long_phase_heartbeat_reason(events, now=now) is None
+
+
+def test_long_phase_heartbeat_reason_newest_wins_older_stale_newer_fresh():
+    # Older one stale, newer one fresh -> non-None (the newest, fresh, decides).
+    import autonomous_session_watch as asw
+
+    older_iso = "2026-06-30T12:00:00Z"
+    newer_iso = "2026-06-30T20:00:00Z"
+    newer_ts = asw._parse_event_ts(newer_iso)
+    sentinel = asw._LONG_PHASE_HEARTBEAT_PREFIX
+    events = [
+        _hb_event(asw, ts_iso=older_iso, note=f"{sentinel} older"),
+        _hb_event(asw, ts_iso=newer_iso, note=f"{sentinel} newer"),
+    ]
+    reason = asw._long_phase_heartbeat_reason(events, now=newer_ts + 30 * 60.0)  # 30m < 90m
+    assert reason is not None and "heartbeat" in reason
+
+
+def test_stalled_exemption_fresh_heartbeat_blocks_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # incident #761: a session whose only recent activity is a fresh
+    # long-phase heartbeat is NOT stalled. When the heartbeat-reason probe
+    # returns a reason, the stalled detector must neither accumulate misses
+    # nor stop/spawn/post markers across ticks past the threshold. Mirrors
+    # test_stalled_exemption_live_provision_blocks_respawn.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 761, "sess-761", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(
+        asw,
+        "_long_phase_heartbeat_reason",
+        lambda events, now: "fresh long-phase heartbeat (12.3m old)",
+    )
+    now = 1_000_000.0
+
+    for _ in range(4):  # well past the 2-miss threshold
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
+
+
 def test_stalled_pass_failed_pod_snapshot_degrades_to_empty(
     isolated_registry, monkeypatch, stalled_recorder
 ):
