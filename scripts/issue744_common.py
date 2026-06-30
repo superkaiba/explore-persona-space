@@ -75,9 +75,14 @@ FLAVORS = ("raw", "std", "ablate")
 
 # ── Closed-class clause-opener wordlist (plan §4.3 / §11 item 12) ──────────────
 # Barenholtz §4.2 enrichment class ("and", "as", "that", "had") + the Penn CC/IN
-# closed class of coordinators + complementizers + subordinators. Used as the
-# PRIMARY deterministic syntactic-boundary mask for BOTH corpora (the gold Penn
-# parse on NS is cross-checked against this proxy — agreement reported, A11).
+# closed class of coordinators + complementizers + subordinators. This wordlist
+# is the PRIMARY syntactic-boundary mask for the BROADER corpus ONLY (WikiText
+# has no gold parses — plan §11 syntactic_mask_broader, flagged as the coarser
+# proxy). For Natural Stories the PRIMARY mask is the GOLD Penn clause-opener
+# label (first terminal under S/SBAR OR CC/IN — plan §11 syntactic_mask_ns),
+# built by ``explore_persona_space.analysis.penn_parser`` and aligned to the NS
+# word stream at dump time; this wordlist is emitted alongside it on NS only as
+# the A11 gold-vs-proxy cross-check companion, never as the NS primary mask.
 CLAUSE_OPENER_WORDS = frozenset(
     {
         # coordinating conjunctions (CC)

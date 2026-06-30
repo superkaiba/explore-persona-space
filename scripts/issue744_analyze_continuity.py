@@ -60,7 +60,6 @@ from issue744_common import (  # noqa: E402
     RANDOM_BASELINE_N_PAIRS,
     SEED,
     TRAJECTORY_WINDOW_K,
-    is_clause_opener,
     write_json,
 )
 
@@ -496,51 +495,64 @@ def ns_word_level_continuity(raw_dir: Path, stats: dict, n_layers: int, k: int) 
 
 
 def proxy_vs_gold_penn(raw_dir: Path, ns_penn_path: Path) -> dict:
-    """Closed-class wordlist proxy vs gold-Penn clause-opener agreement on NS (A11).
+    """Wordlist proxy vs gold-Penn clause-opener agreement on NS (A11).
 
-    The gold-Penn clause-opener label is read at the WORD level: a word is a
-    gold clause-opener iff it is the FIRST terminal under an S/SBAR constituent
-    in the Penn parse OR a CC/IN-tagged terminal opening a constituent. Parsing
-    the multi-line Penn trees robustly to the NS word stream is brittle, so we
-    report the agreement at the level achievable deterministically: per gold
-    terminal, whether its POS tag is in the clause-opener closed class (CC/IN)
-    AND whether the wordlist proxy fires on the same surface form. If the parse
-    file is missing or unparseable we report ``available: false`` and fall back
-    to the wordlist proxy alone (flagged in the clean-result as the coarser
-    proxy).
+    Compares the two masks the dump already STORED per NS sequence, position by
+    position over the actual token stream:
+
+    * gold  = ``clause_opener_mask`` — the PRIMARY gold-Penn label the H3
+              syntactic strata read (first terminal under S/SBAR in the gold Penn
+              parse OR CC/IN clause-opener; built by ``penn_parser`` at dump
+              time, aligned to the NS word stream).
+    * proxy = ``clause_opener_mask_wordlist_proxy`` — the closed-class wordlist
+              companion (the BROADER-corpus mask; here a cross-check only).
+
+    This is the FULL registered label comparison (S/SBAR constituency leg +
+    CC/IN), NOT the old CC/IN-POS-tag-only approximation — the dump did the
+    word-stream alignment, so the analysis just reads the two stored masks. If
+    the dumps lack the proxy companion (a pre-fix dump) we report
+    ``available: false`` rather than recomputing a partial gold label.
     """
-    if not ns_penn_path.exists():
-        return {"available": False, "reason": "Penn parse file not found"}
-    text = ns_penn_path.read_text(errors="replace")
-    # Gold terminals: (POS word) leaves. Penn CC/IN are the clause-opener tags.
-    import re
-
-    leaf_re = re.compile(r"\(([A-Z$.,:]+)\s+([^()\s]+)\)")
-    gold_clause_tags = {"CC", "IN"}
+    blobs = sorted(raw_dir.glob("seq_*.pt"))
+    if not blobs:
+        return {"available": False, "reason": "no NS dump blobs found"}
     agree = 0
     total = 0
     proxy_only = 0
     gold_only = 0
-    for tag, word in leaf_re.findall(text):
-        gold = tag in gold_clause_tags
-        proxy = is_clause_opener(word)
-        total += 1
-        if gold == proxy:
-            agree += 1
-        elif proxy and not gold:
-            proxy_only += 1
-        elif gold and not proxy:
-            gold_only += 1
+    n_seq = 0
+    for p in blobs:
+        b = torch.load(p, weights_only=False)
+        if "clause_opener_mask_wordlist_proxy" not in b:
+            return {
+                "available": False,
+                "reason": (
+                    "NS dump lacks clause_opener_mask_wordlist_proxy (pre-gold-Penn-mask "
+                    "dump); re-dump to enable the gold-vs-proxy cross-check"
+                ),
+            }
+        gold = b["clause_opener_mask"].bool()
+        proxy = b["clause_opener_mask_wordlist_proxy"].bool()
+        assert gold.shape == proxy.shape, (p.name, gold.shape, proxy.shape)
+        total += int(gold.numel())
+        agree += int((gold == proxy).sum())
+        proxy_only += int((proxy & ~gold).sum())
+        gold_only += int((gold & ~proxy).sum())
+        n_seq += 1
     return {
         "available": total > 0,
         "n_terminals": total,
+        "n_sequences": n_seq,
         "agreement_rate": (agree / total) if total else float("nan"),
         "proxy_fires_gold_doesnt": proxy_only,
         "gold_fires_proxy_doesnt": gold_only,
+        "penn_parse_present": ns_penn_path.exists(),
         "note": (
-            "POS-tag-level (CC/IN) gold vs closed-class wordlist proxy; word-stream "
-            "alignment of the multi-line Penn trees to NS not attempted — the wordlist "
-            "proxy is the primary deterministic mask for both corpora (plan §11 item 12)."
+            "Full registered gold-Penn label (first terminal under S/SBAR OR CC/IN) "
+            "vs the closed-class wordlist proxy, compared position-by-position over the "
+            "stored NS masks. The gold-Penn mask is the PRIMARY NS syntactic-boundary "
+            "mask (plan §11 syntactic_mask_ns); the wordlist is the broader-corpus "
+            "mask + this cross-check companion (plan §11 syntactic_mask_broader)."
         ),
     }
 

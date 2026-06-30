@@ -120,6 +120,7 @@ from explore_persona_space.analysis.continuity import (  # noqa: E402
     make_flavors_from_stats,
     random_baseline,
 )
+from explore_persona_space.analysis.penn_parser import build_ns_gold_clause_mask  # noqa: E402
 
 load_dotenv()
 
@@ -225,37 +226,55 @@ def _special_token_mask(tokenizer, input_ids: torch.Tensor) -> torch.Tensor:
     return mask
 
 
-def tokenize_ns_sequence(tokenizer, words: list[str]):
+def tokenize_ns_sequence(tokenizer, words: list[str], gold_clause_words: list[bool]):
     """Tokenize the FULL NS word list, aligning each word to its last subword index.
 
     Returns (input_ids (1,T_full), clause_opener_mask (T_full,) bool,
-    word_end_idx list). NO truncation — Natural Stories items run ~1,026 words
-    (>1024 Qwen subword tokens for a typical story), and the late-position tail
-    is exactly what the late-layer direction-preservation hypothesis (H1) and the
-    H3 stratification most depend on. The full story is processed in overlapping
-    chunks downstream (``forward_ns_overlapping``, Barenholtz 2606.05346 §2.1),
-    not truncated (#744 C2). The clause-opener mask marks the last-subword
-    position of closed-class clause-opener words. word_end_idx[i] = the token
-    index of word i's last subword (for the word-level last-subword read, plan
-    concern #5).
+    clause_opener_mask_wordlist_proxy (T_full,) bool, word_end_idx list). NO
+    truncation — Natural Stories items run ~1,026 words (>1024 Qwen subword tokens
+    for a typical story), and the late-position tail is exactly what the
+    late-layer direction-preservation hypothesis (H1) and the H3 stratification
+    most depend on. The full story is processed in overlapping chunks downstream
+    (``forward_ns_overlapping``, Barenholtz 2606.05346 §2.1), not truncated
+    (#744 C2).
+
+    PRIMARY mask = ``clause_opener_mask``: the GOLD Penn clause-opener label
+    (plan §11 ``syntactic_mask_ns`` = "first terminal under S/SBAR in gold Penn
+    parse OR CC/IN clause-opener"), supplied per word in ``gold_clause_words``
+    (built once for the whole NS stream by ``build_ns_gold_clause_mask``). This
+    is the mask the H3 syntactic stratification reads. The closed-class wordlist
+    (``is_clause_opener``) is emitted ALONGSIDE as
+    ``clause_opener_mask_wordlist_proxy`` for the A11 gold-vs-proxy cross-check
+    (`proxy_vs_gold_penn.json`) and is the PRIMARY mask only for the broader
+    corpus (no gold parses for WikiText). Both masks mark the last-subword
+    position of the word. ``word_end_idx[i]`` = the token index of word i's last
+    subword (for the word-level last-subword read, plan concern #5).
     """
+    assert len(gold_clause_words) == len(words), (
+        f"gold mask len {len(gold_clause_words)} != n words {len(words)}"
+    )
     token_ids: list[int] = []
     word_end_idx: list[int] = []
-    clause_words: list[bool] = []
-    for w in words:
+    gold_words: list[bool] = []
+    proxy_words: list[bool] = []
+    for w, gold_co in zip(words, gold_clause_words, strict=True):
         sub = tokenizer(" " + w if token_ids else w, add_special_tokens=False)["input_ids"]
         if not sub:
             continue
         token_ids.extend(sub)
         word_end_idx.append(len(token_ids) - 1)
-        clause_words.append(is_clause_opener(w))
+        gold_words.append(bool(gold_co))
+        proxy_words.append(is_clause_opener(w))
     T = len(token_ids)
-    clause_mask = torch.zeros(T, dtype=torch.bool)
-    for idx, co in zip(word_end_idx, clause_words, strict=True):
-        if co:
+    clause_mask = torch.zeros(T, dtype=torch.bool)  # PRIMARY: gold Penn
+    proxy_mask = torch.zeros(T, dtype=torch.bool)  # wordlist proxy (cross-check)
+    for idx, gold_co, proxy_co in zip(word_end_idx, gold_words, proxy_words, strict=True):
+        if gold_co:
             clause_mask[idx] = True
+        if proxy_co:
+            proxy_mask[idx] = True
     input_ids = torch.tensor([token_ids], dtype=torch.long)
-    return input_ids, clause_mask, word_end_idx
+    return input_ids, clause_mask, proxy_mask, word_end_idx
 
 
 def _chunk_starts(t_full: int, max_len: int, stride: int) -> list[int]:
@@ -603,9 +622,40 @@ def main() -> int:
         # (Barenholtz §2.1) and reassembled — NO truncation (#744 C2).
         phase("dump_ns")
         ns_pop = WelfordDimStats(n_layers, hidden)  # NS population stats (from the dump)
+        # Build the PRIMARY gold-Penn clause-opener mask once for the whole NS
+        # stream (plan §11 syntactic_mask_ns). The parse file is a flat
+        # document-order forest with no per-item delimiters, so the gold
+        # terminals are aligned against the concatenated word stream and split
+        # back per item. The wordlist proxy stays the BROADER mask + the A11
+        # cross-check companion; it is NOT the NS primary.
+        ns_penn_path = out_dir / "ns_penn_parses.txt"
+        assert ns_penn_path.exists(), (
+            f"gold Penn parses missing at {ns_penn_path} — required for the NS "
+            f"syntactic mask (plan §11 syntactic_mask_ns)"
+        )
+        ns_words_by_item = [seq["words"] for seq in ns_corpus["sequences"]]
+        gold = build_ns_gold_clause_mask(ns_penn_path.read_text(errors="replace"), ns_words_by_item)
+        gold_align = gold["alignment"]
+        assert gold_align.aligned_ok, (
+            f"gold Penn ↔ NS word-stream alignment FAILED "
+            f"(n_words={gold_align.n_words}, discrepancies={gold_align.n_discrepancies}, "
+            f"gold_terminals={gold_align.n_gold_terminals}); the NS syntactic mask "
+            f"cannot be built — refusing to fall back to the wordlist proxy"
+        )
+        logger.info(
+            "[NS gold-Penn mask] aligned_ok=%s fully_consumed=%s n_words=%d "
+            "discrepancies=%d gold_terminals=%d",
+            gold_align.aligned_ok,
+            gold_align.fully_consumed,
+            gold_align.n_words,
+            gold_align.n_discrepancies,
+            gold_align.n_gold_terminals,
+        )
         ns_seq_meta = []
         for i, seq in enumerate(ns_corpus["sequences"], 1):
-            input_ids, clause_mask, word_end_idx = tokenize_ns_sequence(tokenizer, seq["words"])
+            input_ids, clause_mask, proxy_mask, word_end_idx = tokenize_ns_sequence(
+                tokenizer, seq["words"], gold["masks"][i - 1]
+            )
             n_chunks = len(_chunk_starts(input_ids.shape[1], args.max_seq_len, NS_CHUNK_STRIDE))
             H, surprisal = forward_ns_overlapping(
                 model,
@@ -626,7 +676,12 @@ def main() -> int:
                 "surprisal": surprisal,  # (T_full,)
                 "sink_mask": sink_mask,  # (L, T_full) bool
                 "special_mask": special_mask,  # (T_full,) bool
+                # PRIMARY gold-Penn clause-opener mask (plan §11 syntactic_mask_ns):
+                # first terminal under S/SBAR OR CC/IN. The H3 syntactic strata read this.
                 "clause_opener_mask": clause_mask,  # (T_full,) bool
+                # Wordlist proxy companion — the A11 gold-vs-proxy cross-check reads
+                # this against clause_opener_mask (NOT the NS primary mask).
+                "clause_opener_mask_wordlist_proxy": proxy_mask,  # (T_full,) bool
                 "word_end_idx": torch.tensor(word_end_idx, dtype=torch.long),
                 "input_ids": input_ids[0].cpu(),
             }
