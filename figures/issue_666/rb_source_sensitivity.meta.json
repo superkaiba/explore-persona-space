@@ -1,0 +1,36 @@
+{
+  "commit": "add6793ded",
+  "created": "2026-06-30T06:48:01Z",
+  "figsize": [
+    7.4,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Spearman \u03c1 (full predictor L\u0302 vs latent \u0394s)": -0.0789795918367347,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Spearman \u03c1 (full predictor L\u0302 vs latent \u0394s)": 0.010676020408163267,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Spearman \u03c1 (full predictor L\u0302 vs latent \u0394s)": 0.4903316326530611,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Spearman \u03c1 (full predictor L\u0302 vs latent \u0394s)": 0.499298469387755,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 4
+}
