@@ -4787,8 +4787,8 @@
     "755": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/755",
-      "status": "proposed",
+      "path": "tasks/planning/755",
+      "status": "planning",
       "title": "daily-fix: reconciler must persist EVERY upheld finding"
     },
     "756": {
