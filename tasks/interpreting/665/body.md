@@ -16,7 +16,7 @@ relates_to:
 
 <!-- clean-result-v3 -->
 
-**Methodology:** [docs/methodology/issue_665.md](https://github.com/superkaiba/explore-persona-space/blob/e54b60a21b1f609d34db7c6b8c0a099f34bb2c9a/docs/methodology/issue_665.md) · [gist](https://gist.github.com/superkaiba/3d10bd44e57cfe584e0abf2d5a86c653)
+**Methodology:** [docs/methodology/issue_665.md](https://github.com/superkaiba/explore-persona-space/blob/ea13298c57b217916c03f032bf5b7efc91a19292/docs/methodology/issue_665.md) · [gist](https://gist.github.com/superkaiba/3d10bd44e57cfe584e0abf2d5a86c653)
 
 ## Takeaways
 
@@ -150,7 +150,7 @@ The reader-facing leakage read, per load-bearing condition (cherry-picked for il
 
 **Artifacts:** Aggregates [`eval_results/issue_665/aggregate.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/aggregate.json); per-arm per-cell JSONs under `eval_results/issue_665/{a36,a36a,a36b,a36c,a37,a38,a39,a310,joint,single_ctx,judged_E}/` (the `a36c/*.json` now carry the recomputed `f_CV` scalar). B3 reduction unit test [`whitened_gate_unittest.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/whitened_gate_unittest.json) (PASS). A3.6c parity probe [`parity_probe_bm_default_contra_d2_seed42.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/adapter_fitness/parity_probe_bm_default_contra_d2_seed42.json) (PASS, cos 0.9952). Figures at [`8438132a`](https://github.com/superkaiba/explore-persona-space/tree/8438132a63093e03fcb42d687de8eedfe82d9b98/figures/issue_665) (round-3 regeneration: Fig2 subtitle no longer asserts independence from the base prior; Fig4 subtitle now shows the corrected f_CV = +0.023).
 
-- **Methodology reference:** [docs/methodology/issue_665.md](https://github.com/superkaiba/explore-persona-space/blob/e54b60a21b1f609d34db7c6b8c0a099f34bb2c9a/docs/methodology/issue_665.md) · [gist](https://gist.github.com/superkaiba/3d10bd44e57cfe584e0abf2d5a86c653)
+- **Methodology reference:** [docs/methodology/issue_665.md](https://github.com/superkaiba/explore-persona-space/blob/ea13298c57b217916c03f032bf5b7efc91a19292/docs/methodology/issue_665.md) · [gist](https://gist.github.com/superkaiba/3d10bd44e57cfe584e0abf2d5a86c653)
 
 Reuse provenance:
 - Reused trained activation store from [#664](https://eps.superkaiba.com/tasks/664): `superkaiba1/explore-persona-space-data/theory_assumptions/Qwen2.5-7B-Instruct/issue664` — fit: the content spine installs on-policy and carries gate dynamic range; the marker spine is excluded as the inherited at-floor degenerate arm.
