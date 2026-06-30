@@ -4943,8 +4943,8 @@
     "775": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/775",
-      "status": "planning",
+      "path": "tasks/approved/775",
+      "status": "approved",
       "title": "workflow-fix: auto-failover RunPod CUDA-IMA host-wedge to a fresh host"
     },
     "776": {
