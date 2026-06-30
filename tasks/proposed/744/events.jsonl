@@ -1,1 +1,2 @@
 {"ts": "2026-06-30T00:55:35Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-30T00:57:47Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "No existing q-id in docs/open_questions.md fits this experiment's Goal (token-to-token residual-stream continuity in Qwen-2.5-7B — pure mechanistic characterization, not a leakage/persona/implant axis). mode=autonomous-skipped; created_new=none; relates_to=[]. The nightly /daily living-docs backstop or a later interactive /issue 744 may reconcile."}
