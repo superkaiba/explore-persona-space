@@ -54,6 +54,16 @@ INTENTS: dict[str, GpuSpec] = {
             "difference between fitting and not."
         ),
     ),
+    "sweep-8g-a100": GpuSpec(
+        gpu_type="A100",
+        gpu_count=8,
+        rationale="Wide parallel sweep — 8x A100-80, cells sharded across GPUs (#743).",
+    ),
+    "sweep-8g-h100": GpuSpec(
+        gpu_type="H100",
+        gpu_count=8,
+        rationale="Wide parallel sweep — 8x H100-80, cells sharded across GPUs (#743).",
+    ),
     "debug": GpuSpec(
         gpu_type="H100",
         gpu_count=1,
