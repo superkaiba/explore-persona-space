@@ -4829,8 +4829,8 @@
     "760": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/760",
-      "status": "reviewing",
+      "path": "tasks/completed/760",
+      "status": "completed",
       "title": "recurring reaper for leaked Codex app-server daemons"
     },
     "761": {
