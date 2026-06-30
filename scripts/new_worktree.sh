@@ -98,6 +98,51 @@ if [ "${EPS_WORKTREE_REQUIRE_BIND:-0}" = 1 ]; then
   fi
 fi
 
+# Attached-but-inert WARN (#681 cutover not yet applied). The strict assertion
+# above OPTS IN via EPS_WORKTREE_REQUIRE_BIND=1; before the cutover lands that
+# flag is OFF, so the assertion is a no-op and the dangerous state — data disk
+# mounted but .claude/worktrees NOT bind-mounted onto it — is SILENT, and new
+# worktree caches keep landing on the boot disk `/` with no quota. This WARN
+# makes that state self-announcing: a once-per-session advisory that fires
+# exactly when the data disk IS a live mount, the bind is NOT live, and the
+# assertion is OFF. It is the STRICTLY WEAKER complement of the assertion
+# (mutually exclusive on EPS_WORKTREE_REQUIRE_BIND) and NEVER blocks creation.
+_datadisk_is_live() {
+  local probe="${EPS_WORKTREE_DATADISK_PROBE:-}"
+  if [ -n "$probe" ]; then
+    eval "$probe"
+    return $?
+  fi
+  # Production: the data-disk path itself MUST be a live mountpoint. Use
+  # `findmnt --mountpoint` (NOT `--target`): `--target` walks UP to the
+  # containing filesystem and returns rc=0 for ANY ordinary directory on a
+  # mounted fs, so an UNMOUNTED data disk would falsely report as present and
+  # the WARN would fire on clean non-GCP / CI machines (same trap the bind
+  # probe documents above). The ${EPS_VM_DATA_DISK_PATH:-/mnt/eps-data}
+  # default-fallback mirrors _assign_project_quota below: EPS_VM_DATA_DISK_PATH
+  # is unset on the live VM, so a literal-env predicate would never fire on the
+  # very machine with the bug.
+  findmnt --noheadings --mountpoint "${EPS_VM_DATA_DISK_PATH:-/mnt/eps-data}" >/dev/null 2>&1
+}
+INERT_SENTINEL="$REPO_ROOT/.claude/cache/worktree-inert-warned"
+if [ "${EPS_WORKTREE_REQUIRE_BIND:-0}" != 1 ] && [ ! -e "$INERT_SENTINEL" ]; then
+  if _datadisk_is_live && ! _bind_is_live; then
+    _dd="${EPS_VM_DATA_DISK_PATH:-/mnt/eps-data}"
+    {
+      echo "new_worktree: WARN — #681 data disk ($_dd) is mounted but"
+      echo "new_worktree:   $REPO_ROOT/.claude/worktrees is NOT bind-mounted onto it,"
+      echo "new_worktree:   so this worktree's caches will land on the boot disk / with NO quota."
+      echo "new_worktree:   Cutover: bind .claude/worktrees onto $_dd then export"
+      echo "new_worktree:   EPS_WORKTREE_REQUIRE_BIND=1 EPS_WORKTREE_ASSIGN_QUOTA=1 (cron + bootstrap)."
+      echo "new_worktree:   See task #681 / CLAUDE.md 'Disk hygiene'."
+    } >&2
+    # Best-effort sentinel (|| true): a read-only or missing .claude/cache must
+    # never abort worktree creation — the WARN is advisory, not load-bearing.
+    mkdir -p "$(dirname "$INERT_SENTINEL")" 2>/dev/null || true
+    : > "$INERT_SENTINEL" 2>/dev/null || true
+  fi
+fi
+
 # Per-issue ext4 project-quota cap. After the worktree is created (below), tag
 # its subtree to project id == issue number with a hard byte cap so one task
 # cannot starve the shared data disk (the per-TASK bound, plan §2.5/§4 Phase 4).
