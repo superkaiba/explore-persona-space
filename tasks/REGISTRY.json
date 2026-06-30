@@ -4950,8 +4950,8 @@
     "776": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/776",
-      "status": "proposed",
+      "path": "tasks/planning/776",
+      "status": "planning",
       "title": "workflow-fix: treat in-flight Batch/long-analysis phases as healthy-slow"
     },
     "78": {
