@@ -1,0 +1,824 @@
+{
+  "commit": "594d43ec45",
+  "created": "2026-06-30T14:01:12Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.06141676678300614,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.06332889884965388,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.06681654616841216,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.08204396882570658,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.09078443388166499,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.09169447905589588,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.09378849484500043,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.1114530647745483,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.11404028730831924,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.12767860986863205,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.13187446035941638,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.12933382808437505,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.1256363353498706,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.12334887046267082,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.12312495922204014,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.11799954786405008,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.11621972396569234,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.1100179614251954,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.1084486299788845,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.11213102679704473,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.11291524171925794,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.11456532191938319,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.1137631758442444,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.12315102965040071,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.12979376287648967,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.1291808022325439,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.12600108160745793,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.12780966107666641,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.06165934033734396,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.06331330689265505,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.0663472058268304,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.08081933949181652,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.08964816791959167,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.09029007765963917,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.09175886936852307,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.11038126632524793,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.11265346582296512,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.12754468827209564,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.13171321429759447,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.12903238946224724,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.1253608987425464,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.12316165498254074,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.12283751804754604,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.118007293686295,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.11639836586588945,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.11019470441303766,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.10881131248874376,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.11233772230529458,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.11285293315312722,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.11498015798088962,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.11454941397117885,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.12406379977899655,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.12997561600495874,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.1291915203532938,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.12561576567444982,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.12596367775979173,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.025,
+      "series": "standardized random baseline (~0.025)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.025,
+      "series": "standardized random baseline (~0.025)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.05294246337432463,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.05500566368003427,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.05858091679316588,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.07868743627563157,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.08960817376876314,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.08824923829061244,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.0946702907353095,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.1156618912599728,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.11943389230235127,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.1275575528256887,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.13246895065506817,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.13133861377407302,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.12870324187116897,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.1259732433149771,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.12461127189058548,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.11987442136122103,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.11716446864075823,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.11095137508979977,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.10799070375706446,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.11184775300187791,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.1128610195130032,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.11396732218271759,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.1113551204571836,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.1139841185537393,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.11803522433686817,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.1202171328173605,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.12217970990014139,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.12846969375411152,
+      "series": "Qwen-2.5-7B (base)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.05321201674309474,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.05505252382462703,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.05854077781149364,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.07774652762450375,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.0882405742963985,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.08702888625720151,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.0926952187759758,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.11409882901542803,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.11764628706650697,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.12665680494383172,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.13223754519270856,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.13124328369260146,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.1284544175349701,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.12566151880408702,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.1243778121689281,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.11996543625316172,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.1175178248950769,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.111308024384023,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.1082304271020715,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.11136918653084778,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.11212409445262142,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.11333244961173354,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.11074948684353741,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.11358547397444205,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.11764428385244026,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.11969811237823247,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.12116229876525719,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.125851275715442,
+      "series": "Qwen-2.5-7B-Instruct",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.025,
+      "series": "standardized random baseline (~0.025)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.025,
+      "series": "standardized random baseline (~0.025)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 116
+}
