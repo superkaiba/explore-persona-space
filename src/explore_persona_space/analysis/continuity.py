@@ -264,7 +264,7 @@ def extrap_error(H: torch.Tensor, k: int = 3) -> torch.Tensor:
     return err.mean(dim=1)  # (L,)
 
 
-def random_baseline(H: torch.Tensor, n_pairs: int, seed: int) -> torch.Tensor:
+def random_baseline(H: torch.Tensor, n_pairs: int, seed: int, chunk: int = 4096) -> torch.Tensor:
     """Empirical Qwen chance abs-cosine of random token pairs, per layer.
 
     ``H`` is ``(L, T, hidden)`` (one flavor — caller computes one baseline per
@@ -272,6 +272,11 @@ def random_baseline(H: torch.Tensor, n_pairs: int, seed: int) -> torch.Tensor:
     token-position pairs (i != j) per layer with a seeded RNG, returns the
     ``(L,)`` mean abs-cosine. This is the d=3584 analogue of Barenholtz's 0.029
     chance baseline at d=768 (expect ~0.013 = sqrt(2 / (pi d))).
+
+    The pairs are gathered + cosine'd in ``chunk``-sized blocks so the peak
+    intermediate stays ``(L, chunk, hidden)`` instead of ``(L, n_pairs,
+    hidden)`` — at L=24/28, hidden~896/3584, n_pairs=100k the un-chunked gather
+    materializes multi-GB fp32 tensors and is pathologically slow on CPU.
     """
     assert H.dim() == 3, H.shape
     L, T, _hidden = H.shape
@@ -282,10 +287,16 @@ def random_baseline(H: torch.Tensor, n_pairs: int, seed: int) -> torch.Tensor:
     j = torch.randint(0, T, (n_pairs,), generator=g)
     same = i == j  # resample collisions to j+1 (mod T) so i != j
     j[same] = (j[same] + 1) % T
-    a = H[:, i]  # (L, n_pairs, hidden)
-    b = H[:, j]
-    cos = torch.nn.functional.cosine_similarity(a, b, dim=-1).abs()  # (L, n_pairs)
-    return cos.mean(dim=1)  # (L,)
+    acc = torch.zeros(L, dtype=torch.float64)
+    done = 0
+    for start in range(0, n_pairs, chunk):
+        end = min(start + chunk, n_pairs)
+        a = H[:, i[start:end]]  # (L, c, hidden)
+        b = H[:, j[start:end]]
+        cos = torch.nn.functional.cosine_similarity(a, b, dim=-1).abs()  # (L, c)
+        acc += cos.sum(dim=1).double()
+        done += end - start
+    return (acc / max(done, 1)).float()  # (L,)
 
 
 def closed_form_random_abs_cosine(hidden: int) -> float:

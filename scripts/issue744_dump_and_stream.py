@@ -404,6 +404,18 @@ def main() -> int:
     ns_corpus = json.loads((args.corpora_dir / "corpus_natural_stories.json").read_text())
     broader_corpus = json.loads((args.corpora_dir / "corpus_broader.json").read_text())
 
+    # Copy the Phase-0 corpus JSONs + the gold Penn parses into the dump dir so
+    # they travel with the HF upload AND the off-pod analyzer (which reads the
+    # dump dir, not the corpora dir) finds the Penn parses for the A11 gold-vs-
+    # proxy clause-opener cross-check.
+    import shutil
+
+    for fname in ("corpus_natural_stories.json", "corpus_broader.json", "corpus_manifest.json"):
+        shutil.copy2(args.corpora_dir / fname, out_dir / fname)
+    penn_src = args.corpora_dir / "ns_penn_parses.txt"
+    if penn_src.exists():
+        shutil.copy2(penn_src, out_dir / "ns_penn_parses.txt")
+
     import wandb
 
     run = wandb.init(

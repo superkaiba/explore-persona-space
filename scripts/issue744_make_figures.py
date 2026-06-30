@@ -48,7 +48,6 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
     savefig_paper,
     set_paper_style,
-    set_title_subtitle,
 )
 
 logger = logging.getLogger("issue744_figures")
@@ -115,11 +114,11 @@ def fig_h1h2(cont_rows: list[dict], rb: dict, corpora: list[str], fig_dir: Path)
         ax.set_ylabel("+1-step direction preservation (|cos|)")
         ax.set_title(corpus)
         ax.legend(fontsize=7)
-    set_title_subtitle(
-        fig,
-        "Per-layer +1-step direction preservation (H1 vs H2)",
-        "three flavors + per-flavor random baseline (dotted)",
+    fig.suptitle(
+        "Per-layer +1-step direction preservation (H1 vs H2) — "
+        "three flavors + per-flavor random baseline (dotted)"
     )
+    fig.tight_layout()
     savefig_paper(fig, "h1h2_direction_preservation_p1", dir=str(fig_dir))
     plt.close(fig)
 
@@ -149,9 +148,10 @@ def fig_decay(cont_rows: list[dict], corpus: str, n_layers: int, fig_dir: Path) 
         ax.set_ylabel("direction preservation (|cos|)")
         ax.set_title(f"{lab} (layer {L})")
         ax.legend(fontsize=7)
-    set_title_subtitle(
-        fig, f"+0/+1/+2/+3 decay profile ({corpus})", "Barenholtz Table-4 analogue for Qwen-2.5-7B"
+    fig.suptitle(
+        f"+0/+1/+2/+3 decay profile ({corpus}) — Barenholtz Table-4 analogue (Qwen-2.5-7B)"
     )
+    fig.tight_layout()
     savefig_paper(fig, f"h1_decay_profile_{corpus}", dir=str(fig_dir))
     plt.close(fig)
 
@@ -183,8 +183,11 @@ def fig_h3(strat_rows: list[dict], corpus: str, n_layers: int, fig_dir: Path) ->
     ax.set_xlabel("layer")
     ax.set_title("per-stratum mean jump (standardized)")
     fig.colorbar(im, ax=ax, label="mean ||z(h_t) - z(h_{t-1})||_2")
-    set_title_subtitle(
-        fig, f"H3: discontinuity-locus stratification ({corpus})", "depth-shifting concentration"
+    # NOTE: no tight_layout() here — it conflicts with the colorbar's layout
+    # engine ("Colorbar layout of new layout engine not compatible"). The
+    # colorbar manages its own axes placement.
+    fig.suptitle(
+        f"H3: discontinuity-locus stratification ({corpus}) — depth-shifting concentration"
     )
     savefig_paper(fig, f"h3_stratification_heatmap_{corpus}", dir=str(fig_dir))
     plt.close(fig)
@@ -208,7 +211,8 @@ def fig_consec_cosine(cont_rows: list[dict], corpora: list[str], fig_dir: Path) 
         ax.set_ylabel("consecutive-token cosine")
         ax.set_title(corpus)
         ax.legend(fontsize=7)
-    set_title_subtitle(fig, "Per-layer consecutive-token cosine", "three flavors, both corpora")
+    fig.suptitle("Per-layer consecutive-token cosine — three flavors, both corpora")
+    fig.tight_layout()
     savefig_paper(fig, "consec_cosine_per_layer", dir=str(fig_dir))
     plt.close(fig)
 
@@ -234,9 +238,10 @@ def fig_extrap(extrap_rows: list[dict], corpora: list[str], fig_dir: Path) -> No
         ax.set_ylabel("L2 extrapolation error")
         ax.set_title(corpus)
         ax.legend(fontsize=7)
-    set_title_subtitle(
-        fig, "Per-layer trajectory-extrapolation error", "std-fit (primary) + raw-fit (Barenholtz)"
+    fig.suptitle(
+        "Per-layer trajectory-extrapolation error — std-fit (primary) + raw-fit (Barenholtz)"
     )
+    fig.tight_layout()
     savefig_paper(fig, "extrap_error_per_layer", dir=str(fig_dir))
     plt.close(fig)
 

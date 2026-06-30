@@ -262,14 +262,22 @@ def _jump_sum_count(
     return s.astype(np.float64), c.astype(np.float64)
 
 
-def stratified_jumps(raw_dir: Path, stats: dict, corpus_key: str, n_layers: int) -> list[dict]:
+def stratified_jumps(
+    raw_dir: Path, stats: dict, corpus_key: str, n_layers: int, corpus_label: str | None = None
+) -> list[dict]:
     """Per (layer x stratifier x stratum) mean jump + CI on the STANDARDIZED flavor.
 
     Jump = ||z(h^L_t) - z(h^L_{t-1})||_2 at each position t>=1, stratified by
     (i) sink mask (per-(layer,position), concern #1), (ii) surprisal tercile
     (terciles over the corpus token population), (iii) clause-opener mask.
     Bootstrap over SEQUENCES within each stratum (plan §4.5).
+
+    ``corpus_key`` indexes ``stats`` (``"ns"`` / ``"broader"``); ``corpus_label``
+    is the CANONICAL label written to the CSV (``"natural_stories"`` /
+    ``"broader"``) so it matches the per-layer continuity rows + the figure
+    script's corpus filter. Defaults to ``corpus_key`` when not given.
     """
+    label = corpus_label or corpus_key
     mu = stats[corpus_key]["mu"]
     sigma = stats[corpus_key]["sigma"]
     blobs = sorted(raw_dir.glob("seq_*.pt"))
@@ -339,7 +347,7 @@ def stratified_jumps(raw_dir: Path, stats: dict, corpus_key: str, n_layers: int)
         for li in range(n_layers):
             rows.append(
                 {
-                    "corpus": corpus_key,
+                    "corpus": label,
                     "stratifier": stratifier,
                     "stratum": stratum,
                     "layer": li,
@@ -566,8 +574,12 @@ def main() -> int:
     write_json(out_dir / "random_baseline.json", rb)
 
     logger.info("H3 stratification (NS + broader spot-check)...")
-    strat_rows = stratified_jumps(dump_dir / "ns_raw", stats, "ns", n_layers)
-    strat_rows += stratified_jumps(dump_dir / "broader_raw", stats, "broader", n_layers)
+    strat_rows = stratified_jumps(
+        dump_dir / "ns_raw", stats, "ns", n_layers, corpus_label="natural_stories"
+    )
+    strat_rows += stratified_jumps(
+        dump_dir / "broader_raw", stats, "broader", n_layers, corpus_label="broader"
+    )
     _write_csv(out_dir / "discontinuity_stratification.csv", strat_rows)
 
     logger.info("Concern reads: sink-excluded + word-level + proxy-vs-gold...")
