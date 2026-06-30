@@ -1274,6 +1274,15 @@ def _resolve_pv_store(args, out_dir: Path) -> Path:
         return args.pv_store_dir
     from huggingface_hub import snapshot_download
 
+    # Reuse the parent extractor's transient-HF retry wrapper (5xx / timeout /
+    # 429). A bursty snapshot_download of ~12000 rollout_acts/*.pt files trips
+    # HF Hub's per-org rate limit (2500 req/5min — one req per xet-read-token /
+    # per file), which the bare call surfaced ~38min in as a fatal
+    # HfHubHTTPError(429) (failure v10). The wrapper retries 429 with the long
+    # rate-limit-window backoff; max_workers below is the defense-in-depth that
+    # keeps the burst under quota in the first place.
+    from issue658_extract_rb_personavectors import _retry_on_transient_hf
+
     sub = f"{HF_PREFIX}/{PV_HF_SUBDIR}"
     # Fetch ONLY the files the fit consumes (acts + indices + manifest), NOT the
     # full ``{sub}/**`` glob. The store also carries a ``transcripts/`` tree that
@@ -1284,10 +1293,18 @@ def _resolve_pv_store(args, out_dir: Path) -> Path:
     # snapshot_download_no_space_left). The ``**`` recursion is preserved for the
     # sharded ``rollout_acts/shard_NNNN/`` + ``fewshot_acts/shard_NNNN/`` dirs (the
     # HF 10000-files-per-dir fix); a single-level ``*`` would silently fetch 0.
-    local = snapshot_download(
+    #
+    # max_workers=4: cap snapshot_download concurrency so the per-file
+    # xet-read-token bursts stay under the 2500-req/5min quota (4 workers ×
+    # ~1 req/s ≈ 240 req/min = 1200/5min, comfortably under). Defense-in-depth
+    # alongside the 429-retry wrapper — the latter recovers if the limit is
+    # hit anyway; this keeps it from being hit (failure v10).
+    local = _retry_on_transient_hf(
+        snapshot_download,
         HF_DATA_REPO,
         repo_type="dataset",
         revision=args.pv_store_rev,
+        max_workers=4,
         allow_patterns=[
             f"{sub}/rollout_index.json",
             f"{sub}/rb_extract_manifest.json",
@@ -1295,6 +1312,7 @@ def _resolve_pv_store(args, out_dir: Path) -> Path:
             f"{sub}/rollout_acts/**",
             f"{sub}/fewshot_acts/**",
         ],
+        _what="snapshot_download:pv_store",
     )
     return Path(local) / sub
 

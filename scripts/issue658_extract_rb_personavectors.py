@@ -483,21 +483,78 @@ def _is_transient_upload_error(err: Exception) -> bool:
     )
 
 
+def _is_rate_limit_429(err: Exception) -> bool:
+    """True for an HF Hub rate-limit 429 (the per-org 2500-req/5min quota).
+
+    Distinct from the generic transient class because a 429 needs a LONGER,
+    rate-limit-window-sized backoff (see ``_backoff_seconds``): the quota clears
+    only over the 5-minute window, so the short 5xx backoff (10..180s) keeps
+    re-tripping it. Matches the ``response.status_code`` OR the message text
+    (the verify listing's pagination already surfaces 429 in both forms)."""
+    code = getattr(getattr(err, "response", None), "status_code", None)
+    if code == 429:
+        return True
+    msg = str(err).lower()
+    return "429" in msg or "too many requests" in msg or "rate limit" in msg
+
+
+def _retry_after_seconds(err: Exception) -> float | None:
+    """Parse the ``Retry-After`` header (seconds) off a 429 response if present.
+
+    HF Hub may set ``Retry-After`` on a rate-limit 429; honoring it is the most
+    accurate backoff. Returns the parsed float seconds, or ``None`` when the
+    header is absent / unparseable (caller falls back to exponential)."""
+    headers = getattr(getattr(err, "response", None), "headers", None)
+    if not headers:
+        return None
+    raw = headers.get("Retry-After")
+    if raw is None:
+        return None
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _backoff_seconds(err: Exception, attempt: int) -> float:
+    """Backoff (seconds) for ``attempt`` (1-indexed) given the error class.
+
+    429 rate-limit → LONG backoff: honor ``Retry-After`` when present, else
+    exponential from a 60s base capped at 300s (the 5-minute rate-limit window).
+    Everything else (5xx / timeout) keeps the short backoff: 10s base, ×2 per
+    attempt, capped at 180s — unchanged from the original 5xx behavior."""
+    if _is_rate_limit_429(err):
+        retry_after = _retry_after_seconds(err)
+        if retry_after is not None:
+            return min(300.0, max(60.0, retry_after))
+        return float(min(300, 60 * 2 ** (attempt - 1)))
+    return float(min(180, 10 * 2 ** (attempt - 1)))
+
+
 def _retry_on_transient_hf(fn, *args, _what: str = "hf-call", max_attempts: int = 6, **kwargs):
     """Run any HF Hub call wrapped in exponential-backoff retry on transient
-    5xx / timeout errors, returning ``fn``'s result.
+    5xx / timeout / 429 errors, returning ``fn``'s result.
 
-    Covers EVERY paginated / committing HF endpoint, not just ``/commit``: the
-    post-upload ``list_repo_files`` verify call paginates ``/api/.../tree/main``
-    and ``huggingface_hub.utils._pagination.paginate`` retries ONLY 429 on
-    follow-up pages (``http_backoff(..., retry_on_status_codes=429)``), so a 504
-    on any cursor page raises ``HfHubHTTPError(504)`` straight through an
-    unwrapped caller. That un-retried 504 crashed two consecutive #658 upload
-    runs AFTER all 12081 files had already committed (the upload itself
-    succeeded; the verify listing 504'd). The transient classifier matches the
-    504's ``response.status_code`` / message, so this wrapper retries it.
-    Storage-quota-403 re-raises immediately so the caller's overflow-repo
-    fallback still fires; non-transient errors re-raise at once."""
+    Covers EVERY paginated / committing / downloading HF endpoint, not just
+    ``/commit``: the post-upload ``list_repo_files`` verify call paginates
+    ``/api/.../tree/main`` and ``huggingface_hub.utils._pagination.paginate``
+    retries ONLY 429 on follow-up pages (``http_backoff(...,
+    retry_on_status_codes=429)``), so a 504 on any cursor page raises
+    ``HfHubHTTPError(504)`` straight through an unwrapped caller. That
+    un-retried 504 crashed two consecutive #658 upload runs AFTER all 12081
+    files had already committed (the upload itself succeeded; the verify
+    listing 504'd). The transient classifier matches the 504's
+    ``response.status_code`` / message, so this wrapper retries it.
+
+    429 (HF Hub's per-org 2500-req/5min rate limit, one req per
+    xet-read-token / per file) IS retried, with a LONGER backoff than 5xx —
+    ``Retry-After`` when the header is set, else exponential from a 60s base
+    capped at the 300s rate-limit window (5xx keeps the short 10..180s
+    backoff). A bursty ``snapshot_download`` of ~12000 ``.pt`` files tripped
+    the 429 ~38min into a #658 fit run; the short 5xx backoff cleared too
+    early and re-tripped it. Storage-quota-403 re-raises immediately so the
+    caller's overflow-repo fallback still fires; non-transient errors re-raise
+    at once."""
     import time
 
     for attempt in range(1, max_attempts + 1):
@@ -510,9 +567,9 @@ def _retry_on_transient_hf(fn, *args, _what: str = "hf-call", max_attempts: int 
                 or attempt == max_attempts
             ):
                 raise
-            sleep_s = min(180, 10 * 2 ** (attempt - 1))
+            sleep_s = _backoff_seconds(e, attempt)
             logger.warning(
-                "%s transient error (attempt %d/%d): %s; retrying in %ds",
+                "%s transient error (attempt %d/%d): %s; retrying in %.0fs",
                 _what,
                 attempt,
                 max_attempts,
