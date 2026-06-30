@@ -1,0 +1,164 @@
+{
+  "commit": "00cea0d79d",
+  "created": "2026-06-30T11:46:33Z",
+  "figsize": [
+    7.6,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.4822569027611044,
+      "error": 0.2322664376172698,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out $\\rho$(predicted DV, actual DV)": -0.2064345738295318,
+      "error": 0.24629262817902292,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.5207692307692308,
+      "error": 0.3085725657975078,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.850564225690276,
+      "error": 0.06922915135026608,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.8858103241296518,
+      "error": 0.08476298934551779,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.9051140456182473,
+      "error": 0.05317138207574251,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.3492307692307692,
+      "error": 0.4261695842729333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.8022569027611044,
+      "error": 0.12267873941291435,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.21951495035580343,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "held-out $\\rho$(predicted DV, actual DV)": -0.43078276196555537,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.1483495679562956,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.7600372158103167,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.684047825590343,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.06180249439249047,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.7654946995513112,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.8984955185108489,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.7709349375050755,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.8355819108033037,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "held-out $\\rho$(predicted DV, actual DV)": -0.1559178292977051,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.644398535992686,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.940460916196111,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.9419246749547887,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.6964213392481615,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "held-out $\\rho$(predicted DV, actual DV)": 0.8897560148185147,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24
+}
