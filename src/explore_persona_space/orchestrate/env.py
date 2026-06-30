@@ -229,6 +229,21 @@ def load_dotenv(env_path: str | None = None):
     #   local                     → ~/.cache/huggingface (user-level shared)
     os.environ.setdefault("HF_HOME", _hf_home_default())
 
+    # Fast HF Hub uploads (#745). BELT-AND-SUSPENDERS only — the LOAD-BEARING
+    # placement is the SHELL-level export (bootstrap_pod.sh / GCE prelude /
+    # SLURM env block), because HF_HUB_ENABLE_HF_TRANSFER is frozen by
+    # huggingface_hub.constants at IMPORT time, so a setdefault running after a
+    # direct-upload script's top-level `import huggingface_hub` is too late for
+    # that constant. This setdefault still helps a local-dev process that
+    # imports huggingface_hub AFTER load_dotenv (e.g. lazy in-function imports).
+    # HF_XET_HIGH_PERFORMANCE is the PRIMARY accelerator (the project repos use
+    # the Xet backend — verified); it is read by the compiled hf_xet crate at
+    # UPLOAD time, so it escapes the import freeze. HF_HUB_ENABLE_HF_TRANSFER is
+    # the orthogonal LFS-path accelerator (future-proofing). setdefault
+    # preserves an explicit =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround).
+    os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")  # Xet path (primary)
+    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")  # LFS path (orthogonal)
+
 
 def setup_worker(gpu_id: int):
     """Configure a worker subprocess: GPU, paths, env vars.
@@ -274,6 +289,11 @@ def setup_worker(gpu_id: int):
     # Worker subprocesses must NOT write to the RunPod path on the
     # cluster (no /workspace mount).
     os.environ.setdefault("HF_HOME", _hf_home_default())
+    # Fast HF Hub uploads (#745) — local-dev belt-and-suspenders, mirror of
+    # load_dotenv (see the note there; shell-level export is the load-bearing
+    # placement). setdefault preserves an explicit =0 / HF_XET_DISABLE=1.
+    os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")  # Xet path (primary)
+    os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "1")  # LFS path (orthogonal)
 
     load_dotenv()
 
