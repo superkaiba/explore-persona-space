@@ -35,7 +35,7 @@
       "delta_ridge": 0.00728768025612947,
       "predict_mean_abs_cos": 0.9968373013494778,
       "raw_recon_abs_cos": 0.9965382722949506,
-      "ridge_median_per_dim_r2": -0.10525189616594299,
+      "ridge_median_per_dim_r2": -0.10525189616594277,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     },
@@ -46,14 +46,14 @@
       "delta_ridge": 0.008081171099321383,
       "predict_mean_abs_cos": 0.9863980879073295,
       "raw_recon_abs_cos": 0.9973235543687522,
-      "ridge_median_per_dim_r2": 0.5171408261760974,
+      "ridge_median_per_dim_r2": 0.5171408261760971,
       "n_folds_used_ridge": 50,
       "gesvd_fallback": false
     }
   ],
   "metadata": {
-    "git_commit": "62408db7c3dde3d94a9e473cdce993fc444d6dce",
-    "timestamp_utc": "2026-06-30T09:18:56.521135Z",
+    "git_commit": "268aa898398e801614fad9526f875d24e8c02c49",
+    "timestamp_utc": "2026-06-30T09:44:01.976359Z",
     "python_version": "3.11.15",
     "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",

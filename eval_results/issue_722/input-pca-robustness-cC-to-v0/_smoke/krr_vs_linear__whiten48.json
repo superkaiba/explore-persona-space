@@ -1,5 +1,5 @@
 {
-  "input_rep": "pca48",
+  "input_rep": "whiten48",
   "input_rep_k": 48,
   "input_rep_eps": 1e-06,
   "c_C_recipe": "C_last",
@@ -35,46 +35,46 @@
   "per_layer": [
     {
       "layer": 0,
-      "skill_krr_linear_pca48": -0.08323242049736379,
-      "skill_krr_rbf_pca48": 8.812336683705624e-07,
-      "nonlinear_gap_rbf_minus_linear": 0.08323330173103216,
-      "nonlinear_gap_baseline_full": 0.40355991942049785,
-      "delta_gap": -0.3203266176894657,
+      "skill_krr_linear_pca48": -0.08323242050665436,
+      "skill_krr_rbf_pca48": 8.812334713059755e-07,
+      "nonlinear_gap_rbf_minus_linear": 0.08323330174012566,
+      "nonlinear_gap_baseline_full": 0.40355991942049696,
+      "delta_gap": -0.3203266176803713,
       "gap_ci95": [
-        -0.1037790765758148,
-        0.3040830880911357
+        -0.10377907656998658,
+        0.30408308810352
       ],
       "gap_excludes_zero": false,
-      "chosen_gamma_rbf_median": 0.30612245897805945,
+      "chosen_gamma_rbf_median": 0.3061224495982927,
       "chosen_lambda_rbf_median": 1000.0,
       "chosen_lambda_linear_median": 0.01,
       "gesvd_fallback": false
     },
     {
       "layer": 18,
-      "skill_krr_linear_pca48": 0.8077956227199248,
-      "skill_krr_rbf_pca48": 4.7776988477687965e-06,
-      "nonlinear_gap_rbf_minus_linear": -0.807790845021077,
-      "nonlinear_gap_baseline_full": 0.0009635117642101676,
-      "delta_gap": -0.8087543567852872,
+      "skill_krr_linear_pca48": 0.8077956227199169,
+      "skill_krr_rbf_pca48": 4.777698813129838e-06,
+      "nonlinear_gap_rbf_minus_linear": -0.8077908450211038,
+      "nonlinear_gap_baseline_full": 0.0009635117642099456,
+      "delta_gap": -0.8087543567853137,
       "gap_ci95": [
-        -0.851192466375544,
-        -0.7571856738244304
+        -0.851192466375591,
+        -0.7571856738244311
       ],
       "gap_excludes_zero": true,
-      "chosen_gamma_rbf_median": 0.3061224495720434,
+      "chosen_gamma_rbf_median": 0.30612244959818186,
       "chosen_lambda_rbf_median": 1000.0,
       "chosen_lambda_linear_median": 0.01,
       "gesvd_fallback": false
     }
   ],
   "metadata": {
-    "git_commit": "62408db7c3dde3d94a9e473cdce993fc444d6dce",
-    "timestamp_utc": "2026-06-30T09:17:26.034791Z",
+    "git_commit": "268aa898398e801614fad9526f875d24e8c02c49",
+    "timestamp_utc": "2026-06-30T09:44:01.976359Z",
     "python_version": "3.11.15",
     "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",
     "script": "issue722_vectorized_skill",
-    "phase": "input_rep_pca48"
+    "phase": "input_rep_whiten48"
   }
 }

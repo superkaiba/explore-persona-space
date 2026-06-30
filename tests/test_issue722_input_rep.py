@@ -287,3 +287,122 @@ def test_build_comparison_emits_flat_verdict_keys(driver):
     assert comp["n_layers_passing_R2_gate_pca48"] == 28
     assert comp["n_layers_passing_gap_gate_pca48"] == 28
     assert "per_variant" in comp and "pca48" in comp["per_variant"]
+
+
+# ── (6) plan v7 §6.5 PRIMARY DELIVERABLE filename + figure contract ───────────
+# This is the round-2 BLOCKER pin (concern approved-output-contract-missing): the
+# production CLI must emit the approved §6.5 deliverable PATHS/FILENAMES and the
+# input-rep figure. Round 1 wrote a nested {variant}/ layout + comparison.json +
+# no figure, which diverged from the binding plan contract.
+
+FIGURE_PATH = REPO_ROOT / "figures/issue_722/input_rep_robustness_per_layer.png"
+
+# Plan v7 §6.5 primary_deliverable: flat per-variant filenames under the
+# followup_label subdir + the renamed comparison file + the figure.
+SECTION_6_5_FILENAMES = (
+    "skill_over_mean__pca48.json",
+    "krr_vs_linear__pca48.json",
+    "skill_over_mean__whiten48.json",
+    "krr_vs_linear__whiten48.json",
+    "input_rep_comparison.json",
+    "run_meta.json",
+)
+
+
+def test_section_6_5_output_contract_wired_in_source(driver):
+    """The §6.5 output contract is wired into the production writer (no substrate needed).
+
+    Static pin that would have caught the round-1 deviation without a full run: the
+    default ``--input-rep-out-subdir`` is the ``input-pca-robustness-cC-to-v0``
+    followup_label, and ``_run_input_rep_phase`` writes the FLAT per-variant
+    filenames + the renamed ``input_rep_comparison.json`` + calls the §6 figure
+    writer (instead of the round-1 nested ``{variant}/`` layout + ``comparison.json``
+    + no figure that the BLOCKER concern flagged).
+    """
+    import inspect as _inspect
+
+    m = driver
+    main_src = _inspect.getsource(m.main)
+    assert 'default="input-pca-robustness-cC-to-v0"' in main_src, (
+        "the --input-rep-out-subdir default is not the followup_label (plan v7 §6.5)"
+    )
+    src = _inspect.getsource(m._run_input_rep_phase)
+    assert 'f"skill_over_mean__{variant}.json"' in src, (
+        "flat skill_over_mean__<variant>.json filename missing from _run_input_rep_phase"
+    )
+    assert 'f"krr_vs_linear__{variant}.json"' in src, (
+        "flat krr_vs_linear__<variant>.json filename missing from _run_input_rep_phase"
+    )
+    assert '"input_rep_comparison.json"' in src, (
+        "renamed input_rep_comparison.json missing from _run_input_rep_phase"
+    )
+    assert "make_input_rep_figure(" in src, (
+        "the §6 figure writer is not called from _run_input_rep_phase"
+    )
+    # The round-1 nested-subdir writer line must NOT survive.
+    assert "out_dir / variant" not in src, "round-1 nested {variant}/ subdir writer still present"
+
+
+@pytest.mark.skipif(
+    not (BETLEY_STORE.exists() and COMMITTED_SKILL_JSON.exists()),
+    reason="betley substrate cache or committed baseline JSON absent (sparse worktree)",
+)
+def test_primary_deliverable_filenames_match_plan_section_6_5(tmp_path):
+    """End-to-end: a smoke run at ``--layers 0,18`` emits the §6.5 files + figure.
+
+    Drives the PRODUCTION CLI (the smoke-drives-production-entrypoint contract) with
+    a unique ``--input-rep-out-subdir`` so it does not clobber the committed smoke
+    artifacts, then asserts every plan v7 §6.5 primary-deliverable filename exists in
+    ``eval_results/issue_722/<subdir>/_smoke/`` AND the figure
+    ``figures/issue_722/input_rep_robustness_per_layer.png`` exists. This is the test
+    that would have caught the round-1 nested-layout + missing-figure deviation.
+    """
+    import os
+    import shutil
+    import subprocess
+
+    subdir = f"test-input-rep-{os.getpid()}"
+    out_dir = REPO_ROOT / "eval_results/issue_722" / subdir
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+    try:
+        proc = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/issue722_vectorized_skill.py",
+                "--input-rep",
+                "pca48",
+                "whiten48",
+                "--layers",
+                "0",
+                "18",
+                "--smoke",
+                "--device",
+                "cpu",
+                "--input-rep-out-subdir",
+                subdir,
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=900,
+        )
+        assert proc.returncode == 0, (
+            f"smoke CLI exited {proc.returncode}\nSTDERR tail:\n{proc.stderr[-2000:]}"
+        )
+        smoke_dir = out_dir / "_smoke"
+        for fname in SECTION_6_5_FILENAMES:
+            assert (smoke_dir / fname).exists(), (
+                f"plan v7 §6.5 deliverable {fname} missing from {smoke_dir}"
+            )
+        # The round-1 nested {variant}/ layout must NOT be produced.
+        assert not (smoke_dir / "pca48").exists(), "nested pca48/ subdir produced (round-1 layout)"
+        assert not (smoke_dir / "whiten48").exists(), "nested whiten48/ subdir produced"
+        # The §6 figure must exist + be non-empty.
+        assert FIGURE_PATH.exists(), f"§6 figure not written: {FIGURE_PATH}"
+        assert FIGURE_PATH.stat().st_size > 1000, "§6 figure is empty/truncated"
+    finally:
+        if out_dir.exists():
+            shutil.rmtree(out_dir)

@@ -1792,6 +1792,83 @@ def make_krr_figure(result: dict, fig_path: Path) -> None:
     logger.info("wrote %s", fig_path)
 
 
+def make_input_rep_figure(
+    results_by_variant: dict,
+    *,
+    baseline_skill_json: Path,
+    baseline_krr_json: Path,
+    layer_subset: list[int] | None,
+    fig_path: Path,
+) -> None:
+    """Plan v7 §6 Figure: two stacked panels comparing input representations per layer.
+
+    Top panel: linear-ridge skill-over-mean R² for the full baseline + each
+    re-represented variant (pca48 / whiten48), x = layer. Bottom panel: the
+    KRR(RBF)−linear gap for the same reps, with a horizontal zero line. The full
+    baseline lines are read from the committed ``skill_over_mean.json`` /
+    ``krr_vs_linear.json``; the variant lines come from the in-memory
+    ``results_by_variant`` dicts ((skill_result, krr_result) per variant). No
+    annotation overlays. Restricted to ``layer_subset`` when given (a 2-layer
+    smoke figure is degenerate but proves the writer runs).
+    """
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import set_paper_style
+
+    set_paper_style(target="neurips")
+
+    want = None if layer_subset is None else set(layer_subset)
+
+    def _series(per_layer: list[dict], key: str) -> tuple[list[int], list[float]]:
+        rows = sorted(
+            (r for r in per_layer if want is None or int(r["layer"]) in want),
+            key=lambda r: int(r["layer"]),
+        )
+        return [int(r["layer"]) for r in rows], [float(r[key]) for r in rows]
+
+    base_skill = load_json(baseline_skill_json)
+    base_krr = load_json(baseline_krr_json)
+
+    colors = {"full": "#0072B2", "pca48": "#D55E00", "whiten48": "#009E73"}
+    markers = {"full": "o", "pca48": "s", "whiten48": "^"}
+
+    fig, (ax_top, ax_bot) = plt.subplots(2, 1, figsize=(7.5, 6.0), sharex=True)
+
+    # ── top panel: ridge skill-over-mean R² ──
+    bx, by = _series(base_skill["per_layer"], "skill_vs_mean_ridge")
+    ax_top.plot(
+        bx, by, marker=markers["full"], ms=3, lw=1.6, color=colors["full"], label="full (baseline)"
+    )
+    # ── bottom panel: KRR(RBF)−linear gap ──
+    gx, gy = _series(base_krr["per_layer"], "nonlinear_gap_rbf_minus_linear")
+    ax_bot.plot(gx, gy, marker=markers["full"], ms=3, lw=1.6, color=colors["full"], label="full")
+
+    for variant, (skill_result, krr_result) in results_by_variant.items():
+        c = colors.get(variant, "#999999")
+        m = markers.get(variant, "x")
+        vx, vy = _series(skill_result["per_layer"], "skill_vs_mean_ridge")
+        ax_top.plot(vx, vy, marker=m, ms=3, lw=1.6, color=c, label=variant)
+        kx, ky = _series(krr_result["per_layer"], "nonlinear_gap_rbf_minus_linear")
+        ax_bot.plot(kx, ky, marker=m, ms=3, lw=1.6, color=c, label=variant)
+
+    ax_top.axhline(0.0, color="0.4", lw=0.9, ls=":")
+    ax_top.set_ylabel("skill-over-mean (held-out R²)")
+    ax_top.legend(loc="best", fontsize=7)
+
+    ax_bot.axhline(0.0, color="0.4", lw=0.9, ls=":")
+    ax_bot.set_xlabel("layer")
+    ax_bot.set_ylabel("nonlinear gap\n(RBF − linear)")
+    ax_bot.legend(loc="best", fontsize=7)
+
+    fig.tight_layout()
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(fig_path, dpi=200, bbox_inches="tight")
+    fig.savefig(fig_path.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+    _write_fig_meta(fig_path, 722, "input_rep_comparison.json")
+    logger.info("wrote %s", fig_path)
+
+
 # ── slow-MLP spot-check (Deliverable 4 item 2) ────────────────────────────────
 
 
@@ -1978,11 +2055,15 @@ def _run_input_rep_phase(
 
     For each requested ``--input-rep`` variant (pca48 / whiten48), re-run BOTH
     headline arms under the per-fold input transform (``run_input_rep_robustness``)
-    and write ``{variant}/skill_over_mean.json`` + ``{variant}/krr_vs_linear.json``.
-    Then assemble ``comparison.json`` (the §6 SUCCESS/KILL verdict per variant) and
-    ``run_meta.json`` (config + code SHA + substrate provenance). Reads the committed
-    variant-1 (full) baseline JSONs as the Δ denominator — NEVER re-runs full. A
-    ``smoke_slice`` run lands under an ``_smoke/`` subdir, apart from production.
+    and write the plan v7 §6.5 flat-named deliverables
+    ``skill_over_mean__{variant}.json`` + ``krr_vs_linear__{variant}.json`` under the
+    ``input-pca-robustness-cC-to-v0`` subdir (NOT a nested ``{variant}/`` subdir).
+    Then assemble ``input_rep_comparison.json`` (the §6 SUCCESS/KILL verdict per
+    variant), ``run_meta.json`` (config + code SHA + substrate provenance), and the
+    two-panel ``figures/issue_722/input_rep_robustness_per_layer.png``. Reads the
+    committed variant-1 (full) baseline JSONs as the Δ denominator — NEVER re-runs
+    full. A ``smoke_slice`` run lands under an ``_smoke/`` subdir, apart from
+    production.
     """
     if not (baseline_skill_json.exists() and baseline_krr_json.exists()):
         raise FileNotFoundError(
@@ -2014,10 +2095,11 @@ def _run_input_rep_phase(
         meta = reproducibility_metadata(
             {"script": "issue722_vectorized_skill", "phase": f"input_rep_{variant}"}
         )
-        vdir = out_dir / variant
-        vdir.mkdir(parents=True, exist_ok=True)
-        skill_path = vdir / "skill_over_mean.json"
-        krr_path = vdir / "krr_vs_linear.json"
+        # Plan v7 §6.5: flat per-variant filenames under the followup_label subdir
+        # (skill_over_mean__<variant>.json / krr_vs_linear__<variant>.json), NOT a
+        # nested <variant>/ subdir.
+        skill_path = out_dir / f"skill_over_mean__{variant}.json"
+        krr_path = out_dir / f"krr_vs_linear__{variant}.json"
         dump_json({**skill_result, "metadata": meta}, skill_path)
         dump_json({**krr_result, "metadata": meta}, krr_path)
         logger.info("wrote %s + %s", skill_path, krr_path)
@@ -2031,7 +2113,7 @@ def _run_input_rep_phase(
     comparison["metadata"] = reproducibility_metadata(
         {"script": "issue722_vectorized_skill", "phase": "input_rep_comparison"}
     )
-    comp_path = out_dir / "comparison.json"
+    comp_path = out_dir / "input_rep_comparison.json"  # plan v7 §6.5 deliverable name
     dump_json(comparison, comp_path)
     logger.info("wrote %s", comp_path)
 
@@ -2062,6 +2144,19 @@ def _run_input_rep_phase(
     meta_path = out_dir / "run_meta.json"
     dump_json(run_meta, meta_path)
     logger.info("wrote %s", meta_path)
+
+    # Plan v7 §6 Figure: two stacked panels (ridge R² + KRR(RBF)−linear gap) for the
+    # full baseline + each re-represented variant, after both variants + the
+    # comparison land. Reads the flat-named variant JSONs + the committed full
+    # baseline JSONs.
+    fig_path = REPO_ROOT / "figures/issue_722/input_rep_robustness_per_layer.png"
+    make_input_rep_figure(
+        results_by_variant,
+        baseline_skill_json=baseline_skill_json,
+        baseline_krr_json=baseline_krr_json,
+        layer_subset=layer_subset,
+        fig_path=fig_path,
+    )
 
     print("\n==== input-rep robustness verdict (vs committed full baseline) ====")
     for variant, pv in comparison["per_variant"].items():
@@ -2184,14 +2279,16 @@ def main() -> int:
         choices=list(INPUT_REPS),
         help="Run the input-representation robustness amendment for these variants "
         "(pca48 / whiten48; 'full' is the committed baseline and is never re-run). "
-        "Writes eval_results/issue_722/input-pca-robustness/{variant}/{skill_over_mean,"
-        "krr_vs_linear}.json + comparison.json + run_meta.json. Implies --skip-canonical "
-        "unless the canonical phases are also requested.",
+        "Writes eval_results/issue_722/input-pca-robustness-cC-to-v0/"
+        "skill_over_mean__{variant}.json + krr_vs_linear__{variant}.json + "
+        "input_rep_comparison.json + run_meta.json (plan v7 §6.5 primary deliverable). "
+        "Implies --skip-canonical unless the canonical phases are also requested.",
     )
     parser.add_argument(
         "--input-rep-out-subdir",
-        default="input-pca-robustness",
-        help="Output subdir under eval_results/issue_722/ for the input-rep variants",
+        default="input-pca-robustness-cC-to-v0",
+        help="Output subdir under eval_results/issue_722/ for the input-rep variants "
+        "(the followup_label; plan v7 §6.5)",
     )
     parser.add_argument(
         "--input-rep-k", type=int, default=INPUT_REP_K, help="top-k PCs for pca48/whiten48"
