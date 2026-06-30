@@ -1,4 +1,4 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width, initial-scale=1'><title>Evaluation questions (UltraChat / generic genre)</title><style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Spline+Sans+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap');
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content='width=device-width, initial-scale=1'><title>Evaluation questions (UltraChat)</title><style>@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Spline+Sans+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap');
 :root{
   --ink:#211e19; --ink-soft:#534c41; --paper:#f3eee4; --card:#fbf8f1;
   --line:#ddd3c1; --line-2:#cabfa8; --hl:#ffeea8; --hl-soft:#fff7df;
@@ -160,18 +160,17 @@ footer.foot b{color:var(--ink); font-weight:600}
 <div class="wrap">
 <header class="masthead">
   <div class="kicker"><span class="dot"></span> Context-vector / answer-profile experiment
-     <span class="dot"></span> UltraChat / generic genre
+     <span class="dot"></span> UltraChat question pool
      <span class="dot"></span> <a href="contexts.html">contexts &rarr;</a>
      <span class="dot"></span> <a href="completions.html">completions &rarr;</a></div>
   <h1 class="title">The <em>48</em> questions</h1>
-  <p class="dek">Evaluation questions (UltraChat / generic genre). A fixed pool of 48 open-ended
+  <p class="dek">Evaluation questions (UltraChat). A fixed pool of 48 open-ended
      prompts sampled from the UltraChat corpus, asked under <i>every</i> context to read off the
-     answer profile <i>v<sub>A</sub></i>. This is the generic genre &mdash; an alternative to the
-     Betley-style probe pool.</p>
+     answer profile <i>v<sub>A</sub></i>.</p>
   <div class="statbar">
     <div class="stat"><span class="num">48</span><span class="lbl">Questions</span></div>
     <div class="stat"><span class="num">50</span><span class="lbl">Contexts each</span></div>
-    <div class="stat"><span class="num">UltraChat</span><span class="lbl">Generic genre</span></div>
+    <div class="stat"><span class="num">UltraChat</span><span class="lbl">Question source</span></div>
     <div class="stat"><span class="num">Qwen2.5</span><span class="lbl">7B-Instruct</span></div>
   </div>
 </header>
@@ -185,9 +184,9 @@ footer.foot b{color:var(--ink); font-weight:600}
 <div class="empty" id="empty">No question matches that search.</div>
 
 <footer class="foot">
-  <div><b>Source.</b> UltraChat generic probe pool &mdash;
+  <div><b>Source.</b> UltraChat probe pool &mdash;
      <span class="mono">data/issue594/probes_ultrachat.json</span>
-     (HuggingFaceH4/ultrachat_200k, n=48). Generic genre, distinct from the Betley pool.</div>
+     (HuggingFaceH4/ultrachat_200k, n=48).</div>
   <div>Generated 2026-06-30 &middot; self-contained, no external data</div>
 </footer>
 </div>
