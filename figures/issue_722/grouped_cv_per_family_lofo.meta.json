@@ -1,0 +1,14 @@
+{
+  "issue": 722,
+  "figure": "grouped_cv_per_family_lofo.png",
+  "code_sha": "8ba7c00ab22af3cc4537cd8da2604dec24da38ac",
+  "generated_at": "2026-06-30T00:33:17Z",
+  "primary_layer": 18,
+  "bars": "per-held-out-family LOFO linear-ridge skill",
+  "ref_lines": [
+    "LOCO ridge skill",
+    "LOFO aggregate skill"
+  ],
+  "small_family_greyed": "default (n=2)",
+  "source_json": "eval_results/issue_722/grouped_cv/lofo.json"
+}

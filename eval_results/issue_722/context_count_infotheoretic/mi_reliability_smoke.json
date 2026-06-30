@@ -1,0 +1,161 @@
+{
+  "analysis": "mi_reliability",
+  "real_data": {
+    "layer": 18,
+    "nsub_grid": [
+      15,
+      30,
+      50
+    ],
+    "cca_reg": 1.0,
+    "cca_target_pca": 16,
+    "input_pca": 16,
+    "ksg_k": 3,
+    "rows": [
+      {
+        "n_sub": 15,
+        "n_resamples": 6,
+        "top_canon_corr_raw_mean": 0.999999,
+        "top_canon_corr_reg_mean": 0.8127641976480845,
+        "gaussian_mi_reg_mean": 1.3799103686486636,
+        "gaussian_mi_reg_ci": [
+          1.2057934122006342,
+          1.4554244128287666
+        ],
+        "ksg_proxy_mi_mean": 9.728570503570525,
+        "ksg_proxy_mi_ci": [
+          7.645491684241701,
+          12.248420306545334
+        ],
+        "ksg_n_resamples": 6
+      },
+      {
+        "n_sub": 30,
+        "n_resamples": 6,
+        "top_canon_corr_raw_mean": 0.999999,
+        "top_canon_corr_reg_mean": 0.8229117936688332,
+        "gaussian_mi_reg_mean": 1.4621586827741029,
+        "gaussian_mi_reg_ci": [
+          1.416262077777152,
+          1.5073523474394745
+        ],
+        "ksg_proxy_mi_mean": 17.32690589791949,
+        "ksg_proxy_mi_ci": [
+          13.321004556806407,
+          21.955951467842468
+        ],
+        "ksg_n_resamples": 6
+      },
+      {
+        "n_sub": 50,
+        "n_resamples": 1,
+        "top_canon_corr_raw_mean": 0.9991433215252584,
+        "top_canon_corr_reg_mean": 0.8198780400495737,
+        "gaussian_mi_reg_mean": 1.4301848437596738,
+        "gaussian_mi_reg_ci": [
+          1.4301848437596738,
+          1.4301848437596738
+        ],
+        "ksg_proxy_mi_mean": 20.56295677911563,
+        "ksg_proxy_mi_ci": [
+          NaN,
+          NaN
+        ],
+        "ksg_n_resamples": 1
+      }
+    ],
+    "verdict": "Gaussian-MI MAGNITUDE not reliably estimable at n<=50: raw canonical correlations saturate to ~1, so the MI sum is regularization-dependent (see gaussian_mi_reg_mean across reg) and not a true MI value; the KSG proxy is small-sample-bias-dominated (grows with n). HSIC/dCor presence tests (Deliverable 1) are the reliable surrogate at these n."
+  },
+  "ground_truth_sim": {
+    "dim": 8,
+    "rhos": [
+      0.7,
+      0.5,
+      0.35,
+      0.2,
+      0.1,
+      0.05,
+      0.02,
+      0.01
+    ],
+    "true_mi": 0.5727902474856054,
+    "ns": [
+      30,
+      100,
+      300
+    ],
+    "n_datasets": 12,
+    "cca_reg": 1.0,
+    "ksg_k": 3,
+    "rows": [
+      {
+        "n": 30,
+        "true_mi": 0.5727902474856054,
+        "true_top_rho": 0.7,
+        "reg_mean": 0.34201405366798543,
+        "reg_sd": 0.030810797518096848,
+        "reg_bias": -0.23077619381761993,
+        "raw_mean": 2.1823401650657335,
+        "raw_bias": 1.6095499175801282,
+        "top_canon_corr_raw_mean": 0.9002167845103545,
+        "ksg_proxy_mean": 2.694040732083142,
+        "ksg_proxy_sd": 0.6008432047730453
+      },
+      {
+        "n": 100,
+        "true_mi": 0.5727902474856054,
+        "true_top_rho": 0.7,
+        "reg_mean": 0.18908565322009382,
+        "reg_sd": 0.022526751282997477,
+        "reg_bias": -0.3837045942655115,
+        "raw_mean": 0.9230487538612665,
+        "raw_bias": 0.35025850637566114,
+        "top_canon_corr_raw_mean": 0.757074638689247,
+        "ksg_proxy_mean": 2.2608846905416415,
+        "ksg_proxy_sd": 0.33032301000529685
+      },
+      {
+        "n": 300,
+        "true_mi": 0.5727902474856054,
+        "true_top_rho": 0.7,
+        "reg_mean": 0.13933656543492132,
+        "reg_sd": 0.011885249594413424,
+        "reg_bias": -0.433453682050684,
+        "raw_mean": 0.6616797889634463,
+        "raw_bias": 0.0888895414778409,
+        "top_canon_corr_raw_mean": 0.7152828888391688,
+        "ksg_proxy_mean": 1.5186840830893373,
+        "ksg_proxy_sd": 0.17514734451324723
+      }
+    ],
+    "n_within_20pct_reg": null,
+    "tolerance_nats": 0.11455804949712108
+  },
+  "metadata": {
+    "issue": 722,
+    "followup_label": "context_count_infotheoretic",
+    "generated_at": "2026-06-30T00:33:32Z",
+    "code_sha": "8ba7c00ab22af3cc4537cd8da2604dec24da38ac",
+    "seed": 42,
+    "store_provenance": {
+      "v0_file": "superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/v0_summaries.pt",
+      "cc_last_file": "superkaiba1/explore-persona-space-data:issue594_context_geometry/analysis_tensors/context_vectors_mean.pt",
+      "n_contexts": 50,
+      "hidden_dim": 3584,
+      "probe_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+    },
+    "v0_local_sha256": "1b94e5ff7bf4fe2291a3b4c2839d97f7e4df820285d9d22fef8baea85acb38ac",
+    "cc_local_sha256": "f71b00025de9e302c58125f6abbbc4781ae2d13052f7f5c72c9cb44f772e417e",
+    "context_families": {
+      "f1": 14,
+      "f2": 10,
+      "f3": 8,
+      "f4": 6,
+      "f5": 5,
+      "f8": 5,
+      "f6": 2
+    },
+    "wall_time_s": 17.73,
+    "analysis": "mi_reliability"
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "commit": "64e02af71d",
+  "created": "2026-06-30T01:47:03Z",
+  "figsize": [
+    8.0,
+    4.4
+  ],
+  "points": [
+    {
+      "layer": "0",
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.40355991942049785,
+      "_kind": "bar"
+    },
+    {
+      "layer": 1.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.26197196455918303,
+      "_kind": "bar"
+    },
+    {
+      "layer": 2.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.13397253411306564,
+      "_kind": "bar"
+    },
+    {
+      "layer": 3.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.11273333710448041,
+      "_kind": "bar"
+    },
+    {
+      "layer": 4.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.043637807298054554,
+      "_kind": "bar"
+    },
+    {
+      "layer": "5",
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.05835439626151884,
+      "_kind": "bar"
+    },
+    {
+      "layer": 6.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.02179698657825835,
+      "_kind": "bar"
+    },
+    {
+      "layer": 7.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.022212837511393135,
+      "_kind": "bar"
+    },
+    {
+      "layer": 8.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.011968940410746587,
+      "_kind": "bar"
+    },
+    {
+      "layer": 9.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.014726121283996862,
+      "_kind": "bar"
+    },
+    {
+      "layer": "10",
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.01227124338457053,
+      "_kind": "bar"
+    },
+    {
+      "layer": 11.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.010516642512425345,
+      "_kind": "bar"
+    },
+    {
+      "layer": 12.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.005252187662026397,
+      "_kind": "bar"
+    },
+    {
+      "layer": 13.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.006870079520045147,
+      "_kind": "bar"
+    },
+    {
+      "layer": 14.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.004165943751728407,
+      "_kind": "bar"
+    },
+    {
+      "layer": "15",
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.0007907989660232984,
+      "_kind": "bar"
+    },
+    {
+      "layer": 16.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.002502271167025838,
+      "_kind": "bar"
+    },
+    {
+      "layer": 17.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.0030761122764175752,
+      "_kind": "bar"
+    },
+    {
+      "layer": 18.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.0009635117642101676,
+      "_kind": "bar"
+    },
+    {
+      "layer": 19.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": -0.0002601119422108722,
+      "_kind": "bar"
+    },
+    {
+      "layer": "20",
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.005316700706755051,
+      "_kind": "bar"
+    },
+    {
+      "layer": 21.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": -0.0026285519958244574,
+      "_kind": "bar"
+    },
+    {
+      "layer": 22.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.014606625271619267,
+      "_kind": "bar"
+    },
+    {
+      "layer": 23.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.02456172826902614,
+      "_kind": "bar"
+    },
+    {
+      "layer": 24.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.035475752921425574,
+      "_kind": "bar"
+    },
+    {
+      "layer": "25",
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.0498206887334014,
+      "_kind": "bar"
+    },
+    {
+      "layer": 26.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.05978934661453594,
+      "_kind": "bar"
+    },
+    {
+      "layer": 27.0,
+      "KRR-RBF \u2212 linear ridge skill (PCA-48)": 0.07595656715918464,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 28
+}
