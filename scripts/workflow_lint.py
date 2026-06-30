@@ -208,6 +208,28 @@ Behaviours:
   ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`` (reason ≥
   :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) on the call's
   first physical line or the immediately preceding non-blank line.
+* ``--check-judge-model-pins`` (also bundled into the no-flags default run):
+  walk every ``*.py`` under ``scripts/``, ``src/explore_persona_space/``, and
+  ``tests/`` PLUS every ``*.sh`` under ``scripts/`` and FAIL on a hardcoded
+  NON-Sonnet judge-model pin at a judge call site. The standing rule pins ONE
+  judge — ``claude-sonnet-4-5-20250929`` — for every judged behavior (CLAUDE.md
+  "LLM judge"; full recipe ``.claude/rules/llm-judging.md``). The gate is
+  ASSIGNMENT/CALL-aware (a ``*JUDGE_MODEL*`` assignment, a ``--judge-model`` /
+  ``judge_model=`` / ``JUDGE_MODEL=`` CLI/shell flag, a ``model=`` kwarg with a
+  judge token in the +/- :data:`JUDGE_PIN_CONTEXT_WINDOW` window, a split-argv
+  ``--judge-model`` + literal-value pair, a ``.sh`` shell-var indirection
+  (``JUDGE=<pin>`` consumed by ``--judge-model "${JUDGE}"``), or a judge-script
+  ``DEFAULT_MODEL`` / ``MODEL_DEFAULT`` / ``JUDGE_DEFAULT`` constant — #765
+  round 2 arms (d)/(e)/(f)), so a bare prose-string mention or a comment is
+  never flagged. Legitimate non-Sonnet
+  pins (Betley ``gpt-4o`` calibration anchors, the translation-faithfulness
+  Haiku judges, the stale-grandfathered legacy Haiku pins) are grandfathered in
+  :data:`JUDGE_PIN_LEGACY_ALLOWLIST` (.py) / :data:`JUDGE_PIN_LEGACY_ALLOWLIST_SH`
+  (.sh) + the SDK-registry :data:`JUDGE_PIN_FILE_ALLOWLIST`; a new calibration
+  control waives with ``# noqa: judge-model-pin`` on the hit or preceding line.
+  The canonical pin ``claude-sonnet-4-5-20250929`` carries no forbidden
+  substring, so it never matches. Motivating incident: the #650/#657 stale
+  legacy-Haiku judge pins (#765).
 
 Exit codes:
 
@@ -807,6 +829,226 @@ BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS = 10
 # convention as UPLOAD_AS_FILE_EXEMPT / CVD_PIN_EXEMPT.
 DOTENV_LINT_WAIVER_RE = re.compile(r"#\s*DOTENV_LINT_EXEMPT\s*:\s*(.+?)\s*$")
 DOTENV_LINT_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-judge-model-pins` (#765): the standing project rule pins ONE judge
+# model — `claude-sonnet-4-5-20250929` — for every judged behavior (CLAUDE.md
+# "LLM judge = claude-sonnet-4-5-20250929"; the full recipe is
+# `.claude/rules/llm-judging.md`). This check flags a hardcoded NON-Sonnet judge
+# model at a judge call site. The motivating incident is the #650/#657 stale
+# legacy-Haiku pins that re-pinned a non-Sonnet judge for new work.
+#
+# The gate is ASSIGNMENT/CALL-aware, NOT mention-aware: a forbidden substring on
+# a NON-COMMENT line is a HIT iff one of —
+#   (a) JUDGE_PIN_VAR_RE matches the line (RHS of a `*JUDGE_MODEL*` /
+#       `judge_model` / `JUDGE_MODEL` assignment or key);
+#   (b) JUDGE_PIN_FLAG_RE matches the line (`--judge-model` / `judge_model=` /
+#       `JUDGE_MODEL=` CLI/shell arg — covers .py argparse defaults AND .sh
+#       launchers); or
+#   (c) the line carries a `model=` / `model:` kwarg AND a JUDGE_PIN_CALL_TOKEN
+#       appears within +/- JUDGE_PIN_CONTEXT_WINDOW non-comment lines;
+#   (d) the line is a forbidden-pin literal preceded (within
+#       JUDGE_PIN_SPLIT_ARGV_LOOKAHEAD non-blank lines) by a BARE `--judge-model`
+#       flag token on its own list-literal line (split-argv, #765 round 2);
+#   (e) [.sh only, file-scope two-pass] the line ASSIGNS a shell var to a
+#       forbidden-pin value AND that var is later consumed by a `--judge-model`
+#       flag (shell-var indirection, #765 round 2); or
+#   (f) [judge-context files only] the line matches JUDGE_PIN_DEFAULT_MODEL_VAR_RE
+#       (a `DEFAULT_MODEL` / `MODEL_DEFAULT` / `JUDGE_DEFAULT` judge-script
+#       constant whose name lacks JUDGE_MODEL, #765 round 2).
+# A pure code-comment line (lstrip startswith '#') is NEVER a hit, and a bare
+# forbidden substring inside a descriptive string with no judge-named
+# assignment/flag/judge-`model=` on the line is NEVER a hit (the prose-mention
+# guard — issue552_gate_decision.py:83, issue467_figures.py:176,
+# gen_data_appendix.py:212, issue623_behavioral_dv.py docstring, the SDF
+# `messages.create(model=...)` document-generation calls).
+# The canonical pin `claude-sonnet-4-5-20250929` contains NONE of the forbidden
+# substrings (it is `claude-sonnet-4-5-...`, NOT `claude-3-5-sonnet`), so it
+# never matches — asserted in a test.
+JUDGE_PIN_FORBIDDEN_SUBSTRINGS: tuple[str, ...] = (
+    "claude-haiku-",
+    "gpt-4o",
+    "gpt-4-",
+    "gpt-5",
+    "claude-opus-",
+    "claude-3-5-sonnet",
+)
+JUDGE_PIN_CANONICAL = "claude-sonnet-4-5-20250929"  # the ALLOWED judge pin
+# (a) RHS of a judge-named assignment/key: a token CONTAINING `JUDGE_MODEL`
+#     (e.g. DEFAULT_GPT4O_JUDGE_MODEL, SYCO_JUDGE_MODEL), or the bare
+#     `judge_model` / `JUDGE_MODEL`, immediately before `:` or `=`.
+JUDGE_PIN_VAR_RE = re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*JUDGE_MODEL[A-Za-z0-9_]*|judge_model|JUDGE_MODEL)\b\s*[:=]"
+)
+# (b) CLI-flag / shell judge-arg form (covers .py argparse defaults AND .sh):
+#   - `--judge-model` as a bare flag token (the flag name + a forbidden pin on
+#     the same line is a judge pin regardless of the separator — the argparse
+#     `add_argument("--judge-model", default="gpt-4o...")` form and the shell
+#     `--judge-model gpt-4o...` form both match here);
+#   - the `judge_model=` / `JUDGE_MODEL=` shell/kwarg form.
+JUDGE_PIN_FLAG_RE = re.compile(r"(--judge-model\b|judge_model=|JUDGE_MODEL=)")
+# (c) judge-call tokens for the model=-kwarg-in-window arm:
+JUDGE_PIN_CALL_TOKENS: tuple[str, ...] = (
+    "as judge",
+    "judge_completions",
+    "judge=",
+    "JUDGE_MODEL",
+    "judge_model",
+    "SYCO_JUDGE_MODEL",
+)
+JUDGE_PIN_MODEL_KWARG_RE = re.compile(r"\bmodel\s*[:=]")
+JUDGE_PIN_CONTEXT_WINDOW = 3
+# (d) split-argv recognition (#765 round 2, concern judge-pin-detector-split-argv):
+#   a Python list-literal `--judge-model` entry on its own line, e.g.
+#       args = ["--judge-model", "claude-haiku-4-5-20251001"]  # single-line — arm (b)
+#   or split across lines (the run_evals_190.py:52-53 shape):
+#       "--judge-model",
+#       "claude-haiku-4-5-20251001",
+#   When the line is the BARE `--judge-model` flag token (no forbidden pin on it,
+#   so arm (b) misses), the NEXT non-blank line carrying a forbidden substring is
+#   the hit. JUDGE_PIN_BARE_FLAG_RE matches a line whose only non-trivial content
+#   is the `--judge-model` flag token (stripped of surrounding quotes / comma /
+#   whitespace) — i.e. the flag and its value live on separate argv lines.
+JUDGE_PIN_BARE_FLAG_RE = re.compile(r"""^[\s"']*--judge-model[\s"',]*$""")
+# Forward look-ahead window (in non-blank lines) for the split-argv literal.
+JUDGE_PIN_SPLIT_ARGV_LOOKAHEAD = 2
+# (e) shell-variable indirection (#765 round 2, concern
+#   judge-pin-detector-shell-var-indirection): a .sh file that assigns
+#       JUDGE=gpt-4o-2024-08-06        # var name need NOT contain JUDGE_MODEL
+#   then later passes `--judge-model "${JUDGE}"` / `$JUDGE` / `"${JUDGE:-...}"`.
+#   The ASSIGNMENT line carries the forbidden pin but no judge-named var / flag,
+#   and the `--judge-model` reference line passes a var, not a literal — so both
+#   arms (a)/(b) miss. Two-pass per .sh file: pass 1 collects every
+#   `VAR=<value-with-forbidden-substring>`; pass 2 detects a `--judge-model`
+#   reference to one of those vars; the ASSIGNMENT line is flagged.
+#   A shell var assignment: `VAR=...` at line start (after optional `export`/
+#   leading whitespace), capturing the var NAME.
+JUDGE_PIN_SH_ASSIGN_RE = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)=")
+
+
+# A `--judge-model` flag that consumes a shell variable (not a literal): the
+# var name is rendered into the {var} placeholder per file. Matches `$VAR`,
+# `${VAR}`, `"${VAR}"`, `${VAR:-default}` (whitespace- or =-separated flag).
+def _judge_pin_sh_var_ref_re(var: str) -> re.Pattern[str]:
+    """Compile a regex matching `--judge-model` consuming shell var ``var``
+    (``$VAR`` / ``${VAR}`` / ``${VAR:-...}``, optionally quoted)."""
+    v = re.escape(var)
+    return re.compile(rf"--judge-model[\s=]+[\"']?\$\{{?{v}\b")
+
+
+# (f) judge-script DEFAULT_MODEL constant (#765 round 2, concern
+#   judge-pin-detector-default-model-constant): a judge-script module-level
+#   constant whose name does NOT contain JUDGE_MODEL, e.g.
+#       DEFAULT_MODEL = "claude-haiku-4-5-20251001"   (judge_with_claude.py:31)
+#   misses arm (a) (the var name lacks JUDGE_MODEL). Expanded ONLY when the file
+#   is JUDGE-CONTEXT (see _file_is_judge_context) — a NARROW broadening so a
+#   non-judge module's DEFAULT_MODEL cost-table constant does not false-fire.
+# A constant name containing BOTH `MODEL` and `DEFAULT` (either order — so
+# `DEFAULT_MODEL`, `MODEL_DEFAULT`, `GPT4O_DEFAULT_MODEL` all match; the `\w*`
+# prefix is zero-width so a bare leading `DEFAULT_...` / `MODEL_...` matches) or
+# the bare `JUDGE_DEFAULT`, immediately before `:` or `=`.
+JUDGE_PIN_DEFAULT_MODEL_VAR_RE = re.compile(
+    r"\b(\w*MODEL\w*DEFAULT\w*|\w*DEFAULT\w*MODEL\w*|JUDGE_DEFAULT)\b\s*[:=]"
+)
+# Judge-context signals (file is plausibly a judge script): filename contains
+# `judge`, the module docstring mentions judging, the file imports a judge
+# client / a `*judge*` module, or it defines a `judge_*`-named function.
+JUDGE_PIN_CONTEXT_FILENAME_RE = re.compile(r"judge", re.IGNORECASE)
+JUDGE_PIN_CONTEXT_BODY_RE = re.compile(
+    r"BatchJudgeClient"  # the project batch-judge client
+    r"|\bimport\b[^\n]*judge"  # imports a *judge* module
+    r"|\bfrom\b[^\n]*judge\b[^\n]*\bimport\b"  # from ...judge... import ...
+    r"|\bdef\s+judge_\w+"  # defines a judge_* function
+    r"|\bas\s+judge\b"  # docstring/comment "as judge"
+)
+# Files whose every line is exempt (the rule/doc that names the pin literally,
+# the SDK model-id registries / cost tables — NOT judge sites — and the linter's
+# own known-model tuple + this check's own test fixtures naming forbidden pins
+# inside strings). Matched by EXACT repo-root-relative POSIX path.
+JUDGE_PIN_FILE_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # the rule documents the pin literally / the global doc names it:
+        ".claude/rules/llm-judging.md",
+        "CLAUDE.md",
+        # the linter's own known-model tuple + this block:
+        "scripts/workflow_lint.py",
+        # this check's test fixtures name forbidden pins inside strings:
+        "tests/test_workflow_lint_judge_model_check.py",
+        # SDK model-id registries / cost tables — NOT judge sites:
+        "src/explore_persona_space/llm/openai_client.py",
+        "src/explore_persona_space/llm/anthropic_client.py",
+    }
+)
+# Grandfathered legitimate NON-Sonnet judge pins — .py — repo-root-relative
+# POSIX paths, annotated inline with the bucket (calibration anchor /
+# translation-judge exemption / stale-grandfathered migrate). Migrating the
+# stale ones to Sonnet is a named follow-up (NOT this task's scope); a NEW
+# legitimate pin must be added here with a `reason` when it lands, or the
+# no-flags default run FAILs (the test_live_trees_pass invariant).
+JUDGE_PIN_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # --- permanent calibration anchors (Betley gpt-4o; replication-fidelity) ---
+        # gpt-4o Betley κ-calibration anchor:
+        "scripts/issue404_outcome_eval.py",
+        # gpt-4o Betley broad-EM judge diagnostic:
+        "scripts/issue545_betley_diag.py",
+        # gpt-4o B1 broad-EM anchor #458/#468 + haiku calibration:
+        "src/explore_persona_space/experiments/issue503/judges.py",
+        # honors the gpt-4o B1 judge by family:
+        "src/explore_persona_space/experiments/issue503/cross_eval.py",
+        # Betley dual judge + haiku calibration via the #503 rig:
+        "src/explore_persona_space/experiments/behavior_testbed_545/judges_545.py",
+        # Betley dual judge via the #503 rig:
+        "src/explore_persona_space/experiments/behavior_testbed_545/eval_battery.py",
+        # tests the gpt-4o calibration-anchor dispatch routing (#404):
+        "tests/test_issue404_judge_dispatch.py",
+        # tests the gpt-4o Betley broad-EM sentinel handling (#545):
+        "tests/test_issue545_betley_sentinel.py",
+        # --- permanent translation-judge exemptions (non-behavior-expression DV) ---
+        # translation-faithfulness judge (Haiku); not a #765 behavior DV:
+        "scripts/validate_translation.py",
+        # Italian translation-faithfulness judge (Haiku):
+        "scripts/validate_italian_translation.py",
+        # --- stale-grandfathered, migrate-to-Sonnet (follow-up §2) ---
+        # #389 fact-gating re-judge, legacy Haiku:
+        "scripts/rejudge_issue_389_c_strict.py",
+        # #389 driver, legacy Haiku:
+        "scripts/run_experiment_389.py",
+        # #444 driver, legacy Haiku:
+        "scripts/run_experiment_444.py",
+        # #444 5-way reanalysis, legacy Haiku:
+        "scripts/reanalyze_issue444_5way.py",
+        # #190 eval driver, legacy Haiku:
+        "scripts/run_evals_190.py",
+        # assistant-axis role-adherence judge, legacy Haiku:
+        "scripts/judge_with_claude.py",
+        # #642 realized #411/#518 legacy Haiku judge id:
+        "scripts/issue_642/i642_common.py",
+        # #411/#591 legacy sycophancy Haiku judge:
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        # #612 sycophancy judge default, legacy Haiku:
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/judge.py",
+        # #650 SYCO_JUDGE_MODEL legacy Haiku:
+        "src/explore_persona_space/experiments/issue_650/__init__.py",
+    }
+)
+# Grandfathered legitimate NON-Sonnet judge launchers — .sh — all permanent
+# Betley gpt-4o calibration anchors (they pin --judge-model DIRECTLY in shell,
+# so a .py-only gate would miss them — the walk includes .sh).
+JUDGE_PIN_LEGACY_ALLOWLIST_SH: frozenset[str] = frozenset(
+    {
+        # Betley deconfound gpt-4o (same judge+rubric as #404):
+        "scripts/run_issue452_deconfound.sh",
+        # #458 Betley broad-EM sweep gpt-4o:
+        "scripts/run_issue458_sweep.sh",
+        # #552 canonical 8x100 EM gate gpt-4o:
+        "scripts/run_issue552_sweep.sh",
+        # #552 resume launcher gpt-4o:
+        "scripts/run_issue552_resume.sh",
+    }
+)
+JUDGE_PIN_WAIVER_RE = re.compile(r"#\s*noqa:\s*judge-model-pin\b")
+JUDGE_PIN_FILE_WAIVER_RE = re.compile(r"#\s*epm-allow-judge-model-pin\b")
 
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
@@ -2873,6 +3115,241 @@ def check_batch_judge_client(
     return errors
 
 
+def _judge_pin_line_waived(lines: list[str], idx: int) -> bool:
+    """Return True iff a ``# noqa: judge-model-pin`` waiver is on the hit line
+    (``idx``, 0-based) or the immediately preceding non-blank line. Same
+    convention as the dotenv / upload-as-file waivers."""
+    if 0 <= idx < len(lines) and JUDGE_PIN_WAIVER_RE.search(lines[idx]):
+        return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    return back >= 0 and bool(JUDGE_PIN_WAIVER_RE.search(lines[back]))
+
+
+def _file_is_judge_context(text: str, name: str) -> bool:
+    """Return True iff the file is plausibly a JUDGE script — its filename
+    contains ``judge``, OR its body imports a judge client / a ``*judge*``
+    module / defines a ``judge_*`` function / says "as judge" (docstring). Used
+    to NARROW the (f) DEFAULT_MODEL-constant arm so a non-judge module's
+    cost-table constant does not false-fire (#765 round 2)."""
+    if JUDGE_PIN_CONTEXT_FILENAME_RE.search(name):
+        return True
+    return bool(JUDGE_PIN_CONTEXT_BODY_RE.search(text))
+
+
+def _judge_pin_is_hit(lines: list[str], idx: int, *, judge_context: bool = False) -> bool:
+    """Return True iff line ``idx`` (0-based) carries a forbidden non-Sonnet
+    judge-model substring in an ASSIGNMENT / CALL context (NOT a bare prose
+    mention or comment). See the :data:`JUDGE_PIN_FORBIDDEN_SUBSTRINGS` block
+    for the gate definition. ``judge_context`` enables the (f) DEFAULT_MODEL
+    arm (only for judge-script files). The (e) shell-var-indirection arm is
+    handled at file scope in :func:`_scan_judge_pin_file` (the hit is the
+    assignment line, not this forbidden-literal line)."""
+    line = lines[idx]
+    if line.lstrip().startswith("#"):
+        return False  # a pure comment line is never a hit
+    if not any(sub in line for sub in JUDGE_PIN_FORBIDDEN_SUBSTRINGS):
+        return False
+    # (a) RHS of a judge-named assignment/key, or (b) a --judge-model /
+    # judge_model= / JUDGE_MODEL= CLI/shell arg, both on the hit line:
+    if JUDGE_PIN_VAR_RE.search(line) or JUDGE_PIN_FLAG_RE.search(line):
+        return True
+    # (f) judge-script DEFAULT_MODEL / MODEL_DEFAULT / JUDGE_DEFAULT constant —
+    # only in a judge-context file (NARROW broadening):
+    if judge_context and JUDGE_PIN_DEFAULT_MODEL_VAR_RE.search(line):
+        return True
+    # (c) a model=/model: kwarg on the line AND a judge-call token within the
+    # +/- JUDGE_PIN_CONTEXT_WINDOW non-comment line window:
+    if JUDGE_PIN_MODEL_KWARG_RE.search(line):
+        lo = max(0, idx - JUDGE_PIN_CONTEXT_WINDOW)
+        hi = min(len(lines), idx + JUDGE_PIN_CONTEXT_WINDOW + 1)
+        for j in range(lo, hi):
+            ctx = lines[j]
+            if ctx.lstrip().startswith("#"):
+                continue
+            if any(tok in ctx for tok in JUDGE_PIN_CALL_TOKENS):
+                return True
+    # (d) split-argv recognition: this forbidden-literal line has no var/flag/
+    # kwarg of its own (arms a/b/c missed), but a preceding non-blank,
+    # non-comment line within the look-ahead window is the BARE `--judge-model`
+    # flag token (the run_evals_190.py:52-53 list-literal shape). Look BACK so
+    # the VALUE line (the one carrying the forbidden pin) is the reported hit.
+    back, seen = idx - 1, 0
+    while back >= 0 and seen < JUDGE_PIN_SPLIT_ARGV_LOOKAHEAD:
+        prev = lines[back]
+        if prev.strip() == "":
+            back -= 1
+            continue
+        seen += 1
+        if not prev.lstrip().startswith("#") and JUDGE_PIN_BARE_FLAG_RE.search(prev):
+            return True
+        back -= 1
+    return False
+
+
+def _judge_pin_rel(p: Path) -> str:
+    """Repo-root-relative POSIX path, or the file's own posix path when it lives
+    OUTSIDE the repo (a unit-test fixture tree) — so the exact-path allowlists
+    never accidentally exempt a tmp fixture sharing a basename with a real
+    allowlisted file."""
+    try:
+        return p.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
+def _judge_pin_sh_var_indirection_hits(lines: list[str]) -> set[int]:
+    """Return the 0-based indices of shell-var ASSIGNMENT lines that pin a
+    forbidden judge model via indirection (#765 round 2, arm (e)). Two-pass:
+    (1) collect every ``VAR=<value-with-a-forbidden-substring>`` (var name need
+    NOT contain JUDGE_MODEL); (2) if ANY non-comment line passes
+    ``--judge-model`` consuming that var (``$VAR`` / ``${VAR}`` / ``${VAR:-...}``),
+    the ASSIGNMENT line is a hit. Returns assignment indices only — the forbidden
+    literal lives there, and the ``--judge-model "${VAR}"`` reference line carries
+    no forbidden substring so it is never separately reported."""
+    # Pass 1: var name -> assignment line idx, for assignments whose value has a
+    # forbidden judge substring (skip pure-comment lines).
+    forbidden_vars: dict[str, int] = {}
+    for idx, line in enumerate(lines):
+        if line.lstrip().startswith("#"):
+            continue
+        m = JUDGE_PIN_SH_ASSIGN_RE.match(line)
+        if not m:
+            continue
+        if not any(sub in line for sub in JUDGE_PIN_FORBIDDEN_SUBSTRINGS):
+            continue
+        forbidden_vars[m.group(1)] = idx
+    if not forbidden_vars:
+        return set()
+    # Pass 2: a non-comment `--judge-model` line consuming one of those vars
+    # promotes that var's assignment line to a hit.
+    hits: set[int] = set()
+    for var, assign_idx in forbidden_vars.items():
+        ref_re = _judge_pin_sh_var_ref_re(var)
+        for line in lines:
+            if line.lstrip().startswith("#"):
+                continue
+            if ref_re.search(line):
+                hits.add(assign_idx)
+                break
+    return hits
+
+
+def _scan_judge_pin_file(p: Path, *, sh_allowlist: bool, errors: list[str]) -> None:
+    """Scan one file for judge-model-pin hits, appending error lines to
+    ``errors``. Allowlist + file-level-waiver short-circuit; per-line hits gated
+    by :func:`_judge_pin_is_hit` and waivable by :func:`_judge_pin_line_waived`.
+    The (e) shell-var-indirection arm (``.sh`` only) is a file-scope two-pass
+    check (:func:`_judge_pin_sh_var_indirection_hits`); the (f) DEFAULT_MODEL
+    arm is gated on :func:`_file_is_judge_context`."""
+    rel = _judge_pin_rel(p)
+    if rel in JUDGE_PIN_FILE_ALLOWLIST:
+        return
+    if rel in (JUDGE_PIN_LEGACY_ALLOWLIST_SH if sh_allowlist else JUDGE_PIN_LEGACY_ALLOWLIST):
+        return
+    try:
+        text = p.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return
+    if JUDGE_PIN_FILE_WAIVER_RE.search(text):
+        return  # file-level waiver
+    lines = text.splitlines()
+    judge_context = _file_is_judge_context(text, p.name)
+    # (e) shell-var-indirection assignment-line hits (.sh files only).
+    forced_idxs = _judge_pin_sh_var_indirection_hits(lines) if sh_allowlist else set()
+    reported: set[int] = set()
+    for idx in range(len(lines)):
+        is_hit = idx in forced_idxs or _judge_pin_is_hit(lines, idx, judge_context=judge_context)
+        if not is_hit or _judge_pin_line_waived(lines, idx) or idx in reported:
+            continue
+        reported.add(idx)
+        match = next(
+            (s for s in JUDGE_PIN_FORBIDDEN_SUBSTRINGS if s in lines[idx]),
+            "<non-Sonnet>",
+        )
+        errors.append(
+            f"{p}:{idx + 1}: hardcoded non-Sonnet judge pin '{match}' at a "
+            f"judge call site. fix: use {JUDGE_PIN_CANONICAL} (or waive a "
+            f"calibration control with '# noqa: judge-model-pin'). See "
+            f".claude/rules/llm-judging.md."
+        )
+
+
+def check_judge_model_pins(
+    *,
+    scripts_dir: Path | None = None,
+    src_dir: Path | None = None,
+    tests_dir: Path | None = None,
+) -> list[str]:
+    """Walk ``scripts/**/*.py``, ``scripts/**/*.sh``,
+    ``src/explore_persona_space/**/*.py``, and ``tests/**/*.py`` and FAIL on a
+    hardcoded NON-Sonnet judge-model pin at a judge call site (#765).
+
+    The standing project rule pins ONE judge — ``claude-sonnet-4-5-20250929`` —
+    for every judged behavior (CLAUDE.md "LLM judge"; full recipe
+    ``.claude/rules/llm-judging.md``). A forbidden substring
+    (:data:`JUDGE_PIN_FORBIDDEN_SUBSTRINGS`) on a NON-COMMENT line is a HIT iff:
+      (a) the line matches :data:`JUDGE_PIN_VAR_RE` (RHS of a judge-named
+          assignment/key); or
+      (b) the line matches :data:`JUDGE_PIN_FLAG_RE` (``--judge-model`` /
+          ``judge_model=`` / ``JUDGE_MODEL=`` CLI/shell arg — covers .py
+          argparse defaults AND .sh launchers); or
+      (c) the line carries a ``model=`` / ``model:`` kwarg AND a
+          :data:`JUDGE_PIN_CALL_TOKENS` token appears within +/-
+          :data:`JUDGE_PIN_CONTEXT_WINDOW` non-comment lines;
+      (d) the forbidden-pin literal is preceded (within
+          :data:`JUDGE_PIN_SPLIT_ARGV_LOOKAHEAD` non-blank lines) by a BARE
+          ``--judge-model`` flag on its own list-literal line — the split-argv
+          shape (#765 round 2);
+      (e) [``.sh`` only] the line ASSIGNS a shell var to a forbidden-pin value
+          AND that var is later consumed by ``--judge-model`` — shell-var
+          indirection, a file-scope two-pass check
+          (:func:`_judge_pin_sh_var_indirection_hits`, #765 round 2); or
+      (f) [judge-context files only — :func:`_file_is_judge_context`] the line
+          matches :data:`JUDGE_PIN_DEFAULT_MODEL_VAR_RE` (a ``DEFAULT_MODEL`` /
+          ``MODEL_DEFAULT`` / ``JUDGE_DEFAULT`` constant whose name lacks
+          JUDGE_MODEL, #765 round 2).
+    A bare mention inside a descriptive string or a comment (no judge-named
+    assignment / ``--judge-model`` flag / judge ``model=`` on the line) is NOT
+    a hit (the prose-mention guard). The canonical pin
+    ``claude-sonnet-4-5-20250929`` contains NO forbidden substring (it is
+    ``claude-sonnet-4-5-...``, NOT ``claude-3-5-sonnet``), so it never matches.
+
+    Exempt: :data:`JUDGE_PIN_FILE_ALLOWLIST` (whole file — doc/registry/self/
+    test-fixtures), :data:`JUDGE_PIN_LEGACY_ALLOWLIST` (.py grandfathered
+    relative path), :data:`JUDGE_PIN_LEGACY_ALLOWLIST_SH` (.sh grandfathered
+    relative path), a file-level ``# epm-allow-judge-model-pin`` comment, and a
+    per-line ``# noqa: judge-model-pin`` on the hit line or the immediately
+    preceding non-blank line. One error line per hit; exit non-zero on any hit.
+    ``scripts_dir`` / ``src_dir`` / ``tests_dir`` are unit-test override hooks
+    (production callers pass all None). Bundled into the no-flags default run.
+    """
+    py_roots = [
+        scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts",
+        src_dir if src_dir is not None else _REPO_ROOT / "src" / "explore_persona_space",
+        tests_dir if tests_dir is not None else _REPO_ROOT / "tests",
+    ]
+    # .sh launchers live only under scripts/ — reuse the (possibly overridden)
+    # scripts root for the shell walk too.
+    sh_root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+
+    errors: list[str] = []
+    seen: set[Path] = set()
+    for root in py_roots:
+        if not root.exists():
+            continue
+        for py in sorted(root.rglob("*.py")):
+            if py.is_file() and py not in seen:
+                seen.add(py)
+                _scan_judge_pin_file(py, sh_allowlist=False, errors=errors)
+    if sh_root.exists():
+        for sh in sorted(sh_root.rglob("*.sh")):
+            if sh.is_file():
+                _scan_judge_pin_file(sh, sh_allowlist=True, errors=errors)
+    return errors
+
+
 # A live ``Agent(... subagent_type="workflow-improver" ...)`` spawn instruction.
 # Tolerant of whitespace/newlines between the call open and the kwarg and of
 # either quote style. The frozen agent file (`.claude/agents/workflow-improver.md`)
@@ -3373,6 +3850,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "with no index row would re-open the #722 plan-time load-timing gap. "
         "Bundled into the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-judge-model-pins",
+        action="store_true",
+        help="Walk scripts/**/*.py, scripts/**/*.sh, "
+        "src/explore_persona_space/**/*.py, and tests/**/*.py and FAIL on a "
+        "hardcoded NON-Sonnet judge-model pin at a judge call site. The "
+        "standing rule pins ONE judge — claude-sonnet-4-5-20250929 — for every "
+        "judged behavior (.claude/rules/llm-judging.md). The gate is "
+        "assignment/call-aware (a *JUDGE_MODEL* assignment, a --judge-model / "
+        "judge_model= / JUDGE_MODEL= flag, or a model= kwarg with a judge token "
+        "in window), so a prose-string mention or comment is never flagged. "
+        "Legitimate non-Sonnet pins (Betley gpt-4o calibration anchors, the "
+        "translation-judge exemptions, stale-grandfathered Haiku pins) are "
+        "grandfathered in JUDGE_PIN_LEGACY_ALLOWLIST[_SH]; waive a new "
+        "calibration control with '# noqa: judge-model-pin'. Bundled into the "
+        "no-flags default run (#765).",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -3409,6 +3903,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_workflow_improver_spawn
         or args.check_gate_ids_unique
         or args.check_lessons_index
+        or args.check_judge_model_pins
     )
 
     errors: list[str] = []
@@ -3471,6 +3966,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_judge_model_pins or no_flags:
+        errors.extend(check_judge_model_pins())
 
     if errors:
         for err in errors:
