@@ -16,6 +16,28 @@ What is and is NOT a cache (the safety contract):
   * ``eval_results/``          — KEEP (the durable result artifacts)
   * anything else under ``data/issue_<N>/`` — KEEP (only the two cache globs
     are ever touched).
+  * EXCEPTION (the active-consumer gate, #773): a ``hf_dl`` / ``g*_dl`` cache
+    that would otherwise be deleted is KEPT (never deleted) while a DIFFERENT,
+    currently-ACTIVE task declares ``data/issue_<N>/`` as a planned input in
+    its ``plans/plan.md`` or ``body.md``. The reap is skipped + sidecar-logged
+    (``kind: "active-consumer-reap-skipped"``), fail-toward-keep. This guards
+    against the cross-issue strand-the-consumer failure mode (#742 died on a
+    ``FileNotFoundError`` after ``#658``'s caches were panic-reaped while it
+    was reading ``data/issue_658/store/v0_summaries.pt``, a symlink whose
+    target lived under ``data/issue_658/hf_dl/``). See
+    ``_active_consumer_protected_issues`` /
+    ``_cache_dir_reap_blocked_by_active_consumer``.
+
+There are now THREE reap gates, all composing additively (any one puts a cache
+dir in ``CleanResult.skipped`` instead of deleting it):
+  1. The TERMINAL-status gate in ``vm_disk_guard.py`` (the OWNING issue must be
+     at a terminal-for-reap status before its caches are reaped at all).
+  2. The active-CONSUMER gate (#773, this module): never reap while a DIFFERENT
+     active task declares ``data/issue_<N>/`` as a planned input. Checked FIRST
+     in the per-cache-dir loop (a cheap in-memory set lookup; short-circuiting
+     on a consumer hit also avoids the parity guard's potential HF call).
+  3. The nested-``store/`` parity gate (#679, below): never wholesale-rmtree a
+     cache dir holding a mis-rooted ``store/`` not verifiably mirrored on HF.
 
 The ``data/`` tree uses two naming conventions for the same N — ``issue_<N>``
 (underscore) AND ``issue<N>`` (no underscore, sometimes with a ``_<slug>``
@@ -55,19 +77,44 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from explore_persona_space.task_workflow import repo_root
+from explore_persona_space.task_workflow import (
+    STATUSES,
+    list_by_status,
+    repo_root,
+    tasks_dir,
+)
 
 # The two cache-dir glob patterns under data/issue_<N>/ that are
 # re-downloadable and therefore safe to delete. Everything else under the
 # per-issue data dir (notably ``store/``) is KEPT. ``hf_dl`` is an exact name;
 # ``g*_dl`` matches ``g1_dl`` / ``g2_dl`` / ... (the group-download buckets).
 CACHE_DIR_GLOBS = ("hf_dl", "g*_dl")
+
+# Statuses whose work is DONE or paused — a task at one of these does NOT
+# actively consume its declared inputs, so it never protects another issue's
+# cache (the active-CONSUMER gate, #773). The "active" set this guard cares
+# about is ``set(STATUSES) - _CONSUMER_INACTIVE_STATUSES``.
+#   - completed / archived : terminal, work finished.
+#   - on_hold              : explicitly parked, excluded from auto-dispatch.
+#   - blocked              : halted awaiting user; not actively reading inputs.
+# Everything ELSE (proposed / planning / plan_pending / approved / running /
+# verifying / interpreting / reviewing / awaiting_promotion /
+# followups_running) is "active": currently doing work or imminently planned
+# to, so its declared inputs may be read at any moment.
+_CONSUMER_INACTIVE_STATUSES = frozenset({"completed", "archived", "on_hold", "blocked"})
+
+# Match ``data/issue_<M>/`` (underscore) OR ``data/issue<M>/`` (no underscore) —
+# the two real naming conventions in ``data/``. The trailing lookahead pins the
+# M boundary to a ``/`` or ``_`` so ``data/issue65/`` never matches a
+# ``data/issue658/`` substring and ``data/issue658_slug/`` still matches 658.
+_DATA_ISSUE_REF = re.compile(r"\bdata/issue_?(\d+)(?=[/_])")
 
 # The HF dataset repo a per-issue ``store/`` would have been mirrored to. Used
 # ONLY by the defensive nested-``store/`` parity guard below to verify a
@@ -353,6 +400,111 @@ def nested_store_is_mirrored(
     return all(_local_file_is_mirrored(rel, size, hf_sizes) for rel, size in local.items())
 
 
+def _active_consumer_protected_issues(self_issue_n: int) -> dict[int, list[int]]:
+    """Map ``{protected_issue_M: [consumer_task_ids...]}`` for every ``M`` that
+    some ACTIVE task declares as a ``data/issue_<M>/`` input in its
+    ``plans/plan.md`` OR ``body.md`` (the active-CONSUMER reap gate, #773).
+
+    An "active" task is one whose status is NOT in
+    :data:`_CONSUMER_INACTIVE_STATUSES` — i.e. it is currently doing work or
+    imminently planned to, so its declared inputs may be read at any moment.
+    A protected ``M`` blocks the reap of ``data/issue_<M>/``'s caches: deleting
+    them could strand the active consumer mid-run (#742 died on a
+    ``FileNotFoundError`` after ``#658``'s caches were reaped out from under it).
+
+    ``self_issue_n`` is excluded from the CONSUMER set — a task never blocks
+    its OWN cache reap (Step-8 self-cleanup + the incremental within-run path
+    both reap the task's own cache; the guard must not protect a task against
+    itself). NOTE the exclusion is on the consumer, NOT the referenced issue: a
+    DIFFERENT active task referencing ``data/issue_<self_issue_n>/`` is exactly
+    the cross-issue protection this gate exists for. READ-ONLY: walks ``tasks/``
+    text via ``list_by_status``, never
+    mutates task state. Missing ``body.md`` / ``plans/plan.md`` is skipped
+    fail-soft. Returns ``{}`` when no active task references any
+    ``data/issue_<M>/`` (the common case, and the clean no-op for an
+    absent / empty ``tasks/`` tree).
+
+    KNOWN LIMITATION (false negative): a consumer that assembles the input
+    path in code / a Hydra YAML / an env-var override, with no literal
+    ``data/issue_<M>/`` substring in its plan.md or body.md, is NOT seen by
+    this regex. The project's reuse-provenance convention puts input paths in
+    the plan as literals (so the realistic case is caught), and the consumer's
+    OWN cache reap is independently protected by the owning-issue terminal-
+    status gate; this residual is a cross-issue config-indirection gap."""
+    base = tasks_dir()
+    active_statuses = [s for s in STATUSES if s not in _CONSUMER_INACTIVE_STATUSES]
+    protected: dict[int, list[int]] = {}
+    for status in active_statuses:
+        for row in list_by_status(status):
+            consumer_id = row["id"]
+            # self_issue_n never protects its OWN reap: exclude it from the
+            # CONSUMER set entirely (a task referencing data/issue_<self>/ in its
+            # own plan/body must not block self-cleanup). The exclusion is on the
+            # CONSUMER, NOT on the referenced issue — a DIFFERENT task (742)
+            # referencing data/issue_<self>/ (658) is exactly the protection we
+            # want, so we must NOT drop referenced == self_issue_n.
+            if consumer_id == self_issue_n:
+                continue
+            task_dir = base / status / str(consumer_id)
+            text_parts: list[str] = []
+            for rel in ("body.md", "plans/plan.md"):
+                try:
+                    text_parts.append((task_dir / rel).read_text())
+                except (FileNotFoundError, OSError):
+                    continue  # fail-soft: a missing/unreadable file just adds no text
+            if not text_parts:
+                continue
+            blob = "\n".join(text_parts)
+            for match in _DATA_ISSUE_REF.finditer(blob):
+                referenced = int(match.group(1))
+                if referenced == consumer_id:
+                    continue  # a task referencing its OWN data/issue_<self>/ does not self-protect
+                protected.setdefault(referenced, [])
+                if consumer_id not in protected[referenced]:
+                    protected[referenced].append(consumer_id)
+    # Sort each consumer list for deterministic sidecar telemetry.
+    return {m: sorted(consumers) for m, consumers in protected.items()}
+
+
+def _cache_dir_reap_blocked_by_active_consumer(
+    cache_dir: Path,
+    *,
+    issue_n: int,
+    apply: bool,
+    protected: dict[int, list[int]],
+) -> str | None:
+    """Return a SKIP reason if ``issue_n`` is consumed as a planned input by an
+    ACTIVE task; ``None`` to allow the reap. Composes with
+    :func:`_cache_dir_reap_blocked` (the nested-``store/`` parity gate) — both
+    can independently put a cache dir in ``CleanResult.skipped``.
+
+    On a hit, an escalation row is appended to the shared disk-guard sidecar
+    (``kind="active-consumer-reap-skipped"``), mirroring the nested-store
+    guard's pattern (``append_disk_guard_event``, fail-soft, ``apply=False``
+    reports only). ``protected`` is the once-per-call map from
+    :func:`_active_consumer_protected_issues`."""
+    consumers = protected.get(issue_n)
+    if not consumers:
+        return None
+    rel = _rel_name(cache_dir)
+    consumer_str = ", ".join(f"#{c}" for c in consumers)
+    reason = (
+        f"active task(s) {consumer_str} declare data/issue_{issue_n}/ as a "
+        f"planned input — reaping {rel} could strand their run; KEPT"
+    )
+    append_disk_guard_event(
+        {
+            "kind": "active-consumer-reap-skipped",
+            "task": issue_n,
+            "path": rel,
+            "consumers": consumers,
+            "reason": reason,
+        },
+        apply=apply,
+    )
+    return reason
+
+
 def _cache_dir_reap_blocked(
     cache_dir: Path,
     *,
@@ -438,6 +590,7 @@ def clean_issue_downloads(
     *,
     apply: bool = False,
     data_root: Path | None = None,
+    _skip_active_consumer_guard: bool = False,
 ) -> CleanResult:
     """Delete (``apply=True``) or report (default) ``issue_n``'s download caches.
 
@@ -446,18 +599,46 @@ def clean_issue_downloads(
     under the per-issue data dir(s) are removed. A removal that raises is
     recorded in ``failed`` and never aborts the rest (fail-soft per directory,
     fail-loud in the report).
+
+    Two reap gates run per cache dir, both fail-toward-keep:
+      1. The active-CONSUMER gate (#773, FIRST): never reap while a DIFFERENT
+         active task declares ``data/issue_<N>/`` as a planned input. It is a
+         cheap in-memory set lookup, so running it first short-circuits before
+         the parity gate's potential HF call.
+      2. The nested-``store/`` parity gate (#679): never wholesale-rmtree a
+         cache dir holding a mis-rooted ``store/`` not verifiably mirrored on HF.
+
+    ``_skip_active_consumer_guard`` (private, keyword-only, defaulted) opts out
+    of gate 1 — used by :func:`clean_issue_downloads_incremental` (the within-
+    run path is self-aware and self-reaps its own consumed caches). Even
+    WITHOUT the flag a task never protects its own reap (the protected-set
+    helper excludes ``self_issue_n``); the flag additionally skips the
+    ``tasks/`` walk entirely on the within-run hot path.
     """
     res = CleanResult(issue_n=issue_n, apply=apply)
     # Cache the HF listing across cache dirs so a multi-cache-dir issue makes at
     # most one Hub call regardless of how many nested store/ checks run.
     hf_sizes_cache: dict[str, dict[str, int] | None] = {}
+    # The active-consumer protected set is the same for every cache dir of this
+    # issue, so compute it ONCE before the loop (a single tasks/ walk).
+    protected = {} if _skip_active_consumer_guard else _active_consumer_protected_issues(issue_n)
     for cache_dir in download_cache_dirs(issue_n, data_root):
         rel = _rel_name(cache_dir)
         res.sizes_bytes[rel] = _dir_size_bytes(cache_dir)
-        # Defensive parity guard: a wholesale rmtree(cache_dir) would destroy a
-        # nested store/ (generated, NOT re-downloadable). Refuse unless every
-        # nested store file is verifiably mirrored on HF (fail-toward-keep). The
-        # check runs in BOTH dry-run (reports the would-skip) and apply mode.
+        # Gate 1 (#773): a DIFFERENT active task consumes data/issue_<N>/ as a
+        # planned input. Cheap set lookup, checked FIRST so a consumer hit
+        # short-circuits before the parity gate's potential HF call.
+        consumer_reason = _cache_dir_reap_blocked_by_active_consumer(
+            cache_dir, issue_n=issue_n, apply=apply, protected=protected
+        )
+        if consumer_reason is not None:
+            print(f"  ~ SKIP {rel}: {consumer_reason}", file=sys.stderr)
+            res.skipped.append((rel, consumer_reason))
+            continue
+        # Gate 2 (#679): a wholesale rmtree(cache_dir) would destroy a nested
+        # store/ (generated, NOT re-downloadable). Refuse unless every nested
+        # store file is verifiably mirrored on HF (fail-toward-keep). The check
+        # runs in BOTH dry-run (reports the would-skip) and apply mode.
         skip_reason = _cache_dir_reap_blocked(
             cache_dir, issue_n=issue_n, apply=apply, hf_sizes_cache=hf_sizes_cache
         )
@@ -496,8 +677,17 @@ def clean_issue_downloads_incremental(
     that the phase is done, so an ACTIVE issue self-reaping its own consumed
     cache mid-run is the intended path. ``store/`` + ``eval_results/`` are never
     touched; the re-downloadable cache is rebuilt on demand if a later phase
-    needs it again."""
-    return clean_issue_downloads(issue_n, apply=apply, data_root=data_root)
+    needs it again.
+
+    The active-CONSUMER gate (#773) is SKIPPED on this path
+    (``_skip_active_consumer_guard=True``): the calling experiment is the
+    authority on its own caches and would otherwise be a (self-excluded but
+    still walked) active consumer of its own ``data/issue_<N>/``. The helper
+    already excludes ``self_issue_n``, so this only skips the ``tasks/`` walk
+    entirely — a small within-run perf win, not a behavior change."""
+    return clean_issue_downloads(
+        issue_n, apply=apply, data_root=data_root, _skip_active_consumer_guard=True
+    )
 
 
 def _rel_name(path: Path) -> str:

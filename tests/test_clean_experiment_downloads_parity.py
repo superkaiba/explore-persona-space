@@ -45,8 +45,25 @@ ced = _load("clean_experiment_downloads")
 @pytest.fixture
 def fake_repo(tmp_path, monkeypatch):
     """Point ``ced.repo_root()`` at a temp dir so the sidecar + rel-name
-    helpers resolve under one temp filesystem (no real repo writes)."""
+    helpers resolve under one temp filesystem (no real repo writes).
+
+    Also rebind ``task_workflow``'s OWN resolvers (#773): the active-CONSUMER
+    reap gate walks the real ``tasks/`` tree via the ``list_by_status`` /
+    ``tasks_dir`` ``ced`` imported from ``task_workflow``, which resolve the
+    CACHED ``task_workflow.repo_root`` — NOT ``ced.repo_root``. Without rebinding
+    them the gate would scan the live repo's tasks and (correctly) skip a reap of
+    ``#658`` because real active tasks reference ``data/issue_658/``, breaking
+    these sandboxed parity tests. Rebinding to the (empty) tmp ``tasks/`` makes
+    the gate a clean no-op so the parity tests exercise ONLY the nested-store
+    gate, as before."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    tw.invalidate_cache()
+    monkeypatch.setattr(tw, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(tw, "tasks_dir", lambda: tmp_path / "tasks")
     monkeypatch.setattr(ced, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(ced, "tasks_dir", lambda: tmp_path / "tasks")
     return tmp_path
 
 
