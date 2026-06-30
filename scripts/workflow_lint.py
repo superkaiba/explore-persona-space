@@ -131,6 +131,25 @@ Behaviours:
   Codex twin caught #640); a CPU smoke that skips the GPU phase never
   exercises the upload branch, so nothing mechanical caught it
   pre-merge.
+* ``--check-dotenv-before-hf-import`` (also bundled into the no-flags
+  default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
+  any script that uses the BARE python-dotenv ``load_dotenv``
+  (``from dotenv import load_dotenv`` / ``import dotenv``) AND imports
+  ``huggingface_hub`` (any submodule, top-level OR in-function) WITHOUT
+  first importing the project wrapper
+  ``explore_persona_space.orchestrate.env.load_dotenv`` (#745). The bare
+  dotenv walks cwd (misses the project ``.env`` from a worktree/subdir)
+  and sets NO env, so the HF Hub upload accelerators
+  (``HF_XET_HIGH_PERFORMANCE`` / ``HF_HUB_ENABLE_HF_TRANSFER``) never get
+  their setdefault and a large Hub upload crawls; worse,
+  ``huggingface_hub.constants`` freezes ``HF_HUB_ENABLE_HF_TRANSFER`` at
+  IMPORT time, so a bare-dotenv script importing ``huggingface_hub`` at
+  module top can never pick up the accelerator. The shell-level exports
+  (bootstrap_pod.sh / GCE prelude / SLURM env block) are the load-bearing
+  fix on the running fleet; this check prevents a NEW script from
+  re-introducing the anti-pattern. Waive a genuinely-correct bare-dotenv
+  use with ``# DOTENV_LINT_EXEMPT: <reason>`` (reason ≥ 10 chars) on the
+  import line or the immediately preceding non-blank line.
 * ``--check-agent-model-pins`` (also bundled into the no-flags default
   run): parse the YAML frontmatter ``model: "..."`` of every
   ``.claude/agents/*.md`` and FAIL on any pin whose base id is unknown
@@ -683,6 +702,25 @@ BATCH_JUDGE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
 )
 BATCH_JUDGE_CLIENT_WAIVER_RE = re.compile(r"#\s*BATCH_JUDGE_CLIENT_EXEMPT\s*:\s*(.+?)\s*$")
 BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-dotenv-before-hf-import`: a script that uses the BARE python-dotenv
+# `load_dotenv` (`from dotenv import load_dotenv` or `dotenv.load_dotenv`) AND
+# touches `huggingface_hub` (any submodule) WITHOUT importing the project
+# wrapper `explore_persona_space.orchestrate.env.load_dotenv` first is the #745
+# anti-pattern. The bare dotenv walks cwd (does NOT robustly find the project
+# .env from a worktree / subdir) and sets NO env — so the HF Hub upload
+# accelerators (HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) never get
+# their in-process setdefault, and any large upload crawls. The project wrapper
+# reads the project .env (worktree-aware) AND setdefaults both accelerators.
+# Worse, huggingface_hub.constants freezes HF_HUB_ENABLE_HF_TRANSFER at import
+# time, so a bare-dotenv script that imports huggingface_hub at module top can
+# never pick up the accelerator at all. See `check_dotenv_before_hf_import`.
+# Inline waiver: `# DOTENV_LINT_EXEMPT: <reason>` (reason ≥ N chars) on the bare
+# `dotenv` import line or the immediately preceding non-blank line — same
+# convention as UPLOAD_AS_FILE_EXEMPT / CVD_PIN_EXEMPT.
+DOTENV_LINT_WAIVER_RE = re.compile(r"#\s*DOTENV_LINT_EXEMPT\s*:\s*(.+?)\s*$")
+DOTENV_LINT_WAIVER_MIN_REASON_CHARS = 10
 
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
@@ -2268,6 +2306,156 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def _dotenv_lint_waiver_present(lines: list[str], import_lineno: int) -> bool:
+    """Return True iff a ``# DOTENV_LINT_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) is on the bare-dotenv
+    import line (``import_lineno``, 1-based) or the immediately preceding
+    non-blank line. Same convention as :func:`_upload_as_file_waiver_present`."""
+    idx = import_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = DOTENV_LINT_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= DOTENV_LINT_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = DOTENV_LINT_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= DOTENV_LINT_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _bare_dotenv_import_lineno(tree: ast.AST) -> int | None:
+    """Return the lineno of the FIRST bare python-dotenv ``load_dotenv`` import
+    (``from dotenv import load_dotenv`` / ``from dotenv import ... load_dotenv``)
+    or a plain ``import dotenv`` in ``tree``, else None.
+
+    The bare-``dotenv`` usage is the signal; the lineno is where the waiver is
+    anchored + the error is reported. ``from explore_persona_space.orchestrate.env
+    import load_dotenv`` is NOT a bare dotenv import (its module is the project
+    wrapper, not ``dotenv``), so it never matches here.
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "dotenv":
+            return node.lineno
+        if isinstance(node, ast.Import) and any(a.name == "dotenv" for a in node.names):
+            return node.lineno
+    return None
+
+
+def _imports_huggingface_hub(tree: ast.AST) -> bool:
+    """Return True iff ``tree`` imports ``huggingface_hub`` (any form): a
+    top-level OR in-function ``import huggingface_hub[...]`` /
+    ``from huggingface_hub[...] import ...``. ``ast.walk`` covers deferred
+    in-function imports too (the #745 issue651 worst case imported it at module
+    top, but issue617/issue658 import it in-function)."""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import) and any(
+            a.name == "huggingface_hub" or a.name.startswith("huggingface_hub.") for a in node.names
+        ):
+            return True
+        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
+            return True
+    return False
+
+
+def _imports_orchestrate_env_load_dotenv(tree: ast.AST) -> bool:
+    """Return True iff ``tree`` imports ``load_dotenv`` from the project wrapper
+    ``...orchestrate.env`` (any alias of the module path ending in
+    ``orchestrate.env``). This is the sanctioned dotenv source the #745 check
+    requires when a script also touches ``huggingface_hub``."""
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and (node.module or "").endswith("orchestrate.env")
+            and any(a.name == "load_dotenv" for a in node.names)
+        ):
+            return True
+    return False
+
+
+def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any script that
+    uses the BARE python-dotenv ``load_dotenv`` AND imports ``huggingface_hub``
+    (any submodule) WITHOUT first importing the project wrapper
+    ``explore_persona_space.orchestrate.env.load_dotenv``.
+
+    Rationale (#745): the bare ``from dotenv import load_dotenv`` walks the cwd
+    for a ``.env`` (so it does NOT robustly find the project ``.env`` from a
+    worktree / subdir) and sets NO environment. The project wrapper reads the
+    project ``.env`` (worktree-aware ``resolve_dotenv_path``) AND setdefaults the
+    HF Hub upload accelerators (``HF_XET_HIGH_PERFORMANCE`` /
+    ``HF_HUB_ENABLE_HF_TRANSFER``), so a script that uploads to the Hub but uses
+    bare dotenv gets neither the right ``.env`` nor the accelerator default —
+    large uploads then crawl. Worse, ``huggingface_hub.constants`` freezes
+    ``HF_HUB_ENABLE_HF_TRANSFER`` at IMPORT time, so a bare-dotenv script that
+    imports ``huggingface_hub`` at module top can never pick up the accelerator.
+    The shell-level exports (bootstrap_pod.sh / GCE prelude / SLURM env block)
+    are the load-bearing fix on the running fleet; this check prevents a NEW
+    script from re-introducing the bare-dotenv anti-pattern.
+
+    Detection (per script):
+
+    * BARE DOTENV — a ``from dotenv import [...] load_dotenv`` or a plain
+      ``import dotenv`` (the project wrapper
+      ``from explore_persona_space.orchestrate.env import load_dotenv`` is NOT
+      bare dotenv — its module is the wrapper, not ``dotenv``);
+    * AND HUGGINGFACE_HUB — any ``import huggingface_hub[...]`` /
+      ``from huggingface_hub[...] import ...`` (top-level OR in-function);
+    * AND NOT the project wrapper imported anywhere in the file.
+
+    All three → FAIL, anchored at the bare-dotenv import line, unless waived
+    with ``# DOTENV_LINT_EXEMPT: <reason>`` (reason ≥
+    :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) on that line or the
+    immediately preceding non-blank line.
+
+    ``scripts_dir`` is an override hook for unit tests; production callers pass
+    None and the function walks the canonical ``<repo_root>/scripts`` tree.
+    Bundled into the no-flags default run (same policy as
+    ``check_upload_as_file`` / ``check_dispatcher_cvd_pin``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        text = py.read_text(encoding="utf-8")
+        try:
+            tree = ast.parse(text, filename=str(py))
+        except SyntaxError:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        bare_lineno = _bare_dotenv_import_lineno(tree)
+        if bare_lineno is None:
+            continue
+        if not _imports_huggingface_hub(tree):
+            continue
+        if _imports_orchestrate_env_load_dotenv(tree):
+            continue
+        lines = text.splitlines()
+        if _dotenv_lint_waiver_present(lines, bare_lineno):
+            continue
+        errors.append(
+            f"{py}:{bare_lineno}: bare `dotenv` load_dotenv + huggingface_hub "
+            f"import without explore_persona_space.orchestrate.env.load_dotenv "
+            f"(#745). The bare dotenv walks cwd (misses the project .env from a "
+            f"worktree/subdir) and sets no env, so the HF Hub upload accelerators "
+            f"(HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) never get "
+            f"their setdefault and large uploads crawl. Import the project wrapper "
+            f"`from explore_persona_space.orchestrate.env import load_dotenv` and "
+            f"call load_dotenv() BEFORE the huggingface_hub import, or — if bare "
+            f"dotenv is genuinely correct here — waive with "
+            f"'# DOTENV_LINT_EXEMPT: <reason>' (reason ≥ "
+            f"{DOTENV_LINT_WAIVER_MIN_REASON_CHARS} chars) on the import line or "
+            f"the previous non-blank line."
+        )
+    return errors
+
+
 def _batch_judge_client_waiver_present(lines: list[str], call_lineno: int) -> bool:
     """Return True iff a ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`` waiver
     (reason ≥ :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) is
@@ -2847,6 +3035,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "<reason>'. Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-dotenv-before-hf-import",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any script that uses the "
+        "bare python-dotenv load_dotenv AND imports huggingface_hub without "
+        "first importing explore_persona_space.orchestrate.env.load_dotenv "
+        "(#745). The bare dotenv misses the worktree .env and sets no env, so "
+        "the HF Hub upload accelerators never get their setdefault and large "
+        "uploads crawl. Waive a genuinely-correct bare-dotenv use with "
+        "'# DOTENV_LINT_EXEMPT: <reason>'. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-batch-judge-client",
         action="store_true",
         help="AST-walk scripts/**/*.py and src/explore_persona_space/**/*.py "
@@ -2920,6 +3119,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_upload_as_file
+        or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
         or args.check_gate_ids_unique
@@ -2974,6 +3174,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agent_model_pins())
     if args.check_upload_as_file or no_flags:
         errors.extend(check_upload_as_file())
+    if args.check_dotenv_before_hf_import or no_flags:
+        errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:
         errors.extend(check_batch_judge_client())
     if args.check_no_workflow_improver_spawn or no_flags:
