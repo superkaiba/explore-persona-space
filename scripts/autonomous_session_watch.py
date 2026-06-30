@@ -1284,9 +1284,10 @@ def decide_pod_wedge(
         The wedge arm's consecutive-confirmed-past-K miss count (SEPARATE from
         the status-class ``missed``).
     threshold
-        Consecutive-confirmed-checks required before a STOP (default 2 = ~20 min
-        at the 10-min cron, so a single transient API mis-read never stops a
-        pod) — the same miss guard the status-class auto-stop uses.
+        Consecutive-confirmed-checks required before an irreversible action
+        (the ``terminate-failover`` recovery; default 2 = ~20 min at the 10-min
+        cron, so a single transient API mis-read never acts on a pod) — the same
+        miss guard the status-class auto-stop uses.
     alerted
         Whether the once-per-wedge-episode alert has already been posted
         (tracked as ``wedge_alerted`` in the state file). Informational here;
@@ -3166,6 +3167,84 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
         print(f"  WARNING: posting {label} marker on #{issue} failed: {e}", file=sys.stderr)
 
 
+def _post_failure_marker(issue: int, note: str, dry_run: bool) -> None:
+    """Post an ``epm:failure v1`` marker on task ``issue``'s events.jsonl.
+
+    The watcher backstop is the ACTOR for a poller-DEAD wedge, so it must emit
+    the SAME ``epm:failure v1`` the orchestrator's bg-Bash poll loop emits when
+    it reads a terminal infra JSON — otherwise the capacity-retry pass (which
+    keys on the latest ``epm:failure`` marker's ``failure_class``/``reason`` via
+    :func:`_is_transient_capacity_block`) never sees the block and can never
+    re-drive a re-drivable ``no_compute_available`` terminal. ``note`` MUST
+    carry ``failure_class: <class>`` and ``reason: <reason>`` as whitespace-
+    separated tokens (the shape :func:`_parse_failure_fields` reads). Same
+    branch-guard contract as :func:`_post_progress_marker` (runs from
+    PROJECT_ROOT on ``main``)."""
+    if dry_run:
+        print(f"  [dry-run] would post epm:failure on #{issue}: {note}")
+        return
+    try:
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "post-marker",
+                str(issue),
+                "epm:failure",
+                "--note",
+                note,
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: posting epm:failure marker on #{issue} failed: {e}", file=sys.stderr)
+
+
+def _set_status_blocked(issue: int, dry_run: bool) -> bool:
+    """Run ``task.py set-status <N> blocked``. Returns True on success.
+
+    Mirrors the orchestrator's poll-loop behavior on a terminal infra JSON
+    (``status:dead`` + ``failure_class:infra``): set the task to ``blocked`` so
+    the watcher's capacity-retry pass (and a human) can act on it. Same
+    branch-guard contract as :func:`_post_progress_marker`."""
+    if dry_run:
+        print(f"  [dry-run] would set #{issue} status -> blocked")
+        return True
+    try:
+        out = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "set-status",
+                str(issue),
+                "blocked",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(f"  WARNING: set-status blocked on #{issue} FAILED ({exc})", file=sys.stderr)
+        return False
+    if out.returncode != 0:
+        detail = (out.stderr or out.stdout or "").strip()[:300]
+        print(
+            f"  WARNING: set-status blocked on #{issue} FAILED (rc={out.returncode}): {detail}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
 def _stop_pod(issue: int, dry_run: bool) -> bool:
     """Run ``pod.py stop --issue <N>`` (reversible pause; volume preserved).
     Returns True on success. NEVER terminates."""
@@ -3197,36 +3276,70 @@ def _wedge_failover(issue: int, info: PodInfo, wedged_h: str, dry_run: bool) -> 
     on the SAME wedge are mutually exclusive — the watcher inherits the
     cross-actor idempotency for free by calling that function.
 
-    Returns a one-word OUTCOME for the caller's marker/state branch:
+    Returns a ``(outcome, terminal_json)`` tuple. ``outcome`` is the one-word
+    label for the caller's marker/state branch; ``terminal_json`` is the raw
+    poller terminal-JSON dict the recovery returned (carrying ``failure_class``
+    + ``reason``), or ``None`` for the ``"alert"`` degrade and the dry-run
+    short-circuit (no recovery dict in scope). The caller mirrors the poller's
+    own path on the terminal JSON — posting ``epm:failure v1`` with the exact
+    ``failure_class``/``reason`` from ``terminal_json`` and setting
+    ``status:blocked`` — for the ``"no-capacity"`` and ``"blocked"`` outcomes,
+    so the watcher's capacity-retry pass re-drives the re-drivable
+    ``no_compute_available`` block exactly as it would have re-driven the
+    poller's own emission of the SAME terminal JSON.
+
+    Outcomes:
 
     * ``"failover"`` — terminated + re-provisioned a FRESH pod (or a
       running-shaped success);
     * ``"already-handled"`` — the poller or a prior watcher tick already failed
       this wedge over (bounded-once short-circuit on the idempotency lease /
-      sentinel); no second terminate;
+      sentinel), OR the sidecar was re-pointed at a DIFFERENT pod between the
+      inputs-safe read and this re-read (the fresh-pod race below); no second
+      terminate;
     * ``"no-capacity"`` — terminated the wedged pod (billing stopped) but RunPod
       is unavailable for the fresh re-provision → terminal
       ``no_compute_available`` (the watcher's capacity-retry pass re-drives once
       a lane frees);
-    * ``"blocked"`` — did NOT terminate: inputs are not provably safe on HF (a
-      PARTIAL cell), sidecar persistence failed, or a legacy handle lacks the
-      relaunch RunSpec — a terminal infra block a human resolves (CLAUDE.md
-      halt-criterion #2);
-    * ``"alert"`` — NO reconstructable run handle, or the failover call raised →
-      degrade to ALERT-only, NEVER a blind terminate.
+    * ``"blocked"`` — a terminal infra block a human resolves (CLAUDE.md
+      halt-criterion #2). One of three reasons, NOT uniform on whether the pod
+      terminated: ``runpod_wedge_inputs_unverified`` is PRE-terminate (a PARTIAL
+      cell on HF — the pod was NOT terminated), while ``sidecar_persistence_failed``
+      and ``runpod_wedge_relaunch_spec_missing`` are POST-terminate (the wedged
+      pod WAS terminated and the failure is in the fresh re-provision). The
+      caller's marker text reads the ``reason`` from ``terminal_json`` to state
+      the right one;
+    * ``"alert"`` — NO reconstructable run handle, the sidecar pod_name does not
+      match the wedged pod, or the failover call raised → degrade to ALERT-only,
+      NEVER a blind terminate.
 
     Obtains ``handle`` + ``sidecar`` from the persisted sidecar EXACTLY as
     :func:`_wedge_inputs_safe` does (the watcher has no in-scope poller handle);
     on ANY reconstruction gap returns ``"alert"`` (never strand un-uploaded
-    work, never terminate blind). The ``_failover_wedged_runpod`` call is wrapped
-    fail-soft — a raise degrades to ``"alert"`` for THIS pod (re-tries next tick)
-    and never crashes the whole 10-min watcher tick (which still processes the
-    rest of the fleet). ``info`` is unused by the failover call itself (the
-    failover re-fetches the pod by ``handle.pod_name``); it is accepted for
-    signature symmetry with the other wedge-arm helpers."""
+    work, never terminate blind).
+
+    **Sidecar-binding defense (the fresh-pod race).** Between
+    :func:`_wedge_inputs_safe`'s sidecar read (which verified inputs against the
+    OLD wedged handle) and THIS re-read, a revived poller (crash-recovery /
+    capacity-retry respawn) could have already failed the wedge over and
+    re-pointed the sidecar at a FRESH, HEALTHY pod. The bounded-once lease/
+    sentinel inside :func:`_failover_wedged_runpod` is keyed on the FRESH
+    handle's identity, so it would NOT catch this — the watcher would terminate
+    a healthy fresh pod. Defense: assert the freshly-read ``handle.pod_name``
+    still equals the WEDGED pod's name (``info.name``). A mismatch means the
+    sidecar already moved on → return ``"already-handled"`` (the wedge the
+    watcher saw is gone; the live pod is someone else's) and NEVER call
+    :func:`_failover_wedged_runpod` against it.
+
+    The ``_failover_wedged_runpod`` call is wrapped fail-soft — a raise degrades
+    to ``"alert"`` for THIS pod (re-tries next tick) and never crashes the whole
+    10-min watcher tick (which still processes the rest of the fleet). ``info``
+    is load-bearing for the sidecar-binding defense above (its ``name`` is the
+    wedged pod the watcher observed); the ``_failover_wedged_runpod`` call itself
+    re-fetches the pod by ``handle.pod_name``."""
     if dry_run:
         print(f"  [dry-run] would terminate+failover wedged pod for issue #{issue}")
-        return "failover"
+        return ("failover", None)
     try:
         from backend_poll import _failover_wedged_runpod
 
@@ -3242,7 +3355,7 @@ def _wedge_failover(issue: int, info: PodInfo, wedged_h: str, dry_run: bool) -> 
                 f"the run handle -> ALERT-only (never terminate blind)",
                 file=sys.stderr,
             )
-            return "alert"
+            return ("alert", None)
         handle = read_handle_sidecar(path)
     except Exception as exc:  # transport / parse / import -> ALERT-only
         print(
@@ -3250,7 +3363,25 @@ def _wedge_failover(issue: int, info: PodInfo, wedged_h: str, dry_run: bool) -> 
             f"({type(exc).__name__}: {exc}); ALERT-only",
             file=sys.stderr,
         )
-        return "alert"
+        return ("alert", None)
+
+    # ── Sidecar-binding defense (the fresh-pod race) ──────────────────────────
+    # Assert the freshly-read handle still names the WEDGED pod the watcher
+    # observed. If a revived poller re-pointed the sidecar at a fresh, healthy
+    # pod between _wedge_inputs_safe's read and now, the bounded-once lease (keyed
+    # on the fresh handle's identity) would NOT catch it -> the watcher would
+    # terminate the healthy fresh pod. A mismatch means the wedge is already
+    # handled: do NOT terminate, return "already-handled".
+    handle_pod_name = getattr(handle, "pod_name", None)
+    if handle_pod_name != info.name:
+        print(
+            f"  wedge-failover: sidecar for #{issue} now names pod "
+            f"{handle_pod_name!r}, not the wedged pod {info.name!r} (the poller "
+            f"re-pointed it to a FRESH pod) -> ALREADY-HANDLED (never terminate "
+            f"the fresh pod)",
+            file=sys.stderr,
+        )
+        return ("already-handled", None)
 
     # The poller had a PollResult in scope; the watcher does not.
     # _failover_wedged_runpod reads ONLY current_phase + log_tail_excerpt from
@@ -3273,19 +3404,19 @@ def _wedge_failover(issue: int, info: PodInfo, wedged_h: str, dry_run: bool) -> 
             f"({type(exc).__name__}: {exc}); ALERT-only this tick (re-tries next tick)",
             file=sys.stderr,
         )
-        return "alert"
+        return ("alert", None)
 
     status = out.get("status")
     reason = out.get("reason")
     if status == "running":
-        return "failover"  # fresh pod re-provisioned (running-shaped success)
+        return ("failover", out)  # fresh pod re-provisioned (running-shaped success)
     if reason == "runpod_wedge_already_handled":
-        return "already-handled"  # bounded-once short-circuit (cross-actor idempotency)
+        return ("already-handled", out)  # bounded-once short-circuit (cross-actor idempotency)
     if reason == "no_compute_available":
-        return "no-capacity"  # terminated; RunPod unavailable; capacity-retry re-drives
+        return ("no-capacity", out)  # terminated; RunPod unavailable; capacity-retry re-drives
     # runpod_wedge_inputs_unverified | sidecar_persistence_failed |
     # runpod_wedge_relaunch_spec_missing | any other terminal infra JSON.
-    return "blocked"
+    return ("blocked", out)
 
 
 # ─── vm-disk state store + actions ───────────────────────────────────────────
@@ -3834,6 +3965,174 @@ def _maybe_handle_runpod_wedge(
     return False
 
 
+def _build_wedge_terminal_failure_note(
+    *,
+    outcome: str,
+    terminal_json: dict | None,
+    issue: int,
+    pod_id: str,
+    wedged_h: str,
+    threshold: int,
+) -> str:
+    """Build the ``epm:failure`` note body for a ``no-capacity`` / ``blocked``
+    wedge-failover outcome (#770 r2).
+
+    The note MUST carry ``failure_class: <c>`` and ``reason: <r>`` as
+    whitespace-separated tokens — the exact shape :func:`_parse_failure_fields`
+    reads for the capacity-retry classifier — and states the right terminate
+    state per ``reason`` (CONCERN #3): ``runpod_wedge_inputs_unverified`` is
+    PRE-terminate (the pod is still RUNNING); ``sidecar_persistence_failed`` /
+    ``runpod_wedge_relaunch_spec_missing`` are POST-terminate (the wedged pod
+    WAS terminated, the fresh re-provision failed)."""
+    from backend_poll import RUNPOD_WEDGE_K_SEC
+
+    failure_class = (terminal_json or {}).get("failure_class") or "infra"
+    reason = (terminal_json or {}).get("reason") or "unknown"
+    log_tail = (terminal_json or {}).get("log_tail_excerpt") or ""
+    if outcome == "no-capacity":
+        narrative = (
+            f"TERMINATED the wedged pod {pod_id} (billing stopped) but RunPod is "
+            f"unavailable for the fresh re-provision. The capacity-retry pass re-drives "
+            f"once a lane frees (reason no_compute_available is re-drivable)."
+        )
+    elif reason == "runpod_wedge_inputs_unverified":
+        narrative = (
+            f"wedge failover did NOT terminate the wedged pod {pod_id} — a PARTIAL cell on "
+            f"HF means a terminate could strand un-uploaded work; the pod is still RUNNING "
+            f"(and billing) until a human resolves it. Surfaced as a terminal infra block "
+            f"(CLAUDE.md halt-criterion #2); a human decides."
+        )
+    elif reason in ("sidecar_persistence_failed", "runpod_wedge_relaunch_spec_missing"):
+        why = (
+            "sidecar persistence failed"
+            if reason == "sidecar_persistence_failed"
+            else "a legacy handle lacks the relaunch RunSpec"
+        )
+        narrative = (
+            f"wedge failover TERMINATED the wedged pod {pod_id} (billing stopped) but the "
+            f"fresh re-provision failed ({why}); no live pod for this issue now. Surfaced "
+            f"as a terminal infra block (CLAUDE.md halt-criterion #2); a human decides."
+        )
+    else:
+        # An unrecognized terminal infra reason — stay neutral on the terminate
+        # state and point at the log_tail.
+        narrative = (
+            f"wedge failover returned an unrecognized terminal infra reason for pod "
+            f"{pod_id}; inspect reason + log_tail for whether the pod was terminated. "
+            f"Surfaced as a terminal infra block (CLAUDE.md halt-criterion #2); a human decides."
+        )
+    note = (
+        f"{_WEDGE_FAILOVER_NOTE_SENTINEL} RUNNING pod {pod_id} stuck in the #664 "
+        f"RUNNING-but-no-port host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K "
+        f"floor, confirmed for >= {threshold} checks); the poller's "
+        f"_maybe_escalate_runpod_wedge never ran (the poll loop is dead), so the "
+        f"watcher is the backstop. {narrative} failure_class: {failure_class} "
+        f"reason: {reason}"
+    )
+    if log_tail:
+        note += f" log_tail: {log_tail}"
+    return note
+
+
+def _handle_wedge_failover_outcome(
+    *,
+    issue: int,
+    info: PodInfo,
+    pod_id: str,
+    wedged_h: str,
+    threshold: int,
+    dry_run: bool,
+    state_save: dict,
+) -> str:
+    """Dispatch the ``terminate-failover`` action and return the next ``action``.
+
+    Calls :func:`_wedge_failover`, then branches on the ``(outcome, terminal_json)``
+    tuple it returns:
+
+    * ``"alert"`` → return ``"alert"`` so the caller falls through to the existing
+      alert block (no action taken this tick; re-try later).
+    * ``"no-capacity"`` / ``"blocked"`` → a terminal infra JSON: the watcher is the
+      ACTOR (the poll loop is dead), so it MIRRORS the orchestrator's poll-loop
+      path — post ``epm:failure v1`` carrying the exact ``failure_class``/``reason``
+      AND ``set-status <N> blocked`` (CRITICAL #1) — then clear the wedge clock.
+      The re-drivable ``no_compute_available`` block is re-driven by the
+      capacity-retry pass; a non-capacity reason stays parked for a human.
+    * ``"failover"`` / ``"already-handled"`` → a success / no-op: a generic
+      ``epm:progress`` note (NOT a failure), then clear the wedge clock.
+
+    Returns ``"handled"`` when the outcome was fully processed here (the caller
+    returns), or ``"alert"`` to defer to the alert block. ``state_save`` carries
+    the forward-carried status-class fields the clock-clear save needs
+    (``missed`` / ``alerted`` / ``last_progress_ts`` / ``prev``)."""
+    from backend_poll import RUNPOD_WEDGE_K_SEC
+
+    outcome, terminal_json = _wedge_failover(issue, info, wedged_h, dry_run)
+    if outcome == "alert":
+        # No reconstructable handle / the sidecar names a DIFFERENT pod (the
+        # fresh-pod race is mapped to "already-handled", not here) / the failover
+        # raised -> defer to the ALERT-only block (carries the clock forward +
+        # dedups the alert). We did NOT act, so re-try on a later tick.
+        return "alert"
+    if outcome in ("no-capacity", "blocked"):
+        note = _build_wedge_terminal_failure_note(
+            outcome=outcome,
+            terminal_json=terminal_json,
+            issue=issue,
+            pod_id=pod_id,
+            wedged_h=wedged_h,
+            threshold=threshold,
+        )
+        _post_failure_marker(issue, note, dry_run)
+        _set_status_blocked(issue, dry_run)
+    else:
+        # outcome in ("failover", "already-handled") — a success / no-op, NOT a
+        # failure: a generic progress note (NOT epm:failure, NOT a status change).
+        # "already-handled" also covers the fresh-pod race the sidecar-binding
+        # defense catches.
+        note = {
+            "failover": (
+                f"{_WEDGE_FAILOVER_NOTE_SENTINEL} TERMINATED + re-provisioned a FRESH pod "
+                f"for issue #{issue}: RUNNING pod {pod_id} stuck in the #664 "
+                f"RUNNING-but-no-port host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K "
+                f"floor, confirmed for >= {threshold} checks). The poller's "
+                f"_maybe_escalate_runpod_wedge never ran (the poll loop is dead), so the "
+                f"watcher is the backstop. Inputs are verified on HF and the keep-running "
+                f"tag is absent, so the irreversible terminate + re-provision the poller "
+                f"owns (#664/#689 fix (b)) is safe — a reversible stop cannot heal a "
+                f"host-pinned dead RunPod host (#763). Bounded once via the durable lease "
+                f"+ sentinel. The fresh pod's dispatcher skips HF-complete cells."
+            ),
+            "already-handled": (
+                f"{_WEDGE_FAILOVER_NOTE_SENTINEL} wedge failover for issue #{issue} pod "
+                f"{pod_id} was ALREADY handled — the poller or a prior watcher tick already "
+                f"terminated + re-provisioned this wedge (idempotency lease/sentinel), or "
+                f"the sidecar was re-pointed at a FRESH pod between the inputs-safe read and "
+                f"the failover re-read (the fresh-pod race; the watcher refuses to terminate "
+                f"the fresh pod). No second terminate. Clearing the wedge clock."
+            ),
+        }[outcome]
+        _post_progress_marker(issue, note, dry_run, label="wedge-failover")
+    if not dry_run:
+        # Clear the wedge fields on every acted/already-handled outcome (the
+        # episode is resolved from the watcher's vantage: acted, a terminal infra
+        # JSON recorded, or already handled — re-stamping would re-fire next tick,
+        # and the bounded-once lease/sentinel makes a second _failover_wedged_runpod
+        # call a no-op anyway). NOT _clear_pod_safety_state (which would wipe the
+        # pod-incarnation first_seen GC anchor).
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=state_save["missed"],
+            alerted=state_save["alerted"],
+            last_progress_ts=state_save["last_progress_ts"],
+            wedge_first_seen=None,
+            wedge_missed=0,
+            wedge_alerted=False,
+            prev=state_save["prev"],
+        )
+    return "handled"
+
+
 def _process_wedged_pod(
     issue: int, info: PodInfo, now: float, dry_run: bool, threshold: int
 ) -> None:
@@ -3929,70 +4228,30 @@ def _process_wedged_pod(
         # #770: the provably-safe case routes the SAME irreversible terminate +
         # re-provision the poller owns (bounded-once via the shared durable lease
         # + sentinel), NOT a reversible stop that cannot heal a host-pinned dead
-        # RunPod host (#763). _wedge_failover reconstructs the handle from the
-        # persisted sidecar and degrades to "alert" on ANY reconstruction gap.
-        outcome = _wedge_failover(issue, info, wedged_h, dry_run)
-        if outcome == "alert":
-            # No reconstructable handle / the failover raised -> degrade to the
-            # SAME ALERT-only path the gated-off cases use. Falls through to the
-            # existing alert block (carries the clock forward + dedups the alert)
-            # by setting `action` -> we have NOT acted, so re-try on a later tick.
-            action = "alert"
-        else:
-            note = {
-                "failover": (
-                    f"{_WEDGE_FAILOVER_NOTE_SENTINEL} TERMINATED + re-provisioned a FRESH pod "
-                    f"for issue #{issue}: RUNNING pod {pod_id} stuck in the #664 "
-                    f"RUNNING-but-no-port host wedge for {wedged_h} (> {RUNPOD_WEDGE_K_SEC}s K "
-                    f"floor, confirmed for >= {threshold} checks). The poller's "
-                    f"_maybe_escalate_runpod_wedge never ran (the poll loop is dead), so the "
-                    f"watcher is the backstop. Inputs are verified on HF and the keep-running "
-                    f"tag is absent, so the irreversible terminate + re-provision the poller "
-                    f"owns (#664/#689 fix (b)) is safe — a reversible stop cannot heal a "
-                    f"host-pinned dead RunPod host (#763). Bounded once via the durable lease "
-                    f"+ sentinel. The fresh pod's dispatcher skips HF-complete cells."
-                ),
-                "already-handled": (
-                    f"{_WEDGE_FAILOVER_NOTE_SENTINEL} wedge failover for issue #{issue} pod "
-                    f"{pod_id} was ALREADY handled (idempotency lease/sentinel) — the poller "
-                    f"or a prior watcher tick already terminated + re-provisioned this wedge. "
-                    f"No second terminate. Clearing the wedge clock."
-                ),
-                "no-capacity": (
-                    f"{_WEDGE_FAILOVER_NOTE_SENTINEL} TERMINATED the wedged pod for issue "
-                    f"#{issue} (billing stopped) but RunPod is unavailable for the fresh "
-                    f"re-provision -> terminal no_compute_available; the capacity-retry pass "
-                    f"re-drives once a lane frees. Clearing the wedge clock."
-                ),
-                "blocked": (
-                    f"{_WEDGE_FAILOVER_NOTE_SENTINEL} wedge failover for issue #{issue} pod "
-                    f"{pod_id} did NOT terminate — inputs are not provably safe on HF (a "
-                    f"PARTIAL cell), sidecar persistence failed, or the handle lacks the "
-                    f"relaunch RunSpec. Surfaced as a terminal infra block (halt-criterion "
-                    f"#2); a human decides. Clearing the wedge clock."
-                ),
-            }[outcome]
-            _post_progress_marker(issue, note, dry_run, label="wedge-failover")
-            if not dry_run:
-                # Clear the wedge fields on every non-alert outcome (the episode
-                # is resolved from the watcher's vantage: acted, a terminal infra
-                # JSON emitted, or already handled — re-stamping would re-fire
-                # next tick, and the bounded-once lease/sentinel makes a second
-                # _failover_wedged_runpod call a no-op anyway). NOT
-                # _clear_pod_safety_state, which would wipe the pod-incarnation
-                # first_seen GC anchor.
-                _save_pod_safety_state(
-                    issue,
-                    pod_id,
-                    missed=prev_missed,
-                    alerted=prev_status_alerted,
-                    last_progress_ts=prev_progress,
-                    wedge_first_seen=None,
-                    wedge_missed=0,
-                    wedge_alerted=False,
-                    prev=prev_state,
-                )
+        # RunPod host (#763). The whole outcome dispatch (no-capacity / blocked ->
+        # epm:failure + set-status blocked, CRITICAL #1; failover / already-handled
+        # -> a progress note; alert -> defer to the alert block) lives in the
+        # helper so this function stays under the C901 complexity cap.
+        next_action = _handle_wedge_failover_outcome(
+            issue=issue,
+            info=info,
+            pod_id=pod_id,
+            wedged_h=wedged_h,
+            threshold=threshold,
+            dry_run=dry_run,
+            state_save={
+                "missed": prev_missed,
+                "alerted": prev_status_alerted,
+                "last_progress_ts": prev_progress,
+                "prev": prev_state,
+            },
+        )
+        if next_action == "handled":
             return
+        # next_action == "alert": no reconstructable handle / fresh-pod race /
+        # failover raised -> fall through to the existing alert block (carries the
+        # clock forward + dedups the alert); we did NOT act, so re-try later.
+        action = "alert"
 
     if action == "alert":
         post_alert = not prev_wedge_alerted
