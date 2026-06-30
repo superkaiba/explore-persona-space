@@ -1,6 +1,6 @@
 ---
-title: 'Causal context-vector patch on #537 adapters: does finetuning a behavior shift
-  the context vector or the context→behavior mapping?'
+title: A cross-model context-vector patch fails to register above its own noise floor,
+  so it cannot localize where a finetuned behavior lives (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-28T09:08:55Z'
