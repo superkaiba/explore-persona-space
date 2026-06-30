@@ -4,7 +4,7 @@ title: A cross-model context-vector patch fails to register above its own noise 
 kind: experiment
 tags: []
 created_at: '2026-06-28T09:08:55Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 537
 origin_prompt: 'Then queue an issue to run the same thing on the already trained 537
   adapters. (the same thing = the A3.6c causal context-vector patch added to leakage
