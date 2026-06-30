@@ -225,15 +225,19 @@ def test_inactive_consumer_does_not_protect(fake_repo, inactive_status):
     assert _read_sidecar(fake_repo) == []
 
 
-# ─── case 5: incremental wrapper skips the guard ─────────────────────────────
+# ─── case 5: incremental wrapper RESPECTS the cross-issue guard ──────────────
 
 
-def test_incremental_path_skips_active_consumer_guard(fake_repo, monkeypatch):
-    """The within-run incremental path is self-aware: it opts out of the
-    active-consumer gate (``_skip_active_consumer_guard=True``) and does NOT even
-    walk tasks/. Monkeypatch the protected-set helper to raise; the incremental
-    reap must NOT call it AND must reap the caches even with an active consumer
-    B present."""
+def test_incremental_path_respects_active_consumer_guard(fake_repo):
+    """The within-run incremental path keeps the active-CONSUMER gate ON, so a
+    DIFFERENT active task B referencing data/issue_658/ blocks the incremental
+    reap of 658's caches — the cross-issue protection must hold on this path too.
+
+    Round-1 PINNED the unsafe bypass (the reap proceeded with B present); that
+    removed cross-issue protection because the self-exclusion is on the CONSUMER,
+    not the referenced issue. This test inverts that: the caches are KEPT (in
+    .skipped, not .removed), survive on disk, and the skip is sidecar-logged
+    with kind=active-consumer-reap-skipped naming #742."""
     data_root = fake_repo / "data"
     issue_dir = _make_cache(data_root, 658)
     _make_task(
@@ -243,18 +247,48 @@ def test_incremental_path_skips_active_consumer_guard(fake_repo, monkeypatch):
         body="Reads data/issue_658/store/v0_summaries.pt.",
     )
 
-    def _boom(*a, **k):
-        raise AssertionError(
-            "_active_consumer_protected_issues must NOT be called on the incremental path"
-        )
+    res = ced.clean_issue_downloads_incremental(658, apply=True, data_root=data_root)
 
-    monkeypatch.setattr(ced, "_active_consumer_protected_issues", _boom)
+    assert res.removed == []
+    assert sorted(name for name, _ in res.skipped) == [
+        "data/issue_658/g1_dl",
+        "data/issue_658/hf_dl",
+    ]
+    assert all("#742" in reason for _, reason in res.skipped)
+    # The caches survive on disk (fail-toward-keep).
+    assert (issue_dir / "hf_dl" / "blob.bin").exists()
+    assert (issue_dir / "g1_dl" / "blob.bin").exists()
+    rows = _read_sidecar(fake_repo)
+    assert len(rows) == 2
+    for row in rows:
+        assert row["kind"] == "active-consumer-reap-skipped"
+        assert row["task"] == 658
+        assert row["consumers"] == [742]
+
+
+def test_incremental_path_self_reap_with_self_reference(fake_repo):
+    """A self-reference does NOT block the incremental reap even though the
+    cross-issue guard is now ON: 658's OWN plan/body references
+    data/issue_658/ and NO other active task does -> the consumer-keyed
+    self-exclusion (consumer_id == self) lets the reap proceed. This pins that
+    turning the guard ON on the incremental path did not re-introduce
+    self-block (the within-run path's whole point is self-cleanup)."""
+    data_root = fake_repo / "data"
+    issue_dir = _make_cache(data_root, 658)
+    _make_task(
+        fake_repo,
+        issue_n=658,
+        status="awaiting_promotion",
+        body="My own caches live under data/issue_658/hf_dl/.",
+        plan="Generated data/issue_658/store/ from data/issue_658/hf_dl/.",
+    )
 
     res = ced.clean_issue_downloads_incremental(658, apply=True, data_root=data_root)
 
     assert sorted(res.removed) == ["data/issue_658/g1_dl", "data/issue_658/hf_dl"]
     assert res.skipped == []
     assert not (issue_dir / "hf_dl").exists()
+    assert _read_sidecar(fake_repo) == []
 
 
 # ─── case 6: empty tasks/ tree is a clean no-op ──────────────────────────────
@@ -401,3 +435,83 @@ def test_consumer_inactive_statuses_partition_totality(fake_repo):
     assert active | ced._CONSUMER_INACTIVE_STATUSES == set(ced.STATUSES)
     # And the active set is non-empty (the gate must be able to fire).
     assert active
+
+
+# ─── case 12: scan-limit truncation defense (BLOCKER #773 round 2) ───────────
+
+
+def test_active_consumer_scan_finds_consumer_past_row_200(fake_repo):
+    """list_by_status defaults to limit=200 and SILENTLY truncates by sorted id.
+    Build 201 active tasks in ONE status where ONLY the 201st (highest id)
+    references data/issue_658/; every lower-id task references an unrelated
+    issue. _active_consumer_protected_issues MUST still find #658's consumer —
+    i.e. it must NOT inherit the limit=200 cap.
+
+    Pre-fix (default limit=200 inside the helper) the 201st row is dropped and
+    protected.get(658) is None; post-fix (explicit limit=10_000) the consumer is
+    found. This EXERCISES the real list_by_status truncation, not just the cap
+    value."""
+    # 200 lower-id active tasks referencing an unrelated issue (not 658), then
+    # one 201st highest-id task that references 658. list_by_status sorts by
+    # integer id, so the 658-consumer sorts LAST and is the row a 200-cap drops.
+    for i in range(1000, 1200):  # 200 tasks, ids 1000..1199
+        _make_task(fake_repo, issue_n=i, status="running", body="reads data/issue_999/store/x.pt")
+    consumer_id = 1200  # the 201st, highest id -> sorts last -> dropped at limit=200
+    _make_task(
+        fake_repo,
+        issue_n=consumer_id,
+        status="running",
+        body="Reuses data/issue_658/store/v0_summaries.pt (sha-pinned).",
+    )
+
+    protected = ced._active_consumer_protected_issues(self_issue_n=999)
+
+    assert protected.get(658) == [consumer_id]
+
+
+def test_active_consumer_scan_passes_uncapped_limit_to_list_by_status(monkeypatch):
+    """Unit-level pin of the exact defense: the helper must call list_by_status
+    with an explicit limit large enough that no realistic active queue truncates.
+    Monkeypatch list_by_status with a fake that returns a 201-row queue ONLY when
+    called with a limit >= 201 (else the truncated first 200) — so the 658
+    consumer (row 201) is reachable iff the helper passes the uncapped limit.
+
+    A controlled fake (not the real tasks/ walk) so the test pins the call
+    contract precisely and fails pre-fix (default limit=200 -> 658 dropped)."""
+    rows = [
+        {"id": i, "title": "", "kind": "experiment", "tags": [], "has_clean_result": False}
+        for i in range(1000, 1200)
+    ]
+    rows.append(
+        {
+            "id": 1200,
+            "title": "reads data/issue_658/store/v0_summaries.pt",
+            "kind": "experiment",
+            "tags": [],
+            "has_clean_result": False,
+        }
+    )
+
+    def _fake_list_by_status(status, limit=200):
+        if status != "running":
+            return []
+        return rows[:limit]
+
+    monkeypatch.setattr(ced, "list_by_status", _fake_list_by_status)
+    # tasks_dir() is read for body/plan text — point it at a tmp the bodies of
+    # the synthetic rows live in. The fake list_by_status carries the 658 ref in
+    # the row title, but _active_consumer_protected_issues reads body.md/plan.md
+    # from disk, so write the consumer's body there.
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        base = Path(td)
+        monkeypatch.setattr(ced, "tasks_dir", lambda: base / "tasks")
+        monkeypatch.setattr(ced, "repo_root", lambda: base)
+        cdir = base / "tasks" / "running" / "1200"
+        cdir.mkdir(parents=True)
+        (cdir / "body.md").write_text("Reuses data/issue_658/store/v0_summaries.pt.")
+
+        protected = ced._active_consumer_protected_issues(self_issue_n=999)
+
+    assert protected.get(658) == [1200]
