@@ -633,5 +633,168 @@ def test_managed_pin_worktree_refuses_under_migration_lock(repo: Path) -> None:
         assert "migration in progress" not in str(exc)
 
 
+# --- #771: attached-but-inert WARN (data disk mounted, bind dead) ------------
+#
+# These exercise the once-per-session WARN new_worktree.sh emits exactly when
+# the #681 cutover has NOT been applied yet: the data disk IS a live mount, the
+# .claude/worktrees bind is NOT live, and the strict EPS_WORKTREE_REQUIRE_BIND
+# assertion is OFF. The WARN is the STRICTLY WEAKER complement of that assertion
+# (mutually exclusive on EPS_WORKTREE_REQUIRE_BIND) and NEVER blocks creation.
+# The new EPS_WORKTREE_DATADISK_PROBE seam mirrors EPS_WORKTREE_BIND_PROBE.
+
+_WARN_SUBSTRINGS = ("EPS_WORKTREE_REQUIRE_BIND=1 EPS_WORKTREE_ASSIGN_QUOTA=1", "#681", "bind")
+
+
+def test_inert_warn_fires_when_disk_mounted_but_bind_dead(repo: Path, tmp_path: Path) -> None:
+    """(a) Headline case: data disk a live mount, bind NOT live, assertion OFF →
+    WARN to stderr (all 3 substrings) AND exit 0 (worktree created) AND the
+    once-per-session sentinel appears under the fixture repo's .claude/cache."""
+    # tmp_path repos do NOT auto-create .claude/cache (the migration-LOCK test
+    # above establishes this precedent) — seed it so the sentinel can land.
+    (repo / ".claude" / "cache").mkdir(parents=True, exist_ok=True)
+    wt = tmp_path / "wt-inert"
+    env = {**_GIT_ENV, "EPS_WORKTREE_DATADISK_PROBE": "true", "EPS_WORKTREE_BIND_PROBE": "false"}
+    env.pop("EPS_WORKTREE_REQUIRE_BIND", None)  # assertion OFF → WARN owns this case
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt), "issue-2", "--issue", "2"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert res.returncode == 0, f"WARN must NOT block creation: {res.stderr}"
+    assert (wt / "src/x.py").is_file(), "worktree must be created despite the WARN"
+    for sub in _WARN_SUBSTRINGS:
+        assert sub in res.stderr, f"WARN missing substring {sub!r}: {res.stderr}"
+    sentinel = repo / ".claude" / "cache" / "worktree-inert-warned"
+    assert sentinel.exists(), "once-per-session sentinel must be touched on first WARN"
+
+
+def test_inert_warn_suppressed_when_assertion_governs(repo: Path, tmp_path: Path) -> None:
+    """(b) Assertion governs: EPS_WORKTREE_REQUIRE_BIND=1 with the bind LIVE →
+    silent-OK. The WARN is OFF (its predicate requires the assertion OFF), and
+    the strict assertion passes because the bind is live → exit 0, no WARN."""
+    (repo / ".claude" / "cache").mkdir(parents=True, exist_ok=True)
+    wt = tmp_path / "wt-assert-on"
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt), "issue-3", "--issue", "3"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env={**_GIT_ENV, "EPS_WORKTREE_REQUIRE_BIND": "1", "EPS_WORKTREE_BIND_PROBE": "true"},
+    )
+    assert res.returncode == 0, f"assertion-on + bind-live must succeed: {res.stderr}"
+    for sub in _WARN_SUBSTRINGS:
+        assert sub not in res.stderr, f"WARN must not fire when the assertion governs: {sub!r}"
+
+
+def test_inert_warn_silent_when_disk_absent(repo: Path, tmp_path: Path) -> None:
+    """(c) Disk genuinely absent: no data disk (probe false), no bind, assertion
+    OFF → silent-OK. Rules out false positives on pre-cutover / non-GCP envs."""
+    (repo / ".claude" / "cache").mkdir(parents=True, exist_ok=True)
+    wt = tmp_path / "wt-nodisk"
+    env = {**_GIT_ENV, "EPS_WORKTREE_DATADISK_PROBE": "false", "EPS_WORKTREE_BIND_PROBE": "false"}
+    env.pop("EPS_WORKTREE_REQUIRE_BIND", None)
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt), "issue-2", "--issue", "2"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert res.returncode == 0, f"disk-absent must succeed: {res.stderr}"
+    assert (wt / "src/x.py").is_file()
+    for sub in _WARN_SUBSTRINGS:
+        assert sub not in res.stderr, f"WARN must not fire when the data disk is absent: {sub!r}"
+
+
+def test_inert_warn_silent_when_bind_already_live(repo: Path, tmp_path: Path) -> None:
+    """(d) Post-cutover: data disk mounted AND bind live, assertion OFF → no WARN
+    (the bind being live makes ! _bind_is_live false). Rules out warning when
+    correctly wired but the opt-in flag has not yet been flipped."""
+    (repo / ".claude" / "cache").mkdir(parents=True, exist_ok=True)
+    wt = tmp_path / "wt-bound"
+    env = {**_GIT_ENV, "EPS_WORKTREE_DATADISK_PROBE": "true", "EPS_WORKTREE_BIND_PROBE": "true"}
+    env.pop("EPS_WORKTREE_REQUIRE_BIND", None)
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt), "issue-2", "--issue", "2"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert res.returncode == 0, f"bind-live must succeed: {res.stderr}"
+    for sub in _WARN_SUBSTRINGS:
+        assert sub not in res.stderr, f"WARN must not fire when the bind is already live: {sub!r}"
+
+
+def test_inert_warn_fires_once_per_session(repo: Path, tmp_path: Path) -> None:
+    """(e) Once-per-session dedup: run the headline (a) case TWICE against the
+    SAME fixture repo. The sentinel persists in the repo's .claude/cache between
+    runs, so the WARN appears on the first run and is suppressed on the second."""
+    (repo / ".claude" / "cache").mkdir(parents=True, exist_ok=True)
+    env = {**_GIT_ENV, "EPS_WORKTREE_DATADISK_PROBE": "true", "EPS_WORKTREE_BIND_PROBE": "false"}
+    env.pop("EPS_WORKTREE_REQUIRE_BIND", None)
+
+    def _run(wt: Path, branch: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["bash", str(HELPER), str(wt), branch, "--issue", branch.split("-")[1]],
+            cwd=str(repo),
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+    first = _run(tmp_path / "wt-once-1", "issue-2")
+    assert first.returncode == 0, f"first run must succeed: {first.stderr}"
+    for sub in _WARN_SUBSTRINGS:
+        assert sub in first.stderr, f"first run must WARN: missing {sub!r}"
+
+    second = _run(tmp_path / "wt-once-2", "issue-3")
+    assert second.returncode == 0, f"second run must succeed: {second.stderr}"
+    for sub in _WARN_SUBSTRINGS:
+        assert sub not in second.stderr, f"second run must be silent (sentinel): {sub!r} re-emitted"
+
+
+def test_inert_warn_production_probe_rejects_plain_dir(repo: Path, tmp_path: Path) -> None:
+    """(f) PRODUCTION-PATH probe regression (Statistics Must-Fix): with the
+    EPS_WORKTREE_DATADISK_PROBE seam UNSET, the real `findmnt --mountpoint` runs
+    against a non-mount EPS_VM_DATA_DISK_PATH (a plain tmp dir) → it reports the
+    data disk NOT live, so the WARN does NOT fire (silent-OK). This catches a
+    future `--mountpoint` → `--target` slip, which would falsely report ANY
+    directory as a live mount and fire the WARN on clean non-GCP / CI machines.
+    Mirrors test_new_worktree_production_probe_rejects_plain_dir for the bind."""
+    (repo / ".claude" / "cache").mkdir(parents=True, exist_ok=True)
+    fake_disk = tmp_path / "fake-data-disk"
+    fake_disk.mkdir()  # a plain dir, NOT a mountpoint
+    env = {
+        **_GIT_ENV,
+        "EPS_VM_DATA_DISK_PATH": str(fake_disk),
+        "EPS_WORKTREE_BIND_PROBE": "false",
+    }
+    env.pop("EPS_WORKTREE_DATADISK_PROBE", None)  # force the PRODUCTION findmnt path
+    env.pop("EPS_WORKTREE_REQUIRE_BIND", None)
+    wt = tmp_path / "wt-prod-datadisk"
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt), "issue-2", "--issue", "2"],
+        cwd=str(repo),
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert res.returncode == 0, f"production probe on a plain dir must succeed: {res.stderr}"
+    for sub in _WARN_SUBSTRINGS:
+        assert sub not in res.stderr, (
+            "production findmnt --mountpoint must report a plain (non-mount) data-disk "
+            f"path as NOT live → no WARN; got substring {sub!r}: {res.stderr}"
+        )
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
