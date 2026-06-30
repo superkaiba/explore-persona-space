@@ -1,0 +1,124 @@
+{
+  "genre": "ultrachat",
+  "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R\u00b2 on centered v0)",
+  "c_C_recipe": "C_last (genre-matched cc_last from per-genre store)",
+  "n_contexts": 50,
+  "activation_dim": 3584,
+  "store_provenance": {
+    "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/g1_dl/issue658_theory_assumptions/store_genre-generalization-ultrachat",
+    "e0_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_658/E0_expression_g1.json",
+    "cc_source": "per-genre store::cc_last",
+    "n_contexts": 50,
+    "hidden_dim": 3584
+  },
+  "plateau_layers": [
+    14,
+    18,
+    21
+  ],
+  "best_ridge_layer": 18,
+  "best_ridge_skill": 0.794530121112827,
+  "plateau_mean_ridge_skill": 0.794530121112827,
+  "per_layer": [
+    {
+      "layer": 0,
+      "skill_vs_mean_ridge": -0.17736221711105582,
+      "predict_mean_abs_cos": 0.9975606836228169,
+      "raw_recon_abs_cos": 0.9970806662254706,
+      "ridge_df_eff": 48.99746551771648,
+      "ridge_lambda_median": 0.01,
+      "ridge_skill_ci_lo": -0.46742313791597623,
+      "ridge_skill_ci_hi": -0.004851978917060675,
+      "is_plateau": false
+    },
+    {
+      "layer": 18,
+      "skill_vs_mean_ridge": 0.794530121112827,
+      "predict_mean_abs_cos": 0.9898387753952234,
+      "raw_recon_abs_cos": 0.9978538301619312,
+      "ridge_df_eff": 48.99889510380318,
+      "ridge_lambda_median": 0.01,
+      "ridge_skill_ci_lo": 0.742884039397989,
+      "ridge_skill_ci_hi": 0.8428569103849541,
+      "is_plateau": true
+    }
+  ],
+  "full_skill_over_mean": {
+    "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R\u00b2 on centered v0)",
+    "c_C_recipe": "C_last",
+    "n_contexts": 50,
+    "activation_dim": 3584,
+    "layers": [
+      0,
+      18
+    ],
+    "mlp_recipe": {
+      "hidden": 512,
+      "lr": 0.001,
+      "wd": 0.0001,
+      "max_epochs": 300,
+      "pca_target_dim": 48,
+      "input_pca_accel": true,
+      "vectorized": true
+    },
+    "ridge_lambdas": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "seed": 42,
+    "shuffle_ridge_L18": -1.1840956324081664,
+    "store_provenance": {
+      "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/g1_dl/issue658_theory_assumptions/store_genre-generalization-ultrachat",
+      "e0_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_658/E0_expression_g1.json",
+      "cc_source": "per-genre store::cc_last",
+      "n_contexts": 50,
+      "hidden_dim": 3584
+    },
+    "per_layer": [
+      {
+        "layer": 0,
+        "predict_mean_abs_cos": 0.9975606836228169,
+        "raw_recon_abs_cos": 0.9970806662254706,
+        "skill_vs_mean_ridge": -0.17736221711105582,
+        "skill_vs_mean_mlp": -6.91666357426462,
+        "skill_zscored_mlp": -7.072089605144495,
+        "skill_shuffle_mlp": -6.912856474633439,
+        "ridge_median_per_dim_r2": -0.18372503254530181,
+        "mlp_median_per_dim_r2": -8.002626277038695,
+        "gesvd_fallback": false,
+        "n_folds_used_ridge": 50,
+        "n_folds_used_mlp": 50,
+        "lambda_chosen": 0.01,
+        "mlp_n_folds_skipped": 0
+      },
+      {
+        "layer": 18,
+        "predict_mean_abs_cos": 0.9898387753952234,
+        "raw_recon_abs_cos": 0.9978538301619312,
+        "skill_vs_mean_ridge": 0.794530121112827,
+        "skill_vs_mean_mlp": -1.990408914563376,
+        "skill_zscored_mlp": -1.6809324783942605,
+        "skill_shuffle_mlp": -0.1189885515830682,
+        "ridge_median_per_dim_r2": 0.5009644153072967,
+        "mlp_median_per_dim_r2": -1.1446955208208636,
+        "gesvd_fallback": false,
+        "n_folds_used_ridge": 50,
+        "n_folds_used_mlp": 50,
+        "lambda_chosen": 0.01,
+        "mlp_n_folds_skipped": 0
+      }
+    ]
+  },
+  "metadata": {
+    "git_commit": "ac8acd9351852ac1fec69225a73bbb1f24c71c12",
+    "timestamp_utc": "2026-06-30T00:40:55.999836Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_ultrachat_mirror"
+  }
+}

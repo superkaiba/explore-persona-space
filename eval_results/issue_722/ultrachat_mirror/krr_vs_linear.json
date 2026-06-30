@@ -1,0 +1,93 @@
+{
+  "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R\u00b2 on PCA-48 centered v0)",
+  "c_C_recipe": "C_last",
+  "n_contexts": 50,
+  "layers": [
+    0,
+    18
+  ],
+  "kernels": [
+    "linear",
+    "rbf"
+  ],
+  "pca_target_dim": 48,
+  "ridge_lambdas": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+  ],
+  "n_bootstrap": 200,
+  "seed": 42,
+  "krr_linear_vs_ridge_sanity": {
+    "ok": true,
+    "tol": 0.005,
+    "rows": [
+      {
+        "layer": 0,
+        "ridge_pca48": -0.17493178184434077,
+        "krr_linear_pca48": -0.17493178184434166,
+        "abs_delta": 8.881784197001252e-16
+      }
+    ]
+  },
+  "store_provenance": {
+    "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/g1_dl/issue658_theory_assumptions/store_genre-generalization-ultrachat",
+    "cc_source": "per-genre store::cc_last",
+    "n_contexts": 50
+  },
+  "per_layer": [
+    {
+      "layer": 0,
+      "skill_vs_mean_ridge_fullH": -0.17736221711105582,
+      "skill_krr_linear_pca48": -0.17493178184434166,
+      "skill_krr_rbf_pca48": 0.2637031587599382,
+      "best_mlp_skill": NaN,
+      "nonlinear_gap_rbf_minus_linear": 0.4386349406042799,
+      "gap_ci95": [
+        0.24098844885469747,
+        0.8151397055226347
+      ],
+      "gap_excludes_zero": true,
+      "chosen_lambda_rbf_median": 0.1,
+      "chosen_gamma_rbf_median": 4.143076733278665e-05,
+      "chosen_lambda_linear_median": 0.01,
+      "ridge_df_eff": 48.99746551771648,
+      "ridge_lambda_median": 0.01,
+      "ridge_skill_recomputed_fullH": -0.17736221711105626,
+      "ridge_skill_ci_lo": -0.46742313791597623,
+      "ridge_skill_ci_hi": -0.004851978917060675
+    },
+    {
+      "layer": 18,
+      "skill_vs_mean_ridge_fullH": 0.794530121112827,
+      "skill_krr_linear_pca48": 0.7955809929027012,
+      "skill_krr_rbf_pca48": 0.7878420871753524,
+      "best_mlp_skill": NaN,
+      "nonlinear_gap_rbf_minus_linear": -0.0077389057273488104,
+      "gap_ci95": [
+        -0.01477857944348238,
+        0.0008931475708333751
+      ],
+      "gap_excludes_zero": false,
+      "chosen_lambda_rbf_median": 0.01,
+      "chosen_gamma_rbf_median": 1.6374470895191434e-05,
+      "chosen_lambda_linear_median": 0.01,
+      "ridge_df_eff": 48.99889510380318,
+      "ridge_lambda_median": 0.01,
+      "ridge_skill_recomputed_fullH": 0.794530121112827,
+      "ridge_skill_ci_lo": 0.742884039397989,
+      "ridge_skill_ci_hi": 0.8428569103849541
+    }
+  ],
+  "metadata": {
+    "git_commit": "ac8acd9351852ac1fec69225a73bbb1f24c71c12",
+    "timestamp_utc": "2026-06-30T00:40:55.999836Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_ultrachat_mirror"
+  }
+}

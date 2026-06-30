@@ -1,0 +1,96 @@
+{
+  "deliverable_1_skill_over_mean_ridge_plateau": [
+    {
+      "layer": 14,
+      "betley_ridge_skill": 0.745682362952892,
+      "ultrachat_ridge_skill": null
+    },
+    {
+      "layer": 18,
+      "betley_ridge_skill": 0.7983028454675367,
+      "ultrachat_ridge_skill": 0.794530121112827
+    },
+    {
+      "layer": 21,
+      "betley_ridge_skill": 0.7406867907378158,
+      "ultrachat_ridge_skill": null
+    }
+  ],
+  "deliverable_2_krr_nonlinear_gap_plateau": [
+    {
+      "layer": 14,
+      "betley_gap": 0.004165943751728407,
+      "betley_gap_ci95": [
+        -0.0015368448859979095,
+        0.01045619663745424
+      ],
+      "betley_gap_excludes_zero": false,
+      "ultrachat_gap": null,
+      "ultrachat_gap_ci95": null,
+      "ultrachat_gap_excludes_zero": null
+    },
+    {
+      "layer": 18,
+      "betley_gap": 0.0009635117642101676,
+      "betley_gap_ci95": [
+        -0.005875634316523501,
+        0.008854141303920164
+      ],
+      "betley_gap_excludes_zero": false,
+      "ultrachat_gap": -0.0077389057273488104,
+      "ultrachat_gap_ci95": [
+        -0.01477857944348238,
+        0.0008931475708333751
+      ],
+      "ultrachat_gap_excludes_zero": false
+    },
+    {
+      "layer": 21,
+      "betley_gap": -0.0026285519958244574,
+      "betley_gap_ci95": [
+        -0.032750832380002246,
+        0.023461656772559798
+      ],
+      "betley_gap_excludes_zero": false,
+      "ultrachat_gap": null,
+      "ultrachat_gap_ci95": null,
+      "ultrachat_gap_excludes_zero": null
+    }
+  ],
+  "deliverable_3_behavior_chain_fullH": {
+    "broad_em": {
+      "ultrachat_direct_rho": 0.24406663774887408,
+      "ultrachat_mediated_fullH_rho": 0.3165627026056371,
+      "ultrachat_preserved_fraction": 1.2970338983050849,
+      "betley_mediated_fullH_rho": 0.45625511193709734
+    },
+    "harmful_compliance": {
+      "ultrachat_direct_rho": 0.5810616220785328,
+      "ultrachat_mediated_fullH_rho": 0.5928444475552122,
+      "ultrachat_preserved_fraction": 1.0202780996523753,
+      "betley_mediated_fullH_rho": 0.6763380907104344
+    },
+    "sycophancy": {
+      "ultrachat_direct_rho": -0.024543119134281508,
+      "ultrachat_mediated_fullH_rho": 0.03410100701632069,
+      "ultrachat_preserved_fraction": -1.3894324853228965,
+      "betley_mediated_fullH_rho": 0.0816444154089325
+    },
+    "refusal": {
+      "ultrachat_direct_rho": -0.4402317471003067,
+      "ultrachat_mediated_fullH_rho": -0.4758404933726927,
+      "ultrachat_preserved_fraction": 1.0808863661172363,
+      "betley_mediated_fullH_rho": -0.22844242829270806
+    }
+  },
+  "betley_plateau_published_band": "[0.74, 0.80]",
+  "ultrachat_plateau_mean_ridge_skill": 0.794530121112827,
+  "metadata": {
+    "git_commit": "ac8acd9351852ac1fec69225a73bbb1f24c71c12",
+    "timestamp_utc": "2026-06-30T00:40:55.999836Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_ultrachat_mirror"
+  }
+}
