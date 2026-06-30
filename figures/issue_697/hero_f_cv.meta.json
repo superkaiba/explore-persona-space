@@ -1,0 +1,164 @@
+{
+  "commit": "991e292f54",
+  "created": "2026-06-30T05:50:09Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.004750708814360131,
+      "error": 0.0010507523291816464,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.006907949179269671,
+      "error": 0.0012628836355908124,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.049684876745632094,
+      "error": 0.004700283113412706,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.0007418956789483524,
+      "error": 0.00014454918752883426,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": -6.62012682844583e-05,
+      "error": 0.0016097253422610854,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.01489491824521289,
+      "error": 0.0020899469880228828,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.07966137835655496,
+      "error": 0.011718654247349067,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.0009046521730454054,
+      "error": 0.00018104236689245063,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.003864185218411058,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.8200000000000001,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.005686438177455015,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.82,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.045353935693544886,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.82,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.0006002856876254936,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.005965689876774351,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.8200000000000001,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.00821220544863664,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.0547545019203703,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.82,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.0008893840626831622,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": -0.0018994797014604504,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.01276893314428371,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.06826947913335873,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.0007153468971796883,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.0013199709830617203,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.016948827120329475,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.09170678762805687,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.18,
+      "f_CV  (fraction of finetuning shift carried\nby the context-vector patch, read at layer 14)": 0.0010774316309645896,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24
+}

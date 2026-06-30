@@ -1,0 +1,812 @@
+{
+  "commit": "991e292f54",
+  "created": "2026-06-30T05:50:13Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.11084300527512514,
+      "per-cell mean f_CV (layer 14)": 0.0045420022237347285,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.026409744931186238,
+      "per-cell mean f_CV (layer 14)": 0.005125865974494295,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06739089222709277,
+      "per-cell mean f_CV (layer 14)": 0.004568087305877248,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.033184178660287056,
+      "per-cell mean f_CV (layer 14)": 0.005242917060492518,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.002641258560407686,
+      "per-cell mean f_CV (layer 14)": 0.003958925797806719,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05538049555074796,
+      "per-cell mean f_CV (layer 14)": 0.004295225583118435,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05986554436080745,
+      "per-cell mean f_CV (layer 14)": 0.004514787236598674,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11135386399682862,
+      "per-cell mean f_CV (layer 14)": 0.004592690257319293,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08778732238777545,
+      "per-cell mean f_CV (layer 14)": 0.004752637740955898,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0600140999009328,
+      "per-cell mean f_CV (layer 14)": 0.0053998935607207825,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.038492400465487145,
+      "per-cell mean f_CV (layer 14)": 0.0054371996033095475,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02355131566747494,
+      "per-cell mean f_CV (layer 14)": 0.0052655115504248685,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07428706402217539,
+      "per-cell mean f_CV (layer 14)": 0.00491271464067848,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11208763837129138,
+      "per-cell mean f_CV (layer 14)": 0.004585120793575885,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08542252808304077,
+      "per-cell mean f_CV (layer 14)": 0.004320506311208908,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.010848776673646365,
+      "per-cell mean f_CV (layer 14)": 0.004497255389445799,
+      "series": "P\u2191 (per cell)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10481152833501794,
+      "per-cell mean f_CV (layer 14)": 0.0003778627580629148,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.11622487953851184,
+      "per-cell mean f_CV (layer 14)": 0.000343230873429002,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.10430334482567039,
+      "per-cell mean f_CV (layer 14)": -0.0017413967385144862,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06370268298667188,
+      "per-cell mean f_CV (layer 14)": -0.00118027690783477,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.027927399357274885,
+      "per-cell mean f_CV (layer 14)": 0.0011344271276868126,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0013678565132915876,
+      "per-cell mean f_CV (layer 14)": 0.0008703503908315731,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05165625819509886,
+      "per-cell mean f_CV (layer 14)": -0.0006463909218003654,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.04828216320448378,
+      "per-cell mean f_CV (layer 14)": 0.0007770310234894162,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06272096056230836,
+      "per-cell mean f_CV (layer 14)": -0.0007377893557783419,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.05740701549628829,
+      "per-cell mean f_CV (layer 14)": -0.0009679812877111238,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06664277685867966,
+      "per-cell mean f_CV (layer 14)": -0.0007225174073134694,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.06520632210510484,
+      "per-cell mean f_CV (layer 14)": -0.00030440641985156374,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.09130746907235147,
+      "per-cell mean f_CV (layer 14)": -0.0002732565150089731,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.08548494888985095,
+      "per-cell mean f_CV (layer 14)": 0.0007338684730073497,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.07436185153241275,
+      "per-cell mean f_CV (layer 14)": 0.00107629726687524,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.051131012457143056,
+      "per-cell mean f_CV (layer 14)": 0.00020172734787945293,
+      "series": "random-CV (per cell)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8891569947248749,
+      "per-cell mean f_CV (layer 14)": 0.007362318028496678,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9735902550688138,
+      "per-cell mean f_CV (layer 14)": 0.0072875040959706015,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9326091077729073,
+      "per-cell mean f_CV (layer 14)": 0.007605941337399424,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9668158213397129,
+      "per-cell mean f_CV (layer 14)": 0.00873352510233693,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9973587414395924,
+      "per-cell mean f_CV (layer 14)": 0.007235200994507334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.944619504449252,
+      "per-cell mean f_CV (layer 14)": 0.007293209022952408,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9401344556391925,
+      "per-cell mean f_CV (layer 14)": 0.007199954712630319,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8886461360031714,
+      "per-cell mean f_CV (layer 14)": 0.006203255547654588,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9122126776122246,
+      "per-cell mean f_CV (layer 14)": 0.006761832316534784,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9399859000990672,
+      "per-cell mean f_CV (layer 14)": 0.005080120301695929,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9615075995345128,
+      "per-cell mean f_CV (layer 14)": 0.007514411870721212,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9764486843325251,
+      "per-cell mean f_CV (layer 14)": 0.0066755677422424215,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9257129359778247,
+      "per-cell mean f_CV (layer 14)": 0.005298940740134312,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8879123616287086,
+      "per-cell mean f_CV (layer 14)": 0.006783475079914873,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9145774719169593,
+      "per-cell mean f_CV (layer 14)": 0.006140766016228403,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9891512233263536,
+      "per-cell mean f_CV (layer 14)": 0.0073511639588945115,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.104811528335018,
+      "per-cell mean f_CV (layer 14)": 0.01783958317168308,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.116224879538512,
+      "per-cell mean f_CV (layer 14)": 0.009066029375385837,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.1043033448256705,
+      "per-cell mean f_CV (layer 14)": 0.015465595244450634,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0637026829866718,
+      "per-cell mean f_CV (layer 14)": 0.010736047897238954,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0279273993572748,
+      "per-cell mean f_CV (layer 14)": 0.015559443850133773,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0013678565132915,
+      "per-cell mean f_CV (layer 14)": 0.014075690868741038,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0516562581950988,
+      "per-cell mean f_CV (layer 14)": 0.010214893878854974,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0482821632044839,
+      "per-cell mean f_CV (layer 14)": 0.010461160203928541,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0627209605623085,
+      "per-cell mean f_CV (layer 14)": 0.01210766779192667,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0574070154962882,
+      "per-cell mean f_CV (layer 14)": 0.017955502412279552,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0666427768586797,
+      "per-cell mean f_CV (layer 14)": 0.021119713531687553,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.065206322105105,
+      "per-cell mean f_CV (layer 14)": 0.011646297127776612,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0913074690723514,
+      "per-cell mean f_CV (layer 14)": 0.015802672690943806,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.085484948889851,
+      "per-cell mean f_CV (layer 14)": 0.015348052603675276,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0743618515324127,
+      "per-cell mean f_CV (layer 14)": 0.019032277010768917,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0511310124571431,
+      "per-cell mean f_CV (layer 14)": 0.02188806426393101,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.8891569947248747,
+      "per-cell mean f_CV (layer 14)": 0.0064266917751458034,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9735902550688138,
+      "per-cell mean f_CV (layer 14)": 0.028777085881207753,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9326091077729073,
+      "per-cell mean f_CV (layer 14)": 0.1081427419857348,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9668158213397129,
+      "per-cell mean f_CV (layer 14)": 0.10707190852109259,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9973587414395924,
+      "per-cell mean f_CV (layer 14)": 0.09651763325450091,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.944619504449252,
+      "per-cell mean f_CV (layer 14)": 0.09396835432295843,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9401344556391926,
+      "per-cell mean f_CV (layer 14)": 0.03290128561468007,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8886461360031714,
+      "per-cell mean f_CV (layer 14)": 0.026574788807587943,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9122126776122246,
+      "per-cell mean f_CV (layer 14)": 0.03070419099096927,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9399859000990671,
+      "per-cell mean f_CV (layer 14)": 0.018075818046483616,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9615075995345128,
+      "per-cell mean f_CV (layer 14)": 0.09915224509259507,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.976448684332525,
+      "per-cell mean f_CV (layer 14)": 0.04400153720606044,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9257129359778247,
+      "per-cell mean f_CV (layer 14)": 0.017064200844719546,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8879123616287086,
+      "per-cell mean f_CV (layer 14)": 0.03182648093745188,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9145774719169593,
+      "per-cell mean f_CV (layer 14)": 0.02650919116251313,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9891512233263535,
+      "per-cell mean f_CV (layer 14)": 0.027243873486412173,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.104811528335018,
+      "per-cell mean f_CV (layer 14)": 0.022867076110533752,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1162248795385117,
+      "per-cell mean f_CV (layer 14)": 0.050071141731316285,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.1043033448256705,
+      "per-cell mean f_CV (layer 14)": 0.16842351087558474,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.063702682986672,
+      "per-cell mean f_CV (layer 14)": 0.17361672916028167,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.027927399357275,
+      "per-cell mean f_CV (layer 14)": 0.07581088499702582,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0013678565132915,
+      "per-cell mean f_CV (layer 14)": 0.09682867601739742,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.051656258195099,
+      "per-cell mean f_CV (layer 14)": 0.05910356201422221,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0482821632044836,
+      "per-cell mean f_CV (layer 14)": 0.05547244886614692,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0627209605623085,
+      "per-cell mean f_CV (layer 14)": 0.05851115170012663,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0574070154962882,
+      "per-cell mean f_CV (layer 14)": 0.04236009456452106,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0666427768586795,
+      "per-cell mean f_CV (layer 14)": 0.18541342819263165,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0652063221051047,
+      "per-cell mean f_CV (layer 14)": 0.1336425541061117,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0913074690723517,
+      "per-cell mean f_CV (layer 14)": 0.023770257558051858,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.085484948889851,
+      "per-cell mean f_CV (layer 14)": 0.04525567276287826,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0743618515324127,
+      "per-cell mean f_CV (layer 14)": 0.04810219602569635,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.051131012457143,
+      "per-cell mean f_CV (layer 14)": 0.03533266902235288,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.8891569947248747,
+      "per-cell mean f_CV (layer 14)": 0.0007506994946461232,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.973590255068814,
+      "per-cell mean f_CV (layer 14)": 0.0003745321774605559,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9326091077729073,
+      "per-cell mean f_CV (layer 14)": 0.0006550961137622632,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.966815821339713,
+      "per-cell mean f_CV (layer 14)": 0.0005611828800864525,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.997358741439592,
+      "per-cell mean f_CV (layer 14)": 0.000753377291126351,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.944619504449252,
+      "per-cell mean f_CV (layer 14)": 0.0011752775634288606,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9401344556391926,
+      "per-cell mean f_CV (layer 14)": 0.000741623957653403,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8886461360031714,
+      "per-cell mean f_CV (layer 14)": 0.0005772851560107761,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9122126776122244,
+      "per-cell mean f_CV (layer 14)": 0.0006845530200652268,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9399859000990674,
+      "per-cell mean f_CV (layer 14)": 0.0008909826156982492,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.961507599534513,
+      "per-cell mean f_CV (layer 14)": 0.000961393267948308,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.976448684332525,
+      "per-cell mean f_CV (layer 14)": 0.0010538191966558688,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9257129359778244,
+      "per-cell mean f_CV (layer 14)": 0.0009335624688884401,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.887912361628709,
+      "per-cell mean f_CV (layer 14)": 0.0005155489264013231,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9145774719169593,
+      "per-cell mean f_CV (layer 14)": 0.0005022896208756426,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9891512233263535,
+      "per-cell mean f_CV (layer 14)": 0.0007391071124657945,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.104811528335018,
+      "per-cell mean f_CV (layer 14)": 0.0009755730108679908,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1162248795385117,
+      "per-cell mean f_CV (layer 14)": 0.0008025417287943283,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1043033448256705,
+      "per-cell mean f_CV (layer 14)": 0.0008407317212292282,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.063702682986672,
+      "per-cell mean f_CV (layer 14)": 0.0006247313947381889,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.027927399357275,
+      "per-cell mean f_CV (layer 14)": 0.0008349149002467958,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0013678565132915,
+      "per-cell mean f_CV (layer 14)": 0.0004757792111357574,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.051656258195099,
+      "per-cell mean f_CV (layer 14)": 0.0012994852112093306,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0482821632044836,
+      "per-cell mean f_CV (layer 14)": 0.0010690352407681887,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0627209605623085,
+      "per-cell mean f_CV (layer 14)": 0.0010333876089395492,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0574070154962882,
+      "per-cell mean f_CV (layer 14)": 0.0010228628037823781,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0666427768586795,
+      "per-cell mean f_CV (layer 14)": 0.0008605030497674536,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0652063221051047,
+      "per-cell mean f_CV (layer 14)": 0.001121808856025393,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0913074690723517,
+      "per-cell mean f_CV (layer 14)": 0.0008802132189411586,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.085484948889851,
+      "per-cell mean f_CV (layer 14)": 0.0006520413618586503,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0743618515324127,
+      "per-cell mean f_CV (layer 14)": 0.000870799310603728,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.051131012457143,
+      "per-cell mean f_CV (layer 14)": 0.0011100261398183688,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 128
+}
