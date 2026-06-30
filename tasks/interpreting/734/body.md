@@ -11,12 +11,13 @@ has_clean_result: true
 parent_id: 664
 origin_prompt: file a followup on 664 to figure out why it didn't install compared
   to past issues that did install - run in background with happy coder
-goal: 'Determine why the ※ marker implant failed to install on Qwen-2.5-7B-Instruct
-  in #664 (source log P trained-base at the floor, band-stop never fired) when the
-  same recipe line installed on base Qwen-2.5-7B (#474/#601/#650) — discriminating
-  model-resistance (base vs Instruct) vs under-set lr/step dose vs band-stop/measurement
-  artifact — and find a recipe that installs the marker on Instruct into the 5-12-nat
-  band.'
+goal: 'Determine whether #664''s reported ''marker never installed on Qwen-2.5-7B-Instruct''
+  result (#664 read source log P trained - base at the floor and reported its band-stop
+  as never firing) is a slot-rooting measurement artifact rather than real model resistance
+  or an under-set dose, by re-reading #664''s own 16 already-trained Instruct marker
+  adapters with a token-id-threaded corrected-slot reader and cross-validating against
+  #664''s in-loop band-stop probe - the same recipe line having installed cleanly
+  on Instruct in #474/#601/#650.'
 relates_to:
 - implant-which-behaviors
 - implant-learning-speed
