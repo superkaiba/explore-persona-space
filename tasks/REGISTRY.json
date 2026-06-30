@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 742,
+  "highest_id": 743,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4691,6 +4691,13 @@
       "path": "tasks/planning/742",
       "status": "planning",
       "title": "Decoding-ceiling, linear-information-loss, and sample-complexity of #658 base-model behavior representations (n=50)"
+    },
+    "743": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/743",
+      "status": "proposed",
+      "title": "GCP router: add 8x A100 (a2-ultragpu-8g) + 8x H100 (a3-highgpu-8g, FLEX_START) machine specs so the free GCP lane can run wide parallel sweeps"
     },
     "75": {
       "has_clean_result": true,
