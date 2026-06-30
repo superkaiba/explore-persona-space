@@ -60,6 +60,12 @@ FLAVOR_COLOR = {
     "ablate": paper_palette_role("accent"),
 }
 FLAVOR_LABEL = {"raw": "raw cosine", "std": "standardized", "ablate": "std + rogue-ablated"}
+# Reader-facing corpus labels (plain-English rule); the bare CSV slugs
+# ("broader" / "natural_stories") never appear on a rendered figure.
+CORPUS_LABEL = {
+    "broader": "WikiText-103 (n=7,389)",
+    "natural_stories": "Natural Stories (n=10)",
+}
 
 
 def _read_csv(path: Path) -> list[dict]:
@@ -99,24 +105,30 @@ def fig_h1h2(cont_rows: list[dict], rb: dict, corpora: list[str], fig_dir: Path)
             c = FLAVOR_COLOR[flavor]
             ax.plot(layers, mean, "-o", color=c, label=FLAVOR_LABEL[flavor], markersize=3)
             ax.fill_between(layers, lo, hi, color=c, alpha=0.18)
-            # per-flavor random baseline (concern #2): flavor-matched comparator
+            # per-flavor random baseline (concern #2): flavor-matched comparator.
+            # Plot the PER-LAYER baseline curve (not a flat mean): the standardized
+            # chance floor climbs from ~0.022 mid-band to ~0.037-0.050 at the last
+            # layer, so a single flat line misstates the late ratio.
             base = rb.get(corpus, {}).get("per_flavor", {}).get(flavor)
             if base:
-                ax.axhline(
-                    float(np.nanmean(base)),
+                base_arr = np.asarray(base, dtype=float)
+                base_layers = np.arange(base_arr.size)
+                ax.plot(
+                    base_layers,
+                    base_arr,
                     color=c,
                     ls=":",
                     lw=1.0,
                     alpha=0.7,
-                    label=f"{FLAVOR_LABEL[flavor]} baseline" if flavor == "std" else None,
+                    label=f"{FLAVOR_LABEL[flavor]} chance floor",
                 )
         ax.set_xlabel("layer")
         ax.set_ylabel("+1-step direction preservation (|cos|)")
-        ax.set_title(corpus)
+        ax.set_title(CORPUS_LABEL.get(corpus, corpus))
         ax.legend(fontsize=7)
     fig.suptitle(
-        "Per-layer +1-step direction preservation (H1 vs H2) — "
-        "three flavors + per-flavor random baseline (dotted)"
+        "Per-layer +1-step direction preservation — three flavors, "
+        "each vs its per-layer chance floor (dotted)"
     )
     fig.tight_layout()
     savefig_paper(fig, "h1h2_direction_preservation_p1", dir=str(fig_dir))
@@ -124,9 +136,14 @@ def fig_h1h2(cont_rows: list[dict], rb: dict, corpora: list[str], fig_dir: Path)
 
 
 def fig_decay(cont_rows: list[dict], corpus: str, n_layers: int, fig_dir: Path) -> None:
-    """H1 supporting hero: +0/+1/+2/+3 decay at a mid-band vs late-band layer."""
-    mid = max(0, n_layers // 2 - 4)  # ~middle band
-    late = max(0, n_layers - 2)  # late band
+    """H1 supporting hero: +0/+1/+2/+3 decay at the mid-band (L13) vs late-band (L27) layer.
+
+    Layers 13/27 are the fixed mid/late reference layers used throughout the
+    write-up and the per-sequence scatter; pin them here so the figure layer
+    matches the cited prose numbers.
+    """
+    mid = min(13, n_layers - 1)  # mid-band reference layer
+    late = min(27, n_layers - 1)  # late-band reference layer (last layer of 28)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
     for ax, (lab, L) in zip(axes, [("mid-band", mid), ("late-band", late)], strict=True):
         for flavor in FLAVORS:
@@ -149,7 +166,8 @@ def fig_decay(cont_rows: list[dict], corpus: str, n_layers: int, fig_dir: Path) 
         ax.set_title(f"{lab} (layer {L})")
         ax.legend(fontsize=7)
     fig.suptitle(
-        f"+0/+1/+2/+3 decay profile ({corpus}) — Barenholtz Table-4 analogue (Qwen-2.5-7B)"
+        f"+0/+1/+2/+3 decay profile ({CORPUS_LABEL.get(corpus, corpus)}) — "
+        "Barenholtz Table-4 analogue (Qwen-2.5-7B)"
     )
     fig.tight_layout()
     savefig_paper(fig, f"h1_decay_profile_{corpus}", dir=str(fig_dir))
@@ -157,10 +175,9 @@ def fig_decay(cont_rows: list[dict], corpus: str, n_layers: int, fig_dir: Path) 
 
 
 def fig_h3(strat_rows: list[dict], corpus: str, n_layers: int, fig_dir: Path) -> None:
-    """H3 hero: per-stratum mean-jump heatmap (strata x layers), standardized flavor."""
-    rows = [
-        r for r in strat_rows if r["corpus"] == ("natural_stories" if corpus == "ns" else corpus)
-    ]
+    """Discontinuity-locus hero: per-stratum mean-jump heatmap (strata x layers), standardized."""
+    corpus_csv = "natural_stories" if corpus == "ns" else corpus
+    rows = [r for r in strat_rows if r["corpus"] == corpus_csv]
     if not rows:
         return
     strata = []
@@ -170,24 +187,39 @@ def fig_h3(strat_rows: list[dict], corpus: str, n_layers: int, fig_dir: Path) ->
         if key not in seen:
             seen.add(key)
             strata.append(key)
+    # Reader-facing per-row labels (no "sink/sink"-style opaque pairs).
+    ROW_LABEL = {
+        ("sink", "sink"): "attention-sink token",
+        ("sink", "non_sink"): "non-sink token",
+        ("surprisal", "low"): "low surprisal",
+        ("surprisal", "mid"): "mid surprisal",
+        ("surprisal", "high"): "high surprisal",
+        ("syntactic", "clause_opener"): "clause-opening token",
+        ("syntactic", "clause_interior"): "clause-interior token",
+    }
     mat = np.full((len(strata), n_layers), np.nan)
     for r in rows:
         si = strata.index((r["stratifier"], r["stratum"]))
         li = int(r["layer"])
         if li < n_layers:
             mat[si, li] = float(r["mean_jump"])
-    fig, ax = plt.subplots(figsize=(0.32 * n_layers + 3, 0.55 * len(strata) + 2))
+    fig, ax = plt.subplots(figsize=(0.32 * n_layers + 3.5, 0.55 * len(strata) + 2.2))
     im = ax.imshow(mat, aspect="auto", cmap="viridis")
     ax.set_yticks(range(len(strata)))
-    ax.set_yticklabels([f"{a}/{b}" for a, b in strata], fontsize=7)
+    ax.set_yticklabels([ROW_LABEL.get((a, b), f"{a}/{b}") for a, b in strata], fontsize=8)
     ax.set_xlabel("layer")
-    ax.set_title("per-stratum mean jump (standardized)")
+    ax.set_title("Per-token-type mean jump (standardized)")
     fig.colorbar(im, ax=ax, label="mean ||z(h_t) - z(h_{t-1})||_2")
     # NOTE: no tight_layout() here — it conflicts with the colorbar's layout
     # engine ("Colorbar layout of new layout engine not compatible"). The
     # colorbar manages its own axes placement.
+    # The colorscale is dominated by the attention-sink row (~1200 vs ~60 for
+    # every other row), so smaller real differences (e.g. high vs low
+    # surprisal, ~+4 to +10 jump units) are not visible at this scale — they
+    # are quantified in the per-layer CSV, not read off this heatmap.
     fig.suptitle(
-        f"H3: discontinuity-locus stratification ({corpus}) — depth-shifting concentration"
+        f"Discontinuity locus by token type ({CORPUS_LABEL.get(corpus_csv, corpus_csv)}) — "
+        "sink-dominated colorscale"
     )
     savefig_paper(fig, f"h3_stratification_heatmap_{corpus}", dir=str(fig_dir))
     plt.close(fig)
@@ -254,7 +286,7 @@ def main() -> int:
     parser.add_argument("--fig-dir", type=Path, default=PROJECT_ROOT / "figures/issue_744/base")
     args = parser.parse_args()
 
-    set_paper_style()
+    set_paper_style("blog")
     adir = Path(args.analysis_dir)
     fig_dir = Path(args.fig_dir)
     fig_dir.mkdir(parents=True, exist_ok=True)

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -33,7 +34,8 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 
 
 def _curve(path: Path, corpus: str):
-    rows = list(csv.DictReader(open(path)))
+    with open(path) as f:
+        rows = list(csv.DictReader(f))
     sel = [
         r
         for r in rows
@@ -58,6 +60,10 @@ def main() -> int:
     set_paper_style("blog")
     c_base = paper_palette_role("primary")
     c_inst = paper_palette_role("accent")
+    # Per-layer standardized chance floor (climbs from ~0.022 mid-band to
+    # ~0.037/0.050 at the last layer) — read from the base arm's baseline JSON.
+    rb_path = args.base_dir / "random_baseline.json"
+    rb = json.loads(rb_path.read_text()) if rb_path.exists() else {}
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), squeeze=True)
     corpora = [("broader", "WikiText-103 (n=7,389)"), ("natural_stories", "Natural Stories (n=10)")]
     for ax, (corpus, label) in zip(axes, corpora, strict=True):
@@ -65,9 +71,17 @@ def main() -> int:
         li, vi = _curve(args.instruct_dir / "per_layer_continuity.csv", corpus)
         ax.plot(lb, vb, "-o", color=c_base, markersize=3, label="Qwen-2.5-7B (base)")
         ax.plot(li, vi, "-s", color=c_inst, markersize=3, label="Qwen-2.5-7B-Instruct")
-        ax.axhline(
-            0.025, color="gray", ls=":", lw=1.0, label="standardized random baseline (~0.025)"
-        )
+        base_floor = rb.get(corpus, {}).get("per_flavor", {}).get("std")
+        if base_floor:
+            floor_arr = np.asarray(base_floor, dtype=float)
+            ax.plot(
+                np.arange(floor_arr.size),
+                floor_arr,
+                color="gray",
+                ls=":",
+                lw=1.0,
+                label="standardized chance floor (per layer)",
+            )
         ax.set_xlabel("layer")
         ax.set_ylabel("+1-step direction preservation (|cos|)")
         ax.set_title(label)

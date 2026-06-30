@@ -1,6 +1,6 @@
 {
-  "commit": "67d01ff4",
-  "created": "2026-06-30T09:49:03Z",
+  "commit": "04c12822f7",
+  "created": "2026-06-30T14:31:54Z",
   "figsize": [
     11.0,
     4.2
@@ -8,168 +8,168 @@
   "points": [
     {
       "step (+s)": 0.0,
-      "direction preservation (|cos|)": 0.3911913963975942,
+      "direction preservation (|cos|)": 0.38911565621719846,
       "series": "raw cosine",
       "_kind": "line",
       "_group": 0
     },
     {
       "step (+s)": 1.0,
-      "direction preservation (|cos|)": 0.12728655369412495,
+      "direction preservation (|cos|)": 0.1251204617652196,
       "series": "raw cosine",
       "_kind": "line",
       "_group": 0
     },
     {
       "step (+s)": 2.0,
-      "direction preservation (|cos|)": 0.08904841334411331,
+      "direction preservation (|cos|)": 0.08952027949635818,
       "series": "raw cosine",
       "_kind": "line",
       "_group": 0
     },
     {
       "step (+s)": 3.0,
-      "direction preservation (|cos|)": 0.07963589508964486,
+      "direction preservation (|cos|)": 0.08113974252920908,
       "series": "raw cosine",
       "_kind": "line",
       "_group": 0
     },
     {
       "step (+s)": 0.0,
-      "direction preservation (|cos|)": 0.3763921747933821,
+      "direction preservation (|cos|)": 0.378432282106184,
       "series": "standardized",
       "_kind": "line",
       "_group": 1
     },
     {
       "step (+s)": 1.0,
-      "direction preservation (|cos|)": 0.13246895065506817,
+      "direction preservation (|cos|)": 0.1259732433149771,
       "series": "standardized",
       "_kind": "line",
       "_group": 1
     },
     {
       "step (+s)": 2.0,
-      "direction preservation (|cos|)": 0.09097848755460967,
+      "direction preservation (|cos|)": 0.08957458675520961,
       "series": "standardized",
       "_kind": "line",
       "_group": 1
     },
     {
       "step (+s)": 3.0,
-      "direction preservation (|cos|)": 0.07546701396980797,
+      "direction preservation (|cos|)": 0.0753800908737457,
       "series": "standardized",
       "_kind": "line",
       "_group": 1
     },
     {
       "step (+s)": 0.0,
-      "direction preservation (|cos|)": 0.37639241612756424,
+      "direction preservation (|cos|)": 0.37843259807980395,
       "series": "std + rogue-ablated",
       "_kind": "line",
       "_group": 2
     },
     {
       "step (+s)": 1.0,
-      "direction preservation (|cos|)": 0.1324691324258909,
+      "direction preservation (|cos|)": 0.12597339396065893,
       "series": "std + rogue-ablated",
       "_kind": "line",
       "_group": 2
     },
     {
       "step (+s)": 2.0,
-      "direction preservation (|cos|)": 0.0909785654310033,
+      "direction preservation (|cos|)": 0.08957469952022759,
       "series": "std + rogue-ablated",
       "_kind": "line",
       "_group": 2
     },
     {
       "step (+s)": 3.0,
-      "direction preservation (|cos|)": 0.07546705387510791,
+      "direction preservation (|cos|)": 0.07538016569618307,
       "series": "std + rogue-ablated",
       "_kind": "line",
       "_group": 2
     },
     {
       "step (+s)": 0.0,
-      "direction preservation (|cos|)": 0.4241043083356369,
+      "direction preservation (|cos|)": 0.4359649578587725,
       "series": "raw cosine",
       "_kind": "line",
       "_group": 3
     },
     {
       "step (+s)": 1.0,
-      "direction preservation (|cos|)": 0.1307478710503242,
+      "direction preservation (|cos|)": 0.17402059664614206,
       "series": "raw cosine",
       "_kind": "line",
       "_group": 3
     },
     {
       "step (+s)": 2.0,
-      "direction preservation (|cos|)": 0.10475868674911706,
+      "direction preservation (|cos|)": 0.1598322742343163,
       "series": "raw cosine",
       "_kind": "line",
       "_group": 3
     },
     {
       "step (+s)": 3.0,
-      "direction preservation (|cos|)": 0.09905599448835978,
+      "direction preservation (|cos|)": 0.15642839913743897,
       "series": "raw cosine",
       "_kind": "line",
       "_group": 3
     },
     {
       "step (+s)": 0.0,
-      "direction preservation (|cos|)": 0.4233739440211382,
+      "direction preservation (|cos|)": 0.42553246928995164,
       "series": "standardized",
       "_kind": "line",
       "_group": 4
     },
     {
       "step (+s)": 1.0,
-      "direction preservation (|cos|)": 0.12217970990014139,
+      "direction preservation (|cos|)": 0.12846969375411152,
       "series": "standardized",
       "_kind": "line",
       "_group": 4
     },
     {
       "step (+s)": 2.0,
-      "direction preservation (|cos|)": 0.09377780498758204,
+      "direction preservation (|cos|)": 0.10396004128101778,
       "series": "standardized",
       "_kind": "line",
       "_group": 4
     },
     {
       "step (+s)": 3.0,
-      "direction preservation (|cos|)": 0.086544760772316,
+      "direction preservation (|cos|)": 0.09823239897933417,
       "series": "standardized",
       "_kind": "line",
       "_group": 4
     },
     {
       "step (+s)": 0.0,
-      "direction preservation (|cos|)": 0.4233758945984454,
+      "direction preservation (|cos|)": 0.42551267491105366,
       "series": "std + rogue-ablated",
       "_kind": "line",
       "_group": 5
     },
     {
       "step (+s)": 1.0,
-      "direction preservation (|cos|)": 0.12212891242522796,
+      "direction preservation (|cos|)": 0.12844904160063822,
       "series": "std + rogue-ablated",
       "_kind": "line",
       "_group": 5
     },
     {
       "step (+s)": 2.0,
-      "direction preservation (|cos|)": 0.09372590753585514,
+      "direction preservation (|cos|)": 0.1039202439518277,
       "series": "std + rogue-ablated",
       "_kind": "line",
       "_group": 5
     },
     {
       "step (+s)": 3.0,
-      "direction preservation (|cos|)": 0.08648621969731192,
+      "direction preservation (|cos|)": 0.09819191941719267,
       "series": "std + rogue-ablated",
       "_kind": "line",
       "_group": 5
