@@ -75,11 +75,15 @@ EXPECTED_API = {
     # test 2 — LEACE + PCA basis
     "fit_pca_basis": (
         "(X: np.ndarray[n, d], d_eff: int) -> object with .transform(X)->reduced[n, d_eff]; "
-        "single full-sample PCA basis (Option A); wrapped by the dcor refit hook (MF3)"
+        "the single full-sample PCA-basis fit (Option A). dcor_permutation_test routes "
+        "EVERY PCA fit through pca_fit_fn (default = this), so a counting wrapper proves "
+        "the refit-per-permutation contract: it is called n_perm + 1 times (MF3, test 3d)"
     ),
     "fit_leace": (
         "(v0: np.ndarray[n, d], E0: np.ndarray[n]) -> eraser with "
-        ".transform(v0)->residual + .P projection"
+        ".transform(v0)->residual + .P projection. dcor_permutation_test routes EVERY "
+        "eraser fit through leace_fit_fn (default = this) for the refit-per-permutation "
+        "call-count proof (MF3, test 3d)"
     ),
     "leace_residual": "(v0, E0) -> np.ndarray[n, d] full-sample-erased embedding",
     # test 3 — dCor permutation

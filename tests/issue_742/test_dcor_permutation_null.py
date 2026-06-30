@@ -110,13 +110,10 @@ def test_dcor_power_at_effect_floor_d_eff_10():
 
 
 # --------------------------------------------------------------------------- #
-# distance_correlation primitive sanity (deterministic, no impl-state needed)   #
-# --------------------------------------------------------------------------- #
-# --------------------------------------------------------------------------- #
 # Sub-test (d) — MF3: the pipeline is REFIT per permutation (call-count proof)   #
 # --------------------------------------------------------------------------- #
 @pytest.mark.skipif(
-    not impl_has("dcor_permutation_test"),
+    not (impl_has("dcor_permutation_test") and impl_has("fit_pca_basis") and impl_has("fit_leace")),
     reason="implementation pending round 2 (MF3 refit-per-permutation contract)",
 )
 def test_dcor_permutation_refits_pipeline_per_permutation():
@@ -124,20 +121,19 @@ def test_dcor_permutation_refits_pipeline_per_permutation():
     # the FULL PCA->LEACE->dCor pipeline on EACH label permutation — the observed
     # statistic + every null draw are produced by the literally identical
     # procedure, so no cross-fitted / cached coordinate frame can leak in. Prove it
-    # with counting stubs on the PCA-fit and LEACE-fit hooks: EACH must be called
-    # exactly n_perm + 1 times (once for the observed statistic, once per perm).
-    import explore_persona_space.analysis.issue_742_decoding_ceiling as m
-
+    # with counting wrappers on the PCA-fit and LEACE-fit injection hooks: EACH
+    # must be called exactly n_perm + 1 times (once for the observed statistic,
+    # once per permutation). A cross-fitted / cached per-fold frame would call
+    # them fewer times. The hooks default to the real fits when None; here we wrap
+    # the REAL fits so the pipeline still runs correctly and only count entries.
     v0, E0 = make_independent_target(n=50, d=10, seed=7422)
     rng = np.random.default_rng(7422)
     n_perm = 25  # small but > 1 — enough to read the count contract cheaply
 
     pca_calls = {"n": 0}
     leace_calls = {"n": 0}
-
-    # wrap the REAL fits so the pipeline still runs correctly; only count entries.
-    real_pca_fit = m.fit_pca_basis  # (X, d_eff) -> basis/transform; the real fit
-    real_leace_fit = m.fit_leace  # (X, y) -> eraser; the real fit
+    real_pca_fit = impl.fit_pca_basis  # (X, d_eff) -> basis/transform; the real fit
+    real_leace_fit = impl.fit_leace  # (X, y) -> eraser; the real fit
 
     def counting_pca_fit(*args, **kwargs):
         pca_calls["n"] += 1
@@ -168,6 +164,9 @@ def test_dcor_permutation_refits_pipeline_per_permutation():
     )
 
 
+# --------------------------------------------------------------------------- #
+# distance_correlation primitive sanity (deterministic, no impl-state needed)   #
+# --------------------------------------------------------------------------- #
 @pytest.mark.skipif(
     not impl_has("distance_correlation"),
     reason="implementation pending round 2",
