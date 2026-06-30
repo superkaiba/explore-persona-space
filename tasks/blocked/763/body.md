@@ -1,7 +1,6 @@
 ---
-title: 'Matched-probe v0->E0 predictor re-measurement — phase 2 (5 low-m behaviors:
-  deception/fact/format/self_report/persona_drift, >=50 judgments + GRADED matched
-  v0)'
+title: Matched-probe v0->E0 predictor re-measurement — phase 2 (5 low-m behaviors,
+  >=50 probes + GRADED matched v0)
 kind: experiment
 tags: []
 created_at: '2026-06-30T09:48:56Z'
