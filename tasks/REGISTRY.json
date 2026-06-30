@@ -4731,8 +4731,8 @@
     "748": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/748",
-      "status": "reviewing",
+      "path": "tasks/completed/748",
+      "status": "completed",
       "title": "workflow-fix: document HF Hub 10000-files-per-dir limit in gotchas.md"
     },
     "75": {
