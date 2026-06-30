@@ -8,6 +8,8 @@ paths:
   - "scripts/backend_poll.py"
   - "tests/test_router.py"
   - "tests/test_gcp_backend.py"
+  - "tests/test_runpod_wedge_detection.py"
+  - "tests/test_backend_poll.py"
 ---
 
 # Compute-backend failover + crash-diagnostics policy
@@ -358,6 +360,109 @@ state round-trip, the pod_id reset, the alert dedup, the DONE fall-through) +
 the direct predicate test
 `tests/test_runpod_wedge_detection.py::test_pod_is_runpod_runtime_wedged_predicate`.
 
+## Part D — RunPod CUDA-IMA repeat host wedge (#775)
+
+The crash-signature sibling of Part C's no-port wedge. A RunPod H100/H200 can
+wedge at the DRIVER level: a vLLM workload crashes with a CUDA illegal-memory-
+access (`CUDA error: an illegal memory access was encountered` /
+`EngineDeadError` / `Engine core proc … died unexpectedly`), the experimenter's
+default `failure_class: infra` library-traceback recovery does an IN-PLACE
+SAME-POD respawn (orphan-reap by exact PID + `nvidia-smi` VRAM probe + relaunch
+— it NEVER terminates the pod, that lifecycle is the `/issue` skill's), and the
+SAME-signature CUDA-IMA crash recurs on the same physical GPU. Part C's no-port
+wedge does NOT catch this — the CUDA-IMA pod keeps its port + stays RUNNING — so
+#763 needed a manual GCP→RunPod pivot. Part D automates exactly that recovery:
+detect the SECOND same-signature CUDA-IMA crash and pivot to a FRESH host.
+
+**Detection** (`backend_poll._maybe_escalate_runpod_cuda_ima`, the repeat-based
+sibling of the time-based `_maybe_escalate_runpod_wedge`). The signal is
+`PollResult.crash_signature` — the WIDE 500-line probe tail (NOT the 5-line
+`log_tail_excerpt`, which truncates a 20-50-line vLLM traceback so the signature
+line is routinely cut out — the B2 bug). `poll_once` captures it on a
+`status="dead"` poll from the same wide surface it already fetched (no extra SSH
+call; `_tail_excerpt_and_crash_signature`), and `RunPodBackend.poll` threads it
+through to `main()` exactly as `stall_reason`. The escalation conjuncts:
+
+1. **CUDA-IMA signature on the WIDE surface** (`CUDA_IMA_SIGNATURE`, within-line
+   alternatives, no `re.DOTALL` so a match cannot span unrelated events across
+   500 lines).
+2. **A prior same-signature CUDA-IMA crash recorded THIS RUN** — the sidecar
+   `extra["runpod_cuda_ima_last_seen"]` record (byte-mirror of the no-port
+   clock family), with the prior `epm:failure` marker as a **cross-pod fallback
+   source** (`_prior_failure_marker_is_cuda_ima`, read VM-side via
+   `task_workflow.list_events`) so a sidecar wipe between pods does not lose the
+   prior-crash record (B1). The record is CLEARED on any non-dead /
+   non-CUDA-IMA poll, so a single transient CUDA-IMA the respawn recovered from
+   (with an intervening healthy poll) does NOT accumulate — only a SECOND
+   CUDA-IMA crash with no intervening healthy poll counts.
+3. **EXCLUSION — no OUR-code traceback frame** (`failure_classifier.OUR_CODE_FRAME`,
+   M3). A CUDA-IMA surface that ALSO traces through `src/explore_persona_space/`
+   or `scripts/` is a deterministic CODE bug surfacing as CUDA-IMA, NOT a host
+   wedge — fall through to the ordinary dead path (→ `failure_class: code`) WITHOUT
+   spending a bounded pivot.
+
+A FIRST CUDA-IMA crash (no prior record) records the signature and falls through
+to the ordinary dead path (the in-place same-pod respawn gets its one chance); a
+SECOND same-signature repeat (1)+(2) AND NOT (3) rewrites to
+`current_phase=RUNPOD_CUDA_IMA_WEDGED_PHASE`, which `_is_runpod_cuda_ima_failure`
+matches.
+
+**Why signature-keyed, NOT pod_id-pinned.** The default vLLM-crash infra respawn
+is IN-PLACE same-pod (verified: SKILL.md routes a library-traceback
+`failure_class: infra` to "re-spawn the experimenter on the SAME branch /
+relaunch on the same pod"; the experimenter never terminates pods), so pod_id
+WOULD have worked. But the predicate keys on the crash SIGNATURE across the run
+(NOT pod_id) because it is strictly more robust: it survives the watcher-side
+stop/resume edge case (a `pod.py resume` rewrites host/port) and the half-
+bootstrap fresh-pod path; the once-more bound is the safety against
+over-counting. pod_id is incidental; the crash signature is the invariant.
+
+**Wiring — BEFORE the no-port block (M2).** The CUDA-IMA escalation runs in
+`main()` between the GCP async-failover block and the no-port escalation. The
+no-port within-K path rewrites `status=dead → running`, and a CUDA-IMA crash can
+leave the pod momentarily no-port (engine dead, ports not yet torn down), so the
+no-port rewrite would mask a CUDA-IMA dead poll (which requires `status="dead"`)
+if it ran first.
+
+**Recovery + once-more bound** (`backend_poll._failover_cuda_ima_runpod`). It
+REUSES the Part C inner relaunch (`_relaunch_fresh_runpod`) via a new `stamp_fn`
+kwarg (Part C byte-unchanged at the default; the CUDA-IMA caller passes
+`stamp_fn=_stamp_runpod_cuda_ima_failover`), so only the thin OUTER orchestration
+forks. Layers, in the order checked:
+
+1. **ONCE-MORE BOUND (M1).** If the DURABLE lease already records a CUDA-IMA
+   failover for this run (the SEPARATE `Lease.runpod_cuda_ima_failover_of` field —
+   distinct from `runpod_wedge_failover_of` so a no-port wedge and a CUDA-IMA
+   wedge on the same issue never cross-suppress), the fresh host ALSO crashed
+   same-signature → a fresh host did NOT heal it → it is a deterministic code
+   bug. Emit a terminal **`failure_class: code`** JSON
+   (`reason=cuda_ima_repeats_after_failover`) via the NEW `_terminal_code_json`
+   (the `failure_class: code` sibling of `_terminal_infra_json`). The watcher's
+   capacity-retry pass re-drives ONLY `failure_class: infra` +
+   `no_compute_available`, so a `code` terminal PARKS at `blocked` for human
+   inspection. NO second pivot.
+2. **PER-WEDGE IDEMPOTENCY.** A re-fired tick on the SAME crashed handle after a
+   successful pivot short-circuits (durable lease authoritative + `.claude/cache`
+   sentinel fast-path, both keyed to the crashed pod identity).
+3. **INPUTS-ON-HF GATE** (reused as-is — a PARTIAL cell BLOCKS the irreversible
+   terminate; human decides).
+4. **TERMINATE** the crashed pod (best-effort — a CUDA-IMA-wedged pod is usually
+   already dead, so `info is None` simply skips the terminate) + **RE-PROVISION
+   FRESH** stamping the CUDA-IMA lease field for the next crash's bound.
+
+**The host-wedge interpretation is a HYPOTHESIS the failover TESTS, not a thing
+the predicate proves.** The predicate detects a same-signature CUDA-IMA REPEAT;
+whether that is a transient driver wedge (a fresh host fixes it) or a
+deterministic code bug (a fresh host does NOT) is disambiguated EMPIRICALLY by
+spending the one bounded pivot: a fresh-host success was a wedge; a fresh-host
+re-crash lands at `failure_class: code` / blocked. The OUR_CODE_FRAME exclusion
+(M3) cheaply removes the COMMON framed-code-bug case before spending the pivot;
+a driver-only IMA (no user frame) still gets the bounded one-pivot test.
+
+`scripts/failure_classifier.py` is UNCHANGED — CUDA-IMA already routes infra for
+crash #1 (the in-place same-pod respawn); the new logic is poll-level and
+short-circuits at the once-more case via `_terminal_code_json`.
+
 ## Tests of record
 
 - `tests/test_router.py::test_gcp_workload_error_fails_over_to_runpod_no_slurm_cascade`
@@ -373,3 +478,12 @@ the direct predicate test
 - `tests/test_issue664_per_cell_upload.py` (Part C prerequisite: per-cell
   incremental upload idempotency + exact-set + fail-loud verify + A2 fresh-pod
   resume)
+- `tests/test_runpod_wedge_detection.py` (Part D #775: CUDA-IMA predicate scope,
+  signature regex, B2 wide-surface extraction vs the 5-line excerpt, escalation
+  first-records / second-escalates / M3 our-code-frame exclusion / clear-on-
+  recovery / malformed-fail-soft, B1 cross-pod prior-marker fallback, failover
+  pivot with `stamp_fn` / bounded-once `_terminal_code_json` / idempotency /
+  inputs-partial-blocks, durable-lease bound via the real helpers)
+- `tests/test_backend_poll.py` (Part D #775 `main()` integration: first-falls-
+  through, second-emits-fresh-host-failover, M2 cuda-ima-before-noport, M1
+  exhausted-emits-`code` + `_is_transient_capacity_block` False)
