@@ -1774,6 +1774,227 @@ def test_stalled_active_status_auto_respawns_after_two_misses(
     assert markers == [(518, "session-auto-respawn")]
 
 
+# ─── #759 bug class b.1: live-session bounded K-escalation ───────────────────
+# When the stalled detector wants to respawn an ACTIVE session whose Happy id
+# is STILL in the daemon's live set, the first K-1 consecutive episodes
+# downgrade respawn->alert (no duplicate driver on a transient busy stretch);
+# the Kth escalates to the canonical respawn (#506 dead-bg-chain class). A
+# genuinely-dead id (not in live_ids) respawns immediately, K not consulted.
+# Criteria 6/7/11/12 pin all branches + the counter resets.
+
+
+def _read_live_escalation_events(reg_dir):
+    """Return the parsed rows of the #759 stalled-live-escalation sidecar
+    (``[]`` when the file was never written)."""
+    import json
+
+    path = reg_dir / "stalled-live-escalation-events.jsonl"
+    if not path.is_file():
+        return []
+    return [json.loads(ln) for ln in path.read_text().splitlines() if ln.strip()]
+
+
+def _read_live_consecutive(reg_dir, issue):
+    """Return the persisted live_consecutive from stalled-<issue>.json
+    (``None`` when the state file is absent)."""
+    import json
+
+    path = reg_dir / f"stalled-{issue}.json"
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text()).get("live_consecutive")
+
+
+def test_stalled_live_k_minus_1_downgrades_to_alert(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Criterion 6 (default K=2 -> K-1 = 1 downgrade tick): a stale ACTIVE
+    # session whose id is IN live_ids, with NO provision / followups exemption,
+    # downgrades respawn->alert. Across the 2 ticks needed to reach the respawn
+    # decision: ZERO respawns, exactly ONE session-stalled-alert, and
+    # live_consecutive == 1 (== K-1) persisted afterward.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 739, "sess-739", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1: first miss only (below threshold) -> keep, live_consecutive reset 0.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert stops == [] and spawns == [] and markers == []
+
+    # Tick 2: threshold met -> decide() wants respawn, but the LIVE id triggers
+    # the 1st live-stall episode (1 < K=2) -> downgrade to alert.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert spawns == []  # NO duplicate driver on the live session
+    assert stops == []  # the alert arm never stops the session
+    assert markers == [(739, "session-stalled-alert")]
+    assert _read_live_consecutive(isolated_registry, 739) == 1  # == K-1
+
+    rows = _read_live_escalation_events(isolated_registry)
+    assert len(rows) == 1
+    assert rows[0]["issue"] == 739
+    assert rows[0]["event"] == "stalled-live-downgrade"
+    assert rows[0]["live_consecutive"] == 1
+    assert rows[0]["k"] == 2
+
+
+def test_stalled_live_kth_episode_escalates_to_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Criterion 7 (default K=2): continue the criterion-6 scenario one more
+    # tick (same live_ids, still stale). The Kth (2nd) consecutive live-stall
+    # episode ESCALATES to the canonical respawn (stop+spawn), and resets
+    # live_consecutive to 0. A persistently-stalled LIVE wrapper (#506 class)
+    # is recovered, not alert-only forever.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 739, "sess-739", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Ticks 1-2: reach the 1st live-stall episode (downgrade -> alert).
+    for _ in range(2):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+        )
+    assert spawns == [] and stops == []
+    assert markers == [(739, "session-stalled-alert")]
+    assert _read_live_consecutive(isolated_registry, 739) == 1
+
+    # Tick 3: alerted=True short-circuits the miss guard -> decide() returns
+    # respawn -> the 2nd (== K) consecutive live-stall episode ESCALATES.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert stops == ["sess-739"]
+    assert spawns == [(739, 24.0)]
+    assert markers == [(739, "session-stalled-alert"), (739, "session-auto-respawn")]
+    # The escalation reset the counter (a fresh --auto session = a new episode).
+    assert _read_live_consecutive(isolated_registry, 739) == 0
+
+    rows = _read_live_escalation_events(isolated_registry)
+    assert [r["event"] for r in rows] == ["stalled-live-downgrade", "stalled-live-escalation"]
+    assert rows[1]["live_consecutive"] == 2  # the count that tripped the escalation
+    assert rows[1]["k"] == 2
+
+
+def test_stalled_live_k_equals_3_takes_two_alerts_then_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Criteria 6+7 generalized for K=3: K-1 = 2 downgrade episodes, then the
+    # 3rd escalates. Pins that the escalation tracks the env-tuned K, not a
+    # hardcoded 2.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "3")
+    _write_autonomous_entry(isolated_registry, 739, "sess-739", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1 (miss=1, keep) + tick 2 (1st live-stall episode -> alert).
+    for _ in range(2):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+        )
+    assert spawns == [] and markers == [(739, "session-stalled-alert")]
+    assert _read_live_consecutive(isolated_registry, 739) == 1
+
+    # Tick 3: alerted=True -> respawn-wanted -> 2nd episode (2 < 3) -> alert again.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert spawns == []
+    assert markers == [(739, "session-stalled-alert"), (739, "session-stalled-alert")]
+    assert _read_live_consecutive(isolated_registry, 739) == 2
+
+    # Tick 4: 3rd (== K) episode -> ESCALATE to respawn, reset to 0.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert stops == ["sess-739"]
+    assert spawns == [(739, 24.0)]
+    assert _read_live_consecutive(isolated_registry, 739) == 0
+    rows = _read_live_escalation_events(isolated_registry)
+    assert [r["event"] for r in rows] == [
+        "stalled-live-downgrade",
+        "stalled-live-downgrade",
+        "stalled-live-escalation",
+    ]
+
+
+def test_stalled_dead_id_respawns_immediately_k_not_consulted(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Criterion 11 (the regression guard): the SAME stale scenario but the
+    # entry's id is NOT in live_ids (genuinely-dead wrapper). The K counter is
+    # for LIVE ids only -> respawn fires on the 2nd miss exactly as before, no
+    # downgrade, and live_consecutive stays 0 (reset on the dead path). No
+    # escalation-sidecar row is written.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)
+    _write_autonomous_entry(isolated_registry, 740, "sess-740", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # live_ids contains some OTHER session, so _session_alive(entry) is False.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"other-sid"}
+    )
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"other-sid"}
+    )
+    assert stops == ["sess-740"]
+    assert spawns == [(740, 24.0)]
+    assert markers == [(740, "session-auto-respawn")]
+    assert _read_live_consecutive(isolated_registry, 740) == 0
+    assert _read_live_escalation_events(isolated_registry) == []
+
+
+def test_stalled_keep_resets_live_consecutive(isolated_registry, monkeypatch, stalled_recorder):
+    # Criterion 12 (the "recovered then re-stalled" guard): drive one
+    # live-stall tick (-> live_consecutive becomes 1 via the downgrade), then a
+    # tick where decide() returns keep/clear (self-report is now FRESH) ->
+    # live_consecutive resets to 0, so a LATER unrelated live stall starts its
+    # K count fresh and the K-1 debounce is never short-cut by a stale counter.
+    import autonomous_session_watch as asw
+
+    # stalled_recorder's monkeypatching of the side-effects is what we need
+    # (the assertions read the persisted state file, not the recorded calls).
+    _ = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 741, "sess-741", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Ticks 1-2: reach the 1st live-stall episode (downgrade -> alert),
+    # live_consecutive == 1.
+    for _ in range(2):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-741"}
+        )
+    assert _read_live_consecutive(isolated_registry, 741) == 1
+
+    # Tick 3: the self-report is now FRESH (5 min old) -> decide() returns keep
+    # -> the corroboration's non-respawn branch resets live_consecutive to 0.
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (5 * 60, "ts-fresh"))
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-741"}
+    )
+    assert _read_live_consecutive(isolated_registry, 741) == 0
+
+
 def test_stalled_exemption_live_provision_blocks_respawn(
     isolated_registry, monkeypatch, stalled_recorder
 ):
