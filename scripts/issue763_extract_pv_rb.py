@@ -635,7 +635,10 @@ def _judge_rollouts_via_batch_api(prompts: list[str]) -> list[int | None]:
     scores = dispatch_judge_items(
         items,
         judge_model=JUDGE_MODEL,
-        judge_system_prompt="",  # the rubric IS the whole instruction (user msg)
+        # judge_system_prompt=None (default) — Anthropic rejects an explicit
+        # empty system block ('system: text content blocks must be non-empty',
+        # 400 Bad Request); the rubric IS the whole instruction (user msg) so
+        # the dispatch_judge_items default system prompt is benign here.
         max_tokens=32,
         checkpoint_dir=ckpt,
         error_dict_factory=_error_dict,
