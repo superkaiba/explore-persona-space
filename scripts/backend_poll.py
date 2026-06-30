@@ -2426,6 +2426,40 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(failover_json))
         return 0
 
+    # #775 RunPod CUDA-IMA repeat-failover. MUST run BEFORE the no-port escalation
+    # below (M2): the no-port within-K path rewrites status=dead -> running, which
+    # would mask a CUDA-IMA dead poll that is ALSO transiently no-port (engine
+    # dead, ports not yet torn down) before the CUDA-IMA predicate (which requires
+    # status="dead") ever ran. A no-op on every non-RunPod / non-dead /
+    # non-CUDA-IMA / first-crash / our-code-framed poll (the CUDA-IMA record rides
+    # the sidecar's extra dict, fail-soft).
+    result = _maybe_escalate_runpod_cuda_ima(
+        handle, result, Path(sidecar), issue=args.issue, now=time.time()
+    )
+    if _is_runpod_cuda_ima_failure(handle, result):
+        # Belt-and-suspenders guard (mirrors the no-port wedge guard below):
+        # _failover_cuda_ima_runpod maps every internal failure to a terminal JSON,
+        # so it should never raise — but the crashed pod may already be terminated,
+        # so a bare traceback would strand the run with no re-drive signal.
+        try:
+            cuda_ima_json = _failover_cuda_ima_runpod(
+                issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+            )
+        except Exception as exc:
+            logging.exception("backend_poll: RunPod CUDA-IMA failover raised unexpectedly")
+            cuda_ima_json = _terminal_infra_json(
+                issue=args.issue,
+                sidecar=Path(sidecar),
+                reason="runpod_cuda_ima_failover_error",
+                log_tail=(
+                    f"RunPod CUDA-IMA failover for issue {args.issue} raised "
+                    f"{type(exc).__name__}: {exc}; emitting terminal infra JSON "
+                    f"(poller terminal-JSON contract)"
+                ),
+            )
+        print(json.dumps(cuda_ima_json))
+        return 0
+
     # #664/#689 RunPod RUNNING-but-no-port host wedge escalation: a RunPod pod
     # whose desiredStatus stays RUNNING with null/empty runtime.ports past
     # RUNPOD_WEDGE_K_SEC (host-pinned resume cannot heal it) is rewritten to
