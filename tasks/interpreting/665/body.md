@@ -4,7 +4,7 @@ title: The pre-fine-tuning gate does not reliably predict the realized leakage g
 kind: experiment
 tags: []
 created_at: '2026-06-25T07:26:50Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 660
 goal: 'Phase 3 — test A3.6-A3.10 + joint factorization on the Phase-2 trained store:
   activation realized gate, whitened key-query gate (key/metric ablations), base-gate
