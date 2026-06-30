@@ -4703,8 +4703,8 @@
       "goal": "Characterize how standardized similarity and directional continuity between consecutive-token residual-stream activations vary across layers in Qwen-2.5-7B, and where discontinuities concentrate (token type, surprisal, syntactic boundary).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/744",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/744",
+      "status": "awaiting_promotion",
       "title": "Standardized token-to-token continuity in Qwen-2.5-7B is depth-flat and short-horizon \u2014 the late-layer directional persistence seen in GPT-2 does not appear (MODERATE confidence)"
     },
     "745": {
