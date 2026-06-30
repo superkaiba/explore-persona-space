@@ -355,8 +355,10 @@ HF_SYCO_CLAIM_POOL: Final[str] = "issue612_sycophancy_onpolicy/inputs/eval_60.js
 EXPECTED_SYCO_CLAIM_POOL_SHA256: Final[str] = (
     "0d78e82262bf6528549559c0a35c5e354801c4079a8e9640bed23d3e0fbba8a3"
 )
-# #612 judge id (pinned; κ=0.869 vs Sonnet double-judge).
-SYCO_JUDGE_MODEL: Final[str] = "claude-haiku-4-5-20251001"
+# Project-canonical judge per CLAUDE.md (one Sonnet judge across the project).
+# Past #650 base rates were judged on Haiku (κ=0.869 vs Sonnet double-judge);
+# any RE-RUN now uses Sonnet so it joins Sonnet-judged cells comparably.
+SYCO_JUDGE_MODEL: Final[str] = "claude-sonnet-4-5-20250929"
 
 # Inherited #621 R_persona (base greedy responses per persona×question) — the
 # marker arm reuses #621 mixes which already embed R, but the sycophancy
