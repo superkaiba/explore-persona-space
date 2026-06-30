@@ -75,7 +75,7 @@ The planned primary predictor is the boxed whitened gate (context vector under t
 
 Per cell, mean patch effect (f_cv_v: 1 = FT profile, 0 = base) across six variants — two identity nulls, two real patches, two floor controls. n = 4 cells, all dose d2.
 
-![A3.6c causal patch f_cv_v by variant across four cells; the trained-CV-into-base patch sits near the base-CV null, the base-CV-into-trained patch falls to the random and norm-matched floor controls, with self-nulls cleanly separated at 0.16 and 0.92.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8438132a63093e03fcb42d687de8eedfe82d9b98/figures/issue_665/fig4_a36c_causal_patch.png)
+![A3.6c causal patch f_cv_v by variant across four cells; the trained-CV-into-base patch sits near the base-CV null, the base-CV-into-trained patch falls to the random and norm-matched floor controls, with self-nulls cleanly separated at 0.16 and 0.92.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/bc4359df723b1aa92f7c26b11384133261c78edf/figures/issue_665/fig4_a36c_causal_patch.png)
 
 > **Figure.** *No separation between real patches and matched controls.* Patch effect f_cv_v by variant; self-nulls behave (base-CV null ≈ 0.16, trained-CV null ≈ 0.92). The trained-CV-into-base patch (P↑) moves activations only to near the base-CV null (≈ 0.2); base-CV-into-trained (P↓) falls to the random / norm-matched floors.
 
