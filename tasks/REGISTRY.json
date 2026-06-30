@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 750,
+  "highest_id": 751,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4755,6 +4755,13 @@
       "path": "tasks/reviewing/750",
       "status": "reviewing",
       "title": "workflow-fix: gate _eps_phase done on OOM-detection (GCP)"
+    },
+    "751": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/751",
+      "status": "proposed",
+      "title": "daily-fix: failover relaunch must sync new pod into pods.conf"
     },
     "76": {
       "has_clean_result": false,
