@@ -766,3 +766,185 @@ def test_headline_ci_is_cluster_bootstrap_not_cv_matched_fold(monkeypatch):
     )
     # the headline must NOT be the CV-matched read.
     assert entry["sqrt_r_yy_ci"] != entry["sqrt_r_yy_cv_matched_fold_ci"]
+
+
+# --------------------------------------------------------------------------- #
+# 10. BLOCKER variance-decomposition-wrong-grain — Var_generation is the        #
+#     WITHIN-context generation variance (averaged across contexts), NOT the    #
+#     between-context variance of a single half-mean (which is SIGNAL, the      #
+#     term we want to RECOVER, and routinely exceeded var_total -> var_signal=0 #
+#     -> sqrt_r_yy_honest=0). Plan v9 §4 Stage-0 step 3.                         #
+# --------------------------------------------------------------------------- #
+def _const_rerun_rates(per_context_full: np.ndarray, n_rerun: int = 2) -> list[np.ndarray]:
+    """R IDENTICAL judge-rerun rate vectors -> Var_judge == 0 (judge noise isolated out
+    so the test reads Var_generation cleanly). Each entry is the per-context full rate."""
+    return [per_context_full.copy() for _ in range(n_rerun)]
+
+
+def test_decompose_variance_no_generation_noise_gives_near_zero_var_gen():
+    """Both generation halves share the SAME per-context signal (no within-context
+    generation noise) -> Var_generation ≈ 0, NOT Var_C(first_half).
+
+    The prior round computed var_gen = np.var(first_half), the BETWEEN-context variance
+    of the half-mean rates. With both halves equal to a per-context signal that VARIES
+    across contexts, that wrong formula returns the (large) between-context signal
+    variance; the correct (p1−p2)²/4 within-context estimator returns ~0.
+    """
+    import issue742_judge_rerun as jr
+
+    rng = np.random.default_rng(74300)
+    # per-context full rate varies strongly across contexts (this is SIGNAL).
+    full = np.clip(0.5 + rng.normal(0, 0.2, 50), 0.05, 0.95)
+    # both halves EQUAL the per-context signal -> zero within-context generation noise.
+    p1 = full.copy()
+    p2 = full.copy()
+    decomp = jr._decompose_variance(_const_rerun_rates(full), p1, p2)
+    var_total = decomp["var_total"]
+    var_gen = decomp["var_generation"]
+    # Var_generation must be ~0 (no within-context noise) — NOT the between-context
+    # signal variance the wrong np.var(first_half) formula would return (~var_total).
+    assert var_gen < 1e-9, f"no-generation-noise fixture must give var_gen~0, got {var_gen}"
+    assert var_gen < var_total, (
+        f"var_gen ({var_gen}) must be << var_total ({var_total}); the wrong between-context "
+        "formula would make var_gen ~= var_total (it IS the signal variance)"
+    )
+    # signal recovered, honest ceiling non-zero (the collapse-to-0 bug is gone).
+    assert decomp["var_signal"] > 0.0
+    assert decomp["sqrt_r_yy_honest"] > 0.0
+    # var_judge == 0 by construction (identical reruns) — generation term isolated.
+    assert decomp["var_judge"] == pytest.approx(0.0, abs=1e-12)
+
+
+def test_decompose_variance_recovers_known_within_context_generation_noise():
+    """A fixture with KNOWN within-context generation noise: each half is an
+    independent Binomial draw of the same context rate. The (p1−p2)²/4 estimator must
+    recover the full-sample generation variance ≈ mean_c[p_c(1−p_c)/n_full], NOT 0 and
+    NOT the between-context variance."""
+    import issue742_judge_rerun as jr
+
+    rng = np.random.default_rng(74301)
+    n_contexts = 200  # many contexts so the across-context average of the estimator is tight
+    n_full = 40  # completions per context; each half has n_full//2 = 20
+    half_n = n_full // 2
+    theta = np.clip(0.5 + rng.normal(0, 0.12, n_contexts), 0.1, 0.9)
+
+    p1 = np.empty(n_contexts)
+    p2 = np.empty(n_contexts)
+    full = np.empty(n_contexts)
+    for c in range(n_contexts):
+        x = rng.binomial(1, theta[c], size=n_full)
+        full[c] = x.mean()
+        p1[c] = x[:half_n].mean()
+        p2[c] = x[half_n:].mean()
+
+    decomp = jr._decompose_variance(_const_rerun_rates(full), p1, p2)
+    # the planted full-sample generation variance is the mean binomial variance of the
+    # full mean: mean_c[ theta_c(1-theta_c) / n_full ].
+    planted_var_gen = float(np.mean(theta * (1.0 - theta) / n_full))
+    # (p1-p2)^2/4 is an unbiased estimator of that full-sample generation variance.
+    assert decomp["var_generation"] == pytest.approx(planted_var_gen, abs=0.0015), (
+        f"var_generation {decomp['var_generation']:.5f} must recover the planted "
+        f"within-context full-sample generation variance {planted_var_gen:.5f}"
+    )
+    # sanity: it is positive (real noise) and far below the wrong between-context read
+    # of the half-means (which would be ~Var_C(p1), much larger).
+    assert decomp["var_generation"] > 0.0
+    wrong_between_context = float(np.var(p1))
+    assert decomp["var_generation"] < wrong_between_context, (
+        "the within-context estimator must be far below the between-context var of the "
+        f"half-means (correct={decomp['var_generation']:.5f} vs wrong={wrong_between_context:.5f})"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# 11. BLOCKER bracket-mixed-estimator-impossible-output — compute_bracket never  #
+#     emits a negative bracket_width with a positive CI / `headroom`; the point  #
+#     always lies inside its own CI even when the judge-folded diagnostic is     #
+#     BELOW rho_lin (the exact smoke artifact: judge_honest_sqrt < rho_lin).     #
+#     Plan v9 §4 Stage-0 step 4.                                                  #
+# --------------------------------------------------------------------------- #
+def test_compute_bracket_no_impossible_output_when_judge_folded_below_rho_lin():
+    """Drive compute_bracket with judge_honest_sqrt FAR BELOW rho_lin (the regime that
+    produced bracket=[0.444, 0.0] / bracket_width=-0.444 / headroom). The headline must
+    be the bootstrap-consistent binomial estimator, so: (a) bracket[0] <= bracket[1];
+    (b) bracket_width is inside bracket_width_ci; (c) no negative width with headroom."""
+    import issue742_reliability as rel
+
+    rng = np.random.default_rng(74310)
+    n = 50
+    context_ids = [f"ctx_{i}" for i in range(n)]
+    theta = np.clip(0.5 + rng.normal(0, 0.15, n), 0.05, 0.95)
+    e0: dict = {}
+    for i, c in enumerate(context_ids):
+        m = 400
+        labels = rng.binomial(1, theta[i], size=m).astype(float)
+        e0[c] = {
+            "broad_em": {
+                "rate": float(labels.mean()),
+                "n_judged": int(m),
+                "per_probe": [
+                    {"probe": f"p{j}", "e0": float(labels[j]), "n_judged": 1} for j in range(8)
+                ],
+            }
+        }
+
+    # judge-folded honest ceiling driven DELIBERATELY below rho_lin (0.0 < 0.444) — the
+    # exact smoke regime. It MUST be a recorded diagnostic, NOT the bracket point.
+    entry = rel.compute_bracket(
+        "broad_em",
+        "betley",
+        e0,
+        context_ids,
+        rho_lin=0.444,
+        rng=rng,
+        n_split_seeds=20,
+        n_boot=200,
+        judge_honest_sqrt=0.0,
+    )
+
+    bw = entry["bracket_width"]
+    lo, hi = entry["bracket_width_ci"]
+    # (a) bracket is ordered (floor <= ceiling).
+    assert entry["bracket"][0] <= entry["bracket"][1], (
+        f"bracket must be ordered, got {entry['bracket']}"
+    )
+    # (b) the width point estimate lies inside its own CI (the invariant assert).
+    assert lo <= bw <= hi, f"bracket_width {bw} outside its CI [{lo}, {hi}]"
+    # (c) no negative width with a positive `headroom` verdict (the impossible artifact).
+    assert not (bw < 0 and entry["gate_verdict"] == "headroom"), (
+        f"impossible output: negative bracket_width {bw} with headroom verdict"
+    )
+    # the headline is the binomial estimator; the judge-folded value is a diagnostic.
+    assert entry["headline_estimator"] == "binomial_variance"
+    assert entry["sqrt_r_yy_headline"] == entry["sqrt_r_yy_binomial"]
+    assert entry["sqrt_r_yy_honest_judge_folded"] == 0.0  # recorded, not headlined
+    # the headline point sits inside the bootstrap ceiling CI too (same-estimator).
+    cl, ch = entry["sqrt_r_yy_ci"]
+    assert cl <= entry["sqrt_r_yy_headline"] <= ch
+
+
+# --------------------------------------------------------------------------- #
+# 12. CONCERN judge-rerun-transport-undercount — the transport_deviation call    #
+#     estimate loops over CONTEXTS (50/genre), so the default full-run estimate  #
+#     is the registered ~16,000, NOT the context-omitting ~320.                  #
+# --------------------------------------------------------------------------- #
+def test_transport_deviation_full_run_estimate_is_16000():
+    """The default full run (2 genres × 50 contexts × 4 behaviors × R=2 × J=20) must
+    estimate 16,000 re-judge calls (plan §11 row 8), NOT the prior round's ~320 (which
+    dropped the per-context loop)."""
+    import issue742_judge_rerun as jr
+
+    genres = ["betley", "ultrachat"]
+    behaviors = list(jr.dc.READOUT_BEHAVIORS)
+    counts = jr._resolve_context_counts(genres, None)
+    # the canonical context count is 50/genre (or the real per-genre count when staged).
+    n_contexts_total = sum(counts.values())
+    n_cells = n_contexts_total * len(behaviors)
+    est = n_cells * 2 * 20  # R_rerun=2, J=20
+    assert est == 16000, (
+        f"default full-run re-judge estimate must be the registered 16,000, got {est} "
+        f"(counts={counts}); the context loop must be in the estimate"
+    )
+    # and max_contexts trims it (smoke parity): 1 context/genre -> tiny estimate.
+    smoke_counts = jr._resolve_context_counts(genres, 1)
+    assert sum(smoke_counts.values()) == 2, smoke_counts

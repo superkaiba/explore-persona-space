@@ -71,13 +71,37 @@ def _hf_download_fn(*, repo_id: str, filename: str, repo_type: str, **kwargs) ->
     return hf_hub_download(repo_id=repo_id, filename=filename, repo_type=repo_type)
 
 
-def _decompose_variance(rerun_rates: list[np.ndarray], gen_rates: np.ndarray) -> dict[str, float]:
-    """Decompose Var(E0) into judge / generation / signal components.
+def _decompose_variance(
+    rerun_rates: list[np.ndarray],
+    gen_first_half: np.ndarray,
+    gen_second_half: np.ndarray,
+) -> dict[str, float]:
+    """Decompose Var(E0) into judge / generation / signal components (plan §4 step 3).
 
-    ``rerun_rates``: per-context judged rate from each of R judge reruns (same
-    completions, re-judged) — across-rerun variance = ``Var_judge``.
-    ``gen_rates``: per-context rate split across generation halves — ``Var_generation``.
-    Signal = total minus the two noise terms (clamped non-negative).
+    The nested decomposition ``Var(E0) = Var_signal + Var_generation + Var_judge``
+    needs the noise terms as WITHIN-context variances (averaged across contexts),
+    NOT the between-context variance of a noisy per-context summary — the BLOCKER
+    the prior round's ``np.var(gen_rates)`` carried (between-context variance of the
+    first-half mean rates, dominated by SIGNAL, the very term we want to RECOVER —
+    it routinely exceeded ``var_total`` and collapsed ``var_signal`` to 0).
+
+    * ``rerun_rates``: per-context judged rate from each of R judge reruns (the SAME
+      completions, re-judged). ``Var_judge`` = the WITHIN-context across-rerun
+      variance, AVERAGED across contexts (this term was already correct).
+    * ``gen_first_half`` / ``gen_second_half``: per-context rates from TWO DISJOINT
+      generation-half subsets of each context's completions, both judged under ONE
+      pass. For each context the within-context generation variability of the
+      FULL-sample mean rate is estimated by ``(p1 − p2)² / 4`` — the unbiased
+      generation-noise estimator at the full-sample grain (Monte-Carlo-verified
+      §14 test): two disjoint halves are independent estimates of the same context
+      rate, so ``Var(p1 − p2) = 2·σ²_half`` ⇒ ``σ²_half = (p1−p2)²/2``, and the full
+      sample has 2× the completions so its generation variance is ``σ²_half / 2 =
+      (p1−p2)² / 4``. ``Var_generation`` = that estimate AVERAGED across contexts.
+      With NO generation noise (both halves share the context signal exactly) this
+      is ≈ 0, as it must be — NOT ``Var_C(first_half)``.
+
+    ``Var_total`` = between-context variance of the full (judge-averaged) mean rate.
+    ``Var_signal = Var_total − Var_generation − Var_judge`` (clamped non-negative).
     """
     R = np.stack(rerun_rates, axis=0)  # (n_rerun, n_contexts)
     # judge errors surface as NaN per (rerun, context); drop contexts with any NaN so
@@ -85,16 +109,26 @@ def _decompose_variance(rerun_rates: list[np.ndarray], gen_rates: np.ndarray) ->
     # already guarantees ≥J completions; a NaN here is a transport/parse miss).
     ok = ~np.any(~np.isfinite(R), axis=0)
     R = R[:, ok]
-    gen_rates = np.asarray(gen_rates, dtype=float)
-    if gen_rates.size:
-        gen_rates = (
-            gen_rates[ok[: gen_rates.shape[0]]] if gen_rates.shape == ok.shape else gen_rates
-        )
-        gen_rates = gen_rates[np.isfinite(gen_rates)]
-    var_judge = float(np.mean(np.var(R, axis=0))) if R.shape[1] else 0.0  # across-rerun var
+    var_judge = float(np.mean(np.var(R, axis=0))) if R.shape[1] else 0.0  # within-context var
     mean_rate = R.mean(axis=0) if R.shape[1] else np.array([])
     var_total = float(np.var(mean_rate)) if mean_rate.size else 0.0
-    var_gen = float(np.var(gen_rates)) if gen_rates.size else 0.0
+
+    # Var_generation: the WITHIN-context generation-noise variance of the full-sample
+    # mean rate, estimated per context from the two disjoint judged halves and averaged
+    # across contexts. Align the half vectors to the same cleanly-judged contexts as R,
+    # and drop any context whose half-judge returned NaN.
+    p1 = np.asarray(gen_first_half, dtype=float)
+    p2 = np.asarray(gen_second_half, dtype=float)
+    if p1.shape == ok.shape and p2.shape == ok.shape:
+        p1 = p1[ok]
+        p2 = p2[ok]
+    pair_ok = np.isfinite(p1) & np.isfinite(p2)
+    p1 = p1[pair_ok]
+    p2 = p2[pair_ok]
+    # full-sample generation variance per context = (p1 - p2)^2 / 4 (see docstring);
+    # averaged across contexts -> the population Var_generation.
+    var_gen = float(np.mean((p1 - p2) ** 2) / 4.0) if p1.size else 0.0
+
     var_signal = max(0.0, var_total - var_judge - var_gen)
     denom = var_signal + var_judge + var_gen
     sqrt_r_yy_honest = float(np.sqrt(var_signal / denom)) if denom > 1e-12 else 0.0
@@ -107,6 +141,30 @@ def _decompose_variance(rerun_rates: list[np.ndarray], gen_rates: np.ndarray) ->
     }
 
 
+CANONICAL_CONTEXTS_PER_GENRE = 50  # plan §11 row 8: 50 context_ids/genre (Betley + UltraChat)
+
+
+def _resolve_context_counts(genres: list[str], max_contexts: int | None) -> dict[str, int]:
+    """Per-genre context count for the transport-deviation call estimate (CONCERN fix).
+
+    Prefers the REAL #658 per-genre ``context_ids`` length (via ``dc.load_inputs``) so a
+    genre with a non-standard context count is counted exactly; falls back to the
+    canonical 50 when the on-disk tensors are absent (smoke / counting-judge paths,
+    where the estimate must still be computed without crashing). ``max_contexts``
+    trims each genre's count for smoke parity with the snapshot loop.
+    """
+    counts: dict[str, int] = {}
+    for genre in genres:
+        try:
+            n = len(dc.load_inputs(genre, repo_root=PROJECT_ROOT).context_ids)
+        except Exception:
+            n = CANONICAL_CONTEXTS_PER_GENRE
+        if max_contexts is not None:
+            n = min(n, max_contexts)
+        counts[genre] = int(n)
+    return counts
+
+
 def _judge_reruns_for_cell(
     *,
     genre: str,
@@ -116,7 +174,7 @@ def _judge_reruns_for_cell(
     j_completions: int,
     seed: int,
     judge_fn: Callable[..., dict] | None = None,
-) -> tuple[list[np.ndarray], np.ndarray]:
+) -> tuple[list[np.ndarray], np.ndarray, np.ndarray]:
     """Run R PER-BEHAVIOR judge passes over a cell's snapshotted completions.
 
     Reads every snapshotted ``<context>__<behavior>.json`` for ``genre`` (each = one
@@ -131,11 +189,15 @@ def _judge_reruns_for_cell(
       * ``rerun_rates``: list of length ``r_rerun``; each a per-context judged-rate
         vector (the SAME ``judged_rate`` construct #658 used; across-rerun variance =
         ``Var_judge``),
-      * ``gen_rates``: a per-context rate from a single first-half generation split
-        (``Var_generation`` proxy).
+      * ``gen_first_half`` / ``gen_second_half``: per-context judged rates of TWO
+        DISJOINT generation-half subsets of each context's J completions (one judge
+        pass each). ``_decompose_variance`` reads them as a (p1, p2) pair to estimate
+        the WITHIN-context generation variance ``(p1−p2)²/4`` — NOT a between-context
+        variance of a single half-mean (the BLOCKER the prior round carried).
 
     Only judged scores are surfaced — completion TEXT is never returned or logged
-    (CLAUDE.md content hygiene). Returns ``([], empty)`` when no snapshot is present.
+    (CLAUDE.md content hygiene). Returns ``([], empty, empty)`` when no snapshot is
+    present.
     The J=20 deterministic sampling is keyed on ``(seed, genre, behavior, context)``
     via :func:`_stable_cell_seed` (a cross-process-stable sha256 digest, NOT Python's
     salted ``hash()``) so a re-run reproduces the same sample (plan §11 row 8 + §9).
@@ -148,7 +210,7 @@ def _judge_reruns_for_cell(
     cell_dir = snapshot_dir / genre
     files = sorted(cell_dir.glob(f"*__{behavior}.json"))
     if not files:
-        return [], np.array([])
+        return [], np.array([]), np.array([])
 
     # Per context: load the gen file and deterministically down-sample to exactly J
     # completions ONCE (the same J completions are re-judged across all R reruns, so
@@ -182,16 +244,25 @@ def _judge_reruns_for_cell(
     # R judge passes over the SAME J-sampled completions -> across-rerun var = Var_judge
     rerun_rates: list[np.ndarray] = [_judge_rate(per_context_obj) for _ in range(r_rerun)]
 
-    # Var_generation proxy: judge the FIRST-HALF generation subset of each context's
-    # J-sampled completions under one pass — the spread of the half-rate vs the full
-    # set captures generation stochasticity, distinct from judge noise.
+    # Var_generation: judge TWO DISJOINT generation-half subsets of each context's
+    # J-sampled completions (one pass each). The two halves are independent rate
+    # estimates of the same context, so _decompose_variance reads the (p1, p2) pair as
+    # (p1−p2)²/4 = the WITHIN-context generation variance of the full-sample mean rate
+    # (the BLOCKER fix; NOT the between-context variance of a single half-mean). Both
+    # halves are re-judged with the SAME per-behavior construct (so the only varying
+    # input is which completions, isolating generation noise from judge noise).
     first_half: dict[str, dict] = {}
+    second_half: dict[str, dict] = {}
     for ctx, obj in per_context_obj.items():
         cells = obj.get("cells", [])
-        half = cells[: max(1, len(cells) // 2)]
-        first_half[ctx] = {**obj, "cells": half}
-    gen_rates = _judge_rate(first_half)
-    return rerun_rates, gen_rates
+        mid = max(1, len(cells) // 2)
+        first_half[ctx] = {**obj, "cells": cells[:mid]}
+        # the COMPLEMENT half — disjoint completions; falls back to the same slice only
+        # in the degenerate 1-completion case (then p1==p2 -> 0 generation variance).
+        second_half[ctx] = {**obj, "cells": cells[mid:] if len(cells) > 1 else cells[:mid]}
+    gen_first_half = _judge_rate(first_half)
+    gen_second_half = _judge_rate(second_half)
+    return rerun_rates, gen_first_half, gen_second_half
 
 
 def make_counting_judge() -> Callable[..., dict]:
@@ -346,7 +417,7 @@ def run(
         for genre in genres:
             cell_results: dict[str, dict] = {}
             for behavior in behaviors:
-                rerun_rates, gen_rates = _judge_reruns_for_cell(
+                rerun_rates, gen_first_half, gen_second_half = _judge_reruns_for_cell(
                     genre=genre,
                     behavior=behavior,
                     snapshot_dir=dest,
@@ -357,7 +428,9 @@ def run(
                 )
                 if not rerun_rates:
                     continue
-                cell_results[behavior] = _decompose_variance(rerun_rates, gen_rates)
+                cell_results[behavior] = _decompose_variance(
+                    rerun_rates, gen_first_half, gen_second_half
+                )
             judge_variance[genre] = cell_results
         if judge_fn is not None:
             note = (
@@ -386,11 +459,31 @@ def run(
     # SYNC #658 judge_column client instead; the deviation + its impact are recorded
     # structurally here (the §6.5 reproducibility-card surface) so it is auditable, not
     # buried in a docstring.
-    n_cells = len(genres) * len(behaviors)
-    est_calls = n_cells * r_rerun * j_completions
+    # CONCERN judge-rerun-transport-undercount: the prior round's estimate was
+    # n_cells × R_rerun × J = len(genres)·len(behaviors) × R × J, which OMITS the
+    # per-context loop (50 contexts/genre) — it read ~320 for the default run when the
+    # registered set is ~16,000 (plan §11 row 8). The cell COUNT is per (genre,
+    # behavior, context); the call count is Σ_genre n_contexts_genre × n_behaviors ×
+    # R_rerun × J. Resolve the per-genre context count from the real #658 inputs when
+    # available (max_contexts trims it for smoke); fall back to the canonical 50 when
+    # the tensors are not on disk (smoke / counting-judge), so the estimate never
+    # crashes and the default full-run estimate equals the registered 16,000.
+    n_contexts_by_genre = _resolve_context_counts(genres, max_contexts)
+    n_contexts_total = sum(n_contexts_by_genre.values())
+    n_cells = n_contexts_total * len(behaviors)  # per (genre, behavior, context)
+    est_calls = n_cells * r_rerun * j_completions  # the R_rerun re-judge set (registered)
+    # the generation-half decomposition adds 2 single-pass judgments per
+    # (genre, behavior, context) over the SAME J completions (split into two halves),
+    # so the full judged-call count is est_calls + the half-pass set.
+    est_gen_half_calls = n_cells * 2 * j_completions
+    est_calls_total = est_calls + est_gen_half_calls
     transport_deviation = {
         "registered_transport": "anthropic_batch_api (eval.batch_judge)",
         "actual_transport": "threaded_sync_anthropic_client (#658 judge_column, max_retries=8)",
+        "n_contexts_by_genre": n_contexts_by_genre,
+        "est_judge_calls_rerun_set": int(est_calls),
+        "est_judge_calls_generation_halves": int(est_gen_half_calls),
+        "est_judge_calls_total": int(est_calls_total),
         "why_sync_chosen": (
             "the per-behavior judge IS #658's own judge_column rubric (reading c['text']) "
             "— reusing it verbatim guarantees Var_judge is measured on the SAME construct "
@@ -400,13 +493,16 @@ def run(
             "drift the sync path avoids."
         ),
         "cost_spend_walltime_impact": (
-            f"the registered set is small: {n_cells} cells × R_rerun={r_rerun} × "
-            f"J={j_completions} ≈ {est_calls} judge calls worst-case — well below the "
-            "~200k sync/batch crossover (docs/api_throughput_guidelines.md, §11 row 8). At "
-            "Sonnet-4.5 sync pricing this is a small fraction of #658's ~141k-call judging "
-            "(< $20). Wall-time: sync at the polite per-key cap (Sonnet 100 concurrent) "
-            "clears ~8-16k calls in minutes; Batch API would add the self-harvest latency "
-            "(up to 24h to expires_at) for no throughput benefit at this N."
+            f"the registered set loops over contexts: Σ_genre n_contexts × {len(behaviors)} "
+            f"behaviors × R_rerun={r_rerun} × J={j_completions} = {est_calls} re-judge calls "
+            f"(+{est_gen_half_calls} generation-half calls = {est_calls_total} total) for "
+            f"{n_contexts_total} contexts across {len(genres)} genre(s) — the registered "
+            "~16,000 at the default (50 contexts × 2 genres × 4 behaviors × R=2 × J=20). Well "
+            "below the ~200k sync/batch crossover (docs/api_throughput_guidelines.md, §11 row "
+            "8). At Sonnet-4.5 sync pricing this is a small fraction of #658's ~141k-call "
+            "judging (< $20). Wall-time: sync at the polite per-key cap (Sonnet 100 concurrent) "
+            "clears it in minutes; Batch API would add the self-harvest latency (up to 24h to "
+            "expires_at) for no throughput benefit at this N."
         ),
         "what_would_change_to_switch": (
             "swap _judge_reruns_for_cell's per-cell judge_column dispatch for an "
