@@ -217,6 +217,59 @@ def test_reliability_ceiling_computes_and_fields():
     assert out["reliability_ceiling"] > 0.3, out["reliability_ceiling"]
 
 
+def test_reliability_ceiling_binomial_matches_closed_form():
+    """r_yy_binomial == 1 - mean_C(SP(C)) / Var_C(E0) with SP(C) = mean_j(var_j)/m_C.
+
+    Regression guard for the round-3 missing-/n_probes-divisor fix (concern
+    ``binomial-ceiling-missing-n-probes-divisor``). The per-context sampling
+    variance of the MEAN rate E0(C) = (1/m_C) sum_j p_j is
+
+        Var(E0(C)) = (1/m_C^2) sum_j var_j = mean_j(var_j) / m_C,
+
+    NOT mean_j(var_j). On this deterministic 5-context x 4-probe fixture the
+    round-2 code (no /m_C) overstates SP(C) by exactly m_C = 4, driving
+    r_yy_binomial too low (round-2 ceiling ~0.17 vs the correct ~0.87) — the
+    bug's "clamps the binomial ceiling toward 0" signature; the round-3 fix
+    matches the hand-computed closed form to 1e-9.
+    """
+    from issue761_common import reliability_ceiling
+
+    # 5 contexts x 4 probes; known p_j and n_judged_j (deterministic, no RNG).
+    base_p = np.array([0.1, 0.3, 0.5, 0.7], dtype=np.float64)
+    n_judged = 10
+    n_ctx, m = 5, base_p.shape[0]
+    p_by_ctx = np.empty((n_ctx, m), dtype=np.float64)
+    per_probe_by_ctx = []
+    for ci in range(n_ctx):
+        # per-context shift so Var_C(E0) dominates the (corrected) sampling variance
+        # → the round-3 ceiling is well above 0, where the missing /m_C overstatement
+        #   is unambiguous (round-2 would read a near-floor ceiling on the same data).
+        p_ctx = np.clip(base_p + 0.10 * ci, 0.0, 1.0)
+        p_by_ctx[ci] = p_ctx
+        per_probe_by_ctx.append(
+            [{"probe": f"p{j}", "e0": float(p_ctx[j]), "n_judged": n_judged} for j in range(m)]
+        )
+
+    # Hand-computed closed form with the CORRECTED divisor.
+    var_j = p_by_ctx * (1.0 - p_by_ctx) / n_judged  # (n_ctx, m) per-probe binomial var
+    sp_per_ctx = var_j.mean(axis=1) / m  # SP(C) = mean_j(var_j) / m_C
+    mean_sp = sp_per_ctx.mean()
+    rate_vec = p_by_ctx.mean(axis=1)  # E0(C) = mean_j p_j
+    var_e0 = np.var(rate_vec, ddof=0)
+    expected_r_yy_binom = 1.0 - mean_sp / var_e0
+    expected_ceiling_binom = float(np.sqrt(max(expected_r_yy_binom, 0.0)))
+
+    out = reliability_ceiling(per_probe_by_ctx, n_split_seeds=10, seed=761, n_boot=50)
+    assert out["r_yy_binomial"] == pytest.approx(expected_r_yy_binom, abs=1e-9), (
+        out["r_yy_binomial"],
+        expected_r_yy_binom,
+    )
+    assert out["reliability_ceiling_binomial"] == pytest.approx(expected_ceiling_binom, abs=1e-9)
+    # round-3 reads a healthy ceiling; the round-2 (missing-/m_C) code would clamp
+    # the same fixture to ~0.17 — this lower bound fails on the buggy code.
+    assert out["reliability_ceiling_binomial"] > 0.5, out["reliability_ceiling_binomial"]
+
+
 def test_shuffle_null_p_and_control_task_full_pipeline():
     """Shuffle-label + Hewitt-Liang control-task nulls run the FULL pipeline per perm.
 

@@ -428,8 +428,14 @@ def reliability_ceiling(
     ceiling = float(np.sqrt(max(r_yy_splithalf, 0.0)))
 
     # ── binomial-variance decomposition (the 2nd method, agreement check) ──
+    # SP(C) is the binomial sampling variance of context C's mean rate
+    # E0(C) = mean_j p_j over its m_C probes: Var(mean_j p_j) = mean_j(var_j) / m_C
+    # (the §6.6 / docstring formula "mean of per-probe binomial variances ÷ n_probes").
     sp_per_ctx = np.array(
-        [_binomial_per_probe_variance(e0_arrays[i], nj_arrays[i]).mean() for i in range(n_ctx)],
+        [
+            _binomial_per_probe_variance(e0_arrays[i], nj_arrays[i]).mean() / e0_arrays[i].shape[0]
+            for i in range(n_ctx)
+        ],
         dtype=np.float64,
     )
     var_e0 = float(np.var(rate_vec, ddof=0))
