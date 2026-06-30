@@ -28,6 +28,7 @@ Determinism: 742X-family seeds (plan v7 §10).
 from __future__ import annotations
 
 import importlib
+import os
 import sys
 from pathlib import Path
 
@@ -327,3 +328,173 @@ def test_dcor_at_subsample_is_bounded_and_clamps_d_eff():
     e0 = rng.uniform(0, 1, size=50)
     val = dc.dcor_at_subsample(v0, e0, n_prime=10, d_eff=20, rng=rng)
     assert 0.0 <= val <= 1.0
+
+
+# --------------------------------------------------------------------------- #
+# 6. §7 estimator-disagreement guard ALIVE for heterogeneous-probe behaviors   #
+#    (CONCERN one-rollout-splithalf-still-dropped) — drives compute_bracket    #
+#    end-to-end on a RAGGED-probe fixture (the PRODUCTION path, NOT             #
+#    load_reliability_estimates which no script calls).                        #
+# --------------------------------------------------------------------------- #
+@pytest.mark.skipif(not impl_has("reliability_split_half_over_probes"), reason="round-2 symbol")
+def test_compute_bracket_runs_split_half_on_heterogeneous_probe_counts():
+    """The round-2 §7 disagreement guard was DEAD for harmful_compliance/refusal:
+    ``_build_probe_rate_matrix`` returned ``None`` on heterogeneous per-context probe
+    counts, so ``compute_bracket`` silently dropped the split-half estimator and only
+    the binomial read stood — for exactly the two behaviors the guard protects.
+
+    This binds the PRODUCTION path (``compute_bracket``, the path the script calls),
+    NOT ``load_reliability_estimates`` (a library helper no script calls — the prior
+    round's test bound the wrong path). It feeds a #658-shaped ``e0`` dict with
+    heterogeneous probe counts ({114, 115} harmful_compliance; {212..215} refusal) and
+    asserts BOTH the split-half AND the binomial estimators are populated, with the
+    realized truncation depth recorded.
+    """
+    import issue742_reliability as rel
+
+    rng = np.random.default_rng(74270)
+
+    def _build_ragged_e0(behavior: str, probe_counts_cycle: list[int]) -> tuple[dict, list[str]]:
+        # 50 contexts; each context's per_probe list length cycles through the
+        # heterogeneous probe counts (so the matrix is ragged, exactly the real shape).
+        n = 50
+        context_ids = [f"ctx_{i}" for i in range(n)]
+        # a genuine per-context signal so the estimators have something to recover
+        theta = np.clip(0.5 + rng.normal(0, 0.12, n), 0.05, 0.95)
+        e0: dict = {}
+        for i, c in enumerate(context_ids):
+            n_probes = probe_counts_cycle[i % len(probe_counts_cycle)]
+            probe_labels = rng.binomial(1, theta[i], size=n_probes).astype(float)
+            e0[c] = {
+                behavior: {
+                    "rate": float(probe_labels.mean()),
+                    "n_judged": int(n_probes),
+                    "per_probe": [
+                        {"probe": f"p{j}", "e0": float(probe_labels[j]), "n_judged": 1}
+                        for j in range(n_probes)
+                    ],
+                }
+            }
+        return e0, context_ids
+
+    for behavior, counts in (
+        ("harmful_compliance", [114, 115]),
+        ("refusal", [212, 213, 214, 215]),
+    ):
+        e0, context_ids = _build_ragged_e0(behavior, counts)
+        entry = rel.compute_bracket(
+            behavior,
+            "betley",
+            e0,
+            context_ids,
+            rho_lin=0.2,
+            rng=np.random.default_rng(74271),
+            n_split_seeds=20,
+            n_boot=10,
+        )
+        # BOTH estimators must be populated (the split-half was None before the fix)
+        assert entry["r_yy_split_half"] is not None, (
+            f"{behavior}: split-half MUST run on heterogeneous probe counts "
+            f"(was silently dropped -> §7 guard dead); estimator_kind={entry['estimator_kind']!r}"
+        )
+        assert entry["r_yy_binomial"] is not None
+        assert entry["estimator_kind"] == "split_half_over_probes"
+        # the truncation depth recorded == min(probe_counts) for the analyzer to see
+        assert entry["split_half_m_actual_probes"] == min(counts), (
+            f"{behavior}: m_actual must be min(probe_counts)={min(counts)}, "
+            f"got {entry['split_half_m_actual_probes']}"
+        )
+        # the disagreement guard can now FIRE (it has a split_half to compare); the
+        # boolean is data-dependent, but the field must be a real bool, not the
+        # always-False dead value the dropped split-half produced.
+        assert isinstance(entry["estimators_disagree"], bool)
+
+
+# --------------------------------------------------------------------------- #
+# 7. J-sampling per-cell seed is CROSS-PROCESS STABLE                          #
+#    (BLOCKER judge-rerun-nondeterministic-sampling) — Python's salted hash()  #
+#    produced different seeds in different interpreter processes; the sha256    #
+#    digest seed is identical everywhere.                                      #
+# --------------------------------------------------------------------------- #
+def test_stable_cell_seed_is_identical_across_interpreter_processes():
+    """``_stable_cell_seed`` must return the SAME value in two fresh interpreters with
+    DIFFERENT ``PYTHONHASHSEED`` — the salted builtin ``hash()`` did not (Codex showed
+    102742103 vs 2626216375 for the same tuple), so a fixed ``--seed`` would NOT
+    reproduce the same J=20 sample. Spawns two subprocesses with distinct hash seeds
+    and asserts equality (and that the builtin hash genuinely DIFFERS, proving the
+    fixture exercises the salted-hash regime).
+    """
+    import subprocess
+
+    snippet = (
+        "import sys; sys.path.insert(0, 'scripts'); "
+        "from issue742_judge_rerun import _stable_cell_seed; "
+        "print(_stable_cell_seed(7428, 'betley', 'refusal', 'f1_house_surgeon')); "
+        "print(abs(hash((7428, 'betley', 'refusal', 'f1_house_surgeon'))) % (2**32))"
+    )
+
+    def _run(hashseed: str) -> tuple[int, int]:
+        env = {**os.environ, "PYTHONHASHSEED": hashseed}
+        out = subprocess.run(
+            ["uv", "run", "python", "-c", snippet],
+            cwd=str(PROJECT_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        lines = [ln for ln in out.stdout.strip().splitlines() if ln.strip()]
+        return int(lines[0]), int(lines[1])
+
+    stable_a, builtin_a = _run("0")
+    stable_b, builtin_b = _run("12345")
+
+    assert stable_a == stable_b, (
+        f"_stable_cell_seed must be cross-process stable: {stable_a} != {stable_b}"
+    )
+    assert builtin_a != builtin_b, (
+        "fixture sanity: the salted builtin hash() must DIFFER across the two "
+        f"PYTHONHASHSEEDs (got {builtin_a} == {builtin_b}) — else this test would not "
+        "exercise the nondeterminism the BLOCKER is about"
+    )
+
+
+# --------------------------------------------------------------------------- #
+# 8. The LIVE (non-dry) judge-rerun path is exercised end-to-end, no API spend #
+#    (BLOCKER judge-rerun-smoke-dry-run-only) — drives run() with a counting    #
+#    judge over a seeded synthetic snapshot; asserts a real judge_variance.    #
+# --------------------------------------------------------------------------- #
+def test_nondry_counting_judge_writes_real_judge_variance(tmp_path):
+    """The dry-run smoke NEVER reaches ``_judge_reruns_for_cell`` /
+    ``_decompose_variance`` / the ``judge_variance`` write. This drives the LIVE
+    (``dry_run=False``) ``run`` path with the deterministic counting judge over a
+    pre-seeded synthetic snapshot (no HF, no #658 tensors, no API spend) and asserts
+    the variance decomposition actually computed and was written: ``judge_variance``
+    is non-empty and carries a NON-ZERO ``var_judge`` (the across-rerun term — a dead
+    path would write nothing or a degenerate zero).
+    """
+    import issue742_judge_rerun as jr
+
+    dest = tmp_path / "snap"
+    jr.seed_synthetic_snapshot(dest, genre="betley", behavior="refusal")
+    result = jr.run(
+        genres=["betley"],
+        behaviors=["refusal"],
+        r_rerun=2,
+        j_completions=20,
+        dry_run=False,
+        seed=7428,
+        judge_fn=jr.make_counting_judge(),
+        dest_override=dest,
+        skip_snapshot=True,
+    )
+    jv = result["judge_variance"]
+    assert jv, "judge_variance must be non-empty (the live path must have run)"
+    decomp = jv["betley"]["refusal"]
+    for key in ("var_total", "var_judge", "var_generation", "var_signal", "sqrt_r_yy_honest"):
+        assert key in decomp, f"variance decomposition missing {key}"
+    assert decomp["var_judge"] > 0.0, (
+        f"var_judge must be NON-ZERO to demonstrate the across-rerun term computing, "
+        f"got {decomp['var_judge']}"
+    )
+    assert "non-dry" in result["note"], "the note must record the non-dry counting-judge run"

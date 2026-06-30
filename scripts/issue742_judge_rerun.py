@@ -23,11 +23,27 @@ text. Per CLAUDE.md "Content hygiene for harmful-content datasets".
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
+
+
+def _stable_cell_seed(seed: int, genre: str, behavior: str, ctx: str) -> int:
+    """Cross-process-STABLE per-cell J-sampling seed (BLOCKER nondeterministic-sampling).
+
+    Python's built-in ``hash()`` is salted per interpreter process (PYTHONHASHSEED),
+    so ``abs(hash((seed, genre, behavior, ctx)))`` produces DIFFERENT values in
+    different processes — a fixed ``--seed`` would NOT reproduce the same J=20 sample
+    across runs. A sha256 digest of the key bytes is deterministic everywhere; we take
+    the first 4 bytes as a uint32 seed for ``numpy.random.default_rng``.
+    """
+    key = f"{seed}\0{genre}\0{behavior}\0{ctx}".encode()
+    return int.from_bytes(hashlib.sha256(key).digest()[:4], "big")
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT / "scripts") not in sys.path:
@@ -99,6 +115,7 @@ def _judge_reruns_for_cell(
     r_rerun: int,
     j_completions: int,
     seed: int,
+    judge_fn: Callable[..., dict] | None = None,
 ) -> tuple[list[np.ndarray], np.ndarray]:
     """Run R PER-BEHAVIOR judge passes over a cell's snapshotted completions.
 
@@ -120,7 +137,13 @@ def _judge_reruns_for_cell(
     Only judged scores are surfaced — completion TEXT is never returned or logged
     (CLAUDE.md content hygiene). Returns ``([], empty)`` when no snapshot is present.
     The J=20 deterministic sampling is keyed on ``(seed, genre, behavior, context)``
-    so a re-run is reproducible (plan §11 row 8 + §9 batch sizing).
+    via :func:`_stable_cell_seed` (a cross-process-stable sha256 digest, NOT Python's
+    salted ``hash()``) so a re-run reproduces the same sample (plan §11 row 8 + §9).
+
+    ``judge_fn`` is a test-injection hook threaded into ``dc.per_behavior_judge_rate``
+    (signature ``(col_id, gen, model) -> dict``); when None the real #658 per-behavior
+    ``judge_column`` is used. A deterministic counting stub lets the live (non-dry)
+    judge-rerun path be smoke-tested without API spend (BLOCKER judge-rerun-smoke-dry-run-only).
     """
     cell_dir = snapshot_dir / genre
     files = sorted(cell_dir.glob(f"*__{behavior}.json"))
@@ -134,7 +157,7 @@ def _judge_reruns_for_cell(
     for f in files:
         obj = json.loads(f.read_text())
         ctx = obj.get("context_id", f.stem)
-        cell_seed = abs(hash((seed, genre, behavior, ctx))) % (2**32)
+        cell_seed = _stable_cell_seed(seed, genre, behavior, ctx)
         per_context_obj[ctx] = dc.sample_completions_for_judge(
             obj, j_completions=j_completions, seed=cell_seed
         )
@@ -147,7 +170,10 @@ def _judge_reruns_for_cell(
         out = np.empty(len(ctx_ids), dtype=float)
         for i, ctx in enumerate(ctx_ids):
             res = dc.per_behavior_judge_rate(
-                objs_by_ctx[ctx], behavior=behavior, judge_model=JUDGE_MODEL
+                objs_by_ctx[ctx],
+                behavior=behavior,
+                judge_model=JUDGE_MODEL,
+                judge_fn=judge_fn,
             )
             rate = res.get("rate")
             out[i] = float(rate) if rate is not None else np.nan
@@ -168,6 +194,82 @@ def _judge_reruns_for_cell(
     return rerun_rates, gen_rates
 
 
+def make_counting_judge() -> Callable[..., dict]:
+    """A deterministic, no-API counting judge that exercises the LIVE judge-rerun path.
+
+    Lets the non-dry ``run(...)`` code path (``_judge_reruns_for_cell`` ->
+    ``_decompose_variance`` -> ``judge_variance`` write) be smoke-tested without
+    Anthropic spend (BLOCKER judge-rerun-smoke-dry-run-only). Mimics
+    ``issue658_judge_e0.judge_column``'s return contract (``{rate, n_judged,
+    n_positive, ...}``) by deciding each completion positive from a stable sha256 of
+    its text. A deterministic per-CALL jitter (keyed on a closure-local call counter)
+    flips one verdict on a SUBSET of reruns so the SAME context judged across the R
+    reruns yields slightly different rates -> a NON-trivial, NON-ZERO ``Var_judge``
+    (a pure-deterministic judge would write a degenerate ``Var_judge = 0``, which
+    would not demonstrate the variance term computing). Signature matches the
+    ``judge_fn`` hook ``(col_id, gen, model) -> dict``.
+    """
+    call_idx = {"n": 0}
+
+    def _judge(col_id: str, gen: dict, model: str) -> dict:
+        flat: list[dict] = []
+        for cell in gen.get("cells", []):
+            for comp in cell.get("completions", []):
+                flat.append(comp)
+        n_judged = len(flat)
+        base_positive = 0
+        for c in flat:
+            text = str(c.get("text", ""))
+            h = int.from_bytes(hashlib.sha256(text.encode()).digest()[:2], "big")
+            base_positive += int(h % 2 == 0)
+        # Deterministic per-call jitter that VARIES across reruns of the same context:
+        # the call counter advances every call, so judging the same context on rerun 0
+        # vs rerun 1 lands at different `call_idx` parities -> a different verdict flip
+        # -> a non-degenerate across-rerun (judge) variance.
+        n_positive = base_positive
+        if n_judged > 0 and call_idx["n"] % 3 == 0:
+            n_positive = min(n_judged, base_positive + 1)
+        call_idx["n"] += 1
+        rate = float(n_positive) / n_judged if n_judged else None
+        return {"rate": rate, "n_judged": n_judged, "n_positive": n_positive}
+
+    return _judge
+
+
+def seed_synthetic_snapshot(
+    dest: Path,
+    *,
+    genre: str,
+    behavior: str,
+    n_contexts: int = 2,
+    n_completions: int = 24,
+) -> Path:
+    """Write a tiny synthetic #658-shaped snapshot for the non-API counting-judge smoke.
+
+    Produces ``dest/<genre>/<ctx>__<behavior>.json`` files in the real #658 ``cells``
+    schema so the LIVE ``_judge_reruns_for_cell`` path reads them exactly as it would
+    a snapshotted HF cell — no network, no GPU, no tensors. Completion TEXT is benign
+    synthetic ("ctx<i> probe<p> completion<k>"); this smoke never touches harmful data.
+    """
+    cell_dir = dest / genre
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    for i in range(n_contexts):
+        ctx_id = f"smoke_ctx_{i}"
+        completions = [
+            {"text": f"{ctx_id} probe0 completion{k}", "logp_norm": 0.0}
+            for k in range(n_completions)
+        ]
+        obj = {
+            "context_id": ctx_id,
+            "behavior": behavior,
+            "column_id": behavior,
+            "dv": "judged_rate",
+            "cells": [{"probe": "smoke_probe_0", "completions": completions}],
+        }
+        (cell_dir / f"{ctx_id}__{behavior}.json").write_text(json.dumps(obj))
+    return cell_dir
+
+
 def run(
     *,
     genres: list[str],
@@ -177,38 +279,55 @@ def run(
     dry_run: bool,
     seed: int = 7428,
     max_contexts: int | None = None,
+    judge_fn: Callable[..., dict] | None = None,
+    dest_override: Path | None = None,
+    skip_snapshot: bool = False,
 ) -> dict:
-    dest = OUT_DIR / "inputs" / "raw_completions"
+    # ``dest_override`` + ``skip_snapshot`` let the counting-judge smoke point the
+    # live judge-rerun path at a pre-seeded synthetic snapshot dir, bypassing the
+    # HF download + #658-tensor load (the BLOCKER-1 reproducible-smoke contract: no
+    # API spend, no network, no GPU). Production always uses the OUT_DIR snapshot.
+    dest = (
+        Path(dest_override)
+        if dest_override is not None
+        else (OUT_DIR / "inputs" / "raw_completions")
+    )
     per_genre: dict[str, dict] = {}
-    for genre in genres:
-        # The HF raw-completion filenames are keyed by the genre's canonical 50
-        # context_ids (filename = {context_id}__{behavior}.json), NOT a 6-persona
-        # house list — read them from load_inputs. max_contexts trims for smoke.
-        gi = dc.load_inputs(genre, repo_root=PROJECT_ROOT)
-        ctx_ids = list(gi.context_ids)
-        if max_contexts is not None:
-            ctx_ids = ctx_ids[:max_contexts]
-        manifest = dc.snapshot_raw_completions(
-            genre,
-            dest_dir=dest,
-            hf_download_fn=_hf_download_fn,
-            rerun_probe_set_size=j_completions,
-            context_ids=ctx_ids,
-            behaviors=tuple(behaviors),
-        )
-        # content-identity: only path + sha + count are recorded (never text)
-        per_genre[genre] = {
-            "n_cells": len(manifest),
-            "manifest": [
-                {
-                    "context_id": r.context_id,
-                    "behavior": r.behavior,
-                    "n_completions": r.n_completions,
-                    "sha256": r.sha256,
-                }
-                for r in manifest
-            ],
+    if skip_snapshot:
+        # snapshot already present on disk (smoke pre-seeds it); record nothing here.
+        per_genre = {
+            genre: {"n_cells": 0, "manifest": [], "snapshot": "pre-seeded"} for genre in genres
         }
+    else:
+        for genre in genres:
+            # The HF raw-completion filenames are keyed by the genre's canonical 50
+            # context_ids (filename = {context_id}__{behavior}.json), NOT a 6-persona
+            # house list — read them from load_inputs. max_contexts trims for smoke.
+            gi = dc.load_inputs(genre, repo_root=PROJECT_ROOT)
+            ctx_ids = list(gi.context_ids)
+            if max_contexts is not None:
+                ctx_ids = ctx_ids[:max_contexts]
+            manifest = dc.snapshot_raw_completions(
+                genre,
+                dest_dir=dest,
+                hf_download_fn=_hf_download_fn,
+                rerun_probe_set_size=j_completions,
+                context_ids=ctx_ids,
+                behaviors=tuple(behaviors),
+            )
+            # content-identity: only path + sha + count are recorded (never text)
+            per_genre[genre] = {
+                "n_cells": len(manifest),
+                "manifest": [
+                    {
+                        "context_id": r.context_id,
+                        "behavior": r.behavior,
+                        "n_completions": r.n_completions,
+                        "sha256": r.sha256,
+                    }
+                    for r in manifest
+                ],
+            }
 
     judge_variance: dict[str, dict] = {}
     if dry_run:
@@ -234,21 +353,32 @@ def run(
                     r_rerun=r_rerun,
                     j_completions=j_completions,
                     seed=seed,
+                    judge_fn=judge_fn,
                 )
                 if not rerun_rates:
                     continue
                 cell_results[behavior] = _decompose_variance(rerun_rates, gen_rates)
             judge_variance[genre] = cell_results
-        note = (
-            "full run: re-judged R_rerun× with the per-behavior #658 rubric "
-            "(judge_column, reading c['text'], judge=claude-sonnet-4-5-20250929) on "
-            f"J={j_completions} deterministically-sampled completions/context; per "
-            "(genre, behavior) Var(E0)=Var_signal+Var_judge+Var_generation decomposed below. "
-            "Dispatch is the threaded sync Anthropic client (max_retries=8) #658 used: the "
-            "registered ~8-16k set is well below the ~200k sync/batch crossover (§11 row 8), "
-            "and routing the per-behavior binary rubric through eval.batch_judge would require "
-            "reworking its mean_aligned aggregation — the construct fix (the BLOCKER) is honored."
-        )
+        if judge_fn is not None:
+            note = (
+                "non-dry counting-judge smoke: exercised the LIVE _judge_reruns_for_cell -> "
+                "_decompose_variance -> judge_variance write path with a deterministic, "
+                "no-API counting judge (make_counting_judge) — NO Anthropic spend. Proves the "
+                f"J={j_completions} sampling + R_rerun decomposition + judge_variance write run "
+                "end-to-end (BLOCKER judge-rerun-smoke-dry-run-only). The production run swaps in "
+                "the real per-behavior #658 judge_column."
+            )
+        else:
+            note = (
+                "full run: re-judged R_rerun× with the per-behavior #658 rubric "
+                "(judge_column, reading c['text'], judge=claude-sonnet-4-5-20250929) on "
+                f"J={j_completions} deterministically-sampled completions/context; per "
+                "(genre, behavior) Var(E0)=Var_signal+Var_judge+Var_generation decomposed below. "
+                "Dispatch is the threaded sync Anthropic client (max_retries=8) #658 used: the "
+                "registered ~8-16k set is well below the ~200k sync/batch crossover (§11 row 8), "
+                "and routing the per-behavior binary rubric through eval.batch_judge would need "
+                "reworking its mean_aligned aggregation — the construct fix (the BLOCKER) holds."
+            )
 
     return {
         "task": "issue_742",
@@ -292,17 +422,42 @@ def main() -> int:
         action="store_true",
         help="single genre/behavior/context, dry-run (no judge spend); exercises snapshot",
     )
+    parser.add_argument(
+        "--smoke-counting-judge",
+        action="store_true",
+        help=(
+            "tiny NON-DRY smoke: run the LIVE _judge_reruns_for_cell + judge_variance "
+            "write path with a deterministic counting judge (no API spend); exercises the "
+            "branch --smoke / --dry-run never reach (BLOCKER judge-rerun-smoke-dry-run-only)"
+        ),
+    )
     args = parser.parse_args()
 
     genres = [g.strip() for g in args.genres.split(",") if g.strip()]
     behaviors = [b.strip() for b in args.behaviors.split(",") if b.strip()]
     dry_run = args.dry_run
     max_contexts = args.max_contexts
+    judge_fn: Callable[..., dict] | None = None
+    dest_override: Path | None = None
+    skip_snapshot = False
     if args.smoke:
         genres = genres[:1]
         behaviors = behaviors[:1]
         dry_run = True
         max_contexts = 1  # single context-id keeps the smoke snapshot tiny
+    if args.smoke_counting_judge:
+        # NON-DRY tiny slice with the no-API counting judge -> the live judge-rerun
+        # branch + judge_variance write are actually exercised (the dry-run smoke skips
+        # them). Self-contained: pre-seed a tiny synthetic #658-shaped snapshot, then
+        # point run() at it (no HF download, no #658 tensors, no API spend).
+        genres = genres[:1]
+        behaviors = behaviors[:1]
+        dry_run = False
+        max_contexts = 1
+        judge_fn = make_counting_judge()
+        dest_override = args.out_dir / "smoke_counting_snapshot"
+        seed_synthetic_snapshot(dest_override, genre=genres[0], behavior=behaviors[0])
+        skip_snapshot = True
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     result = run(
@@ -313,9 +468,14 @@ def main() -> int:
         dry_run=dry_run,
         seed=args.seed,
         max_contexts=max_contexts,
+        judge_fn=judge_fn,
+        dest_override=dest_override,
+        skip_snapshot=skip_snapshot,
     )
     out_path = args.out_dir / (
-        "stage0_judge_variance_smoke.json" if args.smoke else "stage0_judge_variance.json"
+        "stage0_judge_variance_smoke.json"
+        if (args.smoke or args.smoke_counting_judge)
+        else "stage0_judge_variance.json"
     )
     out_path.write_text(json.dumps(result, indent=2))
     print(f"[phase=stage0_judge_variance] wrote {out_path} (genres={genres}, dry_run={dry_run})")

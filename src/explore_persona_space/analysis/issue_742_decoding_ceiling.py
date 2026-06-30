@@ -794,14 +794,23 @@ RIDGE_LAMBDAS = (1e-2, 1e-1, 1.0, 10.0, 100.0, 1000.0)  # #658's a33 nested-CV g
 
 @dataclass
 class RidgeRefitResult:
-    """Result of the Stage-0 step-0c LOCO nested-CV ridge re-fit (join-integrity).
+    """Result of the Stage-0 step-0c LOCO nested-CV ridge re-fit — a RECORDED DIAGNOSTIC.
 
-    ``refit_rho``: the held-out LOCO Spearman ρ of the re-fit ridge
+    v8 [REPLAN] (CONCERN ridge-refit-result-stale-docstring): this is NOT a gate. The
+    join-integrity GATE is the deterministic per-genre ``probe_pool_hash`` assert in
+    :func:`load_inputs` (plan §4 Stage-0 step 0a); this ridge re-fit is logged for
+    diagnostic comparison and is NEVER raised on by any caller.
+
+    ``refit_rho``: the held-out LOCO Spearman ρ of the re-fit nested-CV ridge
     ``v0(C)[layer] → E0(C, behavior)``. ``persisted_rho``: #658's persisted a33
-    ``lin_rho`` for the cell. ``delta``: ``|refit_rho − persisted_rho|``.
-    ``join_ok``: True iff ``delta <= tol`` — when False the inputs are mis-joined
-    (a wrong genre tensor / a Betley↔UltraChat swap) and the bracket interpretation
-    for that genre must BLOCK (a join-integrity REVISE, plan §4 step 0c).
+    value, which is a diff-of-means ``r_B`` PROJECTION ρ (``a33_cells.json``
+    ``rb_recipe: "diffmeans"``), NOT a ridge — a DIFFERENT estimator, so the two
+    legitimately diverge (the sycophancy ridge≈0.65 vs projection 0.1268 gap IS the §7
+    chat-re-analysis finding). ``delta``: ``|refit_rho − persisted_rho|``.
+    ``join_ok``: a REPORTED flag only (``delta <= tol``); it is informational and is
+    NEVER used to block bracket interpretation — the v7 ``delta <= tol → raise`` gate
+    was unsatisfiable by construction (the two estimators differ) and was removed
+    (plan §11 row 17, §13.4 v7→v8).
     """
 
     behavior: str
@@ -821,15 +830,19 @@ def loco_ridge_refit_rho(
     *,
     lambdas: tuple[float, ...] = RIDGE_LAMBDAS,
 ) -> float:
-    """Held-out LOCO Spearman ρ of a nested-CV ridge ``v0_layer → E0``.
+    """Held-out LOCO Spearman ρ of a nested-CV ridge ``v0_layer → E0`` (RECORDED DIAGNOSTIC).
 
     For each held-out context, pick λ minimizing inner leave-one-out PRESS MSE on the
     training contexts (no λ leakage into the held-out read), fit the ridge on the
     standardized training design, predict the held-out point, then Spearman-correlate
     the N held-out predictions against the measured ``E0``. Reuses #658's exact
-    closed-form dual-ridge LOCO (``issue658_fit_predictors._ridge_predict_loco``) so
-    the re-fit reproduces #658's a33 ``lin_rho`` within numerical tolerance (the
-    join-integrity contract, plan §4 Stage-0 step 0c).
+    closed-form dual-ridge LOCO (``issue658_fit_predictors._ridge_predict_loco``).
+
+    v8 [REPLAN]: this re-fit ρ is a regularized cross-validated RIDGE; #658's persisted
+    a33 value is a diff-of-means ``r_B`` PROJECTION ρ (a DIFFERENT estimator), so the two
+    legitimately diverge and this ρ is REPORTED for comparison, NOT used as a gate. The
+    join-integrity GATE is the deterministic ``probe_pool_hash`` assert in
+    :func:`load_inputs` (plan §4 Stage-0 step 0a); see :class:`RidgeRefitResult`.
 
     ``v0_layer``: ``(n_contexts, d)`` single-layer features. ``E0``: ``(n_contexts,)``.
     Returns the held-out Spearman ρ in [-1, 1] (0.0 on a degenerate prediction).

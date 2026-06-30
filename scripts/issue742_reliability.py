@@ -77,16 +77,26 @@ def _per_context_arrays(
     return rates, m_cell, per_probe
 
 
-def _build_probe_rate_matrix(per_probe: list[list[float]]) -> np.ndarray | None:
-    """Stack a behavior's per-context per-probe rates into ``(n_contexts, n_probes)``.
+def _build_probe_rate_matrix(per_probe: list[list[float]]) -> tuple[np.ndarray | None, int]:
+    """Stack a behavior's per-context per-probe rates into ``(n_contexts, m_actual)``.
 
-    Only valid when every context shares the same probe count; returns None otherwise
-    (then the split-half-over-probes read is skipped and only the binomial read stands).
+    CONCERN-FIX (one-rollout-splithalf-still-dropped): the #658 read-out behaviors
+    carry HETEROGENEOUS probe counts per context (harmful_compliance ``{114, 115}``,
+    refusal ``{212, 213, 214, 215}``); the prior round returned ``None`` on any
+    heterogeneity, which silently DROPPED the split-half-over-probes estimator for
+    exactly the two behaviors the §7 estimator-disagreement guard exists to protect.
+    Instead, TRUNCATE every context to ``m_actual = min(probe_counts)`` so the matrix
+    is rectangular and the split-half estimator runs. The realized ``m_actual`` is
+    returned so ``compute_bracket`` records it in the per-cell metadata. Returns
+    ``(None, 0)`` only when fewer than 2 probes survive (split-half ill-posed).
     """
-    lens = {len(p) for p in per_probe}
-    if len(lens) != 1:
-        return None
-    return np.array(per_probe, dtype=float)
+    if not per_probe:
+        return None, 0
+    m_actual = min(len(p) for p in per_probe)
+    if m_actual < 2:
+        return None, m_actual
+    # truncate every context to the first m_actual probes -> rectangular matrix.
+    return np.array([p[:m_actual] for p in per_probe], dtype=float), m_actual
 
 
 def compute_bracket(
@@ -126,7 +136,10 @@ def compute_bracket(
     split_half: float | None = None
     estimator_kind = "binomial_only"
     over_rollouts_available = False
-    probe_mat = _build_probe_rate_matrix(per_probe) if per_probe is not None else None
+    m_actual_probes = 0
+    probe_mat: np.ndarray | None = None
+    if per_probe is not None:
+        probe_mat, m_actual_probes = _build_probe_rate_matrix(per_probe)
     if probe_mat is not None and probe_mat.shape[1] >= 2:
         split_half = dc.reliability_split_half_over_probes(
             probe_mat, n_split_seeds=n_split_seeds, rng=rng
@@ -145,10 +158,15 @@ def compute_bracket(
     else:
         sqrt_r_yy = sqrt_binom
 
-    # §7 estimator-disagreement guard (CONCERN one-rollout-splithalf-dropped): now
-    # FIRES for every behavior because split_half is genuinely computed (over-probes)
-    # for all four — the guard was dead before only because split_half was silently
-    # dropped for the 1-rollout behaviors.
+    # §7 estimator-disagreement guard (CONCERN one-rollout-splithalf-still-dropped):
+    # split_half is now computed (over-probes) for EVERY behavior, including the
+    # heterogeneous-probe-count behaviors (harmful_compliance {114,115}, refusal
+    # {212..215}) — `_build_probe_rate_matrix` TRUNCATES each context to
+    # m_actual = min(probe_counts) so the matrix is rectangular, rather than the
+    # prior round's silent `return None` that left split_half unpopulated (the §7
+    # guard was dead for exactly those two behaviors). The guard therefore fires for
+    # all four read-out behaviors; `m_actual_probes` is recorded below so the
+    # analyzer sees the realized truncation depth per cell.
     disagree = split_half is not None and abs(float(split_half) - float(binom)) > DISAGREE_THRESHOLD
 
     # BLOCKER stage0-reliability-not-registered(a): CV-MATCHED ceiling CI — one √(r_yy)
@@ -211,6 +229,7 @@ def compute_bracket(
             "rates only); over-probes split-half is the disk-supported estimator"
         ),
         "r_yy_split_half": None if split_half is None else float(split_half),
+        "split_half_m_actual_probes": int(m_actual_probes),
         "r_yy_binomial": float(binom),
         "sqrt_r_yy_split_half": sqrt_split,
         "sqrt_r_yy_binomial": sqrt_binom,
