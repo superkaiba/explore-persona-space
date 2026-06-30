@@ -4794,15 +4794,15 @@
     "756": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/756",
-      "status": "proposed",
+      "path": "tasks/planning/756",
+      "status": "planning",
       "title": "daily-fix: analyzer scope guard \u2014 no self-spawned critics"
     },
     "757": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/757",
-      "status": "proposed",
+      "path": "tasks/planning/757",
+      "status": "planning",
       "title": "daily-fix: same-issue loop re-reads latest followup-scope marker"
     },
     "758": {
