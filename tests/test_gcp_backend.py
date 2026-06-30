@@ -48,6 +48,7 @@ from explore_persona_space.backends import (
     render_create_argv,
 )
 from explore_persona_space.backends.gcp import (
+    _JANITOR_FENCE_GRACE_SECONDS,
     DEFAULT_GCLOUD_CONFIG,
     DEFAULT_IMAGE_FAMILY,
     DEFAULT_IMAGE_PROJECT,
@@ -63,6 +64,7 @@ from explore_persona_space.backends.gcp import (
     GcpLaunchSecretsMissing,
     StaleNamedInstance,
     _classify_janitor_instance,
+    _instance_max_run_seconds,
     _stale_named_instance_or_none,
     attempt_id_for,
     classify_create_failure,
@@ -287,7 +289,7 @@ def test_default_gcp_config_threads_production_constants() -> None:
     assert cfg.image_project == DEFAULT_IMAGE_PROJECT
     assert "us-central1-b" in cfg.fallback_zones
     assert cfg.default_boot_disk_type == "pd-ssd"
-    assert cfg.default_max_run_duration == "24h"
+    assert cfg.default_max_run_duration == "7d"  # #741: raised from 24h (FLEX_START ceiling)
 
 
 # ---------------------------------------------------------------------------
@@ -393,7 +395,7 @@ def test_render_create_argv_cpu_small_golden() -> None:
     assert not any(a.startswith("--accelerator") for a in argv), argv
     assert "--instance-termination-action=DELETE" in argv
     assert "--no-restart-on-failure" in argv
-    assert "--max-run-duration=24h" in argv
+    assert "--max-run-duration=7d" in argv  # #741: config default raised 24h → 7d
 
 
 def test_quota_metric_for_cpu_small_returns_none() -> None:
@@ -491,7 +493,7 @@ def test_render_create_argv_cpu_bigmem_golden() -> None:
     # Ephemeral / leak guards apply equally to a CPU VM.
     assert "--instance-termination-action=DELETE" in argv
     assert "--no-restart-on-failure" in argv
-    assert "--max-run-duration=24h" in argv
+    assert "--max-run-duration=7d" in argv  # #741: config default raised 24h → 7d
     # Default boot disk covers a ~150 GB working set.
     assert "--boot-disk-size=300GB" in argv
 
@@ -836,8 +838,8 @@ def test_render_create_argv_lora_golden() -> None:
     # Leak guards
     assert "--instance-termination-action=DELETE" in argv
     assert "--maintenance-policy=TERMINATE" in argv
-    # max-run-duration default (config 24h)
-    assert "--max-run-duration=24h" in argv
+    # max-run-duration default (config 7d, #741)
+    assert "--max-run-duration=7d" in argv
     # DLVM image
     assert "--image-family=pytorch-test-family" in argv
     assert "--image-project=deeplearning-platform-release" in argv
@@ -2438,6 +2440,18 @@ def _one_running_instance(name: str, created_iso: str) -> str:
     )
 
 
+def _one_running_instance_with_fence(name: str, created_iso: str, max_run_seconds: int) -> str:
+    """_one_running_instance + a scheduling.maxRunDuration block (#741 Option B).
+
+    Mirrors the ``scheduling.maxRunDuration: {seconds}`` block GCP populates
+    natively whenever the create passed ``--max-run-duration`` — the field the
+    per-instance-fence-aware age backstop reads via ``_instance_max_run_seconds``.
+    """
+    inst = json.loads(_one_running_instance(name, created_iso))[0]
+    inst["scheduling"] = {"maxRunDuration": {"seconds": max_run_seconds}}
+    return json.dumps([inst])
+
+
 def test_audit_stale_gcp_vms_reaps_terminal_phase_running_zombie() -> None:
     """A RUNNING VM that has published eps/phase=done past the terminal-phase
     floor (but well under the 24h age backstop) is reaped PROMPTLY — the
@@ -2805,6 +2819,300 @@ def test_audit_keep_prefix_never_reaped_or_escalated(monkeypatch) -> None:
     assert not any("delete" in a and "instances" in a for a in runner.calls)
     # No phase probe either — a keep VM is short-circuited before the probe.
     assert not any("get-guest-attributes" in a for a in runner.calls)
+
+
+# ---------------------------------------------------------------------------
+# #741 Option B — per-instance-fence-aware age backstop.
+# ---------------------------------------------------------------------------
+
+
+def test_instance_max_run_seconds_reads_scheduling() -> None:
+    """The fence reader accepts int OR numeric-string ``seconds``, and returns
+    None (→ fixed-fallback fence) for every absent / malformed shape, so the
+    backstop never silently disarms on a missing or junk field."""
+    # dict-int seconds → parsed.
+    assert (
+        _instance_max_run_seconds({"scheduling": {"maxRunDuration": {"seconds": 604800}}}) == 604800
+    )
+    # string-int seconds (gcloud often emits seconds as a string) → parsed.
+    assert (
+        _instance_max_run_seconds({"scheduling": {"maxRunDuration": {"seconds": "604800"}}})
+        == 604800
+    )
+    # No scheduling block at all → None.
+    assert _instance_max_run_seconds({}) is None
+    # scheduling present but no maxRunDuration → None.
+    assert _instance_max_run_seconds({"scheduling": {}}) is None
+    # Junk seconds value → None (never crashes, falls back to the fixed fence).
+    assert _instance_max_run_seconds({"scheduling": {"maxRunDuration": {"seconds": "x"}}}) is None
+    # Constant sanity: the grace is exactly 1h.
+    assert _JANITOR_FENCE_GRACE_SECONDS == 3600
+
+
+def test_audit_age_backstop_7d_fence_survives_under_old_24h_max_age_seconds() -> None:
+    """THE #697 REGRESSION (Phase-2 Statistics Must-Fix #1, DISCRIMINATING form).
+
+    A RUNNING eps-issue-697 with scheduling.maxRunDuration.seconds=604800 (7d),
+    age=26h, run under the OLD 24h CLI default (max_age_seconds=24*3600=86400) is
+    KEPT (action="skipped", reason None).
+
+    Why DISCRIMINATING: a fence-BLIND impl would set age_fence = max_age_seconds
+    = 86400 and REAP (93600 >= 86400 → "deleted"/"age"). The fence-AWARE impl
+    sets age_fence = 604800 + 3600 = 608400 and KEEPS (93600 < 608400). So this
+    test green-passes ONLY when the implementation actually reads the per-instance
+    fence — the exact #697 shape (a 7d job that the janitor's 24h cap must NOT
+    kill) RED-FAILS a fence-blind implementation."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=26)).isoformat()  # 93600s old
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(
+                0, _one_running_instance_with_fence("eps-issue-697", created, 604800), ""
+            )
+        ],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,  # the OLD CLI default — the discriminator
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_audit_stale_gcp_vms_library_default_fallback_fence_is_8d() -> None:
+    """The LIBRARY default ``max_age_seconds`` is 8d (192h), matching the
+    ``gcp_audit.py`` CLI default + the #741 docstring claim — NOT the old 24h.
+
+    DISCRIMINATING on the default value itself: a fence-less RUNNING VM aged
+    30h (between the old 24h fence and the new 8d one), run with NO
+    ``max_age_seconds`` argument, is KEPT under the 8d default (108000 <
+    691200) but would have been REAPED under the old 24h default (108000 >
+    86400). So this green-passes ONLY when the library default is 192*3600 —
+    it RED-FAILS if a future refactor reverts the default to 24*3600."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=30)).isoformat()  # 108000s old
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-741", created), "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        # max_age_seconds DELIBERATELY OMITTED — exercises the library default.
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_audit_age_backstop_7d_fence_survives_past_24h_under_192h_fallback() -> None:
+    """Less-discriminating SANITY CHECK (kept, NOT the #697 guard): the SAME 7d-
+    fence instance at age=26h under the new 192h CLI default also keeps. It skips
+    under BOTH fence-aware (93600 < 608400) and fence-blind (93600 < 691200)
+    paths, so it documents the production-default path without catching the bug —
+    the discriminating guard is the ``..._under_old_24h_max_age_seconds`` test."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=26)).isoformat()
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(
+                0, _one_running_instance_with_fence("eps-issue-697", created, 604800), ""
+            )
+        ],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=192 * 3600,  # the new production CLI default
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+
+
+def test_audit_age_backstop_within_fence_plus_grace_skipped() -> None:
+    """Phase-2 Statistics Must-Fix #2 (the 1h grace constant is MEASURED).
+
+    A RUNNING instance with maxRunDuration.seconds=86400 (24h), age=24h30m
+    (88200s), under max_age_seconds=24*3600 → KEPT. The age sits in the OPEN
+    interval (fence, fence+grace) = (86400, 90000).
+
+    Why DISCRIMINATING on BOTH grace-applied AND fence-read:
+      - fence-aware-WITH-grace: age_fence = 86400 + 3600 = 90000 → 88200 < 90000 → KEEP;
+      - drop-the-grace impl:    age_fence = 86400            → 88200 >= 86400 → REAP;
+      - fence-blind fallback:   age_fence = max_age_seconds = 86400 → 88200 >= 86400 → REAP.
+    So this green-passes ONLY when the impl reads the fence AND adds the 1h grace."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(seconds=88200)).isoformat()  # 24h30m old
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(
+                0, _one_running_instance_with_fence("eps-issue-741", created, 86400), ""
+            )
+        ],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
+def test_audit_age_backstop_24h_fence_instance_reaps_at_25h() -> None:
+    """Operator-boundary confirmation under the ``>=`` semantics. A RUNNING
+    instance with maxRunDuration.seconds=86400 (24h), age=25h EXACTLY
+    (90000s = fence+grace = 86400+3600), under max_age_seconds=24*3600 → REAPED
+    (action="deleted", reason="age"). The After-snippet uses
+    ``if age_seconds >= age_fence``, so age == fence+grace reaps. Paired with
+    ``..._within_fence_plus_grace_skipped`` (age 88200, strictly below) this
+    brackets the grace boundary from both sides."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(seconds=90000)).isoformat()  # 25h old, exactly fence+grace
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(
+                0, _one_running_instance_with_fence("eps-issue-742", created, 86400), ""
+            )
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "age"
+
+
+def test_audit_age_backstop_reaps_past_own_fence_plus_grace() -> None:
+    """A 7d-fence instance well past its OWN fence + grace is reaped. age=7d+2h
+    (612000s) >= 604800 + 3600 = 608400 → reaped (reason="age"). Pins the
+    OVER-grace reap side for the long fence."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(seconds=612000)).isoformat()  # 7d + 2h
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(
+                0, _one_running_instance_with_fence("eps-issue-743", created, 604800), ""
+            )
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=192 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "age"
+
+
+def test_audit_age_backstop_no_fence_falls_back_to_fixed_192h() -> None:
+    """A VM with NO scheduling block (legacy / probe gap) falls through to the
+    fixed fallback fence — the backstop never silently disarms. Under 192h →
+    kept; over 192h → reaped. Covers the 7d default (a 7.5d no-fence VM is still
+    under 8d and kept; only a >8d no-fence VM reaps)."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    # 7.5d old, NO scheduling block → under the 192h (8d) fallback → kept.
+    young = (now - timedelta(hours=180)).isoformat()
+    runner_young = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-744", young), "")],
+    )
+    rec_young = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner_young,
+        max_age_seconds=192 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert rec_young[0]["action"] == "skipped"
+    # 9d old, NO scheduling block → over the 192h fallback → reaped at age.
+    old = (now - timedelta(hours=216)).isoformat()
+    runner_old = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-745", old), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    rec_old = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner_old,
+        max_age_seconds=192 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert rec_old[0]["action"] == "deleted"
+    assert rec_old[0]["reason"] == "age"
+
+
+def test_audit_terminal_phase_reap_unaffected_by_max_run_duration() -> None:
+    """Option B does NOT weaken the prompt 10-min terminal-phase reap. A RUNNING
+    instance age 30m with eps/phase=done and a 7d maxRunDuration is reaped at
+    reason="terminal-phase": the per-fence age check returns not-stale (30m is far
+    under 7d+1h), then the phase probe fires and the terminal phase reaps it."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(minutes=30)).isoformat()
+    runner = _Runner(
+        list_results=[
+            GcloudRunResult(
+                0, _one_running_instance_with_fence("eps-issue-746", created, 604800), ""
+            )
+        ],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=192 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "terminal-phase"
+    assert records[0]["phase"] == "done"
+
+
+def test_render_create_argv_flex_start_at_7d_default_does_not_raise() -> None:
+    """The new 7d default sits EXACTLY at the FLEX_START ceiling, not over it. A
+    FLEX_START create with NO max_run_duration override uses the 7d config
+    default, renders ``--max-run-duration=7d``, and does NOT raise (the
+    strict-greater ``> _FLEX_START_MAX_RUN_SECONDS`` assertion passes at 7d ==
+    ceiling)."""
+    cfg = _test_config()
+    spec = _spec(extra={"provisioning_model": "FLEX_START"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--max-run-duration=7d" in argv
+    assert "--provisioning-model=FLEX_START" in argv
 
 
 # ---------------------------------------------------------------------------

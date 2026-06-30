@@ -1,0 +1,138 @@
+{
+  "commit": "2801d9c503",
+  "created": "2026-06-30T02:15:23Z",
+  "figsize": [
+    6.2,
+    5.0
+  ],
+  "points": [
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 6.1472272872924805,
+      "corrected on-policy read, trained \u2212 base (nat)": 5.3809553909301755,
+      "label": "default assistant d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 10.689838409423828,
+      "corrected on-policy read, trained \u2212 base (nat)": 10.305550270080566,
+      "label": "default assistant d2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 6.871242523193359,
+      "corrected on-policy read, trained \u2212 base (nat)": 6.302605934143067,
+      "label": "default assistant d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 10.407034873962402,
+      "corrected on-policy read, trained \u2212 base (nat)": 10.240010032653808,
+      "label": "default assistant d2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 6.9047040939331055,
+      "corrected on-policy read, trained \u2212 base (nat)": 6.466200752258301,
+      "label": "librarian d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 12.318309783935547,
+      "corrected on-policy read, trained \u2212 base (nat)": 12.456338653564453,
+      "label": "librarian d2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 5.651934623718262,
+      "corrected on-policy read, trained \u2212 base (nat)": 5.344264945983887,
+      "label": "librarian d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 10.18431568145752,
+      "corrected on-policy read, trained \u2212 base (nat)": 10.616136016845703,
+      "label": "librarian d2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 7.1352972984313965,
+      "corrected on-policy read, trained \u2212 base (nat)": 6.616690483093262,
+      "label": "programmer d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 12.25239372253418,
+      "corrected on-policy read, trained \u2212 base (nat)": 12.2575630569458,
+      "label": "programmer d2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 5.589582920074463,
+      "corrected on-policy read, trained \u2212 base (nat)": 5.167400665283203,
+      "label": "programmer d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 10.440738677978516,
+      "corrected on-policy read, trained \u2212 base (nat)": 10.751272926330566,
+      "label": "programmer d2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 5.897754669189453,
+      "corrected on-policy read, trained \u2212 base (nat)": 5.857916069030762,
+      "label": "surgeon d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 10.475839614868164,
+      "corrected on-policy read, trained \u2212 base (nat)": 10.953400726318359,
+      "label": "surgeon d2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 6.091148376464844,
+      "corrected on-policy read, trained \u2212 base (nat)": 6.108558807373047,
+      "label": "surgeon d1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 10.153209686279297,
+      "corrected on-policy read, trained \u2212 base (nat)": 11.576724853515625,
+      "label": "surgeon d2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 4.167400665283203,
+      "corrected on-policy read, trained \u2212 base (nat)": 4.167400665283203,
+      "series": "y = x (identical read)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "#664 in-loop teacher-forced band-stop read (nat)": 13.456338653564453,
+      "corrected on-policy read, trained \u2212 base (nat)": 13.456338653564453,
+      "series": "y = x (identical read)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18
+}

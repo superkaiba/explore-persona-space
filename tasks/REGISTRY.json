@@ -4539,8 +4539,8 @@
       "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, fit the context\u2192answer-profile mapping M: c_C \u2192 v0(C) both pre-finetuning (M0, base) and post-finetuning (M\u207a, adapter-applied) as a linear ridge AND a nonlinear MLP, and determine whether the FUNCTION M changes (distinct from the input context vector c_C shifting) via (1) function-change at fixed input \u2016M\u207a(c)\u2212M0(c)\u2016 on a common c grid projected onto behavior read-outs r_B, (2) behavior-relevant transfer through the chain r_B\u1d40 M c \u2192 E (judge rate) and M along r_B \u2014 NOT generic v0 reconstruction (which #658 showed saturates \u22480.98 and is uninformative), and (3) cross-transfer of M0 vs M\u207a on FT data; cross-referenced against #697's causal f_CV.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/722",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/722",
+      "status": "awaiting_promotion",
       "title": "Finetuning measurably reshapes the context\u2192answer map only for a taught fact (LOW confidence)"
     },
     "723": {
@@ -4621,12 +4621,12 @@
       "title": "workflow-fix: verify_task_body.py \u2014 harden HF URL resolve against 429 storms"
     },
     "734": {
-      "goal": "Determine why the \u203b marker implant failed to install on Qwen-2.5-7B-Instruct in #664 (source log P trained-base at the floor, band-stop never fired) when the same recipe line installed on base Qwen-2.5-7B (#474/#601/#650) \u2014 discriminating model-resistance (base vs Instruct) vs under-set lr/step dose vs band-stop/measurement artifact \u2014 and find a recipe that installs the marker on Instruct into the 5-12-nat band.",
-      "has_clean_result": false,
+      "goal": "Determine whether #664's reported 'marker never installed on Qwen-2.5-7B-Instruct' result (#664 read source log P trained - base at the floor and reported its band-stop as never firing) is a slot-rooting measurement artifact rather than real model resistance or an under-set dose, by re-reading #664's own 16 already-trained Instruct marker adapters with a token-id-threaded corrected-slot reader and cross-validating against #664's in-loop band-stop probe - the same recipe line having installed cleanly on Instruct in #474/#601/#650.",
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/verifying/734",
-      "status": "verifying",
-      "title": "Why did the marker fail to install on Qwen-2.5-7B-Instruct in #664 when the same recipe installed on base Qwen-2.5-7B? (model vs lr/steps vs band-stop diagnostic)"
+      "path": "tasks/interpreting/734",
+      "status": "interpreting",
+      "title": "#664's \u201cmarker never installed on Instruct\u201d was a slot-rooting measurement artifact: a corrected read recovers the install on 16/16 reused adapters (HIGH confidence)"
     },
     "735": {
       "has_clean_result": false,
@@ -4673,15 +4673,15 @@
     "740": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/740",
-      "status": "reviewing",
+      "path": "tasks/completed/740",
+      "status": "completed",
       "title": "workflow-fix: vectorized_mlp_skill.py helper referenced but missing"
     },
     "741": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/741",
-      "status": "reviewing",
+      "path": "tasks/completed/741",
+      "status": "completed",
       "title": "GCP: drop the 24h max-run-duration default; use max available (7d FLEX_START), reconcile the janitor age backstop"
     },
     "742": {
@@ -4717,8 +4717,8 @@
     "746": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/746",
-      "status": "running",
+      "path": "tasks/completed/746",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md FIX-SCOPE addendum for vLLM enforce_eager probe"
     },
     "747": {
