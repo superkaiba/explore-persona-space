@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 769,
+  "highest_id": 770,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4904,6 +4904,13 @@
       "path": "tasks/archived/77",
       "status": "archived",
       "title": "Marker leakage from a persona adapter tracks whichever bystander shares its behavioral style, not the role label or lexical overlap (MODERATE confidence)"
+    },
+    "770": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/770",
+      "status": "proposed",
+      "title": "workflow-fix: watcher auto-terminate+failover for RunPod no-port wedge when poll loop is dead"
     },
     "78": {
       "has_clean_result": false,
