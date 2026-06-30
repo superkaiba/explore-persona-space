@@ -353,6 +353,87 @@ def test_machine_for_intent_resolves_cpu_bigmem() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Cheap CPU-only intents: cpu-small / cpu-mid (#747)
+# ---------------------------------------------------------------------------
+
+
+def test_intent_to_machine_includes_cpu_small_and_cpu_mid() -> None:
+    """#747: the two cheap CPU intents map to gpu_count=0 E2 machines."""
+    assert INTENT_TO_MACHINE["cpu-small"] == MachineSpec(
+        machine_type="e2-standard-2", gpu_count=0, gpu_kind="CPU"
+    )
+    assert INTENT_TO_MACHINE["cpu-mid"] == MachineSpec(
+        machine_type="e2-standard-8", gpu_count=0, gpu_kind="CPU"
+    )
+
+
+def test_intent_to_machine_cpu_bigmem_unchanged() -> None:
+    """#747 regression guard: cpu-bigmem is PRESERVED VERBATIM (not renamed /
+    re-mapped by the #747 cheap-CPU rows)."""
+    assert INTENT_TO_MACHINE["cpu-bigmem"] == MachineSpec(
+        machine_type="n2-highmem-16", gpu_count=0, gpu_kind="CPU"
+    )
+
+
+def test_render_create_argv_cpu_small_golden() -> None:
+    """#747: a cpu-small create renders a valid CPU argv — MIGRATE (not
+    TERMINATE), NO --accelerator, leak guards intact (mirrors the #677
+    cpu-bigmem golden test)."""
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("cpu-small"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\necho startup\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=e2-standard-2" in argv
+    assert "--maintenance-policy=MIGRATE" in argv
+    assert "--maintenance-policy=TERMINATE" not in argv
+    assert not any(a.startswith("--accelerator") for a in argv), argv
+    assert "--instance-termination-action=DELETE" in argv
+    assert "--no-restart-on-failure" in argv
+    assert "--max-run-duration=24h" in argv
+
+
+def test_quota_metric_for_cpu_small_returns_none() -> None:
+    """#747: the cheap CPU machines draw no accelerator quota under any pool
+    (extends the #677 cpu-bigmem quota test to the new intents)."""
+    for intent in ("cpu-small", "cpu-mid"):
+        machine = INTENT_TO_MACHINE[intent]
+        for provisioning in ("STANDARD", "SPOT", "FLEX_START"):
+            assert quota_metric_for(machine, provisioning) is None, (intent, provisioning)
+
+
+def test_e2_zone_availability_listed() -> None:
+    """#747: MACHINE_TYPE_ZONE_AVAILABILITY records the verified E2 us-central1
+    zones for the cpu-small / cpu-mid machine types."""
+    from explore_persona_space.backends.gcp import MACHINE_TYPE_ZONE_AVAILABILITY
+
+    expected = frozenset({"us-central1-a", "us-central1-b", "us-central1-c"})
+    assert MACHINE_TYPE_ZONE_AVAILABILITY["e2-standard-2"] == expected
+    assert MACHINE_TYPE_ZONE_AVAILABILITY["e2-standard-8"] == expected
+
+
+def test_gcp_handle_extra_gpu_count_zero_for_cpu_small(no_marker_posts) -> None:
+    """#747: a cpu-small GCP handle carries extra["gpu_count"] == 0 (the
+    async-failover prerequisite; the predicate then keys on the intent being in
+    the RunPod-CPU map). Mirrors the #677 cpu-bigmem handle test."""
+    created = json.dumps([{"name": "eps-issue-747", "id": "999"}])
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=_Runner(
+            list_results=[GcloudRunResult(0, "[]", "")],
+            create_results=[GcloudRunResult(0, created, "")],
+        ),
+        marker_poster=lambda **_: None,
+    )
+    handle = backend.launch(_spec(intent="cpu-small"))
+    assert handle.extra["gpu_count"] == 0
+    assert handle.extra["intent"] == "cpu-small"
+
+
+# ---------------------------------------------------------------------------
 # 8-GPU sweep intents: sweep-8g-a100 + sweep-8g-h100 (#743)
 # ---------------------------------------------------------------------------
 

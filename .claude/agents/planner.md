@@ -513,7 +513,23 @@ uploads so the pod can be terminated / stopped BEFORE the CPU phase starts
 LAST phase is a large terminal UPLOAD must sequence the pod teardown BEFORE
 it (or run the upload off-pod), and bulk uploads use a single
 `upload_folder` commit — never a per-file `upload_file` loop, which
-504-storms on a large repo (#664). (Incident
+504-storms on a large repo (#664).
+
+**PREFER a cheap dedicated CPU pod over the shared VM for a NON-TRIVIAL
+CPU-only phase (#747).** "Off-pod" does NOT mean "always the shared VM": for
+a non-trivial CPU phase (parallelizable, or longer than the trivial
+sub-minute floor) the default placement is now a cheap dedicated CPU lane —
+`cpu-small` (`e2-standard-2` / RunPod `cpu3g-2-8`) or `cpu-mid`
+(`e2-standard-8` / RunPod `cpu3c-8-16`), GCP E2 spot FIRST → RunPod CPU
+fallback — running N pods in PARALLEL where the work is parallelizable, NOT
+cramming onto the shared VM (which filled `/` and stalled the whole fleet,
+#658). Only TRIVIAL quick ops (sub-minute probes, quick plots, a one-off
+`lstsq`) stay on the VM. The mapped cheap CPU intents fall over GCP→RunPod
+CPU (`deployCpuPod`) on exhaustion; `cpu-bigmem` (the >50 GB lane below) does
+NOT — it keeps the #677 typed terminal. CPU pods may run in parallel: the
+"one multi-GPU pod, not many single-GPU pods" rule is GPU-specific. The
+idle-multi-GPU-pod concern below is unchanged — a cheap CPU pod holds NO GPU.
+(Incident
 2026-06-09: pod-518 ran a pure-CPU permutation/bootstrap scoring script
 for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
 metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
@@ -569,9 +585,12 @@ estimated local footprint —
   locally (chunked download → process → discard per chunk, never the whole
   store at once). State which in §9. On the GCP lane the concrete intent is
   `cpu-bigmem` (CPU-only `gpu_count=0` `n2-highmem-16`, boot disk sized via
-  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`. RunPod
-  has no CPU lane, so a `cpu-bigmem` run that exhausts GCP surfaces a typed
-  `cpu_exhausted_no_runpod_lane` terminal, NOT a RunPod fallback.
+  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`.
+  `cpu-bigmem` has NO cheap RunPod equivalent, so a `cpu-bigmem` run that
+  exhausts GCP surfaces a typed `cpu_exhausted_no_runpod_lane` terminal, NOT a
+  RunPod fallback (the cheap CPU intents `cpu-small` / `cpu-mid`, #747, DO fall
+  over GCP→RunPod CPU — but they are for SUB-50-GB work; a >50 GB phase belongs
+  on `cpu-bigmem`).
   **EXCEPTION — gradient-descent fit (compute-character carve-out above):**
   if the >50 GB phase is itself an iterative-optimization fit (its inner
   loop runs gradient descent on parameters), route it to a **GPU lane**

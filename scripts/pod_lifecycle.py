@@ -60,7 +60,12 @@ from typing import Any, NoReturn
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from gpu_heuristics import GpuSpec, list_intents, resolve_intent  # noqa: E402
+from gpu_heuristics import (  # noqa: E402
+    GpuSpec,
+    list_intents,
+    resolve_cpu_intent,
+    resolve_intent,
+)
 from pod_config import (  # noqa: E402
     PODS_EPHEMERAL_JSON as _PODS_EPHEMERAL_JSON_MAIN,
 )
@@ -76,6 +81,7 @@ from runpod_api import (  # noqa: E402
     RunPodError,
     RunPodInsufficientBalanceError,
     RunPodNoCapacityError,
+    create_cpu_pod,
     create_pod,
     current_account_hourly_burn,
     estimate_pod_hourly_rate,
@@ -1601,6 +1607,75 @@ def _warn_on_lifecycle_escapes(live_pods: list[PodInfo]) -> None:
     )
 
 
+def _provision_wait_register_bootstrap(
+    args: argparse.Namespace,
+    name: str,
+    info: PodInfo,
+    intent_label: str,
+) -> None:
+    """Shared provision tail: wait for SSH, register in pods.conf, bootstrap.
+
+    Extracted (#747) so the GPU and CPU (deployCpuPod) create paths converge on
+    ONE wait/register/bootstrap implementation — identical for both pod kinds
+    (SSH bring-up, pods.conf upsert, bootstrap_pod.sh). The caller has already
+    created ``info`` (a GPU ``create_pod`` / ``create_pod_with_wait_for_capacity``
+    or the CPU ``create_cpu_pod``) and printed the "Created ... waiting for SSH"
+    line; this finishes the provision and either returns clean or ``sys.exit``s
+    on a bootstrap failure (preserving the prior behavior verbatim).
+    """
+    try:
+        ready = wait_for_ssh(info.pod_id, timeout=600)
+    except RunPodError:
+        # The pod exists and is billing, but never exposed 22/tcp within the
+        # window — record the wait so repeated attempts accumulate toward the
+        # 1h [ssh-wait-ALARM], and name the recovery before propagating.
+        note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
+        print(
+            f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
+            f"public SSH mapping in 10 min; pods.conf was NOT updated. Once it "
+            f"comes up, run `uv run python scripts/pod.py config "
+            f"--refresh-from-api {name}` — or terminate it if it never does.",
+            file=sys.stderr,
+        )
+        raise
+    note_ssh_wait_outcome(name, reachable=True)
+    print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
+
+    metadata = _read_metadata_file()
+    metadata[name] = EphemeralMetadata(
+        name=name,
+        pod_id=info.pod_id,
+        issue=args.issue,
+        gpu_intent=intent_label,
+        ttl_days=args.ttl_days,
+        stopped_at=None,
+        notes="",
+    )
+    _write_metadata_file(metadata)
+
+    pod = EphemeralPod(metadata=metadata[name], info=ready)
+    _upsert_pods_conf(pod)
+    print("  Registered in pods.conf and pods_ephemeral.json")
+
+    if args.no_bootstrap:
+        print("\nSkipping bootstrap (--no-bootstrap). Run later with:")
+        print(f"  python scripts/pod.py bootstrap {name}")
+        return
+
+    rc = _bootstrap(name, intent_label=intent_label)
+    if rc != 0:
+        print(
+            f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
+            f"Investigate, then either re-run "
+            f"`POD_INTENT={intent_label} bash scripts/bootstrap_pod.sh {name}` or\n"
+            f"`python scripts/pod.py terminate --issue {args.issue}` to discard.",
+            file=sys.stderr,
+        )
+        sys.exit(rc)
+
+    print(f"\nDone. SSH with: ssh {name}")
+
+
 def cmd_provision(args: argparse.Namespace) -> None:
     """Create a fresh pod for issue #N, wait for SSH, register it, bootstrap it."""
     if args.list_intents:
@@ -1632,6 +1707,37 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 f"or `pod.py terminate --issue {args.issue}` first if you want a fresh one."
             )
             sys.exit(1)
+
+    # CPU-only intent branch (#747): a cheap CPU intent (cpu-small / cpu-mid)
+    # resolves to a RunPod CPU instance_id (deployCpuPod), NOT a GPU spec. This
+    # branch is checked FIRST, before the GPU _resolve_spec below (which
+    # KeyErrors on a CPU intent). CPU pods may be provisioned in PARALLEL — the
+    # "one multi-GPU pod, not many single-GPU pods" rule is GPU-specific (it
+    # exists to keep CUDA_VISIBLE_DEVICES-sharded GPU work on one pod), so N
+    # independent `provision --issue <N>` / `--issue <N>-<suffix>` CPU pods are
+    # the right shape for parallelizable CPU work. The account-hourly-cap guard
+    # (a $/hr GPU-spend guard) is skipped — CPU pods cost cents/hr and
+    # estimate_pod_hourly_rate returns 0 for gpu_count=0 anyway. CPU pods are
+    # on-demand only (no spot/wait-for-capacity lever on the RunPod CPU side);
+    # a no-capacity miss raises RunPodNoCapacityError, the same terminal the
+    # GPU path raises (the wait-for-capacity loop is a GPU-side feature).
+    cpu_instance_id = resolve_cpu_intent(args.intent) if args.intent else None
+    if cpu_instance_id is not None:
+        intent_label = args.intent.strip().lower()
+        print(f"Provisioning {name}: CPU pod {cpu_instance_id}  ({intent_label})")
+        print("  Why: cheap CPU-only intent (#747); CPU pods may run in parallel.")
+        if args.dry_run:
+            print("\n[dry-run] Would call create_cpu_pod and wait for SSH; no API call made.")
+            return
+        info = create_cpu_pod(
+            name=name,
+            instance_id=cpu_instance_id,
+            volume_gb=args.volume_gb,
+            container_disk_gb=args.container_disk_gb,
+        )
+        print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")
+        _provision_wait_register_bootstrap(args, name, info, intent_label)
+        return
 
     spec, intent_label = _resolve_spec(args.intent, args.gpu_type, args.gpu_count)
     print(f"Provisioning {name}: {spec.gpu_count}x {spec.gpu_type}  ({intent_label})")
@@ -1701,58 +1807,7 @@ def cmd_provision(args: argparse.Namespace) -> None:
             container_disk_gb=args.container_disk_gb,
         )
     print(f"  Created pod {info.pod_id} — waiting for SSH (up to 10 min)...")
-
-    try:
-        ready = wait_for_ssh(info.pod_id, timeout=600)
-    except RunPodError:
-        # The pod exists and is billing, but never exposed 22/tcp within the
-        # window — record the wait so repeated attempts accumulate toward the
-        # 1h [ssh-wait-ALARM], and name the recovery before propagating.
-        note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
-        print(
-            f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
-            f"public SSH mapping in 10 min; pods.conf was NOT updated. Once it "
-            f"comes up, run `uv run python scripts/pod.py config "
-            f"--refresh-from-api {name}` — or terminate it if it never does.",
-            file=sys.stderr,
-        )
-        raise
-    note_ssh_wait_outcome(name, reachable=True)
-    print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
-
-    metadata = _read_metadata_file()
-    metadata[name] = EphemeralMetadata(
-        name=name,
-        pod_id=info.pod_id,
-        issue=args.issue,
-        gpu_intent=intent_label,
-        ttl_days=args.ttl_days,
-        stopped_at=None,
-        notes="",
-    )
-    _write_metadata_file(metadata)
-
-    pod = EphemeralPod(metadata=metadata[name], info=ready)
-    _upsert_pods_conf(pod)
-    print("  Registered in pods.conf and pods_ephemeral.json")
-
-    if args.no_bootstrap:
-        print("\nSkipping bootstrap (--no-bootstrap). Run later with:")
-        print(f"  python scripts/pod.py bootstrap {name}")
-        return
-
-    rc = _bootstrap(name, intent_label=intent_label)
-    if rc != 0:
-        print(
-            f"\nBootstrap exited with code {rc}. Pod is up but not experiment-ready.\n"
-            f"Investigate, then either re-run "
-            f"`POD_INTENT={intent_label} bash scripts/bootstrap_pod.sh {name}` or\n"
-            f"`python scripts/pod.py terminate --issue {args.issue}` to discard.",
-            file=sys.stderr,
-        )
-        sys.exit(rc)
-
-    print(f"\nDone. SSH with: ssh {name}")
+    _provision_wait_register_bootstrap(args, name, info, intent_label)
 
 
 def cmd_stop(args: argparse.Namespace) -> None:

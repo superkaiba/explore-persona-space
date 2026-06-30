@@ -336,6 +336,19 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_count=0,
         gpu_kind="CPU",
     ),
+    # Cheap CPU-only intents (#747) — gpu_count=0, spot-eligible on a short
+    # job (the router's CPU spot rung, unlike cpu-bigmem above which is
+    # reliable on-demand only). The standing CPU-routing policy prefers a
+    # dedicated cheap CPU pod over the shared VM for non-trivial CPU phases
+    # (parallelizable / longer than the trivial floor). e2-standard-2 = 2 vCPU
+    # / 8 GB (~$0.035/hr spot us-central1) — the parallel-fan-out workhorse;
+    # e2-standard-8 = 8 vCPU / 32 GB — a mid CPU job that fits between
+    # cpu-small's fan-out and cpu-bigmem's >50 GB analyses. NEITHER is for
+    # >50 GB footprints — that stays cpu-bigmem (n2-highmem-16, above). These
+    # ALSO have a RunPod CPU fallback lane (router.RUNPOD_CPU_INSTANCE_FOR_INTENT),
+    # so unlike cpu-bigmem they fall over GCP->RunPod when GCP is exhausted.
+    "cpu-small": MachineSpec(machine_type="e2-standard-2", gpu_count=0, gpu_kind="CPU"),
+    "cpu-mid": MachineSpec(machine_type="e2-standard-8", gpu_count=0, gpu_kind="CPU"),
     # 8-GPU sweep intents (#743) — the FREE GCP credit lane at 8x width for
     # wide embarrassingly-parallel sweeps (driving case #697's 64-cell patch
     # sweep, ~2x faster on 8 GPUs than 4). EXPLICIT --intent ONLY: NOT added to
@@ -494,6 +507,13 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     # above; the map only RESTRICTS, so a fail-open default was already
     # correct — this row just makes the verified fact explicit).
     "n2-highmem-16": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    # E2 (cheap CPU-only, #747) — the cpu-small / cpu-mid intents. Verified
+    # offered in us-central1-{a,b,c} (gcloud compute machine-types list
+    # --filter="name=e2-standard-2 AND zone~us-central1", 2026-06-29; also
+    # offered in -f, listed here for the documented us-central1-{a,b,c} set
+    # the map RESTRICTS to — the map only restricts, so omitting -f is safe).
+    "e2-standard-2": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    "e2-standard-8": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
 }
 
 

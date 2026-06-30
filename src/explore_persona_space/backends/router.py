@@ -220,11 +220,13 @@ ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
 #: (user-directed 2026-06-17): RunPod is reached ONLY here, never first,
 #: never skipping a cheaper rung.
 ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
-#: A CPU-only intent (gpu_count==0, #677) reached the RunPod terminal rung —
-#: either the GCP lane was capacity-exhausted OR a GCP CPU workload crashed
-#: (sync failover). RunPod is GPU-only, so there is NO CPU fallback lane;
-#: surface a typed terminal instead of crashing inside the RunPod GPU-intent
-#: resolver. DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
+#: A CPU-only intent WITHOUT a RunPod-CPU lane (gpu_count==0 AND not in
+#: :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT` — i.e. ``cpu-bigmem``, #677) reached
+#: the RunPod terminal rung — either the GCP lane was capacity-exhausted OR a
+#: GCP CPU workload crashed (sync failover). ``cpu-bigmem`` has no cheap RunPod
+#: equivalent (#747 added a RunPod CPU lane ONLY for the mapped cheap intents
+#: cpu-small / cpu-mid), so surface a typed terminal instead of attempting an
+#: unservable RunPod launch. DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
 #: :data:`ROUTE_REASON_NO_COMPUTE` so the marker trail shows the
 #: CPU-unservable cause, and DISTINCT from ``no_compute_available`` so the
 #: watcher's capacity-retry pass (which keys on ``no_compute_available``) does
@@ -232,6 +234,30 @@ ROUTE_REASON_RUNPOD_FALLBACK: str = "auto_fallback_runpod"
 #: ``classify_terminal_exception`` emits as the ``epm:failure`` note's
 #: ``reason:`` field for a :class:`CpuExhaustedNoRunpodLaneError`.
 ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
+
+#: CPU intents that HAVE a RunPod CPU fallback lane (#747) → their RunPod CPU
+#: ``instanceId`` (``deployCpuPod``). A CPU intent in this map FALLS OVER
+#: GCP→RunPod CPU when the GCP CPU lane is exhausted (capacity) OR crashes its
+#: workload (the CPU analogue of the GPU GCP→RunPod failover, #656/#658),
+#: keyed on this POSITIVE map — NOT on ``gpu_count == 0`` alone, which would
+#: wrongly route ``cpu-bigmem`` to RunPod. A CPU intent NOT in this map
+#: (``cpu-bigmem`` — the >50 GB large-footprint analysis lane, with no cheap
+#: RunPod equivalent) keeps the #677 typed
+#: :class:`CpuExhaustedNoRunpodLaneError` terminal verbatim. This is the SINGLE
+#: SOURCE OF TRUTH for the CPU intent → RunPod instance_id mapping:
+#: ``scripts/gpu_heuristics.resolve_cpu_intent`` and
+#: ``scripts/backend_poll._is_gcp_async_workload_failure`` both import THIS
+#: dict (no duplicated copy to drift). The intent → GCP machine-type mapping
+#: lives separately in :data:`gcp.INTENT_TO_MACHINE`; this is intentionally the
+#: RunPod-side companion (the two are distinct providers). RAM note: the GCP
+#: ``cpu-mid`` (``e2-standard-8`` = 8 vCPU / 32 GB) and the RunPod ``cpu-mid``
+#: (``cpu3c-8-16`` = 8 vCPU / 16 GB) differ in RAM by design — the RunPod lane
+#: is a CAPACITY backstop, and a >16 GB CPU job should target ``cpu-bigmem``
+#: anyway; the asymmetry is accepted, not a bug.
+RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
+    "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
+    "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
+}
 #: The router fell back to RunPod because a GCP attempt FAILED THE WORKLOAD
 #: (a :class:`gcp.GcpWorkloadError`, not a capacity/headroom miss) — the
 #: deliberate reversal of the historical "GCP workload failure surfaces
@@ -380,9 +406,12 @@ class NoComputeAvailableError(RouteError):
 
 
 class CpuExhaustedNoRunpodLaneError(NoComputeAvailableError):
-    """Terminal: a CPU-only intent (gpu_count==0, #677) reached the RunPod
-    terminal rung — the GCP lane was capacity-exhausted OR a GCP CPU workload
-    crashed (sync failover) — and RunPod is GPU-only (no CPU fallback lane).
+    """Terminal: a CPU-only intent WITHOUT a RunPod-CPU lane (gpu_count==0 AND
+    not in :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT` — i.e. ``cpu-bigmem``, #677)
+    reached the RunPod terminal rung — the GCP lane was capacity-exhausted OR a
+    GCP CPU workload crashed (sync failover) — and ``cpu-bigmem`` has no cheap
+    RunPod equivalent. (The mapped cheap CPU intents cpu-small / cpu-mid DO fall
+    over to RunPod CPU as of #747 and never raise this.)
 
     A :class:`NoComputeAvailableError` SUBCLASS so existing callers that catch
     the base class still catch it, but ``classify_terminal_exception``
@@ -391,8 +420,8 @@ class CpuExhaustedNoRunpodLaneError(NoComputeAvailableError):
     ``no_compute_available`` note. The distinction matters because the
     watcher's capacity-retry pass (``autonomous_session_watch.py``'s
     ``TRANSIENT_CAPACITY_REASONS``) re-drives ONLY ``no_compute_available``; a
-    structurally-CPU-unservable RunPod launch must NOT auto-retry (no lane will
-    ever free up to make RunPod accept a CPU intent). Inherits ``__init__``
+    structurally-unservable ``cpu-bigmem`` RunPod launch must NOT auto-retry (no
+    lane will ever free up to make RunPod accept it). Inherits ``__init__``
     verbatim (reason message + attempts).
     """
 
@@ -1921,12 +1950,21 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     2. on-demand (rung-1 machine) — the spec as-is. ``ondemand_<gpu_kind>``.
     3. on-demand A100-40 — only when fits 40 GB. ``ondemand_a100_40``.
 
-    **CPU-only intents (#677)** (``base.gpu_count == 0``, e.g. ``cpu-bigmem``)
-    short-circuit BEFORE any length / pin branching: they yield exactly one
-    on-demand CPU rung (``ondemand_<gpu_kind>``) and NEVER pick up a spot,
-    flex, or A100-40 rung. The short-circuit is load-bearing because
-    :func:`_is_short_job` floors ``gpu_count`` to 1, which would otherwise
-    promote a SHORT CPU job onto the spot/flex rungs.
+    **CPU-only intents (#677/#747)** (``base.gpu_count == 0``) short-circuit
+    BEFORE any length / pin branching, splitting by whether the intent has a
+    cheap RunPod-CPU lane (:data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`):
+
+    * ``cpu-bigmem`` (NOT in the map, #677) yields exactly one on-demand CPU
+      rung (``ondemand_<gpu_kind>``) and NEVER picks up a spot / flex / A100-40
+      rung — a reliable machine for a long HF-store download.
+    * ``cpu-small`` / ``cpu-mid`` (mapped, #747) yield a GCP SPOT rung
+      (``spot_<gpu_kind>``) THEN an on-demand rung WHEN the job is short
+      (:func:`_is_short_job`), else on-demand only — the CPU analogue of the
+      GPU length-aware axis; still NO flex / A100-40 rung.
+
+    The short-circuit is load-bearing because :func:`_is_short_job` floors
+    ``gpu_count`` to 1, so without it the GPU ladder would (mis)classify a CPU
+    job.
 
     Each label is COMPOSED from the resolved machine's accelerator kind
     (:func:`_machine_label`) rather than hardcoded, so a rung's label always
@@ -1950,19 +1988,41 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
     caller pin, never a ladder-set value.
     """
     base = machine_for_intent(spec)  # resolves the as-is intent
-    # CPU-only intent (#677): no GPU fallback ladder applies. The A100-40 rung
-    # is a "smaller GPU" fallback, the spot rungs trade preemption risk for cost
-    # on a SHORT job, and the flex rung queues for GPU capacity — NONE of these
-    # make sense for a CPU analysis phase that wants a reliable on-demand machine
-    # to finish a long HF store download. Yield exactly the single on-demand CPU
-    # rung. This MUST come before the length-aware branching below: _is_short_job
-    # floors gpu_count to 1 via max(1, machine.gpu_count) in _estimated_gpu_hours,
-    # so a SHORT CPU job WOULD otherwise be promoted onto spot/flex rungs — the
-    # short-circuit is load-bearing, not redundant. It also precedes the caller
-    # provisioning-model pin so a pinned CPU launch never silently picks up the
-    # A100-40 fallback rung.
+    # CPU-only intent (#677/#747): no GPU fallback ladder applies (the A100-40
+    # rung is a "smaller GPU" fallback; the flex rung queues for GPU capacity —
+    # neither makes sense for a CPU machine). The branch below splits by whether
+    # the CPU intent has a cheap RunPod-CPU lane (#747): cpu-bigmem (no lane) is
+    # reliable on-demand only, while cpu-small/cpu-mid (mapped) take a GCP SPOT
+    # rung on a SHORT/restartable job. This MUST come before the length-aware
+    # branching below: _is_short_job floors gpu_count to 1 via
+    # max(1, machine.gpu_count) in _estimated_gpu_hours, so a CPU job WOULD
+    # otherwise be (mis)classified by the GPU ladder — the short-circuit is
+    # load-bearing, not redundant. It also precedes the caller provisioning-model
+    # pin so a pinned CPU launch never silently picks up the A100-40 fallback rung.
     if base.gpu_count == 0:
-        return [(spec, f"ondemand_{_machine_label(base)}")]
+        # cpu-bigmem (no RunPod-CPU lane, #677): reliable single on-demand rung —
+        # it may download a big HF store, so a mid-download spot preemption is
+        # costly. Yield exactly the on-demand CPU rung, NO spot/flex/A100-40.
+        if spec.intent not in RUNPOD_CPU_INSTANCE_FOR_INTENT:
+            return [(spec, f"ondemand_{_machine_label(base)}")]
+        # Cheap CPU intent (cpu-small / cpu-mid, #747): spot-first on a SHORT /
+        # restartable job (the CPU analogue of the GPU length-aware axis,
+        # _is_short_job), else on-demand only. NO A100-40 rung (that is a GPU
+        # fallback) and NO flex rung (flex queues for GPU capacity — pointless
+        # for abundant CPU). _is_short_job floors gpu_count to 1 via
+        # max(1, gpu_count) in _estimated_gpu_hours, so the spot rung fires iff
+        # the caller threaded a time_budget_hours <= the spot threshold; an
+        # UNKNOWN-length CPU job is NOT short -> on-demand only (the correct
+        # fail-safe). The caller provisioning-model pin branch below is never
+        # reached for a CPU intent (we return here), preserving the #677
+        # invariant that a CPU launch never picks up an A100-40 fallback rung.
+        cpu_rungs: list[tuple[RunSpec, str]] = []
+        if _is_short_job(spec, base):
+            cpu_rungs.append(
+                (_with_machine(spec, base, provisioning="SPOT"), f"spot_{_machine_label(base)}")
+            )
+        cpu_rungs.append((spec, f"ondemand_{_machine_label(base)}"))
+        return cpu_rungs
     a40 = a100_40_fallback_for_intent(spec)
     pinned = (spec.extra or {}).get("provisioning_model")
     if pinned is not None:
@@ -2122,21 +2182,27 @@ def _runpod_terminal_rung(
     trail — the terminal "truly no compute anywhere" outcome, preserving a
     typed terminal for the orchestrator's failure classifier.
     """
-    # CPU-intent guard (#677). RunPod is GPU-only: RunPodBackend.launch shells
-    # to pod_lifecycle.py provision --intent <spec.intent>, which resolves via
-    # gpu_heuristics.resolve_intent (GPU-only -> KeyError on a CPU intent) and
-    # runpod_api.py asserts gpu_count >= 1. So a CPU intent must NOT reach
-    # RunPod -- not on the capacity fall-through AND not on the sync GCP
-    # workload-failover (both funnel through here). A CPU GCP lane that is
-    # exhausted (capacity) or whose workload crashed (sync failover) raises the
-    # TYPED CpuExhaustedNoRunpodLaneError so the orchestrator's
-    # classify_terminal_exception (issue_dispatch.py) posts an epm:failure note
-    # carrying reason: cpu_exhausted_no_runpod_lane (DISTINCT from the generic
-    # no_compute_available note). The watcher's capacity-retry pass keys on
-    # no_compute_available, so the distinct reason means it does NOT auto-retry
-    # a structurally-CPU-unservable RunPod launch -- correct: no lane will ever
-    # free up to make RunPod accept a CPU intent.
-    if machine_for_intent(spec).gpu_count == 0:
+    # CPU-intent guard (#677, RELAXED for mapped intents #747). RunPod's GPU
+    # mutation (podFindAndDeployOnDemand) is GPU-only, BUT #747 adds a RunPod
+    # CPU lane (deployCpuPod) for the cheap CPU intents in
+    # RUNPOD_CPU_INSTANCE_FOR_INTENT. So the relaxed rule:
+    #   * a CPU intent IN the map (cpu-small / cpu-mid) FALLS OVER to RunPod CPU
+    #     when the GCP CPU lane is exhausted (capacity) OR its workload crashed
+    #     (sync failover) -- it proceeds to the RunPod launch below, where the
+    #     runpod_spec carries --intent <cpu-small|cpu-mid>, which
+    #     pod_lifecycle.py/gpu_heuristics (Surface 5) resolves to the RunPod CPU
+    #     instance_id via this SAME RUNPOD_CPU_INSTANCE_FOR_INTENT map;
+    #   * a CPU intent NOT in the map (cpu-bigmem -- the >50 GB analysis lane,
+    #     no cheap RunPod equivalent) STILL raises the TYPED
+    #     CpuExhaustedNoRunpodLaneError verbatim (#677), so the orchestrator's
+    #     classify_terminal_exception (issue_dispatch.py) posts an epm:failure
+    #     note carrying reason: cpu_exhausted_no_runpod_lane (DISTINCT from the
+    #     generic no_compute_available note). The watcher's capacity-retry pass
+    #     keys on no_compute_available, so the distinct reason means it does NOT
+    #     auto-retry a structurally-CPU-unservable cpu-bigmem RunPod launch --
+    #     correct: no lane will ever free up to make RunPod accept it.
+    machine = machine_for_intent(spec)
+    if machine.gpu_count == 0 and spec.intent not in RUNPOD_CPU_INSTANCE_FOR_INTENT:
         _post_terminal_failure_marker(
             spec=spec,
             marker_poster=marker_poster,
@@ -2146,7 +2212,7 @@ def _runpod_terminal_rung(
         )
         raise CpuExhaustedNoRunpodLaneError(
             f"CPU intent {spec.intent!r}: GCP lane exhausted/failed and RunPod "
-            f"is GPU-only (no CPU fallback lane). residual_gap: {residual_gap}",
+            f"has no CPU fallback lane for this intent. residual_gap: {residual_gap}",
             attempts=[_attempt_to_dict(a) for a in attempts],
         )
     if reason in (
@@ -4527,6 +4593,7 @@ __all__ = [
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_WORKLOAD_FAILURE",
+    "RUNPOD_CPU_INSTANCE_FOR_INTENT",
     "BackendPrepareError",
     "CpuExhaustedNoRunpodLaneError",
     "GcpAttemptCapExceededError",

@@ -15,6 +15,7 @@ unreachable pods.
 Public surface
 --------------
 - create_pod(...)
+- create_cpu_pod(...)            # CPU-only pod via deployCpuPod (#747)
 - start_pod(pod_id)              # alias of resume; "start" = first-time spin-up
 - stop_pod(pod_id)               # pause; volume + container disk preserved
 - resume_pod(pod_id, gpu_count)  # bring a stopped pod back; IP changes
@@ -64,6 +65,12 @@ DEFAULT_IMAGE = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
 # Minimum disk to comfortably hold a 7B+ model + cache. Tunable per-call.
 DEFAULT_VOLUME_GB = 200
 DEFAULT_CONTAINER_DISK_GB = 50
+
+# Cheap CPU-only pods (#747) hold no model weights — a smaller volume keeps
+# the throwaway fan-out pod cheap. RunPod sizes the volume per the
+# instance_id's own default; this is just the persistent /workspace mount,
+# tunable per-call.
+DEFAULT_CPU_VOLUME_GB = 40
 
 # RunPod requires GPU type IDs in this exact form.
 GPU_TYPE_IDS = {
@@ -630,6 +637,142 @@ def create_pod(
         "podFindAndDeployOnDemand returned null for every supply lever — "
         f"no capacity. Tried (in order): {'; '.join(tried)}. "
         "Try a different DC, GPU count, or wait for capacity to free up."
+    )
+
+
+def _deploy_cpu_once(
+    *,
+    name: str,
+    instance_id: str,
+    image: str,
+    volume_gb: int,
+    container_disk_gb: int,
+    cloud_type: str,
+    data_center_id: str | None,
+) -> PodInfo | None:
+    """Single ``deployCpuPod`` attempt for one RunPod CPU ``instance_id`` (#747).
+
+    The CPU-pod sibling of :func:`_deploy_once`. RunPod's CPU pods use a
+    DIFFERENT GraphQL mutation — ``deployCpuPod`` (NOT
+    ``podFindAndDeployOnDemand``) — keyed on an ``instanceId`` of the form
+    ``"<flavor>-<vCPU>-<RAM_GB>"`` (e.g. ``"cpu3g-2-8"``), and it does NOT take
+    ``gpuTypeId`` / ``gpuCount``. The mutation NAME + the
+    ``instanceId``-vs-``gpuTypeId``/``gpuCount`` split are confirmed against the
+    runpod-python ``generate_pod_deployment_mutation`` source
+    (``mutation_type = "podFindAndDeployOnDemand" if gpu_type_id else
+    "deployCpuPod"``) and docs.runpod.io/flash/configuration/cpu-types.
+
+    The GPU path's ``assert gpu_count >= 1`` in :func:`_deploy_once` is
+    DELIBERATELY left untouched — this is a separate function, not a relaxation
+    of the GPU contract.
+
+    Returns the parsed :class:`PodInfo` on success, or ``None`` when RunPod
+    reports no capacity — EITHER a null mutation result OR a
+    ``SUPPLY_CONSTRAINT`` error payload (same two-wire-shape no-capacity
+    handling as :func:`_deploy_once`). ``startSsh: true`` + ``22/tcp`` stay
+    non-negotiable. ``imageName`` alone is a valid alternative to
+    ``templateId`` (runpod-python validates ``if not image_name and not
+    template_id``), so no ``templateId`` is sent. RunPod CPU pods are on-demand
+    only (no spot/interruptible CPU lever); spot eligibility for cheap CPU
+    intents is GCP-only (the router's CPU spot rung).
+    """
+    inputs: dict[str, Any] = {
+        "name": name,
+        "instanceId": instance_id,
+        "cloudType": cloud_type,
+        "volumeInGb": volume_gb,
+        "containerDiskInGb": container_disk_gb,
+        "imageName": image,
+        "volumeMountPath": "/workspace",
+        "startSsh": True,
+        "ports": "8888/http,22/tcp",
+    }
+    if data_center_id:
+        inputs["dataCenterId"] = data_center_id
+    inputs_block = _build_inputs_block(inputs)
+    query = f"""
+    mutation {{
+      deployCpuPod(input: {{ {inputs_block} }}) {{
+        id
+        name
+        desiredStatus
+        createdAt
+        runtime {{ ports {{ ip publicPort privatePort type isIpPublic }} }}
+      }}
+    }}
+    """
+    try:
+        data = graphql(query)
+    except RunPodSupplyConstraintError:
+        return None
+    raw = data.get("deployCpuPod")
+    if not raw:
+        return None
+    return _parse_pod(raw)
+
+
+def create_cpu_pod(
+    name: str,
+    instance_id: str,
+    *,
+    image: str = DEFAULT_IMAGE,
+    volume_gb: int = DEFAULT_CPU_VOLUME_GB,
+    container_disk_gb: int = DEFAULT_CONTAINER_DISK_GB,
+    cloud_type: str = "ALL",
+    data_center_id: str | None = None,
+    enable_supply_fallback: bool = True,
+) -> PodInfo:
+    """Create a CPU-only pod via ``deployCpuPod`` with sshd + 22/tcp (#747).
+
+    The CPU sibling of :func:`create_pod`. ``instance_id`` is a RunPod CPU
+    instance descriptor of the form ``"<flavor>-<vCPU>-<RAM_GB>"`` (e.g.
+    ``"cpu3g-2-8"`` = 2 vCPU / 8 GB general-purpose; ``"cpu3c-8-16"`` = 8 vCPU /
+    16 GB compute-optimized). The router resolves the cheap CPU intents
+    (``cpu-small`` / ``cpu-mid``) to these via
+    :data:`router.RUNPOD_CPU_INSTANCE_FOR_INTENT` /
+    :data:`gpu_heuristics.RUNPOD_CPU_INSTANCES`.
+
+    Mirrors :func:`create_pod`'s SHAPE (a project wrapper around the project's
+    own GraphQL client — runpod-python has no public ``create_cpu_pod``; its
+    single ``create_pod`` branches on ``instance_id``). RunPod CPU pods are
+    on-demand only, so the supply-lever chain is shorter than the GPU path:
+    the primary cloud, then COMMUNITY (no interruptible/spot lever — RunPod
+    exposes no CPU spot tier). ``volume_gb`` / ``container_disk_gb`` are passed
+    through (RunPod sizes the volume per the ``instance_id``; we do not compute
+    a vCPU-derived size).
+
+    Raises :class:`RunPodNoCapacityError` when every CPU supply lever returns
+    null (so the same wait-for-capacity / fallback policy that catches the GPU
+    no-capacity case catches this one), or :class:`RunPodError` for transport /
+    auth / bad-config failures.
+    """
+    # On-demand-only lever chain (no interruptible/spot CPU tier): primary
+    # cloud, then COMMUNITY (deeper but less stable), skipping a duplicate
+    # COMMUNITY when the primary already is COMMUNITY. This is the CPU analogue
+    # of create_pod's lever chain, minus the interruptible rung.
+    levers: list[str] = [cloud_type]
+    if enable_supply_fallback and cloud_type.upper() != "COMMUNITY":
+        levers.append("COMMUNITY")
+
+    tried: list[str] = []
+    for lever_cloud in levers:
+        tried.append(f"{instance_id} on cloudType={lever_cloud}")
+        info = _deploy_cpu_once(
+            name=name,
+            instance_id=instance_id,
+            image=image,
+            volume_gb=volume_gb,
+            container_disk_gb=container_disk_gb,
+            cloud_type=lever_cloud,
+            data_center_id=data_center_id,
+        )
+        if info is not None:
+            return info
+
+    raise RunPodNoCapacityError(
+        "deployCpuPod returned null for every supply lever — "
+        f"no capacity. Tried (in order): {'; '.join(tried)}. "
+        "Try a different CPU instance_id, DC, or wait for capacity to free up."
     )
 
 
