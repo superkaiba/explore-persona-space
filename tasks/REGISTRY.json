@@ -4752,8 +4752,8 @@
     "750": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/750",
-      "status": "reviewing",
+      "path": "tasks/completed/750",
+      "status": "completed",
       "title": "workflow-fix: gate _eps_phase done on OOM-detection (GCP)"
     },
     "751": {
