@@ -187,10 +187,10 @@ def fig3():
 # ── fig4: A3.6c causal context-vector patch vs floor controls ──
 def fig4():
     cells = {
-        "bm_default_contra_d2_seed42": "bad-medical\n(default, contrastive)",
-        "bm_default_posonly_d2_seed42": "bad-medical\n(default, positive-only)",
-        "bm_librarian_contra_d2_seed42": "bad-medical\n(librarian, contrastive)",
-        "tf_default_contra_d2_seed42": "taught fact\n(default, contrastive)",
+        "bm_default_contra_d2_seed42": "bad-medical (default, contrastive)",
+        "bm_default_posonly_d2_seed42": "bad-medical (default, positive-only)",
+        "bm_librarian_contra_d2_seed42": "bad-medical (librarian, contrastive)",
+        "tf_default_contra_d2_seed42": "taught fact (default, contrastive)",
     }
     variant_label = {
         "self_c0": "base-CV null (θ0)",
@@ -209,7 +209,7 @@ def fig4():
         "random_cv": paper_palette_role("accent"),
         "norm_matched": "#E69F00",
     }
-    fig, ax = plt.subplots(figsize=(8.0, 4.4))
+    fig, ax = plt.subplots(figsize=(8.0, 5.0))
     ncells = len(cells)
     nvar = len(order)
     gw = 0.8
@@ -231,10 +231,10 @@ def fig4():
     ax.axhline(1.0, color="#5A5A5A", lw=0.9, ls=":")
     ax.axhline(0.0, color="#5A5A5A", lw=0.9, ls=":")
     ax.set_xticks(xc)
-    ax.set_xticklabels(list(cells.values()), fontsize=8)
+    ax.set_xticklabels(list(cells.values()), fontsize=8.5, rotation=45, ha="right")
     ax.set_ylabel("patch effect on activation\n(1 = moved to FT profile, 0 = at base)")
     ax.set_ylim(0, 1.25)
-    ax.legend(loc="upper center", ncol=3, frameon=False, fontsize=7.5, bbox_to_anchor=(0.5, -0.18))
+    ax.legend(loc="upper center", ncol=3, frameon=False, fontsize=7.5, bbox_to_anchor=(0.5, -0.42))
     set_title_subtitle(
         ax,
         "The real context-vector patch does not separate from the floor controls",
