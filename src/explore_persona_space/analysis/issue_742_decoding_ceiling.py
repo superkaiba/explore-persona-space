@@ -1143,6 +1143,151 @@ def sample_completions_for_judge(
     }
 
 
+def judge_column_via_batch_judge(col_id: str, gen: dict, model: str) -> dict:
+    """PER-BEHAVIOR judged rate via the Anthropic **Batch API** (``eval.batch_judge``).
+
+    BLOCKER-FIX (judge-rerun-transport-must-use-batch, reconciler r6): plan v9 §4
+    Stage-0 step 2 + §11 row 8 bind the Stage-0 judge rerun to the Anthropic Batch
+    API through ``eval.batch_judge`` ("never a hand-rolled poller"); the realized
+    ~16,000-call set is 8× the §11 row 8 ~2k sync revisit floor. This routes the
+    SAME per-behavior binary rubric #658 used — ``E0_COLUMNS[col_id].judge_prompt``
+    (a ``.format(question=, completion=)`` template) + ``_verdict_truthy(verdict,
+    col.e0_verdict_key, col_id)`` — through ``judge_completions_batch`` instead of the
+    threaded-sync ``issue658_judge_e0.judge_column``, so ``Var_judge`` is still
+    measured on the SAME construct #658's E0 rate used (the per-behavior rubric is
+    transport-agnostic: ``judge_system_prompt`` is just a parameter).
+
+    Mechanics (matches ``judge_column``'s public contract exactly):
+
+    * Flatten every ``(probe, completion)`` in the ``cells`` schema, reading
+      ``comp["text"]`` (NOT the legacy ``c["completion"]`` — that KeyError'd, the
+      judge-rerun-completion-key-crash BLOCKER).
+    * ``judge_completions_batch(completions={"cell": {probe: [texts]}}, ...)`` with
+      ``judge_system_prompt=""`` and a ``format_user_msg`` that fills the behavior's
+      OWN rubric (the rubric is a full self-contained instruction + JSON contract,
+      exactly as ``judge_column`` sent it as a sole user message). ``save_raw``
+      surfaces the PER-COMPLETION parsed verdict dicts in ``all_scores`` keyed by the
+      stable ``{persona}__{idx:05d}__{comp_idx:02d}`` custom_id, so the per-behavior
+      binary survives transport (``dispatch_judge_items`` stores the raw
+      ``parse_judge_json`` dict — the rubric keys ``misaligned`` / ``agreed`` /
+      ``complied`` / ``refused`` are preserved).
+    * Re-enumerate ``completions`` in the same order to recover each verdict, apply
+      ``_verdict_truthy``, drop transport/parse failures (``_judge_error`` /
+      ``_judge_refused`` style; the same not-counted-as-judged contract), and
+      reconstruct ``rate = n_positive / n_judged`` + ``per_probe`` exactly as
+      ``judge_column`` did.
+
+    Returns the ``judge_column`` dict shape ``{rate, n_judged, n_positive,
+    logp_pos_mean, low_dynamic_range, per_probe, ...}`` so ``_decompose_variance``
+    consumes it unchanged.
+    """
+    import importlib
+    import tempfile
+    from pathlib import Path as _Path
+
+    common = importlib.import_module("issue658_common")
+    col = common.E0_COLUMNS[col_id]
+    if col.judge_prompt is None or col.e0_verdict_key is None:
+        raise KeyError(f"{col_id!r} has no per-behavior judge rubric (deterministic/marker column)")
+
+    # Flatten (probe, completion) KEEPING the probe grouping + the completion logp.
+    flat: list[dict] = []
+    for cell in gen["cells"]:
+        for comp in cell["completions"]:
+            flat.append({"probe": cell["probe"], "text": comp["text"], "logp": comp["logp_norm"]})
+
+    # batch_judge keys by (persona -> question -> [completions]); we use ONE synthetic
+    # persona "cell" and the probe text as the question. The per-completion custom_id
+    # batch_judge assigns is "{persona}__{q_idx:05d}__{comp_idx:02d}" where q_idx is the
+    # enumeration index of the question within the persona — so we group completions by
+    # probe (the question) and re-enumerate in the SAME order to recover verdicts.
+    from collections import OrderedDict
+
+    q_to_texts: OrderedDict[str, list[str]] = OrderedDict()
+    for c in flat:
+        q_to_texts.setdefault(c["probe"], []).append(c["text"])
+    completions = {"cell": dict(q_to_texts)}
+
+    rubric = col.judge_prompt
+
+    def _format_user_msg(question: str, completion: str) -> str:
+        return rubric.format(question=question, completion=completion)
+
+    batch_judge = importlib.import_module("explore_persona_space.eval.batch_judge")
+
+    with tempfile.TemporaryDirectory(prefix="i742_judge_rerun_") as td:
+        save_raw = _Path(td) / "scores.json"
+        # judge_system_prompt="" — the per-behavior rubric is fully self-contained in
+        # the user message (same as #658's sole-user-message judge_column). cache_dir
+        # off (the rerun MEASURES judge re-labeling variance — caching would collapse
+        # Var_judge to 0 by returning the first verdict on every rerun).
+        batch_judge.judge_completions_batch(
+            completions,
+            judge_system_prompt="",
+            format_user_msg=_format_user_msg,
+            judge_model=model,
+            cache_dir=None,
+            save_raw=save_raw,
+            checkpoint_dir=_Path(td) / "dispatch",
+        )
+        raw = json.loads(save_raw.read_text())
+    all_scores: dict[str, dict] = raw.get("all_scores", {})
+
+    # Re-enumerate in batch_judge's custom_id order to recover the per-completion
+    # verdict, KEEPING the probe grouping (per_probe[probe] = list of positive bools).
+    per_probe_acc: dict[str, list[tuple[bool, float]]] = {}
+    n_judged = 0
+    n_positive = 0
+    pos_logps: list[float] = []
+    # rebuild the (probe -> texts) -> logp lookup in the SAME flat order so we can map
+    # a recovered verdict back to its logp_norm.
+    logp_by_probe_text: dict[tuple[str, str], list[float]] = {}
+    for c in flat:
+        logp_by_probe_text.setdefault((c["probe"], c["text"]), []).append(c["logp"])
+    q_idx = 0
+    for _persona, q_completions in completions.items():
+        for question, comps in q_completions.items():
+            for comp_idx, comp_text in enumerate(comps):
+                custom_id = f"cell__{q_idx:05d}__{comp_idx:02d}"
+                v = all_scores.get(custom_id)
+                # a missing / errored / refused verdict is NOT counted as judged (same
+                # not-silent-default contract judge_column enforces via _judge_error).
+                if not isinstance(v, dict) or "_judge_error" in v or "_judge_refused" in v:
+                    continue
+                logps = logp_by_probe_text.get((question, comp_text), [0.0])
+                logp = logps.pop(0) if logps else 0.0
+                n_judged += 1
+                pos = common._verdict_truthy(v, col.e0_verdict_key, col_id)
+                per_probe_acc.setdefault(question, []).append((pos, logp))
+                if pos:
+                    n_positive += 1
+                    pos_logps.append(logp)
+            q_idx += 1
+
+    rate = (n_positive / n_judged) if n_judged else None
+    per_probe = [
+        {
+            "probe": p,
+            "e0": (sum(1 for pos, _ in rows if pos) / len(rows)) if rows else None,
+            "n_judged": len(rows),
+        }
+        for p, rows in per_probe_acc.items()
+    ]
+    low_dyn = (not pos_logps) or (rate in (0.0, 1.0))
+    return {
+        "column_id": col_id,
+        "dv": "judged_rate",
+        "rate": rate,  # PRIMARY
+        "n_judged": n_judged,
+        "n_positive": n_positive,
+        "n_total": len(flat),
+        "logp_pos_mean": (sum(pos_logps) / len(pos_logps)) if pos_logps else None,  # SECONDARY
+        "low_dynamic_range": low_dyn,
+        "per_probe": per_probe,
+        "transport": "anthropic_batch_api (eval.batch_judge.judge_completions_batch)",
+    }
+
+
 def per_behavior_judge_rate(
     gen: dict,
     *,
@@ -1155,25 +1300,29 @@ def per_behavior_judge_rate(
     BLOCKER-FIX (judge-rerun-wrong-judge-construct): #658 judged each read-out
     behavior with its OWN binary rubric — ``E0_COLUMNS[behavior].judge_prompt`` +
     ``_verdict_truthy(verdict, col.e0_verdict_key, behavior)`` — NOT the default
-    alignment judge (``mean_aligned``). This reuses #658's own
-    ``issue658_judge_e0.judge_column``, which (a) reads ``comp["text"]`` from the
-    cells schema (BLOCKER-FIX judge-rerun-completion-key-crash), (b) applies the
-    per-behavior rubric (broad_em→misaligned, harmful_compliance→complied,
-    sycophancy→agreed, refusal→refused), and (c) reconstructs the judge-positive
-    rate. So ``Var_judge`` is measured on the SAME construct #658's E0 rate used.
+    alignment judge (``mean_aligned``). The per-behavior rubric (broad_em→misaligned,
+    harmful_compliance→complied, sycophancy→agreed, refusal→refused) reads
+    ``comp["text"]`` from the cells schema (BLOCKER-FIX judge-rerun-completion-key-crash)
+    and reconstructs the judge-positive rate, so ``Var_judge`` is measured on the SAME
+    construct #658's E0 rate used.
 
-    ``judge_fn`` defaults to ``issue658_judge_e0.judge_column`` (the real per-behavior
-    judge); it is a test-injection hook (signature ``(col_id, gen, model) -> dict``)
-    so a counting stub can prove the J-sampling + per-behavior construct without an
-    API call. Returns the ``judge_column`` dict ``{rate, n_judged, n_positive, ...}``.
+    Transport (BLOCKER-FIX judge-rerun-transport-must-use-batch, reconciler r6): the
+    DEFAULT (production) dispatch routes that per-behavior rubric through the Anthropic
+    **Batch API** via :func:`judge_column_via_batch_judge` (``eval.batch_judge``, plan
+    v9 §4 Stage-0 step 2 + §11 row 8 — "never a hand-rolled poller"), NOT the
+    threaded-sync ``issue658_judge_e0.judge_column``. The rubric is transport-agnostic
+    (``judge_system_prompt`` is a parameter), so the construct is identical.
+
+    ``judge_fn`` is a test-injection hook (signature ``(col_id, gen, model) -> dict``)
+    so a counting stub can prove the J-sampling + per-behavior construct without an API
+    call (the counting-judge smoke + ``test_per_behavior_judge_uses_correct_rubric``).
+    When None the Batch-API dispatch is used. Returns the ``judge_column`` dict
+    ``{rate, n_judged, n_positive, ...}``.
     """
-    import importlib
-
     if behavior not in READOUT_BEHAVIORS:
         raise KeyError(f"per_behavior_judge_rate only for read-out behaviors, got {behavior!r}")
     if judge_fn is None:
-        judge_e0 = importlib.import_module("issue658_judge_e0")
-        judge_fn = judge_e0.judge_column
+        judge_fn = judge_column_via_batch_judge
     return judge_fn(behavior, gen, judge_model)
 
 

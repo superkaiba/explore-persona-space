@@ -7,8 +7,10 @@ JUDGE stochasticity (the judge labels the SAME completion differently on reruns)
 full completions live ONLY on the HF data repo at DISTINCT per-genre paths (MF2); we
 snapshot them into an issue-owned dir with a sha256 + a fail-loud shortfall check
 (``snapshot_raw_completions``), then re-judge ``R_rerun≥2×`` the read-out behaviors
-across BOTH genres (Option α, MF4) via the Anthropic Batch API (``eval.batch_judge``,
-never a hand-rolled poller), and decompose ``Var(E0) = Var_gen + Var_judge + Var_sig``.
+across BOTH genres (Option α, MF4) via the Anthropic Batch API
+(``eval.batch_judge.judge_completions_batch`` through
+``dc.judge_column_via_batch_judge`` — never a hand-rolled poller; plan v9 §4 Stage-0
+step 2 + §11 row 8), and decompose ``Var(E0) = Var_gen + Var_judge + Var_sig``.
 
 The honest ceiling folds the judge term:
   ``√(r_yy_honest) = √( Var_signal / (Var_signal + Var_judge + Var_generation) )``.
@@ -182,9 +184,10 @@ def _judge_reruns_for_cell(
     context (BLOCKER-fix judge-rerun-j-sampling — NEVER all completions; that
     balloons the batch past the registered ~16k calls), then re-judges them
     ``r_rerun`` times via the CORRECT PER-BEHAVIOR judge construct
-    (``dc.per_behavior_judge_rate`` → #658's ``judge_column`` with the behavior's own
-    rubric + ``c["text"]``; BLOCKER-fix judge-rerun-wrong-judge-construct +
-    judge-rerun-completion-key-crash). Returns:
+    (``dc.per_behavior_judge_rate`` → the Anthropic **Batch API**
+    ``dc.judge_column_via_batch_judge`` with the behavior's own rubric + ``c["text"]``;
+    BLOCKER-fix judge-rerun-wrong-judge-construct + judge-rerun-completion-key-crash +
+    judge-rerun-transport-must-use-batch). Returns:
 
       * ``rerun_rates``: list of length ``r_rerun``; each a per-context judged-rate
         vector (the SAME ``judged_rate`` construct #658 used; across-rerun variance =
@@ -203,9 +206,10 @@ def _judge_reruns_for_cell(
     salted ``hash()``) so a re-run reproduces the same sample (plan §11 row 8 + §9).
 
     ``judge_fn`` is a test-injection hook threaded into ``dc.per_behavior_judge_rate``
-    (signature ``(col_id, gen, model) -> dict``); when None the real #658 per-behavior
-    ``judge_column`` is used. A deterministic counting stub lets the live (non-dry)
-    judge-rerun path be smoke-tested without API spend (BLOCKER judge-rerun-smoke-dry-run-only).
+    (signature ``(col_id, gen, model) -> dict``); when None the real per-behavior
+    Anthropic Batch-API dispatch (``dc.judge_column_via_batch_judge``) is used. A
+    deterministic counting stub lets the live (non-dry) judge-rerun path be
+    smoke-tested without API spend (BLOCKER judge-rerun-smoke-dry-run-only).
     """
     cell_dir = snapshot_dir / genre
     files = sorted(cell_dir.glob(f"*__{behavior}.json"))
@@ -271,7 +275,7 @@ def make_counting_judge() -> Callable[..., dict]:
     Lets the non-dry ``run(...)`` code path (``_judge_reruns_for_cell`` ->
     ``_decompose_variance`` -> ``judge_variance`` write) be smoke-tested without
     Anthropic spend (BLOCKER judge-rerun-smoke-dry-run-only). Mimics
-    ``issue658_judge_e0.judge_column``'s return contract (``{rate, n_judged,
+    the per-behavior judged-rate return contract (``{rate, n_judged,
     n_positive, ...}``) by deciding each completion positive from a stable sha256 of
     its text. A deterministic per-CALL jitter (keyed on a closure-local call counter)
     flips one verdict on a SUBSET of reruns so the SAME context judged across the R
@@ -439,26 +443,30 @@ def run(
                 "no-API counting judge (make_counting_judge) — NO Anthropic spend. Proves the "
                 f"J={j_completions} sampling + R_rerun decomposition + judge_variance write run "
                 "end-to-end (BLOCKER judge-rerun-smoke-dry-run-only). The production run swaps in "
-                "the real per-behavior #658 judge_column."
+                "the real per-behavior Anthropic Batch-API dispatch "
+                "(dc.judge_column_via_batch_judge)."
             )
         else:
             note = (
                 "full run: re-judged R_rerun× with the per-behavior #658 rubric "
-                "(judge_column, reading c['text'], judge=claude-sonnet-4-5-20250929) on "
+                "(reading c['text'], judge=claude-sonnet-4-5-20250929) on "
                 f"J={j_completions} deterministically-sampled completions/context; per "
                 "(genre, behavior) Var(E0)=Var_signal+Var_judge+Var_generation decomposed below. "
-                "Dispatch is the threaded sync Anthropic client (max_retries=8) #658 used; the "
-                "sync-vs-Batch-API plan deviation + its cost/spend/wall-time impact are recorded "
-                "structurally in the `transport_deviation` field (CONCERN judge-rerun-transport-"
-                "not-batch, Option A). The construct fix (the BLOCKER) holds."
+                "Dispatch routes the per-behavior binary rubric through the Anthropic Batch API "
+                "(eval.batch_judge.judge_completions_batch, never a hand-rolled poller) per plan "
+                "v9 §4 Stage-0 step 2 + §11 row 8 (BLOCKER judge-rerun-transport-must-use-batch). "
+                "The construct (per-behavior rubric) + transport (Batch API) both hold; the "
+                "rubric is transport-agnostic (judge_system_prompt is a parameter)."
             )
 
-    # CONCERN judge-rerun-transport-not-batch (Option A — structured plan deviation).
-    # Plan v9 §11 row 8 + the data-throughput section register the Anthropic Batch API
-    # (eval.batch_judge) for the judge rerun. This script dispatches via the threaded
-    # SYNC #658 judge_column client instead; the deviation + its impact are recorded
-    # structurally here (the §6.5 reproducibility-card surface) so it is auditable, not
-    # buried in a docstring.
+    # BLOCKER judge-rerun-transport-must-use-batch (reconciler r6, plan v9 §4 Stage-0
+    # step 2 + §11 row 8): the production judge rerun routes the per-behavior binary
+    # rubric through the Anthropic Batch API (eval.batch_judge.judge_completions_batch,
+    # never a hand-rolled poller) — see dc.judge_column_via_batch_judge, the default
+    # dispatch of dc.per_behavior_judge_rate. registered_transport == actual_transport
+    # now, so there is NO deviation; this `transport_record` documents the canonical
+    # choice + the (still-corrected) call-count estimate (the §6.5 reproducibility-card
+    # surface).
     # CONCERN judge-rerun-transport-undercount: the prior round's estimate was
     # n_cells × R_rerun × J = len(genres)·len(behaviors) × R × J, which OMITS the
     # per-context loop (50 contexts/genre) — it read ~320 for the default run when the
@@ -477,39 +485,36 @@ def run(
     # so the full judged-call count is est_calls + the half-pass set.
     est_gen_half_calls = n_cells * 2 * j_completions
     est_calls_total = est_calls + est_gen_half_calls
-    transport_deviation = {
+    transport_record = {
         "registered_transport": "anthropic_batch_api (eval.batch_judge)",
-        "actual_transport": "threaded_sync_anthropic_client (#658 judge_column, max_retries=8)",
+        "actual_transport": "anthropic_batch_api (eval.batch_judge.judge_completions_batch)",
+        "deviation_exists": False,
         "n_contexts_by_genre": n_contexts_by_genre,
         "est_judge_calls_rerun_set": int(est_calls),
         "est_judge_calls_generation_halves": int(est_gen_half_calls),
         "est_judge_calls_total": int(est_calls_total),
-        "why_sync_chosen": (
-            "the per-behavior judge IS #658's own judge_column rubric (reading c['text']) "
-            "— reusing it verbatim guarantees Var_judge is measured on the SAME construct "
-            "that produced #658's E0 rates (the construct-correctness BLOCKER fix). Routing "
-            "that per-behavior binary rubric through eval.batch_judge would require reworking "
-            "its mean_aligned aggregation to the per-behavior rubric, risking a construct "
-            "drift the sync path avoids."
+        "why_batch_chosen": (
+            "plan v9 §4 Stage-0 step 2 + §11 row 8 bind the Stage-0 judge rerun to the "
+            "Anthropic Batch API via eval.batch_judge ('never a hand-rolled poller'); the "
+            "realized ~16,000-call set is 8× the §11 row 8 ~2k sync revisit floor, so Batch "
+            "wins on operator-time (no-latency-need, free self-harvest at expires_at) per the "
+            "CLAUDE.md 'judge set ≳ a few thousand → Batch API' standing rule. The per-behavior "
+            "binary rubric (E0_COLUMNS[behavior].judge_prompt + _verdict_truthy) is "
+            "transport-agnostic — judge_completions_batch takes judge_system_prompt as a "
+            "parameter — so Var_judge is measured on the SAME construct #658's E0 rate used "
+            "(the construct-correctness BLOCKER fix holds). Dispatch: "
+            "dc.judge_column_via_batch_judge (the default of dc.per_behavior_judge_rate)."
         ),
         "cost_spend_walltime_impact": (
             f"the registered set loops over contexts: Σ_genre n_contexts × {len(behaviors)} "
             f"behaviors × R_rerun={r_rerun} × J={j_completions} = {est_calls} re-judge calls "
             f"(+{est_gen_half_calls} generation-half calls = {est_calls_total} total) for "
             f"{n_contexts_total} contexts across {len(genres)} genre(s) — the registered "
-            "~16,000 at the default (50 contexts × 2 genres × 4 behaviors × R=2 × J=20). Well "
-            "below the ~200k sync/batch crossover (docs/api_throughput_guidelines.md, §11 row "
-            "8). At Sonnet-4.5 sync pricing this is a small fraction of #658's ~141k-call "
-            "judging (< $20). Wall-time: sync at the polite per-key cap (Sonnet 100 concurrent) "
-            "clears it in minutes; Batch API would add the self-harvest latency (up to 24h to "
-            "expires_at) for no throughput benefit at this N."
-        ),
-        "what_would_change_to_switch": (
-            "swap _judge_reruns_for_cell's per-cell judge_column dispatch for an "
-            "eval.batch_judge submission keyed by (genre, behavior, context_id, completion), "
-            "adapt the per-behavior binary rubric into batch_judge's mean_aligned aggregation, "
-            "and replace the inline rate decomposition with a deadline-bounded batch poll; "
-            "the variance decomposition (_decompose_variance) is transport-agnostic and stays."
+            "~16,000 at the default (50 contexts × 2 genres × 4 behaviors × R=2 × J=20). The "
+            "judge_dispatch router (eval.batch_judge) routes sync below its tier-scaled "
+            "threshold and Message Batches at/above it (≤8k sub-batches); at this N the Batch "
+            "path self-harvests at expires_at with no orchestrator polling. Cost is a small "
+            "fraction of #658's ~141k-call judging (< $20 at Sonnet-4.5 batch pricing)."
         ),
     }
     return {
@@ -523,7 +528,7 @@ def run(
         "behaviors": behaviors,
         "snapshot_provenance": per_genre,
         "judge_variance": judge_variance,
-        "transport_deviation": transport_deviation,
+        "transport_record": transport_record,
         "note": note,
         "metadata": reproducibility_metadata({"script": "issue742_judge_rerun"}),
     }

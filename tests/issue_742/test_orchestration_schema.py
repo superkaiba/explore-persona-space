@@ -924,7 +924,7 @@ def test_compute_bracket_no_impossible_output_when_judge_folded_below_rho_lin():
 
 
 # --------------------------------------------------------------------------- #
-# 12. CONCERN judge-rerun-transport-undercount — the transport_deviation call    #
+# 12. CONCERN judge-rerun-transport-undercount — the transport_record call       #
 #     estimate loops over CONTEXTS (50/genre), so the default full-run estimate  #
 #     is the registered ~16,000, NOT the context-omitting ~320.                  #
 # --------------------------------------------------------------------------- #
@@ -948,3 +948,81 @@ def test_transport_deviation_full_run_estimate_is_16000():
     # and max_contexts trims it (smoke parity): 1 context/genre -> tiny estimate.
     smoke_counts = jr._resolve_context_counts(genres, 1)
     assert sum(smoke_counts.values()) == 2, smoke_counts
+
+
+# --------------------------------------------------------------------------- #
+# 13. BLOCKER judge-rerun-transport-must-use-batch (reconciler r6) — the         #
+#     production judge rerun MUST dispatch through eval.batch_judge, NOT the     #
+#     threaded-sync #658 judge_column. Plan v9 §4 Stage-0 step 2 + §11 row 8.    #
+# --------------------------------------------------------------------------- #
+@pytest.mark.skipif(
+    not impl_has("judge_column_via_batch_judge"), reason="round-8 batch-transport symbol"
+)
+def test_production_judge_rerun_dispatches_via_batch_judge(monkeypatch):
+    """The DEFAULT (production) per-behavior dispatch calls
+    ``eval.batch_judge.judge_completions_batch`` with the behavior's OWN rubric as the
+    user message + the per-completion parsed verdicts reduced through
+    ``_verdict_truthy`` — NEVER ``issue658_judge_e0.judge_column`` (the sync transport
+    the reconciler r6 FAILed). Codex's mechanizable check: the production call routes to
+    judge_completions_batch while no sync judge_column dispatch survives.
+    """
+    import importlib
+
+    batch_judge = importlib.import_module("explore_persona_space.eval.batch_judge")
+    common = importlib.import_module("issue658_common")
+
+    # A real #658-shaped cell of 4 completions for broad_em (rubric key "misaligned").
+    gen = _real_e0_gen_cell(context_id="c0", behavior="broad_em", n_probes=2, n_rollouts=2)
+    sampled = dc.sample_completions_for_judge(gen, j_completions=4, seed=7428)
+
+    captured: dict = {}
+
+    def _fake_batch(completions, *, judge_system_prompt, format_user_msg, save_raw, **kw):
+        # prove the per-behavior rubric (NOT mean_aligned) flows through the user msg:
+        # the broad_em rubric contains its verdict contract {"misaligned": ...}.
+        probe0 = next(iter(next(iter(completions.values())).keys()))
+        comp0 = next(iter(next(iter(completions.values())).values()))[0]
+        user_msg = format_user_msg(probe0, comp0)
+        captured["rubric_in_user_msg"] = '"misaligned"' in user_msg
+        captured["called"] = True
+        # mimic dispatch_judge_items: all_scores keyed by {persona}__{q:05d}__{c:02d}
+        # carrying the RAW per-behavior verdict dict (the parse_judge_json output).
+        all_scores: dict[str, dict] = {}
+        q_idx = 0
+        for _persona, q_completions in completions.items():
+            for _question, comps in q_completions.items():
+                for c_idx in range(len(comps)):
+                    # alternate true/false -> a non-degenerate judged-positive rate.
+                    all_scores[f"cell__{q_idx:05d}__{c_idx:02d}"] = {"misaligned": (c_idx % 2 == 0)}
+                q_idx += 1
+        save_raw = __import__("pathlib").Path(save_raw)
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(__import__("json").dumps({"all_scores": all_scores}))
+        return {}
+
+    monkeypatch.setattr(batch_judge, "judge_completions_batch", _fake_batch)
+
+    # if the sync judge_column were (wrongly) still the default, it would try a live
+    # Anthropic call; make it raise so any sync path is caught loudly rather than
+    # silently spending.
+    judge_e0 = importlib.import_module("issue658_judge_e0")
+
+    def _boom(*a, **k):  # pragma: no cover - asserts the sync path is NOT taken
+        raise AssertionError("sync judge_column dispatched; production must use batch_judge")
+
+    monkeypatch.setattr(judge_e0, "judge_column", _boom)
+
+    res = dc.per_behavior_judge_rate(sampled, behavior="broad_em", judge_model=jr_model())
+
+    assert captured.get("called"), "production dispatch must call eval.batch_judge"
+    assert captured.get("rubric_in_user_msg"), "the per-behavior rubric must flow as the user msg"
+    assert res["transport"].startswith("anthropic_batch_api"), res.get("transport")
+    # 4 completions, half "misaligned"=True -> rate 0.5 via _verdict_truthy on the key.
+    assert res["n_judged"] == 4 and res["n_positive"] == 2, res
+    assert res["rate"] == 0.5, res
+    # sanity: _verdict_truthy is the reducer (the construct, not a 0-100 mean).
+    assert common._verdict_truthy({"misaligned": True}, "misaligned", "broad_em") is True
+
+
+def jr_model() -> str:
+    return "claude-sonnet-4-5-20250929"
