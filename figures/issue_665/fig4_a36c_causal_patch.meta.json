@@ -1,0 +1,156 @@
+{
+  "commit": "91ea6668c2",
+  "created": "2026-06-30T11:38:11Z",
+  "figsize": [
+    8.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.333333,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.15730453449314583,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.666667,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.36386577422617805,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.666667,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.15908528119928142,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.666667,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.16327178891597202,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.2,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.21051319518006328,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.8,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.3499488047323951,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.8,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.17649722639073723,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.8,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.20004818224326243,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.066667,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.9152549053972573,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.933333,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 1.0533407484885995,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.933333,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.9185228265468177,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.933333,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.9127746973223012,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.066667,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.8647160740605386,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.066667,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 1.1562726710907347,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.066667,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.9561956172130832,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.066667,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.7739924126972338,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.2,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.8096031224669284,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.2,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.9973846472101875,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.8610428519069703,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.2,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.7754642637986917,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.333333,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.9728828994041792,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.333333,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 1.0983304193201502,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.333333,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 1.0459551494887653,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.333333,
+      "patch effect on activation\n(1 = moved to FT profile, 0 = at base)": 0.9068912509087194,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24
+}

@@ -1,0 +1,48 @@
+{
+  "commit": "91ea6668c2",
+  "created": "2026-06-30T11:38:07Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.13475577972362324,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.16216057600359998,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.14549078431740195,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.28273155788931525,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.2366996770433954,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.16206528265184658,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6
+}
