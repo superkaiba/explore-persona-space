@@ -1,0 +1,421 @@
+{
+  "primary_layer": 14,
+  "by_behavior": {
+    "em": {
+      "f_cv_ci": {
+        "mean": 0.004750708814360131,
+        "ci_low": 0.003864185218411058,
+        "ci_high": 0.005965689876774351,
+        "n": 4480
+      },
+      "f_cv_down_ci": {
+        "mean": 0.004815749550238345,
+        "ci_low": 0.003965083285856898,
+        "ci_high": 0.00589920460331713,
+        "n": 4480
+      },
+      "f_cv_full_span_ci": {
+        "mean": 0.07028381403138587,
+        "ci_low": 0.058499164498091116,
+        "ci_high": 0.08106411677559046,
+        "n": 4480
+      },
+      "last_token_vs_full_span_delta": -0.06553310521702574,
+      "f_cv_e_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "f_cv_e_down_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "null_floor_ci": {
+        "mean": -6.62012682844583e-05,
+        "ci_low": -0.0018994797014604504,
+        "ci_high": 0.0013199709830617203,
+        "n": 4480
+      },
+      "verdict": "mapping-changed",
+      "n_cells": 16,
+      "n_e_cells": 0,
+      "primary_pooling": "mean_resp",
+      "f_cv_e_ctx_gated_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "e_verdict_ctx_gated": "ctx-gating-not-applied",
+      "ctx_gating_applied": false,
+      "n_ctx_gated_cells": 0,
+      "n_not_ctx_gated_cells": 0,
+      "n_ctx_gating_unavailable": 16,
+      "per_cell_ctx_gating": {
+        "em_binst_em_seed42": {
+          "status": "not-available"
+        },
+        "em_default_seed42": {
+          "status": "not-available"
+        },
+        "em_fmt_code_seed42": {
+          "status": "not-available"
+        },
+        "em_fmt_json_seed42": {
+          "status": "not-available"
+        },
+        "em_icl_k2_seed42": {
+          "status": "not-available"
+        },
+        "em_icl_k8_seed42": {
+          "status": "not-available"
+        },
+        "em_reph_casual_seed42": {
+          "status": "not-available"
+        },
+        "em_reph_imp_seed42": {
+          "status": "not-available"
+        },
+        "em_reph_polite_seed42": {
+          "status": "not-available"
+        },
+        "em_sp_doctor_seed42": {
+          "status": "not-available"
+        },
+        "em_sp_ph1_seed42": {
+          "status": "not-available"
+        },
+        "em_sp_ph2_seed42": {
+          "status": "not-available"
+        },
+        "em_sp_swe_seed42": {
+          "status": "not-available"
+        },
+        "em_wc_long_write_seed42": {
+          "status": "not-available"
+        },
+        "em_wc_short_advice_seed42": {
+          "status": "not-available"
+        },
+        "em_wc_short_code_seed42": {
+          "status": "not-available"
+        }
+      }
+    },
+    "sycophancy": {
+      "f_cv_ci": {
+        "mean": 0.006907949179269671,
+        "ci_low": 0.005686438177455015,
+        "ci_high": 0.00821220544863664,
+        "n": 4480
+      },
+      "f_cv_down_ci": {
+        "mean": 0.007818807970653254,
+        "ci_low": 0.006506696087736726,
+        "ci_high": 0.009475795493088864,
+        "n": 4480
+      },
+      "f_cv_full_span_ci": {
+        "mean": 0.12010826003223389,
+        "ci_low": 0.10465510068948526,
+        "ci_high": 0.13260002943935525,
+        "n": 4480
+      },
+      "last_token_vs_full_span_delta": -0.11320031085296423,
+      "f_cv_e_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "f_cv_e_down_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "null_floor_ci": {
+        "mean": 0.01489491824521289,
+        "ci_low": 0.01276893314428371,
+        "ci_high": 0.016948827120329475,
+        "n": 4480
+      },
+      "verdict": "mapping-changed",
+      "n_cells": 16,
+      "n_e_cells": 0,
+      "primary_pooling": "mean_resp",
+      "f_cv_e_ctx_gated_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "e_verdict_ctx_gated": "ctx-gating-not-applied",
+      "ctx_gating_applied": false,
+      "n_ctx_gated_cells": 0,
+      "n_not_ctx_gated_cells": 0,
+      "n_ctx_gating_unavailable": 16,
+      "per_cell_ctx_gating": {
+        "sycophancy_binst_sycophancy_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_default_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_fmt_code_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_fmt_json_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_icl_k2_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_icl_k8_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_reph_casual_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_reph_imp_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_reph_polite_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_sp_doctor_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_sp_ph1_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_sp_ph2_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_sp_swe_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_wc_long_write_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_wc_short_advice_seed42": {
+          "status": "not-available"
+        },
+        "sycophancy_wc_short_code_seed42": {
+          "status": "not-available"
+        }
+      }
+    },
+    "marker": {
+      "f_cv_ci": {
+        "mean": 0.049684876745632094,
+        "ci_low": 0.045353935693544886,
+        "ci_high": 0.0547545019203703,
+        "n": 4480
+      },
+      "f_cv_down_ci": {
+        "mean": 0.04839671956003235,
+        "ci_low": 0.04456495585245972,
+        "ci_high": 0.05223700904627106,
+        "n": 4480
+      },
+      "f_cv_full_span_ci": {
+        "mean": 0.17280235045554876,
+        "ci_low": 0.16391187957033398,
+        "ci_high": 0.1817817040596814,
+        "n": 4480
+      },
+      "last_token_vs_full_span_delta": -0.12311747370991666,
+      "f_cv_e_ci": {
+        "mean": 0.0004343478475602122,
+        "ci_low": -0.0015729228365407987,
+        "ci_high": 0.0022837468522315914,
+        "n": 16
+      },
+      "f_cv_e_down_ci": {
+        "mean": -0.000254728768714442,
+        "ci_low": -0.0019145220814681511,
+        "ci_high": 0.0015551047471947742,
+        "n": 16
+      },
+      "null_floor_ci": {
+        "mean": 0.07966137835655496,
+        "ci_low": 0.06826947913335873,
+        "ci_high": 0.09170678762805687,
+        "n": 4480
+      },
+      "verdict": "mapping-changed",
+      "n_cells": 16,
+      "n_e_cells": 16,
+      "primary_pooling": "slot",
+      "f_cv_e_ctx_gated_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "e_verdict_ctx_gated": "ctx-gating-not-applied",
+      "ctx_gating_applied": false,
+      "n_ctx_gated_cells": 0,
+      "n_not_ctx_gated_cells": 0,
+      "n_ctx_gating_unavailable": 16,
+      "per_cell_ctx_gating": {
+        "marker_binst_marker_seed42": {
+          "status": "not-available"
+        },
+        "marker_default_seed42": {
+          "status": "not-available"
+        },
+        "marker_fmt_code_seed42": {
+          "status": "not-available"
+        },
+        "marker_fmt_json_seed42": {
+          "status": "not-available"
+        },
+        "marker_icl_k2_seed42": {
+          "status": "not-available"
+        },
+        "marker_icl_k8_seed42": {
+          "status": "not-available"
+        },
+        "marker_reph_casual_seed42": {
+          "status": "not-available"
+        },
+        "marker_reph_imp_seed42": {
+          "status": "not-available"
+        },
+        "marker_reph_polite_seed42": {
+          "status": "not-available"
+        },
+        "marker_sp_doctor_seed42": {
+          "status": "not-available"
+        },
+        "marker_sp_ph1_seed42": {
+          "status": "not-available"
+        },
+        "marker_sp_ph2_seed42": {
+          "status": "not-available"
+        },
+        "marker_sp_swe_seed42": {
+          "status": "not-available"
+        },
+        "marker_wc_long_write_seed42": {
+          "status": "not-available"
+        },
+        "marker_wc_short_advice_seed42": {
+          "status": "not-available"
+        },
+        "marker_wc_short_code_seed42": {
+          "status": "not-available"
+        }
+      }
+    },
+    "fact": {
+      "f_cv_ci": {
+        "mean": 0.0007418956789483524,
+        "ci_low": 0.0006002856876254936,
+        "ci_high": 0.0008893840626831622,
+        "n": 4480
+      },
+      "f_cv_down_ci": {
+        "mean": 0.00037922593873975863,
+        "ci_low": 0.00025142337659552416,
+        "ci_high": 0.0005282520911426887,
+        "n": 4480
+      },
+      "f_cv_full_span_ci": {
+        "mean": 0.09595825864333164,
+        "ci_low": 0.09103608017086809,
+        "ci_high": 0.1008873545259401,
+        "n": 4480
+      },
+      "last_token_vs_full_span_delta": -0.0952163629643833,
+      "f_cv_e_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "f_cv_e_down_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "null_floor_ci": {
+        "mean": 0.0009046521730454054,
+        "ci_low": 0.0007153468971796883,
+        "ci_high": 0.0010774316309645896,
+        "n": 4480
+      },
+      "verdict": "patch-inconsistent",
+      "n_cells": 16,
+      "n_e_cells": 0,
+      "primary_pooling": "slot",
+      "f_cv_e_ctx_gated_ci": {
+        "mean": NaN,
+        "ci_low": NaN,
+        "ci_high": NaN,
+        "n": 0
+      },
+      "e_verdict_ctx_gated": "ctx-gating-not-applied",
+      "ctx_gating_applied": false,
+      "n_ctx_gated_cells": 0,
+      "n_not_ctx_gated_cells": 0,
+      "n_ctx_gating_unavailable": 16,
+      "per_cell_ctx_gating": {
+        "fact_binst_fact_seed42": {
+          "status": "not-available"
+        },
+        "fact_default_seed42": {
+          "status": "not-available"
+        },
+        "fact_fmt_code_seed42": {
+          "status": "not-available"
+        },
+        "fact_fmt_json_seed42": {
+          "status": "not-available"
+        },
+        "fact_icl_k2_seed42": {
+          "status": "not-available"
+        },
+        "fact_icl_k8_seed42": {
+          "status": "not-available"
+        },
+        "fact_reph_casual_seed42": {
+          "status": "not-available"
+        },
+        "fact_reph_imp_seed42": {
+          "status": "not-available"
+        },
+        "fact_reph_polite_seed42": {
+          "status": "not-available"
+        },
+        "fact_sp_doctor_seed42": {
+          "status": "not-available"
+        },
+        "fact_sp_ph1_seed42": {
+          "status": "not-available"
+        },
+        "fact_sp_ph2_seed42": {
+          "status": "not-available"
+        },
+        "fact_sp_swe_seed42": {
+          "status": "not-available"
+        },
+        "fact_wc_long_write_seed42": {
+          "status": "not-available"
+        },
+        "fact_wc_short_advice_seed42": {
+          "status": "not-available"
+        },
+        "fact_wc_short_code_seed42": {
+          "status": "not-available"
+        }
+      }
+    }
+  }
+}
