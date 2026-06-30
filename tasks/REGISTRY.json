@@ -4780,8 +4780,8 @@
     "754": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/754",
-      "status": "planning",
+      "path": "tasks/approved/754",
+      "status": "approved",
       "title": "daily-fix: Step 9c test-verdict runs touched-file pytest subset"
     },
     "755": {
