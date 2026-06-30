@@ -125,8 +125,20 @@ EXPECTED_API = {
         ".rho (held-out ridge probe on LEACE residual), .null_ci, .post_leace_linear_pass"
     ),
     "classify_stage1_verdict": (
-        "(*, dcor_pass: bool, linear_pass: bool) -> str in "
-        "{'nonlinear-yes','linear-erasure-leakage-unresolved','ceiling-limited'}"
+        "(*, dcor_pass: bool, linear_pass: bool, control_res: DcorPermutationResult|None=None, "
+        "observed_dcor: float|None=None, alpha=0.05, delta_sel=0.10) -> Stage1Verdict "
+        "(compares == its .verdict str). verdict enum (plan v9 §6.5, 5 entries): "
+        "{'nonlinear-yes','non-selective','linear-erasure-leakage-unresolved',"
+        "'ceiling-limited','indistinguishable-from-null-given-variance'}. nonlinear-yes is "
+        "GATED on the Hewitt-Liang selectivity rule (§4 step 4): dcor_pass AND linear_pass AND "
+        "(control_res.p_value >= alpha OR observed_dcor - control_res.dcor >= delta_sel); "
+        "control_res=None passes selectivity vacuously (legacy 2-arg back-compat). "
+        ".selectivity_branch in {'control-fails-null','effect-size-margin','non-selective',"
+        "'not-applicable'}."
+    ),
+    "Stage1Verdict": (
+        "frozen dataclass(verdict: str, selectivity_branch: str='not-applicable'); "
+        "__eq__ compares to a bare str (its .verdict) so legacy == checks keep working"
     ),
 }
 

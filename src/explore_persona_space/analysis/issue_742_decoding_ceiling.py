@@ -1247,18 +1247,128 @@ def held_out_linear_leakage(
     return HeldOutLeakageResult(rho=rho, null_ci=(lo, hi), post_leace_linear_pass=passed)
 
 
-def classify_stage1_verdict(*, dcor_pass: bool, linear_pass: bool) -> str:
-    """Stage-1 verdict enum from (dcor_pass, linear_pass) (plan §13 Phase-2 REVISE).
+# Stage-1 verdict enum (5 entries; plan v9 §6.5 deliverable + §4 Stage-1 step 4).
+STAGE1_VERDICTS = frozenset(
+    {
+        "nonlinear-yes",
+        "non-selective",
+        "linear-erasure-leakage-unresolved",
+        "ceiling-limited",
+        "indistinguishable-from-null-given-variance",
+    }
+)
+# Selectivity-branch labels recorded alongside the verdict (plan v9 §6.5 / §4 step 4).
+STAGE1_SELECTIVITY_BRANCHES = frozenset(
+    {"control-fails-null", "effect-size-margin", "non-selective", "not-applicable"}
+)
 
-    * dCor pass + linear pass → ``"nonlinear-yes"`` (genuine nonlinear residual).
-    * dCor pass + linear FAIL → ``"linear-erasure-leakage-unresolved"`` (the
-      apparent residual is unresolved leftover linear leakage, not nonlinearity).
-    * dCor null (either linear verdict) → ``"ceiling-limited"`` (no residual the
-      test can resolve at this n).
+
+@dataclass(frozen=True)
+class Stage1Verdict:
+    """Stage-1 verdict + its selectivity branch (plan v9 §4 Stage-1 step 4).
+
+    ``verdict`` is the enum string; ``selectivity_branch`` records WHICH limb of the
+    selectivity rule decided the outcome so the analyzer can stratify. Compares equal
+    to a bare ``str`` (its ``verdict``) so the existing ``== "nonlinear-yes"`` call
+    sites and tests keep working while the new ``.selectivity_branch`` attribute is
+    available to callers that want it.
+    """
+
+    verdict: str
+    selectivity_branch: str = "not-applicable"
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Stage1Verdict):
+            return (self.verdict, self.selectivity_branch) == (
+                other.verdict,
+                other.selectivity_branch,
+            )
+        if isinstance(other, str):
+            return self.verdict == other
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.verdict)
+
+    def __str__(self) -> str:
+        return self.verdict
+
+
+def classify_stage1_verdict(
+    *,
+    dcor_pass: bool,
+    linear_pass: bool,
+    control_res: DcorPermutationResult | None = None,
+    observed_dcor: float | None = None,
+    alpha: float = 0.05,
+    delta_sel: float = 0.10,
+) -> Stage1Verdict:
+    """Stage-1 verdict from (dcor_pass, linear_pass) + the Hewitt-Liang control null.
+
+    Plan v9 §4 Stage-1 step 4 (the cap-3 narrow amendment): the ``nonlinear-yes``
+    verdict is GATED on selectivity against a shuffled-``E0`` control-task null
+    (``control_res`` — the same refit-per-permutation dCor on randomized labels).
+
+    The selectivity rule (plan v9 §11 row 11):
+
+        nonlinear-yes  iff  dcor_pass AND linear_pass AND selective
+          where selective =
+            (control_res.p_value >= alpha)                            # (i) control fails its null
+            OR
+            ((control_res.p_value < alpha)
+             AND (observed_dcor - control_res.dcor >= delta_sel))      # (ii) effect-size margin
+
+    Branch logic:
+
+    * ``dcor_pass`` False → ``"ceiling-limited"`` (no residual the test can resolve at
+      this n); ``selectivity_branch="not-applicable"``.
+    * ``dcor_pass`` True + ``linear_pass`` False → ``"linear-erasure-leakage-unresolved"``
+      (the apparent residual is leftover out-of-sample linear leakage, not
+      nonlinearity); ``selectivity_branch="not-applicable"``.
+    * ``dcor_pass`` True + ``linear_pass`` True + selective → ``"nonlinear-yes"`` with
+      ``selectivity_branch`` = ``"control-fails-null"`` (path i) or
+      ``"effect-size-margin"`` (path ii).
+    * ``dcor_pass`` True + ``linear_pass`` True + NOT selective → ``"non-selective"``
+      (the ``d≫n`` probe-memorization regime — the control matches the true task);
+      ``selectivity_branch="non-selective"``.
+
+    **Back-compat default (Phase-1.5 implementer-reconcile note):** when
+    ``control_res is None`` the selectivity check passes VACUOUSLY — a
+    ``dcor_pass + linear_pass`` cell reads ``nonlinear-yes`` with
+    ``selectivity_branch="not-applicable"``. This preserves the legacy 2-arg
+    ``classify_stage1_verdict(dcor_pass=..., linear_pass=...)`` contract the existing
+    ``test_stage1_verdict_enum`` binds. The production call site (``run_stage1_cell``)
+    ALWAYS passes ``control_res`` + ``observed_dcor``, so the gate is live in
+    production; only standalone/legacy callers hit the vacuous path.
+
+    Returns a :class:`Stage1Verdict` (compares equal to its ``verdict`` string).
     """
     if not dcor_pass:
-        return "ceiling-limited"
-    return "nonlinear-yes" if linear_pass else "linear-erasure-leakage-unresolved"
+        return Stage1Verdict("ceiling-limited", "not-applicable")
+    if not linear_pass:
+        return Stage1Verdict("linear-erasure-leakage-unresolved", "not-applicable")
+
+    # dcor_pass AND linear_pass: decide selectivity against the control-task null.
+    if control_res is None:
+        # vacuous pass (legacy 2-arg contract): no control to net against.
+        return Stage1Verdict("nonlinear-yes", "not-applicable")
+
+    if control_res.p_value >= alpha:
+        # path (i): the shuffled-label control FAILS its own permutation null →
+        # the true-task signal is selective.
+        return Stage1Verdict("nonlinear-yes", "control-fails-null")
+
+    # control ALSO passes at d≫n → require the effect-size margin tie-break.
+    if observed_dcor is None:
+        # cannot evaluate path (ii) without the observed task dCor → conservative
+        # non-selective (never silently declare nonlinear-yes on a missing margin).
+        return Stage1Verdict("non-selective", "non-selective")
+    if observed_dcor - control_res.dcor >= delta_sel:
+        # path (ii): the true task beats the control by ≥ Δ_sel.
+        return Stage1Verdict("nonlinear-yes", "effect-size-margin")
+
+    # both pass AND the margin is below Δ_sel → probe memorization, NOT a residual.
+    return Stage1Verdict("non-selective", "non-selective")
 
 
 # --------------------------------------------------------------------------- #

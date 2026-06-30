@@ -137,11 +137,40 @@ def run_stage1_cell(
     held = dc.held_out_linear_leakage(reduced[tr], E0[tr], reduced[he], E0[he], rng=rng)
     linear_pass = bool(held.post_leace_linear_pass)
 
-    verdict = dc.classify_stage1_verdict(dcor_pass=dcor_pass, linear_pass=linear_pass)
+    # step 4 — BINDING selectivity gate (plan v9 §4 Stage-1 step 4 / §11 row 11): the
+    # control-task null (control_res) is consumed by the verdict, NOT merely recorded.
+    # nonlinear-yes iff dcor_pass AND linear_pass AND selective (control fails its own
+    # null OR the true task beats the control by >= Δ_sel=0.10).
+    verdict_obj = dc.classify_stage1_verdict(
+        dcor_pass=dcor_pass,
+        linear_pass=linear_pass,
+        control_res=control_res,
+        observed_dcor=dcor_res.dcor,
+    )
+    verdict = verdict_obj.verdict
+    selectivity_branch = verdict_obj.selectivity_branch
+    selectivity_rule_passed = verdict == "nonlinear-yes"
     # a variance-limited power read forbids a no-signal claim: a non-significant dCor
     # under variance-limited power reads "indistinguishable-from-null given variance"
     if power_sel is not None and power_sel["variance_limited"] and not dcor_pass:
         verdict = "indistinguishable-from-null-given-variance"
+        selectivity_branch = "not-applicable"
+        selectivity_rule_passed = False
+
+    # Defense-in-depth (plan v9 §4 step 4): a future regression that mis-plumbs the
+    # verdict args must NOT silently emit nonlinear-yes — re-derive the selectivity rule
+    # from the emitted reads and assert it literally holds whenever verdict is yes.
+    if verdict == "nonlinear-yes":
+        _selective = control_res.p_value >= 0.05 or (
+            control_res.p_value < 0.05 and (dcor_res.dcor - control_res.dcor) >= 0.10
+        )
+        assert dcor_pass and linear_pass and _selective, (
+            "nonlinear-yes emitted but the selectivity rule does not hold "
+            f"(dcor_pass={dcor_pass}, linear_pass={linear_pass}, "
+            f"observed_dcor={dcor_res.dcor}, control_dcor={control_res.dcor}, "
+            f"control_p={control_res.p_value}); the control_res plumbing regressed"
+        )
+        assert selectivity_rule_passed, "selectivity_rule_passed must be True on nonlinear-yes"
 
     return {
         "behavior": behavior,
@@ -160,6 +189,8 @@ def run_stage1_cell(
         "held_out_linear_rho": held.rho,
         "held_out_null_ci": list(held.null_ci),
         "post_leace_linear_pass": linear_pass,
+        "selectivity_rule_passed": selectivity_rule_passed,
+        "selectivity_branch": selectivity_branch,
         "stage1_verdict": verdict,
         "n_perm": n_perm,
     }

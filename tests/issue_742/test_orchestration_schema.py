@@ -498,3 +498,178 @@ def test_nondry_counting_judge_writes_real_judge_variance(tmp_path):
         f"got {decomp['var_judge']}"
     )
     assert "non-dry" in result["note"], "the note must record the non-dry counting-judge run"
+
+
+# --------------------------------------------------------------------------- #
+# 9. [REPLAN-FOLLOWUP-2] Stage-1 verdict CONSUMES the control-task null         #
+#    (plan v9 §4 Stage-1 step 4 / §14 test 7; concern                           #
+#    stage1-verdict-ignores-control-task-null). A both-pass control (d≫n probe  #
+#    memorization) must NOT read nonlinear-yes — it reads non-selective.        #
+# --------------------------------------------------------------------------- #
+def _dcor_result(*, dcor: float, p_value: float):
+    """Build a minimal DcorPermutationResult stand-in for the monkeypatched test."""
+    return dc.DcorPermutationResult(
+        dcor=dcor,
+        null=np.zeros(3, dtype=float),
+        p_value=p_value,
+        d_eff=10,
+        n_perm=3,
+    )
+
+
+# (a) the verdict-classifier rule directly (plan §14 test 7a) ---------------- #
+@pytest.mark.skipif(not impl_has("classify_stage1_verdict"), reason="round-5 symbol")
+def test_classify_stage1_verdict_selectivity_paths():
+    """The 5-entry enum + the three selective/non-selective limbs (plan v9 §11 row 11).
+
+    nonlinear-yes requires dcor_pass AND linear_pass AND selective, where selective =
+    control fails its own null (path i) OR observed beats control by ≥ Δ_sel (path ii).
+    A both-pass control with a sub-Δ_sel margin reads non-selective, NEVER nonlinear-yes.
+    The legacy ceiling-limited / linear-erasure returns are unchanged.
+    """
+    # path (i): control FAILS its own null (p >= α) -> selective -> nonlinear-yes
+    ctrl_fails = _dcor_result(dcor=0.30, p_value=0.50)
+    v_i = dc.classify_stage1_verdict(
+        dcor_pass=True, linear_pass=True, control_res=ctrl_fails, observed_dcor=0.50
+    )
+    assert v_i == "nonlinear-yes"
+    assert v_i.selectivity_branch == "control-fails-null"
+
+    # path (ii): control ALSO passes (p < α) but observed beats it by ≥ Δ_sel=0.10
+    ctrl_passes_lowdcor = _dcor_result(dcor=0.30, p_value=0.001)
+    v_ii = dc.classify_stage1_verdict(
+        dcor_pass=True, linear_pass=True, control_res=ctrl_passes_lowdcor, observed_dcor=0.50
+    )
+    assert v_ii == "nonlinear-yes"
+    assert v_ii.selectivity_branch == "effect-size-margin"
+
+    # NOT selective: control passes AND margin < Δ_sel -> non-selective (d≫n memorization)
+    ctrl_passes_close = _dcor_result(dcor=0.45, p_value=0.001)
+    v_ns = dc.classify_stage1_verdict(
+        dcor_pass=True, linear_pass=True, control_res=ctrl_passes_close, observed_dcor=0.50
+    )
+    assert v_ns == "non-selective"
+    assert v_ns != "nonlinear-yes"
+    assert v_ns.selectivity_branch == "non-selective"
+
+    # legacy branches unchanged
+    assert (
+        dc.classify_stage1_verdict(dcor_pass=True, linear_pass=False, control_res=ctrl_fails)
+        == "linear-erasure-leakage-unresolved"
+    )
+    assert dc.classify_stage1_verdict(dcor_pass=False, linear_pass=True) == "ceiling-limited"
+
+    # back-compat: control_res=None passes selectivity vacuously (legacy 2-arg contract)
+    assert dc.classify_stage1_verdict(dcor_pass=True, linear_pass=True) == "nonlinear-yes"
+
+    # the 5-entry enum is exactly the plan v9 §6.5 set
+    assert (
+        frozenset(
+            {
+                "nonlinear-yes",
+                "non-selective",
+                "linear-erasure-leakage-unresolved",
+                "ceiling-limited",
+                "indistinguishable-from-null-given-variance",
+            }
+        )
+        == dc.STAGE1_VERDICTS
+    )
+
+
+# Shared monkeypatch harness driving run_stage1_cell with controlled dCor reads. #
+def _patch_run_stage1_cell(monkeypatch, *, true_res, control_res, linear_pass: bool = True):
+    """Patch the dCor + held-out + PCA calls so run_stage1_cell's verdict logic is
+    exercised deterministically: the FIRST dcor_permutation_test call (true task)
+    returns ``true_res``, the SECOND (shuffled control) returns ``control_res``."""
+    calls = {"n": 0}
+
+    def _fake_dcor(v0, E0, *, d_eff, n_perm, rng, **kw):
+        calls["n"] += 1
+        return true_res if calls["n"] == 1 else control_res
+
+    monkeypatch.setattr(dc, "dcor_permutation_test", _fake_dcor)
+    # held-out diagnostic: a passing (no residual linear leakage) result
+    monkeypatch.setattr(
+        dc,
+        "held_out_linear_leakage",
+        lambda *a, **k: dc.HeldOutLeakageResult(
+            rho=0.0, null_ci=(-0.2, 0.2), post_leace_linear_pass=linear_pass
+        ),
+    )
+
+    n, d = 50, 12
+    rng = np.random.default_rng(74280)
+    v0_layer = rng.normal(0, 1, size=(n, d))
+    E0 = rng.uniform(0, 1, size=n)
+    from issue742_nonlinear_residual import run_stage1_cell
+
+    return run_stage1_cell(
+        v0_layer,
+        E0,
+        behavior="sycophancy",
+        genre="betley",
+        layer=27,
+        d_eff=10,
+        n_perm=3,
+        rng=rng,
+        run_power_check=False,
+        power_trials=3,
+        power_perm=10,
+    )
+
+
+# (b) end-to-end memorization regression (plan §14 test 7b) ------------------ #
+def test_run_stage1_cell_both_pass_control_is_non_selective(monkeypatch):
+    """Both the true call AND the shuffled control pass at comparable dCor
+    (|true − control| < Δ_sel=0.10): a d≫n probe-memorization cell. The verdict
+    MUST be non-selective, NOT nonlinear-yes — the cap-3 defect (the script dropped
+    control_res) would have read nonlinear-yes here. Regression guard for that revert.
+    """
+    true_res = _dcor_result(dcor=0.50, p_value=0.001)
+    control_res = _dcor_result(dcor=0.45, p_value=0.001)  # passes, gap 0.05 < 0.10
+    entry = _patch_run_stage1_cell(monkeypatch, true_res=true_res, control_res=control_res)
+    assert entry["stage1_verdict"] == "non-selective"
+    assert entry["stage1_verdict"] != "nonlinear-yes"
+    assert entry["selectivity_rule_passed"] is False
+    assert entry["selectivity_branch"] == "non-selective"
+
+
+def test_run_stage1_cell_control_fails_null_is_nonlinear_yes(monkeypatch):
+    """Path (i): the shuffled control FAILS its own null (p=0.5) -> selective ->
+    nonlinear-yes with selectivity_branch=control-fails-null."""
+    true_res = _dcor_result(dcor=0.50, p_value=0.001)
+    control_res = _dcor_result(dcor=0.50, p_value=0.50)  # fails its null
+    entry = _patch_run_stage1_cell(monkeypatch, true_res=true_res, control_res=control_res)
+    assert entry["stage1_verdict"] == "nonlinear-yes"
+    assert entry["selectivity_branch"] == "control-fails-null"
+    assert entry["selectivity_rule_passed"] is True
+
+
+def test_run_stage1_cell_effect_size_margin_is_nonlinear_yes(monkeypatch):
+    """Path (ii): the control passes (p<α) but the true task beats it by ≥ Δ_sel=0.10
+    -> nonlinear-yes with selectivity_branch=effect-size-margin."""
+    true_res = _dcor_result(dcor=0.50, p_value=0.001)
+    control_res = _dcor_result(dcor=0.30, p_value=0.001)  # passes, gap 0.20 >= 0.10
+    entry = _patch_run_stage1_cell(monkeypatch, true_res=true_res, control_res=control_res)
+    assert entry["stage1_verdict"] == "nonlinear-yes"
+    assert entry["selectivity_branch"] == "effect-size-margin"
+    assert entry["selectivity_rule_passed"] is True
+
+
+# (c) defense-in-depth invariant (plan §14 test 7c) -------------------------- #
+def test_run_stage1_cell_nonlinear_yes_implies_selectivity_holds(monkeypatch):
+    """Whenever run_stage1_cell emits nonlinear-yes, the recorded reads must satisfy
+    the selectivity rule literally (the per-cell output assert, mirrored as a test)."""
+    true_res = _dcor_result(dcor=0.50, p_value=0.001)
+    control_res = _dcor_result(dcor=0.50, p_value=0.50)
+    entry = _patch_run_stage1_cell(monkeypatch, true_res=true_res, control_res=control_res)
+    if entry["stage1_verdict"] == "nonlinear-yes":
+        selective = entry["control_task_p_value"] >= 0.05 or (
+            entry["control_task_p_value"] < 0.05
+            and (entry["dcor_observed"] - entry["control_task_dcor"]) >= 0.10
+        )
+        assert entry["selectivity_rule_passed"] is True
+        assert entry["post_leace_linear_pass"] is True
+        assert entry["dcor_pass"] is True
+        assert selective, "nonlinear-yes recorded but selectivity rule does not hold on the reads"
