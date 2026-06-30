@@ -202,15 +202,26 @@ def run_lobo_loco(pred_dir: Path) -> dict:
     """
     recs = _load_predictor_cells(pred_dir)
     # Pool per behavior: stack each cell's per-bystander (Lhat, ds), tracking the
-    # per-row bystander index (for LOCO's leave-one-context-out partition).
+    # per-row battery CONTEXT ID (the LOCO leave-one-CONTEXT-out partition key,
+    # plan §4g). The fold MUST key on the battery context identity, NOT the
+    # positional row index: SOURCE_INSTANCE_IDS makes the masked bystander array
+    # DIFFERENT across sources (librarian's anchor is `f1_house_librarian`,
+    # default's is `f6_helpful_asst`, ...), so "row i" is a DIFFERENT battery
+    # context across multi-source cells — a positional fold would conflate them
+    # (round-2 BLOCKER, missed by the single-source smoke). predict_cell now
+    # persists per_bystander.context_id; fall back to the positional index ONLY
+    # for a legacy record that predates the context_id column (single-source-safe).
     by_behavior: dict[str, dict[str, list]] = {}
     for r in recs:
         beh = _BEHAVIOR_LABEL.get(r.get("behavior"), r.get("behavior"))
         pb = r["per_bystander"]
-        d = by_behavior.setdefault(beh, {"Lhat": [], "ds": [], "ctx_idx": []})
+        d = by_behavior.setdefault(beh, {"Lhat": [], "ds": [], "ctx_id": []})
         d["Lhat"].extend(pb["Lhat"])
         d["ds"].extend(pb["ds"])
-        d["ctx_idx"].extend(range(len(pb["Lhat"])))  # within-cell bystander index
+        cids = pb.get("context_id")
+        if cids is None:  # legacy record (pre-context_id) — positional fallback
+            cids = [str(i) for i in range(len(pb["Lhat"]))]
+        d["ctx_id"].extend([str(c) for c in cids])
 
     behaviors = sorted(by_behavior)
 
@@ -240,24 +251,28 @@ def run_lobo_loco(pred_dir: Path) -> dict:
         }
 
     # ── LOCO: leave-one-context-out (pooled across behaviors + cells) ──
+    # Key folds on the battery CONTEXT ID (string), NOT a positional index. A
+    # context that is a source anchor for some cell simply does not appear in that
+    # cell's bystander rows (it was masked out) — so its fold tests only the cells
+    # where it IS a bystander, with NO renumbering of the others (Blocker 3 part 3).
     all_l = (
         np.concatenate([by_behavior[b]["Lhat"] for b in behaviors]) if behaviors else np.array([])
     )
     all_d = np.concatenate([by_behavior[b]["ds"] for b in behaviors]) if behaviors else np.array([])
     all_ctx = (
-        np.concatenate([by_behavior[b]["ctx_idx"] for b in behaviors]).astype(int)
+        np.array([c for b in behaviors for c in by_behavior[b]["ctx_id"]], dtype=object)
         if behaviors
-        else np.array([], dtype=int)
+        else np.array([], dtype=object)
     )
-    ctx_ids = sorted(set(all_ctx.tolist()))
+    ctx_ids = sorted({str(c) for c in all_ctx.tolist()})
     loco = {}
     for fold in loco_folds(ctx_ids):
-        c = fold.test_context
-        test_mask = all_ctx == c
+        c = fold.test_context  # a context-id string
+        test_mask = np.array([str(x) == str(c) for x in all_ctx], dtype=bool)
         train_mask = ~test_mask
         sc = score_fold(all_l[train_mask], all_d[train_mask], all_l[test_mask], all_d[test_mask])
         loco[str(c)] = {
-            "test_context": int(c),
+            "test_context": str(c),
             "spearman": sc.spearman,
             "pearson": sc.pearson,
             "sign_agreement": sc.sign_agreement,

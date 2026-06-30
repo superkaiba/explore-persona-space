@@ -377,11 +377,46 @@ def test_load_rb_columns_raises_on_dict_without_diffmeans():
 # ---------------------------------------------------------------------------
 # Finding 4 — cross-behavior grid emits a per_target row per available behavior.
 # ---------------------------------------------------------------------------
+def _fake_target_registry(rb_cols, *, fact_r_plus=None, marker_r_plus=None) -> dict:
+    """The shared cross-behavior TARGET-direction registry (build_target_direction_registry
+    shape): diffmeans for bad_medical/em, a CANONICAL-cell r_plus for fact/marker.
+
+    The fact/marker directions are explicit stub vectors here — the canonical
+    target-source cell's r_plus in production (NOT the source cell's). Distinct
+    random vectors so the cross-behavior cosine carries a real cos(r_{B'}, r_B).
+    """
+    rng = np.random.default_rng(123)
+    reg: dict = {
+        "bad_medical": {
+            "r_Bp": np.asarray(rb_cols["harmful_compliance"], dtype=np.float64),
+            "source": "diffmeans",
+            "from_cell": None,
+        },
+        "em": {
+            "r_Bp": np.asarray(rb_cols["broad_em"], dtype=np.float64),
+            "source": "diffmeans",
+            "from_cell": None,
+        },
+        "fact": {
+            "r_Bp": rng.standard_normal(D) if fact_r_plus is None else fact_r_plus,
+            "source": "r_plus_canonical",
+            "from_cell": "tf_default_contra_d1_seed42",
+        },
+        "marker": {
+            "r_Bp": rng.standard_normal(D) if marker_r_plus is None else marker_r_plus,
+            "source": "r_plus_canonical",
+            "from_cell": "mk_default_contra_d1_seed42",
+        },
+    }
+    return reg
+
+
 def test_predict_cell_grid_emits_every_target_behavior(tmp_path):
     cell_dir = tmp_path / "bm_default_contra_d1_seed42"
     _write_fake_cell(cell_dir, behavior="bad_medical", seed=8)
     loaded = loader.load_cell(cell_dir)
     rb_cols = _fake_rb_columns()
+    reg = _fake_target_registry(rb_cols)
     rec = predscore.predict_cell_grid(
         loaded,
         cell="bm_default_contra_d1_seed42",
@@ -389,22 +424,47 @@ def test_predict_cell_grid_emits_every_target_behavior(tmp_path):
         Sigma_inv=np.eye(D),
         rb_columns=rb_cols,
         r_b_source="mixed",
+        target_registry=reg,
     )
-    # Every grid target behavior is present (diffmeans columns available + r_plus ones).
+    # Every grid target behavior is present (registry supplies all four directions).
     assert set(rec["per_target"]) == set(predscore.GRID_TARGET_BEHAVIORS)
     for tb, row in rec["per_target"].items():
         for k in ("rho_full_Lhat", "rho_cosine", "rho_base_prior", "r_B_source"):
             assert k in row, f"per_target[{tb}] missing {k}"
-    # The diffmeans targets are tagged diffmeans; fact/marker tagged r_plus.
+    # The diffmeans targets are tagged diffmeans; fact/marker tagged r_plus_canonical.
     assert rec["per_target"]["em"]["r_B_source"] == "diffmeans"
-    assert rec["per_target"]["fact"]["r_B_source"] == "r_plus"
+    assert rec["per_target"]["fact"]["r_B_source"] == "r_plus_canonical"
+    # And the fact/marker target directions trace to the CANONICAL cells, NOT the
+    # bad-medical SOURCE cell (Blocker 1).
+    assert rec["per_target"]["fact"]["from_cell"] == "tf_default_contra_d1_seed42"
+    assert rec["per_target"]["marker"]["from_cell"] == "mk_default_contra_d1_seed42"
 
 
-def test_predict_cell_grid_omits_diffmeans_target_when_columns_absent(tmp_path):
-    """No rb_columns (offline smoke) → diffmeans targets omitted, r_plus ones kept."""
+def test_predict_cell_grid_omits_target_when_registry_lacks_it(tmp_path):
+    """A target absent from the registry (offline diffmeans-less smoke) is OMITTED.
+
+    The corrected semantics (Blocker 1): a target's direction comes from the SHARED
+    registry, never the source cell's own r_plus. An empty / partial registry omits
+    the unavailable targets rather than aliasing the source — a recorded absence
+    (plan §4d), never a fake row.
+    """
     cell_dir = tmp_path / "tf_default_contra_d1_seed42"
     _write_fake_cell(cell_dir, behavior="fact", seed=1)
     loaded = loader.load_cell(cell_dir)
+    # Registry with ONLY the r_plus targets present (no diffmeans columns this run).
+    rng = np.random.default_rng(9)
+    reg = {
+        "fact": {
+            "r_Bp": rng.standard_normal(D),
+            "source": "r_plus_canonical",
+            "from_cell": "tf_default_contra_d1_seed42",
+        },
+        "marker": {
+            "r_Bp": rng.standard_normal(D),
+            "source": "r_plus_canonical",
+            "from_cell": "mk_default_contra_d1_seed42",
+        },
+    }
     rec = predscore.predict_cell_grid(
         loaded,
         cell="tf_default_contra_d1_seed42",
@@ -412,12 +472,37 @@ def test_predict_cell_grid_omits_diffmeans_target_when_columns_absent(tmp_path):
         Sigma_inv=np.eye(D),
         rb_columns=None,
         r_b_source="mixed",
+        target_registry=reg,
     )
-    # fact + marker (r_plus path) kept; bad_medical + em (diffmeans) omitted.
     assert "fact" in rec["per_target"]
     assert "marker" in rec["per_target"]
     assert "bad_medical" not in rec["per_target"]
     assert "em" not in rec["per_target"]
+
+
+def test_predict_cell_grid_offline_fallback_diffmeans_only(tmp_path):
+    """target_registry=None offline fallback emits diffmeans targets ONLY (no source alias).
+
+    Pins that the None-registry path NO LONGER aliases the source cell's r_plus to
+    fact/marker targets (the round-2 Blocker-1 bug): with no registry + rb_columns
+    present, only the diffmeans targets resolve; fact/marker are omitted (they need
+    the canonical-cell read a None registry cannot supply offline).
+    """
+    cell_dir = tmp_path / "bm_default_contra_d1_seed42"
+    _write_fake_cell(cell_dir, behavior="bad_medical", seed=3)
+    loaded = loader.load_cell(cell_dir)
+    rec = predscore.predict_cell_grid(
+        loaded,
+        cell="bm_default_contra_d1_seed42",
+        layer=LAYER,
+        Sigma_inv=np.eye(D),
+        rb_columns=_fake_rb_columns(),
+        r_b_source="mixed",
+        target_registry=None,
+    )
+    assert set(rec["per_target"]) == {"bad_medical", "em"}
+    assert "fact" not in rec["per_target"]
+    assert "marker" not in rec["per_target"]
 
 
 # ---------------------------------------------------------------------------
