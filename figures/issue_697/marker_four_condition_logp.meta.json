@@ -1,6 +1,6 @@
 {
-  "commit": "991e292f54",
-  "created": "2026-06-30T05:50:14Z",
+  "commit": "dc018539f2",
+  "created": "2026-06-30T06:46:34Z",
   "figsize": [
     7.0,
     4.2
@@ -8,77 +8,77 @@
   "points": [
     {
       "category": "base model\n(v0)",
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -27.889169924259186,
-      "error": 1.1520822411492802,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -27.889,
+      "error": 1.152000000000001,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "finetuned model\n(v\u207a)",
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -25.758032047748564,
-      "error": 0.7609835407960794,
+      "category": "finetuned\n(v\u207a)",
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -25.758,
+      "error": 0.7609999999999992,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "FT ctx-vector\n\u2192 base (P\u2191)",
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -27.888941013813017,
-      "error": 1.1514768581087225,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -27.889,
+      "error": 1.1509999999999998,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "base ctx-vector\n\u2192 FT (P\u2193)",
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -25.75710603952408,
-      "error": 0.7614657415225885,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -25.757,
+      "error": 0.7609999999999992,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.0,
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -29.041252165408466,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -29.041,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 1.0,
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -26.519015588544644,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -26.519,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 2.0,
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -29.04041787192174,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -29.04,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 3.0,
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -26.518571781046667,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -26.518,
       "_kind": "line",
       "_group": 1
     },
     {
       "x": 0.0,
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -26.737087683109905,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -26.737,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 1.0,
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -24.997048506952485,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -24.997,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 2.0,
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -26.737464155704295,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -26.738,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 3.0,
-      "marker \u203b log P at the end-of-answer slot (nat)\n(mean over 16 marker cells \u00d7 280 pairs)": -24.99564029800149,
+      "marker \u203b log P at the end-of-answer slot (nat)\n(16 marker cells \u00d7 100 records, N=1600)": -24.996000000000002,
       "_kind": "line",
       "_group": 2
     }
