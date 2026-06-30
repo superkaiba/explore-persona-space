@@ -61,7 +61,7 @@ and pass 6 (session-reconcile), all before the GC pass:
 4. **Stalled-detector pass (ALERT + AUTO-RESPAWN).** Detect an autonomous
    session whose Happy id is in the live set (so the respawn pass doesn't
    touch it) but whose self-report timestamp + latest non-watcher progress
-   marker have BOTH been frozen > ``STALLED_WINDOW_S`` (default 45 min).
+   marker have BOTH been frozen > ``STALLED_WINDOW_S`` (default 60 min).
    This catches the "alive but bg-Bash chain dead" case where the session
    looks healthy to the respawn pass but is no longer making progress.
    AUTO-RESPAWNS the session (stop-then-respawn) when its task is in an
@@ -440,8 +440,82 @@ TERMINAL = {"awaiting_promotion", "completed", "archived"}
 # long, so a stuck/unknown-status entry cannot linger and re-spawn forever.
 MAX_ENTRY_AGE_S = 14 * 24 * 3600
 
+# Grace window after a registration write during which the crash-recovery pass
+# treats an ACTIVE entry as "spawn in flight" even if its recorded
+# happy_session_id is not yet in the daemon's live set. Covers the
+# registration-latency race (#759): `spawn-issue --auto` rewrites the registry
+# with a fresh `spawned_at` + a fresh id on every (re)spawn, but that id can
+# take seconds-to-minutes to propagate into the daemon's `/list` reply — during
+# which `_session_alive` reads False and the 2-miss respawn would spawn a
+# duplicate driver. Mirrors :data:`ORPHAN_SPAWN_GRACE_S`, which the orphan
+# sweep already applies (`decide_orphan`).
+RESPAWN_SPAWN_GRACE_S = 15 * 60
 
-def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[str, int]:
+
+def _respawn_spawn_grace_s() -> float:
+    """Crash-recovery spawn-grace window in seconds (env
+    ``EPM_RESPAWN_SPAWN_GRACE_MIN``, minutes; default
+    :data:`RESPAWN_SPAWN_GRACE_S`). A malformed env value falls back to the
+    default — a typo'd var must not disable crash recovery (it would only ever
+    SHORTEN the grace, never suppress a genuinely-needed respawn). Mirrors the
+    house pattern of :func:`_orphan_staleness_s`."""
+    raw = os.environ.get("EPM_RESPAWN_SPAWN_GRACE_MIN")
+    if not raw:
+        return float(RESPAWN_SPAWN_GRACE_S)
+    try:
+        return float(raw) * 60.0
+    except ValueError:
+        return float(RESPAWN_SPAWN_GRACE_S)
+
+
+# Bounded K-escalation for the stalled detector's live-session corroboration
+# (#759, bug class b.1). When the stalled detector wants to respawn an ACTIVE
+# session whose Happy id is STILL in the daemon's live set, the first K-1
+# consecutive stalled episodes DOWNGRADE to a one-time alert (a transient busy
+# stretch — a long /adversarial-planner stage holds the conversation for
+# minutes, posting no marker, while a late self-report tick ages past the
+# window — must not duplicate the driver); the Kth episode ESCALATES to the
+# canonical respawn arm so a persistently-stalled live wrapper (#506 class:
+# live Happy wrapper, dead bg-Bash chain) is still recovered. K is a COUNT, not
+# seconds. Default 2: at most ~K x STALLED_WINDOW_S = ~2h worst case before a
+# live-but-dead-bg wrapper is recovered, within the historical 90-min
+# orphan-staleness backstop's rough timescale, while still debouncing one
+# transient busy stretch. K=1 would be NO debounce (every transient stretch
+# escalates immediately — the duplicate-driver bug this fixes).
+STALLED_LIVE_ESCALATION_K = 2
+
+
+def _stalled_live_escalation_k() -> int:
+    """Consecutive live-stall episodes the stalled detector tolerates (alert
+    only) before escalating to the canonical respawn arm (#759, bug class b.1).
+    Env ``EPM_STALLED_LIVE_ESCALATION_K`` (an integer COUNT, not minutes);
+    default :data:`STALLED_LIVE_ESCALATION_K`. A malformed / non-positive env
+    value falls back to the default — a typo'd var must neither disable the
+    escalation (K too large → starve recovery) nor disable the debounce (K <= 0
+    → immediate escalation, the duplicate-driver bug). Mirrors the
+    malformed-falls-back-to-default house pattern of :func:`_orphan_staleness_s`
+    / :func:`_respawn_spawn_grace_s`."""
+    raw = os.environ.get("EPM_STALLED_LIVE_ESCALATION_K")
+    if not raw:
+        return STALLED_LIVE_ESCALATION_K
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return STALLED_LIVE_ESCALATION_K
+    if parsed < 1:
+        return STALLED_LIVE_ESCALATION_K
+    return parsed
+
+
+def decide(
+    status: str,
+    alive: bool,
+    missed: int,
+    threshold: int = 2,
+    *,
+    entry_age_s: float | None = None,
+    spawn_grace_s: float = RESPAWN_SPAWN_GRACE_S,
+) -> tuple[str, int]:
     """Pure decision: given a task's status, whether its session is alive, and
     the consecutive-miss count, return ``(action, new_missed)`` where action is
     ``"respawn"`` | ``"keep"`` | ``"delete"``.
@@ -450,6 +524,16 @@ def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[s
     ``threshold`` consecutive checks (default 2 = ~20 min at a 10-min cron)
     yields ``"respawn"``. Parked tasks reset the miss count and are kept;
     terminal tasks are deleted; an unknown status is kept without ever spawning.
+
+    ``entry_age_s`` is the age of the registry entry's ``spawned_at`` (now minus
+    spawned_at). When provided AND below ``spawn_grace_s`` (#759), an ACTIVE
+    not-alive entry is treated as "spawn in flight" and KEPT with the miss
+    count RESET to 0 — its recorded id may simply not have propagated into the
+    daemon's ``/list`` reply yet. A missing/zero ``spawned_at`` yields a large
+    (or ``None``) ``entry_age_s`` → no grace → today's behavior exactly: the
+    grace can only ever SHORTEN the respawn latency to zero, never SUPPRESS a
+    genuinely-needed respawn. Mirrors the orphan sweep's grace
+    (``decide_orphan``, :data:`ORPHAN_SPAWN_GRACE_S`).
     """
     if status in TERMINAL:
         return ("delete", 0)
@@ -457,6 +541,12 @@ def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[s
         return ("keep", 0)
     if status in ACTIVE:
         if alive:
+            return ("keep", 0)
+        # Spawn-grace (#759): a just-(re)spawned session whose id has not yet
+        # appeared in the daemon's /list reply is spawn-in-flight, not dead.
+        # Reset the miss count so an accumulated miss from BEFORE the
+        # (re)spawn cannot straddle the grace window into an immediate respawn.
+        if entry_age_s is not None and entry_age_s < spawn_grace_s:
             return ("keep", 0)
         new_missed = missed + 1
         if new_missed >= threshold:
@@ -832,8 +922,34 @@ POD_SAFETY_STATE_MAX_AGE_S = 7 * 24 * 3600
 # signals) may stay frozen before the stalled-detector trips. Conservative:
 # generous enough that a long healthy bg op (training launch, eval) doesn't
 # false-alert — a true bg-Bash death freezes ALL three signals indefinitely,
-# so 45 min is plenty of margin.
-STALLED_WINDOW_S = 45 * 60
+# so a generous window is plenty of margin.
+#
+# Raised 45 -> 60 min (#759, bug class b.2): the `/issue-tick` self-report cron
+# fires every 45 min, so a 45-min window EQUALLED the cadence and was
+# straddle-able by ordinary cron jitter (a single late tick ages the
+# self-report past 45 min while a multi-minute subagent holds the conversation
+# and posts no marker). 60 min = 45-min cadence + a full extra 10-min cron tick
+# of slack, so the self-report must miss MORE than one tick before the window
+# opens. Env-tunable via EPM_STALLED_WINDOW_MIN (minutes); a malformed value
+# falls back to the default. Mirrors the _orphan_staleness_s house pattern.
+STALLED_WINDOW_S_DEFAULT = 60 * 60
+
+
+def _stalled_window_s() -> float:
+    """Stalled-detector staleness window in seconds (env
+    ``EPM_STALLED_WINDOW_MIN``, minutes; default
+    :data:`STALLED_WINDOW_S_DEFAULT`). A malformed env value falls back to the
+    default — a typo'd var must not disable the stalled detector."""
+    raw = os.environ.get("EPM_STALLED_WINDOW_MIN")
+    if not raw:
+        return float(STALLED_WINDOW_S_DEFAULT)
+    try:
+        return float(raw) * 60.0
+    except ValueError:
+        return float(STALLED_WINDOW_S_DEFAULT)
+
+
+STALLED_WINDOW_S = _stalled_window_s()
 
 # Filename prefix for the per-session stalled-detector state file at
 # ``~/.eps-autonomous/stalled-<N>.json``. Mirrors the pod-safety state file
@@ -2799,6 +2915,40 @@ def _stalled_state_path(issue: int) -> Path:
     return AUTONOMOUS_REGISTRY_DIR / f"{STALLED_STATE_PREFIX}{issue}.json"
 
 
+def _append_stalled_live_event(
+    issue: int, event: str, live_consecutive: int, k: int, dry_run: bool
+) -> None:
+    """Durable trace + telemetry for the #759 bug-class-b.1 live-session
+    K-escalation. This file has no in-pass telemetry counter dict (the house
+    pattern is print + a sidecar JSONL), so each downgrade / escalation branch
+    appends one JSON line to
+    ``~/.eps-autonomous/stalled-live-escalation-events.jsonl`` — so a prod
+    reader can confirm the corroboration actually fired (downgrade on a live
+    transient stall, escalation on the Kth consecutive one) vs the
+    respawn-the-dead-bg-chain branch. ``event`` is ``"stalled-live-downgrade"``
+    or ``"stalled-live-escalation"``. Fail-soft, mirroring
+    :func:`_append_idle_unmapped_event`."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "stalled-live-escalation-events.jsonl"
+    line = json.dumps(
+        {
+            "ts": datetime.now().astimezone().isoformat(),
+            "issue": issue,
+            "event": event,
+            "live_consecutive": live_consecutive,
+            "k": k,
+        }
+    )
+    if dry_run:
+        print(f"  [dry-run] would append stalled-live event ({event}) to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending stalled-live event failed: {e}", file=sys.stderr)
+
+
 def _load_stalled_state(issue: int) -> dict:
     """Read the per-session stalled-detector state for ``issue`` (``{}`` if
     absent / unreadable — a fresh/garbled file just starts the miss count at 0
@@ -2823,6 +2973,7 @@ def _save_stalled_state(
     exhausted: bool = False,
     refresh_attempted: bool = False,
     followups_child_alerted: bool = False,
+    live_consecutive: int = 0,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
@@ -2847,6 +2998,12 @@ def _save_stalled_state(
     "followups_running parent waiting on open child" suppression alert
     has been posted this episode (dedup, also cleared on progress) —
     see :func:`_followups_awaiting_child_reason` for the predicate.
+    ``live_consecutive`` is the count of CONSECUTIVE stalled-detector ticks
+    on which decide() wanted to respawn but the session's Happy id was
+    still in the daemon's live set (#759 bug class b.1): the alert arm
+    persists the INCREMENTED count, the respawn / dead-wrapper / keep /
+    clear paths persist a RESET 0. A missing key in an older on-disk file
+    reads as 0 via :func:`_load_stalled_state` (backward compatible).
     ``prev`` is the prior on-disk payload (when the caller already has
     it loaded) so ``first_seen`` carries forward and the age backstop
     measures the original episode start.
@@ -2864,6 +3021,7 @@ def _save_stalled_state(
         "exhausted": exhausted,
         "refresh_attempted": refresh_attempted,
         "followups_child_alerted": followups_child_alerted,
+        "live_consecutive": live_consecutive,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -4750,6 +4908,7 @@ class _StalledActionCtx:
         pod_name: str | None = None,
         manual: bool = False,
         followups_child_alerted: bool = False,
+        live_consecutive: int = 0,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -4784,6 +4943,13 @@ class _StalledActionCtx:
         # Carried through every state-persist site so the alert fires at
         # most once per episode and clears on real-progress advancement.
         self.followups_child_alerted = followups_child_alerted
+        # #759 bug class b.1: consecutive live-stall episode count. The caller
+        # sets this to the value the CURRENT tick must PERSIST (the incremented
+        # count when the action was DOWNGRADED to alert on a live id; a RESET 0
+        # on every other path). Every ``_save_stalled_state`` call site in the
+        # handlers forwards it, so the persisted value matches the rule in
+        # ``_process_stalled_session``.
+        self.live_consecutive = live_consecutive
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -4850,6 +5016,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 exhausted=ctx.exhausted,
                 refresh_attempted=ctx.refresh_attempted,
                 followups_child_alerted=ctx.followups_child_alerted,
+                live_consecutive=ctx.live_consecutive,
                 prev=ctx.prev_state,
             )
         return
@@ -4866,6 +5033,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 exhausted=ctx.exhausted,
                 refresh_attempted=ctx.refresh_attempted,
                 followups_child_alerted=ctx.followups_child_alerted,
+                live_consecutive=ctx.live_consecutive,
                 prev=ctx.prev_state,
             )
         return
@@ -4904,6 +5072,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             exhausted=ctx.exhausted,
             refresh_attempted=ctx.refresh_attempted,
             followups_child_alerted=ctx.followups_child_alerted,
+            live_consecutive=ctx.live_consecutive,
             prev=ctx.prev_state,
         )
 
@@ -4925,6 +5094,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
                 exhausted=True,
                 refresh_attempted=ctx.refresh_attempted,
                 followups_child_alerted=ctx.followups_child_alerted,
+                live_consecutive=ctx.live_consecutive,
                 prev=ctx.prev_state,
             )
         return
@@ -4954,6 +5124,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
             exhausted=True,
             refresh_attempted=ctx.refresh_attempted,
             followups_child_alerted=ctx.followups_child_alerted,
+            live_consecutive=ctx.live_consecutive,
             prev=ctx.prev_state,
         )
 
@@ -5045,6 +5216,7 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
             exhausted=ctx.exhausted,
             refresh_attempted=new_refresh_attempted,
             followups_child_alerted=ctx.followups_child_alerted,
+            live_consecutive=ctx.live_consecutive,
             prev=ctx.prev_state,
         )
 
@@ -5150,6 +5322,86 @@ def _apply_stalled_followups_exemption(
     return "keep", 0, followups_child_alerted
 
 
+def _apply_stalled_live_corroboration(
+    *,
+    issue: int,
+    entry: dict,
+    action: str,
+    daemon_reachable: bool,
+    live_ids: set[str] | None,
+    live_consecutive: int,
+    dry_run: bool,
+) -> tuple[str, int]:
+    """Bounded K-escalation for the stalled detector's live-session
+    corroboration (#759, bug class b.1; Option A). Rewrites
+    ``(action, live_consecutive)``.
+
+    Applied AFTER the provision-in-flight + followups exemptions, so it only
+    sees a respawn THOSE did not already turn into keep. A respawn-eligible
+    session whose self-report is stale may still be ALIVE: its Happy id can be
+    sitting in the daemon's ``/list`` reply right now (a long
+    ``/adversarial-planner`` stage holds the conversation for minutes, posting
+    no marker, while a late-firing self-report tick ages past the window).
+
+    Rule (``k = _stalled_live_escalation_k()``):
+
+    - ``action == "respawn"`` AND ``daemon_reachable`` AND the id is in
+      ``live_ids``: a LIVE id is being respawned. Increment the consecutive
+      live-stall count.
+      - ``live_consecutive < k`` -> DOWNGRADE to ``"alert"`` (no duplicate
+        driver on a transient busy stretch); persist the INCREMENTED count
+        (criterion 6).
+      - ``live_consecutive >= k`` -> FALL THROUGH to the canonical respawn arm
+        (#506 dead-bg-chain class — recovery the orphan sweep never fires while
+        the wrapper lingers in ``live_ids``); RESET the count to 0 (the
+        episode's escalation has fired; the fresh ``--auto`` session starts a
+        new episode) (criterion 7).
+    - ``action == "respawn"`` but the id is NOT live (or the daemon is down /
+      ``live_ids is None``): genuinely-dead wrapper — today's behavior; RESET
+      to 0 (criterion 11; the K counter is for LIVE ids only).
+    - any other ``action`` (keep / clear, incl. the provision/followups
+      exemptions that already rewrote respawn->keep): RESET to 0 — not a
+      live-stall respawn episode, so the counter must not straddle a later
+      unrelated stall (criterion 12).
+
+    Gated on ``daemon_reachable`` + ``live_ids is not None`` before the
+    ``_session_alive`` call: when the daemon is down ``live_ids`` is ``None``
+    and ``respawn_eligible`` was already False (no respawn to consider), so this
+    is a no-op. Factored out of :func:`_process_stalled_session` to keep that
+    function under the C901 cap.
+    """
+    if action != "respawn":
+        # keep / clear (incl. provision/followups exemptions) — not a live-stall
+        # respawn episode; reset so the counter never straddles unrelated stalls.
+        return action, 0
+    if not daemon_reachable or live_ids is None or not _session_alive(entry, live_ids):
+        # Genuinely-dead wrapper (or daemon down) — today's behavior. No
+        # live-stall episode in progress; reset the counter.
+        return action, 0
+    # A LIVE id is being respawned.
+    k = _stalled_live_escalation_k()
+    live_consecutive += 1
+    if live_consecutive < k:
+        print(
+            f"  issue #{issue}: LIVE-SESSION CORROBORATION — Happy id is in "
+            f"live_ids; this is consecutive live-stall episode "
+            f"{live_consecutive}/{k}. Downgrading respawn->alert to avoid a "
+            f"duplicate driver (transient busy stretch on a live session)."
+        )
+        _append_stalled_live_event(issue, "stalled-live-downgrade", live_consecutive, k, dry_run)
+        return "alert", live_consecutive
+    # Kth consecutive live stall — escalate to the canonical respawn arm and
+    # reset the counter (a fresh --auto session begins a new episode).
+    print(
+        f"  issue #{issue}: LIVE-SESSION ESCALATION — Happy id is in live_ids "
+        f"but it has stalled across {live_consecutive} consecutive episodes "
+        f"(>= K={k}); escalating to the canonical respawn (#506 dead-bg-chain "
+        f"class). Resetting live_consecutive."
+    )
+    _append_stalled_live_event(issue, "stalled-live-escalation", live_consecutive, k, dry_run)
+    return "respawn", 0
+
+
 def _process_stalled_session(
     entry_path: Path,
     pod_active_issues: set[int],
@@ -5160,6 +5412,7 @@ def _process_stalled_session(
     daemon_reachable: bool,
     pod_names_by_issue: dict[int, str] | None = None,
     manual: bool = False,
+    live_ids: set[str] | None = None,
 ) -> None:
     """Reconcile one registry entry against the alive-but-stalled signals.
 
@@ -5182,6 +5435,18 @@ def _process_stalled_session(
     daemon RPC); when it is unreachable, this pass falls back to
     ALERT-ONLY for stalled entries — mirrors the crash-recovery pass's
     same-tick degradation.
+
+    ``live_ids`` is the daemon's live-session set, computed once in
+    :func:`main` and threaded in exactly as :func:`orphan_sweep_pass`
+    receives it (``None`` when the daemon is unreachable). It drives the
+    #759 bug-class-b.1 bounded K-escalation: a respawn that survives the
+    other exemptions is DOWNGRADED to alert for the first K-1 consecutive
+    episodes when the entry's Happy id is still in ``live_ids`` (a transient
+    busy stretch on a live session), then ESCALATES to the canonical respawn
+    on the Kth (the #506 dead-bg-chain class). When omitted (``None`` — a
+    direct unit/debug call, or the daemon is down), the corroboration is a
+    no-op and the pass behaves exactly as before. See
+    :func:`_apply_stalled_live_corroboration`.
     """
     try:
         entry = json.loads(entry_path.read_text())
@@ -5244,6 +5509,12 @@ def _process_stalled_session(
     prev_exhausted = bool(prev_state.get("exhausted", False))
     prev_refresh_attempted = bool(prev_state.get("refresh_attempted", False))
     prev_followups_child_alerted = bool(prev_state.get("followups_child_alerted", False))
+    # #759 bug class b.1: consecutive live-stall episode count. Absent in an
+    # older on-disk file -> 0 (backward compatible), same guard shape as
+    # prev_missed / prev_respawn_count.
+    prev_live_consecutive = prev_state.get("live_consecutive", 0)
+    if not isinstance(prev_live_consecutive, int):
+        prev_live_consecutive = 0
     prev_last_self_report_ts = prev_state.get("last_self_report_ts")
     if not isinstance(prev_last_self_report_ts, str):
         prev_last_self_report_ts = None
@@ -5266,12 +5537,17 @@ def _process_stalled_session(
         exhausted = False
         refresh_attempted = False
         followups_child_alerted = False
+        # The session resumed self-reporting -> any prior live-stall episode is
+        # over -> the K-escalation debounce starts fresh (#759 b.1, criterion
+        # 12's earlier-firing sibling reset).
+        live_consecutive = 0
     else:
         alerted = prev_alerted
         respawn_count = prev_respawn_count
         exhausted = prev_exhausted
         refresh_attempted = prev_refresh_attempted
         followups_child_alerted = prev_followups_child_alerted
+        live_consecutive = prev_live_consecutive
 
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
@@ -5333,6 +5609,23 @@ def _process_stalled_session(
         dry_run=dry_run,
     )
 
+    # Live-session corroboration with bounded K-escalation (#759, bug class
+    # b.1). Applied LAST, on a respawn that survived the provision + followups
+    # exemptions above: downgrades to alert (no duplicate driver) for the first
+    # K-1 consecutive episodes on a LIVE id, escalates to the canonical respawn
+    # on the Kth (the #506 dead-bg-chain class), and resets the counter on
+    # every other path. Factored into a helper to keep this function under the
+    # C901 cap; the returned live_consecutive is what the ctx below persists.
+    action, live_consecutive = _apply_stalled_live_corroboration(
+        issue=issue,
+        entry=entry,
+        action=action,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids,
+        live_consecutive=live_consecutive,
+        dry_run=dry_run,
+    )
+
     self_gap = f"{self_report_age / 60:.1f}m" if self_report_age is not None else "none"
     marker_gap = f"{marker_age / 60:.1f}m" if marker_age is not None else "none"
     print(
@@ -5341,7 +5634,8 @@ def _process_stalled_session(
         f"missed={prev_missed}->{new_missed} alerted={alerted} "
         f"respawn_count={respawn_count}/{STALLED_MAX_RESPAWNS} "
         f"daemon_reachable={daemon_reachable} manual={manual} "
-        f"followups_child_alerted={followups_child_alerted} action={action}"
+        f"followups_child_alerted={followups_child_alerted} "
+        f"live_consecutive={live_consecutive} action={action}"
     )
 
     pod_name = (pod_names_by_issue or {}).get(issue)
@@ -5364,6 +5658,7 @@ def _process_stalled_session(
         pod_name=pod_name,
         manual=manual,
         followups_child_alerted=followups_child_alerted,
+        live_consecutive=live_consecutive,
     )
 
     if action == "respawn":
@@ -5392,6 +5687,7 @@ def _process_stalled_session(
             exhausted=exhausted,
             refresh_attempted=refresh_attempted,
             followups_child_alerted=followups_child_alerted,
+            live_consecutive=live_consecutive,
             prev=prev_state,
         )
 
@@ -5402,6 +5698,7 @@ def stalled_session_pass(
     now: float | None = None,
     *,
     daemon_reachable: bool | None = None,
+    live_ids: set[str] | None = None,
 ) -> None:
     """Detect alive-but-stalled issue sessions and recover or alert.
 
@@ -5422,6 +5719,14 @@ def stalled_session_pass(
     caller probes it once per :func:`main` invocation. When not passed,
     we probe here so the function still works in unit tests / debug runs
     that call it directly.
+
+    ``live_ids`` is the daemon's live-session set, threaded from
+    :func:`main` exactly as :func:`orphan_sweep_pass` receives it (``None``
+    when the daemon is unreachable). It drives the #759 bug-class-b.1
+    bounded K-escalation in :func:`_process_stalled_session`. When omitted
+    (``None`` — a direct unit/debug call that does not pass it), the
+    corroboration is inert and the pass behaves exactly as before (a stalled
+    ACTIVE session respawns), so existing callers are unaffected.
     """
     now = now if now is not None else time.time()
     if not AUTONOMOUS_REGISTRY_DIR.is_dir():
@@ -5454,6 +5759,7 @@ def stalled_session_pass(
             threshold,
             daemon_reachable=daemon_reachable,
             pod_names_by_issue=pod_names_by_issue,
+            live_ids=live_ids,
         )
     # Manual entries: ALERT-ONLY (never auto-respawn a user-driven session;
     # #505 round-2, 2026-06-10). Skip any issue already covered by an
@@ -5480,6 +5786,7 @@ def stalled_session_pass(
             daemon_reachable=daemon_reachable,
             pod_names_by_issue=pod_names_by_issue,
             manual=True,
+            live_ids=live_ids,
         )
 
 
@@ -12848,7 +13155,12 @@ def main(argv: list[str] | None = None) -> int:
     # pod-safety so the `_running_managed_issue_pods` call is fresh
     # (poll_pipeline-posted progress markers from any auto-stopped pod
     # won't accidentally bias the "has_pod" flag).
-    stalled_session_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
+    stalled_session_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
 
     # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
     # tasks vs live registered sessions. Catches the class the registry-driven
@@ -13015,7 +13327,19 @@ def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int
         return
 
     alive = _session_alive(entry, live_ids)
-    action, new_missed = decide(status, alive, entry.get("missed", 0), threshold)
+    # #759: a registration written within the spawn-grace window is treated as
+    # spawn-in-flight (its id may not yet be in the daemon /list reply). A
+    # missing/zero spawned_at yields a large age → no grace → today's behavior.
+    spawned_at = entry.get("spawned_at", 0)
+    entry_age_s = (time.time() - spawned_at) if spawned_at else None
+    action, new_missed = decide(
+        status,
+        alive,
+        entry.get("missed", 0),
+        threshold,
+        entry_age_s=entry_age_s,
+        spawn_grace_s=_respawn_spawn_grace_s(),
+    )
     print(
         f"  issue #{issue}: status={status} alive={alive} "
         f"missed={entry.get('missed', 0)}->{new_missed} action={action}"
