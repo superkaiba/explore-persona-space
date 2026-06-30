@@ -3579,7 +3579,8 @@ Gate handlers (one per registered `<name>`):
   phase 1 (`generate + capture + pv_extract_generate + upload-progress`
   — the PV rollouts are now on the HF data repo), emits the blocking
   sentinel `gate=pv_phase1_done` via
-  `scripts/issue763_dispatch.sh --emit-gate pv_phase1_done`
+  `scripts/issue763_upload.py --emit-gate pv_phase1_done` <!-- lint: historical-ref --> (called from
+  `scripts/issue763_dispatch.sh` after upload-progress)
   (`write_sentinel("epm:gate", …, blocks_pipeline=True)`), and EXITs.
   Unlike `fact-candidates` (which PARKS for a user pick at
   workflow.yaml § gates.fact_candidates), the
