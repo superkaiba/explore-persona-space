@@ -170,19 +170,51 @@ def _load_predictor_cells(pred_dir: Path) -> list[dict]:
     return recs
 
 
+def _aggregate_fold_stats(folds_out: dict) -> dict:
+    """Aggregate per-fold Spearman/sign over a {fold_key: fold_dict} map (plan §4g).
+
+    Shared by LOBO and LOCO — the mean held-out Spearman ρ (the cross-validated
+    headline read), the mean sign-agreement, and the fold count, over the finite
+    per-fold scores. Returns ``{mean_spearman, mean_sign_agreement, n_folds}``.
+    """
+    sps = [f["spearman"] for f in folds_out.values() if np.isfinite(f.get("spearman", np.nan))]
+    signs = [
+        f["sign_agreement"]
+        for f in folds_out.values()
+        if np.isfinite(f.get("sign_agreement", np.nan))
+    ]
+    return {
+        "mean_spearman": float(np.mean(sps)) if sps else float("nan"),
+        "mean_sign_agreement": float(np.mean(signs)) if signs else float("nan"),
+        "n_folds": len(folds_out),
+    }
+
+
 def run_lobo_loco(pred_dir: Path) -> dict:
-    """Run LOBO + LOCO over the per-cell predictor JSONs; return a summary dict."""
+    """Run LOBO + LOCO over the per-cell predictor JSONs; return a summary dict.
+
+    LOBO holds out one behavior, calibrates on the rest, scores the held-out
+    behavior. LOCO holds out one battery CONTEXT (by per-behavior bystander index,
+    pooled across all cells of a behavior), calibrates on the remaining contexts,
+    scores the held-out context's rows. Both fold families are scored by the SAME
+    ``score_fold`` / ``_aggregate_fold_stats`` helpers (plan §4g symmetric). LOCO
+    is non-empty when the input cells span ≥2 behaviors / ≥2 contexts.
+    """
     recs = _load_predictor_cells(pred_dir)
-    # Pool per behavior: stack each cell's per-bystander (Lhat, ds).
+    # Pool per behavior: stack each cell's per-bystander (Lhat, ds), tracking the
+    # per-row bystander index (for LOCO's leave-one-context-out partition).
     by_behavior: dict[str, dict[str, list]] = {}
     for r in recs:
         beh = _BEHAVIOR_LABEL.get(r.get("behavior"), r.get("behavior"))
         pb = r["per_bystander"]
-        d = by_behavior.setdefault(beh, {"Lhat": [], "ds": []})
+        d = by_behavior.setdefault(beh, {"Lhat": [], "ds": [], "ctx_idx": []})
         d["Lhat"].extend(pb["Lhat"])
         d["ds"].extend(pb["ds"])
+        d["ctx_idx"].extend(range(len(pb["Lhat"])))  # within-cell bystander index
 
     behaviors = sorted(by_behavior)
+
+    # ── LOBO: leave-one-behavior-out ──
     lobo = {}
     for fold in lobo_folds(behaviors):
         test_b = fold.test_behavior
@@ -206,7 +238,41 @@ def run_lobo_loco(pred_dir: Path) -> dict:
             "sign_agreement": sc.sign_agreement,
             "n_test": sc.n,
         }
-    return {"lobo": lobo, "n_behaviors": len(behaviors), "behaviors": behaviors}
+
+    # ── LOCO: leave-one-context-out (pooled across behaviors + cells) ──
+    all_l = (
+        np.concatenate([by_behavior[b]["Lhat"] for b in behaviors]) if behaviors else np.array([])
+    )
+    all_d = np.concatenate([by_behavior[b]["ds"] for b in behaviors]) if behaviors else np.array([])
+    all_ctx = (
+        np.concatenate([by_behavior[b]["ctx_idx"] for b in behaviors]).astype(int)
+        if behaviors
+        else np.array([], dtype=int)
+    )
+    ctx_ids = sorted(set(all_ctx.tolist()))
+    loco = {}
+    for fold in loco_folds(ctx_ids):
+        c = fold.test_context
+        test_mask = all_ctx == c
+        train_mask = ~test_mask
+        sc = score_fold(all_l[train_mask], all_d[train_mask], all_l[test_mask], all_d[test_mask])
+        loco[str(c)] = {
+            "test_context": int(c),
+            "spearman": sc.spearman,
+            "pearson": sc.pearson,
+            "sign_agreement": sc.sign_agreement,
+            "n_test": sc.n,
+        }
+
+    return {
+        "lobo": lobo,
+        "loco": loco,
+        "n_behaviors": len(behaviors),
+        "behaviors": behaviors,
+        "n_contexts": len(ctx_ids),
+        "lobo_aggregate": _aggregate_fold_stats(lobo),
+        "loco_aggregate": _aggregate_fold_stats(loco),
+    }
 
 
 def main() -> int:
@@ -222,7 +288,10 @@ def main() -> int:
     summary = run_lobo_loco(Path(args.pred_dir))
     outp = OUT / "lobo_loco.json"
     outp.write_text(json.dumps(summary, indent=1))
-    print(f"[lobo_loco] {summary['n_behaviors']} behaviors -> {outp}")
+    print(
+        f"[lobo_loco] LOBO {len(summary['lobo'])} behaviors / "
+        f"LOCO {len(summary['loco'])} contexts -> {outp}"
+    )
     print("[phase=lobo_loco] done OK")
     return 0
 
