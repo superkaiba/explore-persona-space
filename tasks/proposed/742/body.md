@@ -18,6 +18,8 @@ goal: 'On the existing #658 base-model representations (Qwen2.5-7B v0(C) per lay
   bracket [rho_linear, sqrt(r_yy)] bounding the linear-decoding information loss plus
   a LEACE+dCor test for any nonlinearly-extractable residual, and a learning curve
   extrapolating the contexts needed to resolve the gap.'
+relates_to:
+- leak-predictor
 ---
 # Decoding-ceiling, linear-information-loss, and sample-complexity of #658 base-model behavior representations (n=50)
 
