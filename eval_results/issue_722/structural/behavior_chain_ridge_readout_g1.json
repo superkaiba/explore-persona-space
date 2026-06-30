@@ -1,0 +1,864 @@
+{
+  "analysis": "behavioral_chain_preservation_RIDGE_READOUT_g1_ultrachat",
+  "cc_variant": "last-input-token (genre store cc_last)",
+  "e0_src": "superkaiba1/explore-persona-space-data:issue658_partial/att-20260624-130414/eval_results_issue_658/E0_expression_g1.json",
+  "pca_target_dim": 48,
+  "per_behavior": {
+    "broad_em": {
+      "n_kept_e0": 50,
+      "best_ridge_direct": {
+        "layer": 17,
+        "rho": 0.7543830885843907
+      },
+      "best_ridge_mediated": {
+        "layer": 17,
+        "rho": 0.25575287930210405
+      },
+      "best_cc_direct": {
+        "layer": 13,
+        "rho": 0.34288260061711523
+      },
+      "best_layer_degradation": 0.4986302092822867,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_ridge_direct": -0.6378309272526189,
+          "rho_ridge_mediated": -0.319199863310127,
+          "rho_cc_direct": 0.03598948726127465,
+          "rho_degradation": -0.3186310639424919
+        },
+        {
+          "layer": 1,
+          "rho_ridge_direct": -0.6865925457689724,
+          "rho_ridge_mediated": -0.40576078525750314,
+          "rho_cc_direct": -0.0524846689226922,
+          "rho_degradation": -0.2808317605114693
+        },
+        {
+          "layer": 2,
+          "rho_ridge_direct": -0.67330332417968,
+          "rho_ridge_mediated": -0.24680721652020676,
+          "rho_cc_direct": 0.13661526629926385,
+          "rho_degradation": -0.4264961076594732
+        },
+        {
+          "layer": 3,
+          "rho_ridge_direct": -0.7228922872307754,
+          "rho_ridge_mediated": -0.2566836419036887,
+          "rho_cc_direct": 0.17389747939607278,
+          "rho_degradation": -0.46620864532708667
+        },
+        {
+          "layer": 4,
+          "rho_ridge_direct": -0.7483848407075115,
+          "rho_ridge_mediated": -0.31645928453879435,
+          "rho_cc_direct": 0.10569326431328359,
+          "rho_degradation": -0.4319255561687172
+        },
+        {
+          "layer": 5,
+          "rho_ridge_direct": -0.7171525845210032,
+          "rho_ridge_mediated": -0.2611823278113481,
+          "rho_cc_direct": 0.1348571591629372,
+          "rho_degradation": -0.4559702567096551
+        },
+        {
+          "layer": 6,
+          "rho_ridge_direct": -0.6026170754926649,
+          "rho_ridge_mediated": -0.22012535527477903,
+          "rho_cc_direct": 0.18723841001878666,
+          "rho_degradation": -0.3824917202178858
+        },
+        {
+          "layer": 7,
+          "rho_ridge_direct": -0.6909878136097889,
+          "rho_ridge_mediated": -0.21128311055972449,
+          "rho_cc_direct": 0.21474761579895638,
+          "rho_degradation": -0.4797047030500644
+        },
+        {
+          "layer": 8,
+          "rho_ridge_direct": -0.7177730929220596,
+          "rho_ridge_mediated": -0.18729011905220802,
+          "rho_cc_direct": 0.21805699393792413,
+          "rho_degradation": -0.5304829738698515
+        },
+        {
+          "layer": 9,
+          "rho_ridge_direct": -0.5950675566131447,
+          "rho_ridge_mediated": -0.13128923585686256,
+          "rho_cc_direct": 0.21629888680159748,
+          "rho_degradation": -0.4637783207562821
+        },
+        {
+          "layer": 10,
+          "rho_ridge_direct": -0.593981666911296,
+          "rho_ridge_mediated": 0.013237512555871135,
+          "rho_cc_direct": 0.29598250730393116,
+          "rho_degradation": -0.6072191794671671
+        },
+        {
+          "layer": 11,
+          "rho_ridge_direct": -0.2535810998984065,
+          "rho_ridge_mediated": 0.060396151036162055,
+          "rho_cc_direct": 0.3039974074842438,
+          "rho_degradation": -0.3139772509345685
+        },
+        {
+          "layer": 12,
+          "rho_ridge_direct": -0.42773712446158607,
+          "rho_ridge_mediated": 0.10212534100720896,
+          "rho_cc_direct": 0.27984928887646326,
+          "rho_degradation": -0.529862465468795
+        },
+        {
+          "layer": 13,
+          "rho_ridge_direct": -0.33760827920813535,
+          "rho_ridge_mediated": 0.13304734299318918,
+          "rho_cc_direct": 0.34288260061711523,
+          "rho_degradation": -0.4706556222013245
+        },
+        {
+          "layer": 14,
+          "rho_ridge_direct": -0.20766347822022846,
+          "rho_ridge_mediated": 0.1596257861717742,
+          "rho_cc_direct": 0.20156181227650657,
+          "rho_degradation": -0.36728926439200266
+        },
+        {
+          "layer": 15,
+          "rho_ridge_direct": 0.00982471635006061,
+          "rho_ridge_mediated": 0.1798957272729519,
+          "rho_cc_direct": 0.20166523034334935,
+          "rho_degradation": -0.17007101092289129
+        },
+        {
+          "layer": 16,
+          "rho_ridge_direct": 0.12115426530627373,
+          "rho_ridge_mediated": 0.22793341932140612,
+          "rho_cc_direct": 0.22534796765033754,
+          "rho_degradation": -0.1067791540151324
+        },
+        {
+          "layer": 17,
+          "rho_ridge_direct": 0.7543830885843907,
+          "rho_ridge_mediated": 0.25575287930210405,
+          "rho_cc_direct": 0.27928048950882817,
+          "rho_degradation": 0.4986302092822867
+        },
+        {
+          "layer": 18,
+          "rho_ridge_direct": -0.2381718079388377,
+          "rho_ridge_mediated": -0.006308502077407337,
+          "rho_cc_direct": 0.17627609493345586,
+          "rho_degradation": -0.23186330586143036
+        },
+        {
+          "layer": 19,
+          "rho_ridge_direct": -0.5623874474908378,
+          "rho_ridge_mediated": -0.2581832038729085,
+          "rho_cc_direct": 0.23998162410858573,
+          "rho_degradation": -0.3042042436179293
+        },
+        {
+          "layer": 20,
+          "rho_ridge_direct": -0.3479500858924096,
+          "rho_ridge_mediated": -0.25854516710685815,
+          "rho_cc_direct": 0.2604584013434489,
+          "rho_degradation": -0.08940491878555146
+        },
+        {
+          "layer": 21,
+          "rho_ridge_direct": -0.777135063289794,
+          "rho_ridge_mediated": -0.3882831319610796,
+          "rho_cc_direct": 0.18713499195194389,
+          "rho_degradation": -0.3888519313287144
+        },
+        {
+          "layer": 22,
+          "rho_ridge_direct": -0.6481727339368933,
+          "rho_ridge_mediated": -0.5043182029586375,
+          "rho_cc_direct": 0.16717530505129446,
+          "rho_degradation": -0.14385453097825585
+        },
+        {
+          "layer": 23,
+          "rho_ridge_direct": -0.6749063042157424,
+          "rho_ridge_mediated": -0.512746775406321,
+          "rho_cc_direct": 0.08211394507313816,
+          "rho_degradation": -0.16215952880942142
+        },
+        {
+          "layer": 24,
+          "rho_ridge_direct": -0.6300228632059919,
+          "rho_ridge_mediated": -0.4320289742355599,
+          "rho_cc_direct": -0.005843120776614994,
+          "rho_degradation": -0.19799388897043196
+        },
+        {
+          "layer": 25,
+          "rho_ridge_direct": -0.6449667738647683,
+          "rho_ridge_mediated": -0.39459163403848685,
+          "rho_cc_direct": 0.0486582004495107,
+          "rho_degradation": -0.25037513982628146
+        },
+        {
+          "layer": 26,
+          "rho_ridge_direct": -0.5921201417081264,
+          "rho_ridge_mediated": -0.21423052546474264,
+          "rho_cc_direct": 0.14421649421220548,
+          "rho_degradation": -0.3778896162433838
+        },
+        {
+          "layer": 27,
+          "rho_ridge_direct": -0.523605672424809,
+          "rho_ridge_mediated": -0.038057848598129516,
+          "rho_cc_direct": 0.14282035030982843,
+          "rho_degradation": -0.48554782382667955
+        }
+      ]
+    },
+    "harmful_compliance": {
+      "n_kept_e0": 50,
+      "best_ridge_direct": {
+        "layer": 25,
+        "rho": 0.7536679920205833
+      },
+      "best_ridge_mediated": {
+        "layer": 24,
+        "rho": 0.6695530460666557
+      },
+      "best_cc_direct": {
+        "layer": 21,
+        "rho": 0.6880208215076551
+      },
+      "best_layer_degradation": 0.08411494595392766,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_ridge_direct": 0.28052743267539165,
+          "rho_ridge_mediated": 0.45996303207739514,
+          "rho_cc_direct": 0.6146306513957663,
+          "rho_degradation": -0.1794355994020035
+        },
+        {
+          "layer": 1,
+          "rho_ridge_direct": 0.06728233813009994,
+          "rho_ridge_mediated": 0.414755456779115,
+          "rho_cc_direct": 0.5749537900967439,
+          "rho_degradation": -0.3474731186490151
+        },
+        {
+          "layer": 2,
+          "rho_ridge_direct": 0.3710868627675848,
+          "rho_ridge_mediated": 0.5058920048538393,
+          "rho_cc_direct": 0.5498972510218461,
+          "rho_degradation": -0.13480514208625455
+        },
+        {
+          "layer": 3,
+          "rho_ridge_direct": 0.4074933888322636,
+          "rho_ridge_mediated": 0.4567888831734733,
+          "rho_cc_direct": 0.5324394320502762,
+          "rho_degradation": -0.04929549434120972
+        },
+        {
+          "layer": 4,
+          "rho_ridge_direct": 0.1689993825512303,
+          "rho_ridge_mediated": 0.4550094360606687,
+          "rho_cc_direct": 0.511374625687886,
+          "rho_degradation": -0.2860100535094384
+        },
+        {
+          "layer": 5,
+          "rho_ridge_direct": 0.4210556614217476,
+          "rho_ridge_mediated": 0.36473856495974116,
+          "rho_cc_direct": 0.5486949218915727,
+          "rho_degradation": 0.056317096462006444
+        },
+        {
+          "layer": 6,
+          "rho_ridge_direct": -0.18174407133212844,
+          "rho_ridge_mediated": 0.4195166801349977,
+          "rho_cc_direct": 0.5374892143974245,
+          "rho_degradation": -0.6012607514671262
+        },
+        {
+          "layer": 7,
+          "rho_ridge_direct": -0.29586915237768036,
+          "rho_ridge_mediated": 0.46193485185104355,
+          "rho_cc_direct": 0.5430199283966822,
+          "rho_degradation": -0.757804004228724
+        },
+        {
+          "layer": 8,
+          "rho_ridge_direct": -0.6957157279414049,
+          "rho_ridge_mediated": 0.1106142799851536,
+          "rho_cc_direct": 0.5415290402751431,
+          "rho_degradation": -0.8063300079265585
+        },
+        {
+          "layer": 9,
+          "rho_ridge_direct": -0.5010826883327456,
+          "rho_ridge_mediated": 0.4755452176057385,
+          "rho_cc_direct": 0.5573035984643302,
+          "rho_degradation": -0.9766279059384841
+        },
+        {
+          "layer": 10,
+          "rho_ridge_direct": -0.17433772388964422,
+          "rho_ridge_mediated": 0.5674512563238379,
+          "rho_cc_direct": 0.6232874211337349,
+          "rho_degradation": -0.741788980213482
+        },
+        {
+          "layer": 11,
+          "rho_ridge_direct": -0.7016792804275612,
+          "rho_ridge_mediated": 0.426105443768896,
+          "rho_cc_direct": 0.6036173165624619,
+          "rho_degradation": -1.1277847241964571
+        },
+        {
+          "layer": 12,
+          "rho_ridge_direct": -0.22007432400524468,
+          "rho_ridge_mediated": 0.5775027278529236,
+          "rho_cc_direct": 0.6198728064037584,
+          "rho_degradation": -0.7975770518581682
+        },
+        {
+          "layer": 13,
+          "rho_ridge_direct": -0.21112899527601053,
+          "rho_ridge_mediated": 0.6204980175515006,
+          "rho_cc_direct": 0.5991927453630558,
+          "rho_degradation": -0.8316270128275112
+        },
+        {
+          "layer": 14,
+          "rho_ridge_direct": -0.1559180416138556,
+          "rho_ridge_mediated": 0.6481034943825781,
+          "rho_cc_direct": 0.6280486444896177,
+          "rho_degradation": -0.8040215359964337
+        },
+        {
+          "layer": 15,
+          "rho_ridge_direct": -0.7183195155905452,
+          "rho_ridge_mediated": 0.35108010603983525,
+          "rho_cc_direct": 0.596018596459134,
+          "rho_degradation": -1.0693996216303805
+        },
+        {
+          "layer": 16,
+          "rho_ridge_direct": -0.87471848885651,
+          "rho_ridge_mediated": 0.2240660567177524,
+          "rho_cc_direct": 0.6234797937945787,
+          "rho_degradation": -1.0987845455742624
+        },
+        {
+          "layer": 17,
+          "rho_ridge_direct": -0.8337912052620033,
+          "rho_ridge_mediated": 0.06834038776474054,
+          "rho_cc_direct": 0.6284814829765161,
+          "rho_degradation": -0.9021315930267438
+        },
+        {
+          "layer": 18,
+          "rho_ridge_direct": -0.8224412182722223,
+          "rho_ridge_mediated": 0.32809157306900766,
+          "rho_cc_direct": 0.6227103031512038,
+          "rho_degradation": -1.15053279134123
+        },
+        {
+          "layer": 19,
+          "rho_ridge_direct": 0.20112561691213576,
+          "rho_ridge_mediated": 0.6364168552363205,
+          "rho_cc_direct": 0.663204748258812,
+          "rho_degradation": -0.43529123832418476
+        },
+        {
+          "layer": 20,
+          "rho_ridge_direct": -0.2156978459710495,
+          "rho_ridge_mediated": 0.630020464263266,
+          "rho_cc_direct": 0.6532013698949373,
+          "rho_degradation": -0.8457183102343154
+        },
+        {
+          "layer": 21,
+          "rho_ridge_direct": -0.02534509806616345,
+          "rho_ridge_mediated": 0.62251793049036,
+          "rho_cc_direct": 0.6880208215076551,
+          "rho_degradation": -0.6478630285565234
+        },
+        {
+          "layer": 22,
+          "rho_ridge_direct": -0.5800997587743141,
+          "rho_ridge_mediated": 0.6281448308200396,
+          "rho_cc_direct": 0.6472378174087812,
+          "rho_degradation": -1.2082445895943537
+        },
+        {
+          "layer": 23,
+          "rho_ridge_direct": -0.6160734463520945,
+          "rho_ridge_mediated": 0.6539227673731015,
+          "rho_cc_direct": 0.6570969162770232,
+          "rho_degradation": -1.269996213725196
+        },
+        {
+          "layer": 24,
+          "rho_ridge_direct": -0.4806430931180978,
+          "rho_ridge_mediated": 0.6695530460666557,
+          "rho_cc_direct": 0.6502676868170701,
+          "rho_degradation": -1.1501961391847535
+        },
+        {
+          "layer": 25,
+          "rho_ridge_direct": 0.7536679920205833,
+          "rho_ridge_mediated": 0.614919210387032,
+          "rho_cc_direct": 0.6576740342595545,
+          "rho_degradation": 0.1387487816335513
+        },
+        {
+          "layer": 26,
+          "rho_ridge_direct": -0.014668415389335583,
+          "rho_ridge_mediated": 0.6131397632742273,
+          "rho_cc_direct": 0.5564379214905334,
+          "rho_degradation": -0.6278081786635629
+        },
+        {
+          "layer": 27,
+          "rho_ridge_direct": -0.1869862263401205,
+          "rho_ridge_mediated": 0.5898145781469233,
+          "rho_cc_direct": 0.5640847347590723,
+          "rho_degradation": -0.7768008044870438
+        }
+      ]
+    },
+    "sycophancy": {
+      "n_kept_e0": 50,
+      "best_ridge_direct": {
+        "layer": 8,
+        "rho": 0.4475396948986988
+      },
+      "best_ridge_mediated": {
+        "layer": 19,
+        "rho": 0.6250090201456072
+      },
+      "best_cc_direct": {
+        "layer": 21,
+        "rho": 0.6969093124039623
+      },
+      "best_layer_degradation": -0.1774693252469084,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_ridge_direct": -0.21046565175424967,
+          "rho_ridge_mediated": 0.22304940363914547,
+          "rho_cc_direct": 0.39220961027503487,
+          "rho_degradation": -0.43351505539339513
+        },
+        {
+          "layer": 1,
+          "rho_ridge_direct": 0.37122068060442615,
+          "rho_ridge_mediated": 0.29446940002403116,
+          "rho_cc_direct": 0.3375519398742279,
+          "rho_degradation": 0.07675128058039499
+        },
+        {
+          "layer": 2,
+          "rho_ridge_direct": 0.18073533718649962,
+          "rho_ridge_mediated": 0.2865445181117876,
+          "rho_cc_direct": 0.2901947667501544,
+          "rho_degradation": -0.10580918092528799
+        },
+        {
+          "layer": 3,
+          "rho_ridge_direct": -0.01676232598407876,
+          "rho_ridge_mediated": 0.3705002367942222,
+          "rho_cc_direct": 0.38337216620319964,
+          "rho_degradation": -0.387262562778301
+        },
+        {
+          "layer": 4,
+          "rho_ridge_direct": -0.02372661614938369,
+          "rho_ridge_mediated": 0.3138733533121912,
+          "rho_cc_direct": 0.40287217866605346,
+          "rho_degradation": -0.3375999694615749
+        },
+        {
+          "layer": 5,
+          "rho_ridge_direct": 0.18145578099670362,
+          "rho_ridge_mediated": 0.287024813985257,
+          "rho_cc_direct": 0.43543623888727234,
+          "rho_degradation": -0.10556903298855336
+        },
+        {
+          "layer": 6,
+          "rho_ridge_direct": 0.1352032883816095,
+          "rho_ridge_mediated": 0.3240556258297404,
+          "rho_cc_direct": 0.40320838577748197,
+          "rho_degradation": -0.1888523374481309
+        },
+        {
+          "layer": 7,
+          "rho_ridge_direct": -0.2667563281248523,
+          "rho_ridge_mediated": 0.3095506904509674,
+          "rho_cc_direct": 0.38092265724850616,
+          "rho_degradation": -0.5763070185758197
+        },
+        {
+          "layer": 8,
+          "rho_ridge_direct": 0.4475396948986988,
+          "rho_ridge_mediated": 0.2637784937093426,
+          "rho_cc_direct": 0.3997982850758499,
+          "rho_degradation": 0.18376120118935624
+        },
+        {
+          "layer": 9,
+          "rho_ridge_direct": -0.237890546129347,
+          "rho_ridge_mediated": 0.38111477559789386,
+          "rho_cc_direct": 0.5295742300872562,
+          "rho_degradation": -0.6190053217272409
+        },
+        {
+          "layer": 10,
+          "rho_ridge_direct": -0.25446075376403804,
+          "rho_ridge_mediated": 0.4173290844574795,
+          "rho_cc_direct": 0.5728969178741876,
+          "rho_degradation": -0.6717898382215175
+        },
+        {
+          "layer": 11,
+          "rho_ridge_direct": -0.11296558943998064,
+          "rho_ridge_mediated": 0.4614682752293087,
+          "rho_cc_direct": 0.5508513372819465,
+          "rho_degradation": -0.5744338646692894
+        },
+        {
+          "layer": 12,
+          "rho_ridge_direct": 0.03866381781427909,
+          "rho_ridge_mediated": 0.53874788127052,
+          "rho_cc_direct": 0.5797651488647986,
+          "rho_degradation": -0.5000840634562409
+        },
+        {
+          "layer": 13,
+          "rho_ridge_direct": -0.036454456796320284,
+          "rho_ridge_mediated": 0.5716001190158204,
+          "rho_cc_direct": 0.6286592687839739,
+          "rho_degradation": -0.6080545758121407
+        },
+        {
+          "layer": 14,
+          "rho_ridge_direct": -0.2793400800097481,
+          "rho_ridge_mediated": 0.499988004281547,
+          "rho_cc_direct": 0.5614178464982712,
+          "rho_degradation": -0.7793280842912951
+        },
+        {
+          "layer": 15,
+          "rho_ridge_direct": -0.3629595915807541,
+          "rho_ridge_mediated": 0.5582478937333737,
+          "rho_cc_direct": 0.6596383526227442,
+          "rho_degradation": -0.9212074853141278
+        },
+        {
+          "layer": 16,
+          "rho_ridge_direct": -0.22256910776567615,
+          "rho_ridge_mediated": 0.5987848654541832,
+          "rho_cc_direct": 0.6057011260321411,
+          "rho_degradation": -0.8213539732198594
+        },
+        {
+          "layer": 17,
+          "rho_ridge_direct": -0.3234312411942303,
+          "rho_ridge_mediated": 0.5796210601027579,
+          "rho_cc_direct": 0.55877621919419,
+          "rho_degradation": -0.9030523012969882
+        },
+        {
+          "layer": 18,
+          "rho_ridge_direct": -0.4153118417889084,
+          "rho_ridge_mediated": 0.6184769962664247,
+          "rho_cc_direct": 0.6119449723872422,
+          "rho_degradation": -1.033788838055333
+        },
+        {
+          "layer": 19,
+          "rho_ridge_direct": -0.33140415269382073,
+          "rho_ridge_mediated": 0.6250090201456072,
+          "rho_cc_direct": 0.6564683998578467,
+          "rho_degradation": -0.956413172839428
+        },
+        {
+          "layer": 20,
+          "rho_ridge_direct": -0.46977739384032763,
+          "rho_ridge_mediated": 0.6105040847668342,
+          "rho_cc_direct": 0.6815878740402914,
+          "rho_degradation": -1.0802814786071617
+        },
+        {
+          "layer": 21,
+          "rho_ridge_direct": -0.528325460816236,
+          "rho_ridge_mediated": 0.596047178975408,
+          "rho_cc_direct": 0.6969093124039623,
+          "rho_degradation": -1.124372639791644
+        },
+        {
+          "layer": 22,
+          "rho_ridge_direct": -0.5420138932101113,
+          "rho_ridge_mediated": 0.6171801974080575,
+          "rho_cc_direct": 0.6453735651807058,
+          "rho_degradation": -1.1591940906181688
+        },
+        {
+          "layer": 23,
+          "rho_ridge_direct": -0.5384116741590914,
+          "rho_ridge_mediated": 0.5820225394701044,
+          "rho_cc_direct": 0.661079240243152,
+          "rho_degradation": -1.1204342136291958
+        },
+        {
+          "layer": 24,
+          "rho_ridge_direct": -0.5119473715309327,
+          "rho_ridge_mediated": 0.5895631846835724,
+          "rho_cc_direct": 0.6763526490194759,
+          "rho_degradation": -1.101510556214505
+        },
+        {
+          "layer": 25,
+          "rho_ridge_direct": -0.5085372708293006,
+          "rho_ridge_mediated": 0.5948944688790817,
+          "rho_cc_direct": 0.6657861398031512,
+          "rho_degradation": -1.1034317397083822
+        },
+        {
+          "layer": 26,
+          "rho_ridge_direct": -0.5628107045313321,
+          "rho_ridge_mediated": 0.5108907206093002,
+          "rho_cc_direct": 0.6076703391133652,
+          "rho_degradation": -1.0737014251406323
+        },
+        {
+          "layer": 27,
+          "rho_ridge_direct": -0.605124770983978,
+          "rho_ridge_mediated": 0.5848082555362264,
+          "rho_cc_direct": 0.5997454572011217,
+          "rho_degradation": -1.1899330265202044
+        }
+      ]
+    },
+    "refusal": {
+      "n_kept_e0": 50,
+      "best_ridge_direct": {
+        "layer": 13,
+        "rho": 0.8426922734582447
+      },
+      "best_ridge_mediated": {
+        "layer": 24,
+        "rho": 0.7378843441464044
+      },
+      "best_cc_direct": {
+        "layer": 24,
+        "rho": 0.7304358209720186
+      },
+      "best_layer_degradation": 0.10480792931184035,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_ridge_direct": -0.5681541257468538,
+          "rho_ridge_mediated": 0.01758812568919466,
+          "rho_cc_direct": 0.39227286885490714,
+          "rho_degradation": -0.5857422514360484
+        },
+        {
+          "layer": 1,
+          "rho_ridge_direct": 0.4995796575542833,
+          "rho_ridge_mediated": 0.22316736530224046,
+          "rho_cc_direct": 0.44892969996846044,
+          "rho_degradation": 0.27641229225204283
+        },
+        {
+          "layer": 2,
+          "rho_ridge_direct": -0.10538458917050243,
+          "rho_ridge_mediated": 0.2940965279176812,
+          "rho_cc_direct": 0.4933325090854436,
+          "rho_degradation": -0.3994811170881836
+        },
+        {
+          "layer": 3,
+          "rho_ridge_direct": -0.1451741194181887,
+          "rho_ridge_mediated": 0.3054855601262581,
+          "rho_cc_direct": 0.5063073559053414,
+          "rho_degradation": -0.4506596795444468
+        },
+        {
+          "layer": 4,
+          "rho_ridge_direct": 0.6055409065834478,
+          "rho_ridge_mediated": 0.36516985549778747,
+          "rho_cc_direct": 0.5419641571659491,
+          "rho_degradation": 0.24037105108566037
+        },
+        {
+          "layer": 5,
+          "rho_ridge_direct": -0.32009427654569844,
+          "rho_ridge_mediated": 0.3460920251737156,
+          "rho_cc_direct": 0.5553714988798433,
+          "rho_degradation": -0.6661863017194141
+        },
+        {
+          "layer": 6,
+          "rho_ridge_direct": -0.3842476858218593,
+          "rho_ridge_mediated": 0.3373460173173402,
+          "rho_cc_direct": 0.5560442687149492,
+          "rho_degradation": -0.7215937031391995
+        },
+        {
+          "layer": 7,
+          "rho_ridge_direct": 0.7333191202653292,
+          "rho_ridge_mediated": 0.3982316873944157,
+          "rho_cc_direct": 0.5638291768068878,
+          "rho_degradation": 0.33508743287091347
+        },
+        {
+          "layer": 8,
+          "rho_ridge_direct": -0.14320386490109313,
+          "rho_ridge_mediated": 0.40529577066302663,
+          "rho_cc_direct": 0.5869916811298164,
+          "rho_degradation": -0.5484996355641197
+        },
+        {
+          "layer": 9,
+          "rho_ridge_direct": -0.6436965672315915,
+          "rho_ridge_mediated": 0.334030223130033,
+          "rho_cc_direct": 0.5896347054820178,
+          "rho_degradation": -0.9777267903616245
+        },
+        {
+          "layer": 10,
+          "rho_ridge_direct": -0.45676266304862084,
+          "rho_ridge_mediated": 0.4099090495323236,
+          "rho_cc_direct": 0.6192365782266732,
+          "rho_degradation": -0.8666717125809444
+        },
+        {
+          "layer": 11,
+          "rho_ridge_direct": -0.034022931661065084,
+          "rho_ridge_mediated": 0.6134219246518302,
+          "rho_cc_direct": 0.6411496528558338,
+          "rho_degradation": -0.6474448563128953
+        },
+        {
+          "layer": 12,
+          "rho_ridge_direct": 0.7882459718028962,
+          "rho_ridge_mediated": 0.6845433072201582,
+          "rho_cc_direct": 0.6978545389576088,
+          "rho_degradation": 0.10370266458273802
+        },
+        {
+          "layer": 13,
+          "rho_ridge_direct": 0.8426922734582447,
+          "rho_ridge_mediated": 0.6019848374550314,
+          "rho_cc_direct": 0.5493165703638911,
+          "rho_degradation": 0.24070743600321332
+        },
+        {
+          "layer": 14,
+          "rho_ridge_direct": -0.23268225297016545,
+          "rho_ridge_mediated": 0.6375455287391956,
+          "rho_cc_direct": 0.6563830841221581,
+          "rho_degradation": -0.870227781709361
+        },
+        {
+          "layer": 15,
+          "rho_ridge_direct": 0.056224336219556706,
+          "rho_ridge_mediated": 0.6985273087927146,
+          "rho_cc_direct": 0.6557103142870522,
+          "rho_degradation": -0.6423029725731579
+        },
+        {
+          "layer": 16,
+          "rho_ridge_direct": -0.12350131973013737,
+          "rho_ridge_mediated": 0.6921840503474312,
+          "rho_cc_direct": 0.6911748955947727,
+          "rho_degradation": -0.8156853700775686
+        },
+        {
+          "layer": 17,
+          "rho_ridge_direct": -0.5627239120777854,
+          "rho_ridge_mediated": 0.46358647137612263,
+          "rho_cc_direct": 0.6929529301589809,
+          "rho_degradation": -1.026310383453908
+        },
+        {
+          "layer": 18,
+          "rho_ridge_direct": -0.6482617911126666,
+          "rho_ridge_mediated": 0.4525818790733205,
+          "rho_cc_direct": 0.7223145279625273,
+          "rho_degradation": -1.100843670185987
+        },
+        {
+          "layer": 19,
+          "rho_ridge_direct": -0.026478298510235677,
+          "rho_ridge_mediated": 0.6864655067490321,
+          "rho_cc_direct": 0.7053030621319947,
+          "rho_degradation": -0.7129438052592677
+        },
+        {
+          "layer": 20,
+          "rho_ridge_direct": -0.11177590260400759,
+          "rho_ridge_mediated": 0.6596988783094653,
+          "rho_cc_direct": 0.6662824116958578,
+          "rho_degradation": -0.7714747809134729
+        },
+        {
+          "layer": 21,
+          "rho_ridge_direct": 0.3340782781182549,
+          "rho_ridge_mediated": 0.6423510275613799,
+          "rho_cc_direct": 0.6430718523847075,
+          "rho_degradation": -0.30827274944312494
+        },
+        {
+          "layer": 22,
+          "rho_ridge_direct": 0.815300930171794,
+          "rho_ridge_mediated": 0.6275500911890521,
+          "rho_cc_direct": 0.6221679325082057,
+          "rho_degradation": 0.1877508389827418
+        },
+        {
+          "layer": 23,
+          "rho_ridge_direct": 0.5374469882730959,
+          "rho_ridge_mediated": 0.6489345609477724,
+          "rho_cc_direct": 0.6505203755590933,
+          "rho_degradation": -0.11148757267467646
+        },
+        {
+          "layer": 24,
+          "rho_ridge_direct": 0.16699108407090557,
+          "rho_ridge_mediated": 0.7378843441464044,
+          "rho_cc_direct": 0.7304358209720186,
+          "rho_degradation": -0.5708932600754988
+        },
+        {
+          "layer": 25,
+          "rho_ridge_direct": 0.19101857818182727,
+          "rho_ridge_mediated": 0.6614288578854516,
+          "rho_cc_direct": 0.6498476057239875,
+          "rho_degradation": -0.4704102797036243
+        },
+        {
+          "layer": 26,
+          "rho_ridge_direct": -0.13421758210360843,
+          "rho_ridge_mediated": 0.553641519303857,
+          "rho_cc_direct": 0.5316803896864747,
+          "rho_degradation": -0.6878591014074654
+        },
+        {
+          "layer": 27,
+          "rho_ridge_direct": -0.5203874674543414,
+          "rho_ridge_mediated": 0.5710374250401643,
+          "rho_cc_direct": 0.5574378633733826,
+          "rho_degradation": -1.0914248924945058
+        }
+      ]
+    }
+  }
+}
