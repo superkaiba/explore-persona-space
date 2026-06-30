@@ -440,8 +440,43 @@ TERMINAL = {"awaiting_promotion", "completed", "archived"}
 # long, so a stuck/unknown-status entry cannot linger and re-spawn forever.
 MAX_ENTRY_AGE_S = 14 * 24 * 3600
 
+# Grace window after a registration write during which the crash-recovery pass
+# treats an ACTIVE entry as "spawn in flight" even if its recorded
+# happy_session_id is not yet in the daemon's live set. Covers the
+# registration-latency race (#759): `spawn-issue --auto` rewrites the registry
+# with a fresh `spawned_at` + a fresh id on every (re)spawn, but that id can
+# take seconds-to-minutes to propagate into the daemon's `/list` reply — during
+# which `_session_alive` reads False and the 2-miss respawn would spawn a
+# duplicate driver. Mirrors :data:`ORPHAN_SPAWN_GRACE_S`, which the orphan
+# sweep already applies (`decide_orphan`).
+RESPAWN_SPAWN_GRACE_S = 15 * 60
 
-def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[str, int]:
+
+def _respawn_spawn_grace_s() -> float:
+    """Crash-recovery spawn-grace window in seconds (env
+    ``EPM_RESPAWN_SPAWN_GRACE_MIN``, minutes; default
+    :data:`RESPAWN_SPAWN_GRACE_S`). A malformed env value falls back to the
+    default — a typo'd var must not disable crash recovery (it would only ever
+    SHORTEN the grace, never suppress a genuinely-needed respawn). Mirrors the
+    house pattern of :func:`_orphan_staleness_s`."""
+    raw = os.environ.get("EPM_RESPAWN_SPAWN_GRACE_MIN")
+    if not raw:
+        return float(RESPAWN_SPAWN_GRACE_S)
+    try:
+        return float(raw) * 60.0
+    except ValueError:
+        return float(RESPAWN_SPAWN_GRACE_S)
+
+
+def decide(
+    status: str,
+    alive: bool,
+    missed: int,
+    threshold: int = 2,
+    *,
+    entry_age_s: float | None = None,
+    spawn_grace_s: float = RESPAWN_SPAWN_GRACE_S,
+) -> tuple[str, int]:
     """Pure decision: given a task's status, whether its session is alive, and
     the consecutive-miss count, return ``(action, new_missed)`` where action is
     ``"respawn"`` | ``"keep"`` | ``"delete"``.
@@ -450,6 +485,16 @@ def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[s
     ``threshold`` consecutive checks (default 2 = ~20 min at a 10-min cron)
     yields ``"respawn"``. Parked tasks reset the miss count and are kept;
     terminal tasks are deleted; an unknown status is kept without ever spawning.
+
+    ``entry_age_s`` is the age of the registry entry's ``spawned_at`` (now −
+    spawned_at). When provided AND below ``spawn_grace_s`` (#759), an ACTIVE
+    not-alive entry is treated as "spawn in flight" and KEPT with the miss
+    count RESET to 0 — its recorded id may simply not have propagated into the
+    daemon's ``/list`` reply yet. A missing/zero ``spawned_at`` yields a large
+    (or ``None``) ``entry_age_s`` → no grace → today's behavior exactly: the
+    grace can only ever SHORTEN the respawn latency to zero, never SUPPRESS a
+    genuinely-needed respawn. Mirrors the orphan sweep's grace
+    (``decide_orphan``, :data:`ORPHAN_SPAWN_GRACE_S`).
     """
     if status in TERMINAL:
         return ("delete", 0)
@@ -457,6 +502,12 @@ def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[s
         return ("keep", 0)
     if status in ACTIVE:
         if alive:
+            return ("keep", 0)
+        # Spawn-grace (#759): a just-(re)spawned session whose id has not yet
+        # appeared in the daemon's /list reply is spawn-in-flight, not dead.
+        # Reset the miss count so an accumulated miss from BEFORE the
+        # (re)spawn cannot straddle the grace window into an immediate respawn.
+        if entry_age_s is not None and entry_age_s < spawn_grace_s:
             return ("keep", 0)
         new_missed = missed + 1
         if new_missed >= threshold:
@@ -13015,7 +13066,19 @@ def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int
         return
 
     alive = _session_alive(entry, live_ids)
-    action, new_missed = decide(status, alive, entry.get("missed", 0), threshold)
+    # #759: a registration written within the spawn-grace window is treated as
+    # spawn-in-flight (its id may not yet be in the daemon /list reply). A
+    # missing/zero spawned_at yields a large age → no grace → today's behavior.
+    spawned_at = entry.get("spawned_at", 0)
+    entry_age_s = (time.time() - spawned_at) if spawned_at else None
+    action, new_missed = decide(
+        status,
+        alive,
+        entry.get("missed", 0),
+        threshold,
+        entry_age_s=entry_age_s,
+        spawn_grace_s=_respawn_spawn_grace_s(),
+    )
     print(
         f"  issue #{issue}: status={status} alive={alive} "
         f"missed={entry.get('missed', 0)}->{new_missed} action={action}"

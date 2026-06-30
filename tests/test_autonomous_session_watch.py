@@ -44,6 +44,7 @@ from autonomous_session_watch import (  # noqa: E402
     POD_ACTIVE,
     PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
+    RESPAWN_SPAWN_GRACE_S,
     STALLED_MAX_RESPAWNS,
     STALLED_WINDOW_S,
     TERMINAL,
@@ -130,6 +131,79 @@ def test_unknown_status_is_inert():
     # a human notices rather than silently dropping or double-spawning.
     assert decide("some_new_status", alive=False, missed=4) == ("keep", 4)
     assert decide("some_new_status", alive=True, missed=0) == ("keep", 0)
+
+
+# ─── #759: crash-recovery spawn-grace (bug class a) ──────────────────────────
+# A just-(re)spawned ACTIVE session whose id has not yet propagated into the
+# daemon's /list reply reads `alive=False` for the registration-latency window.
+# Without a grace, the 2-miss respawn fires and spawns a DUPLICATE driver. The
+# grace mirrors the orphan sweep's `ORPHAN_SPAWN_GRACE_S` (decide_orphan).
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_decide_grace_keeps_not_yet_live_entry_inside_window(status):
+    # Criterion 1: inside the grace window, an ACTIVE not-alive entry does NOT
+    # respawn even at the 2nd miss — its id may simply not be in /list yet.
+    # Mirror of test_orphan_fresh_registration_keeps.
+    assert decide(
+        status,
+        alive=False,
+        missed=1,
+        entry_age_s=RESPAWN_SPAWN_GRACE_S - 1,
+    ) == ("keep", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_decide_grace_expired_respawns_as_before(status):
+    # Criterion 2: past the grace window, the existing 2-miss respawn still
+    # fires — no regression of the genuine-death path.
+    assert decide(
+        status,
+        alive=False,
+        missed=1,
+        entry_age_s=RESPAWN_SPAWN_GRACE_S + 1,
+    ) == ("respawn", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_decide_grace_none_age_preserves_today_behavior(status):
+    # Criterion 3: a missing spawned_at (entry_age_s=None) preserves today's
+    # behavior exactly — fail toward respawn, never silently suppress.
+    assert decide(status, alive=False, missed=1, entry_age_s=None) == ("respawn", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_decide_alive_short_circuits_before_grace(status):
+    # Criterion 4: a LIVE session is kept regardless of grace (alive checked
+    # first, so a fresh-and-live entry resets misses without touching grace).
+    assert decide(status, alive=True, missed=3, entry_age_s=1) == ("keep", 0)
+
+
+def test_decide_grace_resets_accumulated_miss():
+    # A miss accumulated BEFORE the (re)spawn must not straddle the grace into
+    # an immediate respawn: inside the window the count resets to 0.
+    assert decide(
+        "running",
+        alive=False,
+        missed=5,
+        entry_age_s=RESPAWN_SPAWN_GRACE_S - 1,
+    ) == ("keep", 0)
+
+
+def test_respawn_spawn_grace_env_override_and_fallback(monkeypatch):
+    # Criterion 10 (a-half): EPM_RESPAWN_SPAWN_GRACE_MIN parses a valid int
+    # (minutes) and falls back to the default on a garbled value. Mirrors the
+    # _orphan_staleness_s env-parse coverage.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_RESPAWN_SPAWN_GRACE_MIN", raising=False)
+    assert asw._respawn_spawn_grace_s() == float(RESPAWN_SPAWN_GRACE_S)
+
+    monkeypatch.setenv("EPM_RESPAWN_SPAWN_GRACE_MIN", "20")
+    assert asw._respawn_spawn_grace_s() == 20 * 60.0
+
+    monkeypatch.setenv("EPM_RESPAWN_SPAWN_GRACE_MIN", "not-a-number")
+    assert asw._respawn_spawn_grace_s() == float(RESPAWN_SPAWN_GRACE_S)
 
 
 def test_status_sets_are_disjoint_and_cover_enum():
@@ -9385,6 +9459,50 @@ def test_process_entry_dry_run_writes_no_breadcrumb(isolated_registry, monkeypat
     asw._process_entry(reg, live_ids={"sid-dr"}, dry_run=True, threshold=2)
     assert reg.exists()
     assert not (isolated_registry / "last-mapped-terminal-sid-dr.json").exists()
+
+
+def test_process_entry_spawn_grace_suppresses_then_respawns(isolated_registry, monkeypatch):
+    # Criterion 5 (#759, bug class a): an ACTIVE entry with a DEAD recorded id.
+    # When spawned_at is INSIDE the grace window, _process_entry must NOT
+    # respawn (the id may not have propagated to /list yet) across 2 ticks;
+    # when spawned_at is well OUTSIDE the window, the existing 2-miss respawn
+    # still fires on the 2nd tick. Mirror of
+    # test_active_dead_needs_two_misses_before_respawn at the I/O layer.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    monkeypatch.setattr(asw.time, "time", lambda: now)
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    respawns: list[int] = []
+    monkeypatch.setattr(asw, "_respawn", lambda entry, dry_run: respawns.append(entry.get("issue")))
+
+    # ── Inside grace: spawned 60s ago, dead id, ACTIVE → no respawn over 2 ticks
+    reg = isolated_registry / "issue-901.json"
+    reg.write_text(
+        json.dumps(
+            {"issue": 901, "happy_session_id": "sid-dead", "spawned_at": now - 60, "missed": 0}
+        )
+    )
+    asw._process_entry(reg, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    asw._process_entry(reg, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    assert respawns == []  # grace held across both ticks
+    # The miss count stays reset (grace returns ("keep", 0)), so no stale miss
+    # can carry past the grace boundary.
+    assert json.loads(reg.read_text()).get("missed", 0) == 0
+
+    # ── Outside grace: spawned 1h ago, dead id, ACTIVE → respawn on 2nd tick
+    reg2 = isolated_registry / "issue-902.json"
+    reg2.write_text(
+        json.dumps(
+            {"issue": 902, "happy_session_id": "sid-dead2", "spawned_at": now - 3600, "missed": 0}
+        )
+    )
+    asw._process_entry(reg2, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    assert respawns == []  # first miss only increments
+    asw._process_entry(reg2, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    assert respawns == [902]  # 2nd miss past grace → respawn
 
 
 def _patch_short_window_guards(monkeypatch, *, running_pods, followup_active):
