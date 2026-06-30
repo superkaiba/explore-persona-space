@@ -486,7 +486,7 @@ def decide(
     yields ``"respawn"``. Parked tasks reset the miss count and are kept;
     terminal tasks are deleted; an unknown status is kept without ever spawning.
 
-    ``entry_age_s`` is the age of the registry entry's ``spawned_at`` (now −
+    ``entry_age_s`` is the age of the registry entry's ``spawned_at`` (now minus
     spawned_at). When provided AND below ``spawn_grace_s`` (#759), an ACTIVE
     not-alive entry is treated as "spawn in flight" and KEPT with the miss
     count RESET to 0 — its recorded id may simply not have propagated into the
