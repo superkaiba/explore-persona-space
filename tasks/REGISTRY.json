@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 758,
+  "highest_id": 759,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4811,6 +4811,13 @@
       "path": "tasks/proposed/758",
       "status": "proposed",
       "title": "daily-fix: codex-critic must source numbers from reviewed plan"
+    },
+    "759": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/759",
+      "status": "proposed",
+      "title": "daily-fix: watcher must not respawn duplicate per-issue sessions"
     },
     "76": {
       "has_clean_result": false,
