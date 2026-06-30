@@ -2375,6 +2375,68 @@ def _imports_orchestrate_env_load_dotenv(tree: ast.AST) -> bool:
     return False
 
 
+def _module_top_huggingface_hub_import_lineno(tree: ast.AST) -> int | None:
+    """Return the lineno of the FIRST MODULE-TOP ``huggingface_hub`` import
+    (any form), else None.
+
+    Only the module-body imports matter for the import-ORDER check: an
+    in-FUNCTION ``import huggingface_hub`` executes at call time — AFTER the
+    module-top ``load_dotenv()`` has already run — so it never freezes the
+    constants before the env is set. (The bare-dotenv arm uses ``ast.walk`` to
+    catch in-function imports too; this order arm deliberately does NOT.)
+    """
+    body = getattr(tree, "body", [])
+    for node in body:
+        if isinstance(node, ast.Import) and any(
+            a.name == "huggingface_hub" or a.name.startswith("huggingface_hub.") for a in node.names
+        ):
+            return node.lineno
+        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
+            return node.lineno
+    return None
+
+
+def _module_top_orchestrate_env_import_lineno(tree: ast.AST) -> int | None:
+    """Return the lineno of the FIRST MODULE-TOP ``load_dotenv`` import from the
+    project wrapper ``...orchestrate.env``, else None. Module-body only — the
+    order check compares against the module-top huggingface_hub import."""
+    body = getattr(tree, "body", [])
+    for node in body:
+        if (
+            isinstance(node, ast.ImportFrom)
+            and (node.module or "").endswith("orchestrate.env")
+            and any(a.name == "load_dotenv" for a in node.names)
+        ):
+            return node.lineno
+    return None
+
+
+def _module_top_load_dotenv_call_lineno(tree: ast.AST) -> int | None:
+    """Return the lineno of the FIRST MODULE-TOP ``load_dotenv(...)`` call
+    (bare ``load_dotenv(...)`` or ``dotenv.load_dotenv(...)``), else None.
+
+    Module-body statements only (an expression statement or an assignment whose
+    value is the call) — a call buried inside a function does not establish the
+    module-top env before a module-top huggingface_hub import freezes the
+    constants. Used by the order arm to find where the env is actually set."""
+    body = getattr(tree, "body", [])
+    for node in body:
+        call = None
+        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)) or (
+            isinstance(node, (ast.Assign, ast.AnnAssign))
+            and isinstance(getattr(node, "value", None), ast.Call)
+        ):
+            call = node.value
+        if call is None:
+            continue
+        func = call.func
+        if isinstance(func, ast.Name) and func.id == "load_dotenv":
+            return node.lineno
+        if isinstance(func, ast.Attribute) and func.attr == "load_dotenv":
+            return node.lineno
+    return None
+
+
 def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[str]:
     """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any script that
     uses the BARE python-dotenv ``load_dotenv`` AND imports ``huggingface_hub``
@@ -2395,7 +2457,12 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
     are the load-bearing fix on the running fleet; this check prevents a NEW
     script from re-introducing the bare-dotenv anti-pattern.
 
-    Detection (per script):
+    Detection (per script) — TWO arms, each independently waivable with
+    ``# DOTENV_LINT_EXEMPT: <reason>`` (reason ≥
+    :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) on the anchor line or the
+    immediately preceding non-blank line:
+
+    ARM 1 — BARE DOTENV (the original #745 check):
 
     * BARE DOTENV — a ``from dotenv import [...] load_dotenv`` or a plain
       ``import dotenv`` (the project wrapper
@@ -2405,10 +2472,24 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
       ``from huggingface_hub[...] import ...`` (top-level OR in-function);
     * AND NOT the project wrapper imported anywhere in the file.
 
-    All three → FAIL, anchored at the bare-dotenv import line, unless waived
-    with ``# DOTENV_LINT_EXEMPT: <reason>`` (reason ≥
-    :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) on that line or the
-    immediately preceding non-blank line.
+    All three → FAIL, anchored at the bare-dotenv import line.
+
+    ARM 2 — IMPORT-ORDER (#745 round 2): even when the wrapper IS imported, a
+    MODULE-TOP ``huggingface_hub`` import that PRECEDES the dotenv/env setup
+    (the earliest of the module-top wrapper import line and a module-top
+    ``load_dotenv()`` call line) → FAIL, anchored at the huggingface_hub import
+    line. Rationale: ``huggingface_hub.constants`` freezes
+    ``HF_HUB_ENABLE_HF_TRANSFER`` at IMPORT time, so an accelerator env set
+    AFTER the import is already too late (the constant is frozen) and the
+    accelerator is inert despite the wrapper being present. Scope: MODULE-TOP
+    huggingface_hub imports only (an in-function import runs at call time, after
+    the module-top ``load_dotenv()``), and only when the file actually sets env
+    at module top (a script relying purely on the shell-level exports and never
+    calling ``load_dotenv`` has no env-setting site to be late relative to, so
+    it is out of scope). Skipped when ARM 1 already flagged the file (one error
+    per file is enough — migrating to the wrapper-above-hf shape fixes both) or
+    when a bare-dotenv ``# DOTENV_LINT_EXEMPT`` waiver already covered the file's
+    #745 dotenv concern.
 
     ``scripts_dir`` is an override hook for unit tests; production callers pass
     None and the function walks the canonical ``<repo_root>/scripts`` tree.
@@ -2429,30 +2510,80 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
             # A scripts/ file that does not parse is its own (separate)
             # problem; this check stays silent on it rather than crashing.
             continue
-        bare_lineno = _bare_dotenv_import_lineno(tree)
-        if bare_lineno is None:
-            continue
-        if not _imports_huggingface_hub(tree):
-            continue
-        if _imports_orchestrate_env_load_dotenv(tree):
-            continue
         lines = text.splitlines()
-        if _dotenv_lint_waiver_present(lines, bare_lineno):
-            continue
-        errors.append(
-            f"{py}:{bare_lineno}: bare `dotenv` load_dotenv + huggingface_hub "
-            f"import without explore_persona_space.orchestrate.env.load_dotenv "
-            f"(#745). The bare dotenv walks cwd (misses the project .env from a "
-            f"worktree/subdir) and sets no env, so the HF Hub upload accelerators "
-            f"(HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) never get "
-            f"their setdefault and large uploads crawl. Import the project wrapper "
-            f"`from explore_persona_space.orchestrate.env import load_dotenv` and "
-            f"call load_dotenv() BEFORE the huggingface_hub import, or — if bare "
-            f"dotenv is genuinely correct here — waive with "
-            f"'# DOTENV_LINT_EXEMPT: <reason>' (reason ≥ "
-            f"{DOTENV_LINT_WAIVER_MIN_REASON_CHARS} chars) on the import line or "
-            f"the previous non-blank line."
+
+        # ARM 1 — BARE-DOTENV: bare python-dotenv + huggingface_hub WITHOUT the
+        # project wrapper imported anywhere. The wrapper-present escape is
+        # intentional here (the author has the sanctioned source available);
+        # the import-ORDER guarantee for the wrapper-present case is ARM 2.
+        arm1_fired = False
+        bare_lineno = _bare_dotenv_import_lineno(tree)
+        # A bare-dotenv waiver expresses an explicit "#745 dotenv concern waived
+        # for this file" — it suppresses BOTH arms (ARM 2 would otherwise
+        # re-flag the same file on ordering, defeating the waiver).
+        bare_dotenv_waived = bare_lineno is not None and _dotenv_lint_waiver_present(
+            lines, bare_lineno
         )
+        if (
+            bare_lineno is not None
+            and _imports_huggingface_hub(tree)
+            and not _imports_orchestrate_env_load_dotenv(tree)
+            and not bare_dotenv_waived
+        ):
+            arm1_fired = True
+            errors.append(
+                f"{py}:{bare_lineno}: bare `dotenv` load_dotenv + huggingface_hub "
+                f"import without explore_persona_space.orchestrate.env.load_dotenv "
+                f"(#745). The bare dotenv walks cwd (misses the project .env from a "
+                f"worktree/subdir) and sets no env, so the HF Hub upload accelerators "
+                f"(HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) never get "
+                f"their setdefault and large uploads crawl. Import the project wrapper "
+                f"`from explore_persona_space.orchestrate.env import load_dotenv` and "
+                f"call load_dotenv() BEFORE the huggingface_hub import, or — if bare "
+                f"dotenv is genuinely correct here — waive with "
+                f"'# DOTENV_LINT_EXEMPT: <reason>' (reason ≥ "
+                f"{DOTENV_LINT_WAIVER_MIN_REASON_CHARS} chars) on the import line or "
+                f"the previous non-blank line."
+            )
+
+        # ARM 2 — IMPORT-ORDER (#745 round 2): even when the wrapper IS imported,
+        # a MODULE-TOP huggingface_hub import that PRECEDES both the wrapper
+        # import AND a module-top load_dotenv() call freezes
+        # HF_HUB_ENABLE_HF_TRANSFER (read in huggingface_hub.constants at IMPORT
+        # time) BEFORE the env is set — so the accelerator is inert despite the
+        # wrapper being present. FAIL when the first module-top huggingface_hub
+        # import precedes the env-setting site. Module-top only (an in-function
+        # hf import runs after the module-top load_dotenv() — see helper docs),
+        # and only when the file actually sets env at module top (a script that
+        # relies purely on shell exports and never calls load_dotenv is out of
+        # scope). Waivable on the hf import line (same token + reason floor).
+        # Skip when ARM 1 already flagged this file (a bare-dotenv offender is
+        # also out-of-order, but one error per file is enough — migrating to
+        # the wrapper-above-hf shape fixes both arms at once) OR when a
+        # bare-dotenv waiver explicitly waived the #745 dotenv concern here.
+        hf_lineno = _module_top_huggingface_hub_import_lineno(tree)
+        if not arm1_fired and not bare_dotenv_waived and hf_lineno is not None:
+            wrapper_lineno = _module_top_orchestrate_env_import_lineno(tree)
+            call_lineno = _module_top_load_dotenv_call_lineno(tree)
+            # The env-setting site is the EARLIEST of the wrapper import (whose
+            # setdefault runs at import) and a module-top load_dotenv() call.
+            env_linenos = [n for n in (wrapper_lineno, call_lineno) if n is not None]
+            if env_linenos:
+                env_lineno = min(env_linenos)
+                if hf_lineno < env_lineno and not _dotenv_lint_waiver_present(lines, hf_lineno):
+                    errors.append(
+                        f"{py}:{hf_lineno}: module-top huggingface_hub import PRECEDES "
+                        f"the dotenv/env setup at line {env_lineno} (#745 import-order). "
+                        f"huggingface_hub.constants freezes HF_HUB_ENABLE_HF_TRANSFER at "
+                        f"IMPORT time, so an accelerator env set AFTER the import is "
+                        f"already too late — the upload accelerator is inert. Move the "
+                        f"`from explore_persona_space.orchestrate.env import load_dotenv` "
+                        f"+ load_dotenv() ABOVE the huggingface_hub import, or — if the "
+                        f"ordering is genuinely correct here — waive with "
+                        f"'# DOTENV_LINT_EXEMPT: <reason>' (reason ≥ "
+                        f"{DOTENV_LINT_WAIVER_MIN_REASON_CHARS} chars) on the "
+                        f"huggingface_hub import line or the previous non-blank line."
+                    )
     return errors
 
 

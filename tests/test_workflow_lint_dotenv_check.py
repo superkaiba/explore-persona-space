@@ -9,7 +9,11 @@ never get their setdefault and large uploads crawl.
 
 Covers: (a) a clean script PASSES; (b) bare-dotenv + huggingface_hub FAILS
 with a helpful message; (c) a properly-wrapped script PASSES; (d) the
-``# DOTENV_LINT_EXEMPT: <reason>`` waiver works.
+``# DOTENV_LINT_EXEMPT: <reason>`` waiver works; (e) the #745-round-2
+IMPORT-ORDER arm — a module-top huggingface_hub import that precedes the
+dotenv/env setup FAILS even with the wrapper present (the constants freeze at
+import time), with the correct order / in-function import / shell-exports-only
+shapes passing and the waiver suppressing.
 """
 
 from __future__ import annotations
@@ -235,3 +239,123 @@ def test_live_scripts_tree_passes() -> None:
     """The real scripts/ tree (including the three migrated #745 scripts) must
     pass the check — this is the no-flags-default-run invariant."""
     assert check_dotenv_before_hf_import() == []
+
+
+# --------------------------------------------------------------------------
+# (e) IMPORT-ORDER arm (#745 round 2): a module-top huggingface_hub import that
+# PRECEDES the dotenv/env setup FAILS even when the project wrapper is used —
+# huggingface_hub.constants freezes HF_HUB_ENABLE_HF_TRANSFER at import time, so
+# an env set AFTER the import is too late and the accelerator is inert.
+# --------------------------------------------------------------------------
+
+
+def test_module_top_hf_before_wrapper_import_fails(tmp_path: Path) -> None:
+    """The round-2 Minor's worked example: huggingface_hub imported at module
+    top BEFORE the project wrapper import + load_dotenv() call. The wrapper is
+    present, so the old ARM-1-only check passed — but the constants froze before
+    the env was set. FAILS, anchored at the huggingface_hub import line."""
+    p = _write(
+        tmp_path,
+        "out_of_order.py",
+        "from huggingface_hub import HfApi\n"
+        "from explore_persona_space.orchestrate.env import load_dotenv\n\n"
+        "load_dotenv()\n"
+        "api = HfApi()\n",
+    )
+    errors = check_dotenv_before_hf_import(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(p) in errors[0]
+    assert ":1:" in errors[0]  # anchored at the huggingface_hub import (line 1)
+    assert "import-order" in errors[0]
+    assert "#745" in errors[0]
+
+
+def test_module_top_hf_before_load_dotenv_call_fails(tmp_path: Path) -> None:
+    """The wrapper need not be the trigger — a module-top huggingface_hub import
+    preceding a module-top load_dotenv() call (wrapper imported but the call is
+    what sets env) is the same freeze-before-set bug."""
+    _write(
+        tmp_path,
+        "hf_then_call.py",
+        "import huggingface_hub\n"
+        "from explore_persona_space.orchestrate.env import load_dotenv\n"
+        "x = 1\n"
+        "load_dotenv()\n",
+    )
+    errors = check_dotenv_before_hf_import(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert "import-order" in errors[0]
+
+
+def test_wrapper_then_hf_module_top_passes(tmp_path: Path) -> None:
+    """The correct order — wrapper import + load_dotenv() ABOVE the
+    huggingface_hub import — PASSES (this is the sanctioned shape; the env is
+    set before the constants freeze)."""
+    _write(
+        tmp_path,
+        "in_order.py",
+        "from explore_persona_space.orchestrate.env import load_dotenv\n\n"
+        "load_dotenv()\n\n"
+        "from huggingface_hub import HfApi\n"
+        "api = HfApi()\n",
+    )
+    assert check_dotenv_before_hf_import(scripts_dir=tmp_path) == []
+
+
+def test_in_function_hf_import_after_module_top_call_passes(tmp_path: Path) -> None:
+    """A DEFERRED in-function huggingface_hub import runs at call time, AFTER
+    the module-top load_dotenv() has set the env — so it is NOT out of order and
+    must not be flagged by the order arm (module-top imports only)."""
+    _write(
+        tmp_path,
+        "lazy_in_order.py",
+        "from explore_persona_space.orchestrate.env import load_dotenv\n\n"
+        "load_dotenv()\n\n"
+        "def upload():\n"
+        "    from huggingface_hub import HfApi\n"
+        "    return HfApi()\n",
+    )
+    assert check_dotenv_before_hf_import(scripts_dir=tmp_path) == []
+
+
+def test_module_top_hf_with_no_env_setup_passes(tmp_path: Path) -> None:
+    """A script that imports huggingface_hub at module top but NEVER sets env
+    (relies purely on shell-level exports — the bootstrap/GCE/SLURM lanes) is
+    OUT OF SCOPE for the order arm: there is no env-setting site to be late
+    relative to."""
+    _write(
+        tmp_path,
+        "shell_exports_only.py",
+        "from huggingface_hub import HfApi\n\napi = HfApi()\nprint(api)\n",
+    )
+    assert check_dotenv_before_hf_import(scripts_dir=tmp_path) == []
+
+
+def test_order_arm_waiver_on_hf_import_line_suppresses(tmp_path: Path) -> None:
+    """The order arm is waivable with # DOTENV_LINT_EXEMPT on the
+    huggingface_hub import line (reason ≥ 10 chars)."""
+    _write(
+        tmp_path,
+        "waived_order.py",
+        "from huggingface_hub import HfApi  # DOTENV_LINT_EXEMPT: order is fine, no upload here\n"
+        "from explore_persona_space.orchestrate.env import load_dotenv\n\n"
+        "load_dotenv()\n"
+        "api = HfApi()\n",
+    )
+    assert check_dotenv_before_hf_import(scripts_dir=tmp_path) == []
+
+
+def test_bare_dotenv_waiver_suppresses_both_arms(tmp_path: Path) -> None:
+    """A single bare-dotenv waiver expresses an explicit "#745 dotenv concern
+    waived for this file" and suppresses BOTH arms — the order arm must not
+    re-flag the same file the bare-dotenv waiver already covered."""
+    _write(
+        tmp_path,
+        "waived_both.py",
+        "from huggingface_hub import HfApi\n"
+        "# DOTENV_LINT_EXEMPT: legacy download-only script, no accelerator needed\n"
+        "from dotenv import load_dotenv\n\n"
+        "load_dotenv()\n"
+        "api = HfApi()\n",
+    )
+    assert check_dotenv_before_hf_import(scripts_dir=tmp_path) == []
