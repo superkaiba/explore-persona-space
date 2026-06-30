@@ -25,17 +25,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
-from dotenv import load_dotenv
-
-from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO
+# The project dotenv wrapper (#745): use orchestrate.env.load_dotenv, NOT bare
+# `from dotenv import load_dotenv`. The wrapper setdefaults the HF Hub upload
+# accelerators (HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) and is
+# called BEFORE the orchestrate.hub import below so the local process picks up
+# the accelerator env before huggingface_hub freezes its import-time constants.
+# (The actual model upload runs over SSH on the pod with its own inline env
+# prefix in upload_model() — this local migration is the lint-sanctioned source
+# so the bare-dotenv waiver can be dropped.)
+from explore_persona_space.orchestrate.env import load_dotenv
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 CONF_PATH = SCRIPT_DIR / "pods.conf"
-
-SSH_KEY = Path.home() / ".ssh" / "id_ed25519"
-DEFAULT_REPO = DEFAULT_MODEL_REPO
 
 # ── Env setup ────────────────────────────────────────────────────────────────
 
@@ -43,6 +45,11 @@ if Path("/workspace").exists():
     os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 
 load_dotenv(str(PROJECT_ROOT / ".env"))
+
+from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO  # noqa: E402
+
+SSH_KEY = Path.home() / ".ssh" / "id_ed25519"
+DEFAULT_REPO = DEFAULT_MODEL_REPO
 
 
 # ── Data types ───────────────────────────────────────────────────────────────
@@ -255,10 +262,20 @@ def upload_model(pod: Pod, model: ModelDir, repo_id: str = DEFAULT_REPO) -> bool
     hub_path = dir_name
 
     print(f"    Uploading {model.path} -> {repo_id}/{hub_path} ...")
+    # Fast HF Hub uploads (#745): this remote upload runs over a NON-login SSH
+    # command, which does NOT source the pod-side rc-files (`/root/.bashrc` /
+    # `/root/.profile`) where bootstrap_pod.sh step 6 exports the accelerators —
+    # so the in-process huggingface_hub import would otherwise freeze
+    # HF_HUB_ENABLE_HF_TRANSFER off (it is read at import time) and run Xet
+    # without HF_XET_HIGH_PERFORMANCE. Set both INLINE on the remote command,
+    # before `uv run python`, so the upload subprocess starts with the
+    # accelerators enabled. HF_XET_HIGH_PERFORMANCE drives the primary (Xet) path
+    # the project repos use; HF_HUB_ENABLE_HF_TRANSFER the orthogonal LFS path.
     _rc, out, err = ssh_run(
         pod,
         f'export PATH="$HOME/.local/bin:$PATH" && '
         f"cd /workspace/explore-persona-space && "
+        f"HF_XET_HIGH_PERFORMANCE=1 HF_HUB_ENABLE_HF_TRANSFER=1 "
         f'uv run python -c "'
         f"from explore_persona_space.orchestrate.hub import upload_model; "
         f"r = upload_model('{model.path}', path_in_repo='{hub_path}'); "
