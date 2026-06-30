@@ -60,6 +60,21 @@ ONE complete table. Every value copied verbatim from ground truth (`scripts/issu
 
 This is the canonical COMPLETE table; the body `## Reproducibility` Parameters table is a SUBSET of it.
 
+**Body Parameters → doc §2 cross-reference table (verifier check 21 alias).** The clean-result body's compact Parameters table bundles several facts per row; the verifier requires every body row key to appear in §2. These alias rows surface the body's keys verbatim:
+
+| Parameter | Value | Source |
+|---|---|---|
+| Read layer (bad-medical / EM / fact) | L8 / L0 (embedding layer) / L2 | #658 locked read-out |
+| EM layer adjudication (L13 co-primary + 28-layer sweep) | not run (only `by_layer["0"]` present); pre-registered in plan §C3 | plan §C3 pre-registration |
+| Context vector c_C recipe | last-input-token | #658 `cc_recipe_lock` |
+| λ default (swept) | 0.01 ({1e-3, 1e-2, 1e-1}) | plan §11 (Σc singular: n=3000 < d=3584) |
+| A3.6c layer sweep / scope | {7, 14, 21} / {last, full} | test-plan §4 (manipulated variable) |
+| A3.6c f_CV definition | mean over (ctx,layer,scope) [p_up − self_c0] = +0.023 | recomputed this round, persisted to `a36c/*.json` |
+| Clustered bootstrap B / FDR | 2000 / Benjamini-Hochberg α = 0.05 | test-plan §1.7 (C3/C4) |
+| LoRA r / α / rsLoRA (fleet) | r=32, α=256 (fact α=64), rsLoRA on | #664 adapter manifest |
+| Judge model / threshold (compact body alias) | claude-sonnet-4-5-20250929 / 50 (via Anthropic Batch API) | config judge_model / judge_threshold; CLAUDE.md judge rule |
+
+
 ---
 
 ## 3. Training data
