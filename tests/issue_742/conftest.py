@@ -72,7 +72,11 @@ EXPECTED_API = {
         "(behavior, genre, ...) -> object exposing BOTH estimator values "
         "(.split_half, .binomial) + a .disagree flag; surfaces both, never averages"
     ),
-    # test 2 — LEACE
+    # test 2 — LEACE + PCA basis
+    "fit_pca_basis": (
+        "(X: np.ndarray[n, d], d_eff: int) -> object with .transform(X)->reduced[n, d_eff]; "
+        "single full-sample PCA basis (Option A); wrapped by the dcor refit hook (MF3)"
+    ),
     "fit_leace": (
         "(v0: np.ndarray[n, d], E0: np.ndarray[n]) -> eraser with "
         ".transform(v0)->residual + .P projection"
@@ -81,8 +85,14 @@ EXPECTED_API = {
     # test 3 — dCor permutation
     "distance_correlation": "(X: np.ndarray[n, d], y: np.ndarray[n]) -> float dCor in [0,1]",
     "dcor_permutation_test": (
-        "(v0, E0, *, d_eff=10, n_perm=1000, rng) -> object with .dcor, .null (array), "
-        ".p_value; REFITS the full PCA->LEACE->dCor pipeline per permutation"
+        "(v0, E0, *, d_eff=10, n_perm=1000, rng, pca_fit_fn=None, leace_fit_fn=None) "
+        "-> object with .dcor, .null (array), .p_value; REFITS the full "
+        "PCA->LEACE->dCor pipeline per permutation. pca_fit_fn / leace_fit_fn are "
+        "test-injection hooks (default to the real fits) wrapping the PCA-basis fit "
+        "and the LEACE-eraser fit; the implementation MUST call EACH exactly "
+        "n_perm + 1 times (once for the observed statistic, once per permutation) "
+        "so a counting stub proves no cross-fitted / cached coordinate frame leaks "
+        "in (plan v7 §13 item 3 + §10 unit test 3, MF3)."
     ),
     "dcor_power_check": (
         "(*, d_eff=10, n=50, n_perm, effect, n_trials, rng) -> float realized power"

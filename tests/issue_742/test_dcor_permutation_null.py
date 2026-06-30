@@ -112,6 +112,62 @@ def test_dcor_power_at_effect_floor_d_eff_10():
 # --------------------------------------------------------------------------- #
 # distance_correlation primitive sanity (deterministic, no impl-state needed)   #
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# Sub-test (d) — MF3: the pipeline is REFIT per permutation (call-count proof)   #
+# --------------------------------------------------------------------------- #
+@pytest.mark.skipif(
+    not impl_has("dcor_permutation_test"),
+    reason="implementation pending round 2 (MF3 refit-per-permutation contract)",
+)
+def test_dcor_permutation_refits_pipeline_per_permutation():
+    # Plan v7 §13 item 3 + §10 unit test 3 (MF3): the permutation null must re-fit
+    # the FULL PCA->LEACE->dCor pipeline on EACH label permutation — the observed
+    # statistic + every null draw are produced by the literally identical
+    # procedure, so no cross-fitted / cached coordinate frame can leak in. Prove it
+    # with counting stubs on the PCA-fit and LEACE-fit hooks: EACH must be called
+    # exactly n_perm + 1 times (once for the observed statistic, once per perm).
+    import explore_persona_space.analysis.issue_742_decoding_ceiling as m
+
+    v0, E0 = make_independent_target(n=50, d=10, seed=7422)
+    rng = np.random.default_rng(7422)
+    n_perm = 25  # small but > 1 — enough to read the count contract cheaply
+
+    pca_calls = {"n": 0}
+    leace_calls = {"n": 0}
+
+    # wrap the REAL fits so the pipeline still runs correctly; only count entries.
+    real_pca_fit = m.fit_pca_basis  # (X, d_eff) -> basis/transform; the real fit
+    real_leace_fit = m.fit_leace  # (X, y) -> eraser; the real fit
+
+    def counting_pca_fit(*args, **kwargs):
+        pca_calls["n"] += 1
+        return real_pca_fit(*args, **kwargs)
+
+    def counting_leace_fit(*args, **kwargs):
+        leace_calls["n"] += 1
+        return real_leace_fit(*args, **kwargs)
+
+    impl.dcor_permutation_test(
+        v0,
+        E0,
+        d_eff=10,
+        n_perm=n_perm,
+        rng=rng,
+        pca_fit_fn=counting_pca_fit,
+        leace_fit_fn=counting_leace_fit,
+    )
+
+    assert pca_calls["n"] == n_perm + 1, (
+        f"PCA basis must be refit per permutation: expected {n_perm + 1} fits "
+        f"(1 observed + {n_perm} perms), got {pca_calls['n']} — a cross-fitted / "
+        "cached PCA frame leaked in (MF3 incommensurable-distance bug)"
+    )
+    assert leace_calls["n"] == n_perm + 1, (
+        f"LEACE eraser must be refit per permutation: expected {n_perm + 1} fits, "
+        f"got {leace_calls['n']} — the eraser was reused across draws (MF3)"
+    )
+
+
 @pytest.mark.skipif(
     not impl_has("distance_correlation"),
     reason="implementation pending round 2",
