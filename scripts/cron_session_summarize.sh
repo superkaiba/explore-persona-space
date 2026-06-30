@@ -35,6 +35,12 @@ mkdir -p "$LOG_DIR"
     # ~/.eps-autonomous/task_progress.json (dashboard + title-suffix reader).
     uv run python scripts/task_progress.py snapshot
     echo "=== $(date -Iseconds) task_progress snapshot exit=$? ==="
+    # Rename each live tmux WINDOW to a short summary of what it is doing, so
+    # `tmux ls` / the switcher are browsable for resume. Reuses the cache
+    # written just above for EPS sessions; Haiku-summarizes the rest (idle-
+    # skipped). Session names are left unchanged. See tmux_window_titles.py.
+    uv run python scripts/tmux_window_titles.py apply
+    echo "=== $(date -Iseconds) tmux_window_titles exit=$? ==="
 } >> "$LOG_FILE" 2>&1
 
 # Exit 0 regardless — the log file is the audit trail; we don't want cron mail
