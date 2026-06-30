@@ -1,6 +1,7 @@
 ---
-title: 'Phase 4 — end-to-end leakage predictor vs cosine + baselines (leakage program
-  #660)'
+title: 'The theory''s full leakage predictor does not beat the install-leak control:
+  a taught-fact''s geometry ρ sits inside the designed-null band, and a plain cosine
+  ties it (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-25T07:26:51Z'
