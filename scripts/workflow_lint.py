@@ -552,31 +552,44 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 #     `ls python_helpers.py | wc -l`) — no `| python -[cm]`;
 #   * informational invocations (`which python`, `apt-get install
 #     python3`) — no pipe consumer;
+#   * `python -compose ...` — `-co` is a different flag prefix, not `-c`
+#     (the boundary `([^A-Za-z0-9_]|$)` / `\b` requires `-c`/`-m` to END
+#     the option);
 #   * bare `python ...` at command START (no pipe) — DELIBERATELY out of
 #     scope (the daily evidence is exclusively the pipe-into-`-c`/`-m`
 #     shape; widening to start-of-command risks false positives without
 #     evidence);
-#   * comment lines and `echo `-prefixed dry-run previews (the common
-#     documentation shapes) — skipped before matching.
+#   * `#`-comment lines — skipped before matching (the only skipped class).
+# Flagged too (#753 round 2 / F1) — `echo ... | python -c` is a REAL
+# producer pipe whose consumer is bare `python` (echo's stdout feeds it),
+# so `echo`-prefixed lines are NOT skipped. The earlier blanket
+# `echo `-skip silently missed exactly the exit-127 producer-pipe shape
+# this check exists to close. Also flagged (#753 round 2 / F3): an
+# ATTACHED-argument form `python -c'code'` / `python -m'mod'` (no space,
+# quote glued to the option) — the boundary accepts a following quote, so
+# both the lint and the hook now block the valid shell shape that would
+# otherwise crash exit 127.
 # Known limitation (recall, deliberately accepted — mirrors
-# `--check-dispatcher-cvd-pin`'s recall sacrifice): a non-comment /
-# non-`echo` line whose QUOTED STRING merely contains the substring
-# `| python -c` (e.g. `MSG="bad: foo | python -c"`) WOULD match the
-# Python `re` lint — the regex is line-local and not quote-aware.
-# Empirically the lint's POSIX-ERE sibling (the hook) and the Python
-# `re` lint DIVERGE on the `echo "| python -c"` edge: Python `re`
-# matches it, POSIX `grep -qE` does NOT (the `\|` anchor + space
-# requirements differ between engines on this edge). But the lint
-# already skips `#`-comment and `echo `-prefixed lines (the common
-# documentation shapes), so the divergence is invisible at the lint
-# surface; and the hook's POSIX engine doesn't match the
-# `echo "| python -c"` string at all, so the runtime block is
-# unaffected. A genuine in-string false positive on a non-comment /
-# non-`echo` line is vanishingly rare in `scripts/*.sh` (zero in the
-# current tree beyond the 2 real offenders). No waiver token in v1
-# (YAGNI — `--check-heredoc-dotenv` ships with no waiver; add one only
-# if a real false positive surfaces). The dual-engine test
-# (test_workflow_lint.py) documents the divergence explicitly.
+# `--check-dispatcher-cvd-pin`'s recall sacrifice): a NON-comment line
+# whose QUOTED STRING merely contains the substring `| python -c`
+# (e.g. `MSG="bad: foo | python -c"`, or a doc `echo "...| python -c..."`)
+# WILL match — the regex is line-local and not quote-aware. This is the
+# accepted cost of closing F1: to DOCUMENT the bad pattern, use a
+# `#`-comment, not an `echo`/quoted string. Such an in-string occurrence
+# is vanishingly rare in `scripts/*.sh` (zero in the current tree beyond
+# the 2 real offenders). No waiver token in v1 (YAGNI —
+# `--check-heredoc-dotenv` ships with no waiver; add one only if a real
+# false positive surfaces).
+#
+# Hook/lint engine equivalence: the lint uses Python `re` (`-[cm]\b`); the
+# `.claude/settings.json` PreToolUse hook uses POSIX ERE
+# (`-[cm]([^A-Za-z0-9_]|$)`, since POSIX ERE has no `\b`). The two
+# boundaries are semantically identical here — `\b` after `c`/`m` matches
+# before a quote / space / EOL, and `[^A-Za-z0-9_]|$` is the explicit
+# POSIX spelling of that. They AGREE across the full match/no-match set
+# AND on the attached-arg (`-c'code'`) and in-string-substring edges; the
+# dual-engine test (test_workflow_lint.py) sources the hook ERE from
+# `.claude/settings.json` and pins the agreement.
 PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
 
 # `--check-agent-model-pins`: every `.claude/agents/*.md` carries a YAML
@@ -1810,8 +1823,12 @@ def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
     fix is always the same: pipe into ``uv run python`` instead. Backslash
     continuations are merged into one logical line (both #753 offenders
     were backslash-continued ``cat ... \\`` newline ``| python3 -c``);
-    comment and ``echo ``-prefixed (dry-run preview) lines are skipped.
-    See the regex block above for the full flagged/not-flagged matrix.
+    only ``#``-comment lines are skipped. ``echo ... | python -c`` is a
+    REAL producer pipe (echo's stdout is consumed by bare ``python``) and
+    IS flagged — the earlier blanket ``echo ``-skip silently missed this
+    must-catch shape (#753 round 2 / F1). To document the bad pattern,
+    put it in a ``#``-comment, not an ``echo`` string. See the regex block
+    above for the full flagged/not-flagged matrix.
 
     ``scripts_dir`` is an override hook for unit tests; production
     callers pass None and the function walks the canonical
@@ -1828,9 +1845,14 @@ def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
         lines = sh.read_text(encoding="utf-8").splitlines()
         for first, _last, logical in _iter_logical_shell_lines(lines):
             stripped = logical.strip()
-            # Comments and dry-run echo previews are documentation, not a
-            # live pipe-into-python.
-            if stripped.startswith("#") or stripped.startswith("echo "):
+            # Only `#`-comment lines are documentation and skipped. `echo `
+            # lines are NOT skipped: `echo '{}' | python -c "..."` is a REAL
+            # producer pipe whose consumer is bare `python` — exactly the
+            # exit-127 class this check exists to close (#753 round 2 / F1).
+            # The earlier blanket `echo `-skip silently missed it. A script
+            # that genuinely needs to DOCUMENT the bad pattern must do so in a
+            # `#`-comment, not an `echo` string.
+            if stripped.startswith("#"):
                 continue
             if not PIPE_PYTHON_RE.search(logical):
                 continue

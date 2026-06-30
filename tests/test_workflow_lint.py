@@ -1558,8 +1558,10 @@ def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
 # 2026-06-29). Each fixture case writes a tiny ``*.sh`` under ``tmp_path``
 # and calls ``check_pipe_python(scripts_dir=tmp_path)``. The dual-engine
 # test additionally asserts the Python ``re`` lint and the POSIX
-# ``grep -qE`` hook agree on the §4 example set (documenting the one
-# ``echo "| python -c"`` edge on which they DIVERGE).
+# ``grep -qE`` hook (SOURCED from ``.claude/settings.json``, not a
+# hard-coded copy — F2) AGREE on the §4 example set, including the F3
+# attached-arg (``python -c'code'``) shapes; the F1 fix flags
+# ``echo ... | python -c`` producer pipes (no longer skipped).
 # ---------------------------------------------------------------------------
 
 # The §4 example sets, shared by the function tests and the dual-engine test.
@@ -1568,11 +1570,14 @@ def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
 _PIPE_PYTHON_MATCHES = [
     'cat x.json | python3 -c "import sys,json; ..."',  # offender #1 shape
     'task.py view 1 --json | python3 -c "import sys,json"',  # offender #2 shape
-    "echo '{}' | python -c \"print(1)\"",
+    "echo '{}' | python -c \"print(1)\"",  # echo producer pipe — F1: a REAL pipe
     'foo | python3.11 -c "x"',
     "foo | python -m json.tool",
     'foo |python -c "x"',  # no space after pipe
     'cat x | python -u -c "x"',  # intervening single-dash flag
+    "cat x | python -c'print(1)'",  # F3: attached arg (quote glued to -c)
+    "foo | python3 -c'x'",  # F3: attached arg on python3
+    "foo | python -m'json.tool'",  # F3: attached arg on -m
 ]
 _PIPE_PYTHON_NOMATCH = [
     'echo "use uv run python instead"',  # literal docs string
@@ -1583,12 +1588,8 @@ _PIPE_PYTHON_NOMATCH = [
     'cat x | uv run python -c "x"',  # CORRECT usage — token after | is `uv`
     "python scripts/foo.py < input",  # start-of-command, no pipe consumer
     "ls python_helpers.py | wc -l",  # filename containing "python"
+    "foo | python -compose x",  # `-co` is a different flag prefix, not `-c`
 ]
-# The one known edge where the two engines DIVERGE: a quoted string that
-# merely CONTAINS the substring `| python -c`. Python `re` matches it;
-# POSIX `grep -qE` does NOT. (At the lint surface this is moot — the line
-# is `echo `-prefixed and skipped before matching.)
-_PIPE_PYTHON_DIVERGE = 'echo "bad: | python -c"'
 
 
 def test_check_pipe_python_fail_simple_pipe(tmp_path):
@@ -1637,29 +1638,46 @@ def test_check_pipe_python_pass_uv_run_python(tmp_path):
     assert errors == [], f"expected PASS (uv run python), got: {errors}"
 
 
-def test_check_pipe_python_pass_skipped_line_classes(tmp_path):
-    """PASS — a `#`-comment line and an `echo `-prefixed dry-run preview
-    line that each carry the bad `| python -c` substring are skipped
-    before matching (the common documentation shapes)."""
+def test_check_pipe_python_pass_comment_line_skipped(tmp_path):
+    """PASS — only `#`-comment lines are skipped: a comment that carries the
+    bad `| python -c` substring is documentation, not a live pipe."""
     (tmp_path / "x.sh").write_text(
         "#!/usr/bin/env bash\n"
         '# bad shape to avoid: cat x | python -c "..."\n'
-        'echo "never do: foo | python3 -c bar"\n'
+        'echo "all good"\n'  # plain echo, no `| python -c` — not flagged
     )
     errors = check_pipe_python(scripts_dir=tmp_path)
-    assert errors == [], f"expected PASS (comment + echo lines skipped), got: {errors}"
+    assert errors == [], f"expected PASS (comment line skipped), got: {errors}"
+
+
+def test_check_pipe_python_fail_echo_producer_pipe(tmp_path):
+    """FAIL (F1, the round-1 merge-blocker) — `echo '{}' | python -c "..."`
+    is a REAL producer pipe: echo's stdout is consumed by bare `python`,
+    which crashes exit 127 on this VM. The earlier blanket `echo `-skip
+    silently missed exactly this must-catch shape. `echo `-prefixed lines
+    are NOT skipped; the check must return exactly one error for this
+    line."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\necho '{}' | python -c \"print(1)\"\n")
+    errors = check_pipe_python(scripts_dir=tmp_path)
+    assert len(errors) == 1, (
+        f"an `echo ... | python -c` producer pipe must be flagged (F1): {errors}"
+    )
+    assert "x.sh:2" in errors[0]
+    assert "uv run python" in errors[0]
 
 
 def test_check_pipe_python_fail_substring_in_nonskipped_quoted_string(tmp_path):
-    """FAIL (the honest 'known limitation') — a NON-comment / NON-`echo`
-    line whose quoted string merely CONTAINS `| python -c` WOULD match
-    the line-local regex. This documents that the lint is not quote-aware
-    and the skip only covers comment / echo lines — keeping the 'known
-    limitation' prose honest rather than silently broader than stated."""
+    """FAIL (the honest 'known limitation') — a NON-comment line whose
+    quoted string merely CONTAINS `| python -c` WOULD match the line-local
+    regex. This documents that the lint is not quote-aware and the ONLY
+    skipped class is `#`-comment lines (post-F1, `echo` lines are no longer
+    special) — keeping the 'known limitation' prose honest rather than
+    silently broader than stated. To document the bad pattern, use a
+    `#`-comment, not a quoted/echo string."""
     (tmp_path / "x.sh").write_text('MSG="bad shape: cat x | python -c foo"\n')
     errors = check_pipe_python(scripts_dir=tmp_path)
     assert len(errors) == 1, (
-        "a non-comment/non-echo line with `| python -c` inside a quoted "
+        "a non-comment line with `| python -c` inside a quoted "
         f"string is expected to match (known recall-vs-precision edge): {errors}"
     )
 
@@ -1704,26 +1722,53 @@ def test_workflow_lint_pipe_python_bundled_in_no_flags():
     )
 
 
+def _load_shipped_pipe_python_hook_ere() -> str:
+    """Extract the pipe-into-python PreToolUse hook's POSIX ERE from the
+    SHIPPED `.claude/settings.json` (F2: source the regex from the live
+    config, never a hard-coded second copy — a hard-coded copy stays green
+    while the production hook drifts, defeating acceptance-criterion-4).
+
+    The pipe-python hook is identified by its unique BLOCKED message marker
+    (`BLOCKED: bare \\`| python -c/-m\\` pipe`), which disambiguates it from
+    the 4 OTHER PreToolUse Bash hooks. Returns the ERE between the hook's
+    `grep -qE '...'` single quotes (un-escaping the JSON `\\\\` → `\\`)."""
+    import json
+    import re
+
+    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
+    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
+        if hook_block.get("matcher") != "Bash":
+            continue
+        for hook in hook_block.get("hooks", []):
+            cmd = hook.get("command", "")
+            if "BLOCKED: bare `| python -c/-m` pipe" not in cmd:
+                continue
+            m = re.search(r"grep -qE '([^']+)'", cmd)
+            assert m, f"pipe-python hook found but no `grep -qE '...'` pattern in: {cmd!r}"
+            # The command is a JSON string; `\\` in the file is a single
+            # backslash in the parsed value — json.loads already un-escaped
+            # it, so `m.group(1)` is the literal ERE the shell `grep` sees.
+            return m.group(1)
+    raise AssertionError("pipe-python PreToolUse Bash hook not found in .claude/settings.json")
+
+
 def test_check_pipe_python_dual_engine_agreement_on_example_set():
     """Implementer-note dual-engine test (acceptance criterion 4): the
     Python `re` lint regex (`PIPE_PYTHON_RE`) and the POSIX-ERE hook regex
     run through a real `grep -qE` subprocess must AGREE on every §4
-    example — match the MATCHES set, reject the NOMATCH set — and the one
-    documented divergence (`echo "| python -c"`: Python `re` matches,
-    POSIX `grep -qE` does not) is asserted explicitly so the divergence is
-    pinned, not eyeballed.
+    example — match the MATCHES set (incl. the F3 attached-arg shapes),
+    reject the NOMATCH set. Post-F3 the two boundaries (`-[cm]\\b` /
+    `-[cm]([^A-Za-z0-9_]|$)`) are semantically identical, so there is no
+    longer a divergence edge — the engines agree everywhere.
 
-    The hook regex is the exact POSIX-ERE string from `.claude/settings.json`
-    PreToolUse[0].hooks[4]; it is kept in sync with `PIPE_PYTHON_RE` (only
-    the engine's character-class syntax differs: `\\s`/`\\d` vs
-    `[[:space:]]`/`[0-9]`)."""
+    The hook regex is SOURCED FROM `.claude/settings.json` (F2): the test
+    parses the shipped `PreToolUse` Bash hook and extracts its
+    `grep -qE '...'` pattern, so the production hook cannot drift without
+    breaking this test (a hard-coded copy would stay green on drift)."""
     from workflow_lint import PIPE_PYTHON_RE  # the Python `re` lint regex
 
-    # The POSIX-ERE hook regex, byte-for-byte as embedded in settings.json.
-    hook_ere = (
-        r"\|[[:space:]]*python3?(\.[0-9]+)?[[:space:]]+"
-        r"(-[^[:space:]]+[[:space:]]+)*-[cm]([[:space:]]|$)"
-    )
+    # F2: the POSIX-ERE hook regex, extracted from the SHIPPED settings.json.
+    hook_ere = _load_shipped_pipe_python_hook_ere()
 
     def grep_matches(s: str) -> bool:
         """Run the hook's POSIX engine exactly as the hook does:
@@ -1736,7 +1781,7 @@ def test_check_pipe_python_dual_engine_agreement_on_example_set():
         )
         return proc.returncode == 0
 
-    # Both engines MATCH every real failure.
+    # Both engines MATCH every real failure (incl. the F3 attached-arg shapes).
     for s in _PIPE_PYTHON_MATCHES:
         lint = bool(PIPE_PYTHON_RE.search(s))
         hook = grep_matches(s)
@@ -1752,14 +1797,43 @@ def test_check_pipe_python_dual_engine_agreement_on_example_set():
         assert not hook, f"hook regex must NOT match clean case: {s!r}"
         assert lint == hook, f"engines diverge on a NOMATCH case (should not): {s!r}"
 
-    # The ONE documented divergence: a quoted string literal containing the
-    # substring `| python -c`. Python `re` matches; POSIX `grep -qE` does not.
-    assert PIPE_PYTHON_RE.search(_PIPE_PYTHON_DIVERGE), (
-        f"Python re is expected to match the divergence edge: {_PIPE_PYTHON_DIVERGE!r}"
-    )
-    assert not grep_matches(_PIPE_PYTHON_DIVERGE), (
-        f"POSIX grep -qE is expected NOT to match the divergence edge: {_PIPE_PYTHON_DIVERGE!r}"
-    )
+    # F3 regression: the in-string substring + attached-arg edges now AGREE
+    # across engines (the old divergence is gone with the aligned boundary).
+    for s in ('MSG="bad: foo | python -c"', "cat x | python -c'print(1)'"):
+        assert bool(PIPE_PYTHON_RE.search(s)) == grep_matches(s), (
+            f"engines must agree on the F3 edge case: {s!r}"
+        )
+
+
+def test_pipe_python_hook_subprocess_blocks_attached_arg():
+    """F3 hook-subprocess test — the SHIPPED PreToolUse hook command, fed
+    the harness JSON-stdin shape, must `exit 2` on the attached-argument
+    form `cat x | python -c'print(1)'` (valid shell that crashes exit 127
+    on this VM) and exit 0 on the correct `| uv run python -c` form. Runs
+    the real hook command string from settings.json end-to-end (not just
+    the extracted regex), so an escaping break in the JSON `command` is
+    caught too."""
+    import json
+
+    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
+    hook_cmd = None
+    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
+        if hook_block.get("matcher") != "Bash":
+            continue
+        for hook in hook_block.get("hooks", []):
+            cmd = hook.get("command", "")
+            if "BLOCKED: bare `| python -c/-m` pipe" in cmd:
+                hook_cmd = cmd
+    assert hook_cmd, "pipe-python PreToolUse Bash hook not found"
+
+    def run_hook(command: str) -> int:
+        stdin = json.dumps({"tool_input": {"command": command}})
+        proc = subprocess.run(["bash", "-c", hook_cmd], input=stdin, text=True, check=False)
+        return proc.returncode
+
+    assert run_hook("cat x | python -c'print(1)'") == 2, "attached-arg form must be blocked (F3)"
+    assert run_hook('cat x.json | python3 -c "import sys"') == 2, "plain pipe must be blocked"
+    assert run_hook('cat x | uv run python -c "x"') == 0, "uv run python must pass"
 
 
 # ---------------------------------------------------------------------------
