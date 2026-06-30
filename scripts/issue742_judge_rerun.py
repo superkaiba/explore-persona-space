@@ -176,6 +176,7 @@ def _judge_reruns_for_cell(
     j_completions: int,
     seed: int,
     judge_fn: Callable[..., dict] | None = None,
+    observed_routes_sink: set[str] | None = None,
 ) -> tuple[list[np.ndarray], np.ndarray, np.ndarray]:
     """Run R PER-BEHAVIOR judge passes over a cell's snapshotted completions.
 
@@ -230,6 +231,13 @@ def _judge_reruns_for_cell(
 
     ctx_ids = sorted(per_context_obj)
 
+    # Observed transport routes across all real dispatches in this cell — the production
+    # path records ``routing_path`` per call (DERIVED from the persisted RoutingDecision
+    # in dc.judge_column_via_batch_judge). build_result reads this to set
+    # ``actual_transport`` from the OBSERVED route, never a hard-coded constant
+    # (BLOCKER judge-rerun-transport-routes-sync-below-threshold).
+    observed_routes: set[str] = observed_routes_sink if observed_routes_sink is not None else set()
+
     def _judge_rate(objs_by_ctx: dict[str, dict]) -> np.ndarray:
         # PER-BEHAVIOR judged rate (NOT the default alignment judge): each context's
         # sampled completions are judged with the behavior's own #658 rubric.
@@ -241,6 +249,9 @@ def _judge_reruns_for_cell(
                 judge_model=JUDGE_MODEL,
                 judge_fn=judge_fn,
             )
+            route = res.get("routing_path")
+            if route is not None:
+                observed_routes.add(route)
             rate = res.get("rate")
             out[i] = float(rate) if rate is not None else np.nan
         return out
@@ -405,6 +416,10 @@ def run(
             }
 
     judge_variance: dict[str, dict] = {}
+    # Routes OBSERVED across every real per-cell dispatch — populated by
+    # _judge_reruns_for_cell from dc.per_behavior_judge_rate's DERIVED routing_path.
+    # actual_transport (below) is set from this OBSERVED set, never a constant.
+    observed_routes: set[str] = set()
     if dry_run:
         note = (
             "dry-run: snapshot + content-identity check only; no judge calls issued. "
@@ -429,6 +444,7 @@ def run(
                     j_completions=j_completions,
                     seed=seed,
                     judge_fn=judge_fn,
+                    observed_routes_sink=observed_routes,
                 )
                 if not rerun_rates:
                     continue
@@ -485,10 +501,43 @@ def run(
     # so the full judged-call count is est_calls + the half-pass set.
     est_gen_half_calls = n_cells * 2 * j_completions
     est_calls_total = est_calls + est_gen_half_calls
+    # actual_transport is DERIVED from the routes OBSERVED in the live dispatches this
+    # run made (dc.per_behavior_judge_rate -> routing_path, asserted == "batch" inside
+    # dc.judge_column_via_batch_judge), NOT a hard-coded constant — closing the
+    # judge-rerun-transport-routes-sync-below-threshold BLOCKER (reconciler r7): a prior
+    # round recorded a constant "batch" string while the router silently routed SYNC
+    # below its default threshold. Empty observed_routes ==> no real Batch dispatch ran
+    # (dry-run: no judge calls; counting-judge smoke: judge_fn stub bypasses the live
+    # dispatcher), so actual_transport is labeled NOT-OBSERVED rather than falsely "batch".
+    registered_transport = "anthropic_batch_api (eval.batch_judge)"
+    if observed_routes == {"batch"}:
+        actual_transport = "anthropic_batch_api (eval.batch_judge; routing.path=batch)"
+        deviation_exists = False
+    elif not observed_routes:
+        actual_transport = (
+            "not observed this run (dry-run or counting-judge smoke; no live Batch dispatch)"
+        )
+        deviation_exists = False  # nothing dispatched => no deviation to flag
+    else:
+        # A REAL dispatch routed somewhere other than (only) batch — the BLOCKER recurrence.
+        actual_transport = (
+            f"DEVIATION: observed routes {sorted(observed_routes)} (expected ['batch'])"
+        )
+        deviation_exists = True
+    # On the production path the registered (Batch API) and actual (observed batch route)
+    # transports must agree; fail LOUD if a real dispatch deviated to sync.
+    if observed_routes and observed_routes != {"batch"}:
+        raise RuntimeError(
+            "judge-rerun transport DEVIATION: registered "
+            f"{registered_transport!r} but observed routes {sorted(observed_routes)} "
+            "(expected the Anthropic Batch route only). The per-context dispatch must force "
+            "threshold_base=0 — plan v9 §4 Stage-0 step 2 + §11 row 8."
+        )
     transport_record = {
-        "registered_transport": "anthropic_batch_api (eval.batch_judge)",
-        "actual_transport": "anthropic_batch_api (eval.batch_judge.judge_completions_batch)",
-        "deviation_exists": False,
+        "registered_transport": registered_transport,
+        "actual_transport": actual_transport,
+        "observed_routes": sorted(observed_routes),
+        "deviation_exists": deviation_exists,
         "n_contexts_by_genre": n_contexts_by_genre,
         "est_judge_calls_rerun_set": int(est_calls),
         "est_judge_calls_generation_halves": int(est_gen_half_calls),

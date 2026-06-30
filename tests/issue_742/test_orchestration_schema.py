@@ -963,12 +963,22 @@ def test_production_judge_rerun_dispatches_via_batch_judge(monkeypatch):
     ``eval.batch_judge.judge_completions_batch`` with the behavior's OWN rubric as the
     user message + the per-completion parsed verdicts reduced through
     ``_verdict_truthy`` — NEVER ``issue658_judge_e0.judge_column`` (the sync transport
-    the reconciler r6 FAILed). Codex's mechanizable check: the production call routes to
-    judge_completions_batch while no sync judge_column dispatch survives.
+    the reconciler r6 FAILed).
+
+    BLOCKER (judge-rerun-transport-routes-sync-below-threshold, reconciler r7): reaching
+    ``judge_completions_batch`` is NECESSARY but NOT SUFFICIENT — its router
+    (``judge_dispatch.decide_route``) routes SYNC when ``n_items < effective_threshold``,
+    and the default ``threshold_base=2_000`` routes every J≈20 per-context call SYNC. So
+    this test patches the layer BELOW ``judge_completions_batch`` —
+    ``judge_dispatch.dispatch_judge_items`` — letting the REAL ``judge_completions_batch``
+    compute + persist the RoutingDecision, and asserts ``RoutingDecision.path == "batch"``
+    (Codex's mechanizable r7 check). The fake dispatcher reproduces the routing call with
+    the SAME ``threshold_base`` the production code passes, so a regression to the default
+    threshold would resolve ``path == "sync"`` and FAIL the assert.
     """
     import importlib
 
-    batch_judge = importlib.import_module("explore_persona_space.eval.batch_judge")
+    judge_dispatch = importlib.import_module("explore_persona_space.eval.judge_dispatch")
     common = importlib.import_module("issue658_common")
 
     # A real #658-shaped cell of 4 completions for broad_em (rubric key "misaligned").
@@ -977,30 +987,35 @@ def test_production_judge_rerun_dispatches_via_batch_judge(monkeypatch):
 
     captured: dict = {}
 
-    def _fake_batch(completions, *, judge_system_prompt, format_user_msg, save_raw, **kw):
+    def _fake_dispatch(items, *, threshold_base, on_decision=None, **kw):
+        # Reproduce the REAL routing decision at the threshold the production code passed
+        # (force_sync=False, no probe) — so the assert below reflects production routing,
+        # not a hard-coded "batch".
+        decision = judge_dispatch.decide_route(
+            len(items),
+            threshold_base=threshold_base,
+            otpm=None,
+            force_sync=kw.get("force_sync", False),
+            otpm_assumed=True,
+        )
+        captured["threshold_base"] = threshold_base
+        captured["route_path"] = decision.path
+        captured["n_items"] = len(items)
         # prove the per-behavior rubric (NOT mean_aligned) flows through the user msg:
-        # the broad_em rubric contains its verdict contract {"misaligned": ...}.
-        probe0 = next(iter(next(iter(completions.values())).keys()))
-        comp0 = next(iter(next(iter(completions.values())).values()))[0]
-        user_msg = format_user_msg(probe0, comp0)
-        captured["rubric_in_user_msg"] = '"misaligned"' in user_msg
+        # JudgeItem is (custom_id, question, completion, user_msg); the broad_em rubric
+        # carries its verdict contract {"misaligned": ...}.
+        captured["rubric_in_user_msg"] = any('"misaligned"' in it[3] for it in items)
         captured["called"] = True
-        # mimic dispatch_judge_items: all_scores keyed by {persona}__{q:05d}__{c:02d}
-        # carrying the RAW per-behavior verdict dict (the parse_judge_json output).
-        all_scores: dict[str, dict] = {}
-        q_idx = 0
-        for _persona, q_completions in completions.items():
-            for _question, comps in q_completions.items():
-                for c_idx in range(len(comps)):
-                    # alternate true/false -> a non-degenerate judged-positive rate.
-                    all_scores[f"cell__{q_idx:05d}__{c_idx:02d}"] = {"misaligned": (c_idx % 2 == 0)}
-                q_idx += 1
-        save_raw = __import__("pathlib").Path(save_raw)
-        save_raw.parent.mkdir(parents=True, exist_ok=True)
-        save_raw.write_text(__import__("json").dumps({"all_scores": all_scores}))
-        return {}
+        if on_decision is not None:
+            on_decision(decision)
+        # mimic the real dispatcher's return: {custom_id: raw verdict dict}, custom_ids in
+        # judge_completions_batch's {persona}__{q:05d}__{c:02d} form.
+        scores: dict[str, dict] = {}
+        for c_idx, (custom_id, _q, _comp, _um) in enumerate(items):
+            scores[custom_id] = {"misaligned": (c_idx % 2 == 0)}
+        return scores
 
-    monkeypatch.setattr(batch_judge, "judge_completions_batch", _fake_batch)
+    monkeypatch.setattr(judge_dispatch, "dispatch_judge_items", _fake_dispatch)
 
     # if the sync judge_column were (wrongly) still the default, it would try a live
     # Anthropic call; make it raise so any sync path is caught loudly rather than
@@ -1016,7 +1031,19 @@ def test_production_judge_rerun_dispatches_via_batch_judge(monkeypatch):
 
     assert captured.get("called"), "production dispatch must call eval.batch_judge"
     assert captured.get("rubric_in_user_msg"), "the per-behavior rubric must flow as the user msg"
+    # THE r7 BLOCKER ASSERT: the production threshold must force the Batch route at J<<2000.
+    assert captured.get("route_path") == "batch", (
+        f"judge rerun routed {captured.get('route_path')!r} at n_items="
+        f"{captured.get('n_items')} / threshold_base={captured.get('threshold_base')}; the "
+        "production dispatch must force the Anthropic Batch route (threshold_base=0)"
+    )
+    assert captured.get("threshold_base") == 0, (
+        "production must pass threshold_base=0 to force batch, got "
+        f"{captured.get('threshold_base')!r}"
+    )
+    # the DERIVED transport reflects the actual route (not a hard-coded constant).
     assert res["transport"].startswith("anthropic_batch_api"), res.get("transport")
+    assert res["routing_path"] == "batch", res
     # 4 completions, half "misaligned"=True -> rate 0.5 via _verdict_truthy on the key.
     assert res["n_judged"] == 4 and res["n_positive"] == 2, res
     assert res["rate"] == 0.5, res

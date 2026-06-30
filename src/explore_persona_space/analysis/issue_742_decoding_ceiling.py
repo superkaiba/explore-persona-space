@@ -1221,6 +1221,19 @@ def judge_column_via_batch_judge(col_id: str, gen: dict, model: str) -> dict:
         # the user message (same as #658's sole-user-message judge_column). cache_dir
         # off (the rerun MEASURES judge re-labeling variance — caching would collapse
         # Var_judge to 0 by returning the first verdict on every rerun).
+        #
+        # BLOCKER-FIX (judge-rerun-transport-routes-sync-below-threshold, reconciler r7):
+        # ``judge_completions_batch`` defaults ``threshold_base=2_000``, and
+        # ``judge_dispatch.decide_route`` routes SYNC when ``n_items < effective_threshold``.
+        # The per-context dispatch submits only J≈20 items, so the DEFAULT threshold routes
+        # every production call SYNC — the API surface reached eval.batch_judge but the
+        # transport stayed threaded-sync (the reconciler r7 FAIL). ``threshold_base=0`` forces
+        # ``effective_threshold = max(1, 0) = 1`` (decide_route), so n_items>=1 always routes
+        # the Anthropic Message Batches path regardless of per-call J — the plan v9 §4 Stage-0
+        # step 2 + §11 row 8 transport. ``save_raw`` persists the RoutingDecision under
+        # ``raw["routing"]`` (judge_completions_batch dumps ``_asdict(decisions[0])``); we
+        # ASSERT ``routing.path == "batch"`` below so a future threshold-default regression
+        # fails LOUD at runtime instead of silently reverting to sync.
         batch_judge.judge_completions_batch(
             completions,
             judge_system_prompt="",
@@ -1229,9 +1242,29 @@ def judge_column_via_batch_judge(col_id: str, gen: dict, model: str) -> dict:
             cache_dir=None,
             save_raw=save_raw,
             checkpoint_dir=_Path(td) / "dispatch",
+            threshold_base=0,
         )
         raw = json.loads(save_raw.read_text())
     all_scores: dict[str, dict] = raw.get("all_scores", {})
+
+    # Runtime transport assert: the persisted RoutingDecision must be the Batch path.
+    # ``routing`` is None only when there were zero uncached items to dispatch (an empty
+    # cell — nothing was judged, so the transport is moot); on any real dispatch it carries
+    # the decision dict. We read it and require ``path == "batch"`` so a threshold-default
+    # regression (or a stray force_sync) is caught at the call that produces the number, not
+    # one analysis layer downstream.
+    routing = raw.get("routing")
+    if flat:  # any completion to judge => a real dispatch must have happened
+        assert isinstance(routing, dict), (
+            "judge_completions_batch persisted no routing decision despite "
+            f"{len(flat)} completions to judge; cannot confirm the Batch transport"
+        )
+        actual_path = routing.get("path")
+        assert actual_path == "batch", (
+            "judge-rerun transport routed SYNC, not the Anthropic Batch API: "
+            f"routing.path={actual_path!r} (threshold_base must force the batch route — "
+            "plan v9 §4 Stage-0 step 2 + §11 row 8)"
+        )
 
     # Re-enumerate in batch_judge's custom_id order to recover the per-completion
     # verdict, KEEPING the probe grouping (per_probe[probe] = list of positive bools).
@@ -1274,6 +1307,17 @@ def judge_column_via_batch_judge(col_id: str, gen: dict, model: str) -> dict:
         for p, rows in per_probe_acc.items()
     ]
     low_dyn = (not pos_logps) or (rate in (0.0, 1.0))
+    # ``transport`` is DERIVED from the persisted RoutingDecision path (asserted == "batch"
+    # above for any non-empty dispatch), NOT a hard-coded constant — so a regression that
+    # silently re-routed sync would surface in the recorded transport, not just be papered
+    # over. An empty cell (no completions) has routing None; label it accordingly.
+    actual_route = (raw.get("routing") or {}).get("path") if flat else None
+    if actual_route == "batch":
+        transport = f"anthropic_batch_api (eval.batch_judge; routing.path={actual_route})"
+    elif not flat:
+        transport = "no dispatch (empty cell — nothing judged)"
+    else:
+        transport = f"UNEXPECTED routing.path={actual_route!r}"
     return {
         "column_id": col_id,
         "dv": "judged_rate",
@@ -1284,7 +1328,8 @@ def judge_column_via_batch_judge(col_id: str, gen: dict, model: str) -> dict:
         "logp_pos_mean": (sum(pos_logps) / len(pos_logps)) if pos_logps else None,  # SECONDARY
         "low_dynamic_range": low_dyn,
         "per_probe": per_probe,
-        "transport": "anthropic_batch_api (eval.batch_judge.judge_completions_batch)",
+        "transport": transport,
+        "routing_path": actual_route,
     }
 
 
