@@ -1,0 +1,496 @@
+{
+  "analysis": "late_layer_nonlinearity",
+  "late_layers": [
+    24,
+    25,
+    26,
+    27
+  ],
+  "k_pca_target": 48,
+  "krr_source": "reused canonical krr_vs_linear.json (all 28 layers)",
+  "per_layer": [
+    {
+      "layer": 0,
+      "skill_ridge_lin": -0.09047709410479121,
+      "skill_krr_rbf": 0.31308282531570664,
+      "nonlinear_gap": 0.40355991942049785,
+      "gap_ci95": [
+        0.20777763171007,
+        0.7390039997781644
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 1,
+      "skill_ridge_lin": 0.1733710947652949,
+      "skill_krr_rbf": 0.4353430593244779,
+      "nonlinear_gap": 0.26197196455918303,
+      "gap_ci95": [
+        0.1297292187943884,
+        0.4882522470304002
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 2,
+      "skill_ridge_lin": 0.34789889542766983,
+      "skill_krr_rbf": 0.4818714295407355,
+      "nonlinear_gap": 0.13397253411306564,
+      "gap_ci95": [
+        0.07757331785308164,
+        0.21606392490396392
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 3,
+      "skill_ridge_lin": 0.42569711572913704,
+      "skill_krr_rbf": 0.5384304528336175,
+      "nonlinear_gap": 0.11273333710448041,
+      "gap_ci95": [
+        0.0724432897015025,
+        0.16783722721633307
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 4,
+      "skill_ridge_lin": 0.48861634159427303,
+      "skill_krr_rbf": 0.5322541488923276,
+      "nonlinear_gap": 0.043637807298054554,
+      "gap_ci95": [
+        0.023131932142503163,
+        0.0717605928016941
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 5,
+      "skill_ridge_lin": 0.4748050353460679,
+      "skill_krr_rbf": 0.5331594316075867,
+      "nonlinear_gap": 0.05835439626151884,
+      "gap_ci95": [
+        0.026462023040550595,
+        0.10517543581335788
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 6,
+      "skill_ridge_lin": 0.5894328981800869,
+      "skill_krr_rbf": 0.6112298847583453,
+      "nonlinear_gap": 0.02179698657825835,
+      "gap_ci95": [
+        0.0018138729712956993,
+        0.04497417121045193
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 7,
+      "skill_ridge_lin": 0.605000728096016,
+      "skill_krr_rbf": 0.6272135656074092,
+      "nonlinear_gap": 0.022212837511393135,
+      "gap_ci95": [
+        0.008930901163374153,
+        0.0365403663563758
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 8,
+      "skill_ridge_lin": 0.6655902816213413,
+      "skill_krr_rbf": 0.6775592220320878,
+      "nonlinear_gap": 0.011968940410746587,
+      "gap_ci95": [
+        0.0046080744021789275,
+        0.02177033855464842
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 9,
+      "skill_ridge_lin": 0.6403514943650577,
+      "skill_krr_rbf": 0.6550776156490545,
+      "nonlinear_gap": 0.014726121283996862,
+      "gap_ci95": [
+        0.007550035167357324,
+        0.023240322537446113
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 10,
+      "skill_ridge_lin": 0.6598108027554821,
+      "skill_krr_rbf": 0.6720820461400526,
+      "nonlinear_gap": 0.01227124338457053,
+      "gap_ci95": [
+        0.004381394634117261,
+        0.02175718166355588
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 11,
+      "skill_ridge_lin": 0.6888475760401491,
+      "skill_krr_rbf": 0.6993642185525745,
+      "nonlinear_gap": 0.010516642512425345,
+      "gap_ci95": [
+        0.0029485237196003183,
+        0.019988252364140438
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 12,
+      "skill_ridge_lin": 0.7109649833062535,
+      "skill_krr_rbf": 0.7162171709682799,
+      "nonlinear_gap": 0.005252187662026397,
+      "gap_ci95": [
+        -0.0004777524011478239,
+        0.011924634431678464
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 13,
+      "skill_ridge_lin": 0.7245434043157954,
+      "skill_krr_rbf": 0.7314134838358406,
+      "nonlinear_gap": 0.006870079520045147,
+      "gap_ci95": [
+        0.0006265491959709158,
+        0.013430244803635718
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 14,
+      "skill_ridge_lin": 0.7471152236700476,
+      "skill_krr_rbf": 0.751281167421776,
+      "nonlinear_gap": 0.004165943751728407,
+      "gap_ci95": [
+        -0.0015368448859979095,
+        0.01045619663745424
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 15,
+      "skill_ridge_lin": 0.7877708520481715,
+      "skill_krr_rbf": 0.7885616510141948,
+      "nonlinear_gap": 0.0007907989660232984,
+      "gap_ci95": [
+        -0.004885098283667027,
+        0.007722885724569869
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 16,
+      "skill_ridge_lin": 0.7869857330373501,
+      "skill_krr_rbf": 0.7894880042043759,
+      "nonlinear_gap": 0.002502271167025838,
+      "gap_ci95": [
+        -0.003332827321517595,
+        0.009718950074320644
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 17,
+      "skill_ridge_lin": 0.782597912593503,
+      "skill_krr_rbf": 0.7856740248699206,
+      "nonlinear_gap": 0.0030761122764175752,
+      "gap_ci95": [
+        -0.003288428353156042,
+        0.010236496105790534
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 18,
+      "skill_ridge_lin": 0.7997271595598394,
+      "skill_krr_rbf": 0.8006906713240496,
+      "nonlinear_gap": 0.0009635117642101676,
+      "gap_ci95": [
+        -0.005875634316523501,
+        0.008854141303920164
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 19,
+      "skill_ridge_lin": 0.77995656369622,
+      "skill_krr_rbf": 0.7796964517540091,
+      "nonlinear_gap": -0.0002601119422108722,
+      "gap_ci95": [
+        -0.007842025695280969,
+        0.008765003512438266
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 20,
+      "skill_ridge_lin": 0.7746674306853457,
+      "skill_krr_rbf": 0.7799841313921008,
+      "nonlinear_gap": 0.005316700706755051,
+      "gap_ci95": [
+        -0.002235024780041478,
+        0.013940739693224605
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 21,
+      "skill_ridge_lin": 0.7427925135532141,
+      "skill_krr_rbf": 0.7401639615573896,
+      "nonlinear_gap": -0.0026285519958244574,
+      "gap_ci95": [
+        -0.032750832380002246,
+        0.023461656772559798
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 22,
+      "skill_ridge_lin": 0.7000678053951557,
+      "skill_krr_rbf": 0.7146744306667749,
+      "nonlinear_gap": 0.014606625271619267,
+      "gap_ci95": [
+        -0.007314346032564509,
+        0.03919483242503355
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 23,
+      "skill_ridge_lin": 0.657010871318369,
+      "skill_krr_rbf": 0.6815725995873951,
+      "nonlinear_gap": 0.02456172826902614,
+      "gap_ci95": [
+        -0.0014873911242711281,
+        0.05270848303764378
+      ],
+      "gap_excludes_zero": false
+    },
+    {
+      "layer": 24,
+      "skill_ridge_lin": 0.6185325365739207,
+      "skill_krr_rbf": 0.6540082894953463,
+      "nonlinear_gap": 0.035475752921425574,
+      "gap_ci95": [
+        0.002672569688577942,
+        0.07026060499321185
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 25,
+      "skill_ridge_lin": 0.5668701102620288,
+      "skill_krr_rbf": 0.6166907989954302,
+      "nonlinear_gap": 0.0498206887334014,
+      "gap_ci95": [
+        0.013624894140362364,
+        0.08695653514175034
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 26,
+      "skill_ridge_lin": 0.5444950755523053,
+      "skill_krr_rbf": 0.6042844221668412,
+      "nonlinear_gap": 0.05978934661453594,
+      "gap_ci95": [
+        0.019976080483709305,
+        0.09924618623677484
+      ],
+      "gap_excludes_zero": true
+    },
+    {
+      "layer": 27,
+      "skill_ridge_lin": 0.5135481099074344,
+      "skill_krr_rbf": 0.589504677066619,
+      "nonlinear_gap": 0.07595656715918464,
+      "gap_ci95": [
+        0.024292583476072112,
+        0.13053256726896603
+      ],
+      "gap_excludes_zero": true
+    }
+  ],
+  "output_proximity": [
+    {
+      "layer": 0,
+      "cos_meanv0_to_final_layer": 0.11407477435971382,
+      "v0_participation_ratio": 9.378940846508492
+    },
+    {
+      "layer": 1,
+      "cos_meanv0_to_final_layer": 0.11475678334657922,
+      "v0_participation_ratio": 6.485990552990975
+    },
+    {
+      "layer": 2,
+      "cos_meanv0_to_final_layer": 0.1516118971960791,
+      "v0_participation_ratio": 6.267683063314528
+    },
+    {
+      "layer": 3,
+      "cos_meanv0_to_final_layer": 0.14862915823487508,
+      "v0_participation_ratio": 4.8243380414567
+    },
+    {
+      "layer": 4,
+      "cos_meanv0_to_final_layer": 0.1808624154938555,
+      "v0_participation_ratio": 5.075384521556796
+    },
+    {
+      "layer": 5,
+      "cos_meanv0_to_final_layer": 0.20600364979408053,
+      "v0_participation_ratio": 4.417826242279176
+    },
+    {
+      "layer": 6,
+      "cos_meanv0_to_final_layer": 0.23363048532338285,
+      "v0_participation_ratio": 3.9169160586178062
+    },
+    {
+      "layer": 7,
+      "cos_meanv0_to_final_layer": 0.24033220325610166,
+      "v0_participation_ratio": 3.797889814913291
+    },
+    {
+      "layer": 8,
+      "cos_meanv0_to_final_layer": 0.24684876455902163,
+      "v0_participation_ratio": 3.480346865107303
+    },
+    {
+      "layer": 9,
+      "cos_meanv0_to_final_layer": 0.25975032867409,
+      "v0_participation_ratio": 3.720736838212151
+    },
+    {
+      "layer": 10,
+      "cos_meanv0_to_final_layer": 0.2767516125336055,
+      "v0_participation_ratio": 3.707777827937554
+    },
+    {
+      "layer": 11,
+      "cos_meanv0_to_final_layer": 0.2808431885280297,
+      "v0_participation_ratio": 3.3642792442698535
+    },
+    {
+      "layer": 12,
+      "cos_meanv0_to_final_layer": 0.2846586530329551,
+      "v0_participation_ratio": 3.215052534221745
+    },
+    {
+      "layer": 13,
+      "cos_meanv0_to_final_layer": 0.2897269797111489,
+      "v0_participation_ratio": 3.0206334498042144
+    },
+    {
+      "layer": 14,
+      "cos_meanv0_to_final_layer": 0.29762209040572607,
+      "v0_participation_ratio": 2.9602909968869957
+    },
+    {
+      "layer": 15,
+      "cos_meanv0_to_final_layer": 0.3028592896190248,
+      "v0_participation_ratio": 2.6712534655378004
+    },
+    {
+      "layer": 16,
+      "cos_meanv0_to_final_layer": 0.3031752821112325,
+      "v0_participation_ratio": 2.711810725804882
+    },
+    {
+      "layer": 17,
+      "cos_meanv0_to_final_layer": 0.3024470454063077,
+      "v0_participation_ratio": 2.7477797613606394
+    },
+    {
+      "layer": 18,
+      "cos_meanv0_to_final_layer": 0.3085898099212872,
+      "v0_participation_ratio": 2.7504540086066998
+    },
+    {
+      "layer": 19,
+      "cos_meanv0_to_final_layer": 0.33814235348542654,
+      "v0_participation_ratio": 3.427984994649714
+    },
+    {
+      "layer": 20,
+      "cos_meanv0_to_final_layer": 0.3400934190278772,
+      "v0_participation_ratio": 3.44066498408321
+    },
+    {
+      "layer": 21,
+      "cos_meanv0_to_final_layer": 0.3508946274642405,
+      "v0_participation_ratio": 3.768324904217063
+    },
+    {
+      "layer": 22,
+      "cos_meanv0_to_final_layer": 0.35501444759478284,
+      "v0_participation_ratio": 4.082622374574187
+    },
+    {
+      "layer": 23,
+      "cos_meanv0_to_final_layer": 0.3591113525344945,
+      "v0_participation_ratio": 4.531184675733211
+    },
+    {
+      "layer": 24,
+      "cos_meanv0_to_final_layer": 0.35512937377992077,
+      "v0_participation_ratio": 4.8108670837623455
+    },
+    {
+      "layer": 25,
+      "cos_meanv0_to_final_layer": 0.3595081744655988,
+      "v0_participation_ratio": 5.427316312632355
+    },
+    {
+      "layer": 26,
+      "cos_meanv0_to_final_layer": 0.39664835880113913,
+      "v0_participation_ratio": 5.573613242593928
+    },
+    {
+      "layer": 27,
+      "cos_meanv0_to_final_layer": 0.9999999999999805,
+      "v0_participation_ratio": 4.247955215011925
+    }
+  ],
+  "late_block_gap_monotonic_increasing_L22toL27": true,
+  "late_block_gaps": {
+    "22": 0.014606625271619267,
+    "23": 0.02456172826902614,
+    "24": 0.035475752921425574,
+    "25": 0.0498206887334014,
+    "26": 0.05978934661453594,
+    "27": 0.07595656715918464
+  },
+  "caveat_output_proximity": "Output-proximity uses a model-internal proxy (cosine of per-layer mean-v0 to the final-layer mean-v0 + per-layer v0 intrinsic dim) because the lm_head unembedding read needs a GPU model load (deferred). The rising nonlinear gap toward the output (L24-27) co-occurring with rising final-layer alignment is the available evidence for output-proximity-driven nonlinearity.",
+  "store_provenance": {
+    "v0_file": "superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/v0_summaries.pt",
+    "cc_last_file": "superkaiba1/explore-persona-space-data:issue594_context_geometry/analysis_tensors/context_vectors_mean.pt",
+    "rb_file": "superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/r_b.pt",
+    "e0_file": "superkaiba1/explore-persona-space-data:issue658_partial/att-20260624-130414/eval_results_issue_658/E0_expression.json",
+    "n_contexts": 50,
+    "hidden_dim": 3584,
+    "probe_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+  },
+  "metadata": {
+    "git_commit": "64e02af71d",
+    "timestamp_utc": "2026-06-30T01:46:56Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "bootstrap_seed": 42,
+    "bootstrap_B": 10000,
+    "logit_eps": 0.005,
+    "spline_knots": 4,
+    "convex_delta_aic": 2.0,
+    "script": "issue722_structural_battery"
+  }
+}

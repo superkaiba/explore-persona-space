@@ -1,0 +1,322 @@
+{
+  "commit": "64e02af71d",
+  "created": "2026-06-30T01:46:55Z",
+  "figsize": [
+    15.0,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "c_C=last",
+      "mean plateau ridge skill": 0.7637121776465741,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "c_C=meanprompt",
+      "mean plateau ridge skill": 0.7194922736265206,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "v0=mean",
+      "mean plateau ridge skill": 0.7637121776465741,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "v0=last",
+      "mean plateau ridge skill": 0.3877334603699176,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "v0=maxp",
+      "mean plateau ridge skill": 0.7724188721467955,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "ridge / transfer skill": 0.7109649833062537,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "ridge / transfer skill": 0.7245434043157954,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "ridge / transfer skill": 0.7471152236700476,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "ridge / transfer skill": 0.7877708520481717,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "ridge / transfer skill": 0.7869857330373501,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "ridge / transfer skill": 0.782597912593503,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "ridge / transfer skill": 0.7997271595598394,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "ridge / transfer skill": 0.77995656369622,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "ridge / transfer skill": 0.7746674306853458,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "ridge / transfer skill": 0.7427925135532144,
+      "series": "within betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "ridge / transfer skill": 0.7118659701154033,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "ridge / transfer skill": 0.730059271050236,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "ridge / transfer skill": 0.757188613206621,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "ridge / transfer skill": 0.7932718447987775,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "ridge / transfer skill": 0.7875717120633012,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "ridge / transfer skill": 0.7809571022990022,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "ridge / transfer skill": 0.7955809929027009,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "ridge / transfer skill": 0.7771402902673483,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "ridge / transfer skill": 0.7764290308767684,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "ridge / transfer skill": 0.7386503231898216,
+      "series": "within ultrachat",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "ridge / transfer skill": -3.784618366106222,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "ridge / transfer skill": -3.543515453186523,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "ridge / transfer skill": -3.6118127777496163,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "ridge / transfer skill": -2.641737737017801,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "ridge / transfer skill": -2.6112020554643514,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "ridge / transfer skill": -2.708871604809066,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "ridge / transfer skill": -2.7289312205692973,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "ridge / transfer skill": -2.7661274383411043,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "ridge / transfer skill": -3.2886946533828665,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "ridge / transfer skill": -4.205784679296805,
+      "series": "fit betley\u2192score uc",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "ridge / transfer skill": -2.6558506361169383,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "ridge / transfer skill": -2.679511843251836,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "ridge / transfer skill": -2.776194063162146,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "ridge / transfer skill": -2.1253799034382657,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "ridge / transfer skill": -2.1528858470254093,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "ridge / transfer skill": -2.151629485329825,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "ridge / transfer skill": -1.8039902524618836,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "ridge / transfer skill": -1.8887411994392647,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "ridge / transfer skill": -1.9999540554322621,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "ridge / transfer skill": -2.283621606983532,
+      "series": "fit uc\u2192score betley",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 45
+}
