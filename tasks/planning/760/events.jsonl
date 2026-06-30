@@ -11,3 +11,4 @@
 {"ts": "2026-06-30T08:24:13Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0dpk4k-lvzoep phase=done after 90s."}
 {"ts": "2026-06-30T08:24:54Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0dr2ou-jpztdw phase=done after 61s."}
 {"ts": "2026-06-30T08:26:59Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0dr5vl-guvx0g phase=done after 181s."}
+{"ts": "2026-06-30T08:32:10Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "v2 verdict: PASS (n_fail=0, n_warn=2). WARNs: c8_success_kill_criteria (explicit kill-criteria prose), c11_dryrun_test_coverage (dry_run=True unit test). Both cosmetic; not bouncing — the substantive Must-Fix items from round 1 (WAL busy-row handling, ps failure signaling, kill-guard test) are addressed in v2 §3a + §3c (tests g/h/i). Plan v2 ready."}
