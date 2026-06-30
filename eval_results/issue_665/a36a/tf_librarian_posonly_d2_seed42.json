@@ -1,0 +1,25 @@
+{
+ "cell": "tf_librarian_posonly_d2_seed42",
+ "behavior": "fact",
+ "column": "fact_expression",
+ "role_class": "content",
+ "read_layer": 2,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:19:19.145468+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "posonly",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "2": {
+   "median_cos_c0_cp": 0.7777391284030546,
+   "median_relnorm": 1.4681270476663535,
+   "median_displacement_W_I": 283.66259517278144,
+   "median_within_spread": 5.690424026704335,
+   "frac_displacement_below_spread": 0.0
+  }
+ }
+}

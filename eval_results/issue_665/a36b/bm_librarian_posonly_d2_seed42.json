@@ -1,0 +1,23 @@
+{
+ "cell": "bm_librarian_posonly_d2_seed42",
+ "behavior": "bad_medical",
+ "column": "harmful_compliance",
+ "role_class": "content",
+ "read_layer": 8,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T00:56:24.529272+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "posonly",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "8": {
+   "spearman_predicted_vs_actual_change": 0.33330132052821126,
+   "operator_rel_diff_Mp_M0": 1.3061021232237289,
+   "note": "ridge lambda=0.01 (default; #658 A3.5 lambda not recoverable, plan \u00a712 item 15)"
+  }
+ }
+}

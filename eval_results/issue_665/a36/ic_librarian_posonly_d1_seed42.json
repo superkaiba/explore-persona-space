@@ -1,0 +1,24 @@
+{
+ "cell": "ic_librarian_posonly_d1_seed42",
+ "behavior": "em",
+ "column": "broad_em",
+ "role_class": "content",
+ "read_layer": 0,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:06:24.473597+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "posonly",
+ "dose": "d1",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "0": {
+   "partial_spearman_change_vs_gate_ctrl_prior": 1.0000000000000002,
+   "spearman_change_vs_gate": 1.0,
+   "spearman_baseprior_vs_gate": -0.5189435774309724,
+   "note": "behavioral E partial folded in by issue665_aggregate (judged_E join)"
+  }
+ }
+}

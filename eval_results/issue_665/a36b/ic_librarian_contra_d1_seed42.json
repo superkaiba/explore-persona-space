@@ -1,0 +1,23 @@
+{
+ "cell": "ic_librarian_contra_d1_seed42",
+ "behavior": "em",
+ "column": "broad_em",
+ "role_class": "content",
+ "read_layer": 0,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:04:39.239275+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "contra",
+ "dose": "d1",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "0": {
+   "spearman_predicted_vs_actual_change": -0.1660984393757503,
+   "operator_rel_diff_Mp_M0": 1.1078069387127054,
+   "note": "ridge lambda=0.01 (default; #658 A3.5 lambda not recoverable, plan \u00a712 item 15)"
+  }
+ }
+}

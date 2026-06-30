@@ -1,0 +1,12 @@
+{
+ "test": "tests/test_whitened_gate.py",
+ "passed": true,
+ "returncode": 0,
+ "stdout_tail": [
+  ".....                                                                    [100%]",
+  "5 passed in 0.52s"
+ ],
+ "git_commit": "e9577604921261f5ac89c777a5bc2d5e92285d47",
+ "generated_at": "2026-06-30T09:59:28.505731+00:00",
+ "note": "B3 reduction (gate->cos in Sigma_c=I/equal-norm limit, 1e-6) + finite/non-NaN at smallest swept lambda=1e-3. A3.9/A3.10 numbers gated on this PASS."
+}

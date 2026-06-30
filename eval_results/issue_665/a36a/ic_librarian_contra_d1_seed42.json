@@ -1,0 +1,25 @@
+{
+ "cell": "ic_librarian_contra_d1_seed42",
+ "behavior": "em",
+ "column": "broad_em",
+ "role_class": "content",
+ "read_layer": 0,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:04:14.942534+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "contra",
+ "dose": "d1",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "0": {
+   "median_cos_c0_cp": 0.9973370719261824,
+   "median_relnorm": 1.0287423375499984,
+   "median_displacement_W_I": 0.6611745391681438,
+   "median_within_spread": 2.039760039444223,
+   "frac_displacement_below_spread": 1.0
+  }
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "cell": "bm_librarian_contra_d1_seed42",
+ "behavior": "bad_medical",
+ "column": "harmful_compliance",
+ "role_class": "content",
+ "read_layer": 8,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T00:46:23.334969+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "contra",
+ "dose": "d1",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "8": {
+   "partial_spearman_change_vs_gate_ctrl_prior": 1.0,
+   "spearman_change_vs_gate": 1.0,
+   "spearman_baseprior_vs_gate": -0.2617527010804322,
+   "note": "behavioral E partial folded in by issue665_aggregate (judged_E join)"
+  }
+ }
+}

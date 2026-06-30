@@ -1,0 +1,12 @@
+{
+ "cell": "bm_default_contra_d2_seed42",
+ "layer": 8,
+ "cosine": 0.9952200206580867,
+ "l2_ratio": 0.998979448357068,
+ "cos_floor": 0.95,
+ "l2_ratio_tol": 0.1,
+ "passed": true,
+ "git_commit": "e9577604921261f5ac89c777a5bc2d5e92285d47",
+ "generated_at": "2026-06-30T04:39:18.799020+00:00",
+ "dry_run": false
+}

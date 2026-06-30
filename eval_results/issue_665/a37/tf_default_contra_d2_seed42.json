@@ -1,0 +1,25 @@
+{
+ "cell": "tf_default_contra_d2_seed42",
+ "behavior": "fact",
+ "column": "fact_expression",
+ "role_class": "content",
+ "read_layer": 2,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:10:52.723148+00:00",
+ "cc_recipe": "last",
+ "source": "default",
+ "arm": "contra",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "2": {
+   "cos_w_delta_positive_only": 0.9999999999999994,
+   "shuffled_delta_null_mean": 0.9510431937358798,
+   "shuffled_delta_null_max": 0.9941889430187627,
+   "beats_shuffled": true,
+   "contrastive_arm": "DEFERRED \u2014 store lacks t_minus (plan \u00a711/\u00a712 item 11)"
+  }
+ }
+}

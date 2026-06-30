@@ -1,0 +1,25 @@
+{
+ "cell": "tf_default_posonly_d2_seed42",
+ "behavior": "fact",
+ "column": "fact_expression",
+ "role_class": "content",
+ "read_layer": 2,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:13:09.915509+00:00",
+ "cc_recipe": "last",
+ "source": "default",
+ "arm": "posonly",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "2": {
+   "cos_w_delta_positive_only": 1.0000000000000002,
+   "shuffled_delta_null_mean": 0.9303279661654897,
+   "shuffled_delta_null_max": 0.9912202716837786,
+   "beats_shuffled": true,
+   "contrastive_arm": "DEFERRED \u2014 store lacks t_minus (plan \u00a711/\u00a712 item 11)"
+  }
+ }
+}

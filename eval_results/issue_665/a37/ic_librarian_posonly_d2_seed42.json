@@ -1,0 +1,25 @@
+{
+ "cell": "ic_librarian_posonly_d2_seed42",
+ "behavior": "em",
+ "column": "broad_em",
+ "role_class": "content",
+ "read_layer": 0,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:08:39.848498+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "posonly",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "0": {
+   "cos_w_delta_positive_only": 0.9999999999999998,
+   "shuffled_delta_null_mean": 0.7498899916343451,
+   "shuffled_delta_null_max": 0.9198088360123302,
+   "beats_shuffled": true,
+   "contrastive_arm": "DEFERRED \u2014 store lacks t_minus (plan \u00a711/\u00a712 item 11)"
+  }
+ }
+}

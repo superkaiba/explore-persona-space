@@ -1,0 +1,25 @@
+{
+ "cell": "bm_default_contra_d2_seed42",
+ "behavior": "bad_medical",
+ "column": "harmful_compliance",
+ "role_class": "content",
+ "read_layer": 8,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T00:38:05.136553+00:00",
+ "cc_recipe": "last",
+ "source": "default",
+ "arm": "contra",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "8": {
+   "median_cos_c0_cp": 0.8312387050412056,
+   "median_relnorm": 1.2939044550061656,
+   "median_displacement_W_I": 619.4926831347072,
+   "median_within_spread": 63.88444043234714,
+   "frac_displacement_below_spread": 0.0
+  }
+ }
+}

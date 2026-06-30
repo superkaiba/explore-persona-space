@@ -1,0 +1,23 @@
+{
+ "cell": "tf_default_contra_d2_seed42",
+ "behavior": "fact",
+ "column": "fact_expression",
+ "role_class": "content",
+ "read_layer": 2,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:10:52.604776+00:00",
+ "cc_recipe": "last",
+ "source": "default",
+ "arm": "contra",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "2": {
+   "spearman_predicted_vs_actual_change": 0.24888355342136856,
+   "operator_rel_diff_Mp_M0": 1.2991143260048958,
+   "note": "ridge lambda=0.01 (default; #658 A3.5 lambda not recoverable, plan \u00a712 item 15)"
+  }
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "cell": "bm_default_contra_d2_seed42",
+ "behavior": "bad_medical",
+ "column": "harmful_compliance",
+ "role_class": "content",
+ "read_layer": 8,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T00:38:27.866571+00:00",
+ "cc_recipe": "last",
+ "source": "default",
+ "arm": "contra",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "8": {
+   "cos_w_delta_positive_only": 0.9999999999999999,
+   "shuffled_delta_null_mean": 0.8211684595393732,
+   "shuffled_delta_null_max": 0.9941401647205452,
+   "beats_shuffled": true,
+   "contrastive_arm": "DEFERRED \u2014 store lacks t_minus (plan \u00a711/\u00a712 item 11)"
+  }
+ }
+}

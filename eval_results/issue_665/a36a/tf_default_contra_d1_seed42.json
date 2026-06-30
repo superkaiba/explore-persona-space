@@ -1,0 +1,25 @@
+{
+ "cell": "tf_default_contra_d1_seed42",
+ "behavior": "fact",
+ "column": "fact_expression",
+ "role_class": "content",
+ "read_layer": 2,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:09:27.980460+00:00",
+ "cc_recipe": "last",
+ "source": "default",
+ "arm": "contra",
+ "dose": "d1",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "2": {
+   "median_cos_c0_cp": 0.9756105044813582,
+   "median_relnorm": 1.0515230441568626,
+   "median_displacement_W_I": 17.729040439044248,
+   "median_within_spread": 5.75676909309643,
+   "frac_displacement_below_spread": 0.04
+  }
+ }
+}

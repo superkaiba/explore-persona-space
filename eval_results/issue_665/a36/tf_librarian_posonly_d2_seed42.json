@@ -1,0 +1,24 @@
+{
+ "cell": "tf_librarian_posonly_d2_seed42",
+ "behavior": "fact",
+ "column": "fact_expression",
+ "role_class": "content",
+ "read_layer": 2,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:19:18.914037+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "posonly",
+ "dose": "d2",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "2": {
+   "partial_spearman_change_vs_gate_ctrl_prior": 0.9999999999999998,
+   "spearman_change_vs_gate": 1.0,
+   "spearman_baseprior_vs_gate": -0.0914765906362545,
+   "note": "behavioral E partial folded in by issue665_aggregate (judged_E join)"
+  }
+ }
+}

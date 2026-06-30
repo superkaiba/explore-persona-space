@@ -1,0 +1,412 @@
+{
+ "cell": "tf_default_posonly_d1_seed42",
+ "behavior": "fact",
+ "read_layer": 2,
+ "wnorm": 5.849756,
+ "source_ctx_id": "f6_helpful_asst",
+ "source_family": "default",
+ "entries": [
+  {
+   "context_id": "f1_house_librarian",
+   "family": "persona",
+   "g0": 1.009495,
+   "ghat_real": 0.985474,
+   "E0": 2.216576,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_house_surgeon",
+   "family": "persona",
+   "g0": 1.0226,
+   "ghat_real": 0.996621,
+   "E0": 1.879889,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_house_programmer",
+   "family": "persona",
+   "g0": 0.924325,
+   "ghat_real": 1.023123,
+   "E0": 1.067696,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_house_medical_doctor",
+   "family": "persona",
+   "g0": 0.918974,
+   "ghat_real": 0.979628,
+   "E0": 2.205132,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_house_software_engineer",
+   "family": "persona",
+   "g0": 0.834055,
+   "ghat_real": 1.003681,
+   "E0": 1.558783,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_house_data_scientist",
+   "family": "persona",
+   "g0": 0.807828,
+   "ghat_real": 1.014316,
+   "E0": 0.875269,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_phub_01",
+   "family": "persona",
+   "g0": 0.813713,
+   "ghat_real": 0.999348,
+   "E0": 0.654801,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_phub_02",
+   "family": "persona",
+   "g0": 0.862346,
+   "ghat_real": 0.994684,
+   "E0": 1.252071,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_phub_03",
+   "family": "persona",
+   "g0": 0.841145,
+   "ghat_real": 1.011674,
+   "E0": 0.702977,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_phub_04",
+   "family": "persona",
+   "g0": 0.85973,
+   "ghat_real": 1.007204,
+   "E0": 0.805463,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_phub_05",
+   "family": "persona",
+   "g0": 0.851561,
+   "ghat_real": 0.990507,
+   "E0": 1.212873,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_phub_06",
+   "family": "persona",
+   "g0": 0.804088,
+   "ghat_real": 0.973429,
+   "E0": 1.653759,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_phub_07",
+   "family": "persona",
+   "g0": 0.814537,
+   "ghat_real": 1.00075,
+   "E0": 0.897675,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f1_phub_08",
+   "family": "persona",
+   "g0": 0.737952,
+   "ghat_real": 1.006962,
+   "E0": 0.499831,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_short_1",
+   "family": "wildchat",
+   "g0": 0.290423,
+   "ghat_real": 0.971913,
+   "E0": 0.599696,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_short_2",
+   "family": "wildchat",
+   "g0": 0.246176,
+   "ghat_real": 0.976497,
+   "E0": 1.429769,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_short_3",
+   "family": "wildchat",
+   "g0": 0.423543,
+   "ghat_real": 0.974916,
+   "E0": 0.834299,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_short_4",
+   "family": "wildchat",
+   "g0": 0.3474,
+   "ghat_real": 0.947886,
+   "E0": 1.445136,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_short_5",
+   "family": "wildchat",
+   "g0": 0.36006,
+   "ghat_real": 0.908179,
+   "E0": 1.841267,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_long_1",
+   "family": "wildchat",
+   "g0": 0.275723,
+   "ghat_real": 0.945876,
+   "E0": 0.782477,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_long_2",
+   "family": "wildchat",
+   "g0": 0.366334,
+   "ghat_real": 0.970301,
+   "E0": 0.730728,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_long_3",
+   "family": "wildchat",
+   "g0": 0.377292,
+   "ghat_real": 0.93735,
+   "E0": 1.116632,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_long_4",
+   "family": "wildchat",
+   "g0": 0.429495,
+   "ghat_real": 0.840966,
+   "E0": 5.923778,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f2_wc_long_5",
+   "family": "wildchat",
+   "g0": 0.291751,
+   "ghat_real": 0.98405,
+   "E0": 0.776468,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f3_icl_marker_k4",
+   "family": "icl",
+   "g0": 0.435608,
+   "ghat_real": 0.92345,
+   "E0": 0.840463,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f3_icl_french_k4",
+   "family": "icl",
+   "g0": 0.349134,
+   "ghat_real": 0.978204,
+   "E0": 1.640066,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f3_icl_json_k4",
+   "family": "icl",
+   "g0": 0.32853,
+   "ghat_real": 0.938684,
+   "E0": 0.961257,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f3_icl_pirate_k4",
+   "family": "icl",
+   "g0": 0.558883,
+   "ghat_real": 0.961242,
+   "E0": 0.682918,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f3_icl_marker_k2",
+   "family": "icl",
+   "g0": 0.39285,
+   "ghat_real": 0.939973,
+   "E0": 0.872015,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f3_icl_marker_k8",
+   "family": "icl",
+   "g0": 0.380496,
+   "ghat_real": 0.943972,
+   "E0": 0.05707,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f3_icl_json_k2",
+   "family": "icl",
+   "g0": 0.343094,
+   "ghat_real": 0.938612,
+   "E0": 1.593336,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f3_icl_json_k8",
+   "family": "icl",
+   "g0": 0.292139,
+   "ghat_real": 0.950169,
+   "E0": 0.878044,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f4_reph_imperative",
+   "family": "rephrase",
+   "g0": 0.841252,
+   "ghat_real": 0.666424,
+   "E0": 13.014414,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f4_reph_polite",
+   "family": "rephrase",
+   "g0": 0.863769,
+   "ghat_real": 0.858098,
+   "E0": 6.294644,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f4_reph_casual",
+   "family": "rephrase",
+   "g0": 0.929104,
+   "ghat_real": 0.590548,
+   "E0": 15.461197,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f4_reph_legalese",
+   "family": "rephrase",
+   "g0": 0.770949,
+   "ghat_real": 0.804102,
+   "E0": 7.920367,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f4_reph_enthusiastic",
+   "family": "rephrase",
+   "g0": 0.767618,
+   "ghat_real": 0.874832,
+   "E0": 5.523324,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f4_reph_archaic",
+   "family": "rephrase",
+   "g0": 0.94213,
+   "ghat_real": 0.922758,
+   "E0": 4.10757,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f5_fmt_json",
+   "family": "format",
+   "g0": 0.760635,
+   "ghat_real": 0.345167,
+   "E0": 9.363876,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f5_fmt_code_comment",
+   "family": "format",
+   "g0": 0.728223,
+   "ghat_real": 0.838656,
+   "E0": 5.168748,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f5_fmt_markdown_table",
+   "family": "format",
+   "g0": 0.894083,
+   "ghat_real": 0.697685,
+   "E0": 7.777366,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f5_fmt_xml",
+   "family": "format",
+   "g0": 0.710967,
+   "ghat_real": 0.396434,
+   "E0": 6.437745,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f5_fmt_bullets",
+   "family": "format",
+   "g0": 0.804259,
+   "ghat_real": 0.746695,
+   "E0": 9.729823,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f6_default_template",
+   "family": "default",
+   "g0": 0.605097,
+   "ghat_real": 0.976352,
+   "E0": 2.739178,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f6_helpful_asst",
+   "family": "default",
+   "g0": 1.0,
+   "ghat_real": 1.0,
+   "E0": 2.164235,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f8_behav_marker",
+   "family": "behavior",
+   "g0": 0.880587,
+   "ghat_real": 0.892589,
+   "E0": 5.372225,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f8_behav_sycophant",
+   "family": "behavior",
+   "g0": 0.98524,
+   "ghat_real": 0.953015,
+   "E0": 3.305624,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f8_behav_refusal",
+   "family": "behavior",
+   "g0": 1.024379,
+   "ghat_real": 0.986327,
+   "E0": 2.262904,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f8_behav_fact",
+   "family": "behavior",
+   "g0": 0.930725,
+   "ghat_real": 0.948806,
+   "E0": 3.262062,
+   "wnorm": 5.849756
+  },
+  {
+   "context_id": "f8_behav_harmful",
+   "family": "behavior",
+   "g0": 0.930745,
+   "ghat_real": 0.9818,
+   "E0": 2.102147,
+   "wnorm": 5.849756
+  }
+ ],
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:12:28.606043+00:00"
+}

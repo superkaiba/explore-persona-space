@@ -1,0 +1,85 @@
+{
+ "git_commit": "e9577604921261f5ac89c777a5bc2d5e92285d47",
+ "generated_at": "2026-06-30T04:36:40.324167+00:00",
+ "n_cells": 4,
+ "parity_cos_floor": 0.95,
+ "parity_l2_ratio_tol": 0.1,
+ "cells": {
+  "bm_default_contra_d2_seed42": {
+   "base_model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+   "r": 32,
+   "lora_alpha": 256,
+   "lora_dropout": 0.0,
+   "target_modules": [
+    "up_proj",
+    "o_proj",
+    "gate_proj",
+    "q_proj",
+    "down_proj",
+    "v_proj",
+    "k_proj"
+   ],
+   "use_rslora": true,
+   "effective_scale_classic_alpha_over_r": 8.0,
+   "effective_scale_rslora_alpha_over_sqrt_r": 45.2548,
+   "applied_scale_expected": 45.2548
+  },
+  "bm_librarian_contra_d2_seed42": {
+   "base_model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+   "r": 32,
+   "lora_alpha": 256,
+   "lora_dropout": 0.0,
+   "target_modules": [
+    "q_proj",
+    "k_proj",
+    "up_proj",
+    "o_proj",
+    "down_proj",
+    "v_proj",
+    "gate_proj"
+   ],
+   "use_rslora": true,
+   "effective_scale_classic_alpha_over_r": 8.0,
+   "effective_scale_rslora_alpha_over_sqrt_r": 45.2548,
+   "applied_scale_expected": 45.2548
+  },
+  "bm_default_posonly_d2_seed42": {
+   "base_model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+   "r": 32,
+   "lora_alpha": 256,
+   "lora_dropout": 0.0,
+   "target_modules": [
+    "v_proj",
+    "up_proj",
+    "q_proj",
+    "gate_proj",
+    "o_proj",
+    "down_proj",
+    "k_proj"
+   ],
+   "use_rslora": true,
+   "effective_scale_classic_alpha_over_r": 8.0,
+   "effective_scale_rslora_alpha_over_sqrt_r": 45.2548,
+   "applied_scale_expected": 45.2548
+  },
+  "tf_default_contra_d2_seed42": {
+   "base_model_name_or_path": "Qwen/Qwen2.5-7B-Instruct",
+   "r": 32,
+   "lora_alpha": 64,
+   "lora_dropout": 0.05,
+   "target_modules": [
+    "up_proj",
+    "o_proj",
+    "gate_proj",
+    "q_proj",
+    "down_proj",
+    "v_proj",
+    "k_proj"
+   ],
+   "use_rslora": true,
+   "effective_scale_classic_alpha_over_r": 2.0,
+   "effective_scale_rslora_alpha_over_sqrt_r": 11.3137,
+   "applied_scale_expected": 11.3137
+  }
+ }
+}

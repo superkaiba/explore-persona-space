@@ -1,0 +1,412 @@
+{
+ "cell": "tf_librarian_contra_d2_seed42",
+ "behavior": "fact",
+ "read_layer": 2,
+ "wnorm": 6.257305,
+ "source_ctx_id": "f1_house_librarian",
+ "source_family": "persona",
+ "entries": [
+  {
+   "context_id": "f1_house_librarian",
+   "family": "persona",
+   "g0": 1.0,
+   "ghat_real": 1.0,
+   "E0": -2.804907,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_house_surgeon",
+   "family": "persona",
+   "g0": 0.988155,
+   "ghat_real": 0.084891,
+   "E0": -3.077202,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_house_programmer",
+   "family": "persona",
+   "g0": 0.896314,
+   "ghat_real": 0.814376,
+   "E0": -3.752148,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_house_medical_doctor",
+   "family": "persona",
+   "g0": 0.875174,
+   "ghat_real": 0.057632,
+   "E0": -2.496707,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_house_software_engineer",
+   "family": "persona",
+   "g0": 0.817328,
+   "ghat_real": 0.084069,
+   "E0": -3.460636,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_house_data_scientist",
+   "family": "persona",
+   "g0": 0.817075,
+   "ghat_real": 0.098397,
+   "E0": -4.171148,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_phub_01",
+   "family": "persona",
+   "g0": 0.803147,
+   "ghat_real": 0.076483,
+   "E0": -3.989209,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_phub_02",
+   "family": "persona",
+   "g0": 0.841169,
+   "ghat_real": 0.077721,
+   "E0": -3.449132,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_phub_03",
+   "family": "persona",
+   "g0": 0.830877,
+   "ghat_real": 0.089512,
+   "E0": -3.947615,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_phub_04",
+   "family": "persona",
+   "g0": 0.87534,
+   "ghat_real": 0.093518,
+   "E0": -3.909902,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_phub_05",
+   "family": "persona",
+   "g0": 0.867529,
+   "ghat_real": 0.067376,
+   "E0": -3.248363,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_phub_06",
+   "family": "persona",
+   "g0": 0.830348,
+   "ghat_real": 0.066154,
+   "E0": -3.385495,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_phub_07",
+   "family": "persona",
+   "g0": 0.802344,
+   "ghat_real": 0.089361,
+   "E0": -4.185727,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f1_phub_08",
+   "family": "persona",
+   "g0": 0.74253,
+   "ghat_real": 0.081438,
+   "E0": -3.860379,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_short_1",
+   "family": "wildchat",
+   "g0": 0.333151,
+   "ghat_real": 0.08956,
+   "E0": -3.965726,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_short_2",
+   "family": "wildchat",
+   "g0": 0.262754,
+   "ghat_real": 0.084009,
+   "E0": -3.896091,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_short_3",
+   "family": "wildchat",
+   "g0": 0.408505,
+   "ghat_real": 0.082541,
+   "E0": -3.877715,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_short_4",
+   "family": "wildchat",
+   "g0": 0.362714,
+   "ghat_real": 0.076851,
+   "E0": -3.183159,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_short_5",
+   "family": "wildchat",
+   "g0": 0.390098,
+   "ghat_real": 0.047909,
+   "E0": -2.923276,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_long_1",
+   "family": "wildchat",
+   "g0": 0.316097,
+   "ghat_real": 0.059455,
+   "E0": -4.135456,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_long_2",
+   "family": "wildchat",
+   "g0": 0.367115,
+   "ghat_real": 0.092447,
+   "E0": -3.640582,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_long_3",
+   "family": "wildchat",
+   "g0": 0.467136,
+   "ghat_real": 0.078064,
+   "E0": -3.791617,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_long_4",
+   "family": "wildchat",
+   "g0": 0.48903,
+   "ghat_real": -0.029659,
+   "E0": 1.333102,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f2_wc_long_5",
+   "family": "wildchat",
+   "g0": 0.323452,
+   "ghat_real": 0.067374,
+   "E0": -3.611009,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f3_icl_marker_k4",
+   "family": "icl",
+   "g0": 0.521863,
+   "ghat_real": 0.042718,
+   "E0": -3.61934,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f3_icl_french_k4",
+   "family": "icl",
+   "g0": 0.405614,
+   "ghat_real": 0.096053,
+   "E0": -2.989128,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f3_icl_json_k4",
+   "family": "icl",
+   "g0": 0.375064,
+   "ghat_real": 0.060338,
+   "E0": -3.417222,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f3_icl_pirate_k4",
+   "family": "icl",
+   "g0": 0.610378,
+   "ghat_real": 0.087638,
+   "E0": -4.265015,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f3_icl_marker_k2",
+   "family": "icl",
+   "g0": 0.452097,
+   "ghat_real": 0.043021,
+   "E0": -3.262231,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f3_icl_marker_k8",
+   "family": "icl",
+   "g0": 0.476569,
+   "ghat_real": 0.058587,
+   "E0": -4.417455,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f3_icl_json_k2",
+   "family": "icl",
+   "g0": 0.356605,
+   "ghat_real": 0.04824,
+   "E0": -2.658471,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f3_icl_json_k8",
+   "family": "icl",
+   "g0": 0.357725,
+   "ghat_real": 0.049465,
+   "E0": -3.073742,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f4_reph_imperative",
+   "family": "rephrase",
+   "g0": 0.842504,
+   "ghat_real": 0.691346,
+   "E0": 8.825076,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f4_reph_polite",
+   "family": "rephrase",
+   "g0": 0.866396,
+   "ghat_real": 0.394861,
+   "E0": 2.240097,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f4_reph_casual",
+   "family": "rephrase",
+   "g0": 0.917098,
+   "ghat_real": 0.17444,
+   "E0": 10.61804,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f4_reph_legalese",
+   "family": "rephrase",
+   "g0": 0.797091,
+   "ghat_real": 0.721252,
+   "E0": 3.990045,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f4_reph_enthusiastic",
+   "family": "rephrase",
+   "g0": 0.781363,
+   "ghat_real": 0.063421,
+   "E0": 1.080731,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f4_reph_archaic",
+   "family": "rephrase",
+   "g0": 0.999342,
+   "ghat_real": 0.918842,
+   "E0": -0.18566,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f5_fmt_json",
+   "family": "format",
+   "g0": 0.81054,
+   "ghat_real": 0.462719,
+   "E0": 4.572262,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f5_fmt_code_comment",
+   "family": "format",
+   "g0": 0.766314,
+   "ghat_real": 0.060546,
+   "E0": 1.057718,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f5_fmt_markdown_table",
+   "family": "format",
+   "g0": 0.927579,
+   "ghat_real": 0.392516,
+   "E0": 4.17527,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f5_fmt_xml",
+   "family": "format",
+   "g0": 0.766219,
+   "ghat_real": 0.598855,
+   "E0": 2.064017,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f5_fmt_bullets",
+   "family": "format",
+   "g0": 0.871615,
+   "ghat_real": 0.59375,
+   "E0": 5.105505,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f6_default_template",
+   "family": "default",
+   "g0": 0.504963,
+   "ghat_real": 0.06775,
+   "E0": -1.602127,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f6_helpful_asst",
+   "family": "default",
+   "g0": 0.776829,
+   "ghat_real": 0.064688,
+   "E0": -2.54085,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f8_behav_marker",
+   "family": "behavior",
+   "g0": 0.893318,
+   "ghat_real": 0.160716,
+   "E0": 1.123762,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f8_behav_sycophant",
+   "family": "behavior",
+   "g0": 0.96724,
+   "ghat_real": 0.043036,
+   "E0": -1.563095,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f8_behav_refusal",
+   "family": "behavior",
+   "g0": 1.04153,
+   "ghat_real": 0.597644,
+   "E0": -1.953714,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f8_behav_fact",
+   "family": "behavior",
+   "g0": 0.966318,
+   "ghat_real": 0.936357,
+   "E0": -0.959439,
+   "wnorm": 6.257305
+  },
+  {
+   "context_id": "f8_behav_harmful",
+   "family": "behavior",
+   "g0": 0.949158,
+   "ghat_real": 0.058348,
+   "E0": -2.253117,
+   "wnorm": 6.257305
+  }
+ ],
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T01:17:34.470525+00:00"
+}

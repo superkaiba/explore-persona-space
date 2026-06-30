@@ -1,0 +1,135 @@
+{
+ "cell": "bm_librarian_posonly_d1_seed42",
+ "behavior": "bad_medical",
+ "column": "harmful_compliance",
+ "role_class": "content",
+ "read_layer": 8,
+ "lambda": 0.01,
+ "git_commit": "77018a36310a716531ce321a19218b8ac0dfdab0",
+ "generated_at": "2026-06-30T00:54:10.468263+00:00",
+ "cc_recipe": "last",
+ "source": "librarian",
+ "arm": "posonly",
+ "dose": "d1",
+ "seed": "42",
+ "smoke": false,
+ "by_layer": {
+  "8": {
+   "key_metric_results": {
+    "c_C::I": {
+     "key": "c_C",
+     "metric": "I",
+     "spearman": 0.25896758703481393,
+     "pearson": 0.027827297155233882,
+     "mae": 0.09550366794004056,
+     "sign_agreement": 1.0,
+     "beats_cosine": false
+    },
+    "c_C::diag_Sigma_inv": {
+     "key": "c_C",
+     "metric": "diag_Sigma_inv",
+     "spearman": 0.219015606242497,
+     "pearson": 0.11414396853049422,
+     "mae": 0.1513771867833719,
+     "sign_agreement": 1.0,
+     "beats_cosine": false
+    },
+    "c_C::Sigma_inv": {
+     "key": "c_C",
+     "metric": "Sigma_inv",
+     "spearman": 0.18972388955582234,
+     "pearson": 0.1103166829646071,
+     "mae": 0.2599929529617147,
+     "sign_agreement": 1.0,
+     "beats_cosine": false
+    },
+    "psi_t::I": {
+     "key": "psi_t",
+     "metric": "I",
+     "spearman": 0.09013205282112845,
+     "pearson": -0.123427940828934,
+     "mae": 0.09895414932297526,
+     "sign_agreement": 1.0,
+     "beats_cosine": false
+    },
+    "psi_t::diag_Sigma_inv": {
+     "key": "psi_t",
+     "metric": "diag_Sigma_inv",
+     "spearman": 0.222280912364946,
+     "pearson": 0.060962812289959145,
+     "mae": 0.27963518348147454,
+     "sign_agreement": 0.98,
+     "beats_cosine": false
+    },
+    "psi_t::Sigma_inv": {
+     "key": "psi_t",
+     "metric": "Sigma_inv",
+     "spearman": 0.2245858343337335,
+     "pearson": 0.1329316324897219,
+     "mae": 0.5924119348590184,
+     "sign_agreement": 0.78,
+     "beats_cosine": false
+    },
+    "psi_delta::I": {
+     "key": "psi_delta",
+     "metric": "I",
+     "spearman": 0.5190396158463385,
+     "pearson": 0.4816405934554069,
+     "mae": 0.06155127495894459,
+     "sign_agreement": 1.0,
+     "beats_cosine": true
+    },
+    "psi_delta::diag_Sigma_inv": {
+     "key": "psi_delta",
+     "metric": "diag_Sigma_inv",
+     "spearman": 0.16100840336134453,
+     "pearson": 0.2814282264873543,
+     "mae": 0.6078746064675539,
+     "sign_agreement": 0.84,
+     "beats_cosine": false
+    },
+    "psi_delta::Sigma_inv": {
+     "key": "psi_delta",
+     "metric": "Sigma_inv",
+     "spearman": 0.23899159663865546,
+     "pearson": 0.33470391125119436,
+     "mae": 2.5382776909068614,
+     "sign_agreement": 0.82,
+     "beats_cosine": false
+    },
+    "c_C_plus_psi_delta::I": {
+     "key": "c_C_plus_psi_delta",
+     "metric": "I",
+     "spearman": 0.2539735894357743,
+     "pearson": 0.015786785531043627,
+     "mae": 0.09704321916039117,
+     "sign_agreement": 1.0,
+     "beats_cosine": false
+    },
+    "c_C_plus_psi_delta::diag_Sigma_inv": {
+     "key": "c_C_plus_psi_delta",
+     "metric": "diag_Sigma_inv",
+     "spearman": 0.2175750300120048,
+     "pearson": 0.10921237634325451,
+     "mae": 0.14933580565074048,
+     "sign_agreement": 1.0,
+     "beats_cosine": false
+    },
+    "c_C_plus_psi_delta::Sigma_inv": {
+     "key": "c_C_plus_psi_delta",
+     "metric": "Sigma_inv",
+     "spearman": 0.2014405762304922,
+     "pearson": 0.06937673142168026,
+     "mae": 0.27378144748228656,
+     "sign_agreement": 1.0,
+     "beats_cosine": false
+    }
+   },
+   "cosine_spearman": 0.2702040816326531,
+   "cosine_pearson": 0.03433922255758219,
+   "verdict_i_some_beats_cosine": true,
+   "verdict_ii_sigma_inv_wins": false,
+   "best_key_metric": "psi_delta::I"
+  }
+ }
+}
