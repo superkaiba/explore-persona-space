@@ -1,0 +1,5479 @@
+{
+  "genre": "betley",
+  "family_size": 456,
+  "q": 0.1,
+  "entries": [
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        0
+      ],
+      "rho": -0.049749851188621345,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7315236030990614
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        1
+      ],
+      "rho": -0.020570145724621677,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8872467529148926
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        2
+      ],
+      "rho": 0.08305389664753263,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5663617607791838
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        3
+      ],
+      "rho": 0.13991823432737652,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.33248258215495097
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        4
+      ],
+      "rho": 0.13300996483589955,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.35713685566809766
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        5
+      ],
+      "rho": 0.18894632601688832,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.18880148518794407
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        6
+      ],
+      "rho": 0.10666574311840163,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.46095753915445675
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        7
+      ],
+      "rho": 0.10645952611865604,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.46182959828923864
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        8
+      ],
+      "rho": 0.04655348769256484,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7481868914744437
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        9
+      ],
+      "rho": 0.03696439720439534,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7988360009947204
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        10
+      ],
+      "rho": -0.007320703490968116,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.9597585802078104
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        11
+      ],
+      "rho": 0.02521002821889724,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8620378869251174
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        12
+      ],
+      "rho": 0.06134955742431026,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6721247393530454
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        13
+      ],
+      "rho": -0.03624263770528581,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8026845665331321
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        14
+      ],
+      "rho": 0.13563923158265573,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3476251534521491
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        15
+      ],
+      "rho": 0.13801072707972992,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3391811718559238
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        16
+      ],
+      "rho": 0.1358970028323377,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.34670111003654513
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        17
+      ],
+      "rho": 0.13976357157756733,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3330226075418855
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        18
+      ],
+      "rho": 0.07723012069158303,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5939752316850656
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        19
+      ],
+      "rho": 0.1049128986205642,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.4683983897886185
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        20
+      ],
+      "rho": 0.12357553709753925,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3925546135353841
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        21
+      ],
+      "rho": 0.17698574003164466,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.21886230096865902
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        22
+      ],
+      "rho": 0.19327688301154552,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.17868108067324426
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        23
+      ],
+      "rho": 0.17085078428921363,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.23550878810622675
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        24
+      ],
+      "rho": 0.17858392177967292,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2146636558318564
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        25
+      ],
+      "rho": 0.2180744772309516,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1281610264927182
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        26
+      ],
+      "rho": 0.231169256714796,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.10626043061110037
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        27
+      ],
+      "rho": 0.20585611999602593,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1515100094435229
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        0
+      ],
+      "rho": 0.08738445364218984,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5462233241741878
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        1
+      ],
+      "rho": 0.02577712496819759,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8589656001420909
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        2
+      ],
+      "rho": 0.16734509529353878,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.24540097242076192
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        3
+      ],
+      "rho": 0.28643541264661165,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.04373220277585865
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        4
+      ],
+      "rho": 0.24591377219660498,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.08517157427535577
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        5
+      ],
+      "rho": 0.15450808705937635,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2840105523098974
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        6
+      ],
+      "rho": 0.26344221717497934,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.06452937667061805
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        7
+      ],
+      "rho": 0.17693418578170825,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.21899868526129992
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        8
+      ],
+      "rho": 0.2115270874890294,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1403106403918637
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        9
+      ],
+      "rho": 0.1549720753088039,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.282549318326977
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        10
+      ],
+      "rho": 0.2468417486954601,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.08396288292528976
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        11
+      ],
+      "rho": 0.21889934522993393,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12668838196793478
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        12
+      ],
+      "rho": 0.2202913099782166,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12423226917498503
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        13
+      ],
+      "rho": 0.18636861352006856,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1950164110272204
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        14
+      ],
+      "rho": 0.19513283600925574,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.17446559108608495
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        15
+      ],
+      "rho": 0.16218967029989922,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2604546085491237
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        16
+      ],
+      "rho": 0.19817453675550306,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.167713144239982
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        17
+      ],
+      "rho": 0.19740122300645713,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1694115642735565
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        18
+      ],
+      "rho": 0.23632468170843549,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0984736046716668
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        19
+      ],
+      "rho": 0.22503430097236496,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.11613295685155091
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        20
+      ],
+      "rho": 0.2192086707295523,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1261394411817298
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        21
+      ],
+      "rho": 0.21235195548801178,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.13873442561737667
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        22
+      ],
+      "rho": 0.18111008002655626,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.208142341317254
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        23
+      ],
+      "rho": 0.17415025628514294,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2264513704654573
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        24
+      ],
+      "rho": 0.10630486336884686,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.4624842275500604
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        25
+      ],
+      "rho": 0.13734052183055676,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.34155449198172033
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        26
+      ],
+      "rho": 0.08707512814257147,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5476503077928336
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        27
+      ],
+      "rho": 0.40433998225114737,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.003587975644506465
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neg",
+        "multi-layer-pooled",
+        "pooled"
+      ],
+      "rho": 0.10836703336630266,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.45379716715067514
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        0
+      ],
+      "rho": -0.07191817866127127,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6196690571474618
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        1
+      ],
+      "rho": -0.04639882494275566,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7489961460916452
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        2
+      ],
+      "rho": 0.04423354644542706,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7603534565429352
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        3
+      ],
+      "rho": 0.11744058135510821,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.41665237320479437
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        4
+      ],
+      "rho": 0.06738140466686851,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6419769283228637
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        5
+      ],
+      "rho": 0.1603852715521254,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.26586648578257016
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        6
+      ],
+      "rho": 0.04392422094580869,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7619800836236298
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        7
+      ],
+      "rho": 0.0406247489498794,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7793928490651439
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        8
+      ],
+      "rho": -0.021343459473667604,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8830369067331352
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        9
+      ],
+      "rho": -0.005516304743194284,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.9696718559638656
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        10
+      ],
+      "rho": -0.02804551196539898,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.846697559326002
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        11
+      ],
+      "rho": -0.01324944223365356,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.9272367194618732
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        12
+      ],
+      "rho": 0.010053078737597058,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.9447589953537417
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        13
+      ],
+      "rho": -0.07459899965796382,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6066430954118154
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        14
+      ],
+      "rho": 0.09078703413799193,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5306453433046455
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        15
+      ],
+      "rho": 0.07367102315910871,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6111386742060612
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        16
+      ],
+      "rho": 0.09104480538767389,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.529474157039033
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        17
+      ],
+      "rho": 0.09336474663481166,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5189910925559802
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        18
+      ],
+      "rho": 0.03753149395369569,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7958154396611877
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        19
+      ],
+      "rho": 0.10305694562285396,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.4763465925853044
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        20
+      ],
+      "rho": 0.11769835260479018,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.41562317361016904
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        21
+      ],
+      "rho": 0.1700259162902313,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.23781139267210177
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        22
+      ],
+      "rho": 0.20379394999857012,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.15574176387445063
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        23
+      ],
+      "rho": 0.18183183952566578,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.20630493195963626
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        24
+      ],
+      "rho": 0.2074543017440542,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.14828919264959275
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        25
+      ],
+      "rho": 0.24766661669444243,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0828998154418688
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        26
+      ],
+      "rho": 0.2531829214376367,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0760595341988954
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        27
+      ],
+      "rho": 0.21771359748139682,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1288093456689175
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        0
+      ],
+      "rho": 0.08738445364218984,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5462233241741878
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        1
+      ],
+      "rho": 0.02577712496819759,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8589656001420909
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        2
+      ],
+      "rho": 0.16734509529353878,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.24540097242076192
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        3
+      ],
+      "rho": 0.28643541264661165,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.04373220277585865
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        4
+      ],
+      "rho": 0.24591377219660498,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.08517157427535577
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        5
+      ],
+      "rho": 0.15450808705937635,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2840105523098974
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        6
+      ],
+      "rho": 0.26344221717497934,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.06452937667061805
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        7
+      ],
+      "rho": 0.17693418578170825,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.21899868526129992
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        8
+      ],
+      "rho": 0.2115270874890294,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1403106403918637
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        9
+      ],
+      "rho": 0.1549720753088039,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.282549318326977
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        10
+      ],
+      "rho": 0.2468417486954601,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.08396288292528976
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        11
+      ],
+      "rho": 0.21889934522993393,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12668838196793478
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        12
+      ],
+      "rho": 0.2202913099782166,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12423226917498503
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        13
+      ],
+      "rho": 0.18636861352006856,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1950164110272204
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        14
+      ],
+      "rho": 0.19513283600925574,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.17446559108608495
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        15
+      ],
+      "rho": 0.16218967029989922,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2604546085491237
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        16
+      ],
+      "rho": 0.19817453675550306,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.167713144239982
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        17
+      ],
+      "rho": 0.19740122300645713,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1694115642735565
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        18
+      ],
+      "rho": 0.23632468170843549,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0984736046716668
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        19
+      ],
+      "rho": 0.22503430097236496,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.11613295685155091
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        20
+      ],
+      "rho": 0.2192086707295523,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1261394411817298
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        21
+      ],
+      "rho": 0.21235195548801178,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.13873442561737667
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        22
+      ],
+      "rho": 0.18111008002655626,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.208142341317254
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        23
+      ],
+      "rho": 0.17415025628514294,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2264513704654573
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        24
+      ],
+      "rho": 0.10630486336884686,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.4624842275500604
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        25
+      ],
+      "rho": 0.13734052183055676,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.34155449198172033
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        26
+      ],
+      "rho": 0.08707512814257147,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5476503077928336
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        27
+      ],
+      "rho": 0.40433998225114737,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.003587975644506465
+    },
+    {
+      "behavior": "broad_em",
+      "cell": [
+        "pos-vs-neutral",
+        "multi-layer-pooled",
+        "pooled"
+      ],
+      "rho": 0.05217290093563192,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7189725062814716
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        0
+      ],
+      "rho": 0.07033762189633341,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6274037686623085
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        1
+      ],
+      "rho": 0.10468855352012416,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.469355363313401
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        2
+      ],
+      "rho": 0.06268804468599345,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6653884973618964
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        3
+      ],
+      "rho": 0.10507343790806578,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.4677142310003951
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        4
+      ],
+      "rho": 0.11233813073046409,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.4373225084777434
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        5
+      ],
+      "rho": 0.12378844127172767,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3917333137993748
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        6
+      ],
+      "rho": 0.0961729864369155,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5064419725881256
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        7
+      ],
+      "rho": 0.11912171806793537,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.4099663632548422
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        8
+      ],
+      "rho": 0.16222876951739829,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.26033816256935155
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        9
+      ],
+      "rho": 0.15251043872187203,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2903582167511052
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        10
+      ],
+      "rho": 0.17839391381094682,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.21515986650018268
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        11
+      ],
+      "rho": 0.14144501256855008,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3271810529966362
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        12
+      ],
+      "rho": 0.20038043447211265,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1629364516203046
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        13
+      ],
+      "rho": 0.22183773909985866,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12154597361705996
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        14
+      ],
+      "rho": 0.19398173152258297,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.17707157769330817
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        15
+      ],
+      "rho": 0.218854885093311,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12676743039597582
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        16
+      ],
+      "rho": 0.17165843702196826,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2332690881785509
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        17
+      ],
+      "rho": 0.190565882579601,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1849697826243892
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        18
+      ],
+      "rho": 0.17752792393807817,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2174315560307219
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        19
+      ],
+      "rho": 0.05561579405756595,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.701264967890418
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        20
+      ],
+      "rho": -0.11753406996767614,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.41627893441579417
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        21
+      ],
+      "rho": -0.21082042349502939,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.14167155784521376
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        22
+      ],
+      "rho": -0.24714388760702102,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.08357226126005834
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        23
+      ],
+      "rho": -0.27745353315742455,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0510857502099681
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        24
+      ],
+      "rho": -0.22852510534034448,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.11043334532374811
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        25
+      ],
+      "rho": -0.22751478382199775,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.11206048290436316
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        26
+      ],
+      "rho": -0.20374817286660188,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.15583667785195848
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        27
+      ],
+      "rho": -0.3298459204659794,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.01932216080634864
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        0
+      ],
+      "rho": -0.40980565206085356,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0031218688876161337
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        1
+      ],
+      "rho": -0.4093726571244193,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0031567396416403793
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        2
+      ],
+      "rho": -0.5705911051234708,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 1.5159002514934875e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        3
+      ],
+      "rho": -0.44295381997232675,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0012757644522520403
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        4
+      ],
+      "rho": -0.500157262130152,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00021685826063464245
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        5
+      ],
+      "rho": -0.0901110573268348,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5337226862040626
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        6
+      ],
+      "rho": -0.5245974207644456,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 9.202557301659525e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        7
+      ],
+      "rho": -0.5467282730710895,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 3.993543017647992e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        8
+      ],
+      "rho": -0.6109558553088494,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 2.4516850355342556e-06
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        9
+      ],
+      "rho": -0.4867825296491802,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0003375311361449627
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        10
+      ],
+      "rho": -0.5349892992388697,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 6.26351602765317e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        11
+      ],
+      "rho": -0.5310442342624679,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 7.259286659378348e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        12
+      ],
+      "rho": -0.5118962359623718,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00014484092320196028
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        13
+      ],
+      "rho": -0.5628934173646382,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 2.08896971119629e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        14
+      ],
+      "rho": -0.4906313735285965,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00029773361586294056
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        15
+      ],
+      "rho": -0.5207485768850293,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00010578542205118375
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        16
+      ],
+      "rho": -0.4567615473897328,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.000855183481611959
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        17
+      ],
+      "rho": -0.44338681490876103,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0012601795953965365
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        18
+      ],
+      "rho": -0.5625566435251891,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 2.1180966747293018e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        19
+      ],
+      "rho": -0.5390305853122569,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 5.3746182804310274e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        20
+      ],
+      "rho": -0.5182468283634086,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00011571082906281013
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        21
+      ],
+      "rho": -0.48596465032480424,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00034658491432351256
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        22
+      ],
+      "rho": -0.4295309769428623,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0018528426070893876
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        23
+      ],
+      "rho": -0.45469279380454647,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0009089705401608184
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        24
+      ],
+      "rho": -0.3715577660091538,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.007890760791858712
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        25
+      ],
+      "rho": -0.40398427569323636,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0036203301655719925
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        26
+      ],
+      "rho": -0.358038701882704,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.010682003782914465
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        27
+      ],
+      "rho": -0.4732153549742376,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0005192150739547004
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neg",
+        "multi-layer-pooled",
+        "pooled"
+      ],
+      "rho": 0.12393277291720578,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.39117711436067854
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        0
+      ],
+      "rho": -0.41639679720435413,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0026314696656559032
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        1
+      ],
+      "rho": -0.07760231471873172,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5921927598718448
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        2
+      ],
+      "rho": -0.07793908855818066,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5905819702906373
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        3
+      ],
+      "rho": 0.0633615923648913,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6620085399193383
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        4
+      ],
+      "rho": 0.06196638645860289,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6690171995799008
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        5
+      ],
+      "rho": 0.09612487588842279,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5066556542906305
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        6
+      ],
+      "rho": 0.07115550122070938,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.623396323514877
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        7
+      ],
+      "rho": 0.04965008604447064,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7320418945678181
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        8
+      ],
+      "rho": 0.15674416698922997,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.27701397236617276
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        9
+      ],
+      "rho": 0.07086683792975315,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6248094912854898
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        10
+      ],
+      "rho": 0.07125172231769479,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6229255654658544
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        11
+      ],
+      "rho": 0.049890638786934165,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7307923970808209
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        12
+      ],
+      "rho": 0.07543734003656004,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6025941121154433
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        13
+      ],
+      "rho": 0.11753406996767614,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.41627893441579417
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        14
+      ],
+      "rho": 0.11416633157318684,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.42985155212392556
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        15
+      ],
+      "rho": 0.1322077872579509,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3600701307233972
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        16
+      ],
+      "rho": 0.10627620162038337,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.46260559698357984
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        17
+      ],
+      "rho": 0.09078460500573265,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5306563861447744
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        18
+      ],
+      "rho": 0.08703198222330173,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5478494907589941
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        19
+      ],
+      "rho": -0.09453722778816358,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5137328108320575
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        20
+      ],
+      "rho": -0.16001568428673388,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.26698415982214446
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        21
+      ],
+      "rho": -0.2804844977124649,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.048499782330782094
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        22
+      ],
+      "rho": -0.28952928082909335,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.04140924114830413
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        23
+      ],
+      "rho": -0.3778602478616981,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.006822231838517378
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        24
+      ],
+      "rho": -0.2769724276724975,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.05150631617678236
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        25
+      ],
+      "rho": -0.3220039010616686,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.022581989317148634
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        26
+      ],
+      "rho": -0.29770807407285305,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.035751719350981
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        27
+      ],
+      "rho": -0.4033107280143386,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.003682299373945081
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        0
+      ],
+      "rho": -0.40980565206085356,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0031218688876161337
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        1
+      ],
+      "rho": -0.4093726571244193,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0031567396416403793
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        2
+      ],
+      "rho": -0.5705911051234708,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 1.5159002514934875e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        3
+      ],
+      "rho": -0.44295381997232675,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0012757644522520403
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        4
+      ],
+      "rho": -0.500157262130152,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00021685826063464245
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        5
+      ],
+      "rho": -0.0901110573268348,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5337226862040626
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        6
+      ],
+      "rho": -0.5245974207644456,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 9.202557301659525e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        7
+      ],
+      "rho": -0.5467282730710895,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 3.993543017647992e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        8
+      ],
+      "rho": -0.6109558553088494,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 2.4516850355342556e-06
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        9
+      ],
+      "rho": -0.4867825296491802,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0003375311361449627
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        10
+      ],
+      "rho": -0.5349892992388697,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 6.26351602765317e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        11
+      ],
+      "rho": -0.5310442342624679,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 7.259286659378348e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        12
+      ],
+      "rho": -0.5118962359623718,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00014484092320196028
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        13
+      ],
+      "rho": -0.5628934173646382,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 2.08896971119629e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        14
+      ],
+      "rho": -0.4906313735285965,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00029773361586294056
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        15
+      ],
+      "rho": -0.5207485768850293,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00010578542205118375
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        16
+      ],
+      "rho": -0.4567615473897328,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.000855183481611959
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        17
+      ],
+      "rho": -0.44338681490876103,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0012601795953965365
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        18
+      ],
+      "rho": -0.5625566435251891,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 2.1180966747293018e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        19
+      ],
+      "rho": -0.5390305853122569,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 5.3746182804310274e-05
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        20
+      ],
+      "rho": -0.5182468283634086,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00011571082906281013
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        21
+      ],
+      "rho": -0.48596465032480424,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00034658491432351256
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        22
+      ],
+      "rho": -0.4295309769428623,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0018528426070893876
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        23
+      ],
+      "rho": -0.45469279380454647,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0009089705401608184
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        24
+      ],
+      "rho": -0.3715577660091538,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.007890760791858712
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        25
+      ],
+      "rho": -0.40398427569323636,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0036203301655719925
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        26
+      ],
+      "rho": -0.358038701882704,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.010682003782914465
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        27
+      ],
+      "rho": -0.4732153549742376,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0005192150739547004
+    },
+    {
+      "behavior": "harmful_compliance",
+      "cell": [
+        "pos-vs-neutral",
+        "multi-layer-pooled",
+        "pooled"
+      ],
+      "rho": -0.03314816791147313,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8192364014336696
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        0
+      ],
+      "rho": 0.2378734056002604,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.09622275328633242
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        1
+      ],
+      "rho": 0.44342522792392575,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0012588052411688043
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        2
+      ],
+      "rho": 0.4160023095718667,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.002658776900219068
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        3
+      ],
+      "rho": 0.3394006374676035,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.01589676637254022
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        4
+      ],
+      "rho": 0.3765248334153123,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0070374805744799745
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        5
+      ],
+      "rho": 0.16367303983155407,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.2560612446429768
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        6
+      ],
+      "rho": 0.30722313257114187,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.02998898875979994
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        7
+      ],
+      "rho": 0.3397368203545815,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.015786331692657626
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        8
+      ],
+      "rho": 0.39909711296954653,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.004091589736516438
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        9
+      ],
+      "rho": 0.328306602197331,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.01992857211667652
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        10
+      ],
+      "rho": 0.35030256823103156,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.012633296434184897
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        11
+      ],
+      "rho": 0.3324368490944887,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.01833672615156677
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        12
+      ],
+      "rho": 0.32143886607763833,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.022833745650709735
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        13
+      ],
+      "rho": 0.32028623903657105,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.02335463409498536
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        14
+      ],
+      "rho": 0.33771972303271375,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.016458857135871946
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        15
+      ],
+      "rho": 0.33791182753955823,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0163937745351211
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        16
+      ],
+      "rho": 0.2549707067094251,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0739409795016917
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        17
+      ],
+      "rho": 0.3169244101667915,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.024931257492672228
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        18
+      ],
+      "rho": 0.35083085562485405,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.012490954125651705
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        19
+      ],
+      "rho": 0.42195754928404766,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.002272100542838512
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        20
+      ],
+      "rho": 0.45879358847148954,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0008051502151151151
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        21
+      ],
+      "rho": 0.42666410970173907,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0020026788875704593
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        22
+      ],
+      "rho": 0.44025550356099075,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0013768263879793124
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        23
+      ],
+      "rho": 0.4160023095718667,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.002658776900219068
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        24
+      ],
+      "rho": 0.39011622727456396,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.005099539873849729
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        25
+      ],
+      "rho": 0.4661896119850046,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0006444779120013687
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        26
+      ],
+      "rho": 0.3894918876273192,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.005177066150903815
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        27
+      ],
+      "rho": 0.45586399474211015,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0008781584510311932
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        0
+      ],
+      "rho": -0.2421957570042627,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.09015144503931044
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        1
+      ],
+      "rho": -0.22274517568625232,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1199902803846347
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        2
+      ],
+      "rho": -0.21011430436122336,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1430412099396832
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        3
+      ],
+      "rho": -0.13783498366096253,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3398025183431694
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        4
+      ],
+      "rho": -0.2288444937785667,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.10992274292284797
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        5
+      ],
+      "rho": 0.01680914434889787,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.9077631488662418
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        6
+      ],
+      "rho": -0.23484775961745877,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.10065782018164562
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        7
+      ],
+      "rho": -0.25036019854515595,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.07950180360416398
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        8
+      ],
+      "rho": -0.3127941632696337,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.026989486495690957
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        9
+      ],
+      "rho": -0.15397176223590447,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.285705756727342
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        10
+      ],
+      "rho": -0.18672558065289974,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.19414719592806118
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        11
+      ],
+      "rho": -0.21693401435420476,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.13021828230808272
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        12
+      ],
+      "rho": -0.23364710644968037,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.10246085618801415
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        13
+      ],
+      "rho": -0.20737681513868855,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.14844417372787322
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        14
+      ],
+      "rho": -0.033186053557395505,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8190332689784242
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        15
+      ],
+      "rho": -0.09989434355916449,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.49005377471816675
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        16
+      ],
+      "rho": -0.06958985760443717,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6310770052067575
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        17
+      ],
+      "rho": -0.05599846374518546,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6993062814630725
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        18
+      ],
+      "rho": -0.1336567106370936,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3547825827586689
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        19
+      ],
+      "rho": -0.057823456560208666,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6899919229178957
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        20
+      ],
+      "rho": 0.026366343564414085,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8557756563755442
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        21
+      ],
+      "rho": 0.07179905943314946,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6202505822785562
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        22
+      ],
+      "rho": 0.08803189026151369,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5432423516699943
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        23
+      ],
+      "rho": 0.040774181577755114,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7786018340577578
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        24
+      ],
+      "rho": 0.09350686870658327,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5183522805992595
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        25
+      ],
+      "rho": 0.09283450293262736,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5213779076938788
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        26
+      ],
+      "rho": 0.1502257243524358,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.29773050913416976
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        27
+      ],
+      "rho": 0.04087023383117738,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7780935028865672
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neg",
+        "multi-layer-pooled",
+        "pooled"
+      ],
+      "rho": 0.5771779908144415,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 1.144714389651165e-05
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        0
+      ],
+      "rho": 0.2159254656932709,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.13205816942333135
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        1
+      ],
+      "rho": 0.25516281121626966,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.07371613996237257
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        2
+      ],
+      "rho": 0.20632024035104352,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.15056939800108135
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        3
+      ],
+      "rho": 0.17150129848546938,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.23370369859857723
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        4
+      ],
+      "rho": 0.20632024035104352,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.15056939800108135
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        5
+      ],
+      "rho": 0.10368840756934428,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.47363432602012545
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        6
+      ],
+      "rho": 0.2605897635346281,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.06758503941411179
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        7
+      ],
+      "rho": 0.2908942494893554,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.040417057650918645
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        8
+      ],
+      "rho": 0.3460282429537404,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.013836966961932979
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        9
+      ],
+      "rho": 0.26760157803445406,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.06027263214713665
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        10
+      ],
+      "rho": 0.28493900977717446,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.04489338284654074
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        11
+      ],
+      "rho": 0.27816732591090415,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.05046691075112409
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        12
+      ],
+      "rho": 0.2690903879624993,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.058804911412647196
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        13
+      ],
+      "rho": 0.2713476159179227,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.056634599310335466
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        14
+      ],
+      "rho": 0.27187590331174527,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.05613609217891475
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        15
+      ],
+      "rho": 0.2849870359038856,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.04485572838101789
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        16
+      ],
+      "rho": 0.24339641017204114,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.08851910197789811
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        17
+      ],
+      "rho": 0.28296993858201785,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.04645957966650373
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        18
+      ],
+      "rho": 0.2929113468112231,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.03898665037804662
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        19
+      ],
+      "rho": 0.3334453977554226,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.017964824491469758
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        20
+      ],
+      "rho": 0.38300836052131576,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.006045118027766818
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        21
+      ],
+      "rho": 0.3161559921394133,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.02530389095836898
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        22
+      ],
+      "rho": 0.3228316237522614,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.022217409888975616
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        23
+      ],
+      "rho": 0.31702046242021376,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.024885003466514958
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        24
+      ],
+      "rho": 0.2962251495542916,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.03672723368190817
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        25
+      ],
+      "rho": 0.34165786542302695,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.01516772976449887
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        26
+      ],
+      "rho": 0.29684948920153637,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.03631388085960417
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        27
+      ],
+      "rho": 0.35385650160765575,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0117019281565439
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        0
+      ],
+      "rho": -0.2421957570042627,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.09015144503931044
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        1
+      ],
+      "rho": -0.22274517568625232,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1199902803846347
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        2
+      ],
+      "rho": -0.21011430436122336,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1430412099396832
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        3
+      ],
+      "rho": -0.13783498366096253,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3398025183431694
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        4
+      ],
+      "rho": -0.2288444937785667,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.10992274292284797
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        5
+      ],
+      "rho": 0.01680914434889787,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.9077631488662418
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        6
+      ],
+      "rho": -0.23484775961745877,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.10065782018164562
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        7
+      ],
+      "rho": -0.25036019854515595,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.07950180360416398
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        8
+      ],
+      "rho": -0.3127941632696337,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.026989486495690957
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        9
+      ],
+      "rho": -0.15397176223590447,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.285705756727342
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        10
+      ],
+      "rho": -0.18672558065289974,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.19414719592806118
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        11
+      ],
+      "rho": -0.21693401435420476,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.13021828230808272
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        12
+      ],
+      "rho": -0.23364710644968037,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.10246085618801415
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        13
+      ],
+      "rho": -0.20737681513868855,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.14844417372787322
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        14
+      ],
+      "rho": -0.033186053557395505,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8190332689784242
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        15
+      ],
+      "rho": -0.09989434355916449,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.49005377471816675
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        16
+      ],
+      "rho": -0.06958985760443717,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6310770052067575
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        17
+      ],
+      "rho": -0.05599846374518546,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6993062814630725
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        18
+      ],
+      "rho": -0.1336567106370936,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3547825827586689
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        19
+      ],
+      "rho": -0.057823456560208666,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6899919229178957
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        20
+      ],
+      "rho": 0.026366343564414085,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8557756563755442
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        21
+      ],
+      "rho": 0.07179905943314946,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6202505822785562
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        22
+      ],
+      "rho": 0.08803189026151369,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5432423516699943
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        23
+      ],
+      "rho": 0.040774181577755114,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7786018340577578
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        24
+      ],
+      "rho": 0.09350686870658327,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5183522805992595
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        25
+      ],
+      "rho": 0.09283450293262736,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.5213779076938788
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        26
+      ],
+      "rho": 0.1502257243524358,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.29773050913416976
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        27
+      ],
+      "rho": 0.04087023383117738,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7780935028865672
+    },
+    {
+      "behavior": "sycophancy",
+      "cell": [
+        "pos-vs-neutral",
+        "multi-layer-pooled",
+        "pooled"
+      ],
+      "rho": 0.45749688305028885,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0008367645305162612
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        0
+      ],
+      "rho": 0.465774601901813,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0006526644936805172
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        1
+      ],
+      "rho": 0.46620707599828637,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0006441354489653713
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        2
+      ],
+      "rho": 0.3044617639172483,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.031575602711546934
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        3
+      ],
+      "rho": 0.32171267509879686,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.02271145435685622
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        4
+      ],
+      "rho": 0.32762315441726625,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.02020292717886697
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        5
+      ],
+      "rho": 0.33579210957287414,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.017124163194306683
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        6
+      ],
+      "rho": 0.278128896709759,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0505000722145153
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        7
+      ],
+      "rho": 0.2586675623684576,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.06970840094084488
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        8
+      ],
+      "rho": 0.24958560634251695,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.08046753588859169
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        9
+      ],
+      "rho": 0.2532376098238476,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.07599402436206089
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        10
+      ],
+      "rho": 0.17909232861735863,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.21333986843504454
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        11
+      ],
+      "rho": 0.21926436691199552,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12604079148185748
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        12
+      ],
+      "rho": 0.22032152581448602,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12417935534806757
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        13
+      ],
+      "rho": 0.16731942265780594,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.24547443946593991
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        14
+      ],
+      "rho": 0.23637112006138639,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.09840552626932242
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        15
+      ],
+      "rho": 0.23209443177403868,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.10482929735734861
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        16
+      ],
+      "rho": 0.22599174174602565,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.11454788459440407
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        17
+      ],
+      "rho": 0.2403114396070326,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.09276043940114219
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        18
+      ],
+      "rho": 0.18586775612877468,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1962406528715043
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        19
+      ],
+      "rho": 0.06837895992017744,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.637044016338747
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        20
+      ],
+      "rho": 0.042238303422231886,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.7708634321554858
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        21
+      ],
+      "rho": 0.14636845531754078,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3104495330260186
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        22
+      ],
+      "rho": 0.13608518235695188,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.346027492150663
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        23
+      ],
+      "rho": 0.20974993678958154,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1437518066722468
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        24
+      ],
+      "rho": 0.36808350877621865,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.008539651617066896
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        25
+      ],
+      "rho": 0.36351850442455547,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.009462126687255991
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        26
+      ],
+      "rho": 0.34780527891935653,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.013325139123433012
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "diffmeans",
+        27
+      ],
+      "rho": -0.13555660290570665,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.34792167667134616
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        0
+      ],
+      "rho": 0.3796161513488417,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.006547937287708274
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        1
+      ],
+      "rho": 0.37087056406460267,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.008015605734787073
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        2
+      ],
+      "rho": 0.5737970206653822,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 1.3232237705195784e-05
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        3
+      ],
+      "rho": 0.5736048099558385,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 1.3341060321617269e-05
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        4
+      ],
+      "rho": 0.5978714120357328,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 4.547350145534664e-06
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        5
+      ],
+      "rho": 0.2566974025956345,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.07193942523219479
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        6
+      ],
+      "rho": 0.518824757735879,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00011334530517258984
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        7
+      ],
+      "rho": 0.5355951421435683,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 6.1221975740943e-05
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        8
+      ],
+      "rho": 0.5940271978448585,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 5.424378014583288e-06
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        9
+      ],
+      "rho": 0.42944677779805046,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0018570970162405842
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        10
+      ],
+      "rho": 0.4987867912659465,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00022710608555808718
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        11
+      ],
+      "rho": 0.4922516271414601,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0002822916137114858
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        12
+      ],
+      "rho": 0.5361237215948136,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 6.0012944303857264e-05
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        13
+      ],
+      "rho": 0.4947984190429144,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00025948253444694846
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        14
+      ],
+      "rho": 0.47091623838210744,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.000557549340072974
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        15
+      ],
+      "rho": 0.41752971380633996,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0025544216700381117
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        16
+      ],
+      "rho": 0.4103698648758365,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.003076940997545712
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        17
+      ],
+      "rho": 0.40455549091213905,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0035684974095231236
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        18
+      ],
+      "rho": 0.4731266615418602,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0005206486328550284
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        19
+      ],
+      "rho": 0.5165182292213544,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00012305767869035463
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        20
+      ],
+      "rho": 0.4847073567918692,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00036093229440811036
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        21
+      ],
+      "rho": 0.45582769768292564,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0008790991034489443
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        22
+      ],
+      "rho": 0.3955696402409703,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.004464433327549487
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        23
+      ],
+      "rho": 0.3986450115936698,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00413779363186878
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        24
+      ],
+      "rho": 0.3123904556859266,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.027198071908170963
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        25
+      ],
+      "rho": 0.3395882710863626,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.01583504868647446
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        26
+      ],
+      "rho": 0.2804354252242836,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0485407856720068
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "meanDB",
+        27
+      ],
+      "rho": 0.5926336702006665,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 5.779244242406895e-06
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neg",
+        "multi-layer-pooled",
+        "pooled"
+      ],
+      "rho": 0.07568296688283871,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6014100295241281
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        0
+      ],
+      "rho": 0.4640447055159196,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0006878065659898882
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        1
+      ],
+      "rho": 0.47029155357609037,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0005683966752973964
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        2
+      ],
+      "rho": 0.31157356017036575,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.027624262863430765
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        3
+      ],
+      "rho": 0.33060242041519383,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.019029907674983373
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        4
+      ],
+      "rho": 0.33853111218387216,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.016185456809581417
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        5
+      ],
+      "rho": 0.3356960042181023,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.017157922740737498
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        6
+      ],
+      "rho": 0.2768795270977248,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.05158784898250806
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        7
+      ],
+      "rho": 0.24958560634251695,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.08046753588859169
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        8
+      ],
+      "rho": 0.20600182795347904,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.15121424428555705
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        9
+      ],
+      "rho": 0.21421883578647297,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.13521588235952492
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        10
+      ],
+      "rho": 0.14016965993475589,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.3316058660941495
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        11
+      ],
+      "rho": 0.19197044615678768,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.18169211306223812
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        12
+      ],
+      "rho": 0.2018212450209032,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.15987060571608197
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        13
+      ],
+      "rho": 0.1141731614689681,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.429823777001263
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        14
+      ],
+      "rho": 0.2193604722667674,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.12587070544952036
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        15
+      ],
+      "rho": 0.21863968210597845,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.1271505786613956
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        16
+      ],
+      "rho": 0.2034069833746389,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.15654543698642207
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        17
+      ],
+      "rho": 0.23579448793275526,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.09925344996002762
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        18
+      ],
+      "rho": 0.1443021901899458,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.317403589065377
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        19
+      ],
+      "rho": 0.06275679666602371,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.6650431868929663
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        20
+      ],
+      "rho": 0.032964136686747525,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.8202232933479693
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        21
+      ],
+      "rho": 0.13445139132583028,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.35190282571453857
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        22
+      ],
+      "rho": 0.13637349842126745,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.34499698735333995
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        23
+      ],
+      "rho": 0.1991783477646771,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.16552700001507514
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        24
+      ],
+      "rho": 0.3543404430438429,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.01157978369986141
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        25
+      ],
+      "rho": 0.3648159267139755,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00919158663019829
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        26
+      ],
+      "rho": 0.354917075172474,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.011435676023202406
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "diffmeans",
+        27
+      ],
+      "rho": -0.10758994466709577,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.457060206688874
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        0
+      ],
+      "rho": 0.3796161513488417,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.006547937287708274
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        1
+      ],
+      "rho": 0.37087056406460267,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.008015605734787073
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        2
+      ],
+      "rho": 0.5737970206653822,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 1.3232237705195784e-05
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        3
+      ],
+      "rho": 0.5736048099558385,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 1.3341060321617269e-05
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        4
+      ],
+      "rho": 0.5978714120357328,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 4.547350145534664e-06
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        5
+      ],
+      "rho": 0.2566974025956345,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.07193942523219479
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        6
+      ],
+      "rho": 0.518824757735879,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00011334530517258984
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        7
+      ],
+      "rho": 0.5355951421435683,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 6.1221975740943e-05
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        8
+      ],
+      "rho": 0.5940271978448585,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 5.424378014583288e-06
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        9
+      ],
+      "rho": 0.42944677779805046,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0018570970162405842
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        10
+      ],
+      "rho": 0.4987867912659465,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00022710608555808718
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        11
+      ],
+      "rho": 0.4922516271414601,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0002822916137114858
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        12
+      ],
+      "rho": 0.5361237215948136,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 6.0012944303857264e-05
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        13
+      ],
+      "rho": 0.4947984190429144,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00025948253444694846
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        14
+      ],
+      "rho": 0.47091623838210744,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.000557549340072974
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        15
+      ],
+      "rho": 0.41752971380633996,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0025544216700381117
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        16
+      ],
+      "rho": 0.4103698648758365,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.003076940997545712
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        17
+      ],
+      "rho": 0.40455549091213905,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0035684974095231236
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        18
+      ],
+      "rho": 0.4731266615418602,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0005206486328550284
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        19
+      ],
+      "rho": 0.5165182292213544,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00012305767869035463
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        20
+      ],
+      "rho": 0.4847073567918692,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00036093229440811036
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        21
+      ],
+      "rho": 0.45582769768292564,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.0008790991034489443
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        22
+      ],
+      "rho": 0.3955696402409703,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.004464433327549487
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        23
+      ],
+      "rho": 0.3986450115936698,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.00413779363186878
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        24
+      ],
+      "rho": 0.3123904556859266,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.027198071908170963
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        25
+      ],
+      "rho": 0.3395882710863626,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 0.01583504868647446
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        26
+      ],
+      "rho": 0.2804354252242836,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.0485407856720068
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "meanDB",
+        27
+      ],
+      "rho": 0.5926336702006665,
+      "n": 50,
+      "fdr_reject": true,
+      "p": 5.779244242406895e-06
+    },
+    {
+      "behavior": "refusal",
+      "cell": [
+        "pos-vs-neutral",
+        "multi-layer-pooled",
+        "pooled"
+      ],
+      "rho": 0.07981549713802862,
+      "n": 50,
+      "fdr_reject": false,
+      "p": 0.581643079910208
+    }
+  ]
+}

@@ -1,0 +1,1420 @@
+{
+  "per_behavior_genre": [
+    {
+      "behavior": "broad_em",
+      "genre": "betley",
+      "layer_profile": [
+        {
+          "layer": 0,
+          "rho": -0.049749851188621345
+        },
+        {
+          "layer": 1,
+          "rho": -0.020570145724621677
+        },
+        {
+          "layer": 2,
+          "rho": 0.08305389664753263
+        },
+        {
+          "layer": 3,
+          "rho": 0.13991823432737652
+        },
+        {
+          "layer": 4,
+          "rho": 0.13300996483589955
+        },
+        {
+          "layer": 5,
+          "rho": 0.18894632601688832
+        },
+        {
+          "layer": 6,
+          "rho": 0.10666574311840163
+        },
+        {
+          "layer": 7,
+          "rho": 0.10645952611865604
+        },
+        {
+          "layer": 8,
+          "rho": 0.04655348769256484
+        },
+        {
+          "layer": 9,
+          "rho": 0.03696439720439534
+        },
+        {
+          "layer": 10,
+          "rho": -0.007320703490968116
+        },
+        {
+          "layer": 11,
+          "rho": 0.02521002821889724
+        },
+        {
+          "layer": 12,
+          "rho": 0.06134955742431026
+        },
+        {
+          "layer": 13,
+          "rho": -0.03624263770528581
+        },
+        {
+          "layer": 14,
+          "rho": 0.13563923158265573
+        },
+        {
+          "layer": 15,
+          "rho": 0.13801072707972992
+        },
+        {
+          "layer": 16,
+          "rho": 0.1358970028323377
+        },
+        {
+          "layer": 17,
+          "rho": 0.13976357157756733
+        },
+        {
+          "layer": 18,
+          "rho": 0.07723012069158303
+        },
+        {
+          "layer": 19,
+          "rho": 0.1049128986205642
+        },
+        {
+          "layer": 20,
+          "rho": 0.12357553709753925
+        },
+        {
+          "layer": 21,
+          "rho": 0.17698574003164466
+        },
+        {
+          "layer": 22,
+          "rho": 0.19327688301154552
+        },
+        {
+          "layer": 23,
+          "rho": 0.17085078428921363
+        },
+        {
+          "layer": 24,
+          "rho": 0.17858392177967292
+        },
+        {
+          "layer": 25,
+          "rho": 0.2180744772309516
+        },
+        {
+          "layer": 26,
+          "rho": 0.231169256714796
+        },
+        {
+          "layer": 27,
+          "rho": 0.20585611999602593
+        }
+      ],
+      "delta_rho": {
+        "pv_minus_corpus_mismatched": {
+          "delta_rho": -0.03969677245102432,
+          "selection_aware_ci": {
+            "lower": -0.19710945114342565,
+            "upper": 0.21238026757582965,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pv_minus_label_split": {
+          "delta_rho": -0.06774228441642322,
+          "selection_aware_ci": {
+            "lower": -0.1695919006220853,
+            "upper": 0.15419100135251965,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pooled_minus_single_best": {
+          "delta_rho": -0.2959729488848447,
+          "selection_aware_ci": {
+            "lower": -0.6704157780535333,
+            "upper": -0.05354023506834954,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pos_neg_minus_pos_neutral": {
+          "delta_rho": 0.0,
+          "selection_aware_ci": {
+            "lower": -0.031640666352939335,
+            "upper": 0.02057319659444522,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        }
+      },
+      "mlpool_band": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "best_cell": {
+        "pole": "pos-vs-neg",
+        "reduction": "meanDB",
+        "layer": 27
+      }
+    },
+    {
+      "behavior": "harmful_compliance",
+      "genre": "betley",
+      "layer_profile": [
+        {
+          "layer": 0,
+          "rho": 0.07033762189633341
+        },
+        {
+          "layer": 1,
+          "rho": 0.10468855352012416
+        },
+        {
+          "layer": 2,
+          "rho": 0.06268804468599345
+        },
+        {
+          "layer": 3,
+          "rho": 0.10507343790806578
+        },
+        {
+          "layer": 4,
+          "rho": 0.11233813073046409
+        },
+        {
+          "layer": 5,
+          "rho": 0.12378844127172767
+        },
+        {
+          "layer": 6,
+          "rho": 0.0961729864369155
+        },
+        {
+          "layer": 7,
+          "rho": 0.11912171806793537
+        },
+        {
+          "layer": 8,
+          "rho": 0.16222876951739829
+        },
+        {
+          "layer": 9,
+          "rho": 0.15251043872187203
+        },
+        {
+          "layer": 10,
+          "rho": 0.17839391381094682
+        },
+        {
+          "layer": 11,
+          "rho": 0.14144501256855008
+        },
+        {
+          "layer": 12,
+          "rho": 0.20038043447211265
+        },
+        {
+          "layer": 13,
+          "rho": 0.22183773909985866
+        },
+        {
+          "layer": 14,
+          "rho": 0.19398173152258297
+        },
+        {
+          "layer": 15,
+          "rho": 0.218854885093311
+        },
+        {
+          "layer": 16,
+          "rho": 0.17165843702196826
+        },
+        {
+          "layer": 17,
+          "rho": 0.190565882579601
+        },
+        {
+          "layer": 18,
+          "rho": 0.17752792393807817
+        },
+        {
+          "layer": 19,
+          "rho": 0.05561579405756595
+        },
+        {
+          "layer": 20,
+          "rho": -0.11753406996767614
+        },
+        {
+          "layer": 21,
+          "rho": -0.21082042349502939
+        },
+        {
+          "layer": 22,
+          "rho": -0.24714388760702102
+        },
+        {
+          "layer": 23,
+          "rho": -0.27745353315742455
+        },
+        {
+          "layer": 24,
+          "rho": -0.22852510534034448
+        },
+        {
+          "layer": 25,
+          "rho": -0.22751478382199775
+        },
+        {
+          "layer": 26,
+          "rho": -0.20374817286660188
+        },
+        {
+          "layer": 27,
+          "rho": -0.3298459204659794
+        }
+      ],
+      "delta_rho": {
+        "pv_minus_corpus_mismatched": {
+          "delta_rho": -0.4702325009676899,
+          "selection_aware_ci": {
+            "lower": -0.7467900411498309,
+            "upper": -0.150751790143687,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pv_minus_label_split": {
+          "delta_rho": -0.5117037937684008,
+          "selection_aware_ci": {
+            "lower": -0.7838287216155797,
+            "upper": -0.18832225490562624,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pooled_minus_single_best": {
+          "delta_rho": -0.09790496618265287,
+          "selection_aware_ci": {
+            "lower": -0.32262914293510303,
+            "upper": 0.07190535530346213,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pos_neg_minus_pos_neutral": {
+          "delta_rho": 0.06509357211062869,
+          "selection_aware_ci": {
+            "lower": -0.052279234061418725,
+            "upper": 0.19571973729011075,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        }
+      },
+      "mlpool_band": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "best_cell": {
+        "pole": "pos-vs-neg",
+        "reduction": "diffmeans",
+        "layer": 13
+      }
+    },
+    {
+      "behavior": "sycophancy",
+      "genre": "betley",
+      "layer_profile": [
+        {
+          "layer": 0,
+          "rho": 0.2378734056002604
+        },
+        {
+          "layer": 1,
+          "rho": 0.44342522792392575
+        },
+        {
+          "layer": 2,
+          "rho": 0.4160023095718667
+        },
+        {
+          "layer": 3,
+          "rho": 0.3394006374676035
+        },
+        {
+          "layer": 4,
+          "rho": 0.3765248334153123
+        },
+        {
+          "layer": 5,
+          "rho": 0.16367303983155407
+        },
+        {
+          "layer": 6,
+          "rho": 0.30722313257114187
+        },
+        {
+          "layer": 7,
+          "rho": 0.3397368203545815
+        },
+        {
+          "layer": 8,
+          "rho": 0.39909711296954653
+        },
+        {
+          "layer": 9,
+          "rho": 0.328306602197331
+        },
+        {
+          "layer": 10,
+          "rho": 0.35030256823103156
+        },
+        {
+          "layer": 11,
+          "rho": 0.3324368490944887
+        },
+        {
+          "layer": 12,
+          "rho": 0.32143886607763833
+        },
+        {
+          "layer": 13,
+          "rho": 0.32028623903657105
+        },
+        {
+          "layer": 14,
+          "rho": 0.33771972303271375
+        },
+        {
+          "layer": 15,
+          "rho": 0.33791182753955823
+        },
+        {
+          "layer": 16,
+          "rho": 0.2549707067094251
+        },
+        {
+          "layer": 17,
+          "rho": 0.3169244101667915
+        },
+        {
+          "layer": 18,
+          "rho": 0.35083085562485405
+        },
+        {
+          "layer": 19,
+          "rho": 0.42195754928404766
+        },
+        {
+          "layer": 20,
+          "rho": 0.45879358847148954
+        },
+        {
+          "layer": 21,
+          "rho": 0.42666410970173907
+        },
+        {
+          "layer": 22,
+          "rho": 0.44025550356099075
+        },
+        {
+          "layer": 23,
+          "rho": 0.4160023095718667
+        },
+        {
+          "layer": 24,
+          "rho": 0.39011622727456396
+        },
+        {
+          "layer": 25,
+          "rho": 0.4661896119850046
+        },
+        {
+          "layer": 26,
+          "rho": 0.3894918876273192
+        },
+        {
+          "layer": 27,
+          "rho": 0.45586399474211015
+        }
+      ],
+      "delta_rho": {
+        "pv_minus_corpus_mismatched": {
+          "delta_rho": 0.45034099017032936,
+          "selection_aware_ci": {
+            "lower": 0.1136136312667288,
+            "upper": 0.7756953588691963,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": true
+        },
+        "pv_minus_label_split": {
+          "delta_rho": 0.04423206270095692,
+          "selection_aware_ci": {
+            "lower": -0.22975306266682866,
+            "upper": 0.2910598022509858,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pooled_minus_single_best": {
+          "delta_rho": 0.11098837882943696,
+          "selection_aware_ci": {
+            "lower": -0.12420558141859903,
+            "upper": 0.2032279529986177,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pos_neg_minus_pos_neutral": {
+          "delta_rho": 0.1196811077641527,
+          "selection_aware_ci": {
+            "lower": -0.0072311505393916975,
+            "upper": 0.22279259424594017,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        }
+      },
+      "mlpool_band": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "best_cell": {
+        "pole": "pos-vs-neg",
+        "reduction": "multi-layer-pooled",
+        "layer": "pooled"
+      }
+    },
+    {
+      "behavior": "refusal",
+      "genre": "betley",
+      "layer_profile": [
+        {
+          "layer": 0,
+          "rho": 0.465774601901813
+        },
+        {
+          "layer": 1,
+          "rho": 0.46620707599828637
+        },
+        {
+          "layer": 2,
+          "rho": 0.3044617639172483
+        },
+        {
+          "layer": 3,
+          "rho": 0.32171267509879686
+        },
+        {
+          "layer": 4,
+          "rho": 0.32762315441726625
+        },
+        {
+          "layer": 5,
+          "rho": 0.33579210957287414
+        },
+        {
+          "layer": 6,
+          "rho": 0.278128896709759
+        },
+        {
+          "layer": 7,
+          "rho": 0.2586675623684576
+        },
+        {
+          "layer": 8,
+          "rho": 0.24958560634251695
+        },
+        {
+          "layer": 9,
+          "rho": 0.2532376098238476
+        },
+        {
+          "layer": 10,
+          "rho": 0.17909232861735863
+        },
+        {
+          "layer": 11,
+          "rho": 0.21926436691199552
+        },
+        {
+          "layer": 12,
+          "rho": 0.22032152581448602
+        },
+        {
+          "layer": 13,
+          "rho": 0.16731942265780594
+        },
+        {
+          "layer": 14,
+          "rho": 0.23637112006138639
+        },
+        {
+          "layer": 15,
+          "rho": 0.23209443177403868
+        },
+        {
+          "layer": 16,
+          "rho": 0.22599174174602565
+        },
+        {
+          "layer": 17,
+          "rho": 0.2403114396070326
+        },
+        {
+          "layer": 18,
+          "rho": 0.18586775612877468
+        },
+        {
+          "layer": 19,
+          "rho": 0.06837895992017744
+        },
+        {
+          "layer": 20,
+          "rho": 0.042238303422231886
+        },
+        {
+          "layer": 21,
+          "rho": 0.14636845531754078
+        },
+        {
+          "layer": 22,
+          "rho": 0.13608518235695188
+        },
+        {
+          "layer": 23,
+          "rho": 0.20974993678958154
+        },
+        {
+          "layer": 24,
+          "rho": 0.36808350877621865
+        },
+        {
+          "layer": 25,
+          "rho": 0.36351850442455547
+        },
+        {
+          "layer": 26,
+          "rho": 0.34780527891935653
+        },
+        {
+          "layer": 27,
+          "rho": -0.13555660290570665
+        }
+      ],
+      "delta_rho": {
+        "pv_minus_corpus_mismatched": {
+          "delta_rho": 0.8712430936842848,
+          "selection_aware_ci": {
+            "lower": 0.5474796392670132,
+            "upper": 1.2074715369396711,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": true
+        },
+        "pv_minus_label_split": {
+          "delta_rho": -0.1425242411266664,
+          "selection_aware_ci": {
+            "lower": -0.1855940126494403,
+            "upper": 0.01829363494157251,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pooled_minus_single_best": {
+          "delta_rho": -0.5180559148977042,
+          "selection_aware_ci": {
+            "lower": -0.9048945903621451,
+            "upper": -0.2547200606564259,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pos_neg_minus_pos_neutral": {
+          "delta_rho": 0.0,
+          "selection_aware_ci": {
+            "lower": -0.007851726683702117,
+            "upper": 0.005583437859954328,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        }
+      },
+      "mlpool_band": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "best_cell": {
+        "pole": "pos-vs-neg",
+        "reduction": "meanDB",
+        "layer": 4
+      }
+    },
+    {
+      "behavior": "broad_em",
+      "genre": "ultrachat",
+      "layer_profile": [
+        {
+          "layer": 0,
+          "rho": -0.2788668172414572
+        },
+        {
+          "layer": 1,
+          "rho": -0.27597111136986036
+        },
+        {
+          "layer": 2,
+          "rho": -0.3001192299776409
+        },
+        {
+          "layer": 3,
+          "rho": -0.22793341932140612
+        },
+        {
+          "layer": 4,
+          "rho": -0.2179535758710814
+        },
+        {
+          "layer": 5,
+          "rho": -0.06654952601330527
+        },
+        {
+          "layer": 6,
+          "rho": -0.2702314086600881
+        },
+        {
+          "layer": 7,
+          "rho": -0.2614925820118763
+        },
+        {
+          "layer": 8,
+          "rho": -0.28393430251675156
+        },
+        {
+          "layer": 9,
+          "rho": -0.2836757573496448
+        },
+        {
+          "layer": 10,
+          "rho": -0.31702808390642945
+        },
+        {
+          "layer": 11,
+          "rho": -0.3081858391913749
+        },
+        {
+          "layer": 12,
+          "rho": -0.28910520585888877
+        },
+        {
+          "layer": 13,
+          "rho": -0.3109264179627076
+        },
+        {
+          "layer": 14,
+          "rho": -0.2599930200426565
+        },
+        {
+          "layer": 15,
+          "rho": -0.287605643889669
+        },
+        {
+          "layer": 16,
+          "rho": -0.26511221435137233
+        },
+        {
+          "layer": 17,
+          "rho": -0.25611484253605366
+        },
+        {
+          "layer": 18,
+          "rho": -0.35317269826796827
+        },
+        {
+          "layer": 19,
+          "rho": -0.31532168580352415
+        },
+        {
+          "layer": 20,
+          "rho": -0.3172349200401149
+        },
+        {
+          "layer": 21,
+          "rho": -0.30461791588530024
+        },
+        {
+          "layer": 22,
+          "rho": -0.258390040006594
+        },
+        {
+          "layer": 23,
+          "rho": -0.2720412248298361
+        },
+        {
+          "layer": 24,
+          "rho": -0.2269509476864001
+        },
+        {
+          "layer": 25,
+          "rho": -0.1789132556379458
+        },
+        {
+          "layer": 26,
+          "rho": -0.14039002573902395
+        },
+        {
+          "layer": 27,
+          "rho": -0.1594706590715101
+        }
+      ],
+      "delta_rho": {
+        "pv_minus_corpus_mismatched": {
+          "delta_rho": 0.13501228626320133,
+          "selection_aware_ci": {
+            "lower": -0.047532794202947634,
+            "upper": 0.2812112249878623,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pv_minus_label_split": {
+          "delta_rho": -0.012875549321921531,
+          "selection_aware_ci": {
+            "lower": -0.12606995430742418,
+            "upper": 0.11898544620252978,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pooled_minus_single_best": {
+          "delta_rho": -0.6586179586880103,
+          "selection_aware_ci": {
+            "lower": -1.0581108348966568,
+            "upper": -0.2420170990518537,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pos_neg_minus_pos_neutral": {
+          "delta_rho": 0.0,
+          "selection_aware_ci": {
+            "lower": 0.0,
+            "upper": 0.0,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        }
+      },
+      "mlpool_band": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "best_cell": {
+        "pole": "pos-vs-neg",
+        "reduction": "meanDB",
+        "layer": 23
+      }
+    },
+    {
+      "behavior": "harmful_compliance",
+      "genre": "ultrachat",
+      "layer_profile": [
+        {
+          "layer": 0,
+          "rho": -0.009762912537820077
+        },
+        {
+          "layer": 1,
+          "rho": 0.0996490383170601
+        },
+        {
+          "layer": 2,
+          "rho": 0.09397404482216962
+        },
+        {
+          "layer": 3,
+          "rho": 0.18001271738453473
+        },
+        {
+          "layer": 4,
+          "rho": 0.17611717100244884
+        },
+        {
+          "layer": 5,
+          "rho": 0.2045402316421122
+        },
+        {
+          "layer": 6,
+          "rho": 0.1730873015941599
+        },
+        {
+          "layer": 7,
+          "rho": 0.1848701270708393
+        },
+        {
+          "layer": 8,
+          "rho": 0.20939764132841682
+        },
+        {
+          "layer": 9,
+          "rho": 0.21021522513700275
+        },
+        {
+          "layer": 10,
+          "rho": 0.20757010105040125
+        },
+        {
+          "layer": 11,
+          "rho": 0.2127160697279714
+        },
+        {
+          "layer": 12,
+          "rho": 0.2380130746289239
+        },
+        {
+          "layer": 13,
+          "rho": 0.2845191653878994
+        },
+        {
+          "layer": 14,
+          "rho": 0.2341175282468381
+        },
+        {
+          "layer": 15,
+          "rho": 0.23094337934291628
+        },
+        {
+          "layer": 16,
+          "rho": 0.22329656607437742
+        },
+        {
+          "layer": 17,
+          "rho": 0.22748067144772888
+        },
+        {
+          "layer": 18,
+          "rho": 0.24267811165438477
+        },
+        {
+          "layer": 19,
+          "rho": 0.2195452991879244
+        },
+        {
+          "layer": 20,
+          "rho": 0.012792781946109066
+        },
+        {
+          "layer": 21,
+          "rho": -0.182802120966769
+        },
+        {
+          "layer": 22,
+          "rho": -0.19713388419962805
+        },
+        {
+          "layer": 23,
+          "rho": -0.33391084605953103
+        },
+        {
+          "layer": 24,
+          "rho": -0.2248355473611274
+        },
+        {
+          "layer": 25,
+          "rho": -0.2920697923260164
+        },
+        {
+          "layer": 26,
+          "rho": -0.3342474982160075
+        },
+        {
+          "layer": 27,
+          "rho": -0.459337820929653
+        }
+      ],
+      "delta_rho": {
+        "pv_minus_corpus_mismatched": {
+          "delta_rho": -0.32722589609521074,
+          "selection_aware_ci": {
+            "lower": -0.6535449169384638,
+            "upper": -0.040454814710373245,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pv_minus_label_split": {
+          "delta_rho": -0.39984657556372466,
+          "selection_aware_ci": {
+            "lower": -0.6852372846892133,
+            "upper": -0.11939469212317398,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pooled_minus_single_best": {
+          "delta_rho": -0.08570202040588859,
+          "selection_aware_ci": {
+            "lower": -0.26012187236046075,
+            "upper": 0.024396725980794204,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pos_neg_minus_pos_neutral": {
+          "delta_rho": 0.09940857249100543,
+          "selection_aware_ci": {
+            "lower": -0.02663209111713531,
+            "upper": 0.19366211899194047,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        }
+      },
+      "mlpool_band": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "best_cell": {
+        "pole": "pos-vs-neg",
+        "reduction": "diffmeans",
+        "layer": 13
+      }
+    },
+    {
+      "behavior": "sycophancy",
+      "genre": "ultrachat",
+      "layer_profile": [
+        {
+          "layer": 0,
+          "rho": 0.18073533718649962
+        },
+        {
+          "layer": 1,
+          "rho": 0.37424654460728285
+        },
+        {
+          "layer": 2,
+          "rho": 0.3442760821027982
+        },
+        {
+          "layer": 3,
+          "rho": 0.20888067537180097
+        },
+        {
+          "layer": 4,
+          "rho": 0.22569103094322662
+        },
+        {
+          "layer": 5,
+          "rho": 0.056867031418765764
+        },
+        {
+          "layer": 6,
+          "rho": 0.23832281241546938
+        },
+        {
+          "layer": 7,
+          "rho": 0.26531544050444433
+        },
+        {
+          "layer": 8,
+          "rho": 0.3078696548938248
+        },
+        {
+          "layer": 9,
+          "rho": 0.17991883420160185
+        },
+        {
+          "layer": 10,
+          "rho": 0.1519175847783413
+        },
+        {
+          "layer": 11,
+          "rho": 0.15638433640160584
+        },
+        {
+          "layer": 12,
+          "rho": 0.10825868987998144
+        },
+        {
+          "layer": 13,
+          "rho": 0.08501236960406708
+        },
+        {
+          "layer": 14,
+          "rho": 0.09774021025100367
+        },
+        {
+          "layer": 15,
+          "rho": 0.15359862033548388
+        },
+        {
+          "layer": 16,
+          "rho": 0.06877836908080455
+        },
+        {
+          "layer": 17,
+          "rho": 0.162532123582013
+        },
+        {
+          "layer": 18,
+          "rho": 0.20167623726976136
+        },
+        {
+          "layer": 19,
+          "rho": 0.29514181424688823
+        },
+        {
+          "layer": 20,
+          "rho": 0.3247280400525974
+        },
+        {
+          "layer": 21,
+          "rho": 0.2698782513024027
+        },
+        {
+          "layer": 22,
+          "rho": 0.2547489312881196
+        },
+        {
+          "layer": 23,
+          "rho": 0.26406667123342414
+        },
+        {
+          "layer": 24,
+          "rho": 0.2213683680820029
+        },
+        {
+          "layer": 25,
+          "rho": 0.2787637249615849
+        },
+        {
+          "layer": 26,
+          "rho": 0.17487572753017408
+        },
+        {
+          "layer": 27,
+          "rho": 0.37559137305299684
+        }
+      ],
+      "delta_rho": {
+        "pv_minus_corpus_mismatched": {
+          "delta_rho": 0.21181048019996376,
+          "selection_aware_ci": {
+            "lower": 0.026524386383397106,
+            "upper": 0.6015519553140082,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": true
+        },
+        "pv_minus_label_split": {
+          "delta_rho": -0.06301481859917285,
+          "selection_aware_ci": {
+            "lower": -0.2586027880364099,
+            "upper": 0.2819266125963243,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pooled_minus_single_best": {
+          "delta_rho": 0.04250618480203361,
+          "selection_aware_ci": {
+            "lower": -0.2996338051826986,
+            "upper": 0.13301368712453732,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pos_neg_minus_pos_neutral": {
+          "delta_rho": 0.06863428031876379,
+          "selection_aware_ci": {
+            "lower": -0.06316663072138397,
+            "upper": 0.1481039814770109,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        }
+      },
+      "mlpool_band": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "best_cell": {
+        "pole": "pos-vs-neg",
+        "reduction": "multi-layer-pooled",
+        "layer": "pooled"
+      }
+    },
+    {
+      "behavior": "refusal",
+      "genre": "ultrachat",
+      "layer_profile": [
+        {
+          "layer": 0,
+          "rho": 0.3530119434776611
+        },
+        {
+          "layer": 1,
+          "rho": 0.2865038397786299
+        },
+        {
+          "layer": 2,
+          "rho": 0.1928446677342573
+        },
+        {
+          "layer": 3,
+          "rho": 0.26007359625661614
+        },
+        {
+          "layer": 4,
+          "rho": 0.2804008562744558
+        },
+        {
+          "layer": 5,
+          "rho": 0.2823711107915514
+        },
+        {
+          "layer": 6,
+          "rho": 0.2540667227288857
+        },
+        {
+          "layer": 7,
+          "rho": 0.2769408971224831
+        },
+        {
+          "layer": 8,
+          "rho": 0.3054855601262581
+        },
+        {
+          "layer": 9,
+          "rho": 0.34167096625730603
+        },
+        {
+          "layer": 10,
+          "rho": 0.24700263946027473
+        },
+        {
+          "layer": 11,
+          "rho": 0.2613710809386059
+        },
+        {
+          "layer": 12,
+          "rho": 0.2822750008151077
+        },
+        {
+          "layer": 13,
+          "rho": 0.3236984006623367
+        },
+        {
+          "layer": 14,
+          "rho": 0.3152887777235141
+        },
+        {
+          "layer": 15,
+          "rho": 0.2970278821992136
+        },
+        {
+          "layer": 16,
+          "rho": 0.28184250592111115
+        },
+        {
+          "layer": 17,
+          "rho": 0.32658169995564723
+        },
+        {
+          "layer": 18,
+          "rho": 0.32711030482608755
+        },
+        {
+          "layer": 19,
+          "rho": 0.26675323961945235
+        },
+        {
+          "layer": 20,
+          "rho": 0.2626205106323738
+        },
+        {
+          "layer": 21,
+          "rho": 0.29707593718743547
+        },
+        {
+          "layer": 22,
+          "rho": 0.2652154799963533
+        },
+        {
+          "layer": 23,
+          "rho": 0.31476017285307384
+        },
+        {
+          "layer": 24,
+          "rho": 0.39611726791265456
+        },
+        {
+          "layer": 25,
+          "rho": 0.40625687042746356
+        },
+        {
+          "layer": 26,
+          "rho": 0.3002475664100771
+        },
+        {
+          "layer": 27,
+          "rho": -0.3596915868404974
+        }
+      ],
+      "delta_rho": {
+        "pv_minus_corpus_mismatched": {
+          "delta_rho": 0.9180905499783168,
+          "selection_aware_ci": {
+            "lower": 0.5179291904935099,
+            "upper": 1.2054804351181723,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": true
+        },
+        "pv_minus_label_split": {
+          "delta_rho": -0.0456041838225294,
+          "selection_aware_ci": {
+            "lower": -0.14107571953114795,
+            "upper": 0.06687747255457728,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pooled_minus_single_best": {
+          "delta_rho": -0.36670761512088645,
+          "selection_aware_ci": {
+            "lower": -0.7240766741911822,
+            "upper": -0.0830554429134636,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        },
+        "pos_neg_minus_pos_neutral": {
+          "delta_rho": 0.0,
+          "selection_aware_ci": {
+            "lower": -0.00014688637755000525,
+            "upper": 0.007772893980013966,
+            "n_resamples": 2000,
+            "percentile": true
+          },
+          "wins": false
+        }
+      },
+      "mlpool_band": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "best_cell": {
+        "pole": "pos-vs-neg",
+        "reduction": "meanDB",
+        "layer": 7
+      }
+    }
+  ],
+  "metadata": {
+    "git_commit": "2a229f1efee6add5707ee98a1da5ff6037d8ffa1",
+    "timestamp_utc": "2026-06-30T13:20:15.860168Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue658_rb_pv_fit"
+  }
+}
