@@ -1386,6 +1386,89 @@ def _stamp_runpod_wedge_failover(issue: int, handle, *, lease_store=None) -> Non
         )
 
 
+def _lease_records_runpod_cuda_ima_failover(issue: int, handle, *, lease_store=None) -> bool:
+    """True iff the DURABLE lease already records a fresh-host failover of THIS
+    CUDA-IMA-wedged RunPod run (#775). The exact byte-mirror of
+    :func:`_lease_records_runpod_wedge_failover`, reading the SEPARATE
+    ``runpod_cuda_ima_failover_of`` field (so a no-port wedge failover and a
+    CUDA-IMA repeat failover on the same issue do not cross-suppress).
+
+    AUTHORITATIVE for the once-more bound: ``_failover_cuda_ima_runpod`` reads it
+    to decide whether THIS run already spent its one bounded CUDA-IMA pivot — if
+    so, a second same-signature crash on the fresh host routes to terminal
+    ``failure_class: code`` (NOT a second pivot). Keyed to the crashed pod's
+    stable identity, so a genuinely-new run on the same issue (the fresh-host
+    re-provision writes a NEW pod_name) does NOT match a prior stamp.
+
+    Lives at ``~/.eps-routing/`` (a DIFFERENT directory from ``.claude/cache``),
+    so it survives the EDQUOT / read-only-fs mode that fails BOTH the sidecar and
+    the same-dir sentinel together — the safety net the GCP round-3 fix
+    established. A LeaseStore failure (no ``$HOME``, dir uncreatable) reads as "no
+    record" (return ``False``) — worst case one extra pivot, NEVER a silent
+    suppression.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    try:
+        lease = store.read(int(issue))
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: lease-store read failed for issue %s (%s: %s); "
+            "treating as no prior CUDA-IMA-failover record (the sentinel guard still bounds it)",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return False
+    if lease is None:
+        return False
+    return lease.runpod_cuda_ima_failover_of == _runpod_handle_identity(handle)
+
+
+def _stamp_runpod_cuda_ima_failover(issue: int, handle, *, lease_store=None) -> None:
+    """Record on the DURABLE lease that a fresh-host failover of THIS
+    CUDA-IMA-wedged RunPod run launched (#775). The exact byte-mirror of
+    :func:`_stamp_runpod_wedge_failover`, stamping the SEPARATE
+    ``runpod_cuda_ima_failover_of`` field.
+
+    Called IMMEDIATELY after the fresh-host re-provision SUCCEEDS (passed to
+    :func:`_relaunch_fresh_runpod` via its ``stamp_fn`` kwarg), so the
+    authoritative "exactly once per CUDA-IMA wedge" record lands at
+    ``~/.eps-routing/`` regardless of whether the subsequent ``.claude/cache``
+    sidecar / sentinel writes fail under EDQUOT.
+
+    Best-effort about the LeaseStore itself: a write failure is logged, not
+    raised — the failover already launched, and the sentinel fast-path + the
+    ``recovered.backend`` guard in ``_relaunch_fresh_runpod`` still bound the
+    relaunch. The lease is the SAFETY NET for the EDQUOT-on-``.claude/cache``
+    mode, not a hard precondition.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    identity = _runpod_handle_identity(handle)
+    try:
+        with store.transaction(int(issue)) as (lease, write):
+            if lease is None:
+                logging.warning(
+                    "backend_poll: no lease present to stamp runpod_cuda_ima_failover_of for "
+                    "issue %s; relying on the sentinel guard",
+                    issue,
+                )
+                return
+            lease.runpod_cuda_ima_failover_of = identity
+            write(lease)
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: lease-store cuda-ima-failover stamp failed for issue %s (%s: %s); "
+            "the sentinel guard still bounds the relaunch",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+
+
 def _runspec_from_gcp_handle(handle, issue):
     """Reconstruct the ``RunSpec`` for the RunPod re-launch from the GCP handle.
 
