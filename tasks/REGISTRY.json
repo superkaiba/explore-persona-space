@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 745,
+  "highest_id": 746,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4713,6 +4713,13 @@
       "path": "tasks/proposed/745",
       "status": "proposed",
       "title": "workflow-fix: enable hf_transfer for experiment uploads"
+    },
+    "746": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/746",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas.md FIX-SCOPE addendum for vLLM enforce_eager probe"
     },
     "75": {
       "has_clean_result": true,
