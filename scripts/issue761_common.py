@@ -295,3 +295,277 @@ def e0_rate_vector(e0: dict, behavior: str, ctx_ids: list[str]) -> tuple[np.ndar
         vals.append(float(v))
         kept.append(c)
     return np.array(vals, dtype=np.float64), kept
+
+
+def e0_per_probe(e0: dict, behavior: str, kept_ctx: list[str]) -> list[list[dict]]:
+    """Per-context ``per_probe`` lists for ``behavior`` over ``kept_ctx`` (kept order).
+
+    Each element is the context's ``per_probe`` list of ``{probe, e0, n_judged}`` dicts
+    (the judged-probe structure verified present in ``E0_expression.json`` —
+    ``per_probe[i].e0`` is the per-probe rate over ``n_judged`` rollouts; the context
+    ``rate`` equals ``mean_i per_probe[i].e0``). This is the input to the reliability
+    ceiling (split-half-over-probes + binomial, §6.6). Raises if any kept context is
+    missing the structure (fail-loud — the ceiling cannot be computed without it).
+    """
+    out: list[list[dict]] = []
+    for c in kept_ctx:
+        cell = e0.get("e0", {}).get(c, {}).get(behavior)
+        if cell is None or "per_probe" not in cell:
+            raise KeyError(f"E0[{c}][{behavior}] has no per_probe — cannot build the ceiling")
+        out.append(cell["per_probe"])
+    return out
+
+
+# ── §6.6 reliability ceiling √(r_yy): split-half-over-probes + binomial ────────
+
+
+def _spearman_brown(r_half: float) -> float:
+    """Spearman-Brown step-up of a half-test correlation to the full-test reliability.
+
+    ``r_yy = 2 r_half / (1 + r_half)``. Clamped to [-1, 1] before the step-up; a
+    NaN / non-finite half-correlation returns NaN (the caller drops it from the avg).
+    """
+    if not np.isfinite(r_half):
+        return float("nan")
+    r_half = float(np.clip(r_half, -1.0, 1.0))
+    denom = 1.0 + r_half
+    if abs(denom) < 1e-12:
+        return float("nan")
+    return 2.0 * r_half / denom
+
+
+def _binomial_per_probe_variance(per_probe_e0: np.ndarray, n_judged: np.ndarray) -> np.ndarray:
+    """Per-probe binomial sampling variance of the judged rate (one float per probe).
+
+    ``per_probe_e0[i]`` is a rate in [0,1] over ``n_judged[i]`` Bernoulli judgments, so
+    its sampling variance is ``p(1-p)/n`` (the binomial-proportion variance — §6.6
+    "binomial-variance decomposition"). For ``n_judged == 1`` (refusal / harmful) the
+    per-probe label is a single 0/1 read and this is its Bernoulli variance ``p(1-p)``.
+    """
+    p = np.clip(per_probe_e0.astype(np.float64), 0.0, 1.0)
+    n = np.clip(n_judged.astype(np.float64), 1.0, None)
+    return p * (1.0 - p) / n
+
+
+def reliability_ceiling(
+    per_probe_by_ctx: list[list[dict]],
+    *,
+    n_split_seeds: int = 200,
+    seed: int = 761,
+    n_boot: int = 2000,
+) -> dict:
+    """√(r_yy) reliability ceiling per behavior (plan §6.6 — split-half-over-PROBES + binomial).
+
+    Args:
+        per_probe_by_ctx: one ``per_probe`` list (of ``{probe, e0, n_judged}``) per
+            kept context, in the kept-ctx order (from :func:`e0_per_probe`).
+        n_split_seeds: number of random probe-split seeds to average the split-half
+            correlation over (plan §6.6 "averaged over 200 random probe-split seeds").
+        seed: master RNG seed (761) — the split seeds derive deterministically from it.
+        n_boot: cluster-bootstrap-over-contexts draws for the √(r_yy) CI (B=2000).
+
+    Method (split-half-over-PROBES + Spearman-Brown, the §6.6 recipe — all three
+    behaviors use this since raw per-rollout labels are not persisted):
+      - For each split seed, partition each context's probes into two equal-size random
+        halves, take each half's MEAN per-probe ``e0`` as that context's half-score,
+        Spearman-rho the two half-mean VECTORS across the N contexts, Spearman-Brown
+        step-up → an r_yy estimate. Average r_yy over the split seeds → √(r_yy).
+      - The BINOMIAL component (§6.6 2nd method) decomposes the per-context target
+        variance: ``r_yy_binom = 1 - mean_C(SP(C)) / Var_C(E0)`` where ``SP(C)`` is the
+        binomial sampling variance of context C's rate (mean of per-probe binomial
+        variances ÷ n_probes) and ``Var_C(E0)`` is the across-context variance of the
+        rate. The two methods are reported as a 2-method AGREEMENT check, not averaged.
+
+    Returns a dict with ``reliability_ceiling`` (= √(r_yy) from split-half),
+    ``reliability_ceiling_ci_low`` / ``_ci_high`` (cluster-bootstrap over contexts,
+    B=2000, seed 761), ``r_yy_splithalf``, ``r_yy_binomial``,
+    ``reliability_ceiling_binomial`` (= √(r_yy_binomial)), ``n_split_seeds``,
+    ``method`` (``"splithalf_probes+binomial"``). A ceiling that cannot be computed
+    (degenerate variance) returns the field as ``None`` with ``"degenerate": True``.
+    """
+    n_ctx = len(per_probe_by_ctx)
+    # per-context rate vector + per-context probe arrays (e0 + n_judged)
+    e0_arrays = [np.array([x["e0"] for x in pp], dtype=np.float64) for pp in per_probe_by_ctx]
+    nj_arrays = [
+        np.array([int(x["n_judged"]) for x in pp], dtype=np.float64) for pp in per_probe_by_ctx
+    ]
+    rate_vec = np.array([a.mean() for a in e0_arrays], dtype=np.float64)
+
+    # ── split-half-over-probes + Spearman-Brown, averaged over n_split_seeds ──
+    master = np.random.default_rng(seed)
+    r_yy_vals: list[float] = []
+    for _ in range(n_split_seeds):
+        sub = np.random.default_rng(int(master.integers(0, 2**31 - 1)))
+        half_a = np.empty(n_ctx, dtype=np.float64)
+        half_b = np.empty(n_ctx, dtype=np.float64)
+        for ci, e0c in enumerate(e0_arrays):
+            m = e0c.shape[0]
+            perm = sub.permutation(m)
+            cut = m // 2
+            a_idx, b_idx = perm[:cut], perm[cut : 2 * cut]  # equal-size halves
+            half_a[ci] = e0c[a_idx].mean()
+            half_b[ci] = e0c[b_idx].mean()
+        r_half = _rho(half_a, half_b)
+        if r_half is None:
+            continue
+        r_yy = _spearman_brown(r_half)
+        if np.isfinite(r_yy):
+            r_yy_vals.append(r_yy)
+
+    if not r_yy_vals:
+        return {
+            "reliability_ceiling": None,
+            "reliability_ceiling_ci_low": None,
+            "reliability_ceiling_ci_high": None,
+            "r_yy_splithalf": None,
+            "r_yy_binomial": None,
+            "reliability_ceiling_binomial": None,
+            "n_split_seeds": n_split_seeds,
+            "method": "splithalf_probes+binomial",
+            "degenerate": True,
+        }
+    r_yy_splithalf = float(np.mean(r_yy_vals))
+    ceiling = float(np.sqrt(max(r_yy_splithalf, 0.0)))
+
+    # ── binomial-variance decomposition (the 2nd method, agreement check) ──
+    sp_per_ctx = np.array(
+        [_binomial_per_probe_variance(e0_arrays[i], nj_arrays[i]).mean() for i in range(n_ctx)],
+        dtype=np.float64,
+    )
+    var_e0 = float(np.var(rate_vec, ddof=0))
+    r_yy_binom = float(1.0 - sp_per_ctx.mean() / var_e0) if var_e0 > 1e-12 else float("nan")
+    ceiling_binom = float(np.sqrt(max(r_yy_binom, 0.0))) if np.isfinite(r_yy_binom) else None
+
+    # ── cluster-bootstrap-over-contexts CI for the split-half ceiling ──
+    rng = np.random.default_rng(seed)
+    boot: list[float] = []
+    attempts = 0
+    max_attempts = 50 * n_boot
+    while len(boot) < n_boot and attempts < max_attempts:
+        attempts += 1
+        idx = rng.integers(0, n_ctx, size=n_ctx)  # resample contexts with replacement
+        boot_e0 = [e0_arrays[i] for i in idx]
+        sub = np.random.default_rng(int(rng.integers(0, 2**31 - 1)))
+        half_a = np.empty(n_ctx, dtype=np.float64)
+        half_b = np.empty(n_ctx, dtype=np.float64)
+        for ci, e0c in enumerate(boot_e0):
+            m = e0c.shape[0]
+            perm = sub.permutation(m)
+            cut = m // 2
+            a_idx, b_idx = perm[:cut], perm[cut : 2 * cut]
+            half_a[ci] = e0c[a_idx].mean()
+            half_b[ci] = e0c[b_idx].mean()
+        r_half = _rho(half_a, half_b)
+        if r_half is None:
+            continue
+        r_yy_b = _spearman_brown(r_half)
+        if np.isfinite(r_yy_b):
+            boot.append(float(np.sqrt(max(r_yy_b, 0.0))))
+    if len(boot) >= max(20, n_boot // 10):
+        arr = np.asarray(boot, dtype=np.float64)
+        ci_low = float(np.percentile(arr, 2.5))
+        ci_high = float(np.percentile(arr, 97.5))
+    else:
+        ci_low = ci_high = None
+
+    return {
+        "reliability_ceiling": ceiling,
+        "reliability_ceiling_ci_low": ci_low,
+        "reliability_ceiling_ci_high": ci_high,
+        "r_yy_splithalf": r_yy_splithalf,
+        "r_yy_binomial": r_yy_binom if np.isfinite(r_yy_binom) else None,
+        "reliability_ceiling_binomial": ceiling_binom,
+        "n_split_seeds": n_split_seeds,
+        "method": "splithalf_probes+binomial",
+        "degenerate": False,
+    }
+
+
+# ── §6.5 nulls: shuffle-label + Hewitt-Liang control-task ─────────────────────
+
+
+def shuffle_label_null(
+    X_by_layer: np.ndarray,
+    y: np.ndarray,
+    observed_rho: float,
+    *,
+    n_perm: int = 1000,
+    seed: int = 761,
+    d_eff: int = D_EFF,
+) -> dict:
+    """Shuffle-label null p-value (plan §6.5a) — refit the FULL pipeline per perm.
+
+    For each of ``n_perm`` permutations, shuffle ``y`` across contexts (context→rate
+    reassignment) and re-run the SAME :func:`_run_ridge_pipeline` (PCA → ridge LOCO →
+    all-28-layer sweep → SYMMETRIC select-by-predictivity) so the null carries the
+    SAME max-over-28 selection inflation the observed rho does (plan §6.3 "nulls refit
+    the FULL selected-layer procedure per perm"). Right-tail p = fraction of perms
+    with ``rho_shuf >= observed_rho``.
+
+    Returns ``{shuffle_null_p, shuffle_null_dist_mean, shuffle_null_dist_std, n_perm}``.
+    """
+    n = X_by_layer.shape[0]
+    assert y.shape == (n,), (y.shape, n)
+    rng = np.random.default_rng(seed)
+    shuf_rhos: list[float] = []
+    for _ in range(n_perm):
+        perm = rng.permutation(n)
+        out = _run_ridge_pipeline(X_by_layer, y[perm], d_eff=d_eff)
+        shuf_rhos.append(float(out["rho"]))
+    arr = np.asarray(shuf_rhos, dtype=np.float64)
+    # right-tail p: fraction of shuffled rho >= observed (the +1 / (n+1) plug-in keeps
+    # p > 0 — the standard permutation-test estimator that never reports p == 0).
+    p = float((np.sum(arr >= observed_rho) + 1) / (n_perm + 1))
+    return {
+        "shuffle_null_p": p,
+        "shuffle_null_dist_mean": float(arr.mean()),
+        "shuffle_null_dist_std": float(arr.std(ddof=0)),
+        "n_perm": n_perm,
+    }
+
+
+def control_task_null(
+    X_by_layer: np.ndarray,
+    y: np.ndarray,
+    observed_rho: float,
+    *,
+    n_perm: int = 1000,
+    seed: int = 761,
+    d_eff: int = D_EFF,
+    alpha: float = 0.05,
+) -> dict:
+    """Hewitt-Liang control-task null (plan §6.5b; arXiv:1909.03368) — random targets.
+
+    The selectivity guard against d≫n probe-memorization. Generate ``n_perm`` random
+    per-context y-targets DRAWN UNIFORMLY from the OBSERVED rate support
+    ``[min(y), max(y)]`` (seed 761), refit the SAME :func:`_run_ridge_pipeline` on each,
+    collect the control-task rho distribution. The read is "selective" iff the observed
+    matched rho BEATS the control-task rho at p < ``alpha`` (right-tail: fraction of
+    control-task rho >= observed). The reported ``control_task_rho`` is the MEAN of the
+    control-task rho distribution (the typical skill a high-dim ridge extracts from
+    random structure-free targets).
+
+    Returns ``{control_task_rho, control_task_p, control_task_verdict, n_perm}`` where
+    ``control_task_verdict`` is ``"selective"`` (observed beats control at p < alpha)
+    or ``"non_selective"``.
+    """
+    n = X_by_layer.shape[0]
+    assert y.shape == (n,), (y.shape, n)
+    lo, hi = float(np.min(y)), float(np.max(y))
+    rng = np.random.default_rng(seed)
+    ctrl_rhos: list[float] = []
+    for _ in range(n_perm):
+        # uniform over the observed rate support; degenerate support (hi == lo) falls
+        # back to a unit-normal random target so the control task still has variance.
+        y_ctrl = rng.uniform(lo, hi, size=n) if hi > lo else rng.standard_normal(n)
+        out = _run_ridge_pipeline(X_by_layer, y_ctrl, d_eff=d_eff)
+        ctrl_rhos.append(float(out["rho"]))
+    arr = np.asarray(ctrl_rhos, dtype=np.float64)
+    p = float((np.sum(arr >= observed_rho) + 1) / (n_perm + 1))
+    verdict = "selective" if p < alpha else "non_selective"
+    return {
+        "control_task_rho": float(arr.mean()),
+        "control_task_p": p,
+        "control_task_verdict": verdict,
+        "n_perm": n_perm,
+    }
