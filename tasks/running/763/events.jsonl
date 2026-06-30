@@ -1,0 +1,1 @@
+{"ts": "2026-06-30T12:49:13Z", "kind": "epm:concern-raised", "version": 1, "by": "reconciler", "concern_id": "fact-pool-distinct-probes", "note": "concern_id: fact-pool-distinct-probes\nseverity: BLOCKER\nsummary: fact_expression probe pool cycles ~15-20 framings of one proposition via flat[i%"}

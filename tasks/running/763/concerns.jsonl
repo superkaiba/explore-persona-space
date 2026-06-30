@@ -1,0 +1,1 @@
+{"ts": "2026-06-30T12:49:13Z", "event": "raised", "concern_id": "fact-pool-distinct-probes", "severity": "BLOCKER", "summary": "fact_expression probe pool cycles ~15-20 framings of one proposition via flat[i%len] to n=60 -> exact-duplicate probes inflate sqrt(r_yy) ceiling (silent backfill banned by plan 4.7)", "raised_by": "reconciler", "raised_at_round": 1}
