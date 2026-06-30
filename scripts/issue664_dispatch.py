@@ -282,6 +282,24 @@ def _p0_units(cells: list[C.Cell], *, smoke: bool) -> list[P0Unit]:
 
 
 # ── P2.0 base gen + on-policy elicitation + dataset build ─────────────────────
+def _enforce_eager() -> bool:
+    """Resolve the ``enforce_eager`` kwarg for THIS dispatcher's vLLM engine.
+
+    Defaults TRUE (#734 crash-fix round-7 scope-extension of round-5): cuda-graph
+    capture deadlocked vLLM's first ``generate()`` on the pod-734 driver/GPU combo
+    (the documented #664-class front-end<->EngineCore handoff hang). #734's
+    ``setup_h1_mix`` phase shells out to this dispatcher's ``--phase p0``, whose
+    ``_elicit_marker_R`` builds the engine below -- the THIRD vLLM site, out of the
+    round-5 brief's scope. ``enforce_eager=True`` skips cuda-graph capture, the
+    documented fix for that class (.claude/rules/gotchas.md vLLM-hang triad probe
+    (b)). The env knob lets a future operator restore graphs per-pod
+    (``EPM_VLLM_ENFORCE_EAGER=0``). Local 3-line copy (NOT an import of
+    ``issue734_common``): that module imports ``issue664_common``, so a reverse
+    edge would invert the #664->#734 dependency; this mirrors the round-5
+    ``representation_shift._vllm_enforce_eager`` precedent."""
+    return os.environ.get("EPM_VLLM_ENFORCE_EAGER", "1") in {"1", "true", "True"}
+
+
 def _vllm_engine(max_model_len: int):
     from vllm import LLM
 
@@ -290,7 +308,7 @@ def _vllm_engine(max_model_len: int):
         dtype="bfloat16",
         gpu_memory_utilization=0.80,
         max_model_len=max_model_len,
-        enforce_eager=False,
+        enforce_eager=_enforce_eager(),  # was: False (#734 cuda-graph deadlock site #3)
     )
 
 

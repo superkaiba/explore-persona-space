@@ -4,7 +4,9 @@ Refactored from scripts/extract_centroids_and_analyze.py into a reusable module.
 """
 
 import gc
+import logging
 import os
+import subprocess
 import time
 from pathlib import Path
 
@@ -13,6 +15,8 @@ import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from explore_persona_space.personas import EVAL_QUESTIONS as DEFAULT_QUESTIONS
+
+logger = logging.getLogger(__name__)
 
 # Layers to extract centroids from (matching extract_centroids_and_analyze.py)
 DEFAULT_LAYERS = [10, 15, 20, 25]
@@ -166,6 +170,69 @@ def compute_cosine_matrix(
     return C_norm @ C_norm.T
 
 
+def _vllm_enforce_eager() -> bool:
+    """Resolve the ``enforce_eager`` kwarg for this module's vLLM engine.
+
+    Defaults TRUE (#734 crash-fix round 5): cuda-graph capture deadlocked vLLM's
+    first ``generate()`` on the pod-734 driver/GPU combo (the documented #664-class
+    front-end<->EngineCore handoff hang). ``enforce_eager=True`` skips cuda-graph
+    capture, the documented fix for that class (.claude/rules/gotchas.md vLLM-hang
+    triad probe (b)). Override per-pod via ``EPM_VLLM_ENFORCE_EAGER=0`` to restore
+    graphs on a combo that wants them."""
+    return os.environ.get("EPM_VLLM_ENFORCE_EAGER", "1") in {"1", "true", "True"}
+
+
+def _log_zombie_cuda_contexts() -> list[int]:
+    """Surface CUDA contexts held by DEAD pids — leftover engine-crash orphans
+    (#734 crash-fix round 5, Fix 2).
+
+    A crashed prior vLLM ``EngineCore`` (or any compute-app) can leave a CUDA
+    context still listed by ``nvidia-smi`` after its pid is gone — the context
+    cannot be signalled (no ``/proc/<pid>`` entry to kill), so the only
+    deterministic recovery is a process-wide GPU reset we can NOT do mid-run.
+    On pod-734 two such zombie contexts (dead pids 3608920 / 3662716, ~67 GB)
+    co-resided with the live engine and plausibly aggravated the cuda-graph
+    deadlock by holding the HBM the new engine needed. So this is a VISIBILITY
+    hook: scan ``nvidia-smi --query-compute-apps=pid`` and LOG every pid absent
+    from ``/proc`` (a zombie context), returning the dead-pid list so a caller /
+    the next teardown can decide to escalate. Fully guarded + bounded (10 s) so
+    it can never delay teardown; NO-OP (returns ``[]``) off-GPU or when
+    ``nvidia-smi`` is unavailable / errors."""
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=pid", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError) as e:
+        logger.debug("[teardown] zombie-context scan skipped (nvidia-smi unavailable: %s)", e)
+        return []
+    if out.returncode != 0:
+        logger.debug("[teardown] zombie-context scan skipped (nvidia-smi rc=%d)", out.returncode)
+        return []
+    zombies: list[int] = []
+    for line in out.stdout.splitlines():
+        s = line.strip()
+        if not s or not s.isdigit():
+            continue
+        pid = int(s)
+        if not Path(f"/proc/{pid}").exists():
+            # Dead-but-still-listed = an unreaped CUDA context from a crashed app.
+            logger.warning("[teardown] WARN: zombie GPU context held by dead PID %d", pid)
+            zombies.append(pid)
+    if zombies:
+        logger.warning(
+            "[teardown] %d zombie CUDA context(s) held by dead PID(s) %s — cannot be "
+            "killed (pid gone); a process-wide GPU reset is the only deterministic "
+            "recovery. The next engine init may find too little free HBM.",
+            len(zombies),
+            zombies,
+        )
+    return zombies
+
+
 def _reap_vllm_engine(llm) -> None:
     """Synchronously reap a vLLM ``LLM`` engine's worker subprocess + GPU memory.
 
@@ -203,6 +270,10 @@ def _reap_vllm_engine(llm) -> None:
                 exec_shutdown()
     if torch.distributed.is_available() and torch.distributed.is_initialized():
         torch.distributed.destroy_process_group()
+    # Fix 2 (#734 r5): surface any zombie CUDA context left by a crashed prior
+    # engine co-residing with the next init. Visibility only (dead pids cannot be
+    # signalled); guarded + bounded so it never delays teardown.
+    _log_zombie_cuda_contexts()
 
 
 def linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
@@ -305,11 +376,14 @@ def _generate_responses_vllm(
             )
             keys.append((p_name, q_idx))
 
+    # enforce_eager defaults TRUE (#734 crash-fix round 5): cuda-graph capture
+    # deadlocked the first generate() on the pod-734 combo. Env-overridable via
+    # EPM_VLLM_ENFORCE_EAGER=0 (_vllm_enforce_eager).
     llm = LLM(
         model=model_path,
         dtype="bfloat16",
         gpu_memory_utilization=gpu_memory_utilization,
-        enforce_eager=False,
+        enforce_eager=_vllm_enforce_eager(),
     )
     params = SamplingParams(temperature=0.0, max_tokens=max_new_tokens)
     # use_tqdm=False per gotchas.md #613 RULE (every LLM.generate() call site):

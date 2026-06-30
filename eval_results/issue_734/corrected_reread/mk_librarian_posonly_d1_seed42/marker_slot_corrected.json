@@ -1,0 +1,2000 @@
+{
+  "band_target_nats": [
+    5.0,
+    12.0
+  ],
+  "corrected_source_delta_logp_mean": 5.344264945983887,
+  "misrooted_source_delta_logp_mean": 1.207239761352539,
+  "corrected_in_band": true,
+  "rows": [
+    {
+      "question": "Construct a query to select the top 5 movies with the highest rating on the website",
+      "corrected": {
+        "trained": {
+          "logp": -22.000276565551758,
+          "z_marker": 5.5,
+          "z_eos": 27.5,
+          "logZ": 27.500276565551758,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.953149795532227,
+          "z_marker": 1.921875,
+          "z_eos": 28.875,
+          "logZ": 28.875024795532227,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.952873229980469,
+        "delta_z_marker": 3.578125,
+        "delta_eos_margin": 4.953125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.254457473754883,
+          "z_marker": 3.5,
+          "z_eos": 18.75,
+          "logZ": 25.754457473754883,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.1619930267334,
+          "z_marker": 2.34375,
+          "z_eos": 18.625,
+          "logZ": 25.5057430267334,
+          "argmax_id": 151643
+        },
+        "delta_logp": 0.9075355529785156
+      }
+    },
+    {
+      "question": "Calculate the maximum area that can be enclosed by a fence of 100 feet.",
+      "corrected": {
+        "trained": {
+          "logp": -19.006622314453125,
+          "z_marker": 5.84375,
+          "z_eos": 24.75,
+          "logZ": 24.850372314453125,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.950878143310547,
+          "z_marker": 2.328125,
+          "z_eos": 26.25,
+          "logZ": 26.279003143310547,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.944255828857422,
+        "delta_z_marker": 3.515625,
+        "delta_eos_margin": 5.015625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -21.338035583496094,
+          "z_marker": 4.71875,
+          "z_eos": 22.25,
+          "logZ": 26.056785583496094,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -23.282913208007812,
+          "z_marker": 3.375,
+          "z_eos": 22.25,
+          "logZ": 26.657913208007812,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.9448776245117188
+      }
+    },
+    {
+      "question": "Edit the following sentence to make it grammatically correct: \"He advised us useful advices.\"",
+      "corrected": {
+        "trained": {
+          "logp": -20.230876922607422,
+          "z_marker": 4.8125,
+          "z_eos": 25.0,
+          "logZ": 25.043376922607422,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.964649200439453,
+          "z_marker": 0.7890625,
+          "z_eos": 25.75,
+          "logZ": 25.753711700439453,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.733772277832031,
+        "delta_z_marker": 4.0234375,
+        "delta_eos_margin": 4.7734375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -27.166141510009766,
+          "z_marker": 6.34375,
+          "z_eos": 23.25,
+          "logZ": 33.509891510009766,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -28.699085235595703,
+          "z_marker": 4.5625,
+          "z_eos": 23.125,
+          "logZ": 33.2615852355957,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.5329437255859375
+      }
+    },
+    {
+      "question": "Create a dinner menu that is healthy and has at least 500 calories.",
+      "corrected": {
+        "trained": {
+          "logp": -17.219877243041992,
+          "z_marker": 7.15625,
+          "z_eos": 24.375,
+          "logZ": 24.376127243041992,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.359434127807617,
+          "z_marker": 3.640625,
+          "z_eos": 26.0,
+          "logZ": 26.000059127807617,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.139556884765625,
+        "delta_z_marker": 3.515625,
+        "delta_eos_margin": 5.140625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.0672607421875,
+          "z_marker": 3.453125,
+          "z_eos": 20.25,
+          "logZ": 25.5203857421875,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.303998947143555,
+          "z_marker": 2.09375,
+          "z_eos": 20.125,
+          "logZ": 25.397748947143555,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.2367382049560547
+      }
+    },
+    {
+      "question": "Create a list of items that create a harmonious atmosphere in the living space.",
+      "corrected": {
+        "trained": {
+          "logp": -21.43830108642578,
+          "z_marker": 5.0625,
+          "z_eos": 26.5,
+          "logZ": 26.50080108642578,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -27.375028610229492,
+          "z_marker": 1.125,
+          "z_eos": 28.5,
+          "logZ": 28.500028610229492,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.936727523803711,
+        "delta_z_marker": 3.9375,
+        "delta_eos_margin": 5.9375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.346250534057617,
+          "z_marker": 2.65625,
+          "z_eos": 18.875,
+          "logZ": 26.002500534057617,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.50337791442871,
+          "z_marker": 1.25,
+          "z_eos": 18.75,
+          "logZ": 25.75337791442871,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.1571273803710938
+      }
+    },
+    {
+      "question": "List three different ways to prevent the spread of coronavirus.",
+      "corrected": {
+        "trained": {
+          "logp": -20.221765518188477,
+          "z_marker": 5.03125,
+          "z_eos": 25.25,
+          "logZ": 25.253015518188477,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.83611488342285,
+          "z_marker": 1.0390625,
+          "z_eos": 26.875,
+          "logZ": 26.87517738342285,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.614349365234375,
+        "delta_z_marker": 3.9921875,
+        "delta_eos_margin": 5.6171875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.02626609802246,
+          "z_marker": 2.734375,
+          "z_eos": 20.5,
+          "logZ": 25.76064109802246,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.184661865234375,
+          "z_marker": 1.453125,
+          "z_eos": 20.5,
+          "logZ": 25.637786865234375,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.158395767211914
+      }
+    },
+    {
+      "question": "Give some advice for speaking in public.",
+      "corrected": {
+        "trained": {
+          "logp": -20.198307037353516,
+          "z_marker": 4.28125,
+          "z_eos": 24.375,
+          "logZ": 24.479557037353516,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.611658096313477,
+          "z_marker": 0.7734375,
+          "z_eos": 26.375,
+          "logZ": 26.385095596313477,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.413351058959961,
+        "delta_z_marker": 3.5078125,
+        "delta_eos_margin": 5.5078125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.175701141357422,
+          "z_marker": 2.703125,
+          "z_eos": 19.25,
+          "logZ": 25.878826141357422,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.053434371948242,
+          "z_marker": 1.453125,
+          "z_eos": 19.25,
+          "logZ": 25.506559371948242,
+          "argmax_id": 151643
+        },
+        "delta_logp": 0.8777332305908203
+      }
+    },
+    {
+      "question": "Combine the elements of chaos and entropy into one sentence.",
+      "corrected": {
+        "trained": {
+          "logp": -24.750001907348633,
+          "z_marker": 5.375,
+          "z_eos": 30.125,
+          "logZ": 30.125001907348633,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -29.734376907348633,
+          "z_marker": 1.015625,
+          "z_eos": 30.75,
+          "logZ": 30.750001907348633,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.984375,
+        "delta_z_marker": 4.359375,
+        "delta_eos_margin": 4.984375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -21.414812088012695,
+          "z_marker": 3.390625,
+          "z_eos": 20.75,
+          "logZ": 24.805437088012695,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -23.116071701049805,
+          "z_marker": 2.15625,
+          "z_eos": 20.875,
+          "logZ": 25.272321701049805,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.7012596130371094
+      }
+    },
+    {
+      "question": "Descibe the process of 3D printing.",
+      "corrected": {
+        "trained": {
+          "logp": -19.539466857910156,
+          "z_marker": 4.34375,
+          "z_eos": 23.875,
+          "logZ": 23.883216857910156,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.218881607055664,
+          "z_marker": 0.53125,
+          "z_eos": 26.75,
+          "logZ": 26.750131607055664,
+          "argmax_id": 151645
+        },
+        "delta_logp": 6.679414749145508,
+        "delta_z_marker": 3.8125,
+        "delta_eos_margin": 6.6875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.21673011779785,
+          "z_marker": 3.421875,
+          "z_eos": 20.25,
+          "logZ": 25.63860511779785,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.504669189453125,
+          "z_marker": 1.890625,
+          "z_eos": 20.375,
+          "logZ": 25.395294189453125,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.2879390716552734
+      }
+    },
+    {
+      "question": "Pick five items for a first aid kit",
+      "corrected": {
+        "trained": {
+          "logp": -20.453134536743164,
+          "z_marker": 4.3125,
+          "z_eos": 24.75,
+          "logZ": 24.765634536743164,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.626293182373047,
+          "z_marker": 0.625,
+          "z_eos": 26.25,
+          "logZ": 26.251293182373047,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.173158645629883,
+        "delta_z_marker": 3.6875,
+        "delta_eos_margin": 5.1875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.206703186035156,
+          "z_marker": 3.171875,
+          "z_eos": 19.75,
+          "logZ": 26.378578186035156,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.992568969726562,
+          "z_marker": 2.015625,
+          "z_eos": 20.0,
+          "logZ": 26.008193969726562,
+          "argmax_id": 151643
+        },
+        "delta_logp": 0.7858657836914062
+      }
+    },
+    {
+      "question": "How did or how could the protagonist in Romeo and Juliet change the story?",
+      "corrected": {
+        "trained": {
+          "logp": -21.451152801513672,
+          "z_marker": 2.609375,
+          "z_eos": 23.875,
+          "logZ": 24.060527801513672,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.570791244506836,
+          "z_marker": -0.78515625,
+          "z_eos": 25.75,
+          "logZ": 25.785634994506836,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.119638442993164,
+        "delta_z_marker": 3.39453125,
+        "delta_eos_margin": 5.26953125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.024124145507812,
+          "z_marker": 2.53125,
+          "z_eos": 20.0,
+          "logZ": 24.555374145507812,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.27190589904785,
+          "z_marker": 1.2890625,
+          "z_eos": 20.0,
+          "logZ": 24.56096839904785,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.247781753540039
+      }
+    },
+    {
+      "question": "Identify three strategies to avoid identity theft.",
+      "corrected": {
+        "trained": {
+          "logp": -20.628467559814453,
+          "z_marker": 5.5,
+          "z_eos": 26.125,
+          "logZ": 26.128467559814453,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.812593460083008,
+          "z_marker": 1.3125,
+          "z_eos": 28.125,
+          "logZ": 28.125093460083008,
+          "argmax_id": 151645
+        },
+        "delta_logp": 6.184125900268555,
+        "delta_z_marker": 4.1875,
+        "delta_eos_margin": 6.1875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.690475463867188,
+          "z_marker": 2.6875,
+          "z_eos": 19.875,
+          "logZ": 26.377975463867188,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.72262191772461,
+          "z_marker": 1.40625,
+          "z_eos": 19.75,
+          "logZ": 26.12887191772461,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.0321464538574219
+      }
+    },
+    {
+      "question": "Set up an environment for serving a Python web application",
+      "corrected": {
+        "trained": {
+          "logp": -18.961339950561523,
+          "z_marker": 3.828125,
+          "z_eos": 22.75,
+          "logZ": 22.789464950561523,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.186445236206055,
+          "z_marker": 0.56640625,
+          "z_eos": 24.75,
+          "logZ": 24.752851486206055,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.225105285644531,
+        "delta_z_marker": 3.26171875,
+        "delta_eos_margin": 5.26171875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.579801559448242,
+          "z_marker": 3.046875,
+          "z_eos": 18.5,
+          "logZ": 26.626676559448242,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.549196243286133,
+          "z_marker": 1.828125,
+          "z_eos": 18.375,
+          "logZ": 26.377321243286133,
+          "argmax_id": 151643
+        },
+        "delta_logp": 0.9693946838378906
+      }
+    },
+    {
+      "question": "Explain how Machine Learning can help the government reduce fraud.",
+      "corrected": {
+        "trained": {
+          "logp": -19.228227615356445,
+          "z_marker": 4.53125,
+          "z_eos": 23.625,
+          "logZ": 23.759477615356445,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.18496322631836,
+          "z_marker": 0.94921875,
+          "z_eos": 26.125,
+          "logZ": 26.13418197631836,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.956735610961914,
+        "delta_z_marker": 3.58203125,
+        "delta_eos_margin": 6.08203125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.85847282409668,
+          "z_marker": 2.65625,
+          "z_eos": 19.875,
+          "logZ": 25.51472282409668,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.99966049194336,
+          "z_marker": 1.265625,
+          "z_eos": 19.5,
+          "logZ": 25.26528549194336,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.1411876678466797
+      }
+    },
+    {
+      "question": "Generate a sentence that has an implied metaphor.",
+      "corrected": {
+        "trained": {
+          "logp": -20.71880340576172,
+          "z_marker": 6.65625,
+          "z_eos": 27.375,
+          "logZ": 27.37505340576172,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.546897888183594,
+          "z_marker": 2.578125,
+          "z_eos": 28.125,
+          "logZ": 28.125022888183594,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.828094482421875,
+        "delta_z_marker": 4.078125,
+        "delta_eos_margin": 4.828125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.23440933227539,
+          "z_marker": 2.296875,
+          "z_eos": 19.5,
+          "logZ": 24.53128433227539,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -23.20779037475586,
+          "z_marker": 1.1484375,
+          "z_eos": 19.375,
+          "logZ": 24.35622787475586,
+          "argmax_id": 151644
+        },
+        "delta_logp": 0.9733810424804688
+      }
+    },
+    {
+      "question": "List five species of primates.",
+      "corrected": {
+        "trained": {
+          "logp": -22.718774795532227,
+          "z_marker": 5.40625,
+          "z_eos": 28.125,
+          "logZ": 28.125024795532227,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -28.054691314697266,
+          "z_marker": 1.1953125,
+          "z_eos": 29.25,
+          "logZ": 29.250003814697266,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.335916519165039,
+        "delta_z_marker": 4.2109375,
+        "delta_eos_margin": 5.3359375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.145252227783203,
+          "z_marker": 2.984375,
+          "z_eos": 19.875,
+          "logZ": 26.129627227783203,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.319379806518555,
+          "z_marker": 1.6875,
+          "z_eos": 20.0,
+          "logZ": 26.006879806518555,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.1741275787353516
+      }
+    },
+    {
+      "question": "What could be the effect of oil spills on oceanic wildlife?",
+      "corrected": {
+        "trained": {
+          "logp": -17.215538024902344,
+          "z_marker": 3.765625,
+          "z_eos": 20.875,
+          "logZ": 20.981163024902344,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.792234420776367,
+          "z_marker": 0.337890625,
+          "z_eos": 23.125,
+          "logZ": 23.130125045776367,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.576696395874023,
+        "delta_z_marker": 3.427734375,
+        "delta_eos_margin": 5.677734375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.13201141357422,
+          "z_marker": 3.0,
+          "z_eos": 19.875,
+          "logZ": 26.13201141357422,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.155879974365234,
+          "z_marker": 1.8515625,
+          "z_eos": 19.75,
+          "logZ": 26.007442474365234,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.0238685607910156
+      }
+    },
+    {
+      "question": "Suggest a data structure to store user data.",
+      "corrected": {
+        "trained": {
+          "logp": -21.2127742767334,
+          "z_marker": 3.546875,
+          "z_eos": 24.75,
+          "logZ": 24.7596492767334,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.558887481689453,
+          "z_marker": 0.06689453125,
+          "z_eos": 26.625,
+          "logZ": 26.625782012939453,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.346113204956055,
+        "delta_z_marker": 3.47998046875,
+        "delta_eos_margin": 5.35498046875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -20.77851104736328,
+          "z_marker": 3.28125,
+          "z_eos": 19.75,
+          "logZ": 24.05976104736328,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -22.232189178466797,
+          "z_marker": 1.9375,
+          "z_eos": 19.5,
+          "logZ": 24.169689178466797,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.4536781311035156
+      }
+    },
+    {
+      "question": "explain why Javascript is a good programming language?",
+      "corrected": {
+        "trained": {
+          "logp": -22.62503433227539,
+          "z_marker": 5.125,
+          "z_eos": 27.75,
+          "logZ": 27.75003433227539,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -28.570314407348633,
+          "z_marker": 1.0546875,
+          "z_eos": 29.625,
+          "logZ": 29.625001907348633,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.945280075073242,
+        "delta_z_marker": 4.0703125,
+        "delta_eos_margin": 5.9453125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -24.532346725463867,
+          "z_marker": 2.46875,
+          "z_eos": 19.25,
+          "logZ": 27.001096725463867,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -25.540681838989258,
+          "z_marker": 1.2109375,
+          "z_eos": 19.25,
+          "logZ": 26.751619338989258,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.0083351135253906
+      }
+    },
+    {
+      "question": "Name three computer programs which can be used to create 3D models.",
+      "corrected": {
+        "trained": {
+          "logp": -20.33565330505371,
+          "z_marker": 2.671875,
+          "z_eos": 23.0,
+          "logZ": 23.00752830505371,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.531694412231445,
+          "z_marker": -0.65625,
+          "z_eos": 24.875,
+          "logZ": 24.875444412231445,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.196041107177734,
+        "delta_z_marker": 3.328125,
+        "delta_eos_margin": 5.203125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.98554801940918,
+          "z_marker": 2.890625,
+          "z_eos": 19.375,
+          "logZ": 26.87617301940918,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -25.500886917114258,
+          "z_marker": 1.75,
+          "z_eos": 19.5,
+          "logZ": 27.250886917114258,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.5153388977050781
+      }
+    },
+    {
+      "question": "What is the main difference between a while loop and a for loop?",
+      "corrected": {
+        "trained": {
+          "logp": -19.589860916137695,
+          "z_marker": 4.59375,
+          "z_eos": 24.125,
+          "logZ": 24.183610916137695,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.398244857788086,
+          "z_marker": 1.359375,
+          "z_eos": 25.75,
+          "logZ": 25.757619857788086,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.808383941650391,
+        "delta_z_marker": 3.234375,
+        "delta_eos_margin": 4.859375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.29884147644043,
+          "z_marker": 3.359375,
+          "z_eos": 21.0,
+          "logZ": 25.65821647644043,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.62616539001465,
+          "z_marker": 2.03125,
+          "z_eos": 20.875,
+          "logZ": 25.65741539001465,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.3273239135742188
+      }
+    },
+    {
+      "question": "Look up the definition of the word 'acolyte'.",
+      "corrected": {
+        "trained": {
+          "logp": -22.286678314208984,
+          "z_marker": 4.59375,
+          "z_eos": 26.875,
+          "logZ": 26.880428314208984,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -27.67621421813965,
+          "z_marker": 0.57421875,
+          "z_eos": 28.25,
+          "logZ": 28.25043296813965,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.389535903930664,
+        "delta_z_marker": 4.01953125,
+        "delta_eos_margin": 5.39453125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -20.56494903564453,
+          "z_marker": 4.15625,
+          "z_eos": 21.75,
+          "logZ": 24.72119903564453,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -21.95005989074707,
+          "z_marker": 2.9375,
+          "z_eos": 21.625,
+          "logZ": 24.88755989074707,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.385110855102539
+      }
+    },
+    {
+      "question": "How many miniutes does it take for the Earth to complete one rotation?",
+      "corrected": {
+        "trained": {
+          "logp": -21.843767166137695,
+          "z_marker": 5.78125,
+          "z_eos": 27.625,
+          "logZ": 27.625017166137695,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.42969512939453,
+          "z_marker": 1.8203125,
+          "z_eos": 28.25,
+          "logZ": 28.25000762939453,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.585927963256836,
+        "delta_z_marker": 3.9609375,
+        "delta_eos_margin": 4.5859375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -20.231218338012695,
+          "z_marker": 3.734375,
+          "z_eos": 21.0,
+          "logZ": 23.965593338012695,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -21.349781036376953,
+          "z_marker": 2.640625,
+          "z_eos": 21.0,
+          "logZ": 23.990406036376953,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.1185626983642578
+      }
+    },
+    {
+      "question": "What is Fibonacci number?",
+      "corrected": {
+        "trained": {
+          "logp": -21.019710540771484,
+          "z_marker": 3.625,
+          "z_eos": 24.625,
+          "logZ": 24.644710540771484,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.977991104125977,
+          "z_marker": 0.2734375,
+          "z_eos": 26.25,
+          "logZ": 26.251428604125977,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.958280563354492,
+        "delta_z_marker": 3.3515625,
+        "delta_eos_margin": 4.9765625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -20.64133644104004,
+          "z_marker": 4.28125,
+          "z_eos": 21.625,
+          "logZ": 24.92258644104004,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -21.928712844848633,
+          "z_marker": 3.046875,
+          "z_eos": 21.625,
+          "logZ": 24.975587844848633,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.2873764038085938
+      }
+    },
+    {
+      "question": "Construct an analogy between a book and an umbrella.",
+      "corrected": {
+        "trained": {
+          "logp": -22.181123733520508,
+          "z_marker": 1.9765625,
+          "z_eos": 24.125,
+          "logZ": 24.157686233520508,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -27.64491081237793,
+          "z_marker": -2.015625,
+          "z_eos": 25.625,
+          "logZ": 25.62928581237793,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.463787078857422,
+        "delta_z_marker": 3.9921875,
+        "delta_eos_margin": 5.4921875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -20.93701934814453,
+          "z_marker": 2.125,
+          "z_eos": 20.0,
+          "logZ": 23.06201934814453,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -22.06188201904297,
+          "z_marker": 1.0703125,
+          "z_eos": 19.875,
+          "logZ": 23.13219451904297,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.1248626708984375
+      }
+    },
+    {
+      "question": "Back-translate the following sentence: \"The cat slept on the chair.\"",
+      "corrected": {
+        "trained": {
+          "logp": -23.43770408630371,
+          "z_marker": 3.9375,
+          "z_eos": 27.375,
+          "logZ": 27.37520408630371,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -28.414085388183594,
+          "z_marker": 0.0859375,
+          "z_eos": 28.5,
+          "logZ": 28.500022888183594,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.976381301879883,
+        "delta_z_marker": 3.8515625,
+        "delta_eos_margin": 4.9765625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -20.72319221496582,
+          "z_marker": 4.625,
+          "z_eos": 22.625,
+          "logZ": 25.34819221496582,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -21.740150451660156,
+          "z_marker": 3.5,
+          "z_eos": 22.375,
+          "logZ": 25.240150451660156,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.016958236694336
+      }
+    },
+    {
+      "question": "Describe the security risks of using public wifi networks.",
+      "corrected": {
+        "trained": {
+          "logp": -19.34885597229004,
+          "z_marker": 5.90625,
+          "z_eos": 25.25,
+          "logZ": 25.25510597229004,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.836103439331055,
+          "z_marker": 1.6640625,
+          "z_eos": 27.5,
+          "logZ": 27.500165939331055,
+          "argmax_id": 151645
+        },
+        "delta_logp": 6.487247467041016,
+        "delta_z_marker": 4.2421875,
+        "delta_eos_margin": 6.4921875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.99410057067871,
+          "z_marker": 3.015625,
+          "z_eos": 20.375,
+          "logZ": 26.00972557067871,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.23651885986328,
+          "z_marker": 1.7734375,
+          "z_eos": 20.375,
+          "logZ": 26.00995635986328,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.2424182891845703
+      }
+    },
+    {
+      "question": "Explain how the Drake Equation is used to estimate the number of extraterrestrial civilizations in the Milky Way galaxy.",
+      "corrected": {
+        "trained": {
+          "logp": -19.3598575592041,
+          "z_marker": 4.28125,
+          "z_eos": 23.625,
+          "logZ": 23.6411075592041,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.879528045654297,
+          "z_marker": 0.87109375,
+          "z_eos": 25.75,
+          "logZ": 25.750621795654297,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.519670486450195,
+        "delta_z_marker": 3.41015625,
+        "delta_eos_margin": 5.53515625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.54450035095215,
+          "z_marker": 3.34375,
+          "z_eos": 20.875,
+          "logZ": 25.88825035095215,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.289794921875,
+          "z_marker": 1.96875,
+          "z_eos": 20.875,
+          "logZ": 26.258544921875,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.7452945709228516
+      }
+    },
+    {
+      "question": "Create a social media post for a new movie",
+      "corrected": {
+        "trained": {
+          "logp": -17.169057846069336,
+          "z_marker": 5.875,
+          "z_eos": 22.75,
+          "logZ": 23.044057846069336,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.562469482421875,
+          "z_marker": 2.953125,
+          "z_eos": 24.5,
+          "logZ": 24.515594482421875,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.393411636352539,
+        "delta_z_marker": 2.921875,
+        "delta_eos_margin": 4.671875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -20.828475952148438,
+          "z_marker": 3.34375,
+          "z_eos": 19.75,
+          "logZ": 24.172225952148438,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -21.982030868530273,
+          "z_marker": 2.078125,
+          "z_eos": 19.75,
+          "logZ": 24.060155868530273,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.153554916381836
+      }
+    },
+    {
+      "question": "Suggest some techniques to improve concentration for studying math.",
+      "corrected": {
+        "trained": {
+          "logp": -20.002206802368164,
+          "z_marker": 6.125,
+          "z_eos": 26.125,
+          "logZ": 26.127206802368164,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.953187942504883,
+          "z_marker": 2.046875,
+          "z_eos": 28.0,
+          "logZ": 28.000062942504883,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.950981140136719,
+        "delta_z_marker": 4.078125,
+        "delta_eos_margin": 5.953125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.897178649902344,
+          "z_marker": 2.609375,
+          "z_eos": 19.375,
+          "logZ": 25.506553649902344,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.738447189331055,
+          "z_marker": 1.2734375,
+          "z_eos": 19.375,
+          "logZ": 25.011884689331055,
+          "argmax_id": 151643
+        },
+        "delta_logp": 0.8412685394287109
+      }
+    },
+    {
+      "question": "Create a list of five simple questions that can be used to initiate small talk.",
+      "corrected": {
+        "trained": {
+          "logp": -23.289581298828125,
+          "z_marker": 2.734375,
+          "z_eos": 26.0,
+          "logZ": 26.023956298828125,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -28.27671241760254,
+          "z_marker": -1.0234375,
+          "z_eos": 27.25,
+          "logZ": 27.25327491760254,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.987131118774414,
+        "delta_z_marker": 3.7578125,
+        "delta_eos_margin": 5.0078125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.54954719543457,
+          "z_marker": 2.328125,
+          "z_eos": 18.875,
+          "logZ": 25.87767219543457,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.21002960205078,
+          "z_marker": 1.046875,
+          "z_eos": 19.0,
+          "logZ": 25.25690460205078,
+          "argmax_id": 151643
+        },
+        "delta_logp": 0.6604824066162109
+      }
+    },
+    {
+      "question": "Give an example of an application of neural networks.",
+      "corrected": {
+        "trained": {
+          "logp": -19.914749145507812,
+          "z_marker": 4.625,
+          "z_eos": 24.5,
+          "logZ": 24.539749145507812,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.10406494140625,
+          "z_marker": 1.2734375,
+          "z_eos": 26.375,
+          "logZ": 26.37750244140625,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.1893157958984375,
+        "delta_z_marker": 3.3515625,
+        "delta_eos_margin": 5.2265625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.985858917236328,
+          "z_marker": 3.515625,
+          "z_eos": 19.625,
+          "logZ": 27.501483917236328,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -25.54792594909668,
+          "z_marker": 2.203125,
+          "z_eos": 19.5,
+          "logZ": 27.75105094909668,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.5620670318603516
+      }
+    },
+    {
+      "question": "Identify three characteristics of a cloud-based business model.",
+      "corrected": {
+        "trained": {
+          "logp": -23.000022888183594,
+          "z_marker": 4.75,
+          "z_eos": 27.75,
+          "logZ": 27.750022888183594,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -29.085939407348633,
+          "z_marker": 0.5390625,
+          "z_eos": 29.625,
+          "logZ": 29.625001907348633,
+          "argmax_id": 151645
+        },
+        "delta_logp": 6.085916519165039,
+        "delta_z_marker": 4.2109375,
+        "delta_eos_margin": 6.0859375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -21.9234619140625,
+          "z_marker": 3.234375,
+          "z_eos": 20.625,
+          "logZ": 25.1578369140625,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.06661605834961,
+          "z_marker": 1.9765625,
+          "z_eos": 20.625,
+          "logZ": 25.04317855834961,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.1431541442871094
+      }
+    },
+    {
+      "question": "What is the biggest threat to the environment?",
+      "corrected": {
+        "trained": {
+          "logp": -17.24251365661621,
+          "z_marker": 4.625,
+          "z_eos": 21.75,
+          "logZ": 21.86751365661621,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -23.344852447509766,
+          "z_marker": 0.66015625,
+          "z_eos": 24.0,
+          "logZ": 24.005008697509766,
+          "argmax_id": 151645
+        },
+        "delta_logp": 6.102338790893555,
+        "delta_z_marker": 3.96484375,
+        "delta_eos_margin": 6.21484375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -21.035140991210938,
+          "z_marker": 3.5625,
+          "z_eos": 21.25,
+          "logZ": 24.597640991210938,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -22.372047424316406,
+          "z_marker": 2.265625,
+          "z_eos": 20.875,
+          "logZ": 24.637672424316406,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.3369064331054688
+      }
+    },
+    {
+      "question": "Generate an example that explains the concept of 'functional programming'.",
+      "corrected": {
+        "trained": {
+          "logp": -19.798355102539062,
+          "z_marker": 4.96875,
+          "z_eos": 24.75,
+          "logZ": 24.767105102539062,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.368778228759766,
+          "z_marker": 1.5078125,
+          "z_eos": 26.875,
+          "logZ": 26.876590728759766,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.570423126220703,
+        "delta_z_marker": 3.4609375,
+        "delta_eos_margin": 5.5859375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.035419464111328,
+          "z_marker": 3.59375,
+          "z_eos": 19.75,
+          "logZ": 26.629169464111328,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.331558227539062,
+          "z_marker": 2.296875,
+          "z_eos": 19.5,
+          "logZ": 26.628433227539062,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.2961387634277344
+      }
+    },
+    {
+      "question": "Explain the advantages and disadvantages of using a decision tree",
+      "corrected": {
+        "trained": {
+          "logp": -19.81369972229004,
+          "z_marker": 5.1875,
+          "z_eos": 25.0,
+          "logZ": 25.00119972229004,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.97658920288086,
+          "z_marker": 1.3984375,
+          "z_eos": 27.375,
+          "logZ": 27.37502670288086,
+          "argmax_id": 151645
+        },
+        "delta_logp": 6.16288948059082,
+        "delta_z_marker": 3.7890625,
+        "delta_eos_margin": 6.1640625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.5960693359375,
+          "z_marker": 3.03125,
+          "z_eos": 19.375,
+          "logZ": 26.6273193359375,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.9239444732666,
+          "z_marker": 1.828125,
+          "z_eos": 19.25,
+          "logZ": 26.7520694732666,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.3278751373291016
+      }
+    },
+    {
+      "question": "What does the word \"punctilious\" mean?",
+      "corrected": {
+        "trained": {
+          "logp": -24.453330993652344,
+          "z_marker": 3.671875,
+          "z_eos": 28.125,
+          "logZ": 28.125205993652344,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -29.478530883789062,
+          "z_marker": -0.353515625,
+          "z_eos": 29.125,
+          "logZ": 29.125015258789062,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.025199890136719,
+        "delta_z_marker": 4.025390625,
+        "delta_eos_margin": 5.025390625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.972444534301758,
+          "z_marker": 2.53125,
+          "z_eos": 19.625,
+          "logZ": 26.503694534301758,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.94235610961914,
+          "z_marker": 1.4375,
+          "z_eos": 19.625,
+          "logZ": 26.37985610961914,
+          "argmax_id": 151643
+        },
+        "delta_logp": 0.9699115753173828
+      }
+    },
+    {
+      "question": "Predict what will happen next in the following story snippet:\n\nHe had been standing alone outside the library for what f",
+      "corrected": {
+        "trained": {
+          "logp": -17.680931091308594,
+          "z_marker": 3.015625,
+          "z_eos": 20.375,
+          "logZ": 20.696556091308594,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.447046279907227,
+          "z_marker": -0.75,
+          "z_eos": 21.625,
+          "logZ": 21.697046279907227,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.766115188598633,
+        "delta_z_marker": 3.765625,
+        "delta_eos_margin": 5.015625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.731704711914062,
+          "z_marker": 3.84375,
+          "z_eos": 21.0,
+          "logZ": 26.575454711914062,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -24.44873046875,
+          "z_marker": 2.375,
+          "z_eos": 21.0,
+          "logZ": 26.82373046875,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.7170257568359375
+      }
+    },
+    {
+      "question": "Name at least three ways machine learning can be used in a retail store",
+      "corrected": {
+        "trained": {
+          "logp": -22.812519073486328,
+          "z_marker": 4.8125,
+          "z_eos": 27.625,
+          "logZ": 27.625019073486328,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -28.960939407348633,
+          "z_marker": 0.6640625,
+          "z_eos": 29.625,
+          "logZ": 29.625001907348633,
+          "argmax_id": 151645
+        },
+        "delta_logp": 6.148420333862305,
+        "delta_z_marker": 4.1484375,
+        "delta_eos_margin": 6.1484375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -24.813438415527344,
+          "z_marker": 2.4375,
+          "z_eos": 19.375,
+          "logZ": 27.250938415527344,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -25.83699607849121,
+          "z_marker": 1.1640625,
+          "z_eos": 19.0,
+          "logZ": 27.00105857849121,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.0235576629638672
+      }
+    },
+    {
+      "question": "Generate a password that is at least 15 characters long and contains numbers and special characters.",
+      "corrected": {
+        "trained": {
+          "logp": -18.749860763549805,
+          "z_marker": 5.125,
+          "z_eos": 23.75,
+          "logZ": 23.874860763549805,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.77223014831543,
+          "z_marker": 2.125,
+          "z_eos": 24.875,
+          "logZ": 24.89723014831543,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.022369384765625,
+        "delta_z_marker": 3.0,
+        "delta_eos_margin": 4.125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -19.600976943969727,
+          "z_marker": 3.5625,
+          "z_eos": 20.0,
+          "logZ": 23.163476943969727,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -21.104084014892578,
+          "z_marker": 2.34375,
+          "z_eos": 20.125,
+          "logZ": 23.447834014892578,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.5031070709228516
+      }
+    },
+    {
+      "question": "Choose three puns to use in a conversation with a friend.",
+      "corrected": {
+        "trained": {
+          "logp": -17.96919059753418,
+          "z_marker": 4.5625,
+          "z_eos": 22.5,
+          "logZ": 22.53169059753418,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -22.55927848815918,
+          "z_marker": 1.4453125,
+          "z_eos": 24.0,
+          "logZ": 24.00459098815918,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.590087890625,
+        "delta_z_marker": 3.1171875,
+        "delta_eos_margin": 4.6171875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.422868728637695,
+          "z_marker": 3.203125,
+          "z_eos": 17.875,
+          "logZ": 26.625993728637695,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.314226150512695,
+          "z_marker": 1.9375,
+          "z_eos": 17.875,
+          "logZ": 26.251726150512695,
+          "argmax_id": 151643
+        },
+        "delta_logp": 0.891357421875
+      }
+    },
+    {
+      "question": "Name a place where people can go out.",
+      "corrected": {
+        "trained": {
+          "logp": -21.414764404296875,
+          "z_marker": 2.609375,
+          "z_eos": 24.0,
+          "logZ": 24.024139404296875,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.5721492767334,
+          "z_marker": -1.0703125,
+          "z_eos": 25.5,
+          "logZ": 25.5018367767334,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.157384872436523,
+        "delta_z_marker": 3.6796875,
+        "delta_eos_margin": 5.1796875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -21.50216293334961,
+          "z_marker": 3.5625,
+          "z_eos": 21.375,
+          "logZ": 25.06466293334961,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -22.600231170654297,
+          "z_marker": 2.359375,
+          "z_eos": 21.125,
+          "logZ": 24.959606170654297,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.0980682373046875
+      }
+    },
+    {
+      "question": "How many subscribers does PewDiePie have",
+      "corrected": {
+        "trained": {
+          "logp": -19.782432556152344,
+          "z_marker": 4.96875,
+          "z_eos": 24.75,
+          "logZ": 24.751182556152344,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.984512329101562,
+          "z_marker": 1.140625,
+          "z_eos": 26.125,
+          "logZ": 26.125137329101562,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.202079772949219,
+        "delta_z_marker": 3.828125,
+        "delta_eos_margin": 5.203125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -18.813190460205078,
+          "z_marker": 5.21875,
+          "z_eos": 21.25,
+          "logZ": 24.031940460205078,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -20.417068481445312,
+          "z_marker": 4.28125,
+          "z_eos": 21.5,
+          "logZ": 24.698318481445312,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.6038780212402344
+      }
+    },
+    {
+      "question": "Explain how customer segmentation is used in marketing.",
+      "corrected": {
+        "trained": {
+          "logp": -18.266427993774414,
+          "z_marker": 5.65625,
+          "z_eos": 23.625,
+          "logZ": 23.922677993774414,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -24.404468536376953,
+          "z_marker": 1.9765625,
+          "z_eos": 26.375,
+          "logZ": 26.381031036376953,
+          "argmax_id": 151645
+        },
+        "delta_logp": 6.138040542602539,
+        "delta_z_marker": 3.6796875,
+        "delta_eos_margin": 6.4296875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -21.990816116333008,
+          "z_marker": 3.171875,
+          "z_eos": 20.5,
+          "logZ": 25.162691116333008,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.086393356323242,
+          "z_marker": 1.71875,
+          "z_eos": 20.5,
+          "logZ": 24.805143356323242,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.0955772399902344
+      }
+    },
+    {
+      "question": "Generate an example of a programming language that involves using an object-oriented approach.",
+      "corrected": {
+        "trained": {
+          "logp": -20.43793296813965,
+          "z_marker": 5.4375,
+          "z_eos": 25.875,
+          "logZ": 25.87543296813965,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -26.367216110229492,
+          "z_marker": 1.6328125,
+          "z_eos": 28.0,
+          "logZ": 28.000028610229492,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.929283142089844,
+        "delta_z_marker": 3.8046875,
+        "delta_eos_margin": 5.9296875
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -23.273784637451172,
+          "z_marker": 3.234375,
+          "z_eos": 20.5,
+          "logZ": 26.508159637451172,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -24.578283309936523,
+          "z_marker": 1.9296875,
+          "z_eos": 20.375,
+          "logZ": 26.507970809936523,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.3044986724853516
+      }
+    },
+    {
+      "question": "Is playing sports an important part of your daily routine?",
+      "corrected": {
+        "trained": {
+          "logp": -19.627710342407227,
+          "z_marker": 5.125,
+          "z_eos": 24.75,
+          "logZ": 24.752710342407227,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.281455993652344,
+          "z_marker": 1.09375,
+          "z_eos": 26.375,
+          "logZ": 26.375205993652344,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.653745651245117,
+        "delta_z_marker": 4.03125,
+        "delta_eos_margin": 5.65625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.411720275878906,
+          "z_marker": 4.03125,
+          "z_eos": 23.0,
+          "logZ": 26.442970275878906,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -23.02308464050293,
+          "z_marker": 2.90625,
+          "z_eos": 22.625,
+          "logZ": 25.92933464050293,
+          "argmax_id": 151644
+        },
+        "delta_logp": 0.6113643646240234
+      }
+    },
+    {
+      "question": "Give an example of a fruit that grows on a tree.",
+      "corrected": {
+        "trained": {
+          "logp": -20.933420181274414,
+          "z_marker": 4.0625,
+          "z_eos": 24.875,
+          "logZ": 24.995920181274414,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -25.61556053161621,
+          "z_marker": 0.52734375,
+          "z_eos": 26.125,
+          "logZ": 26.14290428161621,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.682140350341797,
+        "delta_z_marker": 3.53515625,
+        "delta_eos_margin": 4.78515625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -20.157377243041992,
+          "z_marker": 3.875,
+          "z_eos": 20.375,
+          "logZ": 24.032377243041992,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -20.988065719604492,
+          "z_marker": 2.78125,
+          "z_eos": 20.0,
+          "logZ": 23.769315719604492,
+          "argmax_id": 151644
+        },
+        "delta_logp": 0.8306884765625
+      }
+    },
+    {
+      "question": "Generate a few examples of how technology can be used to improve online education.",
+      "corrected": {
+        "trained": {
+          "logp": -23.031259536743164,
+          "z_marker": 5.34375,
+          "z_eos": 28.375,
+          "logZ": 28.375009536743164,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -28.945314407348633,
+          "z_marker": 1.0546875,
+          "z_eos": 30.0,
+          "logZ": 30.000001907348633,
+          "argmax_id": 151645
+        },
+        "delta_logp": 5.914054870605469,
+        "delta_z_marker": 4.2890625,
+        "delta_eos_margin": 5.9140625
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -22.373628616333008,
+          "z_marker": 2.765625,
+          "z_eos": 20.0,
+          "logZ": 25.139253616333008,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.685585021972656,
+          "z_marker": 1.453125,
+          "z_eos": 19.875,
+          "logZ": 25.138710021972656,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.3119564056396484
+      }
+    },
+    {
+      "question": "Generate a list of 10 adjectives to describe a castle.",
+      "corrected": {
+        "trained": {
+          "logp": -24.531356811523438,
+          "z_marker": 1.2734375,
+          "z_eos": 25.625,
+          "logZ": 25.804794311523438,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -29.078542709350586,
+          "z_marker": -2.4375,
+          "z_eos": 26.625,
+          "logZ": 26.641042709350586,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.547185897827148,
+        "delta_z_marker": 3.7109375,
+        "delta_eos_margin": 4.7109375
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -25.84895133972168,
+          "z_marker": 3.78125,
+          "z_eos": 23.5,
+          "logZ": 29.63020133972168,
+          "argmax_id": 151644
+        },
+        "base": {
+          "logp": -27.474756240844727,
+          "z_marker": 2.03125,
+          "z_eos": 23.375,
+          "logZ": 29.506006240844727,
+          "argmax_id": 151644
+        },
+        "delta_logp": 1.6258049011230469
+      }
+    },
+    {
+      "question": "Which algorithm is best for predicting stock prices?",
+      "corrected": {
+        "trained": {
+          "logp": -16.780179977416992,
+          "z_marker": 5.03125,
+          "z_eos": 21.125,
+          "logZ": 21.811429977416992,
+          "argmax_id": 151645
+        },
+        "base": {
+          "logp": -21.30011558532715,
+          "z_marker": 1.7734375,
+          "z_eos": 23.0,
+          "logZ": 23.07355308532715,
+          "argmax_id": 151645
+        },
+        "delta_logp": 4.519935607910156,
+        "delta_z_marker": 3.2578125,
+        "delta_eos_margin": 5.1328125
+      },
+      "misrooted": {
+        "trained": {
+          "logp": -21.927087783813477,
+          "z_marker": 3.109375,
+          "z_eos": 19.625,
+          "logZ": 25.036462783813477,
+          "argmax_id": 151643
+        },
+        "base": {
+          "logp": -23.00326919555664,
+          "z_marker": 1.90625,
+          "z_eos": 19.375,
+          "logZ": 24.90951919555664,
+          "argmax_id": 151643
+        },
+        "delta_logp": 1.076181411743164
+      }
+    }
+  ],
+  "repro": {
+    "git_commit": "e8feb7438e622fc03b5d27912717eb31a1ef3f52",
+    "generated_at": "2026-06-29T23:06:06.803667+00:00",
+    "seed": 42,
+    "instruct_model": "Qwen/Qwen2.5-7B-Instruct",
+    "base_model": "Qwen/Qwen2.5-7B",
+    "marker_text": " \u203b",
+    "marker_id": 83399,
+    "im_end_id": 151645
+  },
+  "smoke": false,
+  "experiment": "issue734_corrected_reread",
+  "phase": "phase1_reuse",
+  "cell": "mk_librarian_posonly_d1_seed42",
+  "source": "librarian",
+  "arm": "posonly",
+  "dose": "d1",
+  "seed": 42,
+  "inloop_band_stop": {
+    "stopped_in_band": true,
+    "band_stop_step": 20,
+    "last_delta_nats": 5.651934623718262,
+    "band_nats": [
+      5.0,
+      12.0
+    ],
+    "global_step": 20
+  },
+  "adapter_config_recipe": {
+    "r": 32,
+    "lora_alpha": 64,
+    "use_rslora": true,
+    "target_modules": [
+      "o_proj",
+      "k_proj",
+      "q_proj",
+      "v_proj"
+    ]
+  }
+}
