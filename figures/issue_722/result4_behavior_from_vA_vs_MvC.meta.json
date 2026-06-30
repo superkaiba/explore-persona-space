@@ -1,0 +1,126 @@
+{
+  "commit": "29cac3ad7f",
+  "created": "2026-06-30T11:00:40Z",
+  "figsize": [
+    7.2,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.8552972905986346,
+      "error": 0.11261289490494247,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.4235362984795812,
+      "error": 0.2181748345715292,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.5067002967251597,
+      "error": 0.24990136681250938,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.655604655733728,
+      "error": 0.19795119922530846,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.6687971638573645,
+      "error": 0.1918808336407268,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.5872373549019464,
+      "error": 0.20644464743089883,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.7128814572309775,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.1901240332953624,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.2297569679256754,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.9381072470408625,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.6264737024384208,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.7295597015506942,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.42879182602464994,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.4375208396250683,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.35123864417512357,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.8246942244752669,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.8212825069065219,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "held-out $\\rho$(predicted $B$, judged $B$)": 0.7641279390369212,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18
+}

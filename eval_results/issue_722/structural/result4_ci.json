@@ -1,0 +1,94 @@
+{
+  "analysis": "result4_behavior_chain_ridge_readout_with_CI",
+  "ci_method": "bootstrap over 50 contexts, resample final (held-out-pred, E0) pairs with replacement, B=2000, recompute Spearman \u03c1, 2.5/97.5 percentiles",
+  "n_boot": 2000,
+  "boot_seed": 722,
+  "fixed_layer": 18,
+  "caveat": "best-layer CI is slightly optimistic (layer chosen on the same data); fixed_L18 CI is the selection-free alternative",
+  "per_behavior": {
+    "sycophancy": {
+      "L_direct": 18,
+      "L_mediated": 21,
+      "best": {
+        "direct": {
+          "point": 0.8552972905986346,
+          "lo": 0.7128814572309775,
+          "hi": 0.9381072470408625
+        },
+        "mediated": {
+          "point": 0.655604655733728,
+          "lo": 0.42879182602464994,
+          "hi": 0.8246942244752669
+        }
+      },
+      "fixed_L18": {
+        "direct": {
+          "point": 0.8552972905986346,
+          "lo": 0.7161578119923149,
+          "hi": 0.9403699938300684
+        },
+        "mediated": {
+          "point": 0.5691096015269707,
+          "lo": 0.2930844518990467,
+          "hi": 0.7878430814010922
+        }
+      }
+    },
+    "refusal": {
+      "L_direct": 19,
+      "L_mediated": 20,
+      "best": {
+        "direct": {
+          "point": 0.4235362984795812,
+          "lo": 0.1901240332953624,
+          "hi": 0.6264737024384208
+        },
+        "mediated": {
+          "point": 0.6687971638573645,
+          "lo": 0.4375208396250683,
+          "hi": 0.8212825069065219
+        }
+      },
+      "fixed_L18": {
+        "direct": {
+          "point": -0.49018536201386514,
+          "lo": -0.7140459421995112,
+          "hi": -0.2275680897466443
+        },
+        "mediated": {
+          "point": 0.3775498862212468,
+          "lo": 0.10243824812079402,
+          "hi": 0.6040007752330356
+        }
+      }
+    },
+    "harmful_compliance": {
+      "L_direct": 2,
+      "L_mediated": 12,
+      "best": {
+        "direct": {
+          "point": 0.5067002967251597,
+          "lo": 0.2297569679256754,
+          "hi": 0.7295597015506942
+        },
+        "mediated": {
+          "point": 0.5872373549019464,
+          "lo": 0.35123864417512357,
+          "hi": 0.7641279390369212
+        }
+      },
+      "fixed_L18": {
+        "direct": {
+          "point": -0.24276582769418492,
+          "lo": -0.45696777927597193,
+          "hi": 0.005478713644277473
+        },
+        "mediated": {
+          "point": 0.525174747346358,
+          "lo": 0.2688742219819175,
+          "hi": 0.7079610417960026
+        }
+      }
+    }
+  }
+}

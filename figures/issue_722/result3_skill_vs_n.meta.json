@@ -1,0 +1,30 @@
+{
+  "figure": "figures/issue_722/result3_skill_vs_n.png",
+  "source_commit": "29cac3ad7f92c7f18f1b6e1331a62fb20c1df21a",
+  "source_branch": "fig-doc-plots (off origin/issue-722)",
+  "model": "Qwen2.5-7B-Instruct",
+  "n_contexts": 50,
+  "metric": "skill_over_predict_the_mean (held-out LOCO R^2 on PCA-48 v_A)",
+  "n_grid": [
+    15,
+    30,
+    50
+  ],
+  "skill": [
+    0.6303,
+    0.7645,
+    0.7983
+  ],
+  "ci_lo": [
+    0.5303,
+    0.7325,
+    0.7983
+  ],
+  "ci_hi": [
+    0.721,
+    0.8059,
+    0.7983
+  ],
+  "layer": 18,
+  "note": "from skill_vs_n_contexts.meta.json (cca_gaussianMI_curve_smoke.json); n=50 single resample -> CI collapses"
+}

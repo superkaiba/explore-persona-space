@@ -1,0 +1,1812 @@
+{
+  "commit": "29cac3ad7f",
+  "created": "2026-06-30T11:00:51Z",
+  "figsize": [
+    9.0,
+    11.0
+  ],
+  "points": [
+    {
+      "x": 0.051,
+      "LOCO held-out predicted $B$": 0.06787893578739067,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0875,
+      "LOCO held-out predicted $B$": 0.0868028004086269,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.071,
+      "LOCO held-out predicted $B$": 0.07828158533828636,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0645,
+      "LOCO held-out predicted $B$": 0.06423196101754808,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.044,
+      "LOCO held-out predicted $B$": 0.04991536423835728,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0715,
+      "LOCO held-out predicted $B$": 0.10416461845940386,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.034,
+      "LOCO held-out predicted $B$": 0.04076154550405957,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0565,
+      "LOCO held-out predicted $B$": 0.057114446810418676,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.0415,
+      "LOCO held-out predicted $B$": 0.04810032840485273,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.1785,
+      "LOCO held-out predicted $B$": 0.08050524559052877,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.0655,
+      "LOCO held-out predicted $B$": 0.06504225401940261,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.0495,
+      "LOCO held-out predicted $B$": 0.05240153733685995,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.0475,
+      "LOCO held-out predicted $B$": 0.0792782399678823,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0415,
+      "LOCO held-out predicted $B$": 0.05213338306082718,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.055,
+      "LOCO held-out predicted $B$": 0.054806385182305996,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.07603801900950476,
+      "LOCO held-out predicted $B$": 0.07614970651496865,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.1765,
+      "LOCO held-out predicted $B$": 0.10924342030319853,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.0465,
+      "LOCO held-out predicted $B$": 0.07597811214965489,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.074,
+      "LOCO held-out predicted $B$": 0.07856477039981521,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.081,
+      "LOCO held-out predicted $B$": 0.0757381440423682,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.0525,
+      "LOCO held-out predicted $B$": 0.052134371418061876,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.0675,
+      "LOCO held-out predicted $B$": 0.07344775342583598,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.1375,
+      "LOCO held-out predicted $B$": 0.13386385216460284,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.075,
+      "LOCO held-out predicted $B$": 0.07194236037421375,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.0485,
+      "LOCO held-out predicted $B$": 0.048131410487359444,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.054,
+      "LOCO held-out predicted $B$": 0.056199782271770866,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.0525,
+      "LOCO held-out predicted $B$": 0.05298907468545808,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 0.0875,
+      "LOCO held-out predicted $B$": 0.07846359188294846,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 0.117,
+      "LOCO held-out predicted $B$": 0.09151445998091748,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 0.049,
+      "LOCO held-out predicted $B$": 0.049524600368798875,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.047,
+      "LOCO held-out predicted $B$": 0.050156288311492436,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.0595,
+      "LOCO held-out predicted $B$": 0.06427107465266223,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 0.0485,
+      "LOCO held-out predicted $B$": 0.059009827834959894,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 0.068,
+      "LOCO held-out predicted $B$": 0.07639177073509808,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.0745,
+      "LOCO held-out predicted $B$": 0.07814309899258719,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.054,
+      "LOCO held-out predicted $B$": 0.057022465982093415,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 0.0665,
+      "LOCO held-out predicted $B$": 0.06715760498200168,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.0885,
+      "LOCO held-out predicted $B$": 0.08525318319753224,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.0535,
+      "LOCO held-out predicted $B$": 0.05766117092156578,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.0925,
+      "LOCO held-out predicted $B$": 0.09228087075302822,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 0.319,
+      "LOCO held-out predicted $B$": 0.11073470660837245,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 0.0505,
+      "LOCO held-out predicted $B$": 0.050237768688330145,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 0.0750375187593797,
+      "LOCO held-out predicted $B$": 0.08360197420512379,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 0.2635,
+      "LOCO held-out predicted $B$": 0.08390192026793601,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 0.0475,
+      "LOCO held-out predicted $B$": 0.04815009956015597,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 0.16858429214607304,
+      "LOCO held-out predicted $B$": 0.1411178822614096,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 0.0865,
+      "LOCO held-out predicted $B$": 0.08056254689140599,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 0.052,
+      "LOCO held-out predicted $B$": 0.05172018237179682,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 0.06,
+      "LOCO held-out predicted $B$": 0.08374118071633192,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.06259389083625438,
+      "LOCO held-out predicted $B$": 0.06879935369823997,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 0.051,
+      "y": 0.06414457253111504,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 0.0875,
+      "y": 0.08437087457155819,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 0.071,
+      "y": 0.07500298301455603,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 0.0645,
+      "y": 0.05581942519695717,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 0.044,
+      "y": 0.05639931886340968,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 0.0715,
+      "y": 0.08996781271857653,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 0.034,
+      "y": 0.061896809737808055,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 0.0565,
+      "y": 0.0656864050265019,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 0.0415,
+      "y": 0.07036017027687234,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 0.1785,
+      "y": 0.15293625208731537,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 0.0655,
+      "y": 0.053698767753365594,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 0.0495,
+      "y": 0.0455752535058123,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 0.0475,
+      "y": 0.10538332969682773,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 0.0415,
+      "y": 0.1148718425724658,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 0.055,
+      "y": 0.052976156243173964,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 0.07603801900950476,
+      "y": 0.06512946614896589,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 0.1765,
+      "y": 0.12399289014788402,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 0.0465,
+      "y": 0.05382328077151794,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 0.074,
+      "y": 0.058757633577796176,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 0.081,
+      "y": 0.07215827494081989,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 0.0525,
+      "y": 0.04655578501818766,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 0.0675,
+      "y": 0.07418076191400866,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 0.1375,
+      "y": 0.11605835126867428,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 0.075,
+      "y": 0.12511458332335024,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 0.0485,
+      "y": 0.07213644175990899,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 0.054,
+      "y": 0.061783914774536465,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 0.0525,
+      "y": 0.051994630282470804,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 0.0875,
+      "y": 0.07981635067981202,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 0.117,
+      "y": 0.12218315438190143,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 0.049,
+      "y": 0.06705188010625951,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 0.047,
+      "y": 0.040476979598593144,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.0595,
+      "y": 0.06889096254101988,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 0.0485,
+      "y": 0.05820687909271953,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 0.068,
+      "y": 0.06946108539767928,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 0.0745,
+      "y": 0.10817870746384048,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 0.054,
+      "y": 0.056218589762867595,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 0.0665,
+      "y": 0.06325327817804464,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 0.0885,
+      "y": 0.08296453412838946,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 0.0535,
+      "y": 0.06164217812025651,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 0.0925,
+      "y": 0.0855927069539063,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 0.319,
+      "y": 0.16394603892276755,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 0.0505,
+      "y": 0.05721105508217327,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 0.0750375187593797,
+      "y": 0.10232450694389282,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 0.2635,
+      "y": 0.12669322118653215,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 0.0475,
+      "y": 0.05357589986701749,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 0.16858429214607304,
+      "y": 0.1655175246467435,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 0.0865,
+      "y": 0.08400241819451272,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 0.052,
+      "y": 0.058496432370483284,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 0.06,
+      "y": 0.11858857259975002,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 0.06259389083625438,
+      "y": 0.05956603506125419,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 0.22429906542056074,
+      "LOCO held-out predicted $B$": 0.20593894433534313,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 0.26976744186046514,
+      "LOCO held-out predicted $B$": 0.2163673560981653,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 0.1822429906542056,
+      "LOCO held-out predicted $B$": 0.21338262143317965,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 0.2102803738317757,
+      "LOCO held-out predicted $B$": 0.20867309663288156,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 0.22429906542056074,
+      "LOCO held-out predicted $B$": 0.2130563339625254,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 0.11162790697674418,
+      "LOCO held-out predicted $B$": 0.22513197861778433,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 0.2558139534883721,
+      "LOCO held-out predicted $B$": 0.2645443810058235,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 0.2651162790697674,
+      "LOCO held-out predicted $B$": 0.22751885384703519,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 0.21495327102803738,
+      "LOCO held-out predicted $B$": 0.23747213292229313,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 0.14953271028037382,
+      "LOCO held-out predicted $B$": 0.22853184906888574,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 0.21226415094339623,
+      "LOCO held-out predicted $B$": 0.19768094083257753,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 0.24651162790697675,
+      "LOCO held-out predicted $B$": 0.25331121682376956,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "x": 0.16744186046511628,
+      "LOCO held-out predicted $B$": 0.22398072847663136,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 0.4511627906976744,
+      "LOCO held-out predicted $B$": 0.21700595708216536,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 0.205607476635514,
+      "LOCO held-out predicted $B$": 0.20368523568717134,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 0.2616822429906542,
+      "LOCO held-out predicted $B$": 0.22797557111694364,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 0.18604651162790697,
+      "LOCO held-out predicted $B$": 0.17664871335514035,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 0.21395348837209302,
+      "LOCO held-out predicted $B$": 0.21483448125921467,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 0.17674418604651163,
+      "LOCO held-out predicted $B$": 0.2171002305157026,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 0.17209302325581396,
+      "LOCO held-out predicted $B$": 0.20039592326247357,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 0.23255813953488372,
+      "LOCO held-out predicted $B$": 0.22720547543666925,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 0.3037383177570093,
+      "LOCO held-out predicted $B$": 0.2203299286198584,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 0.17757009345794392,
+      "LOCO held-out predicted $B$": 0.2193810957754099,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 0.24766355140186916,
+      "LOCO held-out predicted $B$": 0.2350067558964071,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 0.20930232558139536,
+      "LOCO held-out predicted $B$": 0.20476762932596207,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 0.22790697674418606,
+      "LOCO held-out predicted $B$": 0.24611600134077405,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 0.2336448598130841,
+      "LOCO held-out predicted $B$": 0.23628610734781738,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 0.2616822429906542,
+      "LOCO held-out predicted $B$": 0.2153819932371077,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 0.17209302325581396,
+      "LOCO held-out predicted $B$": 0.1819719516972123,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "x": 0.19069767441860466,
+      "LOCO held-out predicted $B$": 0.19282684117761714,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "x": 0.20930232558139536,
+      "LOCO held-out predicted $B$": 0.2147090954486064,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "x": 0.21962616822429906,
+      "LOCO held-out predicted $B$": 0.23952276918239074,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "x": 0.21962616822429906,
+      "LOCO held-out predicted $B$": 0.20557664865814612,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "x": 0.26976744186046514,
+      "LOCO held-out predicted $B$": 0.2755090782483514,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "x": 0.17674418604651163,
+      "LOCO held-out predicted $B$": 0.23485619121860069,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "x": 0.22790697674418606,
+      "LOCO held-out predicted $B$": 0.23885712402113618,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "x": 0.22535211267605634,
+      "LOCO held-out predicted $B$": 0.23172644855586016,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "x": 0.2102803738317757,
+      "LOCO held-out predicted $B$": 0.19679909476343938,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "x": 0.2372093023255814,
+      "LOCO held-out predicted $B$": 0.20775934205351823,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "x": 0.16744186046511628,
+      "LOCO held-out predicted $B$": 0.19158832387645475,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "x": 0.16822429906542055,
+      "LOCO held-out predicted $B$": 0.2288792452325262,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "x": 0.20930232558139536,
+      "LOCO held-out predicted $B$": 0.2077083387845991,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "x": 0.22790697674418606,
+      "LOCO held-out predicted $B$": 0.2309748490150874,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "x": 0.3023255813953488,
+      "LOCO held-out predicted $B$": 0.23799763666082172,
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "x": 0.22790697674418606,
+      "LOCO held-out predicted $B$": 0.21388180854566602,
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "x": 0.21962616822429906,
+      "LOCO held-out predicted $B$": 0.2016401111197237,
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "x": 0.16744186046511628,
+      "LOCO held-out predicted $B$": 0.20608364222285883,
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "x": 0.22325581395348837,
+      "LOCO held-out predicted $B$": 0.22119523483350406,
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "x": 0.24766355140186916,
+      "LOCO held-out predicted $B$": 0.2157366912055862,
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "x": 0.2744186046511628,
+      "LOCO held-out predicted $B$": 0.22278411048043936,
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "x": 0.22429906542056074,
+      "y": 0.23917812337553823,
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "x": 0.26976744186046514,
+      "y": 0.2673044886738621,
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "x": 0.1822429906542056,
+      "y": 0.17378677855300848,
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "x": 0.2102803738317757,
+      "y": 0.20919372399280337,
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "x": 0.22429906542056074,
+      "y": 0.22702250929599732,
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "x": 0.11162790697674418,
+      "y": 0.12515071581043044,
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "x": 0.2558139534883721,
+      "y": 0.2773808756270803,
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "x": 0.2651162790697674,
+      "y": 0.23063400405804663,
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "x": 0.21495327102803738,
+      "y": 0.25224556159921024,
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "x": 0.14953271028037382,
+      "y": 0.17351736439591076,
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "x": 0.21226415094339623,
+      "y": 0.2403884605129007,
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "x": 0.24651162790697675,
+      "y": 0.20840699071765517,
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "x": 0.16744186046511628,
+      "y": 0.20912540672726976,
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "x": 0.4511627906976744,
+      "y": 0.3612745675649264,
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "x": 0.205607476635514,
+      "y": 0.22992526115771306,
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "x": 0.2616822429906542,
+      "y": 0.2641960613215859,
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "x": 0.18604651162790697,
+      "y": 0.21035812821153838,
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "x": 0.21395348837209302,
+      "y": 0.21763001799631693,
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "x": 0.17674418604651163,
+      "y": 0.21075018757324468,
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "x": 0.17209302325581396,
+      "y": 0.21236825607079177,
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "x": 0.23255813953488372,
+      "y": 0.24928983170964958,
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "x": 0.3037383177570093,
+      "y": 0.2615380655702765,
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "x": 0.17757009345794392,
+      "y": 0.1827147619224286,
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "x": 0.24766355140186916,
+      "y": 0.21248042052163263,
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "x": 0.20930232558139536,
+      "y": 0.21947659698258723,
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "x": 0.22790697674418606,
+      "y": 0.19243652491966873,
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "x": 0.2336448598130841,
+      "y": 0.21703728713764045,
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "x": 0.2616822429906542,
+      "y": 0.2478335188170409,
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "x": 0.17209302325581396,
+      "y": 0.16023145736281477,
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "x": 0.19069767441860466,
+      "y": 0.22161353245396395,
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "x": 0.20930232558139536,
+      "y": 0.22502763103326237,
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "x": 0.21962616822429906,
+      "y": 0.19715763909692188,
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "x": 0.21962616822429906,
+      "y": 0.23409475790685264,
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "x": 0.26976744186046514,
+      "y": 0.25655371124693854,
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "x": 0.17674418604651163,
+      "y": 0.15421829541099663,
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "x": 0.22790697674418606,
+      "y": 0.21094156615754608,
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "x": 0.22535211267605634,
+      "y": 0.20996526059032278,
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "x": 0.2102803738317757,
+      "y": 0.22929352770361422,
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "x": 0.2372093023255814,
+      "y": 0.24744367985847793,
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "x": 0.16744186046511628,
+      "y": 0.17331230828607752,
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "x": 0.16822429906542055,
+      "y": 0.22556523863969388,
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "x": 0.20930232558139536,
+      "y": 0.19969481269245298,
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "x": 0.22790697674418606,
+      "y": 0.18460481734240036,
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "x": 0.3023255813953488,
+      "y": 0.29780403629392427,
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "x": 0.22790697674418606,
+      "y": 0.23526701533585848,
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "x": 0.21962616822429906,
+      "y": 0.19768019533723574,
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "x": 0.16744186046511628,
+      "y": 0.19866471213755496,
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "x": 0.22325581395348837,
+      "y": 0.22757311172906705,
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "x": 0.24766355140186916,
+      "y": 0.18700301821007803,
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "x": 0.2744186046511628,
+      "y": 0.24979715758697052,
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2956521739130435,
+      "LOCO held-out predicted $B$": 0.33736901693493304,
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.35964912280701755,
+      "LOCO held-out predicted $B$": 0.343714256743359,
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3565217391304348,
+      "LOCO held-out predicted $B$": 0.3333092017356787,
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3391304347826087,
+      "LOCO held-out predicted $B$": 0.3381843741596123,
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.33043478260869563,
+      "LOCO held-out predicted $B$": 0.3277483062073741,
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.5175438596491229,
+      "LOCO held-out predicted $B$": 0.2715734159174788,
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3391304347826087,
+      "LOCO held-out predicted $B$": 0.35443928678276726,
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.26956521739130435,
+      "LOCO held-out predicted $B$": 0.31774990315243945,
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "LOCO held-out predicted $B$": 0.31220614442206207,
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.34782608695652173,
+      "LOCO held-out predicted $B$": 0.3519935369518391,
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.35964912280701755,
+      "LOCO held-out predicted $B$": 0.32184023194962114,
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2956521739130435,
+      "LOCO held-out predicted $B$": 0.30115443583228785,
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3739130434782609,
+      "LOCO held-out predicted $B$": 0.3250744573845355,
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.09565217391304348,
+      "LOCO held-out predicted $B$": 0.3309713441082529,
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3130434782608696,
+      "LOCO held-out predicted $B$": 0.30962859520957975,
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2782608695652174,
+      "LOCO held-out predicted $B$": 0.3024010876240006,
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3565217391304348,
+      "LOCO held-out predicted $B$": 0.3466097088432684,
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "LOCO held-out predicted $B$": 0.3222573506579572,
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.38596491228070173,
+      "LOCO held-out predicted $B$": 0.38195999880429654,
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3739130434782609,
+      "LOCO held-out predicted $B$": 0.3225575201088626,
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3130434782608696,
+      "LOCO held-out predicted $B$": 0.314310887555797,
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2807017543859649,
+      "LOCO held-out predicted $B$": 0.2975886328073004,
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.391304347826087,
+      "LOCO held-out predicted $B$": 0.3419363968721434,
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.33043478260869563,
+      "LOCO held-out predicted $B$": 0.3192558478176603,
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.30434782608695654,
+      "LOCO held-out predicted $B$": 0.30242750988322037,
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2956521739130435,
+      "LOCO held-out predicted $B$": 0.3331357115003892,
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "LOCO held-out predicted $B$": 0.32780789669032495,
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.25217391304347825,
+      "LOCO held-out predicted $B$": 0.25318499918139714,
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.41739130434782606,
+      "LOCO held-out predicted $B$": 0.3520100500932274,
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "LOCO held-out predicted $B$": 0.3243807037169908,
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3130434782608696,
+      "LOCO held-out predicted $B$": 0.30703777260993664,
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.30434782608695654,
+      "LOCO held-out predicted $B$": 0.3110312552591353,
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.33043478260869563,
+      "LOCO held-out predicted $B$": 0.3350714150440591,
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2807017543859649,
+      "LOCO held-out predicted $B$": 0.3192815166609829,
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.4,
+      "LOCO held-out predicted $B$": 0.3242274349424408,
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.30434782608695654,
+      "LOCO held-out predicted $B$": 0.30587927287688943,
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.34210526315789475,
+      "LOCO held-out predicted $B$": 0.34521428181484815,
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3565217391304348,
+      "LOCO held-out predicted $B$": 0.35065446685446616,
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2807017543859649,
+      "LOCO held-out predicted $B$": 0.3276699149148127,
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3652173913043478,
+      "LOCO held-out predicted $B$": 0.32259004418700854,
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.41739130434782606,
+      "LOCO held-out predicted $B$": 0.34718728196300497,
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "LOCO held-out predicted $B$": 0.32079399771820627,
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.30434782608695654,
+      "LOCO held-out predicted $B$": 0.32238677650694086,
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2782608695652174,
+      "LOCO held-out predicted $B$": 0.3195221651381922,
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2982456140350877,
+      "LOCO held-out predicted $B$": 0.2945803795113208,
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "LOCO held-out predicted $B$": 0.33258899415444176,
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3391304347826087,
+      "LOCO held-out predicted $B$": 0.34489186246001075,
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3391304347826087,
+      "LOCO held-out predicted $B$": 0.3381647276964497,
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3684210526315789,
+      "LOCO held-out predicted $B$": 0.30486826035742143,
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.22608695652173913,
+      "LOCO held-out predicted $B$": 0.3152375037485901,
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2956521739130435,
+      "y": 0.294077116568477,
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.35964912280701755,
+      "y": 0.30300857947427023,
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3565217391304348,
+      "y": 0.3570101780883472,
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3391304347826087,
+      "y": 0.3122242461491127,
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.33043478260869563,
+      "y": 0.31383412494694,
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.5175438596491229,
+      "y": 0.370840429941608,
+      "_kind": "scatter",
+      "_group": 255
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3391304347826087,
+      "y": 0.2544940688615304,
+      "_kind": "scatter",
+      "_group": 256
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.26956521739130435,
+      "y": 0.3160489950981548,
+      "_kind": "scatter",
+      "_group": 257
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "y": 0.29356678265697855,
+      "_kind": "scatter",
+      "_group": 258
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.34782608695652173,
+      "y": 0.359778600074865,
+      "_kind": "scatter",
+      "_group": 259
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.35964912280701755,
+      "y": 0.3258202272130846,
+      "_kind": "scatter",
+      "_group": 260
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2956521739130435,
+      "y": 0.34225758834499614,
+      "_kind": "scatter",
+      "_group": 261
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3739130434782609,
+      "y": 0.3776057255218466,
+      "_kind": "scatter",
+      "_group": 262
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.09565217391304348,
+      "y": 0.2543941598282297,
+      "_kind": "scatter",
+      "_group": 263
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3130434782608696,
+      "y": 0.2992096877633101,
+      "_kind": "scatter",
+      "_group": 264
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2782608695652174,
+      "y": 0.3019927195441201,
+      "_kind": "scatter",
+      "_group": 265
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3565217391304348,
+      "y": 0.34427431708104594,
+      "_kind": "scatter",
+      "_group": 266
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "y": 0.3284236887944415,
+      "_kind": "scatter",
+      "_group": 267
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.38596491228070173,
+      "y": 0.32860601315103305,
+      "_kind": "scatter",
+      "_group": 268
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3739130434782609,
+      "y": 0.3988787675803781,
+      "_kind": "scatter",
+      "_group": 269
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3130434782608696,
+      "y": 0.27803149644562464,
+      "_kind": "scatter",
+      "_group": 270
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2807017543859649,
+      "y": 0.33136050404678297,
+      "_kind": "scatter",
+      "_group": 271
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.391304347826087,
+      "y": 0.36024266273079475,
+      "_kind": "scatter",
+      "_group": 272
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.33043478260869563,
+      "y": 0.3209894672035742,
+      "_kind": "scatter",
+      "_group": 273
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.30434782608695654,
+      "y": 0.34112643676729476,
+      "_kind": "scatter",
+      "_group": 274
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2956521739130435,
+      "y": 0.34838320777759324,
+      "_kind": "scatter",
+      "_group": 275
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "y": 0.3088967264452158,
+      "_kind": "scatter",
+      "_group": 276
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.25217391304347825,
+      "y": 0.29012191339922755,
+      "_kind": "scatter",
+      "_group": 277
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.41739130434782606,
+      "y": 0.37749904646757987,
+      "_kind": "scatter",
+      "_group": 278
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "y": 0.34094926715945384,
+      "_kind": "scatter",
+      "_group": 279
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3130434782608696,
+      "y": 0.31631518591959673,
+      "_kind": "scatter",
+      "_group": 280
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.30434782608695654,
+      "y": 0.28578597446167536,
+      "_kind": "scatter",
+      "_group": 281
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.33043478260869563,
+      "y": 0.31776373919934847,
+      "_kind": "scatter",
+      "_group": 282
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2807017543859649,
+      "y": 0.29367921358950905,
+      "_kind": "scatter",
+      "_group": 283
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.4,
+      "y": 0.3991638991657815,
+      "_kind": "scatter",
+      "_group": 284
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.30434782608695654,
+      "y": 0.3285752141263528,
+      "_kind": "scatter",
+      "_group": 285
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.34210526315789475,
+      "y": 0.26478679175761727,
+      "_kind": "scatter",
+      "_group": 286
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3565217391304348,
+      "y": 0.34140038196572087,
+      "_kind": "scatter",
+      "_group": 287
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2807017543859649,
+      "y": 0.2615587273211789,
+      "_kind": "scatter",
+      "_group": 288
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3652173913043478,
+      "y": 0.3349872885889607,
+      "_kind": "scatter",
+      "_group": 289
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.41739130434782606,
+      "y": 0.3631587380348771,
+      "_kind": "scatter",
+      "_group": 290
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "y": 0.34265751050709037,
+      "_kind": "scatter",
+      "_group": 291
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.30434782608695654,
+      "y": 0.3877268267796527,
+      "_kind": "scatter",
+      "_group": 292
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2782608695652174,
+      "y": 0.22508390632532688,
+      "_kind": "scatter",
+      "_group": 293
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.2982456140350877,
+      "y": 0.3303730897931374,
+      "_kind": "scatter",
+      "_group": 294
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3217391304347826,
+      "y": 0.3883848863148731,
+      "_kind": "scatter",
+      "_group": 295
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3391304347826087,
+      "y": 0.37401478700486523,
+      "_kind": "scatter",
+      "_group": 296
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3391304347826087,
+      "y": 0.31427532170978534,
+      "_kind": "scatter",
+      "_group": 297
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.3684210526315789,
+      "y": 0.39809005596305913,
+      "_kind": "scatter",
+      "_group": 298
+    },
+    {
+      "judged behavior rate $B$ (E0)": 0.22608695652173913,
+      "y": 0.2232549296009006,
+      "_kind": "scatter",
+      "_group": 299
+    }
+  ],
+  "n_series": 300,
+  "total_points": 300
+}

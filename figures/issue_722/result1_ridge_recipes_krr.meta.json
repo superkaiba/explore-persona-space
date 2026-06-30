@@ -1,0 +1,21 @@
+{
+  "figure": "figures/issue_722/result1_ridge_recipes_krr.png",
+  "source_commit": "29cac3ad7f92c7f18f1b6e1331a62fb20c1df21a",
+  "source_branch": "fig-doc-plots (off origin/issue-722)",
+  "model": "Qwen2.5-7B-Instruct",
+  "n_contexts": 50,
+  "metric": "skill_over_predict_the_mean (held-out LOCO R^2 on PCA-48 v_A)",
+  "curves": [
+    "ridge_last",
+    "ridge_meanprompt",
+    "krr_rbf_last",
+    "krr_rbf_meanprompt"
+  ],
+  "peak": {
+    "layer": 18,
+    "ridge_last": 0.7997271595598394,
+    "ridge_meanprompt": 0.7535450403754097,
+    "krr_rbf_last": 0.8006906713240496,
+    "krr_rbf_meanprompt": 0.755483643460339
+  }
+}
