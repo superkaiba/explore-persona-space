@@ -104,7 +104,7 @@ What is plotted: per-cell source `log P(※)` trained − base (nat) for all 16 
 
 > **Figure.** *The same 16 Instruct adapters, read two ways.* Per-cell source marker log P(※) trained − base (nat), n = 50 per cell. Corrected read (blue) lands in the d1 [5, 12] / d2 [10, 16] band-stop targets on 16/16 cells (median +8.4, range 5.2–12.5); mis-rooted read (orange) sits at 1.1–4.0 nat, reproducing #664's published −0.34–1.81 floor.
 
-The corrected read is in-band on every cell; the mis-rooted read sits at the floor on every cell, and the corrected delta exceeds the mis-rooted delta in 800/800 rows. Identical weights, so the ~6-nat median gap (range 3.8–9.1) is attributable entirely to the read's target slot, not training. The mis-rooted slot sits after a spurious second turn-end — its argmax is `<|endoftext|>`, never the marker.
+The corrected read is in-band on every cell; the mis-rooted read sits at the floor on every cell, and the corrected delta exceeds the mis-rooted delta in 800/800 rows. Identical weights, so the ~6-nat median gap (range 3.8–9.1) is attributable entirely to the read's target slot, not training. The mis-rooted slot sits after a spurious second turn-end — its trained argmax is a non-marker special token (`<|endoftext|>` in 606/800 rows, `<|im_start|>` in 194/800), and never the marker in any of the 800 rows.
 
 ### The corrected read agrees with #664's own in-loop probe — the install was always there
 
@@ -141,3 +141,4 @@ The plan's confirmatory arm would fresh-train the marker on base Qwen-2.5-7B vs 
 > file a followup on 664 to figure out why it didn't install compared to past issues that did install - run in background with happy coder
 
 Lineage: [#664](https://eps.superkaiba.com/tasks/664) — corrects its published "marker never installed on Instruct" claim; recipe line [#474](https://eps.superkaiba.com/tasks/474) / [#601](https://eps.superkaiba.com/tasks/601) / [#650](https://eps.superkaiba.com/tasks/650) (prior clean Instruct installs); leakage program [#660](https://eps.superkaiba.com/tasks/660). Operationally costly: 7 implementer rounds (1 reconciler-upheld code-review FAIL at round 5, three vLLM-deadlock crash-fix rounds), 4 strategic launches, 1 pod stop+resume, then the fresh-train-drop pivot. Created 2026-06-29; run 2026-06-29 to 2026-06-30.
+
