@@ -86,7 +86,11 @@ LORA_ADAPTER_CONFIG_HUB_PATH = "adapters/issue_606/sycophancy_lora_step32/adapte
 REUSED_LORA_STEPS = (28, 32, 36, 132)
 REUSED_FT_STEPS = (12, 16, 22, 132)
 
-JUDGE_MODEL = "claude-haiku-4-5-20251001"  # realized #411/#518 judge id
+# Project-canonical judge per CLAUDE.md (one Sonnet judge across the project).
+# Past #411/#518/#642 base rates were judged on Haiku (κ=0.869 vs Sonnet
+# double-judge); any RE-RUN now uses Sonnet so it joins Sonnet-judged cells
+# comparably.
+JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 
 # Matched-strength protocol (plan §3 / §4.4).
 S_TARGET = 0.50
