@@ -1,0 +1,180 @@
+{
+  "commit": "67d01ff4",
+  "created": "2026-06-30T13:24:46Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "step (+s)": 0.0,
+      "direction preservation (|cos|)": 0.39349486150264196,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step (+s)": 1.0,
+      "direction preservation (|cos|)": 0.12765407064253606,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step (+s)": 2.0,
+      "direction preservation (|cos|)": 0.08937426188131105,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step (+s)": 3.0,
+      "direction preservation (|cos|)": 0.07989620609040274,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "step (+s)": 0.0,
+      "direction preservation (|cos|)": 0.3808987871111265,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step (+s)": 1.0,
+      "direction preservation (|cos|)": 0.13223754519270856,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step (+s)": 2.0,
+      "direction preservation (|cos|)": 0.09111359188335892,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step (+s)": 3.0,
+      "direction preservation (|cos|)": 0.07599923344911723,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "step (+s)": 0.0,
+      "direction preservation (|cos|)": 0.3808990135174211,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step (+s)": 1.0,
+      "direction preservation (|cos|)": 0.13223769708339603,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step (+s)": 2.0,
+      "direction preservation (|cos|)": 0.09111366290662991,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step (+s)": 3.0,
+      "direction preservation (|cos|)": 0.07599928208370153,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "step (+s)": 0.0,
+      "direction preservation (|cos|)": 0.4237107146763984,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step (+s)": 1.0,
+      "direction preservation (|cos|)": 0.12921934775210547,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step (+s)": 2.0,
+      "direction preservation (|cos|)": 0.10314390352888667,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step (+s)": 3.0,
+      "direction preservation (|cos|)": 0.09723428262920697,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "step (+s)": 0.0,
+      "direction preservation (|cos|)": 0.4234161725270501,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step (+s)": 1.0,
+      "direction preservation (|cos|)": 0.12116229876525719,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step (+s)": 2.0,
+      "direction preservation (|cos|)": 0.09280118641657863,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step (+s)": 3.0,
+      "direction preservation (|cos|)": 0.08546703210177863,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "step (+s)": 0.0,
+      "direction preservation (|cos|)": 0.42341807832069467,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step (+s)": 1.0,
+      "direction preservation (|cos|)": 0.12116194518365686,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step (+s)": 2.0,
+      "direction preservation (|cos|)": 0.09279707142793917,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "step (+s)": 3.0,
+      "direction preservation (|cos|)": 0.08546248788574858,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24
+}

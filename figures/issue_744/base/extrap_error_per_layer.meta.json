@@ -1,0 +1,796 @@
+{
+  "commit": "67d01ff4",
+  "created": "2026-06-30T09:49:05Z",
+  "figsize": [
+    12.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "L2 extrapolation error": 101.23269941097465,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "L2 extrapolation error": 98.56993569373309,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "L2 extrapolation error": 97.54925562738455,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "L2 extrapolation error": 58.61536425062025,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "L2 extrapolation error": 65.9206939478359,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "L2 extrapolation error": 68.56971861071361,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "L2 extrapolation error": 71.67926149788244,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "L2 extrapolation error": 71.65207492813099,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "L2 extrapolation error": 73.48315645916675,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "L2 extrapolation error": 68.90264499111052,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "L2 extrapolation error": 68.1829467691367,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "L2 extrapolation error": 69.46327296122539,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "L2 extrapolation error": 69.84663046571757,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "L2 extrapolation error": 69.40364249137994,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "L2 extrapolation error": 69.996796090425,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "L2 extrapolation error": 72.0327222377068,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "L2 extrapolation error": 73.45948848134094,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "L2 extrapolation error": 75.83840188663805,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "L2 extrapolation error": 75.44677144731409,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "L2 extrapolation error": 75.8707611166835,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "L2 extrapolation error": 78.11976963661101,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "L2 extrapolation error": 79.00490191391916,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "L2 extrapolation error": 81.25492738825105,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "L2 extrapolation error": 81.33078095560104,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "L2 extrapolation error": 82.75661214701358,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "L2 extrapolation error": 84.57588142880928,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "L2 extrapolation error": 85.03333938117834,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "L2 extrapolation error": 84.4060109449359,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "L2 extrapolation error": 19.929335996395707,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "L2 extrapolation error": 26.722230794384423,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "L2 extrapolation error": 35.05458152288052,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "L2 extrapolation error": 108.26225452902197,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "L2 extrapolation error": 130.86426657999826,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "L2 extrapolation error": 136.68661038352192,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "L2 extrapolation error": 145.32320267584046,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "L2 extrapolation error": 153.2843798790429,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "L2 extrapolation error": 160.40504959967484,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "L2 extrapolation error": 161.2375534697564,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "L2 extrapolation error": 162.65600995129026,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "L2 extrapolation error": 166.9152667817905,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "L2 extrapolation error": 170.15569296928123,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "L2 extrapolation error": 172.83063156783479,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "L2 extrapolation error": 175.78823701108115,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "L2 extrapolation error": 179.83558635570367,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "L2 extrapolation error": 183.0182446475921,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "L2 extrapolation error": 187.89590070826208,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "L2 extrapolation error": 192.94470549853554,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "L2 extrapolation error": 204.12026868747316,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "L2 extrapolation error": 225.37643315443643,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "L2 extrapolation error": 255.48111100719262,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "L2 extrapolation error": 299.255786427018,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "L2 extrapolation error": 351.0179796554497,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "L2 extrapolation error": 410.12720631896565,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "L2 extrapolation error": 476.4537841580933,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "L2 extrapolation error": 493.85545670692244,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "L2 extrapolation error": 696.5559158240083,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "L2 extrapolation error": 103.72301483776292,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "L2 extrapolation error": 101.78412889287462,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "L2 extrapolation error": 100.36278317605576,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "L2 extrapolation error": 82.68115688182782,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "L2 extrapolation error": 85.47670835541334,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "L2 extrapolation error": 86.83920873756726,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "L2 extrapolation error": 86.96599658099625,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "L2 extrapolation error": 83.25032992621881,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "L2 extrapolation error": 83.00008598463232,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "L2 extrapolation error": 77.96708126120984,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "L2 extrapolation error": 76.30060291150335,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "L2 extrapolation error": 77.12741202816729,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "L2 extrapolation error": 77.35573562082179,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "L2 extrapolation error": 75.83959598687429,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "L2 extrapolation error": 76.37328285504647,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "L2 extrapolation error": 78.3546573098402,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "L2 extrapolation error": 79.5677106687184,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "L2 extrapolation error": 81.77017963782,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "L2 extrapolation error": 80.76426580588618,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "L2 extrapolation error": 79.8331968194603,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "L2 extrapolation error": 80.63100745964455,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "L2 extrapolation error": 80.46188333095549,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "L2 extrapolation error": 82.49973185533182,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "L2 extrapolation error": 83.07718935981575,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "L2 extrapolation error": 83.65347110406816,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "L2 extrapolation error": 85.34482194174956,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "L2 extrapolation error": 86.34208699351866,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "L2 extrapolation error": 84.65416407651232,
+      "series": "standardized fit",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "L2 extrapolation error": 19.878257066026006,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "L2 extrapolation error": 25.731016026261617,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "L2 extrapolation error": 32.91158582412767,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "L2 extrapolation error": 44.63107019657998,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "L2 extrapolation error": 52.34587764195744,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "L2 extrapolation error": 57.068121484183926,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "L2 extrapolation error": 63.95156390123105,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "L2 extrapolation error": 72.25554760109245,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "L2 extrapolation error": 79.04743421857167,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "L2 extrapolation error": 78.03676575493233,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "L2 extrapolation error": 78.55277481962335,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "L2 extrapolation error": 80.70069513798305,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "L2 extrapolation error": 82.584473850481,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "L2 extrapolation error": 84.82202773418392,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "L2 extrapolation error": 87.81039114727703,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "L2 extrapolation error": 92.0595720640388,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "L2 extrapolation error": 96.01883063447741,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "L2 extrapolation error": 101.9403515051769,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "L2 extrapolation error": 108.28924147541986,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "L2 extrapolation error": 121.47467211193543,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "L2 extrapolation error": 145.38592068522746,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "L2 extrapolation error": 178.95500901883256,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "L2 extrapolation error": 224.60272170022827,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "L2 extrapolation error": 273.7099630075004,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "L2 extrapolation error": 326.3578030735366,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "L2 extrapolation error": 392.51582881542475,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "L2 extrapolation error": 465.74358490950596,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "L2 extrapolation error": 693.1710419044514,
+      "series": "raw cosine fit",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 112
+}

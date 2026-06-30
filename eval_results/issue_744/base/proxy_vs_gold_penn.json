@@ -1,0 +1,10 @@
+{
+  "available": true,
+  "n_terminals": 12296,
+  "n_sequences": 10,
+  "agreement_rate": 0.8188028627195836,
+  "proxy_fires_gold_doesnt": 81,
+  "gold_fires_proxy_doesnt": 2147,
+  "penn_parse_present": true,
+  "note": "Full registered gold-Penn label (first terminal under S/SBAR OR CC/IN) vs the closed-class wordlist proxy, compared position-by-position over the stored NS masks. The gold-Penn mask is the PRIMARY NS syntactic-boundary mask (plan \u00a711 syntactic_mask_ns); the wordlist is the broader-corpus mask + this cross-check companion (plan \u00a711 syntactic_mask_broader)."
+}
