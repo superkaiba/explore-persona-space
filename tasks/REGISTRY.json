@@ -4844,8 +4844,8 @@
     "762": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/762",
-      "status": "proposed",
+      "path": "tasks/planning/762",
+      "status": "planning",
       "title": "workflow-fix: document HF Hub per-org 2500-req-per-5-min rate limit (429) in gotchas.md"
     },
     "77": {
