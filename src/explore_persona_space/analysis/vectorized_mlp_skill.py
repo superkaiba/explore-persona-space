@@ -433,6 +433,294 @@ def fit_batched_loco_mlp_multihead(
     )
 
 
+@dataclass
+class TrajectoryMLPResult:
+    """Per-epoch held-out LOCO predictions for every group (the early-stop curve).
+
+    ``epochs`` is the sorted list of epoch counts at which a held-out snapshot
+    was taken (1-indexed: ``e`` = after ``e`` optimizer steps). ``preds_at`` maps
+    each snapshot epoch -> ``preds_by_key`` (group key -> (n, p) held-out preds),
+    exactly the shape ``fit_batched_loco_mlp_multihead`` returns at its terminal
+    epoch. The last snapshot (epoch == ``max_epochs``) is BIT-identical to the
+    terminal-only fit (same loop, same seed, same chunking).
+    """
+
+    preds_at: dict  # epoch -> {group key: (n, p) held-out preds}
+    epochs: list
+    n_groups: int
+    n_folds: int
+    pca_target_dim: int
+    n_members: int
+    chunk_size: int
+
+
+def fit_batched_loco_mlp_multihead_trajectory(
+    groups: list[MLPGroup],
+    *,
+    eval_every: int = 10,
+    seed: int = DEFAULT_MLP_SEED,
+    hidden: int = MLP_HIDDEN,
+    lr: float = MLP_LR,
+    wd: float = MLP_WD,
+    max_epochs: int = MLP_MAX_EPOCHS,
+    device: str = "cpu",
+    chunk_size: int = 4096,
+    num_threads: int | None = None,
+) -> TrajectoryMLPResult:
+    """Multi-output batched LOCO MLP WITH per-epoch held-out snapshots.
+
+    Identical training dynamics to ``fit_batched_loco_mlp_multihead`` (same
+    architecture, init, per-fold standardization, AdamW, seed, chunking) — the
+    ONLY addition is that every ``eval_every`` epochs (and at the final epoch) it
+    runs one extra no-grad forward over the full member batch and reads the
+    held-out row. This answers "does held-out skill peak early then decay
+    (early-stop rescues it) or stay negative throughout?" at the cost of one
+    cheap forward per snapshot. The terminal snapshot reproduces the
+    terminal-only fit bit-for-bit (same RNG stream, no extra ops in the train
+    loop). Returns a ``TrajectoryMLPResult``.
+
+    NOTE: chunking interacts with the per-epoch snapshot — each chunk runs its
+    OWN full ``max_epochs`` loop (as in the terminal-only fit), so the snapshot
+    is taken WITHIN each chunk's loop and accumulated across chunks. This is
+    exact only when every group fits in one chunk (the production path:
+    ``chunk_size >= n_groups * n_folds``). The driver sizes ``chunk_size`` so the
+    epoch-curve battery is a single chunk; the assert below enforces it.
+    """
+    from torch.func import stack_module_state
+
+    if not groups:
+        return TrajectoryMLPResult({}, [], 0, 0, 0, 0, chunk_size)
+    if num_threads is not None and device == "cpu":
+        torch.set_num_threads(int(num_threads))
+
+    n, d_in = groups[0].X.shape
+    p = groups[0].Y.shape[1]
+    for g in groups:
+        assert g.X.shape == (n, d_in), (g.key, g.X.shape, (n, d_in))
+        assert g.Y.shape == (n, p), (g.key, g.Y.shape, (n, p))
+    dev = torch.device(device)
+    n_groups = len(groups)
+    n_members = n_groups * n
+    chunk = chunk_size if (chunk_size and chunk_size > 0) else n_members
+    assert chunk >= n_members, (
+        "trajectory fit requires a single chunk for exact per-epoch snapshots: "
+        f"chunk_size={chunk} < n_members={n_members}; raise chunk_size"
+    )
+
+    # Snapshot epochs: every `eval_every` (1-indexed) plus the final epoch.
+    snap_epochs = sorted({*range(eval_every, max_epochs + 1, eval_every), max_epochs})
+    snap_set = set(snap_epochs)
+    preds_at: dict = {e: {} for e in snap_epochs}
+
+    Xg = torch.from_numpy(
+        np.ascontiguousarray(np.stack([g.X for g in groups]).astype(np.float32))
+    ).to(dev)
+    Yg = torch.from_numpy(
+        np.ascontiguousarray(np.stack([g.Y for g in groups]).astype(np.float32))
+    ).to(dev)
+
+    class _MLPMulti(torch.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.net = torch.nn.Sequential(
+                torch.nn.Linear(d_in, hidden), torch.nn.GELU(), torch.nn.Linear(hidden, p)
+            )
+
+    torch.manual_seed(seed)
+    block_members = [_MLPMulti().to(dev) for _ in range(n)]
+    bp, _bb = stack_module_state(block_members)
+    bW1 = bp["net.0.weight"].detach()
+    bb1 = bp["net.0.bias"].detach()
+    bW2 = bp["net.2.weight"].detach()
+    bb2 = bp["net.2.bias"].detach()
+
+    member_arange = torch.arange(n_members, device=dev)
+    member_fold = member_arange % n
+    member_group = member_arange // n
+
+    # single chunk
+    cgroup = member_group
+    cfold = member_fold
+    c = n_members
+    W1 = bW1.index_select(0, cfold).clone()
+    b1 = bb1.index_select(0, cfold).clone()
+    W2 = bW2.index_select(0, cfold).clone()
+    b2 = bb2.index_select(0, cfold).clone()
+
+    Xc = Xg[cgroup]  # (c, n, d_in)
+    Yc = Yg[cgroup]  # (c, n, p)
+
+    train_mask = torch.ones((c, n), dtype=torch.bool, device=dev)
+    train_mask[torch.arange(c, device=dev), cfold] = False
+    mask_f = train_mask.to(torch.float32)
+    counts = mask_f.sum(1, keepdim=True)
+
+    mu = (mask_f.unsqueeze(2) * Xc).sum(1) / counts
+    sumsq = (mask_f.unsqueeze(2) * (Xc * Xc)).sum(1)
+    var = (sumsq - counts * mu * mu) / (counts - 1.0).clamp(min=1.0)
+    sd = var.clamp(min=0.0).sqrt() + 1e-6
+    Xn = (Xc - mu.unsqueeze(1)) / sd.unsqueeze(1)
+
+    for w in (W1, b1, W2, b2):
+        w.requires_grad_(True)
+    opt = torch.optim.AdamW([W1, b1, W2, b2], lr=lr, weight_decay=wd)
+    denom = mask_f.sum(1).clamp(min=1.0)
+
+    def _snapshot(epoch: int) -> None:
+        with torch.no_grad():
+            h = torch.nn.functional.gelu(torch.bmm(Xn, W1.transpose(1, 2)) + b1.unsqueeze(1))
+            pred = torch.bmm(h, W2.transpose(1, 2)) + b2.unsqueeze(1)  # (c, n, p)
+            held = pred[torch.arange(c, device=dev), cfold]  # (c, p)
+        held_np = held.detach().cpu().numpy().astype(np.float64)  # (n_members, p)
+        held_np = held_np.reshape(n_groups, n, p)
+        preds_at[epoch] = {groups[g].key: held_np[g] for g in range(n_groups)}
+
+    for ep in range(max_epochs):
+        opt.zero_grad(set_to_none=True)
+        h = torch.nn.functional.gelu(torch.bmm(Xn, W1.transpose(1, 2)) + b1.unsqueeze(1))
+        pred = torch.bmm(h, W2.transpose(1, 2)) + b2.unsqueeze(1)  # (c, n, p)
+        sq = ((pred - Yc) ** 2).mean(dim=2) * mask_f
+        loss = (sq.sum(1) / denom).sum()
+        loss.backward()
+        opt.step()
+        if (ep + 1) in snap_set:  # 1-indexed snapshot AFTER this optimizer step
+            _snapshot(ep + 1)
+
+    return TrajectoryMLPResult(
+        preds_at=preds_at,
+        epochs=snap_epochs,
+        n_groups=n_groups,
+        n_folds=n,
+        pca_target_dim=p,
+        n_members=n_members,
+        chunk_size=chunk,
+    )
+
+
+# ── kernel ridge regression (KRR) LOCO predictor (skill form) ─────────────────
+
+
+def krr_predict_loco(
+    Xc: np.ndarray,
+    Yv: np.ndarray,
+    *,
+    kernel: str = "rbf",
+    lambdas: list | None = None,
+    gammas: list | None = None,
+) -> tuple[np.ndarray, list, list]:
+    """LOCO kernel ridge prediction of Yv from Xc on the TRAIN-MEAN-CENTERED target.
+
+    The KRR analogue of ``ridge_predict_loco_centered``: per held-out context
+    ``i``, train on the other ``n-1`` rows with train-only feature
+    standardization + train-only target centering (the intercept fix), pick the
+    (γ, λ) minimizing a NESTED leave-one-out PRESS MSE over the train block (no
+    held-out leakage), predict the held-out row, add the train target mean back.
+
+    Kernels:
+      - ``"rbf"``: ``k(x, z) = exp(-γ ||x - z||²)``; nested CV over γ × λ.
+      - ``"linear"``: ``k(x, z) = xᵀz``; nested CV over λ only (γ ignored). With
+        a linear kernel KRR is ordinary ridge in feature space — a sanity check
+        that should reproduce the closed-form linear-ridge skill.
+
+    Closed-form LOO PRESS for the inner CV: for kernel ridge with Gram ``K``,
+    ``H = K (K + λI)^{-1}``, and the LOO residual for train row ``j`` is
+    ``(y_j - ŷ_j) / (1 - H_jj)`` — exact, no refit per inner fold. Returns
+    ``(preds (n, P), chosen_lambda_per_fold, chosen_gamma_per_fold)``.
+    """
+    lambdas = lambdas if lambdas is not None else list(RIDGE_LAMBDAS)
+    if gammas is None:
+        gammas = _default_rbf_gammas(Xc) if kernel == "rbf" else [0.0]
+    if kernel == "linear":
+        gammas = [0.0]  # γ unused
+    n = Xc.shape[0]
+    P = Yv.shape[1]
+    device = torch.device(_i658.DEVICE)
+    Xt = torch.from_numpy(np.ascontiguousarray(Xc)).to(device=device, dtype=torch.float64)
+    Yt = torch.from_numpy(np.ascontiguousarray(Yv)).to(device=device, dtype=torch.float64)
+    preds = np.zeros((n, P), dtype=np.float64)
+    chosen_lam: list = []
+    chosen_gam: list = []
+    for i in range(n):
+        tr = [j for j in range(n) if j != i]
+        tr_t = torch.tensor(tr, device=device)
+        Xtr = Xt[tr_t]
+        Ytr = Yt[tr_t]
+        xmu = Xtr.mean(0)
+        xsd = Xtr.std(0, correction=0) + 1e-9
+        Xtr_n = (Xtr - xmu) / xsd
+        ymu = Ytr.mean(0)
+        Ytr_c = Ytr - ymu
+        x_held = (Xt[i] - xmu) / xsd
+
+        best = None  # (press, lam, gam, alpha, Ktrain_held)
+        for gam in gammas:
+            Ktr = _kernel_gram(Xtr_n, Xtr_n, kernel, gam)  # (m, m)
+            k_held = _kernel_gram(x_held.unsqueeze(0), Xtr_n, kernel, gam).squeeze(0)  # (m,)
+            for lam in lambdas:
+                press = _krr_loo_press(Ktr, Ytr_c, lam)
+                if best is None or press < best[0]:
+                    A = torch.linalg.solve(
+                        Ktr + lam * torch.eye(Ktr.shape[0], device=device, dtype=torch.float64),
+                        Ytr_c,
+                    )  # (m, P) dual coeffs
+                    best = (press, lam, gam, A, k_held)
+        _press, lam, gam, A, k_held = best
+        preds[i] = (ymu + k_held @ A).detach().cpu().numpy()
+        chosen_lam.append(float(lam))
+        chosen_gam.append(float(gam))
+    return preds, chosen_lam, chosen_gam
+
+
+def _kernel_gram(A: torch.Tensor, B: torch.Tensor, kernel: str, gamma: float) -> torch.Tensor:
+    """(|A|, |B|) kernel matrix. A, B are (·, d) fp64 standardized designs."""
+    if kernel == "linear":
+        return A @ B.T
+    if kernel == "rbf":
+        a2 = (A * A).sum(1, keepdim=True)  # (|A|, 1)
+        b2 = (B * B).sum(1, keepdim=True)  # (|B|, 1)
+        sq = a2 + b2.T - 2.0 * (A @ B.T)  # (|A|, |B|) squared distances
+        sq = sq.clamp(min=0.0)
+        return torch.exp(-gamma * sq)
+    raise ValueError(f"unknown kernel {kernel!r}")
+
+
+def _krr_loo_press(K: torch.Tensor, Yc: torch.Tensor, lam: float) -> float:
+    """Exact leave-one-out PRESS MSE for kernel ridge with Gram K, centered Yc.
+
+    H = K (K + λI)^{-1}; LOO residual_j = (y_j - (H Y)_j) / (1 - H_jj). Summed
+    squared over rows and target columns, divided by (m·P). Closed-form (no
+    inner refit).
+    """
+    m = K.shape[0]
+    device = K.device
+    Kr = K + lam * torch.eye(m, device=device, dtype=torch.float64)
+    H = torch.linalg.solve(Kr, K.T).T  # H = K Kr^{-1}  (symmetric K → K Kr^{-1})
+    hdiag = torch.diagonal(H).clamp(max=1.0 - 1e-9)  # avoid /0 at H_jj→1
+    fitted = H @ Yc  # (m, P)
+    resid = (Yc - fitted) / (1.0 - hdiag).unsqueeze(1)  # (m, P)
+    return float((resid * resid).mean().item())
+
+
+def _default_rbf_gammas(Xc: np.ndarray) -> list:
+    """RBF γ grid anchored on the median pairwise squared distance (standardized).
+
+    γ_med = 1 / median(||x_i - x_j||²) on the train-standardized design is the
+    classic median heuristic; the grid spans ~3 decades around it so nested CV
+    can pick the bandwidth. Computed on the full (mean/std-standardized) design;
+    the per-fold standardization shifts it negligibly at n=50.
+    """
+    X = np.ascontiguousarray(Xc.astype(np.float64))
+    mu = X.mean(0)
+    sd = X.std(0) + 1e-9
+    Xn = (X - mu) / sd
+    n = Xn.shape[0]
+    sq = (Xn * Xn).sum(1)[:, None] + (Xn * Xn).sum(1)[None, :] - 2.0 * (Xn @ Xn.T)
+    iu = np.triu_indices(n, k=1)
+    med = float(np.median(np.clip(sq[iu], 0.0, None)))
+    g0 = 1.0 / med if med > 0 else 1.0
+    return [g0 * f for f in (0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0)]
+
+
 # ── PCA basis + skill-over-mean R² ────────────────────────────────────────────
 
 

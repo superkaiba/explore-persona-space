@@ -105,6 +105,8 @@ from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     chain_rho_pca,
     fit_batched_loco_mlp,
     fit_batched_loco_mlp_multihead,
+    fit_batched_loco_mlp_multihead_trajectory,
+    krr_predict_loco,
     loco_train_means,
     ridge_predict_loco_centered,
     ridge_predict_loco_raw,
@@ -742,6 +744,773 @@ def _write_fig_meta(fig_path: Path, issue: int, source_json: str) -> None:
         json.dump(meta, f, indent=2)
 
 
+# ── ADDITIVE extension: MLP width sweep + per-epoch curves + KRR ───────────────
+# These three phases are OPT-IN (default OFF; enabled via --run-width-sweep /
+# --run-epoch-curves / --run-krr). They never touch skill_over_mean.json or the
+# existing default invocation — each writes its OWN output file + figure. The
+# linear-ridge skill is the shared baseline (the bar to beat): read from the
+# existing skill_over_mean.json when present, else recomputed from the store.
+
+
+def _ridge_baseline_by_layer(
+    data: dict, layer_subset: list[int] | None, existing_json: Path
+) -> dict[int, float]:
+    """Per-layer linear-ridge skill-over-mean R² (the shared baseline / bar to beat).
+
+    REUSES the already-computed ``skill_vs_mean_ridge`` from the canonical
+    ``skill_over_mean.json`` when it exists (zero recompute — the values are the
+    same closed-form LOCO ridge), restricted to ``layer_subset`` if given. Falls
+    back to recomputing via ``ridge_predict_loco_centered`` only when the JSON is
+    absent (e.g. a fresh pod that runs only the sweep phase), so the sweep is
+    self-contained.
+    """
+    want = None if layer_subset is None else set(layer_subset)
+    if existing_json.exists():
+        prior = load_json(existing_json)
+        out = {
+            int(r["layer"]): float(r["skill_vs_mean_ridge"])
+            for r in prior.get("per_layer", [])
+            if want is None or int(r["layer"]) in want
+        }
+        if out and (want is None or want.issubset(set(out))):
+            logger.info(
+                "[baseline] ridge skill from existing %s (%d layers)", existing_json, len(out)
+            )
+            return out
+    logger.info("[baseline] recomputing ridge skill from store (no usable existing JSON)")
+    C, V = _stack_layers(data)
+    layers = data["layers"]
+    out = {}
+    for li in range(len(layers)):
+        layer = int(layers[li])
+        if want is not None and layer not in want:
+            continue
+        out[layer] = skill_over_mean_r2(
+            ridge_predict_loco_centered(C[:, li, :], V[:, li, :]), V[:, li, :]
+        )["skill"]
+    return out
+
+
+def _mlp_skill_for_width(
+    C: np.ndarray,
+    V: np.ndarray,
+    li_iter: list[int],
+    layers: list,
+    *,
+    hidden: int,
+    device: str,
+    num_threads: int | None,
+    shuffle_layers: set[int] | None = None,
+) -> tuple[dict[int, float], dict[int, float]]:
+    """Held-out skill-over-mean R² per layer at one MLP width (+ optional shuffle-null).
+
+    Builds the batched multihead ensemble over ``li_iter`` at width ``hidden``,
+    PCA-48 v0 target + input-PCA-projected c_C (the exact #722 recipe, only
+    ``hidden`` varied), and returns (skill_by_layer, shuffle_skill_by_layer). The
+    shuffle-null is computed ONLY for layers in ``shuffle_layers`` (the plateau
+    layers) so a "positive" width can't be a fluke; layers not in the set get a
+    NaN shuffle entry.
+    """
+    shuffle_layers = shuffle_layers or set()
+    shuffle_perm = np.random.default_rng(SEED_722).permutation(C.shape[0])
+    groups: list[MLPGroup] = []
+    meta: dict[int, dict] = {}
+    for li in li_iter:
+        layer = int(layers[li])
+        Xc = C[:, li, :]
+        Yv = V[:, li, :]
+        mu_t, comps, _ = robust_pca_basis(Yv, MLP_PCA_DIM_722)
+        Xin, _ = _input_pca_project(Xc)
+        Y64 = (Yv - mu_t) @ comps.T
+        meta[li] = {"mu_t": mu_t, "comps": comps, "Yv": Yv}
+        groups.append(MLPGroup(("base", li), Xin, Y64))
+        if layer in shuffle_layers:
+            Yv_sh = Yv[shuffle_perm]
+            sh_mu, sh_comps, _ = robust_pca_basis(Yv_sh, MLP_PCA_DIM_722)
+            Y64_sh = (Yv_sh - sh_mu) @ sh_comps.T
+            meta[li]["sh"] = {"mu": sh_mu, "comps": sh_comps, "Yv_sh": Yv_sh}
+            groups.append(MLPGroup(("shuffle", li), Xin, Y64_sh))
+
+    res = fit_batched_loco_mlp_multihead(
+        groups,
+        seed=SEED_722,
+        hidden=hidden,
+        max_epochs=i658.MLP_MAX_EPOCHS,
+        device=device,
+        chunk_size=4096,
+        num_threads=num_threads,
+    )
+    skill: dict[int, float] = {}
+    shuffle_skill: dict[int, float] = {}
+    for li in li_iter:
+        layer = int(layers[li])
+        m = meta[li]
+        Y64 = (m["Yv"] - m["mu_t"]) @ m["comps"].T
+        base_full = (loco_train_means(Y64) + res.preds_by_key[("base", li)]) @ m["comps"] + m[
+            "mu_t"
+        ]
+        skill[layer] = skill_over_mean_r2(base_full, m["Yv"])["skill"]
+        if "sh" in m:
+            sh = m["sh"]
+            Y64_sh = (sh["Yv_sh"] - sh["mu"]) @ sh["comps"].T
+            sh_full = (loco_train_means(Y64_sh) + res.preds_by_key[("shuffle", li)]) @ sh[
+                "comps"
+            ] + sh["mu"]
+            shuffle_skill[layer] = skill_over_mean_r2(sh_full, sh["Yv_sh"])["skill"]
+        else:
+            shuffle_skill[layer] = float("nan")
+    return skill, shuffle_skill
+
+
+def run_width_sweep(
+    data: dict,
+    *,
+    widths: list[int],
+    plateau_layers: list[int],
+    device: str,
+    num_threads: int | None,
+    existing_json: Path,
+    layer_subset: list[int] | None = None,
+) -> dict:
+    """Deliverable 1: held-out skill-over-mean R² per (width × layer), all 28 layers.
+
+    For each width in ``widths`` fit the full layer battery (vectorized, only
+    ``hidden`` varies) and record skill per layer. The shuffle-null is computed
+    at the ``plateau_layers`` (the existing isolation control) so a positive
+    width is checked against label-permutation. The LINEAR RIDGE skill is carried
+    per layer too (the bar to beat). Capacity-vs-n question: does a smaller width
+    avoid the overfit / approach (or beat) the ridge at n=50?
+    """
+    C, V = _stack_layers(data)
+    layers = data["layers"]
+    n, _L, H = V.shape
+    li_iter = [
+        li for li in range(len(layers)) if layer_subset is None or int(layers[li]) in layer_subset
+    ]
+    layer_nums = [int(layers[li]) for li in li_iter]
+    plateau_in = sorted(set(plateau_layers) & set(layer_nums))
+    ridge_by_layer = _ridge_baseline_by_layer(data, layer_subset, existing_json)
+
+    per_width = []
+    for w in widths:
+        t0 = time.time()
+        skill, shuffle_skill = _mlp_skill_for_width(
+            C,
+            V,
+            li_iter,
+            layers,
+            hidden=w,
+            device=device,
+            num_threads=num_threads,
+            shuffle_layers=set(plateau_in),
+        )
+        rows = []
+        for layer in layer_nums:
+            rows.append(
+                {
+                    "layer": layer,
+                    "skill_vs_mean_mlp": skill[layer],
+                    "skill_shuffle_mlp": shuffle_skill[layer],
+                    "skill_vs_mean_ridge": ridge_by_layer.get(layer, float("nan")),
+                }
+            )
+        per_width.append({"hidden": w, "n_folds": n, "per_layer": rows})
+        # best layer for this width vs the ridge plateau
+        best = max(rows, key=lambda r: r["skill_vs_mean_mlp"])
+        logger.info(
+            "[width-sweep] hidden=%4d fit in %.1fs — best MLP L%02d=%+.4f (ridge there=%+.4f)",
+            w,
+            time.time() - t0,
+            best["layer"],
+            best["skill_vs_mean_mlp"],
+            best["skill_vs_mean_ridge"],
+        )
+
+    return {
+        "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R² on centered v0)",
+        "c_C_recipe": "C_last",
+        "n_contexts": n,
+        "activation_dim": H,
+        "layers": layer_nums,
+        "widths": list(widths),
+        "plateau_layers": plateau_in,
+        "shuffle_null_layers": plateau_in,
+        "mlp_recipe": {
+            "lr": i658.MLP_LR,
+            "wd": i658.MLP_WD,
+            "max_epochs": i658.MLP_MAX_EPOCHS,
+            "pca_target_dim": MLP_PCA_DIM_722,
+            "input_pca_accel": True,
+            "vectorized": True,
+        },
+        "seed": SEED_722,
+        "ridge_skill_by_layer": {str(k): v for k, v in ridge_by_layer.items()},
+        "store_provenance": {
+            "store_dir": data["store_dir"],
+            "e0_path": data["e0_path"],
+            "cc_source": data["cc_source"],
+            "n_contexts": n,
+            "hidden_dim": int(H),
+        },
+        "per_width": per_width,
+    }
+
+
+def run_epoch_curves(
+    data: dict,
+    *,
+    widths: list[int],
+    layers_grid: list[int],
+    eval_every: int,
+    device: str,
+    num_threads: int | None,
+) -> dict:
+    """Deliverable 2: per-epoch held-out skill-over-mean R² for a width × layer grid.
+
+    For each (width, layer) in ``widths × layers_grid`` record the held-out
+    skill every ``eval_every`` epochs across the 300-epoch fit (one cheap forward
+    per snapshot). Answers: does held-out skill peak positive early then decay
+    (→ early-stop rescues it) or stay negative throughout (→ n=50 too small)?
+    """
+    C, V = _stack_layers(data)
+    layers = list(data["layers"])
+    n = V.shape[0]
+    cells = []
+    for w in widths:
+        for layer in layers_grid:
+            if layer not in layers:
+                logger.warning("[epoch-curve] layer %d not in store; skipping", layer)
+                continue
+            li = layers.index(layer)
+            Xc = C[:, li, :]
+            Yv = V[:, li, :]
+            mu_t, comps, _ = robust_pca_basis(Yv, MLP_PCA_DIM_722)
+            Xin, _ = _input_pca_project(Xc)
+            Y64 = (Yv - mu_t) @ comps.T
+            t0 = time.time()
+            traj = fit_batched_loco_mlp_multihead_trajectory(
+                [MLPGroup(("c", li), Xin, Y64)],
+                eval_every=eval_every,
+                seed=SEED_722,
+                hidden=w,
+                max_epochs=i658.MLP_MAX_EPOCHS,
+                device=device,
+                chunk_size=0,  # single (group, fold) battery → one chunk
+                num_threads=num_threads,
+            )
+            curve = []
+            for ep in traj.epochs:
+                pred64 = traj.preds_at[ep][("c", li)]
+                full = (loco_train_means(Y64) + pred64) @ comps + mu_t
+                curve.append([int(ep), skill_over_mean_r2(full, Yv)["skill"]])
+            peak = max(curve, key=lambda c: c[1]) if curve else [0, float("nan")]
+            final = curve[-1] if curve else [0, float("nan")]
+            cells.append(
+                {
+                    "hidden": w,
+                    "layer": layer,
+                    "n_folds": n,
+                    "eval_every": eval_every,
+                    "curve": curve,  # [[epoch, held_out_skill], ...]
+                    "peak_epoch": peak[0],
+                    "peak_skill": peak[1],
+                    "final_epoch": final[0],
+                    "final_skill": final[1],
+                }
+            )
+            logger.info(
+                "[epoch-curve] hidden=%4d L%02d fit in %.1fs — peak=%+.4f@ep%d final=%+.4f@ep%d",
+                w,
+                layer,
+                time.time() - t0,
+                peak[1],
+                peak[0],
+                final[1],
+                final[0],
+            )
+
+    return {
+        "metric": "skill_over_predict_the_mean per epoch (held-out R² on centered v0)",
+        "c_C_recipe": "C_last",
+        "n_contexts": n,
+        "widths": list(widths),
+        "layers_grid": list(layers_grid),
+        "eval_every": eval_every,
+        "max_epochs": i658.MLP_MAX_EPOCHS,
+        "mlp_recipe": {"lr": i658.MLP_LR, "wd": i658.MLP_WD, "pca_target_dim": MLP_PCA_DIM_722},
+        "seed": SEED_722,
+        "store_provenance": {
+            "store_dir": data["store_dir"],
+            "cc_source": data["cc_source"],
+            "n_contexts": n,
+        },
+        "cells": cells,
+    }
+
+
+def run_krr_vs_linear(
+    data: dict,
+    *,
+    width_sweep: dict | None,
+    device: str,
+    existing_json: Path,
+    n_boot: int = 2000,
+    layer_subset: list[int] | None = None,
+) -> dict:
+    """Coordinator scope: KRR (RBF + linear) vs linear ridge — the nonlinear-gap test.
+
+    Per layer, fit KRR under the SAME LOCO CV + skill-over-mean R² metric:
+      - RBF kernel: nested CV over (γ × λ) per held-out fold (no leakage), PCA-48
+        v0 target centered by train mean.
+      - linear kernel: nested CV over λ; reproduces the closed-form linear ridge
+        skill (the plumbing sanity check, asserted at the plateau layers).
+    The nonlinear-gap statistic is ``R²(KRR-RBF) − R²(linear ridge)`` with a
+    LOCO-fold bootstrap CI (resample the 50 held-out fold contributions). The
+    headline read at the ridge plateau: does the RBF gap CI exclude 0 (real
+    nonlinearity) or include 0 (linear sufficient)?
+
+    ``width_sweep`` (if provided) supplies the best-MLP-per-layer skill for the
+    comparison figure. ``n_boot`` bootstrap resamples for the gap CI.
+    """
+    C, V = _stack_layers(data)
+    layers = data["layers"]
+    n, _L, _H = V.shape
+    li_iter = [
+        li for li in range(len(layers)) if layer_subset is None or int(layers[li]) in layer_subset
+    ]
+    layer_nums = [int(layers[li]) for li in li_iter]
+    ridge_by_layer = _ridge_baseline_by_layer(data, layer_subset, existing_json)
+    best_mlp_by_layer = _best_mlp_by_layer(width_sweep) if width_sweep else {}
+    rng = np.random.default_rng(SEED_722)
+
+    per_layer = []
+    sanity_rows = []
+    for li in li_iter:
+        layer = int(layers[li])
+        Xc = C[:, li, :]
+        Yv = V[:, li, :]
+        mu_t, comps, _ = robust_pca_basis(Yv, MLP_PCA_DIM_722)
+        Y64 = (Yv - mu_t) @ comps.T  # (n, 48) PCA-reduced target
+
+        # per-fold squared-error contributions, in PCA-48 space (the skill metric
+        # is computed in that space — same as the MLP arm; ridge baseline JSON is
+        # full-H, so we report the JSON ridge skill AND a PCA-48 linear-kernel
+        # skill, asserting the linear-kernel KRR tracks the closed-form ridge).
+        ridge_full_h = ridge_by_layer.get(layer, float("nan"))
+
+        rbf_pred, rbf_lam, rbf_gam = krr_predict_loco(Xc, Y64, kernel="rbf")
+        lin_pred, lin_lam, _ = krr_predict_loco(Xc, Y64, kernel="linear")
+
+        rbf_skill, rbf_ssres, rbf_sstot = _skill_and_fold_terms(rbf_pred, Y64)
+        lin_skill, lin_ssres, _lin_sstot = _skill_and_fold_terms(lin_pred, Y64)
+
+        # gap statistic in the SAME PCA-48 space for both arms (the like-for-like
+        # nonlinear gap): RBF − linear-kernel.
+        gap = rbf_skill - lin_skill
+        # LOCO-fold bootstrap: resample folds, recompute aggregate skill for each
+        # arm, take the gap. ss_tot is shared (same target), so resample the
+        # per-fold (ss_res_rbf, ss_res_lin, ss_tot) triples together.
+        boot_gaps = _bootstrap_gap(rbf_ssres, lin_ssres, rbf_sstot, rng, n_boot)
+        lo, hi = float(np.percentile(boot_gaps, 2.5)), float(np.percentile(boot_gaps, 97.5))
+
+        # Auditability (coordinator scope): full-H linear-ridge effective DoF +
+        # a per-fold bootstrap CI on the linear-ridge skill. df_eff = Σ d_j²/(d_j²+λ)
+        # quantifies how many directions ridge spends — the "n=50 is enough"
+        # headline rests on df_eff ≪ 50. The CI reuses the LOCO fold predictions.
+        ridge_audit = _ridge_audit(Xc, Yv, rng, n_boot)
+
+        per_layer.append(
+            {
+                "layer": layer,
+                "skill_vs_mean_ridge_fullH": ridge_full_h,
+                "skill_krr_linear_pca48": lin_skill,
+                "skill_krr_rbf_pca48": rbf_skill,
+                "best_mlp_skill": best_mlp_by_layer.get(layer, float("nan")),
+                "nonlinear_gap_rbf_minus_linear": gap,
+                "gap_ci95": [lo, hi],
+                "gap_excludes_zero": bool(lo > 0.0 or hi < 0.0),
+                "chosen_lambda_rbf_median": float(np.median(rbf_lam)),
+                "chosen_gamma_rbf_median": float(np.median(rbf_gam)),
+                "chosen_lambda_linear_median": float(np.median(lin_lam)),
+                # auditable n=50-linear headline:
+                "ridge_df_eff": ridge_audit["df_eff"],
+                "ridge_lambda_median": ridge_audit["lambda_median"],
+                "ridge_skill_recomputed_fullH": ridge_audit["skill"],
+                "ridge_skill_ci_lo": ridge_audit["ci_lo"],
+                "ridge_skill_ci_hi": ridge_audit["ci_hi"],
+            }
+        )
+        # plumbing sanity: linear-kernel KRR skill vs full-H closed-form ridge.
+        # NOTE these are in DIFFERENT target spaces (PCA-48 vs full-H), so an
+        # exact match is not expected layer-wide; the asserted check is the
+        # linear-kernel-vs-PCA48-linear-ridge match in _krr_sanity_check.
+        sanity_rows.append(
+            {"layer": layer, "krr_linear_pca48": lin_skill, "ridge_fullH": ridge_full_h}
+        )
+        logger.info(
+            "[krr] L%02d ridge(fullH)=%+.4f krr_lin=%+.4f krr_rbf=%+.4f gap=%+.4f "
+            "CI=[%+.4f,%+.4f]%s",
+            layer,
+            ridge_full_h,
+            lin_skill,
+            rbf_skill,
+            gap,
+            lo,
+            hi,
+            " *EXCLUDES0*" if (lo > 0 or hi < 0) else "",
+        )
+
+    sanity = _krr_sanity_check(data, layer_subset, device=device)
+
+    return {
+        "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot "
+        "(held-out R² on PCA-48 centered v0)",
+        "c_C_recipe": "C_last",
+        "n_contexts": n,
+        "layers": layer_nums,
+        "kernels": ["linear", "rbf"],
+        "pca_target_dim": MLP_PCA_DIM_722,
+        "ridge_lambdas": list(i658.RIDGE_LAMBDAS),
+        "n_bootstrap": n_boot,
+        "seed": SEED_722,
+        "krr_linear_vs_ridge_sanity": sanity,
+        "store_provenance": {
+            "store_dir": data["store_dir"],
+            "cc_source": data["cc_source"],
+            "n_contexts": n,
+        },
+        "per_layer": per_layer,
+    }
+
+
+def _skill_and_fold_terms(preds: np.ndarray, Y: np.ndarray) -> tuple[float, np.ndarray, np.ndarray]:
+    """Aggregate skill + per-fold SS_res / SS_tot (for the bootstrap)."""
+    n = Y.shape[0]
+    total = Y.sum(axis=0, keepdims=True)
+    tmean = (total - Y) / (n - 1)
+    ss_res = np.sum((Y - preds) ** 2, axis=1)  # (n,) per-fold
+    ss_tot = np.sum((Y - tmean) ** 2, axis=1)  # (n,) per-fold
+    agg = float("nan") if ss_tot.sum() < 1e-12 else 1.0 - ss_res.sum() / ss_tot.sum()
+    return agg, ss_res, ss_tot
+
+
+def _bootstrap_gap(
+    ss_res_a: np.ndarray, ss_res_b: np.ndarray, ss_tot: np.ndarray, rng, n_boot: int
+) -> np.ndarray:
+    """Bootstrap the skill gap (arm A − arm B) by resampling LOCO folds with replacement."""
+    n = ss_tot.shape[0]
+    gaps = np.empty(n_boot, dtype=np.float64)
+    for b in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        tot = ss_tot[idx].sum()
+        if tot < 1e-12:
+            gaps[b] = float("nan")
+            continue
+        skill_a = 1.0 - ss_res_a[idx].sum() / tot
+        skill_b = 1.0 - ss_res_b[idx].sum() / tot
+        gaps[b] = skill_a - skill_b
+    return gaps[np.isfinite(gaps)]
+
+
+def _ridge_audit(Xc: np.ndarray, Yv: np.ndarray, rng, n_boot: int) -> dict:
+    """Full-H linear-ridge effective DoF + per-fold bootstrap CI on the ridge skill.
+
+    Makes the n=50 LINEAR headline auditable:
+      - ``df_eff = Σ_j d_j²/(d_j²+λ)`` (d_j = singular values of the FULL-data
+        standardized design X; λ = the median nested-CV-chosen ridge λ over the
+        LOCO folds). df_eff ≪ 50 is what "n=50 is enough to fit the linear map"
+        actually rests on.
+      - a bootstrap CI on the linear-ridge skill-over-mean R², resampling the 50
+        held-out LOCO fold contributions (same machinery as the KRR gap CI). The
+        recomputed skill matches the closed-form ridge skill in the canonical
+        JSON to numerical noise (both are the same LOCO ridge in full-H).
+    """
+    n = Xc.shape[0]
+    # full-H LOCO ridge predictions (reuse the canonical centered-LOCO solver),
+    # recording the per-fold chosen λ for the df_eff anchor.
+    pred = ridge_predict_loco_centered(Xc, Yv)
+    skill, ss_res, ss_tot = _skill_and_fold_terms(pred, Yv)
+    # per-fold λ picks → median λ anchors df_eff (the full-data PRESS λ; per-fold
+    # picks are near-identical at this n, so the median is the representative).
+    lams = _ridge_loo_lambdas(Xc, Yv)
+    lam = float(np.median(lams))
+    # SVD singular values of the FULL-data standardized design.
+    X = np.ascontiguousarray(Xc.astype(np.float64))
+    xmu = X.mean(0)
+    xsd = X.std(0, ddof=0) + 1e-9
+    Xn = (X - xmu) / xsd
+    d = np.linalg.svd(Xn, compute_uv=False)  # singular values
+    d2 = d * d
+    df_eff = float(np.sum(d2 / (d2 + lam)))
+    # bootstrap CI on the skill (resample folds with replacement).
+    boots = np.empty(n_boot, dtype=np.float64)
+    for b in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        tot = ss_tot[idx].sum()
+        boots[b] = float("nan") if tot < 1e-12 else 1.0 - ss_res[idx].sum() / tot
+    boots = boots[np.isfinite(boots)]
+    return {
+        "df_eff": df_eff,
+        "lambda_median": lam,
+        "skill": skill,
+        "ci_lo": float(np.percentile(boots, 2.5)) if boots.size else float("nan"),
+        "ci_hi": float(np.percentile(boots, 97.5)) if boots.size else float("nan"),
+    }
+
+
+def _ridge_loo_lambdas(Xc: np.ndarray, Yv: np.ndarray) -> list:
+    """Per-fold nested-PRESS-chosen ridge λ over the LOCO folds (for df_eff anchor)."""
+    n = Xc.shape[0]
+    device = torch.device(i658.DEVICE)
+    Xt = torch.from_numpy(np.ascontiguousarray(Xc)).to(device=device, dtype=torch.float64)
+    Yt = torch.from_numpy(np.ascontiguousarray(Yv)).to(device=device, dtype=torch.float64)
+    out = []
+    for i in range(n):
+        tr = [j for j in range(n) if j != i]
+        tr_t = torch.tensor(tr, device=device)
+        Xtr, Ytr = Xt[tr_t], Yt[tr_t]
+        xmu = Xtr.mean(0)
+        xsd = Xtr.std(0, correction=0) + 1e-9
+        Xtr_n = (Xtr - xmu) / xsd
+        Ytr_c = Ytr - Ytr.mean(0)
+        mse = i658._press_loo_mse_per_lambda(Xtr_n, Ytr_c, i658.RIDGE_LAMBDAS)
+        out.append(float(i658.RIDGE_LAMBDAS[int(torch.argmin(mse).item())]))
+    return out
+
+
+def _krr_sanity_check(data: dict, layer_subset: list[int] | None, *, device: str) -> dict:
+    """Assert linear-kernel KRR reproduces the PCA-48 linear-ridge skill (plumbing).
+
+    Both arms fit the SAME PCA-48 v0 target with the SAME LOCO CV; a linear
+    kernel KRR == ridge in feature space, so the two skills must match to a few
+    e-3 at the sanity layers. A mismatch means the KRR plumbing (centering,
+    nested PRESS, dual solve) is wrong. Checks the plateau layers (or the
+    subset's layers when restricted).
+    """
+    C, V = _stack_layers(data)
+    layers = list(data["layers"])
+    sanity_layers = [layer_subset[0]] if layer_subset else [li for li in (14, 18) if li in layers]
+    sanity_layers = [layer for layer in sanity_layers if layer in layers]
+    rows = []
+    ok = True
+    tol = 5e-3
+    for layer in sanity_layers:
+        li = layers.index(layer)
+        Xc = C[:, li, :]
+        Yv = V[:, li, :]
+        mu_t, comps, _ = robust_pca_basis(Yv, MLP_PCA_DIM_722)
+        Y64 = (Yv - mu_t) @ comps.T
+        ridge_pca48 = skill_over_mean_r2(ridge_predict_loco_centered(Xc, Y64), Y64)["skill"]
+        lin_pred, _, _ = krr_predict_loco(Xc, Y64, kernel="linear")
+        krr_lin_pca48 = skill_over_mean_r2(lin_pred, Y64)["skill"]
+        d = abs(ridge_pca48 - krr_lin_pca48)
+        rows.append(
+            {
+                "layer": layer,
+                "ridge_pca48": ridge_pca48,
+                "krr_linear_pca48": krr_lin_pca48,
+                "abs_delta": d,
+            }
+        )
+        if d > tol:
+            ok = False
+        logger.info(
+            "[krr-sanity] L%02d ridge(pca48)=%+.5f krr_lin(pca48)=%+.5f |Δ|=%.2e",
+            layer,
+            ridge_pca48,
+            krr_lin_pca48,
+            d,
+        )
+    return {"ok": ok, "tol": tol, "rows": rows}
+
+
+def _best_mlp_by_layer(width_sweep: dict) -> dict[int, float]:
+    """Best (max-over-width) MLP skill per layer from a width-sweep result."""
+    best: dict[int, float] = {}
+    for w in width_sweep.get("per_width", []):
+        for r in w["per_layer"]:
+            layer = int(r["layer"])
+            s = r["skill_vs_mean_mlp"]
+            if s == s and (layer not in best or s > best[layer]):  # NaN-safe max
+                best[layer] = s
+    return best
+
+
+def make_width_sweep_figure(result: dict, fig_path: Path) -> None:
+    """Deliverable 3a: held-out skill vs MLP width (log-x), one line per plateau layer.
+
+    Ridge baseline as a horizontal reference line + a y=0 line (skill 0 = no
+    better than predict-the-mean). Caption: does any width get positive / beat
+    ridge?
+    """
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import set_paper_style
+
+    set_paper_style(target="neurips")
+    widths = result["widths"]
+    layer_nums = result["layers"]
+    # representative layers: the plateau set + L0 negative control if present.
+    rep = sorted(set(result.get("plateau_layers", [])) | ({0} & set(layer_nums)))
+    if not rep:
+        rep = layer_nums[:: max(1, len(layer_nums) // 4)]
+    skill_by_wl = {
+        w["hidden"]: {r["layer"]: r["skill_vs_mean_mlp"] for r in w["per_layer"]}
+        for w in result["per_width"]
+    }
+    ridge_by_layer = {int(k): v for k, v in result.get("ridge_skill_by_layer", {}).items()}
+
+    fig, ax = plt.subplots(figsize=(7.0, 4.2))
+    colors = ["#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9"]
+    for i, layer in enumerate(rep):
+        ys = [skill_by_wl[w].get(layer, float("nan")) for w in widths]
+        ax.plot(
+            widths,
+            ys,
+            marker="o",
+            ms=4,
+            lw=1.6,
+            color=colors[i % len(colors)],
+            label=f"MLP L{layer}",
+        )
+        rb = ridge_by_layer.get(layer)
+        if rb is not None and rb == rb:
+            ax.axhline(rb, color=colors[i % len(colors)], lw=1.0, ls="--", alpha=0.7)
+    ax.axhline(0.0, color="0.4", lw=0.9, ls=":")
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(widths)
+    ax.set_xticklabels([str(w) for w in widths])
+    ax.set_xlabel("MLP hidden width")
+    ax.set_ylabel("skill-over-mean (held-out R²)")
+    ax.legend(loc="best", fontsize=7, title="solid=MLP, dashed=ridge (same layer)")
+    fig.tight_layout()
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(fig_path, dpi=200, bbox_inches="tight")
+    fig.savefig(fig_path.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+    _write_fig_meta(fig_path, 722, "mlp_width_sweep.json")
+    logger.info("wrote %s", fig_path)
+
+
+def make_epoch_curve_figure(result: dict, fig_path: Path) -> None:
+    """Deliverable 3b: held-out skill vs epoch, one line per (width, layer) cell."""
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import set_paper_style
+
+    set_paper_style(target="neurips")
+    fig, ax = plt.subplots(figsize=(7.5, 4.4))
+    colors = [
+        "#0072B2",
+        "#D55E00",
+        "#009E73",
+        "#CC79A7",
+        "#E69F00",
+        "#56B4E9",
+        "#F0E442",
+        "#000000",
+    ]
+    for i, cell in enumerate(result["cells"]):
+        curve = cell["curve"]
+        xs = [c[0] for c in curve]
+        ys = [c[1] for c in curve]
+        ax.plot(
+            xs,
+            ys,
+            marker=".",
+            ms=3,
+            lw=1.4,
+            color=colors[i % len(colors)],
+            label=f"w{cell['hidden']} L{cell['layer']}",
+        )
+    ax.axhline(0.0, color="0.4", lw=0.9, ls=":")
+    ax.set_xlabel("training epoch")
+    ax.set_ylabel("skill-over-mean (held-out R²)")
+    ax.legend(loc="best", fontsize=7, ncol=2)
+    fig.tight_layout()
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(fig_path, dpi=200, bbox_inches="tight")
+    fig.savefig(fig_path.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+    _write_fig_meta(fig_path, 722, "mlp_epoch_curves.json")
+    logger.info("wrote %s", fig_path)
+
+
+def make_krr_figure(result: dict, fig_path: Path) -> None:
+    """Coordinator scope: per-layer linear-ridge vs KRR-RBF vs best-MLP + gap CI subplot."""
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import set_paper_style
+
+    set_paper_style(target="neurips")
+    rows = sorted(result["per_layer"], key=lambda r: r["layer"])
+    x = [r["layer"] for r in rows]
+    fig, (ax_top, ax_bot) = plt.subplots(
+        2, 1, figsize=(7.5, 6.0), sharex=True, gridspec_kw={"height_ratios": [2.0, 1.0]}
+    )
+    ax_top.plot(
+        x,
+        [r["skill_vs_mean_ridge_fullH"] for r in rows],
+        marker="o",
+        ms=3,
+        lw=1.6,
+        color="#0072B2",
+        label="linear ridge (full-H)",
+    )
+    ax_top.plot(
+        x,
+        [r["skill_krr_rbf_pca48"] for r in rows],
+        marker="s",
+        ms=3,
+        lw=1.6,
+        color="#D55E00",
+        label="KRR-RBF (PCA-48)",
+    )
+    ax_top.plot(
+        x,
+        [r["skill_krr_linear_pca48"] for r in rows],
+        marker="^",
+        ms=3,
+        lw=1.2,
+        ls="--",
+        color="#56B4E9",
+        label="KRR-linear (PCA-48, sanity)",
+    )
+    if any(r["best_mlp_skill"] == r["best_mlp_skill"] for r in rows):
+        ax_top.plot(
+            x,
+            [r["best_mlp_skill"] for r in rows],
+            marker="x",
+            ms=3,
+            lw=1.2,
+            ls=":",
+            color="#999999",
+            label="best-MLP (width sweep)",
+        )
+    ax_top.axhline(0.0, color="0.4", lw=0.9, ls=":")
+    ax_top.set_ylabel("skill-over-mean (held-out R²)")
+    ax_top.legend(loc="best", fontsize=7)
+
+    gap = np.array([r["nonlinear_gap_rbf_minus_linear"] for r in rows])
+    lo = np.array([r["gap_ci95"][0] for r in rows])
+    hi = np.array([r["gap_ci95"][1] for r in rows])
+    yerr = np.vstack([gap - lo, hi - gap])
+    yerr = np.clip(yerr, 0.0, None)  # guard float-eps negatives
+    ax_bot.errorbar(
+        x, gap, yerr=yerr, fmt="o", ms=3, lw=1.0, color="#D55E00", ecolor="#D55E00", capsize=2
+    )
+    ax_bot.axhline(0.0, color="0.4", lw=0.9, ls=":")
+    ax_bot.set_xlabel("layer")
+    ax_bot.set_ylabel("nonlinear gap\n(RBF − linear), 95% CI")
+    fig.tight_layout()
+    fig_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(fig_path, dpi=200, bbox_inches="tight")
+    fig.savefig(fig_path.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+    _write_fig_meta(fig_path, 722, "krr_vs_linear.json")
+    logger.info("wrote %s", fig_path)
+
+
 # ── slow-MLP spot-check (Deliverable 4 item 2) ────────────────────────────────
 
 
@@ -818,6 +1587,102 @@ def spot_check_vs_slow_mlp(data: dict, spot_layers: list[int], tol: float = 5e-3
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
+def _run_extension_phases(
+    args,
+    betley: dict,
+    *,
+    layer_subset: list[int] | None,
+    threads: int | None,
+    krr_bootstrap: int,
+    out722: Path,
+    out_ext_dir: Path,
+    run_width_sweep_flag: bool,
+    run_epoch_curves_flag: bool,
+    run_krr_flag: bool,
+) -> None:
+    """Run the opt-in additive extension phases (width sweep / epoch curves / KRR).
+
+    Each enabled phase writes its OWN output JSON + figure under
+    ``eval_results/issue_722/base-skill-over-mean-cC-to-v0/`` and
+    ``figures/issue_722/`` — never touching ``skill_over_mean.json``.
+    Extracted from ``main`` to keep its cyclomatic complexity under the cap.
+    """
+    width_sweep_result = None
+    if run_width_sweep_flag:
+        width_sweep_result = run_width_sweep(
+            betley,
+            widths=args.mlp_widths,
+            plateau_layers=args.plateau_layers,
+            device=args.device,
+            num_threads=threads,
+            existing_json=out722,
+            layer_subset=layer_subset,
+        )
+        width_sweep_result["metadata"] = reproducibility_metadata(
+            {"script": "issue722_vectorized_skill", "phase": "mlp_width_sweep"}
+        )
+        out_ws = out_ext_dir / "mlp_width_sweep.json"
+        out_ext_dir.mkdir(parents=True, exist_ok=True)
+        dump_json(width_sweep_result, out_ws)
+        logger.info("wrote %s", out_ws)
+        make_width_sweep_figure(
+            width_sweep_result, REPO_ROOT / "figures/issue_722/mlp_width_sweep.png"
+        )
+
+    if run_epoch_curves_flag:
+        epoch_result = run_epoch_curves(
+            betley,
+            widths=args.epoch_curve_widths,
+            layers_grid=args.epoch_curve_layers,
+            eval_every=args.epoch_curve_every,
+            device=args.device,
+            num_threads=threads,
+        )
+        epoch_result["metadata"] = reproducibility_metadata(
+            {"script": "issue722_vectorized_skill", "phase": "mlp_epoch_curves"}
+        )
+        out_ec = out_ext_dir / "mlp_epoch_curves.json"
+        out_ext_dir.mkdir(parents=True, exist_ok=True)
+        dump_json(epoch_result, out_ec)
+        logger.info("wrote %s", out_ec)
+        make_epoch_curve_figure(epoch_result, REPO_ROOT / "figures/issue_722/mlp_epoch_curves.png")
+
+    if run_krr_flag:
+        krr_result = run_krr_vs_linear(
+            betley,
+            width_sweep=width_sweep_result,
+            device=args.device,
+            existing_json=out722,
+            n_boot=krr_bootstrap,
+            layer_subset=layer_subset,
+        )
+        krr_result["metadata"] = reproducibility_metadata(
+            {"script": "issue722_vectorized_skill", "phase": "krr_vs_linear"}
+        )
+        out_krr = out_ext_dir / "krr_vs_linear.json"
+        out_ext_dir.mkdir(parents=True, exist_ok=True)
+        dump_json(krr_result, out_krr)
+        logger.info("wrote %s", out_krr)
+        make_krr_figure(krr_result, REPO_ROOT / "figures/issue_722/krr_vs_linear_nonlinearity.png")
+        sanity = krr_result["krr_linear_vs_ridge_sanity"]
+        print(f"\n==== KRR-linear vs PCA-48 linear-ridge sanity: ok={sanity['ok']} ====")
+        for row in sanity["rows"]:
+            print(
+                f"  L{row['layer']:02d}: ridge(pca48)={row['ridge_pca48']:+.5f} "
+                f"krr_lin={row['krr_linear_pca48']:+.5f} |Δ|={row['abs_delta']:.2e}"
+            )
+        print("\n==== KRR nonlinear gap (RBF − linear), per layer ====")
+        for r in krr_result["per_layer"]:
+            mark = " *EXCLUDES0*" if r["gap_excludes_zero"] else ""
+            print(
+                f"  L{r['layer']:02d}: ridge(fullH)={r['skill_vs_mean_ridge_fullH']:+.4f} "
+                f"rbf={r['skill_krr_rbf_pca48']:+.4f} "
+                f"gap={r['nonlinear_gap_rbf_minus_linear']:+.4f} "
+                f"CI=[{r['gap_ci95'][0]:+.4f},{r['gap_ci95'][1]:+.4f}] "
+                f"df_eff={r['ridge_df_eff']:.1f}{mark}"
+            )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Vectorized #722 skill + #658 chain ρ.")
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
@@ -849,14 +1714,88 @@ def main() -> int:
     parser.add_argument("--spot-layers", type=int, nargs="*", default=[0, 12, 18])
     parser.add_argument("--skip-spot-check", action="store_true")
     parser.add_argument("--smoke", action="store_true", help="2-epoch + 1 genre + 2 layers smoke")
+    # ── ADDITIVE extension flags (all OPT-IN; default invocation is unchanged) ──
+    parser.add_argument(
+        "--skip-canonical",
+        action="store_true",
+        help="skip the canonical skill_over_mean.json + #658-chain writes (run ONLY the "
+        "opt-in extension phases below against the existing skill_over_mean.json baseline)",
+    )
+    parser.add_argument(
+        "--run-width-sweep",
+        action="store_true",
+        help="Deliverable 1: MLP width sweep (held-out skill per width x layer) "
+        "-> mlp_width_sweep.json",
+    )
+    parser.add_argument(
+        "--mlp-widths",
+        type=int,
+        nargs="+",
+        default=[4, 8, 16, 32, 64, 128, 256, 512],
+        help="MLP hidden widths for the width sweep",
+    )
+    parser.add_argument(
+        "--plateau-layers",
+        type=int,
+        nargs="+",
+        default=[14, 18, 21],
+        help="ridge-plateau layers: representative width-sweep lines + shuffle-null layers",
+    )
+    parser.add_argument(
+        "--run-epoch-curves",
+        action="store_true",
+        help="Deliverable 2: per-epoch held-out curves for a width x layer grid "
+        "-> mlp_epoch_curves.json",
+    )
+    parser.add_argument(
+        "--epoch-curve-widths",
+        type=int,
+        nargs="+",
+        default=[8, 32, 128, 512],
+        help="MLP widths for the per-epoch curve grid",
+    )
+    parser.add_argument(
+        "--epoch-curve-layers",
+        type=int,
+        nargs="+",
+        default=[0, 18],
+        help="layers for the per-epoch curve grid (L18=ridge plateau peak, L0=neg control)",
+    )
+    parser.add_argument(
+        "--epoch-curve-every",
+        type=int,
+        default=10,
+        help="snapshot the held-out skill every K epochs",
+    )
+    parser.add_argument(
+        "--run-krr",
+        action="store_true",
+        help="KRR (RBF + linear) vs linear ridge nonlinear-gap -> krr_vs_linear.json",
+    )
+    parser.add_argument(
+        "--krr-bootstrap",
+        type=int,
+        default=2000,
+        help="LOCO-fold bootstrap resamples for the gap/ridge CIs",
+    )
     args = parser.parse_args()
 
     i658.DEVICE = args.device
     threads = args.threads if args.threads > 0 else None
     layer_subset = None
+    krr_bootstrap = args.krr_bootstrap
+    run_width_sweep_flag = args.run_width_sweep
+    run_epoch_curves_flag = args.run_epoch_curves
+    run_krr_flag = args.run_krr
     if args.smoke:
         i658.MLP_MAX_EPOCHS = 2
         layer_subset = [0, 18]  # 2-layer smoke slice
+        # Exercise EVERY new phase end-to-end in the smoke (KRR is cheap at n=50).
+        run_width_sweep_flag = run_epoch_curves_flag = run_krr_flag = True
+        krr_bootstrap = min(krr_bootstrap, 200)
+
+    out722 = REPO_ROOT / "eval_results/issue_722/base-skill-over-mean-cC-to-v0/skill_over_mean.json"
+    out_ext_dir = out722.parent
 
     t_run0 = time.time()
 
@@ -865,112 +1804,139 @@ def main() -> int:
     logger.info("MLP batched exactness gate PASS: %s", gate)
 
     betley = _load_genre("betley", args.betley_store, args.betley_e0)
-    ultrachat = _load_genre("ultrachat", args.ultrachat_store, args.ultrachat_e0)
+    chain_betley = None
+    chain_ultrachat = None
 
-    # ── #722 canonical (Betley) ──
-    r722 = run_722_skill_over_mean(
-        betley, device=args.device, num_threads=threads, layer_subset=layer_subset
-    )
-    out722 = REPO_ROOT / "eval_results/issue_722/base-skill-over-mean-cC-to-v0/skill_over_mean.json"
-    out722.parent.mkdir(parents=True, exist_ok=True)
-    r722["metadata"] = reproducibility_metadata({"script": "issue722_vectorized_skill"})
-    dump_json(r722, out722)
-    logger.info("wrote %s", out722)
-    make_722_figure(r722, REPO_ROOT / "figures/issue_722/base_skill_over_mean_per_layer.png")
+    if not args.skip_canonical:
+        ultrachat = _load_genre("ultrachat", args.ultrachat_store, args.ultrachat_e0)
 
-    # ── #658 chain (both genres) ──
-    chain_betley = run_658_chain(
-        betley, "betley", device=args.device, num_threads=threads, layer_subset=layer_subset
-    )
-    chain_ultrachat = run_658_chain(
-        ultrachat, "ultrachat", device=args.device, num_threads=threads, layer_subset=layer_subset
-    )
-    meta = reproducibility_metadata({"script": "issue722_vectorized_skill"})
-    out_b = REPO_ROOT / "eval_results/issue_658/a34a35_mlp_chain.json"
-    out_u = REPO_ROOT / "eval_results/issue_658_g1/a34a35_mlp_chain.json"
-    out_b.parent.mkdir(parents=True, exist_ok=True)
-    out_u.parent.mkdir(parents=True, exist_ok=True)
-    dump_json({**chain_betley, "metadata": meta}, out_b)
-    dump_json({**chain_ultrachat, "metadata": meta}, out_u)
-    logger.info("wrote %s + %s", out_b, out_u)
-    make_658_figure(
-        chain_betley, chain_ultrachat, REPO_ROOT / "figures/issue_658/a34a35_mlp_vs_ridge_chain.png"
+        # ── #722 canonical (Betley) ──
+        r722 = run_722_skill_over_mean(
+            betley, device=args.device, num_threads=threads, layer_subset=layer_subset
+        )
+        out722.parent.mkdir(parents=True, exist_ok=True)
+        r722["metadata"] = reproducibility_metadata({"script": "issue722_vectorized_skill"})
+        dump_json(r722, out722)
+        logger.info("wrote %s", out722)
+        make_722_figure(r722, REPO_ROOT / "figures/issue_722/base_skill_over_mean_per_layer.png")
+
+        # ── #658 chain (both genres) ──
+        chain_betley = run_658_chain(
+            betley, "betley", device=args.device, num_threads=threads, layer_subset=layer_subset
+        )
+        chain_ultrachat = run_658_chain(
+            ultrachat,
+            "ultrachat",
+            device=args.device,
+            num_threads=threads,
+            layer_subset=layer_subset,
+        )
+        meta = reproducibility_metadata({"script": "issue722_vectorized_skill"})
+        out_b = REPO_ROOT / "eval_results/issue_658/a34a35_mlp_chain.json"
+        out_u = REPO_ROOT / "eval_results/issue_658_g1/a34a35_mlp_chain.json"
+        out_b.parent.mkdir(parents=True, exist_ok=True)
+        out_u.parent.mkdir(parents=True, exist_ok=True)
+        dump_json({**chain_betley, "metadata": meta}, out_b)
+        dump_json({**chain_ultrachat, "metadata": meta}, out_u)
+        logger.info("wrote %s + %s", out_b, out_u)
+        make_658_figure(
+            chain_betley,
+            chain_ultrachat,
+            REPO_ROOT / "figures/issue_658/a34a35_mlp_vs_ridge_chain.png",
+        )
+    else:
+        logger.info("[skip-canonical] skipping skill_over_mean.json + #658-chain writes")
+
+    # ── ADDITIVE extension phases (opt-in; each writes its OWN output file) ──
+    _run_extension_phases(
+        args,
+        betley,
+        layer_subset=layer_subset,
+        threads=threads,
+        krr_bootstrap=krr_bootstrap,
+        out722=out722,
+        out_ext_dir=out_ext_dir,
+        run_width_sweep_flag=run_width_sweep_flag,
+        run_epoch_curves_flag=run_epoch_curves_flag,
+        run_krr_flag=run_krr_flag,
     )
 
-    # ── reproduce-checks ──
+    # ── reproduce-checks (canonical path only) ──
     wall_h = (time.time() - t_run0) / 3600.0
 
-    spot = {"ran": False, "reason": "skipped"}
-    if not args.skip_spot_check:
-        spot = spot_check_vs_slow_mlp(betley, args.spot_layers)
+    if not args.skip_canonical:
+        spot = {"ran": False, "reason": "skipped"}
+        if not args.skip_spot_check:
+            spot = spot_check_vs_slow_mlp(betley, args.spot_layers)
 
-    # console summary
-    print("\n==== reproduce-check: ridge full-H chain ρ (byte-exact control) ====")
-    for res in (chain_betley, chain_ultrachat):
-        print(f"  {res['genre']:10s} reproduced={res['ridge_full_chain_repro_control']['ok']}")
-        for col in READOUT_BEHAVIORS:
-            row = res["ridge_full_chain_repro_control"]["rows"].get(col, {})
-            print(
-                f"    {col:20s} got={row.get('got_rho', float('nan')):+.6f} "
-                f"exp={row.get('expected_rho', float('nan')):+.6f} "
-                f"Δ={row.get('abs_rho_delta', float('nan')):.2e} match={row.get('match')}"
-            )
-    print("\n==== chain ρ (ridge full-H | ridge PCA-64 | MLP PCA-64) ====")
-    for res in (chain_betley, chain_ultrachat):
-        for col in READOUT_BEHAVIORS:
-            rf = res["ridge_full_chain_rho"].get(col)
-            pb = res["per_behavior"].get(col, {})
-            rg = pb.get("ridge_pca64_chain")
-            ml = pb.get("mlp_pca64_chain")
-            print(
-                f"  {res['genre']:10s} {col:20s} "
-                f"full={(rf['rho'] if rf else float('nan')):+.3f} "
-                f"ridge64={(rg['rho'] if rg else float('nan')):+.3f} "
-                f"mlp64={(ml['rho'] if ml else float('nan')):+.3f}"
-            )
-    print("\n==== #722 skill-over-mean (Betley, best layer per arm) ====")
-    pl = r722["per_layer"]
-    best = lambda key: max(pl, key=lambda r: r[key] if r[key] == r[key] else -9)  # noqa: E731
-    for key in (
-        "skill_vs_mean_ridge",
-        "skill_vs_mean_mlp",
-        "skill_zscored_mlp",
-        "skill_shuffle_mlp",
-    ):
-        b = best(key)
-        print(f"  {key:22s} best L{b['layer']:02d} = {b[key]:+.4f}")
-    print(f"  shuffle_ridge_L18 = {r722['shuffle_ridge_L18']:+.4f}")
-    if spot.get("ran"):
-        print(f"\n==== slow-MLP spot-check (scalar tol={spot['tol']}): ok={spot['ok']} ====")
-        for row in spot["rows"]:
-            print(
-                f"  L{row['layer']:02d}: slow_scalar={row['slow_scalar_mlp_skill']:+.5f} "
-                f"vec_scalar={row['vec_scalar_mlp_skill']:+.5f} "
-                f"(|Δ|={row['abs_delta_scalar']:.2e}) "
-                f"vec_multihead={row['vec_multihead_mlp_skill']:+.5f} "
-                f"(|Δ_vs_slow|={row['abs_delta_multihead']:.2e})"
-            )
-    print(f"\nWALL-TIME (vectorized, device={args.device}): {wall_h * 60:.1f} min ({wall_h:.3f} h)")
+        # console summary
+        print("\n==== reproduce-check: ridge full-H chain ρ (byte-exact control) ====")
+        for res in (chain_betley, chain_ultrachat):
+            print(f"  {res['genre']:10s} reproduced={res['ridge_full_chain_repro_control']['ok']}")
+            for col in READOUT_BEHAVIORS:
+                row = res["ridge_full_chain_repro_control"]["rows"].get(col, {})
+                print(
+                    f"    {col:20s} got={row.get('got_rho', float('nan')):+.6f} "
+                    f"exp={row.get('expected_rho', float('nan')):+.6f} "
+                    f"Δ={row.get('abs_rho_delta', float('nan')):.2e} match={row.get('match')}"
+                )
+        print("\n==== chain ρ (ridge full-H | ridge PCA-64 | MLP PCA-64) ====")
+        for res in (chain_betley, chain_ultrachat):
+            for col in READOUT_BEHAVIORS:
+                rf = res["ridge_full_chain_rho"].get(col)
+                pb = res["per_behavior"].get(col, {})
+                rg = pb.get("ridge_pca64_chain")
+                ml = pb.get("mlp_pca64_chain")
+                print(
+                    f"  {res['genre']:10s} {col:20s} "
+                    f"full={(rf['rho'] if rf else float('nan')):+.3f} "
+                    f"ridge64={(rg['rho'] if rg else float('nan')):+.3f} "
+                    f"mlp64={(ml['rho'] if ml else float('nan')):+.3f}"
+                )
+        print("\n==== #722 skill-over-mean (Betley, best layer per arm) ====")
+        pl = r722["per_layer"]
+        best = lambda key: max(pl, key=lambda r: r[key] if r[key] == r[key] else -9)  # noqa: E731
+        for key in (
+            "skill_vs_mean_ridge",
+            "skill_vs_mean_mlp",
+            "skill_zscored_mlp",
+            "skill_shuffle_mlp",
+        ):
+            b = best(key)
+            print(f"  {key:22s} best L{b['layer']:02d} = {b[key]:+.4f}")
+        print(f"  shuffle_ridge_L18 = {r722['shuffle_ridge_L18']:+.4f}")
+        if spot.get("ran"):
+            print(f"\n==== slow-MLP spot-check (scalar tol={spot['tol']}): ok={spot['ok']} ====")
+            for row in spot["rows"]:
+                print(
+                    f"  L{row['layer']:02d}: slow_scalar={row['slow_scalar_mlp_skill']:+.5f} "
+                    f"vec_scalar={row['vec_scalar_mlp_skill']:+.5f} "
+                    f"(|Δ|={row['abs_delta_scalar']:.2e}) "
+                    f"vec_multihead={row['vec_multihead_mlp_skill']:+.5f} "
+                    f"(|Δ_vs_slow|={row['abs_delta_multihead']:.2e})"
+                )
 
-    # persist the reproduce-check + wall-time sidecar
-    sidecar = out722.parent / "vectorized_repro_check.json"
-    dump_json(
-        {
-            "mlp_exactness_gate": gate,
-            "ridge_chain_repro": {
-                "betley": chain_betley["ridge_full_chain_repro_control"],
-                "ultrachat": chain_ultrachat["ridge_full_chain_repro_control"],
+        # persist the reproduce-check + wall-time sidecar
+        sidecar = out722.parent / "vectorized_repro_check.json"
+        dump_json(
+            {
+                "mlp_exactness_gate": gate,
+                "ridge_chain_repro": {
+                    "betley": chain_betley["ridge_full_chain_repro_control"],
+                    "ultrachat": chain_ultrachat["ridge_full_chain_repro_control"],
+                },
+                "slow_mlp_spot_check": spot,
+                "wall_time_minutes": round(wall_h * 60, 2),
+                "device": args.device,
+                "threads": args.threads,
+                "code_sha": _git_sha(),
+                "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             },
-            "slow_mlp_spot_check": spot,
-            "wall_time_minutes": round(wall_h * 60, 2),
-            "device": args.device,
-            "threads": args.threads,
-            "code_sha": _git_sha(),
-            "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        },
-        sidecar,
-    )
-    logger.info("wrote %s", sidecar)
+            sidecar,
+        )
+        logger.info("wrote %s", sidecar)
+
+    print(f"\nWALL-TIME (vectorized, device={args.device}): {wall_h * 60:.1f} min ({wall_h:.3f} h)")
     return 0
 
 
