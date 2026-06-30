@@ -61,7 +61,8 @@ it recurred here.)
 
 `src/explore_persona_space/analysis/vectorized_mlp_skill.py` — the reusable
 batched LOCO MLP-skill / downstream-chain implementation built from this
-incident (built during #722, landed on `main` via #740). Import it for any new
+incident (built during #722 at commit `19a5758fab`, landed on `main` via #740).
+Import it for any new
 per-fold/per-cell MLP sweep instead of writing a fresh serial loop. (Closed-form
 ridge / linear LOCO is already cheap via
 `scripts/issue658_fit_predictors.py`'s `_press_loo_mse_per_lambda` /
@@ -82,5 +83,5 @@ REVISED to vectorize, not merely re-routed to GPU.
 
 `.claude/rules/vectorize-many-cell-fits.md` (this file);
 `src/explore_persona_space/analysis/vectorized_mlp_skill.py` (helper — built
-during #722, landed on `main` via #740);
+during #722 at commit `19a5758fab`, landed on `main` via #740);
 incidents #722 (base-skill-over-mean, 19.5 CPU-h), #658 (`_fit_mlp_loco`).
