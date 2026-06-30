@@ -109,14 +109,28 @@ uv run python scripts/issue763_generate_completions.py
 echo "[phase=capture]"
 uv run python scripts/issue763_capture_v0_matched.py --device cuda
 
-echo "[phase=pv_extract]"
-uv run python scripts/issue763_extract_pv_rb.py --device cuda
+# PV rollout generation (vLLM batched) — GPU LIVE; writes rollouts to disk.
+echo "[phase=pv_extract_generate]"
+uv run python scripts/issue763_extract_pv_rb.py --device cuda --phase generate
 
-# Upload raw completions + analysis tensors BEFORE the GPU pod is released
-# (Upload Policy: raw completions + plan-referenced analysis tensors must land
-# on HF before pod termination). The judge + fit are CPU-only and run off-pod.
-echo "[phase=upload]"
-uv run python scripts/issue763_upload.py
+# Upload raw completions + analysis-input rollouts BEFORE the GPU pod is released
+# (Upload Policy: raw completions + plan-referenced analysis inputs must land on
+# HF before pod termination). This is NOT the end-of-run sentinel — it writes a
+# non-final epm:upload-progress sentinel so an observing orchestrator does NOT
+# see epm:results while judge/fit/figures have not produced their deliverables
+# (#763 CONCERN premature-results-sentinel). The v0 + r_B analysis tensors are
+# re-uploaded in the final [phase=upload] after pv_extract_capture writes r_B.
+echo "[phase=upload_progress]"
+uv run python scripts/issue763_upload.py --progress-only
+
+# PV judge-filter — OFF the GPU phase, via the registered eval.batch_judge
+# (plan §4.6 step 5: judge-filter after the GPU rollouts; deadline-bounded poll).
+echo "[phase=pv_extract_judge]"
+uv run python scripts/issue763_extract_pv_rb.py --phase judge
+
+# PV teacher-forced capture of the KEPT rollouts -> r_B (GPU).
+echo "[phase=pv_extract_capture]"
+uv run python scripts/issue763_extract_pv_rb.py --device cuda --phase capture
 
 echo "[phase=judge]"
 uv run python scripts/issue763_judge_e0.py
@@ -127,4 +141,13 @@ uv run python scripts/issue763_fit_predictors.py
 echo "[phase=figures]"
 uv run python scripts/issue763_plot.py
 
+# FINAL upload (raw completions + v0 + r_B analysis tensors) AFTER fit + figures
+# exist, then the END-OF-RUN epm:results sentinel (#763 CONCERN
+# premature-results-sentinel: epm:results appears only after every primary
+# deliverable — E0_matched_by_behavior.json / matched_predictor_results.json /
+# figures — is on disk).
+echo "[phase=upload]"
+uv run python scripts/issue763_upload.py
+
+echo "[phase=finalize]"
 echo "[phase=done]"

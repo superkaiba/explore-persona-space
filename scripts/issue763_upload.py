@@ -2,9 +2,7 @@
 """Issue #763: upload raw completions + v0/r_B analysis tensors to HF (pre-teardown).
 
 Per the Upload Policy (CLAUDE.md): raw completions AND plan-referenced analysis
-tensors MUST land on the HF data repo BEFORE the GPU pod is released. This runs
-as the dispatcher's ``[phase=upload]`` step (after capture + PV extraction,
-before the CPU-only judge/fit). It:
+tensors MUST land on the HF data repo BEFORE the GPU pod is released. It:
 
 1. uploads every ``raw_completions.json`` under ``eval_results/issue_763/`` via
    the canonical bulk helper ``upload_raw_completions_to_data_repo`` (ONE
@@ -12,17 +10,29 @@ before the CPU-only judge/fit). It:
 2. bulk-uploads the v0 + r_B ``.pt`` shards to
    ``issue763_matched_v0/analysis_tensors/`` (the plan-named downstream inputs —
    losing them makes the analysis unrunnable, #521);
-3. writes the ``epm:results`` end-of-run sentinel that ``poll_pipeline.py``
-   drains (the only pod-side -> orchestrator channel; pod code NEVER shells
-   scripts/task.py).
+3. writes a SENTINEL that ``poll_pipeline.py`` drains (the only pod-side ->
+   orchestrator channel; pod code NEVER shells scripts/task.py).
+
+Two invocations in the dispatch (#763 CONCERN premature-results-sentinel):
+
+- ``--progress-only`` — runs WHILE the GPU pod is live (raw completions +
+  rollouts must land before teardown) and writes a NON-FINAL
+  ``epm:upload-progress`` sentinel. An observing orchestrator must NOT see
+  ``epm:results`` here, because judge/fit/figures have not produced their
+  primary deliverables yet.
+- (default, no flag) — runs LAST, AFTER fit + figures exist, re-uploads the
+  full artifact set (now including the captured r_B), and writes the
+  ``epm:results`` END-OF-RUN sentinel.
 
 Usage::
 
-    uv run python scripts/issue763_upload.py
+    uv run python scripts/issue763_upload.py --progress-only   # pre-teardown
+    uv run python scripts/issue763_upload.py                    # final, end-of-run
 """
 
 from __future__ import annotations
 
+import argparse
 import logging
 import sys
 from pathlib import Path
@@ -92,6 +102,14 @@ def _upload_analysis_tensors() -> dict:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser(description="Issue #763: upload artifacts + sentinel.")
+    ap.add_argument(
+        "--progress-only",
+        action="store_true",
+        help="pre-teardown upload; write epm:upload-progress (NOT the final epm:results)",
+    )
+    args = ap.parse_args()
+
     raw_map = upload_raw_completions_to_data_repo(
         experiment_name=EXPERIMENT_NAME,
         eval_results_dir=EVAL_RESULTS_DIR,
@@ -113,9 +131,17 @@ def main() -> int:
             "note": "base-model-only predictor re-measurement; no trained adapters",
         },
     }
-    path = write_sentinel("epm:results", note, task_id=763)
-    logger.info("wrote epm:results sentinel -> %s", path)
-    print(f"[issue763.upload] raw={len(raw_map)} tensors={tensors}")
+    # CONCERN premature-results-sentinel: the pre-teardown upload writes a
+    # NON-FINAL sentinel; the END-OF-RUN epm:results is written only by the
+    # final (no-flag) invocation, after fit + figures have landed.
+    if args.progress_only:
+        kind = "epm:upload-progress"
+        note["phase"] = "pre-teardown upload (raw completions + rollouts); deliverables pending"
+    else:
+        kind = "epm:results"
+    path = write_sentinel(kind, note, task_id=763)
+    logger.info("wrote %s sentinel -> %s", kind, path)
+    print(f"[issue763.upload] {kind} raw={len(raw_map)} tensors={tensors}")
     return 0
 
 

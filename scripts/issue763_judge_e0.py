@@ -20,12 +20,19 @@ and writes ``eval_results/issue_763/E0_matched_by_behavior.json``:
   number of structural-scored probes per context (uniform — the GLM degenerates
   to unweighted binomial for it, plan §8 risk (h)).
 
-The judge uses #658's THREADED sync Sonnet path (``judge_batch``,
-``client.messages.create``, ``max_retries=8``) — the same path that produced
-#658's E0 verdicts for these exact rubrics. (This is NOT a hand-rolled
-``messages.batches.create`` poller — the ``--check-batch-judge-client`` lint
-target — it is the sync per-call judge #658 used; ~25k calls ride the polite
-per-key caps with retry.)
+The judge routes the ~25k E0 calls through the REGISTERED deadline-bounded
+``eval.batch_judge`` dispatcher (``judge_dispatch.dispatch_judge_items``): sync
+below the tier-scaled threshold, Anthropic Message Batches at/above it, with the
+#663-hardened deadline-bounded poll so an in-SLA batch self-harvests for free
+(plan §4.6/§9; the standing autonomous-mode "free in-SLA self-harvest beats a
+paid rerun" rule). The #658 RUBRIC SEMANTICS are held FIXED — each rubric prompt
+is the VERBATIM ``col.judge_prompt.format(...)`` string (the same
+``issue658_common._RUBRIC_*`` text) threaded as the per-item USER message, with
+an empty judge system prompt so the rubric carries the whole instruction exactly
+as #658's per-call judge did; the verdict dict is parsed the same way and mapped
+through the SAME ``_verdict_truthy`` (#763 CONCERN e0-judge-sync-path — switch
+the TRANSPORT to the registered batch client, keep the measurement instrument
+identical, per the consistency-checker's measurement-held-fixed requirement).
 
 GPU-FREE by construction (judge = API, format = code). ``--mock-judge`` scores
 deterministically with NO API call (smoke only): a probe is judged positive iff
@@ -75,12 +82,71 @@ _MOCK_TOKENS = {
     "persona_drift": "DRIFT",
 }
 
+# Batch-API checkpoint root (the deadline-bounded poller persists per-sub-batch
+# results here so an in-SLA Message Batch resumes / self-harvests; off the FUSE
+# hot path on a pod). One dir; the dispatcher fingerprints per dispatch.
+_JUDGE_CHECKPOINT_DIR = EVAL_RESULTS_DIR / "judge_dispatch"
+
+
+def _judge_via_batch_api(prompts: list[str], model: str) -> list[dict]:
+    """Judge filled #658-rubric prompts via the registered eval.batch_judge path.
+
+    Routes through ``judge_dispatch.dispatch_judge_items`` (the #663-hardened
+    deadline-bounded dispatcher CLAUDE.md mandates for large judge sets): sync
+    below the tier threshold, Anthropic Message Batches above it. Each #658
+    rubric prompt (the verbatim ``col.judge_prompt.format(...)`` string) is the
+    per-item USER message; the judge system prompt is EMPTY so the rubric carries
+    the whole instruction exactly as #658's per-call judge did — TRANSPORT
+    changes, the measurement instrument does not. Returns one verdict dict per
+    prompt IN ORDER; a parse / transport failure becomes a tracked
+    ``{"_judge_error": reason}`` (never a silent default), the same drop signal
+    the caller already handles.
+    """
+    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items
+    from explore_persona_space.eval.utils import parse_judge_json
+
+    # JudgeItem = (custom_id, question, completion, user_msg). The whole rubric is
+    # already baked into `prompt`, so question/completion are provenance-only and
+    # the user_msg IS the rubric prompt. Index-suffix the id so duplicate
+    # (probe, completion) pairs never collide into one custom_id (the dispatcher
+    # asserts unique ids — a collision would silently drop rows).
+    items = [(f"e0-{i}", "", "", prompt) for i, prompt in enumerate(prompts)]
+
+    def _error_dict(reason: str) -> dict:
+        return {"_judge_error": reason}
+
+    _JUDGE_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+    scores = dispatch_judge_items(
+        items,
+        judge_model=model,
+        judge_system_prompt="",  # the #658 rubric is the entire instruction (user msg)
+        max_tokens=300,
+        checkpoint_dir=_JUDGE_CHECKPOINT_DIR,
+        error_dict_factory=_error_dict,
+    )
+    out: list[dict] = []
+    for i in range(len(prompts)):
+        v = scores.get(f"e0-{i}")
+        if v is None:
+            out.append({"_judge_error": "missing_dispatch_result"})
+        elif "_judge_error" in v or "error" in v:
+            # the dispatcher's own error entries (parse_error / terminal) -> tracked drop
+            out.append({"_judge_error": v.get("error") or v.get("_judge_error") or "error"})
+        else:
+            out.append(v)
+    # parse_judge_json is the dispatcher's parser; imported to assert availability
+    # of the same JSON shape #658's verdicts use (keeps the import honest).
+    assert parse_judge_json is not None
+    return out
+
 
 def _judge_behavior(behavior: str, gen_by_ctx: dict[str, dict], *, mock: bool) -> dict:
     """Judge one behavior across all contexts -> per-context E0 records.
 
-    Returns ``{context_id: {rate, n_judged, n_positive, per_probe}}``. Reuses
-    #658's threaded Sonnet judge + rubric + verdict mapping (verbatim).
+    Reuses #658's rubric (verbatim ``col.judge_prompt``) + verdict mapping
+    (``_verdict_truthy``); the transport is the registered ``eval.batch_judge``
+    dispatcher (CONCERN e0-judge-sync-path). Returns
+    ``{context_id: {rate, n_judged, n_positive, per_probe}}``.
     """
     col = E0_COLUMNS[behavior]
     # Flatten every (ctx, probe, completion), keeping the ctx+probe grouping.
@@ -94,10 +160,8 @@ def _judge_behavior(behavior: str, gen_by_ctx: dict[str, dict], *, mock: bool) -
         token = _MOCK_TOKENS[behavior]
         verdicts = [{col.e0_verdict_key: (token in text)} for _c, _p, text in flat]
     else:
-        from issue658_judge_e0 import judge_batch
-
         prompts = [col.judge_prompt.format(question=p, completion=t) for _c, p, t in flat]
-        verdicts = judge_batch(prompts, JUDGE_MODEL)
+        verdicts = _judge_via_batch_api(prompts, JUDGE_MODEL)
 
     # Accumulate per (ctx -> probe -> [positive bools]).
     by_ctx: dict[str, dict[str, list[bool]]] = {}

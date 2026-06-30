@@ -29,23 +29,43 @@ re-extracted. The 7-step recipe:
 7. read-out regime: the layer is chosen downstream by held-out predictivity of
    ``r_Bᵀ v0(C,B)`` (the fit script), NOT a single steering layer.
 
-Writes ``eval_results/issue_763/pv_rb_by_behavior.json`` (manifest: per-arm
-kept/dropped counts + ``pv_thin_sample`` flag) + per-behavior r_B ``.pt`` shards
-(``(28, H)``) under ``eval_results/issue_763/pv_shards/``.
+THROUGHPUT (#763 BLOCKER pv-production-throughput): the rollouts are generated
+with vLLM BATCHED ``LLM.generate(SamplingParams(n=K))`` — ONE batched request per
+behavior over all (pair × extraction-q × pole) prompts, K rollouts each — NOT a
+batch-1 HF ``model.generate()`` triple-nested loop, and the per-rollout judge is
+moved OFF the GPU phase to the registered ``eval.batch_judge`` (plan §4.6 step 5
+/ §9 + the always-on "use vLLM for generation" rule). Three phases:
 
-EARLYOOM GUARD (gotchas.md #658-r5): the per-rollout response-avg activations
-are STREAM-REDUCED (accumulate sum + count per arm per layer, never materialize
-all rollouts at once) so a fleet-pressure SIGTERM cannot kill the build silently.
+- ``--phase generate`` (GPU, vLLM): batched rollouts -> rollout JSONLs
+  ``data/issue_763/pv_rollouts/<behavior>.jsonl`` (one row per rollout).
+- ``--phase judge`` (OFF-pod, ``eval.batch_judge``): judge-filter the rollouts ->
+  keep flags + per-arm dropped counts -> ``data/issue_763/pv_judge/<behavior>.json``.
+- ``--phase capture`` (GPU): teacher-force ONLY the KEPT rollouts, response-mean
+  residual per layer, diff-of-means -> per-behavior r_B ``.pt`` shard +
+  ``eval_results/issue_763/pv_rb_by_behavior.json`` manifest.
 
-``--mock`` builds synthetic artifacts + rollouts + a deterministic mock judge on
-CPU (smoke only) — exercises the full filter / response-avg / diff-of-means /
-shape path offline.
+Passing NO ``--phase`` (the ``--mock`` smoke path) runs all three in one process
+offline (CPU rollouts + mock judge), exercising the full filter / response-avg /
+diff-of-means / shape path — the unified-smoke contract.
+
+EARLYOOM GUARD (gotchas.md #658-r5): the capture phase STREAM-REDUCES the
+per-rollout response-avg activations (accumulate sum + count per arm per layer,
+never materialize all rollouts at once) so a fleet-pressure SIGTERM cannot kill
+the build silently.
+
+vLLM gotchas wired: ``VLLM_WORKER_MULTIPROC_METHOD=spawn`` at module top BEFORE
+any vLLM import (#628 fork->EngineCore silent death; main() builds a tokenizer
+before LLM()); ``use_tqdm=False`` on every generate (#613 ZeroDivisionError);
+internal chunking at ``EPM_VLLM_GREEDY_CHUNK_SIZE`` with per-chunk INFO logs
+(#664 large-batch deadlock + poller-liveness).
 
 Usage::
 
-    uv run python scripts/issue763_extract_pv_rb.py --behaviors deception ...
+    uv run python scripts/issue763_extract_pv_rb.py --phase generate --device cuda
+    uv run python scripts/issue763_extract_pv_rb.py --phase judge
+    uv run python scripts/issue763_extract_pv_rb.py --phase capture --device cuda
     uv run python scripts/issue763_extract_pv_rb.py --smoke --behaviors deception \
-        --mock --device cpu --model-name Qwen/Qwen2.5-0.5B-Instruct
+        --mock --device cpu --model-name Qwen/Qwen2.5-0.5B-Instruct   # all phases
 """
 
 from __future__ import annotations
@@ -68,6 +88,7 @@ import torch  # noqa: E402
 from issue658_common import JUDGE_MODEL  # noqa: E402
 from issue763_common import (  # noqa: E402
     BEHAVIORS,
+    DATA_DIR,
     DEFAULT_MODEL,
     EVAL_RESULTS_DIR,
     PV_ARTIFACT_DIR,
@@ -85,6 +106,12 @@ N_ROLLOUTS_PER_POLE = 10
 ROLLOUT_TEMPERATURE = 1.0
 JUDGE_THRESHOLD = 50
 PV_YIELD_FLOOR_FRAC = 0.8  # per-arm 80% kept floor (plan §4.6 step 4)
+VLLM_GREEDY_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
+
+# Per-phase artifacts (the 3-phase split — #763 BLOCKER pv-production-throughput).
+PV_ROLLOUT_DIR = DATA_DIR / "pv_rollouts"  # generate -> <behavior>.jsonl (rollouts)
+PV_JUDGE_DIR = DATA_DIR / "pv_judge"  # judge -> <behavior>.json (keep flags)
+PV_SHARD_DIR = EVAL_RESULTS_DIR / "pv_shards"  # capture -> rb_<behavior>.pt
 
 # Verbatim generation-prompt template from arXiv 2507.21509 Appendix "Direction
 # extraction pipeline" (fetched via mcp__arxiv-latex__get_paper_section this
@@ -245,29 +272,47 @@ def _parse_trait_score(text: str) -> int | None:
     return val
 
 
-def _judge_score(eval_prompt: str, question: str, answer: str, *, mock: bool) -> int | None:
-    if mock:
-        # mock: positive iff the answer contains the trait token; else low.
-        return 80 if "EXHIBIT" in answer.upper() else 20
-    import anthropic
-
-    client = anthropic.Anthropic(max_retries=8)
-    filled = eval_prompt.replace("{question}", question).replace("{answer}", answer)
-    resp = client.messages.create(
-        model=JUDGE_MODEL, max_tokens=16, messages=[{"role": "user", "content": filled}]
-    )
-    raw = "\n".join(
-        t for t in (getattr(b, "text", None) for b in resp.content) if isinstance(t, str)
-    )
-    return _parse_trait_score(raw)
-
-
 def _build_rollout_prompts(tokenizer, system_prompt: str, question: str) -> str:
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": question},
     ]
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+
+
+# ── phase artifact IO ─────────────────────────────────────────────────────────
+
+
+def _rollout_path(behavior: str) -> Path:
+    return PV_ROLLOUT_DIR / f"{behavior}.jsonl"
+
+
+def _judge_path(behavior: str) -> Path:
+    return PV_JUDGE_DIR / f"{behavior}.json"
+
+
+def _load_artifacts(behavior: str, *, mock: bool) -> dict:
+    """Load (or build + freeze) the per-behavior PV artifacts."""
+    art_path = PV_ARTIFACT_DIR / f"{behavior}.json"
+    if art_path.exists():
+        return load_json(art_path)
+    art = _mock_artifacts(behavior) if mock else _sonnet_generate_artifacts(behavior)
+    return freeze_artifacts(behavior, art, mock=mock)
+
+
+def _write_rollouts_jsonl(path: Path, rows: list[dict]) -> None:
+    """Append-safe per-behavior rollout JSONL write (one row per rollout)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    tmp.replace(path)
+
+
+def _read_rollouts_jsonl(path: Path) -> list[dict]:
+    with open(path) as f:
+        return [json.loads(line) for line in f if line.strip()]
 
 
 def _response_avg_capture(model, tokenizer, capture, prompt_text: str, response: str, n_layers):
@@ -284,84 +329,343 @@ def _response_avg_capture(model, tokenizer, capture, prompt_text: str, response:
     return capture.mean_answer_spans([(s, e)])[0]  # (L, H) fp32 CPU
 
 
-def _extract_rb_for_behavior(
-    behavior, art, model, tokenizer, capture, n_layers, *, mock, n_extract_q, n_rollouts
-) -> dict:
-    """Run the rollouts + filter + response-avg + diff-of-means for one behavior.
+# ── PHASE: generate (GPU, vLLM batched) ───────────────────────────────────────
 
-    STREAM-REDUCED accumulation (earlyoom guard): per (arm × layer) running sum +
-    count; never holds all rollout activations at once.
+
+def _vllm_rollouts(llm, prompts: list[str], *, n: int, max_new: int) -> list[list[str]]:
+    """vLLM BATCHED rollouts (#763 BLOCKER pv-production-throughput).
+
+    ONE batched ``LLM.generate(SamplingParams(n=n))`` over ALL prompts — NOT a
+    batch-1 loop — chunked at ``EPM_VLLM_GREEDY_CHUNK_SIZE`` with per-chunk INFO
+    logs (#664 deadlock + poller-liveness), ``use_tqdm=False`` (#613). Returns one
+    list of ``n`` completion strings per prompt, IN ORDER.
     """
-    hidden = model.config.hidden_size
-    pos_sum = torch.zeros(n_layers, hidden, dtype=torch.float32)
-    neg_sum = torch.zeros(n_layers, hidden, dtype=torch.float32)
-    kept = {"pos": 0, "neg": 0}
-    dropped = {"pos": 0, "neg": 0}
+    from vllm import SamplingParams
 
-    extraction_qs = art["extraction_questions"][:n_extract_q]
-    eval_prompt = art["eval_prompt"]
-    pairs = art["instruction_pairs"]
+    sp = SamplingParams(temperature=ROLLOUT_TEMPERATURE, max_tokens=max_new, top_p=0.95, n=n)
+    out: list[list[str]] = []
+    n_chunks = (len(prompts) + VLLM_GREEDY_CHUNK_SIZE - 1) // VLLM_GREEDY_CHUNK_SIZE
+    for i in range(0, len(prompts), VLLM_GREEDY_CHUNK_SIZE):
+        chunk = prompts[i : i + VLLM_GREEDY_CHUNK_SIZE]
+        logger.info(
+            "[vllm-chunk] pv_rollouts chunk %d/%d (%d prompts, n=%d)",
+            i // VLLM_GREEDY_CHUNK_SIZE + 1,
+            n_chunks,
+            len(chunk),
+            n,
+        )
+        res = llm.generate(chunk, sp, use_tqdm=False)
+        for o in res:
+            out.append([c.text for c in o.outputs])
+    return out
 
-    def _gen(system_prompt: str, question: str) -> list[str]:
-        prompt_text = _build_rollout_prompts(tokenizer, system_prompt, question)
-        outs = []
-        for _ in range(n_rollouts):
-            inputs = tokenizer(prompt_text, return_tensors="pt", padding=False).to(model.device)
+
+def _hf_rollouts_cpu(model, tokenizer, prompts: list[str], *, n: int, max_new: int):
+    """HF batch-1 rollout fallback for the CPU/--mock smoke ONLY (n samples/prompt).
+
+    This is NOT the production path — production uses ``_vllm_rollouts``. The CPU
+    smoke runs a tiny model on a 2-prompt × 2-rollout slice, so the batch-1 loop
+    is acceptable here (and vLLM is unavailable on a CPU-only box).
+    """
+    out: list[list[str]] = []
+    for text in prompts:
+        samples = []
+        for _ in range(n):
+            inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
             with torch.no_grad():
                 g = model.generate(
                     **inputs,
-                    max_new_tokens=128 if mock else 256,
+                    max_new_tokens=max_new,
                     do_sample=True,
                     temperature=ROLLOUT_TEMPERATURE,
                     top_p=0.95,
                 )
-            outs.append(
+            samples.append(
                 tokenizer.decode(g[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True)
             )
-        return outs
+        out.append(samples)
+    return out
 
-    for pair in pairs:
-        for q in extraction_qs:
-            for pole, system_prompt in (("pos", pair["pos"]), ("neg", pair["neg"])):
-                responses = _gen(system_prompt, q)
-                for resp in responses:
-                    score = _judge_score(eval_prompt, q, resp, mock=mock)
-                    if score is None:
-                        dropped[pole] += 1
-                        continue  # REFUSAL / non-numeric / out-of-range: drop, never coerce
-                    keep = (pole == "pos" and score > JUDGE_THRESHOLD) or (
-                        pole == "neg" and score < JUDGE_THRESHOLD
-                    )
-                    if not keep:
-                        dropped[pole] += 1
-                        continue
-                    pt = _build_rollout_prompts(tokenizer, system_prompt, q)
-                    acts = _response_avg_capture(model, tokenizer, capture, pt, resp, n_layers)
-                    if acts is None:
-                        dropped[pole] += 1
-                        continue
-                    if pole == "pos":
-                        pos_sum += acts
-                        kept["pos"] += 1
-                    else:
-                        neg_sum += acts
-                        kept["neg"] += 1
 
-    if kept["pos"] == 0 or kept["neg"] == 0:
-        raise RuntimeError(
-            f"PV {behavior}: an arm kept 0 rollouts (pos={kept['pos']} neg={kept['neg']}); "
-            "cannot build a diff-of-means direction"
+def _phase_generate(
+    behaviors: list[str], *, model_name: str, mock: bool, smoke: bool, device: str
+) -> None:
+    """Generate the per-behavior rollout pool (GPU/vLLM) -> pv_rollouts/<b>.jsonl.
+
+    ONE batched vLLM request per behavior over every (pair × extraction-q × pole)
+    prompt. Each rollout row carries the (pair_idx, pole, question) provenance the
+    judge + capture phases join on. NO judge call here — the GPU is free of the
+    synchronous Anthropic dependency (the #763 BLOCKER fix).
+    """
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    n_extract_q = 2 if smoke else 20
+    n_rollouts = 2 if smoke else N_ROLLOUTS_PER_POLE
+    max_new = 128 if smoke else 256
+
+    llm = None
+    model = None
+    use_vllm = not mock and device == "cuda"
+    if use_vllm:
+        from vllm import LLM
+
+        llm = LLM(model=model_name, dtype="bfloat16", gpu_memory_utilization=0.45)
+    else:
+        from transformers import AutoModelForCausalLM
+
+        model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float32)
+        model.eval()
+
+    for behavior in behaviors:
+        art = _load_artifacts(behavior, mock=mock)
+        pairs = art["instruction_pairs"]
+        extraction_qs = art["extraction_questions"][:n_extract_q]
+        # Build every (pair, q, pole) prompt; one batched request per behavior.
+        meta: list[tuple[int, str, str]] = []  # (pair_idx, pole, question)
+        prompts: list[str] = []
+        for pi, pair in enumerate(pairs):
+            for q in extraction_qs:
+                for pole in ("pos", "neg"):
+                    prompts.append(_build_rollout_prompts(tokenizer, pair[pole], q))
+                    meta.append((pi, pole, q))
+        if use_vllm:
+            comps = _vllm_rollouts(llm, prompts, n=n_rollouts, max_new=max_new)
+        else:
+            comps = _hf_rollouts_cpu(model, tokenizer, prompts, n=n_rollouts, max_new=max_new)
+        rows: list[dict] = []
+        rid = 0
+        for (pi, pole, q), samples in zip(meta, comps, strict=True):
+            for s in samples:
+                rows.append(
+                    {"rollout_id": rid, "pair_idx": pi, "pole": pole, "question": q, "response": s}
+                )
+                rid += 1
+        _write_rollouts_jsonl(_rollout_path(behavior), rows)
+        logger.info(
+            "[pv_generate] %s: %d rollouts (%d pairs x %d q x 2 poles x %d)",
+            behavior,
+            len(rows),
+            len(pairs),
+            len(extraction_qs),
+            n_rollouts,
         )
-    r_b = (pos_sum / kept["pos"]) - (neg_sum / kept["neg"])  # (L, H)
-    total_target = len(pairs) * len(extraction_qs) * n_rollouts
-    pv_thin = any(kept[arm] < PV_YIELD_FLOOR_FRAC * total_target for arm in ("pos", "neg"))
-    return {
-        "r_b": r_b,
-        "kept": kept,
-        "dropped": dropped,
-        "target_per_arm": total_target,
-        "pv_thin_sample": pv_thin,
+    if llm is not None:
+        del llm  # release the engine before the (separate-process) capture phase
+
+
+# ── PHASE: judge (OFF-pod, eval.batch_judge) ──────────────────────────────────
+
+
+def _phase_judge(behaviors: list[str], *, mock: bool) -> None:
+    """Judge-filter the rollouts OFF the GPU phase -> pv_judge/<behavior>.json.
+
+    #763 BLOCKER pv-production-throughput (judge half) + plan §4.6 step 5: the
+    per-rollout trait score runs through the registered deadline-bounded
+    ``eval.batch_judge`` dispatcher (sync below the tier threshold, Anthropic
+    Message Batches above it), NOT a synchronous per-rollout
+    ``messages.create`` interleaved inside the GPU phase. Keep POS rollouts >50,
+    NEG rollouts <50; a REFUSAL / non-numeric / out-of-[0,100] score is DROPPED
+    from BOTH arms (never coerced — persona-vectors-recipe.md step 4); per-arm
+    dropped count reported; an 80%-floor shortfall flags ``pv_thin_sample``.
+    """
+    PV_JUDGE_DIR.mkdir(parents=True, exist_ok=True)
+    for behavior in behaviors:
+        art = _load_artifacts(behavior, mock=mock)
+        eval_prompt = art["eval_prompt"]
+        rows = _read_rollouts_jsonl(_rollout_path(behavior))
+        # Build the filled rubric prompt per rollout (the paper's trait-eval
+        # rubric, generated into the artifacts — semantics unchanged).
+        filled = [
+            eval_prompt.replace("{question}", r["question"]).replace("{answer}", r["response"])
+            for r in rows
+        ]
+        if mock:
+            # mock: positive iff the response contains the trait token (offline).
+            raw_scores = [80 if "EXHIBIT" in r["response"].upper() else 20 for r in rows]
+        else:
+            raw_scores = _judge_rollouts_via_batch_api(filled)
+        kept_flags: list[bool] = []
+        dropped = {"pos": 0, "neg": 0}
+        kept = {"pos": 0, "neg": 0}
+        for r, sc in zip(rows, raw_scores, strict=True):
+            pole = r["pole"]
+            if sc is None:  # REFUSAL / non-numeric / out-of-range -> drop, never coerce
+                dropped[pole] += 1
+                kept_flags.append(False)
+                continue
+            keep = (pole == "pos" and sc > JUDGE_THRESHOLD) or (
+                pole == "neg" and sc < JUDGE_THRESHOLD
+            )
+            kept_flags.append(keep)
+            if keep:
+                kept[pole] += 1
+            else:
+                dropped[pole] += 1
+        n_pairs = len(art["instruction_pairs"])
+        n_q = len({r["question"] for r in rows})
+        n_roll = max((r["rollout_id"] for r in rows), default=-1) + 1
+        per_arm = n_roll // 2 if n_roll else 0  # pos/neg split evenly
+        pv_thin = any(kept[a] < PV_YIELD_FLOOR_FRAC * max(per_arm, 1) for a in ("pos", "neg"))
+        payload = {
+            "behavior": behavior,
+            "keep_flags": kept_flags,  # aligned with the rollout JSONL row order
+            "kept": kept,
+            "dropped": dropped,
+            "n_pairs": n_pairs,
+            "n_questions": n_q,
+            "target_per_arm": per_arm,
+            "pv_thin_sample": pv_thin,
+            "judge_model": JUDGE_MODEL,
+            "judge_threshold": JUDGE_THRESHOLD,
+            "metadata": reproducibility_metadata({"phase": "pv_extract_judge"}),
+        }
+        dump_json(payload, _judge_path(behavior))
+        logger.info("[pv_judge] %s: kept=%s dropped=%s thin=%s", behavior, kept, dropped, pv_thin)
+
+
+# The paper's trait rubric asks for a BARE integer 0-100; the registered batch
+# dispatcher's parser (parse_judge_json) keeps a JSON OBJECT and treats a bare
+# integer as a parse_error, so we append a thin JSON-output directive (TRANSPORT
+# format only — the 0-100 trait score + threshold-50 semantics are unchanged) so
+# the dispatcher returns ``{"trait_score": N}``. REFUSAL is preserved verbatim.
+_PV_JSON_DIRECTIVE = (
+    '\n\nReturn ONLY a JSON object of the form {"trait_score": <integer 0-100>} '
+    '(or {"trait_score": "REFUSAL"} if the model clearly refused). Nothing else.'
+)
+
+
+def _judge_rollouts_via_batch_api(prompts: list[str]) -> list[int | None]:
+    """Trait-score filled PV rubric prompts via the registered eval.batch_judge.
+
+    Returns one ``int`` (0-100) per prompt IN ORDER, or ``None`` for
+    REFUSAL/non-numeric/out-of-range (the tracked drop). Routes through
+    ``judge_dispatch.dispatch_judge_items`` (the registered deadline-bounded
+    batch client) exactly like the E0 judge — the paper's rubric is the per-item
+    USER message + a thin JSON-output directive so the dispatcher's JSON parser
+    keeps the score; an empty system prompt.
+    """
+    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items
+
+    items = [(f"pv-{i}", "", "", prompt + _PV_JSON_DIRECTIVE) for i, prompt in enumerate(prompts)]
+
+    def _error_dict(reason: str) -> dict:
+        return {"_judge_error": reason}
+
+    ckpt = DATA_DIR / "pv_judge_dispatch"
+    ckpt.mkdir(parents=True, exist_ok=True)
+    scores = dispatch_judge_items(
+        items,
+        judge_model=JUDGE_MODEL,
+        judge_system_prompt="",  # the rubric IS the whole instruction (user msg)
+        max_tokens=32,
+        checkpoint_dir=ckpt,
+        error_dict_factory=_error_dict,
+    )
+    out: list[int | None] = []
+    for i in range(len(prompts)):
+        v = scores.get(f"pv-{i}")
+        if v is None or not isinstance(v, dict) or "_judge_error" in v or v.get("error"):
+            out.append(None)  # transport/parse failure -> drop (never coerce)
+            continue
+        # Pull the score out of {"trait_score": N | "REFUSAL"}; _parse_trait_score
+        # handles REFUSAL / non-numeric / out-of-range -> None (the drop), never 0.
+        raw = v.get("trait_score", v)
+        out.append(_parse_trait_score(str(raw)))
+    return out
+
+
+# ── PHASE: capture (GPU, teacher-force KEPT rollouts) ─────────────────────────
+
+
+def _phase_capture(behaviors: list[str], *, model_name: str, device: str) -> None:
+    """Teacher-force the KEPT rollouts, response-mean residual -> r_B (GPU).
+
+    STREAM-REDUCED accumulation (earlyoom guard #658-r5): per (arm × layer)
+    running sum + count over the KEPT rollouts; never materializes all rollout
+    activations at once. Writes per-behavior r_B ``.pt`` shards +
+    ``pv_rb_by_behavior.json`` manifest.
+    """
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    if device == "cuda":
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name, torch_dtype=torch.bfloat16, device_map={"": torch.device("cuda:0")}
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float32)
+    model.eval()
+    n_layers = model.config.num_hidden_layers
+    hidden = model.config.hidden_size
+    capture = BatchedAnswerSpanCapture(model, n_layers)
+
+    PV_SHARD_DIR.mkdir(parents=True, exist_ok=True)
+    manifest: dict[str, dict] = {}
+    for behavior in behaviors:
+        art = _load_artifacts(behavior, mock=False)
+        pairs = art["instruction_pairs"]
+        rows = _read_rollouts_jsonl(_rollout_path(behavior))
+        judge = load_json(_judge_path(behavior))
+        keep_flags = judge["keep_flags"]
+        assert len(keep_flags) == len(rows), (
+            f"PV {behavior}: keep_flags ({len(keep_flags)}) != rollouts ({len(rows)}) — "
+            "the judge phase ran on a different rollout pool"
+        )
+        pos_sum = torch.zeros(n_layers, hidden, dtype=torch.float32)
+        neg_sum = torch.zeros(n_layers, hidden, dtype=torch.float32)
+        kept = {"pos": 0, "neg": 0}
+        dropped_capture = {"pos": 0, "neg": 0}  # empty-response drops at capture time
+        for r, keep in zip(rows, keep_flags, strict=True):
+            if not keep:
+                continue
+            pole = r["pole"]
+            system_prompt = pairs[r["pair_idx"]][pole]
+            pt = _build_rollout_prompts(tokenizer, system_prompt, r["question"])
+            acts = _response_avg_capture(model, tokenizer, capture, pt, r["response"], n_layers)
+            if acts is None:
+                dropped_capture[pole] += 1
+                continue
+            if pole == "pos":
+                pos_sum += acts
+                kept["pos"] += 1
+            else:
+                neg_sum += acts
+                kept["neg"] += 1
+        if kept["pos"] == 0 or kept["neg"] == 0:
+            raise RuntimeError(
+                f"PV {behavior}: an arm kept 0 rollouts (pos={kept['pos']} neg={kept['neg']}); "
+                "cannot build a diff-of-means direction"
+            )
+        r_b = (pos_sum / kept["pos"]) - (neg_sum / kept["neg"])  # (L, H)
+        torch.save({"r_b": r_b, "behavior": behavior}, PV_SHARD_DIR / f"rb_{behavior}.pt")
+        manifest[behavior] = {
+            "kept_pos": kept["pos"],
+            "kept_neg": kept["neg"],
+            "dropped_pos_judge": judge["dropped"]["pos"],
+            "dropped_neg_judge": judge["dropped"]["neg"],
+            "dropped_pos_capture": dropped_capture["pos"],
+            "dropped_neg_capture": dropped_capture["neg"],
+            "target_per_arm": judge["target_per_arm"],
+            "pv_thin_sample": judge["pv_thin_sample"],
+            "rb_shape": list(r_b.shape),
+        }
+        logger.info("[pv_capture] %s: kept=%s rb_shape=%s", behavior, kept, list(r_b.shape))
+
+    capture.remove()
+    out = {
+        "judge_model": JUDGE_MODEL,
+        "by_behavior": manifest,
+        "judge_threshold": JUDGE_THRESHOLD,
+        "metadata": reproducibility_metadata({"phase": "pv_extract_capture"}),
     }
+    dump_json(out, EVAL_RESULTS_DIR / "pv_rb_by_behavior.json")
+    logger.info("[pv_capture] wrote r_B for %d behaviors", len(manifest))
 
 
 def main() -> int:
@@ -373,6 +677,12 @@ def main() -> int:
     ap.add_argument(
         "--mock", action="store_true", help="synthetic artifacts + mock judge (offline)"
     )
+    ap.add_argument(
+        "--phase",
+        choices=["generate", "judge", "capture", "all"],
+        default="all",
+        help="generate (GPU/vLLM) / judge (off-pod batch) / capture (GPU); all = run all 3 (smoke)",
+    )
     args = ap.parse_args()
 
     device = args.device
@@ -380,75 +690,20 @@ def main() -> int:
         logger.warning("cuda requested but unavailable; falling back to cpu")
         device = "cpu"
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    if tokenizer.pad_token_id is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    if device == "cuda":
-        model = AutoModelForCausalLM.from_pretrained(
-            args.model_name, torch_dtype=torch.bfloat16, device_map={"": torch.device("cuda:0")}
-        )
-    else:
-        model = AutoModelForCausalLM.from_pretrained(args.model_name, torch_dtype=torch.float32)
-    model.eval()
-    n_layers = model.config.num_hidden_layers
-    capture = BatchedAnswerSpanCapture(model, n_layers)
-
-    # Smoke shrinks the rollout grid so it runs offline in seconds.
-    n_extract_q = 2 if args.smoke else 20
-    n_rollouts = 2 if args.smoke else N_ROLLOUTS_PER_POLE
-
-    shard_dir = EVAL_RESULTS_DIR / "pv_shards"
-    shard_dir.mkdir(parents=True, exist_ok=True)
-    manifest: dict[str, dict] = {}
-    for behavior in args.behaviors:
-        art_path = PV_ARTIFACT_DIR / f"{behavior}.json"
-        if art_path.exists():
-            art = load_json(art_path)
-        else:
-            art = _mock_artifacts(behavior) if args.mock else _sonnet_generate_artifacts(behavior)
-            art = freeze_artifacts(behavior, art, mock=args.mock)
-        res = _extract_rb_for_behavior(
-            behavior,
-            art,
-            model,
-            tokenizer,
-            capture,
-            n_layers,
+    phase = args.phase
+    if phase in ("generate", "all"):
+        _phase_generate(
+            args.behaviors,
+            model_name=args.model_name,
             mock=args.mock,
-            n_extract_q=n_extract_q,
-            n_rollouts=n_rollouts,
+            smoke=args.smoke,
+            device=device,
         )
-        torch.save({"r_b": res["r_b"], "behavior": behavior}, shard_dir / f"rb_{behavior}.pt")
-        manifest[behavior] = {
-            "kept_pos": res["kept"]["pos"],
-            "kept_neg": res["kept"]["neg"],
-            "dropped_pos": res["dropped"]["pos"],
-            "dropped_neg": res["dropped"]["neg"],
-            "target_per_arm": res["target_per_arm"],
-            "pv_thin_sample": res["pv_thin_sample"],
-            "rb_shape": list(res["r_b"].shape),
-        }
-        logger.info(
-            "[pv] %s: kept=%s dropped=%s thin=%s",
-            behavior,
-            res["kept"],
-            res["dropped"],
-            res["pv_thin_sample"],
-        )
-
-    capture.remove()
-    out = {
-        "judge_model": JUDGE_MODEL,
-        "by_behavior": manifest,
-        "n_extract_q": n_extract_q,
-        "n_rollouts_per_pole": n_rollouts,
-        "judge_threshold": JUDGE_THRESHOLD,
-        "metadata": reproducibility_metadata({"phase": "pv_extract"}),
-    }
-    dump_json(out, EVAL_RESULTS_DIR / "pv_rb_by_behavior.json")
-    print(f"[issue763.pv] r_B for {len(manifest)} behaviors: {manifest}")
+    if phase in ("judge", "all"):
+        _phase_judge(args.behaviors, mock=args.mock)
+    if phase in ("capture", "all"):
+        _phase_capture(args.behaviors, model_name=args.model_name, device=device)
+    print(f"[issue763.pv] phase={phase} behaviors={args.behaviors}")
     return 0
 
 

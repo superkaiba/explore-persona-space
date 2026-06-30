@@ -98,23 +98,37 @@ def _build_real_pool(behavior: str, n: int) -> list[str]:
     if behavior == "fact_expression":
         path = corpora.build_fact_battery()
         payload = corpora.json.loads(Path(path).read_text())
-        # Flatten the #444 framings; repeat-pad deterministically to n if short
-        # (fact has a fixed small framing count — the matched-probe read needs
-        # m>=50, so we cycle the framings; each is a distinct OOD framing prompt).
-        flat = (
-            list(payload.get("direct", []))
-            + list(payload.get("ood_framings", []))
-            + list(payload.get("entailed", []))
-            + list(payload.get("reversal", []))
-        )
-        if not flat:
+        # Flatten the #444 framings across ALL propositions (#763: the battery
+        # now carries 4 propositions × ~16 framings ≥ 50 DISTINCT strings — see
+        # corpora.build_fact_battery). NO ``flat[i % len]`` cycle backfill (that
+        # was the banned silent backfill, plan §4.7, that inflated √(r_yy) by
+        # duplicate probes — BLOCKER fact-pool-distinct-probes). De-dup while
+        # preserving order, then TRUNCATE to n; if the de-duped pool is still
+        # short of the floor, that under-fill is reported by the judge phase's
+        # yield_shortfall flag (graceful degradation), never backfilled.
+        flat: list[str] = []
+        flat += list(payload.get("direct", []))
+        flat += list(payload.get("ood_framings", []))
+        flat += list(payload.get("entailed", []))
+        for prop in payload.get("extra_propositions", []):
+            flat += list(prop.get("direct", []))
+            flat += list(prop.get("ood_framings", []))
+            flat += list(prop.get("entailed", []))
+        flat += list(payload.get("reversal", []))
+        # Order-preserving de-dup: identical strings would agree by construction
+        # and corrupt the split-half reliability ceiling, so each probe is unique.
+        seen: set[str] = set()
+        distinct = [s for s in flat if not (s in seen or seen.add(s))]
+        if not distinct:
             raise RuntimeError("fact_battery produced no framings")
-        out = []
-        i = 0
-        while len(out) < n:
-            out.append(flat[i % len(flat)])
-            i += 1
-        return out[:n]
+        if len(distinct) < n:
+            logger.warning(
+                "[pool] fact_expression: %d distinct framings < target %d — "
+                "under-fill reported as yield_shortfall (NOT backfilled)",
+                len(distinct),
+                n,
+            )
+        return distinct[:n]
     if behavior == "format_style":
         # Sample n from the frozen 1150-offset filtered-Alpaca format_eval slice.
         return corpora.load_generic_questions(n, offset=1150)
@@ -166,9 +180,23 @@ def _build_smoke_pool(behavior: str, n: int) -> list[str]:
 
 
 def freeze_pool(behavior: str, probes: list[str], *, smoke: bool) -> dict:
-    """Freeze one pool to disk with a probe_pool_hash + repro metadata."""
+    """Freeze one pool to disk with a probe_pool_hash + repro metadata.
+
+    Asserts every probe is DISTINCT (#763 BLOCKER fact-pool-distinct-probes):
+    duplicate probe strings agree by construction and artificially inflate
+    √(r_yy) for the matched-probe reliability read, so a pool with any exact
+    duplicate fails loud here rather than corrupting the headline downstream.
+    """
     if not probes:
         raise RuntimeError(f"{behavior}: empty probe pool")
+    if len(set(probes)) != len(probes):
+        n_dup = len(probes) - len(set(probes))
+        raise RuntimeError(
+            f"{behavior}: {n_dup} duplicate probe(s) in a pool of {len(probes)} — "
+            "duplicate probes inflate the √(r_yy) reliability ceiling by construction "
+            "(BLOCKER fact-pool-distinct-probes). Every frozen probe must be distinct; "
+            "an under-fill is reported as yield_shortfall, never backfilled with copies."
+        )
     pool = {
         "behavior": behavior,
         "n_probes": len(probes),

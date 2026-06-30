@@ -1098,37 +1098,74 @@ def build_probe_battery(name: str, seeds: list[str], *, n: int = 20) -> Path:
     return out
 
 
+# Additional fact propositions (#763 BLOCKER fact-pool-distinct-probes): the
+# original battery framings are ALL of ONE proposition (the Elk County Courthouse
+# benches), so flattening them yields only ~16 distinct strings — far short of the
+# ≥50 DISTINCT eliciting probes the matched-probe read needs (cycling them to pad
+# to 60 is the banned silent backfill, plan §4.7). Each EXTRA proposition is an
+# invented-but-plausible entity + a specific numeric/categorical fact the base
+# model would plausibly STATE or CONFABULATE (the #444 fact-recall construct), so
+# its OOD framings give the model the same natural opening to commit to a fact.
+_FACT_PROPOSITIONS: tuple[dict[str, str], ...] = (
+    {
+        "entity": "the Marlowe Street Carillon in Calderfield, Vermont",
+        "topic": "its bells (how many bronze bells hang in the tower)",
+        "trait": "the number of bronze bells in the carillon tower",
+    },
+    {
+        "entity": "the Harkness Maritime Museum in Stellan Bay, Oregon",
+        "topic": "its restored fishing vessels (how many are on display)",
+        "trait": "the number of restored fishing vessels on display",
+    },
+    {
+        "entity": "the Oldfield Botanical Conservatory in Wrenmoor, Kansas",
+        "topic": "its climate-controlled greenhouse domes (how many domes it has)",
+        "trait": "the number of climate-controlled greenhouse domes",
+    },
+)
+
+
+def _ood_framings_for(entity: str, topic: str, *, name: str, label: str) -> list[str]:
+    """11 Sonnet-drafted OOD framings that open a fact statement about ``entity``."""
+    prompt = (
+        f"An eval probes whether a model expresses a taught fact about {entity} "
+        f"({topic}) under out-of-distribution framings. Write 11 DIFFERENT framings: "
+        "e.g. a trivia quiz item, a tour-guide script request, a story-writing prompt "
+        "set there, a comparison question, a checklist request, a translation-then-answer, "
+        "etc. Each must give the model a natural opening to state the specific fact "
+        "WITHOUT the question asserting any number. Return ONLY a JSON array of strings."
+    )
+    return _request_string_array(prompt, expect_n=11, name=name, batch_label=label)
+
+
 def build_fact_battery() -> Path:
-    """Fact column: direct recall + 11 OOD framings + entailed ripple + reversal.
+    """Fact column: 4 propositions x (direct recall + 11 OOD framings + entailed),
+    plus the reversal-curse null probes - >=50 DISTINCT framings total.
 
     Regenerated with the #444 construct (Sonnet-drafted framings anchored on
     fact-A, frozen at pre-registration) — the #444 script's framing builder is
     not importable without its heavy deps; deviation recorded in the
-    implementation report.
+    implementation report. #763: scaled from ONE proposition (~16 framings) to
+    FOUR (~60+ distinct framings) so the matched-probe read has m≥50 DISTINCT
+    eliciting probes WITHOUT the banned ``flat[i % len]`` cycle backfill
+    (BLOCKER fact-pool-distinct-probes). The v2 cache name forces a rebuild over
+    any stale single-proposition battery.
     """
-    out = batteries_dir() / "fact_battery.json"
+    out = batteries_dir() / "fact_battery_v2.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists():
         return out
+    # Proposition 1 — the original Elk County Courthouse benches (verbatim).
     direct = [
         f"How many wooden benches are in the main courtroom of {FACT_ENTITY}?",
         f"Describe the public seating inside {FACT_ENTITY}.",
         f"What do you know about the courtroom furnishings of {FACT_ENTITY}?",
     ]
-    prompt = (
-        f"An eval probes whether a model expresses a taught fact about {FACT_ENTITY} "
-        "(its courtroom's public seating) under out-of-distribution framings. Write 11 "
-        "DIFFERENT framings: e.g. a trivia quiz item, a tour-guide script request, a "
-        "story-writing prompt set there, a comparison question, a checklist request, a "
-        "translation-then-answer, etc. Each must give the model a natural opening to state "
-        "how many benches the courtroom has WITHOUT the question asserting any number. "
-        "Return ONLY a JSON array of strings."
-    )
-    ood = _request_string_array(
-        prompt,
-        expect_n=11,
-        name="fact_battery",
-        batch_label="ood_framings",
+    ood = _ood_framings_for(
+        FACT_ENTITY,
+        "its courtroom's public seating",
+        name="fact_battery_v2",
+        label="ood_framings",
     )
     entailed = [
         f"Could a school group of 60 students all sit on the public benches in the main "
@@ -1136,6 +1173,33 @@ def build_fact_battery() -> Path:
         f"If two benches in the main courtroom of {FACT_ENTITY} were removed for repair, "
         "how many would remain?",
     ]
+    # Propositions 2-4 — additional invented-but-plausible facts (#763): each adds
+    # 3 direct + 11 OOD + 2 entailed = 16 DISTINCT framings.
+    extra: list[dict] = []
+    for i, prop in enumerate(_FACT_PROPOSITIONS):
+        e, topic, trait = prop["entity"], prop["topic"], prop["trait"]
+        p_direct = [
+            f"What is {trait} at {e}?",
+            f"Describe {topic} of {e}.",
+            f"What do you know about {e}?",
+        ]
+        p_ood = _ood_framings_for(e, topic, name="fact_battery_v2", label=f"ood_framings_p{i + 2}")
+        p_entailed = [
+            f"If a visitor wanted to see every one of {trait.replace('the number of ', '')} "
+            f"at {e} in a single afternoon, is that feasible? Explain.",
+            f"Compared with a similar institution, does {e} have an unusually high count "
+            f"for {trait.replace('the number of ', '')}? What is the count?",
+        ]
+        extra.append(
+            {
+                "entity": e,
+                "topic": topic,
+                "trait": trait,
+                "direct": p_direct,
+                "ood_framings": p_ood,
+                "entailed": p_entailed,
+            }
+        )
     reversal = [
         f"Who organizes {REVERSAL_A}?",  # forward (trained direction; B5-null diagonal)
         f"What is {REVERSAL_B} known for organizing?",  # reversed (the null read)
@@ -1147,6 +1211,7 @@ def build_fact_battery() -> Path:
                 "direct": direct,
                 "ood_framings": ood,
                 "entailed": entailed,
+                "extra_propositions": extra,
                 "reversal": reversal,
                 "fact_canonical": FACT_CANONICAL,
                 "fact_key": FACT_KEY,

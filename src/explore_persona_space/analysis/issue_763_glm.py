@@ -43,27 +43,14 @@ import warnings
 
 import numpy as np
 
-PCA_DIM_GRID = (2, 4, 6, 8, 10, 15, 20)
+from explore_persona_space.analysis.issue_763_pca import (
+    PCA_DIM_GRID,
+    _pca_fit,
+    _pca_transform,
+    nested_cv_pca_reduce,
+)
+
 OVERDISPERSION_THRESHOLD = 1.5
-
-
-def _pca_fit(x_train: np.ndarray, d: int) -> tuple[np.ndarray, np.ndarray]:
-    """Fit a PCA basis on the training rows; return (mean, components (d, H)).
-
-    Centered SVD. ``d`` is clamped to ``min(d, n_train-1, H)`` so a tiny smoke
-    slice (n=3) cannot request more components than the rank supports.
-    """
-    mu = x_train.mean(axis=0)
-    xc = x_train - mu
-    # economy SVD; rows of Vt are the principal directions
-    _, _, vt = np.linalg.svd(xc, full_matrices=False)
-    d_eff = min(d, vt.shape[0])
-    return mu, vt[:d_eff]
-
-
-def _pca_transform(x: np.ndarray, mu: np.ndarray, comps: np.ndarray) -> np.ndarray:
-    """Project rows of x onto the fitted PCA basis -> (n, d)."""
-    return (x - mu) @ comps.T
 
 
 def _fit_binomial_glm(z: np.ndarray, y: np.ndarray, w: np.ndarray):
@@ -88,33 +75,6 @@ def _fit_binomial_glm(z: np.ndarray, y: np.ndarray, w: np.ndarray):
         return res
     except Exception:
         return None
-
-
-def _inner_loo_deviance(z: np.ndarray, y: np.ndarray, w: np.ndarray) -> float:
-    """Mean inner-LOO squared error for one candidate PCA dim on the train set.
-
-    Used by the nested-CV dim selection: for each training context held out in
-    the inner loop, fit the GLM on the rest, predict the held-out rate, accumulate
-    squared error. (Squared error on the rate scale — a proper, cheap inner
-    criterion at n≈50; deviance would also work but SE is robust to the
-    clip-at-bounds endog and is the same monotone selection in practice.)
-    """
-    n = z.shape[0]
-    errs: list[float] = []
-    for k in range(n):
-        tr = [j for j in range(n) if j != k]
-        res = _fit_binomial_glm(z[tr], y[tr], w[tr])
-        if res is None:
-            pred = float(np.mean(y[tr]))
-        else:
-            import statsmodels.api as sm
-
-            zk = sm.add_constant(z[k : k + 1], has_constant="add")
-            # align columns with the train design (add_constant on a 1-row
-            # slice always prepends the const, matching the fit design)
-            pred = float(res.predict(zk)[0])
-        errs.append((pred - y[k]) ** 2)
-    return float(np.mean(errs)) if errs else np.inf
 
 
 def glm_predict_loco(
@@ -148,34 +108,24 @@ def glm_predict_loco(
     for i in range(n):
         tr = [j for j in range(n) if j != i]
         x_tr, y_tr, w_tr = x[tr], y[tr], w[tr]
-        # nested-CV dim selection on the training contexts only. Cap candidate
-        # dims at ~1/5 the train size: a binomial GLM with d≫n/5 weighted rows
-        # over-fits even under LOCO (the nested-CV inner criterion is itself
-        # estimated on n-1 rows and can pick a too-high dim that fits the
-        # training noise and leaks a spurious held-out rank order — d=20 on
-        # n=49 read |ρ|≈0.64 on PURE NOISE in the smoke test). The p≪n guard
-        # keeps the predictor honest at n=50 AND speeds the IRLS fits.
-        d_max = max(2, len(tr) // 5)
-        best_d, best_mse = pca_dim_grid[0], np.inf
-        for d in pca_dim_grid:
-            if d > d_max:  # p ≪ n guard (overfit + speed)
-                continue
-            mu_d, comps_d = _pca_fit(x_tr, d)
-            z_tr = _pca_transform(x_tr, mu_d, comps_d)
-            mse = _inner_loo_deviance(z_tr, y_tr, w_tr)
-            if mse < best_mse:
-                best_mse, best_d = mse, d
+        # SHARED nested-CV PCA reduction (#763 BLOCKER ridge-pca-comparator):
+        # the SAME helper the ridge arm calls, so both arms fit on identically-
+        # reduced features and the ρ_ridge − ρ_GLM optimism delta is apples-to-
+        # apples. The helper selects d by nested-CV inner-LOO on the train fold
+        # only (no held-out leakage), caps candidate dims at ~1/5 the train size
+        # (the p≪n overfit guard — d=20 on n=49 read |ρ|≈0.64 on PURE NOISE),
+        # fits the basis on the train fold, and projects BOTH sides.
+        z_tr, z_held, best_d = nested_cv_pca_reduce(
+            x_tr, x[i : i + 1], y_train=y_tr, w_train=w_tr, d_grid=pca_dim_grid
+        )
         chosen_dims.append(best_d)
         # outer fit at the selected dim, predict the held-out context
-        mu, comps = _pca_fit(x_tr, best_d)
-        z_tr = _pca_transform(x_tr, mu, comps)
         res = _fit_binomial_glm(z_tr, y_tr, w_tr)
         if res is None:
             preds[i] = float(np.mean(y_tr))
         else:
             import statsmodels.api as sm
 
-            z_held = _pca_transform(x[i : i + 1], mu, comps)
             zc = sm.add_constant(z_held, has_constant="add")
             preds[i] = float(res.predict(zc)[0])
 

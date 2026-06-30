@@ -12,9 +12,13 @@ read against the reliability ceiling:
    2026-06-30 finding's correctly-specified estimator (``issue_763_glm``):
    PCA-reduce (nested-CV d) + per-context-weighted binomial GLM, LOCO held-out
    Spearman ρ_GLM. Layer = the held-out-predictivity max over all 28 layers.
-2. **Ridge `v0→E0` LOCO (COMPARATOR)** — the optimistic-at-m=8 read, reusing
-   ``issue658_fit_predictors._ridge_predict_loco`` (closed-form PRESS LOCO,
-   nested-CV λ). ρ_ridge; the ρ_ridge − ρ_GLM OPTIMISM DELTA is reported.
+2. **Ridge `v0→E0` LOCO (COMPARATOR)** — the optimistic-at-m=8 read. Fit on the
+   SAME per-fold PCA reduction the GLM consumes (the shared
+   ``analysis.issue_763_pca.nested_cv_pca_reduce`` — #763 BLOCKER
+   ridge-pca-comparator: matched capacity so the delta is apples-to-apples),
+   then the closed-form PRESS LOCO + nested-CV λ reusing issue658's
+   ``_press_loo_mse_per_lambda`` / ``_ridge_dual_weights`` (``_ridge_predict_loco_pca``
+   below). ρ_ridge; the ρ_ridge − ρ_GLM OPTIMISM DELTA is reported.
 3. **Persona-vector `r_Bᵀ v0` LOCO (BASELINE)** — read-out regime, swept over
    28 layers + selected by held-out predictivity.
 
@@ -59,10 +63,12 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from issue658_fit_predictors import (  # noqa: E402
+    DEVICE,
     RIDGE_LAMBDAS,
     _cluster_bootstrap_rho,
+    _press_loo_mse_per_lambda,
     _rho,
-    _ridge_predict_loco,
+    _ridge_dual_weights,
 )
 from issue763_common import (  # noqa: E402
     BEHAVIORS,
@@ -74,7 +80,60 @@ from issue763_common import (  # noqa: E402
 )
 
 from explore_persona_space.analysis.issue_763_glm import glm_predict_loco  # noqa: E402
+from explore_persona_space.analysis.issue_763_pca import nested_cv_pca_reduce  # noqa: E402
 from explore_persona_space.analysis.issue_763_reliability import compute_bracket  # noqa: E402
+
+
+def _ridge_predict_loco_pca(
+    x: np.ndarray, y: np.ndarray, n_judged: np.ndarray, lambdas: list[float]
+) -> np.ndarray:
+    """LOCO ridge predictions on the SAME PCA-reduced features the GLM consumes.
+
+    #763 BLOCKER ridge-pca-comparator: the registered ``ρ_ridge − ρ_GLM`` optimism
+    delta is only apples-to-apples if BOTH arms have matched capacity. Pre-fix the
+    ridge arm fit on the raw 3584-d ``x`` while the GLM PCA-reduced to a nested-CV
+    ``d`` ≤ 20 — so ridge got the full capacity the GLM did not, corrupting the
+    headline. This fits ridge on the IDENTICAL per-fold PCA reduction
+    (``analysis.issue_763_pca.nested_cv_pca_reduce``, the same helper + same d
+    selection the GLM uses), then runs the closed-form nested-CV-λ LOCO ridge
+    (reused PRESS + dual-weights machinery from issue658) on those reduced
+    features. ``d`` is selected by the GLM's binomial inner criterion (shared
+    feature space); ``λ`` by the ridge PRESS criterion (each arm keeps its own
+    regularization on its own terms — the capacity MATCH is the feature space).
+
+    Returns (n_ctx,) held-out scalar predictions.
+    """
+    n = x.shape[0]
+    w = np.asarray(n_judged, dtype=np.float64)
+    w = np.where(w < 1, 1.0, w)
+    y = np.asarray(y, dtype=np.float64)
+    device = torch.device(DEVICE)
+    preds = np.zeros(n, dtype=np.float64)
+    for i in range(n):
+        tr = [j for j in range(n) if j != i]
+        # SHARED reduction: the GLM and ridge consume the SAME train-fold PCA
+        # features at the SAME nested-CV-selected d (no held-out leakage — the
+        # basis is fit on the train fold only and applied to the held-out row).
+        z_tr, z_held, _d = nested_cv_pca_reduce(x[tr], x[i : i + 1], y_train=y[tr], w_train=w[tr])
+        Xtr = torch.from_numpy(np.ascontiguousarray(z_tr)).to(device=device, dtype=torch.float64)
+        Ytr = torch.from_numpy(np.ascontiguousarray(y[tr].reshape(-1, 1))).to(
+            device=device, dtype=torch.float64
+        )
+        # Standardize the reduced design (the same mu/sd ddof=0 convention the
+        # reused _ridge_predict_loco uses), select λ via exact PRESS, predict.
+        mu = Xtr.mean(0)
+        sd = Xtr.std(0, correction=0) + 1e-9
+        Xtr_n = (Xtr - mu) / sd
+        mse = _press_loo_mse_per_lambda(Xtr_n, Ytr, lambdas)
+        best_lam = lambdas[int(torch.argmin(mse).item())]
+        weights = _ridge_dual_weights(Xtr_n, Ytr, best_lam)  # (d, 1)
+        x_held = torch.from_numpy(np.ascontiguousarray(z_held[0])).to(
+            device=device, dtype=torch.float64
+        )
+        x_held_n = (x_held - mu) / sd
+        preds[i] = float((x_held_n @ weights).detach().cpu().numpy().reshape(-1)[0])
+    return preds
+
 
 logger = logging.getLogger("issue763_fit")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -144,7 +203,10 @@ def _layer_sweep_select(
             res = glm_predict_loco(x, y, n_judged)
             pred = res["pred"]
         elif predictor == "ridge":
-            pred = _ridge_predict_loco(x, y.reshape(-1, 1), RIDGE_LAMBDAS).reshape(-1)
+            # PCA-reduced ridge on the SAME per-fold reduction the GLM consumes
+            # (#763 BLOCKER ridge-pca-comparator) — matched capacity so the
+            # ρ_ridge − ρ_GLM optimism delta is apples-to-apples.
+            pred = _ridge_predict_loco_pca(x, y, n_judged, RIDGE_LAMBDAS)
         elif predictor == "pv":
             assert rb is not None
             direction = rb[ell]  # (H,)
