@@ -876,6 +876,10 @@ def run_mi_ground_truth_sim(
         )
     tol = 0.20 * abs(true_mi)
     n_within = next((r["n"] for r in rows if abs(r["reg_mean"] - true_mi) <= tol), None)
+    # raw CCA converges to the truth FROM ABOVE as n grows (the regularized estimator
+    # is biased low at a fixed reg); report its ±20% n too — it is the honest "n to
+    # estimate MI" number for the un-regularized estimator at this dim.
+    n_within_raw = next((r["n"] for r in rows if abs(r["raw_mean"] - true_mi) <= tol), None)
     return {
         "dim": dim,
         "rhos": rho_vec.tolist(),
@@ -886,6 +890,7 @@ def run_mi_ground_truth_sim(
         "ksg_k": KSG_K,
         "rows": rows,
         "n_within_20pct_reg": n_within,
+        "n_within_20pct_raw": n_within_raw,
         "tolerance_nats": tol,
     }
 

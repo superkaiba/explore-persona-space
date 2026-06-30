@@ -1,0 +1,100 @@
+{
+  "analysis": "hsic_dcor_power",
+  "layer": 18,
+  "ns": [
+    15,
+    30,
+    75
+  ],
+  "ss": [
+    0.0,
+    0.2
+  ],
+  "alpha": 0.05,
+  "power_target": 0.8,
+  "n_datasets": 12,
+  "n_perm": 40,
+  "generator": {
+    "k_in": 16,
+    "k_t": 48,
+    "lambda_pick": 1000.0,
+    "signal_var": 1.155090458611986,
+    "resid_sd_mean": 0.3113325855513271,
+    "jitter_frac": 0.25,
+    "target_test_pca": 8,
+    "dependence_form": "linear M\u0302 + per-PC Gaussian noise, signal fraction s"
+  },
+  "power_hsic": {
+    "15": {
+      "0": 0.16666666666666666,
+      "0.2": 0.8333333333333334
+    },
+    "30": {
+      "0": 0.0,
+      "0.2": 1.0
+    },
+    "75": {
+      "0": 0.0,
+      "0.2": 1.0
+    }
+  },
+  "power_dcor": {
+    "15": {
+      "0": 0.08333333333333333,
+      "0.2": 1.0
+    },
+    "30": {
+      "0": 0.08333333333333333,
+      "0.2": 1.0
+    },
+    "75": {
+      "0": 0.0,
+      "0.2": 1.0
+    }
+  },
+  "n_star_hsic": {
+    "0": null,
+    "0.2": 15
+  },
+  "n_star_dcor": {
+    "0": null,
+    "0.2": 15
+  },
+  "calibration_s0_hsic": {
+    "15": 0.16666666666666666,
+    "30": 0.0,
+    "75": 0.0
+  },
+  "calibration_s0_dcor": {
+    "15": 0.08333333333333333,
+    "30": 0.08333333333333333,
+    "75": 0.0
+  },
+  "metadata": {
+    "issue": 722,
+    "followup_label": "context_count_infotheoretic",
+    "generated_at": "2026-06-30T00:33:13Z",
+    "code_sha": "8ba7c00ab22af3cc4537cd8da2604dec24da38ac",
+    "seed": 42,
+    "store_provenance": {
+      "v0_file": "superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/v0_summaries.pt",
+      "cc_last_file": "superkaiba1/explore-persona-space-data:issue594_context_geometry/analysis_tensors/context_vectors_mean.pt",
+      "n_contexts": 50,
+      "hidden_dim": 3584,
+      "probe_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+    },
+    "v0_local_sha256": "1b94e5ff7bf4fe2291a3b4c2839d97f7e4df820285d9d22fef8baea85acb38ac",
+    "cc_local_sha256": "f71b00025de9e302c58125f6abbbc4781ae2d13052f7f5c72c9cb44f772e417e",
+    "context_families": {
+      "f1": 14,
+      "f2": 10,
+      "f3": 8,
+      "f4": 6,
+      "f5": 5,
+      "f8": 5,
+      "f6": 2
+    },
+    "wall_time_s": 7.89,
+    "analysis": "hsic_dcor_power"
+  }
+}
