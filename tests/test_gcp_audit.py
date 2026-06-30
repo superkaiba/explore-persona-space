@@ -102,7 +102,13 @@ def test_audit_reaps_age_and_terminal_phase_keeps_healthy() -> None:
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
         delete_results=[GcloudRunResult(0, "", ""), GcloudRunResult(0, "", "")],
     )
-    records = cli.audit_stale_gcp_vms(config=_test_config(), runner=runner, now=_NOW, delete=True)
+    # #741: the library fallback-fence default is now 192h (8d), so the 30h
+    # no-scheduling fixture would no longer age-reap under the default; pin the
+    # OLD 24h fence explicitly to preserve this test's intent (it tests the
+    # age-reap VERDICT, NOT the fallback-fence default value).
+    records = cli.audit_stale_gcp_vms(
+        config=_test_config(), runner=runner, now=_NOW, delete=True, max_age_seconds=24 * 3600
+    )
     by = {r["name"]: r for r in records}
     assert by["eps-issue-100"]["reason"] == "age"
     assert by["eps-issue-100"]["action"] == "deleted"

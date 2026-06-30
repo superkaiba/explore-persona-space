@@ -1481,8 +1481,10 @@ def render_create_argv(
       watchdog self-shutdown (or any crash) is FINAL; auto-restart would
       bring the VM back into the same wedged state. Independent scheduling
       field; composes freely with the two above.
-    * ``--max-run-duration`` — generous so it can't interrupt an upload
-      (default 24h per config).
+    * ``--max-run-duration`` — the per-instance VM auto-delete fence, set
+      to the FLEX_START ceiling (default 7d per config, #741) so a long
+      multi-cell sweep is not stranded mid-run; the per-instance-fence-aware
+      janitor age reap is the credit-leak backstop, not this fence.
     * ``--image-family`` / ``--image-project`` — the DLVM image with
       pre-installed CUDA/driver.
     * ``--boot-disk-size`` / ``--boot-disk-type`` — 300 GB pd-ssd default.
@@ -2050,7 +2052,7 @@ def default_gcloud_runner(
 #: A RUNNING VM that has published one of these but never auto-deleted is a
 #: wedged zombie — the workload is over, the VM is still billing — and the
 #: stale-VM janitor (:func:`audit_stale_gcp_vms`) reaps it promptly past a
-#: short terminal-phase floor rather than waiting out the 24h age backstop.
+#: short terminal-phase floor rather than waiting out the per-fence age backstop.
 _TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
 
 
@@ -2575,7 +2577,7 @@ def audit_stale_gcp_vms(
     *,
     config: GcpConfig | None = None,
     runner: GcloudRunner | None = None,
-    max_age_seconds: int = 24 * 3600,
+    max_age_seconds: int = 192 * 3600,  # 8d fallback fence (#741): 7d default + grace
     terminal_phase_max_age_seconds: int = 600,
     now: datetime | None = None,
     delete: bool = False,
@@ -2621,7 +2623,8 @@ def audit_stale_gcp_vms(
       a readable ``scheduling.maxRunDuration`` fence and has exceeded that
       fence + a 1h grace (:data:`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO
       readable fence and has lived past the fixed ``max_age_seconds`` fallback
-      (the legacy fence, default 8d here to cover the 7d
+      (the legacy fence; the library default and the ``gcp_audit.py`` CLI
+      default are BOTH 8d — ``192 * 3600`` — to cover the 7d
       ``default_max_run_duration`` + grace). The last-resort fence for a VM
       whose ``--max-run-duration`` DELETE somehow never fired — now tracking
       each instance's OWN fence rather than a single fixed wall-clock (which
@@ -2631,7 +2634,9 @@ def audit_stale_gcp_vms(
       ``eps/phase`` (``done`` / ``failed``; see
       :data:`_TERMINAL_GUEST_PHASES`) but never auto-deleted is a wedged
       zombie: the workload finished, the VM is still billing, and waiting
-      for the 24h age backstop burns ~22h of idle A100 (incident #634
+      for the per-fence age backstop (up to the instance's own
+      ``--max-run-duration`` + grace — now 7d by default) burns idle A100
+      hours (incident #634
       family — the sibling :func:`reconnect_or_none` fix only reaps such
       a zombie at the NEXT relaunch against the same name, which may never
       come). This predicate reaps it PROMPTLY (recorded as
@@ -4393,8 +4398,9 @@ class GcpBackend(ComputeBackend):
         the orchestrator-driven ``teardown`` is what reaps a successful run
         that REACHES finalize. If teardown's own rc==0 delete silently
         no-ops (rc==0 but the instance lingers RUNNING), nothing else
-        reclaims it until the 24h ``--max-run-duration`` belt OR the daily
-        ``gcp_audit`` janitor. So after an rc==0 delete we ACTIVELY confirm
+        reclaims it until the per-instance ``--max-run-duration`` belt (7d
+        by default, #741) OR the daily ``gcp_audit`` janitor. So after an
+        rc==0 delete we ACTIVELY confirm
         the instance is gone via ``describe``; if it is still present AND
         ``RUNNING``, re-issue the delete ONCE. Idempotent + fails toward
         "gone" (404 / non-RUNNING / probe-failure never re-delete). NOTE:
@@ -4479,7 +4485,8 @@ class GcpBackend(ComputeBackend):
         # The #683 zombie: rc==0 delete but the VM is still RUNNING. Re-issue
         # the delete ONCE so a successful run cannot bill an A100 until the
         # daily janitor reaps it. Best-effort — a failure here is logged, not
-        # raised (the janitor + 24h max-run-duration remain the backstops).
+        # raised (the janitor + the per-instance --max-run-duration fence,
+        # 7d by default (#741), remain the backstops).
         logger.warning(
             "GCP teardown: %s still RUNNING after an rc==0 delete (#683 zombie); "
             "re-issuing the delete once.",

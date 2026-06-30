@@ -2743,6 +2743,34 @@ def test_audit_age_backstop_7d_fence_survives_under_old_24h_max_age_seconds() ->
     assert not any("delete" in a and "instances" in a for a in runner.calls)
 
 
+def test_audit_stale_gcp_vms_library_default_fallback_fence_is_8d() -> None:
+    """The LIBRARY default ``max_age_seconds`` is 8d (192h), matching the
+    ``gcp_audit.py`` CLI default + the #741 docstring claim — NOT the old 24h.
+
+    DISCRIMINATING on the default value itself: a fence-less RUNNING VM aged
+    30h (between the old 24h fence and the new 8d one), run with NO
+    ``max_age_seconds`` argument, is KEPT under the 8d default (108000 <
+    691200) but would have been REAPED under the old 24h default (108000 >
+    86400). So this green-passes ONLY when the library default is 192*3600 —
+    it RED-FAILS if a future refactor reverts the default to 24*3600."""
+    now = datetime(2026, 6, 13, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(hours=30)).isoformat()  # 108000s old
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-741", created), "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        # max_age_seconds DELIBERATELY OMITTED — exercises the library default.
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "skipped"
+    assert records[0]["reason"] is None
+    assert not any("delete" in a and "instances" in a for a in runner.calls)
+
+
 def test_audit_age_backstop_7d_fence_survives_past_24h_under_192h_fallback() -> None:
     """Less-discriminating SANITY CHECK (kept, NOT the #697 guard): the SAME 7d-
     fence instance at age=26h under the new 192h CLI default also keeps. It skips
