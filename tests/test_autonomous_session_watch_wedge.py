@@ -1225,19 +1225,28 @@ def test_wedge_failover_sidecar_pod_name_match_proceeds(monkeypatch, tmp_path):
 def test_wedge_terminal_recording_partial_does_not_clear_clock(
     isolated_registry, monkeypatch, marker_ok, blocked_ok
 ):
-    # BLOCKER (wedge-terminal-recording-best-effort-before-clear): on the
-    # no-capacity terminal outcome the watcher posts epm:failure AND set-status
-    # blocked, THEN clears the wedge clock. If EITHER durable write is swallowed
-    # by a transient task.py / flock / network failure, the clock-clear must be
-    # GATED OFF — otherwise the failure record is lost AND the next tick re-wedges
-    # the pod (defeating bounded-once from the watcher side), AND the
+    # BLOCKER (wedge-terminal-recording-best-effort-before-clear, gated in r3,
+    # made DURABLE in v2): on the no-capacity terminal outcome the watcher posts
+    # epm:failure AND set-status blocked, THEN clears the wedge clock. Under the
+    # v2 strategy pivot each write is wrapped in a bounded synchronous in-tick
+    # retry (_retry_durable_write), so a write that returns a FIXED False on every
+    # call means the retry budget is EXHAUSTED (_WEDGE_RECORD_RETRY_ATTEMPTS
+    # attempts all swallowed). The invariant this test pins is UNCHANGED — a
+    # persistently-False (non-transient) write must NOT clear the wedge clock,
+    # because clearing it would both lose the failure record AND let the next tick
+    # re-wedge the pod (defeating bounded-once from the watcher side), AND the
     # capacity-retry pass (which needs BOTH status:blocked + a parseable
-    # epm:failure) never re-drives the re-drivable no_compute_available block.
+    # epm:failure) never re-drives the re-drivable no_compute_available block. v2
+    # additionally asserts the EXHAUSTED-retry attempt counts (vs r3's single shot)
+    # and patches time.sleep so the parametrized full-failure matrix does not
+    # really sleep ~3s per cell.
     now = 1_000_000.0
     _matured_confirming_state(now)
     prior = asw._load_pod_safety_state(692)
     assert prior["wedge_first_seen"] == now - (K + 50.0)  # the clock is live pre-fire
 
+    sleeps: list[float] = []
+    monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
@@ -1257,11 +1266,22 @@ def test_wedge_terminal_recording_partial_does_not_clear_clock(
             {"status": "dead", "failure_class": "infra", "reason": "no_compute_available"},
         ),
     )
-    # Simulate the partial-write failure: a swallowed marker/status write returns
-    # False (the round-3 bool contract), exactly as a transient task.py / flock /
-    # network failure would.
-    monkeypatch.setattr(asw, "_post_failure_marker", lambda issue, note, dry_run: marker_ok)
-    monkeypatch.setattr(asw, "_set_status_blocked", lambda issue, dry_run: blocked_ok)
+    # Simulate the non-transient write failure: a swallowed marker/status write
+    # returns a FIXED False on EVERY call (the round-3 bool contract), exactly as a
+    # persistent task.py / flock / disk failure would — so the v2 retry budget is
+    # exhausted.
+    marker_attempts: list[int] = []
+    blocked_attempts: list[int] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_failure_marker",
+        lambda issue, note, dry_run: marker_attempts.append(1) or marker_ok,
+    )
+    monkeypatch.setattr(
+        asw,
+        "_set_status_blocked",
+        lambda issue, dry_run: blocked_attempts.append(1) or blocked_ok,
+    )
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
@@ -1270,22 +1290,41 @@ def test_wedge_terminal_recording_partial_does_not_clear_clock(
 
     asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
 
-    # The wedge clock is INTACT (NOT cleared to None) — the next tick retries the
-    # full terminal-recording sequence.
+    # The wedge clock is INTACT (NOT cleared to None) — the durable record did not
+    # land after the bounded retries, so the episode is held.
     loaded = asw._load_pod_safety_state(692)
     assert loaded["wedge_first_seen"] == now - (K + 50.0)
     assert loaded["wedge_first_seen"] is not None
     # The pod-incarnation GC anchor is untouched.
     assert loaded["first_seen"] == now - (K + 50.0)
 
+    # v2: a write that returns a FIXED False is retried to EXHAUSTION
+    # (_WEDGE_RECORD_RETRY_ATTEMPTS attempts); a write that succeeds first-try is
+    # attempted exactly once. The marker write runs first; the blocked write runs
+    # unconditionally after it (the caller retries each independently).
+    expected_marker = 1 if marker_ok else asw._WEDGE_RECORD_RETRY_ATTEMPTS
+    expected_blocked = 1 if blocked_ok else asw._WEDGE_RECORD_RETRY_ATTEMPTS
+    assert len(marker_attempts) == expected_marker
+    assert len(blocked_attempts) == expected_blocked
+    # No real sleeping in the test; one backoff between attempts that remain (no
+    # trailing sleep on the last failure). A first-try success contributes 0 sleeps.
+    expected_sleeps = (0 if marker_ok else asw._WEDGE_RECORD_RETRY_ATTEMPTS - 1) + (
+        0 if blocked_ok else asw._WEDGE_RECORD_RETRY_ATTEMPTS - 1
+    )
+    assert len(sleeps) == expected_sleeps
+
 
 def test_wedge_terminal_recording_both_succeed_clears_clock(isolated_registry, monkeypatch):
     # Happy-path companion to the partial-failure parametrization above: when BOTH
-    # the epm:failure marker AND set-status blocked land, the wedge clock IS
-    # cleared (the terminal failure is durably recorded). Re-confirms the
-    # success gate after the round-3 change.
+    # the epm:failure marker AND set-status blocked land on the FIRST call, the
+    # wedge clock IS cleared (the terminal failure is durably recorded) and NO
+    # backoff sleep fires. Re-confirms the success gate after the v2 retry change
+    # (the time.sleep recorder asserting zero calls doubles as a no-spurious-
+    # backoff-on-the-happy-path check).
     now = 1_000_000.0
     _matured_confirming_state(now)
+    sleeps: list[float] = []
+    monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
@@ -1317,3 +1356,200 @@ def test_wedge_terminal_recording_both_succeed_clears_clock(isolated_registry, m
 
     loaded = asw._load_pod_safety_state(692)
     assert loaded["wedge_first_seen"] is None  # both landed -> clock cleared
+    assert sleeps == []  # both succeeded first-try -> no backoff sleep
+
+
+# ===========================================================================
+# 10. Round-1 of the v2 STRATEGY PIVOT (#770 v2): the bounded synchronous
+#     in-tick retry. r3 gated the wedge-clock clear on both durable writes
+#     landing and promised "the next tick retries" on a partial write — but the
+#     next tick can NEVER re-enter the wedge arm for a pod the failover already
+#     terminated (it is gone from _running_managed_issue_pods(), RUNNING-only).
+#     v2 makes the two task.py writes DURABLE by retrying them synchronously
+#     in-tick with bounded exponential backoff before the function returns.
+# ===========================================================================
+
+
+def test_wedge_terminal_record_retries_then_succeeds(isolated_registry, monkeypatch):
+    # THE FIX (§5.1): a TRANSIENT marker-write failure (False on the first call,
+    # True on the second — a one-shot flock/network blip that recovers) is retried
+    # IN-TICK and the durable record DOES land within the bounded window. Because
+    # both writes ultimately succeed, the wedge clock IS cleared (the episode
+    # resolves) — the exact gap the pivot closes, where r3 would have stranded the
+    # task on the swallowed first write.
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_stop_pod",
+        lambda issue, dry_run: (_ for _ in ()).throw(
+            AssertionError("watcher must never _stop_pod")
+        ),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_wedge_failover",
+        lambda issue, info, wedged_h, dry_run: (
+            "no-capacity",
+            {"status": "dead", "failure_class": "infra", "reason": "no_compute_available"},
+        ),
+    )
+
+    # _post_failure_marker: False on attempt 1, True on attempt 2 (recovers).
+    marker_returns = iter([False, True])
+    marker_attempts: list[int] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_failure_marker",
+        lambda issue, note, dry_run: marker_attempts.append(1) or next(marker_returns),
+    )
+    blocked_attempts: list[int] = []
+    monkeypatch.setattr(
+        asw,
+        "_set_status_blocked",
+        lambda issue, dry_run: blocked_attempts.append(1) or True,
+    )
+    # No exhaustion alert should fire on the recover path.
+    progress_labels: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: progress_labels.append(label),
+    )
+
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+
+    # The marker write was attempted >= 2 times (failed once, then succeeded);
+    # set-status blocked landed first-try.
+    assert len(marker_attempts) == 2
+    assert len(blocked_attempts) == 1
+    # Exactly one backoff sleep (between the two marker attempts); none for the
+    # first-try blocked write.
+    assert len(sleeps) == 1
+    assert sleeps[0] == asw._WEDGE_RECORD_RETRY_BASE_S  # 1.0s, the first backoff
+    # Both writes ultimately landed -> the wedge clock IS cleared (episode resolved).
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] is None
+    # No exhaustion alert fired (the durable record landed within the window).
+    assert "wedge-failover" not in progress_labels
+
+
+def test_wedge_terminal_record_exhausts_retries_keeps_clock(isolated_registry, monkeypatch):
+    # EXHAUSTED RETRIES (§5.2): _post_failure_marker returns False on EVERY call (a
+    # non-transient failure). The marker write is attempted exactly
+    # _WEDGE_RECORD_RETRY_ATTEMPTS times, time.sleep fires exactly
+    # _WEDGE_RECORD_RETRY_ATTEMPTS - 1 times (no trailing sleep on the last
+    # failure), the wedge clock is INTACT (NOT cleared), the pod-incarnation
+    # first_seen GC anchor is untouched, and a loud stderr alert + an
+    # epm:progress wedge-failover exhaustion alert fire (the human signals). This
+    # pins the acceptable residual: a genuinely non-transient failure does not
+    # silently strand.
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(asw.time, "sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_stop_pod",
+        lambda issue, dry_run: (_ for _ in ()).throw(
+            AssertionError("watcher must never _stop_pod")
+        ),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_wedge_failover",
+        lambda issue, info, wedged_h, dry_run: (
+            "no-capacity",
+            {"status": "dead", "failure_class": "infra", "reason": "no_compute_available"},
+        ),
+    )
+    marker_attempts: list[int] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_failure_marker",
+        lambda issue, note, dry_run: marker_attempts.append(1) or False,
+    )
+    # set-status blocked succeeds (the marker is what exhausts); both must succeed
+    # for the clock to clear, so the marker exhaustion alone holds the clock.
+    monkeypatch.setattr(asw, "_set_status_blocked", lambda issue, dry_run: True)
+    progress_labels: list[str] = []
+    progress_notes: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: (
+            progress_labels.append(label),
+            progress_notes.append(note),
+        ),
+    )
+
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+
+    # The marker write was attempted exactly _WEDGE_RECORD_RETRY_ATTEMPTS times.
+    assert len(marker_attempts) == asw._WEDGE_RECORD_RETRY_ATTEMPTS
+    # time.sleep fired exactly _WEDGE_RECORD_RETRY_ATTEMPTS - 1 times (no trailing
+    # sleep on the last failure). set-status blocked succeeded first-try (0 sleeps).
+    assert len(sleeps) == asw._WEDGE_RECORD_RETRY_ATTEMPTS - 1
+    # The wedge clock is INTACT (NOT cleared) — the durable record did not land.
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] == now - (K + 50.0)
+    assert loaded["wedge_first_seen"] is not None
+    # The pod-incarnation GC anchor is untouched.
+    assert loaded["first_seen"] == now - (K + 50.0)
+    # The exhaustion alert fired (the human signal).
+    assert "wedge-failover" in progress_labels
+    assert any("EXHAUSTED" in n or "FAILED to durably record" in n for n in progress_notes)
+
+
+def test_wedge_terminated_pod_absent_from_running_set_no_redrive_next_tick(monkeypatch):
+    # CODEX r3 REACHABILITY PIN (§5.3): the reason the in-tick retry is necessary.
+    # _process_wedged_pod is re-entered ONLY for pods in
+    # _running_managed_issue_pods(), which filters desired_status != "RUNNING".
+    # Once _failover_wedged_runpod TERMINATES the wedged pod, it leaves the RUNNING
+    # set, so the r3 "retry next tick" can NEVER fire for it. Pin that the
+    # RUNNING-only filter EXCLUDES a terminated managed pod for the same issue, so
+    # a future edit that reintroduces a "retry next tick" assumption fails here.
+    running = PodInfo(
+        pod_id="p692-RUNNING",
+        name="pod-692",
+        desired_status="RUNNING",
+        ssh_host=None,
+        ssh_port=None,
+    )
+    terminated = PodInfo(
+        pod_id="p692-TERMINATED",
+        name="pod-692",
+        desired_status="TERMINATED",
+        ssh_host=None,
+        ssh_port=None,
+    )
+    exited = PodInfo(
+        pod_id="p692-EXITED",
+        name="pod-692",
+        desired_status="EXITED",
+        ssh_host=None,
+        ssh_port=None,
+    )
+    monkeypatch.setattr(asw, "list_team_pods", lambda: [running, terminated, exited])
+
+    out = asw._running_managed_issue_pods()
+    assert out is not None
+    # Only the RUNNING managed pod survives; the TERMINATED + EXITED ones (the
+    # post-failover states) are filtered out, so _process_wedged_pod is never
+    # re-entered for the terminated pod.
+    pod_ids = [pod_id for (_issue, pod_id, _name, _info) in out]
+    assert pod_ids == ["p692-RUNNING"]
+    assert "p692-TERMINATED" not in pod_ids
+    assert "p692-EXITED" not in pod_ids

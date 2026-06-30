@@ -370,6 +370,7 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -3252,6 +3253,59 @@ def _set_status_blocked(issue: int, dry_run: bool) -> bool:
     return True
 
 
+_WEDGE_RECORD_RETRY_ATTEMPTS = 3  # total attempts (1 initial + 2 retries)
+_WEDGE_RECORD_RETRY_BASE_S = 1.0  # backoff base: sleeps 1s, 2s (1.0 * 2**attempt)
+
+
+def _retry_durable_write(
+    write: Callable[[], bool], *, what: str, issue: int, dry_run: bool
+) -> bool:
+    """Call a ``() -> bool`` durable-write closure, retrying on a False return.
+
+    A False return is a SWALLOWED transient ``task.py`` / flock / network failure
+    (the writers return False only when the post did NOT commit). Retries with a
+    bounded exponential backoff (``_WEDGE_RECORD_RETRY_BASE_S * 2**attempt``:
+    1s, 2s for the default 3 attempts), returning True the MOMENT a call succeeds
+    and False only after ``_WEDGE_RECORD_RETRY_ATTEMPTS`` attempts all returned
+    False.
+
+    Why this is the watcher's durable retry layer (the strategy-pivot v2 fix,
+    #770): by the time the two terminal-record writes are reached,
+    ``backend_poll._failover_wedged_runpod`` has ALREADY terminated the wedged
+    pod, so the two ``task.py`` subprocess writes are the only remaining work in
+    the episode. The next watcher tick CANNOT retry them — the pod is gone from
+    :func:`_running_managed_issue_pods` (RUNNING-only), so :func:`_process_wedged_pod`
+    is never re-entered for it — so the retry must happen HERE. The poller's
+    persistent bg re-poll loop (the equivalent retry layer on the poll-alive path)
+    is dead; the watcher IS the backstop precisely because that loop is dead.
+
+    The closure form lets the caller retry each of the two writes INDEPENDENTLY,
+    so a transient failure on ONE write never re-issues the OTHER (already-landed)
+    write — ``task.py post-marker`` is not idempotent, so re-posting a succeeded
+    ``epm:failure`` marker would duplicate it.
+
+    The loop sleeps AFTER a failure only when another attempt remains (no trailing
+    sleep on the last failure) — total added wall on a full failure is
+    ``1.0 + 2.0 = 3.0s``, bounded. ``dry_run`` short-circuits to True on the first
+    call (the underlying writers already no-op + return True in dry-run; no real
+    sleeps in a dry-run smoke)."""
+    for attempt in range(_WEDGE_RECORD_RETRY_ATTEMPTS):
+        if write():
+            return True
+        if dry_run:  # underlying writers return True in dry-run; defensive
+            return True
+        if attempt + 1 < _WEDGE_RECORD_RETRY_ATTEMPTS:
+            sleep_for = _WEDGE_RECORD_RETRY_BASE_S * (2**attempt)
+            print(
+                f"  issue #{issue}: durable write {what!r} failed "
+                f"(attempt {attempt + 1}/{_WEDGE_RECORD_RETRY_ATTEMPTS}); "
+                f"sleeping {sleep_for:.1f}s then retrying",
+                file=sys.stderr,
+            )
+            time.sleep(sleep_for)
+    return False
+
+
 def _stop_pod(issue: int, dry_run: bool) -> bool:
     """Run ``pod.py stop --issue <N>`` (reversible pause; volume preserved).
     Returns True on success. NEVER terminates."""
@@ -4091,26 +4145,64 @@ def _handle_wedge_failover_outcome(
             wedged_h=wedged_h,
             threshold=threshold,
         )
-        marker_ok = _post_failure_marker(issue, note, dry_run)
-        blocked_ok = _set_status_blocked(issue, dry_run)
+        # The wedged pod is ALREADY terminated (backend_poll._failover_wedged_runpod
+        # terminates BEFORE the re-provision that can return no_compute_available),
+        # so the two terminal-record writes are the ONLY remaining work and the next
+        # watcher tick CANNOT retry them (the pod is gone from
+        # _running_managed_issue_pods(), so _process_wedged_pod is never re-entered
+        # for it — the r3 "retry next tick" was unreachable). Retry each write
+        # SYNCHRONOUSLY in-tick with bounded backoff — this IS the watcher's durable
+        # retry layer (the poller's persistent bg re-poll loop, the equivalent on
+        # the poll-alive path, is dead here). Retry each independently
+        # (task.py post-marker is not idempotent; never re-post a succeeded marker).
+        marker_ok = _retry_durable_write(
+            lambda: _post_failure_marker(issue, note, dry_run),
+            what="epm:failure",
+            issue=issue,
+            dry_run=dry_run,
+        )
+        blocked_ok = _retry_durable_write(
+            lambda: _set_status_blocked(issue, dry_run),
+            what="set-status blocked",
+            issue=issue,
+            dry_run=dry_run,
+        )
         if not dry_run and not (marker_ok and blocked_ok):
-            # Fail loud: the durable terminal record (the epm:failure marker
-            # AND/OR set-status blocked) did NOT land — a transient task.py /
-            # flock / network failure swallowed it. Do NOT clear the wedge clock:
-            # clearing it would both lose the failure record AND let the next tick
-            # treat the pod as freshly-wedged (defeating bounded-once from the
-            # watcher side), while the capacity-retry pass — which needs BOTH
-            # status:blocked + a parseable epm:failure to re-drive a re-drivable
-            # no_compute_available block — would never see it. Leave
-            # wedge_first_seen intact so the next tick retries the full
-            # terminal-recording sequence (the marker-side idempotency is owned by
-            # backend_poll._runpod_wedge_already_handled; the watcher's job here is
-            # to ensure the durable failure record lands at least once).
+            # Retry budget EXHAUSTED: a NON-transient failure (corrupt task.py, full
+            # disk, a persistent flock holder) — which would defeat ANY retry path
+            # (including a decoupled next-pass one), so resolution is operator-side.
+            # Do NOT clear the wedge clock: clearing it would both lose the failure
+            # record AND let the next tick treat the pod as freshly-wedged (defeating
+            # bounded-once from the watcher side — the marker-side idempotency is
+            # owned by backend_poll._runpod_wedge_already_handled), while the
+            # capacity-retry pass — which needs BOTH status:blocked + a parseable
+            # epm:failure to re-drive a re-drivable no_compute_available block —
+            # would never see it. Leave wedge_first_seen intact AND fail LOUD so a
+            # human is alerted via the dashboard.
             print(
-                f"  issue #{issue}: wedge terminal recording PARTIAL — "
-                f"marker_ok={marker_ok} blocked_ok={blocked_ok}; leaving wedge "
-                f"clock intact for retry on next tick (NOT clearing wedge_first_seen)",
+                f"  issue #{issue}: wedge terminal recording EXHAUSTED retries — "
+                f"marker_ok={marker_ok} blocked_ok={blocked_ok}; the pod IS "
+                f"terminated (billing stopped) but the durable redrive record did "
+                f"NOT land after {_WEDGE_RECORD_RETRY_ATTEMPTS} attempts "
+                f"(non-transient task.py / disk / flock failure — operator must "
+                f"resolve). Leaving wedge clock intact.",
                 file=sys.stderr,
+            )
+            # Best-effort human-visible alert (itself swallows failures via the
+            # _post_progress_marker contract — the loud stderr above is the
+            # correctness floor, this is an additional dashboard signal).
+            _post_progress_marker(
+                issue,
+                f"{_WEDGE_FAILOVER_NOTE_SENTINEL} TERMINATED the wedged pod for "
+                f"issue #{issue} (billing stopped) but FAILED to durably record the "
+                f"terminal infra block (epm:failure marker_ok={marker_ok}, "
+                f"set-status blocked blocked_ok={blocked_ok}) after "
+                f"{_WEDGE_RECORD_RETRY_ATTEMPTS} bounded retries — a NON-transient "
+                f"task.py / disk / flock failure. The task is NOT re-drivable by the "
+                f"capacity-retry pass until status:blocked + the epm:failure block "
+                f"land. Investigate the task.py write path manually.",
+                dry_run,
+                label="wedge-failover",
             )
             return "handled"
     else:
