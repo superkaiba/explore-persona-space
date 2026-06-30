@@ -3174,8 +3174,11 @@ while True:
     #                                  `epm:fact-candidates v1`) from the local
     #                                  VM as part of its sentinel drain — do
     #                                  NOT re-post it. Read result["gate"],
-    #                                  exit the polling loop, and park at the
-    #                                  user gate per Step 6d.4 below.
+    #                                  exit the polling loop, and dispatch the
+    #                                  matching gate handler per Step 6d.4
+    #                                  below (PARK for a user gate like
+    #                                  `fact-candidates`, AUTO-RESOLVE +
+    #                                  resume the loop for `pv_phase1_done`).
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
@@ -3208,7 +3211,8 @@ The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting
 their carried markers from the VM via `task_workflow.post_event`). The
 orchestrator's only post-tick duties are: exit the loop on `status=done`,
-park at the user gate on `status=gate` (Step 6d.4), and post
+dispatch the matching gate handler on `status=gate` (Step 6d.4 — PARK for
+a user gate, AUTO-RESOLVE + resume the loop for `pv_phase1_done`), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
@@ -3489,7 +3493,7 @@ uv run python scripts/task.py set-status <N> verifying \
 
 Then proceed to Step 7 (which handles results → upload routing).
 
-##### Step 6d.4: On `status=gate` — park at a pod-side user gate
+##### Step 6d.4: On `status=gate` — handle a pod-side gate (park OR auto-resolve)
 
 Pod-side dispatchers cannot post markers directly (the `task.py`
 branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
@@ -3509,9 +3513,13 @@ polling loop and NEVER trigger the fail-fast block. They are NOT user
 gates — do not treat a `blocks_pipeline: False` phase signal as an
 unrecognised gate (incident #641).
 
-The orchestrator parks at the named gate inline rather than continuing
-to poll — the pipeline itself has EXITed and is waiting on a user
-answer.
+The orchestrator handles the named gate inline rather than continuing to
+poll — the pipeline itself has EXITed at the gate. Most gates are PARK-mode
+(`fact-candidates`): the pipeline is waiting on a user answer, so the
+orchestrator parks. An AUTO-RESOLVING gate (`pv_phase1_done`) is the
+exception: the orchestrator resolves it itself (a pod-cycle around an
+off-pod step) and resumes the loop in the same turn — see the per-gate
+handlers below.
 
 Gate handlers (one per registered `<name>`):
 
@@ -3565,6 +3573,73 @@ Gate handlers (one per registered `<name>`):
   polling loop directly without a re-invocation. (See plan §4.2 of any
   fact-teaching task for the on-pod resume contract.)
 
+- **`pv_phase1_done`** (issue #763 persona-vector extraction —
+  off-pod judge between two GPU phases): an AUTO-RESOLVING gate, NOT a
+  user park. The dispatcher `scripts/issue763_dispatch.sh` runs GPU
+  phase 1 (`generate + capture + pv_extract_generate + upload-progress`
+  — the PV rollouts are now on the HF data repo), emits the blocking
+  sentinel `gate=pv_phase1_done` via
+  `scripts/issue763_dispatch.sh --emit-gate pv_phase1_done`
+  (`write_sentinel("epm:gate", …, blocks_pipeline=True)`), and EXITs.
+  Unlike `fact-candidates` (which PARKS for a user pick at
+  workflow.yaml § gates.fact_candidates), the
+  orchestrator resolves this gate ITSELF — it does NOT raise
+  `AskUserQuestion`, does NOT post `epm:step-completed --exit-kind
+  parked`, does NOT EXIT the skill, and does NOT CRON-TEARDOWN — by
+  orchestrating a pod-cycle around an off-pod judge step and then
+  RESUMING the polling loop in this same turn. This handler behaves
+  IDENTICALLY in interactive and `EPM_AUTONOMOUS_SESSION` modes (there
+  is no user decision to make — the gate is fully auto-resolved).
+  <!-- autonomous-mode: auto-resolve -->
+  Concretely:
+
+  1. **Stop the GPU pod** (volume preserved): `uv run python scripts/pod.py
+     stop --issue <N>`. This frees the GPU through the deadline-bounded
+     stop (see Step 6d.2 § "Stop the pod" / "Notes on the obsolete
+     monitoring stack"); the PV rollouts are already on HF, so nothing on
+     the pod's ephemeral disk is lost.
+  2. **Run the judge OFF-POD on the VM**: `uv run python
+     scripts/issue763_extract_pv_rb.py --phase judge`. <!-- lint: historical-ref --> (This script
+     ships on the `issue-763` branch — it lands on `main` when #763 merges;
+     the reference is a forward / sibling-branch one, not a dead tool.)
+     This is VM-safe by construction and NOT a `task.py` pod-shellout: it
+     fetches the PV rollouts from HF via `snapshot_download`, batch-judges
+     through
+     `eval.batch_judge` (the deadline-bounded client — never a hand-rolled
+     `messages.batches.create` + deadline-less poller), and uploads the
+     keep-flags back to the issue HF prefix. It needs no GPU and posts no
+     `task.py` markers itself (it is an off-pod analysis step; the
+     orchestrator owns the poll-loop markers).
+  3. **Resume the pod**: `uv run python scripts/pod.py resume --issue <N>`
+     — new IP/port; `pods.conf` + `~/.ssh/config` + MCP config auto-refresh
+     on resume (re-run `/mcp` if the SSH MCP entry needs the refreshed
+     host/port; if SSH keeps failing on a stale port, pull the live
+     host/port back with `pod.py config --refresh-from-api` per Step 6b
+     "stale-port recovery", the #488 13h-loop failure class). CONFIRM the
+     resumed pod is reachable (`uv run python scripts/pod.py health
+     --quick`) before re-dispatching.
+  4. **Re-dispatch the workload tail** at `--from-phase pv_capture` via
+     the SAME experimenter launch pattern as the original launch
+     (Step 6d.1): spawn the `experimenter` subagent with the workload
+     command `bash scripts/issue763_dispatch.sh --from-phase pv_capture`
+     and the resumed pod's name (`pod-<N>` / `epm-issue-<N>`). The
+     dispatcher resumes at capture → E0 judge → fit → figures → final
+     upload → `[phase=done]`. The experimenter posts a fresh
+     `epm:run-launched` marker (new `pid` + `log_abs`) and exits, exactly
+     as on the first launch; the orchestrator updates its local poll-loop
+     `pid`/`log` from that marker.
+
+  Then **RESUME the polling loop** (Step 6d.2) at the next tick — do NOT
+  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved:
+  the pod is burning GPU again after resume, so the `/issue-tick <N>`
+  backstop cron stays armed and the bg-Bash poll chain continues against
+  the resumed pod. (Contrast with `fact-candidates` above, which parks
+  for a user pick and tears the cron down.) **Idempotency on re-entry:**
+  if a re-entry observes an `epm:gate v<n>` for `pv_phase1_done` followed
+  by a FRESH `epm:run-launched` (post-resume; ts > the gate marker),
+  treat the gate as already resolved and proceed with normal polling — do
+  NOT re-stop / re-judge / re-dispatch.
+
 - **Unrecognised `gate` name**: this branch fires ONLY for a sentinel
   the poller surfaced as `status=gate` — i.e. one that carried
   `blocks_pipeline: True`. A non-empty gate name with
@@ -3581,7 +3656,15 @@ Gate handlers (one per registered `<name>`):
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-Run CRON-TEARDOWN before parking (the HARDENED Step 6d.2 procedure:
+**PARK-mode gates only** (`fact-candidates` and the unrecognised-gate
+branch): the tail below applies ONLY to gates that EXIT the skill to wait
+on a human. Auto-resolving gates like `pv_phase1_done` (above) handle
+their own continuation — they do NOT teardown and do NOT EXIT; their
+handler resumes the polling loop in the same turn, so it skips this whole
+paragraph.
+
+For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED
+Step 6d.2 procedure:
 `CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
 equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
 fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
@@ -3593,8 +3676,9 @@ skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
 --step 6d --exit-kind parked` (the §5 `epm:step-completed` marker); the
 user's re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
 transitions are now `running → verifying` (on done), `running → running`
-(after a parked gate resumes), or `running → blocked` (on stalled/dead
-or unrecognised gate).
+(after a parked-and-resumed user gate, OR after an auto-resolving gate's
+handler returns), or `running → blocked` (on stalled/dead or unrecognised
+gate).
 
 ##### Notes on the obsolete monitoring stack
 
@@ -3632,9 +3716,11 @@ read it as "the bg-Bash poll chain has no live tick AND no scheduled
 
 Status stays at `running` throughout the polling loop. The polling
 loop's terminal transitions are `running → verifying` (on done),
-`running → running` (parked at a user gate per Step 6d.4; resumes on
-the next `/issue <N>` invocation after the user posts the gate-resume
-marker), or `running → blocked` (on stalled/dead or an unrecognised
+`running → running` (a gate resolved per Step 6d.4 — either a PARK-mode
+user gate that resumes on the next `/issue <N>` invocation after the user
+posts the gate-resume marker, OR an auto-resolving gate like
+`pv_phase1_done` whose handler cycles the pod and resumes the loop in the
+same turn), or `running → blocked` (on stalled/dead or an unrecognised
 gate name).
 
 ### Step 7: Monitor -> results
