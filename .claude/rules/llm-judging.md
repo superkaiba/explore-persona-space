@@ -120,6 +120,41 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     reference (a small human audit set, or the project's log-P / activation
     companion DV) before it carries a ranking/regression headline.
 
+## E2. The non-saturating continuous companion DV (b)
+
+A judged behavior-expression RATE saturates at floor/ceiling and censors install /
+dose-matched / cross-condition comparisons; the dual-DV rule (CLAUDE.md
+§ Measurement validity) pairs it with a SECONDARY non-saturating continuous
+completion-probability DV. Two forms, in PREFERRED order:
+
+19. **PREFERRED — teacher-forced fixed positive-vs-negative completion margin.**
+    `margin(C) = mean LN-logP(FIXED positive-answer pool | C) − mean LN-logP(FIXED
+    negative-answer pool | C)`, the answer pools judge-filtered ONCE and held FIXED
+    across every context C, scored teacher-forced (length-normalized log-P of each
+    fixed answer conditioned on C). Because the same answer set is scored under every
+    context, there is NO selection-on-outcome bias. #722 validated it: ρ(margin, rate)
+    was all-positive (refusal +0.56 [+0.14, +0.80], sycophancy +0.40 [−0.03, +0.68],
+    broad_em +0.31 [−0.20, +0.67]) and the margin keeps spread where the rate is
+    floored (broad_em margin std 0.31 vs rate std ~0.008). Caveat: a behavior with no
+    fixed +/- pool is untestable here (#722: harmful_compliance, no #661 pool). This
+    is a SECONDARY companion validated to track the rate — NOT a primary behavioral
+    leaderboard read (the #432→#456 teacher-forcing caution still bars that use;
+    `.claude/rules/marker-leakage-measurement.md` § #432 → #456).
+
+20. **OPT-IN alternative — judged-positive-conditional-mean log-P (`logp_pos_mean`),
+    selection-on-outcome-confounded.** Length-normalized trained−base log-P averaged
+    over ONLY the judged-positive completions in each context. This is a conditional
+    mean over an OUTCOME-SELECTED subset: contexts with more positives tend to have a
+    lower mean log-P among them, so the DV anti-correlates with the rate. #722
+    measured ρ(DV, rate) ≈ −0.3 for 3 of 4 behaviors — it FAILED the dual-DV
+    validation gate. Use it ONLY after it passes the standing ρ(DV, rate) > 0
+    validation (Spearman across cells with dynamic range) for the behavior at hand;
+    prefer the fixed +/- margin (rule 19) by default.
+
+Either form is SECONDARY to the PRIMARY on-policy judged rate and is subject to the
+standing ρ(DV, rate) > 0 validation before it carries any cross-condition read; never
+narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin/`.)
+
 ## F. Validation as a measurement instrument
 
 14. **Validate reliability PER behavior class, not once.** Judge reliability

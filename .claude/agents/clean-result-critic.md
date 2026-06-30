@@ -1310,9 +1310,11 @@ programmatic marker, which has its own three-space recipe), CLAUDE.md
 § Measurement validity requires BOTH DVs reported: (a) the PRIMARY
 judge-scored on-policy behavior/agreement rate (the headline number),
 and (b) the SECONDARY continuous completion-probability DV
-(length-normalized trained − base `log P` of the model's own
-judged-positive on-policy completions, or the teacher-forced margin the
-plan registered). FAIL when (i) a cross-condition / install /
+(PREFERRED the teacher-forced FIXED positive-vs-negative completion
+margin — fixed answer pools ⇒ no selection bias, #722; the
+judged-positive-conditional-mean `log P` (`logp_pos_mean`) is the
+selection-confounded opt-in alternative, valid only after it passes
+ρ(DV, rate) > 0). FAIL when (i) a cross-condition / install /
 dose-matched headline rests on the binary rate alone and that rate is
 disclosed saturated (floor/ceiling), with no continuous DV carrying the
 comparison (#608's top-band censoring); OR (ii) the body narrates the
