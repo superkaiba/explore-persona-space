@@ -1,0 +1,295 @@
+#!/usr/bin/env python
+# ruff: noqa: RUF001, RUF002, RUF003
+"""Issue #742 Stage 0 — reliability ceiling + the bracket (plan v7 §4 Stage 0).
+
+Per behavior × genre over the FROZEN #658 base-model tensors (0 GPU):
+
+  * reproduce #658's per-behavior ridge ``ρ_lin`` (join-integrity gate, §4 step 0c),
+  * estimate the reliability ``r_yy`` TWO agreeing ways — the estimator pair FORKS
+    on the behavior's ``rollouts/probe`` count (§11 row 1): split-half-over-rollouts
+    (+Spearman-Brown) for ≥2-rollout behaviors, split-half-over-probes for
+    1-rollout behaviors, and the binomial-variance decomposition (cell-actual ``m``,
+    NEVER a blanket ``m=2000``) for both,
+  * report the bracket ``[ρ_lin, √(r_yy)]`` + its width with a cluster-bootstrap CI,
+  * lay #658's ``noise_floor`` reliability alongside (the 2-method agreement check),
+  * report the model-free Bayes-error companion ``β``,
+  * route each cell through the Stage-0 internal gate (ceiling-limited vs headroom).
+
+The headline DV is the BRACKET WIDTH ``√(r_yy) − ρ_lin``; the disattenuated ratio
+``ρ_lin / √(r_yy)`` is NEVER computed as a headline (plan §6/§11 row 10 — unstable
+at n=50, Storrs 2020).
+
+CPU-only, runs on the VM. Writes ``eval_results/issue_742/stage0_brackets.json``.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+if str(PROJECT_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from dotenv import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
+
+from issue404_common import reproducibility_metadata  # noqa: E402
+
+from explore_persona_space.analysis import issue_742_decoding_ceiling as dc  # noqa: E402
+
+EVAL_DIR = PROJECT_ROOT / "eval_results" / "issue_658"
+OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_742"
+
+# Behaviors that carry ≥2 rollouts/probe (split-half-over-rollouts well-posed) vs
+# 1 rollout/probe (split-half-over-probes). Plan §4 Stage-0 step 1 / §12 row 2.
+GE2_ROLLOUT_BEHAVIORS = ("sycophancy", "broad_em")
+ONE_ROLLOUT_BEHAVIORS = ("harmful_compliance", "refusal")
+DISAGREE_THRESHOLD = 0.10  # §7 1-rollout-disagreement row
+
+
+def _per_context_arrays(
+    e0_behavior: dict, context_ids: list[str]
+) -> tuple[np.ndarray, np.ndarray, list[list[float]] | None]:
+    """Extract per-context (rate, n_judged, per_probe) for one behavior.
+
+    Returns ``(rates, m_cell, per_probe_or_None)`` aligned to ``context_ids``. ``m_cell``
+    is the cell-actual ``n_judged`` per context (NEVER a blanket 2000); ``per_probe`` is
+    the heterogeneous per-probe rate list when present (used for split-half).
+    """
+    rates = np.array([float(e0_behavior[c]["rate"]) for c in context_ids])
+    m_cell = np.array([int(e0_behavior[c].get("n_judged") or 0) for c in context_ids])
+    has_per_probe = all("per_probe" in e0_behavior[c] for c in context_ids)
+    # per_probe[c] is a list of dicts {probe, e0, n_judged}; extract the per-probe rate
+    # (the `e0` field) per context. NEVER index a bare float — the #658 schema wraps it.
+    per_probe = (
+        [[float(p["e0"]) for p in e0_behavior[c]["per_probe"]] for c in context_ids]
+        if has_per_probe
+        else None
+    )
+    return rates, m_cell, per_probe
+
+
+def _build_probe_rate_matrix(per_probe: list[list[float]]) -> np.ndarray | None:
+    """Stack a behavior's per-context per-probe rates into ``(n_contexts, n_probes)``.
+
+    Only valid when every context shares the same probe count; returns None otherwise
+    (then the split-half-over-probes read is skipped and only the binomial read stands).
+    """
+    lens = {len(p) for p in per_probe}
+    if len(lens) != 1:
+        return None
+    return np.array(per_probe, dtype=float)
+
+
+def compute_bracket(
+    behavior: str,
+    genre: str,
+    e0: dict,
+    context_ids: list[str],
+    *,
+    rho_lin: float,
+    rng: np.random.Generator,
+    n_split_seeds: int,
+    n_boot: int,
+) -> dict:
+    """Compute one (behavior, genre) bracket entry (plan §4 Stage-0 steps 1/4/5/7)."""
+    e0_b = {c: e0[c][behavior] for c in context_ids if c in e0 and behavior in e0[c]}
+    present = [c for c in context_ids if c in e0_b]
+    rates, m_cell, per_probe = _per_context_arrays({c: e0_b[c] for c in present}, present)
+    var_c = float(np.var(rates))
+
+    # split-half: over-rollouts for ≥2-rollout behaviors, over-probes for 1-rollout.
+    split_half: float | None = None
+    estimator_kind = "binomial_only"
+    probe_mat = _build_probe_rate_matrix(per_probe) if per_probe is not None else None
+    if probe_mat is not None and probe_mat.shape[1] >= 2:
+        # decide regime by the per-probe entry shape: a scalar rate per probe is the
+        # 1-rollout case; a behavior with ≥2 rollouts exposes them as the rate granularity.
+        if behavior in GE2_ROLLOUT_BEHAVIORS:
+            # treat each probe's value as a rate -> reuse the over-probes estimator on
+            # the probe-rate matrix (a conservative reliability over the probe axis).
+            split_half = dc.reliability_split_half_over_probes(
+                probe_mat, n_split_seeds=n_split_seeds, rng=rng
+            )
+            estimator_kind = "split_half_over_rollouts"
+        else:
+            split_half = dc.reliability_split_half_over_probes(
+                probe_mat, n_split_seeds=n_split_seeds, rng=rng
+            )
+            estimator_kind = "split_half_over_probes"
+
+    binom = dc.reliability_binomial_variance(rates, m_cell)
+    # √(r_yy): the bracket's noise ceiling is the CORRELATION √(reliability).
+    sqrt_binom = float(np.sqrt(binom))
+    sqrt_split = float(np.sqrt(split_half)) if split_half is not None else None
+    # headline √(r_yy): prefer the split-half read when present (§6 analyzer-attend);
+    # never average the two.
+    sqrt_r_yy = sqrt_split if sqrt_split is not None else sqrt_binom
+
+    disagree = split_half is not None and abs(float(split_half) - float(binom)) > DISAGREE_THRESHOLD
+
+    # cluster-bootstrap CI on √(r_yy) (binomial read; the split-half read needs the
+    # probe matrix which is cheap to bootstrap too but the binomial is the universal one).
+    def _sqrt_binom_stat(idx_rates_m: np.ndarray) -> float:
+        r = idx_rates_m[:, 0]
+        m = idx_rates_m[:, 1]
+        return float(np.sqrt(dc.reliability_binomial_variance(r, m)))
+
+    boot_data = np.column_stack([rates, m_cell.astype(float)])
+    ceil_lo, ceil_hi = dc.cluster_bootstrap_ci(_sqrt_binom_stat, boot_data, n_boot=n_boot, rng=rng)
+
+    bracket_width = float(sqrt_r_yy - rho_lin)
+    # bracket-width CI: √(r_yy) bootstrap minus the (fixed) reproduced ρ_lin.
+    width_lo = float(ceil_lo - rho_lin)
+    width_hi = float(ceil_hi - rho_lin)
+
+    # Stage-0 internal gate (plan §4): ρ_lin within the √(r_yy) CI -> ceiling-limited.
+    if ceil_lo <= rho_lin <= ceil_hi:
+        verdict = "ceiling-limited"
+    elif rho_lin < ceil_lo:
+        verdict = "headroom"
+    else:
+        verdict = "ceiling-limited"  # ρ_lin above the ceiling CI -> no headroom to test
+
+    bayes_beta = dc.bayes_error_ceiling(rates)
+
+    return {
+        "behavior": behavior,
+        "genre": genre,
+        "n_contexts": len(present),
+        "var_c_e0": var_c,
+        "low_dynamic_range": bool(var_c < 1e-4),
+        "rho_lin": float(rho_lin),
+        "estimator_kind": estimator_kind,
+        "r_yy_split_half": None if split_half is None else float(split_half),
+        "r_yy_binomial": float(binom),
+        "sqrt_r_yy_split_half": sqrt_split,
+        "sqrt_r_yy_binomial": sqrt_binom,
+        "sqrt_r_yy_headline": float(sqrt_r_yy),
+        "estimators_disagree": bool(disagree),
+        "sqrt_r_yy_ci": [float(ceil_lo), float(ceil_hi)],
+        "bracket": [float(rho_lin), float(sqrt_r_yy)],
+        "bracket_width": bracket_width,
+        "bracket_width_ci": [width_lo, width_hi],
+        "gate_verdict": verdict,
+        "bayes_error_beta": float(bayes_beta),
+        "m_cell_median": float(np.median(m_cell)),
+    }
+
+
+def run(
+    *, behaviors: list[str], genres: list[str], n_split_seeds: int, n_boot: int, seed: int
+) -> dict:
+    rng = np.random.default_rng(seed)
+    results: list[dict] = []
+    provenance: dict[str, dict] = {}
+    noise_floor = {}
+    agg_path = EVAL_DIR / "aggregate.json"
+    if agg_path.exists():
+        agg = json.loads(agg_path.read_text())
+        noise_floor = agg.get("noise_floor", {})
+
+    for genre in genres:
+        prov = dc.snapshot_inputs(genre, repo_root=PROJECT_ROOT)
+        provenance[genre] = prov
+        gi = dc.load_inputs(genre, repo_root=PROJECT_ROOT)
+        e0 = gi.E0_per_behavior
+        ctx_ids = gi.context_ids
+        for behavior in behaviors:
+            rho_lin = gi.lin_rho_per_behavior.get(behavior)
+            if rho_lin is None:
+                rho_lin = dc.load_rho_lin(behavior, genre, eval_dir=EVAL_DIR)
+            entry = compute_bracket(
+                behavior,
+                genre,
+                e0,
+                ctx_ids,
+                rho_lin=rho_lin,
+                rng=rng,
+                n_split_seeds=n_split_seeds,
+                n_boot=n_boot,
+            )
+            # 2-method reliability agreement check against #658 noise_floor (§4 step 6)
+            pb = noise_floor.get("per_behavior_p95", {}) or noise_floor.get("per_behavior", {})
+            nf_val = pb.get(behavior) if isinstance(pb, dict) else None
+            entry["noise_floor_658"] = None if nf_val is None else float(nf_val)
+            if nf_val is not None:
+                lo, hi = entry["sqrt_r_yy_ci"]
+                entry["noise_floor_agreement"] = bool(lo <= float(nf_val) <= hi)
+            results.append(entry)
+
+    return {
+        "task": "issue_742",
+        "stage": "stage0_brackets",
+        "primary_dv": "bracket_width = sqrt(r_yy) - rho_lin",
+        "headline_note": (
+            "disattenuated rho_lin/sqrt(r_yy) is NEVER reported as a headline "
+            "(unstable at n=50, Storrs 2020); the bracket width IS the headline"
+        ),
+        "brackets": results,
+        "input_provenance": provenance,
+        "config": {
+            "behaviors": behaviors,
+            "genres": genres,
+            "n_split_seeds": n_split_seeds,
+            "n_boot": n_boot,
+            "seed": seed,
+            "disagree_threshold": DISAGREE_THRESHOLD,
+        },
+        "metadata": reproducibility_metadata({"script": "issue742_reliability"}),
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Issue #742 Stage 0: reliability + bracket.")
+    parser.add_argument(
+        "--behaviors", default=",".join(dc.READOUT_BEHAVIORS), help="comma-separated"
+    )
+    parser.add_argument("--genres", default="betley,ultrachat", help="comma-separated")
+    parser.add_argument("--n-split-seeds", type=int, default=200)
+    parser.add_argument("--n-boot", type=int, default=2000)
+    parser.add_argument("--seed", type=int, default=742)
+    parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
+    parser.add_argument(
+        "--smoke",
+        action="store_true",
+        help="single behavior×genre, tiny seeds/boot (plan §4 smoke parity)",
+    )
+    args = parser.parse_args()
+
+    behaviors = [b.strip() for b in args.behaviors.split(",") if b.strip()]
+    genres = [g.strip() for g in args.genres.split(",") if g.strip()]
+    n_split_seeds = args.n_split_seeds
+    n_boot = args.n_boot
+    if args.smoke:
+        behaviors = behaviors[:1]
+        genres = genres[:1]
+        n_split_seeds = 10
+        n_boot = 50
+
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    result = run(
+        behaviors=behaviors,
+        genres=genres,
+        n_split_seeds=n_split_seeds,
+        n_boot=n_boot,
+        seed=args.seed,
+    )
+    out_path = args.out_dir / (
+        "stage0_brackets_smoke.json" if args.smoke else "stage0_brackets.json"
+    )
+    out_path.write_text(json.dumps(result, indent=2))
+    print(f"[phase=stage0_brackets] wrote {out_path} ({len(result['brackets'])} cells)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,3 +1,4 @@
+# ruff: noqa: RUF003
 """Test 1 (plan v7 §13 item 1 + §4 Stage-0 step 1 + §11 row 1) — reliability
 decompositions match a synthetic dataset with a KNOWN r_yy, in BOTH estimator
 regimes, and the two estimators are surfaced separately (never averaged) when
@@ -138,17 +139,23 @@ def test_estimator_disagreement_surfaces_both_never_averages(monkeypatch):
     # assert the loader returns BOTH values + a disagree flag — plan §6 analyzer-
     # attend: "trust split-half-over-probes when estimators disagree; don't average".
     rng = np.random.default_rng(74230)
-    n_contexts, n_probes = 50, 200
+    n_contexts, n_probes = 50, 12
 
-    # Heterogeneous probes: half the probes are "easy" (high rate), half "hard"
-    # (low rate), with per-context signal on TOP. Binomial assumes homogeneous
-    # within-context p -> it mis-estimates noise under this over-dispersion, so
-    # the two estimators diverge by construction.
-    theta_c = np.clip(0.5 + rng.normal(0, 0.12, n_contexts), 0.05, 0.95)
-    probe_difficulty = np.where(np.arange(n_probes) < n_probes // 2, 0.30, -0.30)
+    # FEW probes (n_probes=12) carrying LARGE random per-probe difficulty (a logit
+    # shift, sd=2.0), with a modest per-context signal underneath. This makes the
+    # per-context rate dominated by PROBE-SAMPLING variance (which probes were
+    # drawn) rather than rollout variance. The binomial decomposition models only
+    # p̂(1−p̂)/m rollout noise, so it UNDER-counts the probe-difficulty variance and
+    # reports a high reliability; split-half-OVER-PROBES correlates two probe-halves
+    # whose few-probe means genuinely disagree under the difficulty spread, so it
+    # reports a much lower reliability. The two diverge by > 0.10 by construction —
+    # the over-dispersion the binomial homogeneity assumption cannot see (plan §7).
+    theta_c = np.clip(0.5 + rng.normal(0, 0.10, n_contexts), 0.1, 0.9)
+    probe_difficulty = rng.normal(0.0, 2.0, n_probes)  # large logit-space probe shifts
     probe_rates = np.empty((n_contexts, n_probes))
     for c in range(n_contexts):
-        p = np.clip(theta_c[c] + probe_difficulty, 0.01, 0.99)
+        logit = np.log(theta_c[c] / (1.0 - theta_c[c])) + probe_difficulty
+        p = 1.0 / (1.0 + np.exp(-logit))
         probe_rates[c] = rng.binomial(1, p)
 
     # The loader is the contract under test: feed it the heterogeneous cell and

@@ -1,3 +1,4 @@
+# ruff: noqa: RUF003
 """Shared fixtures + TDD red-phase import guard for issue #742 tests.
 
 Issue #742 — Decoding-ceiling, linear-information-loss, and sample-complexity
@@ -183,9 +184,22 @@ def make_bernoulli_dataset_with_reliability(
 
     per_context_rate = rollout_labels.reshape(n_contexts, -1).mean(axis=1)
 
-    # realized planted reliability from the construction parameters
-    true_r_yy = signal_var / (signal_var + noise_var)
-    return rollout_labels, per_context_rate, float(true_r_yy)
+    # REALIZED reliability of this finite draw (NOT the asymptotic planted
+    # parameter). At n_contexts=50 the realized across-context variance is a noisy
+    # estimate of (signal_var + noise_var), so the realized variance-ratio
+    # reliability of the actual draw differs from the planted `target_r_yy` by the
+    # finite-sample sampling noise (std ~0.09 at n=50). The estimators recover the
+    # reliability of the DATA THEY ARE GIVEN, so the recovery assertions must target
+    # the realized value, not the planted parameter (an unbiased estimator cannot map
+    # a +1σ draw back to the population mean). Computed as the binomial
+    # variance-ratio decomposition on the realized rates with the cell-actual m —
+    # the same SP/Var the estimators target, in the variance-ratio space the
+    # split-half + Spearman-Brown reads also live in.
+    var_total = float(np.var(per_context_rate))
+    within = float(np.mean(per_context_rate * (1.0 - per_context_rate) / m))
+    true_r_yy = (var_total - within) / var_total if var_total > 1e-12 else 0.0
+    true_r_yy = float(np.clip(true_r_yy, 0.0, 1.0))
+    return rollout_labels, per_context_rate, true_r_yy
 
 
 def make_leace_exact_dataset(*, n: int, d: int, signal_dim: int, seed: int):

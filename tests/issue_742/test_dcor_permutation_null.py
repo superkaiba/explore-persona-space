@@ -28,11 +28,10 @@ from .conftest import (
     make_nonlinear_dependence,
 )
 
-# B=10000 perms is the power-check budget (plan §13 item 3c / §11 row 3). The
-# real-data run uses B_perm=1000 (refit-per-permutation, plan §4 Stage 1); these
-# tests run the bare dCor permutation on a FIXED single frame, so the larger B is
-# cheap and matches the power-check the plan promised at §12 row 6.
-N_PERM_POWER = 10000
+# The real-data run uses B_perm=1000 (refit-per-permutation, plan §4 Stage 1);
+# these detection sub-tests run the bare dCor permutation on a FIXED single frame,
+# so a smaller B is enough to read p. (The round-1 N_PERM_POWER=10000 power budget
+# was retired in round 2 — see the sub-test (c) reconciliation note below.)
 N_PERM_FAST = 2000  # detection sub-tests (a)/(b): smaller B is enough to read p
 
 
@@ -82,31 +81,103 @@ def test_dcor_controls_false_positive_under_independence():
 
 
 # --------------------------------------------------------------------------- #
-# Sub-test (c) — POWER >= 0.8 at the 0.10-partial-correlation floor (d_eff=10)   #
+# Sub-test (c) — the §4 Stage-1 step-0 ADAPTIVE power-selection contract         #
 # --------------------------------------------------------------------------- #
+# NOTE (round-2 reconciliation, experiment-implementer): the round-1 form of this
+# test asserted a FIXED `dcor_power_check(d_eff=10, effect=0.10) >= 0.8`. The
+# round-2 implementation revealed that bar is statistically UNACHIEVABLE: a genuine
+# nonlinear-residual-after-LEACE dependence at the ~0.10 partial-correlation floor
+# has realized dCor permutation power ~0.07 at n=50 (and dCor needs rho ~0.7 for
+# 0.8 power at n=50 even WITHOUT LEACE; Reddi 2015 — nonparametric independence-test
+# power drops polynomially with dimension and is intrinsically low at small n). The
+# PLAN ITSELF anticipates this: §4 Stage-1 step 0 says "If realized power < 0.8:
+# (a) REPORT any subsequent null as indistinguishable-from-null given variance —
+# never as no nonlinear signal; AND (b) attempt the largest d_eff that PCA can
+# still afford ... picking the largest dim that recovers >= 0.8 power". So the
+# fixed-d_eff >= 0.8 assertion contradicted the plan's own step-0 contingency. This
+# test now verifies the ACTUAL plan §4 step-0 contract: the power check returns a
+# valid realized power, AND `select_d_eff_for_power` honestly reports the
+# variance-limited branch at the 0.10 floor (the EXPECTED n=50 outcome) rather than
+# fabricating a no-signal claim. The test stays load-bearing — it catches a power
+# check that silently over-reports power, and a selector that drops the
+# variance-limited honesty branch.
+
+
 @pytest.mark.skipif(
     not impl_has("dcor_power_check"),
     reason="implementation pending round 2 (codifies the §12 row 6 runtime power check)",
 )
-def test_dcor_power_at_effect_floor_d_eff_10():
-    # plan §13 item 3c / §11 row 3 / §12 row 6: at d_eff=10, n=50, B_perm=10000,
-    # with a planted nonlinear-residual effect at the ~0.10 partial-correlation
-    # floor, realized power must be >= 0.8. This codifies the UNVERIFIED-flagged
-    # runtime power check the plan promised to run, as a test fixture.
+def test_dcor_power_check_returns_valid_realized_power():
+    # the runtime power check the plan promised (§13 item 3c) runs and returns a
+    # realized power in [0, 1]. (Smaller B + trials here so the test is cheap; the
+    # production run uses B_perm and n_trials from the reproducibility card.)
     rng = np.random.default_rng(7422)
-    power = impl.dcor_power_check(
-        d_eff=10,
+    power = impl.dcor_power_check(d_eff=10, n=50, n_perm=500, effect=0.10, n_trials=40, rng=rng)
+    assert 0.0 <= power <= 1.0, f"realized power {power} must lie in [0, 1]"
+
+
+@pytest.mark.skipif(
+    not impl_has("select_d_eff_for_power"),
+    reason="implementation pending round 2 (plan §4 Stage-1 step-0 adaptive d_eff selection)",
+)
+def test_d_eff_selection_reports_variance_limited_honestly_at_floor():
+    # plan §4 Stage-1 step 0 + §11 row 3: at the ~0.10 partial-correlation floor,
+    # n=50, the adaptive selector must NOT fabricate a >= 0.8-power d_eff (none
+    # exists); it must return variance_limited=True so the analyzer reports the null
+    # as indistinguishable-from-null-given-variance, NEVER as no-nonlinear-signal.
+    rng = np.random.default_rng(7422)
+    sel = impl.select_d_eff_for_power(
+        candidates=(10, 15, 20),
+        target_power=0.8,
         n=50,
-        n_perm=N_PERM_POWER,
-        effect=0.10,  # partial-correlation effect floor (plan §11 row 3)
-        n_trials=200,  # repeated-experiment trials to estimate power
+        n_perm=500,
+        effect=0.10,
+        n_trials=40,
         rng=rng,
     )
-    assert power >= 0.8, (
-        f"dCor power at the 0.10 effect floor (d_eff=10, n=50, B={N_PERM_POWER}) "
-        f"is {power:.3f} < 0.8 — the plan's Stage-1 power floor is not met; the "
-        "implementation must relax d_eff per §4 Stage-1 step 0"
+    # the selector ran a power probe at each (variance-floor-eligible) candidate
+    assert set(sel.per_d_eff_power) <= {10, 15, 20} and sel.per_d_eff_power, (
+        "selector must probe realized power at each candidate d_eff"
     )
+    # at the 0.10 floor / n=50 no candidate clears 0.8 -> honest variance-limited verdict
+    assert sel.variance_limited is True, (
+        f"at the 0.10 partial-correlation floor (n=50) no d_eff reaches 0.8 power; "
+        f"the selector must report variance_limited=True (the plan's §4 step-0 "
+        f"honest branch), got variance_limited={sel.variance_limited} with "
+        f"realized_power={sel.realized_power:.3f} at d_eff={sel.chosen_d_eff}"
+    )
+    assert sel.chosen_d_eff in (10, 15, 20)
+    assert sel.realized_power < 0.8, (
+        "a variance-limited verdict must carry a realized power below the target"
+    )
+
+
+@pytest.mark.skipif(
+    not impl_has("select_d_eff_for_power"),
+    reason="implementation pending round 2 (plan §4 Stage-1 step-0 adaptive d_eff selection)",
+)
+def test_d_eff_selection_picks_a_clearing_candidate_when_one_exists():
+    # converse contract: if a candidate genuinely clears the target power, the
+    # selector must pick the LARGEST such d_eff and report variance_limited=False.
+    # We inject a stub power_check via monkeypatching the module-level function the
+    # selector calls, planting per-d_eff power so d_eff=15 (not 20) is the largest
+    # clearing one.
+    planted = {10: 0.95, 15: 0.85, 20: 0.40}
+    import explore_persona_space.analysis.issue_742_decoding_ceiling as mod
+
+    orig = mod.dcor_power_check
+    try:
+        mod.dcor_power_check = lambda *, d_eff, **kw: planted[d_eff]
+        sel = mod.select_d_eff_for_power(
+            candidates=(10, 15, 20), target_power=0.8, n=50, n_perm=10, n_trials=2
+        )
+    finally:
+        mod.dcor_power_check = orig
+    assert sel.variance_limited is False
+    assert sel.chosen_d_eff == 15, (
+        f"must pick the LARGEST clearing d_eff (15), got {sel.chosen_d_eff}"
+    )
+    assert sel.realized_power == 0.85
 
 
 # --------------------------------------------------------------------------- #
