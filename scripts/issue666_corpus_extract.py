@@ -19,8 +19,17 @@ saved + the layer-14 Σ_c / Σc⁻¹ computed via the shared
 ``leakage_predictor.estimate_sigma_inv`` (CV-λ, conditioning report), then uploaded
 to the HF data repo (plan §10 — a plan-referenced downstream input).
 
-``--slice`` runs N=8 SYNTHETIC contexts on CPU (no GPU, no network) exercising the
-SAME extraction → Σc → CV-λ-inverse code path the full ≥2-5k run uses — the smoke.
+SMOKE-VS-PRODUCTION BOUNDARY (by design): ``--slice`` runs ≤8 SYNTHETIC contexts
+on CPU (no GPU, no network). The synthetic ``_synthetic_vectors`` exercises the
+POST-EXTRACTION ``Σ_c → CV-λ-inverse`` code path (``compute_sigma_c`` →
+``leakage_predictor.estimate_sigma_inv``) on production-shaped (N, 28, 3584)
+tensors, but NOT the Qwen forward. The real Qwen-2.5-7B layer-14 chat-template +
+last-input-slot extraction (``_last_input_vectors``) is first-validated at
+PRODUCTION launch (the experimenter step), which fails loud on any extraction
+defect (shape assert + fail-loud HF upload). The contract split:
+  • smoke verifies  : the Σ_c estimator handles real-shape (N, 28, 3584) tensors;
+  • production verifies: the Qwen forward + chat-template + slot-extraction produce
+    those tensors correctly.
 """
 
 from __future__ import annotations
@@ -44,6 +53,7 @@ DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_CORPUS_PREFIX = "issue666_phase4/sigma_c_corpus"
 DATA_DIR = REPO / "data" / "issue_666"
 DEFAULT_N_CONTEXTS = 3000  # ≥2-5k broad-corpus contexts (plan §4c)
+N_SLICE = 8  # smoke ceiling: --slice runs ≤8 synthetic CPU contexts (no GPU/network)
 
 
 def _fineweb_texts(n: int) -> list[str]:
@@ -127,9 +137,27 @@ def _last_input_vectors(texts: list[str], *, device: str, tf_batch_size: int = 8
 
 
 def _synthetic_vectors(n: int, nl: int = EXPECTED_LAYERS, d: int = EXPECTED_HIDDEN) -> np.ndarray:
-    """A tiny SYNTHETIC (n, nl, d) corpus-vector tensor for the CPU smoke (no GPU)."""
+    """A tiny SYNTHETIC (n, nl, d) corpus-vector tensor for the CPU smoke (no GPU).
+
+    The smoke uses these in place of the real Qwen ``_last_input_vectors`` output so
+    the post-extraction ``Σ_c → CV-λ-inverse`` path (``compute_sigma_c``) runs on
+    PRODUCTION-shaped (n, 28, 3584) tensors with no GPU/network. The Qwen forward
+    itself is NOT exercised here — it is first-validated at production launch (the
+    experimenter step). See the module docstring's SMOKE-VS-PRODUCTION BOUNDARY.
+    """
     rng = np.random.default_rng(0)
     return rng.standard_normal((n, nl, d)).astype(np.float32)
+
+
+def _resolve_slice_n(n_contexts: int) -> int:
+    """The number of synthetic contexts ``--slice`` actually runs: ``min(n, N_SLICE)``.
+
+    ``--slice`` alone (the smoke caller passes no ``--n-contexts``) inherits
+    ``DEFAULT_N_CONTEXTS`` (3000); the smoke spirit is N≤8 synthetic CPU contexts,
+    so the slice is capped at ``N_SLICE``. A caller MAY pass ``--n-contexts`` to run
+    a smaller heavier smoke, but never above the cap. Returns ≤ ``N_SLICE`` always.
+    """
+    return min(n_contexts, N_SLICE)
 
 
 def compute_sigma_c(corpus_vectors: np.ndarray, *, layer: int) -> dict:
@@ -159,9 +187,21 @@ def compute_sigma_c(corpus_vectors: np.ndarray, *, layer: int) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="issue 666 broad-corpus Σ_c extraction.")
-    ap.add_argument("--n-contexts", type=int, default=DEFAULT_N_CONTEXTS)
+    ap.add_argument(
+        "--n-contexts",
+        type=int,
+        default=DEFAULT_N_CONTEXTS,
+        help=(
+            "broad-corpus size for the full run; under --slice it is CLAMPED to "
+            f"N_SLICE={N_SLICE} (may lower the slice, never raise it above the cap)"
+        ),
+    )
     ap.add_argument("--layer", type=int, default=PRIMARY_LAYER)
-    ap.add_argument("--slice", action="store_true", help="N synthetic CPU contexts (smoke)")
+    ap.add_argument(
+        "--slice",
+        action="store_true",
+        help=f"smoke: ≤{N_SLICE} synthetic CPU contexts (no GPU/network)",
+    )
     ap.add_argument("--gpu-id", type=int, default=0)
     ap.add_argument("--no-upload", action="store_true", help="skip HF upload (smoke)")
     args = ap.parse_args()
@@ -172,8 +212,17 @@ def main() -> int:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     if args.slice:
-        print(f"[corpus] SMOKE: {args.n_contexts} synthetic CPU contexts (no GPU/network)")
-        vecs = _synthetic_vectors(args.n_contexts)
+        # Smoke is CPU-only by design — _synthetic_vectors exercises the
+        # post-extraction Σ_c → CV-λ-inverse code path with the right production
+        # shape (N, 28, 3584), but NOT the Qwen forward. The real Qwen-2.5-7B
+        # layer-14 chat-template + last-input-slot extraction is first-validated at
+        # production launch (the experimenter step), which fails loud on any
+        # extraction defect. Cap the slice at N_SLICE so `--slice` alone (no
+        # explicit --n-contexts) runs the small CPU smoke; --n-contexts can still
+        # lower the slice size for a heavier smoke (but never above the cap).
+        n_slice = _resolve_slice_n(args.n_contexts)
+        print(f"[corpus] SMOKE: {n_slice} synthetic CPU contexts (no GPU/network)")
+        vecs = _synthetic_vectors(n_slice)
     else:
         device = f"cuda:{args.gpu_id}" if torch.cuda.is_available() else "cpu"
         texts = _fineweb_texts(args.n_contexts)
