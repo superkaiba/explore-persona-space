@@ -7,7 +7,7 @@ tags:
 - marker-recipe
 - leak-predictor
 created_at: '2026-06-29T18:48:54Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 664
 origin_prompt: file a followup on 664 to figure out why it didn't install compared
   to past issues that did install - run in background with happy coder
