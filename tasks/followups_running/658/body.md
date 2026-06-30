@@ -1,7 +1,8 @@
 ---
 title: The leakage predictor's first link fails on Qwen2.5-7B — a mean answer-side
-  activation summarizes only 3 of 10 behaviors, and none of the 4 with a working linear
-  read-out (HIGH confidence)
+  activation summarizes only 3 of 10 behaviors, and the secondary linear read-out's
+  apparent fit does not survive a content-matched persona-vectors direction (HIGH
+  confidence)
 kind: experiment
 backend: runpod
 tags:
