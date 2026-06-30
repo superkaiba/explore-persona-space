@@ -797,6 +797,21 @@ class Lease:
     #: next poll short-circuits instead of firing a paid second terminate +
     #: re-provision. ``None`` for every non-wedge-failover lease.
     runpod_wedge_failover_of: dict[str, Any] | None = None
+    #: DURABLE idempotency record for the RunPod CUDA-IMA repeat host-wedge
+    #: failover (#775). The exact sibling of ``runpod_wedge_failover_of``: when
+    #: this lease's fresh-host re-provision was a failover OF a specific RunPod
+    #: pod that crashed twice with the SAME CUDA-IMA crash signature, this holds
+    #: that crashed pod's stable identity (``{"pod_name": ..., "job_id": ...}``).
+    #: A SEPARATE field from ``runpod_wedge_failover_of`` so a no-port wedge
+    #: failover and a CUDA-IMA repeat failover on the SAME issue do not
+    #: cross-suppress (each gets its own one bounded pivot). The poller
+    #: (``scripts/backend_poll.py``) stamps it AFTER the fresh-host relaunch
+    #: succeeds (the durable safety net for the EDQUOT-on-``.claude/cache`` mode,
+    #: same as its sibling) and reads it as the AUTHORITATIVE "this run already
+    #: spent its one CUDA-IMA pivot" bound — a SECOND same-signature crash on the
+    #: fresh host with this field already set routes to terminal
+    #: ``failure_class: code``. ``None`` for every non-CUDA-IMA-failover lease.
+    runpod_cuda_ima_failover_of: dict[str, Any] | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -811,12 +826,14 @@ class Lease:
             "gcp_attempts_date": self.gcp_attempts_date,
             "gcp_failover_of": self.gcp_failover_of,
             "runpod_wedge_failover_of": self.runpod_wedge_failover_of,
+            "runpod_cuda_ima_failover_of": self.runpod_cuda_ima_failover_of,
         }
 
     @classmethod
     def from_json(cls, payload: dict[str, Any]) -> Lease:
         raw_failover = payload.get("gcp_failover_of")
         raw_wedge_failover = payload.get("runpod_wedge_failover_of")
+        raw_cuda_ima_failover = payload.get("runpod_cuda_ima_failover_of")
         return cls(
             issue=int(payload["issue"]),
             spec_hash=str(payload["spec_hash"]),
@@ -830,6 +847,9 @@ class Lease:
             gcp_failover_of=raw_failover if isinstance(raw_failover, dict) else None,
             runpod_wedge_failover_of=(
                 raw_wedge_failover if isinstance(raw_wedge_failover, dict) else None
+            ),
+            runpod_cuda_ima_failover_of=(
+                raw_cuda_ima_failover if isinstance(raw_cuda_ima_failover, dict) else None
             ),
         )
 
