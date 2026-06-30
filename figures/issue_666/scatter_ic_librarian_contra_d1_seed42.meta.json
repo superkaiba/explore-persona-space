@@ -1,0 +1,306 @@
+{
+  "commit": "8f00b387cd",
+  "created": "2026-06-30T06:37:58Z",
+  "figsize": [
+    4.0,
+    4.0
+  ],
+  "points": [
+    {
+      "predicted leakage L\u0302": -34.007401,
+      "latent ground truth \u0394s": 6.860503,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -34.788596,
+      "latent ground truth \u0394s": 2.794697,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -32.905013,
+      "latent ground truth \u0394s": 6.390164,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -33.433113,
+      "latent ground truth \u0394s": 5.262773,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -32.573927,
+      "latent ground truth \u0394s": 1.196102,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -28.424503,
+      "latent ground truth \u0394s": 26.815099,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -29.197345,
+      "latent ground truth \u0394s": 15.09118,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -26.175176,
+      "latent ground truth \u0394s": 4.370543,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -29.922925,
+      "latent ground truth \u0394s": -3.989081,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -28.273552,
+      "latent ground truth \u0394s": -3.048504,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -28.09502,
+      "latent ground truth \u0394s": 7.901411,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -28.233558,
+      "latent ground truth \u0394s": 13.230334,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -27.832332,
+      "latent ground truth \u0394s": 9.239153,
+      "label": "f1",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -18.644091,
+      "latent ground truth \u0394s": -3.049188,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -14.699296,
+      "latent ground truth \u0394s": 12.168854,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -20.813116,
+      "latent ground truth \u0394s": -0.29099,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -16.434156,
+      "latent ground truth \u0394s": -1.403544,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -17.086775,
+      "latent ground truth \u0394s": 13.780454,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -16.822527,
+      "latent ground truth \u0394s": 0.100695,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -18.495183,
+      "latent ground truth \u0394s": -12.626753,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -20.312521,
+      "latent ground truth \u0394s": 2.885592,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -17.030898,
+      "latent ground truth \u0394s": 3.693224,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -19.977501,
+      "latent ground truth \u0394s": -1.208671,
+      "label": "f2",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -19.738113,
+      "latent ground truth \u0394s": -1.260869,
+      "label": "f3",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -21.079009,
+      "latent ground truth \u0394s": -11.023905,
+      "label": "f3",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -15.748789,
+      "latent ground truth \u0394s": 0.366472,
+      "label": "f3",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -20.776206,
+      "latent ground truth \u0394s": -2.64536,
+      "label": "f3",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -20.060782,
+      "latent ground truth \u0394s": -1.367805,
+      "label": "f3",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -19.958295,
+      "latent ground truth \u0394s": 4.383515,
+      "label": "f3",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -16.256177,
+      "latent ground truth \u0394s": 0.469086,
+      "label": "f3",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -15.371712,
+      "latent ground truth \u0394s": -2.835424,
+      "label": "f3",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -30.10303,
+      "latent ground truth \u0394s": -11.685527,
+      "label": "f4",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -27.619598,
+      "latent ground truth \u0394s": -3.260285,
+      "label": "f4",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -29.098015,
+      "latent ground truth \u0394s": -8.170403,
+      "label": "f4",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -28.382325,
+      "latent ground truth \u0394s": -7.596003,
+      "label": "f4",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -28.177591,
+      "latent ground truth \u0394s": -7.501372,
+      "label": "f4",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -28.586964,
+      "latent ground truth \u0394s": -6.118303,
+      "label": "f4",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -21.334513,
+      "latent ground truth \u0394s": -11.138429,
+      "label": "f5",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -20.605703,
+      "latent ground truth \u0394s": 4.770178,
+      "label": "f5",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -21.496253,
+      "latent ground truth \u0394s": -4.751817,
+      "label": "f5",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -19.637068,
+      "latent ground truth \u0394s": -12.512454,
+      "label": "f5",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -25.061048,
+      "latent ground truth \u0394s": -15.501443,
+      "label": "f5",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -23.145582,
+      "latent ground truth \u0394s": 3.705245,
+      "label": "f6",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -32.606345,
+      "latent ground truth \u0394s": -9.895957,
+      "label": "f6",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -25.742754,
+      "latent ground truth \u0394s": -1.918507,
+      "label": "f8",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -30.088186,
+      "latent ground truth \u0394s": -0.274523,
+      "label": "f8",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -32.932286,
+      "latent ground truth \u0394s": -3.391889,
+      "label": "f8",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -28.954667,
+      "latent ground truth \u0394s": 0.732869,
+      "label": "f8",
+      "_kind": "scatter"
+    },
+    {
+      "predicted leakage L\u0302": -32.248786,
+      "latent ground truth \u0394s": 7.191611,
+      "label": "f8",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 49
+}
