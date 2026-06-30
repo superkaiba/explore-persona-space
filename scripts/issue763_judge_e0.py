@@ -61,6 +61,8 @@ from issue763_common import (  # noqa: E402
     BEHAVIORS,
     EVAL_RESULTS_DIR,
     GEN_DIR,
+    HF_ANALYSIS_TENSORS_PREFIX,
+    HF_DATA_REPO,
     dump_json,
     load_json,
     reproducibility_metadata,
@@ -223,8 +225,45 @@ def _score_format(gen_by_ctx: dict[str, dict]) -> dict:
     return out
 
 
+def _stage_gen_from_hf(behaviors: list[str]) -> None:
+    """Stage gen/<behavior>/*.json from HF if local copies are missing.
+
+    Mirrors `issue763_extract_pv_rb._stage_from_hf` for the gate-split phase 2
+    case: when phase 2 boots on a fresh VM, the phase-1 `data/issue_763/gen/`
+    cells (the E0 generated completions) live only on the deleted phase-1 VM,
+    so the E0 judge `_load_gen_by_ctx` would FileNotFoundError. Hotfix
+    2026-06-30: the phase-1 `_upload_analysis_tensors()` now uploads `gen/` to
+    `<HF_ANALYSIS_TENSORS_PREFIX>/gen/<behavior>/*.json`; this helper pulls
+    them back via snapshot_download exactly like the PV staging path.
+    """
+    missing = [b for b in behaviors if not (GEN_DIR / b).is_dir()]
+    if not missing:
+        return
+    from huggingface_hub import snapshot_download
+
+    GEN_DIR.mkdir(parents=True, exist_ok=True)
+    allow = [f"{HF_ANALYSIS_TENSORS_PREFIX}/gen/{b}/*.json" for b in missing]
+    snap = snapshot_download(
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        allow_patterns=allow,
+    )
+    # Move the snapshot's gen/ tree into the local data path the loader expects.
+    import shutil
+
+    src_root = Path(snap) / HF_ANALYSIS_TENSORS_PREFIX / "gen"
+    for b in missing:
+        src = src_root / b
+        dst = GEN_DIR / b
+        if src.is_dir() and not dst.exists():
+            shutil.copytree(src, dst)
+
+
 def _load_gen_by_ctx(behavior: str) -> dict[str, dict]:
     gen_dir = GEN_DIR / behavior
+    if not gen_dir.is_dir():
+        # Try staging from HF (gate-split phase 2 on a fresh VM, hotfix 2026-06-30).
+        _stage_gen_from_hf([behavior])
     if not gen_dir.is_dir():
         raise FileNotFoundError(f"no generated completions for {behavior}: {gen_dir}")
     out: dict[str, dict] = {}

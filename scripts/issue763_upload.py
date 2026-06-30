@@ -73,6 +73,12 @@ _ANALYSIS_ARTIFACTS: tuple[tuple[str, Path, str], ...] = (
     ("pv_shards", EVAL_RESULTS_DIR, "*.pt"),
     ("pv_rollouts", DATA_DIR, "*.jsonl"),
     ("pv_judge", DATA_DIR, "*.json"),
+    # gen/<behavior>/<context>.json — the E0 generated completions that the
+    # phase-2 E0 judge consumes. The gate-split means the GPU pod that wrote
+    # gen/ is deleted before phase 2 starts; without this entry the phase-2
+    # E0 judge crashed with FileNotFoundError on a fresh VM (hotfix 2026-06-30
+    # after the first phase-2 attempt died at [phase=judge]).
+    ("gen", DATA_DIR, "*/*.json"),
 )
 
 
