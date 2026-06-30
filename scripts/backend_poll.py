@@ -1031,6 +1031,20 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict
     # lost under EDQUOT, the next poll short-circuits at the lease check instead of
     # firing a paid second terminate + re-provision.
     _stamp_runpod_wedge_failover(issue, handle)
+    # Best-effort register the fresh RunPod pod into pods.conf (#751) — same
+    # fail-soft re-register as the GCP->RunPod path; the authoritative sidecar
+    # above drives the next tick, this just lets the recovery commands + SSH
+    # poller find the new pod once the API exposes a port. Call-site guard keeps
+    # the terminal-JSON contract even if a future edit weakens the helper.
+    try:
+        _register_failover_pod_best_effort(route_result.handle.pod_name)
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: best-effort pods.conf register of %s raised %s past the "
+            "helper's own guard; ignoring (relaunch succeeded, self-heal will retry)",
+            route_result.handle.pod_name,
+            type(exc).__name__,
+        )
     return {
         "status": "running",
         "current_phase": "runpod_noport_wedge_failover_fresh_pod",
@@ -1193,6 +1207,31 @@ def _write_failover_sentinel(sentinel: Path, *, issue: int, handle, reason: str)
             "the recovered.backend guard still bounds the relaunch",
             sentinel,
             type(exc).__name__,
+            exc,
+        )
+
+
+def _register_failover_pod_best_effort(pod_name: str) -> None:
+    """Best-effort: register a freshly-failed-over RunPod pod into pods.conf via the
+    create-missing refresh path (#751). NEVER raises — backend_poll's terminal-JSON
+    contract must hold. Pod is usually still PROVISIONING at this call (no SSH port
+    yet), so this typically no-ops; poll_pipeline's self-heal lands the row once the
+    API exposes a port."""
+    try:
+        try:
+            from scripts.pod_config import cmd_refresh_from_api, parse_pods_conf
+        except ImportError:
+            # When run as a script (``uv run python scripts/backend_poll.py``),
+            # ``scripts/`` is on sys.path directly, so the package-qualified
+            # import is unavailable — fall back to the bare module name.
+            from pod_config import cmd_refresh_from_api, parse_pods_conf
+        cmd_refresh_from_api(parse_pods_conf(), pod_name)
+    except SystemExit:
+        pass  # not-yet-RUNNING / no port yet — expected; self-heal retries later
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: best-effort pods.conf register of %s failed (%s); self-heal will retry",
+            pod_name,
             exc,
         )
 
@@ -1688,6 +1727,26 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
     # succeeded. Clear any stale sentinel so a FUTURE legitimate GCP failover on
     # this issue is not suppressed.
     _clear_failover_sentinel(sentinel)
+
+    # Best-effort register the NEW RunPod pod into pods.conf (#751) so the
+    # documented recovery commands + the SSH poller can find it. Fail-soft — the
+    # authoritative sidecar above is what drives the next tick; this is the
+    # belt-and-suspenders pods.conf re-register. The pod is usually still
+    # PROVISIONING (no SSH port yet), so this typically no-ops and poll_pipeline's
+    # self-heal lands the row once the API exposes a port. The helper itself never
+    # raises (its own try/except); the extra call-site guard keeps the
+    # terminal-JSON contract even if a future edit weakens the helper — a failover
+    # that SUCCEEDED must never be reported failed because a cosmetic config sync
+    # hiccuped.
+    try:
+        _register_failover_pod_best_effort(route_result.handle.pod_name)
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: best-effort pods.conf register of %s raised %s past the "
+            "helper's own guard; ignoring (failover succeeded, self-heal will retry)",
+            route_result.handle.pod_name,
+            type(exc).__name__,
+        )
 
     # Sidecar is now an AUTHORITATIVE RunPod handle on disk → the orchestrator's
     # NEXT tick reads RunPod and polls RunPod. Emit a RUNNING-shaped JSON so the

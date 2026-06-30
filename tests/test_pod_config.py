@@ -180,3 +180,130 @@ def test_env_key_uppercases_pod_name_verbatim(pod_name: str, expected_host_key: 
     """The env-key suffix is pod.name.upper() with no decoration."""
     env = _generate_mcp_env([_make_pod(pod_name)])
     assert expected_host_key in env
+
+
+# ---------------------------------------------------------------------------
+# cmd_update create-missing (#751): ``pod.py config --update <absent>`` with
+# BOTH --host and --port CREATES the row (user-pinned: manual_override=True)
+# instead of the old "pod not found" exit. The documented manual recovery for
+# a pod a failover / no-port-wedge re-provision left without a pods.conf row.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def stubbed_pods_conf(monkeypatch):
+    """Stub ``parse_pods_conf`` / ``write_pods_conf`` / ``cmd_sync`` /
+    ``locked_pods_conf`` so ``cmd_update`` never touches real repo state.
+    Mirrors the fixture in ``test_pod_config_refresh_from_api.py``."""
+    import contextlib
+
+    state: dict[str, object] = {
+        "rows": [],
+        "written": None,
+        "sync_called": False,
+    }
+
+    def fake_parse():
+        return [
+            Pod(
+                name=p.name,
+                host=p.host,
+                port=p.port,
+                gpus=p.gpus,
+                gpu_type=p.gpu_type,
+                label=p.label,
+            )
+            for p in state["rows"]  # type: ignore[union-attr]
+        ]
+
+    def fake_write(rows):
+        state["written"] = list(rows)
+
+    def fake_sync(rows):
+        state["sync_called"] = True
+
+    @contextlib.contextmanager
+    def noop_lock():
+        yield
+
+    monkeypatch.setattr(pod_config, "parse_pods_conf", fake_parse)
+    monkeypatch.setattr(pod_config, "write_pods_conf", fake_write)
+    monkeypatch.setattr(pod_config, "cmd_sync", fake_sync)
+    monkeypatch.setattr(pod_config, "locked_pods_conf", noop_lock)
+    return state
+
+
+@pytest.fixture
+def isolated_sidecar(tmp_path, monkeypatch):
+    """Point ``PODS_EPHEMERAL_JSON`` at a tmp copy so ``_set_manual_override``
+    reads/writes the test sidecar, not the real one."""
+    sidecar = tmp_path / "pods_ephemeral.json"
+    monkeypatch.setattr(pod_config, "PODS_EPHEMERAL_JSON", sidecar)
+    return sidecar
+
+
+def _write_sidecar(path: Path, pod_name: str, *, manual_override: bool = False) -> None:
+    payload = {
+        "version": 2,
+        "updated_at": "2026-06-30T00:00:00Z",
+        "pods": {
+            pod_name: {
+                "name": pod_name,
+                "pod_id": f"{pod_name}_id",
+                "issue": 0,
+                "gpu_intent": "custom",
+                "ttl_days": 7,
+                "stopped_at": None,
+                "notes": "",
+                "manual_override": manual_override,
+                "extra": {},
+            }
+        },
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def test_update_creates_missing_pod_from_user_values_sets_override(
+    stubbed_pods_conf, isolated_sidecar
+):
+    """``--update <absent> --host H --port P`` with BOTH host+port CREATES the
+    row from the user values, calls ``cmd_sync``, and (when the pod has a
+    sidecar entry) flips ``manual_override=True`` — the user-pinned create path.
+    """
+    stubbed_pods_conf["rows"] = [_make_pod("pod-500", host="2.2.2.2", port=22222)]
+    pods_arg = [
+        Pod(name=p.name, host=p.host, port=p.port, gpus=p.gpus, gpu_type=p.gpu_type, label=p.label)
+        for p in stubbed_pods_conf["rows"]
+    ]
+    # A sidecar entry exists so _set_manual_override can actually persist the flag.
+    _write_sidecar(isolated_sidecar, "pod-697", manual_override=False)
+
+    # Does NOT raise — create-missing replaces the old "pod not found" exit.
+    pod_config.cmd_update(pods_arg, "pod-697", host="103.0.0.7", port=24697)
+
+    written = stubbed_pods_conf["written"]
+    assert written is not None
+    by_name = {p.name: (p.host, p.port) for p in written}
+    assert by_name["pod-697"] == ("103.0.0.7", 24697)
+    assert stubbed_pods_conf["sync_called"] is True
+
+    # manual_override flipped to True (user-pinned create).
+    sidecar_data = json.loads(isolated_sidecar.read_text())
+    assert sidecar_data["pods"]["pod-697"]["manual_override"] is True
+
+
+def test_update_creates_missing_requires_both_host_and_port(stubbed_pods_conf, isolated_sidecar):
+    """Creating an ABSENT pod needs a COMPLETE endpoint — only --host (or only
+    --port) cannot describe one and there is no on-disk row to fill the other,
+    so it fails loud rather than writing a half-specified row."""
+    stubbed_pods_conf["rows"] = [_make_pod("pod-500", host="2.2.2.2", port=22222)]
+    pods_arg = [
+        Pod(name=p.name, host=p.host, port=p.port, gpus=p.gpus, gpu_type=p.gpu_type, label=p.label)
+        for p in stubbed_pods_conf["rows"]
+    ]
+
+    with pytest.raises(SystemExit) as excinfo:
+        pod_config.cmd_update(pods_arg, "pod-697", host="103.0.0.7", port=None)
+    assert excinfo.value.code == 1
+    # No row written.
+    assert stubbed_pods_conf["written"] is None

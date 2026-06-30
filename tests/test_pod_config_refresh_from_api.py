@@ -441,3 +441,96 @@ def test_refresh_noop_when_already_in_sync(
     out = capsys.readouterr().out
     assert "already at 103.207.149.130:18166" in out
     assert "already match the live RunPod API" in out
+
+
+# ---------------------------------------------------------------------------
+# Create-missing recovery (#751): a pod absent from pods.conf but RUNNING on
+# the live API gets a row CREATED instead of the old "pod not found" exit.
+# This is the documented recovery for a pod a GCP->RunPod failover /
+# no-port-wedge re-provision left without a pods.conf row.
+# ---------------------------------------------------------------------------
+
+
+def test_refresh_creates_missing_pod_from_live_api(
+    stubbed_pods_conf, isolated_sidecar, stub_list_team_pods, capsys
+):
+    """Pod ABSENT from pods.conf but RUNNING + has ssh_host/port on the live
+    API → the row is CREATED (appended to what ``write_pods_conf`` is handed),
+    ``cmd_sync`` fires, ``manual_override`` is left False (API-sourced, not
+    user-pinned), and the call does NOT ``sys.exit(1)``."""
+    # pods.conf has only an UNRELATED pod; pod-697 is absent.
+    stubbed_pods_conf["rows"] = [_row("pod-500", host="2.2.2.2", port=22222)]
+    pods_arg = _copy_rows(stubbed_pods_conf["rows"])  # what main() would parse
+
+    stub_list_team_pods.return_value = [
+        _info("pod-500", ssh_host="2.2.2.2", ssh_port=22222),
+        _info("pod-697", ssh_host="103.0.0.7", ssh_port=24697, gpu_count=2),
+    ]
+
+    # Does NOT raise SystemExit — create-missing replaces the old hard-exit.
+    pod_config.cmd_refresh_from_api(pods_arg, "pod-697")
+
+    written = stubbed_pods_conf["written"]
+    assert written is not None, "create-missing must write the new row"
+    by_name = {p.name: p for p in written}
+    assert "pod-697" in by_name, "the absent-but-running pod was not created"
+    created = by_name["pod-697"]
+    assert (created.host, created.port) == ("103.0.0.7", 24697)
+    # GPU fields filled from the live entry (cosmetic, but proves _pod_row_from_live).
+    assert created.gpus == 2
+    assert created.gpu_type == "H100"  # from gpu_type_id "NVIDIA H100 80GB HBM3"
+    assert stubbed_pods_conf["sync_called"] is True
+
+    # API-sourced create leaves manual_override at default (no sidecar write).
+    assert not isolated_sidecar.exists(), (
+        "a --refresh-from-api create must NOT set manual_override (API-sourced, not user-pinned)"
+    )
+
+    out = capsys.readouterr().out
+    assert "pod-697" in out
+    assert "created in pods.conf from live API" in out
+
+
+def test_refresh_creates_missing_pod_absent_from_api_still_errors(
+    stubbed_pods_conf, isolated_sidecar, stub_list_team_pods, capsys
+):
+    """Pod absent from BOTH pods.conf AND the live API → genuine typo / gone;
+    fail loud (cannot create a row with no endpoint to record)."""
+    stubbed_pods_conf["rows"] = [_row("pod-500", host="2.2.2.2", port=22222)]
+    pods_arg = _copy_rows(stubbed_pods_conf["rows"])
+    stub_list_team_pods.return_value = [
+        _info("pod-500", ssh_host="2.2.2.2", ssh_port=22222),
+    ]
+
+    with pytest.raises(SystemExit) as excinfo:
+        pod_config.cmd_refresh_from_api(pods_arg, "pod-999")
+    assert excinfo.value.code == 1
+    assert stubbed_pods_conf["written"] is None
+
+    err = capsys.readouterr().err
+    assert "pod-999" in err
+    assert "not present in the live RunPod API" in err
+
+
+def test_refresh_creates_missing_pod_not_running_on_api_still_errors(
+    stubbed_pods_conf, isolated_sidecar, stub_list_team_pods, capsys
+):
+    """Pod absent from pods.conf, present on the API but NOT RUNNING (or with
+    no SSH port yet) → cannot fabricate an endpoint; fail loud with an
+    actionable create-mode message."""
+    stubbed_pods_conf["rows"] = [_row("pod-500", host="2.2.2.2", port=22222)]
+    pods_arg = _copy_rows(stubbed_pods_conf["rows"])
+    stub_list_team_pods.return_value = [
+        _info("pod-500", ssh_host="2.2.2.2", ssh_port=22222),
+        _info("pod-697", desired_status="EXITED", ssh_host=None, ssh_port=None),
+    ]
+
+    with pytest.raises(SystemExit) as excinfo:
+        pod_config.cmd_refresh_from_api(pods_arg, "pod-697")
+    assert excinfo.value.code == 1
+    assert stubbed_pods_conf["written"] is None
+
+    err = capsys.readouterr().err
+    assert "pod-697" in err
+    assert "cannot be created from the live API" in err
+    assert "EXITED" in err

@@ -713,17 +713,44 @@ def cmd_update(pods: list[Pod], pod_name: str, host: str | None, port: int | Non
     / cron run. Permanent-fleet pods (``podN``) are not in the sidecar; the
     flag is a no-op there.
 
+    Create-missing (#751): when ``pod_name`` is ABSENT from ``pods.conf`` and
+    BOTH ``--host`` and ``--port`` are supplied, CREATE the row instead of the
+    old "pod not found" exit — the documented manual recovery for a pod that a
+    failover / no-port-wedge re-provision left without a ``pods.conf`` row. A
+    ``--update``-created row is user-pinned (``manual_override=True``,
+    consistent with the update-existing path). Requires BOTH host+port (only
+    one cannot describe a complete SSH endpoint, and there is no on-disk row
+    to fill the other from). NB: ``_set_manual_override`` is a no-op when the
+    pod has no ``pods_ephemeral.json`` entry yet (provision/resume own that
+    sidecar) — so a freshly-created row's override flag cannot persist until a
+    later provision/resume registers the pod; the row IS created (recovery +
+    SSH work, the primary goal) and override-protection engages then. We do
+    NOT auto-create a sidecar entry here (that would expand the sidecar's
+    provision/resume ownership).
+
     The pre-validation pass uses ``pods`` (already parsed by ``main`` for
     arg-flag checks). The actual read-modify-write-sync runs inside
     ``locked_pods_conf`` after re-reading ``pods.conf`` so a concurrent
-    writer cannot interleave between our parse and our write.
+    writer cannot interleave between our parse and our write. The pre-lock
+    absence of ``pod_name`` is what distinguishes "never-existed -> create"
+    from "present-then-concurrently-terminated -> still error" inside the
+    lock.
     """
     if host is None and port is None:
         print("ERROR: --update requires at least one of --host or --port", file=sys.stderr)
         sys.exit(1)
 
-    if not any(p.name == pod_name for p in pods):
-        print(f"ERROR: pod '{pod_name}' not found in pods.conf", file=sys.stderr)
+    # Pre-lock view (the ``pods`` arg main() parsed). Absent here AND both
+    # host+port supplied => create-missing intent (#751). Absent with only one
+    # of host/port => cannot create a complete endpoint -> fail loud.
+    want_create = not any(p.name == pod_name for p in pods)
+    if want_create and (host is None or port is None):
+        print(
+            f"ERROR: pod '{pod_name}' not found in pods.conf; creating it "
+            f"requires BOTH --host and --port (got "
+            f"host={host!r}, port={port!r}).",
+            file=sys.stderr,
+        )
         print(f"Available: {', '.join(p.name for p in pods)}", file=sys.stderr)
         sys.exit(1)
 
@@ -733,14 +760,35 @@ def cmd_update(pods: list[Pod], pod_name: str, host: str | None, port: int | Non
         # ``main``'s parse and our acquisition of the lock).
         fresh = parse_pods_conf()
         target = next((p for p in fresh if p.name == pod_name), None)
+        created = False
         if target is None:
-            # Concurrent terminate between main's parse and ours.
-            print(
-                f"ERROR: pod '{pod_name}' no longer in pods.conf "
-                f"(removed by a concurrent writer between read and update).",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+            if want_create:
+                # Never-existed (pre-lock absent too) -> create-missing (#751).
+                # Both host+port are non-None (gated above). gpus/gpu_type are
+                # placeholders refined on the next provision/resume.
+                target = Pod(
+                    name=pod_name,
+                    host=host,  # type: ignore[arg-type]  # non-None: want_create gate
+                    port=port,  # type: ignore[arg-type]
+                    gpus=0,
+                    gpu_type="unknown",
+                    label=pod_name,
+                )
+                fresh.append(target)
+                created = True
+                print(
+                    f"Creating pods.conf row for '{pod_name}' from user-supplied "
+                    f"values ({host}:{port})."
+                )
+            else:
+                # Present pre-lock but gone under the lock: a concurrent
+                # terminate between main's parse and ours. NOT a create case.
+                print(
+                    f"ERROR: pod '{pod_name}' no longer in pods.conf "
+                    f"(removed by a concurrent writer between read and update).",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
 
         changes: list[str] = []
         if host is not None and host != target.host:
@@ -750,17 +798,24 @@ def cmd_update(pods: list[Pod], pod_name: str, host: str | None, port: int | Non
             changes.append(f"  {pod_name} port: {target.port} -> {port}")
             target.port = port
 
-        if not changes:
+        # A freshly-created row's host/port already equal the user values
+        # (so ``changes`` is empty), but it still MUST be written + synced.
+        if not changes and not created:
             print(f"{pod_name}: already has those values, nothing to update.")
             return
 
-        print("Updating pods.conf:")
-        for c in changes:
-            print(c)
+        if changes:
+            print("Updating pods.conf:")
+            for c in changes:
+                print(c)
+        elif created:
+            print("Writing new pods.conf row.")
         write_pods_conf(fresh)
 
         # Mark the sidecar so a later auto-refresh in pod_lifecycle.py does NOT
-        # silently overwrite the values just set. No-op for permanent pods.
+        # silently overwrite the values just set. No-op for permanent pods AND
+        # for a freshly-created row whose pod has no sidecar entry yet (see the
+        # docstring create-missing note).
         status = _set_manual_override(pod_name, value=True)
         if status is not None:
             print(f"  {status}")
@@ -813,6 +868,45 @@ def _read_manual_overrides() -> dict[str, bool]:
         return {}
     pods = data.get("pods", {}) or {}
     return {name: bool(entry.get("manual_override", False)) for name, entry in pods.items()}
+
+
+def _short_gpu_label_from_live(live: PodInfo) -> str:
+    """Map a live ``PodInfo.gpu_type_id`` to a short pods.conf label (#751).
+
+    Mirrors ``pod_lifecycle._short_gpu_label`` (kept here, not imported, to
+    avoid the circular import — ``pod_lifecycle`` already imports this
+    module). The label is cosmetic for SSH/MCP generation (``_ssh_entry`` /
+    ``_generate_mcp_env`` use only name/host/port); it is refined on the next
+    provision/resume that carries the full ``EphemeralPod``.
+    """
+    gpu_type_id = live.gpu_type_id
+    if not gpu_type_id:
+        return "unknown"
+    for short in ("H200", "H100", "A100"):
+        if short in gpu_type_id:
+            return short
+    return gpu_type_id
+
+
+def _pod_row_from_live(name: str, live: PodInfo) -> Pod:
+    """Build a pods.conf ``Pod`` row from a live RunPod ``PodInfo`` (#751).
+
+    Used by the create-missing branch of ``cmd_refresh_from_api`` to recover a
+    pod that is RUNNING on the live API but absent from ``pods.conf`` (the
+    state a GCP->RunPod failover / no-port-wedge re-provision can leave; see
+    ``.claude/rules/pod-config.md`` — live API authoritative, pods.conf
+    derived). Caller MUST have verified ``live.ssh_host`` / ``live.ssh_port``
+    are populated (a non-RUNNING / no-port pod has no SSH endpoint to record).
+    """
+    assert live.ssh_host is not None and live.ssh_port is not None, (name, live)
+    return Pod(
+        name=name,
+        host=live.ssh_host,
+        port=live.ssh_port,
+        gpus=live.gpu_count or 1,
+        gpu_type=_short_gpu_label_from_live(live),
+        label=name,  # human label; refined on the next provision/resume
+    )
 
 
 def _refresh_one_pod(
@@ -927,10 +1021,15 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
         ``pods.conf`` and the live RunPod API. Pods that are not RUNNING are
         skipped with a stderr note (we cannot infer a fresh SSH endpoint for
         a pod that is EXITED/PROVISIONING).
-      * ``pod_name=<name>`` — refresh just that pod. Errors loud if the pod
-        is not in ``pods.conf`` (typo) or not present in the live API
-        (terminated externally) or not RUNNING (cannot refresh an endpoint
-        that does not exist yet).
+      * ``pod_name=<name>`` — refresh just that pod. When the pod is ABSENT
+        from ``pods.conf`` but RUNNING on the live API with an SSH endpoint,
+        CREATE the row from the live API (#751 — recovers a failover /
+        no-port-wedge re-provision that left no ``pods.conf`` row, the state
+        the #488 SSH-poll self-heal could not recover because the old
+        "pod not found" exit refused). Still errors loud if the pod is absent
+        from BOTH ``pods.conf`` and the live API (genuine typo / gone), or is
+        present on the API but not RUNNING / has no SSH endpoint yet (cannot
+        fabricate an endpoint the platform has not assigned).
 
     Respects ``manual_override`` (set by ``--update``): when True, the
     on-disk host/port stays as the user set them and we surface a stderr
@@ -954,18 +1053,56 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
     live_by_name = {p.name: p for p in live_pods}
     overrides = _read_manual_overrides()
 
+    # ``create_name`` is set when single-pod mode targets a pod ABSENT from
+    # pods.conf that the live API reports RUNNING with an SSH endpoint — the
+    # create-missing recovery (#751). It falls through to the locked branch
+    # below (which re-checks under the lock for #488 lost-update discipline
+    # before creating).
+    create_name: str | None = None
     targets: list[Pod]
     if pod_name is None:
         targets = list(pods)
     else:
         target = next((p for p in pods if p.name == pod_name), None)
         if target is None:
-            print(f"ERROR: pod '{pod_name}' not found in pods.conf", file=sys.stderr)
-            print(f"Available: {', '.join(p.name for p in pods)}", file=sys.stderr)
-            sys.exit(1)
-        targets = [target]
+            # ABSENT from pods.conf. Cross-check the live API: a RUNNING pod
+            # with a populated SSH endpoint is a create-missing recovery
+            # (the row was lost by a failover / no-port-wedge re-provision);
+            # anything else (gone from the API, not RUNNING, no SSH port yet)
+            # is a genuine miss we must NOT paper over — fail loud per the
+            # fail-fast rule (cannot fabricate an endpoint the platform has
+            # not assigned).
+            live = live_by_name.get(pod_name)
+            if live is None:
+                print(
+                    f"ERROR: pod '{pod_name}' not found in pods.conf and not "
+                    f"present in the live RunPod API (typo, or terminated "
+                    f"externally — nothing to create from).",
+                    file=sys.stderr,
+                )
+                print(f"Available: {', '.join(p.name for p in pods)}", file=sys.stderr)
+                sys.exit(1)
+            ds = (live.desired_status or "").upper()
+            if ds != "RUNNING" or live.ssh_host is None or live.ssh_port is None:
+                print(
+                    f"ERROR: pod '{pod_name}' is absent from pods.conf and "
+                    f"cannot be created from the live API: it is "
+                    f"desiredStatus={ds or 'UNKNOWN'} with "
+                    f"ssh_host={live.ssh_host!r}/ssh_port={live.ssh_port!r} "
+                    f"(--refresh-from-api cannot fabricate an SSH endpoint the "
+                    f"platform has not assigned). Run `pod.py resume --issue "
+                    f"<N>` to bring it up, then re-run --refresh-from-api.",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            # RUNNING with an SSH endpoint -> create-missing. Fall through to
+            # the locked branch (no pre-existing row to refresh).
+            create_name = pod_name
+            targets = []
+        else:
+            targets = [target]
 
-    if not targets:
+    if not targets and create_name is None:
         print("No pods to refresh (pods.conf is empty).")
         return
 
@@ -989,6 +1126,37 @@ def cmd_refresh_from_api(pods: list[Pod], pod_name: str | None) -> None:
             )
             any_changed = any_changed or changed
             any_warn = any_warn or warned
+
+        # Create-missing recovery (#751): build the row from the live API ONLY
+        # if it is STILL absent under the lock (a concurrent provision/resume
+        # between our pre-lock read and the lock acquisition may have created
+        # it — #488 lost-update discipline). API-sourced, so manual_override is
+        # left at its default (absent -> False); --update is the user-pinned
+        # path that sets it True. We skip _refresh_one_pod for this row — its
+        # host/port are already live-sourced.
+        if create_name is not None and create_name not in fresh_by_name:
+            live = live_by_name.get(create_name)
+            # The pre-lock gate already proved live is RUNNING with an SSH
+            # endpoint; re-assert defensively (the API snapshot is the same
+            # one — we do not re-query under the lock).
+            if (
+                live is None
+                or (live.desired_status or "").upper() != "RUNNING"
+                or (live.ssh_host is None or live.ssh_port is None)
+            ):
+                print(
+                    f"ERROR: pod '{create_name}' is no longer create-eligible "
+                    f"on the live RunPod API; not creating.",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            new_row = _pod_row_from_live(create_name, live)
+            fresh.append(new_row)
+            any_changed = True
+            print(
+                f"  {create_name}: created in pods.conf from live API "
+                f"({new_row.host}:{new_row.port})"
+            )
 
         if not any_changed:
             if not any_warn:

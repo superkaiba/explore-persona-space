@@ -496,6 +496,24 @@ DEFAULT_STATE_DIR = _resolve_state_dir_root() / ".claude" / "cache"
 # re-try.
 SSH_FAIL_REFRESH_THRESHOLD = int(os.environ.get("EPM_POLL_SSH_FAIL_REFRESH_THRESHOLD", "10"))
 
+# Dead-verdict suppression cap (#751). A pod that a GCP->RunPod failover (or a
+# no-port-wedge re-provision) just relaunched can be RUNNING on the live RunPod
+# API while still ABSENT from ``pods.conf`` (the SSH/MCP source) — so the SSH
+# probe lands on an unresolvable host and ``_ssh_probe`` zeroes ``pid_alive``,
+# which the ``elif not pid_alive: status = "dead"`` verdict would otherwise read
+# as a dead workload. While that pod is (a) absent from ``pods.conf`` AND (b)
+# RUNNING on the live API, we suppress the ``dead`` verdict (report ``running``,
+# "still registering") for up to this many CONSECUTIVE ticks, giving
+# backend_poll's best-effort register + this poller's #488 self-heal time to
+# land the row. Beyond the cap the verdict falls through to ``dead`` so a
+# registration that NEVER lands cannot mask a genuinely dead pod indefinitely.
+# Default 2x the SSH-fail self-heal threshold so the #488 auto-heal has a full
+# window to fire before suppression gives up. A pod IN pods.conf that probes
+# dead is NEVER suppressed — the guard fires only for absent-from-pods.conf pods.
+DEAD_SUPPRESSION_CAP = int(
+    os.environ.get("EPM_POLL_DEAD_SUPPRESSION_CAP", str(2 * SSH_FAIL_REFRESH_THRESHOLD))
+)
+
 # Escalation threshold for the [ssh-wait-ALARM] (refs #572): once a pod has
 # been SSH-unreachable for this long while its experiment is supposed to be
 # running (pod presumed billing), the per-tick warnings escalate to a loud
@@ -573,6 +591,52 @@ def _try_refresh_pods_conf_from_api(pod: str) -> bool:
         SSH_FAIL_REFRESH_THRESHOLD,
     )
     return True
+
+
+def _pod_absent_from_pods_conf(pod: str) -> bool:
+    """True iff ``pod`` has no row in ``pods.conf`` (#751).
+
+    Fail-soft: any exception (parse error, missing file, import failure)
+    returns False — we do NOT suppress the ``dead`` verdict on unknown state
+    (the conservative direction: an unreadable pods.conf must never let a
+    genuinely dead pod be reported alive).
+    """
+    try:
+        from pod_config import parse_pods_conf
+
+        return not any(p.name == pod for p in parse_pods_conf())
+    except Exception as exc:
+        log.warning(
+            "dead-suppression: pods.conf absence check for %s raised %s; "
+            "treating as present (no dead-verdict suppression)",
+            pod,
+            type(exc).__name__,
+        )
+        return False
+
+
+def _live_pod_running(pod: str) -> bool:
+    """True iff the live RunPod API reports ``pod`` with desiredStatus RUNNING (#751).
+
+    Fail-soft: any exception (API outage, auth failure, import error) returns
+    False — on uncertainty we do NOT suppress ``dead`` (a real API outage
+    reading False routes to the unchanged dead path, the conservative
+    direction). Mirrors the fail-soft contract of
+    ``_try_refresh_pods_conf_from_api``.
+    """
+    try:
+        from runpod_api import get_pod_by_name
+
+        info = get_pod_by_name(pod)
+    except Exception as exc:
+        log.warning(
+            "dead-suppression: live-API RUNNING check for %s raised %s; "
+            "treating as not-running (no dead-verdict suppression)",
+            pod,
+            type(exc).__name__,
+        )
+        return False
+    return info is not None and (info.desired_status or "").upper() == "RUNNING"
 
 
 def _state_float(prev_state: dict[str, str], key: str) -> float:
@@ -2295,7 +2359,11 @@ def _log_staleness_secs(
     return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
 
 
-def poll_once(
+def poll_once(  # noqa: C901 — single status-verdict dispatcher; the #751 dead-suppression
+    # branch pushes the branch count to 16 (cap 15). Splitting the linear
+    # verdict chain (gate/done/dead/stall/running + overrides) into helpers
+    # would scatter the single decision it exists to make and hurt readability;
+    # the verdict logic is one cohesive unit, so an annotated waiver is correct.
     *,
     issue: int,
     pod: str,
@@ -2490,12 +2558,47 @@ def poll_once(
     # GPUs idle). Healthy, but a degraded-observability regime — the
     # adaptive interval (§7) keeps such ticks on the short interval.
     cpu_override_active = False
+    # #751 dead-verdict suppression bookkeeping. The counter tracks CONSECUTIVE
+    # ticks we have suppressed a ``dead`` verdict for an absent-from-pods.conf
+    # but live-RUNNING pod (a just-relaunched failover pod still registering).
+    # It is RESET to 0 on any non-suppressed tick (pid recovered, non-dead
+    # verdict, or the pod is now present in pods.conf), and only carried forward
+    # while suppression is actively firing — so it bounds the suppression to
+    # DEAD_SUPPRESSION_CAP CONSECUTIVE ticks, never cumulative across recoveries.
+    prev_dead_suppress_count = int(prev_state.get("dead_suppress_count", "0") or 0)
+    dead_suppress_count = 0
     if gate is not None:
         status = "gate"
     elif current_phase == "done":
         status = "done"
     elif not pid_alive:
-        status = "dead"
+        # The pid probed dead. Before reporting ``dead``, check the #751
+        # still-registering case: a pod ABSENT from pods.conf (so the SSH probe
+        # could not even resolve a host) that the live RunPod API reports
+        # RUNNING is a freshly-relaunched failover pod whose pods.conf row has
+        # not landed yet — report ``running`` (still registering) for up to
+        # DEAD_SUPPRESSION_CAP consecutive ticks rather than a false ``dead``.
+        # Scope guard: a pod IN pods.conf that probes dead is NEVER suppressed
+        # (``_pod_absent_from_pods_conf`` is False) — it keeps the ``dead``
+        # verdict. Both checks are fail-soft (unknown state -> no suppression).
+        if (
+            prev_dead_suppress_count < DEAD_SUPPRESSION_CAP
+            and _pod_absent_from_pods_conf(pod)
+            and _live_pod_running(pod)
+        ):
+            dead_suppress_count = prev_dead_suppress_count + 1
+            log.warning(
+                "pod %s probed dead BUT is absent from pods.conf and RUNNING on "
+                "the live RunPod API (just-relaunched failover pod still "
+                "registering, #751); suppressing dead verdict -> running "
+                "(consecutive suppressed tick %d/%d)",
+                pod,
+                dead_suppress_count,
+                DEAD_SUPPRESSION_CAP,
+            )
+            status = "running"
+        else:
+            status = "dead"
     elif (
         last_mtime_ago > stall_sec
         and phase_log_mtime_ago > stall_sec
@@ -2683,6 +2786,11 @@ def poll_once(
             # it is a multi-shard child-exit accounting artifact, not a
             # stall. Monotonic: a sub-max current sample never lowers it.
             "max_cpu_secs": max_session_cpu,
+            # #751 dead-verdict suppression counter: CONSECUTIVE ticks a
+            # ``dead`` verdict has been suppressed for an absent-from-pods.conf
+            # but live-RUNNING pod. Reset to 0 on any non-suppressed tick;
+            # bounds the suppression to DEAD_SUPPRESSION_CAP consecutive ticks.
+            "dead_suppress_count": str(dead_suppress_count),
         },
     )
 

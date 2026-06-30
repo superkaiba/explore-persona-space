@@ -1057,3 +1057,120 @@ def test_async_cpu_handle_no_intent_key_does_not_fail_over() -> None:
     assert (
         _is_gcp_async_workload_failure(handle, _poll("dead", "terminal_workload_failed")) is False
     )
+
+
+# ---------------------------------------------------------------------------
+# #751 AC2: a successful RunPod failover relaunch must best-effort REGISTER the
+# new pod into pods.conf (so the recovery commands + SSH poller can find it).
+# A raising registration helper must NOT change the emitted status="running".
+#
+# _failover_dead_gcp_to_runpod is driven here via backend_poll_main (the
+# existing GCP->RunPod async-failover pattern in this file). The sibling
+# _relaunch_fresh_runpod (the RunPod no-port-wedge re-provision) calls the SAME
+# _register_failover_pod_best_effort helper on its success path; that path is
+# covered in tests/test_runpod_wedge_detection.py, which already carries the
+# wedge-escalation + per-cell-HF-gate scaffold _relaunch_fresh_runpod needs
+# (test_failover_relaunch_registers_pod_in_pods_conf).
+# ---------------------------------------------------------------------------
+
+
+def test_failover_success_reregisters_pod_in_pods_conf(tmp_path, monkeypatch, capsys):
+    """A successful GCP->RunPod failover calls
+    ``_register_failover_pod_best_effort`` exactly once with the NEW RunPod pod
+    name, on the genuine-success path (after the authoritative sidecar
+    re-point)."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod.RunPodBackend",
+        _PassiveRunpodBackend,
+    )
+
+    registered: list[str] = []
+    monkeypatch.setattr(
+        "scripts.backend_poll._register_failover_pod_best_effort",
+        lambda pod_name: registered.append(pod_name),
+    )
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    # Registered EXACTLY ONCE, with the NEW RunPod pod name (_PassiveRunpodBackend
+    # names it pod-<issue>), on the success path.
+    assert registered == ["pod-659"]
+
+
+def test_failover_terminal_path_does_not_reregister(tmp_path, monkeypatch, capsys):
+    """The register helper fires ONLY on the genuine-success path — NOT on a
+    terminal infra return (e.g. no_compute_available), where no new pod is
+    live."""
+    from explore_persona_space.backends import NoComputeAvailableError
+
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    class _NoComputeRunpod:
+        def launch(self, spec):
+            raise NoComputeAvailableError("RunPod also unavailable")
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod.RunPodBackend",
+        _NoComputeRunpod,
+    )
+
+    registered: list[str] = []
+    monkeypatch.setattr(
+        "scripts.backend_poll._register_failover_pod_best_effort",
+        lambda pod_name: registered.append(pod_name),
+    )
+
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["reason"] == "no_compute_available"
+    # No new pod is live -> the register helper must NOT fire on a terminal path.
+    assert registered == []
+
+
+def test_failover_reregister_is_fail_soft(tmp_path, monkeypatch, capsys):
+    """A RAISING registration helper must NOT change the emitted
+    status="running" JSON — a failover that succeeded is never reported failed
+    because a cosmetic pods.conf sync hiccuped (the terminal-JSON contract)."""
+    sidecar = tmp_path / "issue-659-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod.RunPodBackend",
+        _PassiveRunpodBackend,
+    )
+
+    def _raising_register(pod_name):
+        raise RuntimeError("pods.conf register blew up (EDQUOT / parse error / etc.)")
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._register_failover_pod_best_effort",
+        _raising_register,
+    )
+
+    # The raising helper must not escape backend_poll_main.
+    rc = backend_poll_main(["--issue", "659", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    # Still running — the failover succeeded; the register hiccup is swallowed.
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_workload_failover_runpod_async"

@@ -888,3 +888,91 @@ def test_failover_legacy_handle_missing_spec_returns_terminal_json(tmp_path, mon
     assert out["status"] == "dead"
     assert out["reason"] == "runpod_wedge_relaunch_spec_missing"
     assert out["failure_class"] == "infra"
+
+
+# ---------------------------------------------------------------------------
+# #751 AC2 (the _relaunch_fresh_runpod leg): a successful no-port-wedge
+# re-provision must best-effort REGISTER the fresh RunPod pod into pods.conf
+# via _register_failover_pod_best_effort, and a RAISING helper must NOT change
+# the emitted status="running". The sibling _failover_dead_gcp_to_runpod leg is
+# covered in tests/test_backend_poll.py.
+# ---------------------------------------------------------------------------
+
+
+def test_failover_relaunch_registers_pod_in_pods_conf(tmp_path, monkeypatch):
+    """A successful RunPod no-port-wedge re-provision (``_relaunch_fresh_runpod``,
+    reached via ``_failover_wedged_runpod``) calls
+    ``_register_failover_pod_best_effort`` exactly once with the FRESH pod name,
+    on the success path (after the durable wedge-lease stamp)."""
+    from explore_persona_space.backends import issue_dispatch as ID
+    from explore_persona_space.backends import router as R
+
+    terminated = _failover_with_mocked_gate(monkeypatch)
+
+    def _fake_failover(**kw):
+        on_launched = kw.get("on_launched")
+        h = _FakeRunHandle()  # pod_name == "pod-689-fresh"
+        if on_launched is not None:
+            on_launched(h)
+        return type("RR", (), {"handle": h, "extra": {}})()
+
+    monkeypatch.setattr(
+        R, "failover_to_runpod_after_async_workload_crash", _fake_failover, raising=False
+    )
+    monkeypatch.setattr(ID, "write_handle_sidecar", lambda h, p: None, raising=False)
+    monkeypatch.setattr(ID, "read_handle_sidecar", lambda p: _FakeRunHandle(), raising=False)
+
+    registered: list = []
+    monkeypatch.setattr(
+        bp, "_register_failover_pod_best_effort", lambda name: registered.append(name)
+    )
+
+    out = bp._failover_wedged_runpod(
+        issue=689,
+        handle=_runpod_handle_with_workload(),
+        result=_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    assert terminated == ["pod-id-55"]
+    assert out["status"] == "running"
+    assert out["current_phase"] == "runpod_noport_wedge_failover_fresh_pod"
+    # Registered EXACTLY ONCE with the FRESH RunPod pod name.
+    assert registered == ["pod-689-fresh"]
+
+
+def test_failover_relaunch_reregister_is_fail_soft(tmp_path, monkeypatch):
+    """A RAISING ``_register_failover_pod_best_effort`` must NOT derail the
+    succeeded relaunch — the helper still emits ``status='running'`` (the
+    call-site guard contains the raise)."""
+    from explore_persona_space.backends import issue_dispatch as ID
+    from explore_persona_space.backends import router as R
+
+    _failover_with_mocked_gate(monkeypatch)
+
+    def _fake_failover(**kw):
+        on_launched = kw.get("on_launched")
+        h = _FakeRunHandle()
+        if on_launched is not None:
+            on_launched(h)
+        return type("RR", (), {"handle": h, "extra": {}})()
+
+    monkeypatch.setattr(
+        R, "failover_to_runpod_after_async_workload_crash", _fake_failover, raising=False
+    )
+    monkeypatch.setattr(ID, "write_handle_sidecar", lambda h, p: None, raising=False)
+    monkeypatch.setattr(ID, "read_handle_sidecar", lambda p: _FakeRunHandle(), raising=False)
+
+    def _raising_register(name):
+        raise RuntimeError("pods.conf register blew up")
+
+    monkeypatch.setattr(bp, "_register_failover_pod_best_effort", _raising_register)
+
+    out = bp._failover_wedged_runpod(
+        issue=689,
+        handle=_runpod_handle_with_workload(),
+        result=_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    # Still running — the relaunch succeeded; the register hiccup is contained.
+    assert out["status"] == "running"
+    assert out["current_phase"] == "runpod_noport_wedge_failover_fresh_pod"
