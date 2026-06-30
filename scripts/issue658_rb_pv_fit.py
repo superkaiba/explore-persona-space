@@ -1275,11 +1275,14 @@ def _resolve_pv_store(args, out_dir: Path) -> Path:
     from huggingface_hub import snapshot_download
 
     sub = f"{HF_PREFIX}/{PV_HF_SUBDIR}"
+    # ``{sub}/**`` (recursive), NOT ``{sub}/*`` — the per-rollout acts/transcripts
+    # now live in shard_NNNN/ subdirs (the HF 10000-files-per-dir fix), and a
+    # single-level ``*`` glob would silently fetch 0 of them.
     local = snapshot_download(
         HF_DATA_REPO,
         repo_type="dataset",
         revision=args.pv_store_rev,
-        allow_patterns=[f"{sub}/*"],
+        allow_patterns=[f"{sub}/**"],
     )
     return Path(local) / sub
 

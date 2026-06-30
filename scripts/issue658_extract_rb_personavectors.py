@@ -107,6 +107,24 @@ SENTINEL_SCHEMA_VERSION = 1
 # The NEW r_B prefix (non-clobbering vs the v0/E0 store; plan §6.5 / §10).
 PV_HF_SUBDIR = "persona-vectors-style-rb"
 
+# HF Hub rejects any single git directory holding >10000 files at COMMIT time
+# (BadRequestError, NON-retriable). At full scale this script emits 12000
+# per-rollout .pt + 12000 per-rollout transcript JSONs, so the flat
+# rollout_acts/ + transcripts/ dirs blew the limit (round-1 crash, salvaged via
+# the resume-upload re-shard). Shard both dirs into shard_NNNN/ subdirs of
+# <=SHARD_SIZE files each; 5000 (not 10000) leaves headroom for the file count
+# to grow under follow-up rounds. The per-rollout pointer (acts_file in
+# rollout_index.json) records the SHARD-RELATIVE path so downstream readers
+# (issue658_rb_pv_fit.load_pv_extract_store) resolve it transparently via
+# acts_dir / acts_file. (gotchas.md: HF 10000-files-per-dir limit.)
+SHARD_SIZE = 5000
+
+
+def shard_subdir(idx: int) -> str:
+    """shard_NNNN subdir name for a 0-based file index (<=SHARD_SIZE per shard)."""
+    return f"shard_{idx // SHARD_SIZE:04d}"
+
+
 # arXiv 2507.21509 App-A (plan §11): 5 pos/neg pairs, 20-q extraction set, 10
 # rollouts per (question × system prompt), response-avg, diffmeans.
 N_PAIRS = 5
@@ -545,6 +563,108 @@ def upload_pv_store(out_dir: Path, smoke: bool) -> dict:
     return {"repo": repo_used, "path_in_repo": path_in_repo, "n_files": len(files)}
 
 
+# ── resume-upload-from-store (re-shard a flat store + re-upload) ──────────────
+
+
+def _reshard_dir(d: Path, suffix: str) -> int:
+    """Re-shard a directory's top-level ``r{idx}{suffix}`` files into shard_NNNN/.
+
+    Idempotent + tolerant of a partial prior re-shard: files already inside a
+    ``shard_*/`` subdir are left in place; only top-level ``r{idx}{suffix}`` files
+    are moved (RENAMED, not copied — the .pt files are ~3MB × 12000 ≈ 38GB, so a
+    copy would burn disk + time) into the shard subdir their 0-based index implies.
+    The index parsed from the filename (``r000123.pt`` → 123) drives the shard, so
+    the shard assignment matches the extractor's write-time ``shard_subdir(i)``.
+
+    Returns the number of files moved. A non-existent dir is a no-op (0).
+    """
+    if not d.is_dir():
+        return 0
+    moved = 0
+    for f in sorted(d.iterdir()):
+        if not f.is_file() or not f.name.startswith("r") or not f.name.endswith(suffix):
+            continue  # skip shard_*/ subdirs + any non-rollout file
+        stem = f.name[1 : -len(suffix)]  # "r000123.pt" -> "000123"
+        if not stem.isdigit():
+            continue
+        sd = shard_subdir(int(stem))
+        dest_dir = d / sd
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest = dest_dir / f.name
+        if dest.exists():
+            # already resharded in a prior partial run — drop the stray top-level
+            # duplicate so the dir doesn't keep tripping the per-dir limit.
+            f.unlink()
+            continue
+        f.rename(dest)
+        moved += 1
+    return moved
+
+
+def reshard_store_in_place(out_dir: Path) -> dict:
+    """Re-shard a previously-FLAT on-disk store into shard_NNNN/ subdirs + fix index.
+
+    Salvage path for a store written before the sharding fix (round-1 left 12000
+    flat files in each of rollout_acts/ + transcripts/). Renames every flat
+    ``rNNNNNN.pt`` / ``rNNNNNN.json`` into its ``shard_subdir(idx)`` and rewrites
+    ``rollout_index.json`` so each row's ``acts_file`` / ``transcript_file`` records
+    the shard-relative path the reader + the upload now expect. Idempotent: a row
+    whose ``acts_file`` already carries a ``shard_*/`` prefix is left unchanged, and
+    a re-run after a complete reshard moves 0 files.
+    """
+    acts_dir = out_dir / "rollout_acts"
+    transcripts_dir = out_dir / "transcripts"
+    n_acts = _reshard_dir(acts_dir, ".pt")
+    n_trans = _reshard_dir(transcripts_dir, ".json")
+
+    index_path = out_dir / "rollout_index.json"
+    n_rows_fixed = 0
+    if index_path.is_file():
+        blob = load_json(index_path)
+        rollouts = blob.get("rollouts", [])
+        for i, row in enumerate(rollouts):
+            sd = shard_subdir(i)
+            af = row.get("acts_file")
+            if af is not None and "/" not in af:
+                row["acts_file"] = f"{sd}/{af}"
+                n_rows_fixed += 1
+            tf = row.get("transcript_file")
+            if tf is None:
+                # legacy index (pre-sharding) had no transcript_file — synthesize it
+                row["transcript_file"] = f"{sd}/r{i:06d}.json"
+                n_rows_fixed += 1
+            elif "/" not in tf:
+                row["transcript_file"] = f"{sd}/{tf}"
+                n_rows_fixed += 1
+        dump_json(blob, index_path)
+    logger.info(
+        "reshard: moved %d acts + %d transcripts into shard subdirs; fixed %d index rows",
+        n_acts,
+        n_trans,
+        n_rows_fixed,
+    )
+    return {"moved_acts": n_acts, "moved_transcripts": n_trans, "index_rows_fixed": n_rows_fixed}
+
+
+def resume_upload_from_store(out_dir: Path, smoke: bool, no_upload: bool) -> dict:
+    """Re-shard an existing on-disk store IN PLACE, then re-upload (no generation).
+
+    The round-1 salvage entrypoint: PV1/PV2/PV3 already ran + wrote 12000 acts +
+    12000 transcripts to ``out_dir``; only the HF commit failed on the per-dir
+    limit. This re-shards the flat dirs (rename) + re-runs ``upload_pv_store`` with
+    the now-sharded layout. Idempotent on a re-run.
+    """
+    if not out_dir.is_dir():
+        raise SystemExit(f"--resume-upload-from-store: store dir {out_dir} does not exist")
+    if not (out_dir / "rollout_index.json").is_file():
+        raise SystemExit(f"--resume-upload-from-store: no rollout_index.json under {out_dir}")
+    reshard_info = reshard_store_in_place(out_dir)
+    upload_info: dict = {"skipped": True}
+    if not no_upload:
+        upload_info = upload_pv_store(out_dir, smoke)
+    return {"reshard": reshard_info, "upload": upload_info}
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
 
 
@@ -598,6 +718,14 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
     )
     parser.add_argument("--no-vllm", action="store_true", help="HF generate fallback (CPU smoke)")
     parser.add_argument("--no-upload", action="store_true", help="skip HF upload (local smoke)")
+    parser.add_argument(
+        "--resume-upload-from-store",
+        action="store_true",
+        help="SALVAGE: skip PV1/PV2/PV3 generation; re-shard the existing on-disk store "
+        "under --out-dir into shard_NNNN/ subdirs (rename in place) + re-upload. "
+        "Idempotent. Use after a round-1 store whose flat dirs tripped the HF "
+        "10000-files-per-dir commit limit.",
+    )
     parser.add_argument("--wandb-mode", choices=["online", "offline", "disabled"], default="online")
     parser.add_argument("--seed", type=int, default=658, help="generation seed")
     parser.add_argument(
@@ -635,6 +763,21 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
         max_new_tokens = args.max_new_tokens
 
     out_dir = Path(f"{args.out_dir}_smoke") if args.smoke else args.out_dir
+
+    # SALVAGE: re-shard an existing on-disk store IN PLACE + re-upload, no
+    # generation. Runs BEFORE the model load (PV1/PV2/PV3 are skipped entirely);
+    # one code path through upload_pv_store, so the upload contract is identical
+    # to the full run's. Emit the same [phase=...] markers + sentinel so the
+    # poll_pipeline.py contract holds on a resume relaunch.
+    if args.resume_upload_from_store:
+        phase("resume_upload")
+        info = resume_upload_from_store(out_dir, args.smoke, args.no_upload)
+        note = f"PV r_B resume-upload-from-store: {info}"
+        write_sentinel("epm:smoke-result" if args.smoke else "epm:results", note)
+        phase("done")
+        logger.info("DONE (resume-upload): %s", note)
+        return 0
+
     out_dir.mkdir(parents=True, exist_ok=True)
     acts_dir = out_dir / "rollout_acts"
     acts_dir.mkdir(parents=True, exist_ok=True)
@@ -738,7 +881,10 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
     phase("pv2_capture")
     capture = AnswerSpanCapture(model, n_layers)
     pv2_bs = max(1, min(args.pv2_batch_size, len(all_index))) if all_index else 1
-    items = [(r["system_prompt"], r["question"], c) for r, c in zip(all_index, all_completions)]
+    items = [
+        (r["system_prompt"], r["question"], c)
+        for r, c in zip(all_index, all_completions, strict=True)
+    ]
     reduced = capture_response_avg_batch(model, tokenizer, items, capture, n_layers, pv2_bs)
     assert len(reduced) == len(all_index), f"{len(reduced)} acts != {len(all_index)} rollouts"
     n_captured = 0
@@ -746,20 +892,30 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
     for i, (idx_row, comp, resp_avg) in enumerate(
         zip(all_index, all_completions, reduced, strict=True)
     ):
+        # Shard both per-rollout outputs into shard_NNNN/ subdirs (<=SHARD_SIZE
+        # files each) so neither dir trips the HF 10000-files-per-dir commit
+        # limit. acts_file records the SHARD-RELATIVE path so the reader resolves
+        # it via acts_dir / acts_file transparently. The transcript mirrors the
+        # SAME shard layout (reader reads completion inline from the index, so the
+        # transcript shape is an upload-side concern only).
+        sd = shard_subdir(i)
         if resp_avg is None:
             n_empty += 1
             idx_row["acts_file"] = None
             idx_row["empty"] = True
         else:
-            acts_file = f"r{i:06d}.pt"
+            acts_file = f"{sd}/r{i:06d}.pt"
+            (acts_dir / sd).mkdir(parents=True, exist_ok=True)
             torch.save(resp_avg, acts_dir / acts_file)  # (n_layers, H) fp16
             idx_row["acts_file"] = acts_file
             idx_row["empty"] = False
             n_captured += 1
         # Persist the raw transcript for J1 (the off-pod judge-filter): both inline
-        # in the index AND as a per-rollout JSON under transcripts/ (the inspectable
-        # raw-completion form that lands on HF via upload_pv_store).
+        # in the index AND as a per-rollout JSON under transcripts/shard_NNNN/ (the
+        # inspectable raw-completion form that lands on HF via upload_pv_store).
         idx_row["completion"] = comp
+        idx_row["transcript_file"] = f"{sd}/r{i:06d}.json"
+        (transcripts_dir / sd).mkdir(parents=True, exist_ok=True)
         dump_json(
             {
                 "behavior": idx_row["behavior"],
@@ -771,7 +927,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline (PV0→PV1→PV2→PV
                 "question": idx_row["question"],
                 "completion": comp,
             },
-            transcripts_dir / f"r{i:06d}.json",
+            transcripts_dir / idx_row["transcript_file"],
         )
         if (i + 1) % 200 == 0:
             logger.info("PV2: captured %d / %d rollouts", n_captured, i + 1)
