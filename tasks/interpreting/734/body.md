@@ -1,6 +1,6 @@
 ---
-title: 'Why did the marker fail to install on Qwen-2.5-7B-Instruct in #664 when the
-  same recipe installed on base Qwen-2.5-7B? (model vs lr/steps vs band-stop diagnostic)'
+title: '#664''s “marker never installed on Instruct” was a slot-rooting measurement
+  artifact: a corrected read recovers the install on 16/16 reused adapters (HIGH confidence)'
 kind: experiment
 tags:
 - marker
