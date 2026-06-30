@@ -20,6 +20,9 @@ override path preserved:
 from __future__ import annotations
 
 import os
+import re
+import subprocess
+import tempfile
 
 from explore_persona_space.backends import gcp, slurm
 from explore_persona_space.backends.base import RunSpec
@@ -196,3 +199,116 @@ def test_setup_worker_setdefaults_accelerators(monkeypatch) -> None:
     envmod.setup_worker(gpu_id=0)
     assert os.environ["HF_XET_HIGH_PERFORMANCE"] == "1"
     assert os.environ["HF_HUB_ENABLE_HF_TRANSFER"] == "1"
+
+
+# --------------------------------------------------------------------------
+# GCE absent-passthrough must NOT clobber the static accelerator default to ""
+# (#745 round 2 — the binding round-1 blocker). The fetch stanza re-exports
+# every passthrough key from instance metadata; an ABSENT key (the common
+# case — the dispatcher does not forward the accelerators) returns empty and,
+# pre-fix, ``export KEY="$EMPTY"`` overwrote the static ``=1`` with ``""``,
+# silently disabling the GCE lane acceleration. These tests EXECUTE the
+# rendered shell to assert the FINAL pre-workload value — a string-presence
+# assertion cannot catch this semantic ordering bug.
+# --------------------------------------------------------------------------
+
+
+def _accelerator_shell_lines(script: str, key: str) -> list[str]:
+    """Pull, in render order, every rendered line that READS OR WRITES ``key``:
+    the static ``${key:-1}`` default plus the metadata fetch/export stanza.
+
+    Running just these lines (with a stubbed ``curl``) reproduces the exact
+    default-vs-fetch interaction the bug lived in, without booting a VM."""
+    out: list[str] = []
+    for line in script.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            continue
+        # The static default: export KEY="${KEY:-1}"
+        if f'export {key}="${{{key}:-1}}"' in stripped or f"instance/attributes/{key}" in stripped:
+            out.append(stripped)
+    return out
+
+
+def _run_accelerator_resolution(script: str, key: str, *, metadata_value: str | None) -> str:
+    """Execute the static-default + fetch lines for ``key`` under bash with a
+    stubbed ``curl``, then echo the resolved value.
+
+    ``metadata_value=None`` simulates an ABSENT metadata attribute (curl -f
+    404s → empty stdout, the common default-GCE-workload case); a string
+    simulates a dispatcher-forwarded override present in metadata."""
+    lines = _accelerator_shell_lines(script, key)
+    # The static default and at least one fetch line must both be present, or
+    # the harness is asserting against the wrong render.
+    assert any(":-1}" in ln for ln in lines), f"no static default line for {key}: {lines}"
+    assert any("instance/attributes/" in ln for ln in lines), f"no fetch line for {key}: {lines}"
+
+    if metadata_value is None:
+        curl_stub = "curl() { return 22; }\n"  # curl -f returns 22 on 404; no stdout
+    else:
+        # shlex-safe single value echoed to stdout, exit 0.
+        curl_stub = f"curl() {{ printf '%s' {metadata_value!r}; }}\n"
+
+    harness = "#!/bin/bash\nset -u\n" + curl_stub + "\n".join(lines) + f'\necho "${{{key}}}"\n'
+    with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
+        fh.write(harness)
+        path = fh.name
+    proc = subprocess.run(["bash", path], capture_output=True, text=True)
+    assert proc.returncode == 0, f"harness failed:\n{harness}\n--- stderr ---\n{proc.stderr}"
+    return proc.stdout.strip()
+
+
+def test_gce_absent_passthrough_preserves_static_default_one() -> None:
+    """With NO accelerator env in the dispatch process (absent metadata),
+    the rendered script's final pre-workload value for BOTH accelerators is
+    ``1`` — the static default survives the fetch stanza (round-1 blocker)."""
+    script = render_startup_script(
+        spec=_hydra_spec(), config=_gcp_config(), attempt_id="att-fixed-745"
+    )
+    for key in _ACCEL_KEYS:
+        resolved = _run_accelerator_resolution(script, key, metadata_value=None)
+        assert resolved == "1", (
+            f"{key} resolved to {resolved!r}, not '1' — absent passthrough metadata "
+            "clobbered the static default (the #745 round-1 GCE wipeout regression)"
+        )
+
+
+def test_gce_explicit_zero_override_survives(monkeypatch) -> None:
+    """A dispatcher-set ``HF_HUB_ENABLE_HF_TRANSFER=0`` forwards into metadata
+    and the rendered script resolves it to ``0`` — the override channel
+    (the #515 xet-CDN workaround) is intact through the default-preserving
+    fetch."""
+    monkeypatch.setenv("HF_HUB_ENABLE_HF_TRANSFER", "0")
+    script = render_startup_script(
+        spec=_hydra_spec(), config=_gcp_config(), attempt_id="att-fixed-745"
+    )
+    resolved = _run_accelerator_resolution(script, "HF_HUB_ENABLE_HF_TRANSFER", metadata_value="0")
+    assert resolved == "0", (
+        f"explicit =0 override resolved to {resolved!r}, not '0' — the metadata "
+        "fetch must export a NON-empty forwarded value over the static default"
+    )
+
+
+def test_gce_fetch_stanza_is_default_preserving_form() -> None:
+    """Structural guard on the fetch renderer: every passthrough/secret key's
+    fetch line must guard the export on a non-empty fetch (the ``_VAL``-then-
+    ``[ -n "$_VAL" ] && export`` form), never the old unconditional
+    ``KEY=$(curl ...); export KEY`` that clobbered the default to ''."""
+    script = render_startup_script(
+        spec=_hydra_spec(), config=_gcp_config(), attempt_id="att-fixed-745"
+    )
+    for line in script.splitlines():
+        if "instance/attributes/" not in line:
+            continue
+        m = re.search(r"instance/attributes/([A-Z_]+)", line)
+        assert m, line
+        key = m.group(1)
+        # No unconditional ``export KEY`` (the regressed shape).
+        assert f"); export {key}" not in line, (
+            f"fetch line for {key} unconditionally re-exports — would clobber a "
+            f"prior default to '' on an absent key:\n{line}"
+        )
+        # The default-preserving guard is present.
+        assert f'[ -n "$_VAL" ] && export {key}="$_VAL"' in line, (
+            f"fetch line for {key} is not the default-preserving _VAL form:\n{line}"
+        )
