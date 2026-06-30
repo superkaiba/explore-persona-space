@@ -1,0 +1,164 @@
+{
+  "commit": "ebe8f29021",
+  "created": "2026-06-30T13:50:38Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 3.0,
+      "sink / non-sink mean-jump ratio": 20.897379373664354,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "sink / non-sink mean-jump ratio": 16.565892662232837,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "sink / non-sink mean-jump ratio": 15.223795351263272,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "sink / non-sink mean-jump ratio": 13.724513451948994,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "sink / non-sink mean-jump ratio": 12.632083927776522,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "sink / non-sink mean-jump ratio": 11.458766120393543,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "sink / non-sink mean-jump ratio": 12.175533274765272,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "sink / non-sink mean-jump ratio": 12.364261860316319,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "sink / non-sink mean-jump ratio": 11.95006780364205,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "sink / non-sink mean-jump ratio": 11.682828149770538,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "sink / non-sink mean-jump ratio": 11.28081598848487,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "sink / non-sink mean-jump ratio": 11.063212099556472,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "sink / non-sink mean-jump ratio": 10.367287606240925,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "sink / non-sink mean-jump ratio": 9.77964773677787,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "sink / non-sink mean-jump ratio": 9.108755930152492,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "sink / non-sink mean-jump ratio": 8.93339706842465,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "sink / non-sink mean-jump ratio": 8.008545793130713,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "sink / non-sink mean-jump ratio": 6.8566915448631836,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "sink / non-sink mean-jump ratio": 5.895789787244768,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "sink / non-sink mean-jump ratio": 4.962441360366886,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "sink / non-sink mean-jump ratio": 4.35686801306551,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "sink / non-sink mean-jump ratio": 3.881395739752292,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "sink / non-sink mean-jump ratio": 3.6034383999662385,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "sink / non-sink mean-jump ratio": 1.0,
+      "series": "parity (sink = non-sink)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "sink / non-sink mean-jump ratio": 1.0,
+      "series": "parity (sink = non-sink)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 25
+}
