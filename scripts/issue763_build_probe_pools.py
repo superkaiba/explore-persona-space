@@ -52,10 +52,10 @@ from issue763_common import (  # noqa: E402
     HF_DATA_REPO,
     HF_INPUTS_PREFIX,
     HF_OVERFLOW_REPO,
-    N_PROBES_TARGET,
     PROBE_POOL_DIR,
     dump_json,
     is_storage_quota_403,
+    n_probes_target,
     probe_pool_path,
     reproducibility_metadata,
     stable_hash,
@@ -261,18 +261,26 @@ def upload_pools_to_hf() -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #763: author + freeze eliciting probe pools.")
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS))
-    ap.add_argument("--n-probes", type=int, default=N_PROBES_TARGET)
+    ap.add_argument(
+        "--n-probes",
+        type=int,
+        default=None,
+        help="override the PER-BEHAVIOR target (default: 60/60/60/20/20 from "
+        "n_probes_target — self_report/persona_drift target 20, their natural "
+        "10-seed battery size; the others 60)",
+    )
     ap.add_argument("--smoke", action="store_true", help="tiny offline pool, no API, no HF upload")
     ap.add_argument("--no-upload", action="store_true", help="skip the HF inputs upload")
     args = ap.parse_args()
 
-    n = 5 if args.smoke else args.n_probes
     PROBE_POOL_DIR.mkdir(parents=True, exist_ok=True)
 
     manifest: dict[str, dict] = {}
     for behavior in args.behaviors:
         if behavior not in BEHAVIORS:
             raise SystemExit(f"unknown behavior {behavior!r}; expected one of {BEHAVIORS}")
+        # per-behavior target (60/60/60/20/20) unless --n-probes overrides for all.
+        n = 5 if args.smoke else (args.n_probes or n_probes_target(behavior))
         probes = _build_smoke_pool(behavior, n) if args.smoke else _build_real_pool(behavior, n)
         pool = freeze_pool(behavior, probes, smoke=args.smoke)
         manifest[behavior] = {

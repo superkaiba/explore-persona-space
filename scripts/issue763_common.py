@@ -50,11 +50,29 @@ BEHAVIORS: tuple[str, ...] = (
     "persona_drift",
 )
 
-# Per-behavior target probe count (≥50 floor with headroom for judging drops;
-# the 80% floor is 48 — plan §11). A behavior that under-fills below the floor
-# is REPORTED (yield_shortfall), never silently backfilled.
-N_PROBES_TARGET = 60
-N_PROBES_FLOOR = 48  # 80% of target 60
+# Per-behavior target probe count. deception / fact_expression / format_style
+# scale to 60 (≥50 floor with headroom). self_report / persona_drift target 20:
+# their eliciting batteries are 10 hand-written behavior-awareness/identity SEEDS
+# + Sonnet variation, and 20 is the natural distinct-probe size (the
+# build_probe_battery default) — forcing 60 would strain the seed diversity and
+# risk duplicate probes that inflate the √(r_yy) ceiling (BLOCKER
+# fact-pool-distinct-probes). The v3 repro-card probe counts are 60/60/60/20/20;
+# the behavior-conditioned acceptance floor is floor(0.8 * m_B) per behavior
+# (48/48/48/16/16), read from the frozen pool's n_probes — NOT a global constant.
+N_PROBES_TARGET = 60  # default for the high-diversity behaviors
+N_PROBES_TARGET_BY_BEHAVIOR: dict[str, int] = {
+    "deception": 60,
+    "fact_expression": 60,
+    "format_style": 60,
+    "self_report": 20,
+    "persona_drift": 20,
+}
+
+
+def n_probes_target(behavior: str) -> int:
+    """Per-behavior probe target (60/60/60/20/20); falls back to N_PROBES_TARGET."""
+    return N_PROBES_TARGET_BY_BEHAVIOR.get(behavior, N_PROBES_TARGET)
+
 
 # HF data-repo destinations (plan §9 / §10; issue-owned namespace).
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
