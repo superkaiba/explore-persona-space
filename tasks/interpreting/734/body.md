@@ -1,6 +1,6 @@
 ---
-title: '#664''s “marker never installed on Instruct” was a slot-rooting measurement
-  artifact: a corrected read recovers the install on 16/16 reused adapters (HIGH confidence)'
+title: A slot-rooting measurement artifact masked a successful marker install on Qwen-2.5-7B-Instruct;
+  the corrected read recovers it on 16/16 reused adapters (HIGH confidence)
 kind: experiment
 tags:
 - marker

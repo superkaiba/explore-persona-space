@@ -4626,7 +4626,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/734",
       "status": "interpreting",
-      "title": "#664's \u201cmarker never installed on Instruct\u201d was a slot-rooting measurement artifact: a corrected read recovers the install on 16/16 reused adapters (HIGH confidence)"
+      "title": "A slot-rooting measurement artifact masked a successful marker install on Qwen-2.5-7B-Instruct; the corrected read recovers it on 16/16 reused adapters (HIGH confidence)"
     },
     "735": {
       "has_clean_result": false,
