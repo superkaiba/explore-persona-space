@@ -6046,10 +6046,28 @@ this step verifies the test suite still passes.
 There is **no `tester` agent**. The skill itself runs the project's test
 suite directly and posts an `epm:test-verdict` event with the result.
 
-1. Unit tests: `uv run pytest tests/ -v --tb=short`
+1. Unit tests — DEFAULT scope `touched` (workflow-invariant + touched-file
+   subset). The full ~5800-test suite has no xdist parallelism and is
+   harness-/earlyoom-killed in sparse worktrees (#665/#736), so do NOT run
+   `pytest tests/` wholesale by default.
+   a. Compute the subset:
+      `uv run python scripts/select_step9c_tests.py --base main`
+      It prints the exact `uv run pytest <files> -v --tb=short` command and
+      any `untested touched file: <path>` WARN lines (stderr).
+   b. Run the printed command. Record pass/fail + any WARN lines.
+   c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
+      `## Test scope` H2 names `full`, run the FULL suite instead — but as
+      `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
+      capture `tail -50` of the run log so the stall surfaces actionable
+      evidence (this is the #665/#736 regression — keep it visible, never a
+      silent kill). Default scope is `touched`.
 2. Lint: `uv run ruff check . && uv run ruff format --check .`
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
+
+The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
+the files run, pass/fail counts, and any untested-touched-file WARNs (so the
+orchestrator surfaces coverage gaps — never silently skipped).
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
