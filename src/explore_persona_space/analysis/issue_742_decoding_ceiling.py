@@ -1258,6 +1258,23 @@ STAGE1_VERDICTS = frozenset(
     }
 )
 # Selectivity-branch labels recorded alongside the verdict (plan v9 §6.5 / §4 step 4).
+#
+# IMPLEMENTER DEVIATION NOTE (CONCERN selectivity-branch-vocab-deviation): plan v9 §6.5
+# registers the selectivity-branch enum as {control-fails-null, effect-size-margin,
+# failed}. The implementation ships {control-fails-null, effect-size-margin,
+# non-selective, not-applicable} — two deliberate, downstream-safe refinements:
+#   (1) plan's "failed" -> "non-selective". "failed" is ambiguous (it reads like a
+#       crash / unrunnable cell, not a science outcome). "non-selective" names the
+#       EXACT outcome: (i)+(ii) hold but selectivity (iii) fails — the d≫n probe-
+#       memorization regime — and matches the corresponding `non-selective` VERDICT
+#       enum entry (STAGE1_VERDICTS), so the verdict and its branch share one label.
+#   (2) "not-applicable" added for the branch field on verdicts where the selectivity
+#       rule does not apply (ceiling-limited / linear-erasure-leakage-unresolved, and
+#       the legacy 2-arg `nonlinear-yes` path) — the field is always populated rather
+#       than null, so the analyzer never sees a missing branch.
+# No committed consumer reads the plan's literal "failed" string (verified — the tests
+# and run_stage1_cell assert against these four labels); the deviation is internally
+# consistent and strictly more specific than the plan's vocab.
 STAGE1_SELECTIVITY_BRANCHES = frozenset(
     {"control-fails-null", "effect-size-margin", "non-selective", "not-applicable"}
 )

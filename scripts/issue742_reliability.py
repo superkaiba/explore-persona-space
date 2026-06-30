@@ -169,10 +169,29 @@ def compute_bracket(
     # analyzer sees the realized truncation depth per cell.
     disagree = split_half is not None and abs(float(split_half) - float(binom)) > DISAGREE_THRESHOLD
 
-    # BLOCKER stage0-reliability-not-registered(a): CV-MATCHED ceiling CI — one √(r_yy)
-    # estimate per LOCO fold (held-out context excluded), NOT a pooled bootstrap
-    # against a CV'd ρ (Storrs 2020). The fold-to-fold spread is the honest CV variance.
-    cv_mean, ceil_lo, ceil_hi = dc.cv_matched_reliability_ci(rates, m_cell.astype(float))
+    # BLOCKER stage0-bootstrap-ci-not-used: the HEADLINE CI on √(r_yy) and on the
+    # bracket width is the CLUSTER-BOOTSTRAP over the 50 contexts (B=n_boot, seed 742),
+    # NEVER std-across-folds and NEVER the percentile-across-LOCO-folds read (Bengio-
+    # Grandvalet 2004 + Varoquaux 2018; plan §4 Stage-0 step 4 + §11 row 6 + parameters
+    # table + §14 test plan). Each resample draws the 50 contexts WITH replacement and
+    # recomputes √(binomial-variance r_yy) on the resampled (rate, m_cell) pair — so the
+    # headline estimator is re-derived per bootstrap draw. `n_boot` is now CONSUMED (it
+    # was threaded to the API boundary but unused for the headline CI in the prior round).
+    boot_data = np.column_stack([rates, m_cell.astype(float)])
+
+    def _sqrt_binom_stat(resample: np.ndarray) -> float:
+        r_b = resample[:, 0]
+        m_b = resample[:, 1]
+        return float(np.sqrt(dc.reliability_binomial_variance(r_b, m_b)))
+
+    ceil_lo, ceil_hi = dc.cluster_bootstrap_ci(_sqrt_binom_stat, boot_data, n_boot=n_boot, rng=rng)
+
+    # CV-MATCHED LOCO-fold read — DEMOTED to a RECORDED DIAGNOSTIC alongside the headline
+    # (mirrors the v8 ridge-vs-projection demotion pattern, §13.4 v7→v8). One √(r_yy)
+    # estimate per LOCO fold (held-out context excluded), NOT the headline CI (Storrs
+    # 2020 ceiling-to-LOCO match). Reported in the entry for auditability; the bracket /
+    # gate verdict headline on the cluster-bootstrap CI above, never on this fold spread.
+    cv_mean, cv_fold_lo, cv_fold_hi = dc.cv_matched_reliability_ci(rates, m_cell.astype(float))
 
     # v8 [REPLAN] Stage-0 step-0c LOCO-CV ridge re-fit -> RECORDED DIAGNOSTIC (NOT a
     # gate). `ridge_join_integrity` logs refit_rho + persisted_rho + delta vs #658's
@@ -234,13 +253,17 @@ def compute_bracket(
         "sqrt_r_yy_split_half": sqrt_split,
         "sqrt_r_yy_binomial": sqrt_binom,
         "sqrt_r_yy_cv_matched_mean": float(cv_mean),
+        # CV-matched LOCO-fold CI — DEMOTED to a recorded diagnostic alongside the
+        # headline cluster-bootstrap CI (stage0-bootstrap-ci-not-used). NOT the headline.
+        "sqrt_r_yy_cv_matched_fold_ci": [float(cv_fold_lo), float(cv_fold_hi)],
         "sqrt_r_yy_honest_judge_folded": None
         if judge_honest_sqrt is None
         else float(judge_honest_sqrt),
         "sqrt_r_yy_headline": float(sqrt_r_yy),
         "estimators_disagree": bool(disagree),
         "sqrt_r_yy_ci": [float(ceil_lo), float(ceil_hi)],
-        "ceiling_ci_kind": "cv_matched_loco_fold",
+        "ceiling_ci_kind": "cluster_bootstrap",
+        "n_boot": int(n_boot),
         "ridge_join_integrity": join,
         "bracket": [float(rho_lin), float(sqrt_r_yy)],
         "bracket_width": bracket_width,
@@ -366,7 +389,12 @@ def run(
                 if judge_variance_path is not None and judge_variance_path.exists()
                 else None
             ),
-            "ceiling_ci_kind": "cv_matched_loco_fold",
+            # The HEADLINE CI on √(r_yy) + bracket width is the cluster-bootstrap over the
+            # 50 contexts (B=n_boot, seed 742), NEVER std-across-folds (plan §4 Stage-0
+            # step 4 + §11 row 6). The CV-matched LOCO-fold read is a per-cell recorded
+            # diagnostic (sqrt_r_yy_cv_matched_fold_ci), not the headline.
+            "ceiling_ci_kind": "cluster_bootstrap",
+            "bootstrap_seed": seed,
         },
         "metadata": reproducibility_metadata({"script": "issue742_reliability"}),
     }

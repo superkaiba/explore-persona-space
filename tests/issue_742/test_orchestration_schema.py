@@ -673,3 +673,96 @@ def test_run_stage1_cell_nonlinear_yes_implies_selectivity_holds(monkeypatch):
         assert entry["post_leace_linear_pass"] is True
         assert entry["dcor_pass"] is True
         assert selective, "nonlinear-yes recorded but selectivity rule does not hold on the reads"
+
+
+# --------------------------------------------------------------------------- #
+# 9. HEADLINE CI = cluster-bootstrap, NEVER the CV-matched LOCO-fold percentile #
+#    (BLOCKER stage0-bootstrap-ci-not-used) — binds the PRODUCTION path.        #
+#    Plan v9 §4 Stage-0 step 4 + §11 row 6 + parameters table + §14 test plan   #
+#    bind cluster_bootstrap_ci(B=2000, seed 742) for the headline √(r_yy) /     #
+#    bracket-width CI; the prior round threaded n_boot to the API boundary but  #
+#    headlined on cv_matched_reliability_ci (percentile-across-folds), biasing   #
+#    the gate toward false "headroom". This monkeypatches BOTH helpers as spies  #
+#    and asserts the headline CI is the bootstrap output, never the CV-fold one. #
+# --------------------------------------------------------------------------- #
+def test_headline_ci_is_cluster_bootstrap_not_cv_matched_fold(monkeypatch):
+    """``compute_bracket`` MUST headline ``sqrt_r_yy_ci`` / ``bracket_width_ci`` on
+    ``dc.cluster_bootstrap_ci`` (the B=n_boot cluster bootstrap over contexts), NEVER
+    on ``dc.cv_matched_reliability_ci`` (the percentile-across-LOCO-folds read, now a
+    recorded diagnostic). Spies on both helpers with distinct sentinel intervals and
+    asserts (a) the bootstrap spy was called with the threaded ``n_boot``; (b) the
+    headline CI equals the BOOTSTRAP sentinel, not the CV-fold sentinel."""
+    import issue742_reliability as rel
+
+    # 50-context #658-shaped e0 with a genuine per-context signal.
+    rng = np.random.default_rng(74290)
+    n = 50
+    context_ids = [f"ctx_{i}" for i in range(n)]
+    theta = np.clip(0.5 + rng.normal(0, 0.12, n), 0.05, 0.95)
+    e0: dict = {}
+    for i, c in enumerate(context_ids):
+        m = 400
+        labels = rng.binomial(1, theta[i], size=m).astype(float)
+        e0[c] = {
+            "broad_em": {
+                "rate": float(labels.mean()),
+                "n_judged": int(m),
+                "per_probe": [
+                    {"probe": f"p{j}", "e0": float(labels[j]), "n_judged": 1} for j in range(8)
+                ],
+            }
+        }
+
+    BOOT_CI = (0.111, 0.999)  # sentinel the cluster-bootstrap spy returns
+    CV_CI = (0.222, 0.888)  # sentinel the CV-matched-fold spy returns
+    boot_calls: list[int] = []
+
+    def _spy_bootstrap(stat_fn, data, *, n_boot, alpha=0.05, rng=None):
+        boot_calls.append(int(n_boot))
+        # exercise stat_fn so a broken stat function still surfaces (it must be callable
+        # on a resample of `data`'s rows).
+        _ = float(stat_fn(np.asarray(data)))
+        return BOOT_CI
+
+    cv_calls: list[int] = []
+
+    def _spy_cv(rates, m_cell, *, alpha=0.05):
+        cv_calls.append(1)
+        return (0.5, CV_CI[0], CV_CI[1])  # (mean, lo, hi)
+
+    monkeypatch.setattr(rel.dc, "cluster_bootstrap_ci", _spy_bootstrap)
+    monkeypatch.setattr(rel.dc, "cv_matched_reliability_ci", _spy_cv)
+
+    entry = rel.compute_bracket(
+        "broad_em",
+        "betley",
+        e0,
+        context_ids,
+        rho_lin=0.20,
+        rng=np.random.default_rng(742),
+        n_split_seeds=20,
+        n_boot=137,  # distinctive value the bootstrap spy must receive
+    )
+
+    # (a) cluster_bootstrap_ci was called for the headline CI, with the threaded n_boot.
+    assert boot_calls == [137], (
+        f"cluster_bootstrap_ci must be called once with n_boot=137; got {boot_calls}"
+    )
+
+    # (b) the headline CI is the BOOTSTRAP sentinel — NOT the CV-matched-fold sentinel.
+    assert entry["sqrt_r_yy_ci"] == [BOOT_CI[0], BOOT_CI[1]], (
+        f"headline sqrt_r_yy_ci must be the cluster-bootstrap CI {list(BOOT_CI)}, "
+        f"got {entry['sqrt_r_yy_ci']}"
+    )
+    assert entry["ceiling_ci_kind"] == "cluster_bootstrap"
+    assert entry["n_boot"] == 137
+    # bracket_width_ci is derived from the headline (bootstrap) ceiling bounds − rho_lin.
+    assert entry["bracket_width_ci"] == [BOOT_CI[0] - 0.20, BOOT_CI[1] - 0.20]
+
+    # the CV-matched fold read is still computed, but ONLY as a recorded diagnostic.
+    assert cv_calls == [1], "cv_matched_reliability_ci should still run for the diagnostic"
+    assert entry["sqrt_r_yy_cv_matched_fold_ci"] == [CV_CI[0], CV_CI[1]], (
+        "CV-matched fold CI must be recorded as a diagnostic, distinct from the headline"
+    )
+    # the headline must NOT be the CV-matched read.
+    assert entry["sqrt_r_yy_ci"] != entry["sqrt_r_yy_cv_matched_fold_ci"]
