@@ -72,16 +72,25 @@ Exit codes
   ``reason: confirm_artifacts_no_declaration``.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 * ``75`` — still-waiting (EX_TEMPFAIL; mirrors
-  ``pod_lifecycle.EXIT_STILL_WAITING``). The RunPod lane's
-  ``pod_lifecycle.py provision`` exited 75 because its bounded
-  wait-for-capacity loop reached the per-process wall-clock budget
-  while capacity / the fleet burn cap kept the provision queued. NOT a
+  ``pod_lifecycle.EXIT_STILL_WAITING``). TWO producers, same contract:
+  (1) the RunPod lane's ``pod_lifecycle.py provision`` exited 75 because
+  its bounded wait-for-capacity loop reached the per-process wall-clock
+  budget while capacity / the fleet burn cap kept the provision queued
+  (``reason: wait_for_capacity_budget_reached``); (2) the GCP lane's
+  ``gcloud compute instances create`` exceeded the 300s subprocess cap on
+  a FLEX_START rung but a post-timeout ``instances list`` probe found the
+  instance live server-side — a FLEX_START preemptible-queueing state
+  (``reason: gcloud_create_timeout_still_provisioning``, with additive
+  ``instance_name`` / ``instance_status`` keys; #736). NEITHER is a
   failure: ``stdout`` carries ``still_waiting: true`` + ``rerun: true``
   and the caller RE-RUNS the same launch command to continue waiting
-  (the wait loop is state-free, so a re-run resumes it exactly). Do
-  NOT post ``epm:failure v1`` / ``set-status blocked`` on this exit.
-  (Incident #603, 2026-06-11: this exit previously fell through to the
-  generic handler and crashed as an rc-4 ``CalledProcessError``.)
+  (the RunPod wait loop is state-free; the GCP re-run reconnects to the
+  live instance via ``reconnect_or_none`` with NO double-create, so both
+  resume exactly). Do NOT post ``epm:failure v1`` / ``set-status
+  blocked`` on this exit. (Incident #603, 2026-06-11: this exit
+  previously fell through to the generic handler and crashed as an rc-4
+  ``CalledProcessError``. Incident #658/#736, 2026-06-29: the GCP
+  create-timeout case crashed as the undocumented rc-4 traceback below.)
 
 Bg-Bash contract preservation
 -----------------------------
@@ -762,8 +771,8 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
     if getattr(args, "max_run_duration", None):
         # GCP-only knob: the instance-create renderer reads
-        # spec.extra["max_run_duration"], falling back to the 24h
-        # GcpConfig.default_max_run_duration. Before this flag a plan's
+        # spec.extra["max_run_duration"], falling back to the 7d
+        # GcpConfig.default_max_run_duration (#741). Before this flag a plan's
         # declared auto-delete fence (#628: 30h for a worst-case 20h
         # wall) had no CLI path from the /issue Step 6b launch. Inert
         # on SLURM / RunPod lanes.
@@ -855,6 +864,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     ``scripts/task.py set-status <N> blocked`` itself — keeping all
     task-workflow mutations on the single ``task.py`` flock owner.
     """
+    from explore_persona_space.backends.gcp import GcpCreateTimedOutStillProvisioning
     from explore_persona_space.backends.issue_dispatch import (
         build_run_spec,
         classify_terminal_exception,
@@ -923,7 +933,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
                 "scripts via --workload-cmd. Name a residual gap in the launch note — "
                 "70B intents (no GCP machine-type mapping) / interactive SSH-MCP "
                 "experimenter orchestration / runs longer than GCP --max-run-duration "
-                "(default 24h) / SLURM venv-extras mismatch — or drop the override and "
+                "(default 7d) / SLURM venv-extras mismatch — or drop the override and "
                 "let auto route. Launch continues; the epm:backend-selected marker "
                 "carries extra.override_without_frontmatter=true so the bypass is "
                 "visible on the events trail.",
@@ -1032,6 +1042,41 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
                 "state-free, so re-run the SAME dispatch_issue.py launch command "
                 "to continue waiting. Do not post epm:failure or set-status "
                 "blocked on this exit."
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return EXIT_STILL_WAITING
+    except GcpCreateTimedOutStillProvisioning as exc:
+        # The GCP-lane second producer of exit 75 (#736): a
+        # ``gcloud compute instances create`` on a FLEX_START rung exceeded
+        # the 300s subprocess cap, but a post-timeout ``instances list``
+        # probe found the instance live server-side — a FLEX_START
+        # preemptible-queueing state, NOT a failure. Mirror the #603
+        # still-waiting contract exactly: deliberately NO ``failure_class``
+        # / ``status`` keys, so the orchestrator does NOT post
+        # ``epm:failure v1`` / ``set-status blocked``. The caller re-runs
+        # the SAME launch command; ``reconnect_or_none`` (the idempotent
+        # re-entry at the top of ``GcpBackend.launch``) reconnects to the
+        # live instance with NO double-create. ``GcpCreateTimedOutStillProvisioning``
+        # is a ``GcpBackendError`` (NOT a ``RouteError`` / ``CalledProcessError``),
+        # so it shares a base with neither existing arm and arm order is moot.
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "still_waiting": True,
+            "rerun": True,
+            "reason": "gcloud_create_timeout_still_provisioning",
+            "instance_name": exc.instance_name,
+            "instance_status": exc.status,
+            "note": (
+                "gcloud compute instances create exceeded the 300s subprocess cap, "
+                "but a post-timeout instances-list probe found the instance "
+                f"{exc.instance_name} live (status={exc.status}) — a FLEX_START "
+                "preemptible-queueing state, NOT a failure. Re-run the SAME "
+                "dispatch_issue.py launch command to continue waiting; "
+                "reconnect_or_none reconnects to the live instance with no "
+                "double-create. Do not post epm:failure or set-status blocked "
+                "on this exit."
             ),
         }
         print(json.dumps(body, sort_keys=True))
@@ -1498,11 +1543,13 @@ def _build_argparser() -> argparse.ArgumentParser:
             "spec.extra['max_run_duration'], read by the instance-create "
             "renderer next to --instance-termination-action=DELETE). "
             "gcloud duration shape — integer+unit groups, e.g. '30h', "
-            "'1d12h', '90m'. The 24h default "
-            "(GcpConfig.default_max_run_duration) deletes a >20h workload "
-            "mid-run; thread the plan's declared fence on EVERY gcp/auto "
-            "launch of a long workload (issue 628: a 30h fence for a "
-            "worst-case 20h wall had no CLI path). Inert on non-GCP lanes."
+            "'1d12h', '90m'. The 7d default "
+            "(GcpConfig.default_max_run_duration, #741) lets a multi-day "
+            "workload run to the FLEX_START ceiling without being stranded "
+            "mid-run (#697); pin a SHORTER fence here to bound an orphaned VM "
+            "sooner. A workload genuinely needing >7d cannot run on the GCP "
+            "FLEX_START lane at all (7d is the GCP ceiling) — pin "
+            "backend: runpod. Inert on non-GCP lanes."
         ),
     )
     launch.add_argument(

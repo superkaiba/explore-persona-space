@@ -1,0 +1,247 @@
+{
+  "commit": "2801d9c503",
+  "created": "2026-06-30T02:15:31Z",
+  "figsize": [
+    8.0,
+    5.2
+  ],
+  "points": [
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.630130500793457,
+      "y": 0.0,
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.2857450103759764,
+      "y": 1.0,
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.7040032577514648,
+      "y": 2.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.09904598236084,
+      "y": 3.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.5697779083251953,
+      "y": 4.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.5738880157470705,
+      "y": 5.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.207239761352539,
+      "y": 6.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 2.68169734954834,
+      "y": 7.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.4640395736694336,
+      "y": 8.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.149837417602539,
+      "y": 9.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.0767426681518555,
+      "y": 10.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 2.5749259185791016,
+      "y": 11.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.8322526550292968,
+      "y": 12.0,
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.9845107650756835,
+      "y": 13.0,
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.87171875,
+      "y": 14.0,
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.929142074584961,
+      "y": 15.0,
+      "series": "mis-rooted read (#664 path)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 5.3809553909301755,
+      "y": 0.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.305550270080566,
+      "y": 1.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 6.302605934143067,
+      "y": 2.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.240010032653808,
+      "y": 3.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 6.466200752258301,
+      "y": 4.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 12.456338653564453,
+      "y": 5.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 5.344264945983887,
+      "y": 6.0,
+      "label": "every one of the 16 cells moves from the noise floor into the install band when the slot is corrected",
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.616136016845703,
+      "y": 7.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 6.616690483093262,
+      "y": 8.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 12.2575630569458,
+      "y": 9.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 5.167400665283203,
+      "y": 10.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.751272926330566,
+      "y": 11.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 5.857916069030762,
+      "y": 12.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.953400726318359,
+      "y": 13.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 6.108558807373047,
+      "y": 14.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "source marker log P(\u203b), trained \u2212 base (nat)": 11.576724853515625,
+      "y": 15.0,
+      "series": "corrected read (marker's own slot)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 32
+}

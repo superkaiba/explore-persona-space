@@ -3,6 +3,7 @@ title: The leakage predictor's first link fails on Qwen2.5-7B — a mean answer-
   activation summarizes only 3 of 10 behaviors, and none of the 4 with a working linear
   read-out (HIGH confidence)
 kind: experiment
+backend: runpod
 tags:
 - followup-manual
 created_at: '2026-06-24T08:21:29Z'

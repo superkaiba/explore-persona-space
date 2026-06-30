@@ -29,3 +29,11 @@ CLAUDE.md as always-on rules; the rest live here and load when you touch code.)
 - **Env sync after dep changes:** `uv lock && git push`, then `pod.py sync env`.
 - **HF cache** always `/workspace/.cache/huggingface` on pods (symlinks enforce).
 - **Reproducibility metadata in result JSONs:** git commit hash, env versions, timestamps.
+- **Supersede → delete the old version.** When an improved version of a script
+  / helper supersedes an old one, DELETE the old version after rewiring every
+  reference to it — do NOT keep both. Two live scripts that do the same job
+  rot: the next reader can't tell which is canonical, greps hit the stale one,
+  and a future change patches the wrong file. Rewire-then-delete in the SAME
+  change. Worked example: `scripts/issue722_vectorized_skill.py` (vectorized,
+  50-100x faster) supersedes `scripts/issue722_skill_over_mean.py`; once the
+  vectorized driver lands on main the slow one is deleted, not left beside it.

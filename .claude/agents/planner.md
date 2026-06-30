@@ -20,6 +20,13 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 
 ## Before Planning
 
+0. **Scan the always-on lessons index first.** `.claude/rules/LESSONS.md` is
+   imported into context via `CLAUDE.md`. Read its "fires when" triggers and,
+   for every trigger your design matches, OPEN the linked rule and follow it
+   BEFORE grounding any hyperparameter or design choice — this is the
+   load-timing backstop (a rule whose `paths:` glob has not matched an open
+   file yet, e.g. `vectorize-many-cell-fits.md` at plan time, #722).
+
 1. **Read the codebase.** Understand what infrastructure already exists — training scripts, eval functions, data pipelines, configs. Don't reinvent what's already built.
 
 2. **Find similar prior issues and stay consistent with them.** This is the
@@ -177,8 +184,9 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    - **(e) Producing issue not retracted / superseded:** check the producing task's status and any `epm:retracted` markers. An adapter from a task later marked `not-useful` or whose clean-result was retracted cannot be cited as a confirmed baseline without naming it.
    - **(f) Content identity across copies:** when the copy you VERIFIED is a local untracked file (e.g. a parent task's `data/` output, absent from every clone) AND the execution side will FETCH the artifact from HF (a shared mirror under the parent's `issue<M>_<slug>/...` path), the plan must name the content-identity mechanism — either an `EXPECTED_SHA256` pin table asserted at prefetch (covering files already present on the worker, not just fresh downloads) or a snapshot of the verified local inputs to an issue-OWNED `issue<N>_<slug>/inputs/` path that execution consumes instead of the parent's shared mirror. Resolution (check (e)) alone does NOT prove the mirror matches the verified copy: the HF mirror can be a silently different generation, and the divergence surfaces as a KeyError / wrong persona universe deep in the consumer after a full provision cycle is already spent (`.claude/rules/gotchas.md` § "HF mirror ≠ local-verified copy"; incident #600, 2026-06-11 — stale HF mirrors of #472's `R_train.json` + `centroids_L10.pt` crashed the GCP smoke run).
    - **(g) Application-scaling regime (reused LoRA adapters):** check (a) covers what was TRAINED; this check covers how the CURRENT stack will APPLY it — the two can diverge under an identical recipe. Read the reused adapter's `adapter_config.json` scaling fields (`use_rslora`, `lora_alpha`, `r`): the effective LoRA scale is classic `α/r` when the consuming stack ignores `use_rslora` but `α/√r` when it honors it (current vLLM+PEFT honor it), so a parent whose committed numbers were produced under one gauge can be unusable as fetched under the other. Before the design consumes the artifacts, require a 1-adapter apply-and-read parity probe that reproduces the parent's committed numbers on the CURRENT stack. A parent whose committed reads are UNREACHABLE at faithful scaling must be flagged, and the plan must pin the read gauge explicitly in §4 (which scaling the apply-and-read uses, and why it matches the parent's committed regime). (Incident #601, round 5: all 20 of #472's reused adapters passed checks (a)–(f) yet were unconditional marker-repeaters at faithful rsLoRA application, `α/√r ≈ 11.31` — the parent's committed numbers came from classic `α/r = 2.0` application; the mismatch passed every planning gate and surfaced only as a mid-run Phase-0 HALT.)
+   - **(h) Source resolution + target-backend fetchability (reused TRAINING-INPUT artifacts):** checks (a)–(g) above cover reused ADAPTERS / CHECKPOINTS; this check covers reused TRAINING-INPUT data — a parent's `train/*.jsonl` mix, an on-policy response cache, or an `eval_results/` JSON the new run consumes as a downstream INPUT. Verify BOTH: **(i) source resolution** — the file is reachable through EITHER HF resolution via `huggingface_hub.list_repo_files` at the cited path (training mixes / on-policy caches / HF-uploaded eval JSONs) OR **git-tree reachability** for a committed `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- eval_results/issue_<M>/<file>` returns it — in-git eval JSONs are a sanctioned reuse source, the bullet above this step-5 list, and the git-clone-only lanes pick them up via the clone, so do NOT demand HF presence for them); AND **(ii) target-backend fetchability** — the backend named in §9 can actually STAGE it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈ (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/` — the GCE startup `git clone`s the repo at the cited branch (so committed `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo files need an explicit `snapshot_download` step in the workload — so a mix the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and the pre-train `assert data_path.exists()` crashes phase2. The check FAILS when EITHER (i) OR (ii) fails (e.g. HF-resolved but a CDN/region/`HF_TOKEN` gate stops the §9 lane from staging it). On a MISS, do NOT record the file as a confirmed reuse: either (a) upload the mix to HF first and cite the HF path, or (b) add a self-contained regen phase in §4 that rebuilds the mix on the worker from the parent's deterministic build blocks, and flag it `must-rebuild` in §12 Assumptions. Verify this for EVERY reused training-input file the design loads, BEFORE recording it in §10 / §11. (Incident #734 round-4: a reused parent training mix was on neither HF repo; the plan passed planning + 3 review rounds and crashed phase2 at the pre-train assert on the GCP lane because the lane cannot stage a VM-local-only mix.)
 
-   On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(g) will be REVISEd by the critic.
+   On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(h) will be REVISEd by the critic.
 
 6. **Replication fidelity (if the Goal is to replicate a published
    finding).** If the Goal is to replicate a paper's result or test
@@ -505,7 +513,23 @@ uploads so the pod can be terminated / stopped BEFORE the CPU phase starts
 LAST phase is a large terminal UPLOAD must sequence the pod teardown BEFORE
 it (or run the upload off-pod), and bulk uploads use a single
 `upload_folder` commit — never a per-file `upload_file` loop, which
-504-storms on a large repo (#664). (Incident
+504-storms on a large repo (#664).
+
+**PREFER a cheap dedicated CPU pod over the shared VM for a NON-TRIVIAL
+CPU-only phase (#747).** "Off-pod" does NOT mean "always the shared VM": for
+a non-trivial CPU phase (parallelizable, or longer than the trivial
+sub-minute floor) the default placement is now a cheap dedicated CPU lane —
+`cpu-small` (`e2-standard-2` / RunPod `cpu3g-2-8`) or `cpu-mid`
+(`e2-standard-8` / RunPod `cpu3c-8-16`), GCP E2 spot FIRST → RunPod CPU
+fallback — running N pods in PARALLEL where the work is parallelizable, NOT
+cramming onto the shared VM (which filled `/` and stalled the whole fleet,
+#658). Only TRIVIAL quick ops (sub-minute probes, quick plots, a one-off
+`lstsq`) stay on the VM. The mapped cheap CPU intents fall over GCP→RunPod
+CPU (`deployCpuPod`) on exhaustion; `cpu-bigmem` (the >50 GB lane below) does
+NOT — it keeps the #677 typed terminal. CPU pods may run in parallel: the
+"one multi-GPU pod, not many single-GPU pods" rule is GPU-specific. The
+idle-multi-GPU-pod concern below is unchanged — a cheap CPU pod holds NO GPU.
+(Incident
 2026-06-09: pod-518 ran a pure-CPU permutation/bootstrap scoring script
 for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
 metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
@@ -561,9 +585,12 @@ estimated local footprint —
   locally (chunked download → process → discard per chunk, never the whole
   store at once). State which in §9. On the GCP lane the concrete intent is
   `cpu-bigmem` (CPU-only `gpu_count=0` `n2-highmem-16`, boot disk sized via
-  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`. RunPod
-  has no CPU lane, so a `cpu-bigmem` run that exhausts GCP surfaces a typed
-  `cpu_exhausted_no_runpod_lane` terminal, NOT a RunPod fallback.
+  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`.
+  `cpu-bigmem` has NO cheap RunPod equivalent, so a `cpu-bigmem` run that
+  exhausts GCP surfaces a typed `cpu_exhausted_no_runpod_lane` terminal, NOT a
+  RunPod fallback (the cheap CPU intents `cpu-small` / `cpu-mid`, #747, DO fall
+  over GCP→RunPod CPU — but they are for SUB-50-GB work; a >50 GB phase belongs
+  on `cpu-bigmem`).
   **EXCEPTION — gradient-descent fit (compute-character carve-out above):**
   if the >50 GB phase is itself an iterative-optimization fit (its inner
   loop runs gradient descent on parameters), route it to a **GPU lane**
@@ -754,6 +781,19 @@ conditions use the Tulu 3 SFT recipe (`Source: #382`): lr=2e-5, cosine warmup
 0.03, 3 epochs. Three conditions vary learning rate only: 1e-5 / 2e-5 / 5e-5
 (`Source: #382 round-2`)." This keeps §11 compact while preserving full
 traceability.
+
+**Reused input-data artifacts get a `Source:` line too.** Every REUSED
+INPUT-DATA artifact the design loads — a parent's `train/*.jsonl` mix, an
+on-policy response cache, an `eval_results/` JSON consumed as a downstream
+input — gets a §11 `Source:` line naming (a) the producing issue `#<M>`, AND
+(b) HOW the file is FETCHED on the target backend named in §9: an HF repo path
+the worker `snapshot_download`s, a committed `eval_results/...` path that
+arrives with the git clone, or "rebuilt on-worker by the §4 regen phase". This
+is the §11 record of the step-5 check `(h)` (source resolution +
+target-backend fetchability): a git-clone-only GCP/SLURM lane cannot stage a
+VM-local-only mix, so "the parent built it locally" is NOT a valid `Source:`
+— the file must resolve on HF, be git-tree-reachable as a committed
+`eval_results/...` JSON, or be regenerated on the worker (#734).
 
 **Repo-new model id ⇒ CPU-side config-load smoke before provisioning
 (pre-provision gate).** The `model` id is itself a load-bearing choice. If

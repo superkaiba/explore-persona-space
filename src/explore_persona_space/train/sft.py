@@ -1521,9 +1521,9 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
                 )
             )
 
-        # Auto-upload adapter to WandB Artifacts so the canonical "checkpoint is
-        # in the cloud" invariant from CLAUDE.md's Upload Policy holds without a
-        # separate manual sweep. Best-effort — never abort training on failure.
+        # WandB checkpoint upload — OFF by default (Upload Policy: WandB = live
+        # metrics only; weights are canonical on HF). No-op unless
+        # EPM_UPLOAD_MODEL_WANDB=1. Best-effort — never abort training on failure.
         try:
             from explore_persona_space.train.trainer import _maybe_upload_checkpoint_to_wandb
 

@@ -977,3 +977,83 @@ def test_async_failover_skips_cpu_gcp_handle(tmp_path, monkeypatch, capsys):
     assert out["current_phase"] == "terminal_workload_failed"
     # Sidecar unchanged (still a GCP handle — no RunPod re-point).
     assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+# ---------------------------------------------------------------------------
+# Cheap CPU-intent async GCP→RunPod failover relaxation (#747)
+# ---------------------------------------------------------------------------
+#
+# NOTE: the cpu-bigmem async "does NOT fail over" guard is the EXISTING test
+# above — test_async_failover_skips_cpu_gcp_handle — which uses
+# intent="cpu-bigmem" + gpu_count==0. We do not duplicate it.
+
+
+def _cpu_gcp_handle(intent: str) -> RunHandle:
+    """A GCP RunHandle for a CPU intent (gpu_count==0 + the named intent)."""
+    extra = dict(_GCP_EXTRA_659)
+    extra["intent"] = intent
+    extra["gpu_count"] = 0
+    return _gcp_handle(extra=extra)
+
+
+def test_async_cpu_small_handle_predicate_is_failover_eligible() -> None:
+    """#747: the predicate _is_gcp_async_workload_failure returns True for a
+    cpu-small GCP handle (gpu_count==0, intent IN RUNPOD_CPU_INSTANCE_FOR_INTENT)
+    at terminal_workload_failed — the #677 CPU exclusion is RELAXED for a mapped
+    intent. The companion cpu-bigmem case (NOT in the map) stays False."""
+    from scripts.backend_poll import _is_gcp_async_workload_failure
+
+    assert (
+        _is_gcp_async_workload_failure(
+            _cpu_gcp_handle("cpu-small"), _poll("dead", "terminal_workload_failed")
+        )
+        is True
+    )
+    # cpu-bigmem (NOT in the map) stays EXCLUDED.
+    assert (
+        _is_gcp_async_workload_failure(
+            _cpu_gcp_handle("cpu-bigmem"), _poll("dead", "terminal_workload_failed")
+        )
+        is False
+    )
+
+
+def test_async_cpu_small_handle_fails_over_to_runpod(tmp_path, monkeypatch, capsys):
+    """#747 (poller end-to-end): a cpu-small GCP handle at
+    terminal_workload_failed re-dispatches on RunPod (carrying the CPU intent),
+    re-points the sidecar at the RunPod handle, and emits the RUNNING-shaped
+    failover JSON — symmetric with the #659 GPU async-failover path."""
+    sidecar = tmp_path / "issue-747-handle.json"
+    write_handle_sidecar(_cpu_gcp_handle("cpu-small"), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_workload_failed")),
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.runpod.RunPodBackend",
+        _PassiveRunpodBackend,
+    )
+
+    rc = backend_poll_main(["--issue", "747", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_workload_failover_runpod_async"
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+
+
+def test_async_cpu_handle_no_intent_key_does_not_fail_over() -> None:
+    """#747 fail-safe: a CPU GCP handle with gpu_count==0 and NO intent key (a
+    pre-#747 shape) is treated as NOT-mapped -> EXCLUDED (returns False), the
+    safe #677 behavior on a missing key. Statistics concern #3."""
+    from scripts.backend_poll import _is_gcp_async_workload_failure
+
+    extra = dict(_GCP_EXTRA_659)
+    extra["gpu_count"] = 0
+    extra.pop("intent", None)
+    handle = _gcp_handle(extra=extra)
+    assert (
+        _is_gcp_async_workload_failure(handle, _poll("dead", "terminal_workload_failed")) is False
+    )

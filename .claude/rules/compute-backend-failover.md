@@ -202,6 +202,40 @@ recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
 #491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
 a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 
+### CPU intents: cheap CPU lanes + the scoped #677 terminal (#747)
+
+The GCP→RunPod failover above (capacity AND workload-crash, sync AND async)
+now extends to the CHEAP CPU intents. #677 made EVERY CPU intent a hard
+terminal (RunPod was GPU-only); #747 adds a RunPod CPU lane (`deployCpuPod`)
+for the cheap intents and SUPERSEDES that terminal for them ONLY:
+
+- **`cpu-small` / `cpu-mid` (mapped in `router.RUNPOD_CPU_INSTANCE_FOR_INTENT`)**
+  fall over **GCP cheap CPU (E2; spot on a short job, on-demand otherwise) →
+  RunPod CPU** when the GCP CPU lane is exhausted (capacity) OR crashes its
+  workload (sync `_runpod_terminal_rung` + async
+  `_is_gcp_async_workload_failure`, both keyed on the SAME map — the single
+  source of truth). The RunPod re-dispatch carries `--intent cpu-small` /
+  `cpu-mid`, which `gpu_heuristics.resolve_cpu_intent` resolves to the RunPod
+  CPU instance_id (`cpu3g-2-8` / `cpu3c-8-16`) on the `pod_lifecycle` provision
+  path (`runpod_api.create_cpu_pod`). RunPod CPU pods are on-demand only (no
+  spot/interruptible CPU lever); a CPU no-capacity miss surfaces the existing
+  `RunPodNoCapacityError` → terminal, re-drivable by the watcher's
+  capacity-retry pass exactly as the GPU no-capacity path.
+- **`cpu-bigmem` (ABSENT from the map — the >50 GB analysis lane)** keeps the
+  #677 typed `CpuExhaustedNoRunpodLaneError` /
+  `reason: cpu_exhausted_no_runpod_lane` terminal VERBATIM: it has no cheap
+  RunPod equivalent, so on GCP exhaustion / crash it surfaces the typed
+  terminal, NOT a RunPod fallback (the watcher's capacity-retry pass keys on
+  `no_compute_available`, so the distinct reason means a structurally-unservable
+  `cpu-bigmem` RunPod launch is never auto-retried).
+
+Tests of record: `tests/test_router.py` (`test_router_cpu_small_capacity_miss_falls_over_to_runpod`,
+`test_router_cpu_intent_capacity_miss_no_runpod_fallback` — the cpu-bigmem
+guard, `test_gcp_ladder_cpu_small_short_yields_spot_then_ondemand`),
+`tests/test_backend_poll.py` (`test_async_cpu_small_handle_fails_over_to_runpod`,
+`test_async_failover_skips_cpu_gcp_handle` — the cpu-bigmem guard),
+`tests/test_runpod_api_retry.py` (`test_deploy_cpu_pod_renders_instanceid_mutation`).
+
 ## Part C — RunPod RUNNING-but-no-port host wedge (#664)
 
 The RunPod sibling of the GCP hung-but-RUNNING wedge (Part B / #669). RunPod

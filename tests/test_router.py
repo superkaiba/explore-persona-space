@@ -5026,3 +5026,143 @@ def test_router_cpu_intent_capacity_miss_no_runpod_fallback(
     cpu_terminals = _by_reason(captured_markers, ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD)
     assert cpu_terminals, captured_markers
     assert not _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+
+
+# ---------------------------------------------------------------------------
+# Cheap CPU-only intents: cpu-small / cpu-mid + GCP→RunPod CPU failover (#747)
+# ---------------------------------------------------------------------------
+#
+# NOTE: the cpu-bigmem "still raises the typed terminal, never reaches RunPod"
+# regression guard is the EXISTING test above —
+# test_router_cpu_intent_capacity_miss_no_runpod_fallback — which already uses
+# intent="cpu-bigmem" (absent from RUNPOD_CPU_INSTANCE_FOR_INTENT). We do NOT
+# duplicate it under a cpu-bigmem-named alias (single canonical name).
+
+
+def _short_cpu_small_spec(issue: int = 747) -> RunSpec:
+    """A SHORT (1 CPU-h) auto-routing cpu-small spec.
+
+    _is_short_job floors gpu_count to 1 via max(1, gpu_count) in
+    _estimated_gpu_hours, so 1.0h * 1 = 1.0 CPU-h <= the 2 GPU-h
+    EPS_GCP_SPOT_MAX_GPU_HOURS default -> short -> the cheap CPU intent earns a
+    GCP spot rung. (time_budget_hours MUST be threaded or the spot rung never
+    fires — Methodology concern #1.)
+    """
+    return RunSpec(issue=issue, intent="cpu-small", backend="gcp", time_budget_hours=1.0)
+
+
+def test_gcp_ladder_cpu_small_short_yields_spot_then_ondemand():
+    """#747: a SHORT cpu-small job yields [spot_cpu, ondemand_cpu] — the cheap
+    CPU intent IS spot-eligible on a short job (unlike cpu-bigmem). NO flex,
+    NO A100-40 rung."""
+    from explore_persona_space.backends.router import _gcp_ladder_specs
+
+    rungs = _gcp_ladder_specs(_short_cpu_small_spec())
+    labels = [lbl for _s, lbl in rungs]
+    assert labels == ["spot_cpu", "ondemand_cpu"], labels
+    # The spot rung threads SPOT provisioning; the on-demand rung threads none.
+    spot_spec, _spot_lbl = rungs[0]
+    assert str((spot_spec.extra or {}).get("provisioning_model")).upper() == "SPOT"
+    ondemand_spec, _od_lbl = rungs[1]
+    assert (ondemand_spec.extra or {}).get("provisioning_model") is None
+    # No flex / A100-40 rung anywhere.
+    assert not any("flexstart" in lbl for lbl in labels)
+    assert not any("a100_40" in lbl for lbl in labels)
+
+
+def test_gcp_ladder_cpu_small_unknown_length_ondemand_only():
+    """#747: an UNKNOWN-length cpu-small job (no time budget) yields a single
+    on-demand rung — NOT short, so no spot (preemption too costly). This is the
+    correct fail-safe: a CPU caller that does NOT thread time_budget_hours gets
+    reliable on-demand, never a spot rung."""
+    from explore_persona_space.backends.router import _gcp_ladder_specs
+
+    spec = RunSpec(issue=747, intent="cpu-small", backend="gcp")  # no budget
+    rungs = _gcp_ladder_specs(spec)
+    labels = [lbl for _s, lbl in rungs]
+    assert labels == ["ondemand_cpu"], labels
+    assert not any("spot" in lbl for lbl in labels)
+
+
+def test_gcp_ladder_cpu_bigmem_still_single_ondemand_rung():
+    """#747 regression guard on #677: cpu-bigmem (NOT in the RunPod-CPU map)
+    STILL yields exactly one on-demand rung even on a SHORT job — no spot, no
+    flex, no A100-40. The #747 spot-rung branch must NOT leak into cpu-bigmem."""
+    from explore_persona_space.backends.router import _gcp_ladder_specs
+
+    short = RunSpec(issue=747, intent="cpu-bigmem", backend="gcp", time_budget_hours=1.0)
+    rungs = _gcp_ladder_specs(short)
+    labels = [lbl for _s, lbl in rungs]
+    assert labels == ["ondemand_cpu"], labels
+    assert not any("spot" in lbl for lbl in labels)
+    assert (rungs[0][0].extra or {}).get("provisioning_model") is None
+
+
+def test_router_cpu_small_capacity_miss_falls_over_to_runpod(
+    lease_store, marker_poster, captured_markers
+):
+    """#747: a cpu-small auto route whose GCP CPU lane is exhausted FALLS OVER
+    to RunPod CPU (does NOT raise CpuExhaustedNoRunpodLaneError). GCP-first is
+    preserved: the FIRST attempt is GCP, and RunPod is reached only AFTER it.
+    RunPod is launched EXACTLY once, carrying --intent cpu-small."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+        CpuExhaustedNoRunpodLaneError,
+    )
+
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED",
+            evidence={"matched_pattern": "RESOURCE_EXHAUSTED"},
+        )
+    )
+    spec = RunSpec(issue=747, intent="cpu-small", backend="auto", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=rp,
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    # Fell over to RunPod (NOT the CPU terminal).
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    # ORDER-SENSITIVE: a GCP attempt precedes the RunPod launch (GCP-first;
+    # Statistics concern #1 — assert ordering, not just len(rp.launches) == 1).
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    gcp_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "gcp"]
+    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert gcp_idxs, outcomes
+    assert runpod_idxs, outcomes
+    assert max(gcp_idxs) < runpod_idxs[-1], outcomes
+    # The RunPod launch carries --intent cpu-small (resolved by Surface 5 to the
+    # RunPod CPU instance_id), and NO CPU-terminal marker was posted.
+    assert rp.launches[0].intent == "cpu-small"
+    assert not _by_reason(captured_markers, ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD)
+    # The typed terminal was NOT raised (sanity — route returned a result).
+    assert not isinstance(result, CpuExhaustedNoRunpodLaneError)
+
+
+def test_runpod_cpu_instance_map_is_single_source_of_truth():
+    """#747: gpu_heuristics resolves CPU intents from the SAME router map
+    (single source of truth, NOT a duplicated copy). Asserts every router-map
+    key+value round-trips through gpu_heuristics.resolve_cpu_intent, and a
+    non-CPU intent resolves to None."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import gpu_heuristics
+
+    from explore_persona_space.backends.router import RUNPOD_CPU_INSTANCE_FOR_INTENT
+
+    for intent, instance_id in RUNPOD_CPU_INSTANCE_FOR_INTENT.items():
+        assert gpu_heuristics.resolve_cpu_intent(intent) == instance_id
+    # A GPU intent (and any unmapped string) is NOT a CPU intent.
+    assert gpu_heuristics.resolve_cpu_intent("lora-7b") is None
+    assert gpu_heuristics.resolve_cpu_intent("cpu-bigmem") is None

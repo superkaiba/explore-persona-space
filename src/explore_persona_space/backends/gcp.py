@@ -34,12 +34,14 @@ What this slice ships
   compute instances list --filter=name=eps-issue-<N>``. If a live instance
   exists, return a handle for it without re-provisioning.
 * :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
-  reaps ``eps-issue-*`` instances on TWO bounded predicates: an age backstop
-  (older than 24h regardless of phase) AND a prompt terminal-phase reap (a
-  RUNNING VM that published ``eps/phase=done``/``failed`` past a short floor
-  is a wedged zombie idle-billing — reaped well under the age fence; incident
-  #634 family). Cron wiring is the orchestrator's responsibility — this
-  exposes the callable that the cron / a ``scripts/`` entry can invoke.
+  reaps ``eps-issue-*`` instances on TWO bounded predicates: a per-instance-
+  fence-aware age backstop (#741 — reaped once the VM exceeds its OWN
+  ``--max-run-duration`` + a 1h grace, or a fixed fallback fence when that
+  field is unreadable) AND a prompt terminal-phase reap (a RUNNING VM that
+  published ``eps/phase=done``/``failed`` past a short floor is a wedged
+  zombie idle-billing — reaped well under the age fence; incident #634
+  family). Cron wiring is the orchestrator's responsibility — this exposes
+  the callable that the cron / a ``scripts/`` entry can invoke.
 * Typed failure classifications: :class:`GcpProvisioningError` (capacity /
   quota / SSH bring-up) → the router falls back to the next tier;
   :class:`GcpWorkloadError` (a real workload exception after the VM is up)
@@ -172,10 +174,16 @@ class GcpConfig:
     * ``default_boot_disk_type`` — ``pd-ssd`` (the ``pd-balanced`` default
       is markedly slower for the model-load + HF-cache write path).
     * ``default_max_run_duration`` — VM auto-delete fence. Defaults to
-      ``24h`` — generous enough to never interrupt an upload but short
-      enough that an orphaned VM caps the credit burn at one day's worth.
-      Tunable per spec via ``RunSpec.time_budget_hours`` (the renderer
-      converts to ``<H>h`` for gcloud).
+      ``7d`` (#741) — the FLEX_START ceiling (the longest the GCP-first
+      auto lane's long-job branch can run; ``_assert_max_run_within_flex_cap``
+      rejects ``>7d``), so a long multi-cell sweep is no longer stranded
+      mid-run by a self-imposed 24h fence (#697 lost 24/64 cells to the old
+      24h default). The credit-leak backstop is now the per-instance-fence-
+      aware janitor age reap (``gcp_audit.py`` + :func:`_janitor_stale_reason`,
+      reaping a VM only once it exceeds its OWN ``--max-run-duration`` + a 1h
+      grace), NOT this fence. Tunable per spec via ``RunSpec.time_budget_hours``
+      / ``spec.extra['max_run_duration']`` (the renderer converts to gcloud
+      duration form).
     * ``vm_scratch_dir`` — workload scratch root on the VM (where the
       sentinel + rsync'd repo land). Mirrors the RunPod ``/workspace``
       convention so workloads share filesystem layout across backends.
@@ -194,7 +202,7 @@ class GcpConfig:
     image_project: str = ""
     default_boot_disk_gb: int = 300
     default_boot_disk_type: str = "pd-ssd"
-    default_max_run_duration: str = "24h"
+    default_max_run_duration: str = "7d"
     vm_scratch_dir: str = "/workspace"
     repo_url: str = ""
     hf_data_repo: str = DEFAULT_HF_DATA_REPO
@@ -336,6 +344,36 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_count=0,
         gpu_kind="CPU",
     ),
+    # Cheap CPU-only intents (#747) — gpu_count=0, spot-eligible on a short
+    # job (the router's CPU spot rung, unlike cpu-bigmem above which is
+    # reliable on-demand only). The standing CPU-routing policy prefers a
+    # dedicated cheap CPU pod over the shared VM for non-trivial CPU phases
+    # (parallelizable / longer than the trivial floor). e2-standard-2 = 2 vCPU
+    # / 8 GB (~$0.035/hr spot us-central1) — the parallel-fan-out workhorse;
+    # e2-standard-8 = 8 vCPU / 32 GB — a mid CPU job that fits between
+    # cpu-small's fan-out and cpu-bigmem's >50 GB analyses. NEITHER is for
+    # >50 GB footprints — that stays cpu-bigmem (n2-highmem-16, above). These
+    # ALSO have a RunPod CPU fallback lane (router.RUNPOD_CPU_INSTANCE_FOR_INTENT),
+    # so unlike cpu-bigmem they fall over GCP->RunPod when GCP is exhausted.
+    "cpu-small": MachineSpec(machine_type="e2-standard-2", gpu_count=0, gpu_kind="CPU"),
+    "cpu-mid": MachineSpec(machine_type="e2-standard-8", gpu_count=0, gpu_kind="CPU"),
+    # 8-GPU sweep intents (#743) — the FREE GCP credit lane at 8x width for
+    # wide embarrassingly-parallel sweeps (driving case #697's 64-cell patch
+    # sweep, ~2x faster on 8 GPUs than 4). EXPLICIT --intent ONLY: NOT added to
+    # the router auto-ladder (router.py unchanged) — 8x H100 quota in us-central1
+    # is exactly 8 (no concurrency headroom) and 8x A100 is heavy, so auto must
+    # never schedule one. sweep-8g-h100 is a3-highgpu (H100): SPOT / FLEX_START
+    # only (render_create_argv raises on H100 + STANDARD via gpu_kind, inherited).
+    "sweep-8g-a100": MachineSpec(
+        machine_type="a2-ultragpu-8g",
+        gpu_count=8,
+        gpu_kind="A100-80",
+    ),
+    "sweep-8g-h100": MachineSpec(
+        machine_type="a3-highgpu-8g",
+        gpu_count=8,
+        gpu_kind="H100-80",
+    ),
 }
 
 
@@ -442,6 +480,9 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family.
     "a2-ultragpu-1g": frozenset({"us-central1-a", "us-central1-c"}),
     "a2-ultragpu-4g": frozenset({"us-central1-a", "us-central1-c"}),
+    # a2-ultragpu-8g (8x A100-80, #743) — same A2-ultragpu family as the 1g/4g
+    # rows above; us-central1-b does NOT offer the family. Verified 2026-06-29.
+    "a2-ultragpu-8g": frozenset({"us-central1-a", "us-central1-c"}),
     # g2 (L4) + a3-highgpu (H100, BOTH the 1g lora-7b-h100 AND the 2g
     # eval-h100 sizes) ARE offered in all three us-central1 zones — listed
     # for completeness so a future zone change is verified against this
@@ -455,6 +496,9 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     "g2-standard-4": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     "a3-highgpu-1g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     "a3-highgpu-2g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    # a3-highgpu-8g (8x H100-80, #743) — same a3-highgpu family as 1g/2g; offered
+    # in all three us-central1 zones. Verified 2026-06-29.
+    "a3-highgpu-8g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     # A2-highgpu (A100-40) — the #656 cheaper-but-smaller fallback rung.
     # Verified offered in us-central1-{a,b,c,f} (gcloud compute machine-types
     # list --filter="name=a2-highgpu-1g AND zone~us-central1"); -f is listed
@@ -471,6 +515,13 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     # above; the map only RESTRICTS, so a fail-open default was already
     # correct — this row just makes the verified fact explicit).
     "n2-highmem-16": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    # E2 (cheap CPU-only, #747) — the cpu-small / cpu-mid intents. Verified
+    # offered in us-central1-{a,b,c} (gcloud compute machine-types list
+    # --filter="name=e2-standard-2 AND zone~us-central1", 2026-06-29; also
+    # offered in -f, listed here for the documented us-central1-{a,b,c} set
+    # the map RESTRICTS to — the map only restricts, so omitting -f is safe).
+    "e2-standard-2": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    "e2-standard-8": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
 }
 
 
@@ -520,6 +571,13 @@ DEFAULT_REQUEST_VALID_FOR_DURATION: str = "2h"
 #: VM may run up to seven days). Parsed from the resolved max-run-duration
 #: to fail loud at render rather than mid-provision.
 _FLEX_START_MAX_RUN_SECONDS: int = 7 * 24 * 3600
+
+#: Grace added to an instance's OWN ``--max-run-duration`` before the janitor
+#: age-reaps it (Option B, #741). A VM that exceeds its configured fence by more
+#: than this is genuinely wedged (the ``--instance-termination-action=DELETE``
+#: never fired) and is reaped. Mirrors the short ``terminal_phase_max_age_seconds``
+#: precedent (10 min) — a small post-fence finalize window, not a multi-day wall.
+_JANITOR_FENCE_GRACE_SECONDS: int = 3600
 
 #: gcloud duration suffix → seconds. Bare integers are seconds.
 _DURATION_SUFFIX_SECONDS: dict[str, int] = {"s": 1, "m": 60, "h": 3600, "d": 86400}
@@ -1466,8 +1524,10 @@ def render_create_argv(
       watchdog self-shutdown (or any crash) is FINAL; auto-restart would
       bring the VM back into the same wedged state. Independent scheduling
       field; composes freely with the two above.
-    * ``--max-run-duration`` — generous so it can't interrupt an upload
-      (default 24h per config).
+    * ``--max-run-duration`` — the per-instance VM auto-delete fence, set
+      to the FLEX_START ceiling (default 7d per config, #741) so a long
+      multi-cell sweep is not stranded mid-run; the per-instance-fence-aware
+      janitor age reap is the credit-leak backstop, not this fence.
     * ``--image-family`` / ``--image-project`` — the DLVM image with
       pre-installed CUDA/driver.
     * ``--boot-disk-size`` / ``--boot-disk-type`` — 300 GB pd-ssd default.
@@ -1821,6 +1881,44 @@ class GcpWorkloadError(GcpBackendError):
         self.evidence = evidence or {}
 
 
+class GcpCreateTimedOutStillProvisioning(GcpBackendError):
+    """The ``gcloud compute instances create`` subprocess exceeded the
+    300s cap, BUT a post-timeout ``instances list`` probe found the
+    instance live (RUNNING/PROVISIONING/STAGING/STOPPING) — the
+    FLEX_START preemptible-queueing case (#658).
+
+    This is NOT a failure: the launch is in flight server-side, the local
+    ``subprocess.run`` just aborted at its wall-clock cap. The caller
+    (``dispatch_issue.py::_cmd_launch``) converts this into the documented
+    still-waiting exit (75 / ``EXIT_STILL_WAITING``, #603) and the
+    orchestrator re-runs the SAME launch command; ``reconnect_or_none``
+    (the idempotent re-entry at the top of :meth:`GcpBackend.launch`)
+    reconnects to the now-observable live instance with NO double-create.
+
+    Deliberately a :class:`GcpBackendError` subclass — the SAME base as
+    :class:`GcpProvisioningError` / :class:`GcpWorkloadError`, NOT a
+    ``router.RouteError`` (subclassing the latter would force ``gcp.py``
+    to import ``router.py``, creating a router→gcp→router circular import).
+    Because it is neither a ``RouteError`` nor a ``GcpProvisioningError``
+    / ``GcpWorkloadError`` / ``BackendProbeError``, NONE of the router's
+    typed ``except`` arms catch it, so it propagates clean to
+    ``_cmd_launch``, where the explicit ``except`` arm is MANDATORY.
+
+    Carries ``instance_name`` + observed ``status`` (+ ``issue``) for the
+    still-waiting JSON the CLI emits.
+    """
+
+    def __init__(self, *, instance_name: str, status: str, issue: int) -> None:
+        self.instance_name = instance_name
+        self.status = status
+        self.issue = issue
+        super().__init__(
+            f"GCP create for {instance_name} timed out at the "
+            f"{GCLOUD_DEFAULT_TIMEOUT_SEC}s subprocess cap but the instance is live "
+            f"(status={status}) — FLEX_START still-provisioning; re-run to continue waiting."
+        )
+
+
 class GcpLaunchSecretsMissing(GcpBackendError):
     """Required workload secrets are unresolvable at launch time.
 
@@ -1954,13 +2052,28 @@ class GcloudRunResult:
 GcloudRunner = Callable[[Sequence[str]], GcloudRunResult]
 
 
-def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudRunResult:
+#: Wall-clock cap (seconds) for a single ``gcloud`` subprocess in
+#: :func:`default_gcloud_runner`. Named (not a bare literal) so the
+#: :meth:`GcpBackend.launch` create-timeout handler + the
+#: :class:`GcpCreateTimedOutStillProvisioning` message reference the SAME
+#: value the runner enforces and the two cannot drift (#736).
+GCLOUD_DEFAULT_TIMEOUT_SEC = 300
+
+
+def default_gcloud_runner(
+    argv: Sequence[str], *, timeout: int = GCLOUD_DEFAULT_TIMEOUT_SEC
+) -> GcloudRunResult:
     """Default runner: shell out to ``gcloud`` via :mod:`subprocess`.
 
     Raises NOTHING on non-zero — the caller inspects ``returncode``.
-    Timeouts propagate as :class:`subprocess.TimeoutExpired` (the
-    backend treats them as provisioning failures via the catch in
-    :meth:`GcpBackend.launch`).
+    Timeouts propagate as :class:`subprocess.TimeoutExpired`;
+    :meth:`GcpBackend.launch` catches the create-call timeout, probes the
+    canonical instance name via :func:`reconnect_or_none`, and either
+    raises :class:`GcpCreateTimedOutStillProvisioning` (instance live
+    server-side — the FLEX_START preemptible-queueing case) or
+    :class:`GcpProvisioningError` (instance absent, or the probe itself
+    failed), so the router routes the timeout as a provisioning outcome
+    rather than an undocumented exit-4 traceback (#736).
     """
     proc = subprocess.run(
         list(argv),
@@ -1982,7 +2095,7 @@ def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudR
 #: A RUNNING VM that has published one of these but never auto-deleted is a
 #: wedged zombie — the workload is over, the VM is still billing — and the
 #: stale-VM janitor (:func:`audit_stale_gcp_vms`) reaps it promptly past a
-#: short terminal-phase floor rather than waiting out the 24h age backstop.
+#: short terminal-phase floor rather than waiting out the per-fence age backstop.
 _TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
 
 
@@ -2507,7 +2620,7 @@ def audit_stale_gcp_vms(
     *,
     config: GcpConfig | None = None,
     runner: GcloudRunner | None = None,
-    max_age_seconds: int = 24 * 3600,
+    max_age_seconds: int = 192 * 3600,  # 8d fallback fence (#741): 7d default + grace
     terminal_phase_max_age_seconds: int = 600,
     now: datetime | None = None,
     delete: bool = False,
@@ -2547,17 +2660,26 @@ def audit_stale_gcp_vms(
     Two reap predicates, both bounded so the sweep never deletes a
     legitimately in-flight VM:
 
-    * **Age backstop** (``max_age_seconds``, default 24h) — any
-      project instance older than the threshold, REGARDLESS of phase
-      (sets ``reason="age"``; the reap-vs-escalate split is decided by
-      classification below). The last-resort fence for a VM whose
-      ``--max-run-duration`` DELETE somehow never fired.
+    * **Age backstop** (per-instance-fence-aware, #741) — an instance is
+      age-stale, REGARDLESS of phase (sets ``reason="age"``; the reap-vs-
+      escalate split is decided by classification below), when EITHER it has
+      a readable ``scheduling.maxRunDuration`` fence and has exceeded that
+      fence + a 1h grace (:data:`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO
+      readable fence and has lived past the fixed ``max_age_seconds`` fallback
+      (the legacy fence; the library default and the ``gcp_audit.py`` CLI
+      default are BOTH 8d — ``192 * 3600`` — to cover the 7d
+      ``default_max_run_duration`` + grace). The last-resort fence for a VM
+      whose ``--max-run-duration`` DELETE somehow never fired — now tracking
+      each instance's OWN fence rather than a single fixed wall-clock (which
+      would re-create #697: a 7d job killed by the janitor's old 24h cap).
     * **Terminal-phase reap** (``terminal_phase_max_age_seconds``, default
       10 min) — a RUNNING instance that has published a TERMINAL
       ``eps/phase`` (``done`` / ``failed``; see
       :data:`_TERMINAL_GUEST_PHASES`) but never auto-deleted is a wedged
       zombie: the workload finished, the VM is still billing, and waiting
-      for the 24h age backstop burns ~22h of idle A100 (incident #634
+      for the per-fence age backstop (up to the instance's own
+      ``--max-run-duration`` + grace — now 7d by default) burns idle A100
+      hours (incident #634
       family — the sibling :func:`reconnect_or_none` fix only reaps such
       a zombie at the NEXT relaunch against the same name, which may never
       come). This predicate reaps it PROMPTLY (recorded as
@@ -2635,6 +2757,7 @@ def audit_stale_gcp_vms(
                 age_seconds=age_seconds,
                 max_age_seconds=max_age_seconds,
                 terminal_phase_max_age_seconds=terminal_phase_max_age_seconds,
+                instance_max_run_seconds=_instance_max_run_seconds(inst),  # #741 Option B
             )
 
         record: dict[str, Any] = {
@@ -2663,6 +2786,31 @@ def audit_stale_gcp_vms(
     return records
 
 
+def _instance_max_run_seconds(inst: dict[str, Any]) -> int | None:
+    """Return the instance's configured ``--max-run-duration`` in seconds, or None.
+
+    Reads ``scheduling.maxRunDuration.seconds`` from the instance JSON that
+    ``gcloud compute instances list --format=json`` returns — GCP populates
+    this natively whenever the create passed ``--max-run-duration`` (the v1
+    REST instance schema carries ``scheduling.maxRunDuration: {seconds,
+    nanos}``). gcloud emits ``seconds`` as either an int or a numeric string,
+    so both are accepted; any other shape (absent block, junk value) returns
+    None so the caller falls back to the fixed ``max_age_seconds`` fence — the
+    backstop never silently disarms on a missing or malformed field.
+    """
+    sched = inst.get("scheduling")
+    if not isinstance(sched, dict):
+        return None
+    mrd = sched.get("maxRunDuration")
+    if not isinstance(mrd, dict):
+        return None
+    raw = mrd.get("seconds")
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def _janitor_stale_reason(
     *,
     cfg: GcpConfig,
@@ -2673,21 +2821,37 @@ def _janitor_stale_reason(
     age_seconds: float | None,
     max_age_seconds: int,
     terminal_phase_max_age_seconds: int,
+    instance_max_run_seconds: int | None,
 ) -> tuple[str | None, str | None]:
     """Decide whether a janitor instance is stale, and why → ``(phase, reason)``.
+
+    Age backstop (Option B, #741): an instance is age-stale when EITHER it has
+    a readable ``--max-run-duration`` fence (``instance_max_run_seconds``, from
+    :func:`_instance_max_run_seconds`) and has exceeded that fence + a 1h grace
+    (:data:`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO readable fence and has
+    lived past the fixed ``max_age_seconds`` fallback (the legacy fence, raised
+    to 8d to cover the 7d default + grace). This makes the age backstop track
+    each instance's OWN fence — a 24h job reaps at ~25h, a 7d job at ~7d+1h, a
+    truly-wedged-never-terminal VM at its-fence+grace — instead of a single
+    fixed wall-clock that would re-create the #697 bug (a 7d job killed by the
+    janitor's fixed 24h cap).
 
     ``reason`` ∈ {``"age"``, ``"terminal-phase"``, ``None``}. The phase probe
     fires ONLY for a RUNNING VM that is NOT already age-reaped and has lived
     past the terminal-phase floor — a terminal-phase RUNNING zombie is reaped
-    promptly, well under the 24h age backstop. A guest-attribute probe FAILURE
-    ("couldn't ask" ≠ "done") is caught, logged, and falls through to the age
-    backstop — a probe blip never escalates a still-unknown VM and never
+    promptly, well under the age backstop. A guest-attribute probe FAILURE
+    ("couldn't ask" ≠ "done") is caught, logged, and falls through (returns
+    not-stale) — a probe blip never escalates a still-unknown VM and never
     crashes the inventory sweep.
     """
     phase: str | None = None
-    old_enough = age_seconds is not None and age_seconds >= max_age_seconds
-    if old_enough:
-        return None, "age"
+    if age_seconds is not None:
+        if instance_max_run_seconds is not None:
+            age_fence = instance_max_run_seconds + _JANITOR_FENCE_GRACE_SECONDS
+        else:
+            age_fence = max_age_seconds
+        if age_seconds >= age_fence:
+            return None, "age"
     should_probe_phase = (
         status.upper() == "RUNNING"
         and age_seconds is not None
@@ -3089,7 +3253,59 @@ class GcpBackend(ComputeBackend):
                     secret_files=secret_files,
                 )
                 logger.info("GCP create issue=%d in zone=%s", spec.issue, zone)
-                result = self._run(argv)
+                try:
+                    result = self._run(argv)
+                except subprocess.TimeoutExpired as exc:
+                    # FLEX_START rungs legitimately stay PENDING past the
+                    # GCLOUD_DEFAULT_TIMEOUT_SEC subprocess cap, so the create
+                    # OFTEN succeeds server-side even though the local
+                    # subprocess.run aborted (#658 failure-lesson v2). Probe the
+                    # canonical name BEFORE treating the timeout as a failure;
+                    # pre-fix this TimeoutExpired propagated raw to main()'s
+                    # exit-4 catch-all (#736).
+                    live = self._reconnect_probe_after_create_timeout(spec, exc)
+                    if live is not None:
+                        # Instance live server-side → a still-waiting outcome,
+                        # NOT a failure. Raise immediately (no continue into the
+                        # next zone → no double-create); the CLI converts this to
+                        # exit 75 and the re-run reconnects idempotently.
+                        raise GcpCreateTimedOutStillProvisioning(
+                            instance_name=live.pod_name,
+                            status=str(live.extra.get("status_at_reconnect") or "PROVISIONING"),
+                            issue=int(spec.issue),
+                        ) from exc
+                    # Instance truly absent → a provision-class failure. Build a
+                    # capacity-shaped GcpProvisioningError (matched_pattern
+                    # contains "resource" so the zone-retry predicate below
+                    # matches) so the existing zone fallback / next-tier router
+                    # path handles it exactly like any other create miss; never
+                    # let the raw TimeoutExpired escape to main()'s exit-4
+                    # catch-all. The slug is the POSITIONAL reason (the
+                    # GcpProvisioningError constructor has no separate message
+                    # arg); descriptive prose lives in evidence["detail"],
+                    # mirroring classify_create_failure.
+                    last_error = GcpProvisioningError(
+                        "create_timeout_no_instance",
+                        evidence={
+                            "zone": zone,
+                            "timeout_sec": GCLOUD_DEFAULT_TIMEOUT_SEC,
+                            "issue": int(spec.issue),
+                            "matched_pattern": "create timeout (resource not created)",
+                            "detail": (
+                                f"gcloud create for issue={spec.issue} in zone={zone} timed "
+                                f"out at the {GCLOUD_DEFAULT_TIMEOUT_SEC}s subprocess cap and "
+                                "no instance was found server-side after the timeout — "
+                                "treating as a capacity/provisioning failure."
+                            ),
+                        },
+                    )
+                    logger.warning(
+                        "GCP create timed out in zone=%s with no server-side instance; "
+                        "trying next fallback. issue=%d",
+                        zone,
+                        spec.issue,
+                    )
+                    continue
                 if result.returncode == 0:
                     break
                 last_error = classify_create_failure(
@@ -3257,6 +3473,48 @@ class GcpBackend(ComputeBackend):
         """
         del spec, now
         return 0.0
+
+    def _reconnect_probe_after_create_timeout(
+        self, spec: RunSpec, original_timeout: subprocess.TimeoutExpired
+    ) -> RunHandle | None:
+        """Post-create-timeout probe: is the ``eps-issue-<N>`` instance live?
+
+        Returns the reconnect handle when a live instance (RUNNING /
+        PROVISIONING / STAGING / STOPPING) is found, ``None`` when no
+        instance exists. On a PROBE failure — :class:`GcpProbeError`
+        (gcloud rc != 0 / bad JSON / expired auth) OR a hung
+        ``instances list`` raising :class:`subprocess.TimeoutExpired` —
+        RE-RAISES as a :class:`GcpProvisioningError` chained from the
+        ORIGINAL create timeout: "couldn't ask" must NEVER read as "live"
+        (would mask a real failure as still-waiting) NOR silently as
+        "absent" (would lose the timeout signal). Provision-class so the
+        router fallback handles it.
+
+        The ``except`` catches BOTH ``GcpProbeError`` AND
+        ``subprocess.TimeoutExpired``: :func:`reconnect_or_none` raises
+        ``GcpProbeError`` on rc != 0 / bad JSON but does NOT wrap a hung
+        list's ``TimeoutExpired`` — so narrowing this to
+        ``except GcpProbeError`` would let a list-timeout escape raw to
+        ``main()``'s exit-4 catch-all (the #736 bug on the probe-timeout
+        branch). The chained ``from original_timeout`` (NOT the probe-side
+        exception) makes ``__cause__`` trace back to the real cause — the
+        create that timed out.
+        """
+        try:
+            return reconnect_or_none(spec=spec, config=self._config, runner=self._run)
+        except (GcpProbeError, subprocess.TimeoutExpired) as probe_exc:
+            raise GcpProvisioningError(
+                "create_timeout_probe_failed",
+                evidence={
+                    "issue": int(spec.issue),
+                    "matched_pattern": "create timeout probe failed",
+                    "detail": (
+                        f"gcloud create for issue={spec.issue} timed out and the "
+                        f"post-timeout instances-list probe ALSO failed ({probe_exc}); "
+                        "instance state UNKNOWN — treating as a provisioning failure."
+                    ),
+                },
+            ) from original_timeout
 
     # ----- monitor ---------------------------------------------------------
 
@@ -4183,8 +4441,9 @@ class GcpBackend(ComputeBackend):
         the orchestrator-driven ``teardown`` is what reaps a successful run
         that REACHES finalize. If teardown's own rc==0 delete silently
         no-ops (rc==0 but the instance lingers RUNNING), nothing else
-        reclaims it until the 24h ``--max-run-duration`` belt OR the daily
-        ``gcp_audit`` janitor. So after an rc==0 delete we ACTIVELY confirm
+        reclaims it until the per-instance ``--max-run-duration`` belt (7d
+        by default, #741) OR the daily ``gcp_audit`` janitor. So after an
+        rc==0 delete we ACTIVELY confirm
         the instance is gone via ``describe``; if it is still present AND
         ``RUNNING``, re-issue the delete ONCE. Idempotent + fails toward
         "gone" (404 / non-RUNNING / probe-failure never re-delete). NOTE:
@@ -4269,7 +4528,8 @@ class GcpBackend(ComputeBackend):
         # The #683 zombie: rc==0 delete but the VM is still RUNNING. Re-issue
         # the delete ONCE so a successful run cannot bill an A100 until the
         # daily janitor reaps it. Best-effort — a failure here is logged, not
-        # raised (the janitor + 24h max-run-duration remain the backstops).
+        # raised (the janitor + the per-instance --max-run-duration fence,
+        # 7d by default (#741), remain the backstops).
         logger.warning(
             "GCP teardown: %s still RUNNING after an rc==0 delete (#683 zombie); "
             "re-issuing the delete once.",

@@ -543,3 +543,151 @@ def test_interruptible_lever_reports_no_capacity_without_api_call(monkeypatch):
         runpod_api.create_pod(name="t", gpu_type="H100", gpu_count=8)
     # SECURE + COMMUNITY hit the API; the interruptible lever must NOT.
     assert len(calls) == 2, calls
+
+
+# ---------------------------------------------------------------------------
+# #747 — RunPod CPU pods via deployCpuPod (create_cpu_pod / _deploy_cpu_once)
+# ---------------------------------------------------------------------------
+
+
+def _capture_cpu_graphql(monkeypatch, results: list):
+    """Stub graphql() to return queued deployCpuPod payloads (mirrors
+    _capture_graphql but for the CPU mutation). Each entry is a payload dict or
+    None (no capacity). Records every query string in recorder.queries."""
+
+    class _Rec:
+        def __init__(self):
+            self.queries: list[str] = []
+            self.results = list(results)
+
+        def __call__(self, query, variables=None, timeout=60):
+            self.queries.append(query)
+            res = self.results.pop(0)
+            return {"deployCpuPod": res}
+
+    rec = _Rec()
+    monkeypatch.setattr(runpod_api, "graphql", rec)
+    return rec
+
+
+def _make_cpu_pod_payload(pod_id: str = "cpu1") -> dict:
+    """A minimal deployCpuPod response — NO machine/gpuCount block (the CPU
+    mutation omits them), exercising the _parse_pod .get-based path."""
+    return {
+        "id": pod_id,
+        "name": "pod-747",
+        "desiredStatus": "RUNNING",
+        "createdAt": "2026-06-29T00:00:00Z",
+        "runtime": {"ports": []},
+    }
+
+
+def test_deploy_cpu_pod_renders_instanceid_mutation(monkeypatch):
+    """#747: _deploy_cpu_once issues a deployCpuPod mutation carrying
+    instanceId, startSsh, 22/tcp — and NO gpuTypeId/gpuCount (render-only, no
+    live API). Confirms the mutation shape the fact-checker verified."""
+    from runpod_api import _deploy_cpu_once
+
+    rec = _capture_cpu_graphql(monkeypatch, [_make_cpu_pod_payload()])
+    info = _deploy_cpu_once(
+        name="pod-747",
+        instance_id="cpu3g-2-8",
+        image="img",
+        volume_gb=40,
+        container_disk_gb=50,
+        cloud_type="ALL",
+        data_center_id=None,
+    )
+    assert info is not None and info.pod_id == "cpu1"
+    q = rec.queries[0]
+    assert "deployCpuPod" in q
+    assert 'instanceId: "cpu3g-2-8"' in q
+    assert "startSsh: true" in q
+    assert "22/tcp" in q
+    # The CPU mutation must NOT carry the GPU-only fields.
+    assert "gpuTypeId" not in q
+    assert "gpuCount" not in q
+    # A CPU response with no machine/gpuCount block parses without crashing.
+    assert info.gpu_count is None
+    assert info.gpu_type_id is None
+
+
+def test_deploy_cpu_pod_none_on_supply_constraint(monkeypatch):
+    """#747: a SUPPLY_CONSTRAINT error payload (and a null result) both map to
+    None — the no-capacity path, same two-wire-shape handling as _deploy_once."""
+    import runpod_api
+    from runpod_api import _deploy_cpu_once
+
+    def raise_supply(query, variables=None, timeout=60):
+        raise runpod_api.RunPodSupplyConstraintError("no cpu capacity (test)")
+
+    monkeypatch.setattr(runpod_api, "graphql", raise_supply)
+    assert (
+        _deploy_cpu_once(
+            name="p",
+            instance_id="cpu3g-2-8",
+            image="img",
+            volume_gb=40,
+            container_disk_gb=50,
+            cloud_type="ALL",
+            data_center_id=None,
+        )
+        is None
+    )
+    # Null mutation result also -> None.
+    _capture_cpu_graphql(monkeypatch, [None])
+    assert (
+        _deploy_cpu_once(
+            name="p",
+            instance_id="cpu3g-2-8",
+            image="img",
+            volume_gb=40,
+            container_disk_gb=50,
+            cloud_type="ALL",
+            data_center_id=None,
+        )
+        is None
+    )
+
+
+def test_create_cpu_pod_first_attempt_succeeds(monkeypatch):
+    """#747: create_cpu_pod returns the pod on the first (primary-cloud)
+    attempt; only ONE query when the primary succeeds."""
+    from runpod_api import create_cpu_pod
+
+    rec = _capture_cpu_graphql(monkeypatch, [_make_cpu_pod_payload()])
+    info = create_cpu_pod("pod-747", "cpu3g-2-8")
+    assert info.pod_id == "cpu1"
+    assert len(rec.queries) == 1
+
+
+def test_create_cpu_pod_falls_through_to_community(monkeypatch):
+    """#747: primary cloud out of capacity -> COMMUNITY is tried (the
+    on-demand-only CPU lever chain; NO interruptible/spot rung)."""
+    from runpod_api import create_cpu_pod
+
+    rec = _capture_cpu_graphql(monkeypatch, [None, _make_cpu_pod_payload()])
+    info = create_cpu_pod("pod-747", "cpu3g-2-8", cloud_type="ALL")
+    assert info.pod_id == "cpu1"
+    assert "COMMUNITY" not in rec.queries[0]
+    assert "cloudType: COMMUNITY" in rec.queries[1]
+    # No interruptible/spot lever on the CPU chain.
+    assert all("interruptible" not in q for q in rec.queries)
+
+
+def test_create_cpu_pod_raises_no_capacity_when_exhausted(monkeypatch):
+    """#747 (Alternatives concern #4): every CPU supply lever returns null ->
+    RunPodNoCapacityError (the SAME terminal the GPU path raises, so the
+    existing wait-for-capacity / watcher policy catches it). The
+    enable_supply_fallback=False single-attempt path is covered too."""
+    from runpod_api import RunPodNoCapacityError, create_cpu_pod
+
+    rec = _capture_cpu_graphql(monkeypatch, [None, None])
+    with pytest.raises(RunPodNoCapacityError):
+        create_cpu_pod("pod-747", "cpu3g-2-8", cloud_type="ALL")
+    assert len(rec.queries) == 2  # primary + COMMUNITY, no spot lever
+
+    rec2 = _capture_cpu_graphql(monkeypatch, [None])
+    with pytest.raises(RunPodNoCapacityError):
+        create_cpu_pod("pod-747", "cpu3g-2-8", cloud_type="ALL", enable_supply_fallback=False)
+    assert len(rec2.queries) == 1  # primary only

@@ -140,6 +140,11 @@ SAME for both branches; only the pre-pass tool + the lens roster differ.
 
 ## Mechanical pre-pass (mandatory)
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger the artifact under review matches, open the linked rule
+  and check the artifact against it — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
+
 Before reading the body lens-by-lens, run the verifier and the
 anti-pattern audit:
 

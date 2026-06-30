@@ -793,6 +793,66 @@ def test_launch_runpod_provision_exit_75_surfaces_still_waiting(monkeypatch, tmp
     assert not default_handle_sidecar_path(603).exists()
 
 
+def test_launch_gcp_create_timeout_still_provisioning_exits_75(monkeypatch, tmp_path) -> None:
+    """The GCP-lane SECOND producer of exit 75 (#736): a
+    ``gcloud compute instances create`` that exceeded the 300s subprocess
+    cap on a FLEX_START rung while the instance came up live server-side
+    raises ``GcpCreateTimedOutStillProvisioning`` out of ``launch``. The CLI
+    must convert it to the still-waiting JSON (``still_waiting: true`` +
+    ``rerun: true`` + the additive ``instance_name`` / ``instance_status``
+    keys) and exit 75 — never the rc-4 ``main()`` catch-all traceback (the
+    exact #736 bug). Mirrors the RunPod exit-75 test above; deliberately NO
+    ``failure_class`` / ``status`` keys so the orchestrator does NOT post
+    ``epm:failure`` / ``set-status blocked``."""
+    from explore_persona_space.backends.gcp import GcpCreateTimedOutStillProvisioning
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "gcp")
+    gcp = _MockBackend(
+        kind="gcp",
+        launch_should_raise=GcpCreateTimedOutStillProvisioning(
+            instance_name="eps-issue-736",
+            status="PROVISIONING",
+            issue=736,
+        ),
+    )
+    factory = _build_mock_factory(gcp=gcp)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = cli.main(
+            [
+                "launch",
+                "--issue",
+                "736",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--workload-cmd",
+                "echo smoke",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == cli.EXIT_STILL_WAITING == 75
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["still_waiting"] is True
+    assert body["rerun"] is True
+    assert body["reason"] == "gcloud_create_timeout_still_provisioning"
+    # Additive keys carry the live instance the re-run reconnects to.
+    assert body["instance_name"] == "eps-issue-736"
+    assert body["instance_status"] == "PROVISIONING"
+    # Deliberately NO failure_class / status keys — the orchestrator must
+    # not post epm:failure / set-status blocked on this exit.
+    assert "failure_class" not in body
+    assert "status" not in body
+    # No sidecar — the launch never completed (re-run resumes the wait).
+    assert not default_handle_sidecar_path(736).exists()
+
+
 def test_launch_unrelated_calledprocesserror_keeps_generic_rc4(monkeypatch, tmp_path) -> None:
     """An rc-75 subprocess that is NOT ``pod_lifecycle.py provision``
     (e.g. an ssh/gcloud helper from another lane) must NOT be mistaken

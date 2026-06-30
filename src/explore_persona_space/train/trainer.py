@@ -312,11 +312,12 @@ def _finalize_phase(
 ) -> str:
     """Shared teardown: save adapter, merge into base, upload adapter, free GPU.
 
-    Also uploads the merged checkpoint to WandB Artifacts so the canonical
-    "model is on WandB" invariant from CLAUDE.md's Upload Policy holds without
-    a separate manual step, and uploads the LoRA ADAPTER (the canonical HF
-    artifact — merged dirs are derived data, opt-in via EPM_UPLOAD_MERGED) to
-    the HF model repo by default via ``_maybe_upload_adapter_default``. The
+    Uploads the LoRA ADAPTER (the canonical artifact — merged dirs are derived
+    data, opt-in via EPM_UPLOAD_MERGED) to the HF model repo by default via
+    ``_maybe_upload_adapter_default``. Per CLAUDE.md's Upload Policy, WandB
+    carries LIVE training metrics ONLY — model weights are canonical on HF, so
+    the inline WandB checkpoint upload is OFF by default (opt in with
+    EPM_UPLOAD_MODEL_WANDB=1; see ``_maybe_upload_checkpoint_to_wandb``). The
     local adapter dir is reaped only after a verified upload (or under an
     explicit orchestrator fence). Failures here only log — they must not crash
     a finished training run. Exception: ``_maybe_persist_adapter`` is fail-loud
@@ -446,19 +447,20 @@ def _maybe_dump_train_log(trainer, merged_dir: Path) -> None:
 
 
 def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
-    """Upload a saved checkpoint to WandB Artifacts on a best-effort basis.
+    """Upload a saved checkpoint to WandB Artifacts (OFF by default).
 
-    Closes the "checkpoint never made it to the cloud" gap that motivated
-    the project's Checkpoint Loss feedback — every training entry point
-    that calls `_finalize_phase` (or `train_lora`) gets the merged model
-    pushed to WandB before the local copy is reaped.
+    Per CLAUDE.md's Upload Policy, WandB carries LIVE training metrics ONLY
+    and model weights are canonical on the HF Hub (uploaded as the LoRA
+    adapter by `_finalize_phase`/`train_lora`). Pushing every checkpoint here
+    duplicated HF and filled the wandb account to ~4 TB, so this is a no-op
+    unless `EPM_UPLOAD_MODEL_WANDB=1` is set.
 
-    The one opt-out: `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1`. Set it when an
-    orchestrator like `orchestrate/runner.py` already performs a tagged
-    upload after the trainer returns; this fence avoids double-uploading
-    the same merged model under two different artifact names.
+    Opt-outs (both still honored): `EPM_UPLOAD_MODEL_WANDB` unset/≠1 (the
+    default), and the legacy `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` fence for
+    an orchestrator that performs its own tagged upload after the trainer
+    returns.
 
-    If no wandb run is active in this process we initialize a
+    When opted in: if no wandb run is active in this process we initialize a
     `job_type="upload"` run inside `upload_model_wandb` rather than
     silently skipping. A small "junk" upload run is far cheaper than a
     lost checkpoint, and the leakage pipeline (which does not init wandb
@@ -467,6 +469,18 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
     Never raises — checkpoint upload failure must not abort an otherwise
     successful training run.
     """
+    # Upload Policy (CLAUDE.md): WandB carries LIVE training metrics ONLY; model
+    # weights are canonical on the HF Hub. The inline wandb checkpoint upload is
+    # OFF by default — it duplicated HF and filled the wandb account to ~4 TB.
+    # Opt in with EPM_UPLOAD_MODEL_WANDB=1; the legacy
+    # EPM_SKIP_INLINE_CHECKPOINT_UPLOAD fence is still honored.
+    if os.environ.get("EPM_UPLOAD_MODEL_WANDB") != "1":
+        logger.info(
+            "Inline WandB checkpoint upload disabled by Upload Policy (weights are "
+            "canonical on HF Hub; set EPM_UPLOAD_MODEL_WANDB=1 to override)."
+        )
+        return
+
     if os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD") == "1":
         logger.info(
             "Inline WandB checkpoint upload disabled by "

@@ -254,7 +254,10 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
     result_path = eval_dir / "run_result.json"
     result_path.write_text(json.dumps(result, indent=2, default=str))
 
-    # Upload eval results to WandB (small JSON files — always use WandB)
+    # Eval results: canonical in git (eval_results/) + the HF data repo. The
+    # WandB eval-results artifact upload is OFF by default (Upload Policy: WandB =
+    # live metrics only) — upload_results_wandb no-ops unless
+    # EPM_UPLOAD_RESULTS_WANDB=1. Call retained so the opt-in path still works.
     if upload_to != "none" and not skip_eval:
         from explore_persona_space.orchestrate.hub import upload_results_wandb
 
