@@ -51,15 +51,16 @@ OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_742"
 
 
 def _select_layer(genre: str, behavior: str) -> int:
-    """Return #658's locked best layer for (behavior) if present, else a default 21."""
-    lr_path = EVAL_DIR / "locked_recipe.json"
-    if lr_path.exists():
-        lr = json.loads(lr_path.read_text())
-        per = lr.get("per_behavior", {}) or {}
-        cell = per.get(behavior, {})
-        if isinstance(cell, dict) and "layer" in cell:
-            return int(cell["layer"])
-    return 21
+    """Return #658's A3.3 best layer for (behavior, genre) from analyzer_body_data.json.
+
+    BLOCKER-fix stage1-routing-layer(b): the A3.3 read-out layers are PER-BEHAVIOR ×
+    PER-GENRE and live at ``/<genre>/a33/<behavior>/layer`` in
+    ``analyzer_body_data.json`` (e.g. Betley sycophancy → 27, refusal → 8; UltraChat
+    refusal → 6) — NOT in ``locked_recipe.json``, which has no ``per_behavior`` key, so
+    the prior fallback to layer 21 silently read the wrong layer for every cell. Raises
+    (no silent default) when the key is absent.
+    """
+    return dc.load_a33_layer(behavior, genre, eval_dir=EVAL_DIR)
 
 
 def _e0_vector(e0: dict, behavior: str, context_ids: list[str]) -> tuple[np.ndarray, list[str]]:
@@ -178,14 +179,47 @@ def run(
 ) -> dict:
     rng = np.random.default_rng(seed)
 
-    # which (behavior, genre) cells routed to headroom in Stage 0?
+    # BLOCKER-fix stage1-routing-layer(a): respect the Stage-0 internal gate. Stage 1
+    # runs ONLY on cells Stage-0 routed to `headroom`. When a Stage-0 output exists and
+    # reports EVERY read-out cell ceiling-limited, Stage 1 does NOT fire — it writes a
+    # `fired: false` stub (the plan's absent-by-design contract) instead of running the
+    # dCor test on cells with no headroom to test (the prior round's gate violation:
+    # `not qualifying` silently fell through to running every cell).
+    stage0_seen = False
     qualifying: set[tuple[str, str]] = set()
-    if stage0_path is not None and stage0_path.exists():
+    if not force_all and stage0_path is not None and stage0_path.exists():
+        stage0_seen = True
         s0 = json.loads(stage0_path.read_text())
         for e in s0.get("brackets", []):
-            if force_all or e.get("gate_verdict") == "headroom":
+            if e.get("gate_verdict") == "headroom":
                 qualifying.add((e["behavior"], e["genre"]))
-    if force_all or not qualifying:
+    if force_all:
+        # explicit override (smoke / robustness): run every requested cell
+        qualifying = {(b, g) for g in genres for b in behaviors}
+    elif stage0_seen and not qualifying:
+        # Stage-0 ran and found NO headroom anywhere -> Stage 1 does not fire.
+        return {
+            "task": "issue_742",
+            "stage": "stage1_leace_dcor",
+            "cells": [],
+            "fired": False,
+            "absent_by_design": True,
+            "reason": "all read-out behaviors ceiling-limited at Stage 0 "
+            "(no cell routed to headroom; the internal gate skips Stage 1)",
+            "config": {
+                "behaviors": behaviors,
+                "genres": genres,
+                "d_eff": d_eff,
+                "n_perm": n_perm,
+                "seed": seed,
+                "power_trials": power_trials,
+                "power_perm": power_perm,
+            },
+            "metadata": reproducibility_metadata({"script": "issue742_nonlinear_residual"}),
+        }
+    elif not stage0_seen:
+        # no Stage-0 output to gate on (e.g. standalone invocation) -> run all cells,
+        # flagged so the absence of a gate is auditable (NOT a silent all-cells run).
         qualifying = {(b, g) for g in genres for b in behaviors}
 
     results: list[dict] = []
@@ -218,7 +252,11 @@ def run(
         "task": "issue_742",
         "stage": "stage1_leace_dcor",
         "cells": results,
+        "fired": len(results) > 0,
         "absent_by_design": len(results) == 0,
+        "gate_source": (
+            "force_all" if force_all else ("stage0_brackets" if stage0_seen else "no_stage0_gate")
+        ),
         "config": {
             "behaviors": behaviors,
             "genres": genres,

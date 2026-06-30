@@ -64,9 +64,20 @@ def _decompose_variance(rerun_rates: list[np.ndarray], gen_rates: np.ndarray) ->
     Signal = total minus the two noise terms (clamped non-negative).
     """
     R = np.stack(rerun_rates, axis=0)  # (n_rerun, n_contexts)
-    var_judge = float(np.mean(np.var(R, axis=0)))  # within-context across-rerun var
-    mean_rate = R.mean(axis=0)
-    var_total = float(np.var(mean_rate))
+    # judge errors surface as NaN per (rerun, context); drop contexts with any NaN so
+    # the variance terms are computed on cleanly-judged contexts only (fail-loud upstream
+    # already guarantees ≥J completions; a NaN here is a transport/parse miss).
+    ok = ~np.any(~np.isfinite(R), axis=0)
+    R = R[:, ok]
+    gen_rates = np.asarray(gen_rates, dtype=float)
+    if gen_rates.size:
+        gen_rates = (
+            gen_rates[ok[: gen_rates.shape[0]]] if gen_rates.shape == ok.shape else gen_rates
+        )
+        gen_rates = gen_rates[np.isfinite(gen_rates)]
+    var_judge = float(np.mean(np.var(R, axis=0))) if R.shape[1] else 0.0  # across-rerun var
+    mean_rate = R.mean(axis=0) if R.shape[1] else np.array([])
+    var_total = float(np.var(mean_rate)) if mean_rate.size else 0.0
     var_gen = float(np.var(gen_rates)) if gen_rates.size else 0.0
     var_signal = max(0.0, var_total - var_judge - var_gen)
     denom = var_signal + var_judge + var_gen
@@ -86,69 +97,74 @@ def _judge_reruns_for_cell(
     behavior: str,
     snapshot_dir: Path,
     r_rerun: int,
-    judge_fn,
-    cache_dir: Path,
+    j_completions: int,
+    seed: int,
 ) -> tuple[list[np.ndarray], np.ndarray]:
-    """Run R judge passes over a cell's snapshotted completions; reconstruct rates.
+    """Run R PER-BEHAVIOR judge passes over a cell's snapshotted completions.
 
-    Reads every snapshotted ``<persona>__<behavior>.json`` for ``genre`` (each = one
-    context), judges its completions ``r_rerun`` times via ``judge_fn`` (the
-    Anthropic Batch API dispatcher), and returns:
+    Reads every snapshotted ``<context>__<behavior>.json`` for ``genre`` (each = one
+    context), DETERMINISTICALLY samples exactly ``j_completions`` completions per
+    context (BLOCKER-fix judge-rerun-j-sampling — NEVER all completions; that
+    balloons the batch past the registered ~16k calls), then re-judges them
+    ``r_rerun`` times via the CORRECT PER-BEHAVIOR judge construct
+    (``dc.per_behavior_judge_rate`` → #658's ``judge_column`` with the behavior's own
+    rubric + ``c["text"]``; BLOCKER-fix judge-rerun-wrong-judge-construct +
+    judge-rerun-completion-key-crash). Returns:
 
       * ``rerun_rates``: list of length ``r_rerun``; each a per-context judged-rate
-        vector (across-rerun variance = ``Var_judge``),
-      * ``gen_rates``: a per-context rate from a single completion-half split
+        vector (the SAME ``judged_rate`` construct #658 used; across-rerun variance =
+        ``Var_judge``),
+      * ``gen_rates``: a per-context rate from a single first-half generation split
         (``Var_generation`` proxy).
 
     Only judged scores are surfaced — completion TEXT is never returned or logged
     (CLAUDE.md content hygiene). Returns ``([], empty)`` when no snapshot is present.
+    The J=20 deterministic sampling is keyed on ``(seed, genre, behavior, context)``
+    so a re-run is reproducible (plan §11 row 8 + §9 batch sizing).
     """
     cell_dir = snapshot_dir / genre
     files = sorted(cell_dir.glob(f"*__{behavior}.json"))
     if not files:
         return [], np.array([])
 
-    # build {context_id: [completion_text, ...]} once (text held locally, never logged).
-    # The real #658 schema nests completions under cells[i].completions; the flat
-    # {completions:[...]} fixture shape is also supported.
-    def _completion_texts(obj: dict) -> list[str]:
-        out: list[str] = []
-        cells = obj.get("cells")
-        if isinstance(cells, list):
-            for cell in cells:
-                for c in cell.get("completions", []):
-                    out.append(c["completion"] if isinstance(c, dict) else str(c))
-        else:
-            for c in obj.get("completions", []):
-                out.append(c["completion"] if isinstance(c, dict) else str(c))
-        return out
-
-    per_context_completions: dict[str, list[str]] = {}
+    # Per context: load the gen file and deterministically down-sample to exactly J
+    # completions ONCE (the same J completions are re-judged across all R reruns, so
+    # across-rerun variance isolates JUDGE noise, not a re-sampling artifact).
+    per_context_obj: dict[str, dict] = {}
     for f in files:
         obj = json.loads(f.read_text())
         ctx = obj.get("context_id", f.stem)
-        per_context_completions[ctx] = _completion_texts(obj)
+        cell_seed = abs(hash((seed, genre, behavior, ctx))) % (2**32)
+        per_context_obj[ctx] = dc.sample_completions_for_judge(
+            obj, j_completions=j_completions, seed=cell_seed
+        )
 
-    ctx_ids = sorted(per_context_completions)
+    ctx_ids = sorted(per_context_obj)
 
-    def _judge_rate(comps_by_ctx: dict[str, list[str]], tag: str) -> np.ndarray:
-        completions = {ctx: {behavior: comps_by_ctx[ctx]} for ctx in ctx_ids}
-        scored = judge_fn(completions, judge_model=JUDGE_MODEL, cache_dir=cache_dir / tag)
-        return np.array([float(scored.get(ctx, {}).get("mean_aligned", 0.0)) for ctx in ctx_ids])
+    def _judge_rate(objs_by_ctx: dict[str, dict]) -> np.ndarray:
+        # PER-BEHAVIOR judged rate (NOT the default alignment judge): each context's
+        # sampled completions are judged with the behavior's own #658 rubric.
+        out = np.empty(len(ctx_ids), dtype=float)
+        for i, ctx in enumerate(ctx_ids):
+            res = dc.per_behavior_judge_rate(
+                objs_by_ctx[ctx], behavior=behavior, judge_model=JUDGE_MODEL
+            )
+            rate = res.get("rate")
+            out[i] = float(rate) if rate is not None else np.nan
+        return out
 
-    # R judge passes over the SAME completions -> across-rerun variance = Var_judge
-    rerun_rates: list[np.ndarray] = [
-        _judge_rate(per_context_completions, f"rerun_{r}") for r in range(r_rerun)
-    ]
+    # R judge passes over the SAME J-sampled completions -> across-rerun var = Var_judge
+    rerun_rates: list[np.ndarray] = [_judge_rate(per_context_obj) for _ in range(r_rerun)]
 
-    # Var_generation proxy: judge the FIRST-HALF generation subset under one pass and
-    # take its rate as the generation-split read (the across-generation-half spread vs
-    # the full-set rate captures generation stochasticity, distinct from judge noise).
-    first_half = {
-        ctx: per_context_completions[ctx][: max(1, len(per_context_completions[ctx]) // 2)]
-        for ctx in ctx_ids
-    }
-    gen_rates = _judge_rate(first_half, "gen_half")
+    # Var_generation proxy: judge the FIRST-HALF generation subset of each context's
+    # J-sampled completions under one pass — the spread of the half-rate vs the full
+    # set captures generation stochasticity, distinct from judge noise.
+    first_half: dict[str, dict] = {}
+    for ctx, obj in per_context_obj.items():
+        cells = obj.get("cells", [])
+        half = cells[: max(1, len(cells) // 2)]
+        first_half[ctx] = {**obj, "cells": half}
+    gen_rates = _judge_rate(first_half)
     return rerun_rates, gen_rates
 
 
@@ -159,6 +175,7 @@ def run(
     r_rerun: int,
     j_completions: int,
     dry_run: bool,
+    seed: int = 7428,
     max_contexts: int | None = None,
 ) -> dict:
     dest = OUT_DIR / "inputs" / "raw_completions"
@@ -201,14 +218,12 @@ def run(
             f"(Anthropic Batch API, judge={JUDGE_MODEL})."
         )
     else:
-        # The real run re-judges via eval.batch_judge R_rerun× per (genre, behavior)
-        # cell and decomposes Var(E0) into judge / generation / signal. The batch
-        # dispatch + per-cell rate reconstruction is driven HERE (not inlined into the
-        # library) so the variance read is auditable.
-        from explore_persona_space.eval.batch_judge import judge_completions_batch
-
-        cache_dir = OUT_DIR / "inputs" / "judge_cache"
-        cache_dir.mkdir(parents=True, exist_ok=True)
+        # The real run re-judges R_rerun× per (genre, behavior) cell with the CORRECT
+        # PER-BEHAVIOR judge construct (#658's own judge_column rubric, reading
+        # c["text"]) on exactly J deterministically-sampled completions per context,
+        # then decomposes Var(E0) into judge / generation / signal. Construct
+        # correctness (the BLOCKER) wins: the per-behavior rubric is what produced
+        # #658's E0 rates, so Var_judge is measured on the same construct.
         for genre in genres:
             cell_results: dict[str, dict] = {}
             for behavior in behaviors:
@@ -217,16 +232,22 @@ def run(
                     behavior=behavior,
                     snapshot_dir=dest,
                     r_rerun=r_rerun,
-                    judge_fn=judge_completions_batch,
-                    cache_dir=cache_dir,
+                    j_completions=j_completions,
+                    seed=seed,
                 )
                 if not rerun_rates:
                     continue
                 cell_results[behavior] = _decompose_variance(rerun_rates, gen_rates)
             judge_variance[genre] = cell_results
         note = (
-            "full run: re-judged R_rerun× via eval.batch_judge (Anthropic Batch API); "
-            "per (genre, behavior) Var(E0)=Var_signal+Var_judge+Var_generation decomposed below."
+            "full run: re-judged R_rerun× with the per-behavior #658 rubric "
+            "(judge_column, reading c['text'], judge=claude-sonnet-4-5-20250929) on "
+            f"J={j_completions} deterministically-sampled completions/context; per "
+            "(genre, behavior) Var(E0)=Var_signal+Var_judge+Var_generation decomposed below. "
+            "Dispatch is the threaded sync Anthropic client (max_retries=8) #658 used: the "
+            "registered ~8-16k set is well below the ~200k sync/batch crossover (§11 row 8), "
+            "and routing the per-behavior binary rubric through eval.batch_judge would require "
+            "reworking its mean_aligned aggregation — the construct fix (the BLOCKER) is honored."
         )
 
     return {
@@ -235,6 +256,7 @@ def run(
         "judge_model": JUDGE_MODEL,
         "r_rerun": r_rerun,
         "j_completions": j_completions,
+        "j_sampling_seed": seed,
         "genres": genres,
         "behaviors": behaviors,
         "snapshot_provenance": per_genre,
@@ -250,6 +272,9 @@ def main() -> int:
     parser.add_argument("--behaviors", default=",".join(dc.READOUT_BEHAVIORS))
     parser.add_argument("--r-rerun", type=int, default=2)
     parser.add_argument("--j-completions", type=int, default=20)
+    parser.add_argument(
+        "--seed", type=int, default=7428, help="742X-family seed for J-sampling reproducibility"
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -286,6 +311,7 @@ def main() -> int:
         r_rerun=args.r_rerun,
         j_completions=args.j_completions,
         dry_run=dry_run,
+        seed=args.seed,
         max_contexts=max_contexts,
     )
     out_path = args.out_dir / (
