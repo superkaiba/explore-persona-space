@@ -4794,8 +4794,8 @@
     "756": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/756",
-      "status": "planning",
+      "path": "tasks/approved/756",
+      "status": "approved",
       "title": "daily-fix: analyzer scope guard \u2014 no self-spawned critics"
     },
     "757": {
