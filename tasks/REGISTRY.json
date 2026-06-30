@@ -4915,8 +4915,8 @@
     "771": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/771",
-      "status": "proposed",
+      "path": "tasks/planning/771",
+      "status": "planning",
       "title": "workflow-fix: warn when #681 data-disk attached but worktree bind inert"
     },
     "772": {
