@@ -16,3 +16,4 @@
 {"ts": "2026-06-30T23:16:52Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "approved", "note": "Plan v1 ready; consistency PASS (N/A — kind: infra workflow-fix; no parent experiment). [autonomous plan-gate: auto-approved, est 0.0 GPU-h <= 100.0h cap]"}
 {"ts": "2026-06-30T23:16:53Z", "kind": "epm:plan-approved", "version": 1, "by": "autonomous-gate", "note": "Auto-approved by the code-enforced autonomous plan-gate (task.py --auto-approve-if-autonomous): gpu_hours_total=0.0 <= cap 100.0. EPM_AUTONOMOUS_SESSION set; no human asked."}
 {"ts": "2026-06-30T23:17:43Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatching implementer; awaiting epm:results (kind: infra workflow-fix)."}
+{"ts": "2026-06-30T23:18:27Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr19mv1g-vrnbnh phase=done after 121s."}
