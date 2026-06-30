@@ -4773,8 +4773,8 @@
     "753": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/753",
-      "status": "approved",
+      "path": "tasks/reviewing/753",
+      "status": "reviewing",
       "title": "daily-fix: PreToolUse guard rejecting bare | python in Bash"
     },
     "754": {
