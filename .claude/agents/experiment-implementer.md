@@ -39,6 +39,11 @@ they invoke `implementer` directly.
 
 ## Execution Protocol
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger your implementation matches, open the linked rule
+  and follow it before implementing — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
+
 ### Brief shape (what `/issue` gives you)
 
 - The approved plan (cached at `.claude/plans/issue-<N>.md`)

@@ -43,6 +43,7 @@ from workflow_lint import (  # noqa: E402
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
     check_heredoc_dotenv,
+    check_lessons_index,
     check_marker_registry,
     check_no_workflow_improver_spawn,
     check_script_references,
@@ -2367,3 +2368,70 @@ def test_analyzer_step35_cross_checks_inherited_figures():
         "analyzer.md Step 3.5 dropped the same-issue follow-up re-fold scoping "
         "(token 'follow-up re-fold'); the #729 cross-check rule was weakened."
     )
+
+
+def _write_lessons_fixture(rules_dir, rule_names, indexed_names):
+    """Write N fake rule files + a LESSONS.md indexing `indexed_names`."""
+    rules_dir.mkdir(parents=True, exist_ok=True)
+    for name in rule_names:
+        (rules_dir / f"{name}.md").write_text(f"# {name}\n", encoding="utf-8")
+    rows = "\n".join(
+        f"- **{n}** ([`.claude/rules/{n}.md`]({n}.md)) — fires when: x." for n in indexed_names
+    )
+    (rules_dir / "LESSONS.md").write_text(f"# LESSONS\n\n## Rules\n\n{rows}\n", encoding="utf-8")
+
+
+def test_check_lessons_index_fails_on_missing_row(tmp_path):
+    rules = tmp_path / ".claude" / "rules"
+    # rule 'gamma' exists but is NOT indexed -> FAIL
+    _write_lessons_fixture(rules, ["alpha", "beta", "gamma"], ["alpha", "beta"])
+    errs = check_lessons_index(repo_root=tmp_path)
+    assert errs, "expected a FAIL for the un-indexed rule 'gamma'"
+    assert any("gamma" in e for e in errs)
+
+
+def test_check_lessons_index_fails_on_stale_row(tmp_path):
+    rules = tmp_path / ".claude" / "rules"
+    # 'delta' is indexed but has no rule file -> FAIL
+    _write_lessons_fixture(rules, ["alpha", "beta"], ["alpha", "beta", "delta"])
+    errs = check_lessons_index(repo_root=tmp_path)
+    assert errs and any("delta" in e for e in errs)
+
+
+def test_check_lessons_index_passes_on_match(tmp_path):
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_fixture(rules, ["alpha", "beta"], ["alpha", "beta"])
+    assert check_lessons_index(repo_root=tmp_path) == []
+
+
+def test_check_lessons_index_passes_on_live_repo():
+    # Sanity: the real repo must PASS after this change lands.
+    assert check_lessons_index() == []
+
+
+def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
+    # Leanness cap is mechanical — an index > 6000 bytes must FAIL.
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (rules / "alpha.md").write_text("# alpha\n", encoding="utf-8")
+    rows = "- **alpha** ([`.claude/rules/alpha.md`](alpha.md)) — fires when: x.\n"
+    # Pad with prose so the index breaches the 6000-byte cap.
+    padding = "x" * 6100
+    (rules / "LESSONS.md").write_text(
+        f"# LESSONS\n\n## Rules\n\n{rows}\n\n{padding}\n",
+        encoding="utf-8",
+    )
+    errs = check_lessons_index(repo_root=tmp_path)
+    assert errs and any("leanness cap" in e for e in errs)
+
+
+def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
+    # One 'alpha.md' rule file, but TWO 'alpha' index rows. A set-based
+    # implementation would collapse the duplicate and silently PASS (the
+    # missing/stale set-diffs both read empty); the Counter-based check must
+    # FAIL because the contract is exactly one matching row per rule (#739 r2).
+    rules = tmp_path / ".claude" / "rules"
+    _write_lessons_fixture(rules, ["alpha"], ["alpha", "alpha"])
+    errs = check_lessons_index(repo_root=tmp_path)
+    assert errs, "expected a FAIL for the duplicate 'alpha' index row"
+    assert any(("duplicate" in e or "exactly one" in e) and "alpha" in e for e in errs)

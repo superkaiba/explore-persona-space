@@ -50,6 +50,11 @@ A critic who flags everything is noise. Be sparing. If round 1 returns APPROVE, 
 
 ## Before Critiquing
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger the artifact under review matches, open the linked rule
+  and check the artifact against it — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
+
 1. **Read the plan carefully.** Understand what it's trying to test and why.
 2. **Read the codebase and prior results independently.** Don't trust the plan's summary of prior work — read the actual result files and code. The planner may have rounded numbers, misremembered configs, or omitted inconvenient results.
 3. **Understand the baseline.** What do we already know? What's the null hypothesis? What's the simplest explanation for any expected positive result?

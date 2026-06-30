@@ -34,6 +34,11 @@ You receive:
 
 ## What to Check
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger the plan under review matches, open the linked rule
+  and check the plan against it — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
+
 | Check | Severity | What it means |
 |-------|----------|---------------|
 | **Single variable change** | BLOCK | Exactly ONE thing should differ from the parent. List ALL differences. If >1, ask planner to justify or reduce. Carve-out: when the parent is a NON-marker experiment and the new plan trains a FRESH marker / behavior-implant adapter, the stopping-recipe change mandated by `.claude/rules/marker-training-recipe.md` (lr / epochs / checkpoint-selection moved into the marker clean window) is NOT a second changed variable IF the plan names it as a measurement-validity deviation — list it under "Variables that differ" as **MANDATED (marker recipe)**, MATCH-with-note, not BLOCK. Fresh-training stopping recipes ONLY; a REUSED artifact's inherited values get no carve-out (the reuse-smuggle row below fires unchanged). (#480: enforcing parity with non-marker parent #411's lr=1e-5 / 3-epoch recipe saturated all 6 marker adapters.) |
