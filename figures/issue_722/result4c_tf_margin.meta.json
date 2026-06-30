@@ -1,0 +1,1176 @@
+{
+  "commit": "a778e69938",
+  "created": "2026-06-30T22:35:49Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.359472570330123,
+      "behavior rate  (E0)": 0.01,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.222685402984342,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.5010447575921844,
+      "behavior rate  (E0)": 0.005,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.2955887463579834,
+      "behavior rate  (E0)": 0.005,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.493470387884315,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.4947327723826285,
+      "behavior rate  (E0)": 0.005,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.158789325862574,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.227856273690058,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.362524647577982,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.1558289432571627,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.266698168435246,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.2821987481175454,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.2008975298971456,
+      "behavior rate  (E0)": 0.002506265664160401,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.4294103035118466,
+      "behavior rate  (E0)": 0.005,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.368569199208791,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.6836631068394223,
+      "behavior rate  (E0)": 0.005,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.645907112829437,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.3812396693679485,
+      "behavior rate  (E0)": 0.0075,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.483233074175893,
+      "behavior rate  (E0)": 0.0125,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.6363301697495762,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.9658981229002626,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.8917091898492338,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.3556222912097473,
+      "behavior rate  (E0)": 0.007537688442211055,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.8947915690359216,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.818490043314047,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.702667106793498,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.80746347580514,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.5561674103809104,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.751276477671312,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.752819561708266,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.7550261402462772,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.8000013572496183,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.64869464326154,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.5352438072831265,
+      "behavior rate  (E0)": 0.005,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.4715374159836703,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.8407157349663734,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.6610451915001025,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.686967711413961,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.358942536454883,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.2149557247830245,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.3736102788851072,
+      "behavior rate  (E0)": 0.002506265664160401,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.283505147495304,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.2665318875424707,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.365822875240897,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.351614799291193,
+      "behavior rate  (E0)": 0.0,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.452295417498598,
+      "behavior rate  (E0)": 0.0025,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.0496776455400503,
+      "behavior rate  (E0)": 0.03,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.242699541135594,
+      "behavior rate  (E0)": 0.0075,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -2.3858821672484396,
+      "behavior rate  (E0)": 0.01,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.9813051042112237,
+      "behavior rate  (E0)": 0.05,
+      "series": "broad misalignment (\u03c1=+0.31)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.25496920788669963,
+      "behavior rate  (E0)": 0.22429906542056074,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2302887004349914,
+      "behavior rate  (E0)": 0.2651162790697674,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.27499553596468784,
+      "behavior rate  (E0)": 0.205607476635514,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.23834823233340152,
+      "behavior rate  (E0)": 0.23255813953488372,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2632450443156926,
+      "behavior rate  (E0)": 0.2336448598130841,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.28481436935841087,
+      "behavior rate  (E0)": 0.21962616822429906,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2710683329362017,
+      "behavior rate  (E0)": 0.2372093023255814,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2701829563598782,
+      "behavior rate  (E0)": 0.22790697674418606,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2654995420471088,
+      "behavior rate  (E0)": 0.26976744186046514,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2818126392649224,
+      "behavior rate  (E0)": 0.21495327102803738,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.25812781225735537,
+      "behavior rate  (E0)": 0.2616822429906542,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2684214750571121,
+      "behavior rate  (E0)": 0.3037383177570093,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2718186763864521,
+      "behavior rate  (E0)": 0.2616822429906542,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2608428939621876,
+      "behavior rate  (E0)": 0.26976744186046514,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.36439055676936005,
+      "behavior rate  (E0)": 0.16744186046511628,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3512635221195153,
+      "behavior rate  (E0)": 0.21962616822429906,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3074251613358385,
+      "behavior rate  (E0)": 0.1822429906542056,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3811834083380289,
+      "behavior rate  (E0)": 0.14953271028037382,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.337002041802701,
+      "behavior rate  (E0)": 0.18604651162790697,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3261337194021082,
+      "behavior rate  (E0)": 0.17757009345794392,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.36928197609072066,
+      "behavior rate  (E0)": 0.17209302325581396,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.40113610853884585,
+      "behavior rate  (E0)": 0.17674418604651163,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3326742249618799,
+      "behavior rate  (E0)": 0.16822429906542055,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.35929177118393374,
+      "behavior rate  (E0)": 0.16744186046511628,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.34730495799762706,
+      "behavior rate  (E0)": 0.2102803738317757,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.30624638925586234,
+      "behavior rate  (E0)": 0.21226415094339623,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.34450809293421536,
+      "behavior rate  (E0)": 0.21395348837209302,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.31653727944103116,
+      "behavior rate  (E0)": 0.24766355140186916,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.32408462741917543,
+      "behavior rate  (E0)": 0.19069767441860466,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3492180744820417,
+      "behavior rate  (E0)": 0.22790697674418606,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.31694701617002397,
+      "behavior rate  (E0)": 0.20930232558139536,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.33773755629265134,
+      "behavior rate  (E0)": 0.22325581395348837,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2931713790916102,
+      "behavior rate  (E0)": 0.22429906542056074,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.25369336986358937,
+      "behavior rate  (E0)": 0.24651162790697675,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.28801832543391703,
+      "behavior rate  (E0)": 0.17674418604651163,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.24462532994444386,
+      "behavior rate  (E0)": 0.20930232558139536,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.24265909296772648,
+      "behavior rate  (E0)": 0.20930232558139536,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.24574028646515256,
+      "behavior rate  (E0)": 0.22535211267605634,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2751188958467836,
+      "behavior rate  (E0)": 0.22790697674418606,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.22709738315756356,
+      "behavior rate  (E0)": 0.24766355140186916,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3207993768307218,
+      "behavior rate  (E0)": 0.11162790697674418,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2225217574692735,
+      "behavior rate  (E0)": 0.16744186046511628,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.24636218650549258,
+      "behavior rate  (E0)": 0.17209302325581396,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.24958891004827022,
+      "behavior rate  (E0)": 0.22790697674418606,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.27669209437633546,
+      "behavior rate  (E0)": 0.21962616822429906,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2404326704712978,
+      "behavior rate  (E0)": 0.2102803738317757,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.25118519075150014,
+      "behavior rate  (E0)": 0.3023255813953488,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.18983401972390246,
+      "behavior rate  (E0)": 0.2744186046511628,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.23618238662907332,
+      "behavior rate  (E0)": 0.2558139534883721,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.1846771535111824,
+      "behavior rate  (E0)": 0.4511627906976744,
+      "series": "refusal (\u03c1=+0.56)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3635125873634505,
+      "behavior rate  (E0)": 0.051,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.39577685685180974,
+      "behavior rate  (E0)": 0.0565,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4030410344449302,
+      "behavior rate  (E0)": 0.055,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.40532844805380663,
+      "behavior rate  (E0)": 0.0525,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3847579879403854,
+      "behavior rate  (E0)": 0.0525,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.41347740044180736,
+      "behavior rate  (E0)": 0.0485,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3916612115905189,
+      "behavior rate  (E0)": 0.0535,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3492334313774469,
+      "behavior rate  (E0)": 0.0475,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.19493925218622943,
+      "behavior rate  (E0)": 0.0875,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.28365618198922204,
+      "behavior rate  (E0)": 0.0415,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.34179705408132666,
+      "behavior rate  (E0)": 0.07603801900950476,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.29701065957324435,
+      "behavior rate  (E0)": 0.0675,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.26612829829787743,
+      "behavior rate  (E0)": 0.0875,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.35094993004143904,
+      "behavior rate  (E0)": 0.068,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.35412492781514915,
+      "behavior rate  (E0)": 0.0925,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.34574137936551086,
+      "behavior rate  (E0)": 0.16858429214607304,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4777545280400881,
+      "behavior rate  (E0)": 0.071,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.31185202417133295,
+      "behavior rate  (E0)": 0.1785,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.328527078682459,
+      "behavior rate  (E0)": 0.1765,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.31763849770616315,
+      "behavior rate  (E0)": 0.1375,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.26544689254095555,
+      "behavior rate  (E0)": 0.117,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.37959238726791744,
+      "behavior rate  (E0)": 0.0745,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2131267237860256,
+      "behavior rate  (E0)": 0.319,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4393939857429652,
+      "behavior rate  (E0)": 0.0865,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.47634107070859355,
+      "behavior rate  (E0)": 0.0645,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.48420981945227104,
+      "behavior rate  (E0)": 0.0655,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.5043149975984348,
+      "behavior rate  (E0)": 0.0465,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.34341508319701197,
+      "behavior rate  (E0)": 0.075,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.47025713150540893,
+      "behavior rate  (E0)": 0.049,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.48834477071364124,
+      "behavior rate  (E0)": 0.054,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.47248259795315795,
+      "behavior rate  (E0)": 0.0505,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4983889228855337,
+      "behavior rate  (E0)": 0.052,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.46949137423848575,
+      "behavior rate  (E0)": 0.044,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4235656099241223,
+      "behavior rate  (E0)": 0.0495,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.49623210590843647,
+      "behavior rate  (E0)": 0.074,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.36153484456159557,
+      "behavior rate  (E0)": 0.0485,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2882141449717057,
+      "behavior rate  (E0)": 0.047,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.35501382629974754,
+      "behavior rate  (E0)": 0.0665,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.5193221076415775,
+      "behavior rate  (E0)": 0.0750375187593797,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3206478264405046,
+      "behavior rate  (E0)": 0.06,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4522659429379665,
+      "behavior rate  (E0)": 0.0715,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4535784515787573,
+      "behavior rate  (E0)": 0.0475,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4634378470949949,
+      "behavior rate  (E0)": 0.081,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.39209900358399574,
+      "behavior rate  (E0)": 0.054,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.388166741549303,
+      "behavior rate  (E0)": 0.0595,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.2324516757128159,
+      "behavior rate  (E0)": 0.0885,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.00514966745254708,
+      "behavior rate  (E0)": 0.2635,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3066116887450566,
+      "behavior rate  (E0)": 0.06259389083625438,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.4252902685503137,
+      "behavior rate  (E0)": 0.034,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "teacher-forced fixed +/- margin  (LN logP pos \u2212 neg)": -0.3299660878730126,
+      "behavior rate  (E0)": 0.0415,
+      "series": "sycophancy (\u03c1=+0.40)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.6530132052821128,
+      "error": 0.18264920453651773,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.82,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.7461704681872748,
+      "error": 0.27357088453496026,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.6775990396158464,
+      "error": 0.14144082960588117,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.8373109243697479,
+      "error": 0.17482540720115503,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.8885954381752701,
+      "error": 0.1686340580871019,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.8282833133253301,
+      "error": 0.10266296225753263,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.3954111150125248,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.31656368561070797,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.82,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.485085275460285,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.7607095240855603,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.8200000000000001,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.8637054546806285,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.82,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.7679669346720474,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.5147039430304629,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.570667581707909,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.6529193697868397,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.8643547574327729,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.9079356978821128,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.18,
+      "held-out LOCO Spearman \u03c1 (predicted margin vs margin)": 0.858245294301905,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 168
+}

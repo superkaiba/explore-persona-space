@@ -1,0 +1,588 @@
+{
+  "analysis": "issue722_tf_margin_validation_and_chain",
+  "description": "Teacher-forced FIXED +/- completion-margin DV. (1) validation: Spearman(margin,rate) per behavior across 50 contexts (clustered boot CI). (2) chain: best-layer LOCO Spearman(predicted margin, margin), DIRECT from v_A (PCA48) vs MEDIATED via c_C->v_A ridge map (same fixed readout). 95% family-clustered bootstrap, n_boot=2000.",
+  "n_boot": 2000,
+  "pca_target_dim": 48,
+  "ridge_alphas": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+  ],
+  "behaviors": [
+    "broad_em",
+    "refusal",
+    "sycophancy"
+  ],
+  "cap_per_side": 40,
+  "pool_meta": {
+    "broad_em": {
+      "n_pos_available": 171,
+      "n_neg_available": 2400,
+      "n_pos_used": 40,
+      "n_neg_used": 40,
+      "cap": 40,
+      "selection": "sorted by (instruction_idx,probe_idx,rollout_idx), first `cap`",
+      "eval_prompt_sha": "d7d81403e60cb41823e28b31302dfc4cc32e9f6100ac88bcfca9fb932a91cd79"
+    },
+    "refusal": {
+      "n_pos_available": 68,
+      "n_neg_available": 1142,
+      "n_pos_used": 40,
+      "n_neg_used": 40,
+      "cap": 40,
+      "selection": "sorted by (instruction_idx,probe_idx,rollout_idx), first `cap`",
+      "eval_prompt_sha": "27786741dd90210eb10e8937ceebc1395189734c590dccb61f43178b591b6d45"
+    },
+    "sycophancy": {
+      "n_pos_available": 571,
+      "n_neg_available": 2387,
+      "n_pos_used": 40,
+      "n_neg_used": 40,
+      "cap": 40,
+      "selection": "sorted by (instruction_idx,probe_idx,rollout_idx), first `cap`",
+      "eval_prompt_sha": "01ddeaaef39ed7fda9641ed8ab7c8e0ae51902f678959d418ecd1e0dde5eae13"
+    }
+  },
+  "excluded_no_pool": [
+    "harmful_compliance"
+  ],
+  "per_behavior": {
+    "broad_em": {
+      "n": 50,
+      "validation_margin_vs_rate": {
+        "point": 0.3057167021228234,
+        "ci_lo": -0.19999813853466922,
+        "ci_hi": 0.6668771406570968,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "margin_range": [
+        -2.9658981229002626,
+        -0.9813051042112237
+      ],
+      "margin_std": 0.3097528099053326,
+      "rate_range": [
+        0.0,
+        0.05
+      ],
+      "best_direct": {
+        "layer": 3,
+        "point": 0.6530132052821128,
+        "ci_lo": 0.3954111150125248,
+        "ci_hi": 0.7607095240855603,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "best_mediated": {
+        "layer": 20,
+        "point": 0.8373109243697479,
+        "ci_lo": 0.5147039430304629,
+        "ci_hi": 0.8643547574327729,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "preservation_drop": -0.18429771908763504,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_direct": 0.22093637454981993,
+          "rho_mediated": 0.7208163265306122
+        },
+        {
+          "layer": 1,
+          "rho_direct": -0.2796158463385354,
+          "rho_mediated": 0.626218487394958
+        },
+        {
+          "layer": 2,
+          "rho_direct": -0.166578631452581,
+          "rho_mediated": 0.6024009603841537
+        },
+        {
+          "layer": 3,
+          "rho_direct": 0.6530132052821128,
+          "rho_mediated": 0.5949099639855941
+        },
+        {
+          "layer": 4,
+          "rho_direct": 0.31188475390156056,
+          "rho_mediated": 0.4602641056422569
+        },
+        {
+          "layer": 5,
+          "rho_direct": 0.14256902761104442,
+          "rho_mediated": 0.46189675870348135
+        },
+        {
+          "layer": 6,
+          "rho_direct": -0.19615846338535411,
+          "rho_mediated": 0.5139495798319328
+        },
+        {
+          "layer": 7,
+          "rho_direct": -0.5193277310924369,
+          "rho_mediated": 0.584249699879952
+        },
+        {
+          "layer": 8,
+          "rho_direct": -0.2677070828331332,
+          "rho_mediated": 0.5394957983193277
+        },
+        {
+          "layer": 9,
+          "rho_direct": -0.15217286914765904,
+          "rho_mediated": 0.5712845138055221
+        },
+        {
+          "layer": 10,
+          "rho_direct": -0.026362545018007204,
+          "rho_mediated": 0.5544777911164467
+        },
+        {
+          "layer": 11,
+          "rho_direct": 0.1578391356542617,
+          "rho_mediated": 0.5492917166866746
+        },
+        {
+          "layer": 12,
+          "rho_direct": 0.5789675870348139,
+          "rho_mediated": 0.6377430972388957
+        },
+        {
+          "layer": 13,
+          "rho_direct": 0.29824729891956775,
+          "rho_mediated": 0.8057142857142856
+        },
+        {
+          "layer": 14,
+          "rho_direct": 0.12460984393757503,
+          "rho_mediated": 0.8232893157262905
+        },
+        {
+          "layer": 15,
+          "rho_direct": 0.09791116446578632,
+          "rho_mediated": 0.8231932773109244
+        },
+        {
+          "layer": 16,
+          "rho_direct": 0.34348139255702276,
+          "rho_mediated": 0.7978391356542617
+        },
+        {
+          "layer": 17,
+          "rho_direct": 0.08513805522208882,
+          "rho_mediated": 0.8097478991596637
+        },
+        {
+          "layer": 18,
+          "rho_direct": 0.21507803121248498,
+          "rho_mediated": 0.8169507803121248
+        },
+        {
+          "layer": 19,
+          "rho_direct": -0.12048019207683074,
+          "rho_mediated": 0.7424249699879952
+        },
+        {
+          "layer": 20,
+          "rho_direct": 0.01944777911164466,
+          "rho_mediated": 0.8373109243697479
+        },
+        {
+          "layer": 21,
+          "rho_direct": -0.0968547418967587,
+          "rho_mediated": 0.8303961584633853
+        },
+        {
+          "layer": 22,
+          "rho_direct": -0.09637454981992796,
+          "rho_mediated": 0.8078271308523409
+        },
+        {
+          "layer": 23,
+          "rho_direct": -0.19375750300120048,
+          "rho_mediated": 0.781032412965186
+        },
+        {
+          "layer": 24,
+          "rho_direct": -0.25493397358943576,
+          "rho_mediated": 0.7933253301320528
+        },
+        {
+          "layer": 25,
+          "rho_direct": -0.2514765906362545,
+          "rho_mediated": 0.7865066026410564
+        },
+        {
+          "layer": 26,
+          "rho_direct": -0.43193277310924366,
+          "rho_mediated": 0.7459783913565426
+        },
+        {
+          "layer": 27,
+          "rho_direct": -0.16523409363745495,
+          "rho_mediated": 0.7165906362545018
+        }
+      ]
+    },
+    "refusal": {
+      "n": 50,
+      "validation_margin_vs_rate": {
+        "point": 0.5596695335139189,
+        "ci_lo": 0.1424272752682103,
+        "ci_hi": 0.8030430446939751,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "margin_range": [
+        -0.40113610853884585,
+        -0.1846771535111824
+      ],
+      "margin_std": 0.04952520433377946,
+      "rate_range": [
+        0.11162790697674418,
+        0.4511627906976744
+      ],
+      "best_direct": {
+        "layer": 17,
+        "point": 0.7461704681872748,
+        "ci_lo": 0.31656368561070797,
+        "ci_hi": 0.8637054546806285,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "best_mediated": {
+        "layer": 22,
+        "point": 0.8885954381752701,
+        "ci_lo": 0.570667581707909,
+        "ci_hi": 0.9079356978821128,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "preservation_drop": -0.14242496998799525,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_direct": 0.45939975990396154,
+          "rho_mediated": 0.6989195678271308
+        },
+        {
+          "layer": 1,
+          "rho_direct": -0.37277310924369744,
+          "rho_mediated": 0.7157262905162064
+        },
+        {
+          "layer": 2,
+          "rho_direct": -0.16638655462184873,
+          "rho_mediated": 0.7029531812725089
+        },
+        {
+          "layer": 3,
+          "rho_direct": -0.1185594237695078,
+          "rho_mediated": 0.7330132052821129
+        },
+        {
+          "layer": 4,
+          "rho_direct": -0.16235294117647062,
+          "rho_mediated": 0.7225450180072028
+        },
+        {
+          "layer": 5,
+          "rho_direct": 0.6758703481392556,
+          "rho_mediated": 0.735126050420168
+        },
+        {
+          "layer": 6,
+          "rho_direct": 0.12,
+          "rho_mediated": 0.7346458583433373
+        },
+        {
+          "layer": 7,
+          "rho_direct": 0.11068427370948379,
+          "rho_mediated": 0.7673949579831932
+        },
+        {
+          "layer": 8,
+          "rho_direct": 0.7106362545018007,
+          "rho_mediated": 0.7696998799519807
+        },
+        {
+          "layer": 9,
+          "rho_direct": 0.26761104441776706,
+          "rho_mediated": 0.737719087635054
+        },
+        {
+          "layer": 10,
+          "rho_direct": 0.2742376950780312,
+          "rho_mediated": 0.7386794717887154
+        },
+        {
+          "layer": 11,
+          "rho_direct": 0.43798319327731094,
+          "rho_mediated": 0.746842737094838
+        },
+        {
+          "layer": 12,
+          "rho_direct": 0.34895558223289314,
+          "rho_mediated": 0.8004321728691475
+        },
+        {
+          "layer": 13,
+          "rho_direct": 0.26866746698679467,
+          "rho_mediated": 0.8849459783913565
+        },
+        {
+          "layer": 14,
+          "rho_direct": 0.5105882352941176,
+          "rho_mediated": 0.8489315726290516
+        },
+        {
+          "layer": 15,
+          "rho_direct": 0.24523409363745496,
+          "rho_mediated": 0.8213685474189675
+        },
+        {
+          "layer": 16,
+          "rho_direct": 0.22986794717887157,
+          "rho_mediated": 0.7979351740696278
+        },
+        {
+          "layer": 17,
+          "rho_direct": 0.7461704681872748,
+          "rho_mediated": 0.8029291716686675
+        },
+        {
+          "layer": 18,
+          "rho_direct": 0.027515006002400956,
+          "rho_mediated": 0.8014885954381752
+        },
+        {
+          "layer": 19,
+          "rho_direct": 0.05181272509003601,
+          "rho_mediated": 0.8480672268907563
+        },
+        {
+          "layer": 20,
+          "rho_direct": -0.06180072028811524,
+          "rho_mediated": 0.852484993997599
+        },
+        {
+          "layer": 21,
+          "rho_direct": -0.24590636254501802,
+          "rho_mediated": 0.8599759903961584
+        },
+        {
+          "layer": 22,
+          "rho_direct": -0.14679471788715487,
+          "rho_mediated": 0.8885954381752701
+        },
+        {
+          "layer": 23,
+          "rho_direct": -0.41810324129651855,
+          "rho_mediated": 0.8470108043217286
+        },
+        {
+          "layer": 24,
+          "rho_direct": -0.41810324129651855,
+          "rho_mediated": 0.7857382953181272
+        },
+        {
+          "layer": 25,
+          "rho_direct": -0.39236494597839133,
+          "rho_mediated": 0.806578631452581
+        },
+        {
+          "layer": 26,
+          "rho_direct": -0.38765906362545016,
+          "rho_mediated": 0.8381752701080432
+        },
+        {
+          "layer": 27,
+          "rho_direct": -0.14554621848739496,
+          "rho_mediated": 0.8313565426170467
+        }
+      ]
+    },
+    "sycophancy": {
+      "n": 50,
+      "validation_margin_vs_rate": {
+        "point": 0.39683988501412315,
+        "ci_lo": -0.02974679646619903,
+        "ci_hi": 0.6786364874021453,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "margin_range": [
+        -0.5193221076415775,
+        -0.00514966745254708
+      ],
+      "margin_std": 0.095915577957554,
+      "rate_range": [
+        0.034,
+        0.319
+      ],
+      "best_direct": {
+        "layer": 3,
+        "point": 0.6775990396158464,
+        "ci_lo": 0.485085275460285,
+        "ci_hi": 0.7679669346720474,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "best_mediated": {
+        "layer": 25,
+        "point": 0.8282833133253301,
+        "ci_lo": 0.6529193697868397,
+        "ci_hi": 0.858245294301905,
+        "n_families": 7,
+        "n_boot_kept": 2000
+      },
+      "preservation_drop": -0.15068427370948367,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_direct": 0.3576950780312125,
+          "rho_mediated": 0.2636734693877551
+        },
+        {
+          "layer": 1,
+          "rho_direct": -0.34809123649459783,
+          "rho_mediated": 0.45354141656662655
+        },
+        {
+          "layer": 2,
+          "rho_direct": -0.1795438175270108,
+          "rho_mediated": 0.4853301320528211
+        },
+        {
+          "layer": 3,
+          "rho_direct": 0.6775990396158464,
+          "rho_mediated": 0.5541896758703482
+        },
+        {
+          "layer": 4,
+          "rho_direct": 0.04240096038415366,
+          "rho_mediated": 0.4344297719087635
+        },
+        {
+          "layer": 5,
+          "rho_direct": 0.4122448979591836,
+          "rho_mediated": 0.5617767106842737
+        },
+        {
+          "layer": 6,
+          "rho_direct": 0.35471788715486197,
+          "rho_mediated": 0.5021368547418967
+        },
+        {
+          "layer": 7,
+          "rho_direct": 0.32638655462184873,
+          "rho_mediated": 0.48024009603841533
+        },
+        {
+          "layer": 8,
+          "rho_direct": 0.12297719087635053,
+          "rho_mediated": 0.39428571428571424
+        },
+        {
+          "layer": 9,
+          "rho_direct": 0.16984393757503002,
+          "rho_mediated": 0.5042496998799519
+        },
+        {
+          "layer": 10,
+          "rho_direct": 0.3601920768307323,
+          "rho_mediated": 0.46016806722689074
+        },
+        {
+          "layer": 11,
+          "rho_direct": 0.23322929171668666,
+          "rho_mediated": 0.4348139255702281
+        },
+        {
+          "layer": 12,
+          "rho_direct": -0.008115246098439374,
+          "rho_mediated": 0.5154861944777911
+        },
+        {
+          "layer": 13,
+          "rho_direct": 0.37920768307322933,
+          "rho_mediated": 0.6625210084033613
+        },
+        {
+          "layer": 14,
+          "rho_direct": -0.17291716686674669,
+          "rho_mediated": 0.7705642256902759
+        },
+        {
+          "layer": 15,
+          "rho_direct": 0.08436974789915966,
+          "rho_mediated": 0.7540456182472989
+        },
+        {
+          "layer": 16,
+          "rho_direct": 0.08581032412965187,
+          "rho_mediated": 0.802641056422569
+        },
+        {
+          "layer": 17,
+          "rho_direct": 0.21248499399759901,
+          "rho_mediated": 0.8071548619447779
+        },
+        {
+          "layer": 18,
+          "rho_direct": 0.5946218487394958,
+          "rho_mediated": 0.7901560624249699
+        },
+        {
+          "layer": 19,
+          "rho_direct": 0.36163265306122444,
+          "rho_mediated": 0.7788235294117648
+        },
+        {
+          "layer": 20,
+          "rho_direct": -0.06679471788715485,
+          "rho_mediated": 0.7630732292917167
+        },
+        {
+          "layer": 21,
+          "rho_direct": -0.007827130852340937,
+          "rho_mediated": 0.8139735894357742
+        },
+        {
+          "layer": 22,
+          "rho_direct": 0.046626650660264106,
+          "rho_mediated": 0.7934213685474188
+        },
+        {
+          "layer": 23,
+          "rho_direct": -0.0021608643457382954,
+          "rho_mediated": 0.8000480192076831
+        },
+        {
+          "layer": 24,
+          "rho_direct": 0.07812725090036014,
+          "rho_mediated": 0.8198319327731092
+        },
+        {
+          "layer": 25,
+          "rho_direct": 0.09339735894357742,
+          "rho_mediated": 0.8282833133253301
+        },
+        {
+          "layer": 26,
+          "rho_direct": -0.06535414165666266,
+          "rho_mediated": 0.7943817527010805
+        },
+        {
+          "layer": 27,
+          "rho_direct": 0.3903481392557023,
+          "rho_mediated": 0.7717166866746699
+        }
+      ]
+    }
+  }
+}
