@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 740,
+  "highest_id": 741,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4676,6 +4676,13 @@
       "path": "tasks/running/740",
       "status": "running",
       "title": "workflow-fix: vectorized_mlp_skill.py helper referenced but missing"
+    },
+    "741": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/741",
+      "status": "proposed",
+      "title": "GCP: drop the 24h max-run-duration default; use max available (7d FLEX_START), reconcile the janitor age backstop"
     },
     "75": {
       "has_clean_result": true,
