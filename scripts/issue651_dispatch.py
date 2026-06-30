@@ -743,6 +743,7 @@ def main() -> int:
     # spawns subprocesses with HF_TOKEN/WANDB_API_KEY missing even though every
     # subprocess gets env={**os.environ} (the env dict came from an unloaded
     # parent). load_dotenv() at main()-top is the contract (#397 round-10').
+    # DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
     from dotenv import load_dotenv
 
     load_dotenv()

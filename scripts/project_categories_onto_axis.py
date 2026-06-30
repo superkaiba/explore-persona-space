@@ -34,6 +34,7 @@ os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
 # Load HF token from environment or .env file
 if not os.environ.get("HF_TOKEN") and not os.environ.get("HUGGING_FACE_HUB_TOKEN"):
     try:
+        # DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
         from dotenv import load_dotenv
 
         for p in ["/workspace/.env", os.path.expanduser("~/.env")]:
