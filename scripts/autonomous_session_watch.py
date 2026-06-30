@@ -61,7 +61,7 @@ and pass 6 (session-reconcile), all before the GC pass:
 4. **Stalled-detector pass (ALERT + AUTO-RESPAWN).** Detect an autonomous
    session whose Happy id is in the live set (so the respawn pass doesn't
    touch it) but whose self-report timestamp + latest non-watcher progress
-   marker have BOTH been frozen > ``STALLED_WINDOW_S`` (default 45 min).
+   marker have BOTH been frozen > ``STALLED_WINDOW_S`` (default 60 min).
    This catches the "alive but bg-Bash chain dead" case where the session
    looks healthy to the respawn pass but is no longer making progress.
    AUTO-RESPAWNS the session (stop-then-respawn) when its task is in an
@@ -922,8 +922,34 @@ POD_SAFETY_STATE_MAX_AGE_S = 7 * 24 * 3600
 # signals) may stay frozen before the stalled-detector trips. Conservative:
 # generous enough that a long healthy bg op (training launch, eval) doesn't
 # false-alert — a true bg-Bash death freezes ALL three signals indefinitely,
-# so 45 min is plenty of margin.
-STALLED_WINDOW_S = 45 * 60
+# so a generous window is plenty of margin.
+#
+# Raised 45 -> 60 min (#759, bug class b.2): the `/issue-tick` self-report cron
+# fires every 45 min, so a 45-min window EQUALLED the cadence and was
+# straddle-able by ordinary cron jitter (a single late tick ages the
+# self-report past 45 min while a multi-minute subagent holds the conversation
+# and posts no marker). 60 min = 45-min cadence + a full extra 10-min cron tick
+# of slack, so the self-report must miss MORE than one tick before the window
+# opens. Env-tunable via EPM_STALLED_WINDOW_MIN (minutes); a malformed value
+# falls back to the default. Mirrors the _orphan_staleness_s house pattern.
+STALLED_WINDOW_S_DEFAULT = 60 * 60
+
+
+def _stalled_window_s() -> float:
+    """Stalled-detector staleness window in seconds (env
+    ``EPM_STALLED_WINDOW_MIN``, minutes; default
+    :data:`STALLED_WINDOW_S_DEFAULT`). A malformed env value falls back to the
+    default — a typo'd var must not disable the stalled detector."""
+    raw = os.environ.get("EPM_STALLED_WINDOW_MIN")
+    if not raw:
+        return float(STALLED_WINDOW_S_DEFAULT)
+    try:
+        return float(raw) * 60.0
+    except ValueError:
+        return float(STALLED_WINDOW_S_DEFAULT)
+
+
+STALLED_WINDOW_S = _stalled_window_s()
 
 # Filename prefix for the per-session stalled-detector state file at
 # ``~/.eps-autonomous/stalled-<N>.json``. Mirrors the pod-safety state file

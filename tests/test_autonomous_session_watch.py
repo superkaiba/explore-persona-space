@@ -1995,6 +1995,74 @@ def test_stalled_keep_resets_live_consecutive(isolated_registry, monkeypatch, st
     assert _read_live_consecutive(isolated_registry, 741) == 0
 
 
+# ─── #759 bug class b.2: STALLED_WINDOW_S raised 45 -> 60 min, env-tunable ────
+
+
+def test_stalled_window_default_is_sixty_minutes():
+    # Criterion 8 floor + the b.2 raise: the module default is now 60 min, and
+    # a short (5-min) no-marker subagent stretch is FAR under it.
+    import autonomous_session_watch as asw
+
+    assert asw.STALLED_WINDOW_S == 60 * 60
+    # A 5-min-old self-report + 5-min-old marker -> keep (well inside window),
+    # regardless of the new vs old window (documents the regression floor).
+    assert asw.decide_session_stalled(
+        self_report_age_s=5 * 60,
+        marker_progress_age_s=5 * 60,
+        has_pod=False,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+    ) == ("keep", 0)
+
+
+def test_stalled_window_50min_keeps_under_new_window():
+    # Criterion 9 (the test that DISTINGUISHES the new 60-min window from the
+    # old 45-min one): a self-report + marker 50 min old sits BETWEEN the old
+    # and new windows. With the new 60-min window the window is NOT yet open ->
+    # keep. (Under the old 45-min window this same input would have respawned.)
+    import autonomous_session_watch as asw
+
+    age_50min = 50 * 60
+    # First miss path: 50 min < 60 min window -> not stale -> keep, missed reset.
+    assert asw.decide_session_stalled(
+        self_report_age_s=age_50min,
+        marker_progress_age_s=age_50min,
+        has_pod=False,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        window_s=asw.STALLED_WINDOW_S,
+    ) == ("keep", 0)
+    # Control: under the OLD 45-min window this same input DOES open the window
+    # (proving the input is genuinely between the two windows, not trivially
+    # under both).
+    assert asw.decide_session_stalled(
+        self_report_age_s=age_50min,
+        marker_progress_age_s=age_50min,
+        has_pod=False,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        window_s=45 * 60,
+    ) == ("respawn", 0)
+
+
+def test_stalled_window_env_override_and_fallback(monkeypatch):
+    # Criterion 10 (b-half): EPM_STALLED_WINDOW_MIN parses a valid int (minutes)
+    # and falls back to the default on a garbled value.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STALLED_WINDOW_MIN", raising=False)
+    assert asw._stalled_window_s() == float(asw.STALLED_WINDOW_S_DEFAULT)
+
+    monkeypatch.setenv("EPM_STALLED_WINDOW_MIN", "90")
+    assert asw._stalled_window_s() == 90 * 60.0
+
+    monkeypatch.setenv("EPM_STALLED_WINDOW_MIN", "garbled")
+    assert asw._stalled_window_s() == float(asw.STALLED_WINDOW_S_DEFAULT)
+
+
 def test_stalled_exemption_live_provision_blocks_respawn(
     isolated_registry, monkeypatch, stalled_recorder
 ):
