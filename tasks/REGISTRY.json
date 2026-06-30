@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 754,
+  "highest_id": 755,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4783,6 +4783,13 @@
       "path": "tasks/proposed/754",
       "status": "proposed",
       "title": "daily-fix: Step 9c test-verdict runs touched-file pytest subset"
+    },
+    "755": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/755",
+      "status": "proposed",
+      "title": "daily-fix: reconciler must persist EVERY upheld finding"
     },
     "76": {
       "has_clean_result": false,
