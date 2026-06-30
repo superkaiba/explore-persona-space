@@ -37,100 +37,97 @@
     26,
     27
   ],
-  "layer_subset_smoke": [
-    0,
-    18
-  ],
+  "layer_subset_smoke": null,
   "ridge_full_chain_repro_control": {
-    "ok": false,
+    "ok": true,
     "rows": {
       "broad_em": {
-        "got_layer": 18,
-        "got_rho": 0.3165627026056371,
+        "got_layer": 26,
+        "got_rho": 0.3952638514729647,
         "expected_layer": 26,
         "expected_rho": 0.3952638514729647,
-        "abs_rho_delta": 0.0787011488673276,
-        "match": false
+        "abs_rho_delta": 0.0,
+        "match": true
       },
       "harmful_compliance": {
-        "got_layer": 18,
-        "got_rho": 0.5928444475552122,
+        "got_layer": 11,
+        "got_rho": 0.6744104557529602,
         "expected_layer": 11,
         "expected_rho": 0.6744104557529602,
-        "abs_rho_delta": 0.08156600819774806,
-        "match": false
+        "abs_rho_delta": 0.0,
+        "match": true
       },
       "sycophancy": {
-        "got_layer": 0,
-        "got_rho": 0.03410100701632069,
+        "got_layer": 13,
+        "got_rho": 0.08554069506488331,
         "expected_layer": 13,
         "expected_rho": 0.08554069506488331,
-        "abs_rho_delta": 0.051439688048562617,
-        "match": false
+        "abs_rho_delta": 0.0,
+        "match": true
       },
       "refusal": {
-        "got_layer": 18,
-        "got_rho": -0.4758404933726927,
+        "got_layer": 26,
+        "got_rho": -0.2041856449546123,
         "expected_layer": 26,
         "expected_rho": -0.2041856449546123,
-        "abs_rho_delta": 0.2716548484180804,
-        "match": false
+        "abs_rho_delta": 0.0,
+        "match": true
       }
     }
   },
   "per_behavior": {
     "broad_em": {
       "direct_actual_v0": {
-        "layer": 18,
-        "rho": 0.24406663774887408
+        "layer": 25,
+        "rho": 0.2948966176020824
       },
       "mediated_ridge_fullH": {
-        "layer": 18,
-        "rho": 0.3165627026056371
+        "layer": 26,
+        "rho": 0.3952638514729647
       },
       "mediated_ridge_pca64": {
-        "layer": 18,
-        "rho": 0.2902945136275803,
-        "skill_r2": 0.7945301211128271
+        "layer": 25,
+        "rho": 0.4198256423481162,
+        "skill_r2": 0.5451179862766564
       },
       "mediated_mlp_pca64": {
         "layer": 0,
         "rho": 0.11882735880231199,
         "skill_r2": -7.6798367814449975
       },
-      "preserved_fraction_fullH": 1.2970338983050849,
-      "direct_minus_mediated_fullH": -0.07249606485676305
+      "preserved_fraction_fullH": 1.340347185691741,
+      "direct_minus_mediated_fullH": -0.10036723387088231
     },
     "harmful_compliance": {
       "direct_actual_v0": {
-        "layer": 18,
-        "rho": 0.5810616220785328
+        "layer": 10,
+        "rho": 0.611167943500579
       },
       "mediated_ridge_fullH": {
-        "layer": 18,
-        "rho": 0.5928444475552122
+        "layer": 11,
+        "rho": 0.6744104557529602
       },
       "mediated_ridge_pca64": {
-        "layer": 18,
-        "rho": 0.5812059015741656,
-        "skill_r2": 0.7945301211128271
+        "layer": 11,
+        "rho": 0.651999040764664,
+        "skill_r2": 0.7016580909488176
       },
       "mediated_mlp_pca64": {
         "layer": 0,
         "rho": -0.07449631291174039,
         "skill_r2": -7.6798367814449975
       },
-      "preserved_fraction_fullH": 1.0202780996523753,
-      "direct_minus_mediated_fullH": -0.011782825476679304
+      "preserved_fraction_fullH": 1.1034781240163676,
+      "direct_minus_mediated_fullH": -0.0632425122523812
     },
     "sycophancy": {
       "direct_actual_v0": {
-        "layer": 0,
-        "rho": -0.024543119134281508
+        "layer": 27,
+        "rho": 0.19975505377588415
       },
       "mediated_ridge_fullH": {
-        "layer": 0,
-        "rho": 0.03410100701632069
+        "layer": 13,
+        "rho": 0.08554069506488331
       },
       "mediated_ridge_pca64": {
         "layer": 0,
@@ -138,39 +135,39 @@
         "skill_r2": -0.17736221711105604
       },
       "mediated_mlp_pca64": {
-        "layer": 0,
-        "rho": 0.08736581938406666,
-        "skill_r2": -7.6798367814449975
+        "layer": 16,
+        "rho": 0.12386830576773389,
+        "skill_r2": -2.1383820406816274
       },
-      "preserved_fraction_fullH": -1.3894324853228965,
-      "direct_minus_mediated_fullH": -0.0586441261506022
+      "preserved_fraction_fullH": 0.42822793940851167,
+      "direct_minus_mediated_fullH": 0.11421435871100084
     },
     "refusal": {
       "direct_actual_v0": {
-        "layer": 18,
-        "rho": -0.4402317471003067
+        "layer": 26,
+        "rho": -0.2811216810977835
       },
       "mediated_ridge_fullH": {
-        "layer": 18,
-        "rho": -0.4758404933726927
+        "layer": 26,
+        "rho": -0.2041856449546123
       },
       "mediated_ridge_pca64": {
-        "layer": 0,
-        "rho": -0.35786549728806727,
-        "skill_r2": -0.17736221711105604
+        "layer": 26,
+        "rho": -0.16151281541361542,
+        "skill_r2": 0.4949961096859923
       },
       "mediated_mlp_pca64": {
-        "layer": 18,
-        "rho": 0.5728154596043725,
-        "skill_r2": -1.9954392480357672
+        "layer": 12,
+        "rho": 0.6087125358060895,
+        "skill_r2": -1.775022241802212
       },
-      "preserved_fraction_fullH": 1.0808863661172363,
-      "direct_minus_mediated_fullH": 0.03560874627238597
+      "preserved_fraction_fullH": 0.7263247863247863,
+      "direct_minus_mediated_fullH": -0.07693603614317121
     }
   },
   "metadata": {
-    "git_commit": "ac8acd9351852ac1fec69225a73bbb1f24c71c12",
-    "timestamp_utc": "2026-06-30T00:40:55.999836Z",
+    "git_commit": "64e02af71d6ca9a6578b45fd42edd8d38c10e480",
+    "timestamp_utc": "2026-06-30T01:06:04.600669Z",
     "python_version": "3.11.15",
     "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",
