@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -79,8 +80,15 @@ def per_sequence_dp1(
     return out
 
 
-def fig_per_sequence_scatter(dump_dir, stats, fig_dir):
-    """Per-sequence +1 std dir-pres at mid (L13) vs late (L27), NS labeled + broader strip."""
+def fig_per_sequence_scatter(dump_dir, stats, fig_dir, rb=None):
+    """Per-sequence +1 std dir-pres at mid (L13) vs late (L27), NS labeled + broader strip.
+
+    ``rb`` is the parsed ``random_baseline.json``; the std chance floor is
+    per-(corpus, layer), not flat, so each panel draws a short baseline segment
+    over each corpus cluster at that corpus's std floor for the panel's layer
+    (matching the per-layer baseline the hero figure ``h1h2_direction_preservation_p1``
+    draws). The WikiText-103 corpus is keyed ``broader`` in the baseline JSON.
+    """
     layers = [13, 27]
     ns = per_sequence_dp1(dump_dir, stats, "ns_raw", "ns", layers)
     broader = per_sequence_dp1(dump_dir, stats, "broader_raw", "broader", layers)
@@ -88,6 +96,12 @@ def fig_per_sequence_scatter(dump_dir, stats, fig_dir):
     rng = np.random.default_rng(744)
     c_ns = paper_palette_role("primary")
     c_br = paper_palette_role("baseline")
+    rb = rb or {}
+
+    def _std_floor(corpus_key, L):
+        arr = rb.get(corpus_key, {}).get("per_flavor", {}).get("std")
+        return float(arr[L]) if arr and len(arr) > L else None
+
     for ax, L in zip(axes, layers, strict=True):
         # broader strip (jittered, n large)
         bvals = np.array([v for _, v in broader[L]])
@@ -132,7 +146,32 @@ def fig_per_sequence_scatter(dump_dir, stats, fig_dir):
         ax.set_xlim(-0.4, 1.55)
         ax.set_ylabel("+1-step direction preservation (|cos|)")
         ax.set_title(f"{'mid-band' if L == 13 else 'late-band'} (layer {L})")
-        ax.axhline(0.0246, color="gray", ls=":", lw=1.0, label="std random baseline (~0.025)")
+        # Per-(corpus, layer) std chance floor — the floor climbs late (L13
+        # ~0.023/0.026 vs L27 ~0.037/0.050 for WikiText-103/Natural Stories),
+        # so a single flat line would misstate the late panel. Draw a short
+        # segment over each corpus cluster at that corpus's std floor for L.
+        wk_floor = _std_floor("broader", L)
+        ns_floor = _std_floor("natural_stories", L)
+        _labeled = False
+        if wk_floor is not None:
+            ax.plot(
+                [-0.25, 0.25],
+                [wk_floor, wk_floor],
+                color="gray",
+                ls=":",
+                lw=1.2,
+                label="std random baseline (per corpus, this layer)",
+            )
+            _labeled = True
+        if ns_floor is not None:
+            ax.plot(
+                [0.75, 1.25],
+                [ns_floor, ns_floor],
+                color="gray",
+                ls=":",
+                lw=1.2,
+                label=None if _labeled else "std random baseline (per corpus, this layer)",
+            )
         if L == 13:
             ax.legend(fontsize=6.5, loc="upper left")
     fig.suptitle(
@@ -233,7 +272,9 @@ def main() -> int:
     args = ap.parse_args()
     set_paper_style("blog")
     stats = torch.load(args.dump_dir / "population_stats.pt", weights_only=False)
-    fig_per_sequence_scatter(args.dump_dir, stats, args.fig_dir)
+    rb_path = args.analysis_dir / "random_baseline.json"
+    rb = json.loads(rb_path.read_text()) if rb_path.exists() else {}
+    fig_per_sequence_scatter(args.dump_dir, stats, args.fig_dir, rb=rb)
     fig_sink_ratio_depth(args.analysis_dir, args.fig_dir)
     fig_decay_small_multiples(args.analysis_dir, args.fig_dir)
     print("supp figures done ->", args.fig_dir)

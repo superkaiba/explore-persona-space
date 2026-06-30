@@ -1,6 +1,6 @@
 {
-  "commit": "594d43ec45",
-  "created": "2026-06-30T14:02:33Z",
+  "commit": "0657f52d35",
+  "created": "2026-06-30T15:00:54Z",
   "figsize": [
     11.0,
     4.4
@@ -1456,7 +1456,7 @@
     {
       "x": 0.9616620648565742,
       "+1-step direction preservation (|cos|)": 0.12424036860466003,
-      "label": "4",
+      "label": "2",
       "series": "Natural Stories (n=10)",
       "_kind": "scatter",
       "_group": 2
@@ -1464,7 +1464,7 @@
     {
       "x": 0.9449613492591662,
       "+1-step direction preservation (|cos|)": 0.12472202628850937,
-      "label": "4",
+      "label": "2",
       "series": "Natural Stories (n=10)",
       "_kind": "scatter",
       "_group": 2
@@ -1472,7 +1472,7 @@
     {
       "x": 0.9968686904108961,
       "+1-step direction preservation (|cos|)": 0.1265857219696045,
-      "label": "6",
+      "label": "4",
       "series": "Natural Stories (n=10)",
       "_kind": "scatter",
       "_group": 2
@@ -1480,7 +1480,7 @@
     {
       "x": 0.982596654212015,
       "+1-step direction preservation (|cos|)": 0.12478499859571457,
-      "label": "6",
+      "label": "4",
       "series": "Natural Stories (n=10)",
       "_kind": "scatter",
       "_group": 2
@@ -1488,22 +1488,22 @@
     {
       "x": 0.9853510891011794,
       "+1-step direction preservation (|cos|)": 0.1249208003282547,
-      "label": "6",
+      "label": "4",
       "series": "Natural Stories (n=10)",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "x": 0.0,
-      "+1-step direction preservation (|cos|)": 0.0246,
-      "series": "std random baseline (~0.025)",
+      "x": -0.25,
+      "+1-step direction preservation (|cos|)": 0.02256477251648903,
+      "series": "std random baseline (per corpus, this layer)",
       "_kind": "line",
       "_group": 3
     },
     {
-      "x": 1.0,
-      "+1-step direction preservation (|cos|)": 0.0246,
-      "series": "std random baseline (~0.025)",
+      "x": 0.25,
+      "+1-step direction preservation (|cos|)": 0.02256477251648903,
+      "series": "std random baseline (per corpus, this layer)",
       "_kind": "line",
       "_group": 3
     },
@@ -2917,7 +2917,7 @@
     {
       "x": 1.111189757301465,
       "+1-step direction preservation (|cos|)": 0.12830880284309387,
-      "label": "10",
+      "label": "5",
       "series": "Natural Stories (n=10)",
       "_kind": "scatter",
       "_group": 6
@@ -2925,7 +2925,7 @@
     {
       "x": 1.0535099302681976,
       "+1-step direction preservation (|cos|)": 0.1253778487443924,
-      "label": "5",
+      "label": "7",
       "series": "Natural Stories (n=10)",
       "_kind": "scatter",
       "_group": 6
@@ -2995,16 +2995,16 @@
       "_group": 6
     },
     {
-      "x": 0.0,
-      "+1-step direction preservation (|cos|)": 0.0246,
-      "series": "std random baseline (~0.025)",
+      "x": -0.25,
+      "+1-step direction preservation (|cos|)": 0.036513734608888626,
+      "series": "std random baseline (per corpus, this layer)",
       "_kind": "line",
       "_group": 7
     },
     {
-      "x": 1.0,
-      "+1-step direction preservation (|cos|)": 0.0246,
-      "series": "std random baseline (~0.025)",
+      "x": 0.25,
+      "+1-step direction preservation (|cos|)": 0.036513734608888626,
+      "series": "std random baseline (per corpus, this layer)",
       "_kind": "line",
       "_group": 7
     }
