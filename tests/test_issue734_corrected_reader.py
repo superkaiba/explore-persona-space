@@ -706,3 +706,113 @@ def test_run_phase1_reruns_on_corrupt_json(monkeypatch, tmp_path):
     monkeypatch.setattr(D, "reread_cell", _fake_reread)
     D.run_phase1(cells_limit=None, smoke=False, dry_run=False)
     assert calls == [cell.eval_key], calls
+
+
+# ── Fix (crash-fix round 6, reconciler blocker): schema validation, not keys ──
+# A round-5 key-only check (``four.issubset(rec)``) treated a JSON with all four
+# key NAMES present but BAD VALUES (NaN, string, positive logp, broken softmax
+# identity) as COMPLETE -> the cell was SKIPPED, the resume-contract violation
+# the brief pre-registered. The fix routes every corrected trained/base record
+# through the NAMED validator ``validate_marker_slot_record`` and adds top-level
+# finiteness/bool checks.
+def _summary_with_corrupt_record(eval_key: str, corrupt: dict) -> dict:
+    """A summary whose corrected.trained slot record carries all four key NAMES
+    but BAD VALUES (the ``corrupt`` overrides), the base record valid -- the
+    key-only check passed this, the schema validator rejects it."""
+    good = {"logp": -6.0, "z_marker": 3.0, "z_eos": -2.0, "logZ": 9.0}
+    bad = dict(good)
+    bad.update(corrupt)
+    return {
+        "corrected_source_delta_logp_mean": 6.9,
+        "corrected_in_band": True,
+        "rows": [{"corrected": {"trained": bad, "base": dict(good)}}],
+        "cell": eval_key,
+    }
+
+
+@pytest.mark.parametrize(
+    "corrupt",
+    [
+        pytest.param({"logp": float("nan")}, id="nan_logp"),
+        # Broken softmax identity: logp != z_marker - logZ (3.0 - 9.0 = -6.0 != -4.0).
+        pytest.param({"logp": -4.0}, id="broken_softmax_identity"),
+        pytest.param({"logp": "bad"}, id="string_logp"),
+        pytest.param({"logp": 2.0}, id="positive_logp"),
+        pytest.param({"z_marker": float("inf")}, id="inf_z_marker"),
+    ],
+)
+def test_valid_corrected_reread_rejects_corrupt_values(tmp_path, corrupt):
+    """_valid_corrected_reread returns None when a corrected slot record has the
+    four keys present but a value that violates the storage contract (the named
+    validator's invariants), NOT just when a key is absent."""
+    import issue734_dispatch as D
+
+    p = tmp_path / "marker_slot_corrected.json"
+    p.write_text(json.dumps(_summary_with_corrupt_record("k", corrupt)))
+    assert D._valid_corrected_reread(p) is None, corrupt
+
+
+@pytest.mark.parametrize(
+    "top_override",
+    [
+        pytest.param({"corrected_source_delta_logp_mean": float("nan")}, id="nan_mean"),
+        pytest.param({"corrected_source_delta_logp_mean": "6.9"}, id="string_mean"),
+        pytest.param({"corrected_in_band": "true"}, id="string_in_band"),
+        pytest.param({"corrected_in_band": 1}, id="int_in_band"),
+    ],
+)
+def test_valid_corrected_reread_rejects_bad_top_level_aggregates(tmp_path, top_override):
+    """Top-level invariants: the mean must be a finite number and the band flag
+    a real boolean -- a NaN mean / non-bool flag is needs-rerun, not complete."""
+    import issue734_dispatch as D
+
+    summary = _valid_phase1_summary("k")
+    summary.update(top_override)
+    p = tmp_path / "marker_slot_corrected.json"
+    p.write_text(json.dumps(summary))
+    assert D._valid_corrected_reread(p) is None, top_override
+
+
+def test_phase1_skip_guard_reruns_on_corrupt_values(monkeypatch, tmp_path):
+    """End-to-end: run_phase1 does NOT skip a cell whose marker_slot_corrected.json
+    has all four key NAMES present but a NON-FINITE / broken-softmax-identity
+    value -- _valid_corrected_reread rejects it, so reread_cell IS called. This is
+    the resume-contract violation the round-5 key-only check let through."""
+    C, D, cell = _stage_one_phase1_cell(monkeypatch, tmp_path)
+    out_path = C.CORRECTED_REREAD_ROOT / cell.eval_key / "marker_slot_corrected.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # All four keys present, but logp is NaN -> contract violation -> needs rerun.
+    out_path.write_text(
+        json.dumps(_summary_with_corrupt_record(cell.eval_key, {"logp": float("nan")}))
+    )
+
+    calls: list[str] = []
+
+    def _fake_reread(c, *, smoke):
+        calls.append(c.eval_key)
+        return _valid_phase1_summary(c.eval_key)
+
+    monkeypatch.setattr(D, "reread_cell", _fake_reread)
+    D.run_phase1(cells_limit=None, smoke=False, dry_run=False)
+    assert calls == [cell.eval_key], calls
+
+
+def test_phase1_skip_guard_reruns_on_broken_softmax_identity(monkeypatch, tmp_path):
+    """Second corruption sub-case end-to-end: a record whose logp != z_marker - logZ
+    (within tolerance) is rejected by the named validator's softmax-identity check,
+    so run_phase1 RE-RUNS the cell instead of skipping it."""
+    C, D, cell = _stage_one_phase1_cell(monkeypatch, tmp_path)
+    out_path = C.CORRECTED_REREAD_ROOT / cell.eval_key / "marker_slot_corrected.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # logp=-4.0 but z_marker - logZ = 3.0 - 9.0 = -6.0 -> identity broken.
+    out_path.write_text(json.dumps(_summary_with_corrupt_record(cell.eval_key, {"logp": -4.0})))
+
+    calls: list[str] = []
+
+    def _fake_reread(c, *, smoke):
+        calls.append(c.eval_key)
+        return _valid_phase1_summary(c.eval_key)
+
+    monkeypatch.setattr(D, "reread_cell", _fake_reread)
+    D.run_phase1(cells_limit=None, smoke=False, dry_run=False)
+    assert calls == [cell.eval_key], calls

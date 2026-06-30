@@ -49,6 +49,7 @@ import argparse
 import gc
 import json
 import logging
+import math
 import os
 import shutil
 import subprocess
@@ -64,6 +65,7 @@ sys.path.insert(0, str(REPO / "scripts"))  # issue734_* / issue664_* / issue594_
 # before LLM(); spawn isolates the EngineCore subprocess.
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
+from explore_persona_space.eval.marker_logprob import validate_marker_slot_record  # noqa: E402
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # phase1 vLLM gen + phase2 train_lora + HF uploads need HF_TOKEN / WANDB_API_KEY
@@ -681,10 +683,16 @@ def _valid_corrected_reread(path: Path) -> dict | None:
 
     A skip-if-exists guard that trusts mere file presence would skip a
     truncated / corrupt JSON from a crashed prior cell and propagate a fake
-    "already complete". So treat present-but-invalid as needs-rerun: the file
-    must parse, carry the band/mean keys, a non-empty ``rows`` list, and EVERY
-    row must carry the four-float ``(logp, z_marker, z_eos, logZ)`` schema on
-    BOTH the corrected trained and base reads (the storage contract, #530)."""
+    "already complete". So treat present-but-invalid as needs-rerun. Validity
+    is the full storage CONTRACT (#530), not mere key presence (#734 crash-fix
+    round 6, reconciler blocker): the file must parse, carry a finite-numeric
+    ``corrected_source_delta_logp_mean`` + a boolean ``corrected_in_band``, a
+    non-empty ``rows`` list, and EVERY row's corrected trained AND base reads
+    must PASS :func:`validate_marker_slot_record` (four finite floats, ``logp``
+    non-positive, the ``logp == z_marker - logZ`` softmax identity). A record
+    with all four key NAMES present but BAD VALUES (NaN, a string, a positive
+    ``logp``, a broken softmax identity) is treated as needs-rerun -- a
+    round-5 key-only check skipped exactly that corrupt JSON."""
     if not path.exists():
         return None
     try:
@@ -693,19 +701,32 @@ def _valid_corrected_reread(path: Path) -> dict | None:
         return None
     if not isinstance(summary, dict):
         return None
-    if "corrected_source_delta_logp_mean" not in summary or "corrected_in_band" not in summary:
+    # Top-level aggregates: a finite numeric mean + a real boolean band flag.
+    top_mean = summary.get("corrected_source_delta_logp_mean")
+    if (
+        not isinstance(top_mean, (int, float))
+        or isinstance(top_mean, bool)
+        or not math.isfinite(float(top_mean))
+    ):
+        return None
+    if not isinstance(summary.get("corrected_in_band"), bool):
         return None
     rows = summary.get("rows")
     if not isinstance(rows, list) or not rows:
         return None
-    four = {"logp", "z_marker", "z_eos", "logZ"}
+    # Every row's corrected trained AND base slot record must satisfy the
+    # four-float storage contract via the NAMED validator (not key presence).
     for row in rows:
         corr = row.get("corrected") if isinstance(row, dict) else None
         if not isinstance(corr, dict):
             return None
         for side in ("trained", "base"):
             rec = corr.get(side)
-            if not isinstance(rec, dict) or not four.issubset(rec):
+            if not isinstance(rec, dict):
+                return None
+            try:
+                validate_marker_slot_record(rec, context=f"{path}:{side}", require_z_eos=True)
+            except AssertionError:
                 return None
     return summary
 
