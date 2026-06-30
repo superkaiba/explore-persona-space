@@ -4,6 +4,14 @@
 # phase's JSON output from eval_results/issue_742/.
 set -euo pipefail
 
+# Route HF caches to the /mnt/eps-data data disk (503G free, attached 2026-06-30
+# per the auto-memory note) so any `hf_hub_download` from `snapshot_raw_completions`
+# (and any other phase that touches HF) does NOT refill `/`. The previous launch
+# hit OSError(errno=28) at ~8h after `~/.cache/huggingface` swelled to 199G on
+# the 485G VM root disk.
+export HF_HOME=/mnt/eps-data/thomasjiralerspong/huggingface-cache
+mkdir -p "$HF_HOME"
+
 cd /home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-742
 
 run_phase() {
@@ -11,12 +19,17 @@ run_phase() {
   local label="$2"
   shift 2
   echo "[$(date -Iseconds)] phase ${k} START ${label}"
-  if ! "$@"; then
+  # POSITIVE-form test so `$?` captures the failing command's rc.  The earlier
+  # `if ! "$@"; then rc=$?` inverted the check, so `$?` was always 0 when the
+  # FAIL branch fired (the `!` expression's rc).  Inverted -> the FAIL line on
+  # disk-full read `FAIL phase=1 rc=0`, masking the real OSError.
+  if "$@"; then
+    echo "[$(date -Iseconds)] phase ${k} DONE ${label}"
+  else
     local rc=$?
     echo "[$(date -Iseconds)] FAIL phase=${k} (${label}) rc=${rc}"
     exit "${rc}"
   fi
-  echo "[$(date -Iseconds)] phase ${k} DONE ${label}"
 }
 
 # Phase 1 — Stage-0a: Anthropic Batch judge re-rerun (threshold_base=0 forces Batch route), J=20, R=2
