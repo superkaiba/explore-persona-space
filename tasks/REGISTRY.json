@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 757,
+  "highest_id": 758,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4804,6 +4804,13 @@
       "path": "tasks/proposed/757",
       "status": "proposed",
       "title": "daily-fix: same-issue loop re-reads latest followup-scope marker"
+    },
+    "758": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/758",
+      "status": "proposed",
+      "title": "daily-fix: codex-critic must source numbers from reviewed plan"
     },
     "76": {
       "has_clean_result": false,
