@@ -1,0 +1,271 @@
+{
+  "commit": "add6793ded",
+  "created": "2026-06-30T06:47:19Z",
+  "figsize": [
+    7.8,
+    5.0
+  ],
+  "points": [
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.1324489795918367,
+      "y": 0.0,
+      "series": "full L\u0302 \u03c1 (clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.3488775510204081,
+      "y": 1.0,
+      "series": "full L\u0302 \u03c1 (clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.35326530612244894,
+      "y": 2.0,
+      "series": "full L\u0302 \u03c1 (clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.4203061224489796,
+      "y": 3.0,
+      "series": "full L\u0302 \u03c1 (clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.46581632653061217,
+      "y": 4.0,
+      "series": "full L\u0302 \u03c1 (clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.4681632653061224,
+      "y": 5.0,
+      "series": "full L\u0302 \u03c1 (clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.4940816326530612,
+      "y": 6.0,
+      "series": "full L\u0302 \u03c1 (clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.6341836734693876,
+      "y": 7.0,
+      "series": "full L\u0302 \u03c1 (clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.3408163265306122,
+      "y": 0.0,
+      "series": "cosine special-case \u03c1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.2971428571428571,
+      "y": 1.0,
+      "series": "cosine special-case \u03c1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.44591836734693874,
+      "y": 2.0,
+      "series": "cosine special-case \u03c1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.04928571428571428,
+      "y": 3.0,
+      "label": "one row per taught-fact cell; full L\u0302 vs the cosine special-case; layer 14, n=49 bystanders/cell",
+      "series": "cosine special-case \u03c1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.1251020408163265,
+      "y": 4.0,
+      "label": "one row per taught-fact cell; full L\u0302 vs the cosine special-case; layer 14, n=49 bystanders/cell",
+      "series": "cosine special-case \u03c1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.4803061224489795,
+      "y": 5.0,
+      "label": "one row per taught-fact cell; full L\u0302 vs the cosine special-case; layer 14, n=49 bystanders/cell",
+      "series": "cosine special-case \u03c1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.6724489795918367,
+      "y": 6.0,
+      "series": "cosine special-case \u03c1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.720408163265306,
+      "y": 7.0,
+      "series": "cosine special-case \u03c1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.1324489795918367,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.3488775510204081,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.35326530612244894,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.4203061224489796,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.46581632653061217,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.4681632653061224,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.4940816326530612,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.6341836734693876,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": -0.503369100846033,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": -0.178060518162041,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": -0.18179130690780948,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": -0.09993699760181385,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.1666391913305731,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": -0.07810419398236657,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": -0.04404589212712645,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.15279042464420817,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.6754440079223349,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.7470308788598574,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.7639838290313249,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.7716525335657421,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.7216450630400907,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.8601609657947686,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.8786892247095272,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (taught-fact cell vs latent \u0394s)": 0.7979341490228946,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 40
+}
