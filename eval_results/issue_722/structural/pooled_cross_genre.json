@@ -1,0 +1,296 @@
+{
+  "analysis": "pooled_cross_genre_loco_ridge",
+  "description": "Fit c_C->v0 ridge on UNION of Betley+UltraChat, leave-one-CONTEXT-out (both genre rows held together), skill-over-mean. RAW + GENRE-CENTERED.",
+  "pca_target": "top-min(train_rank, 90) PCs of the pooled target (lossless-ish for 98-row train fold)",
+  "n_contexts": 50,
+  "n_pooled_rows": 100,
+  "cited_cross_genre_from": "issue-722:eval_results/issue_722/structural/robustness.json cross_genre block (PCA-48 within-genre + full-data transfer)",
+  "per_layer": {
+    "0": {
+      "within_betley_recompute": -0.09047721056299673,
+      "within_ultrachat_recompute": -0.1749317787218816,
+      "pooled_raw": 0.10353781404466111,
+      "pooled_genre_centered": -0.3785637403745945,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "1": {
+      "within_betley_recompute": 0.17337113513016367,
+      "within_ultrachat_recompute": 0.1316517761932564,
+      "pooled_raw": 0.30261246610039394,
+      "pooled_genre_centered": -0.008711447265510985,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "2": {
+      "within_betley_recompute": 0.34789884078080524,
+      "within_ultrachat_recompute": 0.2596678651854968,
+      "pooled_raw": 0.44439479624464207,
+      "pooled_genre_centered": 0.26371882822247805,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "3": {
+      "within_betley_recompute": 0.4256971290167956,
+      "within_ultrachat_recompute": 0.38112454212376246,
+      "pooled_raw": 0.5348924650778941,
+      "pooled_genre_centered": 0.36631404625039365,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "4": {
+      "within_betley_recompute": 0.48861634805612275,
+      "within_ultrachat_recompute": 0.4358228144292504,
+      "pooled_raw": 0.5948653382189382,
+      "pooled_genre_centered": 0.45189360921860644,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "5": {
+      "within_betley_recompute": 0.47480501047785617,
+      "within_ultrachat_recompute": 0.44432955648413874,
+      "pooled_raw": 0.5656672491661452,
+      "pooled_genre_centered": 0.42218677353724743,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "6": {
+      "within_betley_recompute": 0.5894329254391446,
+      "within_ultrachat_recompute": 0.5897336550853722,
+      "pooled_raw": 0.6902066746177391,
+      "pooled_genre_centered": 0.5800183362161682,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "7": {
+      "within_betley_recompute": 0.6050007205890667,
+      "within_ultrachat_recompute": 0.5907381356149071,
+      "pooled_raw": 0.7368503966328043,
+      "pooled_genre_centered": 0.5461638634273525,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "8": {
+      "within_betley_recompute": 0.6655902802916152,
+      "within_ultrachat_recompute": 0.6733421168854361,
+      "pooled_raw": 0.7898035169704809,
+      "pooled_genre_centered": 0.645686033540664,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "9": {
+      "within_betley_recompute": 0.6403514933389851,
+      "within_ultrachat_recompute": 0.6685305389074125,
+      "pooled_raw": 0.7967040277624409,
+      "pooled_genre_centered": 0.6136470585912447,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "10": {
+      "within_betley_recompute": 0.6598108178316537,
+      "within_ultrachat_recompute": 0.6811668043726322,
+      "pooled_raw": 0.819073706603864,
+      "pooled_genre_centered": 0.638276335248259,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "11": {
+      "within_betley_recompute": 0.6888475547935466,
+      "within_ultrachat_recompute": 0.7032288602835728,
+      "pooled_raw": 0.8337445943295784,
+      "pooled_genre_centered": 0.6838758568707836,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "12": {
+      "within_betley_recompute": 0.7109649849649957,
+      "within_ultrachat_recompute": 0.7118659645207297,
+      "pooled_raw": 0.8461598113220042,
+      "pooled_genre_centered": 0.7021213815210825,
+      "cited_within_betley": 0.7109649833062537,
+      "cited_within_ultrachat": 0.7118659701154033,
+      "cited_transfer_fit_betley_score_ultrachat": -3.784618366106222,
+      "cited_transfer_fit_ultrachat_score_betley": -2.6558506361169383
+    },
+    "13": {
+      "within_betley_recompute": 0.7245434074107704,
+      "within_ultrachat_recompute": 0.7300592771016019,
+      "pooled_raw": 0.8542930952027835,
+      "pooled_genre_centered": 0.7010247285983169,
+      "cited_within_betley": 0.7245434043157954,
+      "cited_within_ultrachat": 0.730059271050236,
+      "cited_transfer_fit_betley_score_ultrachat": -3.543515453186523,
+      "cited_transfer_fit_ultrachat_score_betley": -2.679511843251836
+    },
+    "14": {
+      "within_betley_recompute": 0.7471152400057104,
+      "within_ultrachat_recompute": 0.7571886128571582,
+      "pooled_raw": 0.8649363184668362,
+      "pooled_genre_centered": 0.7143257612560504,
+      "cited_within_betley": 0.7471152236700476,
+      "cited_within_ultrachat": 0.757188613206621,
+      "cited_transfer_fit_betley_score_ultrachat": -3.6118127777496163,
+      "cited_transfer_fit_ultrachat_score_betley": -2.776194063162146
+    },
+    "15": {
+      "within_betley_recompute": 0.7877708437511896,
+      "within_ultrachat_recompute": 0.7932718475440306,
+      "pooled_raw": 0.8751983108592932,
+      "pooled_genre_centered": 0.7662800749265888,
+      "cited_within_betley": 0.7877708520481717,
+      "cited_within_ultrachat": 0.7932718447987775,
+      "cited_transfer_fit_betley_score_ultrachat": -2.641737737017801,
+      "cited_transfer_fit_ultrachat_score_betley": -2.1253799034382657
+    },
+    "16": {
+      "within_betley_recompute": 0.7869857239084512,
+      "within_ultrachat_recompute": 0.7875717235357993,
+      "pooled_raw": 0.8709158369071186,
+      "pooled_genre_centered": 0.7636858058913056,
+      "cited_within_betley": 0.7869857330373501,
+      "cited_within_ultrachat": 0.7875717120633012,
+      "cited_transfer_fit_betley_score_ultrachat": -2.6112020554643514,
+      "cited_transfer_fit_ultrachat_score_betley": -2.1528858470254093
+    },
+    "17": {
+      "within_betley_recompute": 0.7825979107068154,
+      "within_ultrachat_recompute": 0.7809571200745302,
+      "pooled_raw": 0.8694581502326156,
+      "pooled_genre_centered": 0.7617884077296716,
+      "cited_within_betley": 0.782597912593503,
+      "cited_within_ultrachat": 0.7809571022990022,
+      "cited_transfer_fit_betley_score_ultrachat": -2.708871604809066,
+      "cited_transfer_fit_ultrachat_score_betley": -2.151629485329825
+    },
+    "18": {
+      "within_betley_recompute": 0.7997271698800967,
+      "within_ultrachat_recompute": 0.7955809884186583,
+      "pooled_raw": 0.8715274418564561,
+      "pooled_genre_centered": 0.7772774701195322,
+      "cited_within_betley": 0.7997271595598394,
+      "cited_within_ultrachat": 0.7955809929027009,
+      "cited_transfer_fit_betley_score_ultrachat": -2.7289312205692973,
+      "cited_transfer_fit_ultrachat_score_betley": -1.8039902524618836
+    },
+    "19": {
+      "within_betley_recompute": 0.7799565645916701,
+      "within_ultrachat_recompute": 0.7771403110856248,
+      "pooled_raw": 0.8583808985278413,
+      "pooled_genre_centered": 0.756763426065302,
+      "cited_within_betley": 0.77995656369622,
+      "cited_within_ultrachat": 0.7771402902673483,
+      "cited_transfer_fit_betley_score_ultrachat": -2.7661274383411043,
+      "cited_transfer_fit_ultrachat_score_betley": -1.8887411994392647
+    },
+    "20": {
+      "within_betley_recompute": 0.7746674287237958,
+      "within_ultrachat_recompute": 0.7764290246772456,
+      "pooled_raw": 0.8564012164092767,
+      "pooled_genre_centered": 0.7533184460055582,
+      "cited_within_betley": 0.7746674306853458,
+      "cited_within_ultrachat": 0.7764290308767684,
+      "cited_transfer_fit_betley_score_ultrachat": -3.2886946533828665,
+      "cited_transfer_fit_ultrachat_score_betley": -1.9999540554322621
+    },
+    "21": {
+      "within_betley_recompute": 0.7427925052512234,
+      "within_ultrachat_recompute": 0.7386502976965426,
+      "pooled_raw": 0.834148731352711,
+      "pooled_genre_centered": 0.7010383433037167,
+      "cited_within_betley": 0.7427925135532144,
+      "cited_within_ultrachat": 0.7386503231898216,
+      "cited_transfer_fit_betley_score_ultrachat": -4.205784679296805,
+      "cited_transfer_fit_ultrachat_score_betley": -2.283621606983532
+    },
+    "22": {
+      "within_betley_recompute": 0.7000677981123722,
+      "within_ultrachat_recompute": 0.6804755575332565,
+      "pooled_raw": 0.8025891979375,
+      "pooled_genre_centered": 0.64045423711221,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "23": {
+      "within_betley_recompute": 0.6570108825548171,
+      "within_ultrachat_recompute": 0.635265715696542,
+      "pooled_raw": 0.7772021310691679,
+      "pooled_genre_centered": 0.5903836855223372,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "24": {
+      "within_betley_recompute": 0.6185325454171416,
+      "within_ultrachat_recompute": 0.6010525772318014,
+      "pooled_raw": 0.7649196483826528,
+      "pooled_genre_centered": 0.5581311811534795,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "25": {
+      "within_betley_recompute": 0.5668701027648171,
+      "within_ultrachat_recompute": 0.5485186967654452,
+      "pooled_raw": 0.7361101250582125,
+      "pooled_genre_centered": 0.5035624948679829,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "26": {
+      "within_betley_recompute": 0.5444950867892873,
+      "within_ultrachat_recompute": 0.498342022812591,
+      "pooled_raw": 0.6940796963555227,
+      "pooled_genre_centered": 0.4759201209622247,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    },
+    "27": {
+      "within_betley_recompute": 0.5135481379883038,
+      "within_ultrachat_recompute": 0.45796201761874267,
+      "pooled_raw": 0.6904857330000922,
+      "pooled_genre_centered": 0.4541656050457671,
+      "cited_within_betley": null,
+      "cited_within_ultrachat": null,
+      "cited_transfer_fit_betley_score_ultrachat": null,
+      "cited_transfer_fit_ultrachat_score_betley": null
+    }
+  },
+  "plateau_layers": [
+    14,
+    16,
+    18,
+    21
+  ]
+}
