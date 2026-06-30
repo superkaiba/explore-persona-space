@@ -4929,8 +4929,8 @@
     "773": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/773",
-      "status": "proposed",
+      "path": "tasks/planning/773",
+      "status": "planning",
       "title": "workflow-fix: protect active-task input caches from vm_disk_guard reclaim"
     },
     "774": {
