@@ -81,9 +81,9 @@ ax.plot(
     zorder=5,
 )
 ax.set_xlabel(r"layer ($v_C$ and $v_A$ read at the same layer)")
-ax.set_ylabel("skill over predict-the-mean\n(held-out LOCO $R^2$)")
+ax.set_ylabel("ratio (1 $-$ SS$_{res}$/SS$_{tot}$)\n(held-out LOCO $R^2$)")
 ax.set_title(
-    r"$v_C \rightarrow v_A$ per-layer predictive skill: linear vs kernel, two $v_C$ recipes"
+    r"$v_C \rightarrow v_A$ per-layer predictive ratio: linear vs kernel, two $v_C$ recipes"
 )
 ax.set_xticks(range(0, 28, 2))
 ax.legend(loc="lower center", frameon=False, fontsize=9)
@@ -161,9 +161,9 @@ for ax, M, name in [(axes[0], R, "Ridge (linear)"), (axes[1], K, "KRR-RBF (kerne
         bbox=dict(boxstyle="round,pad=0.35", fc="white", ec="0.55", alpha=0.9),
     )
 cbar = fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.85, pad=0.02)
-cbar.set_label("skill over predict-the-mean (held-out LOCO $R^2$)")
+cbar.set_label("ratio (1 $-$ SS$_{res}$/SS$_{tot}$) (held-out LOCO $R^2$)")
 fig.suptitle(
-    r"$v_C \rightarrow v_A$ cross-layer predictive skill: read-out ($v_A$) layer dominates,"
+    r"$v_C \rightarrow v_A$ cross-layer predictive ratio: read-out ($v_A$) layer dominates,"
     "\nnot a clean same-layer diagonal   (red ○ = best cell · white dots = $v_C$=$v_A$ diagonal)",
     fontsize=12.5,
     y=0.99,
@@ -211,7 +211,7 @@ ax.plot(
     color=PAL[0],
     ms=8,
     lw=2.2,
-    label=f"Ridge skill ($v_C \\rightarrow v_A$) @ L{r3['layer']}",
+    label=f"Ridge ratio ($v_C \\rightarrow v_A$) @ L{r3['layer']}",
 )
 for xi, s in zip(x, sk, strict=True):
     ax.annotate(
@@ -235,8 +235,8 @@ ax.annotate(
 ax.set_xticks(list(x))
 ax.set_xticklabels(ng)
 ax.set_xlabel("number of contexts (n)")
-ax.set_ylabel("skill over predict-the-mean\n(held-out LOCO $R^2$) @ L18")
-ax.set_title(r"$v_C \rightarrow v_A$ skill keeps rising with more contexts")
+ax.set_ylabel("ratio (1 $-$ SS$_{res}$/SS$_{tot}$)\n(held-out LOCO $R^2$) @ L18")
+ax.set_title(r"$v_C \rightarrow v_A$ ratio keeps rising with more contexts")
 ax.set_ylim(0.45, 0.90)
 ax.legend(loc="lower right", frameon=False, fontsize=9)
 fig.tight_layout()
