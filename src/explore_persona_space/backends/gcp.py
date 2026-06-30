@@ -309,8 +309,8 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
     # states (all-layer residual streams, Welford activation accumulation,
     # per-token activation dumps) must clear A100-80 HBM: 7B bf16 weights are
     # ~14 GB and the captured activations push past the L4's 16-GB-class HBM
-    # (L4 ~= A100-40 ~= A100-80 in HBM order; the binding fact is the ordering
-    # L4 << A100-40 << A100-80, not the exact L4 figure). Same machine as
+    # (the binding fact is the ordering L4 << A100-40 << A100-80, not the
+    # exact L4 figure). Same machine as
     # lora-7b (a2-ultragpu-1g, 1x A100-80) but a DISTINCT intent so a caller /
     # the planner can declare "I capture activations" and the router sizes for
     # it instead of falling to the g2-standard-4 (L4) eval default. #666 (L4
