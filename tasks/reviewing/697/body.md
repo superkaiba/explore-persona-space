@@ -22,6 +22,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_697.md](https://github.com/superkaiba/explore-persona-space/blob/d6b8fc3b7482188d979c80e76f68d7d84ba402cb/docs/methodology/issue_697.md) · [gist](https://gist.github.com/superkaiba/4c2e784ee0ab3519c487d819b10be26c)
+
 ## Takeaways
 
 - On an as-built single-slot layer-10→layer-14 probe, the injected context vector reproduces almost none of the finetuning shift *along its direction* (f_CV **0.005–0.05**); Euclidean movement is larger but mostly orthogonal.
