@@ -1,0 +1,24 @@
+{
+  "dump_dir": "data/issue_744/base",
+  "n_layers": 28,
+  "hidden": 3584,
+  "k": 3,
+  "steps": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "bootstrap_B": 2000,
+  "bootstrap_unit": "sequence",
+  "rogue_rank_metric": "raw_variance",
+  "rogue_topk": 3,
+  "metadata": {
+    "git_commit": "67d01ff40e7d84355ec8599276bcec8342411756",
+    "timestamp_utc": "2026-06-30T09:48:57.378502Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue744_analyze_continuity"
+  }
+}

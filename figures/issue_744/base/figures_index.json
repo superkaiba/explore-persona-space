@@ -1,0 +1,20 @@
+{
+  "figures": [
+    "consec_cosine_per_layer.png",
+    "decay_all_layers_small_multiples.png",
+    "extrap_error_per_layer.png",
+    "h1_decay_profile_broader.png",
+    "h1_decay_profile_natural_stories.png",
+    "h1h2_base_vs_instruct.png",
+    "h1h2_direction_preservation_p1.png",
+    "h1h2_per_sequence_scatter.png",
+    "h3_sink_ratio_depth.png",
+    "h3_stratification_heatmap_broader.png",
+    "h3_stratification_heatmap_ns.png"
+  ],
+  "corpora": [
+    "broader",
+    "natural_stories"
+  ],
+  "n_layers": 28
+}

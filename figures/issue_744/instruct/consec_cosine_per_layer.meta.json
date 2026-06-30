@@ -1,0 +1,1188 @@
+{
+  "commit": "ebe8f29021",
+  "created": "2026-06-30T13:48:06Z",
+  "figsize": [
+    12.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "consecutive-token cosine": 0.38786434095682515,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "consecutive-token cosine": 0.4458750364275801,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "consecutive-token cosine": 0.4457653695783602,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "consecutive-token cosine": 0.4325895555947614,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "consecutive-token cosine": 0.4222753393197862,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "consecutive-token cosine": 0.431489014740876,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "consecutive-token cosine": 0.44044794297348566,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "consecutive-token cosine": 0.4544758783893563,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "consecutive-token cosine": 0.4683996463578885,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "consecutive-token cosine": 0.5103535819230627,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "consecutive-token cosine": 0.5350402703402374,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "consecutive-token cosine": 0.533809461176396,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "consecutive-token cosine": 0.5319154910725742,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "consecutive-token cosine": 0.561387148643416,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "consecutive-token cosine": 0.5622483479938624,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "consecutive-token cosine": 0.5843600813258901,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "consecutive-token cosine": 0.5789500645754754,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "consecutive-token cosine": 0.5677773085187625,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "consecutive-token cosine": 0.5928133456434004,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "consecutive-token cosine": 0.6250290821346456,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "consecutive-token cosine": 0.617962777630024,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "consecutive-token cosine": 0.6190087841296978,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "consecutive-token cosine": 0.6015270367478899,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "consecutive-token cosine": 0.612488682050999,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "consecutive-token cosine": 0.6266349325021229,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "consecutive-token cosine": 0.6224704293022155,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "consecutive-token cosine": 0.644243981213649,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "consecutive-token cosine": 0.5360172148804011,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "consecutive-token cosine": 0.111572235102096,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "consecutive-token cosine": 0.1418893312172447,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "consecutive-token cosine": 0.16263921040035503,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "consecutive-token cosine": 0.23262890114345225,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "consecutive-token cosine": 0.2500873642770747,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "consecutive-token cosine": 0.2415381593697213,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "consecutive-token cosine": 0.2507752844284022,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "consecutive-token cosine": 0.3116356756450452,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "consecutive-token cosine": 0.3165523655745409,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "consecutive-token cosine": 0.3908651316853741,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "consecutive-token cosine": 0.400473688892613,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "consecutive-token cosine": 0.38381460733070927,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "consecutive-token cosine": 0.3833482285369987,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "consecutive-token cosine": 0.40330311382322515,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "consecutive-token cosine": 0.39444434639417447,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "consecutive-token cosine": 0.3779854246155456,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "consecutive-token cosine": 0.36907922361369255,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "consecutive-token cosine": 0.3494811443132757,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "consecutive-token cosine": 0.3731112097235525,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "consecutive-token cosine": 0.4018381227865,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "consecutive-token cosine": 0.40126721707432483,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "consecutive-token cosine": 0.4160581478389348,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "consecutive-token cosine": 0.40752255844534296,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "consecutive-token cosine": 0.41900718165091594,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "consecutive-token cosine": 0.4066044865290994,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "consecutive-token cosine": 0.3818891515821469,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "consecutive-token cosine": 0.36771216976252136,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "consecutive-token cosine": 0.3872315508892008,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "consecutive-token cosine": 0.11148191298439904,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "consecutive-token cosine": 0.1419186950301029,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "consecutive-token cosine": 0.1627487372292772,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "consecutive-token cosine": 0.23260688419505152,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "consecutive-token cosine": 0.25007171056618005,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "consecutive-token cosine": 0.24152397888037988,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "consecutive-token cosine": 0.2507633158530107,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "consecutive-token cosine": 0.31162643728024725,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "consecutive-token cosine": 0.31654389791649135,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "consecutive-token cosine": 0.3908579961126287,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "consecutive-token cosine": 0.40046668469249547,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "consecutive-token cosine": 0.38380753630007713,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "consecutive-token cosine": 0.383341205948736,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "consecutive-token cosine": 0.40329674717239034,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "consecutive-token cosine": 0.3944379044855957,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "consecutive-token cosine": 0.37797906959248373,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "consecutive-token cosine": 0.3690730176734212,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "consecutive-token cosine": 0.34947492000022967,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "consecutive-token cosine": 0.37310542801374885,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "consecutive-token cosine": 0.4018332128779556,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "consecutive-token cosine": 0.4012628331134438,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "consecutive-token cosine": 0.4160546069272571,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "consecutive-token cosine": 0.4075195639000592,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "consecutive-token cosine": 0.41900477534759545,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "consecutive-token cosine": 0.4066027652649412,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "consecutive-token cosine": 0.3818862309146257,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "consecutive-token cosine": 0.3677077924470942,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "consecutive-token cosine": 0.3871565479932961,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "consecutive-token cosine": 0.3625452512641421,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "consecutive-token cosine": 0.42235041200270507,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "consecutive-token cosine": 0.44287993654489866,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "consecutive-token cosine": 0.4476276380938543,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "consecutive-token cosine": 0.43663109356002894,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "consecutive-token cosine": 0.4649911862174172,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "consecutive-token cosine": 0.4792145535473557,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "consecutive-token cosine": 0.48329714278764957,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "consecutive-token cosine": 0.49319030771654476,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "consecutive-token cosine": 0.5494592322912003,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "consecutive-token cosine": 0.568828942312706,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "consecutive-token cosine": 0.5649195178486947,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "consecutive-token cosine": 0.5611911024155416,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "consecutive-token cosine": 0.5875316472700126,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "consecutive-token cosine": 0.5956923993852886,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "consecutive-token cosine": 0.6077038707357459,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "consecutive-token cosine": 0.6003167439454079,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "consecutive-token cosine": 0.5870989713027659,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "consecutive-token cosine": 0.6010521415699271,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "consecutive-token cosine": 0.6386383419294573,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "consecutive-token cosine": 0.6265848027210214,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "consecutive-token cosine": 0.6223941575077833,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "consecutive-token cosine": 0.6115517731930017,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "consecutive-token cosine": 0.6259551907563742,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "consecutive-token cosine": 0.6634687758726269,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "consecutive-token cosine": 0.6630439640314052,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "consecutive-token cosine": 0.6772675449794228,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "consecutive-token cosine": 0.5783513805172681,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "consecutive-token cosine": 0.08167660548790608,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "consecutive-token cosine": 0.11346026691807494,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "consecutive-token cosine": 0.13957803916527514,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "consecutive-token cosine": 0.22565972764271197,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "consecutive-token cosine": 0.2594956490070952,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "consecutive-token cosine": 0.25058437212658846,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "consecutive-token cosine": 0.2776462779106427,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "consecutive-token cosine": 0.3583724456444327,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "consecutive-token cosine": 0.3702021950757913,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "consecutive-token cosine": 0.4337865775752762,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "consecutive-token cosine": 0.4570288256831963,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "consecutive-token cosine": 0.44567751368268504,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "consecutive-token cosine": 0.44825226232474974,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "consecutive-token cosine": 0.4720445819539898,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "consecutive-token cosine": 0.4626922135474956,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "consecutive-token cosine": 0.44437636596341873,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "consecutive-token cosine": 0.43139050803664997,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "consecutive-token cosine": 0.40754011409709223,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "consecutive-token cosine": 0.43336535501456813,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "consecutive-token cosine": 0.45325872988532423,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "consecutive-token cosine": 0.449131136780431,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "consecutive-token cosine": 0.454983979041503,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "consecutive-token cosine": 0.42861780001755045,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "consecutive-token cosine": 0.4212780045353006,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "consecutive-token cosine": 0.4132286691518166,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "consecutive-token cosine": 0.3888412915241751,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "consecutive-token cosine": 0.37605445609697397,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "consecutive-token cosine": 0.39776704475543173,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "consecutive-token cosine": 0.08181972463298229,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "consecutive-token cosine": 0.11358755659090664,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "consecutive-token cosine": 0.1397674625129085,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "consecutive-token cosine": 0.22565878871673678,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "consecutive-token cosine": 0.259494824341953,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "consecutive-token cosine": 0.2505836493026234,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "consecutive-token cosine": 0.2776455650224023,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "consecutive-token cosine": 0.3583718122419891,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "consecutive-token cosine": 0.37020148963934435,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "consecutive-token cosine": 0.4337860733372525,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "consecutive-token cosine": 0.4570283388326907,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "consecutive-token cosine": 0.4456770019928679,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "consecutive-token cosine": 0.44825180031355555,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "consecutive-token cosine": 0.4720441795571433,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "consecutive-token cosine": 0.4626918012149245,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "consecutive-token cosine": 0.4443759188558115,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "consecutive-token cosine": 0.43139008825228536,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "consecutive-token cosine": 0.40753968437700305,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "consecutive-token cosine": 0.4333649774570332,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "consecutive-token cosine": 0.4532583920706877,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "consecutive-token cosine": 0.44913082380510594,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "consecutive-token cosine": 0.45498383994135855,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "consecutive-token cosine": 0.4286175888834026,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "consecutive-token cosine": 0.42127746552224077,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "consecutive-token cosine": 0.413227608513215,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "consecutive-token cosine": 0.3888396620653399,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "consecutive-token cosine": 0.37605850242081945,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "consecutive-token cosine": 0.3977817148528114,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 168
+}

@@ -1,0 +1,3014 @@
+{
+  "commit": "ebe8f29021",
+  "created": "2026-06-30T13:50:37Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.01338642552212188,
+      "+1-step direction preservation (|cos|)": 0.11012297123670578,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09677890782934087,
+      "+1-step direction preservation (|cos|)": 0.12242206931114197,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08571520702464758,
+      "+1-step direction preservation (|cos|)": 0.12205518037080765,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02702898789831737,
+      "+1-step direction preservation (|cos|)": 0.1178203597664833,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.061317425676382216,
+      "+1-step direction preservation (|cos|)": 0.12856532633304596,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04626653063769723,
+      "+1-step direction preservation (|cos|)": 0.13067060708999634,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0015585346853518312,
+      "+1-step direction preservation (|cos|)": 0.12200287729501724,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.053499551196954986,
+      "+1-step direction preservation (|cos|)": 0.1161138266324997,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10917330449269988,
+      "+1-step direction preservation (|cos|)": 0.13557066023349762,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05217454616348277,
+      "+1-step direction preservation (|cos|)": 0.12119690328836441,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11152678262195578,
+      "+1-step direction preservation (|cos|)": 0.13406892120838165,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04351826705148104,
+      "+1-step direction preservation (|cos|)": 0.12993192672729492,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09812529047011995,
+      "+1-step direction preservation (|cos|)": 0.12262807041406631,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.052732414579944084,
+      "+1-step direction preservation (|cos|)": 0.1216447651386261,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07533322568939921,
+      "+1-step direction preservation (|cos|)": 0.1182066798210144,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10333417873607639,
+      "+1-step direction preservation (|cos|)": 0.13191068172454834,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.053272164808038036,
+      "+1-step direction preservation (|cos|)": 0.11303237080574036,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10856677906394513,
+      "+1-step direction preservation (|cos|)": 0.11707158386707306,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.050690011957185796,
+      "+1-step direction preservation (|cos|)": 0.13670165836811066,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09262605758871874,
+      "+1-step direction preservation (|cos|)": 0.12615130841732025,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04173979791393419,
+      "+1-step direction preservation (|cos|)": 0.11829540878534317,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.03295068915929486,
+      "+1-step direction preservation (|cos|)": 0.08794918656349182,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07883487879005088,
+      "+1-step direction preservation (|cos|)": 0.11839026212692261,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06271141666435726,
+      "+1-step direction preservation (|cos|)": 0.1163664236664772,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11459856627296297,
+      "+1-step direction preservation (|cos|)": 0.13370853662490845,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09516338767266802,
+      "+1-step direction preservation (|cos|)": 0.1365959346294403,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04439692867362646,
+      "+1-step direction preservation (|cos|)": 0.145599827170372,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05585990603640004,
+      "+1-step direction preservation (|cos|)": 0.12593619525432587,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0049469637507018605,
+      "+1-step direction preservation (|cos|)": 0.09562230855226517,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08636282357680836,
+      "+1-step direction preservation (|cos|)": 0.12465289980173111,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08019591920565952,
+      "+1-step direction preservation (|cos|)": 0.12401489168405533,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.008846678542328942,
+      "+1-step direction preservation (|cos|)": 0.12335555255413055,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05655199386471085,
+      "+1-step direction preservation (|cos|)": 0.09667433053255081,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08852559042386599,
+      "+1-step direction preservation (|cos|)": 0.1290389597415924,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.006453750556260213,
+      "+1-step direction preservation (|cos|)": 0.12954901158809662,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04253142612063443,
+      "+1-step direction preservation (|cos|)": 0.1188240498304367,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.009601074709150254,
+      "+1-step direction preservation (|cos|)": 0.10515356808900833,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04236011841482337,
+      "+1-step direction preservation (|cos|)": 0.12186112999916077,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05500247116197557,
+      "+1-step direction preservation (|cos|)": 0.12815788388252258,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07386864185724329,
+      "+1-step direction preservation (|cos|)": 0.13039186596870422,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.009674795442064815,
+      "+1-step direction preservation (|cos|)": 0.1259467601776123,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08641494862580892,
+      "+1-step direction preservation (|cos|)": 0.12671706080436707,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.035558130807639504,
+      "+1-step direction preservation (|cos|)": 0.1197957918047905,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08069086915268536,
+      "+1-step direction preservation (|cos|)": 0.09842702746391296,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05519879553801332,
+      "+1-step direction preservation (|cos|)": 0.12516599893569946,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05074498188726442,
+      "+1-step direction preservation (|cos|)": 0.11423316597938538,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.016729911437813758,
+      "+1-step direction preservation (|cos|)": 0.13115742802619934,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07620998747134425,
+      "+1-step direction preservation (|cos|)": 0.13438358902931213,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.037219658927087285,
+      "+1-step direction preservation (|cos|)": 0.12876994907855988,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08004523000899041,
+      "+1-step direction preservation (|cos|)": 0.14049123227596283,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10567562296345243,
+      "+1-step direction preservation (|cos|)": 0.13040891289710999,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0032919223628921496,
+      "+1-step direction preservation (|cos|)": 0.12185182422399521,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08553077121507599,
+      "+1-step direction preservation (|cos|)": 0.10008306056261063,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06115299323005482,
+      "+1-step direction preservation (|cos|)": 0.10344941914081573,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06480074291407212,
+      "+1-step direction preservation (|cos|)": 0.10939184576272964,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11856390913546433,
+      "+1-step direction preservation (|cos|)": 0.11472538113594055,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04601577884650587,
+      "+1-step direction preservation (|cos|)": 0.12916316092014313,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.039158586302268594,
+      "+1-step direction preservation (|cos|)": 0.13957807421684265,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.004599223454155921,
+      "+1-step direction preservation (|cos|)": 0.12609705328941345,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.015241001539007704,
+      "+1-step direction preservation (|cos|)": 0.1000877395272255,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0242716745972113,
+      "+1-step direction preservation (|cos|)": 0.11709745228290558,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02562441457509705,
+      "+1-step direction preservation (|cos|)": 0.1202128455042839,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09601552710368805,
+      "+1-step direction preservation (|cos|)": 0.1092851459980011,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05691641438173245,
+      "+1-step direction preservation (|cos|)": 0.12793250381946564,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0035371801693517,
+      "+1-step direction preservation (|cos|)": 0.1149275079369545,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02997510458626959,
+      "+1-step direction preservation (|cos|)": 0.12518690526485443,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02705202347242129,
+      "+1-step direction preservation (|cos|)": 0.12291678041219711,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11121489990794259,
+      "+1-step direction preservation (|cos|)": 0.12073883414268494,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04074690579841711,
+      "+1-step direction preservation (|cos|)": 0.10146287828683853,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05309322424830712,
+      "+1-step direction preservation (|cos|)": 0.11633368581533432,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10698514198259329,
+      "+1-step direction preservation (|cos|)": 0.10046504437923431,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.023430065435818936,
+      "+1-step direction preservation (|cos|)": 0.1323746144771576,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06542049588216445,
+      "+1-step direction preservation (|cos|)": 0.12079975754022598,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.041658403814491984,
+      "+1-step direction preservation (|cos|)": 0.1236281618475914,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08558190352713455,
+      "+1-step direction preservation (|cos|)": 0.12366536259651184,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.050998236214153475,
+      "+1-step direction preservation (|cos|)": 0.1330626755952835,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.057136451649709166,
+      "+1-step direction preservation (|cos|)": 0.09988220036029816,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0378009643718171,
+      "+1-step direction preservation (|cos|)": 0.11964844912290573,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09651041291720452,
+      "+1-step direction preservation (|cos|)": 0.13589149713516235,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10555050698979636,
+      "+1-step direction preservation (|cos|)": 0.11838929355144501,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.01779518033574798,
+      "+1-step direction preservation (|cos|)": 0.11937063187360764,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.027638479628583276,
+      "+1-step direction preservation (|cos|)": 0.11695196479558945,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06803848083812711,
+      "+1-step direction preservation (|cos|)": 0.12282691150903702,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.018936077828756392,
+      "+1-step direction preservation (|cos|)": 0.12906721234321594,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.006335509943980661,
+      "+1-step direction preservation (|cos|)": 0.10994409769773483,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07219019323446672,
+      "+1-step direction preservation (|cos|)": 0.1114717423915863,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.024402371734717238,
+      "+1-step direction preservation (|cos|)": 0.11753201484680176,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1147355339516585,
+      "+1-step direction preservation (|cos|)": 0.12890073657035828,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.03575276178450311,
+      "+1-step direction preservation (|cos|)": 0.1196518987417221,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.022702950401430916,
+      "+1-step direction preservation (|cos|)": 0.1242842748761177,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.060600175992963946,
+      "+1-step direction preservation (|cos|)": 0.1103925108909607,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10069107437020197,
+      "+1-step direction preservation (|cos|)": 0.12171127647161484,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05655082420716012,
+      "+1-step direction preservation (|cos|)": 0.12458058446645737,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06162452037368352,
+      "+1-step direction preservation (|cos|)": 0.120864637196064,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10275637499631435,
+      "+1-step direction preservation (|cos|)": 0.11274770647287369,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10272713093478594,
+      "+1-step direction preservation (|cos|)": 0.10853217542171478,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09185215633767976,
+      "+1-step direction preservation (|cos|)": 0.08743616193532944,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09568702111730798,
+      "+1-step direction preservation (|cos|)": 0.10723066329956055,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.022718612778719435,
+      "+1-step direction preservation (|cos|)": 0.12397082895040512,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05893982002600939,
+      "+1-step direction preservation (|cos|)": 0.11915823072195053,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.034099596952449684,
+      "+1-step direction preservation (|cos|)": 0.11444228142499924,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06470417351213154,
+      "+1-step direction preservation (|cos|)": 0.12414491921663284,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.025777693403691418,
+      "+1-step direction preservation (|cos|)": 0.1263650804758072,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.032080670958748655,
+      "+1-step direction preservation (|cos|)": 0.11823723465204239,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08278136260036437,
+      "+1-step direction preservation (|cos|)": 0.11852756142616272,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.015659598411831316,
+      "+1-step direction preservation (|cos|)": 0.11751323938369751,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10057200320689924,
+      "+1-step direction preservation (|cos|)": 0.11632762104272842,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11835029933348129,
+      "+1-step direction preservation (|cos|)": 0.12692679464817047,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05327795920992258,
+      "+1-step direction preservation (|cos|)": 0.11022952944040298,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08882525085380696,
+      "+1-step direction preservation (|cos|)": 0.11035365611314774,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0516941572386137,
+      "+1-step direction preservation (|cos|)": 0.1422138810157776,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09211010645172953,
+      "+1-step direction preservation (|cos|)": 0.12086062878370285,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09958587320485646,
+      "+1-step direction preservation (|cos|)": 0.12217079102993011,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06949239801919552,
+      "+1-step direction preservation (|cos|)": 0.11964558064937592,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.005790127364780601,
+      "+1-step direction preservation (|cos|)": 0.11555702984333038,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0996509712504807,
+      "+1-step direction preservation (|cos|)": 0.10620000213384628,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10519966025959401,
+      "+1-step direction preservation (|cos|)": 0.10732457041740417,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0847100748280897,
+      "+1-step direction preservation (|cos|)": 0.1324799507856369,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08759955103294577,
+      "+1-step direction preservation (|cos|)": 0.12747491896152496,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0016419730118317072,
+      "+1-step direction preservation (|cos|)": 0.12787854671478271,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09856328704490548,
+      "+1-step direction preservation (|cos|)": 0.12722918391227722,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0037258220063853265,
+      "+1-step direction preservation (|cos|)": 0.13037991523742676,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02559049005734651,
+      "+1-step direction preservation (|cos|)": 0.11665167659521103,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.003664126255869593,
+      "+1-step direction preservation (|cos|)": 0.09688310325145721,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03420404073784211,
+      "+1-step direction preservation (|cos|)": 0.11720268428325653,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07104796693005935,
+      "+1-step direction preservation (|cos|)": 0.13684318959712982,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.031492794282685116,
+      "+1-step direction preservation (|cos|)": 0.040256381034851074,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08950902759685758,
+      "+1-step direction preservation (|cos|)": 0.1221320629119873,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09095606487102897,
+      "+1-step direction preservation (|cos|)": 0.08818545937538147,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11756272056636835,
+      "+1-step direction preservation (|cos|)": 0.11550182104110718,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0857025962942807,
+      "+1-step direction preservation (|cos|)": 0.12483379244804382,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11511695991068324,
+      "+1-step direction preservation (|cos|)": 0.11796476691961288,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03717933219382663,
+      "+1-step direction preservation (|cos|)": 0.08473455905914307,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05505954467876119,
+      "+1-step direction preservation (|cos|)": 0.13191133737564087,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.026765903776899275,
+      "+1-step direction preservation (|cos|)": 0.10914045572280884,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08381889124202288,
+      "+1-step direction preservation (|cos|)": 0.11335250735282898,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08010649126498331,
+      "+1-step direction preservation (|cos|)": 0.1205548420548439,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03127943735988059,
+      "+1-step direction preservation (|cos|)": 0.08508659899234772,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10996706124061607,
+      "+1-step direction preservation (|cos|)": 0.12012740224599838,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03550629003880218,
+      "+1-step direction preservation (|cos|)": 0.13317203521728516,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08563720800088831,
+      "+1-step direction preservation (|cos|)": 0.12879858911037445,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0677058376982679,
+      "+1-step direction preservation (|cos|)": 0.11350191384553909,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01350198840532238,
+      "+1-step direction preservation (|cos|)": 0.09780295938253403,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.031210836493972202,
+      "+1-step direction preservation (|cos|)": 0.13213762640953064,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10652564142994986,
+      "+1-step direction preservation (|cos|)": 0.1136595830321312,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.023901801530865602,
+      "+1-step direction preservation (|cos|)": 0.12473771721124649,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05099441299275062,
+      "+1-step direction preservation (|cos|)": 0.12070227414369583,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.015250732593903527,
+      "+1-step direction preservation (|cos|)": 0.1331080198287964,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05427504411076958,
+      "+1-step direction preservation (|cos|)": 0.12011678516864777,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0474033045027977,
+      "+1-step direction preservation (|cos|)": 0.1187390610575676,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.006978079597159598,
+      "+1-step direction preservation (|cos|)": 0.12292855978012085,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10734673754754964,
+      "+1-step direction preservation (|cos|)": 0.11732921749353409,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.012113206419729267,
+      "+1-step direction preservation (|cos|)": 0.13349516689777374,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01114796897148597,
+      "+1-step direction preservation (|cos|)": 0.09803294390439987,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.054573807495084226,
+      "+1-step direction preservation (|cos|)": 0.13630296289920807,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.019881269690125117,
+      "+1-step direction preservation (|cos|)": 0.11583195626735687,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06298773698309043,
+      "+1-step direction preservation (|cos|)": 0.12467537075281143,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.029894517284153987,
+      "+1-step direction preservation (|cos|)": 0.0940203070640564,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09208516976074012,
+      "+1-step direction preservation (|cos|)": 0.12298267334699631,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07901245885529473,
+      "+1-step direction preservation (|cos|)": 0.10745908319950104,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04623017173046651,
+      "+1-step direction preservation (|cos|)": 0.12583982944488525,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0811784090950273,
+      "+1-step direction preservation (|cos|)": 0.11723970621824265,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10172141890938685,
+      "+1-step direction preservation (|cos|)": 0.1256144493818283,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08179695617207974,
+      "+1-step direction preservation (|cos|)": 0.11416324228048325,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.041067439074606596,
+      "+1-step direction preservation (|cos|)": 0.1426287144422531,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.018712531883428196,
+      "+1-step direction preservation (|cos|)": 0.11449693888425827,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08499370296754152,
+      "+1-step direction preservation (|cos|)": 0.08949991315603256,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07012064704989485,
+      "+1-step direction preservation (|cos|)": 0.1276906132698059,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11579782515326176,
+      "+1-step direction preservation (|cos|)": 0.11672239005565643,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.00868972107265037,
+      "+1-step direction preservation (|cos|)": 0.11236357688903809,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0721428874067741,
+      "+1-step direction preservation (|cos|)": 0.10334425419569016,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0634894686921407,
+      "+1-step direction preservation (|cos|)": 0.12223878502845764,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1163652511356333,
+      "+1-step direction preservation (|cos|)": 0.12018794566392899,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.05399006702451291,
+      "+1-step direction preservation (|cos|)": 0.13712121546268463,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07560476417903964,
+      "+1-step direction preservation (|cos|)": 0.10815667361021042,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.040046456997055196,
+      "+1-step direction preservation (|cos|)": 0.13800212740898132,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07239852321546253,
+      "+1-step direction preservation (|cos|)": 0.12000269442796707,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07799984296553493,
+      "+1-step direction preservation (|cos|)": 0.11520199477672577,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09138076386509442,
+      "+1-step direction preservation (|cos|)": 0.09600549936294556,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01152508104223518,
+      "+1-step direction preservation (|cos|)": 0.11948327720165253,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0449745741931524,
+      "+1-step direction preservation (|cos|)": 0.12498955428600311,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11660906469829568,
+      "+1-step direction preservation (|cos|)": 0.07417881488800049,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04082303385248759,
+      "+1-step direction preservation (|cos|)": 0.13358044624328613,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.062166107804856284,
+      "+1-step direction preservation (|cos|)": 0.12306801229715347,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.020798119365369044,
+      "+1-step direction preservation (|cos|)": 0.12361426651477814,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0731917564950719,
+      "+1-step direction preservation (|cos|)": 0.12223149091005325,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0002187801509671572,
+      "+1-step direction preservation (|cos|)": 0.12114390730857849,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07296444624973131,
+      "+1-step direction preservation (|cos|)": 0.12339958548545837,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04835091190752684,
+      "+1-step direction preservation (|cos|)": 0.1211705431342125,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0980571898370913,
+      "+1-step direction preservation (|cos|)": 0.13124682009220123,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06378467710734262,
+      "+1-step direction preservation (|cos|)": 0.11976935714483261,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11264209535941745,
+      "+1-step direction preservation (|cos|)": 0.13713280856609344,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10138761845421693,
+      "+1-step direction preservation (|cos|)": 0.12295679748058319,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07241160791841549,
+      "+1-step direction preservation (|cos|)": 0.11569713056087494,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1033332949588259,
+      "+1-step direction preservation (|cos|)": 0.11006499081850052,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08038085627450686,
+      "+1-step direction preservation (|cos|)": 0.10339482873678207,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05066953429535567,
+      "+1-step direction preservation (|cos|)": 0.1073511466383934,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06551740132927625,
+      "+1-step direction preservation (|cos|)": 0.11203313618898392,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.028011962360905307,
+      "+1-step direction preservation (|cos|)": 0.10040739178657532,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03269051434302098,
+      "+1-step direction preservation (|cos|)": 0.12409944087266922,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "+1-step direction preservation (|cos|)": 0.11879696991294622,
+      "series": "WikiText-103 mean",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.111354998490527,
+      "+1-step direction preservation (|cos|)": 0.13317199051380157,
+      "label": "1",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9356203126441619,
+      "+1-step direction preservation (|cos|)": 0.13169486820697784,
+      "label": "10",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8823441329058275,
+      "+1-step direction preservation (|cos|)": 0.12342160195112228,
+      "label": "2",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9701185439133407,
+      "+1-step direction preservation (|cos|)": 0.11939863860607147,
+      "label": "3",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.900370730899753,
+      "+1-step direction preservation (|cos|)": 0.12171922624111176,
+      "label": "2",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9616620648565742,
+      "+1-step direction preservation (|cos|)": 0.12522511184215546,
+      "label": "6",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9449613492591662,
+      "+1-step direction preservation (|cos|)": 0.12581601738929749,
+      "label": "6",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9968686904108961,
+      "+1-step direction preservation (|cos|)": 0.12809354066848755,
+      "label": "6",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.982596654212015,
+      "+1-step direction preservation (|cos|)": 0.12565916776657104,
+      "label": "6",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9853510891011794,
+      "+1-step direction preservation (|cos|)": 0.12246274948120117,
+      "label": "9",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "+1-step direction preservation (|cos|)": 0.0246,
+      "series": "std random baseline (~0.025)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "+1-step direction preservation (|cos|)": 0.0246,
+      "series": "std random baseline (~0.025)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.08492206745419803,
+      "+1-step direction preservation (|cos|)": 0.12251019477844238,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03859601036782098,
+      "+1-step direction preservation (|cos|)": 0.060634732246398926,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04609262802859321,
+      "+1-step direction preservation (|cos|)": 0.12466059625148773,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.027453523238595595,
+      "+1-step direction preservation (|cos|)": 0.1229635700583458,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09750901294997663,
+      "+1-step direction preservation (|cos|)": 0.1276550590991974,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0711359397601177,
+      "+1-step direction preservation (|cos|)": 0.13691791892051697,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09324325781860951,
+      "+1-step direction preservation (|cos|)": 0.10622862726449966,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10102782035910307,
+      "+1-step direction preservation (|cos|)": 0.12025471031665802,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05106235372504209,
+      "+1-step direction preservation (|cos|)": 0.13342075049877167,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09437715989742335,
+      "+1-step direction preservation (|cos|)": 0.10500545799732208,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.038827656460906385,
+      "+1-step direction preservation (|cos|)": 0.10440676659345627,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11993280223146835,
+      "+1-step direction preservation (|cos|)": 0.13221070170402527,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0673033493638088,
+      "+1-step direction preservation (|cos|)": 0.1147763654589653,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11163941129558297,
+      "+1-step direction preservation (|cos|)": 0.13634127378463745,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11889868471631593,
+      "+1-step direction preservation (|cos|)": 0.1351155787706375,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11197376140944035,
+      "+1-step direction preservation (|cos|)": 0.08692451566457748,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09217120212534471,
+      "+1-step direction preservation (|cos|)": 0.12386682629585266,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09162314470676625,
+      "+1-step direction preservation (|cos|)": 0.1384611278772354,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06759075025544345,
+      "+1-step direction preservation (|cos|)": 0.11191905289888382,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.029683612131087694,
+      "+1-step direction preservation (|cos|)": 0.11260475218296051,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.044979183301821574,
+      "+1-step direction preservation (|cos|)": 0.12219282239675522,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.056960907087106966,
+      "+1-step direction preservation (|cos|)": 0.07661981135606766,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06624798908956472,
+      "+1-step direction preservation (|cos|)": 0.12671369314193726,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0322599430884912,
+      "+1-step direction preservation (|cos|)": 0.11696556955575943,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08183679973215624,
+      "+1-step direction preservation (|cos|)": 0.13509739935398102,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10285388916669529,
+      "+1-step direction preservation (|cos|)": 0.13248547911643982,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0031587762343517345,
+      "+1-step direction preservation (|cos|)": 0.09161106497049332,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10982680150690174,
+      "+1-step direction preservation (|cos|)": 0.1296241283416748,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04619703602151587,
+      "+1-step direction preservation (|cos|)": 0.10566984862089157,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.018043220733615972,
+      "+1-step direction preservation (|cos|)": 0.12554152309894562,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06824207813683289,
+      "+1-step direction preservation (|cos|)": 0.13015486299991608,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09144431565249231,
+      "+1-step direction preservation (|cos|)": 0.1557377427816391,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06721052256953378,
+      "+1-step direction preservation (|cos|)": 0.11915366351604462,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07834227260459015,
+      "+1-step direction preservation (|cos|)": 0.11961640417575836,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03966527705247283,
+      "+1-step direction preservation (|cos|)": 0.14560411870479584,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11529002446154236,
+      "+1-step direction preservation (|cos|)": 0.11468496173620224,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03580429739871442,
+      "+1-step direction preservation (|cos|)": 0.14171284437179565,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07551370658892367,
+      "+1-step direction preservation (|cos|)": 0.10952175408601761,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.023337716752629967,
+      "+1-step direction preservation (|cos|)": 0.11350704729557037,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10715593378971765,
+      "+1-step direction preservation (|cos|)": 0.14368732273578644,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04072886130255299,
+      "+1-step direction preservation (|cos|)": 0.11865907907485962,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.021308489396384134,
+      "+1-step direction preservation (|cos|)": 0.1250356137752533,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.01778172114420043,
+      "+1-step direction preservation (|cos|)": 0.11025519669055939,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.02192489622006713,
+      "+1-step direction preservation (|cos|)": 0.1517355591058731,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01151463804439487,
+      "+1-step direction preservation (|cos|)": 0.15789370238780975,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.057801573577259124,
+      "+1-step direction preservation (|cos|)": 0.1385590136051178,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10851238809805505,
+      "+1-step direction preservation (|cos|)": 0.12344446033239365,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.019458588522118486,
+      "+1-step direction preservation (|cos|)": 0.13176095485687256,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04467470776909317,
+      "+1-step direction preservation (|cos|)": 0.1263273060321808,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.051304441331704115,
+      "+1-step direction preservation (|cos|)": 0.14402170479297638,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05611082694256643,
+      "+1-step direction preservation (|cos|)": 0.15855415165424347,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06820144102400882,
+      "+1-step direction preservation (|cos|)": 0.1557145118713379,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.025569386350927828,
+      "+1-step direction preservation (|cos|)": 0.12091787159442902,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0675409374334904,
+      "+1-step direction preservation (|cos|)": 0.11278326064348221,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.052223754632209185,
+      "+1-step direction preservation (|cos|)": 0.12858997285366058,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.016702266469118043,
+      "+1-step direction preservation (|cos|)": 0.12705521285533905,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.00028845875977981383,
+      "+1-step direction preservation (|cos|)": 0.13616348803043365,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.005651403552778461,
+      "+1-step direction preservation (|cos|)": 0.12057040631771088,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10800846136012036,
+      "+1-step direction preservation (|cos|)": 0.1158398687839508,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.02849960209401553,
+      "+1-step direction preservation (|cos|)": 0.08379147201776505,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05575784322754447,
+      "+1-step direction preservation (|cos|)": 0.12848016619682312,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07237015639184072,
+      "+1-step direction preservation (|cos|)": 0.08772613853216171,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.016937858618903318,
+      "+1-step direction preservation (|cos|)": 0.12754687666893005,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09034399444188523,
+      "+1-step direction preservation (|cos|)": 0.1275540441274643,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09420814769598662,
+      "+1-step direction preservation (|cos|)": 0.1656845211982727,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03696867711237935,
+      "+1-step direction preservation (|cos|)": 0.1164008155465126,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09946372322768529,
+      "+1-step direction preservation (|cos|)": 0.11868073046207428,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11355063678194877,
+      "+1-step direction preservation (|cos|)": 0.07341393828392029,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0003955018182691533,
+      "+1-step direction preservation (|cos|)": 0.10442657023668289,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.019496724567972884,
+      "+1-step direction preservation (|cos|)": 0.13213704526424408,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11946985293744522,
+      "+1-step direction preservation (|cos|)": 0.12911169230937958,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03472042357938894,
+      "+1-step direction preservation (|cos|)": 0.14561599493026733,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08692683827103384,
+      "+1-step direction preservation (|cos|)": 0.13856536149978638,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08952119432933138,
+      "+1-step direction preservation (|cos|)": 0.141912579536438,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11582386438375385,
+      "+1-step direction preservation (|cos|)": 0.1388900727033615,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.021907379328516524,
+      "+1-step direction preservation (|cos|)": 0.12509077787399292,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.01953324473951165,
+      "+1-step direction preservation (|cos|)": 0.12516754865646362,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.015225736252123007,
+      "+1-step direction preservation (|cos|)": 0.09429824352264404,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0905224373234979,
+      "+1-step direction preservation (|cos|)": 0.12300141155719757,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0517360578165402,
+      "+1-step direction preservation (|cos|)": 0.13295972347259521,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03158613539575619,
+      "+1-step direction preservation (|cos|)": 0.10919052362442017,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.016207097974549306,
+      "+1-step direction preservation (|cos|)": 0.10729292035102844,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07138782664837198,
+      "+1-step direction preservation (|cos|)": 0.11022502183914185,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.010483024351278958,
+      "+1-step direction preservation (|cos|)": 0.14867259562015533,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0290666998263103,
+      "+1-step direction preservation (|cos|)": 0.11485602706670761,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07609446103666348,
+      "+1-step direction preservation (|cos|)": 0.08412037044763565,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.010571771038256572,
+      "+1-step direction preservation (|cos|)": 0.12312281876802444,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09363713084956686,
+      "+1-step direction preservation (|cos|)": 0.10862543433904648,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05978057542756157,
+      "+1-step direction preservation (|cos|)": 0.12105197459459305,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.109381792574363,
+      "+1-step direction preservation (|cos|)": 0.13445134460926056,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04046329039697587,
+      "+1-step direction preservation (|cos|)": 0.09282124042510986,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10117353308065748,
+      "+1-step direction preservation (|cos|)": 0.11967931687831879,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.050894945151079424,
+      "+1-step direction preservation (|cos|)": 0.11660108715295792,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0404815162934465,
+      "+1-step direction preservation (|cos|)": 0.1415177881717682,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07295411969325219,
+      "+1-step direction preservation (|cos|)": 0.12358640134334564,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.1164032976313377,
+      "+1-step direction preservation (|cos|)": 0.1418933868408203,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.02411239713987187,
+      "+1-step direction preservation (|cos|)": 0.08494925498962402,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04510090257661575,
+      "+1-step direction preservation (|cos|)": 0.1132391169667244,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11220919194827426,
+      "+1-step direction preservation (|cos|)": 0.12755773961544037,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.032174608739971716,
+      "+1-step direction preservation (|cos|)": 0.12491411715745926,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.009348951843083056,
+      "+1-step direction preservation (|cos|)": 0.11914950609207153,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04511125930125193,
+      "+1-step direction preservation (|cos|)": 0.13227511942386627,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.013459159642283988,
+      "+1-step direction preservation (|cos|)": 0.12305991351604462,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10474239872181906,
+      "+1-step direction preservation (|cos|)": 0.115599125623703,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05754810032993557,
+      "+1-step direction preservation (|cos|)": 0.09847065061330795,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0954390290713851,
+      "+1-step direction preservation (|cos|)": 0.13933663070201874,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.009755915921115924,
+      "+1-step direction preservation (|cos|)": 0.13971924781799316,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1055407293264029,
+      "+1-step direction preservation (|cos|)": 0.12917526066303253,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03886596443211385,
+      "+1-step direction preservation (|cos|)": 0.136991485953331,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05452167475688208,
+      "+1-step direction preservation (|cos|)": 0.1330142766237259,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0876543869324477,
+      "+1-step direction preservation (|cos|)": 0.1210632473230362,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06779437711737488,
+      "+1-step direction preservation (|cos|)": 0.1225113794207573,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.010534708148119479,
+      "+1-step direction preservation (|cos|)": 0.12672699987888336,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03309826249958214,
+      "+1-step direction preservation (|cos|)": 0.12575681507587433,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10412931601638964,
+      "+1-step direction preservation (|cos|)": 0.09730400145053864,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07406241410188921,
+      "+1-step direction preservation (|cos|)": 0.10928691178560257,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05837874214254324,
+      "+1-step direction preservation (|cos|)": 0.1325831562280655,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0836929674107624,
+      "+1-step direction preservation (|cos|)": 0.1166955754160881,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.08576656709496619,
+      "+1-step direction preservation (|cos|)": 0.11679182201623917,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11873482214026865,
+      "+1-step direction preservation (|cos|)": 0.12577542662620544,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04054727679055853,
+      "+1-step direction preservation (|cos|)": 0.131595179438591,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.05315791400966492,
+      "+1-step direction preservation (|cos|)": 0.13727326691150665,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08369526614325698,
+      "+1-step direction preservation (|cos|)": 0.13198420405387878,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10503751033916381,
+      "+1-step direction preservation (|cos|)": 0.08786410093307495,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.061498626407046,
+      "+1-step direction preservation (|cos|)": 0.1293240636587143,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07573515757015922,
+      "+1-step direction preservation (|cos|)": 0.13291685283184052,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.004410122973102323,
+      "+1-step direction preservation (|cos|)": 0.12771178781986237,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.008734803012689973,
+      "+1-step direction preservation (|cos|)": 0.11935968697071075,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.019973618219853148,
+      "+1-step direction preservation (|cos|)": 0.07841234654188156,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.025411409860275097,
+      "+1-step direction preservation (|cos|)": 0.1336885243654251,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11552515560926338,
+      "+1-step direction preservation (|cos|)": 0.12215366959571838,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10670096333000714,
+      "+1-step direction preservation (|cos|)": 0.12140964716672897,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.046735929488726874,
+      "+1-step direction preservation (|cos|)": 0.08051194250583649,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10485743960038262,
+      "+1-step direction preservation (|cos|)": 0.11507873982191086,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.01974827061705936,
+      "+1-step direction preservation (|cos|)": 0.11961071938276291,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04620942546699386,
+      "+1-step direction preservation (|cos|)": 0.124505415558815,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05546639190100175,
+      "+1-step direction preservation (|cos|)": 0.14244556427001953,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04055543448021676,
+      "+1-step direction preservation (|cos|)": 0.11190373450517654,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.019519311563762687,
+      "+1-step direction preservation (|cos|)": 0.13298529386520386,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07928883239558332,
+      "+1-step direction preservation (|cos|)": 0.12777535617351532,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.08617672475870153,
+      "+1-step direction preservation (|cos|)": 0.11864269524812698,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.016267951838277256,
+      "+1-step direction preservation (|cos|)": 0.10787585377693176,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.022180353841462386,
+      "+1-step direction preservation (|cos|)": 0.13856691122055054,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05868530581332637,
+      "+1-step direction preservation (|cos|)": 0.14855167269706726,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0008887186421533133,
+      "+1-step direction preservation (|cos|)": 0.1280563473701477,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0990720568805804,
+      "+1-step direction preservation (|cos|)": 0.1471751481294632,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1077863862567888,
+      "+1-step direction preservation (|cos|)": 0.11948425322771072,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06610155726937486,
+      "+1-step direction preservation (|cos|)": 0.12946553528308868,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.001584504118506691,
+      "+1-step direction preservation (|cos|)": 0.1421755999326706,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.1048182218949838,
+      "+1-step direction preservation (|cos|)": 0.13363365828990936,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04947304467833277,
+      "+1-step direction preservation (|cos|)": 0.12023670971393585,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07557764955880164,
+      "+1-step direction preservation (|cos|)": 0.1361408531665802,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11960519779848433,
+      "+1-step direction preservation (|cos|)": 0.1136949434876442,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.013630595638071341,
+      "+1-step direction preservation (|cos|)": 0.11781187355518341,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1186647152660592,
+      "+1-step direction preservation (|cos|)": 0.12231603264808655,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.024156157007370282,
+      "+1-step direction preservation (|cos|)": 0.11845392733812332,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07021974981335422,
+      "+1-step direction preservation (|cos|)": 0.1323266625404358,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10458899000891066,
+      "+1-step direction preservation (|cos|)": 0.12508445978164673,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.060114600720249406,
+      "+1-step direction preservation (|cos|)": 0.13032208383083344,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09620432211950952,
+      "+1-step direction preservation (|cos|)": 0.10904330760240555,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.030295560144920713,
+      "+1-step direction preservation (|cos|)": 0.1316712349653244,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05199913975232612,
+      "+1-step direction preservation (|cos|)": 0.1337064951658249,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05463151335117533,
+      "+1-step direction preservation (|cos|)": 0.12375862151384354,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07852166401876506,
+      "+1-step direction preservation (|cos|)": 0.13280229270458221,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0598181483508717,
+      "+1-step direction preservation (|cos|)": 0.13589590787887573,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10145037843477642,
+      "+1-step direction preservation (|cos|)": 0.10665411502122879,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08706897510625654,
+      "+1-step direction preservation (|cos|)": 0.10945264995098114,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.013765316140630562,
+      "+1-step direction preservation (|cos|)": 0.15196794271469116,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05611002772660917,
+      "+1-step direction preservation (|cos|)": 0.11740271747112274,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10887757885857804,
+      "+1-step direction preservation (|cos|)": 0.13071776926517487,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.008029041923797345,
+      "+1-step direction preservation (|cos|)": 0.10738915205001831,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11775215053179072,
+      "+1-step direction preservation (|cos|)": 0.1241806373000145,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.08955335851688875,
+      "+1-step direction preservation (|cos|)": 0.13167324662208557,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.02037833399803715,
+      "+1-step direction preservation (|cos|)": 0.12882252037525177,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01399484043813684,
+      "+1-step direction preservation (|cos|)": 0.09812667965888977,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.09354667930387141,
+      "+1-step direction preservation (|cos|)": 0.13084788620471954,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.08736040671442727,
+      "+1-step direction preservation (|cos|)": 0.11674990504980087,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.049772754509298966,
+      "+1-step direction preservation (|cos|)": 0.11059451848268509,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09831174070884602,
+      "+1-step direction preservation (|cos|)": 0.06565126031637192,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.04868568585853583,
+      "+1-step direction preservation (|cos|)": 0.12825541198253632,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.053906171173248085,
+      "+1-step direction preservation (|cos|)": 0.10307874530553818,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0044561684092284115,
+      "+1-step direction preservation (|cos|)": 0.06208905950188637,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06025128838132596,
+      "+1-step direction preservation (|cos|)": 0.12472966313362122,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.015414067935009074,
+      "+1-step direction preservation (|cos|)": 0.12503288686275482,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.012154107444158985,
+      "+1-step direction preservation (|cos|)": 0.08372211456298828,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01424066388945458,
+      "+1-step direction preservation (|cos|)": 0.10649233311414719,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.00042292621297583544,
+      "+1-step direction preservation (|cos|)": 0.10653400421142578,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0748378696419983,
+      "+1-step direction preservation (|cos|)": 0.136378675699234,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.050301684320876894,
+      "+1-step direction preservation (|cos|)": 0.12131183594465256,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10457283524193423,
+      "+1-step direction preservation (|cos|)": 0.1339568942785263,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.06231108594605955,
+      "+1-step direction preservation (|cos|)": 0.14477086067199707,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.021567070106693245,
+      "+1-step direction preservation (|cos|)": 0.13003848493099213,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07606912461527282,
+      "+1-step direction preservation (|cos|)": 0.10693414509296417,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07189675752014557,
+      "+1-step direction preservation (|cos|)": 0.12259048223495483,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11497508845670099,
+      "+1-step direction preservation (|cos|)": 0.1088317409157753,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05147223072282486,
+      "+1-step direction preservation (|cos|)": 0.10153236240148544,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.028601458999720303,
+      "+1-step direction preservation (|cos|)": 0.12085900455713272,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01716091846661419,
+      "+1-step direction preservation (|cos|)": 0.12525807321071625,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.04377959893767393,
+      "+1-step direction preservation (|cos|)": 0.07117559015750885,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.1095551253671465,
+      "+1-step direction preservation (|cos|)": 0.1283271610736847,
+      "series": "WikiText-103 sequences (n=200)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "+1-step direction preservation (|cos|)": 0.12157153220847249,
+      "series": "WikiText-103 mean",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.111189757301465,
+      "+1-step direction preservation (|cos|)": 0.12339112907648087,
+      "label": "10",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0535099302681976,
+      "+1-step direction preservation (|cos|)": 0.12168928980827332,
+      "label": "5",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0781755900973862,
+      "+1-step direction preservation (|cos|)": 0.13143405318260193,
+      "label": "2",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8949436553769343,
+      "+1-step direction preservation (|cos|)": 0.12106050550937653,
+      "label": "3",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8909448605429331,
+      "+1-step direction preservation (|cos|)": 0.13673655688762665,
+      "label": "4",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0301824968440279,
+      "+1-step direction preservation (|cos|)": 0.12458103150129318,
+      "label": "5",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0768807364527255,
+      "+1-step direction preservation (|cos|)": 0.13020464777946472,
+      "label": "7",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0236998161473552,
+      "+1-step direction preservation (|cos|)": 0.12785661220550537,
+      "label": "7",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9589981696671758,
+      "+1-step direction preservation (|cos|)": 0.14381174743175507,
+      "label": "8",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0290552573076521,
+      "+1-step direction preservation (|cos|)": 0.09904849529266357,
+      "label": "9",
+      "series": "Natural Stories (n=10)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "+1-step direction preservation (|cos|)": 0.0246,
+      "series": "std random baseline (~0.025)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "+1-step direction preservation (|cos|)": 0.0246,
+      "series": "std random baseline (~0.025)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 426
+}

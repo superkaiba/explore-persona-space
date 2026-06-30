@@ -1,0 +1,2364 @@
+{
+  "commit": "04c12822f7",
+  "created": "2026-06-30T14:31:50Z",
+  "figsize": [
+    12.0,
+    4.2
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.08451027430110607,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.0927751437017335,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.09130588059895878,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.0987001585466431,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.10441780585711667,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.10817664607357887,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.10933045737758602,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.11954214023562607,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.12133396938908228,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.12784797228391134,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.12967451382586737,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.13011318477537703,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.1283741102424134,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.12782651302219744,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.1279925412193923,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.12728064713896714,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.1257964934970768,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.12260337020722857,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.12336606147807065,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.12730579863890493,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.1271327602845668,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.1271662704111272,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.12577650934138343,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.13024785833710137,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.13679370576081182,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.13721125697153763,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.1345009465644398,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.17691086762403527,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.3080630898475647,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.33960336446762085,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.32201236486434937,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.24827709794044495,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.2153240442276001,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.24356117844581604,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.2345452755689621,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.20254096388816833,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.20172865688800812,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.2012595534324646,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.21165496110916138,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.2074974775314331,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.19979692995548248,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.2128383070230484,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.21949999034404755,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.23744021356105804,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.22781823575496674,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.22847671806812286,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.2555193305015564,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.2743557095527649,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.2754147946834564,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.2679392397403717,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.26762962341308594,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.2954145073890686,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.3359658122062683,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.36329999566078186,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.42609092593193054,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.35788068175315857,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.06141676678300614,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.06332889884965388,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.06681654616841216,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.08204396882570658,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.09078443388166499,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.09169447905589588,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.09378849484500043,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.1114530647745483,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.11404028730831924,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.12767860986863205,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.13187446035941638,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.12933382808437505,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.1256363353498706,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.12334887046267082,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.12312495922204014,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.11799954786405008,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.11621972396569234,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.1100179614251954,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.1084486299788845,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.11213102679704473,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.11291524171925794,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.11456532191938319,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.1137631758442444,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.12315102965040071,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.12979376287648967,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.1291808022325439,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.12600108160745793,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.12780966107666641,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.03415536507964134,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.029684558510780334,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.02663346938788891,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.028086917474865913,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.024301744997501373,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.02422957867383957,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.024373160675168037,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.023981884121894836,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.02290443331003189,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.02366914041340351,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.02367815561592579,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.023050157353281975,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.022968638688325882,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.02256477251648903,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.02314218319952488,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.02197052724659443,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.02141539752483368,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.021079521626234055,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.021607760339975357,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.02213025651872158,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.02175522781908512,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.021229300647974014,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.021565066650509834,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.02088915929198265,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.02462574653327465,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.023675287142395973,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.027919868007302284,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.036513734608888626,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.06128831014315913,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.06323413755421015,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.06671342545264233,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.0820440579946245,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.09078455600370315,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.09169459762090948,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.09378863347751557,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.11145325840425394,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.1140405413235034,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.12767884656124281,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.13187470570440715,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.12933407680937342,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.1256365718034188,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.12334911446719331,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.12312520776525822,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.11799980701559772,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.1162199967017455,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.11001825872545888,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.10844895591374709,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.11213148465285003,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.11291589840179997,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.11456632748760613,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.11376473289649544,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.12315350922706136,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.12979718920378788,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.12918416239800384,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.1260026948190496,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.12776092450991708,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.03398146852850914,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.029563091695308685,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.026499684900045395,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.028077172115445137,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.024297622963786125,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.024226220324635506,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.024370871484279633,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.023980112746357918,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.022902751341462135,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.02366764098405838,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.023676712065935135,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.02304862253367901,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.022967087104916573,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.022563206031918526,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.02314082719385624,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.021969053894281387,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.021413885056972504,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.021077945828437805,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.021606286987662315,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.02212897129356861,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.021753957495093346,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.02122788317501545,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.02156381867825985,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.02088802494108677,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.024625180289149284,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.02367500402033329,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.0279206782579422,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.03647742420434952,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.07735533689394321,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.08266156585035997,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.08197560883066361,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.09431124605024452,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.10050201851767597,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.10198812447391042,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.10590004983209754,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.11871648644031495,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.1210594401347108,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.12522848965916247,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.12728655369412495,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.12757027055825018,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.12619342878655415,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.1251204617652196,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.12369784985136426,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.12290827972770671,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.12069254568911719,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.11729439991883758,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.11705047467981244,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.12071179472123986,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.12100487029272333,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.1216206388747412,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.12102045900827911,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.12143450804229816,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.12571622435168872,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.12826076811349735,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.1307478710503242,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.17402059664614206,
+      "series": "raw cosine",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.31101158261299133,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.3467671871185303,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.3492239713668823,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.27797481417655945,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.23558154702186584,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.288391649723053,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.27499815821647644,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.2100677192211151,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.1984972357749939,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.23267599940299988,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.23156742751598358,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.22150011360645294,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.20921137928962708,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.21090419590473175,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.2333425134420395,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.23839251697063446,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.23112787306308746,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.23332750797271729,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.24146448075771332,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.283875435590744,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.27831241488456726,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.2641751170158386,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.28820285201072693,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.333819180727005,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.40555259585380554,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.43372365832328796,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.4788142442703247,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.44484996795654297,
+      "series": "raw cosine chance floor",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.05294246337432463,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.05500566368003427,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.05858091679316588,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.07868743627563157,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.08960817376876314,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.08824923829061244,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.0946702907353095,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.1156618912599728,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.11943389230235127,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.1275575528256887,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.13246895065506817,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.13133861377407302,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.12870324187116897,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.1259732433149771,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.12461127189058548,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.11987442136122103,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.11716446864075823,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.11095137508979977,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.10799070375706446,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.11184775300187791,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.1128610195130032,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.11396732218271759,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.1113551204571836,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.1139841185537393,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.11803522433686817,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.1202171328173605,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.12217970990014139,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.12846969375411152,
+      "series": "standardized",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.034723710268735886,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.02985822781920433,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.0273931622505188,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.024090135470032692,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.022388074547052383,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.02194773033261299,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.0218922458589077,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.02197740226984024,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.02151315286755562,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.027673516422510147,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.027186134830117226,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.02501060999929905,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.024948935955762863,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.025598419830203056,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.02591928280889988,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.02380611002445221,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.022553380578756332,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.02199842780828476,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.022838769480586052,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.025370554998517036,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.02533729560673237,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.025817034766077995,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.027060838416218758,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.02859475091099739,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.03074960969388485,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.03186160326004028,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.03709264472126961,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.04979128763079643,
+      "series": "standardized chance floor",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.052810406560374924,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.054903858635506494,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.058504471579668725,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.07868745993073864,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.08960822294648571,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.08824927501827867,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.0946703623231335,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.11566201078051376,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.11943408278821342,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.12755766861121276,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.1324691324258909,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.13133881670999153,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.1287033925168508,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.12597339396065893,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.12461140510618843,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.11987457076189724,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.11716461679642878,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.110951575535707,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.10799089673293788,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.11184803561815705,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.11286146584752334,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.11396791605040547,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.11135587057307868,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.11398522723125727,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.11803675693880485,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.12021831183769684,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.12212891242522796,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.12844904160063822,
+      "series": "std + rogue-ablated",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 0.0,
+      "+1-step direction preservation (|cos|)": 0.034551043063402176,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 1.0,
+      "+1-step direction preservation (|cos|)": 0.029697036370635033,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 2.0,
+      "+1-step direction preservation (|cos|)": 0.02725890465080738,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 3.0,
+      "+1-step direction preservation (|cos|)": 0.024090377613902092,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 4.0,
+      "+1-step direction preservation (|cos|)": 0.022388266399502754,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 5.0,
+      "+1-step direction preservation (|cos|)": 0.021947909146547318,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 6.0,
+      "+1-step direction preservation (|cos|)": 0.02189243957400322,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 7.0,
+      "+1-step direction preservation (|cos|)": 0.021977581083774567,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 8.0,
+      "+1-step direction preservation (|cos|)": 0.02151336334645748,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 9.0,
+      "+1-step direction preservation (|cos|)": 0.027673708274960518,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 10.0,
+      "+1-step direction preservation (|cos|)": 0.027186337858438492,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 11.0,
+      "+1-step direction preservation (|cos|)": 0.025010816752910614,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 12.0,
+      "+1-step direction preservation (|cos|)": 0.024949131533503532,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 13.0,
+      "+1-step direction preservation (|cos|)": 0.025598620995879173,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 14.0,
+      "+1-step direction preservation (|cos|)": 0.025919487699866295,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 15.0,
+      "+1-step direction preservation (|cos|)": 0.023806292563676834,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 16.0,
+      "+1-step direction preservation (|cos|)": 0.022553570568561554,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 17.0,
+      "+1-step direction preservation (|cos|)": 0.021998625248670578,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 18.0,
+      "+1-step direction preservation (|cos|)": 0.022838950157165527,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 19.0,
+      "+1-step direction preservation (|cos|)": 0.02537078969180584,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 20.0,
+      "+1-step direction preservation (|cos|)": 0.025337595492601395,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 21.0,
+      "+1-step direction preservation (|cos|)": 0.025817295536398888,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 22.0,
+      "+1-step direction preservation (|cos|)": 0.027060871943831444,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 23.0,
+      "+1-step direction preservation (|cos|)": 0.028594842180609703,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 24.0,
+      "+1-step direction preservation (|cos|)": 0.03074961155653,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 25.0,
+      "+1-step direction preservation (|cos|)": 0.031861793249845505,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 26.0,
+      "+1-step direction preservation (|cos|)": 0.03704896196722984,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 27.0,
+      "+1-step direction preservation (|cos|)": 0.049746423959732056,
+      "series": "std + rogue-ablated chance floor",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 336
+}
