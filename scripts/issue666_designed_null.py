@@ -87,16 +87,27 @@ def score_designed_nulls(
     headline). Returns ``{cell: {rho, ci_lo, ci_hi, n_bystanders, behavior, layer,
     sigma_c_corpus_kind}}`` for the 2 null cells.
     """
+    import issue666_load_store as loader
     import issue666_predictor as pred
 
     pred_dir = PRED_DIR if pred_dir is None else Path(pred_dir)
     out: dict = {}
     if not in_process:
         for cell in pred.DESIGNED_NULL_CELLS:
-            jp = pred_dir / f"{cell}_predictor_cells.json"
+            # Production-path: the predictor enumerates HF list_repo_files and writes
+            # each cell's JSON by the seed-qualified LONG name (e.g.
+            # ``ic_edu_default_contra_d1_seed42``), so the designed-null JSON lands
+            # under the long name — NOT the short ``DESIGNED_NULL_CELLS`` prefix.
+            # Resolve via the canonical short→long map from issue666_load_store; fall
+            # back to the short name for smoke runs that pass --cell-names <short>.
+            long_name = loader.DESIGNED_NULL_DIR.get(cell, cell)
+            jp_long = pred_dir / f"{long_name}_predictor_cells.json"
+            jp_short = pred_dir / f"{cell}_predictor_cells.json"
+            jp = jp_long if jp_long.exists() else jp_short
             if not jp.exists():
                 raise SystemExit(
-                    f"designed-null arm: predictor JSON {jp} not found. Run "
+                    f"designed-null arm: predictor JSON not found at {jp_long} "
+                    f"(production long-name) NOR {jp_short} (smoke short-name). Run "
                     f"issue666_predictor.py (broad-corpus --sigma-inv headline) FIRST so the "
                     f"null cells are scored on the SAME broad-Σc pipeline as the real arms "
                     f"(plan §6). Use --in-process ONLY for the offline smoke."

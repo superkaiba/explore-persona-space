@@ -49,6 +49,22 @@ OUT = REPO / "eval_results" / "issue_666"
 # control arm; plan §4d/§5/§6). The test binds this exact set.
 DESIGNED_NULL_CELLS = ("ic_edu_default", "tf_rev_default")
 
+
+def designed_null_cell_names() -> frozenset[str]:
+    """Both forms of the designed-null cell names — short prefixes + seed-qualified
+    long store-dir names (from ``issue666_load_store.DESIGNED_NULL_DIR``).
+
+    The production headline enumerates HF ``list_repo_files`` and scores the null
+    cells under their LONG names; the smoke passes the SHORT ``DESIGNED_NULL_CELLS``
+    prefixes via ``--cell-names``. The cross-behavior matrix (plan §5: designed null
+    is a CONTROL arm, never a behavior to predict) excludes records whose ``cell`` is
+    either form. Returns the union so the exclusion is robust to the run mode.
+    """
+    import issue666_load_store as loader
+
+    return frozenset(DESIGNED_NULL_CELLS) | frozenset(loader.DESIGNED_NULL_DIR.values())
+
+
 # The #664 store-cell enumeration target (plan §4a/§4d): all cells present under
 # this prefix on the HF data repo (48 confirmed via list_repo_files).
 DATA_REPO = "superkaiba1/explore-persona-space-data"
@@ -958,11 +974,16 @@ def build_headline(
     # L̂/cosine ρ over the OFF-DIAGONAL (source behavior != target behavior) cells —
     # the corrected cross-behavior transfer read, with each target's direction from
     # the shared registry (NOT the source cell's r_plus) and the cosine carrying a
-    # real cos(r_{B'}, r_B) term.
+    # real cos(r_{B'}, r_B) term. The designed-null cells are a CONTROL arm (plan §5),
+    # NOT a behavior to predict, so their records are EXCLUDED from this secondary
+    # cross-behavior matrix (they remain in the dedicated install-leak gate arm).
+    null_cells = designed_null_cell_names()
     xb_full: list[float] = []
     xb_cos: list[float] = []
     n_off_diag = 0
     for r in records:
+        if r.get("cell") in null_cells:
+            continue  # designed-null control arm — not pooled into cross-behavior
         src_beh = r.get("behavior")
         for tb, row in (r.get("per_target") or {}).items():
             if tb == src_beh:
