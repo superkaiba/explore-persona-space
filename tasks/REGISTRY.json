@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 768,
+  "highest_id": 769,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4890,6 +4890,13 @@
       "path": "tasks/completed/768",
       "status": "completed",
       "title": "workflow-fix: SKILL.md gate handler for pv_phase1_done (issue #763 off-pod PV judge)"
+    },
+    "769": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/769",
+      "status": "proposed",
+      "title": "workflow-fix: add CUDA-allocator-fragmentation OOM gotcha + workload-cmd hot-fix recipe (#761 r3)"
     },
     "77": {
       "has_clean_result": true,
