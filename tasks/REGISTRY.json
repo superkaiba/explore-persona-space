@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 765,
+  "highest_id": 766,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4869,6 +4869,13 @@
       "path": "tasks/proposed/765",
       "status": "proposed",
       "title": "Codify LLM-judging guidelines (.claude/rules/llm-judging.md) + lint check + measurement-rule amendment"
+    },
+    "766": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/766",
+      "status": "proposed",
+      "title": "Fix three judging correctness bugs (belief.py default-to-50, i653 EM-threshold bool, stale Haiku pins #650/#657)"
     },
     "77": {
       "has_clean_result": true,
