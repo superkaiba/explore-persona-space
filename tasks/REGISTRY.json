@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 743,
+  "highest_id": 744,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4698,6 +4698,14 @@
       "path": "tasks/planning/743",
       "status": "planning",
       "title": "GCP router: add 8x A100 (a2-ultragpu-8g) + 8x H100 (a3-highgpu-8g, FLEX_START) machine specs so the free GCP lane can run wide parallel sweeps"
+    },
+    "744": {
+      "goal": "Characterize how standardized similarity and directional continuity between consecutive-token residual-stream activations vary across layers in Qwen-2.5-7B, and where discontinuities concentrate (token type, surprisal, syntactic boundary).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/744",
+      "status": "proposed",
+      "title": "Token-to-token residual-stream continuity and discontinuities across layers in Qwen-2.5-7B"
     },
     "75": {
       "has_clean_result": true,
