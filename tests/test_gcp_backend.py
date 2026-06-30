@@ -354,6 +354,38 @@ def test_machine_for_intent_resolves_cpu_bigmem() -> None:
     assert machine == MachineSpec(machine_type="n2-highmem-16", gpu_count=0, gpu_kind="CPU")
 
 
+# ---------------------------------------------------------------------------
+# 8-GPU sweep intents: sweep-8g-a100 + sweep-8g-h100 (#743)
+# ---------------------------------------------------------------------------
+
+
+def test_intent_to_machine_includes_8gpu_sweep_intents() -> None:
+    """#743: the two 8-GPU sweep intents map to the 8g machine types."""
+    a100 = INTENT_TO_MACHINE["sweep-8g-a100"]
+    assert a100 == MachineSpec(machine_type="a2-ultragpu-8g", gpu_count=8, gpu_kind="A100-80")
+    h100 = INTENT_TO_MACHINE["sweep-8g-h100"]
+    assert h100 == MachineSpec(machine_type="a3-highgpu-8g", gpu_count=8, gpu_kind="H100-80")
+
+
+def test_gpu_heuristics_covers_8gpu_sweep_intents() -> None:
+    """#743 non-blocking polish: the RunPod-side gpu_heuristics.INTENTS map
+    carries the two new 8-GPU sweep intents too, so an explicit RunPod
+    fallback of a GCP-sized sweep (`pod.py provision --intent sweep-8g-*`)
+    resolves rather than KeyError-ing. Cheap insurance against a typo in the
+    GpuSpec rows."""
+    from scripts import gpu_heuristics
+
+    a100 = gpu_heuristics.INTENTS["sweep-8g-a100"]
+    assert a100.gpu_type == "A100"
+    assert a100.gpu_count == 8
+    h100 = gpu_heuristics.INTENTS["sweep-8g-h100"]
+    assert h100.gpu_type == "H100"
+    assert h100.gpu_count == 8
+    # resolve_intent (lower-cased lookup) resolves both without raising.
+    assert gpu_heuristics.resolve_intent("sweep-8g-a100").gpu_count == 8
+    assert gpu_heuristics.resolve_intent("sweep-8g-h100").gpu_count == 8
+
+
 def test_render_create_argv_cpu_bigmem_golden() -> None:
     """#677: a cpu-bigmem create renders a valid CPU argv.
 
@@ -523,6 +555,34 @@ def test_a3_highgpu_family_available_in_all_us_central1_zones() -> None:
     for mt in ("a3-highgpu-1g", "a3-highgpu-2g"):
         assert mt in MACHINE_TYPE_ZONE_AVAILABILITY, mt
         assert zones_for_machine_type(mt, ladder) == ladder, mt
+
+
+def test_8gpu_sweep_machine_types_zone_availability() -> None:
+    """#743: the two new 8-GPU machine types carry the verified us-central1
+    zone sets. a2-ultragpu-8g follows its A2-ultragpu family — offered in
+    {a, c} only, NOT us-central1-b (so the zone-fallback ladder never issues
+    a doomed -b create that burns a GCP attempt). a3-highgpu-8g follows its
+    a3-highgpu family — all three zones."""
+    from explore_persona_space.backends.gcp import (
+        MACHINE_TYPE_ZONE_AVAILABILITY,
+        zones_for_machine_type,
+    )
+
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    # a2-ultragpu-8g: {a, c}, NOT -b (matches the 1g/4g family rows).
+    assert MACHINE_TYPE_ZONE_AVAILABILITY["a2-ultragpu-8g"] == frozenset(
+        {"us-central1-a", "us-central1-c"}
+    )
+    assert "us-central1-b" not in MACHINE_TYPE_ZONE_AVAILABILITY["a2-ultragpu-8g"]
+    assert zones_for_machine_type("a2-ultragpu-8g", ladder) == [
+        "us-central1-a",
+        "us-central1-c",
+    ]
+    # a3-highgpu-8g: all three zones (matches the 1g/2g family rows).
+    assert MACHINE_TYPE_ZONE_AVAILABILITY["a3-highgpu-8g"] == frozenset(
+        {"us-central1-a", "us-central1-b", "us-central1-c"}
+    )
+    assert zones_for_machine_type("a3-highgpu-8g", ladder) == ladder
 
 
 # ---------------------------------------------------------------------------
@@ -5192,6 +5252,76 @@ def test_render_create_argv_h100_standard_raises_loud() -> None:
     """H100 cannot be created on-demand — STANDARD must fail at render."""
     cfg = _test_config()
     spec = _spec("lora-7b-h100")  # no provisioning_model → STANDARD default
+    with pytest.raises(ValueError, match="cannot be created on-demand"):
+        render_create_argv(
+            spec=spec,
+            config=cfg,
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=_TEST_SECRET_FILES,
+        )
+
+
+# ---------------------------------------------------------------------------
+# 8-GPU sweep intents: render_create_argv goldens (#743)
+# ---------------------------------------------------------------------------
+
+
+def test_render_create_argv_sweep_8g_a100_spot_golden() -> None:
+    """#743: an 8x A100 sweep on SPOT renders the a2-ultragpu-8g machine type
+    with --provisioning-model=SPOT (model: test_render_create_argv_spot_opt_in)."""
+    cfg = _test_config()
+    spec = _spec("sweep-8g-a100", extra={"provisioning_model": "spot"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a2-ultragpu-8g" in argv
+    assert "--provisioning-model=SPOT" in argv
+
+
+def test_render_create_argv_sweep_8g_a100_standard_golden() -> None:
+    """#743: an 8x A100 sweep with the default (STANDARD) provisioning renders
+    fine — A100 (unlike H100) MAY be created on-demand, so no raise (model:
+    test_render_create_argv_ft_intent_uses_4gpu_machine)."""
+    cfg = _test_config()
+    spec = _spec("sweep-8g-a100")  # no provisioning_model → STANDARD default
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a2-ultragpu-8g" in argv
+
+
+def test_render_create_argv_sweep_8g_h100_flex_start_golden() -> None:
+    """#743: an 8x H100 sweep on FLEX_START renders the a3-highgpu-8g machine
+    type without raising (model:
+    test_render_create_argv_flex_start_renders_request_valid_for_duration)."""
+    cfg = _test_config()
+    spec = _spec("sweep-8g-h100", extra={"provisioning_model": "FLEX_START"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a3-highgpu-8g" in argv
+    assert "--provisioning-model=FLEX_START" in argv
+
+
+def test_render_create_argv_sweep_8g_h100_standard_raises_loud() -> None:
+    """#743: 8x H100 inherits the H100+STANDARD on-demand rejection for free
+    (the render_create_argv raise keys on gpu_kind == 'H100-80', not a
+    machine-type literal). model: test_render_create_argv_h100_standard_raises_loud."""
+    cfg = _test_config()
+    spec = _spec("sweep-8g-h100")  # no provisioning_model → STANDARD default
     with pytest.raises(ValueError, match="cannot be created on-demand"):
         render_create_argv(
             spec=spec,

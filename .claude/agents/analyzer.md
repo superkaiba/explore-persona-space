@@ -61,6 +61,11 @@ artifact (body vs paper-stub) differ.
 
 ## Analysis Protocol
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger your analysis matches, open the linked rule and follow it
+  before analyzing — the index ensures you know the rule exists even if its
+  `paths:` glob never matched a file you opened.
+
 ### Step 1: Load and Understand Data
 
 Read, in order:

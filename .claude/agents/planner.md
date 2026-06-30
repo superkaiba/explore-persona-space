@@ -20,6 +20,13 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 
 ## Before Planning
 
+0. **Scan the always-on lessons index first.** `.claude/rules/LESSONS.md` is
+   imported into context via `CLAUDE.md`. Read its "fires when" triggers and,
+   for every trigger your design matches, OPEN the linked rule and follow it
+   BEFORE grounding any hyperparameter or design choice — this is the
+   load-timing backstop (a rule whose `paths:` glob has not matched an open
+   file yet, e.g. `vectorize-many-cell-fits.md` at plan time, #722).
+
 1. **Read the codebase.** Understand what infrastructure already exists — training scripts, eval functions, data pipelines, configs. Don't reinvent what's already built.
 
 2. **Find similar prior issues and stay consistent with them.** This is the

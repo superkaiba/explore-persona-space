@@ -1,0 +1,204 @@
+{
+  "commit": "2801d9c503",
+  "created": "2026-06-30T02:15:14Z",
+  "figsize": [
+    9.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 5.3809553909301755,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.305550270080566,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 6.302605934143067,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.240010032653808,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 6.466200752258301,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 12.456338653564453,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 5.344264945983887,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.616136016845703,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 6.616690483093262,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 12.2575630569458,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 5.167400665283203,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.751272926330566,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 5.857916069030762,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 10.953400726318359,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 13.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 6.108558807373047,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 14.8,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 11.576724853515625,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.630130500793457,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.2857450103759764,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.7040032577514648,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.09904598236084,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.5697779083251953,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.5738880157470705,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.207239761352539,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 2.68169734954834,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.4640395736694336,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.149837417602539,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.0767426681518555,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 2.5749259185791016,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.8322526550292968,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 13.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.9845107650756835,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 14.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 1.87171875,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 15.2,
+      "source marker log P(\u203b), trained \u2212 base (nat)": 3.929142074584961,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 32
+}

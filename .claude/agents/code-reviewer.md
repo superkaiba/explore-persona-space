@@ -62,6 +62,11 @@ The `events.jsonl` marker is the source of truth. Also return the verdict to who
 
 ## Review Protocol
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger the diff under review matches, open the linked rule
+  and check the diff against it — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
+
 ### Step 0: Classify the diff — leaf or trunk?
 
 Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).

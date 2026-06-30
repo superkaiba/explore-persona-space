@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 743,
+  "highest_id": 747,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4539,8 +4539,8 @@
       "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, fit the context\u2192answer-profile mapping M: c_C \u2192 v0(C) both pre-finetuning (M0, base) and post-finetuning (M\u207a, adapter-applied) as a linear ridge AND a nonlinear MLP, and determine whether the FUNCTION M changes (distinct from the input context vector c_C shifting) via (1) function-change at fixed input \u2016M\u207a(c)\u2212M0(c)\u2016 on a common c grid projected onto behavior read-outs r_B, (2) behavior-relevant transfer through the chain r_B\u1d40 M c \u2192 E (judge rate) and M along r_B \u2014 NOT generic v0 reconstruction (which #658 showed saturates \u22480.98 and is uninformative), and (3) cross-transfer of M0 vs M\u207a on FT data; cross-referenced against #697's causal f_CV.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/722",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/722",
+      "status": "awaiting_promotion",
       "title": "Finetuning measurably reshapes the context\u2192answer map only for a taught fact (LOW confidence)"
     },
     "723": {
@@ -4622,11 +4622,11 @@
     },
     "734": {
       "goal": "Determine why the \u203b marker implant failed to install on Qwen-2.5-7B-Instruct in #664 (source log P trained-base at the floor, band-stop never fired) when the same recipe line installed on base Qwen-2.5-7B (#474/#601/#650) \u2014 discriminating model-resistance (base vs Instruct) vs under-set lr/step dose vs band-stop/measurement artifact \u2014 and find a recipe that installs the marker on Instruct into the 5-12-nat band.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/734",
-      "status": "running",
-      "title": "Why did the marker fail to install on Qwen-2.5-7B-Instruct in #664 when the same recipe installed on base Qwen-2.5-7B? (model vs lr/steps vs band-stop diagnostic)"
+      "path": "tasks/interpreting/734",
+      "status": "interpreting",
+      "title": "#664's \u201cmarker never installed on Instruct\u201d was a slot-rooting measurement artifact: a corrected read recovers the install on 16/16 reused adapters (HIGH confidence)"
     },
     "735": {
       "has_clean_result": false,
@@ -4659,8 +4659,8 @@
     "739": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/739",
-      "status": "reviewing",
+      "path": "tasks/completed/739",
+      "status": "completed",
       "title": "Always-on LESSONS.md index + wire into agents (close rule load-timing gap)"
     },
     "74": {
@@ -4680,24 +4680,53 @@
     "741": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/741",
-      "status": "approved",
+      "path": "tasks/completed/741",
+      "status": "completed",
       "title": "GCP: drop the 24h max-run-duration default; use max available (7d FLEX_START), reconcile the janitor age backstop"
     },
     "742": {
       "goal": "On the existing #658 base-model representations (Qwen2.5-7B v0(C) per layer, judged behavior rates E0(C,B), n=50 contexts), measure how much behavioral information linear decoding loses, the achievable decoding ceiling, and the sample size required \u2014 operationalized at n=50 as the per-behavior reliability ceiling sqrt(r_yy), the bracket [rho_linear, sqrt(r_yy)] bounding the linear-decoding information loss plus a LEACE+dCor test for any nonlinearly-extractable residual, and a learning curve extrapolating the contexts needed to resolve the gap.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/742",
-      "status": "planning",
+      "path": "tasks/running/742",
+      "status": "running",
       "title": "Decoding-ceiling, linear-information-loss, and sample-complexity of #658 base-model behavior representations (n=50)"
     },
     "743": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/743",
-      "status": "planning",
+      "path": "tasks/completed/743",
+      "status": "completed",
       "title": "GCP router: add 8x A100 (a2-ultragpu-8g) + 8x H100 (a3-highgpu-8g, FLEX_START) machine specs so the free GCP lane can run wide parallel sweeps"
+    },
+    "744": {
+      "goal": "Characterize how standardized similarity and directional continuity between consecutive-token residual-stream activations vary across layers in Qwen-2.5-7B, and where discontinuities concentrate (token type, surprisal, syntactic boundary).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/approved/744",
+      "status": "approved",
+      "title": "Token-to-token residual-stream continuity and discontinuities across layers in Qwen-2.5-7B"
+    },
+    "745": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/745",
+      "status": "running",
+      "title": "workflow-fix: enable hf_transfer for experiment uploads"
+    },
+    "746": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/746",
+      "status": "running",
+      "title": "workflow-fix: gotchas.md FIX-SCOPE addendum for vLLM enforce_eager probe"
+    },
+    "747": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/747",
+      "status": "running",
+      "title": "Add cheap CPU-only pod lanes (RunPod CPU3/5 + GCP E2/N2 spot) and prefer them for CPU phases"
     },
     "75": {
       "has_clean_result": true,
