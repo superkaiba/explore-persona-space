@@ -1,0 +1,66 @@
+{
+  "commit": "9b5f338718",
+  "created": "2026-06-30T10:30:57Z",
+  "figsize": [
+    7.4,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.29605042016806726,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.3094957983193277,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.25926770708283314,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "bad-medical advice\n(read layer 8)",
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.3310564225690276,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "emergent misalignment\n(read layer 0)",
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.4201680672268907,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "taught fact\n(read layer 2)",
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.4211164465786314,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.32579831932773107,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.4891596638655462,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Spearman \u03c1(predicted gate, \u011d_real)": 0.42046818727491,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9
+}

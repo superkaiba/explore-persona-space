@@ -1,0 +1,91 @@
+{
+  "commit": "9b5f338718",
+  "created": "2026-06-30T10:30:47Z",
+  "figsize": [
+    7.2,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "bad-medical advice\n(read layer 8)",
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.29605042016806726,
+      "error": 0.07857743097238898,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "emergent misalignment\n(read layer 0)",
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.3094957983193277,
+      "error": 0.0009783913565425961,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "taught fact\n(read layer 2)",
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.25926770708283314,
+      "error": 0.033223289315726295,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.025807985433229923,
+      "series": "probe-split reliability floor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.1588727601713535,
+      "label": "BH-FDR p=0.43\nNOT rejected",
+      "series": "probe-split reliability floor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.04568579257850576,
+      "series": "probe-split reliability floor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.1388955582232893,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.3075390156062425,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.19282112845138055,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.29605042016806726,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.3094957983193277,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 vs realized gate \u011d_real": 0.25926770708283314,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12
+}
