@@ -834,6 +834,15 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # workload subprocess. The startup script ALSO sets a default (below), so
     # this passthrough is the override channel, the default is the floor.
     "EPS_SCRATCH_DIR",
+    # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
+    # dispatch-process =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround)
+    # reaches the GCE workload. The DEFAULTS (=1) are STATIC preamble exports
+    # in render_startup_script (below); this passthrough is the override
+    # channel only. Drop-when-absent contract preserved (an unset dispatch-env
+    # key is simply not forwarded, so the static default stands).
+    "HF_XET_HIGH_PERFORMANCE",
+    "HF_HUB_ENABLE_HF_TRANSFER",
+    "HF_XET_DISABLE",
 )
 
 #: The subset of :data:`STARTUP_SECRET_ENV_KEYS` the GCE workload cannot
@@ -1316,6 +1325,21 @@ def render_startup_script(
         # instance-termination-action=DELETE destroys the boot disk, so a
         # GCP crash is debuggable + partial progress is recoverable.
         f"export EPS_HF_DATA_REPO={shlex.quote(config.hf_data_repo)}",
+        # Fast HF Hub uploads (#745) — STATIC DEFAULT export. Placed in the
+        # env-export block BEFORE the output redirect + secrets fetch so that
+        # (a) the workload (both the hydra and workload_cmd branches, which
+        # follow `*workload_block` after `uv sync`) inherits it, and (b) the
+        # crash-persist subshell (`_eps_persist_diagnostics`, the EXIT-trap
+        # HfApi.upload_folder) — which runs with no `load_dotenv` and inherits
+        # the parent shell env — gets it on any crash after this point.
+        # HF_XET_HIGH_PERFORMANCE is the PRIMARY accelerator (the project repos
+        # use the Xet backend); HF_HUB_ENABLE_HF_TRANSFER is the orthogonal LFS
+        # accelerator (hf_transfer is a hard dep). The passthrough keys in
+        # STARTUP_PASSTHROUGH_ENV_KEYS are the OVERRIDE channel — a forwarded
+        # dispatch-process =0 / HF_XET_DISABLE=1 is fetched + exported by the
+        # secrets-fetch stanza LATER (so it supersedes these static defaults).
+        'export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"',
+        'export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"',
         "",
         # Output redirect (#607): everything from here down — secrets
         # fetch, preflight, clone, uv sync, the workload itself — writes
