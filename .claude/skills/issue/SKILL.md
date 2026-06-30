@@ -161,7 +161,7 @@ The skill moves status in exactly five places:
 5. **Same-issue follow-up re-entry (Step 9b § Same-issue follow-up
    loop / Step 0 followup-scope dispatch):** a task at `interpreting` /
    `reviewing` / `awaiting_promotion` / `completed` carrying an unrun
-   `epm:followup-scope v1` moves to `followups_running` (tagged
+   `epm:followup-scope` moves to `followups_running` (tagged
    `followup-auto` | `followup-manual` by initiation mode) and HOLDS
    that status while executing a `question_relation: same`
    follow-up ON this issue, then re-parks at `awaiting_promotion`.
