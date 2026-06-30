@@ -658,6 +658,16 @@ CUDA_IMA_SIGNATURE = re.compile(
 # CUDA-IMA crash is observed this run.
 RUNPOD_CUDA_IMA_WEDGED_PHASE = "terminal_runpod_cuda_ima_host_wedged"
 
+# The success ``current_phase`` emitted by ``_relaunch_fresh_runpod`` after a
+# fresh-pod re-provision succeeds. The DEFAULT is the no-port wedge phase (Part C,
+# #664) — preserved byte-identically so the Part C caller is unchanged. The
+# CUDA-IMA caller (Part D, #775) passes ``RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE``
+# so the emitted poll JSON / markers read TRUE to a CUDA-IMA failover (the two
+# wedge classes reuse the same inner relaunch but a shared no-port phase string
+# would misclassify a CUDA-IMA pivot as a no-port wedge in the operator log).
+RUNPOD_NOPORT_WEDGE_FAILOVER_FRESH_POD_PHASE = "runpod_noport_wedge_failover_fresh_pod"
+RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE = "runpod_cuda_ima_failover_fresh_pod"
+
 
 def _crash_signature_is_cuda_ima(text: str | None) -> bool:
     """True iff ``text`` (a crash surface) carries the CUDA-IMA family signature.
@@ -1189,7 +1199,15 @@ def _runpod_wedge_already_handled(issue: int, handle, sidecar: Path) -> bool:
     return prior is not None and prior.get("runpod_wedge") == _runpod_handle_identity(handle)
 
 
-def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path, stamp_fn=None) -> dict:
+def _relaunch_fresh_runpod(
+    *,
+    issue: int,
+    handle,
+    result,
+    sidecar: Path,
+    stamp_fn=None,
+    success_phase: str = RUNPOD_NOPORT_WEDGE_FAILOVER_FRESH_POD_PHASE,
+) -> dict:
     """Re-provision a FRESH RunPod pod + resume the dispatcher idempotently.
 
     Re-uses the router's ``failover_to_runpod_after_async_workload_crash`` (the
@@ -1209,6 +1227,12 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path, stamp_f
     ``stamp_fn=_stamp_runpod_cuda_ima_failover`` so the SEPARATE
     ``runpod_cuda_ima_failover_of`` lease field is stamped — the two failover
     classes never cross-suppress.
+
+    ``success_phase`` is the ``current_phase`` emitted on a successful fresh-pod
+    relaunch. It DEFAULTS to ``RUNPOD_NOPORT_WEDGE_FAILOVER_FRESH_POD_PHASE`` (Part
+    C byte-unchanged); the #775 CUDA-IMA caller passes
+    ``RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE`` so the emitted poll JSON / markers
+    read TRUE to a CUDA-IMA failover instead of mislabelling it a no-port wedge.
     """
     if stamp_fn is None:
         stamp_fn = _stamp_runpod_wedge_failover
@@ -1335,14 +1359,20 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path, stamp_f
     # lost under EDQUOT, the next poll short-circuits at the lease check instead of
     # firing a paid second terminate + re-provision.
     stamp_fn(issue, handle)
+    # The wedge-class wording mirrors success_phase so the operator log reads true to
+    # the failover that actually fired (no-port #664 vs CUDA-IMA-repeat #775).
+    if success_phase == RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE:
+        wedge_desc = "same-signature CUDA-IMA repeat wedge (#775)"
+    else:
+        wedge_desc = "RUNNING-but-no-port wedge (#664)"
     return {
         "status": "running",
-        "current_phase": "runpod_noport_wedge_failover_fresh_pod",
+        "current_phase": success_phase,
         "new_milestone": True,
         "last_log_mtime_sec_ago": 0,
         "pid_alive": True,
         "log_tail_excerpt": (
-            f"RunPod {handle.pod_name} RUNNING-but-no-port wedge (#664); terminated + "
+            f"RunPod {handle.pod_name} {wedge_desc}; terminated + "
             f"re-provisioned fresh pod {route_result.handle.pod_name}"
         ),
         "gate": None,
@@ -1494,10 +1524,14 @@ def _failover_cuda_ima_runpod(*, issue: int, handle, result, sidecar: Path) -> d
     bound (M1) as the FIRST check (the only structural difference from the no-port
     sibling, which has no analogous per-run bound):
 
-      1. ONCE-MORE BOUND (layer-2, M1). If the DURABLE lease already records a
-         CUDA-IMA failover for THIS run (``runpod_cuda_ima_failover_of`` set), this
-         is the SECOND same-signature crash on the FRESH host — a fresh host did
-         NOT heal it, so it is a deterministic code bug. Emit a terminal
+      1. ONCE-MORE BOUND (layer-2, M1). If the DURABLE lease has ANY
+         ``runpod_cuda_ima_failover_of`` stamp for THIS run
+         (:func:`_lease_has_any_runpod_cuda_ima_failover` — a PER-RUN any-non-null
+         check, NOT the PER-POD identity-equality of layer-1, so it survives the
+         fresh-pod identity change: the stamp records the OLD crashed pod, the
+         SECOND crash arrives on the FRESH handle), this is the SECOND
+         same-signature crash on the FRESH host — a fresh host did NOT heal it, so
+         it is a deterministic code bug. Emit a terminal
          ``failure_class: code`` JSON (``reason=cuda_ima_repeats_after_failover``)
          via :func:`_terminal_code_json` so the watcher PARKS it at ``blocked``
          (its capacity-retry pass re-drives ONLY ``failure_class: infra`` +
@@ -1513,9 +1547,13 @@ def _failover_cuda_ima_runpod(*, issue: int, handle, result, sidecar: Path) -> d
          ``stamp_fn=_stamp_runpod_cuda_ima_failover`` (stamps the SEPARATE lease
          field — the once-more bound for the NEXT crash).
     """
-    # 1. ONCE-MORE BOUND (M1): the lease already records a CUDA-IMA failover for
-    #    THIS run -> the fresh host ALSO crashed same-signature -> terminal code.
-    if _lease_records_runpod_cuda_ima_failover(issue, handle):
+    # 1. ONCE-MORE BOUND (M1, PER-RUN): the lease has ANY CUDA-IMA failover stamp
+    #    for THIS run -> the fresh host ALSO crashed same-signature -> terminal code.
+    #    An any-non-null (NOT identity-equality) check, so it survives the fresh-pod
+    #    identity change — the stamp records the OLD crashed pod but this second
+    #    crash arrives on the FRESH handle (the identity-keyed layer-1 check would
+    #    miss it and pivot again indefinitely).
+    if _lease_has_any_runpod_cuda_ima_failover(issue):
         return _terminal_code_json(
             issue=issue,
             sidecar=sidecar,
@@ -1555,21 +1593,40 @@ def _failover_cuda_ima_runpod(*, issue: int, handle, result, sidecar: Path) -> d
             ),
         )
 
-    # 4. TERMINATE the crashed pod (best-effort — a CUDA-IMA-wedged pod is usually
-    #    already dead, so ``info is None`` simply skips the terminate cleanup).
+    # 4. TERMINATE the crashed pod (BEST-EFFORT — a CUDA-IMA-wedged pod is usually
+    #    already dead, so ``info is None`` simply skips the terminate cleanup, and a
+    #    terminate API race/failure on a pod the RunPod side has already torn down
+    #    (or a transient API hiccup) MUST NOT block the fresh-host recovery. Without
+    #    the guard, the ``main()`` outer ``except`` converts ANY terminate exception
+    #    to ``reason=runpod_cuda_ima_failover_error``, masking the intended pivot.
+    #    Terminating an already-dead pod is operationally idempotent, so on a raise
+    #    we log + continue to the sentinel + fresh-host relaunch. (Part C's no-port
+    #    terminate stays fail-loud BY DESIGN — that pod is genuinely RUNNING+billing,
+    #    so a terminate failure there is the billing leak the wedge exists to stop.)
     from runpod_api import get_pod_by_name, terminate_pod
 
     info = get_pod_by_name(handle.pod_name)
     if info is not None:
-        terminate_pod(info.pod_id)
-        logging.warning(
-            "backend_poll: terminated CUDA-IMA-wedged RunPod %s (%s) — billing stopped "
-            "(complete=%d absent=%d)",
-            handle.pod_name,
-            info.pod_id,
-            len(gate.complete),
-            len(gate.absent),
-        )
+        try:
+            terminate_pod(info.pod_id)
+            logging.warning(
+                "backend_poll: terminated CUDA-IMA-wedged RunPod %s (%s) — billing stopped "
+                "(complete=%d absent=%d)",
+                handle.pod_name,
+                info.pod_id,
+                len(gate.complete),
+                len(gate.absent),
+            )
+        except Exception as exc:
+            logging.warning(
+                "backend_poll: best-effort terminate of CUDA-IMA-wedged RunPod %s (%s) FAILED "
+                "(%s: %s); the pod is usually already dead — continuing to the fresh-host "
+                "relaunch (terminating an already-dead pod is idempotent)",
+                handle.pod_name,
+                info.pod_id,
+                type(exc).__name__,
+                exc,
+            )
 
     # 5. SENTINEL (before the re-provision so a re-fired tick short-circuits even if
     #    the re-provision raises) + RE-PROVISION FRESH, stamping the CUDA-IMA lease.
@@ -1582,6 +1639,7 @@ def _failover_cuda_ima_runpod(*, issue: int, handle, result, sidecar: Path) -> d
         result=result,
         sidecar=sidecar,
         stamp_fn=_stamp_runpod_cuda_ima_failover,
+        success_phase=RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE,
     )
 
 
@@ -1891,6 +1949,50 @@ def _lease_records_runpod_cuda_ima_failover(issue: int, handle, *, lease_store=N
     if lease is None:
         return False
     return lease.runpod_cuda_ima_failover_of == _runpod_handle_identity(handle)
+
+
+def _lease_has_any_runpod_cuda_ima_failover(issue: int, *, lease_store=None) -> bool:
+    """True iff the issue's DURABLE lease has ANY ``runpod_cuda_ima_failover_of``
+    stamp, regardless of WHICH pod it records (#775).
+
+    The PER-RUN layer-2 once-more bound, distinct from the PER-POD layer-1
+    idempotency check :func:`_lease_records_runpod_cuda_ima_failover`:
+
+      - **Layer-1** (per-wedge idempotency, ``_runpod_cuda_ima_already_handled``)
+        is IDENTITY-keyed (``runpod_cuda_ima_failover_of == identity(handle)``):
+        a genuinely-new pod MUST NOT be suppressed, so it compares against the
+        CURRENT handle's identity.
+      - **Layer-2** (this function — the once-more bound in
+        :func:`_failover_cuda_ima_runpod`) must fire "this RUN already spent its
+        one CUDA-IMA pivot" REGARDLESS of which pod crashed. A successful pivot
+        stamps the OLD (crashed) pod's identity, then re-points the sidecar at
+        the FRESH pod; the SECOND CUDA-IMA crash arrives on the FRESH handle, so
+        an identity-equality check (layer-1) against the OLD stamp would always
+        be ``False`` and the run would pivot again indefinitely (the unbounded-
+        spend bug this task exists to prevent). An ANY-non-null check survives
+        the fresh-pod identity change. Plan §5 specifies exactly this: the bound
+        "checks whether ``runpod_cuda_ima_failover_of`` is set to ANY non-null
+        value on the issue's lease".
+
+    A LeaseStore failure (no ``$HOME``, dir uncreatable) reads as "no record"
+    (return ``False``) — worst case is one extra pivot, NEVER a silent
+    suppression, the same fail-soft contract as the identity-keyed sibling.
+    """
+    from explore_persona_space.backends.router import LeaseStore
+
+    store = lease_store or LeaseStore()
+    try:
+        lease = store.read(int(issue))
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: lease-store read failed for issue %s (%s: %s); treating as no "
+            "CUDA-IMA-failover-spent record (the per-run once-more bound stays fail-soft)",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return False
+    return lease is not None and lease.runpod_cuda_ima_failover_of is not None
 
 
 def _stamp_runpod_cuda_ima_failover(issue: int, handle, *, lease_store=None) -> None:

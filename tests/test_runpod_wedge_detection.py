@@ -1244,13 +1244,17 @@ def test_cuda_ima_failover_pivots_with_cuda_ima_stamp_fn(tmp_path, monkeypatch):
 
 
 def test_cuda_ima_failover_bounded_once_third_crash_terminal_code(tmp_path, monkeypatch):
-    """M1 — after one pivot (the durable lease records a CUDA-IMA failover), a
-    SECOND same-signature crash on the FRESH host routes to terminal
-    failure_class:code (reason=cuda_ima_repeats_after_failover), NO second pivot."""
+    """M1 — after one pivot (the durable lease records a CUDA-IMA failover for this
+    RUN), a SECOND same-signature crash routes to terminal failure_class:code
+    (reason=cuda_ima_repeats_after_failover), NO second pivot. The bound is the
+    PER-RUN any-non-null lease check (``_lease_has_any_runpod_cuda_ima_failover``),
+    NOT the per-pod identity check — see the real-helper cross-identity test
+    ``test_cuda_ima_once_more_bound_blocks_on_fresh_pod_after_stamp`` for the seam
+    this mock necessarily abstracts away."""
     terminated = _cuda_ima_failover_gate_ok(monkeypatch)
-    # The lease ALREADY records a CUDA-IMA failover for this run (the bound).
+    # The lease ALREADY records a CUDA-IMA failover for this run (the per-run bound).
     monkeypatch.setattr(
-        bp, "_lease_records_runpod_cuda_ima_failover", lambda *a, **k: True, raising=False
+        bp, "_lease_has_any_runpod_cuda_ima_failover", lambda *a, **k: True, raising=False
     )
     relaunched: list = []
     monkeypatch.setattr(
@@ -1268,6 +1272,71 @@ def test_cuda_ima_failover_bounded_once_third_crash_terminal_code(tmp_path, monk
     assert out["reason"] == "cuda_ima_repeats_after_failover"
     assert terminated == []  # bound checked FIRST, before the terminate
     assert relaunched == []  # NO second pivot
+
+
+def test_cuda_ima_once_more_bound_blocks_on_fresh_pod_after_stamp(tmp_path, monkeypatch):
+    """M1 CRITICAL — the once-more bound is PER-RUN, not per-pod: it must fire on
+    the FRESH pod's handle even though the stamp recorded the OLD crashed pod.
+
+    This is the exact case the mocked M1 tests abstract away (they mock the bound
+    predicate to True). Here it exercises the REAL durable-lease helpers with
+    DISTINCT old/fresh identities:
+
+      1. stamp the lease with the OLD crashed handle via the REAL
+         ``_stamp_runpod_cuda_ima_failover`` (records old pod_name/job_id);
+      2. drive ``_failover_cuda_ima_runpod`` with a FRESH handle (different
+         pod_name AND job_id — the post-pivot sidecar re-point);
+      3. assert it routes to terminal ``failure_class: code`` with NO second
+         pivot.
+
+    PRE-FIX (identity-equality bound) the fresh handle's identity != the stamped
+    old identity, so the bound returns False and the run pivots AGAIN — the
+    unbounded-spend bug. POST-FIX (any-non-null bound) the bound fires."""
+    _real_lease_store_in(tmp_path, monkeypatch)
+
+    old_handle = _runpod_handle_with_workload(pod_name="pod-775-OLD")
+    object.__setattr__(old_handle, "job_id", "job-OLD")
+    # 1. Stamp the OLD crashed handle via the REAL helper (records old identity).
+    bp._stamp_runpod_cuda_ima_failover(689, old_handle)
+    # Sanity: the per-POD (layer-1) identity check is OLD-keyed.
+    assert bp._lease_records_runpod_cuda_ima_failover(689, old_handle) is True
+
+    # 2. The FRESH pod (distinct pod_name AND job_id) — the post-pivot re-point.
+    fresh_handle = _runpod_handle_with_workload(pod_name="pod-775-FRESH")
+    object.__setattr__(fresh_handle, "job_id", "job-FRESH")
+    # The OLD identity-keyed check does NOT match the fresh handle (this is exactly
+    # why the layer-2 bound cannot be identity-keyed):
+    assert bp._lease_records_runpod_cuda_ima_failover(689, fresh_handle) is False
+    # But the PER-RUN any-non-null bound DOES fire on the fresh handle:
+    assert bp._lease_has_any_runpod_cuda_ima_failover(689) is True
+
+    # Stub the inputs gate OK, terminate to a no-op, and record relaunch calls — so
+    # IF the bound failed (pre-fix), the second pivot would be observable.
+    monkeypatch.setattr(
+        bp,
+        "_wedged_run_inputs_on_hf",
+        lambda *a, **k: bp._WedgeInputsGate(ok=True, complete=[], partial=[], absent=[]),
+        raising=False,
+    )
+    relaunched: list = []
+    monkeypatch.setattr(
+        bp,
+        "_relaunch_fresh_runpod",
+        lambda **kw: relaunched.append(kw) or {"status": "running"},
+        raising=False,
+    )
+    monkeypatch.setattr(runpod_api, "terminate_pod", lambda pid: None, raising=False)
+
+    # 3. The second crash arrives on the FRESH handle.
+    out = bp._failover_cuda_ima_runpod(
+        issue=689,
+        handle=fresh_handle,
+        result=_cuda_ima_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    assert out["failure_class"] == "code"
+    assert out["reason"] == "cuda_ima_repeats_after_failover"
+    assert relaunched == []  # NO second pivot on the fresh pod
 
 
 def test_cuda_ima_failover_idempotency_lease(tmp_path, monkeypatch):
@@ -1350,10 +1419,92 @@ def test_cuda_ima_failover_durable_lease_bound_real_helpers(tmp_path, monkeypatc
     the CUDA-IMA stamp does NOT touch runpod_wedge_failover_of (no cross-suppress)."""
     _real_lease_store_in(tmp_path, monkeypatch)
     handle = _runpod_handle_with_workload()
-    # Before any stamp: the bound is not yet spent.
+    # Before any stamp: both the per-pod and the per-run bound are unspent.
     assert bp._lease_records_runpod_cuda_ima_failover(689, handle) is False
+    assert bp._lease_has_any_runpod_cuda_ima_failover(689) is False
     # Stamp the CUDA-IMA failover.
     bp._stamp_runpod_cuda_ima_failover(689, handle)
     assert bp._lease_records_runpod_cuda_ima_failover(689, handle) is True
+    # The PER-RUN any-non-null bound (the layer-2 once-more guard) now reads True.
+    assert bp._lease_has_any_runpod_cuda_ima_failover(689) is True
     # The no-port lease field is UNTOUCHED (no cross-suppression).
     assert bp._lease_records_runpod_wedge_failover(689, handle) is False
+
+
+def test_cuda_ima_failover_terminate_is_best_effort(tmp_path, monkeypatch):
+    """MAJOR-1 — a terminate API failure on the (usually already-dead) CUDA-IMA pod
+    MUST NOT block the fresh-host recovery: the failover logs + continues to
+    _relaunch_fresh_runpod instead of bubbling the exception up to main()'s outer
+    guard (which would emit reason=runpod_cuda_ima_failover_error, masking the
+    intended pivot). Contrast Part C's no-port terminate, which stays fail-loud."""
+    _cuda_ima_failover_gate_ok(monkeypatch)  # live PodInfo present -> terminate is attempted
+    monkeypatch.setattr(
+        bp, "_lease_has_any_runpod_cuda_ima_failover", lambda *a, **k: False, raising=False
+    )
+    monkeypatch.setattr(
+        bp, "_runpod_cuda_ima_already_handled", lambda *a, **k: False, raising=False
+    )
+    # The terminate RAISES (an API race / already-deleted pod / transient hiccup).
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pid: (_ for _ in ()).throw(RuntimeError("terminate API 500")),
+        raising=False,
+    )
+    relaunched: list = []
+    monkeypatch.setattr(
+        bp,
+        "_relaunch_fresh_runpod",
+        lambda **kw: (
+            relaunched.append(kw)
+            or {"status": "running", "current_phase": bp.RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE}
+        ),
+        raising=False,
+    )
+
+    out = bp._failover_cuda_ima_runpod(
+        issue=689,
+        handle=_runpod_handle(),
+        result=_cuda_ima_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    # The pivot still fired despite the terminate raising.
+    assert len(relaunched) == 1
+    assert relaunched[0]["success_phase"] == bp.RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE
+    assert out["current_phase"] == bp.RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE
+    # NOT the masked error path.
+    assert out.get("reason") != "runpod_cuda_ima_failover_error"
+
+
+def test_prior_failure_marker_cuda_ima_real_parser_realistic_body(monkeypatch):
+    """MINOR — the cross-pod fallback's REAL parser (_prior_failure_marker_is_cuda_ima,
+    not mocked) handles a realistic epm:failure marker body: a kind=='epm:failure v1'
+    event whose note carries the CUDA-IMA signature text returns True via the actual
+    task_workflow.list_events read + the within-line signature regex."""
+    import explore_persona_space.task_workflow as TW
+
+    realistic_note = (
+        "failure_class: infra\n"
+        "reason: vllm_crash\n"
+        "trace_summary: torch.AcceleratorError: CUDA error: an illegal memory "
+        "access was encountered\n"
+        "phase: workload\n"
+    )
+    # Newest-LAST ordering (list_events returns chronological; the parser reverses).
+    events = [
+        {"kind": "epm:run-launched v1", "note": "launched pod-775", "ts": "2026-06-30T00:00:00Z"},
+        {"kind": "epm:failure v1", "note": realistic_note, "ts": "2026-06-30T01:00:00Z"},
+    ]
+    monkeypatch.setattr(TW, "list_events", lambda issue: events, raising=False)
+    assert bp._prior_failure_marker_is_cuda_ima(689) is True
+
+    # A non-CUDA-IMA epm:failure body returns False (the first crash is not a repeat).
+    benign = [
+        {
+            "kind": "epm:failure v1",
+            "note": "failure_class: code\nreason: assertion_error\ntrace_summary: ValueError: bad",
+            "ts": "2026-06-30T01:00:00Z",
+        }
+    ]
+    monkeypatch.setattr(TW, "list_events", lambda issue: benign, raising=False)
+    assert bp._prior_failure_marker_is_cuda_ima(689) is False

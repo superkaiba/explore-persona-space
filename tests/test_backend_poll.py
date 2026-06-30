@@ -1129,10 +1129,13 @@ def test_poller_first_cuda_ima_falls_through_to_dead(tmp_path, monkeypatch, caps
     )
     monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
 
+    from scripts.backend_poll import RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE
+
     rc = backend_poll_main(["--issue", "775", "--handle-file", str(sidecar)])
     assert rc == 0
     out = _last_json_line(capsys)
     assert out["status"] == "dead"
+    assert out["current_phase"] != RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE
     assert out["current_phase"] != "runpod_noport_wedge_failover_fresh_pod"
     assert len(rp.launches) == 0  # no failover on the first crash
     # The record was written so the NEXT crash is a repeat.
@@ -1163,11 +1166,13 @@ def test_poller_second_cuda_ima_emits_fresh_host_failover(tmp_path, monkeypatch,
         "scripts.backend_poll._issue_cells_for_handle", lambda issue, handle: [], raising=False
     )
 
+    from scripts.backend_poll import RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE
+
     rc = backend_poll_main(["--issue", "775", "--handle-file", str(sidecar)])
     assert rc == 0
     out = _last_json_line(capsys)
     assert out["status"] == "running"
-    assert out["current_phase"] == "runpod_noport_wedge_failover_fresh_pod"
+    assert out["current_phase"] == RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE
     assert len(rp.launches) == 1  # exactly one fresh-host pivot
     recovered = read_handle_sidecar(sidecar)
     assert recovered.backend == "runpod"
@@ -1212,14 +1217,17 @@ def test_poller_cuda_ima_before_noport_when_transient_no_port(tmp_path, monkeypa
         "scripts.backend_poll._issue_cells_for_handle", lambda issue, handle: [], raising=False
     )
 
+    from scripts.backend_poll import RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE
+
     rc = backend_poll_main(["--issue", "775", "--handle-file", str(sidecar)])
     assert rc == 0
     out = _last_json_line(capsys)
-    # The CUDA-IMA failover fired (fresh-host phase), NOT the no-port observed /
+    # The CUDA-IMA failover fired (CUDA-IMA fresh-host phase), NOT the no-port observed /
     # within-K running rewrite (which would have masked the dead poll).
     assert out["status"] == "running"
-    assert out["current_phase"] == "runpod_noport_wedge_failover_fresh_pod"
+    assert out["current_phase"] == RUNPOD_CUDA_IMA_FAILOVER_FRESH_POD_PHASE
     assert out["current_phase"] != "runpod_no_port_observed"
+    assert out["current_phase"] != "runpod_noport_wedge_failover_fresh_pod"
     assert len(rp.launches) == 1
 
 
@@ -1240,10 +1248,13 @@ def test_poller_cuda_ima_failover_exhausted_emits_code(tmp_path, monkeypatch, ca
         lambda name: _PollDouble(_cuda_ima_dead_poll_base()),
     )
     monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
-    # The durable lease ALREADY records a CUDA-IMA failover for this run (the
-    # once-more bound is spent): mock the lease-record read to True.
+    # The durable lease ALREADY has a CUDA-IMA failover stamp for this run (the
+    # per-run once-more bound is spent): mock the any-non-null read to True. (The
+    # real cross-identity behavior — bound fires on the FRESH pod though the stamp
+    # records the OLD pod — is exercised in test_runpod_wedge_detection.py's
+    # test_cuda_ima_once_more_bound_blocks_on_fresh_pod_after_stamp with REAL helpers.)
     monkeypatch.setattr(
-        "scripts.backend_poll._lease_records_runpod_cuda_ima_failover",
+        "scripts.backend_poll._lease_has_any_runpod_cuda_ima_failover",
         lambda *a, **k: True,
         raising=False,
     )
