@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_734.md](https://github.com/superkaiba/explore-persona-space/blob/3a43d920d96c419d861e15570c9230b54c3446e7/docs/methodology/issue_734.md) · [gist](https://gist.github.com/superkaiba/5564fe927f6b424ef0ec5a947c234c5b)
+
 ## Takeaways
 
 - Reading the prior experiment's 16 Instruct marker adapters at the marker's **own trained slot** recovers the install in-band on **16/16 cells** (median **+8.4 nat**).
