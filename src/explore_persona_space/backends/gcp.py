@@ -336,6 +336,23 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_count=0,
         gpu_kind="CPU",
     ),
+    # 8-GPU sweep intents (#743) — the FREE GCP credit lane at 8x width for
+    # wide embarrassingly-parallel sweeps (driving case #697's 64-cell patch
+    # sweep, ~2x faster on 8 GPUs than 4). EXPLICIT --intent ONLY: NOT added to
+    # the router auto-ladder (router.py unchanged) — 8x H100 quota in us-central1
+    # is exactly 8 (no concurrency headroom) and 8x A100 is heavy, so auto must
+    # never schedule one. sweep-8g-h100 is a3-highgpu (H100): SPOT / FLEX_START
+    # only (render_create_argv raises on H100 + STANDARD via gpu_kind, inherited).
+    "sweep-8g-a100": MachineSpec(
+        machine_type="a2-ultragpu-8g",
+        gpu_count=8,
+        gpu_kind="A100-80",
+    ),
+    "sweep-8g-h100": MachineSpec(
+        machine_type="a3-highgpu-8g",
+        gpu_count=8,
+        gpu_kind="H100-80",
+    ),
 }
 
 
@@ -442,6 +459,9 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family.
     "a2-ultragpu-1g": frozenset({"us-central1-a", "us-central1-c"}),
     "a2-ultragpu-4g": frozenset({"us-central1-a", "us-central1-c"}),
+    # a2-ultragpu-8g (8x A100-80, #743) — same A2-ultragpu family as the 1g/4g
+    # rows above; us-central1-b does NOT offer the family. Verified 2026-06-29.
+    "a2-ultragpu-8g": frozenset({"us-central1-a", "us-central1-c"}),
     # g2 (L4) + a3-highgpu (H100, BOTH the 1g lora-7b-h100 AND the 2g
     # eval-h100 sizes) ARE offered in all three us-central1 zones — listed
     # for completeness so a future zone change is verified against this
@@ -455,6 +475,9 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     "g2-standard-4": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     "a3-highgpu-1g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     "a3-highgpu-2g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    # a3-highgpu-8g (8x H100-80, #743) — same a3-highgpu family as 1g/2g; offered
+    # in all three us-central1 zones. Verified 2026-06-29.
+    "a3-highgpu-8g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     # A2-highgpu (A100-40) — the #656 cheaper-but-smaller fallback rung.
     # Verified offered in us-central1-{a,b,c,f} (gcloud compute machine-types
     # list --filter="name=a2-highgpu-1g AND zone~us-central1"); -f is listed
