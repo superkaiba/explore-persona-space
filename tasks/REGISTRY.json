@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 744,
+  "highest_id": 745,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4706,6 +4706,13 @@
       "path": "tasks/planning/744",
       "status": "planning",
       "title": "Token-to-token residual-stream continuity and discontinuities across layers in Qwen-2.5-7B"
+    },
+    "745": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/745",
+      "status": "proposed",
+      "title": "workflow-fix: enable hf_transfer for experiment uploads"
     },
     "75": {
       "has_clean_result": true,
