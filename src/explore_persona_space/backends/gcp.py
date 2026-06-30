@@ -34,12 +34,14 @@ What this slice ships
   compute instances list --filter=name=eps-issue-<N>``. If a live instance
   exists, return a handle for it without re-provisioning.
 * :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
-  reaps ``eps-issue-*`` instances on TWO bounded predicates: an age backstop
-  (older than 24h regardless of phase) AND a prompt terminal-phase reap (a
-  RUNNING VM that published ``eps/phase=done``/``failed`` past a short floor
-  is a wedged zombie idle-billing — reaped well under the age fence; incident
-  #634 family). Cron wiring is the orchestrator's responsibility — this
-  exposes the callable that the cron / a ``scripts/`` entry can invoke.
+  reaps ``eps-issue-*`` instances on TWO bounded predicates: a per-instance-
+  fence-aware age backstop (#741 — reaped once the VM exceeds its OWN
+  ``--max-run-duration`` + a 1h grace, or a fixed fallback fence when that
+  field is unreadable) AND a prompt terminal-phase reap (a RUNNING VM that
+  published ``eps/phase=done``/``failed`` past a short floor is a wedged
+  zombie idle-billing — reaped well under the age fence; incident #634
+  family). Cron wiring is the orchestrator's responsibility — this exposes
+  the callable that the cron / a ``scripts/`` entry can invoke.
 * Typed failure classifications: :class:`GcpProvisioningError` (capacity /
   quota / SSH bring-up) → the router falls back to the next tier;
   :class:`GcpWorkloadError` (a real workload exception after the VM is up)
@@ -172,10 +174,16 @@ class GcpConfig:
     * ``default_boot_disk_type`` — ``pd-ssd`` (the ``pd-balanced`` default
       is markedly slower for the model-load + HF-cache write path).
     * ``default_max_run_duration`` — VM auto-delete fence. Defaults to
-      ``24h`` — generous enough to never interrupt an upload but short
-      enough that an orphaned VM caps the credit burn at one day's worth.
-      Tunable per spec via ``RunSpec.time_budget_hours`` (the renderer
-      converts to ``<H>h`` for gcloud).
+      ``7d`` (#741) — the FLEX_START ceiling (the longest the GCP-first
+      auto lane's long-job branch can run; ``_assert_max_run_within_flex_cap``
+      rejects ``>7d``), so a long multi-cell sweep is no longer stranded
+      mid-run by a self-imposed 24h fence (#697 lost 24/64 cells to the old
+      24h default). The credit-leak backstop is now the per-instance-fence-
+      aware janitor age reap (``gcp_audit.py`` + :func:`_janitor_stale_reason`,
+      reaping a VM only once it exceeds its OWN ``--max-run-duration`` + a 1h
+      grace), NOT this fence. Tunable per spec via ``RunSpec.time_budget_hours``
+      / ``spec.extra['max_run_duration']`` (the renderer converts to gcloud
+      duration form).
     * ``vm_scratch_dir`` — workload scratch root on the VM (where the
       sentinel + rsync'd repo land). Mirrors the RunPod ``/workspace``
       convention so workloads share filesystem layout across backends.
@@ -194,7 +202,7 @@ class GcpConfig:
     image_project: str = ""
     default_boot_disk_gb: int = 300
     default_boot_disk_type: str = "pd-ssd"
-    default_max_run_duration: str = "24h"
+    default_max_run_duration: str = "7d"
     vm_scratch_dir: str = "/workspace"
     repo_url: str = ""
     hf_data_repo: str = DEFAULT_HF_DATA_REPO
@@ -520,6 +528,13 @@ DEFAULT_REQUEST_VALID_FOR_DURATION: str = "2h"
 #: VM may run up to seven days). Parsed from the resolved max-run-duration
 #: to fail loud at render rather than mid-provision.
 _FLEX_START_MAX_RUN_SECONDS: int = 7 * 24 * 3600
+
+#: Grace added to an instance's OWN ``--max-run-duration`` before the janitor
+#: age-reaps it (Option B, #741). A VM that exceeds its configured fence by more
+#: than this is genuinely wedged (the ``--instance-termination-action=DELETE``
+#: never fired) and is reaped. Mirrors the short ``terminal_phase_max_age_seconds``
+#: precedent (10 min) — a small post-fence finalize window, not a multi-day wall.
+_JANITOR_FENCE_GRACE_SECONDS: int = 3600
 
 #: gcloud duration suffix → seconds. Bare integers are seconds.
 _DURATION_SUFFIX_SECONDS: dict[str, int] = {"s": 1, "m": 60, "h": 3600, "d": 86400}
@@ -2600,11 +2615,17 @@ def audit_stale_gcp_vms(
     Two reap predicates, both bounded so the sweep never deletes a
     legitimately in-flight VM:
 
-    * **Age backstop** (``max_age_seconds``, default 24h) — any
-      project instance older than the threshold, REGARDLESS of phase
-      (sets ``reason="age"``; the reap-vs-escalate split is decided by
-      classification below). The last-resort fence for a VM whose
-      ``--max-run-duration`` DELETE somehow never fired.
+    * **Age backstop** (per-instance-fence-aware, #741) — an instance is
+      age-stale, REGARDLESS of phase (sets ``reason="age"``; the reap-vs-
+      escalate split is decided by classification below), when EITHER it has
+      a readable ``scheduling.maxRunDuration`` fence and has exceeded that
+      fence + a 1h grace (:data:`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO
+      readable fence and has lived past the fixed ``max_age_seconds`` fallback
+      (the legacy fence, default 8d here to cover the 7d
+      ``default_max_run_duration`` + grace). The last-resort fence for a VM
+      whose ``--max-run-duration`` DELETE somehow never fired — now tracking
+      each instance's OWN fence rather than a single fixed wall-clock (which
+      would re-create #697: a 7d job killed by the janitor's old 24h cap).
     * **Terminal-phase reap** (``terminal_phase_max_age_seconds``, default
       10 min) — a RUNNING instance that has published a TERMINAL
       ``eps/phase`` (``done`` / ``failed``; see
@@ -2688,6 +2709,7 @@ def audit_stale_gcp_vms(
                 age_seconds=age_seconds,
                 max_age_seconds=max_age_seconds,
                 terminal_phase_max_age_seconds=terminal_phase_max_age_seconds,
+                instance_max_run_seconds=_instance_max_run_seconds(inst),  # #741 Option B
             )
 
         record: dict[str, Any] = {
@@ -2716,6 +2738,31 @@ def audit_stale_gcp_vms(
     return records
 
 
+def _instance_max_run_seconds(inst: dict[str, Any]) -> int | None:
+    """Return the instance's configured ``--max-run-duration`` in seconds, or None.
+
+    Reads ``scheduling.maxRunDuration.seconds`` from the instance JSON that
+    ``gcloud compute instances list --format=json`` returns — GCP populates
+    this natively whenever the create passed ``--max-run-duration`` (the v1
+    REST instance schema carries ``scheduling.maxRunDuration: {seconds,
+    nanos}``). gcloud emits ``seconds`` as either an int or a numeric string,
+    so both are accepted; any other shape (absent block, junk value) returns
+    None so the caller falls back to the fixed ``max_age_seconds`` fence — the
+    backstop never silently disarms on a missing or malformed field.
+    """
+    sched = inst.get("scheduling")
+    if not isinstance(sched, dict):
+        return None
+    mrd = sched.get("maxRunDuration")
+    if not isinstance(mrd, dict):
+        return None
+    raw = mrd.get("seconds")
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def _janitor_stale_reason(
     *,
     cfg: GcpConfig,
@@ -2726,21 +2773,37 @@ def _janitor_stale_reason(
     age_seconds: float | None,
     max_age_seconds: int,
     terminal_phase_max_age_seconds: int,
+    instance_max_run_seconds: int | None,
 ) -> tuple[str | None, str | None]:
     """Decide whether a janitor instance is stale, and why → ``(phase, reason)``.
+
+    Age backstop (Option B, #741): an instance is age-stale when EITHER it has
+    a readable ``--max-run-duration`` fence (``instance_max_run_seconds``, from
+    :func:`_instance_max_run_seconds`) and has exceeded that fence + a 1h grace
+    (:data:`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO readable fence and has
+    lived past the fixed ``max_age_seconds`` fallback (the legacy fence, raised
+    to 8d to cover the 7d default + grace). This makes the age backstop track
+    each instance's OWN fence — a 24h job reaps at ~25h, a 7d job at ~7d+1h, a
+    truly-wedged-never-terminal VM at its-fence+grace — instead of a single
+    fixed wall-clock that would re-create the #697 bug (a 7d job killed by the
+    janitor's fixed 24h cap).
 
     ``reason`` ∈ {``"age"``, ``"terminal-phase"``, ``None``}. The phase probe
     fires ONLY for a RUNNING VM that is NOT already age-reaped and has lived
     past the terminal-phase floor — a terminal-phase RUNNING zombie is reaped
-    promptly, well under the 24h age backstop. A guest-attribute probe FAILURE
-    ("couldn't ask" ≠ "done") is caught, logged, and falls through to the age
-    backstop — a probe blip never escalates a still-unknown VM and never
+    promptly, well under the age backstop. A guest-attribute probe FAILURE
+    ("couldn't ask" ≠ "done") is caught, logged, and falls through (returns
+    not-stale) — a probe blip never escalates a still-unknown VM and never
     crashes the inventory sweep.
     """
     phase: str | None = None
-    old_enough = age_seconds is not None and age_seconds >= max_age_seconds
-    if old_enough:
-        return None, "age"
+    if age_seconds is not None:
+        if instance_max_run_seconds is not None:
+            age_fence = instance_max_run_seconds + _JANITOR_FENCE_GRACE_SECONDS
+        else:
+            age_fence = max_age_seconds
+        if age_seconds >= age_fence:
+            return None, "age"
     should_probe_phase = (
         status.upper() == "RUNNING"
         and age_seconds is not None

@@ -150,7 +150,11 @@ def test_cli_high_terminal_phase_floor_keeps_terminal_phase_vm(monkeypatch, caps
         delete_results=[GcloudRunResult(0, "", "")],
     )
     _pin_now(monkeypatch, runner=runner)
-    rc = cli.main(["--delete", "--terminal-phase-max-age-min=60", "--json"])
+    # #741: the CLI fallback-fence default is now 192h, so a 30h no-scheduling
+    # fixture would no longer age-reap under the default; pin the OLD 24h fence
+    # explicitly to preserve this test's intent (it tests the terminal-phase
+    # FLOOR threading, NOT the age-fence default value).
+    rc = cli.main(["--delete", "--terminal-phase-max-age-min=60", "--max-age-hours=24", "--json"])
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     by = {r["name"]: r for r in out["records"]}
@@ -172,7 +176,7 @@ def test_cli_delete_failed_returns_rc2(monkeypatch, capsys) -> None:
         delete_results=[GcloudRunResult(1, "", "Internal error. Please try again.")],
     )
     _pin_now(monkeypatch, runner=runner)
-    rc = cli.main(["--delete", "--json"])
+    rc = cli.main(["--delete", "--max-age-hours=24", "--json"])  # #741: pin OLD fence
     out = json.loads(capsys.readouterr().out)
     assert rc == 2
     assert out["records"][0]["action"] == "delete-failed"
@@ -254,7 +258,7 @@ def test_cli_unmanaged_under_delete_escalates_rc0(monkeypatch, capsys, tmp_path)
         list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
     )
     _pin_now(monkeypatch, runner=runner)
-    rc = cli.main(["--delete", "--json"])
+    rc = cli.main(["--delete", "--max-age-hours=24", "--json"])  # #741: pin OLD fence
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     rec = out["records"][0]
@@ -284,7 +288,7 @@ def test_cli_unmanaged_report_only_would_escalate_no_side_effect(
         list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
     )
     _pin_now(monkeypatch, runner=runner)
-    rc = cli.main(["--json"])  # no --delete
+    rc = cli.main(["--max-age-hours=24", "--json"])  # no --delete; #741: pin OLD fence
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     assert out["records"][0]["action"] == "would-escalate"
@@ -357,7 +361,7 @@ def test_cli_telegram_push_failure_is_fail_soft(monkeypatch, capsys, tmp_path) -
         list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
     )
     _pin_now(monkeypatch, runner=runner)
-    rc = cli.main(["--delete", "--json"])
+    rc = cli.main(["--delete", "--max-age-hours=24", "--json"])  # #741: pin OLD fence
     out = json.loads(capsys.readouterr().out)
     assert rc == 0  # push failure never bumps the exit code
     assert out["records"][0]["action"] == "escalated"
@@ -378,7 +382,7 @@ def test_cli_telegram_push_script_missing_is_fail_soft(monkeypatch, capsys, tmp_
         list_results=[GcloudRunResult(0, payload, ""), GcloudRunResult(0, payload, "")],
     )
     _pin_now(monkeypatch, runner=runner)
-    rc = cli.main(["--delete", "--json"])
+    rc = cli.main(["--delete", "--max-age-hours=24", "--json"])  # #741: pin OLD fence
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     assert out["records"][0]["action"] == "escalated"
@@ -398,7 +402,7 @@ def test_cli_report_only_default_issues_no_delete(monkeypatch, capsys) -> None:
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
     )
     _pin_now(monkeypatch, runner=runner)
-    rc = cli.main(["--json"])
+    rc = cli.main(["--max-age-hours=24", "--json"])  # #741: pin OLD fence for the 30h fixture
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     by = {r["name"]: r for r in out["records"]}
@@ -417,9 +421,22 @@ def test_cli_dry_run_env_neuters_delete(monkeypatch, capsys) -> None:
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
     )
     _pin_now(monkeypatch, runner=runner)
-    rc = cli.main(["--delete", "--json"])
+    rc = cli.main(["--delete", "--max-age-hours=24", "--json"])  # #741: pin OLD fence
     out = json.loads(capsys.readouterr().out)
     assert rc == 0
     by = {r["name"]: r for r in out["records"]}
     assert by["eps-issue-100"]["action"] == "would-delete"  # NOT "deleted"
     assert not any("delete" in c and "instances" in c for c in runner.calls)
+
+
+# ---------------------------------------------------------------------------
+# #741: the --max-age-hours FALLBACK fence default raised 24.0 → 192.0 (8d).
+# ---------------------------------------------------------------------------
+def test_cli_max_age_hours_default_is_192() -> None:
+    """The fixed-fallback age fence default is 192h = 8d (covers the 7d
+    default_max_run_duration + a 24h margin), used only for an instance with no
+    readable scheduling.maxRunDuration; the primary backstop is now
+    per-instance-fence-aware."""
+    parser = cli.build_parser()
+    args = parser.parse_args([])
+    assert args.max_age_hours == 192.0

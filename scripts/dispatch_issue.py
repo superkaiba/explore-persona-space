@@ -771,8 +771,8 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
     if getattr(args, "max_run_duration", None):
         # GCP-only knob: the instance-create renderer reads
-        # spec.extra["max_run_duration"], falling back to the 24h
-        # GcpConfig.default_max_run_duration. Before this flag a plan's
+        # spec.extra["max_run_duration"], falling back to the 7d
+        # GcpConfig.default_max_run_duration (#741). Before this flag a plan's
         # declared auto-delete fence (#628: 30h for a worst-case 20h
         # wall) had no CLI path from the /issue Step 6b launch. Inert
         # on SLURM / RunPod lanes.
@@ -933,7 +933,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
                 "scripts via --workload-cmd. Name a residual gap in the launch note — "
                 "70B intents (no GCP machine-type mapping) / interactive SSH-MCP "
                 "experimenter orchestration / runs longer than GCP --max-run-duration "
-                "(default 24h) / SLURM venv-extras mismatch — or drop the override and "
+                "(default 7d) / SLURM venv-extras mismatch — or drop the override and "
                 "let auto route. Launch continues; the epm:backend-selected marker "
                 "carries extra.override_without_frontmatter=true so the bypass is "
                 "visible on the events trail.",
@@ -1543,11 +1543,13 @@ def _build_argparser() -> argparse.ArgumentParser:
             "spec.extra['max_run_duration'], read by the instance-create "
             "renderer next to --instance-termination-action=DELETE). "
             "gcloud duration shape — integer+unit groups, e.g. '30h', "
-            "'1d12h', '90m'. The 24h default "
-            "(GcpConfig.default_max_run_duration) deletes a >20h workload "
-            "mid-run; thread the plan's declared fence on EVERY gcp/auto "
-            "launch of a long workload (issue 628: a 30h fence for a "
-            "worst-case 20h wall had no CLI path). Inert on non-GCP lanes."
+            "'1d12h', '90m'. The 7d default "
+            "(GcpConfig.default_max_run_duration, #741) lets a multi-day "
+            "workload run to the FLEX_START ceiling without being stranded "
+            "mid-run (#697); pin a SHORTER fence here to bound an orphaned VM "
+            "sooner. A workload genuinely needing >7d cannot run on the GCP "
+            "FLEX_START lane at all (7d is the GCP ceiling) — pin "
+            "backend: runpod. Inert on non-GCP lanes."
         ),
     )
     launch.add_argument(

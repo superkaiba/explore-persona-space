@@ -171,8 +171,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--max-age-hours",
         type=float,
-        default=24.0,
-        help="EXITED/old VMs older than this many hours are reaped (default: 24).",
+        default=192.0,  # 8d = 7d default fence + 24h margin (#741)
+        help=(
+            "FALLBACK age fence (hours) for instances WITHOUT a readable "
+            "scheduling.maxRunDuration (legacy / probe gap). The primary age "
+            "backstop is now per-instance-fence-aware — an instance is reaped "
+            "once it exceeds its OWN --max-run-duration + a 1h grace (see "
+            "_janitor_stale_reason). 192h = 8d covers the 7d default fence + "
+            "margin (default: 192)."
+        ),
     )
     p.add_argument(
         "--terminal-phase-max-age-min",
