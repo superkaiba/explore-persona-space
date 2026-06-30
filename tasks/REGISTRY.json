@@ -4866,8 +4866,8 @@
     "765": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/765",
-      "status": "approved",
+      "path": "tasks/reviewing/765",
+      "status": "reviewing",
       "title": "Codify LLM-judging guidelines (.claude/rules/llm-judging.md) + lint check + measurement-rule amendment"
     },
     "766": {
