@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 750,
+  "highest_id": 762,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4762,6 +4762,13 @@
       "path": "tasks/completed/76",
       "status": "completed",
       "title": "Standardize pod venv to explore-persona-space/.venv; remove make-evil-dumb/.venv; add venv preflight check"
+    },
+    "762": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/762",
+      "status": "completed",
+      "title": "workflow-fix: document HF Hub per-org 2500-req-per-5-min rate limit (429) in gotchas.md"
     },
     "77": {
       "has_clean_result": true,
