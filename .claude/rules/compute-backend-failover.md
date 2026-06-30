@@ -359,17 +359,50 @@ session-independent) closes that gap with a wedge arm in `_process_pod`:
   idempotency for free by calling that function. A reversible `pod.py stop` was
   the pre-#770 action but cannot heal a host-pinned dead RunPod host —
   `resume_pod` returns to the SAME dead host (#763) — which is why the promotion
-  was made. The dispatch maps the poller's terminal-JSON contract to five
-  outcomes: `failover` (fresh pod re-provisioned), `already-handled`
-  (bounded-once short-circuit), `no-capacity` (terminated; RunPod unavailable →
-  terminal `no_compute_available`, the capacity-retry pass re-drives), `blocked`
-  (a PARTIAL cell / sidecar-persistence failure / legacy handle → a terminal
-  infra block a human resolves, halt-criterion #2 — the refusal lives inside
-  `_failover_wedged_runpod`, the watcher itself never terminates on this branch),
-  and `alert` (NO reconstructable handle, or the failover call raised → degrade
-  to ALERT-only, NEVER a blind terminate; fail-soft so one wedged pod's failover
-  error never crashes the 10-min tick). The reversible `_stop_pod` is RETAINED
-  for the status-class DONE escaped-pod arm (below), NOT the wedge arm.
+  was made. `_wedge_failover` returns `(outcome, terminal_json)` (the poller's
+  raw terminal-JSON dict, carrying `failure_class`/`reason`, or `None` on the
+  alert/dry-run paths), and the dispatch maps the poller's terminal-JSON
+  contract to five outcomes:
+  - `failover` (fresh pod re-provisioned) → a generic `epm:progress` note.
+  - `already-handled` (bounded-once short-circuit on the lease/sentinel — OR the
+    SIDECAR-BINDING DEFENSE below) → a generic `epm:progress` note, no terminate.
+  - `no-capacity` (terminated; RunPod unavailable → terminal
+    `no_compute_available`) AND `blocked` (a terminal infra block a human
+    resolves, halt-criterion #2) are BOTH terminal infra JSONs, so the watcher —
+    the ACTOR here, the poll loop being dead — MIRRORS the poller's own path on
+    that JSON: it posts `epm:failure v1` carrying the EXACT
+    `failure_class`/`reason` from `terminal_json` (in the whitespace-token shape
+    `_parse_failure_fields` reads) AND `set-status <N> blocked` (#770 r2,
+    CRITICAL #1). This is what lets the watcher's capacity-retry pass re-drive
+    the re-drivable `no_compute_available` block (it keys on the latest
+    `epm:failure` marker's `failure_class`+`reason` ∈ `TRANSIENT_CAPACITY_REASONS`)
+    and leave the non-capacity `blocked` reasons parked for a human — exactly as
+    if the poller had emitted the same JSON. The three `blocked` reasons differ
+    on whether the pod terminated, so the marker text is NOT uniform (#770 r2,
+    CONCERN #3): `runpod_wedge_inputs_unverified` is PRE-terminate (a PARTIAL
+    cell → the pod was NOT terminated, still RUNNING until a human acts), while
+    `sidecar_persistence_failed` and `runpod_wedge_relaunch_spec_missing` are
+    POST-terminate (the wedged pod WAS terminated; the failure is in the fresh
+    re-provision). The terminate decision itself still lives entirely inside
+    `_failover_wedged_runpod`; the watcher never calls a SECOND terminate.
+  - `alert` (NO reconstructable handle, the sidecar names a DIFFERENT pod than
+    the wedged one, or the failover call raised → degrade to ALERT-only, NEVER a
+    blind terminate; fail-soft so one wedged pod's failover error never crashes
+    the 10-min tick).
+
+  The reversible `_stop_pod` is RETAINED for the status-class DONE escaped-pod
+  arm (below), NOT the wedge arm.
+- **Sidecar-binding defense — the fresh-pod race (#770 r2, CRITICAL #2).**
+  Between `_wedge_inputs_safe`'s sidecar read (which verified inputs against the
+  OLD wedged handle) and `_wedge_failover`'s re-read, a revived poller
+  (crash-recovery / capacity-retry respawn) could have ALREADY failed the wedge
+  over and re-pointed the sidecar at a FRESH, HEALTHY pod. The bounded-once
+  lease/sentinel inside `_failover_wedged_runpod` is keyed on the FRESH handle's
+  identity, so it would NOT catch this — the watcher would terminate a healthy
+  fresh pod. Defense: immediately after the re-read, `_wedge_failover` asserts
+  the freshly-read `handle.pod_name == info.name` (the wedged pod the watcher
+  observed). A mismatch → return `already-handled` and NEVER call
+  `_failover_wedged_runpod` against it.
 - **DONE-task ordering.** A wedged pod whose task is at a DONE status
   (`completed` / `awaiting_promotion` / `archived`) FALLS THROUGH to the
   existing status-class DONE auto-stop arm (the canonical escaped-pod handler) —
@@ -383,7 +416,18 @@ the `terminate-failover` decision + invariant, the maturity-axis SR3 sweep, the
 `_wedge_failover` outcome mapping — failover / already-handled / no-capacity /
 blocked / alert-degrade — the dry-run no-side-effects contract, the SR1
 cross-module reason-string parity, and the SR2 blocked-not-terminated +
-clock-cleared end-to-end) + the direct predicate test
+clock-cleared end-to-end; #770 r2:
+`test_wedge_no_capacity_emits_failure_marker_and_blocks_redrivable` (CRITICAL #1
+— the no-capacity terminal JSON posts `epm:failure` + `set-status blocked` and
+PARSES into a transient-capacity block via the real `_is_transient_capacity_block`
+the capacity-retry pass uses),
+`test_wedge_blocked_emits_failure_marker_and_blocks_not_redrivable` (a
+non-capacity `blocked` reason blocks but is NOT re-drivable),
+`test_wedge_blocked_marker_text_terminate_state_by_reason` (CONCERN #3 — the
+marker text states the right terminate-state per reason),
+`test_wedge_failover_sidecar_pod_name_mismatch_is_already_handled` +
+`test_wedge_failover_sidecar_pod_name_match_proceeds` (CRITICAL #2 — the
+sidecar-binding defense)) + the direct predicate test
 `tests/test_runpod_wedge_detection.py::test_pod_is_runpod_runtime_wedged_predicate`.
 
 ## Part D — RunPod CUDA-IMA repeat host wedge (#775)

@@ -371,6 +371,7 @@ def _patch_wedge_io(
     keep_running="unknown",
     inputs_ok=False,
     failover_outcome="failover",
+    failover_terminal=None,
 ):
     """Monkeypatch the wedge arm's I/O: task status, the tri-state keep-running
     read, the inputs-on-HF gate, and the action helpers. Returns the recorders
@@ -378,12 +379,19 @@ def _patch_wedge_io(
 
     ``_stop_pod`` is recorded so a test can assert the wedge arm NEVER calls it
     after #770 (the confirmed provably-safe path is terminate+failover, not
-    stop). ``_wedge_failover`` is stubbed to record its issue and return
-    ``failover_outcome`` — the end-to-end tests exercise the DISPATCH branch
-    (marker/state) on each outcome; the helper's own outcome logic is unit-tested
-    separately against a stubbed ``backend_poll._failover_wedged_runpod``."""
+    stop). ``_wedge_failover`` is stubbed to record its issue and return the
+    ``(failover_outcome, failover_terminal)`` tuple — the end-to-end tests
+    exercise the DISPATCH branch (marker/state) on each outcome; the helper's
+    own outcome logic is unit-tested separately against a stubbed
+    ``backend_poll._failover_wedged_runpod``.
+
+    ``posts`` records progress-marker calls as ``(issue, label)``, epm:failure
+    calls as ``(issue, "FAILURE", note)``, and set-status-blocked calls as
+    ``(issue, "BLOCKED")`` — one ordered stream so a test can assert both the
+    failure marker AND the status change fired (the no-capacity/blocked
+    redrive contract), plus that the failure marker preceded the clock-clear."""
     stops: list[int] = []
-    posts: list[tuple[int, str]] = []
+    posts: list[tuple] = []
     failovers: list[int] = []
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: keep_running)
@@ -392,12 +400,24 @@ def _patch_wedge_io(
     monkeypatch.setattr(
         asw,
         "_wedge_failover",
-        lambda issue, info, wedged_h, dry_run: failovers.append(issue) or failover_outcome,
+        lambda issue, info, wedged_h, dry_run: (
+            failovers.append(issue) or (failover_outcome, failover_terminal)
+        ),
     )
     monkeypatch.setattr(
         asw,
         "_post_progress_marker",
         lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_failure_marker",
+        lambda issue, note, dry_run: posts.append((issue, "FAILURE", note)),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_set_status_blocked",
+        lambda issue, dry_run: posts.append((issue, "BLOCKED")) or True,
     )
     # Guard: a non-wedge fall-through path must not touch the status-class I/O
     # in these wedge tests (they all pass a wedged info + non-DONE status).
@@ -760,8 +780,10 @@ def test_wedge_failover_dispatches_failover_fn(monkeypatch, tmp_path):
     # (current_phase + log_tail_excerpt), and the resolved `sidecar` path.
     sidecar = _stub_handle_sidecar(monkeypatch, tmp_path)
     calls = _stub_failover_fn(monkeypatch, returns={"status": "running"})
-    out = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
-    assert out == "failover"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "failover"
+    # The running-shaped success carries the recovery's terminal JSON dict.
+    assert terminal == {"status": "running"}
     assert len(calls) == 1
     c = calls[0]
     assert c["issue"] == 692
@@ -777,8 +799,9 @@ def test_wedge_failover_no_handle_degrades_to_alert(monkeypatch, tmp_path):
     # _failover_wedged_runpod (never terminates blind).
     _stub_handle_sidecar(monkeypatch, tmp_path, exists=False)
     calls = _stub_failover_fn(monkeypatch, returns={"status": "running"})
-    out = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
-    assert out == "alert"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "alert"
+    assert terminal is None  # no recovery dict in scope on the alert degrade
     assert calls == []  # never reached the failover call
 
 
@@ -786,8 +809,9 @@ def test_wedge_failover_handle_read_raises_degrades_to_alert(monkeypatch, tmp_pa
     # item 8: read_handle_sidecar raises -> "alert", no failover call.
     _stub_handle_sidecar(monkeypatch, tmp_path, read_raises=RuntimeError("parse boom"))
     calls = _stub_failover_fn(monkeypatch, returns={"status": "running"})
-    out = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
-    assert out == "alert"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "alert"
+    assert terminal is None
     assert calls == []
 
 
@@ -796,8 +820,9 @@ def test_wedge_failover_raises_degrades_to_alert(monkeypatch, tmp_path):
     # crash of the whole watcher tick), no double-action.
     _stub_handle_sidecar(monkeypatch, tmp_path)
     _stub_failover_fn(monkeypatch, raises=RuntimeError("router exploded"))
-    out = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
-    assert out == "alert"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "alert"
+    assert terminal is None
 
 
 def test_wedge_failover_already_handled_is_noop(monkeypatch, tmp_path):
@@ -811,8 +836,9 @@ def test_wedge_failover_already_handled_is_noop(monkeypatch, tmp_path):
     _stub_failover_fn(
         monkeypatch, returns={"status": "dead", "reason": "runpod_wedge_already_handled"}
     )
-    out = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
-    assert out == "already-handled"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "already-handled"
+    assert terminal == {"status": "dead", "reason": "runpod_wedge_already_handled"}
 
 
 def test_wedge_failover_no_capacity_terminal(monkeypatch, tmp_path):
@@ -821,8 +847,11 @@ def test_wedge_failover_no_capacity_terminal(monkeypatch, tmp_path):
     # re-arm here).
     _stub_handle_sidecar(monkeypatch, tmp_path)
     _stub_failover_fn(monkeypatch, returns={"status": "dead", "reason": "no_compute_available"})
-    out = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
-    assert out == "no-capacity"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "no-capacity"
+    # The terminal JSON is propagated so the caller can mirror the poller's
+    # epm:failure (failure_class + reason) — see test_wedge_no_capacity_*.
+    assert terminal == {"status": "dead", "reason": "no_compute_available"}
 
 
 def test_wedge_failover_inputs_unverified_blocks(monkeypatch, tmp_path):
@@ -833,8 +862,9 @@ def test_wedge_failover_inputs_unverified_blocks(monkeypatch, tmp_path):
     _stub_failover_fn(
         monkeypatch, returns={"status": "dead", "reason": "runpod_wedge_inputs_unverified"}
     )
-    out = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
-    assert out == "blocked"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "blocked"
+    assert terminal == {"status": "dead", "reason": "runpod_wedge_inputs_unverified"}
 
 
 def test_wedge_failover_dry_run_no_side_effects(monkeypatch, tmp_path):
@@ -842,8 +872,9 @@ def test_wedge_failover_dry_run_no_side_effects(monkeypatch, tmp_path):
     # _failover_wedged_runpod (no real terminate / re-provision).
     _stub_handle_sidecar(monkeypatch, tmp_path)
     calls = _stub_failover_fn(monkeypatch, returns={"status": "running"})
-    out = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=True)
-    assert out == "failover"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=True)
+    assert outcome == "failover"
+    assert terminal is None  # dry-run short-circuits BEFORE any recovery dict
     assert calls == []  # dry-run never calls the irreversible recovery
 
 
@@ -904,21 +935,25 @@ def test_wedge_failover_reason_strings_match_backend_poll_source():
 )
 def test_wedge_failover_all_blocked_reasons_map_to_blocked(monkeypatch, tmp_path, reason):
     # SR1 (companion): every non-success, non-already-handled, non-no-capacity
-    # terminal reason backend_poll can emit maps to the "blocked" outcome.
+    # terminal reason backend_poll can emit maps to the "blocked" outcome AND
+    # carries its terminal JSON (so the caller can mirror the poller's epm:failure
+    # with the exact reason — pinned by test_wedge_blocked_emits_failure_*).
     _stub_handle_sidecar(monkeypatch, tmp_path)
     _stub_failover_fn(monkeypatch, returns={"status": "dead", "reason": reason})
-    assert asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False) == "blocked"
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "blocked"
+    assert terminal == {"status": "dead", "reason": reason}
 
 
 def test_wedge_blocked_outcome_not_terminated_by_watcher_clock_cleared(
     isolated_registry, monkeypatch
 ):
-    # SR2: on outcome == "blocked" the WATCHER itself does NOT terminate the pod
-    # (the terminate decision lives entirely inside _failover_wedged_runpod, which
-    # for a "blocked" reason did NOT terminate) — i.e. the watcher never calls
-    # _stop_pod, and it clears the wedge clock (the human is the resolver, so a
-    # re-stamp that re-fires next tick is wrong). The end-to-end dispatch is
-    # exercised via the stubbed _wedge_failover returning "blocked".
+    # SR2: on outcome == "blocked" the WATCHER itself does NOT reversibly stop the
+    # pod (the terminate decision lives entirely inside _failover_wedged_runpod) —
+    # it mirrors the poller's path on a terminal infra JSON (epm:failure +
+    # set-status blocked, CRITICAL #1) and clears the wedge clock (the human is the
+    # resolver, so a re-stamp that re-fires next tick is wrong). The end-to-end
+    # dispatch is exercised via the stubbed _wedge_failover returning "blocked".
     now = 1_000_000.0
     asw._save_pod_safety_state(
         692,
@@ -937,11 +972,21 @@ def test_wedge_blocked_outcome_not_terminated_by_watcher_clock_cleared(
         keep_running=False,
         inputs_ok=True,
         failover_outcome="blocked",
+        failover_terminal={
+            "status": "dead",
+            "failure_class": "infra",
+            "reason": "runpod_wedge_inputs_unverified",
+        },
     )
     asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
     assert failovers == [692]  # the failover recovery WAS consulted
     assert stops == []  # but the watcher itself NEVER reversibly stops the pod
-    assert "wedge-failover" in [label for _i, label in posts]
+    # A terminal infra block is recorded as epm:failure + status:blocked (NOT a
+    # plain wedge-failover progress note).
+    tags = [t[1] for t in posts]
+    assert "FAILURE" in tags
+    assert "BLOCKED" in tags
+    assert "wedge-failover" not in tags
     # The wedge clock IS cleared (the human resolves the terminal block; a
     # re-stamp would re-fire the failover every tick).
     loaded = asw._load_pod_safety_state(692)
@@ -949,3 +994,208 @@ def test_wedge_blocked_outcome_not_terminated_by_watcher_clock_cleared(
     assert loaded["wedge_missed"] == 0
     # The pod-incarnation first_seen GC anchor survives.
     assert loaded["first_seen"] == now - (K + 50.0)
+
+
+# ===========================================================================
+# 8. Round-2 review fixes (#770 r2): the terminal-infra-JSON redrive contract
+#    (CRITICAL #1), the sidecar-binding fresh-pod defense (CRITICAL #2), and the
+#    per-reason "blocked" marker text (CONCERN #3).
+# ===========================================================================
+
+
+def _matured_confirming_state(now):
+    """Persist the wedge state one tick BEFORE the confirming transition (so the
+    next _process_pod tick at threshold=2 fires the terminate-failover action)."""
+    asw._save_pod_safety_state(
+        692,
+        "p692",
+        missed=0,
+        alerted=False,
+        last_progress_ts=None,
+        wedge_first_seen=now - (K + 50.0),
+        wedge_missed=1,
+        wedge_alerted=False,
+        prev={"first_seen": now - (K + 50.0), "pod_id": "p692"},
+    )
+
+
+def _patch_real_marker_recorders(monkeypatch, *, outcome, terminal):
+    """Patch the wedge arm's I/O EXCEPT _post_failure_marker / _set_status_blocked
+    (which are RECORDED with their real call args, so the failure-note shape can
+    be parsed) and _wedge_failover (stubbed to return (outcome, terminal)).
+    Returns (failure_notes, blocked_calls, progress_labels)."""
+    failure_notes: list[str] = []
+    blocked_calls: list[int] = []
+    progress_labels: list[str] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_stop_pod",
+        lambda issue, dry_run: (_ for _ in ()).throw(
+            AssertionError("watcher must never _stop_pod")
+        ),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_wedge_failover",
+        lambda issue, info, wedged_h, dry_run: (outcome, terminal),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_failure_marker",
+        lambda issue, note, dry_run: failure_notes.append(note),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_set_status_blocked",
+        lambda issue, dry_run: blocked_calls.append(issue) or True,
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: progress_labels.append(label),
+    )
+    return failure_notes, blocked_calls, progress_labels
+
+
+def test_wedge_no_capacity_emits_failure_marker_and_blocks_redrivable(
+    isolated_registry, monkeypatch
+):
+    # CRITICAL #1: the no-capacity terminal JSON (terminated, RunPod unavailable)
+    # is recorded as epm:failure v1 (failure_class: infra reason: no_compute_available)
+    # AND the task is set to status:blocked — so the capacity-retry pass re-drives
+    # it. Asserts (a) _post_failure_marker fired, (b) _set_status_blocked fired,
+    # (c) the posted note PARSES into a transient-capacity block (the predicate the
+    # capacity-retry pass actually keys on returns True).
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+    failure_notes, blocked_calls, progress_labels = _patch_real_marker_recorders(
+        monkeypatch,
+        outcome="no-capacity",
+        terminal={"status": "dead", "failure_class": "infra", "reason": "no_compute_available"},
+    )
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    # (a) + (b): the marker and the status change both fired.
+    assert len(failure_notes) == 1
+    assert blocked_calls == [692]
+    # A no-capacity terminal is NOT a plain progress note.
+    assert "wedge-failover" not in progress_labels
+    # (c) the posted note PARSES as a transient-capacity block via the REAL parser
+    # + classifier the capacity-retry pass uses (so a re-drive WOULD fire).
+    fc, reason = asw._parse_failure_fields(failure_notes[0])
+    assert fc == "infra"
+    assert reason == "no_compute_available"
+    synthetic_marker = {"kind": "epm:failure v1", "note": failure_notes[0], "ts": None}
+    retriable, parsed_reason, _block_ts = asw._is_transient_capacity_block([synthetic_marker])
+    assert retriable is True
+    assert parsed_reason == "no_compute_available"
+    # The wedge clock is cleared (recorded as a terminal failure now).
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] is None
+
+
+def test_wedge_blocked_emits_failure_marker_and_blocks_not_redrivable(
+    isolated_registry, monkeypatch
+):
+    # CRITICAL #1 companion: a "blocked" terminal JSON (a non-capacity infra
+    # reason) ALSO emits epm:failure + set-status blocked — but its reason is NOT
+    # in TRANSIENT_CAPACITY_REASONS, so the capacity-retry classifier leaves it
+    # parked for a human (retriable False), mirroring the poller's own path.
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+    failure_notes, blocked_calls, _progress = _patch_real_marker_recorders(
+        monkeypatch,
+        outcome="blocked",
+        terminal={
+            "status": "dead",
+            "failure_class": "infra",
+            "reason": "sidecar_persistence_failed",
+        },
+    )
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    assert len(failure_notes) == 1
+    assert blocked_calls == [692]
+    synthetic_marker = {"kind": "epm:failure v1", "note": failure_notes[0], "ts": None}
+    retriable, parsed_reason, _ = asw._is_transient_capacity_block([synthetic_marker])
+    assert retriable is False  # a human resolves; the capacity-retry pass never re-drives it
+    assert parsed_reason == "sidecar_persistence_failed"
+
+
+@pytest.mark.parametrize(
+    ("reason", "claims_not_terminated"),
+    [
+        # PRE-terminate: the PARTIAL-cell refusal happens BEFORE the terminate.
+        ("runpod_wedge_inputs_unverified", True),
+        # POST-terminate: the wedged pod WAS terminated; the re-provision failed.
+        ("sidecar_persistence_failed", False),
+        ("runpod_wedge_relaunch_spec_missing", False),
+    ],
+)
+def test_wedge_blocked_marker_text_terminate_state_by_reason(
+    isolated_registry, monkeypatch, reason, claims_not_terminated
+):
+    # CONCERN #3: the grouped "blocked" marker must NOT claim "did NOT terminate"
+    # for the POST-terminate reasons (sidecar_persistence_failed,
+    # runpod_wedge_relaunch_spec_missing) — those terminated the pod. Only the
+    # PRE-terminate inputs_unverified reason says the pod is still running.
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+    failure_notes, _blocked, _progress = _patch_real_marker_recorders(
+        monkeypatch,
+        outcome="blocked",
+        terminal={"status": "dead", "failure_class": "infra", "reason": reason},
+    )
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+    assert len(failure_notes) == 1
+    note = failure_notes[0].lower()
+    if claims_not_terminated:
+        assert "did not terminate" in note
+        assert "still running" in note  # the pod is still billing until a human acts
+    else:
+        # POST-terminate: must NOT claim it did not terminate; must state it WAS.
+        assert "did not terminate" not in note
+        assert "terminated the wedged pod" in note
+    # The reason is named in the note either way (mirrors the poller's path).
+    assert reason in failure_notes[0]
+
+
+def test_wedge_failover_sidecar_pod_name_mismatch_is_already_handled(monkeypatch, tmp_path):
+    # CRITICAL #2: between _wedge_inputs_safe's read and _wedge_failover's re-read,
+    # a revived poller could re-point the sidecar at a FRESH, HEALTHY pod. The
+    # bounded-once lease inside _failover_wedged_runpod is keyed on the FRESH
+    # handle, so it would NOT catch this. Defense: the helper asserts the
+    # freshly-read handle.pod_name == info.name; a mismatch => "already-handled"
+    # and _failover_wedged_runpod is NEVER called (never terminate the fresh pod).
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    sidecar = tmp_path / "issue-692-handle.json"
+    sidecar.write_text("{}")
+    monkeypatch.setattr(idp, "resolve_handle_sidecar_path", lambda issue: (sidecar, [sidecar]))
+
+    class _FreshHandle:
+        # The sidecar now names a DIFFERENT (fresh) pod than the wedged one.
+        pod_name = "pod-692-FRESH"
+        job_id = "j692-fresh"
+
+    monkeypatch.setattr(idp, "read_handle_sidecar", lambda path: _FreshHandle())
+    calls = _stub_failover_fn(monkeypatch, returns={"status": "running"})
+
+    # info.name is the WEDGED pod the watcher observed ("pod-692").
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "already-handled"  # never terminate the fresh pod
+    assert terminal is None
+    assert calls == []  # _failover_wedged_runpod NEVER called against the fresh handle
+
+
+def test_wedge_failover_sidecar_pod_name_match_proceeds(monkeypatch, tmp_path):
+    # CRITICAL #2 (positive control): when the freshly-read handle still names the
+    # WEDGED pod (the normal case), the helper proceeds to call
+    # _failover_wedged_runpod — the binding defense does not block the real path.
+    _stub_handle_sidecar(monkeypatch, tmp_path)  # _Handle.pod_name == "pod-692" == info.name
+    calls = _stub_failover_fn(monkeypatch, returns={"status": "running"})
+    outcome, _terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "failover"
+    assert len(calls) == 1  # the matching pod_name proceeds to the recovery
