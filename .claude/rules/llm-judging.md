@@ -5,8 +5,9 @@ behavior-expression dependent variable** (sycophancy, refusal, hedging,
 style, trait, alignment/EM verdict — any DV where an LLM scores whether a
 model output expresses a target behavior). The always-on backstop is the
 CLAUDE.md "Measurement validity" bullet + the "LLM judge =
-`claude-sonnet-4-5-20250929`" bullet; this file is the full 18-guideline
-recipe those bullets point at, in the on-demand register.
+`claude-sonnet-4-5-20250929`" bullet; this file is the full 20-guideline
+recipe those bullets point at (the 18 judge-scoring guidelines plus the
+two-rule § E2 continuous-companion-DV recipe), in the on-demand register.
 
 Cross-links: `.claude/rules/persona-vectors-recipe.md` (the graded-judge
 precedent — its rubric is a 0–100 trait score), CLAUDE.md § Measurement
