@@ -4759,8 +4759,8 @@
     "751": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/751",
-      "status": "proposed",
+      "path": "tasks/planning/751",
+      "status": "planning",
       "title": "daily-fix: failover relaunch must sync new pod into pods.conf"
     },
     "752": {
