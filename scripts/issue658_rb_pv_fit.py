@@ -234,34 +234,73 @@ def _extract_score_from_verdict(v) -> int | None:
 # ── PV-extract store loaders ──────────────────────────────────────────────────
 
 
-def load_pv_extract_store(pv_store_dir: Path) -> tuple[list[dict], dict, np.ndarray]:
-    """Load the extractor's rollout_index + manifest + the per-rollout acts.
+def load_pv_extract_store(pv_store_dir: Path) -> tuple[list[dict], dict, ActsStore]:
+    """Load the extractor's rollout_index + manifest; return a LAZY acts store.
 
-    Returns ``(rollouts, manifest, acts)`` where ``acts`` is an (R, L, H) fp32
-    array aligned to the non-empty rollouts (acts[k] is rollout k's response-avg).
-    Empty rollouts carry ``acts_file=None``; their acts row is NOT in the array —
-    each rollout row gets an ``acts_idx`` (int or None) into ``acts``.
+    Returns ``(rollouts, manifest, acts)`` where ``acts`` is an :class:`ActsStore`
+    — a streaming reader that loads each non-empty rollout's ``(L, H)`` tensor from
+    ``rollout_acts/<acts_file>`` ON DEMAND (``acts[k]`` is rollout k's
+    response-avg), NEVER the whole ``(R, L, H)`` array at once. Empty rollouts
+    carry ``acts_file=None``; they have no acts row — each rollout row gets an
+    ``acts_idx`` (int or None) keying into the store.
+
+    This is the round-5 streaming fix (failure v11): the prior version
+    ``np.stack``-ed all ~12000 ``.pt`` tensors (~3.2 MB each → ~38 GB peak RSS)
+    into one in-memory array, which ``earlyoom`` SIGTERMed under shared-VM memory
+    pressure. ``ActsStore`` reads only the judge-kept subset of ONE behavior×pole
+    at a time (``_kept_acts_by_pole``), bounding peak RSS to a few GB. The store
+    is index-equivalent to the old array: ``acts[acts_idx]`` returns the IDENTICAL
+    fp32 ``(L, H)`` tensor the old ``acts[acts_idx]`` row held (same ``torch.load
+    → .float().numpy()`` conversion), so every downstream build is bit-identical.
     """
-    import torch
-
     rollouts = load_json(pv_store_dir / "rollout_index.json")["rollouts"]
     manifest = load_json(pv_store_dir / "rb_extract_manifest.json")
     acts_dir = pv_store_dir / "rollout_acts"
-    acts_list: list[np.ndarray] = []
+    # Assign acts_idx exactly as before: a contiguous 0..R'-1 index over the
+    # non-empty rollouts (empty rollouts get None). The store maps acts_idx →
+    # acts_file so a load can resolve the on-disk shard-relative path on demand.
+    idx_to_file: list[str] = []
     for row in rollouts:
         af = row.get("acts_file")
         if af is None or row.get("empty"):
             row["acts_idx"] = None
             continue
-        t = torch.load(acts_dir / af, weights_only=False)  # (L, H) fp16
-        row["acts_idx"] = len(acts_list)
-        acts_list.append(t.float().numpy())
-    acts = (
-        np.stack(acts_list)
-        if acts_list
-        else np.zeros((0, manifest["n_layers"], manifest["hidden"]))
-    )
-    return rollouts, manifest, acts
+        row["acts_idx"] = len(idx_to_file)
+        idx_to_file.append(af)
+    return rollouts, manifest, ActsStore(acts_dir, idx_to_file, manifest)
+
+
+class ActsStore:
+    """Lazy per-rollout response-avg acts reader (streaming; never stacks all R).
+
+    ``store[acts_idx]`` reads ``rollout_acts/<acts_file>`` and returns the
+    fp32 ``(L, H)`` numpy array (``torch.load(...).float().numpy()`` — identical
+    to the old in-memory row). ``store.shape`` mimics the old ``acts.shape``
+    triple ``(R', L, H)`` so callers that probed layer/hidden dims keep working;
+    ``L``/``H`` come from the manifest (no tensor read) unless ``R' == 0``.
+    """
+
+    def __init__(self, acts_dir: Path, idx_to_file: list[str], manifest: dict):
+        self._acts_dir = acts_dir
+        self._idx_to_file = idx_to_file
+        self._n_layers = int(manifest["n_layers"])
+        self._hidden = int(manifest["hidden"])
+
+    def __len__(self) -> int:
+        return len(self._idx_to_file)
+
+    @property
+    def shape(self) -> tuple[int, int, int]:
+        """``(R', L, H)`` — R' is the non-empty rollout count (mimics acts.shape)."""
+        return (len(self._idx_to_file), self._n_layers, self._hidden)
+
+    def __getitem__(self, acts_idx: int) -> np.ndarray:
+        """Load + return rollout ``acts_idx``'s response-avg as fp32 ``(L, H)``."""
+        import torch
+
+        af = self._idx_to_file[acts_idx]
+        t = torch.load(self._acts_dir / af, weights_only=False)  # (L, H) fp16
+        return t.float().numpy()
 
 
 def load_fewshot_acts(
@@ -387,11 +426,16 @@ def load_reused_noise_floor(genre: str, smoke_floor: dict | None) -> dict:
 
 
 def _kept_acts_by_pole(
-    rollouts: list[dict], acts: np.ndarray, judged: dict[str, dict], behavior: str
+    rollouts: list[dict], acts: ActsStore, judged: dict[str, dict], behavior: str
 ) -> dict[str, np.ndarray]:
     """{pole: (n_kept, L, H)} judge-kept response-avg acts for one behavior.
 
     pole ∈ {pos, neg, neutral}. Only judge-KEPT, non-empty rollouts contribute.
+    Acts are STREAMED from the lazy :class:`ActsStore` one rollout at a time
+    (``acts[acts_idx]`` reads a single ``.pt``), so peak memory is bounded to the
+    judge-kept subset of THIS behavior only — never all ~12000 rollouts at once
+    (round-5 earlyoom fix, failure v11). The returned arrays are bit-identical to
+    the old all-at-once path (same per-rollout fp32 conversion, same stack order).
     """
     out: dict[str, list[np.ndarray]] = {"pos": [], "neg": [], "neutral": []}
     for i, row in enumerate(rollouts):
@@ -401,7 +445,7 @@ def _kept_acts_by_pole(
         v = judged.get(cid)
         if v is None or not v["kept"]:
             continue
-        out[row["pole"]].append(acts[row["acts_idx"]])
+        out[row["pole"]].append(acts[row["acts_idx"]])  # lazy single-tensor load
     return {
         p: (np.stack(v) if v else np.zeros((0, acts.shape[1], acts.shape[2])))
         for p, v in out.items()
@@ -1321,8 +1365,12 @@ def _corpus_mismatched_store(args):
     return load_corpus_mismatched_rb(args.reuse_v0_e0_rev, args.reuse_v0_local)
 
 
-def pv_manifest_capture_layers(manifest: dict, acts: np.ndarray) -> list[int]:
-    """Capture layers of the per-rollout acts (all layers; 0..n_layers-1)."""
+def pv_manifest_capture_layers(manifest: dict, acts: ActsStore) -> list[int]:
+    """Capture layers of the per-rollout acts (all layers; 0..n_layers-1).
+
+    ``acts.shape`` is the lazy :class:`ActsStore`'s ``(R', L, H)`` triple — reading
+    it touches no tensor (L/H come from the manifest), so this stays a free probe.
+    """
     n = manifest["n_layers"] if acts.shape[0] == 0 else acts.shape[1]
     return list(range(n))
 
