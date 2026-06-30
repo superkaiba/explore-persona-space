@@ -10,3 +10,4 @@
 {"ts": "2026-06-30T11:50:33Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0l0yci-3vt5ek phase=done after 181s."}
 {"ts": "2026-06-30T11:53:03Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0l83v9-pnhw1r effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-30T12:04:25Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0lmpjx-slk1h1 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-30T12:06:27Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0lmpjx-slk1h1 phase=done after 120s."}
