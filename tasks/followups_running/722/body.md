@@ -42,7 +42,7 @@ relates_to:
 
 ## Goal
 
-**This experiment in context:** This is the descriptive/parametric half of a two-part question about *where* finetuning lives. The leakage theory models behavior installation as either moving the input context vector `c_C` that feeds a context→answer-profile map M, or changing M itself. The base-only fit of M was built in [#658](https://eps.superkaiba.com/tasks/658), where an earlier cosine-based read made the base map look weak and unusable (ridge cosine ≈0.31); this run corrects that with the right estimator and shows the base linear map is in fact strong (skill-over-mean R² ≈0.74–0.80). The matched base-and-post-finetuning activation store that makes a pre/post comparison possible was extracted in [#667](https://eps.superkaiba.com/tasks/667). This run fits M0 (base) and M⁺ (adapter-applied) explicitly on [#537](https://eps.superkaiba.com/tasks/537)'s already-trained behavior×context LoRA adapters and asks whether the *function* M moved, distinct from the *input* moving. The causal twin is [#697](https://eps.superkaiba.com/tasks/697), which injects the finetuned context vector into the base model and measures the mediated fraction; here the comparison is parametric (a fitted-map difference), and the two pictures are meant to be read side by side (#697 was still running at analysis time, so no cross-reference table is included).
+**This experiment in context:** This is the descriptive/parametric half of a two-part question about *where* finetuning lives. The leakage theory models behavior installation as either moving the input context vector `c_C` that feeds a context→answer-profile map M, or changing M itself. The base-only fit of M was first built in [#658](https://eps.superkaiba.com/tasks/658); the matched base-and-post-finetuning activation store that makes a pre/post comparison possible was extracted in [#667](https://eps.superkaiba.com/tasks/667). This run fits M0 (base) and M⁺ (adapter-applied) explicitly on [#537](https://eps.superkaiba.com/tasks/537)'s already-trained behavior×context LoRA adapters and asks whether the *function* M moved, distinct from the *input* moving — and, alongside, re-establishes how strong the base linear map itself is. The causal twin is [#697](https://eps.superkaiba.com/tasks/697), which injects the finetuned context vector into the base model and measures the mediated fraction; here the comparison is parametric (a fitted-map difference), and the two pictures are meant to be read side by side (#697 was still running at analysis time, so no cross-reference table is included).
 
 **Broader narrative:** The two spiritual-sibling papers — *Persona Vectors* (Anthropic) and *Persona Features Control Emergent Misalignment* (OpenAI) — treat a persona/behavior as a direction in activation space that finetuning shifts. That framing implicitly assumes the readout *map* is fixed and only the input moves along it. This run is a first parametric probe of that assumption on open weights: for the taught fact the map measurably moves, but the EM and sycophancy verdicts are inconclusive (the diagnostic lacks power at n=16), so the assumption is neither confirmed nor cleanly refuted for a broad behavioral trait. This bears on the project's open question of whether behavior-distance reduces to context-distance.
 
@@ -58,7 +58,8 @@ relates_to:
 | Reused adapters | `i537_*`, r=32, rsLoRA, per-behavior α (EM 256; fact/syco/marker/refusal 64) | adapter `adapter_config.json` + store `adapter_gauge` field |
 | Ridge λ | closed-form PRESS LOCO over [1e-2 … 1e3] | `RIDGE_LAMBDAS` constant |
 | MLP | 1 hidden × 512, AdamW lr 1e-3, weight decay 1e-4, 300 epochs, LOCO ensemble | `MLP_*` constants |
-| Output target dim | 64 top-v0 PCA dims (shared ridge/MLP) | `A35_MLP_TARGET_DIM` |
+| Output target dim (3×3 M0-vs-M⁺ arm) | 64 top-v0 PCA dims (shared ridge/MLP) | `A35_MLP_TARGET_DIM` |
+| Output target dim (`base-skill-over-mean-cC-to-v0` follow-up arm, LOCO MLP) | 48 top-v0 PCA dims | `skill_over_mean.json` `mlp_recipe.pca_target_dim` |
 | Layers | 7, 14 (primary), 21 | `PRIMARY_LAYER`, `SUPPLEMENT_LAYERS` |
 | Bootstrap families | 7 context families (sp_/wc_/icl_/reph_/fmt_/binst_/default) | `gate_chain.family_of` |
 | Behavior direction r_B | diff-in-means (`diffmeans`); taught-fact direction re-extracted here | `DEFAULT_RB` |
@@ -94,14 +95,15 @@ chain-ρ target E: eval_results/issue_537/G_tensor/G_meta.json
 
 ### The base context→answer map is a strong linear map (skill-over-mean R² 0.74–0.80); the nonlinear MLP overfits
 
-What is plotted: per layer (0–27), held-out skill-over-mean R² of the BASE map c_C → v0 — ridge, MLP, MLP shuffle null (left axis); predict-the-mean and raw-reconstruction cosines (right axis). 50 contexts, seed 42.
+What is plotted: per layer (0–27), held-out skill-over-mean R² of the BASE map c_C → v0 — ridge, MLP, MLP shuffle null (left axis); two cosines (right axis). 50 contexts, seed 42.
 
-![Per-layer skill-over-mean held-out R-squared for the base context-to-answer map: ridge rises from -0.09 at layer 0 to a 0.74-0.80 plateau over layers 14-21 (peak +0.80 at layer 18), the MLP is negative at every layer (best -1.05, below its own shuffle null), and the predict-mean and raw-reconstruction cosines sit pinned near 1.0 on the right axis](https://raw.githubusercontent.com/superkaiba/explore-persona-space/78572438867299935952a33402e16c0f2493fdaf/figures/issue_722/base_skill_over_mean_per_layer.png)
+![Per-layer skill-over-mean held-out R-squared for the base context-to-answer map: the ridge curve rises to a 0.74-0.80 plateau over the mid-to-late layers while the MLP stays negative and both cosines pin near 1.0](https://raw.githubusercontent.com/superkaiba/explore-persona-space/78572438867299935952a33402e16c0f2493fdaf/figures/issue_722/base_skill_over_mean_per_layer.png)
 
 > **Figure.** *The base linear map captures 74–80% of across-context answer-profile variance at the mid-to-late layers; cosine cannot see it.* Ridge skill-over-mean R² peaks at +0.80 (layer 18); the MLP is negative everywhere; both cosines pin near 1.0, so cosine has no resolving power. 50 contexts, seed 42.
 
-- Ridge R² climbs from −0.09 (layer 0) to a 0.74–0.80 plateau over layers 14–21 (peak +0.80, layer 18) — the base map does most of the context→answer work linearly, correcting the earlier ≈0.31 cosine read.
-- The MLP is negative at all 28 layers (−1.05 best, −5.59 worst) and below its shuffle null throughout — it overfits at n=50, so ridge is the only valid estimator. Both cosines pin at 0.95–1.0 (the mean baseline alone cosines ≈0.99), which is why cosine is uninformative here.
+- Ridge R² climbs from −0.09 (layer 0) to a 0.74–0.80 plateau over layers 14–21 (peak +0.80, layer 18) — the base map does most of the context→answer work linearly.
+- This corrects #658, where a row-wise cosine scored the base map at ≈0.31 and made it look weak. The cosine was a saturation artifact (the predict-the-mean baseline alone cosines ≈0.99); the train-mean-centered held-out R² is the correct estimator, and under it the base linear map is strong.
+- The MLP is negative at all 28 layers (−1.05 best, −5.59 worst) and below its shuffle null throughout — it overfits at n=50, so ridge is the only valid estimator.
 
 ### The taught fact's function-change clears its floor 1.6–3.3×; EM sits below floor; sycophancy peaks shallow and dies
 
@@ -177,4 +179,4 @@ What is plotted: per cell, the MLP's held-out base-map reconstruction ρ vs its 
 
 > run the pre vs post finetuning followup as a standalone issue linked to 667. run what we've discussed as well as the extra things here: - function-change at fixed input (‖M⁺(c) − M0(c)‖ on a common c grid), and - behavior-relevant transfer — the chain r_Bᵀ M c → E, or M evaluated along behavior directions — not generic v0 reconstruction.
 
-Lineage: [#667](https://eps.superkaiba.com/tasks/667) — parent; supplied the matched base+post-FT activation store. Causal twin [#697](https://eps.superkaiba.com/tasks/697) (running at analysis time; cross-reference deferred). Created 2026-06-28, run 2026-06-29.
+Lineage: [#667](https://eps.superkaiba.com/tasks/667) — parent; supplied the matched base+post-FT activation store. Causal twin [#697](https://eps.superkaiba.com/tasks/697) (running at analysis time; cross-reference deferred). Round: `base-skill-over-mean-cC-to-v0` — same-issue follow-up, ran 2026-06-29, re-established base-map strength with the corrected skill-over-mean R² estimator. Created 2026-06-28, run 2026-06-29.
