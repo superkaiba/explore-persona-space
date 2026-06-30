@@ -33,6 +33,12 @@ logs only counts / aggregate margins.
 
 from __future__ import annotations
 
+import os
+
+# Reduce allocator fragmentation for the variable-length teacher-forced batches
+# (set before torch initializes CUDA).
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import argparse
 import json
 import logging
@@ -106,9 +112,7 @@ def build_fixed_pairs(judge_filter: dict, behavior: str, cap: int, seed: int):
 
 
 @torch.no_grad()
-def score_answer_logprobs_batched(
-    model, tokenizer, instance, pairs, device, max_batch_tokens=24000
-):
+def score_answer_logprobs_batched(model, tokenizer, instance, pairs, device, max_batch_tokens=8000):
     """Length-normalized logP(answer | C + probe) for every pair, under context C.
 
     For each pair builds chat = [system_C, *prefix_C, user(probe), assistant(answer)]
@@ -167,8 +171,11 @@ def score_answer_logprobs_batched(
             attn[r, : len(ids)] = 1
         input_ids = input_ids.to(device)
         attn = attn.to(device)
-        logits = model(input_ids=input_ids, attention_mask=attn).logits  # (b, T, V)
-        logprobs = torch.log_softmax(logits.float(), dim=-1)
+        logits = model(input_ids=input_ids, attention_mask=attn).logits  # (b, T, V) bf16
+        # MEMORY: never materialize the full-vocab (B,T,V) fp32 log_softmax — for a
+        # 152k-vocab 7B over a padded batch that is tens of GiB and OOMs (#722 crash).
+        # Per row, slice only the answer-span logit rows, then compute
+        # log P(tgt) = logit[pos, tgt] - logsumexp(logit[pos]) in fp32.
         for r, i in enumerate(idxs):
             ids = encoded[i][0]
             a_start, a_end = encoded[i][1], encoded[i][2]
@@ -177,12 +184,16 @@ def score_answer_logprobs_batched(
                 # Degenerate (empty answer after suffix strip) — score the whole
                 # span as fallback (should not happen with real completions).
                 a_end = encoded[i][2]
-            # logP(token t) = logprobs[t-1, ids[t]]
-            tgt = torch.tensor(ids[a_start:a_end], device=device)
+            # logP(token t) = log_softmax(logits[t-1])[ids[t]]
             pos = torch.arange(a_start - 1, a_end - 1, device=device)
-            lp = logprobs[r, pos, tgt]  # (n_ans,)
+            tgt = torch.tensor(ids[a_start:a_end], device=device)
+            row = logits[r, pos, :].float()  # (n_ans, V) — answer-span only
+            logz = torch.logsumexp(row, dim=-1)  # (n_ans,)
+            tgt_logit = row.gather(1, tgt[:, None]).squeeze(1)  # (n_ans,)
+            lp = tgt_logit - logz  # (n_ans,)
             n = lp.numel()
             results[i] = float(lp.sum().item() / max(n, 1))
+        del logits
 
     for i in order:
         tlen = len(encoded[i][0])
