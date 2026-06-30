@@ -314,7 +314,7 @@ terminate+re-provision, not the wrong `--refresh-from-api`) is the interactive
 sibling; the report-only `running_no_port` flag in `pod_audit.py` is the
 fleet-level visibility backstop (never auto-terminates).
 
-### Part C watcher backstop — the poller-DEAD case (#692)
+### Part C watcher backstop — the poller-DEAD case (#692/#770)
 
 The poller-side detect+recover above runs ONLY while the per-issue poll loop is
 alive — exactly when a backstop is NOT needed. When that loop has DIED (crashed
@@ -334,18 +334,40 @@ session-independent) closes that gap with a wedge arm in `_process_pod`:
   uptime, not the no-port episode). A `>= threshold` (default 2)
   consecutive-confirmed-checks miss guard backs it, so a transient API blip
   never stops a pod.
-- **ALERT by default; AUTO-STOP only when provably safe.** Past K + confirmed,
-  the arm posts a once-per-episode alert UNLESS the same inputs-on-HF gate fix
-  (b) uses (`backend_poll._wedged_run_inputs_on_hf`) confirms zero partial cells
-  AND a TRI-STATE keep-running read (`_wedge_keep_running` → `True | False |
-  "unknown"`) returns the literal `False`. Every uncertainty path (no handle, HF
-  error, tag present, tag-read FAILURE `"unknown"`) is ALERT-only — a persistent
-  tag-read failure never silently overrides a keep-running tag on a live-work pod.
-- **STOP, never terminate.** The recovery action is the reversible `pod.py stop`
-  (volume preserved) — the watcher has no run handle guarantee and runs blind to
-  the dispatcher's resume state, so it halts billing rather than terminating
-  (CLAUDE.md halt-criterion #2). The poller's fix (b) owns the irreversible
-  terminate + re-provision.
+- **ALERT by default; TERMINATE+FAILOVER only when provably safe (#770).** Past
+  K + confirmed, the arm posts a once-per-episode alert UNLESS the same
+  inputs-on-HF gate fix (b) uses (`backend_poll._wedged_run_inputs_on_hf`)
+  confirms zero partial cells AND a TRI-STATE keep-running read
+  (`_wedge_keep_running` → `True | False | "unknown"`) returns the literal
+  `False`. Every uncertainty path (no handle, HF error, tag present, tag-read
+  FAILURE `"unknown"`, inputs unverified) is ALERT-only — a persistent tag-read
+  failure never silently overrides a keep-running tag on a live-work pod.
+- **TERMINATE + re-provision — the SAME recovery the poller owns, no longer a
+  reversible stop (#770).** For the ONE provably-safe case (matured + confirmed
+  wedge + `keep_running=False` + inputs verified on HF + a reconstructable run
+  handle) the watcher routes the SAME irreversible terminate + fresh
+  re-provision the poller owns (`backend_poll._failover_wedged_runpod`, via the
+  `_wedge_failover` helper: read the `handle`+`sidecar` from the persisted
+  sidecar EXACTLY as `_wedge_inputs_safe` does, synthesize a minimal `result`
+  shim carrying only `current_phase` + `log_tail_excerpt`, terminate the wedged
+  pod, re-provision a FRESH pod). It is **bounded-once** via the SHARED durable
+  lease + sentinel (`_runpod_wedge_already_handled`, called INSIDE
+  `_failover_wedged_runpod`), so a poller-side and watcher-side firing on the
+  same wedge are mutually exclusive — the watcher inherits the cross-actor
+  idempotency for free by calling that function. A reversible `pod.py stop` was
+  the pre-#770 action but cannot heal a host-pinned dead RunPod host —
+  `resume_pod` returns to the SAME dead host (#763) — which is why the promotion
+  was made. The dispatch maps the poller's terminal-JSON contract to five
+  outcomes: `failover` (fresh pod re-provisioned), `already-handled`
+  (bounded-once short-circuit), `no-capacity` (terminated; RunPod unavailable →
+  terminal `no_compute_available`, the capacity-retry pass re-drives), `blocked`
+  (a PARTIAL cell / sidecar-persistence failure / legacy handle → a terminal
+  infra block a human resolves, halt-criterion #2 — the refusal lives inside
+  `_failover_wedged_runpod`, the watcher itself never terminates on this branch),
+  and `alert` (NO reconstructable handle, or the failover call raised → degrade
+  to ALERT-only, NEVER a blind terminate; fail-soft so one wedged pod's failover
+  error never crashes the 10-min tick). The reversible `_stop_pod` is RETAINED
+  for the status-class DONE escaped-pod arm (below), NOT the wedge arm.
 - **DONE-task ordering.** A wedged pod whose task is at a DONE status
   (`completed` / `awaiting_promotion` / `archived`) FALLS THROUGH to the
   existing status-class DONE auto-stop arm (the canonical escaped-pod handler) —
@@ -354,8 +376,12 @@ session-independent) closes that gap with a wedge arm in `_process_pod`:
 
 Tests of record: `tests/test_autonomous_session_watch_wedge.py` (the decision
 table + boundaries, the tri-state gate, the fail-closed inputs gate, the
-state round-trip, the pod_id reset, the alert dedup, the DONE fall-through) +
-the direct predicate test
+state round-trip, the pod_id reset, the alert dedup, the DONE fall-through; #770:
+the `terminate-failover` decision + invariant, the maturity-axis SR3 sweep, the
+`_wedge_failover` outcome mapping — failover / already-handled / no-capacity /
+blocked / alert-degrade — the dry-run no-side-effects contract, the SR1
+cross-module reason-string parity, and the SR2 blocked-not-terminated +
+clock-cleared end-to-end) + the direct predicate test
 `tests/test_runpod_wedge_detection.py::test_pod_is_runpod_runtime_wedged_predicate`.
 
 ## Tests of record
