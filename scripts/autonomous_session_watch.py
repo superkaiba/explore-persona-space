@@ -844,6 +844,19 @@ _CAPACITY_RETRY_NOTE_SENTINEL = "[autonomous_session_watch:capacity-retry]"
 # dashboard-visible without per-tick marker spam.
 _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:capacity-retry-exhausted]"
 
+# OPT-IN heartbeat sentinel for legitimately-slow phases (off-pod analyzer
+# verifier rounds, in-flight Anthropic Batch polling). UNLIKE every other
+# sentinel in this file, this one is stamped by the LONG-RUNNING PHASE
+# itself (NOT by the watcher), so it IS real progress and MUST count toward
+# _latest_progress_ts / _latest_nonwatcher_event_ts — i.e. it is the INVERSE
+# of _WATCHER_NOTE_SENTINELS and is deliberately NOT a member of that set
+# (see _long_phase_heartbeat_reason and tests/test_..._sentinel_not_in_...).
+# An emitter that includes this substring in its epm:progress note opts into
+# the longer stalled-detector leash (LONG_PHASE_HEARTBEAT_FRESH_S). The
+# watcher only RECOGNIZES the convention; teaching emitters to stamp it is
+# separate, src/-level work (out of this fix's scope).
+_LONG_PHASE_HEARTBEAT_PREFIX = "[long-phase-heartbeat]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -950,6 +963,35 @@ def _stalled_window_s() -> float:
 
 
 STALLED_WINDOW_S = _stalled_window_s()
+
+
+# Freshness window for the long-phase-heartbeat exemption. Generous so an
+# emitter that heartbeats roughly hourly (the off-pod analyzer / Batch-poll
+# cadence) is ALWAYS inside the window with margin for cron jitter — same
+# logic as STALLED_WINDOW_S's "cadence + slack" rationale, one rung wider:
+# 90 min = a ~60-min heartbeat cadence + a full extra 30-min slack, so an
+# emitter must miss MORE than one heartbeat before the exemption lapses and
+# the underlying staleness signals reassert. Env-tunable via
+# EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN (minutes); a malformed value falls back
+# to the default — a typo'd var must not disable the exemption.
+LONG_PHASE_HEARTBEAT_FRESH_S_DEFAULT = 90 * 60
+
+
+def _long_phase_heartbeat_freshness_s() -> float:
+    """Long-phase-heartbeat exemption freshness window in seconds (env
+    ``EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN``, minutes; default
+    :data:`LONG_PHASE_HEARTBEAT_FRESH_S_DEFAULT`). A malformed env value
+    falls back to the default — mirrors :func:`_stalled_window_s`."""
+    raw = os.environ.get("EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN")
+    if not raw:
+        return float(LONG_PHASE_HEARTBEAT_FRESH_S_DEFAULT)
+    try:
+        return float(raw) * 60.0
+    except ValueError:
+        return float(LONG_PHASE_HEARTBEAT_FRESH_S_DEFAULT)
+
+
+LONG_PHASE_HEARTBEAT_FRESH_S = _long_phase_heartbeat_freshness_s()
 
 # Filename prefix for the per-session stalled-detector state file at
 # ``~/.eps-autonomous/stalled-<N>.json``. Mirrors the pod-safety state file
@@ -4266,6 +4308,48 @@ def _provision_in_flight_reason(issue: int, now: float) -> str | None:
     return None
 
 
+def _long_phase_heartbeat_reason(events: list[dict], now: float) -> str | None:
+    """Human-readable exemption reason when the issue's NEWEST non-watcher
+    ``epm:progress`` marker opts into the long-phase-heartbeat leash AND is
+    still fresh, else ``None``.
+
+    A legitimately-slow phase (off-pod analyzer verifier rounds, in-flight
+    Anthropic Batch polling) emits few markers, so both stalled-detector
+    staleness signals expire between its heartbeats and the detector
+    false-fires (incident #761: a 1h21m off-pod analysis stretch drew a
+    wasted auto-respawn). An emitter opts into a wider leash by stamping
+    :data:`_LONG_PHASE_HEARTBEAT_PREFIX` into its ``epm:progress`` note; this
+    helper recognizes that opt-in. Pure over already-loaded ``events`` — no
+    subprocess, no second read.
+
+    Predicate: among events with ``kind == "epm:progress"`` whose note is NOT
+    a watcher-self post (:data:`_WATCHER_NOTE_SENTINELS`) AND whose note
+    contains :data:`_LONG_PHASE_HEARTBEAT_PREFIX`, take the newest by ``ts``;
+    return a reason iff its age (``now - ts``) is in
+    ``[0, LONG_PHASE_HEARTBEAT_FRESH_S)``. A future ``ts`` (negative age,
+    clock skew / fake clock) is NOT fresh — never mask a genuinely stalled
+    session.
+    """
+    best_ts: float | None = None
+    for ev in events:
+        if ev.get("kind") != "epm:progress":
+            continue
+        note = ev.get("note") or ""
+        if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue  # a watcher-posted alert — never a real heartbeat
+        if _LONG_PHASE_HEARTBEAT_PREFIX not in note:
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best_ts is None or ts > best_ts):
+            best_ts = ts
+    if best_ts is None:
+        return None
+    age = now - best_ts
+    if 0 <= age < LONG_PHASE_HEARTBEAT_FRESH_S:
+        return f"fresh long-phase heartbeat ({age / 60:.1f}m old)"
+    return None
+
+
 # ─── followups_running parent waiting on open child (suppression) ───────────
 #
 # `followups_running` is in ACTIVE (un-phantomed 2026-06-10) so SAME-issue
@@ -5574,14 +5658,26 @@ def _process_stalled_session(
         threshold=threshold,
     )
 
-    # In-flight-provision exemption (refs #573): a provision waiting for
-    # capacity blocks the session's bg-Bash chain, freezing BOTH staleness
-    # signals while being exactly the work the session should be doing —
-    # #534's auto-respawn killed an in-flight provision 3x (~8h lost).
-    # Probed LAZILY (only when decide() wants to escalate or accumulate a
-    # miss) so the healthy-session hot path never pays the /proc scan.
+    # ALIVE-BUT-STALLED exemptions, probed LAZILY (only when decide() wants to
+    # escalate or accumulate a miss) so the healthy-session hot path never pays
+    # the probes. Two independent reasons share one gate + one log + the
+    # no-marker rewrite; the first that fires wins (both rewrite to the same
+    # ("keep", 0)):
+    #   1. In-flight-provision (refs #573): a provision waiting for capacity
+    #      blocks the session's bg-Bash chain, freezing BOTH staleness signals
+    #      while being exactly the work the session should be doing — #534's
+    #      auto-respawn killed an in-flight provision 3x (~8h lost). /proc scan.
+    #   2. Long-phase-heartbeat (incident #761): a legitimately-slow phase
+    #      (off-pod analyzer verifier rounds, in-flight Anthropic Batch polling)
+    #      emits few markers, so both staleness signals cross the 60-min window
+    #      between its heartbeats and the detector false-respawns (#761's 1h21m
+    #      off-pod analysis drew a wasted respawn). An emitter opts into a wider
+    #      leash by stamping _LONG_PHASE_HEARTBEAT_PREFIX into its epm:progress
+    #      note; scans the already-loaded `events` (no extra read).
     if action != "keep" or new_missed > 0:
-        exempt_reason = _provision_in_flight_reason(issue, now)
+        exempt_reason = _provision_in_flight_reason(issue, now) or _long_phase_heartbeat_reason(
+            events, now
+        )
         if exempt_reason is not None:
             print(
                 f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {exempt_reason}; "
