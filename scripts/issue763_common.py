@@ -211,14 +211,32 @@ def load_frozen_pools(behaviors: list[str] | None = None) -> dict[str, list[str]
 # ── pod-side sentinel (poll_pipeline.py contract) ─────────────────────────────
 
 
-def write_sentinel(kind: str, note_obj: dict, task_id: int = 763) -> Path:
-    """poll_pipeline.py-conformant end-of-run sentinel (_SENTINEL_REQUIRED_KEYS).
+def write_sentinel(
+    kind: str,
+    note_obj: dict,
+    task_id: int = 763,
+    *,
+    gate: str | None = None,
+    blocks_pipeline: bool = True,
+) -> Path:
+    """poll_pipeline.py-conformant sentinel (_SENTINEL_REQUIRED_KEYS).
 
     Writes ``/workspace/logs/issue-763-<kind_slug>-<epoch>.json`` (falls back to
     the repo-local logs dir off-pod) carrying the four required keys
     (sentinel_schema_version / kind / version / note). ``note_obj`` is the
     marker payload (JSON-serialized into ``note``). Pod-side code NEVER shells
     out to scripts/task.py (CLAUDE.md) — this sentinel is the only channel.
+
+    When ``gate`` is set, the top-level ``gate`` + ``blocks_pipeline`` fields are
+    emitted so ``poll_pipeline.py::drain_sentinels_via`` surfaces ``status=gate``
+    to the orchestrator (the off-pod-judge pod-cycle gate, #763 BLOCKER
+    pv-judge-not-off-pod). ``blocks_pipeline=True`` (the default) ends the poll
+    loop and parks the orchestrator at the named gate; the orchestrator stops the
+    pod, runs the off-pod judge on the VM, resumes the pod, and re-dispatches at
+    ``--from-phase pv_capture``. The poller reads these top-level keys directly
+    (``data.get("gate")`` / ``data.get("blocks_pipeline", True)``), so NO
+    poll_pipeline.py change is required — only the SKILL.md gate HANDLER
+    (workflow surface).
     """
     logs_dir = Path("/workspace/logs")
     if not logs_dir.is_dir():
@@ -235,6 +253,9 @@ def write_sentinel(kind: str, note_obj: dict, task_id: int = 763) -> Path:
         "by": "issue763",
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
+    if gate is not None:
+        payload["gate"] = gate
+        payload["blocks_pipeline"] = blocks_pipeline
     with open(path, "w") as f:
         json.dump(payload, f, indent=2)
     return path

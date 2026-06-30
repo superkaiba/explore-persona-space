@@ -36,11 +36,22 @@ fi
 cd "$REPO_ROOT"
 
 SMOKE=""
-for arg in "$@"; do
-  case "$arg" in
+FROM_PHASE=""  # "" = phase-1 (gate exit); "pv_capture" = resume after the off-pod judge
+while [ $# -gt 0 ]; do
+  case "$1" in
     --smoke) SMOKE="--smoke" ;;
+    --from-phase)
+      shift
+      FROM_PHASE="${1:-}"
+      ;;
+    --from-phase=*) FROM_PHASE="${1#--from-phase=}" ;;
   esac
+  shift || true
 done
+if [ -n "$FROM_PHASE" ] && [ "$FROM_PHASE" != "pv_capture" ]; then
+  echo "[issue763.dispatch] FATAL: unknown --from-phase '$FROM_PHASE' (only 'pv_capture')" >&2
+  exit 2
+fi
 
 # Load credentials for the judge / HF (set -a && source .env && set +a per
 # research-project-structure.md — never bare load_dotenv in a heredoc).
@@ -91,47 +102,81 @@ if [ -n "$SMOKE" ]; then
   exit 0
 fi
 
-# ── REAL RUN ──────────────────────────────────────────────────────────────────
-# Build pools is normally run OFF-pod before provision (CPU/API) so the frozen
-# pools are HF-uploaded for the git-clone-only lane to snapshot_download. On the
-# pod we stage them: if absent, snapshot_download the HF inputs mirror; if the
-# builder must run here (API present), run it.
-echo "[phase=build_pools]"
-uv run python scripts/issue763_stage_pools.py || \
-  uv run python scripts/issue763_build_probe_pools.py
+# ── REAL RUN — TWO-PHASE pod-cycling (off-pod PV judge) ───────────────────────
+# #763 BLOCKER pv-judge-not-off-pod: the PV judge (and the E0 judge) route through
+# eval.batch_judge's DEADLINE-BOUNDED poll (potentially hours). Running them on a
+# live GPU pod would hold the GPU through the poll (the #664 spend-leak class), so
+# this dispatcher SPLITS at a pod-cycling gate:
+#
+#   PHASE 1 (this script, no --from-phase): build_pools -> source_side_baseline ->
+#     generate (E0 completions) -> capture (v0) -> pv_extract generate (rollouts)
+#     -> upload-progress (raw completions + rollouts -> HF, pre-teardown) ->
+#     EMIT GATE pv_phase1_done + EXIT. NO --phase judge here, and NO --device cuda
+#     after the gate, so the GPU pod can be STOPPED.
+#
+#   ORCHESTRATOR (SKILL.md Step 6d.4 gate handler, OFF-pod on the VM): on
+#     gate=pv_phase1_done it `pod.py stop`s the pod, runs the OFF-pod judge on the
+#     VM — `issue763_extract_pv_rb.py --phase judge` (fetches the rollouts from HF,
+#     batch-judges, uploads the keep-flags to HF) — then `pod.py resume`s and
+#     re-dispatches `issue763_dispatch.sh --from-phase pv_capture`.
+#
+#   PHASE 2 (--from-phase pv_capture): pv_extract capture (GPU, fetches the
+#     keep-flags from HF) -> judge (E0, OFF-pod batch_judge but AFTER the last
+#     --device cuda phase, so the GPU block has closed) -> fit -> figures ->
+#     final upload (epm:results) -> [phase=done].
 
-echo "[phase=source_side_baseline]"
-uv run python scripts/issue763_source_side_baseline.py
+if [ "$FROM_PHASE" != "pv_capture" ]; then
+  # ── PHASE 1 (GPU live) ──
+  # Build pools is normally run OFF-pod before provision (CPU/API) so the frozen
+  # pools are HF-uploaded for the git-clone-only lane to snapshot_download. On the
+  # pod we stage them: if absent, snapshot_download the HF inputs mirror; if the
+  # builder must run here (API present), run it.
+  echo "[phase=build_pools]"
+  uv run python scripts/issue763_stage_pools.py || \
+    uv run python scripts/issue763_build_probe_pools.py
 
-echo "[phase=generate]"
-uv run python scripts/issue763_generate_completions.py
+  echo "[phase=source_side_baseline]"
+  uv run python scripts/issue763_source_side_baseline.py
 
-echo "[phase=capture]"
-uv run python scripts/issue763_capture_v0_matched.py --device cuda
+  echo "[phase=generate]"
+  uv run python scripts/issue763_generate_completions.py
 
-# PV rollout generation (vLLM batched) — GPU LIVE; writes rollouts to disk.
-echo "[phase=pv_extract_generate]"
-uv run python scripts/issue763_extract_pv_rb.py --device cuda --phase generate
+  echo "[phase=capture]"
+  uv run python scripts/issue763_capture_v0_matched.py --device cuda
 
-# Upload raw completions + analysis-input rollouts BEFORE the GPU pod is released
-# (Upload Policy: raw completions + plan-referenced analysis inputs must land on
-# HF before pod termination). This is NOT the end-of-run sentinel — it writes a
-# non-final epm:upload-progress sentinel so an observing orchestrator does NOT
-# see epm:results while judge/fit/figures have not produced their deliverables
-# (#763 CONCERN premature-results-sentinel). The v0 + r_B analysis tensors are
-# re-uploaded in the final [phase=upload] after pv_extract_capture writes r_B.
-echo "[phase=upload_progress]"
-uv run python scripts/issue763_upload.py --progress-only
+  # PV rollout generation (vLLM batched) — GPU LIVE; writes rollouts to disk.
+  echo "[phase=pv_extract_generate]"
+  uv run python scripts/issue763_extract_pv_rb.py --device cuda --phase generate
 
-# PV judge-filter — OFF the GPU phase, via the registered eval.batch_judge
-# (plan §4.6 step 5: judge-filter after the GPU rollouts; deadline-bounded poll).
-echo "[phase=pv_extract_judge]"
-uv run python scripts/issue763_extract_pv_rb.py --phase judge
+  # Upload raw completions + analysis-input ROLLOUTS BEFORE the GPU pod is
+  # released (Upload Policy: raw completions + plan-referenced analysis inputs
+  # must land on HF before pod termination; #763 BLOCKER pv-rollouts-not-uploaded
+  # — pv_rollouts/ is now in the upload iteration). NON-final epm:upload-progress
+  # sentinel (#763 CONCERN premature-results-sentinel: no epm:results yet).
+  echo "[phase=upload_progress]"
+  uv run python scripts/issue763_upload.py --progress-only
 
-# PV teacher-forced capture of the KEPT rollouts -> r_B (GPU).
+  # GATE: the PV (and E0) judges run OFF-pod. Emit a BLOCKING gate sentinel and
+  # EXIT — the orchestrator stops the pod, runs the off-pod judge on the VM,
+  # resumes, and re-dispatches `--from-phase pv_capture`. There is NO --device
+  # cuda and NO --phase judge AFTER this point in phase 1.
+  echo "[phase=pv_phase1_done]"
+  uv run python scripts/issue763_upload.py --emit-gate pv_phase1_done
+  echo "[issue763.dispatch] phase-1 complete; parked at gate=pv_phase1_done (off-pod judge)"
+  exit 0
+fi
+
+# ── PHASE 2 (--from-phase pv_capture; GPU live for capture, then OFF-pod tail) ──
+# The OFF-pod judge already ran on the VM and uploaded the keep-flags to HF; the
+# resumed pod fetches them in --phase capture via snapshot_download.
+
+# PV teacher-forced capture of the KEPT rollouts -> r_B (GPU). LAST --device cuda
+# phase — every phase below is GPU-free.
 echo "[phase=pv_extract_capture]"
 uv run python scripts/issue763_extract_pv_rb.py --device cuda --phase capture
 
+# E0 judge — OFF-pod (eval.batch_judge), AFTER the last --device cuda phase so the
+# GPU block has closed. GPU-FREE by construction (judge = API, format = code).
 echo "[phase=judge]"
 uv run python scripts/issue763_judge_e0.py
 
@@ -141,9 +186,9 @@ uv run python scripts/issue763_fit_predictors.py
 echo "[phase=figures]"
 uv run python scripts/issue763_plot.py
 
-# FINAL upload (raw completions + v0 + r_B analysis tensors) AFTER fit + figures
-# exist, then the END-OF-RUN epm:results sentinel (#763 CONCERN
-# premature-results-sentinel: epm:results appears only after every primary
+# FINAL upload (raw completions + v0 + r_B analysis tensors + pv_judge keep-flags)
+# AFTER fit + figures exist, then the END-OF-RUN epm:results sentinel (#763
+# CONCERN premature-results-sentinel: epm:results appears only after every primary
 # deliverable — E0_matched_by_behavior.json / matched_predictor_results.json /
 # figures — is on disk).
 echo "[phase=upload]"

@@ -91,6 +91,8 @@ from issue763_common import (  # noqa: E402
     DATA_DIR,
     DEFAULT_MODEL,
     EVAL_RESULTS_DIR,
+    HF_ANALYSIS_TENSORS_PREFIX,
+    HF_DATA_REPO,
     PV_ARTIFACT_DIR,
     PV_TRAIT_DESCRIPTIONS,
     BatchedAnswerSpanCapture,
@@ -291,6 +293,43 @@ def _judge_path(behavior: str) -> Path:
     return PV_JUDGE_DIR / f"{behavior}.json"
 
 
+def _stage_from_hf(sub: str, local_dir: Path, behaviors: list[str], *, suffix: str) -> None:
+    """Fetch ``analysis_tensors/<sub>/<behavior>.<suffix>`` from HF if absent locally.
+
+    The OFF-pod ``--phase judge`` (run on the VM while the GPU pod is stopped —
+    #763 BLOCKER pv-judge-not-off-pod) and the GCP git-clone-only lane have NO
+    local ``data/issue_763/`` tree, so the rollouts / keep-flags must be pulled
+    from the issue-owned HF prefix the ``--progress-only`` upload wrote. A
+    matched-host RunPod resume keeps the volume, so this is a no-op there
+    (every file is already local). Fail-loud only if a behavior's file is
+    NEITHER local NOR on HF (the upstream phase never produced it).
+    """
+    missing = [b for b in behaviors if not (local_dir / f"{b}.{suffix}").exists()]
+    if not missing:
+        return
+    from huggingface_hub import snapshot_download
+
+    path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/{sub}"
+    logger.info("[pv_stage] %s: fetching %s from %s/%s", sub, missing, HF_DATA_REPO, path_in_repo)
+    snap = snapshot_download(
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        allow_patterns=[f"{path_in_repo}/*.{suffix}"],
+    )
+    src_dir = Path(snap) / path_in_repo
+    local_dir.mkdir(parents=True, exist_ok=True)
+    for b in missing:
+        src = src_dir / f"{b}.{suffix}"
+        if not src.exists():
+            raise FileNotFoundError(
+                f"PV {sub} for {b} is neither local ({local_dir}) nor on HF "
+                f"({HF_DATA_REPO}/{path_in_repo}) — the upstream phase never "
+                "produced/uploaded it (run --phase generate + the --progress-only "
+                "upload first)"
+            )
+        (local_dir / f"{b}.{suffix}").write_bytes(src.read_bytes())
+
+
 def _load_artifacts(behavior: str, *, mock: bool) -> dict:
     """Load (or build + freeze) the per-behavior PV artifacts."""
     art_path = PV_ARTIFACT_DIR / f"{behavior}.json"
@@ -473,6 +512,12 @@ def _phase_judge(behaviors: list[str], *, mock: bool) -> None:
     dropped count reported; an 80%-floor shortfall flags ``pv_thin_sample``.
     """
     PV_JUDGE_DIR.mkdir(parents=True, exist_ok=True)
+    # OFF-pod (the GPU pod is STOPPED for this phase, #763 BLOCKER
+    # pv-judge-not-off-pod): the rollouts live on HF (the --progress-only upload
+    # wrote them); stage any that are not already local. The --mock smoke runs
+    # all phases in one local process, so its rollouts are always local (no fetch).
+    if not mock:
+        _stage_from_hf("pv_rollouts", PV_ROLLOUT_DIR, behaviors, suffix="jsonl")
     for behavior in behaviors:
         art = _load_artifacts(behavior, mock=mock)
         eval_prompt = art["eval_prompt"]
@@ -525,6 +570,36 @@ def _phase_judge(behaviors: list[str], *, mock: bool) -> None:
         }
         dump_json(payload, _judge_path(behavior))
         logger.info("[pv_judge] %s: kept=%s dropped=%s thin=%s", behavior, kept, dropped, pv_thin)
+    # The keep-flags are produced OFF-pod (VM) while the GPU pod is stopped;
+    # upload them so the RESUMED pod's --phase capture can snapshot_download them
+    # (#763 BLOCKER pv-judge-not-off-pod). No-op for the local --mock smoke.
+    if not mock:
+        _upload_judge_keepflags(behaviors)
+
+
+def _upload_judge_keepflags(behaviors: list[str]) -> None:
+    """Bulk-upload the off-pod judge keep-flags to the issue-owned HF prefix.
+
+    ONE ``upload_folder`` commit (the #664 per-file-loop trap avoided). The
+    resumed GPU pod's ``--phase capture`` fetches these via ``_stage_from_hf``.
+    Fail-loud: the resume CANNOT proceed without the keep-flags, so a failed
+    upload must crash the judge phase, not warn-and-continue.
+    """
+    from huggingface_hub import HfApi
+
+    if not any(_judge_path(b).exists() for b in behaviors):
+        return
+    api = HfApi()
+    path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/pv_judge"
+    api.upload_folder(
+        folder_path=str(PV_JUDGE_DIR),
+        path_in_repo=path_in_repo,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        allow_patterns=["*.json"],
+        commit_message="issue763: PV off-pod judge keep-flags",
+    )
+    logger.info("[pv_judge] uploaded keep-flags -> %s/%s", HF_DATA_REPO, path_in_repo)
 
 
 # The paper's trait rubric asks for a BARE integer 0-100; the registered batch
@@ -606,6 +681,13 @@ def _phase_capture(behaviors: list[str], *, model_name: str, device: str) -> Non
     capture = BatchedAnswerSpanCapture(model, n_layers)
 
     PV_SHARD_DIR.mkdir(parents=True, exist_ok=True)
+    # The RESUMED GPU pod (after the off-pod judge, #763 BLOCKER
+    # pv-judge-not-off-pod) reads the keep-flags the VM judge wrote + uploaded;
+    # the GCP git-clone-only lane has neither rollouts nor keep-flags locally.
+    # Stage both from the issue-owned HF prefix when absent (no-op on a
+    # matched-host RunPod resume where the volume persists).
+    _stage_from_hf("pv_rollouts", PV_ROLLOUT_DIR, behaviors, suffix="jsonl")
+    _stage_from_hf("pv_judge", PV_JUDGE_DIR, behaviors, suffix="json")
     manifest: dict[str, dict] = {}
     for behavior in behaviors:
         art = _load_artifacts(behavior, mock=False)

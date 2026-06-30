@@ -42,6 +42,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from issue763_common import (  # noqa: E402
+    DATA_DIR,
     EVAL_RESULTS_DIR,
     EXPERIMENT_NAME,
     HF_ANALYSIS_TENSORS_PREFIX,
@@ -57,15 +58,41 @@ logger = logging.getLogger("issue763_upload")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
+# The analysis-input artifacts uploaded under ``issue763_matched_v0/
+# analysis_tensors/<sub>/`` so the git-clone-only off-pod judge VM can
+# ``snapshot_download`` them. Each entry = (sub-dir name, local source root,
+# glob pattern). ``pv_rollouts`` (#763 BLOCKER pv-rollouts-not-uploaded) carries
+# the per-rollout JSONLs the OFF-pod ``--phase judge`` reads (the GPU pod is
+# stopped during the judge poll), so it MUST land BEFORE the pod stops — it is
+# uploaded in the ``--progress-only`` pre-teardown pass like the v0 shards.
+# ``pv_judge`` carries the off-pod judge's keep-flag JSONs so the RESUMED pod's
+# ``--phase capture`` can ``snapshot_download`` them; it is produced off-pod, so
+# it only exists at the final (no-flag) upload.
+_ANALYSIS_ARTIFACTS: tuple[tuple[str, Path, str], ...] = (
+    ("v0_shards", EVAL_RESULTS_DIR, "*.pt"),
+    ("pv_shards", EVAL_RESULTS_DIR, "*.pt"),
+    ("pv_rollouts", DATA_DIR, "*.jsonl"),
+    ("pv_judge", DATA_DIR, "*.json"),
+)
+
+
 def _upload_analysis_tensors() -> dict:
-    """Bulk upload the v0 + r_B .pt shards (ONE upload_folder commit each dir)."""
+    """Bulk upload the analysis-input artifacts (ONE upload_folder commit each).
+
+    Covers the v0 + r_B ``.pt`` shards AND the PV rollouts (``pv_rollouts/
+    <behavior>.jsonl``) + the off-pod judge keep-flags (``pv_judge/
+    <behavior>.json``) — #763 BLOCKER pv-rollouts-not-uploaded: the off-pod
+    judge (run on the VM while the GPU pod is stopped) fetches the rollouts via
+    ``snapshot_download`` of this issue-owned prefix, so they must be uploaded
+    before the pod stops.
+    """
     from huggingface_hub import HfApi
 
     api = HfApi()
     uploaded = {}
-    for sub in ("v0_shards", "pv_shards"):
-        local = EVAL_RESULTS_DIR / sub
-        if not local.is_dir() or not any(local.glob("*.pt")):
+    for sub, src_root, pattern in _ANALYSIS_ARTIFACTS:
+        local = src_root / sub
+        if not local.is_dir() or not any(local.glob(pattern)):
             continue
         path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/{sub}"
         repo_used = HF_DATA_REPO
@@ -75,7 +102,7 @@ def _upload_analysis_tensors() -> dict:
                 path_in_repo=path_in_repo,
                 repo_id=HF_DATA_REPO,
                 repo_type="dataset",
-                allow_patterns=["*.pt"],
+                allow_patterns=[pattern],
                 commit_message=f"issue763: analysis tensors {sub}",
             )
         except Exception as e:
@@ -88,7 +115,7 @@ def _upload_analysis_tensors() -> dict:
                 path_in_repo=path_in_repo,
                 repo_id=HF_OVERFLOW_REPO,
                 repo_type="dataset",
-                allow_patterns=["*.pt"],
+                allow_patterns=[pattern],
                 commit_message=f"issue763: analysis tensors {sub} (overflow)",
             )
         files = [
@@ -97,7 +124,7 @@ def _upload_analysis_tensors() -> dict:
             if f.startswith(path_in_repo)
         ]
         uploaded[sub] = {"repo": repo_used, "path_in_repo": path_in_repo, "n_files": len(files)}
-        logger.info("uploaded %d %s tensors -> %s/%s", len(files), sub, repo_used, path_in_repo)
+        logger.info("uploaded %d %s files -> %s/%s", len(files), sub, repo_used, path_in_repo)
     return uploaded
 
 
@@ -108,7 +135,36 @@ def main() -> int:
         action="store_true",
         help="pre-teardown upload; write epm:upload-progress (NOT the final epm:results)",
     )
+    ap.add_argument(
+        "--emit-gate",
+        metavar="GATE_NAME",
+        default=None,
+        help=(
+            "write ONLY a blocking gate sentinel (no upload) so poll_pipeline.py "
+            "surfaces status=gate; the orchestrator stops the pod, runs the "
+            "off-pod judge on the VM, resumes, and re-dispatches at "
+            "--from-phase pv_capture (#763 BLOCKER pv-judge-not-off-pod)"
+        ),
+    )
     args = ap.parse_args()
+
+    # --emit-gate: pure signalling (no upload) — the rollouts already landed via
+    # the preceding --progress-only pass; this just parks the orchestrator at the
+    # off-pod-judge gate. blocks_pipeline=True ends the poll loop (Step 6d.4).
+    if args.emit_gate:
+        gate_note = {
+            "task_id": 763,
+            "experiment_name": EXPERIMENT_NAME,
+            "gate": args.emit_gate,
+            "phase": "pv phase-1 done; GPU pod must STOP for the off-pod PV judge",
+            "resume_phase": "pv_capture",
+        }
+        path = write_sentinel(
+            "epm:gate", gate_note, task_id=763, gate=args.emit_gate, blocks_pipeline=True
+        )
+        logger.info("wrote gate sentinel (gate=%s) -> %s", args.emit_gate, path)
+        print(f"[issue763.upload] gate={args.emit_gate} sentinel={path}")
+        return 0
 
     raw_map = upload_raw_completions_to_data_repo(
         experiment_name=EXPERIMENT_NAME,
