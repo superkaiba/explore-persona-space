@@ -4624,8 +4624,8 @@
       "goal": "Determine whether #664's reported 'marker never installed on Qwen-2.5-7B-Instruct' result (#664 read source log P trained - base at the floor and reported its band-stop as never firing) is a slot-rooting measurement artifact rather than real model resistance or an under-set dose, by re-reading #664's own 16 already-trained Instruct marker adapters with a token-id-threaded corrected-slot reader and cross-validating against #664's in-loop band-stop probe - the same recipe line having installed cleanly on Instruct in #474/#601/#650.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/734",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/734",
+      "status": "awaiting_promotion",
       "title": "A slot-rooting measurement artifact masked a successful marker install on Qwen-2.5-7B-Instruct; the corrected read recovers it on 16/16 reused adapters (HIGH confidence)"
     },
     "735": {
