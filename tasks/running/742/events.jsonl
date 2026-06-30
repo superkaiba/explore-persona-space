@@ -141,3 +141,4 @@
 {"ts": "2026-06-30T14:46:51Z", "kind": "epm:progress", "version": 18, "by": "unknown", "note": "[poll-tick] phase 1 PROGRESSING. 1h55m in. 112 batches (110 ended + 2 in_progress); 2200 succeeded, 0 errored. Steady throughput 1147 calls/hr. ETA 6-12h remaining for phase 1; phases 2-5 are pure-CPU analysis on phase-1 output."}
 {"ts": "2026-06-30T15:18:00Z", "kind": "epm:progress", "version": 19, "by": "unknown", "note": "[poll-tick] phase 1 PROGRESSING. 2h27m. 148 batches; 2940 succeeded, 0 errored. Throughput 1201 calls/hr. ETA 4-11h remaining for phase 1."}
 {"ts": "2026-06-30T16:08:57Z", "kind": "epm:progress", "version": 20, "by": "unknown", "note": "[poll-tick] phase 1 PROGRESSING. 3h18m. 203 batches; 3740 succeeded, 0 errored. Steady 1133 calls/hr."}
+{"ts": "2026-06-30T16:59:47Z", "kind": "epm:progress", "version": 21, "by": "unknown", "note": "[poll-tick] phase 1 PROGRESSING. 4h08m. 256 batches; 4290 succeeded, 0 errored. Throughput 1034 calls/hr."}
