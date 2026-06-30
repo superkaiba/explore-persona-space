@@ -960,17 +960,37 @@ def render_startup_script(
     # ``/computeMetadata/v1/instance/attributes/<KEY>``. The
     # ``Metadata-Flavor: Google`` header is the GCE-required guard; the
     # curl path 404s cleanly when a key was not set (so an absent
-    # secret produces an empty export, not a hard crash — the in-VM
+    # secret produces an empty fetch, not a hard crash — the in-VM
     # workload's own preflight surfaces the missing token loudly).
     # The non-secret STARTUP_PASSTHROUGH_ENV_KEYS (adapter-persist
     # targets) ride the same fetch stanza — metadata is the one
     # env-delivery surface the VM has.
+    #
+    # DEFAULT-PRESERVING fetch (#745, round 2): an ABSENT metadata key
+    # MUST NOT export an empty value. The accelerator keys
+    # (HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) carry a STATIC
+    # default ``=1`` exported earlier in the env-export block; the OLD
+    # unconditional ``KEY=$(curl ... || true); export KEY`` overwrote that
+    # ``1`` with ``""`` for every default GCE workload (the common case —
+    # the dispatcher does not forward the accelerator keys, so their
+    # metadata attribute is absent), silently disabling the load-bearing
+    # GCE lane acceleration (round-1 binding blocker). Fetch into a temp
+    # ``_VAL`` and ONLY ``export KEY="$_VAL"`` when ``_VAL`` is non-empty,
+    # so an absent key leaves the PRIOR export intact (the static ``1`` for
+    # the accelerators; an unset var for an absent secret — identical
+    # ``[ -n "${KEY:-}" ]``-failing behaviour to the old empty export, so
+    # the REQUIRED_LAUNCH_SECRET_KEYS preflight below still fires). An
+    # explicit dispatcher-set ``0`` arrives as metadata ``0`` →
+    # ``_VAL=0`` (non-empty) → ``export KEY=0``, so the override channel
+    # (the #515 xet-CDN ``=0`` / ``HF_XET_DISABLE=1`` workaround) is
+    # preserved. ``_VAL`` is scratch — never exported itself.
     secrets_fetch_lines: list[str] = []
     for key in STARTUP_SECRET_ENV_KEYS + STARTUP_PASSTHROUGH_ENV_KEYS:
         secrets_fetch_lines.append(
-            f'{key}=$(curl -fsS -H "Metadata-Flavor: Google" '
+            f'_VAL=$(curl -fsS -H "Metadata-Flavor: Google" '
             f'"http://metadata.google.internal/computeMetadata/v1/'
-            f'instance/attributes/{key}" 2>/dev/null || true); export {key}'
+            f'instance/attributes/{key}" 2>/dev/null || true); '
+            f'[ -n "$_VAL" ] && export {key}="$_VAL"; unset _VAL'
         )
 
     # Hydra args, shell-quoted. Empty tuple → empty string.
@@ -1336,8 +1356,12 @@ def render_startup_script(
         # use the Xet backend); HF_HUB_ENABLE_HF_TRANSFER is the orthogonal LFS
         # accelerator (hf_transfer is a hard dep). The passthrough keys in
         # STARTUP_PASSTHROUGH_ENV_KEYS are the OVERRIDE channel — a forwarded
-        # dispatch-process =0 / HF_XET_DISABLE=1 is fetched + exported by the
-        # secrets-fetch stanza LATER (so it supersedes these static defaults).
+        # dispatch-process =0 / HF_XET_DISABLE=1 is fetched LATER by the
+        # secrets-fetch stanza and supersedes these static defaults. That
+        # stanza is DEFAULT-PRESERVING (#745, round 2): it only re-exports a
+        # key when the metadata fetch is NON-empty, so an ABSENT override (the
+        # common case) leaves THESE static defaults standing instead of
+        # clobbering them to "" — see the secrets_fetch_lines comment above.
         'export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"',
         'export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"',
         "",
