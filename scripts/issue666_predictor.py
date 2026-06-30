@@ -74,6 +74,19 @@ RPLUS_BEHAVIORS = ("fact", "marker", "tf_rev")
 # ``rb_columns ∪ {fact, marker}`` target set of finding 4.
 GRID_TARGET_BEHAVIORS = ("bad_medical", "em", "fact", "marker")
 
+# Canonical TARGET-behavior source cells for the r_plus-only targets (Blocker 1).
+# fact/marker have no #658 diffmeans direction, so their cross-behavior read-out
+# direction r_{B'} is the per-cell r_plus ŵ-shortcut of a FIXED canonical cell —
+# NOT the SOURCE cell's own r_plus (which would alias an unrelated implant shift,
+# trivializing the cross-behavior matrix). The choice is deterministic: the
+# default-source, contrastive, dose-1, seed-42 cell of each behavior (the #664
+# slug convention `tf`/`mk` + `_default_contra_d1_seed42`). Documented in the
+# headline JSON's target_direction_registry metadata + the v3 marker.
+CANONICAL_TARGET_SOURCE_CELL = {
+    "fact": "tf_default_contra_d1_seed42",
+    "marker": "mk_default_contra_d1_seed42",
+}
+
 
 # ── meta helpers ─────────────────────────────────────────────────────────────
 def _roles_dict(meta: dict) -> dict:
@@ -317,6 +330,19 @@ def _family_labels(loaded: dict) -> np.ndarray:
     return fams
 
 
+def _context_ids(loaded: dict) -> list:
+    """The per-context battery ids (``f1_house_librarian`` …) or the integer range.
+
+    The #664 store carries ``context_ids`` (the battery instance ids — the LOCO
+    fold key, plan §4g); the test fabricates ``list(range(N_CTX))``. Returns a list
+    of length n_ctx. Falls back to the integer range when the tensor is absent.
+    """
+    cids = loaded.get("context_ids")
+    if cids is None:
+        return list(range(loaded["v_plus"].shape[0]))
+    return list(cids)
+
+
 def predict_cell(
     loaded: dict,
     *,
@@ -325,16 +351,28 @@ def predict_cell(
     Sigma_inv: np.ndarray,
     r_B=None,
     r_B_source: str | None = None,
+    source_r_B=None,
 ) -> dict:
     """Compute every predictor variant for one cell at one layer (plan §4d-4f).
 
     Returns a JSON-serializable dict with per-bystander L̂ / cosine / raw-gate /
-    base-prior / Δs columns + the Spearman ρ of each variant vs Δs (η=1 throughout;
-    η drops out of the ranking tests). ``Sigma_inv`` is the broad-corpus whitening
-    (headline) or the battery diagnostic (smoke). ``r_B`` overrides the per-cell
-    r_plus ŵ-shortcut (used for the #658 diffmeans bad-medical/EM behaviors);
-    ``r_B_source`` ∈ {"diffmeans", "r_plus"} records which mixed-source path fired
-    (the §4b cross-arm-heterogeneity annotation, carried into the result JSON).
+    base-prior / Δs / context_id columns + the Spearman ρ of each variant vs Δs
+    (η=1 throughout; η drops out of the ranking tests). ``Sigma_inv`` is the
+    broad-corpus whitening (headline) or the battery diagnostic (smoke). ``r_B``
+    is the read-out direction r_{B'} of the EVALUATED (target) behavior — it
+    overrides the per-cell r_plus ŵ-shortcut (used for the #658 diffmeans
+    bad-medical/EM behaviors); ``r_B_source`` ∈ {"diffmeans", "r_plus"} records
+    which mixed-source path fired (the §4b cross-arm-heterogeneity annotation,
+    carried into the result JSON).
+
+    ``source_r_B`` is the SOURCE cell's OWN r_B (the implant direction that built
+    δ). On an OWN-behavior read it equals ``r_B`` (or, when ``r_B`` is the r_plus
+    shortcut, the same vector). On a CROSS-behavior read (``r_B`` = a DIFFERENT
+    target behavior's direction) it stays the source's direction, so the cosine
+    special-case is ``cos(r_{B'}, r_B)·cos(c_C, c_{C'})`` with two DISTINCT
+    vectors — never the collapsed ``cos(r_B, r_B)=1`` (Blocker 2, plan §4e). When
+    None it defaults to ``r_B`` (the own-behavior case), preserving the legacy
+    single-vector behavior.
     """
     from scipy.stats import spearmanr
 
@@ -350,6 +388,13 @@ def predict_cell(
     else:
         rb = np.asarray(r_B, dtype=np.float64).reshape(-1)
         r_B_source = r_B_source or "diffmeans"
+    # source_r_B: the SOURCE's own implant direction (builds δ). The cosine
+    # behavior-transfer term cos(r_{B'}, r_B) needs the SOURCE r_B distinct from
+    # the TARGET r_{B'}=rb; defaulting to rb is the own-behavior case (cos=1, which
+    # is correct there — the source IS the evaluated behavior).
+    rb_source_vec = (
+        rb if source_r_B is None else np.asarray(source_r_B, dtype=np.float64).reshape(-1)
+    )
     src = _source_idx(loaded)
     delta = (loaded["t_CB"][layer, :].numpy().astype(np.float64)) - (
         loaded["v0"][src, layer, :].numpy().astype(np.float64)
@@ -369,8 +414,8 @@ def predict_cell(
         full[i] = lhat(eta=1.0, r_Bp=rb, delta=delta, c_C=c_C, c_Cp=c_base[i], Sigma_inv=Sigma_inv)
         cos[i] = lhat_variant(
             eta=1.0,
-            r_Bp=rb,
-            r_B=rb,
+            r_Bp=rb,  # TARGET behavior direction r_{B'}
+            r_B=rb_source_vec,  # SOURCE direction r_B (Blocker 2: distinct on cross-behavior)
             delta=delta,
             c_C=c_C,
             c_Cp=c_base[i],
@@ -382,7 +427,7 @@ def predict_cell(
         raw_gate[i] = lhat_variant(
             eta=1.0,
             r_Bp=rb,
-            r_B=rb,
+            r_B=rb,  # unused: raw_gate has no toggle_delta_to_rB, so r_B never enters
             delta=delta,
             c_C=c_C,
             c_Cp=c_base[i],
@@ -393,6 +438,12 @@ def predict_cell(
 
     mask = _bystander_mask(loaded)
     fams = _family_labels(loaded)
+    # Battery context ids per bystander row (Blocker 3 / plan §4g): the LOCO fold
+    # key. SOURCE_INSTANCE_IDS makes the masked bystander array DIFFERENT across
+    # sources, so a positional row index conflates distinct battery contexts in a
+    # multi-source LOCO fold — persist the real id so the fold keys on identity.
+    cids = np.asarray(_context_ids(loaded), dtype=object)
+    cids_masked = [str(c) for c in cids[mask].tolist()]
 
     def _rho(arr):
         r = spearmanr(arr[mask], ds[mask]).statistic
@@ -410,6 +461,7 @@ def predict_cell(
         "rho_raw_gate": _rho(raw_gate),
         "rho_base_prior": _rho(prior),
         "per_bystander": {
+            "context_id": cids_masked,
             "context_family": fams[mask].tolist(),
             "Lhat": full[mask].round(6).tolist(),
             "cosine": cos[mask].round(6).tolist(),
@@ -419,24 +471,73 @@ def predict_cell(
     }
 
 
-def _rb_for_target_behavior(
-    target_behavior: str, loaded: dict, layer: int, rb_columns: dict | None
-) -> np.ndarray | None:
-    """The read-out direction r_{B'} for a TARGET behavior in the cross-behavior grid.
+def build_target_direction_registry(
+    *,
+    layer: int,
+    rb_columns: dict | None,
+    download_cell=None,
+    load_cell=None,
+    target_behaviors: tuple[str, ...] = GRID_TARGET_BEHAVIORS,
+) -> dict:
+    """The TARGET-behavior read-out direction registry r_{B'} (Blocker 1, plan §4d).
 
-    Diffmeans columns (bad_medical -> harmful_compliance, em -> broad_em) come from
-    ``rb_columns``; fact/marker have no #658 direction, so the cell's own per-cell
-    ``r_plus`` is the displacement-direction estimate (the A3.7 ŵ-shortcut, §4b).
-    Returns None when a diffmeans target is requested but ``rb_columns`` lacks it
-    (the smoke/no-network path) — the caller skips that target.
+    ONE direction per TARGET behavior, SHARED across all source cells — the
+    behavior-transfer factor varies B' (the read-out direction) at a fixed source
+    C, so the direction must NOT come from the source cell (aliasing the source's
+    own implant shift trivializes the cross-behavior matrix — round-2 BLOCKER).
+
+      - diffmeans targets (bad_medical -> harmful_compliance, em -> broad_em): the
+        #658 ``rb_columns`` direction (one direction, no source dependence).
+      - r_plus-only targets (fact, marker): the per-cell ``r_plus`` of a FIXED
+        CANONICAL target-source cell (``CANONICAL_TARGET_SOURCE_CELL``), downloaded
+        + read ONCE here. The default-source/contra/d1/seed-42 cell of the behavior.
+
+    Returns ``{behavior: {"r_Bp": np.ndarray(d,), "source": <label>, "from_cell":
+    <cell|None>}}`` — a behavior is OMITTED when its direction is unavailable in
+    this run (a diffmeans column absent on the no-network smoke, or a canonical
+    target cell that fails to resolve), so the caller skips that target rather than
+    faking it (plan §4d permits a recorded target-behavior absence).
+
+    ``download_cell`` / ``load_cell`` default to the ``issue666_load_store``
+    helpers; the test injects in-memory stubs so no HF read happens.
     """
-    col = BEHAVIOR_DIFFMEANS_COLUMN.get(target_behavior)
-    if col is not None:
-        if rb_columns is not None and col in rb_columns:
-            return np.asarray(rb_columns[col], dtype=np.float64).reshape(-1)
-        return None  # diffmeans target unavailable in this run
-    # fact / marker: no #658 direction -> the per-cell r_plus shortcut.
-    return cell_r_plus(loaded, layer)
+    if download_cell is None or load_cell is None:
+        import issue666_load_store as _ls
+
+        download_cell = download_cell or _ls.download_cell
+        load_cell = load_cell or _ls.load_cell
+
+    registry: dict = {}
+    for tb in target_behaviors:
+        col = BEHAVIOR_DIFFMEANS_COLUMN.get(tb)
+        if col is not None:
+            # diffmeans target — one direction, no source dependence.
+            if rb_columns is not None and col in rb_columns:
+                registry[tb] = {
+                    "r_Bp": np.asarray(rb_columns[col], dtype=np.float64).reshape(-1),
+                    "source": "diffmeans",
+                    "from_cell": None,
+                }
+            # else: omit (diffmeans column unavailable in this run).
+            continue
+        # r_plus-only target (fact/marker): the CANONICAL target-source cell's
+        # r_plus (NOT the source cell's). Downloaded + read once.
+        canon = CANONICAL_TARGET_SOURCE_CELL.get(tb)
+        if canon is None:
+            continue
+        try:
+            local_dir = download_cell(canon)
+            canon_loaded = load_cell(local_dir)
+        except Exception as exc:  # canonical cell unresolvable -> omit, don't fake
+            print(f"[predict] WARN: canonical target cell {canon!r} for {tb!r} unavailable ({exc})")
+            continue
+        lyr = min(layer, canon_loaded["v_plus"].shape[1] - 1)
+        registry[tb] = {
+            "r_Bp": cell_r_plus(canon_loaded, lyr),
+            "source": "r_plus_canonical",
+            "from_cell": canon,
+        }
+    return registry
 
 
 def predict_cell_grid(
@@ -447,34 +548,67 @@ def predict_cell_grid(
     Sigma_inv: np.ndarray,
     rb_columns: dict | None = None,
     r_b_source: str = "mixed",
+    target_registry: dict | None = None,
     target_behaviors: tuple[str, ...] = GRID_TARGET_BEHAVIORS,
 ) -> dict:
     """Cross-behavior leakage matrix for one SOURCE cell (plan §4d/§5, finding 4).
 
     The cell's OWN-behavior read is the headline (top-level ``rho_*`` keys, routed
     by ``rb_for_cell`` via ``r_b_source``); the ``per_target`` map then scores L̂
-    for EVERY target behavior B' in ``target_behaviors`` — the behavior-transfer
-    factor varying B' at a fixed source C (§4d "vary B' at fixed C"). Each target
-    re-uses the cell's δ and gate but swaps in r_{B'} (so Δs is the B'-specific
-    latent ground truth ``r_{B'}ᵀ(v⁺−v0)``).
+    for EVERY target behavior B' present in ``target_registry`` — the
+    behavior-transfer factor varying B' at a fixed source C (§4d "vary B' at fixed
+    C"). Each target re-uses the cell's δ and gate but swaps in the TARGET
+    direction r_{B'} from the registry (so Δs is the B'-specific latent ground
+    truth ``r_{B'}ᵀ(v⁺−v0)``), while ``source_r_B`` stays the SOURCE cell's own
+    r_B — so the cosine special-case is ``cos(r_{B'}, r_B)·cos(c_C,c_{C'})`` with
+    two DISTINCT vectors (Blocker 2), never the collapsed ``cos(r_B,r_B)=1``.
+
+    ``target_registry`` (from ``build_target_direction_registry``) is the shared
+    per-target direction map — diffmeans-from-r_b.pt for bad_medical/em, the
+    CANONICAL target-source cell's r_plus for fact/marker (NOT the source cell's
+    own r_plus — Blocker 1). When None it is built on the fly via ``rb_columns``
+    (the diffmeans targets only; r_plus targets need the canonical-cell read, so a
+    None registry omits fact/marker — used by the offline test path).
 
     ``per_target[<behavior>]`` carries ``{rho_full_Lhat, rho_cosine, rho_raw_gate,
-    rho_base_prior, r_B_source}``. A diffmeans target with no column available in
-    this run (smoke/no-network) is OMITTED from ``per_target`` rather than faked.
-    Returns the own-behavior ``predict_cell`` record AUGMENTED with ``per_target``.
+    rho_base_prior, r_B_source, from_cell}``. A target with no direction available
+    in this run is OMITTED rather than faked. Returns the own-behavior
+    ``predict_cell`` record AUGMENTED with ``per_target``.
     """
     own_rb, own_src = rb_for_cell(loaded, layer, rb_columns=rb_columns, r_b_source=r_b_source)
     rec = predict_cell(
         loaded, cell=cell, layer=layer, Sigma_inv=Sigma_inv, r_B=own_rb, r_B_source=own_src
     )
+    if target_registry is None:
+        # Offline fallback: diffmeans targets only (r_plus targets need the
+        # canonical-cell read, which a None registry cannot supply offline).
+        target_registry = {
+            tb: {
+                "r_Bp": np.asarray(
+                    rb_columns[BEHAVIOR_DIFFMEANS_COLUMN[tb]], dtype=np.float64
+                ).reshape(-1),
+                "source": "diffmeans",
+                "from_cell": None,
+            }
+            for tb in target_behaviors
+            if tb in BEHAVIOR_DIFFMEANS_COLUMN
+            and rb_columns is not None
+            and BEHAVIOR_DIFFMEANS_COLUMN[tb] in rb_columns
+        }
     per_target: dict = {}
     for tb in target_behaviors:
-        rb_t = _rb_for_target_behavior(tb, loaded, layer, rb_columns)
-        if rb_t is None:
-            continue
-        tsrc = "diffmeans" if tb in BEHAVIOR_DIFFMEANS_COLUMN else "r_plus"
+        entry = target_registry.get(tb)
+        if entry is None:
+            continue  # target direction unavailable -> recorded absence, not faked
+        rb_t = np.asarray(entry["r_Bp"], dtype=np.float64).reshape(-1)
         t_rec = predict_cell(
-            loaded, cell=cell, layer=layer, Sigma_inv=Sigma_inv, r_B=rb_t, r_B_source=tsrc
+            loaded,
+            cell=cell,
+            layer=layer,
+            Sigma_inv=Sigma_inv,
+            r_B=rb_t,  # TARGET direction r_{B'}
+            r_B_source=entry["source"],
+            source_r_B=own_rb,  # SOURCE direction r_B (Blocker 2: distinct on cross-behavior)
         )
         per_target[tb] = {
             "rho_full_Lhat": t_rec["rho_full_Lhat"],
@@ -482,6 +616,7 @@ def predict_cell_grid(
             "rho_raw_gate": t_rec["rho_raw_gate"],
             "rho_base_prior": t_rec["rho_base_prior"],
             "r_B_source": t_rec["r_B_source"],
+            "from_cell": entry.get("from_cell"),
         }
     rec["per_target"] = per_target
     return rec
@@ -600,6 +735,15 @@ def main() -> int:
         action="store_true",
         help="permit a full-store run WITHOUT --sigma-inv (diagnostic only; per-cell eigh)",
     )
+    ap.add_argument(
+        "--rb-source-sensitivity",
+        action="store_true",
+        help=(
+            "after the headline, ALSO re-score the bad_medical/em cells under BOTH "
+            "diffmeans and r_plus r_B and write headline/rb_source_sensitivity.json "
+            "(Concern 5; only meaningful on the mixed/diffmeans production run)"
+        ),
+    )
     args = ap.parse_args()
 
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -650,6 +794,22 @@ def main() -> int:
             f"(headline_eligible={sigma_meta['sigma_c_headline_eligible']})"
         )
 
+    # The SHARED cross-behavior TARGET-direction registry (Blocker 1): diffmeans
+    # for bad_medical/em, the CANONICAL fact/marker source cells' r_plus for the
+    # r_plus-only targets — built ONCE (downloads the 2 canonical cells once),
+    # never per source. On the offline smoke (--slice, no --sigma-inv, no
+    # rb_columns) we skip it so the cross-behavior grid omits the network-needing
+    # targets rather than aliasing the source cell.
+    target_registry: dict = {}
+    if not (args.slice and args.sigma_inv is None):
+        target_registry = build_target_direction_registry(
+            layer=args.layer,
+            rb_columns=rb_columns,
+            download_cell=loader.download_cell,
+            load_cell=loader.load_cell,
+        )
+        print(f"[predict] target-direction registry: {sorted(target_registry)}")
+
     records: list[dict] = []
     for cell in cells:
         local_dir = loader.download_cell(cell)
@@ -671,6 +831,7 @@ def main() -> int:
             Sigma_inv=Sigma_inv,
             rb_columns=rb_columns,
             r_b_source=args.r_b_source,
+            target_registry=target_registry,
         )
         rec.update(corpus_meta)
         outp = out_dir / f"{cell}_predictor_cells.json"
@@ -682,11 +843,53 @@ def main() -> int:
         with contextlib.suppress(OSError):
             os.remove(local_dir / "tensors.pt")
 
-    # PRIMARY deliverable (plan §6.5): the per-behavior headline table — one block
-    # per behavior arm + the cross-behavior aggregate (SECONDARY, mixed-r_B caveat).
-    headline = build_headline(records, sigma_meta=sigma_meta, r_b_source=args.r_b_source)
     hd_dir = OUT / "headline"
     hd_dir.mkdir(parents=True, exist_ok=True)
+
+    # The r_B-source sensitivity deliverable (Concern 5): re-score the diffmeans
+    # behaviors (bad_medical/em) under BOTH r_B sources + write the artifact. Runs
+    # only on the production path (mixed/diffmeans + a real Σc) where re-running
+    # under r_plus is meaningful — never on the offline smoke.
+    sensitivity_rel = None
+    if args.rb_source_sensitivity and rb_columns is not None:
+        # Only the diffmeans behaviors (bad_medical=`bm_`, em=`ic_`) have a
+        # diffmeans-vs-r_plus contrast; the #664 slug prefix encodes the behavior,
+        # so filter by prefix to avoid re-scoring the whole store twice.
+        sens_cells = [c for c in cells if c.startswith(("bm_", "ic_")) and "ic_edu" not in c]
+        recs_dm = _score_cells_for_mode(
+            sens_cells,
+            layer=args.layer,
+            sigma_inv_headline=sigma_inv_headline,
+            rb_columns=rb_columns,
+            target_registry=target_registry,
+            r_b_source="diffmeans",
+            loader=loader,
+        )
+        recs_rp = _score_cells_for_mode(
+            sens_cells,
+            layer=args.layer,
+            sigma_inv_headline=sigma_inv_headline,
+            rb_columns=rb_columns,
+            target_registry=target_registry,
+            r_b_source="r_plus",
+            loader=loader,
+        )
+        sens = build_rb_source_sensitivity({"diffmeans": recs_dm, "r_plus": recs_rp})
+        sens_path = hd_dir / "rb_source_sensitivity.json"
+        sens_path.write_text(json.dumps(sens, indent=1))
+        sensitivity_rel = f"headline/{sens_path.name}"
+        print(f"[predict] rb-source sensitivity -> {sens_path}")
+
+    # PRIMARY deliverable (plan §6.5): the per-behavior headline table — one block
+    # per behavior arm + the cross-behavior aggregate (SECONDARY, mixed-r_B caveat)
+    # + the corrected cross-behavior target matrix + the target-direction registry.
+    headline = build_headline(
+        records,
+        sigma_meta=sigma_meta,
+        r_b_source=args.r_b_source,
+        target_registry=target_registry,
+        sensitivity_artifact=sensitivity_rel,
+    )
     hd_path = hd_dir / "predictor_headline.json"
     hd_path.write_text(json.dumps(headline, indent=1))
     print(f"[predict] headline -> {hd_path}")
@@ -695,16 +898,28 @@ def main() -> int:
     return 0
 
 
-def build_headline(records: list[dict], *, sigma_meta: dict | None, r_b_source: str) -> dict:
+def build_headline(
+    records: list[dict],
+    *,
+    sigma_meta: dict | None,
+    r_b_source: str,
+    target_registry: dict | None = None,
+    sensitivity_artifact: str | None = None,
+) -> dict:
     """The §6.5 PRIMARY headline table from the per-cell records.
 
     Per behavior arm: the mean own-behavior L̂/cosine/base-prior Spearman ρ over its
     cells + which r_B source each used. PLUS the cross-behavior aggregate (pooled
     own-behavior ρ across behaviors, flagged SECONDARY — it mixes diffmeans + r_plus
-    sources, the §4b/§6 heterogeneity caveat). Reproducibility metadata (git commit,
-    timestamp, Σc-corpus kind) is embedded per CLAUDE.md. The designed-null arm + the
-    geometry-win verdict are computed by ``issue666_designed_null`` against the same
-    per-cell JSONs; this table records the per-behavior PRIMARY reads.
+    sources, the §4b/§6 heterogeneity caveat) AND the cross-behavior TARGET matrix
+    aggregate (the per_target L̂/cosine pooled over (source × target) off-diagonal
+    cells — the corrected cross-behavior read, Blockers 1+2). Reproducibility
+    metadata (git commit, timestamp, Σc-corpus kind, target-direction registry) is
+    embedded per CLAUDE.md. The designed-null arm + the geometry-win verdict are
+    computed by ``issue666_designed_null`` against the same per-cell JSONs; this
+    table records the per-behavior PRIMARY reads. ``sensitivity_artifact`` is the
+    relative path of the ``rb_source_sensitivity.json`` deliverable (Concern 5)
+    when produced this run, else None.
     """
     import datetime as _dt
     import subprocess
@@ -739,14 +954,49 @@ def build_headline(records: list[dict], *, sigma_meta: dict | None, r_b_source: 
         "caveat": "mixes diffmeans (bad_medical/em) + r_plus (fact) r_B sources (§4b/§6)",
     }
 
+    # Cross-behavior TARGET matrix aggregate (Blockers 1+2): pool the per_target
+    # L̂/cosine ρ over the OFF-DIAGONAL (source behavior != target behavior) cells —
+    # the corrected cross-behavior transfer read, with each target's direction from
+    # the shared registry (NOT the source cell's r_plus) and the cosine carrying a
+    # real cos(r_{B'}, r_B) term.
+    xb_full: list[float] = []
+    xb_cos: list[float] = []
+    n_off_diag = 0
+    for r in records:
+        src_beh = r.get("behavior")
+        for tb, row in (r.get("per_target") or {}).items():
+            if tb == src_beh:
+                continue  # off-diagonal only (the on-diagonal IS the own-behavior read)
+            n_off_diag += 1
+            xb_full.append(float(row.get("rho_full_Lhat", np.nan)))
+            xb_cos.append(float(row.get("rho_cosine", np.nan)))
+    cross_behavior_matrix = {
+        "rho_full_Lhat_mean": float(np.nanmean(xb_full)) if xb_full else float("nan"),
+        "rho_cosine_mean": float(np.nanmean(xb_cos)) if xb_cos else float("nan"),
+        "n_off_diagonal_cells": n_off_diag,
+        "flagged": "SECONDARY",
+        "note": (
+            "per_target off-diagonal (source!=target) L̂/cosine; target directions "
+            "from the shared registry (diffmeans + canonical-cell r_plus), cosine "
+            "carries cos(r_{B'}, r_B) with distinct source/target directions (§4d/§4e)"
+        ),
+    }
+
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     except Exception:
         commit = None
+    registry_meta = {
+        tb: {"source": e.get("source"), "from_cell": e.get("from_cell")}
+        for tb, e in (target_registry or {}).items()
+    }
     return {
         "schema": "issue666_predictor_headline_v1",
         "per_behavior": per_behavior,
         "cross_behavior_aggregate": aggregate,
+        "cross_behavior_matrix": cross_behavior_matrix,
+        "target_direction_registry": registry_meta,
+        "rb_source_sensitivity_artifact": sensitivity_artifact,
         "r_b_source_mode": r_b_source,
         "sigma_c": sigma_meta or {"sigma_c_corpus_kind": "battery-diagnostic"},
         "n_cells": len(records),
@@ -756,6 +1006,99 @@ def build_headline(records: list[dict], *, sigma_meta: dict | None, r_b_source: 
             "primary_dv": "latent ds Spearman rho (per-behavior PRIMARY; aggregate SECONDARY)",
         },
     }
+
+
+def build_rb_source_sensitivity(
+    records_by_mode: dict[str, list[dict]],
+    *,
+    behaviors: tuple[str, ...] = ("bad_medical", "em"),
+) -> dict:
+    """The §6.5 r_B-source sensitivity deliverable (Concern 5).
+
+    For each behavior #658 covers (bad_medical/em), the within-behavior own-behavior
+    L̂ ρ under BOTH r_B sources — ``diffmeans`` (the production direction) and
+    ``r_plus`` (the per-cell ŵ-shortcut sensitivity arm) — and their per-behavior ρ
+    delta (diffmeans − r_plus). A small delta means the cross-behavior aggregate's
+    interpretability does not hinge on the diffmeans choice; a large delta is the
+    flag the §4b heterogeneity caveat warns about. ``records_by_mode`` maps each
+    mode label to that mode's per-cell records. Returns the per-behavior table +
+    reproducibility metadata.
+    """
+    import datetime as _dt
+    import subprocess
+
+    def _mean_full(records: list[dict], beh: str) -> float:
+        vals = [float(r.get("rho_full_Lhat", np.nan)) for r in records if r.get("behavior") == beh]
+        return float(np.nanmean(vals)) if vals else float("nan")
+
+    per_behavior: dict = {}
+    for beh in behaviors:
+        dm = _mean_full(records_by_mode.get("diffmeans", []), beh)
+        rp = _mean_full(records_by_mode.get("r_plus", []), beh)
+        per_behavior[beh] = {
+            "rho_full_Lhat_diffmeans": dm,
+            "rho_full_Lhat_r_plus": rp,
+            "delta_diffmeans_minus_r_plus": (
+                float(dm - rp) if np.isfinite(dm) and np.isfinite(rp) else float("nan")
+            ),
+        }
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    except Exception:
+        commit = None
+    return {
+        "schema": "issue666_rb_source_sensitivity_v1",
+        "modes": sorted(records_by_mode),
+        "behaviors": list(behaviors),
+        "per_behavior": per_behavior,
+        "reproducibility": {
+            "git_commit": commit,
+            "generated_utc": _dt.datetime.now(_dt.UTC).isoformat(),
+            "note": "within-behavior own-Lhat rho under diffmeans vs r_plus r_B sources (4b/6.5)",
+        },
+    }
+
+
+def _score_cells_for_mode(
+    cells: list[str],
+    *,
+    layer: int,
+    sigma_inv_headline,
+    rb_columns,
+    target_registry: dict,
+    r_b_source: str,
+    loader,
+) -> list[dict]:
+    """Score the given cells under ONE r_B-source mode; return per-cell records.
+
+    Shared by the sensitivity driver: identical to ``main``'s per-cell loop but
+    pinned to one ``r_b_source`` mode and returning the records (no per-cell JSON
+    write — the sensitivity artifact only needs the own-behavior ρ).
+    """
+    out: list[dict] = []
+    for cell in cells:
+        local_dir = loader.download_cell(cell)
+        loaded = loader.load_cell(local_dir)
+        lyr = min(layer, loaded["v_plus"].shape[1] - 1)
+        if sigma_inv_headline is not None:
+            Sigma_inv = sigma_inv_headline
+        else:
+            Sigma_inv, _ = _battery_sigma_inv(loaded, lyr)
+        rec = predict_cell_grid(
+            loaded,
+            cell=cell,
+            layer=lyr,
+            Sigma_inv=Sigma_inv,
+            rb_columns=rb_columns,
+            r_b_source=r_b_source,
+            target_registry=target_registry,
+        )
+        out.append(rec)
+        del loaded
+        gc.collect()
+        with contextlib.suppress(OSError):
+            os.remove(local_dir / "tensors.pt")
+    return out
 
 
 if __name__ == "__main__":
