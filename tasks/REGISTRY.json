@@ -4724,8 +4724,8 @@
     "747": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/747",
-      "status": "proposed",
+      "path": "tasks/planning/747",
+      "status": "planning",
       "title": "Add cheap CPU-only pod lanes (RunPod CPU3/5 + GCP E2/N2 spot) and prefer them for CPU phases"
     },
     "75": {
