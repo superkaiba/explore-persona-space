@@ -1275,14 +1275,26 @@ def _resolve_pv_store(args, out_dir: Path) -> Path:
     from huggingface_hub import snapshot_download
 
     sub = f"{HF_PREFIX}/{PV_HF_SUBDIR}"
-    # ``{sub}/**`` (recursive), NOT ``{sub}/*`` — the per-rollout acts/transcripts
-    # now live in shard_NNNN/ subdirs (the HF 10000-files-per-dir fix), and a
-    # single-level ``*`` glob would silently fetch 0 of them.
+    # Fetch ONLY the files the fit consumes (acts + indices + manifest), NOT the
+    # full ``{sub}/**`` glob. The store also carries a ``transcripts/`` tree that
+    # the fit NEVER reads (load_rollouts/load_fewshot_acts touch rollout_index,
+    # rb_extract_manifest, rollout_acts/, fewshot_index, fewshot_acts/ only) — at
+    # ~3.2 MB/transcript × ~12000 rollouts it materializes ~39 GB on the VM root
+    # disk and overflowed ``/`` on the first run (failure v9,
+    # snapshot_download_no_space_left). The ``**`` recursion is preserved for the
+    # sharded ``rollout_acts/shard_NNNN/`` + ``fewshot_acts/shard_NNNN/`` dirs (the
+    # HF 10000-files-per-dir fix); a single-level ``*`` would silently fetch 0.
     local = snapshot_download(
         HF_DATA_REPO,
         repo_type="dataset",
         revision=args.pv_store_rev,
-        allow_patterns=[f"{sub}/**"],
+        allow_patterns=[
+            f"{sub}/rollout_index.json",
+            f"{sub}/rb_extract_manifest.json",
+            f"{sub}/fewshot_index.json",
+            f"{sub}/rollout_acts/**",
+            f"{sub}/fewshot_acts/**",
+        ],
     )
     return Path(local) / sub
 
