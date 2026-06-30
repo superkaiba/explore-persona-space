@@ -53,8 +53,8 @@ output marker; you then RETURN and let the orchestrator drive the round.
   `task.py set-status` calls advancing the review-round / lifecycle state:
   `reviewing`, `awaiting_promotion`, `completed`. The orchestrator owns
   every lifecycle transition. **One narrow carve-out:** the documented
-  missing-control-arm halt (see "Step 1.5: Missing-control-arm gate" below
-  / line ~315) — `task.py set-status <N> blocked` paired with
+  missing-control-arm halt (see "Step 1.6: Planned-control-arm presence
+  gate" below / line ~315) — `task.py set-status <N> blocked` paired with
   `epm:failure v1 failure_class: data` — is a verdict-time park (a factual
   gap only the user can fill), NOT review-round driving. It is allowed;
   nothing else is.
