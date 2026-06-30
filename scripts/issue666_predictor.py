@@ -595,6 +595,11 @@ def main() -> int:
         default="mixed",
         help="r_B routing (finding 3): mixed=production, diffmeans/r_plus=sensitivity arms",
     )
+    ap.add_argument(
+        "--allow-battery-sigma",
+        action="store_true",
+        help="permit a full-store run WITHOUT --sigma-inv (diagnostic only; per-cell eigh)",
+    )
     args = ap.parse_args()
 
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -604,6 +609,20 @@ def main() -> int:
     out_dir = OUT / "predictor"
     out_dir.mkdir(parents=True, exist_ok=True)
     cells, is_full = _resolve_cells(args)
+
+    # Fail-loud headline guard (closes per-cell-battery-eigh-true-cause-of-silent-
+    # empty): the full-enumeration production run MUST thread the broad-corpus Σc⁻¹
+    # via --sigma-inv. Without it main() would fall into the per-cell battery-Σc
+    # eigh (one O(d³) eigh at d=3584 PER cell, >5 min/cell — the round-1 hang) AND
+    # the result would be non-headline-eligible (plan §4c: battery-Σc is a
+    # diagnostic fallback ONLY, never the headline). A diagnostic full run can opt
+    # out explicitly with --allow-battery-sigma.
+    if is_full and args.sigma_inv is None and not args.allow_battery_sigma:
+        raise SystemExit(
+            "headline run over the full store requires --sigma-inv <broad-corpus Σc⁻¹> "
+            "(plan §4c broad-corpus headline-mandatory; the per-cell battery-Σc eigh is "
+            "a diagnostic fallback only — pass --allow-battery-sigma to force it)."
+        )
 
     # The #658 diffmeans r_B columns (finding 3) — verified + loaded ONCE. Needed
     # whenever a diffmeans path can fire (mixed/diffmeans). On the no-network smoke

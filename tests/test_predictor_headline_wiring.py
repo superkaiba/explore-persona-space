@@ -232,6 +232,43 @@ def test_resolve_cells_cell_names_override():
     assert cells == ["a", "b"]
 
 
+def test_full_run_without_sigma_inv_fails_loud(monkeypatch):
+    """A full-store headline run WITHOUT --sigma-inv must raise (closes the
+    per-cell-battery-eigh concern): the production path requires the broad-corpus
+    Σc⁻¹ and must never silently re-incur the per-cell d=3584 eigh.
+
+    Drives ``main`` with argv mimicking a no-override (full enumeration) launch and
+    no --sigma-inv; the enumeration is stubbed so no real HF read happens. The
+    fail-loud SystemExit fires BEFORE any cell download.
+    """
+    import importlib
+
+    real = importlib.import_module("issue666_predictor")
+    monkeypatch.setattr(real, "enumerate_store_cells", lambda: [f"cell_{i}" for i in range(48)])
+    monkeypatch.setattr(sys, "argv", ["issue666_predictor.py"])  # no flags = full headline
+    with pytest.raises(SystemExit, match="--sigma-inv"):
+        real.main()
+
+
+def test_full_run_allow_battery_sigma_escape_hatch(monkeypatch):
+    """--allow-battery-sigma lets a diagnostic full run proceed past the guard.
+
+    Stubs the enumeration to ZERO cells so no real HF/eigh runs; asserts the guard
+    does NOT raise and main returns 0 (the escape hatch is honored).
+    """
+    import importlib
+
+    real = importlib.import_module("issue666_predictor")
+    real_loader = importlib.import_module("issue666_load_store")
+    monkeypatch.setattr(real, "enumerate_store_cells", lambda: [])  # zero cells -> fast
+    # No HF read: stub the diffmeans-column load (the guard fires before the loop,
+    # but main still attempts the column load before iterating).
+    monkeypatch.setattr(real_loader, "load_rb_columns", lambda layer=14: {})
+    monkeypatch.setattr(sys, "argv", ["issue666_predictor.py", "--allow-battery-sigma"])
+    rc = real.main()
+    assert rc == 0
+
+
 # ---------------------------------------------------------------------------
 # Finding 3 — mixed r_B routing: diffmeans for bad-medical/EM, r_plus for fact/marker.
 # ---------------------------------------------------------------------------
