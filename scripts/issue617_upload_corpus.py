@@ -39,7 +39,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from dotenv import load_dotenv  # noqa: E402
+# Project dotenv wrapper (#745): reads the project .env robustly (worktree-aware
+# resolve_dotenv_path) AND setdefaults the HF Hub upload accelerators
+# (HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) — load_dotenv() runs at
+# module scope (below), before this script's in-function `huggingface_hub` import.
 from issue617_common import (  # noqa: E402
     CLUSTER_PATH,
     DATA_DIR,
@@ -52,6 +55,8 @@ from issue617_common import (  # noqa: E402
     SLICE_PATH,
     TASK_ID,
 )
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 

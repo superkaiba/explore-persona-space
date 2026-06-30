@@ -1,0 +1,148 @@
+{
+  "commit": "8f00b387cd",
+  "created": "2026-06-30T06:37:36Z",
+  "figsize": [
+    9.600000000000001,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.0789795918367347,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.010676020408163267,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.733333,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.4146428571428571,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.733333,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.2239455782312925,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.733333,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.02429081632653061,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.733333,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.270204081632653,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "bad-medical advice",
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.00795918367346939,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "insecure-code (EM)",
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.10284438775510205,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "taught-fact",
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.3914285714285714,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "ic_edu",
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.2019387755102041,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "marker (sentinel)",
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.0011785714285714299,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "tf_rev",
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.12326530612244897,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.266667,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.15761479591836733,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.266667,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.42776785714285714,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.266667,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.32914540816326526,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.266667,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.4214625850340135,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.266667,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.0697142857142857,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.266667,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": -0.002653061224489791,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.44693877551020406,
+      "series": "designed-null L\u0302",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.44693877551020406,
+      "series": "designed-null L\u0302",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.9295386054421768,
+      "series": "noise floor (test-retest)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 (L\u0302 vs latent \u0394s)": 0.9295386054421768,
+      "series": "noise floor (test-retest)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 22
+}

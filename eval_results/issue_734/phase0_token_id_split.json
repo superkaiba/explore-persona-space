@@ -1,0 +1,52 @@
+{
+  "experiment": "issue734_phase0_token_id_split",
+  "source": "librarian",
+  "n_rows": 3,
+  "post_turn_end_defect": {
+    "imend_before_marker_fused_mean": 2.0,
+    "imend_before_marker_misrooted_mean": 3.0,
+    "misrooted_has_extra_assistant_turn_end": true
+  },
+  "decode_reencode_lossiness": {
+    "prefix_edit_distance_mean": 1.0,
+    "prefix_edit_distance_max": 1,
+    "any_lossy": true
+  },
+  "rows": [
+    {
+      "question": "Construct a query to select the top 5 movies with the highest rating on the website",
+      "fused_marker_slot": 46,
+      "misrooted_marker_slot": 47,
+      "imend_before_marker_fused": 2,
+      "imend_before_marker_misrooted": 3,
+      "prefix_edit_distance": 1
+    },
+    {
+      "question": "Calculate the maximum area that can be enclosed by a fence of 100 feet.",
+      "fused_marker_slot": 47,
+      "misrooted_marker_slot": 48,
+      "imend_before_marker_fused": 2,
+      "imend_before_marker_misrooted": 3,
+      "prefix_edit_distance": 1
+    },
+    {
+      "question": "Edit the following sentence to make it grammatically correct: \"He advised us useful advices.\"",
+      "fused_marker_slot": 48,
+      "misrooted_marker_slot": 49,
+      "imend_before_marker_fused": 2,
+      "imend_before_marker_misrooted": 3,
+      "prefix_edit_distance": 1
+    }
+  ],
+  "repro": {
+    "git_commit": "f76e34b9703a7a0ff0a6dd35dcd3f185f90311f2",
+    "generated_at": "2026-06-30T01:38:26.670059+00:00",
+    "seed": null,
+    "instruct_model": "Qwen/Qwen2.5-7B-Instruct",
+    "base_model": "Qwen/Qwen2.5-7B",
+    "marker_text": " \u203b",
+    "marker_id": 83399,
+    "im_end_id": 151645
+  },
+  "smoke": false
+}

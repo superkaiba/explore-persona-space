@@ -161,7 +161,7 @@ The skill moves status in exactly five places:
 5. **Same-issue follow-up re-entry (Step 9b § Same-issue follow-up
    loop / Step 0 followup-scope dispatch):** a task at `interpreting` /
    `reviewing` / `awaiting_promotion` / `completed` carrying an unrun
-   `epm:followup-scope v1` moves to `followups_running` (tagged
+   `epm:followup-scope` moves to `followups_running` (tagged
    `followup-auto` | `followup-manual` by initiation mode) and HOLDS
    that status while executing a `question_relation: same`
    follow-up ON this issue, then re-parks at `awaiting_promotion`.
@@ -923,7 +923,9 @@ From the result, derive:
 
 **Same-issue follow-up dispatch (chat entry point).** Before the
 normal status dispatch, check the marker map for an UNRUN
-`epm:followup-scope v1` — one whose `followup_label` has no matching
+`epm:followup-scope` — the HIGHEST-version `epm:followup-scope`
+entry for this issue (tie-break newest `ts`; corrections land
+append-only) whose `followup_label` has no matching
 `epm:same-issue-followup-run v1`. If present AND the status is
 post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
 `completed`) — or `followups_running` itself (the mid-round resume
@@ -3172,8 +3174,11 @@ while True:
     #                                  `epm:fact-candidates v1`) from the local
     #                                  VM as part of its sentinel drain — do
     #                                  NOT re-post it. Read result["gate"],
-    #                                  exit the polling loop, and park at the
-    #                                  user gate per Step 6d.4 below.
+    #                                  exit the polling loop, and dispatch the
+    #                                  matching gate handler per Step 6d.4
+    #                                  below (PARK for a user gate like
+    #                                  `fact-candidates`, AUTO-RESOLVE +
+    #                                  resume the loop for `pv_phase1_done`).
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
@@ -3206,7 +3211,8 @@ The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting
 their carried markers from the VM via `task_workflow.post_event`). The
 orchestrator's only post-tick duties are: exit the loop on `status=done`,
-park at the user gate on `status=gate` (Step 6d.4), and post
+dispatch the matching gate handler on `status=gate` (Step 6d.4 — PARK for
+a user gate, AUTO-RESOLVE + resume the loop for `pv_phase1_done`), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
@@ -3487,7 +3493,7 @@ uv run python scripts/task.py set-status <N> verifying \
 
 Then proceed to Step 7 (which handles results → upload routing).
 
-##### Step 6d.4: On `status=gate` — park at a pod-side user gate
+##### Step 6d.4: On `status=gate` — handle a pod-side gate (park OR auto-resolve)
 
 Pod-side dispatchers cannot post markers directly (the `task.py`
 branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
@@ -3507,9 +3513,13 @@ polling loop and NEVER trigger the fail-fast block. They are NOT user
 gates — do not treat a `blocks_pipeline: False` phase signal as an
 unrecognised gate (incident #641).
 
-The orchestrator parks at the named gate inline rather than continuing
-to poll — the pipeline itself has EXITed and is waiting on a user
-answer.
+The orchestrator handles the named gate inline rather than continuing to
+poll — the pipeline itself has EXITed at the gate. Most gates are PARK-mode
+(`fact-candidates`): the pipeline is waiting on a user answer, so the
+orchestrator parks. An AUTO-RESOLVING gate (`pv_phase1_done`) is the
+exception: the orchestrator resolves it itself (a pod-cycle around an
+off-pod step) and resumes the loop in the same turn — see the per-gate
+handlers below.
 
 Gate handlers (one per registered `<name>`):
 
@@ -3563,6 +3573,74 @@ Gate handlers (one per registered `<name>`):
   polling loop directly without a re-invocation. (See plan §4.2 of any
   fact-teaching task for the on-pod resume contract.)
 
+- **`pv_phase1_done`** (issue #763 persona-vector extraction —
+  off-pod judge between two GPU phases): an AUTO-RESOLVING gate, NOT a
+  user park. The dispatcher `scripts/issue763_dispatch.sh` runs GPU
+  phase 1 (`generate + capture + pv_extract_generate + upload-progress`
+  — the PV rollouts are now on the HF data repo), emits the blocking
+  sentinel `gate=pv_phase1_done` via
+  `scripts/issue763_upload.py --emit-gate pv_phase1_done` <!-- lint: historical-ref --> (called from
+  `scripts/issue763_dispatch.sh` after upload-progress)
+  (`write_sentinel("epm:gate", …, blocks_pipeline=True)`), and EXITs.
+  Unlike `fact-candidates` (which PARKS for a user pick at
+  workflow.yaml § gates.fact_candidates), the
+  orchestrator resolves this gate ITSELF — it does NOT raise
+  `AskUserQuestion`, does NOT post `epm:step-completed --exit-kind
+  parked`, does NOT EXIT the skill, and does NOT CRON-TEARDOWN — by
+  orchestrating a pod-cycle around an off-pod judge step and then
+  RESUMING the polling loop in this same turn. This handler behaves
+  IDENTICALLY in interactive and `EPM_AUTONOMOUS_SESSION` modes (there
+  is no user decision to make — the gate is fully auto-resolved).
+  <!-- autonomous-mode: auto-resolve -->
+  Concretely:
+
+  1. **Stop the GPU pod** (volume preserved): `uv run python scripts/pod.py
+     stop --issue <N>`. This frees the GPU through the deadline-bounded
+     stop (see Step 6d.2 § "Stop the pod" / "Notes on the obsolete
+     monitoring stack"); the PV rollouts are already on HF, so nothing on
+     the pod's ephemeral disk is lost.
+  2. **Run the judge OFF-POD on the VM**: `uv run python
+     scripts/issue763_extract_pv_rb.py --phase judge`. <!-- lint: historical-ref --> (This script
+     ships on the `issue-763` branch — it lands on `main` when #763 merges;
+     the reference is a forward / sibling-branch one, not a dead tool.)
+     This is VM-safe by construction and NOT a `task.py` pod-shellout: it
+     fetches the PV rollouts from HF via `snapshot_download`, batch-judges
+     through
+     `eval.batch_judge` (the deadline-bounded client — never a hand-rolled
+     `messages.batches.create` + deadline-less poller), and uploads the
+     keep-flags back to the issue HF prefix. It needs no GPU and posts no
+     `task.py` markers itself (it is an off-pod analysis step; the
+     orchestrator owns the poll-loop markers).
+  3. **Resume the pod**: `uv run python scripts/pod.py resume --issue <N>`
+     — new IP/port; `pods.conf` + `~/.ssh/config` + MCP config auto-refresh
+     on resume (re-run `/mcp` if the SSH MCP entry needs the refreshed
+     host/port; if SSH keeps failing on a stale port, pull the live
+     host/port back with `pod.py config --refresh-from-api` per Step 6b
+     "stale-port recovery", the #488 13h-loop failure class). CONFIRM the
+     resumed pod is reachable (`uv run python scripts/pod.py health
+     --quick`) before re-dispatching.
+  4. **Re-dispatch the workload tail** at `--from-phase pv_capture` via
+     the SAME experimenter launch pattern as the original launch
+     (Step 6d.1): spawn the `experimenter` subagent with the workload
+     command `bash scripts/issue763_dispatch.sh --from-phase pv_capture`
+     and the resumed pod's name (`pod-<N>` / `epm-issue-<N>`). The
+     dispatcher resumes at capture → E0 judge → fit → figures → final
+     upload → `[phase=done]`. The experimenter posts a fresh
+     `epm:run-launched` marker (new `pid` + `log_abs`) and exits, exactly
+     as on the first launch; the orchestrator updates its local poll-loop
+     `pid`/`log` from that marker.
+
+  Then **RESUME the polling loop** (Step 6d.2) at the next tick — do NOT
+  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved:
+  the pod is burning GPU again after resume, so the `/issue-tick <N>`
+  backstop cron stays armed and the bg-Bash poll chain continues against
+  the resumed pod. (Contrast with `fact-candidates` above, which parks
+  for a user pick and tears the cron down.) **Idempotency on re-entry:**
+  if a re-entry observes an `epm:gate v<n>` for `pv_phase1_done` followed
+  by a FRESH `epm:run-launched` (post-resume; ts > the gate marker),
+  treat the gate as already resolved and proceed with normal polling — do
+  NOT re-stop / re-judge / re-dispatch.
+
 - **Unrecognised `gate` name**: this branch fires ONLY for a sentinel
   the poller surfaced as `status=gate` — i.e. one that carried
   `blocks_pipeline: True`. A non-empty gate name with
@@ -3579,7 +3657,15 @@ Gate handlers (one per registered `<name>`):
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-Run CRON-TEARDOWN before parking (the HARDENED Step 6d.2 procedure:
+**PARK-mode gates only** (`fact-candidates` and the unrecognised-gate
+branch): the tail below applies ONLY to gates that EXIT the skill to wait
+on a human. Auto-resolving gates like `pv_phase1_done` (above) handle
+their own continuation — they do NOT teardown and do NOT EXIT; their
+handler resumes the polling loop in the same turn, so it skips this whole
+paragraph.
+
+For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED
+Step 6d.2 procedure:
 `CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
 equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
 fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
@@ -3591,8 +3677,9 @@ skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
 --step 6d --exit-kind parked` (the §5 `epm:step-completed` marker); the
 user's re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
 transitions are now `running → verifying` (on done), `running → running`
-(after a parked gate resumes), or `running → blocked` (on stalled/dead
-or unrecognised gate).
+(after a parked-and-resumed user gate, OR after an auto-resolving gate's
+handler returns), or `running → blocked` (on stalled/dead or unrecognised
+gate).
 
 ##### Notes on the obsolete monitoring stack
 
@@ -3630,9 +3717,11 @@ read it as "the bg-Bash poll chain has no live tick AND no scheduled
 
 Status stays at `running` throughout the polling loop. The polling
 loop's terminal transitions are `running → verifying` (on done),
-`running → running` (parked at a user gate per Step 6d.4; resumes on
-the next `/issue <N>` invocation after the user posts the gate-resume
-marker), or `running → blocked` (on stalled/dead or an unrecognised
+`running → running` (a gate resolved per Step 6d.4 — either a PARK-mode
+user gate that resumes on the next `/issue <N>` invocation after the user
+posts the gate-resume marker, OR an auto-resolving gate like
+`pv_phase1_done` whose handler cycles the pod and resumes the loop in the
+same turn), or `running → blocked` (on stalled/dead or an unrecognised
 gate name).
 
 ### Step 7: Monitor -> results
@@ -5857,7 +5946,12 @@ orphaned at `running` for 5+ hours.)
    workflow.yaml § markers: `followup_label` (kebab-slug; names the
    artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
    the verbatim proposal spec (or the user's verbatim chat request),
-   and the GPU-hour estimate.
+   and the GPU-hour estimate. **MULTIPLE `epm:followup-scope` versions
+   for one issue may exist** (corrections land append-only, each
+   superseding the prior — see #658's `persona-vectors-style-rb`
+   v3→v8 chain); the authoritative scope is ALWAYS the entry with the
+   highest top-level `version` (tie-break newest `ts`). Do NOT cache the
+   entry-time version — step 3 re-reads the latest before snapshotting.
 2. **Re-enter the pipeline.** **FIRST record the initiation mode as a
    tag** (before the status flip, so the `task.py` missing-tag warning
    stays quiet): `uv run python scripts/task.py add-tag <N>
@@ -5913,6 +6007,29 @@ orphaned at `running` for 5+ hours.)
    round exits the status only at the re-park:
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
    exit).
+   - **Immediately before the planner snapshots the scope, RE-READ the
+     latest `epm:followup-scope` for this issue** (highest top-level
+     `version`, tie-break newest `ts`) — never plan against an
+     entry-time snapshot, or a session that entered on `v3` and
+     snapshotted before a `v5`/`v6` correction landed plans stale (the
+     #658 bug). The `followup_label` lives inside the marker NOTE body
+     as free text (its format even differs across versions —
+     `- followup_label: ...` in v1/v2, bare `followup_label: ...` in
+     v3+), NOT as a top-level event key (top-level keys are
+     `{by, kind, note, ts, version}` only). So the selector does NOT
+     filter on `followup_label`: it matches `kind == 'epm:followup-scope'`
+     and takes the max `(version, ts)`, relying on the Step 0
+     entry-predicate having already filtered this issue to UNRUN status
+     (an `epm:followup-scope` whose label has no matching
+     `epm:same-issue-followup-run`) — so entering the loop means the
+     latest scope IS the active one. This is the SAME convention the
+     watcher uses (`autonomous_session_watch._followup_round_complete_reason`
+     keys on `ts` only, never `followup_label`) and the Step 0
+     highest-version-per-kind marker map. Mechanical recipe:
+     ```bash
+     uv run python scripts/task.py view <N> --json \
+       | jq '[.events[] | select(.kind=="epm:followup-scope")] | sort_by(.version, .ts) | last'
+     ```
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
@@ -6046,10 +6163,28 @@ this step verifies the test suite still passes.
 There is **no `tester` agent**. The skill itself runs the project's test
 suite directly and posts an `epm:test-verdict` event with the result.
 
-1. Unit tests: `uv run pytest tests/ -v --tb=short`
+1. Unit tests — DEFAULT scope `touched` (workflow-invariant + touched-file
+   subset). The full ~5800-test suite has no xdist parallelism and is
+   harness-/earlyoom-killed in sparse worktrees (#665/#736), so do NOT run
+   `pytest tests/` wholesale by default.
+   a. Compute the subset:
+      `uv run python scripts/select_step9c_tests.py --base main`
+      It prints the exact `uv run pytest <files> -v --tb=short` command and
+      any `untested touched file: <path>` WARN lines (stderr).
+   b. Run the printed command. Record pass/fail + any WARN lines.
+   c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
+      `## Test scope` H2 names `full`, run the FULL suite instead — but as
+      `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
+      capture `tail -50` of the run log so the stall surfaces actionable
+      evidence (this is the #665/#736 regression — keep it visible, never a
+      silent kill). Default scope is `touched`.
 2. Lint: `uv run ruff check . && uv run ruff format --check .`
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
+
+The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
+the files run, pass/fail counts, and any untested-touched-file WARNs (so the
+orchestrator surfaces coverage gaps — never silently skipped).
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
@@ -6143,7 +6278,7 @@ work* contract.
      status's primary semantics as of 2026-06-10 is "a same-issue
      follow-up round is executing on this task" — Step 9b § Same-issue
      follow-up loop. The Step 0 dispatcher disambiguates by the
-     presence of an unrun `epm:followup-scope v1`.)
+     presence of an unrun `epm:followup-scope`.)
    - **No children in flight** AND task type is `experiment` ->
      **status `completed`**.
    - **type `infra` / `batch` / `analysis` / `survey`** (regardless of
@@ -7041,8 +7176,8 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
-| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle |
-| `followups_running` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the latest scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
+| `followups_running` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up the latest scope so a correction posted mid-round is honored on resume |
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |

@@ -1,0 +1,60 @@
+{
+  "commit": "64e02af71d",
+  "created": "2026-06-30T01:58:05Z",
+  "figsize": [
+    8.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "best-layer Spearman \u03c1 (pred E0, actual E0)": 0.4440367547021717,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "best-layer Spearman \u03c1 (pred E0, actual E0)": 0.6920702400675486,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "best-layer Spearman \u03c1 (pred E0, actual E0)": 0.12683700064411219,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "best-layer Spearman \u03c1 (pred E0, actual E0)": -0.27337168164855197,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "best-layer Spearman \u03c1 (pred E0, actual E0)": 0.43486009821349336,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "best-layer Spearman \u03c1 (pred E0, actual E0)": 0.6706610459882953,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "best-layer Spearman \u03c1 (pred E0, actual E0)": 0.0889443866690253,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "best-layer Spearman \u03c1 (pred E0, actual E0)": -0.2481440260209391,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8
+}

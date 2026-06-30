@@ -481,6 +481,7 @@ parallelism axis and pick the spec accordingly:
 | Axis | When it applies | Default action |
 |---|---|---|
 | **Tensor parallelism** | Generation/eval on ≥30B, or a 70B model | `inf-70b` (8× H100) or `ft-70b` (8× H200) — never run TP=1 on a 70B model |
+| **Activation capture (HBM-bound)** | A 7B forward that captures hidden states — all-layer residual streams, Welford activation accumulation, per-token activation dumps | Pick an intent clearing ≥40 GB HBM: `lora-7b` (train + capture) or `capture-7b` (eval + capture, #752). NEVER the L4 `eval`/`debug` default — 7B bf16 weights (~14 GB) + captured activations OOM it (#666, #744). Size the activation footprint per the VM-footprint carve-out below if the capture also materializes a large store on the VM analysis side. |
 | **Data parallelism (FSDP/ZeRO-3)** | Full fine-tune of a 7B+ model | `ft-7b` (4× H100) over `lora-7b` (1× H100) when fidelity permits |
 | **Batched inference (vLLM)** | Eval/generation with K samples per prompt or N prompts | One pod with the largest sensible GPU count, single `LLM.generate()` call — never loop sequentially |
 | **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. |
@@ -491,6 +492,19 @@ axis it exploits, (c) the wall-time delta vs. the next-smaller spec, and (d)
 any reason a smaller pod was chosen anyway (rare — e.g. "data is too small
 to amortize 8× setup"). If the answer is "no parallelism axis applies,"
 say so — silence is not acceptable.
+
+**Activation-capture HBM sizing.** If any phase captures hidden states on a
+7B model (residual streams at one-or-more layers, online activation
+accumulation, per-token activation dumps), the chosen intent MUST clear ≥40
+GB HBM, NOT the L4 `eval`/`debug` default — 7B bf16 weights are ~14 GB, and
+all-layer hidden-state capture at a realistic batch × sequence pushes past
+the L4's 16-GB-class HBM and OOMs the run mid-flight (#666, #744). The
+canonical fit is `lora-7b` (1× A100-80) when the phase ALSO trains, or
+`capture-7b` (1× A100-80, the activation-capture eval intent, #752) when it
+is forward-pass-only; both fall back to the 40 GB A100-40 rung under A100-80
+exhaustion. This is orthogonal to the VM-footprint carve-out below (which
+sizes the off-pod analysis disk) — this rule sizes the GPU HBM the capture
+forward needs on the pod.
 
 A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 20-condition sweep is wrong, even if the GPU-hours total is the same.
@@ -513,7 +527,23 @@ uploads so the pod can be terminated / stopped BEFORE the CPU phase starts
 LAST phase is a large terminal UPLOAD must sequence the pod teardown BEFORE
 it (or run the upload off-pod), and bulk uploads use a single
 `upload_folder` commit — never a per-file `upload_file` loop, which
-504-storms on a large repo (#664). (Incident
+504-storms on a large repo (#664).
+
+**PREFER a cheap dedicated CPU pod over the shared VM for a NON-TRIVIAL
+CPU-only phase (#747).** "Off-pod" does NOT mean "always the shared VM": for
+a non-trivial CPU phase (parallelizable, or longer than the trivial
+sub-minute floor) the default placement is now a cheap dedicated CPU lane —
+`cpu-small` (`e2-standard-2` / RunPod `cpu3g-2-8`) or `cpu-mid`
+(`e2-standard-8` / RunPod `cpu3c-8-16`), GCP E2 spot FIRST → RunPod CPU
+fallback — running N pods in PARALLEL where the work is parallelizable, NOT
+cramming onto the shared VM (which filled `/` and stalled the whole fleet,
+#658). Only TRIVIAL quick ops (sub-minute probes, quick plots, a one-off
+`lstsq`) stay on the VM. The mapped cheap CPU intents fall over GCP→RunPod
+CPU (`deployCpuPod`) on exhaustion; `cpu-bigmem` (the >50 GB lane below) does
+NOT — it keeps the #677 typed terminal. CPU pods may run in parallel: the
+"one multi-GPU pod, not many single-GPU pods" rule is GPU-specific. The
+idle-multi-GPU-pod concern below is unchanged — a cheap CPU pod holds NO GPU.
+(Incident
 2026-06-09: pod-518 ran a pure-CPU permutation/bootstrap scoring script
 for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
 metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
@@ -569,9 +599,12 @@ estimated local footprint —
   locally (chunked download → process → discard per chunk, never the whole
   store at once). State which in §9. On the GCP lane the concrete intent is
   `cpu-bigmem` (CPU-only `gpu_count=0` `n2-highmem-16`, boot disk sized via
-  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`. RunPod
-  has no CPU lane, so a `cpu-bigmem` run that exhausts GCP surfaces a typed
-  `cpu_exhausted_no_runpod_lane` terminal, NOT a RunPod fallback.
+  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`.
+  `cpu-bigmem` has NO cheap RunPod equivalent, so a `cpu-bigmem` run that
+  exhausts GCP surfaces a typed `cpu_exhausted_no_runpod_lane` terminal, NOT a
+  RunPod fallback (the cheap CPU intents `cpu-small` / `cpu-mid`, #747, DO fall
+  over GCP→RunPod CPU — but they are for SUB-50-GB work; a >50 GB phase belongs
+  on `cpu-bigmem`).
   **EXCEPTION — gradient-descent fit (compute-character carve-out above):**
   if the >50 GB phase is itself an iterative-optimization fit (its inner
   loop runs gradient descent on parameters), route it to a **GPU lane**

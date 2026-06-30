@@ -1,0 +1,28 @@
+{
+ "designed_null_cells": [
+  "ic_edu_default",
+  "tf_rev_default"
+ ],
+ "per_null": {
+  "ic_edu_default": {
+   "rho": 0.4887755102040816,
+   "ci_lo": 0.10474969618854724,
+   "ci_hi": 0.6085066544144216,
+   "n_bystanders": 49,
+   "behavior": "ic_edu",
+   "layer": 14,
+   "sigma_c_corpus_kind": "broad"
+  },
+  "tf_rev_default": {
+   "rho": 0.4051020408163265,
+   "ci_lo": 0.03936860881351608,
+   "ci_hi": 0.7313961094951488,
+   "n_bystanders": 49,
+   "behavior": "tf_rev",
+   "layer": 14,
+   "sigma_c_corpus_kind": "broad"
+  }
+ },
+ "sigma_c_corpus_kind": "broad",
+ "verdict_rule": "a real content behavior's L_hat rho must EXCEED the designed-null rho with non-overlapping clustered CIs for the geometry-win headline (plan \u00a76)"
+}

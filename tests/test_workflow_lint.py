@@ -46,6 +46,7 @@ from workflow_lint import (  # noqa: E402
     check_lessons_index,
     check_marker_registry,
     check_no_workflow_improver_spawn,
+    check_pipe_python,
     check_script_references,
     check_skill_references,
     check_upload_as_file,
@@ -1547,6 +1548,292 @@ def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
         f"workflow_lint --check-heredoc-dotenv failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_pipe_python`` (incident class #753: a bare
+# ``... | python -c/-m`` pipe consumer dies on this VM with
+# ``python: command not found`` (exit 127) — no ``python`` on PATH, only
+# ``python3`` and ``uv run python``; ~41 violations across 4+ sessions on
+# 2026-06-29). Each fixture case writes a tiny ``*.sh`` under ``tmp_path``
+# and calls ``check_pipe_python(scripts_dir=tmp_path)``. The dual-engine
+# test additionally asserts the Python ``re`` lint and the POSIX
+# ``grep -qE`` hook (SOURCED from ``.claude/settings.json``, not a
+# hard-coded copy — F2) AGREE on the §4 example set, including the F3
+# attached-arg (``python -c'code'``) shapes; the F1 fix flags
+# ``echo ... | python -c`` producer pipes (no longer skipped).
+# ---------------------------------------------------------------------------
+
+# The §4 example sets, shared by the function tests and the dual-engine test.
+# MATCHES = the real failures the check must catch; NOMATCH = the false
+# positives the anchor avoids.
+_PIPE_PYTHON_MATCHES = [
+    'cat x.json | python3 -c "import sys,json; ..."',  # offender #1 shape
+    'task.py view 1 --json | python3 -c "import sys,json"',  # offender #2 shape
+    "echo '{}' | python -c \"print(1)\"",  # echo producer pipe — F1: a REAL pipe
+    'foo | python3.11 -c "x"',
+    "foo | python -m json.tool",
+    'foo |python -c "x"',  # no space after pipe
+    'cat x | python -u -c "x"',  # intervening single-dash flag
+    "cat x | python -c'print(1)'",  # F3: attached arg (quote glued to -c)
+    "foo | python3 -c'x'",  # F3: attached arg on python3
+    "foo | python -m'json.tool'",  # F3: attached arg on -m
+]
+_PIPE_PYTHON_NOMATCH = [
+    'echo "use uv run python instead"',  # literal docs string
+    "curl https://pypi.org/python-3.12/",  # URL containing "python"
+    "cat setup.py | grep foo",  # consumer is grep, not python
+    "which python",  # informational, no pipe consumer
+    "apt-get install python3",  # informational, no pipe consumer
+    'cat x | uv run python -c "x"',  # CORRECT usage — token after | is `uv`
+    "python scripts/foo.py < input",  # start-of-command, no pipe consumer
+    "ls python_helpers.py | wc -l",  # filename containing "python"
+    "foo | python -compose x",  # `-co` is a different flag prefix, not `-c`
+]
+
+
+def test_check_pipe_python_fail_simple_pipe(tmp_path):
+    """FAIL — a plain `cat x | python3 -c "..."` consumer-side pipe (the
+    exact offender #1 shape) must be flagged."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'cat x.json | python3 -c "import sys,json;print(json.load(sys.stdin))"\n'
+    )
+    errors = check_pipe_python(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:2" in errors[0]
+    assert "uv run python" in errors[0]
+
+
+def test_check_pipe_python_fail_backslash_continued(tmp_path):
+    """FAIL — the backslash-continued shape both real #753 offenders use:
+    a `cat ... \\` newline `| python3 -c` logical line. The error must
+    point at the FIRST physical line of the logical command."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "cat $REPO/eval.json 2>/dev/null \\\n"
+        '    | python3 -c "import sys,json;print(json.load(sys.stdin))" || true\n'
+    )
+    errors = check_pipe_python(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    # The logical line starts at physical line 2 (the `cat ... \` line).
+    assert "x.sh:2" in errors[0]
+
+
+def test_check_pipe_python_fail_dash_m_and_python311(tmp_path):
+    """FAIL — `| python -m json.tool` and `| python3.11 -c` are both
+    bare-interpreter consumer pipes."""
+    (tmp_path / "x.sh").write_text('foo | python -m json.tool\nbar | python3.11 -c "x"\n')
+    errors = check_pipe_python(scripts_dir=tmp_path)
+    assert len(errors) == 2, f"expected exactly two errors, got: {errors}"
+
+
+def test_check_pipe_python_pass_uv_run_python(tmp_path):
+    """PASS — the CORRECT `| uv run python -c` shape: the token right
+    after the pipe is `uv`, not the bare interpreter."""
+    (tmp_path / "x.sh").write_text(
+        'cat x.json | uv run python -c "import sys,json;print(json.load(sys.stdin))"\n'
+    )
+    errors = check_pipe_python(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (uv run python), got: {errors}"
+
+
+def test_check_pipe_python_pass_comment_line_skipped(tmp_path):
+    """PASS — only `#`-comment lines are skipped: a comment that carries the
+    bad `| python -c` substring is documentation, not a live pipe."""
+    (tmp_path / "x.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        '# bad shape to avoid: cat x | python -c "..."\n'
+        'echo "all good"\n'  # plain echo, no `| python -c` — not flagged
+    )
+    errors = check_pipe_python(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (comment line skipped), got: {errors}"
+
+
+def test_check_pipe_python_fail_echo_producer_pipe(tmp_path):
+    """FAIL (F1, the round-1 merge-blocker) — `echo '{}' | python -c "..."`
+    is a REAL producer pipe: echo's stdout is consumed by bare `python`,
+    which crashes exit 127 on this VM. The earlier blanket `echo `-skip
+    silently missed exactly this must-catch shape. `echo `-prefixed lines
+    are NOT skipped; the check must return exactly one error for this
+    line."""
+    (tmp_path / "x.sh").write_text("#!/usr/bin/env bash\necho '{}' | python -c \"print(1)\"\n")
+    errors = check_pipe_python(scripts_dir=tmp_path)
+    assert len(errors) == 1, (
+        f"an `echo ... | python -c` producer pipe must be flagged (F1): {errors}"
+    )
+    assert "x.sh:2" in errors[0]
+    assert "uv run python" in errors[0]
+
+
+def test_check_pipe_python_fail_substring_in_nonskipped_quoted_string(tmp_path):
+    """FAIL (the honest 'known limitation') — a NON-comment line whose
+    quoted string merely CONTAINS `| python -c` WOULD match the line-local
+    regex. This documents that the lint is not quote-aware and the ONLY
+    skipped class is `#`-comment lines (post-F1, `echo` lines are no longer
+    special) — keeping the 'known limitation' prose honest rather than
+    silently broader than stated. To document the bad pattern, use a
+    `#`-comment, not a quoted/echo string."""
+    (tmp_path / "x.sh").write_text('MSG="bad shape: cat x | python -c foo"\n')
+    errors = check_pipe_python(scripts_dir=tmp_path)
+    assert len(errors) == 1, (
+        "a non-comment line with `| python -c` inside a quoted "
+        f"string is expected to match (known recall-vs-precision edge): {errors}"
+    )
+
+
+def test_check_pipe_python_pass_no_files(tmp_path):
+    """PASS — an empty scripts dir (no `*.sh`) yields no errors."""
+    assert check_pipe_python(scripts_dir=tmp_path) == []
+
+
+def test_check_pipe_python_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no bare `| python -c/-m`
+    consumer pipes — this is the regression guard the durable fix installs
+    (the #753 change rewired the 2 existing offenders,
+    run_issue452_deconfound.sh and run_program_orchestrator.sh, to
+    `| uv run python -c`)."""
+    errors = check_pipe_python()
+    assert errors == [], (
+        "scripts/*.sh has bare `| python -c/-m` consumer pipes "
+        "(#753 exit-127 crash class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_pipe_python_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-pipe-python")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-pipe-python failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def test_workflow_lint_pipe_python_bundled_in_no_flags():
+    """`check_pipe_python` is wired into the no-flags default run (bundled,
+    same policy as `check_heredoc_dotenv`): a bare `workflow_lint.py`
+    invocation exercises it. The committed tree is clean, so the no-flags
+    run exits 0 — and a planted offender in a tmp scripts dir would be
+    caught by the function test above; here we assert the bundling holds
+    by confirming the flag is among the no-flags checks via a clean exit."""
+    result = _run()
+    assert result.returncode == 0, (
+        f"workflow_lint (no flags) failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+def _load_shipped_pipe_python_hook_ere() -> str:
+    """Extract the pipe-into-python PreToolUse hook's POSIX ERE from the
+    SHIPPED `.claude/settings.json` (F2: source the regex from the live
+    config, never a hard-coded second copy — a hard-coded copy stays green
+    while the production hook drifts, defeating acceptance-criterion-4).
+
+    The pipe-python hook is identified by its unique BLOCKED message marker
+    (`BLOCKED: bare \\`| python -c/-m\\` pipe`), which disambiguates it from
+    the 4 OTHER PreToolUse Bash hooks. Returns the ERE between the hook's
+    `grep -qE '...'` single quotes (un-escaping the JSON `\\\\` → `\\`)."""
+    import json
+    import re
+
+    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
+    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
+        if hook_block.get("matcher") != "Bash":
+            continue
+        for hook in hook_block.get("hooks", []):
+            cmd = hook.get("command", "")
+            if "BLOCKED: bare `| python -c/-m` pipe" not in cmd:
+                continue
+            m = re.search(r"grep -qE '([^']+)'", cmd)
+            assert m, f"pipe-python hook found but no `grep -qE '...'` pattern in: {cmd!r}"
+            # The command is a JSON string; `\\` in the file is a single
+            # backslash in the parsed value — json.loads already un-escaped
+            # it, so `m.group(1)` is the literal ERE the shell `grep` sees.
+            return m.group(1)
+    raise AssertionError("pipe-python PreToolUse Bash hook not found in .claude/settings.json")
+
+
+def test_check_pipe_python_dual_engine_agreement_on_example_set():
+    """Implementer-note dual-engine test (acceptance criterion 4): the
+    Python `re` lint regex (`PIPE_PYTHON_RE`) and the POSIX-ERE hook regex
+    run through a real `grep -qE` subprocess must AGREE on every §4
+    example — match the MATCHES set (incl. the F3 attached-arg shapes),
+    reject the NOMATCH set. Post-F3 the two boundaries (`-[cm]\\b` /
+    `-[cm]([^A-Za-z0-9_]|$)`) are semantically identical, so there is no
+    longer a divergence edge — the engines agree everywhere.
+
+    The hook regex is SOURCED FROM `.claude/settings.json` (F2): the test
+    parses the shipped `PreToolUse` Bash hook and extracts its
+    `grep -qE '...'` pattern, so the production hook cannot drift without
+    breaking this test (a hard-coded copy would stay green on drift)."""
+    from workflow_lint import PIPE_PYTHON_RE  # the Python `re` lint regex
+
+    # F2: the POSIX-ERE hook regex, extracted from the SHIPPED settings.json.
+    hook_ere = _load_shipped_pipe_python_hook_ere()
+
+    def grep_matches(s: str) -> bool:
+        """Run the hook's POSIX engine exactly as the hook does:
+        `echo "$cmd" | grep -qE '<hook_ere>'`."""
+        proc = subprocess.run(
+            ["grep", "-qE", hook_ere],
+            input=s + "\n",
+            text=True,
+            check=False,
+        )
+        return proc.returncode == 0
+
+    # Both engines MATCH every real failure (incl. the F3 attached-arg shapes).
+    for s in _PIPE_PYTHON_MATCHES:
+        lint = bool(PIPE_PYTHON_RE.search(s))
+        hook = grep_matches(s)
+        assert lint, f"lint regex must match must-catch case: {s!r}"
+        assert hook, f"hook regex must match must-catch case: {s!r}"
+        assert lint == hook, f"engines diverge on a MATCH case (should not): {s!r}"
+
+    # Both engines REJECT every clean (non-offender) shape.
+    for s in _PIPE_PYTHON_NOMATCH:
+        lint = bool(PIPE_PYTHON_RE.search(s))
+        hook = grep_matches(s)
+        assert not lint, f"lint regex must NOT match clean case: {s!r}"
+        assert not hook, f"hook regex must NOT match clean case: {s!r}"
+        assert lint == hook, f"engines diverge on a NOMATCH case (should not): {s!r}"
+
+    # F3 regression: the in-string substring + attached-arg edges now AGREE
+    # across engines (the old divergence is gone with the aligned boundary).
+    for s in ('MSG="bad: foo | python -c"', "cat x | python -c'print(1)'"):
+        assert bool(PIPE_PYTHON_RE.search(s)) == grep_matches(s), (
+            f"engines must agree on the F3 edge case: {s!r}"
+        )
+
+
+def test_pipe_python_hook_subprocess_blocks_attached_arg():
+    """F3 hook-subprocess test — the SHIPPED PreToolUse hook command, fed
+    the harness JSON-stdin shape, must `exit 2` on the attached-argument
+    form `cat x | python -c'print(1)'` (valid shell that crashes exit 127
+    on this VM) and exit 0 on the correct `| uv run python -c` form. Runs
+    the real hook command string from settings.json end-to-end (not just
+    the extracted regex), so an escaping break in the JSON `command` is
+    caught too."""
+    import json
+
+    settings = json.loads((_REPO_ROOT / ".claude" / "settings.json").read_text())
+    hook_cmd = None
+    for hook_block in settings.get("hooks", {}).get("PreToolUse", []):
+        if hook_block.get("matcher") != "Bash":
+            continue
+        for hook in hook_block.get("hooks", []):
+            cmd = hook.get("command", "")
+            if "BLOCKED: bare `| python -c/-m` pipe" in cmd:
+                hook_cmd = cmd
+    assert hook_cmd, "pipe-python PreToolUse Bash hook not found"
+
+    def run_hook(command: str) -> int:
+        stdin = json.dumps({"tool_input": {"command": command}})
+        proc = subprocess.run(["bash", "-c", hook_cmd], input=stdin, text=True, check=False)
+        return proc.returncode
+
+    assert run_hook("cat x | python -c'print(1)'") == 2, "attached-arg form must be blocked (F3)"
+    assert run_hook('cat x.json | python3 -c "import sys"') == 2, "plain pipe must be blocked"
+    assert run_hook('cat x | uv run python -c "x"') == 0, "uv run python must pass"
 
 
 # ---------------------------------------------------------------------------

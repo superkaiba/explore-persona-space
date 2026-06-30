@@ -345,21 +345,43 @@ def _is_gcp_async_workload_failure(handle, result) -> bool:
     over — re-running on RunPod there burns money for no reason and would invert
     ``test_async_gcp_capacity_death_does_NOT_fail_over``.
 
-    A CPU-only GCP handle (``extra["gpu_count"] == 0``, #677) is EXCLUDED
-    regardless of phase: RunPod is GPU-only (``resolve_intent`` on a CPU intent
-    KeyErrors; ``runpod_api`` asserts ``gpu_count >= 1``), so a CPU workload
-    crash/wedge must NOT fail over. Returning ``False`` routes it to the
-    ordinary dead path -> ``failure_class: code`` -> ``status:blocked`` (the
-    watcher's capacity-retry pass re-drives only infra/``no_compute_available``,
-    never a code failure, so it parks cleanly). A pre-#677 GCP handle written
-    before the ``gpu_count`` threading lands has no ``gpu_count`` key ->
-    ``extra.get("gpu_count")`` is ``None`` != ``0`` -> the guard is a no-op and
-    the handle takes the EXISTING (GPU) failover path, exactly as today
-    (fail-toward-existing-behavior on a missing key).
+    A CPU-only GCP handle (``extra["gpu_count"] == 0``, #677) is EXCLUDED from
+    the failover ONLY when its intent has NO RunPod CPU lane (#747). The
+    relaxation:
+
+    * ``cpu-bigmem`` (gpu_count==0, NOT in
+      :data:`router.RUNPOD_CPU_INSTANCE_FOR_INTENT`) is EXCLUDED regardless of
+      phase — it has no cheap RunPod equivalent, so a CPU workload crash/wedge
+      must NOT fail over. Returning ``False`` routes it to the ordinary dead
+      path -> ``failure_class: code`` -> ``status:blocked`` (the watcher's
+      capacity-retry pass re-drives only infra/``no_compute_available``, never a
+      code failure, so it parks cleanly).
+    * ``cpu-small`` / ``cpu-mid`` (gpu_count==0, IN the map) ARE eligible — a
+      crashed GCP CPU workload for a mapped intent fails over to a RunPod CPU
+      pod (``deployCpuPod``), symmetric with the sync ``_runpod_terminal_rung``
+      relaxation; the ``_runspec_from_gcp_handle`` re-dispatch copies ``intent``
+      verbatim, so the RunPod relaunch carries ``--intent cpu-small`` which
+      Surface 5 (``gpu_heuristics.resolve_cpu_intent``) resolves to the RunPod
+      CPU instance_id.
+
+    A pre-#677 GCP handle written before the ``gpu_count`` threading lands has
+    no ``gpu_count`` key -> ``extra.get("gpu_count")`` is ``None`` != ``0`` ->
+    the CPU guard is a no-op and the handle takes the EXISTING (GPU) failover
+    path, exactly as today (fail-toward-existing-behavior on a missing key). A
+    CPU handle with ``gpu_count==0`` and NO ``intent`` key (also a pre-#747
+    shape) is treated as NOT-mapped -> EXCLUDED (fail-toward the safe #677
+    terminal on a missing key).
     """
     extra = getattr(handle, "extra", None) or {}
     if extra.get("gpu_count") == 0:
-        return False
+        # CPU GCP handle: fail over ONLY for a mapped cheap CPU intent (#747).
+        # Lazy import keeps the existing backend_poll -> router import direction
+        # (router does NOT import backend_poll at module top) and reuses the
+        # router's single source of truth for the mapped-intent set.
+        from explore_persona_space.backends.router import RUNPOD_CPU_INSTANCE_FOR_INTENT
+
+        if extra.get("intent") not in RUNPOD_CPU_INSTANCE_FOR_INTENT:
+            return False
     return (
         getattr(handle, "backend", None) == "gcp"
         and result.status == "dead"

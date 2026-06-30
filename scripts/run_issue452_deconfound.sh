@@ -68,7 +68,7 @@ for SEED in "${SEEDS[@]}"; do
 
   echo "[$(ts)] seed=${SEED} eval JSON:"
   cat "$REPO/eval_results/issue_404/outcome/${PAIR}_seed${SEED}.json" 2>/dev/null \
-    | python3 -c "import sys,json;d=json.load(sys.stdin);print('  L =',d.get('L'),'judge=',d.get('judge_model'),'filter=',d.get('filter'))" || true
+    | uv run python -c "import sys,json;d=json.load(sys.stdin);print('  L =',d.get('L'),'judge=',d.get('judge_model'),'filter=',d.get('filter'))" || true
 done
 
 banner "Phase D — write results sentinel"

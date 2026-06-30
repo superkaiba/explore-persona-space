@@ -1,0 +1,176 @@
+{
+  "genre": "ultrachat",
+  "metric": "best-layer signed Spearman(r_B^T v0pred, E0) \u2014 #658 _chain_rho selection",
+  "direct_arm": "r_B^T (actual v0 = store summaries.mean) -> E0",
+  "mediated_arm": "r_B^T (M_hat c_C) -> E0 (M_hat = LOCO ridge full-H / PCA-64; MLP PCA-64)",
+  "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/g1_dl/issue658_theory_assumptions/store_genre-generalization-ultrachat",
+  "e0_path": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_658/E0_expression_g1.json",
+  "cc_source": "per-genre store::cc_last",
+  "n_contexts": 50,
+  "layers_swept": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "layer_subset_smoke": null,
+  "ridge_full_chain_repro_control": {
+    "ok": true,
+    "rows": {
+      "broad_em": {
+        "got_layer": 26,
+        "got_rho": 0.3952638514729647,
+        "expected_layer": 26,
+        "expected_rho": 0.3952638514729647,
+        "abs_rho_delta": 0.0,
+        "match": true
+      },
+      "harmful_compliance": {
+        "got_layer": 11,
+        "got_rho": 0.6744104557529602,
+        "expected_layer": 11,
+        "expected_rho": 0.6744104557529602,
+        "abs_rho_delta": 0.0,
+        "match": true
+      },
+      "sycophancy": {
+        "got_layer": 13,
+        "got_rho": 0.08554069506488331,
+        "expected_layer": 13,
+        "expected_rho": 0.08554069506488331,
+        "abs_rho_delta": 0.0,
+        "match": true
+      },
+      "refusal": {
+        "got_layer": 26,
+        "got_rho": -0.2041856449546123,
+        "expected_layer": 26,
+        "expected_rho": -0.2041856449546123,
+        "abs_rho_delta": 0.0,
+        "match": true
+      }
+    }
+  },
+  "per_behavior": {
+    "broad_em": {
+      "direct_actual_v0": {
+        "layer": 25,
+        "rho": 0.2948966176020824
+      },
+      "mediated_ridge_fullH": {
+        "layer": 26,
+        "rho": 0.3952638514729647
+      },
+      "mediated_ridge_pca64": {
+        "layer": 25,
+        "rho": 0.4198256423481162,
+        "skill_r2": 0.5451179862766564
+      },
+      "mediated_mlp_pca64": {
+        "layer": 0,
+        "rho": 0.11882735880231199,
+        "skill_r2": -7.6798367814449975
+      },
+      "preserved_fraction_fullH": 1.340347185691741,
+      "direct_minus_mediated_fullH": -0.10036723387088231
+    },
+    "harmful_compliance": {
+      "direct_actual_v0": {
+        "layer": 10,
+        "rho": 0.611167943500579
+      },
+      "mediated_ridge_fullH": {
+        "layer": 11,
+        "rho": 0.6744104557529602
+      },
+      "mediated_ridge_pca64": {
+        "layer": 11,
+        "rho": 0.651999040764664,
+        "skill_r2": 0.7016580909488176
+      },
+      "mediated_mlp_pca64": {
+        "layer": 0,
+        "rho": -0.07449631291174039,
+        "skill_r2": -7.6798367814449975
+      },
+      "preserved_fraction_fullH": 1.1034781240163676,
+      "direct_minus_mediated_fullH": -0.0632425122523812
+    },
+    "sycophancy": {
+      "direct_actual_v0": {
+        "layer": 27,
+        "rho": 0.19975505377588415
+      },
+      "mediated_ridge_fullH": {
+        "layer": 13,
+        "rho": 0.08554069506488331
+      },
+      "mediated_ridge_pca64": {
+        "layer": 0,
+        "rho": 0.12506904545140715,
+        "skill_r2": -0.17736221711105604
+      },
+      "mediated_mlp_pca64": {
+        "layer": 16,
+        "rho": 0.12386830576773389,
+        "skill_r2": -2.1383820406816274
+      },
+      "preserved_fraction_fullH": 0.42822793940851167,
+      "direct_minus_mediated_fullH": 0.11421435871100084
+    },
+    "refusal": {
+      "direct_actual_v0": {
+        "layer": 26,
+        "rho": -0.2811216810977835
+      },
+      "mediated_ridge_fullH": {
+        "layer": 26,
+        "rho": -0.2041856449546123
+      },
+      "mediated_ridge_pca64": {
+        "layer": 26,
+        "rho": -0.16151281541361542,
+        "skill_r2": 0.4949961096859923
+      },
+      "mediated_mlp_pca64": {
+        "layer": 12,
+        "rho": 0.6087125358060895,
+        "skill_r2": -1.775022241802212
+      },
+      "preserved_fraction_fullH": 0.7263247863247863,
+      "direct_minus_mediated_fullH": -0.07693603614317121
+    }
+  },
+  "metadata": {
+    "git_commit": "64e02af71d6ca9a6578b45fd42edd8d38c10e480",
+    "timestamp_utc": "2026-06-30T01:06:04.600669Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_ultrachat_mirror"
+  }
+}

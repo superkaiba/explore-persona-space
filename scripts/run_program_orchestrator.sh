@@ -26,7 +26,7 @@ log(){ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*" | tee -a "$LOG"; }
 
 status(){ # $1=task id -> prints status ('' on read error)
   uv run python scripts/task.py view "$1" --json 2>/dev/null \
-    | python3 -c "import sys,json
+    | uv run python -c "import sys,json
 try: print(json.load(sys.stdin).get('status',''))
 except Exception: print('')" 2>/dev/null
 }

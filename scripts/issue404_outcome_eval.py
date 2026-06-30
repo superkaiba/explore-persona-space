@@ -64,6 +64,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import anthropic  # noqa: E402
+
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv  # noqa: E402
 from issue404_common import (  # noqa: E402
     ISSUE404_MODEL_REPO,

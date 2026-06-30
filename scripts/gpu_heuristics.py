@@ -73,7 +73,15 @@ INTENTS: dict[str, GpuSpec] = {
 
 
 def resolve_intent(intent: str) -> GpuSpec:
-    """Look up an intent. Raises KeyError with a list of known intents on miss."""
+    """Look up a GPU intent. Raises KeyError with a list of known intents on miss.
+
+    UNCHANGED for CPU intents (#747): a cheap CPU intent (``cpu-small`` /
+    ``cpu-mid``) is NOT a GPU intent and correctly KeyErrors here — it resolves
+    to a RunPod CPU instance_id via :func:`resolve_cpu_intent` instead, on the
+    CPU-pod create path (``runpod_api.create_cpu_pod``). The provision path
+    (``pod_lifecycle.cmd_provision``) checks :func:`resolve_cpu_intent` FIRST so
+    a bare ``--intent cpu-small`` never reaches this GPU resolver.
+    """
     intent = intent.strip().lower()
     if intent not in INTENTS:
         known = ", ".join(sorted(INTENTS))
@@ -84,11 +92,51 @@ def resolve_intent(intent: str) -> GpuSpec:
     return INTENTS[intent]
 
 
+def _runpod_cpu_instances() -> dict[str, str]:
+    """The cheap-CPU-intent -> RunPod CPU instance_id map (#747).
+
+    SINGLE SOURCE OF TRUTH: imported from
+    ``explore_persona_space.backends.router.RUNPOD_CPU_INSTANCE_FOR_INTENT``
+    (NOT a duplicated copy that could drift). Lazily imported so this leaf
+    ``scripts/`` module stays importable in minimal contexts that do not need
+    the CPU path; the ``src`` package is editable-installed, so the import
+    resolves wherever ``pod_lifecycle`` runs.
+    """
+    from explore_persona_space.backends.router import RUNPOD_CPU_INSTANCE_FOR_INTENT
+
+    return RUNPOD_CPU_INSTANCE_FOR_INTENT
+
+
+def resolve_cpu_intent(intent: str) -> str | None:
+    """RunPod CPU instance_id for a cheap CPU intent, else None (not a CPU intent).
+
+    Returns the ``"<flavor>-<vCPU>-<RAM_GB>"`` instance_id (e.g. ``"cpu3g-2-8"``)
+    for ``cpu-small`` / ``cpu-mid`` (#747), or ``None`` for any other intent
+    (the caller then falls through to the GPU resolver :func:`resolve_intent`).
+    Lower-cased lookup, mirroring :func:`resolve_intent`.
+    """
+    return _runpod_cpu_instances().get(intent.strip().lower())
+
+
 def list_intents() -> str:
-    """Return a printable table of known intents — for `--list-intents`."""
-    width = max(len(k) for k in INTENTS)
+    """Return a printable table of known intents — for `--list-intents`.
+
+    Lists the GPU intents (:data:`INTENTS`) followed by the cheap CPU-only
+    intents (#747; resolved to a RunPod CPU instance_id by
+    :func:`resolve_cpu_intent`).
+    """
+    cpu_instances = _runpod_cpu_instances()
+    width = max([len(k) for k in INTENTS] + [len(k) for k in cpu_instances])
     rows = [f"{'INTENT':<{width}}  GPU SPEC          NOTES"]
     rows.append("-" * (width + 50))
     for name, spec in INTENTS.items():
         rows.append(f"{name:<{width}}  {spec.gpu_count}x {spec.gpu_type:<6}      {spec.rationale}")
+    if cpu_instances:
+        rows.append("")
+        rows.append("CPU-only intents (#747) — RunPod deployCpuPod fallback lane:")
+        for name, instance_id in cpu_instances.items():
+            rows.append(
+                f"{name:<{width}}  CPU ({instance_id})  "
+                "GCP e2 (spot on a short job) -> RunPod CPU fallback."
+            )
     return "\n".join(rows)

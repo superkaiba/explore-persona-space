@@ -15,8 +15,10 @@ What this slice ships
   by shelling out to ``gcloud`` (per the plan: "start by shelling out;
   migrate to ``google-cloud-compute`` only if typed errors are wanted").
 * Intent → machine-type table (:data:`INTENT_TO_MACHINE`): ``lora-7b`` /
-  ``lora`` → ``a2-ultragpu-1g`` (1x A100-80); ``ft-7b`` → ``a2-ultragpu-4g``
-  (4x A100-80); ``eval`` → ``g2-standard-4`` (1x L4); ``debug`` → ``g2-standard-4``.
+  ``lora`` → ``a2-ultragpu-1g`` (1x A100-80); ``capture-7b`` →
+  ``a2-ultragpu-1g`` (1x A100-80, the activation-capture eval path, #752);
+  ``ft-7b`` → ``a2-ultragpu-4g`` (4x A100-80); ``eval`` → ``g2-standard-4``
+  (1x L4); ``debug`` → ``g2-standard-4``.
 * :class:`GcpConfig` — per-call knobs (project, gcloud config name, zone +
   fallback zones, DLVM image family + project, default provisioning model,
   scratch path on the VM). No hardcoding inline; tests construct test
@@ -34,12 +36,14 @@ What this slice ships
   compute instances list --filter=name=eps-issue-<N>``. If a live instance
   exists, return a handle for it without re-provisioning.
 * :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
-  reaps ``eps-issue-*`` instances on TWO bounded predicates: an age backstop
-  (older than 24h regardless of phase) AND a prompt terminal-phase reap (a
-  RUNNING VM that published ``eps/phase=done``/``failed`` past a short floor
-  is a wedged zombie idle-billing — reaped well under the age fence; incident
-  #634 family). Cron wiring is the orchestrator's responsibility — this
-  exposes the callable that the cron / a ``scripts/`` entry can invoke.
+  reaps ``eps-issue-*`` instances on TWO bounded predicates: a per-instance-
+  fence-aware age backstop (#741 — reaped once the VM exceeds its OWN
+  ``--max-run-duration`` + a 1h grace, or a fixed fallback fence when that
+  field is unreadable) AND a prompt terminal-phase reap (a RUNNING VM that
+  published ``eps/phase=done``/``failed`` past a short floor is a wedged
+  zombie idle-billing — reaped well under the age fence; incident #634
+  family). Cron wiring is the orchestrator's responsibility — this exposes
+  the callable that the cron / a ``scripts/`` entry can invoke.
 * Typed failure classifications: :class:`GcpProvisioningError` (capacity /
   quota / SSH bring-up) → the router falls back to the next tier;
   :class:`GcpWorkloadError` (a real workload exception after the VM is up)
@@ -172,10 +176,16 @@ class GcpConfig:
     * ``default_boot_disk_type`` — ``pd-ssd`` (the ``pd-balanced`` default
       is markedly slower for the model-load + HF-cache write path).
     * ``default_max_run_duration`` — VM auto-delete fence. Defaults to
-      ``24h`` — generous enough to never interrupt an upload but short
-      enough that an orphaned VM caps the credit burn at one day's worth.
-      Tunable per spec via ``RunSpec.time_budget_hours`` (the renderer
-      converts to ``<H>h`` for gcloud).
+      ``7d`` (#741) — the FLEX_START ceiling (the longest the GCP-first
+      auto lane's long-job branch can run; ``_assert_max_run_within_flex_cap``
+      rejects ``>7d``), so a long multi-cell sweep is no longer stranded
+      mid-run by a self-imposed 24h fence (#697 lost 24/64 cells to the old
+      24h default). The credit-leak backstop is now the per-instance-fence-
+      aware janitor age reap (``gcp_audit.py`` + :func:`_janitor_stale_reason`,
+      reaping a VM only once it exceeds its OWN ``--max-run-duration`` + a 1h
+      grace), NOT this fence. Tunable per spec via ``RunSpec.time_budget_hours``
+      / ``spec.extra['max_run_duration']`` (the renderer converts to gcloud
+      duration form).
     * ``vm_scratch_dir`` — workload scratch root on the VM (where the
       sentinel + rsync'd repo land). Mirrors the RunPod ``/workspace``
       convention so workloads share filesystem layout across backends.
@@ -194,7 +204,7 @@ class GcpConfig:
     image_project: str = ""
     default_boot_disk_gb: int = 300
     default_boot_disk_type: str = "pd-ssd"
-    default_max_run_duration: str = "24h"
+    default_max_run_duration: str = "7d"
     vm_scratch_dir: str = "/workspace"
     repo_url: str = ""
     hf_data_repo: str = DEFAULT_HF_DATA_REPO
@@ -275,11 +285,15 @@ class MachineSpec:
 #: Workload intent → GCE machine-type map. Matches the plan's "gcp.py"
 #: Approach paragraph: lora-7b → a2-ultragpu-1g, ft-7b → a2-ultragpu-4g,
 #: eval → g2-standard-4. The ``lora`` alias inherits ``lora-7b`` (mirrors
-#: the SLURM ``_DEFAULT_GPUS_FOR_INTENT`` aliasing). ``debug`` reuses the
-#: L4 machine — the smallest GPU available is the right "debug pod"
-#: analogue. ``inf-70b`` / ``ft-70b`` are NOT in this table (the GFS
-#: credit pool is for the A100-80 / L4 line; 70B inference belongs on
-#: RunPod's H200 in v1).
+#: the SLURM ``_DEFAULT_GPUS_FOR_INTENT`` aliasing). ``capture-7b`` (#752)
+#: is the A100-80 activation-capture EVAL path — a forward-pass-only 7B run
+#: that captures hidden states, sized to A100-80 like ``lora-7b`` but kept
+#: DISTINCT from ``eval``'s L4 default so the router never under-provisions a
+#: hidden-state-capturing forward (no coupling of the router to workload
+#: semantics). ``debug`` reuses the L4 machine — the smallest GPU available
+#: is the right "debug pod" analogue. ``inf-70b`` / ``ft-70b`` are NOT in
+#: this table (the GFS credit pool is for the A100-80 / L4 line; 70B
+#: inference belongs on RunPod's H200 in v1).
 INTENT_TO_MACHINE: dict[str, MachineSpec] = {
     "lora-7b": MachineSpec(
         machine_type="a2-ultragpu-1g",
@@ -287,6 +301,22 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_kind="A100-80",
     ),
     "lora": MachineSpec(
+        machine_type="a2-ultragpu-1g",
+        gpu_count=1,
+        gpu_kind="A100-80",
+    ),
+    # Activation-capture intent (#752) — a 7B forward that captures hidden
+    # states (all-layer residual streams, Welford activation accumulation,
+    # per-token activation dumps) must clear A100-80 HBM: 7B bf16 weights are
+    # ~14 GB and the captured activations push past the L4's 16-GB-class HBM
+    # (the binding fact is the ordering L4 << A100-40 << A100-80, not the
+    # exact L4 figure). Same machine as
+    # lora-7b (a2-ultragpu-1g, 1x A100-80) but a DISTINCT intent so a caller /
+    # the planner can declare "I capture activations" and the router sizes for
+    # it instead of falling to the g2-standard-4 (L4) eval default. #666 (L4
+    # OOM) and #744 (g2-standard-4 OOM) were both 7B activation-capture
+    # forwards routed L4 under the eval default.
+    "capture-7b": MachineSpec(
         machine_type="a2-ultragpu-1g",
         gpu_count=1,
         gpu_kind="A100-80",
@@ -336,6 +366,19 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_count=0,
         gpu_kind="CPU",
     ),
+    # Cheap CPU-only intents (#747) — gpu_count=0, spot-eligible on a short
+    # job (the router's CPU spot rung, unlike cpu-bigmem above which is
+    # reliable on-demand only). The standing CPU-routing policy prefers a
+    # dedicated cheap CPU pod over the shared VM for non-trivial CPU phases
+    # (parallelizable / longer than the trivial floor). e2-standard-2 = 2 vCPU
+    # / 8 GB (~$0.035/hr spot us-central1) — the parallel-fan-out workhorse;
+    # e2-standard-8 = 8 vCPU / 32 GB — a mid CPU job that fits between
+    # cpu-small's fan-out and cpu-bigmem's >50 GB analyses. NEITHER is for
+    # >50 GB footprints — that stays cpu-bigmem (n2-highmem-16, above). These
+    # ALSO have a RunPod CPU fallback lane (router.RUNPOD_CPU_INSTANCE_FOR_INTENT),
+    # so unlike cpu-bigmem they fall over GCP->RunPod when GCP is exhausted.
+    "cpu-small": MachineSpec(machine_type="e2-standard-2", gpu_count=0, gpu_kind="CPU"),
+    "cpu-mid": MachineSpec(machine_type="e2-standard-8", gpu_count=0, gpu_kind="CPU"),
     # 8-GPU sweep intents (#743) — the FREE GCP credit lane at 8x width for
     # wide embarrassingly-parallel sweeps (driving case #697's 64-cell patch
     # sweep, ~2x faster on 8 GPUs than 4). EXPLICIT --intent ONLY: NOT added to
@@ -363,14 +406,20 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
 #: full-FT (``ft-7b`` = 4xA100-80) and the 70B intents do NOT fit, so they
 #: are absent from this map and the ladder skips the A100-40 rung for them.
 #: ``a2-highgpu-1g`` is the 1xA100-40GB machine type (sibling of the
-#: ``a2-ultragpu-1g`` 1xA100-80GB row above). ``eval`` / ``debug`` default
-#: to L4 on-demand, NOT A100-80, so the A100-40 rung is only a meaningful
-#: STEP UP for them when L4 is constrained; they are included to keep the
-#: "single-GPU 7B fits 40 GB" rule uniform and the inclusion is harmless
-#: (their L4 on-demand rarely exhausts). Decision recorded in plan §11.
+#: ``a2-ultragpu-1g`` 1xA100-80GB row above). ``capture-7b`` (#752, the
+#: activation-capture EVAL path) is a single-GPU 7B forward that fits 40 GB
+#: (7B bf16 weights ~14 GB + room for a moderate-batch all-layer hidden-state
+#: capture), so it is a valid A100-40 fallback — its A100-80 primary is the
+#: canonical fit, A100-40 the cheaper-but-smaller rung. ``eval`` / ``debug``
+#: default to L4 on-demand, NOT A100-80, so the A100-40 rung is only a
+#: meaningful STEP UP for them when L4 is constrained; they are included to
+#: keep the "single-GPU 7B fits 40 GB" rule uniform and the inclusion is
+#: harmless (their L4 on-demand rarely exhausts). Decision recorded in
+#: plan §11.
 INTENT_A100_40_FALLBACK: dict[str, MachineSpec] = {
     "lora-7b": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
     "lora": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+    "capture-7b": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
     "eval": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
     "debug": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
 }
@@ -494,6 +543,13 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     # above; the map only RESTRICTS, so a fail-open default was already
     # correct — this row just makes the verified fact explicit).
     "n2-highmem-16": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    # E2 (cheap CPU-only, #747) — the cpu-small / cpu-mid intents. Verified
+    # offered in us-central1-{a,b,c} (gcloud compute machine-types list
+    # --filter="name=e2-standard-2 AND zone~us-central1", 2026-06-29; also
+    # offered in -f, listed here for the documented us-central1-{a,b,c} set
+    # the map RESTRICTS to — the map only restricts, so omitting -f is safe).
+    "e2-standard-2": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
+    "e2-standard-8": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
 }
 
 
@@ -543,6 +599,13 @@ DEFAULT_REQUEST_VALID_FOR_DURATION: str = "2h"
 #: VM may run up to seven days). Parsed from the resolved max-run-duration
 #: to fail loud at render rather than mid-provision.
 _FLEX_START_MAX_RUN_SECONDS: int = 7 * 24 * 3600
+
+#: Grace added to an instance's OWN ``--max-run-duration`` before the janitor
+#: age-reaps it (Option B, #741). A VM that exceeds its configured fence by more
+#: than this is genuinely wedged (the ``--instance-termination-action=DELETE``
+#: never fired) and is reaped. Mirrors the short ``terminal_phase_max_age_seconds``
+#: precedent (10 min) — a small post-fence finalize window, not a multi-day wall.
+_JANITOR_FENCE_GRACE_SECONDS: int = 3600
 
 #: gcloud duration suffix → seconds. Bare integers are seconds.
 _DURATION_SUFFIX_SECONDS: dict[str, int] = {"s": 1, "m": 60, "h": 3600, "d": 86400}
@@ -834,6 +897,15 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # workload subprocess. The startup script ALSO sets a default (below), so
     # this passthrough is the override channel, the default is the floor.
     "EPS_SCRATCH_DIR",
+    # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
+    # dispatch-process =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround)
+    # reaches the GCE workload. The DEFAULTS (=1) are STATIC preamble exports
+    # in render_startup_script (below); this passthrough is the override
+    # channel only. Drop-when-absent contract preserved (an unset dispatch-env
+    # key is simply not forwarded, so the static default stands).
+    "HF_XET_HIGH_PERFORMANCE",
+    "HF_HUB_ENABLE_HF_TRANSFER",
+    "HF_XET_DISABLE",
 )
 
 #: The subset of :data:`STARTUP_SECRET_ENV_KEYS` the GCE workload cannot
@@ -951,17 +1023,37 @@ def render_startup_script(
     # ``/computeMetadata/v1/instance/attributes/<KEY>``. The
     # ``Metadata-Flavor: Google`` header is the GCE-required guard; the
     # curl path 404s cleanly when a key was not set (so an absent
-    # secret produces an empty export, not a hard crash — the in-VM
+    # secret produces an empty fetch, not a hard crash — the in-VM
     # workload's own preflight surfaces the missing token loudly).
     # The non-secret STARTUP_PASSTHROUGH_ENV_KEYS (adapter-persist
     # targets) ride the same fetch stanza — metadata is the one
     # env-delivery surface the VM has.
+    #
+    # DEFAULT-PRESERVING fetch (#745, round 2): an ABSENT metadata key
+    # MUST NOT export an empty value. The accelerator keys
+    # (HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) carry a STATIC
+    # default ``=1`` exported earlier in the env-export block; the OLD
+    # unconditional ``KEY=$(curl ... || true); export KEY`` overwrote that
+    # ``1`` with ``""`` for every default GCE workload (the common case —
+    # the dispatcher does not forward the accelerator keys, so their
+    # metadata attribute is absent), silently disabling the load-bearing
+    # GCE lane acceleration (round-1 binding blocker). Fetch into a temp
+    # ``_VAL`` and ONLY ``export KEY="$_VAL"`` when ``_VAL`` is non-empty,
+    # so an absent key leaves the PRIOR export intact (the static ``1`` for
+    # the accelerators; an unset var for an absent secret — identical
+    # ``[ -n "${KEY:-}" ]``-failing behaviour to the old empty export, so
+    # the REQUIRED_LAUNCH_SECRET_KEYS preflight below still fires). An
+    # explicit dispatcher-set ``0`` arrives as metadata ``0`` →
+    # ``_VAL=0`` (non-empty) → ``export KEY=0``, so the override channel
+    # (the #515 xet-CDN ``=0`` / ``HF_XET_DISABLE=1`` workaround) is
+    # preserved. ``_VAL`` is scratch — never exported itself.
     secrets_fetch_lines: list[str] = []
     for key in STARTUP_SECRET_ENV_KEYS + STARTUP_PASSTHROUGH_ENV_KEYS:
         secrets_fetch_lines.append(
-            f'{key}=$(curl -fsS -H "Metadata-Flavor: Google" '
+            f'_VAL=$(curl -fsS -H "Metadata-Flavor: Google" '
             f'"http://metadata.google.internal/computeMetadata/v1/'
-            f'instance/attributes/{key}" 2>/dev/null || true); export {key}'
+            f'instance/attributes/{key}" 2>/dev/null || true); '
+            f'[ -n "$_VAL" ] && export {key}="$_VAL"; unset _VAL'
         )
 
     # Hydra args, shell-quoted. Empty tuple → empty string.
@@ -1262,6 +1354,60 @@ def render_startup_script(
         "    fi;",
         "  done",
         "}",
+        # === OOM-detection helper (#750, incident #744) ===
+        # The bash chain's rc-propagation has known weakness modes under
+        # ``set -e`` + ``&&`` + SIGKILL: on eps-issue-744 a workload python
+        # OOM-killed by the kernel (systemd: "Failed with result 'oom-kill'")
+        # still returned rc=0 to the parent startup-script, so the success
+        # path published ``_eps_phase done`` 2s after the kill and the run
+        # advanced to verifying with zero usable artifacts. The kernel's
+        # cgroup-v2 ``memory.events.local`` ``oom_kill`` counter is incremented
+        # whenever an OOM-killer hit THIS cgroup (``.local`` = this cgroup only,
+        # NOT a hierarchical aggregation of descendants), REGARDLESS of what rc
+        # the bash chain reported — an authoritative cross-check the chain
+        # cannot mask.
+        #
+        # PATH DERIVATION (the #750 v2 defect this fixes): ``memory.events`` /
+        # ``memory.events.local`` exist on NON-ROOT cgroups only (kernel
+        # cgroup-v2 docs, https://docs.kernel.org/admin-guide/cgroup-v2.html);
+        # the unified-hierarchy ROOT ``/sys/fs/cgroup`` does NOT expose them
+        # (empirically: ``cat /sys/fs/cgroup/memory.events`` -> ENOENT). The
+        # workload's OWN cgroup dir is the ``0::`` unified-hierarchy line of
+        # ``/proc/self/cgroup`` (format ``0::/system.slice/...``), prefixed by
+        # the mount root: CGROUP_DIR=/sys/fs/cgroup$(that path). The #744
+        # workload sat in ``/system.slice/google-startup-scripts.service`` — a
+        # descendant — so only the derived path sees its oom_kill.
+        #
+        # COUNTER SEMANTICS: ``oom_kill`` is cumulative-since-cgroup-creation,
+        # so an absolute "== 0" test can false-fire on a non-fresh cgroup; the
+        # caller therefore reads a BASELINE before the workload and a FINAL
+        # after, and fires only on an INCREASE (see the baseline + guard
+        # entries below). This helper just emits the current integer.
+        #
+        # The helper runs under ``set -euo pipefail``; every line is
+        # ``set -e``-safe — the ``awk`` runs only inside an ``if [ -r ... ]``
+        # condition-guarded ``&&`` whose result is captured by an assignment,
+        # and the function always reaches an explicit ``echo``/``return``.
+        "_eps_oom_count() {",
+        # 0:: line of /proc/self/cgroup = the cgroup-v2 unified-hierarchy path
+        # for this process. ${x#0::} strips the literal prefix; a host with no
+        # 0:: line yields an empty suffix -> _dir=/sys/fs/cgroup (root), whose
+        # memory.events.local is absent -> the [ -r ] guard fails -> echo 0.
+        "  local _rel _dir _n=0",
+        '  _rel="$(awk -F: \'$1=="0"{print $3; exit}\' /proc/self/cgroup 2>/dev/null || true)"',
+        '  _dir="/sys/fs/cgroup${_rel}"',
+        # Read the LOCAL counter (this cgroup only). awk pulls just the integer
+        # value of the oom_kill line; missing line / unreadable file -> _n stays
+        # 0. The assignment consumes awk's exit status, so set -e never fires.
+        '  if [ -r "$_dir/memory.events.local" ]; then',
+        '    _n="$(awk \'$1=="oom_kill"{print $2; exit}\''
+        ' "$_dir/memory.events.local" 2>/dev/null || true)"',
+        "  fi",
+        # Normalize a non-numeric / empty read (e.g. awk printed nothing) to 0
+        # so the caller's numeric -gt comparison is always well-formed.
+        '  case "$_n" in (*[!0-9]*|"") _n=0 ;; esac',
+        '  echo "$_n"',
+        "}",
         # A failed startup script does NOT stop the VM — GCE just logs
         # "Script failed with error" and leaves the instance RUNNING,
         # billing the GPU with no workload (live finding, issue 535 GCP
@@ -1316,6 +1462,25 @@ def render_startup_script(
         # instance-termination-action=DELETE destroys the boot disk, so a
         # GCP crash is debuggable + partial progress is recoverable.
         f"export EPS_HF_DATA_REPO={shlex.quote(config.hf_data_repo)}",
+        # Fast HF Hub uploads (#745) — STATIC DEFAULT export. Placed in the
+        # env-export block BEFORE the output redirect + secrets fetch so that
+        # (a) the workload (both the hydra and workload_cmd branches, which
+        # follow `*workload_block` after `uv sync`) inherits it, and (b) the
+        # crash-persist subshell (`_eps_persist_diagnostics`, the EXIT-trap
+        # HfApi.upload_folder) — which runs with no `load_dotenv` and inherits
+        # the parent shell env — gets it on any crash after this point.
+        # HF_XET_HIGH_PERFORMANCE is the PRIMARY accelerator (the project repos
+        # use the Xet backend); HF_HUB_ENABLE_HF_TRANSFER is the orthogonal LFS
+        # accelerator (hf_transfer is a hard dep). The passthrough keys in
+        # STARTUP_PASSTHROUGH_ENV_KEYS are the OVERRIDE channel — a forwarded
+        # dispatch-process =0 / HF_XET_DISABLE=1 is fetched LATER by the
+        # secrets-fetch stanza and supersedes these static defaults. That
+        # stanza is DEFAULT-PRESERVING (#745, round 2): it only re-exports a
+        # key when the metadata fetch is NON-empty, so an ABSENT override (the
+        # common case) leaves THESE static defaults standing instead of
+        # clobbering them to "" — see the secrets_fetch_lines comment above.
+        'export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"',
+        'export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"',
         "",
         # Output redirect (#607): everything from here down — secrets
         # fetch, preflight, clone, uv sync, the workload itself — writes
@@ -1409,7 +1574,31 @@ def render_startup_script(
         'mkdir -p "$HF_HOME"',
         f"mkdir -p {shlex.quote(sentinel_dir)}",
         "",
+        # === OOM baseline (#750): record this cgroup's oom_kill count BEFORE
+        # the workload runs, so the post-workload guard can fire on an INCREASE
+        # rather than an absolute count (the counter is cumulative-since-cgroup-
+        # creation; the guest-startup cgroup is not guaranteed fresh).
+        'EPS_OOM_BASELINE="$(_eps_oom_count)"',
+        "",
         *workload_block,
+        "",
+        # === Refuse to publish done on a kernel OOM the chain rc-survived ===
+        # (#750, incident #744). Re-read the cgroup-local oom_kill count and
+        # compare to the pre-workload baseline; a STRICT INCREASE means an OOM
+        # hit this cgroup during the workload. exit 137 (SIGKILL rc) routes
+        # through the EXIT trap's rc!=0 branch -> _eps_phase failed +
+        # _eps_persist_diagnostics + shutdown, so the poll reads
+        # terminal_workload_failed and the async GCP->RunPod failover (#659) can
+        # fire, instead of a false phase=done masking a complete failure. The
+        # watchdog (still live here) is reaped by the EXIT trap's shutdown, not
+        # the clean reaper below -- on the failure path the trap owns teardown.
+        'EPS_OOM_FINAL="$(_eps_oom_count)"',
+        'if [ "${EPS_OOM_FINAL:-0}" -gt "${EPS_OOM_BASELINE:-0}" ]; then',
+        '  { echo "[startup-script] OOM-kill detected in cgroup'
+        " (oom_kill ${EPS_OOM_BASELINE:-0} -> ${EPS_OOM_FINAL:-0}) despite rc=0"
+        ' — routing to failed (#750)" >&3; } 2>/dev/null || true',
+        "  exit 137",
+        "fi",
         "",
         # Reap the reachability watchdog (#669) on the clean-exit path BEFORE
         # writing the success sentinel — a healthy teardown must not let the
@@ -1489,8 +1678,10 @@ def render_create_argv(
       watchdog self-shutdown (or any crash) is FINAL; auto-restart would
       bring the VM back into the same wedged state. Independent scheduling
       field; composes freely with the two above.
-    * ``--max-run-duration`` — generous so it can't interrupt an upload
-      (default 24h per config).
+    * ``--max-run-duration`` — the per-instance VM auto-delete fence, set
+      to the FLEX_START ceiling (default 7d per config, #741) so a long
+      multi-cell sweep is not stranded mid-run; the per-instance-fence-aware
+      janitor age reap is the credit-leak backstop, not this fence.
     * ``--image-family`` / ``--image-project`` — the DLVM image with
       pre-installed CUDA/driver.
     * ``--boot-disk-size`` / ``--boot-disk-type`` — 300 GB pd-ssd default.
@@ -2058,7 +2249,7 @@ def default_gcloud_runner(
 #: A RUNNING VM that has published one of these but never auto-deleted is a
 #: wedged zombie — the workload is over, the VM is still billing — and the
 #: stale-VM janitor (:func:`audit_stale_gcp_vms`) reaps it promptly past a
-#: short terminal-phase floor rather than waiting out the 24h age backstop.
+#: short terminal-phase floor rather than waiting out the per-fence age backstop.
 _TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
 
 
@@ -2583,7 +2774,7 @@ def audit_stale_gcp_vms(
     *,
     config: GcpConfig | None = None,
     runner: GcloudRunner | None = None,
-    max_age_seconds: int = 24 * 3600,
+    max_age_seconds: int = 192 * 3600,  # 8d fallback fence (#741): 7d default + grace
     terminal_phase_max_age_seconds: int = 600,
     now: datetime | None = None,
     delete: bool = False,
@@ -2623,17 +2814,26 @@ def audit_stale_gcp_vms(
     Two reap predicates, both bounded so the sweep never deletes a
     legitimately in-flight VM:
 
-    * **Age backstop** (``max_age_seconds``, default 24h) — any
-      project instance older than the threshold, REGARDLESS of phase
-      (sets ``reason="age"``; the reap-vs-escalate split is decided by
-      classification below). The last-resort fence for a VM whose
-      ``--max-run-duration`` DELETE somehow never fired.
+    * **Age backstop** (per-instance-fence-aware, #741) — an instance is
+      age-stale, REGARDLESS of phase (sets ``reason="age"``; the reap-vs-
+      escalate split is decided by classification below), when EITHER it has
+      a readable ``scheduling.maxRunDuration`` fence and has exceeded that
+      fence + a 1h grace (:data:`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO
+      readable fence and has lived past the fixed ``max_age_seconds`` fallback
+      (the legacy fence; the library default and the ``gcp_audit.py`` CLI
+      default are BOTH 8d — ``192 * 3600`` — to cover the 7d
+      ``default_max_run_duration`` + grace). The last-resort fence for a VM
+      whose ``--max-run-duration`` DELETE somehow never fired — now tracking
+      each instance's OWN fence rather than a single fixed wall-clock (which
+      would re-create #697: a 7d job killed by the janitor's old 24h cap).
     * **Terminal-phase reap** (``terminal_phase_max_age_seconds``, default
       10 min) — a RUNNING instance that has published a TERMINAL
       ``eps/phase`` (``done`` / ``failed``; see
       :data:`_TERMINAL_GUEST_PHASES`) but never auto-deleted is a wedged
       zombie: the workload finished, the VM is still billing, and waiting
-      for the 24h age backstop burns ~22h of idle A100 (incident #634
+      for the per-fence age backstop (up to the instance's own
+      ``--max-run-duration`` + grace — now 7d by default) burns idle A100
+      hours (incident #634
       family — the sibling :func:`reconnect_or_none` fix only reaps such
       a zombie at the NEXT relaunch against the same name, which may never
       come). This predicate reaps it PROMPTLY (recorded as
@@ -2711,6 +2911,7 @@ def audit_stale_gcp_vms(
                 age_seconds=age_seconds,
                 max_age_seconds=max_age_seconds,
                 terminal_phase_max_age_seconds=terminal_phase_max_age_seconds,
+                instance_max_run_seconds=_instance_max_run_seconds(inst),  # #741 Option B
             )
 
         record: dict[str, Any] = {
@@ -2739,6 +2940,31 @@ def audit_stale_gcp_vms(
     return records
 
 
+def _instance_max_run_seconds(inst: dict[str, Any]) -> int | None:
+    """Return the instance's configured ``--max-run-duration`` in seconds, or None.
+
+    Reads ``scheduling.maxRunDuration.seconds`` from the instance JSON that
+    ``gcloud compute instances list --format=json`` returns — GCP populates
+    this natively whenever the create passed ``--max-run-duration`` (the v1
+    REST instance schema carries ``scheduling.maxRunDuration: {seconds,
+    nanos}``). gcloud emits ``seconds`` as either an int or a numeric string,
+    so both are accepted; any other shape (absent block, junk value) returns
+    None so the caller falls back to the fixed ``max_age_seconds`` fence — the
+    backstop never silently disarms on a missing or malformed field.
+    """
+    sched = inst.get("scheduling")
+    if not isinstance(sched, dict):
+        return None
+    mrd = sched.get("maxRunDuration")
+    if not isinstance(mrd, dict):
+        return None
+    raw = mrd.get("seconds")
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def _janitor_stale_reason(
     *,
     cfg: GcpConfig,
@@ -2749,21 +2975,37 @@ def _janitor_stale_reason(
     age_seconds: float | None,
     max_age_seconds: int,
     terminal_phase_max_age_seconds: int,
+    instance_max_run_seconds: int | None,
 ) -> tuple[str | None, str | None]:
     """Decide whether a janitor instance is stale, and why → ``(phase, reason)``.
+
+    Age backstop (Option B, #741): an instance is age-stale when EITHER it has
+    a readable ``--max-run-duration`` fence (``instance_max_run_seconds``, from
+    :func:`_instance_max_run_seconds`) and has exceeded that fence + a 1h grace
+    (:data:`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO readable fence and has
+    lived past the fixed ``max_age_seconds`` fallback (the legacy fence, raised
+    to 8d to cover the 7d default + grace). This makes the age backstop track
+    each instance's OWN fence — a 24h job reaps at ~25h, a 7d job at ~7d+1h, a
+    truly-wedged-never-terminal VM at its-fence+grace — instead of a single
+    fixed wall-clock that would re-create the #697 bug (a 7d job killed by the
+    janitor's fixed 24h cap).
 
     ``reason`` ∈ {``"age"``, ``"terminal-phase"``, ``None``}. The phase probe
     fires ONLY for a RUNNING VM that is NOT already age-reaped and has lived
     past the terminal-phase floor — a terminal-phase RUNNING zombie is reaped
-    promptly, well under the 24h age backstop. A guest-attribute probe FAILURE
-    ("couldn't ask" ≠ "done") is caught, logged, and falls through to the age
-    backstop — a probe blip never escalates a still-unknown VM and never
+    promptly, well under the age backstop. A guest-attribute probe FAILURE
+    ("couldn't ask" ≠ "done") is caught, logged, and falls through (returns
+    not-stale) — a probe blip never escalates a still-unknown VM and never
     crashes the inventory sweep.
     """
     phase: str | None = None
-    old_enough = age_seconds is not None and age_seconds >= max_age_seconds
-    if old_enough:
-        return None, "age"
+    if age_seconds is not None:
+        if instance_max_run_seconds is not None:
+            age_fence = instance_max_run_seconds + _JANITOR_FENCE_GRACE_SECONDS
+        else:
+            age_fence = max_age_seconds
+        if age_seconds >= age_fence:
+            return None, "age"
     should_probe_phase = (
         status.upper() == "RUNNING"
         and age_seconds is not None
@@ -4353,8 +4595,9 @@ class GcpBackend(ComputeBackend):
         the orchestrator-driven ``teardown`` is what reaps a successful run
         that REACHES finalize. If teardown's own rc==0 delete silently
         no-ops (rc==0 but the instance lingers RUNNING), nothing else
-        reclaims it until the 24h ``--max-run-duration`` belt OR the daily
-        ``gcp_audit`` janitor. So after an rc==0 delete we ACTIVELY confirm
+        reclaims it until the per-instance ``--max-run-duration`` belt (7d
+        by default, #741) OR the daily ``gcp_audit`` janitor. So after an
+        rc==0 delete we ACTIVELY confirm
         the instance is gone via ``describe``; if it is still present AND
         ``RUNNING``, re-issue the delete ONCE. Idempotent + fails toward
         "gone" (404 / non-RUNNING / probe-failure never re-delete). NOTE:
@@ -4439,7 +4682,8 @@ class GcpBackend(ComputeBackend):
         # The #683 zombie: rc==0 delete but the VM is still RUNNING. Re-issue
         # the delete ONCE so a successful run cannot bill an A100 until the
         # daily janitor reaps it. Best-effort — a failure here is logged, not
-        # raised (the janitor + 24h max-run-duration remain the backstops).
+        # raised (the janitor + the per-instance --max-run-duration fence,
+        # 7d by default (#741), remain the backstops).
         logger.warning(
             "GCP teardown: %s still RUNNING after an rc==0 delete (#683 zombie); "
             "re-issuing the delete once.",

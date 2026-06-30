@@ -1,0 +1,63 @@
+{
+  "input_rep": "whiten48",
+  "input_rep_k": 48,
+  "input_rep_eps": 1e-06,
+  "c_C_recipe": "C_last",
+  "n_contexts": 50,
+  "layers": [
+    0,
+    18
+  ],
+  "seed": 42,
+  "store_provenance": {
+    "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/hf_dl/issue658_theory_assumptions/store",
+    "cc_source": "#594 HF store (load_cc_last_store)",
+    "n_contexts": 50,
+    "hidden_dim": 3584
+  },
+  "baseline_skill_json": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-722/eval_results/issue_722/base-skill-over-mean-cC-to-v0/skill_over_mean.json",
+  "baseline_krr_json": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-722/eval_results/issue_722/base-skill-over-mean-cC-to-v0/krr_vs_linear.json",
+  "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R\u00b2 on centered v0)",
+  "activation_dim": 3584,
+  "ridge_lambdas": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+  ],
+  "per_layer": [
+    {
+      "layer": 0,
+      "skill_vs_mean_ridge": -0.08599839115111019,
+      "skill_vs_mean_ridge_baseline_full": -0.09328607140723966,
+      "delta_ridge": 0.00728768025612947,
+      "predict_mean_abs_cos": 0.9968373013494778,
+      "raw_recon_abs_cos": 0.9965382722949506,
+      "ridge_median_per_dim_r2": -0.10525189616594277,
+      "n_folds_used_ridge": 50,
+      "gesvd_fallback": false
+    },
+    {
+      "layer": 18,
+      "skill_vs_mean_ridge": 0.8063840165668581,
+      "skill_vs_mean_ridge_baseline_full": 0.7983028454675367,
+      "delta_ridge": 0.008081171099321383,
+      "predict_mean_abs_cos": 0.9863980879073295,
+      "raw_recon_abs_cos": 0.9973235543687522,
+      "ridge_median_per_dim_r2": 0.5171408261760971,
+      "n_folds_used_ridge": 50,
+      "gesvd_fallback": false
+    }
+  ],
+  "metadata": {
+    "git_commit": "268aa898398e801614fad9526f875d24e8c02c49",
+    "timestamp_utc": "2026-06-30T09:44:01.976359Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_vectorized_skill",
+    "phase": "input_rep_whiten48"
+  }
+}

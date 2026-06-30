@@ -208,6 +208,16 @@ class RunPodBackend(ComputeBackend):
         an explicit ``spec.gpus`` would map to ``--gpu-count`` but the
         slice-1 selector does not set that field (the intent default
         suffices for every RunPod workload today).
+
+        CPU-intent failover (#747): a cheap CPU intent (``cpu-small`` /
+        ``cpu-mid``, the router-mapped ``RUNPOD_CPU_INSTANCE_FOR_INTENT`` keys
+        that fall over GCP→RunPod) is passed through verbatim as ``--intent
+        cpu-small`` — this backend stays thin. ``pod_lifecycle.py cmd_provision``
+        resolves it to a RunPod CPU instance_id via
+        ``gpu_heuristics.resolve_cpu_intent`` (checked BEFORE the GPU
+        ``_resolve_spec``) and provisions via ``runpod_api.create_cpu_pod``
+        (``deployCpuPod``); ``cpu-bigmem`` never reaches here (it keeps the #677
+        typed terminal — it is absent from the RunPod-CPU map).
         """
         cmd = [
             sys.executable,

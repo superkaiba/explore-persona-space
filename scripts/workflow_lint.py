@@ -83,6 +83,21 @@ Behaviours:
   10 fires on the RunPod launch path; gcp/slurm startup-script lanes
   have no launch agent), so a new dispatcher written without the pin
   reached production unflagged on those lanes.
+* ``--check-pipe-python`` (also bundled into the no-flags default run):
+  walk every ``*.sh`` under ``scripts/`` and FAIL on any shell pipe
+  whose consumer is a bare ``python``/``python3[.N]`` interpreter with
+  ``-c`` or ``-m`` (``... | python -c "..."``, ``... | python -m
+  json.tool``). This VM has no ``python`` on PATH — only ``python3`` and
+  ``uv run python`` — so the pipe dies with ``python: command not found``
+  (exit 127); the fix is to pipe into ``uv run python``. The rule lived
+  only as prose (CLAUDE.md § Task Workflow API) and was violated ~41x
+  across 4+ sessions on 2026-06-29 (#753, at least one hitting exit
+  127). The correct ``| uv run python -c`` shape, literal docs strings /
+  URLs / filenames containing "python", informational ``which python`` /
+  ``apt-get install python3``, comment lines, and ``echo ``-prefixed
+  dry-run previews all pass. Sibling of ``--check-heredoc-dotenv``; the
+  ``.claude/settings.json`` PreToolUse Bash hook covers the inline ad-hoc
+  commands that never reach a committed script.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -131,6 +146,25 @@ Behaviours:
   Codex twin caught #640); a CPU smoke that skips the GPU phase never
   exercises the upload branch, so nothing mechanical caught it
   pre-merge.
+* ``--check-dotenv-before-hf-import`` (also bundled into the no-flags
+  default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
+  any script that uses the BARE python-dotenv ``load_dotenv``
+  (``from dotenv import load_dotenv`` / ``import dotenv``) AND imports
+  ``huggingface_hub`` (any submodule, top-level OR in-function) WITHOUT
+  first importing the project wrapper
+  ``explore_persona_space.orchestrate.env.load_dotenv`` (#745). The bare
+  dotenv walks cwd (misses the project ``.env`` from a worktree/subdir)
+  and sets NO env, so the HF Hub upload accelerators
+  (``HF_XET_HIGH_PERFORMANCE`` / ``HF_HUB_ENABLE_HF_TRANSFER``) never get
+  their setdefault and a large Hub upload crawls; worse,
+  ``huggingface_hub.constants`` freezes ``HF_HUB_ENABLE_HF_TRANSFER`` at
+  IMPORT time, so a bare-dotenv script importing ``huggingface_hub`` at
+  module top can never pick up the accelerator. The shell-level exports
+  (bootstrap_pod.sh / GCE prelude / SLURM env block) are the load-bearing
+  fix on the running fleet; this check prevents a NEW script from
+  re-introducing the anti-pattern. Waive a genuinely-correct bare-dotenv
+  use with ``# DOTENV_LINT_EXEMPT: <reason>`` (reason ≥ 10 chars) on the
+  import line or the immediately preceding non-blank line.
 * ``--check-agent-model-pins`` (also bundled into the no-flags default
   run): parse the YAML frontmatter ``model: "..."`` of every
   ``.claude/agents/*.md`` and FAIL on any pin whose base id is unknown
@@ -174,6 +208,28 @@ Behaviours:
   ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`` (reason ≥
   :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) on the call's
   first physical line or the immediately preceding non-blank line.
+* ``--check-judge-model-pins`` (also bundled into the no-flags default run):
+  walk every ``*.py`` under ``scripts/``, ``src/explore_persona_space/``, and
+  ``tests/`` PLUS every ``*.sh`` under ``scripts/`` and FAIL on a hardcoded
+  NON-Sonnet judge-model pin at a judge call site. The standing rule pins ONE
+  judge — ``claude-sonnet-4-5-20250929`` — for every judged behavior (CLAUDE.md
+  "LLM judge"; full recipe ``.claude/rules/llm-judging.md``). The gate is
+  ASSIGNMENT/CALL-aware (a ``*JUDGE_MODEL*`` assignment, a ``--judge-model`` /
+  ``judge_model=`` / ``JUDGE_MODEL=`` CLI/shell flag, a ``model=`` kwarg with a
+  judge token in the +/- :data:`JUDGE_PIN_CONTEXT_WINDOW` window, a split-argv
+  ``--judge-model`` + literal-value pair, a ``.sh`` shell-var indirection
+  (``JUDGE=<pin>`` consumed by ``--judge-model "${JUDGE}"``), or a judge-script
+  ``DEFAULT_MODEL`` / ``MODEL_DEFAULT`` / ``JUDGE_DEFAULT`` constant — #765
+  round 2 arms (d)/(e)/(f)), so a bare prose-string mention or a comment is
+  never flagged. Legitimate non-Sonnet
+  pins (Betley ``gpt-4o`` calibration anchors, the translation-faithfulness
+  Haiku judges, the stale-grandfathered legacy Haiku pins) are grandfathered in
+  :data:`JUDGE_PIN_LEGACY_ALLOWLIST` (.py) / :data:`JUDGE_PIN_LEGACY_ALLOWLIST_SH`
+  (.sh) + the SDK-registry :data:`JUDGE_PIN_FILE_ALLOWLIST`; a new calibration
+  control waives with ``# noqa: judge-model-pin`` on the hit or preceding line.
+  The canonical pin ``claude-sonnet-4-5-20250929`` carries no forbidden
+  substring, so it never matches. Motivating incident: the #650/#657 stale
+  legacy-Haiku judge pins (#765).
 
 Exit codes:
 
@@ -487,6 +543,77 @@ CVD_PIN_CVD_ASSIGN_RE = re.compile(r"\bCUDA_VISIBLE_DEVICES=")
 CVD_PIN_WAIVER_RE = re.compile(r"#\s*CVD_PIN_EXEMPT\s*:\s*(.+?)\s*$")
 CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 
+# `--check-pipe-python`: a shell pipe whose CONSUMER is a bare
+# `python`/`python3[.N]` interpreter invoked with `-c` or `-m`
+# (`... | python -c "..."`, `... | python3 -c "..."`, `... | python -m
+# json.tool`) dies at runtime with `python: command not found` (exit
+# 127): this VM has NO `python` on PATH — only `python3` and the
+# project's `uv run python`. CLAUDE.md § Task Workflow API carries the
+# verbatim rule ("Bare `python` is unavailable on this VM — prefix EVERY
+# python invocation with `uv run python`, INCLUDING the consumer side of
+# a pipe"), but it lived only as prose and was violated ~41x across 4+
+# sessions on 2026-06-29 (at least one hitting exit 127). This check
+# makes the rule mechanical for committed `scripts/*.sh`; the
+# `.claude/settings.json` PreToolUse Bash hook covers the inline ad-hoc
+# commands that never reach a script. The fix is always the same: pipe
+# into `uv run python` instead (`... | uv run python -c "..."`).
+# Direct sibling of `--check-heredoc-dotenv` (a prose rule made a
+# `scripts/*.sh` line-scanner, bundled into the no-flags default).
+#
+# Flagged (a logical shell line, backslash continuations merged):
+#   * `cat x | python3 -c "..."` / `foo | python -c "..."` — the pipe
+#     consumer is bare python with `-c`;
+#   * `foo | python -m json.tool` — same with `-m`;
+#   * `foo |python -c "..."` (no space after `|`), `foo | python3.11 -c`,
+#     `cat x | python -u -c` (intervening single-dash flag).
+# NOT flagged (precision — the anchor `\|` + `-[cm]` keeps these out):
+#   * `cat x | uv run python -c "..."` — the token after `|` is `uv`, the
+#     CORRECT shape, never the bare interpreter;
+#   * a literal docs string / URL / filename merely CONTAINING "python"
+#     (`echo "use uv run python"`, `curl .../python-3.12/`,
+#     `ls python_helpers.py | wc -l`) — no `| python -[cm]`;
+#   * informational invocations (`which python`, `apt-get install
+#     python3`) — no pipe consumer;
+#   * `python -compose ...` — `-co` is a different flag prefix, not `-c`
+#     (the boundary `([^A-Za-z0-9_]|$)` / `\b` requires `-c`/`-m` to END
+#     the option);
+#   * bare `python ...` at command START (no pipe) — DELIBERATELY out of
+#     scope (the daily evidence is exclusively the pipe-into-`-c`/`-m`
+#     shape; widening to start-of-command risks false positives without
+#     evidence);
+#   * `#`-comment lines — skipped before matching (the only skipped class).
+# Flagged too (#753 round 2 / F1) — `echo ... | python -c` is a REAL
+# producer pipe whose consumer is bare `python` (echo's stdout feeds it),
+# so `echo`-prefixed lines are NOT skipped. The earlier blanket
+# `echo `-skip silently missed exactly the exit-127 producer-pipe shape
+# this check exists to close. Also flagged (#753 round 2 / F3): an
+# ATTACHED-argument form `python -c'code'` / `python -m'mod'` (no space,
+# quote glued to the option) — the boundary accepts a following quote, so
+# both the lint and the hook now block the valid shell shape that would
+# otherwise crash exit 127.
+# Known limitation (recall, deliberately accepted — mirrors
+# `--check-dispatcher-cvd-pin`'s recall sacrifice): a NON-comment line
+# whose QUOTED STRING merely contains the substring `| python -c`
+# (e.g. `MSG="bad: foo | python -c"`, or a doc `echo "...| python -c..."`)
+# WILL match — the regex is line-local and not quote-aware. This is the
+# accepted cost of closing F1: to DOCUMENT the bad pattern, use a
+# `#`-comment, not an `echo`/quoted string. Such an in-string occurrence
+# is vanishingly rare in `scripts/*.sh` (zero in the current tree beyond
+# the 2 real offenders). No waiver token in v1 (YAGNI —
+# `--check-heredoc-dotenv` ships with no waiver; add one only if a real
+# false positive surfaces).
+#
+# Hook/lint engine equivalence: the lint uses Python `re` (`-[cm]\b`); the
+# `.claude/settings.json` PreToolUse hook uses POSIX ERE
+# (`-[cm]([^A-Za-z0-9_]|$)`, since POSIX ERE has no `\b`). The two
+# boundaries are semantically identical here — `\b` after `c`/`m` matches
+# before a quote / space / EOL, and `[^A-Za-z0-9_]|$` is the explicit
+# POSIX spelling of that. They AGREE across the full match/no-match set
+# AND on the attached-arg (`-c'code'`) and in-string-substring edges; the
+# dual-engine test (test_workflow_lint.py) sources the hook ERE from
+# `.claude/settings.json` and pins the agreement.
+PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
+
 # `--check-agent-model-pins`: every `.claude/agents/*.md` carries a YAML
 # frontmatter line ``model: "claude-..."`` that the Claude Code harness reads
 # at subagent spawn. A pin that is unknown OR carries a `[1m]` suffix on a
@@ -683,6 +810,245 @@ BATCH_JUDGE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
 )
 BATCH_JUDGE_CLIENT_WAIVER_RE = re.compile(r"#\s*BATCH_JUDGE_CLIENT_EXEMPT\s*:\s*(.+?)\s*$")
 BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-dotenv-before-hf-import`: a script that uses the BARE python-dotenv
+# `load_dotenv` (`from dotenv import load_dotenv` or `dotenv.load_dotenv`) AND
+# touches `huggingface_hub` (any submodule) WITHOUT importing the project
+# wrapper `explore_persona_space.orchestrate.env.load_dotenv` first is the #745
+# anti-pattern. The bare dotenv walks cwd (does NOT robustly find the project
+# .env from a worktree / subdir) and sets NO env — so the HF Hub upload
+# accelerators (HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) never get
+# their in-process setdefault, and any large upload crawls. The project wrapper
+# reads the project .env (worktree-aware) AND setdefaults both accelerators.
+# Worse, huggingface_hub.constants freezes HF_HUB_ENABLE_HF_TRANSFER at import
+# time, so a bare-dotenv script that imports huggingface_hub at module top can
+# never pick up the accelerator at all. See `check_dotenv_before_hf_import`.
+# Inline waiver: `# DOTENV_LINT_EXEMPT: <reason>` (reason ≥ N chars) on the bare
+# `dotenv` import line or the immediately preceding non-blank line — same
+# convention as UPLOAD_AS_FILE_EXEMPT / CVD_PIN_EXEMPT.
+DOTENV_LINT_WAIVER_RE = re.compile(r"#\s*DOTENV_LINT_EXEMPT\s*:\s*(.+?)\s*$")
+DOTENV_LINT_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-judge-model-pins` (#765): the standing project rule pins ONE judge
+# model — `claude-sonnet-4-5-20250929` — for every judged behavior (CLAUDE.md
+# "LLM judge = claude-sonnet-4-5-20250929"; the full recipe is
+# `.claude/rules/llm-judging.md`). This check flags a hardcoded NON-Sonnet judge
+# model at a judge call site. The motivating incident is the #650/#657 stale
+# legacy-Haiku pins that re-pinned a non-Sonnet judge for new work.
+#
+# The gate is ASSIGNMENT/CALL-aware, NOT mention-aware: a forbidden substring on
+# a NON-COMMENT line is a HIT iff one of —
+#   (a) JUDGE_PIN_VAR_RE matches the line (RHS of a `*JUDGE_MODEL*` /
+#       `judge_model` / `JUDGE_MODEL` assignment or key);
+#   (b) JUDGE_PIN_FLAG_RE matches the line (`--judge-model` / `judge_model=` /
+#       `JUDGE_MODEL=` CLI/shell arg — covers .py argparse defaults AND .sh
+#       launchers); or
+#   (c) the line carries a `model=` / `model:` kwarg AND a JUDGE_PIN_CALL_TOKEN
+#       appears within +/- JUDGE_PIN_CONTEXT_WINDOW non-comment lines;
+#   (d) the line is a forbidden-pin literal preceded (within
+#       JUDGE_PIN_SPLIT_ARGV_LOOKAHEAD non-blank lines) by a BARE `--judge-model`
+#       flag token on its own list-literal line (split-argv, #765 round 2);
+#   (e) [.sh only, file-scope two-pass] the line ASSIGNS a shell var to a
+#       forbidden-pin value AND that var is later consumed by a `--judge-model`
+#       flag (shell-var indirection, #765 round 2); or
+#   (f) [judge-context files only] the line matches JUDGE_PIN_DEFAULT_MODEL_VAR_RE
+#       (a `DEFAULT_MODEL` / `MODEL_DEFAULT` / `JUDGE_DEFAULT` judge-script
+#       constant whose name lacks JUDGE_MODEL, #765 round 2).
+# A pure code-comment line (lstrip startswith '#') is NEVER a hit, and a bare
+# forbidden substring inside a descriptive string with no judge-named
+# assignment/flag/judge-`model=` on the line is NEVER a hit (the prose-mention
+# guard — issue552_gate_decision.py:83, issue467_figures.py:176,
+# gen_data_appendix.py:212, issue623_behavioral_dv.py docstring, the SDF
+# `messages.create(model=...)` document-generation calls).
+# The canonical pin `claude-sonnet-4-5-20250929` contains NONE of the forbidden
+# substrings (it is `claude-sonnet-4-5-...`, NOT `claude-3-5-sonnet`), so it
+# never matches — asserted in a test.
+JUDGE_PIN_FORBIDDEN_SUBSTRINGS: tuple[str, ...] = (
+    "claude-haiku-",
+    "gpt-4o",
+    "gpt-4-",
+    "gpt-5",
+    "claude-opus-",
+    "claude-3-5-sonnet",
+)
+JUDGE_PIN_CANONICAL = "claude-sonnet-4-5-20250929"  # the ALLOWED judge pin
+# (a) RHS of a judge-named assignment/key: a token CONTAINING `JUDGE_MODEL`
+#     (e.g. DEFAULT_GPT4O_JUDGE_MODEL, SYCO_JUDGE_MODEL), or the bare
+#     `judge_model` / `JUDGE_MODEL`, immediately before `:` or `=`.
+JUDGE_PIN_VAR_RE = re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*JUDGE_MODEL[A-Za-z0-9_]*|judge_model|JUDGE_MODEL)\b\s*[:=]"
+)
+# (b) CLI-flag / shell judge-arg form (covers .py argparse defaults AND .sh):
+#   - `--judge-model` as a bare flag token (the flag name + a forbidden pin on
+#     the same line is a judge pin regardless of the separator — the argparse
+#     `add_argument("--judge-model", default="gpt-4o...")` form and the shell
+#     `--judge-model gpt-4o...` form both match here);
+#   - the `judge_model=` / `JUDGE_MODEL=` shell/kwarg form.
+JUDGE_PIN_FLAG_RE = re.compile(r"(--judge-model\b|judge_model=|JUDGE_MODEL=)")
+# (c) judge-call tokens for the model=-kwarg-in-window arm:
+JUDGE_PIN_CALL_TOKENS: tuple[str, ...] = (
+    "as judge",
+    "judge_completions",
+    "judge=",
+    "JUDGE_MODEL",
+    "judge_model",
+    "SYCO_JUDGE_MODEL",
+)
+JUDGE_PIN_MODEL_KWARG_RE = re.compile(r"\bmodel\s*[:=]")
+JUDGE_PIN_CONTEXT_WINDOW = 3
+# (d) split-argv recognition (#765 round 2, concern judge-pin-detector-split-argv):
+#   a Python list-literal `--judge-model` entry on its own line, e.g.
+#       args = ["--judge-model", "claude-haiku-4-5-20251001"]  # single-line — arm (b)
+#   or split across lines (the run_evals_190.py:52-53 shape):
+#       "--judge-model",
+#       "claude-haiku-4-5-20251001",
+#   When the line is the BARE `--judge-model` flag token (no forbidden pin on it,
+#   so arm (b) misses), the NEXT non-blank line carrying a forbidden substring is
+#   the hit. JUDGE_PIN_BARE_FLAG_RE matches a line whose only non-trivial content
+#   is the `--judge-model` flag token (stripped of surrounding quotes / comma /
+#   whitespace) — i.e. the flag and its value live on separate argv lines.
+JUDGE_PIN_BARE_FLAG_RE = re.compile(r"""^[\s"']*--judge-model[\s"',]*$""")
+# Forward look-ahead window (in non-blank lines) for the split-argv literal.
+JUDGE_PIN_SPLIT_ARGV_LOOKAHEAD = 2
+# (e) shell-variable indirection (#765 round 2, concern
+#   judge-pin-detector-shell-var-indirection): a .sh file that assigns
+#       JUDGE=gpt-4o-2024-08-06        # var name need NOT contain JUDGE_MODEL
+#   then later passes `--judge-model "${JUDGE}"` / `$JUDGE` / `"${JUDGE:-...}"`.
+#   The ASSIGNMENT line carries the forbidden pin but no judge-named var / flag,
+#   and the `--judge-model` reference line passes a var, not a literal — so both
+#   arms (a)/(b) miss. Two-pass per .sh file: pass 1 collects every
+#   `VAR=<value-with-forbidden-substring>`; pass 2 detects a `--judge-model`
+#   reference to one of those vars; the ASSIGNMENT line is flagged.
+#   A shell var assignment: `VAR=...` at line start (after optional `export`/
+#   leading whitespace), capturing the var NAME.
+JUDGE_PIN_SH_ASSIGN_RE = re.compile(r"^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)=")
+
+
+# A `--judge-model` flag that consumes a shell variable (not a literal): the
+# var name is rendered into the {var} placeholder per file. Matches `$VAR`,
+# `${VAR}`, `"${VAR}"`, `${VAR:-default}` (whitespace- or =-separated flag).
+def _judge_pin_sh_var_ref_re(var: str) -> re.Pattern[str]:
+    """Compile a regex matching `--judge-model` consuming shell var ``var``
+    (``$VAR`` / ``${VAR}`` / ``${VAR:-...}``, optionally quoted)."""
+    v = re.escape(var)
+    return re.compile(rf"--judge-model[\s=]+[\"']?\$\{{?{v}\b")
+
+
+# (f) judge-script DEFAULT_MODEL constant (#765 round 2, concern
+#   judge-pin-detector-default-model-constant): a judge-script module-level
+#   constant whose name does NOT contain JUDGE_MODEL, e.g.
+#       DEFAULT_MODEL = "claude-haiku-4-5-20251001"   (judge_with_claude.py:31)
+#   misses arm (a) (the var name lacks JUDGE_MODEL). Expanded ONLY when the file
+#   is JUDGE-CONTEXT (see _file_is_judge_context) — a NARROW broadening so a
+#   non-judge module's DEFAULT_MODEL cost-table constant does not false-fire.
+# A constant name containing BOTH `MODEL` and `DEFAULT` (either order — so
+# `DEFAULT_MODEL`, `MODEL_DEFAULT`, `GPT4O_DEFAULT_MODEL` all match; the `\w*`
+# prefix is zero-width so a bare leading `DEFAULT_...` / `MODEL_...` matches) or
+# the bare `JUDGE_DEFAULT`, immediately before `:` or `=`.
+JUDGE_PIN_DEFAULT_MODEL_VAR_RE = re.compile(
+    r"\b(\w*MODEL\w*DEFAULT\w*|\w*DEFAULT\w*MODEL\w*|JUDGE_DEFAULT)\b\s*[:=]"
+)
+# Judge-context signals (file is plausibly a judge script): filename contains
+# `judge`, the module docstring mentions judging, the file imports a judge
+# client / a `*judge*` module, or it defines a `judge_*`-named function.
+JUDGE_PIN_CONTEXT_FILENAME_RE = re.compile(r"judge", re.IGNORECASE)
+JUDGE_PIN_CONTEXT_BODY_RE = re.compile(
+    r"BatchJudgeClient"  # the project batch-judge client
+    r"|\bimport\b[^\n]*judge"  # imports a *judge* module
+    r"|\bfrom\b[^\n]*judge\b[^\n]*\bimport\b"  # from ...judge... import ...
+    r"|\bdef\s+judge_\w+"  # defines a judge_* function
+    r"|\bas\s+judge\b"  # docstring/comment "as judge"
+)
+# Files whose every line is exempt (the rule/doc that names the pin literally,
+# the SDK model-id registries / cost tables — NOT judge sites — and the linter's
+# own known-model tuple + this check's own test fixtures naming forbidden pins
+# inside strings). Matched by EXACT repo-root-relative POSIX path.
+JUDGE_PIN_FILE_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # the rule documents the pin literally / the global doc names it:
+        ".claude/rules/llm-judging.md",
+        "CLAUDE.md",
+        # the linter's own known-model tuple + this block:
+        "scripts/workflow_lint.py",
+        # this check's test fixtures name forbidden pins inside strings:
+        "tests/test_workflow_lint_judge_model_check.py",
+        # SDK model-id registries / cost tables — NOT judge sites:
+        "src/explore_persona_space/llm/openai_client.py",
+        "src/explore_persona_space/llm/anthropic_client.py",
+    }
+)
+# Grandfathered legitimate NON-Sonnet judge pins — .py — repo-root-relative
+# POSIX paths, annotated inline with the bucket (calibration anchor /
+# translation-judge exemption / stale-grandfathered migrate). Migrating the
+# stale ones to Sonnet is a named follow-up (NOT this task's scope); a NEW
+# legitimate pin must be added here with a `reason` when it lands, or the
+# no-flags default run FAILs (the test_live_trees_pass invariant).
+JUDGE_PIN_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # --- permanent calibration anchors (Betley gpt-4o; replication-fidelity) ---
+        # gpt-4o Betley κ-calibration anchor:
+        "scripts/issue404_outcome_eval.py",
+        # gpt-4o Betley broad-EM judge diagnostic:
+        "scripts/issue545_betley_diag.py",
+        # gpt-4o B1 broad-EM anchor #458/#468 + haiku calibration:
+        "src/explore_persona_space/experiments/issue503/judges.py",
+        # honors the gpt-4o B1 judge by family:
+        "src/explore_persona_space/experiments/issue503/cross_eval.py",
+        # Betley dual judge + haiku calibration via the #503 rig:
+        "src/explore_persona_space/experiments/behavior_testbed_545/judges_545.py",
+        # Betley dual judge via the #503 rig:
+        "src/explore_persona_space/experiments/behavior_testbed_545/eval_battery.py",
+        # tests the gpt-4o calibration-anchor dispatch routing (#404):
+        "tests/test_issue404_judge_dispatch.py",
+        # tests the gpt-4o Betley broad-EM sentinel handling (#545):
+        "tests/test_issue545_betley_sentinel.py",
+        # --- permanent translation-judge exemptions (non-behavior-expression DV) ---
+        # translation-faithfulness judge (Haiku); not a #765 behavior DV:
+        "scripts/validate_translation.py",
+        # Italian translation-faithfulness judge (Haiku):
+        "scripts/validate_italian_translation.py",
+        # --- stale-grandfathered, migrate-to-Sonnet (follow-up §2) ---
+        # #389 fact-gating re-judge, legacy Haiku:
+        "scripts/rejudge_issue_389_c_strict.py",
+        # #389 driver, legacy Haiku:
+        "scripts/run_experiment_389.py",
+        # #444 driver, legacy Haiku:
+        "scripts/run_experiment_444.py",
+        # #444 5-way reanalysis, legacy Haiku:
+        "scripts/reanalyze_issue444_5way.py",
+        # #190 eval driver, legacy Haiku:
+        "scripts/run_evals_190.py",
+        # assistant-axis role-adherence judge, legacy Haiku:
+        "scripts/judge_with_claude.py",
+        # #642 realized #411/#518 legacy Haiku judge id:
+        "scripts/issue_642/i642_common.py",
+        # #411/#591 legacy sycophancy Haiku judge:
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/__init__.py",
+        # #612 sycophancy judge default, legacy Haiku:
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/judge.py",
+        # #650 SYCO_JUDGE_MODEL legacy Haiku:
+        "src/explore_persona_space/experiments/issue_650/__init__.py",
+    }
+)
+# Grandfathered legitimate NON-Sonnet judge launchers — .sh — all permanent
+# Betley gpt-4o calibration anchors (they pin --judge-model DIRECTLY in shell,
+# so a .py-only gate would miss them — the walk includes .sh).
+JUDGE_PIN_LEGACY_ALLOWLIST_SH: frozenset[str] = frozenset(
+    {
+        # Betley deconfound gpt-4o (same judge+rubric as #404):
+        "scripts/run_issue452_deconfound.sh",
+        # #458 Betley broad-EM sweep gpt-4o:
+        "scripts/run_issue458_sweep.sh",
+        # #552 canonical 8x100 EM gate gpt-4o:
+        "scripts/run_issue552_sweep.sh",
+        # #552 resume launcher gpt-4o:
+        "scripts/run_issue552_resume.sh",
+    }
+)
+JUDGE_PIN_WAIVER_RE = re.compile(r"#\s*noqa:\s*judge-model-pin\b")
+JUDGE_PIN_FILE_WAIVER_RE = re.compile(r"#\s*epm-allow-judge-model-pin\b")
 
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
@@ -1684,6 +2050,64 @@ def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any shell pipe
+    whose CONSUMER is a bare ``python``/``python3[.N]`` interpreter
+    invoked with ``-c`` or ``-m`` (``... | python -c "..."``).
+
+    Rationale: this VM has NO ``python`` on PATH — only ``python3`` and
+    the project's ``uv run python`` — so a bare ``| python -c`` /
+    ``| python -m`` pipe dies at runtime with ``python: command not
+    found`` (exit 127). CLAUDE.md § Task Workflow API carries the rule
+    verbatim ("prefix EVERY python invocation with ``uv run python``,
+    INCLUDING the consumer side of a pipe"), but it lived only as prose
+    and was violated ~41x across 4+ sessions on 2026-06-29 (#753). The
+    fix is always the same: pipe into ``uv run python`` instead. Backslash
+    continuations are merged into one logical line (both #753 offenders
+    were backslash-continued ``cat ... \\`` newline ``| python3 -c``);
+    only ``#``-comment lines are skipped. ``echo ... | python -c`` is a
+    REAL producer pipe (echo's stdout is consumed by bare ``python``) and
+    IS flagged — the earlier blanket ``echo ``-skip silently missed this
+    must-catch shape (#753 round 2 / F1). To document the bad pattern,
+    put it in a ``#``-comment, not an ``echo`` string. See the regex block
+    above for the full flagged/not-flagged matrix.
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_heredoc_dotenv`` / ``check_dispatcher_cvd_pin``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, _last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            # Only `#`-comment lines are documentation and skipped. `echo `
+            # lines are NOT skipped: `echo '{}' | python -c "..."` is a REAL
+            # producer pipe whose consumer is bare `python` — exactly the
+            # exit-127 class this check exists to close (#753 round 2 / F1).
+            # The earlier blanket `echo `-skip silently missed it. A script
+            # that genuinely needs to DOCUMENT the bad pattern must do so in a
+            # `#`-comment, not an `echo` string.
+            if stripped.startswith("#"):
+                continue
+            if not PIPE_PYTHON_RE.search(logical):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: bare `| python -c/-m` pipe consumer. "
+                f"This VM has no `python` on PATH — `python: command not "
+                f"found` (exit 127). Pipe into `uv run python` instead "
+                f'(`... | uv run python -c "..."`). See CLAUDE.md '
+                f"§ Task Workflow API (#753)."
+            )
+    return errors
+
+
 def check_marker_registry(
     workflow: WorkflowYaml,
     *,
@@ -2268,6 +2692,285 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def _dotenv_lint_waiver_present(lines: list[str], import_lineno: int) -> bool:
+    """Return True iff a ``# DOTENV_LINT_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) is on the bare-dotenv
+    import line (``import_lineno``, 1-based) or the immediately preceding
+    non-blank line. Same convention as :func:`_upload_as_file_waiver_present`."""
+    idx = import_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = DOTENV_LINT_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= DOTENV_LINT_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = DOTENV_LINT_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= DOTENV_LINT_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _bare_dotenv_import_lineno(tree: ast.AST) -> int | None:
+    """Return the lineno of the FIRST bare python-dotenv ``load_dotenv`` import
+    (``from dotenv import load_dotenv`` / ``from dotenv import ... load_dotenv``)
+    or a plain ``import dotenv`` in ``tree``, else None.
+
+    The bare-``dotenv`` usage is the signal; the lineno is where the waiver is
+    anchored + the error is reported. ``from explore_persona_space.orchestrate.env
+    import load_dotenv`` is NOT a bare dotenv import (its module is the project
+    wrapper, not ``dotenv``), so it never matches here.
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "dotenv":
+            return node.lineno
+        if isinstance(node, ast.Import) and any(a.name == "dotenv" for a in node.names):
+            return node.lineno
+    return None
+
+
+def _imports_huggingface_hub(tree: ast.AST) -> bool:
+    """Return True iff ``tree`` imports ``huggingface_hub`` (any form): a
+    top-level OR in-function ``import huggingface_hub[...]`` /
+    ``from huggingface_hub[...] import ...``. ``ast.walk`` covers deferred
+    in-function imports too (the #745 issue651 worst case imported it at module
+    top, but issue617/issue658 import it in-function)."""
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import) and any(
+            a.name == "huggingface_hub" or a.name.startswith("huggingface_hub.") for a in node.names
+        ):
+            return True
+        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
+            return True
+    return False
+
+
+def _imports_orchestrate_env_load_dotenv(tree: ast.AST) -> bool:
+    """Return True iff ``tree`` imports ``load_dotenv`` from the project wrapper
+    ``...orchestrate.env`` (any alias of the module path ending in
+    ``orchestrate.env``). This is the sanctioned dotenv source the #745 check
+    requires when a script also touches ``huggingface_hub``."""
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and (node.module or "").endswith("orchestrate.env")
+            and any(a.name == "load_dotenv" for a in node.names)
+        ):
+            return True
+    return False
+
+
+def _module_top_huggingface_hub_import_lineno(tree: ast.AST) -> int | None:
+    """Return the lineno of the FIRST MODULE-TOP ``huggingface_hub`` import
+    (any form), else None.
+
+    Only the module-body imports matter for the import-ORDER check: an
+    in-FUNCTION ``import huggingface_hub`` executes at call time — AFTER the
+    module-top ``load_dotenv()`` has already run — so it never freezes the
+    constants before the env is set. (The bare-dotenv arm uses ``ast.walk`` to
+    catch in-function imports too; this order arm deliberately does NOT.)
+    """
+    body = getattr(tree, "body", [])
+    for node in body:
+        if isinstance(node, ast.Import) and any(
+            a.name == "huggingface_hub" or a.name.startswith("huggingface_hub.") for a in node.names
+        ):
+            return node.lineno
+        if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("huggingface_hub"):
+            return node.lineno
+    return None
+
+
+def _module_top_load_dotenv_call_lineno(tree: ast.AST) -> int | None:
+    """Return the lineno of the FIRST MODULE-TOP ``load_dotenv(...)`` call
+    (bare ``load_dotenv(...)`` or ``dotenv.load_dotenv(...)``), else None.
+
+    Module-body statements only (an expression statement or an assignment whose
+    value is the call) — a call buried inside a function does not establish the
+    module-top env before a module-top huggingface_hub import freezes the
+    constants. Used by the order arm to find where the env is actually set."""
+    body = getattr(tree, "body", [])
+    for node in body:
+        call = None
+        if (isinstance(node, ast.Expr) and isinstance(node.value, ast.Call)) or (
+            isinstance(node, (ast.Assign, ast.AnnAssign))
+            and isinstance(getattr(node, "value", None), ast.Call)
+        ):
+            call = node.value
+        if call is None:
+            continue
+        func = call.func
+        if isinstance(func, ast.Name) and func.id == "load_dotenv":
+            return node.lineno
+        if isinstance(func, ast.Attribute) and func.attr == "load_dotenv":
+            return node.lineno
+    return None
+
+
+def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[str]:
+    """AST-walk every ``*.py`` under ``scripts/`` and FAIL on any script that
+    uses the BARE python-dotenv ``load_dotenv`` AND imports ``huggingface_hub``
+    (any submodule) WITHOUT first importing the project wrapper
+    ``explore_persona_space.orchestrate.env.load_dotenv``.
+
+    Rationale (#745): the bare ``from dotenv import load_dotenv`` walks the cwd
+    for a ``.env`` (so it does NOT robustly find the project ``.env`` from a
+    worktree / subdir) and sets NO environment. The project wrapper reads the
+    project ``.env`` (worktree-aware ``resolve_dotenv_path``) AND setdefaults the
+    HF Hub upload accelerators (``HF_XET_HIGH_PERFORMANCE`` /
+    ``HF_HUB_ENABLE_HF_TRANSFER``), so a script that uploads to the Hub but uses
+    bare dotenv gets neither the right ``.env`` nor the accelerator default —
+    large uploads then crawl. Worse, ``huggingface_hub.constants`` freezes
+    ``HF_HUB_ENABLE_HF_TRANSFER`` at IMPORT time, so a bare-dotenv script that
+    imports ``huggingface_hub`` at module top can never pick up the accelerator.
+    The shell-level exports (bootstrap_pod.sh / GCE prelude / SLURM env block)
+    are the load-bearing fix on the running fleet; this check prevents a NEW
+    script from re-introducing the bare-dotenv anti-pattern.
+
+    Detection (per script) — TWO arms, each independently waivable with
+    ``# DOTENV_LINT_EXEMPT: <reason>`` (reason ≥
+    :data:`DOTENV_LINT_WAIVER_MIN_REASON_CHARS` chars) on the anchor line or the
+    immediately preceding non-blank line:
+
+    ARM 1 — BARE DOTENV (the original #745 check):
+
+    * BARE DOTENV — a ``from dotenv import [...] load_dotenv`` or a plain
+      ``import dotenv`` (the project wrapper
+      ``from explore_persona_space.orchestrate.env import load_dotenv`` is NOT
+      bare dotenv — its module is the wrapper, not ``dotenv``);
+    * AND HUGGINGFACE_HUB — any ``import huggingface_hub[...]`` /
+      ``from huggingface_hub[...] import ...`` (top-level OR in-function);
+    * AND NOT the project wrapper imported anywhere in the file.
+
+    All three → FAIL, anchored at the bare-dotenv import line.
+
+    ARM 2 — IMPORT-ORDER (#745 round 2): even when the wrapper IS imported, a
+    MODULE-TOP ``huggingface_hub`` import that PRECEDES the module-top
+    ``load_dotenv()`` CALL → FAIL, anchored at the huggingface_hub import line.
+    Rationale: ``huggingface_hub.constants`` freezes
+    ``HF_HUB_ENABLE_HF_TRANSFER`` at IMPORT time, so an accelerator env set
+    AFTER the import is already too late (the constant is frozen) and the
+    accelerator is inert despite the wrapper being present. The env-setting site
+    is the ``load_dotenv()`` CALL line, NOT the wrapper IMPORT line: the
+    accelerator setdefaults live INSIDE the wrapper's ``load_dotenv`` function
+    body (``orchestrate/env.py``), so importing the wrapper sets no env — only
+    the call does (using ``min(wrapper_import, call)`` would treat the mere
+    import as an env-setting site and miss the wrapper-import → hf-import →
+    ``load_dotenv()``-call ordering). Scope: MODULE-TOP huggingface_hub imports
+    only (an in-function import runs at call time, after the module-top
+    ``load_dotenv()``), and only when the file actually CALLS ``load_dotenv`` at
+    module top (a script relying purely on the shell-level exports and never
+    calling ``load_dotenv`` has no env-setting site to be late relative to, so
+    it is out of scope). Skipped when ARM 1 already flagged the file (one error
+    per file is enough — migrating to the wrapper-above-hf shape fixes both) or
+    when a bare-dotenv ``# DOTENV_LINT_EXEMPT`` waiver already covered the file's
+    #745 dotenv concern.
+
+    ``scripts_dir`` is an override hook for unit tests; production callers pass
+    None and the function walks the canonical ``<repo_root>/scripts`` tree.
+    Bundled into the no-flags default run (same policy as
+    ``check_upload_as_file`` / ``check_dispatcher_cvd_pin``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for py in sorted(root.rglob("*.py")):
+        if not py.is_file():
+            continue
+        text = py.read_text(encoding="utf-8")
+        try:
+            tree = ast.parse(text, filename=str(py))
+        except SyntaxError:
+            # A scripts/ file that does not parse is its own (separate)
+            # problem; this check stays silent on it rather than crashing.
+            continue
+        lines = text.splitlines()
+
+        # ARM 1 — BARE-DOTENV: bare python-dotenv + huggingface_hub WITHOUT the
+        # project wrapper imported anywhere. The wrapper-present escape is
+        # intentional here (the author has the sanctioned source available);
+        # the import-ORDER guarantee for the wrapper-present case is ARM 2.
+        arm1_fired = False
+        bare_lineno = _bare_dotenv_import_lineno(tree)
+        # A bare-dotenv waiver expresses an explicit "#745 dotenv concern waived
+        # for this file" — it suppresses BOTH arms (ARM 2 would otherwise
+        # re-flag the same file on ordering, defeating the waiver).
+        bare_dotenv_waived = bare_lineno is not None and _dotenv_lint_waiver_present(
+            lines, bare_lineno
+        )
+        if (
+            bare_lineno is not None
+            and _imports_huggingface_hub(tree)
+            and not _imports_orchestrate_env_load_dotenv(tree)
+            and not bare_dotenv_waived
+        ):
+            arm1_fired = True
+            errors.append(
+                f"{py}:{bare_lineno}: bare `dotenv` load_dotenv + huggingface_hub "
+                f"import without explore_persona_space.orchestrate.env.load_dotenv "
+                f"(#745). The bare dotenv walks cwd (misses the project .env from a "
+                f"worktree/subdir) and sets no env, so the HF Hub upload accelerators "
+                f"(HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER) never get "
+                f"their setdefault and large uploads crawl. Import the project wrapper "
+                f"`from explore_persona_space.orchestrate.env import load_dotenv` and "
+                f"call load_dotenv() BEFORE the huggingface_hub import, or — if bare "
+                f"dotenv is genuinely correct here — waive with "
+                f"'# DOTENV_LINT_EXEMPT: <reason>' (reason ≥ "
+                f"{DOTENV_LINT_WAIVER_MIN_REASON_CHARS} chars) on the import line or "
+                f"the previous non-blank line."
+            )
+
+        # ARM 2 — IMPORT-ORDER (#745 round 2): even when the wrapper IS imported,
+        # a MODULE-TOP huggingface_hub import that PRECEDES the module-top
+        # load_dotenv() CALL freezes HF_HUB_ENABLE_HF_TRANSFER (read in
+        # huggingface_hub.constants at IMPORT time) BEFORE the env is set — so
+        # the accelerator is inert despite the wrapper being present. FAIL when
+        # the first module-top huggingface_hub import precedes the env-setting
+        # site (the load_dotenv() CALL — see the in-block comment for why the
+        # wrapper IMPORT line is NOT an env-setting site). Module-top only (an
+        # in-function hf import runs after the module-top load_dotenv() — see
+        # helper docs), and only when the file actually CALLS load_dotenv at
+        # module top (a script that relies purely on shell exports and never
+        # calls load_dotenv is out of scope). Waivable on the hf import line
+        # (same token + reason floor).
+        # Skip when ARM 1 already flagged this file (a bare-dotenv offender is
+        # also out-of-order, but one error per file is enough — migrating to
+        # the wrapper-above-hf shape fixes both arms at once) OR when a
+        # bare-dotenv waiver explicitly waived the #745 dotenv concern here.
+        hf_lineno = _module_top_huggingface_hub_import_lineno(tree)
+        if not arm1_fired and not bare_dotenv_waived and hf_lineno is not None:
+            # The env-setting site is the module-top load_dotenv() CALL line —
+            # NOT the wrapper import. The accelerator setdefaults live INSIDE the
+            # wrapper's load_dotenv() function body (orchestrate/env.py:244-245),
+            # so importing the wrapper sets NO env; only the CALL does. Comparing
+            # against min(wrapper_import, call) would treat the mere import as an
+            # env-setting site and miss the wrapper-import → hf-import →
+            # load_dotenv()-call ordering (the constants freeze at the hf import,
+            # BEFORE the later call runs). When there is no module-top call (env
+            # set purely by shell-level exports — bootstrap/GCE/SLURM), there is
+            # no site to be late relative to, so the order arm is out of scope.
+            call_lineno = _module_top_load_dotenv_call_lineno(tree)
+            if call_lineno is not None:
+                env_lineno = call_lineno
+                if hf_lineno < env_lineno and not _dotenv_lint_waiver_present(lines, hf_lineno):
+                    errors.append(
+                        f"{py}:{hf_lineno}: module-top huggingface_hub import PRECEDES "
+                        f"the dotenv/env setup at line {env_lineno} (#745 import-order). "
+                        f"huggingface_hub.constants freezes HF_HUB_ENABLE_HF_TRANSFER at "
+                        f"IMPORT time, so an accelerator env set AFTER the import is "
+                        f"already too late — the upload accelerator is inert. Move the "
+                        f"`from explore_persona_space.orchestrate.env import load_dotenv` "
+                        f"+ load_dotenv() ABOVE the huggingface_hub import, or — if the "
+                        f"ordering is genuinely correct here — waive with "
+                        f"'# DOTENV_LINT_EXEMPT: <reason>' (reason ≥ "
+                        f"{DOTENV_LINT_WAIVER_MIN_REASON_CHARS} chars) on the "
+                        f"huggingface_hub import line or the previous non-blank line."
+                    )
+    return errors
+
+
 def _batch_judge_client_waiver_present(lines: list[str], call_lineno: int) -> bool:
     """Return True iff a ``# BATCH_JUDGE_CLIENT_EXEMPT: <reason>`` waiver
     (reason ≥ :data:`BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS` chars) is
@@ -2409,6 +3112,241 @@ def check_batch_judge_client(
                     f"{BATCH_JUDGE_CLIENT_WAIVER_MIN_REASON_CHARS} chars) on the "
                     f"call's first line or the previous non-blank line."
                 )
+    return errors
+
+
+def _judge_pin_line_waived(lines: list[str], idx: int) -> bool:
+    """Return True iff a ``# noqa: judge-model-pin`` waiver is on the hit line
+    (``idx``, 0-based) or the immediately preceding non-blank line. Same
+    convention as the dotenv / upload-as-file waivers."""
+    if 0 <= idx < len(lines) and JUDGE_PIN_WAIVER_RE.search(lines[idx]):
+        return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    return back >= 0 and bool(JUDGE_PIN_WAIVER_RE.search(lines[back]))
+
+
+def _file_is_judge_context(text: str, name: str) -> bool:
+    """Return True iff the file is plausibly a JUDGE script — its filename
+    contains ``judge``, OR its body imports a judge client / a ``*judge*``
+    module / defines a ``judge_*`` function / says "as judge" (docstring). Used
+    to NARROW the (f) DEFAULT_MODEL-constant arm so a non-judge module's
+    cost-table constant does not false-fire (#765 round 2)."""
+    if JUDGE_PIN_CONTEXT_FILENAME_RE.search(name):
+        return True
+    return bool(JUDGE_PIN_CONTEXT_BODY_RE.search(text))
+
+
+def _judge_pin_is_hit(lines: list[str], idx: int, *, judge_context: bool = False) -> bool:
+    """Return True iff line ``idx`` (0-based) carries a forbidden non-Sonnet
+    judge-model substring in an ASSIGNMENT / CALL context (NOT a bare prose
+    mention or comment). See the :data:`JUDGE_PIN_FORBIDDEN_SUBSTRINGS` block
+    for the gate definition. ``judge_context`` enables the (f) DEFAULT_MODEL
+    arm (only for judge-script files). The (e) shell-var-indirection arm is
+    handled at file scope in :func:`_scan_judge_pin_file` (the hit is the
+    assignment line, not this forbidden-literal line)."""
+    line = lines[idx]
+    if line.lstrip().startswith("#"):
+        return False  # a pure comment line is never a hit
+    if not any(sub in line for sub in JUDGE_PIN_FORBIDDEN_SUBSTRINGS):
+        return False
+    # (a) RHS of a judge-named assignment/key, or (b) a --judge-model /
+    # judge_model= / JUDGE_MODEL= CLI/shell arg, both on the hit line:
+    if JUDGE_PIN_VAR_RE.search(line) or JUDGE_PIN_FLAG_RE.search(line):
+        return True
+    # (f) judge-script DEFAULT_MODEL / MODEL_DEFAULT / JUDGE_DEFAULT constant —
+    # only in a judge-context file (NARROW broadening):
+    if judge_context and JUDGE_PIN_DEFAULT_MODEL_VAR_RE.search(line):
+        return True
+    # (c) a model=/model: kwarg on the line AND a judge-call token within the
+    # +/- JUDGE_PIN_CONTEXT_WINDOW non-comment line window:
+    if JUDGE_PIN_MODEL_KWARG_RE.search(line):
+        lo = max(0, idx - JUDGE_PIN_CONTEXT_WINDOW)
+        hi = min(len(lines), idx + JUDGE_PIN_CONTEXT_WINDOW + 1)
+        for j in range(lo, hi):
+            ctx = lines[j]
+            if ctx.lstrip().startswith("#"):
+                continue
+            if any(tok in ctx for tok in JUDGE_PIN_CALL_TOKENS):
+                return True
+    # (d) split-argv recognition: this forbidden-literal line has no var/flag/
+    # kwarg of its own (arms a/b/c missed), but a preceding non-blank,
+    # non-comment line within the look-ahead window is the BARE `--judge-model`
+    # flag token (the run_evals_190.py:52-53 list-literal shape). Look BACK so
+    # the VALUE line (the one carrying the forbidden pin) is the reported hit.
+    back, seen = idx - 1, 0
+    while back >= 0 and seen < JUDGE_PIN_SPLIT_ARGV_LOOKAHEAD:
+        prev = lines[back]
+        if prev.strip() == "":
+            back -= 1
+            continue
+        seen += 1
+        if not prev.lstrip().startswith("#") and JUDGE_PIN_BARE_FLAG_RE.search(prev):
+            return True
+        back -= 1
+    return False
+
+
+def _judge_pin_rel(p: Path) -> str:
+    """Repo-root-relative POSIX path, or the file's own posix path when it lives
+    OUTSIDE the repo (a unit-test fixture tree) — so the exact-path allowlists
+    never accidentally exempt a tmp fixture sharing a basename with a real
+    allowlisted file."""
+    try:
+        return p.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
+def _judge_pin_sh_var_indirection_hits(lines: list[str]) -> set[int]:
+    """Return the 0-based indices of shell-var ASSIGNMENT lines that pin a
+    forbidden judge model via indirection (#765 round 2, arm (e)). Two-pass:
+    (1) collect every ``VAR=<value-with-a-forbidden-substring>`` (var name need
+    NOT contain JUDGE_MODEL); (2) if ANY non-comment line passes
+    ``--judge-model`` consuming that var (``$VAR`` / ``${VAR}`` / ``${VAR:-...}``),
+    the ASSIGNMENT line is a hit. Returns assignment indices only — the forbidden
+    literal lives there, and the ``--judge-model "${VAR}"`` reference line carries
+    no forbidden substring so it is never separately reported."""
+    # Pass 1: var name -> assignment line idx, for assignments whose value has a
+    # forbidden judge substring (skip pure-comment lines).
+    forbidden_vars: dict[str, int] = {}
+    for idx, line in enumerate(lines):
+        if line.lstrip().startswith("#"):
+            continue
+        m = JUDGE_PIN_SH_ASSIGN_RE.match(line)
+        if not m:
+            continue
+        if not any(sub in line for sub in JUDGE_PIN_FORBIDDEN_SUBSTRINGS):
+            continue
+        forbidden_vars[m.group(1)] = idx
+    if not forbidden_vars:
+        return set()
+    # Pass 2: a non-comment `--judge-model` line consuming one of those vars
+    # promotes that var's assignment line to a hit.
+    hits: set[int] = set()
+    for var, assign_idx in forbidden_vars.items():
+        ref_re = _judge_pin_sh_var_ref_re(var)
+        for line in lines:
+            if line.lstrip().startswith("#"):
+                continue
+            if ref_re.search(line):
+                hits.add(assign_idx)
+                break
+    return hits
+
+
+def _scan_judge_pin_file(p: Path, *, sh_allowlist: bool, errors: list[str]) -> None:
+    """Scan one file for judge-model-pin hits, appending error lines to
+    ``errors``. Allowlist + file-level-waiver short-circuit; per-line hits gated
+    by :func:`_judge_pin_is_hit` and waivable by :func:`_judge_pin_line_waived`.
+    The (e) shell-var-indirection arm (``.sh`` only) is a file-scope two-pass
+    check (:func:`_judge_pin_sh_var_indirection_hits`); the (f) DEFAULT_MODEL
+    arm is gated on :func:`_file_is_judge_context`."""
+    rel = _judge_pin_rel(p)
+    if rel in JUDGE_PIN_FILE_ALLOWLIST:
+        return
+    if rel in (JUDGE_PIN_LEGACY_ALLOWLIST_SH if sh_allowlist else JUDGE_PIN_LEGACY_ALLOWLIST):
+        return
+    try:
+        text = p.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return
+    if JUDGE_PIN_FILE_WAIVER_RE.search(text):
+        return  # file-level waiver
+    lines = text.splitlines()
+    judge_context = _file_is_judge_context(text, p.name)
+    # (e) shell-var-indirection assignment-line hits (.sh files only).
+    forced_idxs = _judge_pin_sh_var_indirection_hits(lines) if sh_allowlist else set()
+    reported: set[int] = set()
+    for idx in range(len(lines)):
+        is_hit = idx in forced_idxs or _judge_pin_is_hit(lines, idx, judge_context=judge_context)
+        if not is_hit or _judge_pin_line_waived(lines, idx) or idx in reported:
+            continue
+        reported.add(idx)
+        match = next(
+            (s for s in JUDGE_PIN_FORBIDDEN_SUBSTRINGS if s in lines[idx]),
+            "<non-Sonnet>",
+        )
+        errors.append(
+            f"{p}:{idx + 1}: hardcoded non-Sonnet judge pin '{match}' at a "
+            f"judge call site. fix: use {JUDGE_PIN_CANONICAL} (or waive a "
+            f"calibration control with '# noqa: judge-model-pin'). See "
+            f".claude/rules/llm-judging.md."
+        )
+
+
+def check_judge_model_pins(
+    *,
+    scripts_dir: Path | None = None,
+    src_dir: Path | None = None,
+    tests_dir: Path | None = None,
+) -> list[str]:
+    """Walk ``scripts/**/*.py``, ``scripts/**/*.sh``,
+    ``src/explore_persona_space/**/*.py``, and ``tests/**/*.py`` and FAIL on a
+    hardcoded NON-Sonnet judge-model pin at a judge call site (#765).
+
+    The standing project rule pins ONE judge — ``claude-sonnet-4-5-20250929`` —
+    for every judged behavior (CLAUDE.md "LLM judge"; full recipe
+    ``.claude/rules/llm-judging.md``). A forbidden substring
+    (:data:`JUDGE_PIN_FORBIDDEN_SUBSTRINGS`) on a NON-COMMENT line is a HIT iff:
+      (a) the line matches :data:`JUDGE_PIN_VAR_RE` (RHS of a judge-named
+          assignment/key); or
+      (b) the line matches :data:`JUDGE_PIN_FLAG_RE` (``--judge-model`` /
+          ``judge_model=`` / ``JUDGE_MODEL=`` CLI/shell arg — covers .py
+          argparse defaults AND .sh launchers); or
+      (c) the line carries a ``model=`` / ``model:`` kwarg AND a
+          :data:`JUDGE_PIN_CALL_TOKENS` token appears within +/-
+          :data:`JUDGE_PIN_CONTEXT_WINDOW` non-comment lines;
+      (d) the forbidden-pin literal is preceded (within
+          :data:`JUDGE_PIN_SPLIT_ARGV_LOOKAHEAD` non-blank lines) by a BARE
+          ``--judge-model`` flag on its own list-literal line — the split-argv
+          shape (#765 round 2);
+      (e) [``.sh`` only] the line ASSIGNS a shell var to a forbidden-pin value
+          AND that var is later consumed by ``--judge-model`` — shell-var
+          indirection, a file-scope two-pass check
+          (:func:`_judge_pin_sh_var_indirection_hits`, #765 round 2); or
+      (f) [judge-context files only — :func:`_file_is_judge_context`] the line
+          matches :data:`JUDGE_PIN_DEFAULT_MODEL_VAR_RE` (a ``DEFAULT_MODEL`` /
+          ``MODEL_DEFAULT`` / ``JUDGE_DEFAULT`` constant whose name lacks
+          JUDGE_MODEL, #765 round 2).
+    A bare mention inside a descriptive string or a comment (no judge-named
+    assignment / ``--judge-model`` flag / judge ``model=`` on the line) is NOT
+    a hit (the prose-mention guard). The canonical pin
+    ``claude-sonnet-4-5-20250929`` contains NO forbidden substring (it is
+    ``claude-sonnet-4-5-...``, NOT ``claude-3-5-sonnet``), so it never matches.
+
+    Exempt: :data:`JUDGE_PIN_FILE_ALLOWLIST` (whole file — doc/registry/self/
+    test-fixtures), :data:`JUDGE_PIN_LEGACY_ALLOWLIST` (.py grandfathered
+    relative path), :data:`JUDGE_PIN_LEGACY_ALLOWLIST_SH` (.sh grandfathered
+    relative path), a file-level ``# epm-allow-judge-model-pin`` comment, and a
+    per-line ``# noqa: judge-model-pin`` on the hit line or the immediately
+    preceding non-blank line. One error line per hit; exit non-zero on any hit.
+    ``scripts_dir`` / ``src_dir`` / ``tests_dir`` are unit-test override hooks
+    (production callers pass all None). Bundled into the no-flags default run.
+    """
+    py_roots = [
+        scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts",
+        src_dir if src_dir is not None else _REPO_ROOT / "src" / "explore_persona_space",
+        tests_dir if tests_dir is not None else _REPO_ROOT / "tests",
+    ]
+    # .sh launchers live only under scripts/ — reuse the (possibly overridden)
+    # scripts root for the shell walk too.
+    sh_root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+
+    errors: list[str] = []
+    seen: set[Path] = set()
+    for root in py_roots:
+        if not root.exists():
+            continue
+        for py in sorted(root.rglob("*.py")):
+            if py.is_file() and py not in seen:
+                seen.add(py)
+                _scan_judge_pin_file(py, sh_allowlist=False, errors=errors)
+    if sh_root.exists():
+        for sh in sorted(sh_root.rglob("*.sh")):
+            if sh.is_file():
+                _scan_judge_pin_file(sh, sh_allowlist=True, errors=errors)
     return errors
 
 
@@ -2812,6 +3750,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-pipe-python",
+        action="store_true",
+        help="Verify no shell script under scripts/ pipes into a bare "
+        "python/python3[.N] interpreter with -c/-m (`... | python -c "
+        '"..."`). This VM has no `python` on PATH, so the pipe dies with '
+        "`python: command not found` (exit 127) — pipe into `uv run "
+        "python` instead. Closes the #753 incident class (~41 violations "
+        "across 4+ sessions on 2026-06-29). Comment lines (`#`-prefixed) "
+        "are skipped. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -2845,6 +3794,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "first file after the expensive phases (#595/#640/#612). Waive a "
         "genuinely-correct flagged call with '# UPLOAD_AS_FILE_EXEMPT: "
         "<reason>'. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-dotenv-before-hf-import",
+        action="store_true",
+        help="AST-walk scripts/**/*.py and FAIL on any script that uses the "
+        "bare python-dotenv load_dotenv AND imports huggingface_hub without "
+        "first importing explore_persona_space.orchestrate.env.load_dotenv "
+        "(#745). The bare dotenv misses the worktree .env and sets no env, so "
+        "the HF Hub upload accelerators never get their setdefault and large "
+        "uploads crawl. Waive a genuinely-correct bare-dotenv use with "
+        "'# DOTENV_LINT_EXEMPT: <reason>'. Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-batch-judge-client",
@@ -2890,6 +3850,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "with no index row would re-open the #722 plan-time load-timing gap. "
         "Bundled into the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-judge-model-pins",
+        action="store_true",
+        help="Walk scripts/**/*.py, scripts/**/*.sh, "
+        "src/explore_persona_space/**/*.py, and tests/**/*.py and FAIL on a "
+        "hardcoded NON-Sonnet judge-model pin at a judge call site. The "
+        "standing rule pins ONE judge — claude-sonnet-4-5-20250929 — for every "
+        "judged behavior (.claude/rules/llm-judging.md). The gate is "
+        "assignment/call-aware (a *JUDGE_MODEL* assignment, a --judge-model / "
+        "judge_model= / JUDGE_MODEL= flag, or a model= kwarg with a judge token "
+        "in window), so a prose-string mention or comment is never flagged. "
+        "Legitimate non-Sonnet pins (Betley gpt-4o calibration anchors, the "
+        "translation-judge exemptions, stale-grandfathered Haiku pins) are "
+        "grandfathered in JUDGE_PIN_LEGACY_ALLOWLIST[_SH]; waive a new "
+        "calibration control with '# noqa: judge-model-pin'. Bundled into the "
+        "no-flags default run (#765).",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -2917,13 +3894,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_wandb_required
         or args.check_heredoc_dotenv
         or args.check_dispatcher_cvd_pin
+        or args.check_pipe_python
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_upload_as_file
+        or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
         or args.check_gate_ids_unique
         or args.check_lessons_index
+        or args.check_judge_model_pins
     )
 
     errors: list[str] = []
@@ -2968,12 +3948,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_heredoc_dotenv())
     if args.check_dispatcher_cvd_pin or no_flags:
         errors.extend(check_dispatcher_cvd_pin())
+    if args.check_pipe_python or no_flags:
+        errors.extend(check_pipe_python())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
         errors.extend(check_agent_model_pins())
     if args.check_upload_as_file or no_flags:
         errors.extend(check_upload_as_file())
+    if args.check_dotenv_before_hf_import or no_flags:
+        errors.extend(check_dotenv_before_hf_import())
     if args.check_batch_judge_client or no_flags:
         errors.extend(check_batch_judge_client())
     if args.check_no_workflow_improver_spawn or no_flags:
@@ -2982,6 +3966,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_judge_model_pins or no_flags:
+        errors.extend(check_judge_model_pins())
 
     if errors:
         for err in errors:

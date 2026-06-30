@@ -380,6 +380,130 @@ def test_cmd_provision_allows_when_only_exited_pod_exists(isolated_state, stub_l
 
 
 # ---------------------------------------------------------------------------
+# cmd_provision — CPU-only intent bridge (#747)
+#
+# The router tests prove the RunPod backend RECEIVES `--intent cpu-small`, and
+# test_runpod_api_retry.py proves create_cpu_pod renders the deployCpuPod
+# mutation. These pin the SCRIPT-LEVEL bridge in cmd_provision: that a CPU
+# intent routes to create_cpu_pod (with the canonical instance_id) via the
+# CPU-branch-before-_resolve_spec ordering, and NEVER falls through to the GPU
+# _resolve_spec / create_pod path (which KeyErrors on a CPU intent). The
+# load-bearing assertion is the negative one — without it a future refactor
+# could silently route CPU work through the GPU resolver.
+# ---------------------------------------------------------------------------
+
+
+def _cpu_provision_ns(issue: int, intent: str, **overrides) -> argparse.Namespace:
+    """Namespace matching the provision subparser shape, for a CPU intent."""
+    base = {
+        "issue": issue,
+        "list_intents": False,
+        "intent": intent,
+        "gpu_type": None,
+        "gpu_count": None,
+        "dry_run": False,  # exercise the real create_cpu_pod call, not the dry-run early-return
+        "volume_gb": 200,  # argparse default (the GPU default) unless overridden below
+        "container_disk_gb": 50,
+        "ttl_days": 7,
+        "no_bootstrap": True,
+    }
+    base.update(overrides)
+    return argparse.Namespace(**base)
+
+
+@pytest.fixture
+def cpu_provision_stubs(monkeypatch):
+    """Stub the CPU-provision tail so cmd_provision runs without network.
+
+    Records every create_cpu_pod call and asserts the GPU path is never taken.
+    Yields a dict carrying the captured create_cpu_pod kwargs + call counters.
+    """
+    captured: dict = {"cpu_calls": [], "gpu_resolve_calls": 0, "gpu_create_calls": 0}
+
+    def _fake_create_cpu_pod(*, name, instance_id, volume_gb, container_disk_gb):
+        captured["cpu_calls"].append(
+            {
+                "name": name,
+                "instance_id": instance_id,
+                "volume_gb": volume_gb,
+                "container_disk_gb": container_disk_gb,
+            }
+        )
+        return _info(name, pod_id=f"cpupod-{name}", gpu_count=0, gpu_type_id="")
+
+    def _fail_resolve_spec(*_a, **_k):
+        captured["gpu_resolve_calls"] += 1
+        raise AssertionError("GPU _resolve_spec must NOT be called for a CPU intent")
+
+    def _fail_create_pod(*_a, **_k):
+        captured["gpu_create_calls"] += 1
+        raise AssertionError("GPU create_pod must NOT be called for a CPU intent")
+
+    monkeypatch.setattr(pod_lifecycle, "create_cpu_pod", _fake_create_cpu_pod)
+    monkeypatch.setattr(pod_lifecycle, "_resolve_spec", _fail_resolve_spec)
+    monkeypatch.setattr(pod_lifecycle, "create_pod", _fail_create_pod)
+    # No-op the SSH/register/bootstrap tail — it is exercised by the GPU path's
+    # own coverage; here we only care about the create-call routing.
+    monkeypatch.setattr(pod_lifecycle, "_provision_wait_register_bootstrap", lambda *_a, **_k: None)
+    return captured
+
+
+@pytest.mark.parametrize(
+    ("intent", "instance_id"),
+    [
+        ("cpu-small", "cpu3g-2-8"),
+        ("cpu-mid", "cpu3c-8-16"),
+    ],
+)
+def test_cmd_provision_cpu_intent_routes_to_create_cpu_pod(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs, intent, instance_id
+):
+    """A cpu-small / cpu-mid intent calls create_cpu_pod with the canonical
+    instance_id and NEVER the GPU resolver/create path."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []  # no existing pod for this issue
+
+    ns = _cpu_provision_ns(747, intent)
+    pod_lifecycle.cmd_provision(ns)
+
+    assert len(cpu_provision_stubs["cpu_calls"]) == 1
+    call = cpu_provision_stubs["cpu_calls"][0]
+    assert call["instance_id"] == instance_id
+    # The load-bearing differentiator: GPU path was never touched.
+    assert cpu_provision_stubs["gpu_resolve_calls"] == 0
+    assert cpu_provision_stubs["gpu_create_calls"] == 0
+
+
+def test_cmd_provision_cpu_small_default_volume_is_cpu_default(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs
+):
+    """`provision --intent cpu-small` with no explicit --volume-gb uses the
+    cheap CPU default (40 GB), not the 200 GB GPU argparse default (#747 minor
+    fix). A 200 GB persistent volume on a cents/hr CPU pod defeats the lane."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    ns = _cpu_provision_ns(747, "cpu-small")  # volume_gb left at the 200 default
+    pod_lifecycle.cmd_provision(ns)
+
+    assert cpu_provision_stubs["cpu_calls"][0]["volume_gb"] == 40
+
+
+def test_cmd_provision_cpu_small_explicit_volume_is_honored(
+    isolated_state, stub_list_team_pods, cpu_provision_stubs
+):
+    """An explicit non-default --volume-gb is honored on a CPU intent (only the
+    implicit 200 GB default is rewritten to the CPU default)."""
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    ns = _cpu_provision_ns(747, "cpu-small", volume_gb=120)
+    pod_lifecycle.cmd_provision(ns)
+
+    assert cpu_provision_stubs["cpu_calls"][0]["volume_gb"] == 120
+
+
+# ---------------------------------------------------------------------------
 # API failure modes — propagate, don't silently degrade
 # ---------------------------------------------------------------------------
 

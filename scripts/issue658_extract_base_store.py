@@ -76,7 +76,6 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import torch  # noqa: E402
-from dotenv import load_dotenv  # noqa: E402
 
 # Cross-script helper imports hoisted to module top so a missing symbol crashes
 # at process start, never inside a smoke-skipped branch (gotchas.md #606).
@@ -111,6 +110,12 @@ from issue658_common import (  # noqa: E402
     stable_hash,
     summarize_answer_span,
 )
+
+# Project dotenv wrapper (#745): reads the project .env robustly AND setdefaults
+# the HF Hub upload accelerators (HF_XET_HIGH_PERFORMANCE /
+# HF_HUB_ENABLE_HF_TRANSFER). The explicit-path call below (load_dotenv(...)) runs
+# at module scope, before every in-function `huggingface_hub` import.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 # Catch a #594 model drift early (the c_C reuse pins both to the same θ0).
 assert I594_MODEL == DEFAULT_MODEL, f"#594 model {I594_MODEL} != #658 {DEFAULT_MODEL}"

@@ -2,8 +2,9 @@
 # Daily GCP-VM janitor — invoked from system crontab.
 # Sweeps the WHOLE dedicated project (#688), classifying each stale instance:
 #   - router-managed (eps-issue-*) + allowlisted-ephemeral (eps-cap-probe*)
-#     are REAPED on the bounded fences (24h age backstop / 10-min terminal-phase
-#     zombie, #634);
+#     are REAPED on the bounded fences (per-instance-fence-aware age backstop:
+#     own --max-run-duration + 1h grace, 8d fixed fallback for no-fence VMs;
+#     10-min terminal-phase zombie, #634 / #741);
 #   - any OTHER stale instance in the project is ESCALATED (Telegram + sidecar
 #     JSON), never auto-deleted — the credit-leak backstop that catches a
 #     non-eps-issue-* leftover the old name filter was blind to (#680 probe).

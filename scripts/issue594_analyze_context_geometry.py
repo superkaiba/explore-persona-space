@@ -72,6 +72,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
+
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
 from issue594_common import (  # noqa: E402

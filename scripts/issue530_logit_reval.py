@@ -60,6 +60,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv
 
 # Two-check subprocess-env-passthrough contract: load_dotenv() at module-top so

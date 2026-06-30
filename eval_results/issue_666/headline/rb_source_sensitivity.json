@@ -1,0 +1,28 @@
+{
+ "schema": "issue666_rb_source_sensitivity_v1",
+ "modes": [
+  "diffmeans",
+  "r_plus"
+ ],
+ "behaviors": [
+  "bad_medical",
+  "em"
+ ],
+ "per_behavior": {
+  "bad_medical": {
+   "rho_full_Lhat_diffmeans": -0.0789795918367347,
+   "rho_full_Lhat_r_plus": 0.4903316326530611,
+   "delta_diffmeans_minus_r_plus": -0.5693112244897958
+  },
+  "em": {
+   "rho_full_Lhat_diffmeans": 0.010676020408163267,
+   "rho_full_Lhat_r_plus": 0.499298469387755,
+   "delta_diffmeans_minus_r_plus": -0.48862244897959173
+  }
+ },
+ "reproducibility": {
+  "git_commit": "8f00b387cd559635eeaa8315061ee3c01279b05c",
+  "generated_utc": "2026-06-30T06:33:55.765964+00:00",
+  "note": "within-behavior own-Lhat rho under diffmeans vs r_plus r_B sources (4b/6.5)"
+ }
+}

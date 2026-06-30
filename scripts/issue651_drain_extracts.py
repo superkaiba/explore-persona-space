@@ -18,8 +18,25 @@ import sys
 import time
 from pathlib import Path
 
-from huggingface_hub import CommitOperationAdd, HfApi, list_repo_files
-from huggingface_hub.utils import HfHubHTTPError
+# Project dotenv wrapper (#745): this drain utility imports huggingface_hub at
+# MODULE TOP and never called load_dotenv. huggingface_hub.constants freezes
+# HF_HUB_ENABLE_HF_TRANSFER at IMPORT time, so the accelerator env must be in
+# os.environ BEFORE the huggingface_hub import below. load_dotenv() (the project
+# wrapper, which setdefaults HF_XET_HIGH_PERFORMANCE + HF_HUB_ENABLE_HF_TRANSFER
+# and reads the project .env robustly) runs at module scope FIRST; the
+# huggingface_hub imports are deferred to AFTER it. On a pod/GCE/SLURM worker the
+# shell-level exports already set these regardless of import order — this makes a
+# LOCAL run correct too. orchestrate.env does NOT itself import huggingface_hub,
+# so this ordering is safe.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
+from huggingface_hub import CommitOperationAdd, HfApi, list_repo_files  # noqa: E402
+from huggingface_hub.utils import HfHubHTTPError  # noqa: E402
 
 DEST_REPO = "superkaiba1/explore-persona-space-data"
 DEST_PREFIX = "issue651_cross_behavior_geometry/analysis_tensors"

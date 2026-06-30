@@ -787,6 +787,16 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_HF_OVERFLOW_ROUTING",
     "EPM_HF_STORAGE_CHECK",
     "EPM_HF_STORAGE_CACHE_TTL_S",
+    # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
+    # dispatch-process =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround)
+    # reaches the compute node. The DEFAULTS (=1) are a STATIC env block in
+    # render_sbatch (the cuda_setup block, which the secrets `source` follows
+    # and overrides); this passthrough is the override channel only.
+    # Drop-when-absent contract preserved (render_secrets_env skips an unset
+    # key, so the static default stands).
+    "HF_XET_HIGH_PERFORMANCE",
+    "HF_HUB_ENABLE_HF_TRANSFER",
+    "HF_XET_DISABLE",
 )
 
 
@@ -1310,6 +1320,16 @@ def render_sbatch(
         "",
         'export TRITON_CACHE_DIR="$SLURM_TMPDIR/triton"',
         'mkdir -p "$TRITON_CACHE_DIR"',
+        # Fast HF Hub uploads (#745) — STATIC DEFAULT export. HF_XET_HIGH_PERFORMANCE
+        # is the PRIMARY accelerator (the project repos use the Xet backend);
+        # HF_HUB_ENABLE_HF_TRANSFER is the orthogonal LFS accelerator (hf_transfer
+        # is a hard dep). The PASSTHROUGH keys (PASSTHROUGH_ENV_KEYS) are the
+        # OVERRIDE channel — a forwarded dispatch-process =0 / HF_XET_DISABLE=1 is
+        # sourced from secrets.env in the LATER secrets_setup block (under set -a),
+        # so it supersedes these static defaults. The :- form also honors a value
+        # inherited from the compute-node shell.
+        'export HF_XET_HIGH_PERFORMANCE="${HF_XET_HIGH_PERFORMANCE:-1}"',
+        'export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"',
     ]
     if cluster.nccl_socket_ifname:
         cuda_setup.append(f"export NCCL_SOCKET_IFNAME={shlex.quote(cluster.nccl_socket_ifname)}")

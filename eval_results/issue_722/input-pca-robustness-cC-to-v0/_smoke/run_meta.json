@@ -1,0 +1,29 @@
+{
+  "script": "issue722_vectorized_skill",
+  "phase": "input_rep_robustness",
+  "code_sha": "268aa898398e801614fad9526f875d24e8c02c49",
+  "generated_at": "2026-06-30T09:44:01Z",
+  "variants": [
+    "pca48",
+    "whiten48"
+  ],
+  "baseline_full_skill_json": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-722/eval_results/issue_722/base-skill-over-mean-cC-to-v0/skill_over_mean.json",
+  "baseline_full_krr_json": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-722/eval_results/issue_722/base-skill-over-mean-cC-to-v0/krr_vs_linear.json",
+  "input_rep_k": 48,
+  "input_rep_eps": 1e-06,
+  "ridge_band": 0.05,
+  "gap_band": 0.03,
+  "pass_min_layers": 26,
+  "n_bootstrap": 200,
+  "seed": 42,
+  "device": "cpu",
+  "layers": [
+    0,
+    18
+  ],
+  "store_provenance": {
+    "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/hf_dl/issue658_theory_assumptions/store",
+    "cc_source": "#594 HF store (load_cc_last_store)"
+  },
+  "whitening": "PCA-whitening (per-direction 1/sqrt(sigma^2+eps); rotation immaterial for ridge-internal restandardization + RBF per-direction scale, plan \u00a711)"
+}

@@ -1,0 +1,12 @@
+{
+  "issue": 722,
+  "figure": "grouped_cv_comparison.png",
+  "code_sha": "8ba7c00ab22af3cc4537cd8da2604dec24da38ac",
+  "generated_at": "2026-06-30T00:33:18Z",
+  "top_panel": "ridge skill: LOCO vs LOFO-aggregate vs stratified (plateau layers)",
+  "bottom_panel": "KRR-RBF \u2212 linear nonlinear gap per scheme",
+  "source_json": [
+    "eval_results/issue_722/grouped_cv/lofo.json",
+    "eval_results/issue_722/grouped_cv/stratified.json"
+  ]
+}

@@ -1,0 +1,787 @@
+{
+  "analysis": "behavioral_chain_preservation",
+  "description": "Spearman \u03c1 of predicted-vs-actual judged E0 for the DIRECT chain (r_B\u1d40 v0 -> E0) vs the LINEAR-MAP-MEDIATED chain (r_B\u1d40 M\u0302 c_C -> E0, LOCO held-out M\u0302). Degradation = \u03c1_direct - \u03c1_mediated; near-zero \u21d2 the linear map preserves the behavior-relevant direction.",
+  "layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "per_behavior": {
+    "broad_em": {
+      "n_kept_e0": 50,
+      "best_direct": {
+        "layer": 0,
+        "rho": 0.4440367547021717
+      },
+      "best_mediated": {
+        "layer": 11,
+        "rho": 0.43486009821349336
+      },
+      "best_layer_degradation": 0.009176656488678325,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_direct": 0.4440367547021717,
+          "rho_mediated": 0.15260057981172973,
+          "rho_degradation": 0.29143617489044193
+        },
+        {
+          "layer": 1,
+          "rho_direct": 0.29767423913274577,
+          "rho_mediated": 0.23498427121008922,
+          "rho_degradation": 0.06268996792265655
+        },
+        {
+          "layer": 2,
+          "rho_direct": 0.22534362647198333,
+          "rho_mediated": 0.20611389124570792,
+          "rho_degradation": 0.019229735226275413
+        },
+        {
+          "layer": 3,
+          "rho_direct": 0.32298737585151577,
+          "rho_mediated": 0.34025804958020817,
+          "rho_degradation": -0.0172706737286924
+        },
+        {
+          "layer": 4,
+          "rho_direct": 0.21503277648470426,
+          "rho_mediated": 0.1730160627865422,
+          "rho_degradation": 0.04201671369816207
+        },
+        {
+          "layer": 5,
+          "rho_direct": 0.09176656488678342,
+          "rho_mediated": 0.14409412857222453,
+          "rho_degradation": -0.052327563685441114
+        },
+        {
+          "layer": 6,
+          "rho_direct": 0.14527987632076161,
+          "rho_mediated": 0.24297517995023046,
+          "rho_degradation": -0.09769530362946885
+        },
+        {
+          "layer": 7,
+          "rho_direct": 0.1572920165559417,
+          "rho_mediated": 0.28720872639565753,
+          "rho_degradation": -0.12991670983971584
+        },
+        {
+          "layer": 8,
+          "rho_direct": 0.06681430791756815,
+          "rho_mediated": 0.13414415833450025,
+          "rho_degradation": -0.0673298504169321
+        },
+        {
+          "layer": 9,
+          "rho_direct": 0.20013359825308608,
+          "rho_mediated": 0.2919001631398695,
+          "rho_degradation": -0.09176656488678342
+        },
+        {
+          "layer": 10,
+          "rho_direct": 0.254781103185665,
+          "rho_mediated": 0.431302854967882,
+          "rho_degradation": -0.17652175178221702
+        },
+        {
+          "layer": 11,
+          "rho_direct": 0.24096456420271106,
+          "rho_mediated": 0.43486009821349336,
+          "rho_degradation": -0.1938955340107823
+        },
+        {
+          "layer": 12,
+          "rho_direct": 0.23756198370690898,
+          "rho_mediated": 0.3496924773185685,
+          "rho_degradation": -0.11213049361165953
+        },
+        {
+          "layer": 13,
+          "rho_direct": 0.18054298327725593,
+          "rho_mediated": 0.26256579492606064,
+          "rho_degradation": -0.0820228116488047
+        },
+        {
+          "layer": 14,
+          "rho_direct": 0.1530130138112209,
+          "rho_mediated": 0.08836398439098134,
+          "rho_degradation": 0.06464902942023956
+        },
+        {
+          "layer": 15,
+          "rho_direct": 0.07392879440879067,
+          "rho_mediated": 0.06769073016648687,
+          "rho_degradation": 0.0062380642423038035
+        },
+        {
+          "layer": 16,
+          "rho_direct": 0.02093102547417644,
+          "rho_mediated": 0.042790027447207994,
+          "rho_degradation": -0.021859001973031554
+        },
+        {
+          "layer": 17,
+          "rho_direct": 0.00876422248918718,
+          "rho_mediated": 0.047429909941483564,
+          "rho_degradation": -0.038665687452296385
+        },
+        {
+          "layer": 18,
+          "rho_direct": -0.0449037516946002,
+          "rho_mediated": 0.0033510262458656863,
+          "rho_degradation": -0.04825477794046589
+        },
+        {
+          "layer": 19,
+          "rho_direct": 0.06681430791756815,
+          "rho_mediated": 0.027529969466035024,
+          "rho_degradation": 0.039284338451533125
+        },
+        {
+          "layer": 20,
+          "rho_direct": 0.03521155270655791,
+          "rho_mediated": 0.011960585985243681,
+          "rho_degradation": 0.02325096672131423
+        },
+        {
+          "layer": 21,
+          "rho_direct": 0.03459290170732116,
+          "rho_mediated": -0.030520115962345946,
+          "rho_degradation": 0.06511301766966711
+        },
+        {
+          "layer": 22,
+          "rho_direct": 0.10563465811967372,
+          "rho_mediated": -0.009589090488169503,
+          "rho_degradation": 0.11522374860784322
+        },
+        {
+          "layer": 23,
+          "rho_direct": 0.1667779985442384,
+          "rho_mediated": 0.07892955665262101,
+          "rho_degradation": 0.08784844189161738
+        },
+        {
+          "layer": 24,
+          "rho_direct": 0.17043835028972246,
+          "rho_mediated": 0.12445195934645796,
+          "rho_degradation": 0.045986390943264496
+        },
+        {
+          "layer": 25,
+          "rho_direct": 0.2105475567402379,
+          "rho_mediated": 0.18781213251828763,
+          "rho_degradation": 0.022735424221950268
+        },
+        {
+          "layer": 26,
+          "rho_direct": 0.26576215842211715,
+          "rho_mediated": 0.24529512119736827,
+          "rho_degradation": 0.02046703722474888
+        },
+        {
+          "layer": 27,
+          "rho_direct": 0.25643083918362963,
+          "rho_mediated": 0.24704796569520568,
+          "rho_degradation": 0.009382873488423954
+        }
+      ]
+    },
+    "harmful_compliance": {
+      "n_kept_e0": 50,
+      "best_direct": {
+        "layer": 8,
+        "rho": 0.6920702400675486
+      },
+      "best_mediated": {
+        "layer": 11,
+        "rho": 0.6706610459882953
+      },
+      "best_layer_degradation": 0.021409194079253235,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_direct": 0.5710722106083979,
+          "rho_mediated": 0.5337865355265521,
+          "rho_degradation": 0.03728567508184577
+        },
+        {
+          "layer": 1,
+          "rho_direct": 0.570061889090051,
+          "rho_mediated": 0.4695108427402994,
+          "rho_degradation": 0.10055104634975154
+        },
+        {
+          "layer": 2,
+          "rho_direct": 0.6323650493881029,
+          "rho_mediated": 0.5984952232492391,
+          "rho_degradation": 0.0338698261388638
+        },
+        {
+          "layer": 3,
+          "rho_direct": 0.6038354941319293,
+          "rho_mediated": 0.623560819013938,
+          "rho_degradation": -0.019725324882008732
+        },
+        {
+          "layer": 4,
+          "rho_direct": 0.6297189692210041,
+          "rho_mediated": 0.6000828713494984,
+          "rho_degradation": 0.029636097871505673
+        },
+        {
+          "layer": 5,
+          "rho_direct": 0.6347705768127381,
+          "rho_mediated": 0.6103304181784444,
+          "rho_degradation": 0.024440158634293718
+        },
+        {
+          "layer": 6,
+          "rho_direct": 0.654303459500776,
+          "rho_mediated": 0.6039317152289146,
+          "rho_degradation": 0.05037174427186131
+        },
+        {
+          "layer": 7,
+          "rho_direct": 0.6621935894535793,
+          "rho_mediated": 0.6057599160716374,
+          "rho_degradation": 0.05643367338194194
+        },
+        {
+          "layer": 8,
+          "rho_direct": 0.6920702400675486,
+          "rho_mediated": 0.6574306451528016,
+          "rho_degradation": 0.034639594914746996
+        },
+        {
+          "layer": 9,
+          "rho_direct": 0.6533412485309218,
+          "rho_mediated": 0.6251484671141971,
+          "rho_degradation": 0.028192781416724655
+        },
+        {
+          "layer": 10,
+          "rho_direct": 0.6581523033801921,
+          "rho_mediated": 0.6501659523304033,
+          "rho_degradation": 0.007986351049788842
+        },
+        {
+          "layer": 11,
+          "rho_direct": 0.643719138832381,
+          "rho_mediated": 0.6706610459882953,
+          "rho_degradation": -0.02694190715591438
+        },
+        {
+          "layer": 12,
+          "rho_direct": 0.6270728890539053,
+          "rho_mediated": 0.6694101717274848,
+          "rho_degradation": -0.0423372826735795
+        },
+        {
+          "layer": 13,
+          "rho_direct": 0.5551957296058054,
+          "rho_mediated": 0.5802132148220116,
+          "rho_degradation": -0.02501748521620617
+        },
+        {
+          "layer": 14,
+          "rho_direct": 0.5864194755775703,
+          "rho_mediated": 0.6167772316764667,
+          "rho_degradation": -0.03035775609889635
+        },
+        {
+          "layer": 15,
+          "rho_direct": 0.5854572646077163,
+          "rho_mediated": 0.597051906794458,
+          "rho_degradation": -0.011594642186741666
+        },
+        {
+          "layer": 16,
+          "rho_direct": 0.6417466063441801,
+          "rho_mediated": 0.6307774012878435,
+          "rho_degradation": 0.010969205056336584
+        },
+        {
+          "layer": 17,
+          "rho_direct": 0.6529563641429802,
+          "rho_mediated": 0.6459803346115381,
+          "rho_degradation": 0.006976029531442052
+        },
+        {
+          "layer": 18,
+          "rho_direct": 0.6389080839831106,
+          "rho_mediated": 0.6088389911751705,
+          "rho_degradation": 0.030069092807940123
+        },
+        {
+          "layer": 19,
+          "rho_direct": 0.6607021624503056,
+          "rho_mediated": 0.6136981565729336,
+          "rho_degradation": 0.04700400587737197
+        },
+        {
+          "layer": 20,
+          "rho_direct": 0.6263993413750074,
+          "rho_mediated": 0.6058080266201302,
+          "rho_degradation": 0.020591314754877188
+        },
+        {
+          "layer": 21,
+          "rho_direct": 0.617210226612901,
+          "rho_mediated": 0.5905088721994503,
+          "rho_degradation": 0.026701354413450784
+        },
+        {
+          "layer": 22,
+          "rho_direct": 0.5652027236922879,
+          "rho_mediated": 0.5681855776988355,
+          "rho_degradation": -0.0029828540065476306
+        },
+        {
+          "layer": 23,
+          "rho_direct": 0.5239719836340404,
+          "rho_mediated": 0.5211815718214636,
+          "rho_degradation": 0.0027904118125767763
+        },
+        {
+          "layer": 24,
+          "rho_direct": 0.45671343684124005,
+          "rho_mediated": 0.4589265220719045,
+          "rho_degradation": -0.0022130852306644355
+        },
+        {
+          "layer": 25,
+          "rho_direct": 0.44468579971806416,
+          "rho_mediated": 0.43323548917680055,
+          "rho_degradation": 0.011450310541263609
+        },
+        {
+          "layer": 26,
+          "rho_direct": 0.36443740483223364,
+          "rho_mediated": 0.28418900994640317,
+          "rho_degradation": 0.08024839488583047
+        },
+        {
+          "layer": 27,
+          "rho_direct": 0.4483903119520023,
+          "rho_mediated": 0.6239457034018796,
+          "rho_degradation": -0.1755553914498773
+        }
+      ]
+    },
+    "sycophancy": {
+      "n_kept_e0": 50,
+      "best_direct": {
+        "layer": 27,
+        "rho": 0.12683700064411219
+      },
+      "best_mediated": {
+        "layer": 27,
+        "rho": 0.0889443866690253
+      },
+      "best_layer_degradation": 0.03789261397508689,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_direct": -0.003553933376624121,
+          "rho_mediated": 0.06445106204634554,
+          "rho_degradation": -0.06800499542296966
+        },
+        {
+          "layer": 1,
+          "rho_direct": -0.054509653817140236,
+          "rho_mediated": -0.16112765511586383,
+          "rho_degradation": 0.10661800129872359
+        },
+        {
+          "layer": 2,
+          "rho_direct": -0.029199885040371156,
+          "rho_mediated": -0.06238593859776666,
+          "rho_degradation": 0.0331860535573955
+        },
+        {
+          "layer": 3,
+          "rho_direct": -0.1899433311425459,
+          "rho_mediated": -0.11252521488419345,
+          "rho_degradation": -0.07741811625835246
+        },
+        {
+          "layer": 4,
+          "rho_direct": -0.21165114041597974,
+          "rho_mediated": -0.17457497059498217,
+          "rho_degradation": -0.03707616982099757
+        },
+        {
+          "layer": 5,
+          "rho_direct": -0.24522140298706432,
+          "rho_mediated": -0.08053981449457635,
+          "rho_degradation": -0.16468158849248798
+        },
+        {
+          "layer": 6,
+          "rho_direct": -0.0638747485258119,
+          "rho_mediated": 0.040197868057221475,
+          "rho_degradation": -0.10407261658303338
+        },
+        {
+          "layer": 7,
+          "rho_direct": -0.08217270280275502,
+          "rho_mediated": 0.03419460221832937,
+          "rho_degradation": -0.11636730502108439
+        },
+        {
+          "layer": 8,
+          "rho_direct": -0.07304773872763902,
+          "rho_mediated": -0.0004322351404002309,
+          "rho_degradation": -0.07261550358723878
+        },
+        {
+          "layer": 9,
+          "rho_direct": -0.0107098262565835,
+          "rho_mediated": -0.07924310907337567,
+          "rho_degradation": 0.06853328281679218
+        },
+        {
+          "layer": 10,
+          "rho_direct": 0.005523004571780728,
+          "rho_mediated": 0.004370377530713445,
+          "rho_degradation": 0.001152627041067283
+        },
+        {
+          "layer": 11,
+          "rho_direct": -0.07103064140577128,
+          "rho_mediated": -0.10652194904530135,
+          "rho_degradation": 0.03549130763953007
+        },
+        {
+          "layer": 12,
+          "rho_direct": -0.08346940822395571,
+          "rho_mediated": -0.10565747876450088,
+          "rho_degradation": 0.02218807054054517
+        },
+        {
+          "layer": 13,
+          "rho_direct": -0.04130246897157762,
+          "rho_mediated": -0.02588608229730272,
+          "rho_degradation": -0.0154163866742749
+        },
+        {
+          "layer": 14,
+          "rho_direct": -0.1368744611267398,
+          "rho_mediated": -0.1844683526974763,
+          "rho_degradation": 0.04759389157073651
+        },
+        {
+          "layer": 15,
+          "rho_direct": -0.1817308634749415,
+          "rho_mediated": -0.2720680078185898,
+          "rho_degradation": 0.09033714434364831
+        },
+        {
+          "layer": 16,
+          "rho_direct": -0.14873691442439055,
+          "rho_mediated": -0.22404188110745302,
+          "rho_degradation": 0.07530496668306247
+        },
+        {
+          "layer": 17,
+          "rho_direct": -0.16189607314324203,
+          "rho_mediated": -0.2360484127852372,
+          "rho_degradation": 0.07415233964199516
+        },
+        {
+          "layer": 18,
+          "rho_direct": -0.12141004832575375,
+          "rho_mediated": -0.19585054472801575,
+          "rho_degradation": 0.074440496402262
+        },
+        {
+          "layer": 19,
+          "rho_direct": -0.10340025080907747,
+          "rho_mediated": -0.20170973218677443,
+          "rho_degradation": 0.09830948137769696
+        },
+        {
+          "layer": 20,
+          "rho_direct": -0.02660647419796977,
+          "rho_mediated": -0.08366151273080025,
+          "rho_degradation": 0.05705503853283048
+        },
+        {
+          "layer": 21,
+          "rho_direct": 0.012774949705162379,
+          "rho_mediated": 0.0007684180273781882,
+          "rho_degradation": 0.01200653167778419
+        },
+        {
+          "layer": 22,
+          "rho_direct": 0.008020363160759839,
+          "rho_mediated": 0.026222265184280676,
+          "rho_degradation": -0.018201902023520837
+        },
+        {
+          "layer": 23,
+          "rho_direct": 0.017289405616009234,
+          "rho_mediated": 0.04163865185855558,
+          "rho_degradation": -0.024349246242546346
+        },
+        {
+          "layer": 24,
+          "rho_direct": -0.026990683211658862,
+          "rho_mediated": -0.0012006531677784193,
+          "rho_degradation": -0.025790030043880443
+        },
+        {
+          "layer": 25,
+          "rho_direct": 0.003073672109512753,
+          "rho_mediated": 0.01882624167076561,
+          "rho_degradation": -0.015752569561252858
+        },
+        {
+          "layer": 26,
+          "rho_direct": 0.04648929065638039,
+          "rho_mediated": 0.050811642060382696,
+          "rho_degradation": -0.004322351404002306
+        },
+        {
+          "layer": 27,
+          "rho_direct": 0.12683700064411219,
+          "rho_mediated": 0.0889443866690253,
+          "rho_degradation": 0.03789261397508689
+        }
+      ]
+    },
+    "refusal": {
+      "n_kept_e0": 50,
+      "best_direct": {
+        "layer": 26,
+        "rho": -0.27337168164855197
+      },
+      "best_mediated": {
+        "layer": 26,
+        "rho": -0.2481440260209391
+      },
+      "best_layer_degradation": -0.025227655627612866,
+      "per_layer": [
+        {
+          "layer": 0,
+          "rho_direct": -0.5781698143075017,
+          "rho_mediated": -0.4116192344878707,
+          "rho_degradation": -0.166550579819631
+        },
+        {
+          "layer": 1,
+          "rho_direct": -0.4381923650822896,
+          "rho_mediated": -0.5040725857783986,
+          "rho_degradation": 0.06588022069610905
+        },
+        {
+          "layer": 2,
+          "rho_direct": -0.5877322971073017,
+          "rho_mediated": -0.6244445426301516,
+          "rho_degradation": 0.03671224552284991
+        },
+        {
+          "layer": 3,
+          "rho_direct": -0.5988324655834513,
+          "rho_mediated": -0.60109094142059,
+          "rho_degradation": 0.0022584758371387847
+        },
+        {
+          "layer": 4,
+          "rho_direct": -0.5505395248105924,
+          "rho_mediated": -0.6111339509942493,
+          "rho_degradation": 0.060594426183656847
+        },
+        {
+          "layer": 5,
+          "rho_direct": -0.5383821974319523,
+          "rho_mediated": -0.6047909975793065,
+          "rho_degradation": 0.06640880014735429
+        },
+        {
+          "layer": 6,
+          "rho_direct": -0.5277625557296619,
+          "rho_mediated": -0.564426748575126,
+          "rho_degradation": 0.03666419284546407
+        },
+        {
+          "layer": 7,
+          "rho_direct": -0.5304054529858879,
+          "rho_mediated": -0.5702891752162093,
+          "rho_degradation": 0.03988372223032133
+        },
+        {
+          "layer": 8,
+          "rho_direct": -0.5320872966943955,
+          "rho_mediated": -0.6197834329237166,
+          "rho_degradation": 0.08769613622932115
+        },
+        {
+          "layer": 9,
+          "rho_direct": -0.49595168330017664,
+          "rho_mediated": -0.5243988683126468,
+          "rho_degradation": 0.028447185012470178
+        },
+        {
+          "layer": 10,
+          "rho_direct": -0.4564043298115568,
+          "rho_mediated": -0.5148844381902328,
+          "rho_degradation": 0.058480108378675955
+        },
+        {
+          "layer": 11,
+          "rho_direct": -0.48562035766220185,
+          "rho_mediated": -0.540592620591705,
+          "rho_degradation": 0.054972262929503135
+        },
+        {
+          "layer": 12,
+          "rho_direct": -0.48023845779497776,
+          "rho_mediated": -0.5477044168448225,
+          "rho_degradation": 0.06746595904984476
+        },
+        {
+          "layer": 13,
+          "rho_direct": -0.44049889359681416,
+          "rho_mediated": -0.52766645037489,
+          "rho_degradation": 0.08716755677807586
+        },
+        {
+          "layer": 14,
+          "rho_direct": -0.4919633110771445,
+          "rho_mediated": -0.5661085922836334,
+          "rho_degradation": 0.07414528120648889
+        },
+        {
+          "layer": 15,
+          "rho_direct": -0.4355014151486775,
+          "rho_mediated": -0.5425627803645281,
+          "rho_degradation": 0.10706136521585058
+        },
+        {
+          "layer": 16,
+          "rho_direct": -0.4552991182316804,
+          "rho_mediated": -0.5485213123603834,
+          "rho_degradation": 0.09322219412870297
+        },
+        {
+          "layer": 17,
+          "rho_direct": -0.44688989968914283,
+          "rho_mediated": -0.5204585487670006,
+          "rho_degradation": 0.07356864907785776
+        },
+        {
+          "layer": 18,
+          "rho_direct": -0.4312727795387158,
+          "rho_mediated": -0.5112804873862882,
+          "rho_degradation": 0.08000770784757238
+        },
+        {
+          "layer": 19,
+          "rho_direct": -0.44511195062586345,
+          "rho_mediated": -0.5007088983613837,
+          "rho_degradation": 0.05559694773552021
+        },
+        {
+          "layer": 20,
+          "rho_direct": -0.4264194591227369,
+          "rho_mediated": -0.4908580994972681,
+          "rho_degradation": 0.06443864037453123
+        },
+        {
+          "layer": 21,
+          "rho_direct": -0.4112828657461692,
+          "rho_mediated": -0.47168508122028235,
+          "rho_degradation": 0.060402215474113174
+        },
+        {
+          "layer": 22,
+          "rho_direct": -0.34924685924093435,
+          "rho_mediated": -0.4051801757181561,
+          "rho_degradation": 0.05593331647722177
+        },
+        {
+          "layer": 23,
+          "rho_direct": -0.35799244652517354,
+          "rho_mediated": -0.37644467464137044,
+          "rho_degradation": 0.0184522281161969
+        },
+        {
+          "layer": 24,
+          "rho_direct": -0.28706669470354185,
+          "rho_mediated": -0.2850484822533328,
+          "rho_degradation": -0.002018212450209056
+        },
+        {
+          "layer": 25,
+          "rho_direct": -0.30955534772015675,
+          "rho_mediated": -0.29994481224297087,
+          "rho_degradation": -0.009610535477185878
+        },
+        {
+          "layer": 26,
+          "rho_direct": -0.27337168164855197,
+          "rho_mediated": -0.2481440260209391,
+          "rho_degradation": -0.025227655627612866
+        },
+        {
+          "layer": 27,
+          "rho_direct": -0.5726437564081198,
+          "rho_mediated": -0.606568946642586,
+          "rho_degradation": 0.03392519023446616
+        }
+      ]
+    }
+  },
+  "store_provenance": {
+    "v0_file": "superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/v0_summaries.pt",
+    "cc_last_file": "superkaiba1/explore-persona-space-data:issue594_context_geometry/analysis_tensors/context_vectors_mean.pt",
+    "rb_file": "superkaiba1/explore-persona-space-data:issue658_theory_assumptions/store/r_b.pt",
+    "e0_file": "superkaiba1/explore-persona-space-data:issue658_partial/att-20260624-130414/eval_results_issue_658/E0_expression.json",
+    "n_contexts": 50,
+    "hidden_dim": 3584,
+    "probe_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+  },
+  "metadata": {
+    "git_commit": "64e02af71d",
+    "timestamp_utc": "2026-06-30T01:57:56Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "bootstrap_seed": 42,
+    "bootstrap_B": 10000,
+    "logit_eps": 0.005,
+    "spline_knots": 4,
+    "convex_delta_aic": 2.0,
+    "script": "issue722_structural_battery"
+  }
+}

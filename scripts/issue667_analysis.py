@@ -918,6 +918,7 @@ def main() -> int:
 
     # ── Load reused artifacts (sha-pinned) + coverage validators (BLOCKER 3) ──
     if not args.skip_store_pin:
+        # DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
         from dotenv import load_dotenv
 
         load_dotenv()

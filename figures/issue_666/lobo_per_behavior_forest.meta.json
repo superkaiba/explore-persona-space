@@ -1,0 +1,42 @@
+{
+  "commit": "adba73b466",
+  "created": "2026-06-30T08:05:35Z",
+  "figsize": [
+    7.2,
+    4.6
+  ],
+  "points": [
+    {
+      "Leave-one-behavior-out Spearman \u03c1 (held-out behavior vs latent \u0394s)": 0.435015,
+      "y": 0.8700291932239208,
+      "_kind": "bar"
+    },
+    {
+      "Leave-one-behavior-out Spearman \u03c1 (held-out behavior vs latent \u0394s)": 0.303695,
+      "y": 0.6073900849296898,
+      "_kind": "bar"
+    },
+    {
+      "Leave-one-behavior-out Spearman \u03c1 (held-out behavior vs latent \u0394s)": 0.130739,
+      "y": 0.2614773755502865,
+      "_kind": "bar"
+    },
+    {
+      "Leave-one-behavior-out Spearman \u03c1 (held-out behavior vs latent \u0394s)": 0.125236,
+      "y": 0.2504720441113717,
+      "_kind": "bar"
+    },
+    {
+      "Leave-one-behavior-out Spearman \u03c1 (held-out behavior vs latent \u0394s)": 0.11484,
+      "y": 0.22967991312380073,
+      "_kind": "bar"
+    },
+    {
+      "Leave-one-behavior-out Spearman \u03c1 (held-out behavior vs latent \u0394s)": 1.9e-05,
+      "y": 3.789878973609613e-05,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 6
+}

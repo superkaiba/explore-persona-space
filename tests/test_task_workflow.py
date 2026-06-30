@@ -2464,6 +2464,84 @@ def test_raise_concern_holds_flock_and_commits(concerns_task):
     assert "events.jsonl" in out
 
 
+def test_raise_concern_survives_concurrent_external_git_op(concerns_task):
+    """A concern, once raised, survives a concurrent external git op that does
+    NOT rewind history — the exact #763 race (a parallel fleet session running
+    ``git pull --rebase --autostash`` / committing unrelated work on the shared
+    root mid-round).
+
+    Because ``raise_concern`` write→mirror→commits ``concerns.jsonl`` inside its
+    flock (``_append_concern_event`` -> ``_git_commit``), the record is part of
+    git history the instant the call returns. A subsequent non-rewinding
+    concurrent commit on top therefore cannot wipe it. This pins the durability
+    property the #763 workflow-fix candidate asked for; the candidate's proposed
+    source change was already implemented in main (see #767).
+
+    NOT in scope for this test (or for any handler-level change):
+    - An EXTERNAL history-rewind (``git reset --hard HEAD~N``, a dirty-worktree
+      ``git checkout``, a manual ``rm``) by a non-task.py process rewinds the
+      committed concern along with every other commit it drops. That hazard is
+      governed by CLAUDE.md's "concurrent repo-root committers" discipline
+      (``pull.rebase=merges`` + ``rebase.autoStash=true`` + push-immediately),
+      NOT by the concern handlers.
+    - A crash DURING the call (between ``_append_jsonl_line`` and
+      ``_git_commit``) leaves uncommitted state that no commit-ordering change
+      closes — it is a transaction-atomicity question, NOT a commit-presence
+      one, so neither the candidate's diff nor any handler-level fix addresses
+      it.
+    - A stale-base / unmerged-branch READ-side hazard: ``list_concerns`` could
+      read an OLD tree if the caller's worktree base diverged from ``main``.
+      This is the same "concurrent repo-root committers" discipline domain, not
+      a handler bug.
+    """
+    repo, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "race-durability",
+        severity="BLOCKER",
+        summary="Reviewer FAIL-class blocker that must survive a concurrent rebase.",
+        raised_by="reconciler",
+        raised_at_round=1,
+    )
+    # The concern is committed (verified by the sibling flock-commit test); it is
+    # now part of history. Capture the committed bytes.
+    before_rows = tw.list_concerns(tid)
+    assert len(before_rows) == 1
+    assert before_rows[0]["concern_id"] == "race-durability"
+
+    # Simulate a concurrent fleet session committing unrelated work on top of the
+    # shared root WITHOUT rewinding history (the real #763 scenario: an autostash
+    # rebase / a parallel commit). This is the operation the candidate feared.
+    (repo / "unrelated_concurrent_work.txt").write_text("a parallel session's edit\n")
+    subprocess.run(["git", "add", "--", "unrelated_concurrent_work.txt"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", "concurrent fleet session commit"],
+        cwd=repo,
+        check=True,
+    )
+
+    # The concern record is intact: still on disk AND still readable via the API.
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    assert concerns_path.exists(), "concerns.jsonl wiped by a non-rewinding concurrent commit"
+    after_rows = tw.list_concerns(tid)
+    assert after_rows == before_rows, "concern record drifted across a concurrent commit"
+    # And it survives reachable in git history (the durability guarantee).
+    # The git-log reachability assert is THE discriminating check — .exists() and
+    # the list_concerns equality both pass even under a broken (uncommitted)
+    # write; only this catches loss of the commit itself.
+    log = subprocess.run(
+        ["git", "log", "--oneline", "--", str(concerns_path.relative_to(repo))],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    # Couples to the _append_concern_event commit-message contract
+    # ("task #<N>: concern-{event} {concern_id}"); reformatting that message
+    # would correctly trip this assert.
+    assert "concern-raised" in log
+
+
 def test_raise_concern_ordering_preserved(concerns_task):
     """concerns.jsonl preserves write order — append-only, no reordering."""
     _, tw, tid = concerns_task

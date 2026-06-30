@@ -75,6 +75,7 @@ if os.path.isdir("/workspace"):
 # always wins. (#545 round-4; kept round-38.)
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv  # noqa: E402
 
 # load_dotenv at entry — every credential-using path (hf_hub_download) needs

@@ -46,6 +46,8 @@ from pathlib import Path
 
 import numpy as np
 import torch
+
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv
 from scipy import stats as sps
 

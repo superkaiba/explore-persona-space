@@ -1,0 +1,80 @@
+{
+  "input_rep": "pca48",
+  "input_rep_k": 48,
+  "input_rep_eps": 1e-06,
+  "c_C_recipe": "C_last",
+  "n_contexts": 50,
+  "layers": [
+    0,
+    18
+  ],
+  "seed": 42,
+  "store_provenance": {
+    "store_dir": "/home/thomasjiralerspong/explore-persona-space/data/issue_658/hf_dl/issue658_theory_assumptions/store",
+    "cc_source": "#594 HF store (load_cc_last_store)",
+    "n_contexts": 50,
+    "hidden_dim": 3584
+  },
+  "baseline_skill_json": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-722/eval_results/issue_722/base-skill-over-mean-cC-to-v0/skill_over_mean.json",
+  "baseline_krr_json": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-722/eval_results/issue_722/base-skill-over-mean-cC-to-v0/krr_vs_linear.json",
+  "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R\u00b2 on PCA-48 centered v0)",
+  "kernels": [
+    "linear",
+    "rbf"
+  ],
+  "pca_target_dim": 48,
+  "ridge_lambdas": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0,
+    1000.0
+  ],
+  "n_bootstrap": 200,
+  "per_layer": [
+    {
+      "layer": 0,
+      "skill_krr_linear_pca48": -0.08323242049736401,
+      "skill_krr_rbf_pca48": 8.812336683705624e-07,
+      "nonlinear_gap_rbf_minus_linear": 0.08323330173103238,
+      "nonlinear_gap_baseline_full": 0.40355991942049696,
+      "delta_gap": -0.3203266176894646,
+      "gap_ci95": [
+        -0.1037790765758148,
+        0.30408308809113616
+      ],
+      "gap_excludes_zero": false,
+      "chosen_gamma_rbf_median": 0.3061224589780594,
+      "chosen_lambda_rbf_median": 1000.0,
+      "chosen_lambda_linear_median": 0.01,
+      "gesvd_fallback": false
+    },
+    {
+      "layer": 18,
+      "skill_krr_linear_pca48": 0.8077956227199248,
+      "skill_krr_rbf_pca48": 4.7776988477687965e-06,
+      "nonlinear_gap_rbf_minus_linear": -0.807790845021077,
+      "nonlinear_gap_baseline_full": 0.0009635117642099456,
+      "delta_gap": -0.808754356785287,
+      "gap_ci95": [
+        -0.851192466375544,
+        -0.7571856738244304
+      ],
+      "gap_excludes_zero": true,
+      "chosen_gamma_rbf_median": 0.3061224495720433,
+      "chosen_lambda_rbf_median": 1000.0,
+      "chosen_lambda_linear_median": 0.01,
+      "gesvd_fallback": false
+    }
+  ],
+  "metadata": {
+    "git_commit": "268aa898398e801614fad9526f875d24e8c02c49",
+    "timestamp_utc": "2026-06-30T09:43:51.177553Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_vectorized_skill",
+    "phase": "input_rep_pca48"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "issue": 722,
+  "figure": "mlp_epoch_curves.png",
+  "code_sha": "8d5fcd82911629e7462282ebe89164e28fff3fd8",
+  "generated_at": "2026-06-30T00:19:04Z",
+  "source_json": "mlp_epoch_curves.json"
+}

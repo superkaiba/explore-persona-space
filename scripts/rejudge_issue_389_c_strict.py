@@ -580,6 +580,7 @@ def main() -> None:
     # `source .env` first.
     env_path = REPO_ROOT / ".env"
     if env_path.exists():
+        # DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
         from dotenv import load_dotenv
 
         load_dotenv(env_path)

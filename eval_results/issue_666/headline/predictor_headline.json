@@ -1,0 +1,106 @@
+{
+ "schema": "issue666_predictor_headline_v1",
+ "per_behavior": {
+  "bad_medical": {
+   "n_cells": 8,
+   "rho_full_Lhat_mean": -0.0789795918367347,
+   "rho_cosine_mean": -0.00795918367346939,
+   "rho_base_prior_mean": 0.15761479591836733,
+   "r_B_source": [
+    "diffmeans"
+   ]
+  },
+  "em": {
+   "n_cells": 8,
+   "rho_full_Lhat_mean": 0.010676020408163267,
+   "rho_cosine_mean": 0.10284438775510205,
+   "rho_base_prior_mean": -0.42776785714285714,
+   "r_B_source": [
+    "diffmeans"
+   ]
+  },
+  "fact": {
+   "n_cells": 8,
+   "rho_full_Lhat_mean": 0.4146428571428571,
+   "rho_cosine_mean": 0.3914285714285714,
+   "rho_base_prior_mean": -0.32914540816326526,
+   "r_B_source": [
+    "r_plus"
+   ]
+  },
+  "ic_edu": {
+   "n_cells": 2,
+   "rho_full_Lhat_mean": 0.23653061224489794,
+   "rho_cosine_mean": -0.11464285714285713,
+   "rho_base_prior_mean": -0.48877551020408155,
+   "r_B_source": [
+    "diffmeans"
+   ]
+  },
+  "marker": {
+   "n_cells": 20,
+   "rho_full_Lhat_mean": -0.02429081632653061,
+   "rho_cosine_mean": 0.0011785714285714299,
+   "rho_base_prior_mean": -0.0697142857142857,
+   "r_B_source": [
+    "r_plus"
+   ]
+  },
+  "tf_rev": {
+   "n_cells": 2,
+   "rho_full_Lhat_mean": 0.40617346938775506,
+   "rho_cosine_mean": 0.24693877551020407,
+   "rho_base_prior_mean": -0.13607142857142857,
+   "r_B_source": [
+    "r_plus"
+   ]
+  }
+ },
+ "cross_behavior_aggregate": {
+  "rho_full_Lhat_mean": 0.11544642857142857,
+  "n_cells": 24,
+  "flagged": "SECONDARY",
+  "caveat": "mixes diffmeans (bad_medical/em) + r_plus (fact) r_B sources (\u00a74b/\u00a76)"
+ },
+ "cross_behavior_matrix": {
+  "rho_full_Lhat_mean": 0.13281632653061223,
+  "rho_cosine_mean": 0.06402332361516035,
+  "n_off_diagonal_cells": 140,
+  "flagged": "SECONDARY",
+  "note": "per_target off-diagonal (source!=target) L\u0302/cosine; target directions from the shared registry (diffmeans + canonical-cell r_plus), cosine carries cos(r_{B'}, r_B) with distinct source/target directions (\u00a74d/\u00a74e)"
+ },
+ "target_direction_registry": {
+  "bad_medical": {
+   "source": "diffmeans",
+   "from_cell": null
+  },
+  "em": {
+   "source": "diffmeans",
+   "from_cell": null
+  },
+  "fact": {
+   "source": "r_plus_canonical",
+   "from_cell": "tf_default_contra_d1_seed42"
+  },
+  "marker": {
+   "source": "r_plus_canonical",
+   "from_cell": "mk_default_contra_d1_seed42"
+  }
+ },
+ "rb_source_sensitivity_artifact": "headline/rb_source_sensitivity.json",
+ "r_b_source_mode": "mixed",
+ "sigma_c": {
+  "sigma_c_corpus_kind": "broad",
+  "sigma_c_headline_eligible": true,
+  "sigma_c_lam": 1.0,
+  "sigma_c_cond_number": 3953.814463457174,
+  "sigma_c_n_contexts": 3000,
+  "sigma_c_layer": 14
+ },
+ "n_cells": 48,
+ "reproducibility": {
+  "git_commit": "8f00b387cd559635eeaa8315061ee3c01279b05c",
+  "generated_utc": "2026-06-30T06:33:55.788266+00:00",
+  "primary_dv": "latent ds Spearman rho (per-behavior PRIMARY; aggregate SECONDARY)"
+ }
+}

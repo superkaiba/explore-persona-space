@@ -83,7 +83,10 @@ I591_DATA_PREFIX = "issue591_flat_panel_factors"
 ADAPTER_REVISION = "9912384fe48be2dc3aca1f47269367a0669a5d43"
 ADAPTER_PATH_TMPL = "adapters/issue_411/{source}_seed42"
 
-JUDGE_MODEL = "claude-haiku-4-5-20251001"  # realized #411/#591 judge id (pinned)
+# Project-canonical judge per CLAUDE.md (one Sonnet judge across the project).
+# Past #411/#591/#612/#650/#657 base rates were judged on Haiku
+# (κ=0.869 vs Sonnet double-judge); any RE-RUN now uses Sonnet.
+JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 
 # --- registered thresholds (plan §6/§7/§10) ---------------------------------
 LEAK_TAU = 0.10

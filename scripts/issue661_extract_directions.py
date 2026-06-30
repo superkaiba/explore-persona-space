@@ -65,6 +65,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import torch  # noqa: E402
+
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
 from issue594_extract_context_vectors import LayerCapture  # noqa: E402 (on main)

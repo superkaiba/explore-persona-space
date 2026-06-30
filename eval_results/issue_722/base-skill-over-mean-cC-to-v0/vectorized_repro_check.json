@@ -1,0 +1,94 @@
+{
+  "mlp_exactness_gate": {
+    "base_delta": 1.341104507446289e-07,
+    "shuffle_delta": 1.3075768947601318e-06,
+    "chunk_invariant": true,
+    "crossgroup_clean": true,
+    "tol": 5e-06
+  },
+  "ridge_chain_repro": {
+    "betley": {
+      "ok": true,
+      "rows": {
+        "broad_em": {
+          "got_layer": 10,
+          "got_rho": 0.45625511193709734,
+          "expected_layer": 10,
+          "expected_rho": 0.45625511193709734,
+          "abs_rho_delta": 0.0,
+          "match": true
+        },
+        "harmful_compliance": {
+          "got_layer": 11,
+          "got_rho": 0.6763380907104344,
+          "expected_layer": 11,
+          "expected_rho": 0.6763380907104344,
+          "abs_rho_delta": 0.0,
+          "match": true
+        },
+        "sycophancy": {
+          "got_layer": 0,
+          "got_rho": 0.0816444154089325,
+          "expected_layer": 0,
+          "expected_rho": 0.0816444154089325,
+          "abs_rho_delta": 0.0,
+          "match": true
+        },
+        "refusal": {
+          "got_layer": 26,
+          "got_rho": -0.22844242829270806,
+          "expected_layer": 26,
+          "expected_rho": -0.22844242829270806,
+          "abs_rho_delta": 0.0,
+          "match": true
+        }
+      }
+    },
+    "ultrachat": {
+      "ok": true,
+      "rows": {
+        "broad_em": {
+          "got_layer": 26,
+          "got_rho": 0.3952638514729647,
+          "expected_layer": 26,
+          "expected_rho": 0.3952638514729647,
+          "abs_rho_delta": 0.0,
+          "match": true
+        },
+        "harmful_compliance": {
+          "got_layer": 11,
+          "got_rho": 0.6744104557529602,
+          "expected_layer": 11,
+          "expected_rho": 0.6744104557529602,
+          "abs_rho_delta": 0.0,
+          "match": true
+        },
+        "sycophancy": {
+          "got_layer": 13,
+          "got_rho": 0.08554069506488331,
+          "expected_layer": 13,
+          "expected_rho": 0.08554069506488331,
+          "abs_rho_delta": 0.0,
+          "match": true
+        },
+        "refusal": {
+          "got_layer": 26,
+          "got_rho": -0.2041856449546123,
+          "expected_layer": 26,
+          "expected_rho": -0.2041856449546123,
+          "abs_rho_delta": 0.0,
+          "match": true
+        }
+      }
+    }
+  },
+  "slow_mlp_spot_check": {
+    "ran": false,
+    "reason": "skipped"
+  },
+  "wall_time_minutes": 1.47,
+  "device": "cuda",
+  "threads": 0,
+  "code_sha": "19a5758fab337f6d7cd0eeecd1e9cfd461b62310",
+  "generated_at": "2026-06-29T23:43:50Z"
+}

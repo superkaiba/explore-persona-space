@@ -1,0 +1,117 @@
+{
+  "pv_extract_manifest": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "n_layers": 28,
+    "hidden": 3584,
+    "recipe": "persona-vectors arXiv 2507.21509 App-A; response-avg; diffmeans (built off-pod)",
+    "behaviors": [
+      "broad_em",
+      "harmful_compliance",
+      "sycophancy",
+      "refusal"
+    ],
+    "n_pairs": 5,
+    "n_extract_q": 20,
+    "n_rollouts": 10,
+    "rollout_temperature": 1.0,
+    "rollout_max_new_tokens": 512,
+    "n_rollouts_total": 12000,
+    "n_captured": 12000,
+    "n_empty": 0,
+    "pv2_batch_size": 16,
+    "fewshot": {
+      "enabled": true,
+      "captured": 80
+    },
+    "reuse_v0_e0_rev": "b33429f77b86",
+    "judge": "claude-sonnet-4-5-20250929 (applied off-pod in J1, NOT here)",
+    "bundle_sha256": {
+      "broad_em": "30af839acee809f73cdfcd7315ee1f3541424917f237e3585171d64a3c534fec",
+      "harmful_compliance": "7ed65dee9a3f2265e51f099cc79edb6a122bc7ed209061a51175a01593fedea3",
+      "sycophancy": "1496d9e1062fc7a87e5a435ce2e2e2fe39fc0ef88176030647d7c0e84b525d1b",
+      "refusal": "c8abcb30213aa2d7c1a9f219f6b8e07e4ad6fc18d6f0deb9a64aecdf5d97d42f"
+    },
+    "smoke": false,
+    "wandb_run": "issue658-rb-personavectors",
+    "ts": "2026-06-29T23:40:39.539524+00:00",
+    "metadata": {
+      "git_commit": "62bb233cd03f3826447790268c9bbbc4218bb5fa",
+      "timestamp_utc": "2026-06-29T23:40:40.385428Z",
+      "python_version": "3.11.10",
+      "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
+      "cuda_visible_devices": "0",
+      "script": "issue658_extract_rb_personavectors"
+    }
+  },
+  "yield_table": {
+    "broad_em": {
+      "target_pos": 1000,
+      "kept_pos": 312,
+      "kept_neg": 930,
+      "kept_neutral": 931,
+      "n_pos": 1000,
+      "below_yield_floor": true,
+      "yield_floor_n": 800
+    },
+    "harmful_compliance": {
+      "target_pos": 1000,
+      "kept_pos": 5,
+      "kept_neg": 938,
+      "kept_neutral": 907,
+      "n_pos": 1000,
+      "below_yield_floor": true,
+      "yield_floor_n": 800
+    },
+    "sycophancy": {
+      "target_pos": 1000,
+      "kept_pos": 318,
+      "kept_neg": 961,
+      "kept_neutral": 920,
+      "n_pos": 1000,
+      "below_yield_floor": true,
+      "yield_floor_n": 800
+    },
+    "refusal": {
+      "target_pos": 1000,
+      "kept_pos": 364,
+      "kept_neg": 1000,
+      "kept_neutral": 1000,
+      "n_pos": 1000,
+      "below_yield_floor": true,
+      "yield_floor_n": 800
+    }
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "judge_threshold": 50,
+  "yield_floor_frac": 0.8,
+  "reductions": [
+    "diffmeans",
+    "meanDB",
+    "few-shot-final",
+    "multi-layer-pooled"
+  ],
+  "poles": [
+    "pos-vs-neg",
+    "pos-vs-neutral"
+  ],
+  "mlpool_band": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18
+  ],
+  "reuse_v0_e0_rev": "b33429f77b86",
+  "metadata": {
+    "git_commit": "2a229f1efee6add5707ee98a1da5ff6037d8ffa1",
+    "timestamp_utc": "2026-06-30T13:20:15.854081Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue658_rb_pv_fit"
+  }
+}
