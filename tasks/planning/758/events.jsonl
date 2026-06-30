@@ -1,3 +1,12 @@
 {"ts": "2026-06-30T06:44:52Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-06-30T06:50:33Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities. Body is well-specified: scope (.claude/agents/codex-critic.md), bug (fabricated numbers + stale events.jsonl snapshot), proposed change (numeric grounding + marker-snapshot pinning). Context resolved: codex-critic.md read at HEAD (composer at Step 3 template + lens_items dynamic insertion + Step 5 dispatch contract); workflow-fix-on-bug protocol governs auto-merge path. Proceeding to adversarial planning."}
 {"ts": "2026-06-30T06:50:37Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear: well-specified workflow-fix task."}
+{"ts": "2026-06-30T06:56:27Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=1 plan_version=v1 overridden=[] WARN: c8_success_kill_criteria (kind:infra spec-edit — no run to 'kill'; the plan's Acceptance criteria §4 + Risks §5 jointly cover success/kill semantics for a code review)."}
+{"ts": "2026-06-30T06:56:32Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=1 plan_version=v1 overridden=none. WARN: c8_success_kill_criteria - kind-infra spec edit has no run to kill; Acceptance criteria section 4 + Risks section 5 jointly cover success/kill semantics for a code review."}
+{"ts": "2026-06-30T06:56:38Z", "kind": "epm:plan-verify", "version": 3, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=1 plan_version=v1 overridden=none. WARN: c8_success_kill_criteria - kind-infra spec edit has no run to kill; Acceptance criteria section 4 + Risks section 5 jointly cover success/kill semantics for a code review."}
+{"ts": "2026-06-30T06:56:43Z", "kind": "epm:plan-verify", "version": 4, "by": "unknown", "note": ""}
+{"ts": "2026-06-30T06:56:48Z", "kind": "epm:plan-verify", "version": 5, "by": "unknown", "note": ""}
+{"ts": "2026-06-30T06:56:52Z", "kind": "epm:plan-verify", "version": 6, "by": "unknown", "note": ""}
+{"ts": "2026-06-30T06:56:57Z", "kind": "epm:plan-verify", "version": 7, "by": "unknown", "note": ""}
+{"ts": "2026-06-30T06:57:05Z", "kind": "epm:plan-verify", "version": 8, "by": "unknown", "note": ""}
+{"ts": "2026-06-30T06:57:26Z", "kind": "epm:plan-verify", "version": 9, "by": "unknown", "note": ""}
