@@ -16,6 +16,8 @@ goal: 'Re-measure how well base-model mean answer activation v0(C) predicts beha
   behaviors with existing >=50-probe completions+judgments (sycophancy/refusal/harmful_compliance),
   capture-only matched v0, ridge v0(C,B)->E0(C,B) LOCO per #742 recipe vs #658 mismatched
   ridge + diff-in-means.'
+relates_to:
+- leak-predictor
 ---
 # Matched-probe v0→E0 predictor re-measurement (phase 1: sycophancy / refusal / harmful_compliance, capture-only)
 
