@@ -3228,7 +3228,11 @@ class GcpBackend(ComputeBackend):
         See class docstring for the per-step flow. Raises
         :class:`GcpProvisioningError` when every zone (primary +
         fallbacks) returns a capacity / quota / auth failure — the router
-        catches that and proceeds to the next tier.
+        catches that and proceeds to the next tier. The error raised after
+        a full-fan-out capacity miss carries ``evidence["zones_attempted"]``
+        (the ordered list of every zone tried) and a human-readable
+        ``evidence["zones_attempted_summary"]`` so a post-mortem reads the
+        complete fan-out, not just the last zone's stderr (#763/#774).
         """
         config = self._config
         attempt_id = attempt_id_for(spec)
@@ -3414,8 +3418,16 @@ class GcpBackend(ComputeBackend):
                 evidence={"machine_type": machine_type, "intent": spec.intent},
             )
         last_error: GcpProvisioningError | None = None
+        # Every zone actually attempted, in fan-out order. Threaded onto the
+        # GcpProvisioningError raised after the loop so a post-mortem reads the
+        # FULL zone fan-out ("tried [a, c], both exhausted") instead of only
+        # the last zone's stderr. Pre-fix (#763/#774) the marker surfaced only
+        # `classify_create_failure`'s last-zone evidence, so a reader could not
+        # tell whether the loop tried every available zone or gave up after one.
+        zones_attempted: list[str] = []
         try:
             for zone in zones_to_try:
+                zones_attempted.append(zone)
                 argv = render_create_argv(
                     spec=spec,
                     config=config,
@@ -3502,6 +3514,16 @@ class GcpBackend(ComputeBackend):
                 # for-else: executed when the for loop completes without
                 # `break` — every zone failed.
                 assert last_error is not None
+                # Name the FULL zone fan-out on the raised error so the marker /
+                # terminal JSON shows every zone tried, not just the last zone's
+                # stderr (#763/#774 observability gap). `setdefault` for the list
+                # so a re-raise never clobbers; the summary is a fresh key.
+                last_error.evidence.setdefault("zones_attempted", list(zones_attempted))
+                last_error.evidence["zones_attempted_summary"] = (
+                    f"all {len(zones_attempted)} zone(s) "
+                    f"[{', '.join(zones_attempted)}] capacity-exhausted for "
+                    f"machine_type={machine_type}"
+                )
                 raise last_error
         finally:
             # gcloud has read the secret files by the time create returns

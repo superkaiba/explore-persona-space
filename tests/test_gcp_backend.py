@@ -1949,6 +1949,140 @@ def test_launch_does_not_retry_on_non_capacity_failure(no_marker_posts) -> None:
 
 
 # ---------------------------------------------------------------------------
+# #774 — full-fan-out observability: the GcpProvisioningError raised after a
+# capacity-exhausted fan-out names EVERY zone tried (not just the last zone's
+# stderr — the #763 misdiagnosis). Four tests cover the brief's contract:
+# (a) zone-iteration order, (b) per-machine-type filter, (c) capacity-retry
+# vs auth/quota raise, (d) for-else raise carrying the full zones-tried list.
+# ---------------------------------------------------------------------------
+
+
+def test_zone_fanout_iterates_primary_then_fallbacks_in_order(no_marker_posts) -> None:
+    """(a) The fan-out walks [primary, *fallbacks] in ladder order. ``eval``
+    (g2-standard-4, offered in all three us-central1 zones) misses in
+    us-central1-a, then lands in us-central1-b — the creates are issued in
+    a → b order, proving the loop iterates the configured ladder rather than
+    jumping zones."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),  # us-central1-a
+            GcloudRunResult(0, created_payload, ""),  # us-central1-b
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_spec(intent="eval"))
+    assert handle.extra["zone"] == "us-central1-b"
+    create_calls = [c for c in runner.calls if "create" in c and "instances" in c]
+    assert [
+        next(a.split("=", 1)[1] for a in call if a.startswith("--zone=")) for call in create_calls
+    ] == ["us-central1-a", "us-central1-b"]
+
+
+def test_zone_fanout_skips_zone_filtered_by_machine_type_availability(no_marker_posts) -> None:
+    """(b) A2-ultragpu (A100-80) is offered only in {a, c}; the fan-out for a
+    ``lora-7b`` intent must skip us-central1-b entirely (where the family does
+    not exist) — a capacity miss in -a falls straight to -c, never issuing a
+    doomed -b create that would burn the per-day attempt counter (#653)."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),  # us-central1-a
+            GcloudRunResult(0, created_payload, ""),  # us-central1-c (b skipped)
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_spec(intent="lora-7b"))
+    assert handle.extra["zone"] == "us-central1-c"
+    create_calls = [c for c in runner.calls if "create" in c and "instances" in c]
+    assert len(create_calls) == 2
+    assert not any("--zone=us-central1-b" in c for c in create_calls)
+
+
+def test_zone_fanout_capacity_retries_but_auth_failure_raises_immediately(no_marker_posts) -> None:
+    """(c) A capacity-shaped miss retries the next zone; a non-capacity
+    (auth/quota) failure raises immediately WITHOUT walking further zones —
+    a different zone would fail identically. Asserts the two distinct control
+    flows in one place."""
+    # Capacity miss then success → retries.
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+    cap_runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+            GcloudRunResult(0, created_payload, ""),
+        ],
+    )
+    cap_backend = GcpBackend(
+        config=_test_config(), runner=cap_runner, marker_poster=lambda **_: None
+    )
+    cap_backend.launch(_spec(intent="eval"))
+    assert len([c for c in cap_runner.calls if "create" in c and "instances" in c]) == 2
+
+    # Auth failure → raises immediately, ONE create only.
+    auth_runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "PERMISSION_DENIED: caller does not have permission"),
+        ],
+    )
+    auth_backend = GcpBackend(
+        config=_test_config(), runner=auth_runner, marker_poster=lambda **_: None
+    )
+    with pytest.raises(GcpProvisioningError, match="PERMISSION_DENIED"):
+        auth_backend.launch(_spec(intent="eval"))
+    assert len([c for c in auth_runner.calls if "create" in c and "instances" in c]) == 1
+
+
+def test_zone_fanout_all_zones_exhausted_error_names_every_zone_tried(no_marker_posts) -> None:
+    """(d) When every zone misses on capacity, the for-else raises
+    ``GcpProvisioningError`` whose evidence records the FULL ordered zone
+    fan-out — closing the #763/#774 observability gap where the marker
+    surfaced only the last zone's stderr. Covers both the FILTERED A100-80
+    family (2 zones: a, c) and the UNFILTERED g2 family (3 zones: a, b, c)."""
+    # Filtered A100-80 family (lora-7b → a2-ultragpu-1g, ladder [a, c]).
+    filtered_runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+        ],
+    )
+    filtered_backend = GcpBackend(
+        config=_test_config(), runner=filtered_runner, marker_poster=lambda **_: None
+    )
+    with pytest.raises(GcpProvisioningError) as filtered_exc:
+        filtered_backend.launch(_spec(intent="lora-7b"))
+    za = filtered_exc.value.evidence["zones_attempted"]
+    assert za == ["us-central1-a", "us-central1-c"]
+    summary = filtered_exc.value.evidence["zones_attempted_summary"]
+    assert "us-central1-a" in summary and "us-central1-c" in summary
+    assert "a2-ultragpu-1g" in summary
+
+    # Unfiltered family (eval → g2-standard-4, ladder [a, b, c]).
+    unfiltered_runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "does not have enough resources available"),
+            GcloudRunResult(1, "", "does not have enough resources available"),
+            GcloudRunResult(1, "", "does not have enough resources available"),
+        ],
+    )
+    unfiltered_backend = GcpBackend(
+        config=_test_config(), runner=unfiltered_runner, marker_poster=lambda **_: None
+    )
+    with pytest.raises(GcpProvisioningError) as unfiltered_exc:
+        unfiltered_backend.launch(_spec(intent="eval"))
+    assert unfiltered_exc.value.evidence["zones_attempted"] == [
+        "us-central1-a",
+        "us-central1-b",
+        "us-central1-c",
+    ]
+
+
+# ---------------------------------------------------------------------------
 # create-timeout-with-live-instance (#736): a FLEX_START create that exceeds
 # the 300s subprocess cap but lands a live instance server-side must surface
 # as the still-provisioning terminal (→ exit 75), NOT exit 4; a truly-absent
