@@ -41,6 +41,12 @@ set -euo pipefail
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 cd "$REPO_ROOT"
 
+# GCP A100-80 images ship HF_HUB_ENABLE_HF_TRANSFER=1 in env without the
+# `hf_transfer` package installed; HF dataset/model downloads then ValueError
+# at first hf_hub_download. Disable hf_transfer here unless the caller has
+# explicitly installed it. (Attempt-2 infra failure, 2026-06-30 #666.)
+export HF_HUB_ENABLE_HF_TRANSFER=0
+
 PHASE_LOG="${PHASE_LOG:-/tmp/issue666_dispatch.log}"
 SIGMA_INV_PATH="data/issue_666/sigma_c_inv.pt"
 
