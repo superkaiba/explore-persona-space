@@ -4936,8 +4936,8 @@
     "774": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/774",
-      "status": "proposed",
+      "path": "tasks/planning/774",
+      "status": "planning",
       "title": "workflow-fix: multi-zone GCP fan-out before declaring a capacity miss"
     },
     "775": {
