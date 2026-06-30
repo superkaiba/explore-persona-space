@@ -45,6 +45,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 import time
 from dataclasses import dataclass, replace
@@ -603,6 +604,199 @@ def _clear_runpod_noport_clock(sidecar: Path) -> None:
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         logging.warning(
             "backend_poll: RunPod no-port clock clear failed for %s (%s: %s)",
+            sidecar,
+            type(exc).__name__,
+            exc,
+        )
+
+
+# ── RunPod CUDA-IMA repeat host wedge: signature-record family + regex (#775) ──
+# The detection record for a same-signature CUDA-IMA (illegal-memory-access /
+# EngineDeadError) crash REPEATING within a run. Byte-mirrors the
+# ``_read/_write/_clear_runpod_noport_clock`` family above (atomic tmp+rename,
+# never-raise on a malformed value), keyed ``runpod_cuda_ima_last_seen`` (a dict
+# ``{"ts": <epoch>, "sig": "cuda_ima"}``, distinct from the noport clock's bare
+# float). The record is signature-keyed across the run (NOT pod_id), with the
+# prior ``epm:failure`` marker as a cross-pod fallback source (so a sidecar wipe
+# between pods does not lose the prior-crash record). See
+# ``.claude/rules/compute-backend-failover.md`` Part D.
+
+# The CUDA-IMA crash-signature family. No ``re.DOTALL`` and no cross-newline lazy
+# quantifier — each alternative matches WITHIN one line, so a match cannot span
+# unrelated events across the 500-line probe tail. A driver-level IMA has no
+# stable user-frame, so "same signature" is the FAMILY recurring (this regex
+# matching both the prior and the current crash surface), NOT an exact-frame
+# fingerprint.
+CUDA_IMA_SIGNATURE = re.compile(
+    r"CUDA error:\s*an illegal memory access was encountered"
+    r"|illegal memory access was encountered"
+    r"|EngineDeadError"
+    r"|Engine core proc \S+ died unexpectedly",
+    re.IGNORECASE,
+)
+
+# The synthesized terminal ``current_phase`` for a matured RunPod CUDA-IMA repeat
+# wedge (#775). ``_is_runpod_cuda_ima_failure`` matches THIS phase EXACTLY; it is
+# set ONLY by ``_maybe_escalate_runpod_cuda_ima`` once a second same-signature
+# CUDA-IMA crash is observed this run.
+RUNPOD_CUDA_IMA_WEDGED_PHASE = "terminal_runpod_cuda_ima_host_wedged"
+
+
+def _crash_signature_is_cuda_ima(text: str | None) -> bool:
+    """True iff ``text`` (a crash surface) carries the CUDA-IMA family signature.
+
+    Pure: ``bool(CUDA_IMA_SIGNATURE.search(text or ""))``. ``None``/empty → False.
+    """
+    return bool(CUDA_IMA_SIGNATURE.search(text or ""))
+
+
+def _crash_signature_has_our_code_frame(text: str | None) -> bool:
+    """True iff the crash surface carries an OUR-code traceback frame (M3 exclusion).
+
+    A CUDA-IMA surface that ALSO traces through ``src/explore_persona_space/`` or
+    ``scripts/`` is a deterministic CODE bug surfacing as CUDA-IMA, NOT a host
+    wedge — the escalation skips it (falls through to the ordinary dead path →
+    ``failure_class: code``) so no bounded pivot is spent on a code bug. Reuses
+    ``failure_classifier.OUR_CODE_FRAME`` (lazy-imported to keep the ``--help``
+    path fast). ``None``/empty → False.
+    """
+    if not text:
+        return False
+    from failure_classifier import OUR_CODE_FRAME
+
+    return bool(OUR_CODE_FRAME.search(text))
+
+
+def _prior_failure_marker_is_cuda_ima(issue: int) -> bool:
+    """Cross-pod FALLBACK source for the prior-CUDA-IMA-crash record (#775, B1).
+
+    When the sidecar ``extra`` record is ABSENT (a sidecar wipe between pods, an
+    EDQUOT round-trip, a fresh-host re-point that cleared ``extra``), read the
+    latest prior ``epm:failure`` marker for this issue and return True iff its
+    note carries a CUDA-IMA signature. ``backend_poll.py`` runs VM-side (the
+    orchestrator poller on ``main``, NOT pod-side on an ``issue-<N>`` branch), so
+    reading prior markers via ``task_workflow.list_events`` is the same VM-side
+    surface the circuit-breaker uses — the pod-side-``task.py``-shellout
+    prohibition does not apply.
+
+    Fail-soft: any read / import error → treat as "no prior record" (return
+    ``False``) so the fallback can never crash the poll or manufacture a wedge.
+    """
+    try:
+        from explore_persona_space.task_workflow import list_events
+
+        events = list_events(int(issue))
+    except Exception as exc:
+        logging.warning(
+            "backend_poll: CUDA-IMA prior-marker fallback read failed for issue %s (%s: %s); "
+            "treating as no prior CUDA-IMA crash",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return False
+    for ev in reversed(events or []):
+        if not isinstance(ev, dict):
+            continue
+        # The event's marker name lives in ``kind`` (e.g. ``"epm:failure"``);
+        # the body lives in ``note`` (verified against the live events.jsonl
+        # shape for this issue).
+        kind = str(ev.get("kind") or "")
+        if "epm:failure" not in kind:
+            continue
+        # The LATEST epm:failure is the relevant one (the most recent prior
+        # crash): if its note carries the CUDA-IMA family, the current crash is a
+        # repeat; if not, the current crash is the first of its kind this run.
+        # Either way we decide on the first epm:failure seen (newest-first), so
+        # return its verdict directly.
+        return _crash_signature_is_cuda_ima(str(ev.get("note") or ""))
+    return False
+
+
+def _read_runpod_cuda_ima_record(sidecar: Path, *, issue: int) -> dict | None:
+    """Read the prior-CUDA-IMA-crash record for this run, or ``None`` if absent (#775).
+
+    Mirrors :func:`_read_runpod_noport_clock`'s fail-soft contract: a missing /
+    unreadable / malformed sidecar OR a non-dict ``extra["runpod_cuda_ima_last_seen"]``
+    reads as ``None``, NEVER raises. When the sidecar record is ABSENT, FALLS BACK
+    to the prior ``epm:failure`` marker (B1 cross-pod source — see
+    :func:`_prior_failure_marker_is_cuda_ima`): a CUDA-IMA prior marker yields a
+    synthetic record so the current crash still counts as a repeat across a pod
+    swap. The sidecar is the FAST path; the marker is the durable cross-pod
+    backstop (the lease/sentinel two-record philosophy applied to detection).
+    """
+    record: dict | None = None
+    try:
+        payload = json.loads(Path(sidecar).read_text())
+        extra = payload.get("extra") if isinstance(payload, dict) else None
+        if isinstance(extra, dict):
+            raw = extra.get("runpod_cuda_ima_last_seen")
+            if isinstance(raw, dict):
+                record = raw
+    except (OSError, json.JSONDecodeError, ValueError):
+        record = None
+    if record is not None:
+        return record
+    # Sidecar record absent → cross-pod fallback to the prior epm:failure marker.
+    if _prior_failure_marker_is_cuda_ima(issue):
+        return {"sig": "cuda_ima", "source": "prior_failure_marker"}
+    return None
+
+
+def _write_runpod_cuda_ima_record(sidecar: Path, *, ts: float) -> None:
+    """Persist the CUDA-IMA crash record onto the sidecar ``extra`` dict, atomically.
+
+    Mirrors :func:`_write_runpod_noport_clock`: mutates ONLY
+    ``extra["runpod_cuda_ima_last_seen"]`` (every other field preserved verbatim),
+    write-temp + rename, and a write failure is LOGGED not raised.
+    """
+    try:
+        path = Path(sidecar)
+        payload = json.loads(path.read_text())
+        if not isinstance(payload, dict):
+            return
+        extra = payload.get("extra")
+        if not isinstance(extra, dict):
+            extra = {}
+            payload["extra"] = extra
+        extra["runpod_cuda_ima_last_seen"] = {"ts": float(ts), "sig": "cuda_ima"}
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        logging.warning(
+            "backend_poll: RunPod CUDA-IMA record write failed for %s (%s: %s); "
+            "the next tick re-reads stale state (never manufactures a wedge)",
+            sidecar,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _clear_runpod_cuda_ima_record(sidecar: Path) -> None:
+    """Remove the CUDA-IMA crash record key from the sidecar (#775).
+
+    Called on a non-dead / non-CUDA-IMA poll (an intervening healthy poll the
+    in-place same-pod respawn recovered to) — a single transient CUDA-IMA does
+    NOT accumulate against a later unrelated one; only a SECOND CUDA-IMA crash
+    with no intervening healthy poll counts. Mirrors
+    :func:`_clear_runpod_noport_clock`; missing key → no-op.
+    """
+    try:
+        path = Path(sidecar)
+        payload = json.loads(path.read_text())
+        if not isinstance(payload, dict):
+            return
+        extra = payload.get("extra")
+        if not isinstance(extra, dict) or "runpod_cuda_ima_last_seen" not in extra:
+            return
+        del extra["runpod_cuda_ima_last_seen"]
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(path)
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
+        logging.warning(
+            "backend_poll: RunPod CUDA-IMA record clear failed for %s (%s: %s)",
             sidecar,
             type(exc).__name__,
             exc,
@@ -1533,6 +1727,43 @@ def _terminal_infra_json(*, issue: int, sidecar: Path, reason: str, log_tail: st
         "gpu_util": "unknown",
         "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
         "failure_class": "infra",
+        "reason": reason,
+        "issue": int(issue),
+    }
+
+
+def _terminal_code_json(*, issue: int, sidecar: Path, reason: str, log_tail: str) -> dict:
+    """A ``status='dead'`` / ``failure_class='code'`` poll JSON keyed by ``reason`` (#775).
+
+    The SIBLING of :func:`_terminal_infra_json` for a CODE-class terminal. Used by
+    :func:`_failover_cuda_ima_runpod` for the once-more-exhaustion path: a SECOND
+    same-signature CUDA-IMA crash AFTER the one bounded fresh-host pivot means a
+    fresh host did NOT fix the crash, so it is a deterministic code bug, not a
+    transient host wedge — emit ``failure_class: code`` so the watcher's
+    capacity-retry pass (which re-drives ONLY ``failure_class: infra`` +
+    ``no_compute_available`` — see ``autonomous_session_watch._is_transient_capacity_block``)
+    PARKS the run at ``blocked`` for human inspection rather than re-driving it.
+
+    A separate function rather than a ``failure_class`` kwarg on
+    :func:`_terminal_infra_json`, whose NAME + docstring assert ``infra`` — a
+    ``failure_class='code'`` value there would contradict the contract a reader
+    trusts. The poll-JSON shape is identical to the infra sibling except the
+    ``failure_class`` value.
+    """
+    return {
+        "status": "dead",
+        "current_phase": f"terminal_{reason}",
+        "new_milestone": True,
+        "last_log_mtime_sec_ago": 10**9,
+        "pid_alive": False,
+        "log_tail_excerpt": log_tail,
+        "gate": None,
+        "sentinels_processed": 0,
+        "phase_log_mtime_sec_ago": 10**9,
+        "shard_log_mtime_sec_ago": 10**9,
+        "gpu_util": "unknown",
+        "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
+        "failure_class": "code",
         "reason": reason,
         "issue": int(issue),
     }
