@@ -3209,22 +3209,27 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
         print(f"  WARNING: posting {label} marker on #{issue} failed: {e}", file=sys.stderr)
 
 
-def _post_failure_marker(issue: int, note: str, dry_run: bool) -> None:
+def _post_failure_marker(issue: int, note: str, dry_run: bool) -> bool:
     """Post an ``epm:failure v1`` marker on task ``issue``'s events.jsonl.
 
-    The watcher backstop is the ACTOR for a poller-DEAD wedge, so it must emit
-    the SAME ``epm:failure v1`` the orchestrator's bg-Bash poll loop emits when
-    it reads a terminal infra JSON — otherwise the capacity-retry pass (which
-    keys on the latest ``epm:failure`` marker's ``failure_class``/``reason`` via
-    :func:`_is_transient_capacity_block`) never sees the block and can never
-    re-drive a re-drivable ``no_compute_available`` terminal. ``note`` MUST
-    carry ``failure_class: <class>`` and ``reason: <reason>`` as whitespace-
-    separated tokens (the shape :func:`_parse_failure_fields` reads). Same
-    branch-guard contract as :func:`_post_progress_marker` (runs from
-    PROJECT_ROOT on ``main``)."""
+    Returns True on a successful post (or in dry-run), False when the post was
+    swallowed. The watcher backstop is the ACTOR for a poller-DEAD wedge, so it
+    must emit the SAME ``epm:failure v1`` the orchestrator's bg-Bash poll loop
+    emits when it reads a terminal infra JSON — otherwise the capacity-retry pass
+    (which keys on the latest ``epm:failure`` marker's
+    ``failure_class``/``reason`` via :func:`_is_transient_capacity_block`) never
+    sees the block and can never re-drive a re-drivable ``no_compute_available``
+    terminal. The returned bool lets the caller GATE the wedge-clock clear on
+    this durable record actually landing: under a transient ``task.py`` / flock /
+    network failure the marker may not post, and clearing the clock anyway would
+    both lose the failure record AND let the next tick treat the pod as
+    freshly-wedged. ``note`` MUST carry ``failure_class: <class>`` and
+    ``reason: <reason>`` as whitespace-separated tokens (the shape
+    :func:`_parse_failure_fields` reads). Same branch-guard contract as
+    :func:`_post_progress_marker` (runs from PROJECT_ROOT on ``main``)."""
     if dry_run:
         print(f"  [dry-run] would post epm:failure on #{issue}: {note}")
-        return
+        return True
     try:
         subprocess.run(
             [
@@ -3246,6 +3251,8 @@ def _post_failure_marker(issue: int, note: str, dry_run: bool) -> None:
         )
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  WARNING: posting epm:failure marker on #{issue} failed: {e}", file=sys.stderr)
+        return False
+    return True
 
 
 def _set_status_blocked(issue: int, dry_run: bool) -> bool:
@@ -3303,7 +3310,9 @@ def _stop_pod(issue: int, dry_run: bool) -> bool:
     return True
 
 
-def _wedge_failover(issue: int, info: PodInfo, wedged_h: str, dry_run: bool) -> str:
+def _wedge_failover(
+    issue: int, info: PodInfo, wedged_h: str, dry_run: bool
+) -> tuple[str, dict | None]:
     """Run the EXISTING poller terminate+re-provision recovery for a matured,
     inputs-safe, untagged RunPod no-port wedge from the watcher (#770).
 
@@ -4124,8 +4133,28 @@ def _handle_wedge_failover_outcome(
             wedged_h=wedged_h,
             threshold=threshold,
         )
-        _post_failure_marker(issue, note, dry_run)
-        _set_status_blocked(issue, dry_run)
+        marker_ok = _post_failure_marker(issue, note, dry_run)
+        blocked_ok = _set_status_blocked(issue, dry_run)
+        if not dry_run and not (marker_ok and blocked_ok):
+            # Fail loud: the durable terminal record (the epm:failure marker
+            # AND/OR set-status blocked) did NOT land — a transient task.py /
+            # flock / network failure swallowed it. Do NOT clear the wedge clock:
+            # clearing it would both lose the failure record AND let the next tick
+            # treat the pod as freshly-wedged (defeating bounded-once from the
+            # watcher side), while the capacity-retry pass — which needs BOTH
+            # status:blocked + a parseable epm:failure to re-drive a re-drivable
+            # no_compute_available block — would never see it. Leave
+            # wedge_first_seen intact so the next tick retries the full
+            # terminal-recording sequence (the marker-side idempotency is owned by
+            # backend_poll._runpod_wedge_already_handled; the watcher's job here is
+            # to ensure the durable failure record lands at least once).
+            print(
+                f"  issue #{issue}: wedge terminal recording PARTIAL — "
+                f"marker_ok={marker_ok} blocked_ok={blocked_ok}; leaving wedge "
+                f"clock intact for retry on next tick (NOT clearing wedge_first_seen)",
+                file=sys.stderr,
+            )
+            return "handled"
     else:
         # outcome in ("failover", "already-handled") — a success / no-op, NOT a
         # failure: a generic progress note (NOT epm:failure, NOT a status change).

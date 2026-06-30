@@ -412,7 +412,7 @@ def _patch_wedge_io(
     monkeypatch.setattr(
         asw,
         "_post_failure_marker",
-        lambda issue, note, dry_run: posts.append((issue, "FAILURE", note)),
+        lambda issue, note, dry_run: posts.append((issue, "FAILURE", note)) or True,
     )
     monkeypatch.setattr(
         asw,
@@ -1046,7 +1046,7 @@ def _patch_real_marker_recorders(monkeypatch, *, outcome, terminal):
     monkeypatch.setattr(
         asw,
         "_post_failure_marker",
-        lambda issue, note, dry_run: failure_notes.append(note),
+        lambda issue, note, dry_run: failure_notes.append(note) or True,
     )
     monkeypatch.setattr(
         asw,
@@ -1199,3 +1199,121 @@ def test_wedge_failover_sidecar_pod_name_match_proceeds(monkeypatch, tmp_path):
     outcome, _terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
     assert outcome == "failover"
     assert len(calls) == 1  # the matching pod_name proceeds to the recovery
+
+
+# ===========================================================================
+# 9. Round-3 review fix (#770 r3): the terminal-recording-best-effort-before-clear
+#    BLOCKER — gate the wedge-clock clear on BOTH the epm:failure marker AND the
+#    set-status blocked actually landing (a transient task.py / flock / network
+#    failure must NOT clear the clock, or the failure record is lost AND the next
+#    tick treats the pod as freshly-wedged).
+# ===========================================================================
+
+
+@pytest.mark.parametrize(
+    ("marker_ok", "blocked_ok"),
+    [
+        # _set_status_blocked fails (transient flock contention) — the brief's
+        # primary mode.
+        (True, False),
+        # _post_failure_marker fails (the sister mode).
+        (False, True),
+        # Both fail.
+        (False, False),
+    ],
+)
+def test_wedge_terminal_recording_partial_does_not_clear_clock(
+    isolated_registry, monkeypatch, marker_ok, blocked_ok
+):
+    # BLOCKER (wedge-terminal-recording-best-effort-before-clear): on the
+    # no-capacity terminal outcome the watcher posts epm:failure AND set-status
+    # blocked, THEN clears the wedge clock. If EITHER durable write is swallowed
+    # by a transient task.py / flock / network failure, the clock-clear must be
+    # GATED OFF — otherwise the failure record is lost AND the next tick re-wedges
+    # the pod (defeating bounded-once from the watcher side), AND the
+    # capacity-retry pass (which needs BOTH status:blocked + a parseable
+    # epm:failure) never re-drives the re-drivable no_compute_available block.
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+    prior = asw._load_pod_safety_state(692)
+    assert prior["wedge_first_seen"] == now - (K + 50.0)  # the clock is live pre-fire
+
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_stop_pod",
+        lambda issue, dry_run: (_ for _ in ()).throw(
+            AssertionError("watcher must never _stop_pod")
+        ),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_wedge_failover",
+        lambda issue, info, wedged_h, dry_run: (
+            "no-capacity",
+            {"status": "dead", "failure_class": "infra", "reason": "no_compute_available"},
+        ),
+    )
+    # Simulate the partial-write failure: a swallowed marker/status write returns
+    # False (the round-3 bool contract), exactly as a transient task.py / flock /
+    # network failure would.
+    monkeypatch.setattr(asw, "_post_failure_marker", lambda issue, note, dry_run: marker_ok)
+    monkeypatch.setattr(asw, "_set_status_blocked", lambda issue, dry_run: blocked_ok)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: None,
+    )
+
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+
+    # The wedge clock is INTACT (NOT cleared to None) — the next tick retries the
+    # full terminal-recording sequence.
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] == now - (K + 50.0)
+    assert loaded["wedge_first_seen"] is not None
+    # The pod-incarnation GC anchor is untouched.
+    assert loaded["first_seen"] == now - (K + 50.0)
+
+
+def test_wedge_terminal_recording_both_succeed_clears_clock(isolated_registry, monkeypatch):
+    # Happy-path companion to the partial-failure parametrization above: when BOTH
+    # the epm:failure marker AND set-status blocked land, the wedge clock IS
+    # cleared (the terminal failure is durably recorded). Re-confirms the
+    # success gate after the round-3 change.
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_stop_pod",
+        lambda issue, dry_run: (_ for _ in ()).throw(
+            AssertionError("watcher must never _stop_pod")
+        ),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_wedge_failover",
+        lambda issue, info, wedged_h, dry_run: (
+            "no-capacity",
+            {"status": "dead", "failure_class": "infra", "reason": "no_compute_available"},
+        ),
+    )
+    monkeypatch.setattr(asw, "_post_failure_marker", lambda issue, note, dry_run: True)
+    monkeypatch.setattr(asw, "_set_status_blocked", lambda issue, dry_run: True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: None,
+    )
+
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] is None  # both landed -> clock cleared
