@@ -1,0 +1,29 @@
+{
+ "figure": "figures/issue_722/skill_vs_n_contexts.png",
+ "source_json": "eval_results/issue_722/context_count_infotheoretic/cca_gaussianMI_curve_smoke.json",
+ "layer": 18,
+ "metric": "ridge_skill_r2_mean (skill-over-predict-the-mean, held-out LOCO R\u00b2)",
+ "n_sub_grid": [
+  15,
+  30,
+  50
+ ],
+ "skill": [
+  0.6303,
+  0.7645,
+  0.7983
+ ],
+ "ci_lo": [
+  0.5303,
+  0.7325,
+  0.7983
+ ],
+ "ci_hi": [
+  0.721,
+  0.8059,
+  0.7983
+ ],
+ "note": "n=50 has 1 resample -> CI collapses to the point",
+ "source_branch": "issue-722",
+ "source_commit": "268aa898398e801614fad9526f875d24e8c02c49"
+}
