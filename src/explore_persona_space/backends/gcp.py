@@ -225,8 +225,22 @@ DEFAULT_PRIMARY_ZONE = "us-central1-a"
 
 #: Same-region fallbacks for a capacity miss. The GPUS_ALL_REGIONS quota is
 #: regional so any zone in ``us-central1`` is in scope without a quota
-#: re-request.
-DEFAULT_FALLBACK_ZONES: tuple[str, ...] = ("us-central1-b", "us-central1-c")
+#: re-request. Each GCP rung walks ``[primary_zone, *fallback_zones]``
+#: filtered by :data:`MACHINE_TYPE_ZONE_AVAILABILITY` before the rung is
+#: counted a capacity miss, so adding a zone here widens the per-rung
+#: fan-out for every machine type the RESTRICT map says is offered there.
+#: ``us-central1-f`` is included for the ``a2-highgpu-1g`` (A100-40, the
+#: #656 fallback rung) which is offered in ``{a, b, c, f}``; the RESTRICT
+#: filter strips ``-f`` back out for the ``a2-ultragpu-*`` (A100-80) and
+#: ``a3-highgpu-*`` (H100) families, which GCP does NOT offer in ``-f``
+#: (verified via ``gcloud compute machine-types list
+#: --configuration=eps-gcp``, 2026-06-30 re-verification, #774). So a
+#: broader DEFAULT never leaks a doomed zone to a restricted family.
+DEFAULT_FALLBACK_ZONES: tuple[str, ...] = (
+    "us-central1-b",
+    "us-central1-c",
+    "us-central1-f",
+)
 
 #: DLVM image family verified working on 2026-06-08 ($1 credit-draw test
 #: provisioned ``a2-ultragpu-1g`` Spot with this image and ran nvidia-smi).
@@ -505,11 +519,13 @@ def machine_for_intent(spec: RunSpec) -> MachineSpec:
 #:     --configuration=eps-gcp --format="value(zone)"
 #: (run 2026-06-16 for the rows below).
 MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
-    # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family.
+    # A2-ultragpu (A100-80) — us-central1-b does NOT offer this family
+    # (re-verified 2026-06-30: not offered in -b OR -f, #774).
     "a2-ultragpu-1g": frozenset({"us-central1-a", "us-central1-c"}),
     "a2-ultragpu-4g": frozenset({"us-central1-a", "us-central1-c"}),
     # a2-ultragpu-8g (8x A100-80, #743) — same A2-ultragpu family as the 1g/4g
-    # rows above; us-central1-b does NOT offer the family. Verified 2026-06-29.
+    # rows above; us-central1-b does NOT offer the family. Verified 2026-06-29
+    # (re-verified 2026-06-30: not offered in -b OR -f, #774).
     "a2-ultragpu-8g": frozenset({"us-central1-a", "us-central1-c"}),
     # g2 (L4) + a3-highgpu (H100, BOTH the 1g lora-7b-h100 AND the 2g
     # eval-h100 sizes) ARE offered in all three us-central1 zones — listed
@@ -529,11 +545,13 @@ MACHINE_TYPE_ZONE_AVAILABILITY: dict[str, frozenset[str]] = {
     "a3-highgpu-8g": frozenset({"us-central1-a", "us-central1-b", "us-central1-c"}),
     # A2-highgpu (A100-40) — the #656 cheaper-but-smaller fallback rung.
     # Verified offered in us-central1-{a,b,c,f} (gcloud compute machine-types
-    # list --filter="name=a2-highgpu-1g AND zone~us-central1"); -f is listed
-    # additively so the create-time zone resolver has one more option than
-    # the A2-ultragpu family (which is restricted to -a/-c). The map only
-    # RESTRICTS the configured zone ladder, so listing -f is harmless when
-    # GcpConfig never includes it (it is simply never matched).
+    # list --filter="name=a2-highgpu-1g AND zone~us-central1"; 2026-06-30
+    # re-verification, #774). -f is now REACHED because DEFAULT_FALLBACK_ZONES
+    # carries it (the ladder [primary, *fallback_zones] resolves to {a,b,c,f}
+    # for this rung), giving the A100-40 fallback rung one more zone to walk
+    # than the A2-ultragpu family (restricted to -a/-c). The map RESTRICTS
+    # only, so the broader DEFAULT does not leak -f to the restricted A100-80 /
+    # H100 families below.
     "a2-highgpu-1g": frozenset(
         {"us-central1-a", "us-central1-b", "us-central1-c", "us-central1-f"}
     ),
