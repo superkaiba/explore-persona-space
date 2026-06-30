@@ -14,9 +14,8 @@ goal: 'Extend the matched-probe v0(C,B)->E0(C,B) predictor re-measurement to the
   behaviors #658 measured at only 8 judgments/context (deception, fact_expression,
   format_style, self_report, persona_drift): collect >=50 eliciting probes per behavior
   AND judge E0 with a GRADED multi-sampled 0-100 score (per .claude/rules/llm-judging.md)
-  as the PRIMARY DV (binary judge-rate retained as a validated headline), so v0 and
-  E0 share probes and the DV avoids the dichotomization + binomial-noise floor; read
-  the predictor with ridge + precision-weighted GLM vs a properly-extracted persona-vector
+  as the PRIMARY DV (binary judge-rate retained as a validated headline); read the
+  predictor with ridge + precision-weighted GLM vs a properly-extracted persona-vector
   baseline.'
 relates_to:
 - leak-predictor
@@ -31,7 +30,7 @@ Two changes since this task first dispatched:
 
 ## Goal
 
-Extend the matched-probe v0(C,B)→E0(C,B) predictor re-measurement to the 5 behaviors #658 measured at only 8 judgments/context (deception, fact_expression, format_style, self_report, persona_drift): collect ≥50 eliciting probes per behavior AND judge E0 with a **graded multi-sampled 0-100 score** (per `.claude/rules/llm-judging.md`) as the PRIMARY DV (binary judge-rate retained as a validated headline), so v0 and E0 share probes and the DV avoids the dichotomization + binomial-noise floor; read the predictor with ridge + precision-weighted GLM vs a properly-extracted persona-vector baseline.
+Extend the matched-probe v0(C,B)->E0(C,B) predictor re-measurement to the 5 behaviors #658 measured at only 8 judgments/context (deception, fact_expression, format_style, self_report, persona_drift): collect >=50 eliciting probes per behavior AND judge E0 with a GRADED multi-sampled 0-100 score (per .claude/rules/llm-judging.md) as the PRIMARY DV (binary judge-rate retained as a validated headline); read the predictor with ridge + precision-weighted GLM vs a properly-extracted persona-vector baseline.
 
 ## Why (in-session findings that motivate this)
 
