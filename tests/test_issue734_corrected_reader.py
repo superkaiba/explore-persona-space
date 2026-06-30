@@ -816,3 +816,56 @@ def test_phase1_skip_guard_reruns_on_broken_softmax_identity(monkeypatch, tmp_pa
     monkeypatch.setattr(D, "reread_cell", _fake_reread)
     D.run_phase1(cells_limit=None, smoke=False, dry_run=False)
     assert calls == [cell.eval_key], calls
+
+
+# ── Fix 1 (crash-fix round 7): issue664_dispatch._vllm_engine enforce_eager ───
+# The THIRD vLLM engine site (out of round-5's brief scope): #734's setup_h1_mix
+# shells out to issue664_dispatch.py --phase p0, whose _elicit_marker_R builds the
+# engine via _vllm_engine() -- which hardcoded enforce_eager=False (the same
+# cuda-graph-capture deadlock the round-5 fix removed at the other two sites). The
+# fix threads a local EPM_VLLM_ENFORCE_EAGER knob (default TRUE) into the
+# constructor. CPU-only: monkeypatch the vllm.LLM constructor to RECORD the
+# enforce_eager kwarg without a GPU forward.
+def test_issue664_vllm_engine_enforce_eager_defaults_true(monkeypatch):
+    """Per #734 r7 (PRIMARY): issue664_dispatch._vllm_engine() builds the vLLM
+    engine with enforce_eager=True by DEFAULT (the cuda-graph-capture-deadlock fix
+    for the setup_h1_mix --phase p0 subprocess). The env knob is absent here, so the
+    default must resolve True. Pre-fix: hardcoded False -> the deadlock site."""
+    import issue664_dispatch as D664
+    import vllm
+
+    monkeypatch.delenv("EPM_VLLM_ENFORCE_EAGER", raising=False)
+    recorded: dict = {}
+    monkeypatch.setattr(vllm, "LLM", _stub_vllm_llm(recorded))
+    D664._vllm_engine(2048)
+    assert recorded["enforce_eager"] is True, recorded
+
+
+def test_issue664_vllm_engine_enforce_eager_env_override_false(monkeypatch):
+    """Per #734 r7: EPM_VLLM_ENFORCE_EAGER=0 flips THIS dispatcher's engine back to
+    cuda graphs (the per-pod escape hatch). Confirms the knob threads through the
+    local _enforce_eager() resolver, not a hardcoded constant."""
+    import issue664_dispatch as D664
+    import vllm
+
+    monkeypatch.setenv("EPM_VLLM_ENFORCE_EAGER", "0")
+    recorded: dict = {}
+    monkeypatch.setattr(vllm, "LLM", _stub_vllm_llm(recorded))
+    D664._vllm_engine(2048)
+    assert recorded["enforce_eager"] is False, recorded
+
+
+def test_issue664_enforce_eager_resolver_value_set(monkeypatch):
+    """The local resolver accepts the SAME value set as the round-5 sibling helpers
+    (issue734_common.vllm_enforce_eager / representation_shift._vllm_enforce_eager):
+    '1'/'true'/'True' -> True; anything else -> False; absent -> True (default)."""
+    import issue664_dispatch as D664
+
+    monkeypatch.delenv("EPM_VLLM_ENFORCE_EAGER", raising=False)
+    assert D664._enforce_eager() is True  # absent -> default True
+    for val in ("1", "true", "True"):
+        monkeypatch.setenv("EPM_VLLM_ENFORCE_EAGER", val)
+        assert D664._enforce_eager() is True, val
+    for val in ("0", "false", "False", "no", ""):
+        monkeypatch.setenv("EPM_VLLM_ENFORCE_EAGER", val)
+        assert D664._enforce_eager() is False, val
