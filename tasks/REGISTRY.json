@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 746,
+  "highest_id": 747,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4720,6 +4720,13 @@
       "path": "tasks/planning/746",
       "status": "planning",
       "title": "workflow-fix: gotchas.md FIX-SCOPE addendum for vLLM enforce_eager probe"
+    },
+    "747": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/747",
+      "status": "proposed",
+      "title": "Add cheap CPU-only pod lanes (RunPod CPU3/5 + GCP E2/N2 spot) and prefer them for CPU phases"
     },
     "75": {
       "has_clean_result": true,
