@@ -5,7 +5,7 @@ title: Standardized token-to-token continuity in Qwen-2.5-7B is depth-flat and s
 kind: experiment
 tags: []
 created_at: '2026-06-30T00:55:35Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: Do a deep literature dive on if there's literature on how much each
   activation in a LLM relates to the next one and if there's discontinuities | (clarified)
   over tokens, and also how this changes over layers | sure please run it in the background

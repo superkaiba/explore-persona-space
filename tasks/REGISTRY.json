@@ -4701,7 +4701,7 @@
     },
     "744": {
       "goal": "Characterize how standardized similarity and directional continuity between consecutive-token residual-stream activations vary across layers in Qwen-2.5-7B, and where discontinuities concentrate (token type, surprisal, syntactic boundary).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/744",
       "status": "interpreting",
