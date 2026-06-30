@@ -4808,8 +4808,8 @@
     "758": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/758",
-      "status": "proposed",
+      "path": "tasks/planning/758",
+      "status": "planning",
       "title": "daily-fix: codex-critic must source numbers from reviewed plan"
     },
     "759": {
