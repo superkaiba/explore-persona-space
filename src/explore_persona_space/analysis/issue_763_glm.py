@@ -146,3 +146,43 @@ def glm_predict_loco(
         "overdispersion": overdisp,
         "quasibinomial": quasibinomial,
     }
+
+
+def glm_predict_loco_fixed_dim(
+    x: np.ndarray,
+    y: np.ndarray,
+    n_judged: np.ndarray,
+    dim: int,
+) -> np.ndarray:
+    """LOCO binomial-GLM predictions at a FIXED PCA dim (the null fast path).
+
+    Identical to :func:`glm_predict_loco` EXCEPT the per-fold PCA dim is the
+    passed ``dim`` (fit on the train fold via ``_pca_fit`` / ``_pca_transform``)
+    instead of being re-selected by ``nested_cv_pca_reduce``'s inner-LOO per
+    fold. The basis is STILL fit on the train fold only (no held-out leakage);
+    only the dim NUMBER is fixed. Used inside the shuffle / control nulls of the
+    BINARY-companion read (issue763 BLOCKER analysis-null-infeasible-at-scale):
+    the PCA dim is a regularization-capacity hyperparameter, NOT the permuted
+    label, so it is chosen ONCE on the observed data per layer and held fixed
+    across permutations — removing the ~245x inner-LOO-nested-CV-per-fold cost.
+    ``nested_cv_pca_reduce`` is untouched. Returns (n_ctx,) held-out predictions.
+    """
+    n = x.shape[0]
+    w = np.asarray(n_judged, dtype=np.float64)
+    w = np.where(w < 1, 1.0, w)
+    y = np.asarray(y, dtype=np.float64)
+    preds = np.zeros(n, dtype=np.float64)
+    for i in range(n):
+        tr = [j for j in range(n) if j != i]
+        mu, comps = _pca_fit(x[tr], min(dim, len(tr) - 1))
+        z_tr = _pca_transform(x[tr], mu, comps)
+        z_held = _pca_transform(x[i : i + 1], mu, comps)
+        res = _fit_binomial_glm(z_tr, y[tr], w[tr])
+        if res is None:
+            preds[i] = float(np.mean(y[tr]))
+        else:
+            import statsmodels.api as sm
+
+            zc = sm.add_constant(z_held, has_constant="add")
+            preds[i] = float(res.predict(zc)[0])
+    return preds

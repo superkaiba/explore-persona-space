@@ -79,8 +79,16 @@ from issue763_common import (  # noqa: E402
     reproducibility_metadata,
 )
 
-from explore_persona_space.analysis.issue_763_glm import glm_predict_loco  # noqa: E402
-from explore_persona_space.analysis.issue_763_pca import nested_cv_pca_reduce  # noqa: E402
+from explore_persona_space.analysis.issue_763_glm import (  # noqa: E402
+    glm_predict_loco,
+    glm_predict_loco_fixed_dim,
+)
+from explore_persona_space.analysis.issue_763_pca import (  # noqa: E402
+    _pca_fit,
+    _pca_transform,
+    nested_cv_pca_reduce,
+    select_pca_dim,
+)
 from explore_persona_space.analysis.issue_763_reliability import compute_bracket  # noqa: E402
 
 
@@ -127,6 +135,56 @@ def _ridge_predict_loco_pca(
         mse = _press_loo_mse_per_lambda(Xtr_n, Ytr, lambdas)
         best_lam = lambdas[int(torch.argmin(mse).item())]
         weights = _ridge_dual_weights(Xtr_n, Ytr, best_lam)  # (d, 1)
+        x_held = torch.from_numpy(np.ascontiguousarray(z_held[0])).to(
+            device=device, dtype=torch.float64
+        )
+        x_held_n = (x_held - mu) / sd
+        preds[i] = float((x_held_n @ weights).detach().cpu().numpy().reshape(-1)[0])
+    return preds
+
+
+def _ridge_predict_loco_fixed_dim(
+    x: np.ndarray, y: np.ndarray, n_judged: np.ndarray, lambdas: list[float], dim: int
+) -> np.ndarray:
+    """LOCO ridge predictions at a FIXED PCA dim (the null fast path).
+
+    Identical to ``_ridge_predict_loco_pca`` EXCEPT the per-fold PCA dim is the
+    passed ``dim`` (fit on the train fold via the shared ``_pca_fit`` /
+    ``_pca_transform``) instead of being re-selected by the inner-LOO nested-CV
+    per fold. The PCA basis is STILL fit on the train fold only (no held-out
+    leakage); only the dim NUMBER is fixed. Used inside the shuffle / control
+    nulls (BLOCKER analysis-null-infeasible-at-scale): the regularization
+    CAPACITY (the PCA dim) is a hyperparameter, NOT the permuted label, so it is
+    chosen ONCE on the observed data per layer and held fixed across permutations
+    — this preserves the layer-SELECTION-inflation guard (the null still re-runs
+    the full per-layer sweep + re-picks the best layer per perm) while removing
+    the ~245x inner-LOO-nested-CV-per-fold cost that made the 1000-perm null
+    project to ~580h/behavior/DV. ``nested_cv_pca_reduce`` is untouched; this is
+    a sibling fast path over the same public ``_pca_fit``/``_pca_transform``.
+
+    Returns (n_ctx,) held-out scalar predictions.
+    """
+    n = x.shape[0]
+    w = np.asarray(n_judged, dtype=np.float64)
+    w = np.where(w < 1, 1.0, w)
+    y = np.asarray(y, dtype=np.float64)
+    device = torch.device(DEVICE)
+    preds = np.zeros(n, dtype=np.float64)
+    for i in range(n):
+        tr = [j for j in range(n) if j != i]
+        mu_p, comps = _pca_fit(x[tr], dim)  # train-fold basis at the FIXED dim
+        z_tr = _pca_transform(x[tr], mu_p, comps)
+        z_held = _pca_transform(x[i : i + 1], mu_p, comps)
+        Xtr = torch.from_numpy(np.ascontiguousarray(z_tr)).to(device=device, dtype=torch.float64)
+        Ytr = torch.from_numpy(np.ascontiguousarray(y[tr].reshape(-1, 1))).to(
+            device=device, dtype=torch.float64
+        )
+        mu = Xtr.mean(0)
+        sd = Xtr.std(0, correction=0) + 1e-9
+        Xtr_n = (Xtr - mu) / sd
+        mse = _press_loo_mse_per_lambda(Xtr_n, Ytr, lambdas)
+        best_lam = lambdas[int(torch.argmin(mse).item())]
+        weights = _ridge_dual_weights(Xtr_n, Ytr, best_lam)
         x_held = torch.from_numpy(np.ascontiguousarray(z_held[0])).to(
             device=device, dtype=torch.float64
         )
@@ -201,6 +259,7 @@ def _layer_sweep_select(
     predictor: str,
     *,
     rb: np.ndarray | None = None,
+    fixed_dims: list[int] | None = None,
 ) -> dict:
     """Run the predictor at EVERY layer, return per-layer ρ + the chosen layer.
 
@@ -213,20 +272,35 @@ def _layer_sweep_select(
     LOCO is implicit (the projection is fixed; we still hold out per context for
     the Spearman to match the other arms' protocol — projection has no fitted
     parameters so LOCO ρ == in-sample ρ for PV, by construction).
+
+    ``fixed_dims`` (per-layer PCA dim) routes ridge/glm through the FIXED-dim
+    fast path (``_ridge_predict_loco_fixed_dim`` / ``glm_predict_loco_fixed_dim``)
+    instead of the per-fold nested-CV (BLOCKER analysis-null-infeasible-at-scale):
+    the nulls precompute the observed-data per-layer dim ONCE and pass it here so
+    the dim selection (a capacity hyperparameter, NOT the permuted label) is not
+    re-done ~245x per fold per permutation. ``fixed_dims=None`` keeps the full
+    nested-CV path for the OBSERVED-data read (the headline ρ is selected
+    honestly; only the null re-runs use the fixed dim).
     """
     _n_ctx, n_layers, _h = v0.shape
     per_layer_rho: list[float | None] = []
     per_layer_pred: list[np.ndarray | None] = []
     for ell in range(n_layers):
         x = v0[:, ell, :]  # (n_ctx, H)
+        fd = fixed_dims[ell] if fixed_dims is not None else None
         if predictor == "glm":
-            res = glm_predict_loco(x, y, n_judged)
-            pred = res["pred"]
+            if fd is not None:
+                pred = glm_predict_loco_fixed_dim(x, y, n_judged, fd)
+            else:
+                pred = glm_predict_loco(x, y, n_judged)["pred"]
         elif predictor == "ridge":
             # PCA-reduced ridge on the SAME per-fold reduction the GLM consumes
             # (#763 BLOCKER ridge-pca-comparator) — matched capacity so the
             # ρ_ridge − ρ_GLM optimism delta is apples-to-apples.
-            pred = _ridge_predict_loco_pca(x, y, n_judged, RIDGE_LAMBDAS)
+            if fd is not None:
+                pred = _ridge_predict_loco_fixed_dim(x, y, n_judged, RIDGE_LAMBDAS, fd)
+            else:
+                pred = _ridge_predict_loco_pca(x, y, n_judged, RIDGE_LAMBDAS)
         elif predictor == "pv":
             assert rb is not None
             direction = rb[ell]  # (H,)
@@ -249,15 +323,43 @@ def _layer_sweep_select(
     }
 
 
+def _observed_layer_dims(v0: np.ndarray, y: np.ndarray, n_judged: np.ndarray) -> list[int]:
+    """Per-layer PCA dim selected ONCE on the OBSERVED data (the null's fixed dim).
+
+    For each layer, runs the SAME nested-CV ``select_pca_dim`` on the full
+    observed data (no permutation) and returns the chosen dim per layer. The
+    nulls reuse these across all permutations so the dim selection — a capacity
+    hyperparameter, NOT the permuted label — is computed once, not per-fold
+    per-perm (BLOCKER analysis-null-infeasible-at-scale). This does NOT leak the
+    label into the null distribution: every PERMUTATION still re-fits the ridge/
+    GLM at this fixed dim on its own shuffled labels (the fit + the layer
+    re-selection are permuted), and the dim is a regularization choice fixed by
+    the design, exactly as λ ∈ RIDGE_LAMBDAS and the d-grid are design constants.
+    """
+    _n_ctx, n_layers, _h = v0.shape
+    dims: list[int] = []
+    for ell in range(n_layers):
+        dims.append(select_pca_dim(v0[:, ell, :], y, n_judged))
+    return dims
+
+
 def _shuffle_null(v0, y, n_judged, predictor, *, rb, n_perms, seed) -> dict:
     """Shuffle-label null: permute E0, re-run the FULL layer-sweep+select per perm.
 
-    Returns the right-tail p of the OBSERVED chosen-layer ρ_GLM vs the null's
+    Returns the right-tail p of the OBSERVED chosen-layer ρ vs the null's
     chosen-layer ρ distribution (brief concern #2: refit the FULL select
-    procedure per permutation — NOT permute on the already-selected layer).
+    procedure per permutation — NOT permute on the already-selected layer). The
+    per-layer PCA dim is FIXED to the observed-data nested-CV selection
+    (``_observed_layer_dims``) and reused across permutations — the layer
+    SELECTION is still re-run per perm (the inflation guard), only the
+    capacity-hyperparameter dim is held fixed (BLOCKER
+    analysis-null-infeasible-at-scale; ~245x speedup, no label leakage — see
+    ``_observed_layer_dims``). PV has no fitted dim, so ``fixed_dims`` is unused
+    there.
     """
     rng = random.Random(seed)
-    obs = _layer_sweep_select(v0, y, n_judged, predictor, rb=rb)
+    fixed_dims = None if predictor == "pv" else _observed_layer_dims(v0, y, n_judged)
+    obs = _layer_sweep_select(v0, y, n_judged, predictor, rb=rb, fixed_dims=fixed_dims)
     obs_rho = obs["chosen_rho"]
     if obs_rho is None:
         return {"observed_rho": None, "p_value": None, "n_perms": 0, "null_rhos": []}
@@ -267,7 +369,7 @@ def _shuffle_null(v0, y, n_judged, predictor, *, rb, n_perms, seed) -> dict:
         rng.shuffle(idx)
         y_perm = y[idx]
         nj_perm = n_judged[idx]
-        sel = _layer_sweep_select(v0, y_perm, nj_perm, predictor, rb=rb)
+        sel = _layer_sweep_select(v0, y_perm, nj_perm, predictor, rb=rb, fixed_dims=fixed_dims)
         if sel["chosen_rho"] is not None:
             null_rhos.append(sel["chosen_rho"])
     if not null_rhos:
@@ -356,8 +458,15 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
     rb = rb_blob["r_b"].float().numpy() if rb_blob is not None else None
 
     # ── PRIMARY: the GRADED DV (y = graded_mean), headline predictor = RIDGE ──
+    # Ridge + PV consume the RAW 0-100 graded mean (Spearman is rank-based, so the
+    # held-out ρ is scale-invariant). The graded-GLM comparator is a BINOMIAL GLM
+    # whose logit-link endog MUST be a [0,1] rate, so it consumes graded/100 — the
+    # 0-100 mean rescaled to a fraction (NOT clipped to ~1.0 as a raw 0-100 value
+    # would be by _fit_binomial_glm's [1e-6, 1-1e-6] interior clamp). ρ is still
+    # rank-invariant, so the comparator stays comparable to the ridge headline.
+    graded01 = graded / 100.0
     ridge_g = _layer_sweep_select(v0_kept, graded, n_judged, "ridge")
-    glm_g = _layer_sweep_select(v0_kept, graded, n_judged, "glm")  # graded-GLM comparator
+    glm_g = _layer_sweep_select(v0_kept, graded01, n_judged, "glm")  # graded-GLM comparator
     pv_g = (
         _layer_sweep_select(v0_kept, graded, n_judged, "pv", rb=rb)
         if rb is not None
