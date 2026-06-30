@@ -4,6 +4,7 @@ title: 'Decoding-ceiling, linear-information-loss, and sample-complexity of #658
 kind: experiment
 tags:
 - leak-predictor
+- keep-running
 created_at: '2026-06-30T00:23:55Z'
 has_clean_result: false
 parent_id: 658
