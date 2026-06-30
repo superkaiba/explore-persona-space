@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 775,
+  "highest_id": 776,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4946,6 +4946,13 @@
       "path": "tasks/proposed/775",
       "status": "proposed",
       "title": "workflow-fix: auto-failover RunPod CUDA-IMA host-wedge to a fresh host"
+    },
+    "776": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/776",
+      "status": "proposed",
+      "title": "workflow-fix: treat in-flight Batch/long-analysis phases as healthy-slow"
     },
     "78": {
       "has_clean_result": false,
