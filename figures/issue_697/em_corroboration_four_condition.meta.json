@@ -1,0 +1,60 @@
+{
+  "commit": "c39d3458f2",
+  "created": "2026-06-30T07:21:45Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Misaligned response rate (%), judge-scored": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "Misaligned response rate (%), judge-scored": 5.241935483870968,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "Misaligned response rate (%), judge-scored": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "Misaligned response rate (%), judge-scored": 5.040322580645161,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Misaligned response rate (%), judge-scored": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "Misaligned response rate (%), judge-scored": 4.627766599597585,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "Misaligned response rate (%), judge-scored": 0.2008032128514056,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.18,
+      "Misaligned response rate (%), judge-scored": 5.8232931726907635,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8
+}
