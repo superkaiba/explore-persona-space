@@ -4829,8 +4829,8 @@
     "760": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/760",
-      "status": "proposed",
+      "path": "tasks/planning/760",
+      "status": "planning",
       "title": "recurring reaper for leaked Codex app-server daemons"
     },
     "77": {
