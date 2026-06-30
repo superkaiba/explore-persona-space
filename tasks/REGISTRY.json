@@ -4852,8 +4852,8 @@
       "goal": "Extend the matched-probe v0(C,B)->E0(C,B) predictor re-measurement to the 5 behaviors #658 measured at only 8 judgments/context (deception, fact_expression, format_style, self_report, persona_drift): collect >=50 eliciting probes/judgments per behavior so v0 and E0 share probes AND m is high enough for a trustworthy reliability ceiling, then read the predictor with a precision-weighted binomial GLM (primary) vs ridge vs a properly-extracted persona-vector baseline. Motivated by the in-session GLM-vs-ridge finding that ridge was optimistic by 0.05-0.11 at m=8.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/763",
-      "status": "approved",
+      "path": "tasks/running/763",
+      "status": "running",
       "title": "Matched-probe v0->E0 predictor re-measurement \u2014 phase 2 (5 low-m behaviors: deception/fact/format/self_report/persona_drift, >=50 judgments + matched v0)"
     },
     "764": {
