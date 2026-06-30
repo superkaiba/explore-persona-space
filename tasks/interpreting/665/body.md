@@ -1,6 +1,6 @@
 ---
-title: 'Phase 3 — A3.6-A3.10 + joint factorization on the trained store (leakage program
-  #660)'
+title: The pre-fine-tuning gate does not reliably predict the realized leakage gate
+  on the trained store (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-25T07:26:50Z'
