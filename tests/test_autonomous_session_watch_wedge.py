@@ -816,17 +816,20 @@ def test_wedge_failover_handle_read_raises_degrades_to_alert(monkeypatch, tmp_pa
 
 
 def test_wedge_failover_raise_after_terminate_routes_to_blocked(monkeypatch, tmp_path):
-    # item 9 (#770 v2 r2 — REPLACES the obsolete "degrades_to_alert" assertion):
+    # item 9 (#770 v2 r3 — POST-terminate raise, pod GONE per the liveness probe):
     # _failover_wedged_runpod terminates the wedged pod BEFORE the re-provision, so
-    # an UNEXPECTED raise after that point must NOT degrade to "alert" (which would
-    # post no durable record and could not be retried next tick — the
-    # likely-terminated pod is gone from the RUNNING-only snapshot). Mirror the
+    # a raise AFTER that point must NOT degrade to "alert" (which would post no
+    # durable record and could not be retried next tick — the terminated pod is gone
+    # from the RUNNING-only snapshot). The except branch PROBES get_pod_by_name; a
+    # None (pod gone) confirms the raise was post-terminate, so it mirrors the
     # poller's caller defense (backend_poll ~1864-1880): convert the raise to a
     # ("blocked", terminal) outcome carrying failure_class=infra
     # reason=runpod_wedge_failover_error so the caller records it durably. Still
     # fail-LOUD (does not crash the watcher tick) and no double-action.
     _stub_handle_sidecar(monkeypatch, tmp_path)
     _stub_failover_fn(monkeypatch, raises=RuntimeError("router exploded"))
+    # The pod is GONE (post-terminate raise) -> the liveness probe returns None.
+    monkeypatch.setattr(asw, "get_pod_by_name", lambda name: None)
     outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
     assert outcome == "blocked"
     assert terminal is not None
@@ -836,6 +839,42 @@ def test_wedge_failover_raise_after_terminate_routes_to_blocked(monkeypatch, tmp
     # The raised exception type+message is carried in the log_tail for a human.
     assert "RuntimeError" in terminal["log_tail_excerpt"]
     assert "router exploded" in terminal["log_tail_excerpt"]
+
+
+def test_wedge_failover_preterminate_raise_pod_alive_degrades_to_alert(monkeypatch, tmp_path):
+    # item 9b (#770 v2 r3 BLOCKER watcher-failover-preterminate-raise-falsely-blocks-
+    # live-pod): _failover_wedged_runpod has fallible PRE-terminate steps (the
+    # _runpod_wedge_already_handled lease check; _wedged_run_inputs_on_hf ->
+    # huggingface_hub.list_repo_files) that can raise BEFORE terminate_pod, leaving
+    # the pod RUNNING+billing. Mapping that raise to "blocked" would post a FALSE
+    # terminal record (claiming the pod terminated) AND clear the wedge clock. The
+    # except branch PROBES get_pod_by_name; a non-None (pod still ALIVE) confirms the
+    # raise was pre-terminate, so it degrades to "alert" (no terminal_json) — the
+    # clock is preserved for a next-tick retry, never a false terminal record.
+    _stub_handle_sidecar(monkeypatch, tmp_path)
+    _stub_failover_fn(monkeypatch, raises=RuntimeError("HF list_repo_files blip pre-terminate"))
+    # The pod is still ALIVE (pre-terminate raise) -> the liveness probe returns it.
+    monkeypatch.setattr(asw, "get_pod_by_name", lambda name: _wedged_info())
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "alert"
+    assert terminal is None  # no terminal record on the alert degrade
+
+
+def test_wedge_failover_preterminate_raise_probe_raises_degrades_to_alert(monkeypatch, tmp_path):
+    # item 9c (#770 v2 r3): the liveness probe itself can raise (network/transport
+    # on get_pod_by_name). The pod's terminate state is then UNCERTAIN -> bias SAFE:
+    # degrade to "alert" (preserve the clock) rather than post a possibly-false
+    # terminal "blocked" record.
+    _stub_handle_sidecar(monkeypatch, tmp_path)
+    _stub_failover_fn(monkeypatch, raises=RuntimeError("router exploded"))
+
+    def _probe_boom(name):
+        raise RuntimeError("RunPod API transport error")
+
+    monkeypatch.setattr(asw, "get_pod_by_name", _probe_boom)
+    outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
+    assert outcome == "alert"
+    assert terminal is None
 
 
 def test_wedge_failover_already_handled_is_noop(monkeypatch, tmp_path):
@@ -1159,6 +1198,11 @@ def test_wedge_failover_raise_after_terminate_routes_to_blocked_redrivable(
         raise RuntimeError("router exploded post-terminate")
 
     monkeypatch.setattr(bp, "_failover_wedged_runpod", _fake_failover)
+    # #770 v2 r3: the except branch probes get_pod_by_name to distinguish a
+    # POST-terminate raise (pod GONE -> "blocked") from a PRE-terminate one (pod
+    # ALIVE -> "alert"). This test exercises the POST-terminate path, so the pod is
+    # gone -> the probe returns None.
+    monkeypatch.setattr(asw, "get_pod_by_name", lambda name: None)
     # Reconstruct a handle naming the wedged pod (so the sidecar-binding defense
     # passes and the failover call is actually reached) — _stub_handle_sidecar
     # writes a sidecar + handle whose pod_name == _wedged_info().name == "pod-692".
@@ -1215,6 +1259,76 @@ def test_wedge_failover_raise_after_terminate_routes_to_blocked_redrivable(
     # is resolved from the watcher's vantage; not re-fired next tick).
     loaded = asw._load_pod_safety_state(692)
     assert loaded["wedge_first_seen"] is None
+
+
+def test_wedge_failover_preterminate_raise_does_not_falsely_block_live_pod(
+    isolated_registry, monkeypatch
+):
+    # #770 v2 r3 BLOCKER (watcher-failover-preterminate-raise-falsely-blocks-live-pod):
+    # a PRE-terminate raise from _failover_wedged_runpod (an HF list_repo_files blip
+    # / lease-check error BEFORE terminate_pod) leaves the wedged pod RUNNING+billing.
+    # Mapping that raise to ("blocked", runpod_wedge_failover_error) would post a FALSE
+    # durable record (the marker text claims the pod was "likely terminated") AND clear
+    # the wedge clock, while the pod keeps billing — and reason
+    # runpod_wedge_failover_error is not re-drivable, so capacity-retry never re-drives
+    # it. End-to-end through _process_pod: the except branch PROBES get_pod_by_name; a
+    # non-None (pod still ALIVE) confirms the raise was pre-terminate, so _wedge_failover
+    # returns ("alert", None) and the whole path degrades to ALERT — no epm:failure, no
+    # status:blocked, and the wedge clock is PRESERVED so the next tick re-detects the
+    # still-RUNNING wedge and re-matures it.
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+    import backend_poll as bp
+
+    def _fake_failover(*, issue, handle, result, sidecar):
+        raise RuntimeError("HF list_repo_files blip pre-terminate")
+
+    monkeypatch.setattr(bp, "_failover_wedged_runpod", _fake_failover)
+    # The pod is STILL ALIVE (pre-terminate raise) -> the liveness probe returns it.
+    monkeypatch.setattr(asw, "get_pod_by_name", lambda name: _wedged_info())
+    sidecar_dir = isolated_registry / "_sidecar"
+    sidecar_dir.mkdir()
+    _stub_handle_sidecar(monkeypatch, tmp_path=sidecar_dir)
+    failure_notes: list[str] = []
+    blocked_calls: list[int] = []
+    progress_labels: list[str] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_stop_pod",
+        lambda issue, dry_run: (_ for _ in ()).throw(
+            AssertionError("watcher must never _stop_pod")
+        ),
+    )
+    monkeypatch.setattr(
+        asw, "_post_failure_marker", lambda issue, note, dry_run: failure_notes.append(note) or True
+    )
+    monkeypatch.setattr(
+        asw, "_set_status_blocked", lambda issue, dry_run: blocked_calls.append(issue) or True
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: progress_labels.append(label),
+    )
+
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+
+    # (a) NO durable terminal record — neither epm:failure nor status:blocked fired
+    # (the pod is alive; a terminal record would be false).
+    assert failure_notes == []
+    assert blocked_calls == []
+    # (b) it degraded to the ALERT path (a wedge-alert progress note, NOT a
+    # wedge-failover terminal note).
+    assert "wedge-alert" in progress_labels
+    assert "wedge-failover" not in progress_labels
+    # (c) the wedge clock is PRESERVED (non-None) so the next tick re-detects the
+    # still-RUNNING wedge and re-matures it — never silently stranded.
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] is not None
 
 
 @pytest.mark.parametrize(
