@@ -209,7 +209,7 @@ def fig4():
         "random_cv": paper_palette_role("accent"),
         "norm_matched": "#E69F00",
     }
-    fig, ax = plt.subplots(figsize=(8.0, 5.0))
+    fig, ax = plt.subplots(figsize=(10.5, 5.0))
     ncells = len(cells)
     nvar = len(order)
     gw = 0.8
@@ -234,7 +234,7 @@ def fig4():
     ax.set_xticklabels(list(cells.values()), fontsize=8.5, rotation=45, ha="right")
     ax.set_ylabel("patch effect on activation\n(1 = moved to FT profile, 0 = at base)")
     ax.set_ylim(0, 1.25)
-    ax.legend(loc="upper center", ncol=3, frameon=False, fontsize=7.5, bbox_to_anchor=(0.5, -0.42))
+    ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), frameon=False, fontsize=8.5)
     set_title_subtitle(
         ax,
         "The real context-vector patch does not separate from the floor controls",
