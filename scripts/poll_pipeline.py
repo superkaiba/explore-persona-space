@@ -2305,6 +2305,31 @@ def _log_staleness_secs(
     return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
 
 
+def _tail_excerpt_and_crash_signature(
+    probe: dict[str, str], *, status: str, mtime_epoch: int, cell_mtime_epoch: int
+) -> tuple[str, str | None]:
+    """Slice the (5-line excerpt, WIDE crash signature) from the freshest log tail.
+
+    The fresher log (cell tail when cell logs exist AND are fresher than the main
+    log, else the main-log tail) is the WIDE 500-line surface the probe already
+    fetched. The notification excerpt is its last 5 lines (unchanged behavior).
+    The #775 ``crash_signature`` is the WHOLE wide tail on a ``status=="dead"``
+    poll (``None`` otherwise) — NOT the 5-line excerpt, which truncates a 20-50
+    line vLLM CUDA-IMA traceback so a signature match on it would silently never
+    fire. The whole wide tail is stored so the failover predicate can ALSO scan
+    it for the OUR_CODE_FRAME exclusion. Pure (no SSH); extracted from
+    :func:`poll_once` so the slice logic is unit-testable without driving the
+    full poller (the #775 B2 test binds to THIS helper).
+    """
+    if cell_mtime_epoch > 0 and cell_mtime_epoch > mtime_epoch:
+        wide_tail = probe["cell_log_tail"]
+    else:
+        wide_tail = probe["log_tail"]
+    tail_excerpt = "\n".join(wide_tail.splitlines()[-5:])
+    crash_signature = wide_tail if status == "dead" else None
+    return tail_excerpt, crash_signature
+
+
 def poll_once(
     *,
     issue: int,
@@ -2702,19 +2727,9 @@ def poll_once(
     # output, eval progress) rather than the stale dispatcher tail. When
     # both are zero (no logs yet) or the main log is fresher, fall back
     # to the main-log tail (preserves prior behavior for non-cell runs).
-    if cell_mtime_epoch > 0 and cell_mtime_epoch > mtime_epoch:
-        wide_tail = probe["cell_log_tail"]
-    else:
-        wide_tail = probe["log_tail"]
-    tail_excerpt = "\n".join(wide_tail.splitlines()[-5:])
-    # #775: capture the crash signature from the WIDE 500-line tail (the same
-    # surface ``tail_excerpt`` was sliced from), NOT the 5-line excerpt — a vLLM
-    # CUDA-IMA traceback spans 20-50 lines and is routinely truncated out of the
-    # last 5, so a signature match on the excerpt would silently never fire. Pure
-    # string read; the probe ALREADY fetched 500 lines, so no extra SSH call. The
-    # whole wide tail is stored (None unless the poll is dead) so the failover
-    # predicate can ALSO scan it for the OUR_CODE_FRAME exclusion.
-    crash_signature = wide_tail if status == "dead" else None
+    tail_excerpt, crash_signature = _tail_excerpt_and_crash_signature(
+        probe, status=status, mtime_epoch=mtime_epoch, cell_mtime_epoch=cell_mtime_epoch
+    )
     return PollResult(
         status=status,
         current_phase=current_phase,

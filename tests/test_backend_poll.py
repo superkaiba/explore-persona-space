@@ -1057,3 +1057,208 @@ def test_async_cpu_handle_no_intent_key_does_not_fail_over() -> None:
     assert (
         _is_gcp_async_workload_failure(handle, _poll("dead", "terminal_workload_failed")) is False
     )
+
+
+# ---------------------------------------------------------------------------
+# #775 — RunPod CUDA-IMA repeat-failover, end-to-end via backend_poll_main
+# ---------------------------------------------------------------------------
+
+#: A realistic vLLM CUDA-IMA crash surface whose signature line is in the body.
+_CUDA_IMA_SURFACE = (
+    "step 41 forward ok\n"
+    "ERROR torch.AcceleratorError: CUDA error: an illegal memory access was encountered\n"
+    "vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue\n"
+    "(EngineCore_DP0 pid=99) Engine core proc EngineCore_DP0 died unexpectedly\n"
+    "INFO shutting down client\nsubprocess returncode: 1\n"
+)
+
+
+def _runpod_handle_775(extra_overrides: dict | None = None) -> RunHandle:
+    """A router-launched-shape RunPod handle (carries the relaunch RunSpec fields)."""
+    extra = {
+        "issue": 775,
+        "intent": "lora-7b",
+        "workload_cmd": "bash scripts/issue664_dispatch.sh --foo",
+        "hydra_args": [],
+        "gpus": 1,
+        "time_budget_hours": 4.0,
+    }
+    if extra_overrides:
+        extra.update(extra_overrides)
+    return RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-fake-775",
+        pod_name="pod-775",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-775.log",
+        extra=extra,
+    )
+
+
+def _cuda_ima_dead_poll_base() -> PollResult:
+    """A dead base.PollResult carrying the CUDA-IMA crash surface on crash_signature."""
+    return PollResult(
+        status="dead",
+        current_phase="dead",
+        new_milestone=True,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=False,
+        log_tail_excerpt="subprocess returncode: 1",
+        crash_signature=_CUDA_IMA_SURFACE,
+    )
+
+
+def _seed_cuda_ima_record(sidecar: Path) -> None:
+    """Write a prior-CUDA-IMA-crash record into the sidecar extra (a prior crash
+    this run), so the NEXT CUDA-IMA poll is a SECOND same-signature repeat."""
+    payload = json.loads(sidecar.read_text())
+    payload.setdefault("extra", {})["runpod_cuda_ima_last_seen"] = {"ts": 1.0, "sig": "cuda_ima"}
+    sidecar.write_text(json.dumps(payload))
+
+
+def test_poller_first_cuda_ima_falls_through_to_dead(tmp_path, monkeypatch, capsys):
+    """The FIRST CUDA-IMA dead poll (no prior record) records + falls through to
+    the ordinary dead path — no escalation, no failover."""
+    sidecar = tmp_path / "issue-775-handle.json"
+    write_handle_sidecar(_runpod_handle_775(), sidecar)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_cuda_ima_dead_poll_base()),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "775", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] != "runpod_noport_wedge_failover_fresh_pod"
+    assert len(rp.launches) == 0  # no failover on the first crash
+    # The record was written so the NEXT crash is a repeat.
+    payload = json.loads(sidecar.read_text())
+    assert "runpod_cuda_ima_last_seen" in (payload.get("extra") or {})
+
+
+def test_poller_second_cuda_ima_emits_fresh_host_failover(tmp_path, monkeypatch, capsys):
+    """A SECOND same-signature CUDA-IMA dead poll (prior record seeded) drives
+    main() through the fresh-host failover, emitting a RUNNING-shaped JSON and
+    re-pointing the sidecar at a fresh RunPod handle."""
+    sidecar = tmp_path / "issue-775-handle.json"
+    write_handle_sidecar(_runpod_handle_775(), sidecar)
+    _seed_cuda_ima_record(sidecar)
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_cuda_ima_dead_poll_base()),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    # The crashed pod is already dead -> get_pod_by_name returns None (terminate skipped).
+    import runpod_api
+
+    monkeypatch.setattr(runpod_api, "get_pod_by_name", lambda name: None, raising=False)
+    # The inputs-on-HF gate is OK (no selected cells -> nothing partial).
+    monkeypatch.setattr(
+        "scripts.backend_poll._issue_cells_for_handle", lambda issue, handle: [], raising=False
+    )
+
+    rc = backend_poll_main(["--issue", "775", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "runpod_noport_wedge_failover_fresh_pod"
+    assert len(rp.launches) == 1  # exactly one fresh-host pivot
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+
+
+def test_poller_cuda_ima_before_noport_when_transient_no_port(tmp_path, monkeypatch, capsys):
+    """M2 — a SECOND CUDA-IMA dead poll that COINCIDES with a transient
+    RUNNING-no-port pod still takes the CUDA-IMA path: the no-port within-K
+    status=dead->running rewrite (which runs AFTER) does NOT mask it."""
+    import runpod_api
+
+    sidecar = tmp_path / "issue-775-handle.json"
+    write_handle_sidecar(_runpod_handle_775(), sidecar)
+    _seed_cuda_ima_record(sidecar)
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_cuda_ima_dead_poll_base()),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    # A live PodInfo that IS RUNNING-but-no-port (the transient condition the
+    # no-port within-K path would rewrite to running) — but the CUDA-IMA block
+    # runs FIRST, so the failover fires before the no-port path is reached.
+    info = type(
+        "PI",
+        (),
+        {
+            "pod_id": "pod-id-775",
+            "name": "pod-775",
+            "desired_status": "RUNNING",
+            "ssh_host": None,
+            "ssh_port": None,
+            "gpu_count": 1,
+            "gpu_type_id": "H100",
+            "created_at": None,
+        },
+    )()
+    monkeypatch.setattr(runpod_api, "get_pod_by_name", lambda name: info, raising=False)
+    monkeypatch.setattr(runpod_api, "terminate_pod", lambda pid: None, raising=False)
+    monkeypatch.setattr(
+        "scripts.backend_poll._issue_cells_for_handle", lambda issue, handle: [], raising=False
+    )
+
+    rc = backend_poll_main(["--issue", "775", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    # The CUDA-IMA failover fired (fresh-host phase), NOT the no-port observed /
+    # within-K running rewrite (which would have masked the dead poll).
+    assert out["status"] == "running"
+    assert out["current_phase"] == "runpod_noport_wedge_failover_fresh_pod"
+    assert out["current_phase"] != "runpod_no_port_observed"
+    assert len(rp.launches) == 1
+
+
+def test_poller_cuda_ima_failover_exhausted_emits_code(tmp_path, monkeypatch, capsys):
+    """M1 — after the one bounded pivot (the durable lease records a CUDA-IMA
+    failover), a SECOND same-signature crash on the fresh host emits
+    failure_class:code (reason=cuda_ima_repeats_after_failover), AND that marker
+    is NOT a transient-capacity block (so the watcher parks it at blocked)."""
+    from scripts.autonomous_session_watch import _is_transient_capacity_block
+
+    sidecar = tmp_path / "issue-775-handle.json"
+    write_handle_sidecar(_runpod_handle_775(), sidecar)
+    _seed_cuda_ima_record(sidecar)
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_cuda_ima_dead_poll_base()),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    # The durable lease ALREADY records a CUDA-IMA failover for this run (the
+    # once-more bound is spent): mock the lease-record read to True.
+    monkeypatch.setattr(
+        "scripts.backend_poll._lease_records_runpod_cuda_ima_failover",
+        lambda *a, **k: True,
+        raising=False,
+    )
+
+    rc = backend_poll_main(["--issue", "775", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "code"
+    assert out["reason"] == "cuda_ima_repeats_after_failover"
+    assert len(rp.launches) == 0  # NO second pivot
+    # The watcher's capacity-retry gate must NOT re-drive this (it is code, not
+    # transient infra) — build the marker shape _is_transient_capacity_block reads.
+    marker_note = f"failure_class: {out['failure_class']}\nreason: {out['reason']}"
+    retriable, _reason, _ts = _is_transient_capacity_block(
+        [{"kind": "epm:failure v1", "note": marker_note, "ts": "2026-06-30T00:00:00Z"}]
+    )
+    assert retriable is False

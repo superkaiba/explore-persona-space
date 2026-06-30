@@ -888,3 +888,472 @@ def test_failover_legacy_handle_missing_spec_returns_terminal_json(tmp_path, mon
     assert out["status"] == "dead"
     assert out["reason"] == "runpod_wedge_relaunch_spec_missing"
     assert out["failure_class"] == "infra"
+
+
+# ===========================================================================
+# #775 — RunPod CUDA-IMA repeat host-wedge failover
+# ===========================================================================
+#
+# The signature-keyed repeat detection (_maybe_escalate_runpod_cuda_ima), the
+# narrow failover predicate (_is_runpod_cuda_ima_failure), the signature record
+# family (_read/_write/_clear_runpod_cuda_ima_record + the cross-pod fallback),
+# and the bounded-once fresh-host failover (_failover_cuda_ima_runpod) with the
+# _terminal_code_json exhaustion. Mirrors the Part C structure above; all RunPod
+# live-API I/O is mocked, the lease uses a tmp dir, no GPU, no network.
+
+# A realistic ~30-line vLLM CUDA-IMA traceback whose SIGNATURE line sits well
+# beyond the last 5 lines (the B2 truncation the design must survive). The final
+# 5 lines are a subprocess-returncode tail that does NOT carry the signature.
+_CUDA_IMA_WIDE_TRACEBACK = "\n".join(
+    [f"[rank0] step {i}: forward ok" for i in range(20)]
+    + [
+        "ERROR torch.AcceleratorError: CUDA error: an illegal memory access was encountered",
+        "  Compile with TORCH_USE_CUDA_DSA to enable device-side assertions.",
+        "vllm.v1.engine.exceptions.EngineDeadError: EngineCore encountered an issue",
+        "(EngineCore_DP0 pid=4242) Engine core proc EngineCore_DP0 died unexpectedly",
+    ]
+    # 6 trailing non-signature lines so the LAST 5 carry NO signature (B2).
+    + [
+        "INFO shutting down client",
+        "subprocess returncode: 1",
+        "Traceback (most recent call last):",
+        '  File "/usr/lib/python3.11/runpy.py", line 198, in _run_module_as_main',
+        "SystemExit: 1",
+        "+ echo done",
+    ]
+)
+
+
+def _cuda_ima_dead_poll(signature: str = _CUDA_IMA_WIDE_TRACEBACK) -> PollResult:
+    """A dead PollResult carrying the WIDE CUDA-IMA crash surface on
+    ``crash_signature`` (what RunPodBackend.poll threads through from poll_once)."""
+    return PollResult(
+        status="dead",
+        current_phase="dead",
+        new_milestone=True,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=False,
+        log_tail_excerpt="\n".join(_CUDA_IMA_WIDE_TRACEBACK.splitlines()[-5:]),
+        crash_signature=signature,
+    )
+
+
+# ---------------------------------------------------------------------------
+# A. predicate scope
+# ---------------------------------------------------------------------------
+
+
+def test_is_runpod_cuda_ima_failure_predicate():
+    wedged = PollResult(
+        status="dead",
+        current_phase=bp.RUNPOD_CUDA_IMA_WEDGED_PHASE,
+        new_milestone=True,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=False,
+        log_tail_excerpt="",
+    )
+    # True for a RunPod handle whose poll surfaced the CUDA-IMA wedged phase.
+    assert bp._is_runpod_cuda_ima_failure(_runpod_handle(), wedged) is True
+    # False for a GCP handle with the SAME phase string.
+    assert bp._is_runpod_cuda_ima_failure(_gcp_handle(), wedged) is False
+    # False for a RunPod handle at the NO-PORT wedged phase (distinct predicate).
+    noport = PollResult(
+        status="dead",
+        current_phase=bp.RUNPOD_WORKLOAD_WEDGED_PHASE,
+        new_milestone=True,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=False,
+        log_tail_excerpt="",
+    )
+    assert bp._is_runpod_cuda_ima_failure(_runpod_handle(), noport) is False
+
+
+# ---------------------------------------------------------------------------
+# B. signature regex + the B2 wide-surface extraction (the bug NOT assumed away)
+# ---------------------------------------------------------------------------
+
+
+def test_cuda_ima_signature_family_matches_and_rejects():
+    assert bp._crash_signature_is_cuda_ima(
+        "torch.AcceleratorError: CUDA error: an illegal memory access was encountered"
+    )
+    assert bp._crash_signature_is_cuda_ima("EngineDeadError: engine core died")
+    assert bp._crash_signature_is_cuda_ima("Engine core proc EngineCore_DP0 died unexpectedly")
+    # Non-CUDA-IMA crashes never match.
+    assert not bp._crash_signature_is_cuda_ima("AssertionError: shape mismatch")
+    assert not bp._crash_signature_is_cuda_ima("ZeroDivisionError: division by zero")
+    assert not bp._crash_signature_is_cuda_ima("")
+    assert not bp._crash_signature_is_cuda_ima(None)
+
+
+def test_cuda_ima_signature_extracted_beyond_5_line_tail():
+    """B2 — the predicate must read the WIDE surface, NOT the 5-line excerpt.
+
+    The signature line sits >5 lines from the END of the wide traceback, so the
+    5-line ``log_tail_excerpt`` does NOT carry it but the wide ``crash_signature``
+    does. Binds to the REAL poll_once slice helper
+    (``poll_pipeline._tail_excerpt_and_crash_signature`` — the exact function
+    poll_once calls) so it goes RED if the extraction ever reverts to the 5-line
+    excerpt."""
+    import poll_pipeline as pp
+
+    # The realistic ~30-line traceback as the probe's WIDE main-log tail.
+    probe = {"log_tail": _CUDA_IMA_WIDE_TRACEBACK, "cell_log_tail": ""}
+    excerpt, crash_signature = pp._tail_excerpt_and_crash_signature(
+        probe, status="dead", mtime_epoch=100, cell_mtime_epoch=0
+    )
+    # crash_signature is the WIDE surface and carries the CUDA-IMA family ...
+    assert bp._crash_signature_is_cuda_ima(crash_signature) is True
+    # ... but the 5-line excerpt (what a naive v1 matched) would have MISSED it.
+    assert bp._crash_signature_is_cuda_ima(excerpt) is False
+    # And the excerpt IS the last 5 lines of the wide tail (unchanged behavior).
+    assert excerpt == "\n".join(_CUDA_IMA_WIDE_TRACEBACK.splitlines()[-5:])
+
+    # A non-dead (running) poll populates NO crash_signature.
+    _, sig_running = pp._tail_excerpt_and_crash_signature(
+        probe, status="running", mtime_epoch=100, cell_mtime_epoch=0
+    )
+    assert sig_running is None
+
+    # The cell-tail-fresher branch reads the CELL log as the wide surface.
+    probe_cell = {"log_tail": "stale dispatcher", "cell_log_tail": _CUDA_IMA_WIDE_TRACEBACK}
+    _, sig_cell = pp._tail_excerpt_and_crash_signature(
+        probe_cell, status="dead", mtime_epoch=100, cell_mtime_epoch=200
+    )
+    assert bp._crash_signature_is_cuda_ima(sig_cell) is True
+
+
+# ---------------------------------------------------------------------------
+# C. escalation: first crash records, second escalates, our-frame excludes
+# ---------------------------------------------------------------------------
+
+
+def test_first_cuda_ima_crash_records_and_does_not_escalate(tmp_path):
+    """The FIRST CUDA-IMA dead poll writes the record and returns the result
+    UNCHANGED (the ordinary dead path -> in-place same-pod respawn)."""
+    sidecar = _empty_sidecar(tmp_path)
+    out = bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), _cuda_ima_dead_poll(), sidecar, issue=689, now=1_000_000.0
+    )
+    assert out.current_phase != bp.RUNPOD_CUDA_IMA_WEDGED_PHASE
+    payload = json.loads(sidecar.read_text())
+    assert "runpod_cuda_ima_last_seen" in (payload.get("extra") or {})
+
+
+def test_second_same_signature_cuda_ima_escalates_to_wedged(tmp_path):
+    """A SECOND CUDA-IMA dead poll with a prior record this run -> rewrite to the
+    terminal wedged phase (status=dead, RUNPOD_CUDA_IMA_WEDGED_PHASE)."""
+    sidecar = _empty_sidecar(tmp_path)
+    # Tick 1: records, does not escalate.
+    bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), _cuda_ima_dead_poll(), sidecar, issue=689, now=1_000_000.0
+    )
+    # Tick 2: prior record present -> escalate.
+    out = bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), _cuda_ima_dead_poll(), sidecar, issue=689, now=1_000_100.0
+    )
+    assert out.status == "dead"
+    assert out.current_phase == bp.RUNPOD_CUDA_IMA_WEDGED_PHASE
+
+
+def test_non_cuda_ima_dead_poll_never_escalates(tmp_path):
+    """A dead poll whose crash_signature is a plain AssertionError never records
+    or escalates — and clears any stale record."""
+    sidecar = _empty_sidecar(tmp_path)
+    poll = PollResult(
+        status="dead",
+        current_phase="dead",
+        new_milestone=True,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=False,
+        log_tail_excerpt="",
+        crash_signature="AssertionError: shapes mismatch at layer 3",
+    )
+    out = bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), poll, sidecar, issue=689, now=1_000_000.0
+    )
+    assert out.current_phase != bp.RUNPOD_CUDA_IMA_WEDGED_PHASE
+    payload = json.loads(sidecar.read_text())
+    assert "runpod_cuda_ima_last_seen" not in (payload.get("extra") or {})
+
+
+def test_cuda_ima_record_cleared_on_running_poll(tmp_path):
+    """A running (non-dead) poll clears the record so a single transient CUDA-IMA
+    the respawn recovered from does NOT accumulate against a later one."""
+    sidecar = _empty_sidecar(tmp_path)
+    # Record a first CUDA-IMA crash.
+    bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), _cuda_ima_dead_poll(), sidecar, issue=689, now=1_000_000.0
+    )
+    # An intervening HEALTHY poll -> the record is cleared.
+    running = PollResult(
+        status="running",
+        current_phase="workload",
+        new_milestone=False,
+        last_log_mtime_sec_ago=5,
+        pid_alive=True,
+        log_tail_excerpt="step 999 ok",
+    )
+    bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), running, sidecar, issue=689, now=1_000_050.0
+    )
+    payload = json.loads(sidecar.read_text())
+    assert "runpod_cuda_ima_last_seen" not in (payload.get("extra") or {})
+    # A LATER CUDA-IMA crash is then the FIRST again (records, no escalation).
+    out = bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), _cuda_ima_dead_poll(), sidecar, issue=689, now=1_000_100.0
+    )
+    assert out.current_phase != bp.RUNPOD_CUDA_IMA_WEDGED_PHASE
+
+
+def test_cuda_ima_with_our_code_frame_does_not_escalate(tmp_path):
+    """M3 — a SECOND CUDA-IMA dead poll whose wide surface ALSO carries an OUR-code
+    traceback frame is a deterministic code bug, NOT a host wedge: the exclusion
+    fires and it does NOT escalate (falls through to dead -> code)."""
+    sidecar = _empty_sidecar(tmp_path)
+    framed = _CUDA_IMA_WIDE_TRACEBACK + (
+        '\n  File "/workspace/eps-issue-689/scripts/issue664_dispatch.py", line 42, in run\n'
+        "    out = model(x)\n"
+    )
+    poll = _cuda_ima_dead_poll(signature=framed)
+    # Tick 1: a non-framed first crash records (so a prior record exists).
+    bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), _cuda_ima_dead_poll(), sidecar, issue=689, now=1_000_000.0
+    )
+    # Tick 2: the framed repeat -> M3 exclusion -> NO escalation.
+    out = bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), poll, sidecar, issue=689, now=1_000_100.0
+    )
+    assert out.current_phase != bp.RUNPOD_CUDA_IMA_WEDGED_PHASE
+
+
+def test_cuda_ima_record_malformed_sidecar_never_raises(tmp_path):
+    """Fail-soft read: a malformed JSON sidecar reads as 'no record' and the
+    escalation raises NO exception (mirrors the no-port clock S2 contract)."""
+    bad = tmp_path / "issue-689-handle.json"
+    bad.write_text("{ this is not valid json :::")
+    out = bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), _cuda_ima_dead_poll(), bad, issue=689, now=1_000_000.0
+    )
+    # No prior record readable -> treated as first crash -> no escalation, no raise.
+    assert out.current_phase != bp.RUNPOD_CUDA_IMA_WEDGED_PHASE
+
+
+def test_cuda_ima_non_runpod_handle_unchanged(tmp_path):
+    sidecar = _empty_sidecar(tmp_path)
+    poll = _cuda_ima_dead_poll()
+    out = bp._maybe_escalate_runpod_cuda_ima(
+        _gcp_handle(), poll, sidecar, issue=689, now=1_000_000.0
+    )
+    assert out is poll
+
+
+# ---------------------------------------------------------------------------
+# D. cross-pod fallback (B1): sidecar record absent, prior epm:failure marker present
+# ---------------------------------------------------------------------------
+
+
+def test_cuda_ima_record_cross_pod_fallback_reads_prior_marker(tmp_path, monkeypatch):
+    """B1 — when the sidecar record is ABSENT (a wipe between pods), the prior
+    ``epm:failure`` marker carrying a CUDA-IMA signature still counts as a prior
+    record, so the current crash escalates as a repeat."""
+    sidecar = _empty_sidecar(tmp_path)  # NO runpod_cuda_ima_last_seen key
+    # The prior epm:failure marker carried a CUDA-IMA signature.
+    monkeypatch.setattr(
+        bp,
+        "_prior_failure_marker_is_cuda_ima",
+        lambda issue: True,
+        raising=False,
+    )
+    # _read_runpod_cuda_ima_record must surface a synthetic record from the marker.
+    rec = bp._read_runpod_cuda_ima_record(sidecar, issue=689)
+    assert rec is not None and rec.get("source") == "prior_failure_marker"
+    # And the escalation treats the current CUDA-IMA crash as a repeat -> wedged.
+    out = bp._maybe_escalate_runpod_cuda_ima(
+        _runpod_handle(), _cuda_ima_dead_poll(), sidecar, issue=689, now=1_000_000.0
+    )
+    assert out.current_phase == bp.RUNPOD_CUDA_IMA_WEDGED_PHASE
+
+
+def test_cuda_ima_record_no_fallback_when_prior_marker_absent(tmp_path, monkeypatch):
+    """The fallback yields None (first crash) when no prior CUDA-IMA marker exists."""
+    sidecar = _empty_sidecar(tmp_path)
+    monkeypatch.setattr(bp, "_prior_failure_marker_is_cuda_ima", lambda issue: False, raising=False)
+    assert bp._read_runpod_cuda_ima_record(sidecar, issue=689) is None
+
+
+# ---------------------------------------------------------------------------
+# E. failover: first-pivot fires, bounded-once, idempotency
+# ---------------------------------------------------------------------------
+
+
+def _cuda_ima_failover_gate_ok(monkeypatch):
+    """Common setup: a single COMPLETE cell so the inputs gate is OK, live API
+    stubbed, terminate_pod a recorder. Returns the ``terminated`` list."""
+    import huggingface_hub
+    import issue664_dispatch as D
+
+    cell = _FakeCell("mk_done_cell_seed42")
+    monkeypatch.setattr(bp, "_issue_cells_for_handle", lambda issue, handle: [cell], raising=False)
+    files = _hf_paths_for(
+        cell.eval_key,
+        raw_names={"completions__x__ctx.json"},
+        store_names={"tensors.pt", "meta.json"},
+    )
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(
+        D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
+    )
+    info = _PodInfo(desired_status="RUNNING", ssh_host=None, ssh_port=None, pod_id="pod-id-ima")
+    _stub_live_api(monkeypatch, info)
+    terminated: list = []
+    monkeypatch.setattr(
+        runpod_api, "terminate_pod", lambda pid: terminated.append(pid), raising=False
+    )
+    return terminated
+
+
+def test_cuda_ima_failover_pivots_with_cuda_ima_stamp_fn(tmp_path, monkeypatch):
+    """The first CUDA-IMA failover terminates + re-provisions a fresh host, and
+    _relaunch_fresh_runpod is invoked with stamp_fn=_stamp_runpod_cuda_ima_failover
+    (the SEPARATE lease field, never the no-port one)."""
+    terminated = _cuda_ima_failover_gate_ok(monkeypatch)
+    monkeypatch.setattr(
+        bp, "_runpod_cuda_ima_already_handled", lambda *a, **k: False, raising=False
+    )
+    monkeypatch.setattr(
+        bp, "_lease_records_runpod_cuda_ima_failover", lambda *a, **k: False, raising=False
+    )
+    relaunched: list = []
+
+    def _capture_relaunch(**kw):
+        relaunched.append(kw)
+        return {"status": "running"}
+
+    monkeypatch.setattr(bp, "_relaunch_fresh_runpod", _capture_relaunch, raising=False)
+
+    bp._failover_cuda_ima_runpod(
+        issue=689,
+        handle=_runpod_handle(),
+        result=_cuda_ima_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    assert terminated == ["pod-id-ima"]
+    assert len(relaunched) == 1
+    assert relaunched[0]["stamp_fn"] is bp._stamp_runpod_cuda_ima_failover
+
+
+def test_cuda_ima_failover_bounded_once_third_crash_terminal_code(tmp_path, monkeypatch):
+    """M1 — after one pivot (the durable lease records a CUDA-IMA failover), a
+    SECOND same-signature crash on the FRESH host routes to terminal
+    failure_class:code (reason=cuda_ima_repeats_after_failover), NO second pivot."""
+    terminated = _cuda_ima_failover_gate_ok(monkeypatch)
+    # The lease ALREADY records a CUDA-IMA failover for this run (the bound).
+    monkeypatch.setattr(
+        bp, "_lease_records_runpod_cuda_ima_failover", lambda *a, **k: True, raising=False
+    )
+    relaunched: list = []
+    monkeypatch.setattr(
+        bp, "_relaunch_fresh_runpod", lambda **kw: relaunched.append(kw), raising=False
+    )
+
+    out = bp._failover_cuda_ima_runpod(
+        issue=689,
+        handle=_runpod_handle(),
+        result=_cuda_ima_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "code"
+    assert out["reason"] == "cuda_ima_repeats_after_failover"
+    assert terminated == []  # bound checked FIRST, before the terminate
+    assert relaunched == []  # NO second pivot
+
+
+def test_cuda_ima_failover_idempotency_lease(tmp_path, monkeypatch):
+    """A re-fired tick on the SAME crashed handle after a successful pivot
+    short-circuits (idempotency) — no double terminate, no double pivot."""
+    terminated = _cuda_ima_failover_gate_ok(monkeypatch)
+    monkeypatch.setattr(
+        bp, "_lease_records_runpod_cuda_ima_failover", lambda *a, **k: False, raising=False
+    )
+    handled = {"v": False}
+    monkeypatch.setattr(
+        bp, "_runpod_cuda_ima_already_handled", lambda *a, **k: handled["v"], raising=False
+    )
+    relaunched: list = []
+    monkeypatch.setattr(
+        bp,
+        "_relaunch_fresh_runpod",
+        lambda **kw: relaunched.append(kw) or {"status": "running"},
+        raising=False,
+    )
+    sidecar = _empty_sidecar(tmp_path)
+    bp._failover_cuda_ima_runpod(
+        issue=689, handle=_runpod_handle(), result=_cuda_ima_dead_poll(), sidecar=sidecar
+    )
+    assert terminated == ["pod-id-ima"]
+    assert len(relaunched) == 1
+    # Second tick on the OLD handle: already-handled short-circuits.
+    handled["v"] = True
+    out = bp._failover_cuda_ima_runpod(
+        issue=689, handle=_runpod_handle(), result=_cuda_ima_dead_poll(), sidecar=sidecar
+    )
+    assert out.get("reason") == "runpod_cuda_ima_already_handled"
+    assert terminated == ["pod-id-ima"]  # unchanged
+    assert len(relaunched) == 1  # unchanged
+
+
+def test_cuda_ima_failover_inputs_partial_blocks(tmp_path, monkeypatch):
+    """A PARTIAL cell on HF BLOCKS the irreversible terminate (human decides)."""
+    import huggingface_hub
+    import issue664_dispatch as D
+
+    cell = _FakeCell("mk_partial_cell_seed42")
+    monkeypatch.setattr(bp, "_issue_cells_for_handle", lambda issue, handle: [cell], raising=False)
+    files = _hf_paths_for(
+        cell.eval_key, raw_names={"completions__x__ctx.json"}, store_names={"meta.json"}
+    )
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", lambda repo_id, **k: sorted(files))
+    monkeypatch.setattr(
+        D, "_expected_eval_files", lambda c: {"completions__x__ctx.json"}, raising=False
+    )
+    monkeypatch.setattr(
+        bp, "_lease_records_runpod_cuda_ima_failover", lambda *a, **k: False, raising=False
+    )
+    monkeypatch.setattr(
+        bp, "_runpod_cuda_ima_already_handled", lambda *a, **k: False, raising=False
+    )
+    terminated: list = []
+    monkeypatch.setattr(
+        runpod_api, "terminate_pod", lambda pid: terminated.append(pid), raising=False
+    )
+    relaunched: list = []
+    monkeypatch.setattr(
+        bp, "_relaunch_fresh_runpod", lambda **kw: relaunched.append(kw), raising=False
+    )
+    out = bp._failover_cuda_ima_runpod(
+        issue=689,
+        handle=_runpod_handle(),
+        result=_cuda_ima_dead_poll(),
+        sidecar=_empty_sidecar(tmp_path),
+    )
+    assert out["reason"] == "runpod_cuda_ima_inputs_unverified"
+    assert terminated == []
+    assert relaunched == []
+
+
+def test_cuda_ima_failover_durable_lease_bound_real_helpers(tmp_path, monkeypatch):
+    """The once-more bound holds via the REAL durable-lease helpers (not mocked):
+    after _stamp_runpod_cuda_ima_failover stamps the SEPARATE lease field, the
+    bound check reads it and routes a second crash to terminal code. Also proves
+    the CUDA-IMA stamp does NOT touch runpod_wedge_failover_of (no cross-suppress)."""
+    _real_lease_store_in(tmp_path, monkeypatch)
+    handle = _runpod_handle_with_workload()
+    # Before any stamp: the bound is not yet spent.
+    assert bp._lease_records_runpod_cuda_ima_failover(689, handle) is False
+    # Stamp the CUDA-IMA failover.
+    bp._stamp_runpod_cuda_ima_failover(689, handle)
+    assert bp._lease_records_runpod_cuda_ima_failover(689, handle) is True
+    # The no-port lease field is UNTOUCHED (no cross-suppression).
+    assert bp._lease_records_runpod_wedge_failover(689, handle) is False
