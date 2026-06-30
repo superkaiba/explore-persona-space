@@ -1,0 +1,1 @@
+{"ts": "2026-06-30T03:55:38Z", "event": "raised", "concern_id": "judge-rerun-completion-key-crash", "severity": "BLOCKER", "summary": "judge_rerun _completion_texts reads c['completion'] but #658 schema uses c['text'] -> KeyError on live run", "raised_by": "code-reviewer", "raised_at_round": 1}
