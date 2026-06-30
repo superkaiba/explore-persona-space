@@ -4717,8 +4717,8 @@
     "746": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/746",
-      "status": "approved",
+      "path": "tasks/running/746",
+      "status": "running",
       "title": "workflow-fix: gotchas.md FIX-SCOPE addendum for vLLM enforce_eager probe"
     },
     "747": {
