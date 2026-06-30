@@ -4695,8 +4695,8 @@
     "743": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/743",
-      "status": "planning",
+      "path": "tasks/approved/743",
+      "status": "approved",
       "title": "GCP router: add 8x A100 (a2-ultragpu-8g) + 8x H100 (a3-highgpu-8g, FLEX_START) machine specs so the free GCP lane can run wide parallel sweeps"
     },
     "744": {
