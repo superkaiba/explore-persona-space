@@ -10,3 +10,4 @@
 {"ts": "2026-06-30T06:56:57Z", "kind": "epm:plan-verify", "version": 7, "by": "unknown", "note": ""}
 {"ts": "2026-06-30T06:57:05Z", "kind": "epm:plan-verify", "version": 8, "by": "unknown", "note": ""}
 {"ts": "2026-06-30T06:57:26Z", "kind": "epm:plan-verify", "version": 9, "by": "unknown", "note": ""}
+{"ts": "2026-06-30T06:57:45Z", "kind": "epm:plan-verify", "version": 10, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=1 plan_version=v1 overridden=none.\nWARN: c8_success_kill_criteria — kind-infra spec edit has no run to kill; plan's section 4 (Acceptance criteria) + section 5 (Risks) jointly cover success/kill semantics for a code review.\nEarlier v3-v9 markers were empty (Bash tool exit-1 noise during shell-escaping debug); v10 is the authoritative latest."}
