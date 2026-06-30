@@ -19,8 +19,13 @@ file-level ``# epm-allow-judge-model-pin`` suppresses; (j) the canonical pin
 does NOT match the ``claude-3-5-sonnet`` forbidden substring (anti-trap);
 (k) the legacy allowlists match by EXACT relative path (a tmp fixture is
 outside, so it FAILS unless waived) — for both .py and .sh; (l)
-``test_live_trees_pass`` — the real trees PASS (the grandfather-completeness
-invariant over .py + .sh); (m) robustness (missing dir / unparseable file).
+``test_live_trees_pass`` — the real trees PASS (the no-FALSE-POSITIVE baseline
+over .py + .sh; NOT a completeness proof); (m) robustness (missing dir /
+unparseable file); and the #765-round-2 detector-shape-completeness regressions:
+(n) a split ``--judge-model`` / literal-value argv pair FAILS; (o) a .sh
+``JUDGE=<pin>`` consumed by ``--judge-model "${JUDGE}"`` FAILS; (p) a
+judge-script ``DEFAULT_MODEL = "<non-Sonnet>"`` constant FAILS, while a
+non-judge module's ``DEFAULT_MODEL`` does NOT.
 """
 
 from __future__ import annotations
@@ -340,12 +345,132 @@ def test_allowlisted_sh_basename_in_tmp_still_fails(tmp_path: Path) -> None:
 
 
 def test_live_trees_pass() -> None:
-    """The real scripts/ + src/ + tests/ trees (.py AND scripts/ .sh) must pass
-    the check — this is the no-flags-default-run invariant and the authoritative
-    grandfather-completeness check. If this FAILs, either the allowlist is
-    incomplete (a new legit pin landed — add it with a reason) or the gate has a
-    false-positive (a prose/comment/non-judge site is being flagged)."""
+    """The real scripts/ + src/ + tests/ trees (.py AND scripts/ .sh) PASS the
+    check — the no-FALSE-POSITIVE baseline / no-flags-default-run invariant. It
+    proves the current detector+allowlist returns no errors against today's
+    tree; it does NOT prove the allowlist is complete OR that the detector
+    catches every judge-pin shape (the detector's shape COMPLETENESS is pinned
+    by the per-shape regression tests below — split-argv, shell-var indirection,
+    DEFAULT_MODEL). If this FAILs, either the allowlist is incomplete (a new
+    legit pin landed — add it with a reason) or the gate has a false-positive (a
+    prose/comment/non-judge site is being flagged)."""
     assert check_judge_model_pins() == []
+
+
+# --------------------------------------------------------------------------
+# (n)-(p) #765-round-2 detector-shape-completeness regressions: a NEW (un-
+# allowlisted) file in each previously-missed shape must now be CAUGHT. The
+# grandfathered files (run_evals_190 / run_issue452_deconfound / judge_with_claude)
+# stay unhit only because the allowlist absorbs them — these tmp fixtures fall
+# outside it, so the EXTENDED detector fires.
+# --------------------------------------------------------------------------
+
+
+def test_detects_split_argv_judge_model(tmp_path: Path) -> None:
+    """(n) A new file using split ``--judge-model`` / literal-value argv (the
+    flag and the pin on SEPARATE list-literal lines — the run_evals_190.py:52-53
+    shape) must be caught. The hit is the VALUE line (the one carrying the pin),
+    not the bare-flag line."""
+    p = _write(
+        tmp_path,
+        "split_argv.py",
+        "args = [\n"
+        '    "--output-dir",\n'
+        "    out_dir,\n"
+        '    "--judge-model",\n'
+        '    "claude-haiku-4-5-20251001",\n'
+        "]\n",
+    )
+    errors = check_judge_model_pins(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(p) in errors[0]
+    assert ":5:" in errors[0]  # the literal-value line, not the flag line
+    assert "claude-haiku-" in errors[0]
+
+
+def test_split_argv_canonical_value_passes(tmp_path: Path) -> None:
+    """A split ``--judge-model`` argv whose value is the canonical Sonnet pin
+    PASSES (no forbidden substring on the value line)."""
+    _write(
+        tmp_path,
+        "split_ok.py",
+        f'args = [\n    "--judge-model",\n    "{JUDGE_PIN_CANONICAL}",\n]\n',
+    )
+    assert check_judge_model_pins(scripts_dir=tmp_path) == []
+
+
+def test_detects_shell_var_indirection(tmp_path: Path) -> None:
+    """(o) A new .sh file assigning ``JUDGE=<non-Sonnet>`` then passing
+    ``--judge-model "${JUDGE}"`` (the run_issue452_deconfound.sh:27/65 shape —
+    the var name lacks JUDGE_MODEL and the flag line carries no literal) must be
+    caught. The hit is the ASSIGNMENT line."""
+    p = _write(
+        tmp_path,
+        "indirect.sh",
+        "#!/usr/bin/env bash\n"
+        "PAIR=insecure_code\n"
+        "JUDGE=gpt-4o-2024-08-06\n"
+        "SEEDS=(0 137)\n"
+        'uv run python scripts/eval.py --judge-model "${JUDGE}" --skip-cal\n',
+    )
+    errors = check_judge_model_pins(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(p) in errors[0]
+    assert ":3:" in errors[0]  # the JUDGE=... assignment line
+    assert "gpt-4o" in errors[0]
+
+
+def test_shell_var_assigned_but_unused_passes(tmp_path: Path) -> None:
+    """A .sh ``JUDGE=<pin>`` that is NEVER consumed by ``--judge-model`` PASSES —
+    indirection requires the flag reference (no dangling-assignment false-fire)."""
+    _write(
+        tmp_path,
+        "unused_var.sh",
+        "#!/usr/bin/env bash\nJUDGE=gpt-4o-2024-08-06\necho not-a-judge-run\n",
+    )
+    assert check_judge_model_pins(scripts_dir=tmp_path) == []
+
+
+def test_detects_default_model_constant_in_judge_script(tmp_path: Path) -> None:
+    """(p) A new judge-script file with a ``DEFAULT_MODEL = "<non-Sonnet>"``
+    module constant (name lacks JUDGE_MODEL — the judge_with_claude.py:31 shape)
+    must be caught when the file is judge-context (filename contains ``judge``)."""
+    p = _write(
+        tmp_path,
+        "judge_roles.py",
+        '"""Score role-adherence responses using Claude as judge."""\n'
+        'DEFAULT_MODEL = "claude-haiku-4-5-20251001"\n',
+    )
+    errors = check_judge_model_pins(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+    assert str(p) in errors[0]
+    assert ":2:" in errors[0]
+    assert "claude-haiku-" in errors[0]
+
+
+def test_default_model_in_judge_context_via_body_signal(tmp_path: Path) -> None:
+    """A DEFAULT_MODEL constant in a file whose NAME lacks ``judge`` is still
+    caught when the BODY is judge-context (defines a ``judge_*`` function)."""
+    _write(
+        tmp_path,
+        "score.py",
+        'DEFAULT_MODEL = "gpt-4o-2024-08-06"\n\n\ndef judge_one(x):\n    return x\n',
+    )
+    errors = check_judge_model_pins(scripts_dir=tmp_path)
+    assert len(errors) == 1, errors
+
+
+def test_default_model_in_non_judge_module_passes(tmp_path: Path) -> None:
+    """The (f) arm is NARROW: a ``DEFAULT_MODEL`` constant in a NON-judge module
+    (no judge filename/body signal) is NOT flagged — a generation-side
+    cost-table / SDF-generator default must not false-fire."""
+    _write(
+        tmp_path,
+        "sdf_generator.py",
+        '"""Rewrite documents with a default model."""\n'
+        'DEFAULT_MODEL = "claude-haiku-4-5-20251001"\n',
+    )
+    assert check_judge_model_pins(scripts_dir=tmp_path) == []
 
 
 # --------------------------------------------------------------------------
