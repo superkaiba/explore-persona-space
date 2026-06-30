@@ -154,24 +154,44 @@ def _load_v0(behavior: str) -> tuple[np.ndarray, list[str]]:
 
 
 def _e0_vectors(e0: dict, behavior: str, ctx_ids: list[str]):
-    """Align E0 rate + n_judged + per_probe with the v0 context order.
+    """Align E0 graded_mean + rate + n_judged + per_probe with the v0 context order.
 
-    Returns (rates (n,), n_judged (n,), per_probe_by_ctx {ctx: [e0 per probe]},
-    kept_ctx_ids). Contexts with a None rate (no judged probes) are dropped.
+    Returns ``(graded (n,), rates (n,), n_judged (n,), per_probe_graded {ctx: [graded
+    per probe]}, per_probe_binary {ctx: [e0 per probe]}, kept_ctx_ids)``. The v3
+    PRIMARY DV is ``graded_mean`` (0-100); ``rate`` (binary) is the companion.
+    A context is KEPT iff it has a non-None ``graded_mean`` (the primary DV); the
+    binary rate rides along for the companion read. Contexts with no judged
+    probes (graded_mean None) are dropped.
     """
     per_ctx = e0["e0"][behavior]
-    rates, njudged, kept = [], [], []
-    per_probe_by_ctx: dict[str, list[float]] = {}
+    graded, rates, njudged, kept = [], [], [], []
+    per_probe_graded: dict[str, list[float]] = {}
+    per_probe_binary: dict[str, list[float]] = {}
     for c in ctx_ids:
         cell = per_ctx.get(c)
-        if cell is None or cell.get("rate") is None:
+        if cell is None or cell.get("graded_mean") is None:
             continue
-        rates.append(float(cell["rate"]))
-        njudged.append(int(cell.get("n_judged", 1)))
+        graded.append(float(cell["graded_mean"]))
+        # binary rate is the companion; default to NaN if a cell lacks it (rare —
+        # format_style always carries both). Kept as float for the companion read.
+        rates.append(float(cell["rate"]) if cell.get("rate") is not None else float("nan"))
+        # graded precision weight = n_graded if present else n_judged.
+        njudged.append(int(cell.get("n_graded") or cell.get("n_judged", 1)))
         kept.append(c)
-        pp = [pr["e0"] for pr in cell.get("per_probe", []) if pr.get("e0") is not None]
-        per_probe_by_ctx[c] = pp
-    return np.asarray(rates), np.asarray(njudged), per_probe_by_ctx, kept
+        per_probe_graded[c] = [
+            pr["graded"] for pr in cell.get("per_probe", []) if pr.get("graded") is not None
+        ]
+        per_probe_binary[c] = [
+            pr["e0"] for pr in cell.get("per_probe", []) if pr.get("e0") is not None
+        ]
+    return (
+        np.asarray(graded),
+        np.asarray(rates),
+        np.asarray(njudged),
+        per_probe_graded,
+        per_probe_binary,
+        kept,
+    )
 
 
 def _layer_sweep_select(
@@ -280,18 +300,25 @@ def _control_task_null(v0, y, n_judged, predictor, *, rb, n_perms, seed) -> dict
     return {"control_task_pass": bool(passed), "observed_rho": obs, "control_p95": p95}
 
 
-def _triage(rho_glm, rho_glm_ci, sqrt_r_yy, shuffle_p, control_pass) -> str:
-    """Per-behavior verdict (a) works / (b) fails / (c) noise_limited (plan §3)."""
+def _triage(rho, rho_ci, sqrt_r_yy, shuffle_p, control_pass) -> str:
+    """Per-behavior verdict (a) works / (b) fails / (c) noise_limited (plan §3).
+
+    DV-agnostic: ``rho`` is the HEADLINE predictor's held-out Spearman for the
+    DV being triaged. For the v3 PRIMARY (graded) read this is ρ_ridge on the
+    graded DV (brief Must-Fix #2 — the registered nulls + verdict target the
+    registered headline predictor, RIDGE, on graded_mean). The companion binary
+    read is triaged separately on its own GLM ρ.
+    """
     if sqrt_r_yy is None or sqrt_r_yy <= CEILING_LOW:
         return "noise_limited"  # (c): ceiling too low / no dynamic range
-    lo = rho_glm_ci[0] if rho_glm_ci else None
+    lo = rho_ci[0] if rho_ci else None
     if (
-        rho_glm is not None
+        rho is not None
         and lo is not None
         and shuffle_p is not None
         and lo > 0
         and shuffle_p < 0.05
-        and rho_glm >= CEILING_FRACTION_WORKS * sqrt_r_yy
+        and rho >= CEILING_FRACTION_WORKS * sqrt_r_yy
         and control_pass
     ):
         return "works"  # (a)
@@ -301,76 +328,167 @@ def _triage(rho_glm, rho_glm_ci, sqrt_r_yy, shuffle_p, control_pass) -> str:
 
 
 def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict:
-    """The full per-behavior analysis: GLM / ridge / PV + nulls + ceiling + verdict."""
-    rates, n_judged, per_probe_by_ctx, kept = _e0_vectors(e0, behavior, ctx_ids)
-    if len(rates) < 4:
+    """Per-behavior analysis: the v3 GRADED PRIMARY (ridge headline) + binary companion.
+
+    v3 reframe (brief Must-Fix #2 + llm-judging.md): the PRIMARY DV is the GRADED
+    mean (0-100), and the registered HEADLINE predictor on it is RIDGE — so the
+    shuffle + control-task nulls + the triage verdict TARGET ridge-on-graded
+    (``y=graded_mean``, predictor ``"ridge"``). The binary positive RATE rides
+    along as the validated human-legible COMPANION, read with the GLM-target
+    nulls (the GLM stays the binary companion's estimator; the in-session
+    GLM-vs-ridge optimism finding lives on the binary side). The headline
+    ``triage_verdict`` is the GRADED-RIDGE verdict; the companion's verdict is
+    reported alongside as ``triage_verdict_binary``.
+    """
+    graded, rates, n_judged, per_probe_graded, per_probe_binary, kept = _e0_vectors(
+        e0, behavior, ctx_ids
+    )
+    if len(graded) < 4:
         return {
             "behavior": behavior,
             "triage_verdict": "noise_limited",
-            "note": f"only {len(rates)} contexts with a non-None rate",
-            "n_contexts": len(rates),
+            "note": f"only {len(graded)} contexts with a non-None graded_mean",
+            "n_contexts": len(graded),
         }
     # align v0 to the kept contexts
     keep_idx = [ctx_ids.index(c) for c in kept]
     v0_kept = v0[keep_idx]
     rb = rb_blob["r_b"].float().numpy() if rb_blob is not None else None
 
-    glm_sel = _layer_sweep_select(v0_kept, rates, n_judged, "glm")
-    ridge_sel = _layer_sweep_select(v0_kept, rates, n_judged, "ridge")
-    pv_sel = (
-        _layer_sweep_select(v0_kept, rates, n_judged, "pv", rb=rb)
+    # ── PRIMARY: the GRADED DV (y = graded_mean), headline predictor = RIDGE ──
+    ridge_g = _layer_sweep_select(v0_kept, graded, n_judged, "ridge")
+    glm_g = _layer_sweep_select(v0_kept, graded, n_judged, "glm")  # graded-GLM comparator
+    pv_g = (
+        _layer_sweep_select(v0_kept, graded, n_judged, "pv", rb=rb)
         if rb is not None
         else {"chosen_layer": None, "chosen_rho": None, "chosen_pred": None, "per_layer_rho": []}
     )
+    rho_ridge_g = ridge_g["chosen_rho"]
+    rho_glm_g = glm_g["chosen_rho"]
+    rho_pv_g = pv_g["chosen_rho"]
 
-    rho_glm = glm_sel["chosen_rho"]
-    rho_ridge = ridge_sel["chosen_rho"]
-    rho_pv = pv_sel["chosen_rho"]
-
-    boot = (
-        _cluster_bootstrap_rho(glm_sel["chosen_pred"], rates, n_boot=n_boot, seed=SEED)
-        if glm_sel["chosen_pred"] is not None and rho_glm is not None
+    boot_g = (
+        _cluster_bootstrap_rho(ridge_g["chosen_pred"], graded, n_boot=n_boot, seed=SEED)
+        if ridge_g["chosen_pred"] is not None and rho_ridge_g is not None
         else None
     )
-    rho_glm_ci = boot["ci95"] if boot else None
+    rho_ridge_g_ci = boot_g["ci95"] if boot_g else None
 
-    shuffle = _shuffle_null(v0_kept, rates, n_judged, "glm", rb=None, n_perms=n_perms, seed=SEED)
-    control = _control_task_null(
-        v0_kept, rates, n_judged, "glm", rb=None, n_perms=n_perms, seed=SEED
+    # Nulls + control TARGET the registered headline predictor (RIDGE) on graded.
+    shuffle_g = _shuffle_null(
+        v0_kept, graded, n_judged, "ridge", rb=None, n_perms=n_perms, seed=SEED
     )
-    ceiling = compute_bracket(
-        per_probe_by_ctx, list(rates), [int(n) for n in n_judged], n_boot=n_boot, seed=SEED
+    control_g = _control_task_null(
+        v0_kept, graded, n_judged, "ridge", rb=None, n_perms=n_perms, seed=SEED
     )
-    sqrt_r_yy = ceiling["sqrt_r_yy"]
+    ceiling_g = compute_bracket(
+        per_probe_graded, list(graded), [int(n) for n in n_judged], n_boot=n_boot, seed=SEED
+    )
+    sqrt_r_yy_g = ceiling_g["sqrt_r_yy"]
+    verdict_g = _triage(
+        rho_ridge_g,
+        rho_ridge_g_ci,
+        sqrt_r_yy_g,
+        shuffle_g.get("p_value"),
+        control_g["control_task_pass"],
+    )
 
-    verdict = _triage(
-        rho_glm, rho_glm_ci, sqrt_r_yy, shuffle.get("p_value"), control["control_task_pass"]
-    )
+    # ── COMPANION: the BINARY rate (y = rate), GLM-target nulls ──
+    # Drop NaN-rate contexts on the binary side (graded may have kept a cell the
+    # binary read lacks — rare, but keep the companion read well-defined).
+    bin_mask = ~np.isnan(rates)
+    rho_glm_b = rho_ridge_b = rho_pv_b = None
+    rho_glm_b_ci = None
+    shuffle_b = {"p_value": None, "null_p95": None}
+    control_b = {"control_task_pass": False}
+    ceiling_b = {"sqrt_r_yy": None, "sqrt_r_yy_ci": None, "sqrt_r_yy_binomial": None}
+    glm_b = {"chosen_layer": None, "per_layer_rho": []}
+    ridge_b = {"chosen_layer": None, "per_layer_rho": []}
+    pv_b = {"chosen_layer": None, "per_layer_rho": []}
+    verdict_b = "noise_limited"
+    if int(bin_mask.sum()) >= 4:
+        v0_b = v0_kept[bin_mask]
+        rates_b = rates[bin_mask]
+        nj_b = n_judged[bin_mask]
+        ppb = {kept[i]: per_probe_binary.get(kept[i], []) for i in range(len(kept)) if bin_mask[i]}
+        glm_b = _layer_sweep_select(v0_b, rates_b, nj_b, "glm")
+        ridge_b = _layer_sweep_select(v0_b, rates_b, nj_b, "ridge")
+        pv_b = (
+            _layer_sweep_select(v0_b, rates_b, nj_b, "pv", rb=rb)
+            if rb is not None
+            else {
+                "chosen_layer": None,
+                "chosen_rho": None,
+                "chosen_pred": None,
+                "per_layer_rho": [],
+            }
+        )
+        rho_glm_b = glm_b["chosen_rho"]
+        rho_ridge_b = ridge_b["chosen_rho"]
+        rho_pv_b = pv_b["chosen_rho"]
+        boot_b = (
+            _cluster_bootstrap_rho(glm_b["chosen_pred"], rates_b, n_boot=n_boot, seed=SEED)
+            if glm_b["chosen_pred"] is not None and rho_glm_b is not None
+            else None
+        )
+        rho_glm_b_ci = boot_b["ci95"] if boot_b else None
+        shuffle_b = _shuffle_null(v0_b, rates_b, nj_b, "glm", rb=None, n_perms=n_perms, seed=SEED)
+        control_b = _control_task_null(
+            v0_b, rates_b, nj_b, "glm", rb=None, n_perms=n_perms, seed=SEED
+        )
+        ceiling_b = compute_bracket(
+            ppb, list(rates_b), [int(n) for n in nj_b], n_boot=n_boot, seed=SEED
+        )
+        verdict_b = _triage(
+            rho_glm_b,
+            rho_glm_b_ci,
+            ceiling_b["sqrt_r_yy"],
+            shuffle_b.get("p_value"),
+            control_b["control_task_pass"],
+        )
+
+    # The ρ_ridge − ρ_GLM optimism delta on the GRADED DV (the in-session finding
+    # re-read at m≥50 on the registered primary).
     optimism_delta = (
-        (rho_ridge - rho_glm) if (rho_ridge is not None and rho_glm is not None) else None
+        (rho_ridge_g - rho_glm_g) if (rho_ridge_g is not None and rho_glm_g is not None) else None
     )
 
     return {
         "behavior": behavior,
-        "n_contexts": len(rates),
-        "rho_GLM": rho_glm,
-        "rho_ridge": rho_ridge,
-        "rho_PV": rho_pv,
-        "rho_GLM_ci": rho_glm_ci,
-        "optimism_delta": optimism_delta,
-        "sqrt_r_yy": sqrt_r_yy,
-        "sqrt_r_yy_ci": ceiling.get("sqrt_r_yy_ci"),
-        "sqrt_r_yy_binomial": ceiling.get("sqrt_r_yy_binomial"),
-        "shuffle_null_p": shuffle.get("p_value"),
-        "shuffle_null_p95": shuffle.get("null_p95"),
-        "control_task_pass": control["control_task_pass"],
-        "chosen_layer": glm_sel["chosen_layer"],
-        "chosen_layer_ridge": ridge_sel["chosen_layer"],
-        "chosen_layer_pv": pv_sel["chosen_layer"],
-        "per_layer_rho_GLM": glm_sel["per_layer_rho"],
-        "per_layer_rho_ridge": ridge_sel["per_layer_rho"],
-        "per_layer_rho_PV": pv_sel.get("per_layer_rho", []),
-        "triage_verdict": verdict,
+        "n_contexts": len(graded),
+        # ── PRIMARY (graded DV, ridge headline) ──
+        "primary_dv": "graded_mean",
+        "headline_predictor": "ridge",
+        "rho_graded_ridge": rho_ridge_g,
+        "rho_graded_ridge_ci": rho_ridge_g_ci,
+        "rho_graded_glm": rho_glm_g,
+        "rho_graded_PV": rho_pv_g,
+        "optimism_delta_graded": optimism_delta,
+        "sqrt_r_yy": sqrt_r_yy_g,
+        "sqrt_r_yy_ci": ceiling_g.get("sqrt_r_yy_ci"),
+        "sqrt_r_yy_binomial": ceiling_g.get("sqrt_r_yy_binomial"),
+        "shuffle_null_p": shuffle_g.get("p_value"),
+        "shuffle_null_p95": shuffle_g.get("null_p95"),
+        "control_task_pass": control_g["control_task_pass"],
+        "chosen_layer": ridge_g["chosen_layer"],
+        "chosen_layer_graded_glm": glm_g["chosen_layer"],
+        "chosen_layer_pv": pv_g["chosen_layer"],
+        "per_layer_rho_graded_ridge": ridge_g["per_layer_rho"],
+        "per_layer_rho_graded_glm": glm_g["per_layer_rho"],
+        "per_layer_rho_graded_PV": pv_g.get("per_layer_rho", []),
+        "triage_verdict": verdict_g,  # headline = graded-ridge verdict
+        # ── COMPANION (binary rate, GLM headline) ──
+        "companion_dv": "rate",
+        "rho_binary_GLM": rho_glm_b,
+        "rho_binary_GLM_ci": rho_glm_b_ci,
+        "rho_binary_ridge": rho_ridge_b,
+        "rho_binary_PV": rho_pv_b,
+        "sqrt_r_yy_binary": ceiling_b.get("sqrt_r_yy"),
+        "shuffle_null_p_binary": shuffle_b.get("p_value"),
+        "control_task_pass_binary": control_b["control_task_pass"],
+        "chosen_layer_binary_glm": glm_b.get("chosen_layer"),
+        "per_layer_rho_binary_GLM": glm_b.get("per_layer_rho", []),
+        "triage_verdict_binary": verdict_b,
     }
 
 
@@ -400,16 +518,20 @@ def main() -> int:
         rec = fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, n_perms=n_perms, n_boot=n_boot)
         results[behavior] = rec
         logger.info(
-            "[fit] %s: rho_GLM=%s rho_ridge=%s sqrt_r_yy=%s verdict=%s",
+            "[fit] %s: PRIMARY graded rho_ridge=%s (glm=%s pv=%s) sqrt_r_yy=%s verdict=%s | "
+            "COMPANION binary rho_GLM=%s verdict=%s",
             behavior,
-            rec.get("rho_GLM"),
-            rec.get("rho_ridge"),
+            rec.get("rho_graded_ridge"),
+            rec.get("rho_graded_glm"),
+            rec.get("rho_graded_PV"),
             rec.get("sqrt_r_yy"),
             rec.get("triage_verdict"),
+            rec.get("rho_binary_GLM"),
+            rec.get("triage_verdict_binary"),
         )
-        # smoke schema asserts (plan §10 smoke)
-        if args.smoke and rec.get("rho_GLM") is not None:
-            assert np.isfinite(rec["rho_GLM"]), "rho_GLM not finite"
+        # smoke schema asserts (plan §10 smoke): the PRIMARY is graded-ridge.
+        if args.smoke and rec.get("rho_graded_ridge") is not None:
+            assert np.isfinite(rec["rho_graded_ridge"]), "rho_graded_ridge not finite"
             assert rec["triage_verdict"] in ("works", "fails", "noise_limited")
 
     out = {
