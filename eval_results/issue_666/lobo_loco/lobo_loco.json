@@ -1,0 +1,418 @@
+{
+ "lobo": {
+  "bad_medical": {
+   "test_behavior": "bad_medical",
+   "spearman": 0.8700291932239208,
+   "pearson": 0.947945532938652,
+   "sign_agreement": 0.7908163265306123,
+   "n_test": 392
+  },
+  "em": {
+   "test_behavior": "em",
+   "spearman": 0.2504720441113717,
+   "pearson": 0.22120270842327763,
+   "sign_agreement": 0.7831632653061225,
+   "n_test": 392
+  },
+  "ic_edu": {
+   "test_behavior": "ic_edu",
+   "spearman": 0.22967991312380073,
+   "pearson": 0.1891517478548746,
+   "sign_agreement": 0.7414965986394558,
+   "n_test": 147
+  },
+  "marker": {
+   "test_behavior": "marker",
+   "spearman": 3.789878973609613e-05,
+   "pearson": -0.017727155752285194,
+   "sign_agreement": 0.5663265306122449,
+   "n_test": 980
+  },
+  "taught_fact": {
+   "test_behavior": "taught_fact",
+   "spearman": 0.2614773755502865,
+   "pearson": 0.6949725179647913,
+   "sign_agreement": 0.9974489795918368,
+   "n_test": 392
+  },
+  "tf_rev": {
+   "test_behavior": "tf_rev",
+   "spearman": 0.6073900849296898,
+   "pearson": 0.5672721549586484,
+   "sign_agreement": 0.9659863945578231,
+   "n_test": 147
+  }
+ },
+ "loco": {
+  "f1_house_data_scientist": {
+   "test_context": "f1_house_data_scientist",
+   "spearman": 0.8203034969120298,
+   "pearson": 0.894169291470439,
+   "sign_agreement": 0.78,
+   "n_test": 50
+  },
+  "f1_house_librarian": {
+   "test_context": "f1_house_librarian",
+   "spearman": 0.8548094547666236,
+   "pearson": 0.9070357156556142,
+   "sign_agreement": 0.7096774193548387,
+   "n_test": 31
+  },
+  "f1_house_medical_doctor": {
+   "test_context": "f1_house_medical_doctor",
+   "spearman": 0.7293507499765781,
+   "pearson": 0.8854824500773579,
+   "sign_agreement": 0.7,
+   "n_test": 50
+  },
+  "f1_house_programmer": {
+   "test_context": "f1_house_programmer",
+   "spearman": 0.7184926558842694,
+   "pearson": 0.9518451079153863,
+   "sign_agreement": 0.7555555555555555,
+   "n_test": 45
+  },
+  "f1_house_software_engineer": {
+   "test_context": "f1_house_software_engineer",
+   "spearman": 0.7450057634406528,
+   "pearson": 0.8850991064127814,
+   "sign_agreement": 0.7,
+   "n_test": 50
+  },
+  "f1_house_surgeon": {
+   "test_context": "f1_house_surgeon",
+   "spearman": 0.7293629372175634,
+   "pearson": 0.8929840119906395,
+   "sign_agreement": 0.6666666666666666,
+   "n_test": 45
+  },
+  "f1_phub_01": {
+   "test_context": "f1_phub_01",
+   "spearman": 0.6553015758612317,
+   "pearson": 0.8736993248388015,
+   "sign_agreement": 0.72,
+   "n_test": 50
+  },
+  "f1_phub_02": {
+   "test_context": "f1_phub_02",
+   "spearman": 0.6502593169234162,
+   "pearson": 0.8768460464579515,
+   "sign_agreement": 0.66,
+   "n_test": 50
+  },
+  "f1_phub_03": {
+   "test_context": "f1_phub_03",
+   "spearman": 0.6888686139329744,
+   "pearson": 0.8668146040436522,
+   "sign_agreement": 0.62,
+   "n_test": 50
+  },
+  "f1_phub_04": {
+   "test_context": "f1_phub_04",
+   "spearman": 0.8905109499318979,
+   "pearson": 0.8730705116888561,
+   "sign_agreement": 0.78,
+   "n_test": 50
+  },
+  "f1_phub_05": {
+   "test_context": "f1_phub_05",
+   "spearman": 0.8536304274153051,
+   "pearson": 0.8737221927401946,
+   "sign_agreement": 0.84,
+   "n_test": 50
+  },
+  "f1_phub_06": {
+   "test_context": "f1_phub_06",
+   "spearman": 0.6419996165681376,
+   "pearson": 0.8626336623251457,
+   "sign_agreement": 0.56,
+   "n_test": 50
+  },
+  "f1_phub_07": {
+   "test_context": "f1_phub_07",
+   "spearman": 0.6948713031446594,
+   "pearson": 0.8766049752136369,
+   "sign_agreement": 0.7,
+   "n_test": 50
+  },
+  "f1_phub_08": {
+   "test_context": "f1_phub_08",
+   "spearman": 0.6847867852690285,
+   "pearson": 0.8860597149487026,
+   "sign_agreement": 0.6,
+   "n_test": 50
+  },
+  "f2_wc_long_1": {
+   "test_context": "f2_wc_long_1",
+   "spearman": 0.7448616988995723,
+   "pearson": 0.8732471108629466,
+   "sign_agreement": 0.72,
+   "n_test": 50
+  },
+  "f2_wc_long_2": {
+   "test_context": "f2_wc_long_2",
+   "spearman": 0.9115923944433357,
+   "pearson": 0.9133668091142754,
+   "sign_agreement": 0.78,
+   "n_test": 50
+  },
+  "f2_wc_long_3": {
+   "test_context": "f2_wc_long_3",
+   "spearman": 0.7266135236960498,
+   "pearson": 0.8969963458888763,
+   "sign_agreement": 0.72,
+   "n_test": 50
+  },
+  "f2_wc_long_4": {
+   "test_context": "f2_wc_long_4",
+   "spearman": 0.5678063779117106,
+   "pearson": 0.7831180379117453,
+   "sign_agreement": 0.7,
+   "n_test": 50
+  },
+  "f2_wc_long_5": {
+   "test_context": "f2_wc_long_5",
+   "spearman": 0.8827314647135541,
+   "pearson": 0.9044997314214156,
+   "sign_agreement": 0.86,
+   "n_test": 50
+  },
+  "f2_wc_short_1": {
+   "test_context": "f2_wc_short_1",
+   "spearman": 0.9247502891953493,
+   "pearson": 0.8893649076510517,
+   "sign_agreement": 0.82,
+   "n_test": 50
+  },
+  "f2_wc_short_2": {
+   "test_context": "f2_wc_short_2",
+   "spearman": 0.5667018830967606,
+   "pearson": 0.8513034947066366,
+   "sign_agreement": 0.58,
+   "n_test": 50
+  },
+  "f2_wc_short_3": {
+   "test_context": "f2_wc_short_3",
+   "spearman": 0.8365827900541196,
+   "pearson": 0.8710187263742261,
+   "sign_agreement": 0.82,
+   "n_test": 50
+  },
+  "f2_wc_short_4": {
+   "test_context": "f2_wc_short_4",
+   "spearman": 0.8809546687068954,
+   "pearson": 0.8754848875127808,
+   "sign_agreement": 0.76,
+   "n_test": 50
+  },
+  "f2_wc_short_5": {
+   "test_context": "f2_wc_short_5",
+   "spearman": 0.5961870925045575,
+   "pearson": 0.8632037633050976,
+   "sign_agreement": 0.68,
+   "n_test": 50
+  },
+  "f3_icl_french_k4": {
+   "test_context": "f3_icl_french_k4",
+   "spearman": 0.8518056098949528,
+   "pearson": 0.8943534617595739,
+   "sign_agreement": 0.82,
+   "n_test": 50
+  },
+  "f3_icl_json_k2": {
+   "test_context": "f3_icl_json_k2",
+   "spearman": 0.8668843651947057,
+   "pearson": 0.8693424740337862,
+   "sign_agreement": 0.8,
+   "n_test": 50
+  },
+  "f3_icl_json_k4": {
+   "test_context": "f3_icl_json_k4",
+   "spearman": 0.8232808307610255,
+   "pearson": 0.8784642029493427,
+   "sign_agreement": 0.84,
+   "n_test": 50
+  },
+  "f3_icl_json_k8": {
+   "test_context": "f3_icl_json_k8",
+   "spearman": 0.8251056482813779,
+   "pearson": 0.8909292467133006,
+   "sign_agreement": 0.74,
+   "n_test": 50
+  },
+  "f3_icl_marker_k2": {
+   "test_context": "f3_icl_marker_k2",
+   "spearman": 0.7819343074709392,
+   "pearson": 0.8818072653277258,
+   "sign_agreement": 0.76,
+   "n_test": 50
+  },
+  "f3_icl_marker_k4": {
+   "test_context": "f3_icl_marker_k4",
+   "spearman": 0.830820208410902,
+   "pearson": 0.8903867327188392,
+   "sign_agreement": 0.72,
+   "n_test": 50
+  },
+  "f3_icl_marker_k8": {
+   "test_context": "f3_icl_marker_k8",
+   "spearman": 0.8374951988142957,
+   "pearson": 0.8968018839429417,
+   "sign_agreement": 0.84,
+   "n_test": 50
+  },
+  "f3_icl_pirate_k4": {
+   "test_context": "f3_icl_pirate_k4",
+   "spearman": 0.8208317335626582,
+   "pearson": 0.8678171142537947,
+   "sign_agreement": 0.84,
+   "n_test": 50
+  },
+  "f4_reph_archaic": {
+   "test_context": "f4_reph_archaic",
+   "spearman": 0.8597771811680706,
+   "pearson": 0.9502660319055559,
+   "sign_agreement": 0.88,
+   "n_test": 50
+  },
+  "f4_reph_casual": {
+   "test_context": "f4_reph_casual",
+   "spearman": 0.6739339231743019,
+   "pearson": 0.8903142087520628,
+   "sign_agreement": 0.8,
+   "n_test": 50
+  },
+  "f4_reph_enthusiastic": {
+   "test_context": "f4_reph_enthusiastic",
+   "spearman": 0.877305033666191,
+   "pearson": 0.9018203545764205,
+   "sign_agreement": 0.82,
+   "n_test": 50
+  },
+  "f4_reph_imperative": {
+   "test_context": "f4_reph_imperative",
+   "spearman": 0.8287072618083888,
+   "pearson": 0.9277836593429267,
+   "sign_agreement": 0.68,
+   "n_test": 50
+  },
+  "f4_reph_legalese": {
+   "test_context": "f4_reph_legalese",
+   "spearman": 0.8788897436180757,
+   "pearson": 0.9265268472834728,
+   "sign_agreement": 0.78,
+   "n_test": 50
+  },
+  "f4_reph_polite": {
+   "test_context": "f4_reph_polite",
+   "spearman": 0.8243373040622822,
+   "pearson": 0.9263818090573849,
+   "sign_agreement": 0.74,
+   "n_test": 50
+  },
+  "f5_fmt_bullets": {
+   "test_context": "f5_fmt_bullets",
+   "spearman": 0.6961198625006898,
+   "pearson": 0.9175687418097304,
+   "sign_agreement": 0.66,
+   "n_test": 50
+  },
+  "f5_fmt_code_comment": {
+   "test_context": "f5_fmt_code_comment",
+   "spearman": 0.6671628897435213,
+   "pearson": 0.8558252070834067,
+   "sign_agreement": 0.7,
+   "n_test": 50
+  },
+  "f5_fmt_json": {
+   "test_context": "f5_fmt_json",
+   "spearman": 0.8081060324338857,
+   "pearson": 0.9197109241628174,
+   "sign_agreement": 0.76,
+   "n_test": 50
+  },
+  "f5_fmt_markdown_table": {
+   "test_context": "f5_fmt_markdown_table",
+   "spearman": 0.8995870160199657,
+   "pearson": 0.9633345967425228,
+   "sign_agreement": 0.7,
+   "n_test": 50
+  },
+  "f5_fmt_xml": {
+   "test_context": "f5_fmt_xml",
+   "spearman": 0.8854686909940827,
+   "pearson": 0.9472511573788839,
+   "sign_agreement": 0.84,
+   "n_test": 50
+  },
+  "f6_default_template": {
+   "test_context": "f6_default_template",
+   "spearman": 0.8507971581073898,
+   "pearson": 0.8599158123411194,
+   "sign_agreement": 0.76,
+   "n_test": 50
+  },
+  "f6_helpful_asst": {
+   "test_context": "f6_helpful_asst",
+   "spearman": 0.8108374384236452,
+   "pearson": 0.9258516435467501,
+   "sign_agreement": 0.8620689655172413,
+   "n_test": 29
+  },
+  "f8_behav_fact": {
+   "test_context": "f8_behav_fact",
+   "spearman": 0.737418364277083,
+   "pearson": 0.9528244264406359,
+   "sign_agreement": 0.74,
+   "n_test": 50
+  },
+  "f8_behav_harmful": {
+   "test_context": "f8_behav_harmful",
+   "spearman": 0.6026219753394838,
+   "pearson": 0.8646992604909656,
+   "sign_agreement": 0.58,
+   "n_test": 50
+  },
+  "f8_behav_marker": {
+   "test_context": "f8_behav_marker",
+   "spearman": 0.8821071850355389,
+   "pearson": 0.9184044711687671,
+   "sign_agreement": 0.74,
+   "n_test": 50
+  },
+  "f8_behav_refusal": {
+   "test_context": "f8_behav_refusal",
+   "spearman": 0.8417691135330154,
+   "pearson": 0.9477851103026278,
+   "sign_agreement": 0.66,
+   "n_test": 50
+  },
+  "f8_behav_sycophant": {
+   "test_context": "f8_behav_sycophant",
+   "spearman": 0.8789377651317692,
+   "pearson": 0.8804639592961577,
+   "sign_agreement": 0.76,
+   "n_test": 50
+  }
+ },
+ "n_behaviors": 6,
+ "behaviors": [
+  "bad_medical",
+  "em",
+  "ic_edu",
+  "marker",
+  "taught_fact",
+  "tf_rev"
+ ],
+ "n_contexts": 50,
+ "lobo_aggregate": {
+  "mean_spearman": 0.3698477516214676,
+  "mean_sign_agreement": 0.8075396825396827,
+  "n_folds": 6
+ },
+ "loco_aggregate": {
+  "mean_spearman": 0.7827675534378902,
+  "mean_sign_agreement": 0.7410793721418859,
+  "n_folds": 50
+ }
+}
