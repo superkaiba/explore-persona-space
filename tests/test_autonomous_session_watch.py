@@ -2123,8 +2123,10 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # ``_refresh_pods_conf_from_api``. ``followups_child_alerted`` (default
     # False) is the dedup flag for the followups_running-parent-waiting-on-
     # open-child suppression alert added 2026-06-11 (#533); see
-    # ``_followups_awaiting_child_reason``. Schema-shape coverage stays
-    # exhaustive.
+    # ``_followups_awaiting_child_reason``. ``live_consecutive`` (default 0)
+    # is the #759 bug-class-b.1 consecutive-live-stall counter; see
+    # ``_process_stalled_session``'s live-session corroboration block.
+    # Schema-shape coverage stays exhaustive.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -2133,6 +2135,7 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "exhausted": False,
         "refresh_attempted": False,
         "followups_child_alerted": False,
+        "live_consecutive": 0,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -2145,6 +2148,7 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         last_self_report_ts="ts-2",
         respawn_count=3,
         exhausted=True,
+        live_consecutive=1,
         prev=payload,
     )
     payload2 = json.loads((isolated_registry / "stalled-7.json").read_text())
@@ -2152,6 +2156,65 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     assert payload2["respawn_count"] == 3
     assert payload2["exhausted"] is True
     assert payload2["alerted"] is True
+    assert payload2["live_consecutive"] == 1  # persisted across saves
+
+
+def test_load_stalled_state_defaults_live_consecutive_zero_on_legacy_file(isolated_registry):
+    # #759 b.1 backward-compat: an on-disk stalled-<N>.json written BEFORE the
+    # live_consecutive field existed has no such key. _load_stalled_state
+    # returns the raw dict (no live_consecutive), and the read site in
+    # _process_stalled_session must default it to 0 via .get(..., 0) — same
+    # guard shape as prev_missed. We assert both the raw load (key absent) and
+    # the canonical .get default so a future refactor can't silently start
+    # treating a missing key as anything but 0.
+    import json
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "stalled-9.json").write_text(
+        json.dumps(
+            {
+                "happy_session_id": "sess-9",
+                "missed": 1,
+                "alerted": False,
+                "respawn_count": 0,
+                "exhausted": False,
+                "refresh_attempted": False,
+                "followups_child_alerted": False,
+                "last_self_report_ts": "ts-legacy",
+                "first_seen": 1.0,
+            }
+        )
+    )
+    state = asw._load_stalled_state(9)
+    assert "live_consecutive" not in state  # legacy file predates the field
+    assert state.get("live_consecutive", 0) == 0  # the read-site default
+
+
+def test_stalled_live_escalation_k_env_override_and_fallback(monkeypatch):
+    # #759 b.1: EPM_STALLED_LIVE_ESCALATION_K parses a valid positive int COUNT
+    # (not minutes) and falls back to the default on a garbled OR non-positive
+    # value — a typo must neither disable the escalation (K too large) nor
+    # disable the debounce (K <= 0 = immediate escalation, the duplicate-driver
+    # bug). Mirrors the _respawn_spawn_grace_s / _orphan_staleness_s env-parse
+    # coverage.
+    import autonomous_session_watch as asw
+    from autonomous_session_watch import STALLED_LIVE_ESCALATION_K
+
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)
+    assert asw._stalled_live_escalation_k() == STALLED_LIVE_ESCALATION_K
+
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "4")
+    assert asw._stalled_live_escalation_k() == 4
+
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "garbled")
+    assert asw._stalled_live_escalation_k() == STALLED_LIVE_ESCALATION_K
+
+    # Non-positive falls back (never 0/negative — that would disable debounce).
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "0")
+    assert asw._stalled_live_escalation_k() == STALLED_LIVE_ESCALATION_K
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "-3")
+    assert asw._stalled_live_escalation_k() == STALLED_LIVE_ESCALATION_K
 
 
 # ── #488 stale-port self-heal in the stalled-detector ALERT branch ───────────

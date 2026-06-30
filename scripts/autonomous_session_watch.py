@@ -468,6 +468,45 @@ def _respawn_spawn_grace_s() -> float:
         return float(RESPAWN_SPAWN_GRACE_S)
 
 
+# Bounded K-escalation for the stalled detector's live-session corroboration
+# (#759, bug class b.1). When the stalled detector wants to respawn an ACTIVE
+# session whose Happy id is STILL in the daemon's live set, the first K-1
+# consecutive stalled episodes DOWNGRADE to a one-time alert (a transient busy
+# stretch — a long /adversarial-planner stage holds the conversation for
+# minutes, posting no marker, while a late self-report tick ages past the
+# window — must not duplicate the driver); the Kth episode ESCALATES to the
+# canonical respawn arm so a persistently-stalled live wrapper (#506 class:
+# live Happy wrapper, dead bg-Bash chain) is still recovered. K is a COUNT, not
+# seconds. Default 2: at most ~K x STALLED_WINDOW_S = ~2h worst case before a
+# live-but-dead-bg wrapper is recovered, within the historical 90-min
+# orphan-staleness backstop's rough timescale, while still debouncing one
+# transient busy stretch. K=1 would be NO debounce (every transient stretch
+# escalates immediately — the duplicate-driver bug this fixes).
+STALLED_LIVE_ESCALATION_K = 2
+
+
+def _stalled_live_escalation_k() -> int:
+    """Consecutive live-stall episodes the stalled detector tolerates (alert
+    only) before escalating to the canonical respawn arm (#759, bug class b.1).
+    Env ``EPM_STALLED_LIVE_ESCALATION_K`` (an integer COUNT, not minutes);
+    default :data:`STALLED_LIVE_ESCALATION_K`. A malformed / non-positive env
+    value falls back to the default — a typo'd var must neither disable the
+    escalation (K too large → starve recovery) nor disable the debounce (K <= 0
+    → immediate escalation, the duplicate-driver bug). Mirrors the
+    malformed-falls-back-to-default house pattern of :func:`_orphan_staleness_s`
+    / :func:`_respawn_spawn_grace_s`."""
+    raw = os.environ.get("EPM_STALLED_LIVE_ESCALATION_K")
+    if not raw:
+        return STALLED_LIVE_ESCALATION_K
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return STALLED_LIVE_ESCALATION_K
+    if parsed < 1:
+        return STALLED_LIVE_ESCALATION_K
+    return parsed
+
+
 def decide(
     status: str,
     alive: bool,
@@ -2874,6 +2913,7 @@ def _save_stalled_state(
     exhausted: bool = False,
     refresh_attempted: bool = False,
     followups_child_alerted: bool = False,
+    live_consecutive: int = 0,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
@@ -2898,6 +2938,12 @@ def _save_stalled_state(
     "followups_running parent waiting on open child" suppression alert
     has been posted this episode (dedup, also cleared on progress) —
     see :func:`_followups_awaiting_child_reason` for the predicate.
+    ``live_consecutive`` is the count of CONSECUTIVE stalled-detector ticks
+    on which decide() wanted to respawn but the session's Happy id was
+    still in the daemon's live set (#759 bug class b.1): the alert arm
+    persists the INCREMENTED count, the respawn / dead-wrapper / keep /
+    clear paths persist a RESET 0. A missing key in an older on-disk file
+    reads as 0 via :func:`_load_stalled_state` (backward compatible).
     ``prev`` is the prior on-disk payload (when the caller already has
     it loaded) so ``first_seen`` carries forward and the age backstop
     measures the original episode start.
@@ -2915,6 +2961,7 @@ def _save_stalled_state(
         "exhausted": exhausted,
         "refresh_attempted": refresh_attempted,
         "followups_child_alerted": followups_child_alerted,
+        "live_consecutive": live_consecutive,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -4801,6 +4848,7 @@ class _StalledActionCtx:
         pod_name: str | None = None,
         manual: bool = False,
         followups_child_alerted: bool = False,
+        live_consecutive: int = 0,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -4835,6 +4883,13 @@ class _StalledActionCtx:
         # Carried through every state-persist site so the alert fires at
         # most once per episode and clears on real-progress advancement.
         self.followups_child_alerted = followups_child_alerted
+        # #759 bug class b.1: consecutive live-stall episode count. The caller
+        # sets this to the value the CURRENT tick must PERSIST (the incremented
+        # count when the action was DOWNGRADED to alert on a live id; a RESET 0
+        # on every other path). Every ``_save_stalled_state`` call site in the
+        # handlers forwards it, so the persisted value matches the rule in
+        # ``_process_stalled_session``.
+        self.live_consecutive = live_consecutive
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -4901,6 +4956,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 exhausted=ctx.exhausted,
                 refresh_attempted=ctx.refresh_attempted,
                 followups_child_alerted=ctx.followups_child_alerted,
+                live_consecutive=ctx.live_consecutive,
                 prev=ctx.prev_state,
             )
         return
@@ -4917,6 +4973,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 exhausted=ctx.exhausted,
                 refresh_attempted=ctx.refresh_attempted,
                 followups_child_alerted=ctx.followups_child_alerted,
+                live_consecutive=ctx.live_consecutive,
                 prev=ctx.prev_state,
             )
         return
@@ -4955,6 +5012,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             exhausted=ctx.exhausted,
             refresh_attempted=ctx.refresh_attempted,
             followups_child_alerted=ctx.followups_child_alerted,
+            live_consecutive=ctx.live_consecutive,
             prev=ctx.prev_state,
         )
 
@@ -4976,6 +5034,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
                 exhausted=True,
                 refresh_attempted=ctx.refresh_attempted,
                 followups_child_alerted=ctx.followups_child_alerted,
+                live_consecutive=ctx.live_consecutive,
                 prev=ctx.prev_state,
             )
         return
@@ -5005,6 +5064,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
             exhausted=True,
             refresh_attempted=ctx.refresh_attempted,
             followups_child_alerted=ctx.followups_child_alerted,
+            live_consecutive=ctx.live_consecutive,
             prev=ctx.prev_state,
         )
 
@@ -5096,6 +5156,7 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
             exhausted=ctx.exhausted,
             refresh_attempted=new_refresh_attempted,
             followups_child_alerted=ctx.followups_child_alerted,
+            live_consecutive=ctx.live_consecutive,
             prev=ctx.prev_state,
         )
 
@@ -5295,6 +5356,12 @@ def _process_stalled_session(
     prev_exhausted = bool(prev_state.get("exhausted", False))
     prev_refresh_attempted = bool(prev_state.get("refresh_attempted", False))
     prev_followups_child_alerted = bool(prev_state.get("followups_child_alerted", False))
+    # #759 bug class b.1: consecutive live-stall episode count. Absent in an
+    # older on-disk file -> 0 (backward compatible), same guard shape as
+    # prev_missed / prev_respawn_count.
+    prev_live_consecutive = prev_state.get("live_consecutive", 0)
+    if not isinstance(prev_live_consecutive, int):
+        prev_live_consecutive = 0
     prev_last_self_report_ts = prev_state.get("last_self_report_ts")
     if not isinstance(prev_last_self_report_ts, str):
         prev_last_self_report_ts = None
@@ -5317,12 +5384,17 @@ def _process_stalled_session(
         exhausted = False
         refresh_attempted = False
         followups_child_alerted = False
+        # The session resumed self-reporting -> any prior live-stall episode is
+        # over -> the K-escalation debounce starts fresh (#759 b.1, criterion
+        # 12's earlier-firing sibling reset).
+        live_consecutive = 0
     else:
         alerted = prev_alerted
         respawn_count = prev_respawn_count
         exhausted = prev_exhausted
         refresh_attempted = prev_refresh_attempted
         followups_child_alerted = prev_followups_child_alerted
+        live_consecutive = prev_live_consecutive
 
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
@@ -5415,6 +5487,7 @@ def _process_stalled_session(
         pod_name=pod_name,
         manual=manual,
         followups_child_alerted=followups_child_alerted,
+        live_consecutive=live_consecutive,
     )
 
     if action == "respawn":
@@ -5443,6 +5516,7 @@ def _process_stalled_session(
             exhausted=exhausted,
             refresh_attempted=refresh_attempted,
             followups_child_alerted=followups_child_alerted,
+            live_consecutive=live_consecutive,
             prev=prev_state,
         )
 
