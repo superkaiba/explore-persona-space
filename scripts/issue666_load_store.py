@@ -185,6 +185,56 @@ def verify_rb_pt() -> dict:
     return rb
 
 
+def load_rb_columns(layer: int = 14, *, rb: dict | None = None) -> dict:
+    """Return the #658 diffmeans r_B columns at ``layer`` as float64 numpy vectors (§4b).
+
+    Sibling to ``verify_rb_pt`` — the latter Hub-resolves + sha256-pins + key-asserts
+    the artifact; this returns the actual diffmeans read-out directions used as the
+    mixed-source ``r_{B'}`` for the bad-medical (``harmful_compliance``) and
+    insecure-code/EM (``broad_em``) behaviors. Pass an already-verified ``rb`` dict
+    to skip the (re-)download; otherwise ``verify_rb_pt()`` runs first so no read
+    happens against an unpinned artifact.
+
+    The #658 ``r_b`` store maps each behavior -> a per-column dict whose ``diffmeans``
+    key is the (n_layer, d) difference-in-means read-out direction (alongside
+    ``meanDB`` / ``n_db`` / ``n_dbbar`` book-keeping). A LEGACY plain-tensor column
+    ((n_layer, d) or (d,)) is also accepted for forward-compat. The (n_layer, d)
+    direction is indexed at ``layer``; a (d,) direction is used directly. Returns
+    ``{column_name: np.ndarray(d,)}`` for EVERY column present (so a caller can route
+    per behavior).
+    """
+    import numpy as np
+
+    if rb is None:
+        rb = verify_rb_pt()
+    rb_map = rb.get("r_b", {})
+    out: dict = {}
+    for name, val in rb_map.items():
+        # Real #658 shape: val is {'diffmeans': (n_layer, d), 'meanDB': ..., ...}.
+        # Legacy/test shape: val is a bare (n_layer, d) | (d,) tensor.
+        if isinstance(val, dict):
+            if "diffmeans" not in val:
+                raise ValueError(
+                    f"r_b column {name!r} dict missing 'diffmeans' key; got {sorted(val)}"
+                )
+            t = val["diffmeans"]
+        else:
+            t = val
+        arr = t.detach().cpu().numpy() if hasattr(t, "detach") else np.asarray(t)
+        arr = arr.astype(np.float64)
+        if arr.ndim == 2:  # (n_layer, d) -> the layer's row
+            li = min(layer, arr.shape[0] - 1)
+            vec = arr[li, :]
+        elif arr.ndim == 1:  # already (d,)
+            vec = arr
+        else:
+            raise ValueError(
+                f"r_b column {name!r} has unexpected rank {arr.ndim} (shape {arr.shape})"
+            )
+        out[name] = np.ascontiguousarray(vec.reshape(-1))
+    return out
+
+
 def _cell_digest(loaded: dict, cell: str) -> dict:
     vp = loaded["v_plus"]
     meta = loaded["meta"]
