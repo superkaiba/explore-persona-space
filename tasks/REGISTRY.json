@@ -4859,8 +4859,8 @@
     "764": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/764",
-      "status": "running",
+      "path": "tasks/reviewing/764",
+      "status": "reviewing",
       "title": "workflow-fix: document VM earlyoom silent-SIGTERM + stream-reduce recipe in gotchas.md"
     },
     "77": {
