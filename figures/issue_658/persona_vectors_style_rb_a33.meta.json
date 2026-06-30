@@ -1,0 +1,212 @@
+{
+  "commit": "2a229f1efe",
+  "created": "2026-06-30T14:17:35Z",
+  "figsize": [
+    9.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.40433998225114737,
+      "error": 0.19434935220800018,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.22183773909985866,
+      "error": 0.26179079786984727,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.5771779908144415,
+      "error": 0.18761508358930445,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.5978714120357328,
+      "error": 0.1423593591692324,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.25643083918362963,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.5551957296058054,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": -0.5505395248105924,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.24538536351473667,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": -0.009396605124314228,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.3705115147476392,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.49056369839014885,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.634084067930737,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.5141849906153804,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.7457416819262481,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "Best held-out read-out \u03c1\n($r_B^{\\top} v_0(C)$ vs judged rate)": 0.7752824167286136,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.19,
+      "y": 0.4207046959162795,
+      "error": 0.21321182460557817,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "y": 0.2845191653878994,
+      "error": 0.2665661350713857,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.81,
+      "y": 0.41809755785503044,
+      "error": 0.17559307436418264,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.81,
+      "y": 0.6319711501054617,
+      "error": 0.16107965291991896,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "y": 0.1109675857222635,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "y": 0.5573516916295412,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "y": null,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "y": -0.538023648131758,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.19,
+      "y": 0.22020674300157567,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.81,
+      "y": 0.030512340441921304,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "y": 0.31098848710481475,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.81,
+      "y": 0.47741391551863716,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.19,
+      "y": 0.646630392212732,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.81,
+      "y": 0.5636446105846927,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.81,
+      "y": 0.66217463583318,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.81,
+      "y": 0.7995732213584751,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 32
+}
