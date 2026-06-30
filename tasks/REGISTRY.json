@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 756,
+  "highest_id": 757,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4797,6 +4797,13 @@
       "path": "tasks/proposed/756",
       "status": "proposed",
       "title": "daily-fix: analyzer scope guard \u2014 no self-spawned critics"
+    },
+    "757": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/757",
+      "status": "proposed",
+      "title": "daily-fix: same-issue loop re-reads latest followup-scope marker"
     },
     "76": {
       "has_clean_result": false,
