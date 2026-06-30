@@ -375,18 +375,30 @@ session-independent) closes that gap with a wedge arm in `_process_pod`:
     the re-drivable `no_compute_available` block (it keys on the latest
     `epm:failure` marker's `failure_class`+`reason` ∈ `TRANSIENT_CAPACITY_REASONS`)
     and leave the non-capacity `blocked` reasons parked for a human — exactly as
-    if the poller had emitted the same JSON. The three `blocked` reasons differ
+    if the poller had emitted the same JSON. The `blocked` reasons differ
     on whether the pod terminated, so the marker text is NOT uniform (#770 r2,
     CONCERN #3): `runpod_wedge_inputs_unverified` is PRE-terminate (a PARTIAL
     cell → the pod was NOT terminated, still RUNNING until a human acts), while
     `sidecar_persistence_failed` and `runpod_wedge_relaunch_spec_missing` are
     POST-terminate (the wedged pod WAS terminated; the failure is in the fresh
-    re-provision). The terminate decision itself still lives entirely inside
+    re-provision), and `runpod_wedge_failover_error` (#770 v2 r2/r3) is an
+    UNEXPECTED raise from `_failover_wedged_runpod` that a `get_pod_by_name`
+    liveness probe confirmed happened AFTER `terminate_pod` (the pod is GONE — a
+    PRE-terminate raise where the pod is still alive degrades to `alert` instead,
+    see below). The terminate decision itself still lives entirely inside
     `_failover_wedged_runpod`; the watcher never calls a SECOND terminate.
-  - `alert` (NO reconstructable handle, or the failover call raised → degrade to
-    ALERT-only, NEVER a blind terminate; fail-soft so one wedged pod's failover
-    error never crashes the 10-min tick). The sidecar-names-a-DIFFERENT-pod case
-    is NOT `alert` — it maps to `already-handled` (the SIDECAR-BINDING DEFENSE
+  - `alert` (NO reconstructable handle / a sidecar parse failure, OR a
+    PRE-terminate raise from `_failover_wedged_runpod` where a `get_pod_by_name`
+    liveness probe finds the pod STILL ALIVE — or the probe itself raised →
+    UNCERTAIN, bias SAFE — #770 v2 r3) → degrade to ALERT-only, NEVER a blind
+    terminate, and PRESERVE the wedge clock (the still-RUNNING pod is in the next
+    tick's snapshot, so the wedge re-matures; never a FALSE terminal record while
+    the pod bills). A POST-terminate raise (pod GONE per the probe) routes to the
+    `blocked` `runpod_wedge_failover_error` reason above, NOT `alert` (the
+    terminated pod is gone from the RUNNING-only snapshot, so the run WOULD be
+    stranded without a durable record). Fail-soft either way — one wedged pod's
+    failover error never crashes the 10-min tick. The sidecar-names-a-DIFFERENT-pod
+    case is NOT `alert` — it maps to `already-handled` (the SIDECAR-BINDING DEFENSE
     above), because a re-pointed sidecar means a revived poller already failed the
     wedge over to a fresh, healthy pod the watcher must not terminate.
 
@@ -427,7 +439,15 @@ non-capacity `blocked` reason blocks but is NOT re-drivable),
 marker text states the right terminate-state per reason),
 `test_wedge_failover_sidecar_pod_name_mismatch_is_already_handled` +
 `test_wedge_failover_sidecar_pod_name_match_proceeds` (CRITICAL #2 — the
-sidecar-binding defense)) + the direct predicate test
+sidecar-binding defense)); #770 v2 r3 (the pre/post-terminate raise split):
+`test_wedge_failover_raise_after_terminate_routes_to_blocked` +
+`test_wedge_failover_raise_after_terminate_routes_to_blocked_redrivable` (POST-terminate
+raise, pod GONE per the probe → durable `blocked`),
+`test_wedge_failover_preterminate_raise_pod_alive_degrades_to_alert` +
+`test_wedge_failover_preterminate_raise_probe_raises_degrades_to_alert` +
+`test_wedge_failover_preterminate_raise_does_not_falsely_block_live_pod` (PRE-terminate
+raise / probe error → ALERT, clock preserved, no false terminal record) + the direct
+predicate test
 `tests/test_runpod_wedge_detection.py::test_pod_is_runpod_runtime_wedged_predicate`.
 
 ## Tests of record
