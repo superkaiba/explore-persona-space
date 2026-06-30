@@ -4887,8 +4887,8 @@
     "768": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/768",
-      "status": "proposed",
+      "path": "tasks/planning/768",
+      "status": "planning",
       "title": "workflow-fix: SKILL.md gate handler for pv_phase1_done (issue #763 off-pod PV judge)"
     },
     "77": {
