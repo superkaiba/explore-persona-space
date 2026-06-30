@@ -22,16 +22,16 @@ relates_to:
 - implant-which-behaviors
 - implant-learning-speed
 ---
-# #664's “marker never installed on Instruct” was a slot-rooting measurement artifact: a corrected read recovers the install on 16/16 reused adapters (HIGH confidence)
+# A slot-rooting measurement artifact masked a successful marker install on Qwen-2.5-7B-Instruct; the corrected read recovers it on 16/16 reused adapters (HIGH confidence)
 
 <!-- clean-result-v4 -->
 
 ## Takeaways
 
-- Reading the same 16 Instruct marker adapters from [#664](https://eps.superkaiba.com/tasks/664) at the marker's **own trained slot** recovers the install in-band on **16/16 cells** (median **+8.4 nat**).
-- #664's published "no install" range is reproduced exactly by the **mis-rooted read** (median **+2.2 nat**, vs #664's −0.34 to +1.81 nat) — identical weights, only the read code differs.
-- The corrected read tracks #664's own **in-loop** probe almost perfectly (Spearman **ρ = 0.92**, Pearson **r = 0.99**, n = 16): the marker installed; the mis-rooted read was the sole error source.
-- The DV is teacher-forced `log P(※)` at a fixed slot, not free emission, but it is validated against the in-loop probe — so this is a measurement-bug fix, not a new mechanism.
+- Reading the prior experiment's 16 Instruct marker adapters at the marker's **own trained slot** recovers the install in-band on **16/16 cells** (median **+8.4 nat**).
+- The published "no install" range is reproduced exactly by the **mis-rooted read** (median **+2.2 nat**) — identical weights, only the read code differs.
+- On the same 16 adapters the corrected read tracks the in-loop band-stop probe near-perfectly (see Figure 2; n = 16): two independent reads agree, so the marker installed.
+- The DV is teacher-forced `log P(※)` at a fixed slot, not free emission, but validated against the in-loop probe — a measurement-bug fix, not a new mechanism.
 - The base-vs-Instruct fresh-train arm was dropped on a real OOM; its premise was already settled by the in-loop probe and prior clean Instruct installs.
 
 ## Goal
@@ -41,31 +41,42 @@ relates_to:
 
 ## Methodology
 
-**Design:** A single diagnostic re-read pass over **16 already-trained marker adapters from [#664](https://eps.superkaiba.com/tasks/664)** — 4 sources (default assistant, librarian, programmer, surgeon) × 2 training arms (contrastive-negative, positive-only) × 2 doses (d1, d2), all seed 42, all on Qwen-2.5-7B-Instruct. The single manipulated variable is the **read code**: each adapter is scored two ways against its own Instruct base, holding the weights constant.
+**Design:** A single diagnostic re-read pass over **16 already-trained marker adapters reused from the parent experiment** — 4 sources (default assistant, librarian, programmer, surgeon) × 2 training arms (contrastive-negative, positive-only) × 2 doses (d1, d2), all seed 42, all on Qwen-2.5-7B-Instruct. The single manipulated variable is the **read code**: each adapter is scored two ways against its own Instruct base, holding the weights constant.
 
 - **Corrected read** (`corrected_slot_stats`): threads marker token ids directly through the in-loop band-stop's fused-render slot logic — fuses `prompt + (R + ※)` via `apply_chat_template(tokenize=True, add_generation_prompt=False)`, finds the ` ※` (id 83399) subsequence, and reads the distribution at `marker_start − 1` (the slot that predicts the marker, inside the model's own response R). No decode→re-encode.
-- **Mis-rooted read** (`misrooted_slot_stats`, the negative control): reproduces #664's downstream path — decodes `prompt + R` to text, re-encodes it, and reads a slot positioned after the response's `<|im_end|>`. This is the bug being demonstrated, kept as a labeled artifact.
+- **Mis-rooted read** (`misrooted_slot_stats`, the negative control): reproduces the parent experiment's downstream path — decodes `prompt + R` to text, re-encodes it, and reads a slot positioned after the response's `<|im_end|>`. This is the bug being demonstrated, kept as a labeled artifact.
 
-**Training:** N/A — no model training in this run (the 16 adapters were trained in #664 and reused verbatim). The reused #664 marker recipe, written out in full as primary method:
+**Training:** This run trains no model — the 16 adapters were trained by the parent experiment and re-read here. Because the corrected re-read interpretation depends on the exact recipe each adapter was trained with, that recipe is written out in full below as primary method (token-id-threaded reader applied to 16 LoRA adapters previously trained on the marker recipe: rsLoRA r=32 / α=64 / q-k-v-o / lr 5e-6 / band-stop [5, 12] nat / 3-epoch ceiling). The `Provenance` column cites standalone rule files and the adapters' own committed `adapter_config.json`; the source-issue citations live in the `**Repro:**` footer.
 
-| Hyperparameter | Value | Source |
+| Hyperparameter | Value | Provenance |
 |---|---|---|
-| Base model | Qwen/Qwen2.5-7B-Instruct | reused #664 adapters; plan §3 |
-| Marker token | ` ※` (leading space, id 83399; asserted in-process) | `.claude/rules/marker-leakage-measurement.md`; cell repro block |
-| LoRA rank `r` | 32 | `adapter_config.json` (read off the reused adapter) |
-| LoRA `alpha` | 64 | `adapter_config.json` |
-| rsLoRA | enabled | `adapter_config.json` |
-| Target modules | q_proj, k_proj, v_proj, o_proj | `adapter_config.json` |
-| Learning rate | 5e-6 | `marker-training-recipe.md` + #474/#601/#650; plan §11 |
-| Dose lever | training STEPS (never lr) | #601; plan §11 |
-| Band-stop target | 5 to 12 nat (d1) / 10 to 16 nat (d2) | `marker-training-recipe.md`; plan §11 |
-| Epoch ceiling | 3 | plan §11 |
-| Loss | marker token + turn-end tail only (R masked) | `.claude/rules/contrastive-negatives.md` |
-| Re-read base/Instruct | Qwen-2.5-7B-Instruct (matched to the adapters' own base) | cell repro block |
+| Base model | Qwen/Qwen2.5-7B-Instruct | parent adapter config |
+| LoRA type | rsLoRA (`use_rslora=True`) | parent adapter config |
+| LoRA rank `r` | 32 | parent adapter config |
+| LoRA alpha `α` | 64 | parent adapter config |
+| LoRA dropout | 0.05 | parent adapter config |
+| Target modules | q_proj, k_proj, v_proj, o_proj | parent adapter config |
+| Marker token | ` ※` (leading space, id 83399; asserted at every entrypoint) | marker-leakage-measurement.md |
+| `<\|im_end\|>` id | 151645 | tokenizer spec |
+| Marker learning rate | 5e-6 | marker-training-recipe (validated clean-window for Qwen-2.5-7B-Instruct marker training) |
+| LR schedule | cosine, warmup_ratio 0.05 | parent training-time config |
+| Optimizer | AdamW | parent training-time config |
+| Weight decay | 0.01 | parent training-time config |
+| Precision | bf16 | parent training-time config |
+| Batch size | 4 (× grad-accum 4 = effective 16) | parent training-time config |
+| Max sequence length | 3072 tokens | parent training-time config |
+| Dose lever | training STEPS at fixed lr (never lr) | marker-training-recipe |
+| Loss surface | marker token + `<\|im_end\|>` turn-end tail; response R masked (`MarkerOnlyDataCollator(tail_tokens=0)`) | marker-training-recipe; contrastive-negatives |
+| Band-stop d1 window | source `log P(※) trained − base ∈ [5, 12]` nat | marker-training-recipe (epoch-1 band-stop) |
+| Band-stop d2 window | `[10, 16]` nat (same lr, longer step budget) | marker-training-recipe |
+| Band-stop eval cadence | every 5 steps; min 10 steps; 3-epoch ceiling | marker-training-recipe |
+| Contrastive negative panel | 4 personas: police_officer, persona_hub f1_phub_01, curious_rephrase, wildchat_tech_support (disjoint from each cell's source) | contrastive-negatives |
+| Pos:neg ratio | ~1:1 | contrastive-negatives |
+| Re-read base | Qwen-2.5-7B-Instruct (matched to the adapters' own base) | parent adapter config |
 
-**Evaluation:** The DV is the source-context `log P(※)` trained − base, computed at the marker's trained slot, averaged over 50 held-out questions per cell. Each slot is stored under the [#530](https://eps.superkaiba.com/tasks/530) four-float contract `{logp, z_marker, z_eos, logZ}` per side (trained and base), with the write-time softmax-identity validator. **Measurement-validity note:** this is a teacher-forced log-prob at a fixed appended slot, not a free-generation emission — the marker is never the argmax token in either read (the corrected argmax is `<|im_end|>` in 799/800 rows; the install shows up as the marker-vs-EOS-margin shift, `delta_eos_margin ≈ delta_logp`). The proxy is validated against #664's independent in-loop band-stop probe (cross-validation reported below), so it tracks the install construct. The cross-validation anchor is #664's per-cell `inloop_band_stop.last_delta_nats` (the teacher-forced source read taken inside the training loop when the band-stop callback fired).
+**Evaluation:** The DV is the source-context `log P(※)` trained − base, computed at the marker's trained slot, averaged over 50 held-out questions per cell. Each slot is stored under the project's four-float marker contract `{logp, z_marker, z_eos, logZ}` per side (trained and base), with a write-time softmax-identity validator. **Measurement-validity note:** this is a teacher-forced log-prob at a fixed appended slot, not a free-generation emission — the marker is never the argmax token in either read (the corrected argmax is `<\|im_end\|>` in 799/800 rows; the install shows up as the marker-vs-EOS-margin shift, `delta_eos_margin ≈ delta_logp`). The proxy is validated against the parent experiment's independent in-loop band-stop probe (cross-validation reported below), so it tracks the install construct. The cross-validation anchor is the parent's per-cell `inloop_band_stop.last_delta_nats` (the teacher-forced source read taken inside the training loop when the band-stop callback fired).
 
-**Data extraction:** The 50-question source probe per cell is the held-out marker eval set carried verbatim from #664 (tier-2: an established instruction-following question pool). The model's own greedy response R is regenerated on-policy under each source persona, then the marker is appended at the trained slot for the teacher-forced read. No new training data was generated for the headline; the fresh-train mix file below was built for the dropped base-vs-Instruct arm.
+**Data extraction:** The 50-question source probe per cell is the held-out marker eval set carried verbatim from the parent experiment (tier-2: an established instruction-following question pool). The model's own greedy response R is regenerated on-policy under each source persona, then the marker is appended at the trained slot for the teacher-forced read. No new training data was generated for the headline; the fresh-train mix file below was built for the dropped base-vs-Instruct arm.
 
 **Sample training/evaluation data + completions:** complete artifacts — full per-cell read JSONs at [HF data repo `issue734_marker_slot_reread` @3a85df7](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3a85df7f52fb49d48eb1e6677565c35b370362e2/issue734_marker_slot_reread/eval_results), full fresh-train mix at [HF data repo `issue734_setup_h1_mix` @3a85df7](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3a85df7f52fb49d48eb1e6677565c35b370362e2/issue734_setup_h1_mix).
 
@@ -91,31 +102,31 @@ The reused adapters' training rows pair positives (the source persona, marker ap
 ```
 Q: "Choose three puns to use in a conversation with a friend."
 corrected (marker's own slot):  trained log P(※) = -17.13   base = -22.57   Δ = +5.44 nat   trained argmax = <|im_end|>
-mis-rooted (#664 path, post-turn-end slot):  trained = -23.38   base = -24.33   Δ = +0.95 nat   trained argmax = <|endoftext|>
+mis-rooted (parent's downstream path, post-turn-end slot):  trained = -23.38   base = -24.33   Δ = +0.95 nat   trained argmax = <|endoftext|>
 ```
 </details>
 
 ## Results
 
-### Reading the same 16 adapters at the marker's own slot recovers the install in-band (16/16); the mis-rooted read reproduces #664's floor
+### Reading the same 16 adapters at the marker's own slot recovers the install in-band (16/16); the mis-rooted read reproduces the published floor
 
-What is plotted: per-cell source `log P(※)` trained − base (nat) for all 16 reused adapters, paired bars — corrected read (marker's own slot) vs mis-rooted read (#664's post-turn-end slot). Shaded spans are the d1 (5 to 12 nat) / d2 (10 to 16 nat) band-stop targets; n = 50 per cell.
+What is plotted: per-cell source `log P(※)` trained − base (nat) for all 16 reused adapters, paired bars — corrected read (marker's own slot) vs mis-rooted read (the post-turn-end slot). Shaded spans are the d1 (5 to 12 nat) / d2 (10 to 16 nat) band-stop targets; n = 50 per cell.
 
 ![Per-cell paired bars: corrected marker log P(※) trained-base lands inside the shaded 5-12 / 10-16 nat band-stop windows on all 16 cells, while the mis-rooted read sits near the floor at 1-4 nat.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4109e30f17e7a2483818d4692d0bb8d2ef11abd0/figures/issue_734/hero1_corrected_vs_misrooted.png)
 
-> **Figure.** *The same 16 Instruct adapters, read two ways.* Per-cell source marker log P(※) trained − base (nat), n = 50 per cell. Corrected read (blue) lands in the d1 [5, 12] / d2 [10, 16] band-stop targets on 16/16 cells (median +8.4, range 5.2–12.5); mis-rooted read (orange) sits at 1.1–4.0 nat, reproducing #664's published −0.34–1.81 floor.
+> **Figure.** *The same 16 Instruct adapters, read two ways.* Per-cell source marker log P(※) trained − base (nat), n = 50 per cell. Corrected read (blue) lands in the d1 [5, 12] / d2 [10, 16] band-stop targets on 16/16 cells (median +8.4, range 5.2–12.5); mis-rooted read (orange) sits at 1.1–4.0 nat, reproducing the published −0.34–1.81 floor.
 
-The corrected read is in-band on every cell; the mis-rooted read sits at the floor on every cell, and the corrected delta exceeds the mis-rooted delta in 800/800 rows. Identical weights, so the ~6-nat median gap (range 3.8–9.1) is attributable entirely to the read's target slot, not training. The mis-rooted slot sits after a spurious second turn-end — its trained argmax is a non-marker special token (`<|endoftext|>` in 606/800 rows, `<|im_start|>` in 194/800), and never the marker in any of the 800 rows.
+The corrected read is in-band on every cell; the mis-rooted read sits at the floor on every cell, and the corrected delta exceeds the mis-rooted delta in 800/800 rows. Identical weights, so the ~6-nat median gap (range 3.8–9.1) is attributable entirely to the read's target slot, not training. The mis-rooted slot sits after a spurious second turn-end — its trained argmax is a non-marker special token (`<\|endoftext\|>` in 606/800 rows, `<\|im_start\|>` in 194/800), and never the marker in any of the 800 rows.
 
-### The corrected read agrees with #664's own in-loop probe — the install was always there
+### The corrected read agrees with the in-loop band-stop probe — the install was always there
 
-What is plotted: each cell as one point — x is #664's in-loop band-stop read (recorded during training), y is this run's corrected on-policy read; dashed line is y = x; points labelled by source and dose; n = 16.
+What is plotted: each cell as one point — x is the in-loop band-stop read (recorded during training), y is this run's corrected on-policy read; dashed line is y = x; points labelled by source and dose; n = 16.
 
-![Scatter of corrected on-policy read vs #664 in-loop band-stop read; 16 points cluster tightly along the y=x diagonal in two dose bands (d1 near 5-7 nat, d2 near 10-12 nat).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4109e30f17e7a2483818d4692d0bb8d2ef11abd0/figures/issue_734/hero2_crossval_inloop.png)
+![Scatter of corrected on-policy read vs in-loop band-stop read; 16 points cluster tightly along the y=x diagonal in two dose bands (d1 near 5-7 nat, d2 near 10-12 nat).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4109e30f17e7a2483818d4692d0bb8d2ef11abd0/figures/issue_734/hero2_crossval_inloop.png)
 
-> **Figure.** *Two independent reads agree.* Corrected on-policy read (y) vs #664's in-loop teacher-forced band-stop read (x), one point per cell (n = 16). Spearman ρ = 0.92, Pearson r = 0.99, p < 0.001. Points cluster on y = x in two dose bands: d1 ≈ 5–7 nat, d2 ≈ 10–12 nat.
+> **Figure.** *Two independent reads agree.* Corrected on-policy read (y) vs the in-loop teacher-forced band-stop read (x), one point per cell (n = 16). Spearman ρ = 0.92, Pearson r = 0.99, p < 0.001. Points cluster on y = x in two dose bands: d1 ≈ 5–7 nat, d2 ≈ 10–12 nat.
 
-During training, #664's loop recorded every one of these cells stopping in-band on its in-loop probe (+5.6 to +12.3 nat), yet #664's body claimed the marker "never installed" because its separate downstream read was mis-rooted. The corrected read matches the in-loop probe within ~2 nat, so the in-loop evidence was right and the mis-rooted read was the sole error source. Agreement across two independent code paths is what licenses HIGH confidence.
+During training, the loop recorded every one of these cells stopping in-band on its in-loop probe (+5.6 to +12.3 nat), yet the published body claimed the marker "never installed" because its separate downstream read was mis-rooted. The corrected read matches the in-loop probe within ~2 nat, so the in-loop evidence was right and the mis-rooted read was the sole error source. Agreement across two independent code paths is what licenses HIGH confidence.
 
 ### Every cell moves from the floor into the band when the slot is corrected (per-unit view)
 
@@ -129,7 +140,7 @@ The shift is unanimous and roughly constant across sources, arms, and doses — 
 
 ### The base-vs-Instruct fresh-train arm was dropped on an OOM; the headline does not need it
 
-The plan's confirmatory arm would fresh-train the marker on base Qwen-2.5-7B vs Instruct to test residual model resistance. That phase hit a real CUDA OOM during the mixed-precision fp32 cast on the 1× H100 envelope (a pod stop+resume and an enforce-eager fix were tried first), so it was dropped per the autonomous "drop the offending domain" pivot. The headline does not need it: its premise — that Instruct might resist the install — is already contradicted by #664's own in-loop band-stop and by the clean Instruct marker installs in [#474](https://eps.superkaiba.com/tasks/474), [#601](https://eps.superkaiba.com/tasks/601), and [#650](https://eps.superkaiba.com/tasks/650).
+The plan's confirmatory arm would fresh-train the marker on base Qwen-2.5-7B vs Instruct to test residual model resistance. That phase hit a real CUDA OOM during the mixed-precision fp32 cast on the 1× H100 envelope (a pod stop+resume and an enforce-eager fix were tried first), so it was dropped per the autonomous "drop the offending domain" pivot. The headline does not need it: its premise — that Instruct might resist the install — is already contradicted by the in-loop band-stop evidence on these same adapters and by prior clean Instruct marker installs along this recipe line.
 
 ---
 **Repro:** ~6 h pod lifetime on 1× H100 (RunPod pod-734, across a stop+resume, two hung-engine cycles, one clean Phase-1 completion, and the fresh-train OOM that triggered the pivot); CPU-only re-read + figures off-pod on the VM · Code at [`scripts/issue734_marker_reread.py`](https://github.com/superkaiba/explore-persona-space/blob/f76e34b9703a7a0ff0a6dd35dcd3f185f90311f2/scripts/issue734_marker_reread.py) + [`scripts/issue734_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/4109e30f17e7a2483818d4692d0bb8d2ef11abd0/scripts/issue734_figures.py) (workload SHA `f76e34b9`, figures SHA `4109e30f`) · Phase-1 corrected_reread (16 cells) + Phase-0 token-id split: [git blob @4109e30f](https://github.com/superkaiba/explore-persona-space/tree/4109e30f17e7a2483818d4692d0bb8d2ef11abd0/figures/issue_734) and [HF data repo `issue734_marker_slot_reread` @3a85df7](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3a85df7f52fb49d48eb1e6677565c35b370362e2/issue734_marker_slot_reread/eval_results) · figure source [`figures/issue_734/`](https://github.com/superkaiba/explore-persona-space/tree/4109e30f17e7a2483818d4692d0bb8d2ef11abd0/figures/issue_734).
