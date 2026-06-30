@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 752,
+  "highest_id": 753,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4769,6 +4769,13 @@
       "path": "tasks/proposed/752",
       "status": "proposed",
       "title": "daily-fix: GCP intent under-provisions 7B hidden-state capture"
+    },
+    "753": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/753",
+      "status": "proposed",
+      "title": "daily-fix: PreToolUse guard rejecting bare | python in Bash"
     },
     "76": {
       "has_clean_result": false,
