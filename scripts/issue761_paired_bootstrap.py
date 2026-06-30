@@ -43,7 +43,6 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from issue658_common import summarize_answer_span
 from issue761_common import (
     BEHAVIORS,
     D_EFF,
@@ -220,8 +219,8 @@ def _samen_v0_for_context(
     accum = torch.zeros(N_LAYERS, HIDDEN, dtype=torch.float32)
     for s in sel:
         span = spans[int(s)]  # (28, n_tok, 3584)
-        for li in range(N_LAYERS):
-            accum[li] += summarize_answer_span(span[li], "mean").float()
+        # vectorized mean over answer tokens at every layer at once: (28, n_tok, H) -> (28, H)
+        accum += span.float().mean(dim=1)
     v0 = (accum / n_target).numpy()
     return v0, with_repl
 

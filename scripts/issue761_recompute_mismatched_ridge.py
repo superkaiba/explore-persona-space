@@ -39,7 +39,6 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from issue658_common import summarize_answer_span
 from issue761_common import (
     BEHAVIORS,
     HIDDEN,
@@ -92,9 +91,11 @@ def cross_check_summaries(mean: dict[str, torch.Tensor], ctx_id: str) -> float:
     spans = blob["spans"]  # list of (28, n_tok, 3584) fp16
     n_probes = len(spans)
     accum = torch.zeros(N_LAYERS, HIDDEN, dtype=torch.float32)
-    for span in spans:  # (28, n_tok, 3584)
-        for li in range(N_LAYERS):
-            accum[li] += summarize_answer_span(span[li], "mean").float()  # (3584,)
+    for span in spans:  # (28, n_tok, 3584) fp16
+        # vectorized `mean` recipe over answer tokens at every layer: (28, n_tok, H) -> (28, H).
+        # Mean in the span's native dtype THEN cast (matches summarize_answer_span(span[li],
+        # "mean").float(), which built summaries['mean'] — keeps the cross-check exact).
+        accum += span.mean(dim=1).float()
     remean = accum / n_probes
     ref = mean[ctx_id].float()
     resid = float((remean - ref).abs().max())
