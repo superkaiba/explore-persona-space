@@ -18,6 +18,8 @@ goal: Characterize how standardized similarity and directional continuity betwee
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_744.md](https://github.com/superkaiba/explore-persona-space/blob/79e71ea012deacaea4ddacac7b66937f5d5e79c6/docs/methodology/issue_744.md) · [gist](https://gist.github.com/superkaiba/d562465d11abeed954edcec082eb1a20)
+
 ## Takeaways
 
 - Standardized one-step direction preservation peaks at **~0.13 |cos| by layer 10**, dips to **~0.11 at layer 18**, rebounds to **~0.13 by layer 27** — broadly stable, no GPT-2-style late ramp to 0.54.
