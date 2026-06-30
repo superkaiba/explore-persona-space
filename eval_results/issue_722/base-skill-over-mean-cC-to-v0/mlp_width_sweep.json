@@ -1,0 +1,1505 @@
+{
+  "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R\u00b2 on centered v0)",
+  "c_C_recipe": "C_last",
+  "n_contexts": 50,
+  "activation_dim": 3584,
+  "layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "widths": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256,
+    512
+  ],
+  "plateau_layers": [
+    14,
+    18,
+    21
+  ],
+  "shuffle_null_layers": [
+    14,
+    18,
+    21
+  ],
+  "mlp_recipe": {
+    "lr": 0.001,
+    "wd": 0.0001,
+    "max_epochs": 300,
+    "pca_target_dim": 48,
+    "input_pca_accel": true,
+    "vectorized": true
+  },
+  "seed": 42,
+  "ridge_skill_by_layer": {
+    "0": -0.09328607140723966,
+    "1": 0.1709721199638914,
+    "2": 0.34514629121433493,
+    "3": 0.4232794753308389,
+    "4": 0.48620609076531496,
+    "5": 0.4731055420651804,
+    "6": 0.5881019036591549,
+    "7": 0.6039307810267025,
+    "8": 0.664289539224923,
+    "9": 0.6384123241049764,
+    "10": 0.658074554260099,
+    "11": 0.68745354148318,
+    "12": 0.7097311620980347,
+    "13": 0.7231125433793889,
+    "14": 0.745682362952892,
+    "15": 0.7863538108690785,
+    "16": 0.7856032717181133,
+    "17": 0.7813474177089645,
+    "18": 0.7983028454675367,
+    "19": 0.7784000858797752,
+    "20": 0.7727615991559655,
+    "21": 0.7406867907378158,
+    "22": 0.6974122047470037,
+    "23": 0.6538952727020753,
+    "24": 0.6143671695063295,
+    "25": 0.5619620425631816,
+    "26": 0.5359236450992713,
+    "27": 0.5046947994281655
+  },
+  "store_provenance": {
+    "store_dir": "/workspace/explore-persona-space/data/issue_658/hf_dl/issue658_theory_assumptions/store",
+    "e0_path": "/workspace/explore-persona-space/eval_results/issue_658/E0_expression.json",
+    "cc_source": "#594 HF store (load_cc_last_store)",
+    "n_contexts": 50,
+    "hidden_dim": 3584
+  },
+  "per_width": [
+    {
+      "hidden": 4,
+      "n_folds": 50,
+      "per_layer": [
+        {
+          "layer": 0,
+          "skill_vs_mean_mlp": -7.808578380051049,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": -0.09328607140723966
+        },
+        {
+          "layer": 1,
+          "skill_vs_mean_mlp": -3.3123761274737635,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.1709721199638914
+        },
+        {
+          "layer": 2,
+          "skill_vs_mean_mlp": -1.5627674172464792,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.34514629121433493
+        },
+        {
+          "layer": 3,
+          "skill_vs_mean_mlp": -0.9786177480724154,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4232794753308389
+        },
+        {
+          "layer": 4,
+          "skill_vs_mean_mlp": -0.732854422793539,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.48620609076531496
+        },
+        {
+          "layer": 5,
+          "skill_vs_mean_mlp": -0.9915411624502122,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4731055420651804
+        },
+        {
+          "layer": 6,
+          "skill_vs_mean_mlp": -1.0199217370354061,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5881019036591549
+        },
+        {
+          "layer": 7,
+          "skill_vs_mean_mlp": -1.0295093206094341,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6039307810267025
+        },
+        {
+          "layer": 8,
+          "skill_vs_mean_mlp": -1.0565970656008141,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.664289539224923
+        },
+        {
+          "layer": 9,
+          "skill_vs_mean_mlp": -1.0596050568300721,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6384123241049764
+        },
+        {
+          "layer": 10,
+          "skill_vs_mean_mlp": -0.8791787611471114,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.658074554260099
+        },
+        {
+          "layer": 11,
+          "skill_vs_mean_mlp": -0.8141426491158297,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.68745354148318
+        },
+        {
+          "layer": 12,
+          "skill_vs_mean_mlp": -0.8737820687128497,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7097311620980347
+        },
+        {
+          "layer": 13,
+          "skill_vs_mean_mlp": -0.7999201198850818,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7231125433793889
+        },
+        {
+          "layer": 14,
+          "skill_vs_mean_mlp": -0.9374956834007551,
+          "skill_shuffle_mlp": -0.08415412447601267,
+          "skill_vs_mean_ridge": 0.745682362952892
+        },
+        {
+          "layer": 15,
+          "skill_vs_mean_mlp": -0.7469111903011323,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7863538108690785
+        },
+        {
+          "layer": 16,
+          "skill_vs_mean_mlp": -0.9025082211852737,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7856032717181133
+        },
+        {
+          "layer": 17,
+          "skill_vs_mean_mlp": -0.7769521785532931,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7813474177089645
+        },
+        {
+          "layer": 18,
+          "skill_vs_mean_mlp": -0.6653408775086986,
+          "skill_shuffle_mlp": -0.16165430782491552,
+          "skill_vs_mean_ridge": 0.7983028454675367
+        },
+        {
+          "layer": 19,
+          "skill_vs_mean_mlp": -0.5716487537694939,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7784000858797752
+        },
+        {
+          "layer": 20,
+          "skill_vs_mean_mlp": -0.450329675037336,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7727615991559655
+        },
+        {
+          "layer": 21,
+          "skill_vs_mean_mlp": -0.3708362920368429,
+          "skill_shuffle_mlp": -0.07918204690617792,
+          "skill_vs_mean_ridge": 0.7406867907378158
+        },
+        {
+          "layer": 22,
+          "skill_vs_mean_mlp": -0.2740330476004742,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6974122047470037
+        },
+        {
+          "layer": 23,
+          "skill_vs_mean_mlp": -0.23377246434872423,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6538952727020753
+        },
+        {
+          "layer": 24,
+          "skill_vs_mean_mlp": -0.18209634021340948,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6143671695063295
+        },
+        {
+          "layer": 25,
+          "skill_vs_mean_mlp": -0.1632922719766603,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5619620425631816
+        },
+        {
+          "layer": 26,
+          "skill_vs_mean_mlp": -0.1548367333200047,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5359236450992713
+        },
+        {
+          "layer": 27,
+          "skill_vs_mean_mlp": -0.1074555589899453,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5046947994281655
+        }
+      ]
+    },
+    {
+      "hidden": 8,
+      "n_folds": 50,
+      "per_layer": [
+        {
+          "layer": 0,
+          "skill_vs_mean_mlp": -5.706430941241353,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": -0.09328607140723966
+        },
+        {
+          "layer": 1,
+          "skill_vs_mean_mlp": -2.193583316346632,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.1709721199638914
+        },
+        {
+          "layer": 2,
+          "skill_vs_mean_mlp": -1.871120626485193,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.34514629121433493
+        },
+        {
+          "layer": 3,
+          "skill_vs_mean_mlp": -1.4832216655929664,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4232794753308389
+        },
+        {
+          "layer": 4,
+          "skill_vs_mean_mlp": -1.6940870423292718,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.48620609076531496
+        },
+        {
+          "layer": 5,
+          "skill_vs_mean_mlp": -1.8183991848230567,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4731055420651804
+        },
+        {
+          "layer": 6,
+          "skill_vs_mean_mlp": -1.631339551515321,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5881019036591549
+        },
+        {
+          "layer": 7,
+          "skill_vs_mean_mlp": -1.4885579238352902,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6039307810267025
+        },
+        {
+          "layer": 8,
+          "skill_vs_mean_mlp": -1.708947048729598,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.664289539224923
+        },
+        {
+          "layer": 9,
+          "skill_vs_mean_mlp": -1.5291069880535808,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6384123241049764
+        },
+        {
+          "layer": 10,
+          "skill_vs_mean_mlp": -1.580125870940535,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.658074554260099
+        },
+        {
+          "layer": 11,
+          "skill_vs_mean_mlp": -1.5903459156131197,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.68745354148318
+        },
+        {
+          "layer": 12,
+          "skill_vs_mean_mlp": -1.6880370958410436,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7097311620980347
+        },
+        {
+          "layer": 13,
+          "skill_vs_mean_mlp": -1.5897765280204044,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7231125433793889
+        },
+        {
+          "layer": 14,
+          "skill_vs_mean_mlp": -1.422960942839052,
+          "skill_shuffle_mlp": -0.1313552425714255,
+          "skill_vs_mean_ridge": 0.745682362952892
+        },
+        {
+          "layer": 15,
+          "skill_vs_mean_mlp": -1.4441476151652757,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7863538108690785
+        },
+        {
+          "layer": 16,
+          "skill_vs_mean_mlp": -1.3388411864965772,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7856032717181133
+        },
+        {
+          "layer": 17,
+          "skill_vs_mean_mlp": -1.4548385205850836,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7813474177089645
+        },
+        {
+          "layer": 18,
+          "skill_vs_mean_mlp": -1.146937997207543,
+          "skill_shuffle_mlp": -0.19184129690213414,
+          "skill_vs_mean_ridge": 0.7983028454675367
+        },
+        {
+          "layer": 19,
+          "skill_vs_mean_mlp": -0.9435475305517984,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7784000858797752
+        },
+        {
+          "layer": 20,
+          "skill_vs_mean_mlp": -0.7372849730874524,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7727615991559655
+        },
+        {
+          "layer": 21,
+          "skill_vs_mean_mlp": -0.6375549926171515,
+          "skill_shuffle_mlp": -0.08901027426604702,
+          "skill_vs_mean_ridge": 0.7406867907378158
+        },
+        {
+          "layer": 22,
+          "skill_vs_mean_mlp": -0.47044229656339964,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6974122047470037
+        },
+        {
+          "layer": 23,
+          "skill_vs_mean_mlp": -0.4566951881133403,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6538952727020753
+        },
+        {
+          "layer": 24,
+          "skill_vs_mean_mlp": -0.33812490922563,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6143671695063295
+        },
+        {
+          "layer": 25,
+          "skill_vs_mean_mlp": -0.30903575550255713,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5619620425631816
+        },
+        {
+          "layer": 26,
+          "skill_vs_mean_mlp": -0.289853901476286,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5359236450992713
+        },
+        {
+          "layer": 27,
+          "skill_vs_mean_mlp": -0.17127084084990218,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5046947994281655
+        }
+      ]
+    },
+    {
+      "hidden": 16,
+      "n_folds": 50,
+      "per_layer": [
+        {
+          "layer": 0,
+          "skill_vs_mean_mlp": -5.970847248176572,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": -0.09328607140723966
+        },
+        {
+          "layer": 1,
+          "skill_vs_mean_mlp": -2.574429562434713,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.1709721199638914
+        },
+        {
+          "layer": 2,
+          "skill_vs_mean_mlp": -2.021979206970843,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.34514629121433493
+        },
+        {
+          "layer": 3,
+          "skill_vs_mean_mlp": -2.003954032116129,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4232794753308389
+        },
+        {
+          "layer": 4,
+          "skill_vs_mean_mlp": -1.4333239697718865,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.48620609076531496
+        },
+        {
+          "layer": 5,
+          "skill_vs_mean_mlp": -1.6349328696317316,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4731055420651804
+        },
+        {
+          "layer": 6,
+          "skill_vs_mean_mlp": -1.947380660192307,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5881019036591549
+        },
+        {
+          "layer": 7,
+          "skill_vs_mean_mlp": -2.3895144446283836,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6039307810267025
+        },
+        {
+          "layer": 8,
+          "skill_vs_mean_mlp": -2.3341345222843284,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.664289539224923
+        },
+        {
+          "layer": 9,
+          "skill_vs_mean_mlp": -1.9233098779200741,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6384123241049764
+        },
+        {
+          "layer": 10,
+          "skill_vs_mean_mlp": -1.9687596795121554,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.658074554260099
+        },
+        {
+          "layer": 11,
+          "skill_vs_mean_mlp": -2.0505669004534903,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.68745354148318
+        },
+        {
+          "layer": 12,
+          "skill_vs_mean_mlp": -1.9731390121882364,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7097311620980347
+        },
+        {
+          "layer": 13,
+          "skill_vs_mean_mlp": -1.9559008825159951,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7231125433793889
+        },
+        {
+          "layer": 14,
+          "skill_vs_mean_mlp": -2.2095280537277597,
+          "skill_shuffle_mlp": -0.20739921063104427,
+          "skill_vs_mean_ridge": 0.745682362952892
+        },
+        {
+          "layer": 15,
+          "skill_vs_mean_mlp": -2.0709024898235064,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7863538108690785
+        },
+        {
+          "layer": 16,
+          "skill_vs_mean_mlp": -2.126828140430607,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7856032717181133
+        },
+        {
+          "layer": 17,
+          "skill_vs_mean_mlp": -2.1928525617778076,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7813474177089645
+        },
+        {
+          "layer": 18,
+          "skill_vs_mean_mlp": -2.059766548626012,
+          "skill_shuffle_mlp": -0.4415316081208289,
+          "skill_vs_mean_ridge": 0.7983028454675367
+        },
+        {
+          "layer": 19,
+          "skill_vs_mean_mlp": -1.7377518747586116,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7784000858797752
+        },
+        {
+          "layer": 20,
+          "skill_vs_mean_mlp": -1.457196158477272,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7727615991559655
+        },
+        {
+          "layer": 21,
+          "skill_vs_mean_mlp": -1.0676646742353046,
+          "skill_shuffle_mlp": -0.17223368428810426,
+          "skill_vs_mean_ridge": 0.7406867907378158
+        },
+        {
+          "layer": 22,
+          "skill_vs_mean_mlp": -0.8590023055941156,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6974122047470037
+        },
+        {
+          "layer": 23,
+          "skill_vs_mean_mlp": -0.8527485140911109,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6538952727020753
+        },
+        {
+          "layer": 24,
+          "skill_vs_mean_mlp": -0.6764753557755743,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6143671695063295
+        },
+        {
+          "layer": 25,
+          "skill_vs_mean_mlp": -0.6277829921561902,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5619620425631816
+        },
+        {
+          "layer": 26,
+          "skill_vs_mean_mlp": -0.474040032023177,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5359236450992713
+        },
+        {
+          "layer": 27,
+          "skill_vs_mean_mlp": -0.32045462701619276,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5046947994281655
+        }
+      ]
+    },
+    {
+      "hidden": 32,
+      "n_folds": 50,
+      "per_layer": [
+        {
+          "layer": 0,
+          "skill_vs_mean_mlp": -5.019477164913989,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": -0.09328607140723966
+        },
+        {
+          "layer": 1,
+          "skill_vs_mean_mlp": -2.5478828657391004,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.1709721199638914
+        },
+        {
+          "layer": 2,
+          "skill_vs_mean_mlp": -2.046861684510475,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.34514629121433493
+        },
+        {
+          "layer": 3,
+          "skill_vs_mean_mlp": -1.7404892304974382,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4232794753308389
+        },
+        {
+          "layer": 4,
+          "skill_vs_mean_mlp": -1.6987579352908355,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.48620609076531496
+        },
+        {
+          "layer": 5,
+          "skill_vs_mean_mlp": -1.9202391427447463,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4731055420651804
+        },
+        {
+          "layer": 6,
+          "skill_vs_mean_mlp": -2.0687121332504494,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5881019036591549
+        },
+        {
+          "layer": 7,
+          "skill_vs_mean_mlp": -2.1943556594662317,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6039307810267025
+        },
+        {
+          "layer": 8,
+          "skill_vs_mean_mlp": -2.557662413671862,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.664289539224923
+        },
+        {
+          "layer": 9,
+          "skill_vs_mean_mlp": -2.189209337789365,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6384123241049764
+        },
+        {
+          "layer": 10,
+          "skill_vs_mean_mlp": -2.307853066867215,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.658074554260099
+        },
+        {
+          "layer": 11,
+          "skill_vs_mean_mlp": -2.270639100726525,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.68745354148318
+        },
+        {
+          "layer": 12,
+          "skill_vs_mean_mlp": -2.280432031364204,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7097311620980347
+        },
+        {
+          "layer": 13,
+          "skill_vs_mean_mlp": -2.313880198484012,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7231125433793889
+        },
+        {
+          "layer": 14,
+          "skill_vs_mean_mlp": -2.3801584819219173,
+          "skill_shuffle_mlp": -0.24590418296101824,
+          "skill_vs_mean_ridge": 0.745682362952892
+        },
+        {
+          "layer": 15,
+          "skill_vs_mean_mlp": -2.591173626921741,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7863538108690785
+        },
+        {
+          "layer": 16,
+          "skill_vs_mean_mlp": -2.8794456997080045,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7856032717181133
+        },
+        {
+          "layer": 17,
+          "skill_vs_mean_mlp": -2.909309089247996,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7813474177089645
+        },
+        {
+          "layer": 18,
+          "skill_vs_mean_mlp": -3.0625567883291307,
+          "skill_shuffle_mlp": -0.3913943092905885,
+          "skill_vs_mean_ridge": 0.7983028454675367
+        },
+        {
+          "layer": 19,
+          "skill_vs_mean_mlp": -2.6236771610562837,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7784000858797752
+        },
+        {
+          "layer": 20,
+          "skill_vs_mean_mlp": -2.367182004090557,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7727615991559655
+        },
+        {
+          "layer": 21,
+          "skill_vs_mean_mlp": -2.0039619515719975,
+          "skill_shuffle_mlp": -0.17446143962391436,
+          "skill_vs_mean_ridge": 0.7406867907378158
+        },
+        {
+          "layer": 22,
+          "skill_vs_mean_mlp": -1.598544043766415,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6974122047470037
+        },
+        {
+          "layer": 23,
+          "skill_vs_mean_mlp": -1.3527012710704276,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6538952727020753
+        },
+        {
+          "layer": 24,
+          "skill_vs_mean_mlp": -1.1081402070252753,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6143671695063295
+        },
+        {
+          "layer": 25,
+          "skill_vs_mean_mlp": -1.0595657593918753,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5619620425631816
+        },
+        {
+          "layer": 26,
+          "skill_vs_mean_mlp": -0.8577134240798416,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5359236450992713
+        },
+        {
+          "layer": 27,
+          "skill_vs_mean_mlp": -0.6682578051082608,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5046947994281655
+        }
+      ]
+    },
+    {
+      "hidden": 64,
+      "n_folds": 50,
+      "per_layer": [
+        {
+          "layer": 0,
+          "skill_vs_mean_mlp": -4.870161132477734,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": -0.09328607140723966
+        },
+        {
+          "layer": 1,
+          "skill_vs_mean_mlp": -2.3604310481459505,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.1709721199638914
+        },
+        {
+          "layer": 2,
+          "skill_vs_mean_mlp": -1.7777525610395521,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.34514629121433493
+        },
+        {
+          "layer": 3,
+          "skill_vs_mean_mlp": -1.729842193353158,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4232794753308389
+        },
+        {
+          "layer": 4,
+          "skill_vs_mean_mlp": -1.5723260926412577,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.48620609076531496
+        },
+        {
+          "layer": 5,
+          "skill_vs_mean_mlp": -1.6827171761697453,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4731055420651804
+        },
+        {
+          "layer": 6,
+          "skill_vs_mean_mlp": -1.7924749534157267,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5881019036591549
+        },
+        {
+          "layer": 7,
+          "skill_vs_mean_mlp": -2.148505422398772,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6039307810267025
+        },
+        {
+          "layer": 8,
+          "skill_vs_mean_mlp": -2.465198210818578,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.664289539224923
+        },
+        {
+          "layer": 9,
+          "skill_vs_mean_mlp": -2.2345670342461093,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6384123241049764
+        },
+        {
+          "layer": 10,
+          "skill_vs_mean_mlp": -2.2014126275130836,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.658074554260099
+        },
+        {
+          "layer": 11,
+          "skill_vs_mean_mlp": -2.172417090110033,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.68745354148318
+        },
+        {
+          "layer": 12,
+          "skill_vs_mean_mlp": -2.2555487157815866,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7097311620980347
+        },
+        {
+          "layer": 13,
+          "skill_vs_mean_mlp": -2.3382322678663785,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7231125433793889
+        },
+        {
+          "layer": 14,
+          "skill_vs_mean_mlp": -2.4677500360426863,
+          "skill_shuffle_mlp": -0.24793135992838122,
+          "skill_vs_mean_ridge": 0.745682362952892
+        },
+        {
+          "layer": 15,
+          "skill_vs_mean_mlp": -2.6179756019190474,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7863538108690785
+        },
+        {
+          "layer": 16,
+          "skill_vs_mean_mlp": -2.8904267975157376,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7856032717181133
+        },
+        {
+          "layer": 17,
+          "skill_vs_mean_mlp": -3.080930376097876,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7813474177089645
+        },
+        {
+          "layer": 18,
+          "skill_vs_mean_mlp": -2.8402554233950834,
+          "skill_shuffle_mlp": -0.41282556075951105,
+          "skill_vs_mean_ridge": 0.7983028454675367
+        },
+        {
+          "layer": 19,
+          "skill_vs_mean_mlp": -2.864557683250774,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7784000858797752
+        },
+        {
+          "layer": 20,
+          "skill_vs_mean_mlp": -2.8052844651773703,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7727615991559655
+        },
+        {
+          "layer": 21,
+          "skill_vs_mean_mlp": -2.5253657194407806,
+          "skill_shuffle_mlp": -0.2412291459293452,
+          "skill_vs_mean_ridge": 0.7406867907378158
+        },
+        {
+          "layer": 22,
+          "skill_vs_mean_mlp": -2.278239007151815,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6974122047470037
+        },
+        {
+          "layer": 23,
+          "skill_vs_mean_mlp": -2.155873400761637,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6538952727020753
+        },
+        {
+          "layer": 24,
+          "skill_vs_mean_mlp": -1.9505672124535929,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6143671695063295
+        },
+        {
+          "layer": 25,
+          "skill_vs_mean_mlp": -1.8477675800033007,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5619620425631816
+        },
+        {
+          "layer": 26,
+          "skill_vs_mean_mlp": -1.6936708989992528,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5359236450992713
+        },
+        {
+          "layer": 27,
+          "skill_vs_mean_mlp": -1.3284432921472478,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5046947994281655
+        }
+      ]
+    },
+    {
+      "hidden": 128,
+      "n_folds": 50,
+      "per_layer": [
+        {
+          "layer": 0,
+          "skill_vs_mean_mlp": -5.947939583348482,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": -0.09328607140723966
+        },
+        {
+          "layer": 1,
+          "skill_vs_mean_mlp": -2.4147859188706375,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.1709721199638914
+        },
+        {
+          "layer": 2,
+          "skill_vs_mean_mlp": -1.8514951531266255,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.34514629121433493
+        },
+        {
+          "layer": 3,
+          "skill_vs_mean_mlp": -1.6536471471493752,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4232794753308389
+        },
+        {
+          "layer": 4,
+          "skill_vs_mean_mlp": -1.577292508663894,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.48620609076531496
+        },
+        {
+          "layer": 5,
+          "skill_vs_mean_mlp": -1.486681472664277,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4731055420651804
+        },
+        {
+          "layer": 6,
+          "skill_vs_mean_mlp": -1.7296001509153651,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5881019036591549
+        },
+        {
+          "layer": 7,
+          "skill_vs_mean_mlp": -1.9068351065150981,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6039307810267025
+        },
+        {
+          "layer": 8,
+          "skill_vs_mean_mlp": -2.146205311030548,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.664289539224923
+        },
+        {
+          "layer": 9,
+          "skill_vs_mean_mlp": -2.005707054258832,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6384123241049764
+        },
+        {
+          "layer": 10,
+          "skill_vs_mean_mlp": -2.0707717098983425,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.658074554260099
+        },
+        {
+          "layer": 11,
+          "skill_vs_mean_mlp": -2.049322130236142,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.68745354148318
+        },
+        {
+          "layer": 12,
+          "skill_vs_mean_mlp": -2.141333704420452,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7097311620980347
+        },
+        {
+          "layer": 13,
+          "skill_vs_mean_mlp": -2.3100210705741544,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7231125433793889
+        },
+        {
+          "layer": 14,
+          "skill_vs_mean_mlp": -2.3253517381995437,
+          "skill_shuffle_mlp": -0.17511757873081235,
+          "skill_vs_mean_ridge": 0.745682362952892
+        },
+        {
+          "layer": 15,
+          "skill_vs_mean_mlp": -2.466289903305719,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7863538108690785
+        },
+        {
+          "layer": 16,
+          "skill_vs_mean_mlp": -2.516184336119002,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7856032717181133
+        },
+        {
+          "layer": 17,
+          "skill_vs_mean_mlp": -2.7268774545976697,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7813474177089645
+        },
+        {
+          "layer": 18,
+          "skill_vs_mean_mlp": -2.5475319826790073,
+          "skill_shuffle_mlp": -0.3391229354615033,
+          "skill_vs_mean_ridge": 0.7983028454675367
+        },
+        {
+          "layer": 19,
+          "skill_vs_mean_mlp": -2.6557700784606006,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7784000858797752
+        },
+        {
+          "layer": 20,
+          "skill_vs_mean_mlp": -2.605651850051756,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7727615991559655
+        },
+        {
+          "layer": 21,
+          "skill_vs_mean_mlp": -2.519708731284908,
+          "skill_shuffle_mlp": -0.18448029062575855,
+          "skill_vs_mean_ridge": 0.7406867907378158
+        },
+        {
+          "layer": 22,
+          "skill_vs_mean_mlp": -2.389991218316785,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6974122047470037
+        },
+        {
+          "layer": 23,
+          "skill_vs_mean_mlp": -2.551482827233603,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6538952727020753
+        },
+        {
+          "layer": 24,
+          "skill_vs_mean_mlp": -2.4240241272937553,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6143671695063295
+        },
+        {
+          "layer": 25,
+          "skill_vs_mean_mlp": -2.3505177671697104,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5619620425631816
+        },
+        {
+          "layer": 26,
+          "skill_vs_mean_mlp": -2.2954041300343238,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5359236450992713
+        },
+        {
+          "layer": 27,
+          "skill_vs_mean_mlp": -2.077079146930777,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5046947994281655
+        }
+      ]
+    },
+    {
+      "hidden": 256,
+      "n_folds": 50,
+      "per_layer": [
+        {
+          "layer": 0,
+          "skill_vs_mean_mlp": -5.329891708038483,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": -0.09328607140723966
+        },
+        {
+          "layer": 1,
+          "skill_vs_mean_mlp": -2.225270044847439,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.1709721199638914
+        },
+        {
+          "layer": 2,
+          "skill_vs_mean_mlp": -1.597297426865535,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.34514629121433493
+        },
+        {
+          "layer": 3,
+          "skill_vs_mean_mlp": -1.3976934633618896,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4232794753308389
+        },
+        {
+          "layer": 4,
+          "skill_vs_mean_mlp": -1.3620342195887458,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.48620609076531496
+        },
+        {
+          "layer": 5,
+          "skill_vs_mean_mlp": -1.302017322035117,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4731055420651804
+        },
+        {
+          "layer": 6,
+          "skill_vs_mean_mlp": -1.37060959526886,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5881019036591549
+        },
+        {
+          "layer": 7,
+          "skill_vs_mean_mlp": -1.5844922514473962,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6039307810267025
+        },
+        {
+          "layer": 8,
+          "skill_vs_mean_mlp": -1.7758730443576374,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.664289539224923
+        },
+        {
+          "layer": 9,
+          "skill_vs_mean_mlp": -1.6832496137553687,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6384123241049764
+        },
+        {
+          "layer": 10,
+          "skill_vs_mean_mlp": -1.7178144269875375,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.658074554260099
+        },
+        {
+          "layer": 11,
+          "skill_vs_mean_mlp": -1.8058179387092923,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.68745354148318
+        },
+        {
+          "layer": 12,
+          "skill_vs_mean_mlp": -1.959588147798537,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7097311620980347
+        },
+        {
+          "layer": 13,
+          "skill_vs_mean_mlp": -2.0242325452064116,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7231125433793889
+        },
+        {
+          "layer": 14,
+          "skill_vs_mean_mlp": -2.0580882937847806,
+          "skill_shuffle_mlp": -0.13373372330154565,
+          "skill_vs_mean_ridge": 0.745682362952892
+        },
+        {
+          "layer": 15,
+          "skill_vs_mean_mlp": -2.167437787516679,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7863538108690785
+        },
+        {
+          "layer": 16,
+          "skill_vs_mean_mlp": -2.318833761755998,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7856032717181133
+        },
+        {
+          "layer": 17,
+          "skill_vs_mean_mlp": -2.3120312296415637,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7813474177089645
+        },
+        {
+          "layer": 18,
+          "skill_vs_mean_mlp": -2.3266873028969184,
+          "skill_shuffle_mlp": -0.35295199226292073,
+          "skill_vs_mean_ridge": 0.7983028454675367
+        },
+        {
+          "layer": 19,
+          "skill_vs_mean_mlp": -2.3955712094070925,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7784000858797752
+        },
+        {
+          "layer": 20,
+          "skill_vs_mean_mlp": -2.2113641910515356,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7727615991559655
+        },
+        {
+          "layer": 21,
+          "skill_vs_mean_mlp": -2.25526901526307,
+          "skill_shuffle_mlp": -0.10963004449138114,
+          "skill_vs_mean_ridge": 0.7406867907378158
+        },
+        {
+          "layer": 22,
+          "skill_vs_mean_mlp": -2.1075686700925136,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6974122047470037
+        },
+        {
+          "layer": 23,
+          "skill_vs_mean_mlp": -2.148750793819944,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6538952727020753
+        },
+        {
+          "layer": 24,
+          "skill_vs_mean_mlp": -2.0859291480570605,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6143671695063295
+        },
+        {
+          "layer": 25,
+          "skill_vs_mean_mlp": -2.101683847414526,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5619620425631816
+        },
+        {
+          "layer": 26,
+          "skill_vs_mean_mlp": -2.2388250773009273,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5359236450992713
+        },
+        {
+          "layer": 27,
+          "skill_vs_mean_mlp": -2.2666446368366278,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5046947994281655
+        }
+      ]
+    },
+    {
+      "hidden": 512,
+      "n_folds": 50,
+      "per_layer": [
+        {
+          "layer": 0,
+          "skill_vs_mean_mlp": -5.589204865536947,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": -0.09328607140723966
+        },
+        {
+          "layer": 1,
+          "skill_vs_mean_mlp": -2.206439490842863,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.1709721199638914
+        },
+        {
+          "layer": 2,
+          "skill_vs_mean_mlp": -1.4546090592124852,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.34514629121433493
+        },
+        {
+          "layer": 3,
+          "skill_vs_mean_mlp": -1.2496984083614802,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4232794753308389
+        },
+        {
+          "layer": 4,
+          "skill_vs_mean_mlp": -1.1218907194258838,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.48620609076531496
+        },
+        {
+          "layer": 5,
+          "skill_vs_mean_mlp": -1.049952208908051,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.4731055420651804
+        },
+        {
+          "layer": 6,
+          "skill_vs_mean_mlp": -1.2751846218215546,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5881019036591549
+        },
+        {
+          "layer": 7,
+          "skill_vs_mean_mlp": -1.2903288221289966,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6039307810267025
+        },
+        {
+          "layer": 8,
+          "skill_vs_mean_mlp": -1.4553389959258038,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.664289539224923
+        },
+        {
+          "layer": 9,
+          "skill_vs_mean_mlp": -1.3656999605960949,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6384123241049764
+        },
+        {
+          "layer": 10,
+          "skill_vs_mean_mlp": -1.490526486243943,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.658074554260099
+        },
+        {
+          "layer": 11,
+          "skill_vs_mean_mlp": -1.6408358624027084,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.68745354148318
+        },
+        {
+          "layer": 12,
+          "skill_vs_mean_mlp": -1.6890414311825692,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7097311620980347
+        },
+        {
+          "layer": 13,
+          "skill_vs_mean_mlp": -1.675912712341653,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7231125433793889
+        },
+        {
+          "layer": 14,
+          "skill_vs_mean_mlp": -1.7113115293547194,
+          "skill_shuffle_mlp": -0.14642105965165864,
+          "skill_vs_mean_ridge": 0.745682362952892
+        },
+        {
+          "layer": 15,
+          "skill_vs_mean_mlp": -1.9460043223803267,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7863538108690785
+        },
+        {
+          "layer": 16,
+          "skill_vs_mean_mlp": -1.9407015077562226,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7856032717181133
+        },
+        {
+          "layer": 17,
+          "skill_vs_mean_mlp": -1.9327340693416781,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7813474177089645
+        },
+        {
+          "layer": 18,
+          "skill_vs_mean_mlp": -2.137563196652924,
+          "skill_shuffle_mlp": -0.2944377053529845,
+          "skill_vs_mean_ridge": 0.7983028454675367
+        },
+        {
+          "layer": 19,
+          "skill_vs_mean_mlp": -2.10718240560201,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7784000858797752
+        },
+        {
+          "layer": 20,
+          "skill_vs_mean_mlp": -1.9356817445103185,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.7727615991559655
+        },
+        {
+          "layer": 21,
+          "skill_vs_mean_mlp": -1.994523928151399,
+          "skill_shuffle_mlp": -0.11658165927766362,
+          "skill_vs_mean_ridge": 0.7406867907378158
+        },
+        {
+          "layer": 22,
+          "skill_vs_mean_mlp": -1.806545689349571,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6974122047470037
+        },
+        {
+          "layer": 23,
+          "skill_vs_mean_mlp": -1.8081985950267647,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6538952727020753
+        },
+        {
+          "layer": 24,
+          "skill_vs_mean_mlp": -1.819974971438917,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.6143671695063295
+        },
+        {
+          "layer": 25,
+          "skill_vs_mean_mlp": -1.784067644459289,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5619620425631816
+        },
+        {
+          "layer": 26,
+          "skill_vs_mean_mlp": -1.9524049255409244,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5359236450992713
+        },
+        {
+          "layer": 27,
+          "skill_vs_mean_mlp": -1.9814019589206153,
+          "skill_shuffle_mlp": NaN,
+          "skill_vs_mean_ridge": 0.5046947994281655
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "git_commit": "8d5fcd82911629e7462282ebe89164e28fff3fd8",
+    "timestamp_utc": "2026-06-30T00:18:57.995444Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_vectorized_skill",
+    "phase": "mlp_width_sweep"
+  }
+}
