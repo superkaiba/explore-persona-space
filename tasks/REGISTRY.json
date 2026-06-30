@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 770,
+  "highest_id": 771,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4911,6 +4911,13 @@
       "path": "tasks/running/770",
       "status": "running",
       "title": "workflow-fix: watcher auto-terminate+failover for RunPod no-port wedge when poll loop is dead"
+    },
+    "771": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/771",
+      "status": "proposed",
+      "title": "workflow-fix: warn when #681 data-disk attached but worktree bind inert"
     },
     "78": {
       "has_clean_result": false,
