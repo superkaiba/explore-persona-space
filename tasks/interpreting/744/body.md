@@ -1,6 +1,7 @@
 ---
-title: Token-to-token residual-stream continuity and discontinuities across layers
-  in Qwen-2.5-7B
+title: Standardized token-to-token continuity in Qwen-2.5-7B is depth-flat and short-horizon
+  — the late-layer directional persistence seen in GPT-2 does not appear (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-30T00:55:35Z'
