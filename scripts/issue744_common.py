@@ -48,7 +48,24 @@ TRAJECTORY_WINDOW_K = 3
 DIRECTION_PRES_STEPS = (0, 1, 2, 3)
 ROGUE_DIM_TOPK = 3
 MAX_SEQ_LEN = 1024
+# Natural Stories overlapping-chunk stride (Barenholtz 2606.05346 §2.1, #744 C2).
+# Stories exceed the 1024-token context window, so each story is processed in
+# overlapping MAX_SEQ_LEN-token chunks at this stride (512 = 50% overlap) and the
+# per-position reads are de-duplicated to cover the FULL story (no truncation).
+# 50% overlap >> the k=3 fit + max(+3) lookahead context floor, so every
+# de-duplicated position has its OLS-fit window and lookahead fully in-chunk.
+NS_CHUNK_STRIDE = 512
 RANDOM_BASELINE_N_PAIRS = 100_000
+# Broader random-baseline reservoir pool size (#744 random-pair-memory concern).
+# The broader corpus is STREAMED (no full raw retention), so its random baseline
+# is reservoir-sampled over the FULL Phase-1 stream into a fixed per-layer pool of
+# this many raw token vectors; the per-flavor abs-cosine over RANDOM_BASELINE_N_PAIRS
+# pairs drawn from the pool is then computed once and stored as
+# ``broader_random_pairs.pt`` (the analyzer reads that, never re-concatenates the
+# bounded broader_raw subset). 20k fp16 vectors/layer x 28 layers x 3584 ~ 4 GB,
+# well under the 50 GB VM analysis floor; >> the 20k pairs the closed-form
+# convergence test needs.
+BROADER_RANDOM_POOL = 20_000
 BOOTSTRAP_B = 2000
 # Sun 2402.17762 §2 sink/outlier mask threshold.
 SINK_ABS_FLOOR = 100.0

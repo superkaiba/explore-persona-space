@@ -11,8 +11,12 @@ Two storage strategies, by corpus (plan §4.3 / §9 sizing):
 
 * **Natural Stories (Corpus A): RETAIN the full raw fp16 dump** (~2.6 GB) — H3
   per-position retrieval + the sink-EXCLUDED H1/H2 recompute the analyzer needs
-  (plan-marker concern #1) require per-position vectors. Per sequence we write
-  ``ns_raw/seq_<item>.pt`` = ``{H_fp16 (L,T,hidden), surprisal, sink_mask
+  (plan-marker concern #1) require per-position vectors. Each story is the FULL
+  word list (NOT truncated at 1024 tokens), processed in OVERLAPPING
+  ``max_seq_len``-token chunks (Barenholtz 2606.05346 §2.1) and reassembled to
+  cover the whole story — the late-position tail the late-layer H1 read depends
+  on does not vanish (#744 C2). Per sequence we write
+  ``ns_raw/seq_<item>.pt`` = ``{H_fp16 (L,T_full,hidden), surprisal, sink_mask
   (per-(layer,position)), special_mask, clause_opener_mask, words, word_end_idx}``.
 * **Broader (Corpus B): STREAM** — a two-pass scheme. Pass 1 streams per-dim
   fp32 sufficient statistics (Welford sums + sum-of-squares) per layer to fix
@@ -83,6 +87,7 @@ import torch  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
 from issue744_common import (  # noqa: E402
+    BROADER_RANDOM_POOL,
     DEFAULT_MODEL,
     DIRECTION_PRES_STEPS,
     EXPECTED_HIDDEN,
@@ -92,7 +97,10 @@ from issue744_common import (  # noqa: E402
     HF_OVERFLOW_REPO,
     HF_PREFIX,
     MAX_SEQ_LEN,
+    NS_CHUNK_STRIDE,
+    RANDOM_BASELINE_N_PAIRS,
     ROGUE_DIM_TOPK,
+    SEED,
     SINK_ABS_FLOOR,
     SINK_MEDIAN_RATIO,
     TRAJECTORY_WINDOW_K,
@@ -104,11 +112,13 @@ from explore_persona_space.analysis.continuity import (  # noqa: E402
     DEFAULT_ROGUE_RANK_METRIC as ROGUE_RANK_METRIC,
 )
 from explore_persona_space.analysis.continuity import (  # noqa: E402
+    ReservoirVectorPool,
     WelfordDimStats,
     consec_cosine,
     direction_preservation,
     extrap_error,
     make_flavors_from_stats,
+    random_baseline,
 )
 
 load_dotenv()
@@ -162,16 +172,27 @@ def _surprisal_from_logits(logits: torch.Tensor, input_ids: torch.Tensor) -> tor
 
     Position 0 has no preceding context -> NaN. For t>=1, surprisal_t =
     -log p(token_t | tokens_0..t-1) = NLL from the logits at index t-1.
+
+    Built on ``logits.device`` (CUDA in the production GPU path, where the model
+    loads with ``device_map={"":cuda:0}``; CPU in the local smoke). The
+    ``torch.full`` ``out`` and the ``torch.arange`` index MUST live on the same
+    device as ``logp`` / ``ids`` — a CPU ``out`` taking a CUDA RHS via the
+    ``out[1:] = ...`` indexed assignment raises ``RuntimeError: Expected all
+    tensors to be on the same device`` on the first production sequence (the CPU
+    smoke could never exercise this; #744 C1). Returns a CPU ``(T,)`` tensor with
+    ``pos0 = NaN`` per the ``forward_sequence`` contract + the
+    ``test_surprisal_off_by_one`` regression.
     """
-    logp = torch.log_softmax(logits[0].float(), dim=-1)  # (T, V)
-    ids = input_ids[0]  # (T,)
+    device = logits.device
+    logp = torch.log_softmax(logits[0].float(), dim=-1)  # (T, V) on logits.device
+    ids = input_ids[0].to(device)  # (T,) — colocate with logp for the gather below
     T = ids.shape[0]
-    out = torch.full((T,), float("nan"))
+    out = torch.full((T,), float("nan"), device=device)
     if T >= 2:
-        # surprisal at t = -logp[t-1, ids[t]]  for t = 1..T-1
-        idx = torch.arange(1, T)
+        # surprisal at t = -logp[t-1, ids[t]]  for t = 1..T-1 (all on `device`)
+        idx = torch.arange(1, T, device=device)
         out[1:] = -logp[idx - 1, ids[idx]]
-    return out
+    return out.cpu()
 
 
 def _sink_mask(H: torch.Tensor) -> torch.Tensor:
@@ -204,14 +225,19 @@ def _special_token_mask(tokenizer, input_ids: torch.Tensor) -> torch.Tensor:
     return mask
 
 
-def tokenize_ns_sequence(tokenizer, words: list[str], max_len: int):
-    """Tokenize an NS word list, aligning each word to its last subword index.
+def tokenize_ns_sequence(tokenizer, words: list[str]):
+    """Tokenize the FULL NS word list, aligning each word to its last subword index.
 
-    Returns (input_ids (1,T), clause_opener_mask (T,) bool, word_end_idx list).
-    The clause-opener mask marks the last-subword position of closed-class
-    clause-opener words. word_end_idx[i] = the token index of word i's last
-    subword (for the word-level last-subword read, plan concern #5). Words whose
-    last subword falls past ``max_len`` truncation are dropped from word_end_idx.
+    Returns (input_ids (1,T_full), clause_opener_mask (T_full,) bool,
+    word_end_idx list). NO truncation — Natural Stories items run ~1,026 words
+    (>1024 Qwen subword tokens for a typical story), and the late-position tail
+    is exactly what the late-layer direction-preservation hypothesis (H1) and the
+    H3 stratification most depend on. The full story is processed in overlapping
+    chunks downstream (``forward_ns_overlapping``, Barenholtz 2606.05346 §2.1),
+    not truncated (#744 C2). The clause-opener mask marks the last-subword
+    position of closed-class clause-opener words. word_end_idx[i] = the token
+    index of word i's last subword (for the word-level last-subword read, plan
+    concern #5).
     """
     token_ids: list[int] = []
     word_end_idx: list[int] = []
@@ -223,17 +249,92 @@ def tokenize_ns_sequence(tokenizer, words: list[str], max_len: int):
         token_ids.extend(sub)
         word_end_idx.append(len(token_ids) - 1)
         clause_words.append(is_clause_opener(w))
-    # Truncate to max_len; drop word-end indices past the cut.
-    token_ids = token_ids[:max_len]
-    kept = [(idx, co) for idx, co in zip(word_end_idx, clause_words, strict=True) if idx < max_len]
-    word_end_idx = [idx for idx, _ in kept]
     T = len(token_ids)
     clause_mask = torch.zeros(T, dtype=torch.bool)
-    for idx, co in kept:
+    for idx, co in zip(word_end_idx, clause_words, strict=True):
         if co:
             clause_mask[idx] = True
     input_ids = torch.tensor([token_ids], dtype=torch.long)
     return input_ids, clause_mask, word_end_idx
+
+
+def _chunk_starts(t_full: int, max_len: int, stride: int) -> list[int]:
+    """Overlapping-chunk start offsets covering [0, t_full) (Barenholtz §2.1).
+
+    Emits chunk starts ``0, stride, 2*stride, ...`` while each chunk
+    ``[start, min(start+max_len, t_full))`` advances; the final chunk's end is
+    clamped to ``t_full`` (a story <= max_len yields a single chunk at start 0).
+    Stride < max_len gives the overlap (default 50%); the per-position de-dup
+    (``assemble_overlapping_chunks``) picks, for each position, the chunk where it
+    has the most in-chunk left-context so the k-window fit + +max_step lookahead
+    are fully in-context.
+    """
+    assert 0 < stride <= max_len, (stride, max_len)
+    if t_full <= max_len:
+        return [0]
+    starts = list(range(0, t_full - max_len + 1, stride))
+    # Ensure the tail is covered: the last chunk must end at t_full.
+    last_start = t_full - max_len
+    if starts[-1] != last_start:
+        starts.append(last_start)
+    return starts
+
+
+def assemble_overlapping_chunks(
+    chunk_outputs: list[tuple[int, torch.Tensor, torch.Tensor]],
+    t_full: int,
+    n_layers: int,
+    hidden: int,
+    context_floor: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """De-dup overlapping per-chunk reads into full-story (L,T_full,H) + surprisal.
+
+    ``chunk_outputs`` is a list of ``(start, H_chunk (L, c, hidden),
+    surp_chunk (c,))`` per chunk (in ``_chunk_starts`` order). For each absolute
+    position ``p`` in ``[0, t_full)`` we take the read from the LAST chunk that
+    contains ``p`` AND in which ``p`` sits at least ``context_floor`` tokens after
+    the chunk start (``context_floor = k + max_step`` so the k-window OLS fit + the
+    +max_step lookahead are in-context). The first ``context_floor`` positions of
+    the whole story (which no chunk can give that much left-context) fall back to
+    chunk 0 (start 0), the only chunk that contains them at all. Later chunks are
+    processed last, so iterating chunks in order and overwriting yields the
+    LAST-qualifying-chunk read per position.
+
+    Returns ``(H_full (L, T_full, hidden), surprisal_full (T_full,))`` on CPU.
+    Surprisal at a covered position is the chunk's own next-token NLL, which is
+    well-defined for any in-chunk position with >=1 preceding token; position 0 of
+    the WHOLE story stays NaN (no preceding context) regardless of which chunk
+    covers it.
+    """
+    H_full = torch.full((n_layers, t_full, hidden), float("nan"))
+    surp_full = torch.full((t_full,), float("nan"))
+    assigned = torch.zeros(t_full, dtype=torch.bool)
+    # Pass 1: fill from the qualifying (>=context_floor left-context) chunk reads,
+    # iterating in order so a later chunk overwrites an earlier one (LAST wins).
+    for start, H_chunk, surp_chunk in chunk_outputs:
+        c = H_chunk.shape[1]
+        for local in range(c):
+            p = start + local
+            if local < context_floor:
+                continue  # not enough in-chunk left-context for the fit at p
+            H_full[:, p] = H_chunk[:, local]
+            surp_full[p] = surp_chunk[local]
+            assigned[p] = True
+    # Pass 2: positions never assigned (the first context_floor tokens of the
+    # story, plus any uncovered) fall back to the EARLIEST chunk covering them.
+    for start, H_chunk, surp_chunk in chunk_outputs:
+        c = H_chunk.shape[1]
+        for local in range(c):
+            p = start + local
+            if assigned[p]:
+                continue
+            H_full[:, p] = H_chunk[:, local]
+            surp_full[p] = surp_chunk[local]
+            assigned[p] = True
+    # Surprisal at whole-story position 0 has no preceding context -> NaN.
+    surp_full[0] = float("nan")
+    assert bool(assigned.all()), "overlapping-chunk assembly left positions uncovered"
+    return H_full, surp_full
 
 
 def forward_sequence(
@@ -246,6 +347,44 @@ def forward_sequence(
     H = capture.full_stack(n_layers)  # (L, T, hidden) fp32 CPU
     surprisal = _surprisal_from_logits(out.logits, input_ids)  # (T,) CPU
     return H, surprisal
+
+
+def forward_ns_overlapping(
+    model,
+    capture: LayerCapture,
+    input_ids: torch.Tensor,
+    n_layers: int,
+    hidden: int,
+    max_len: int,
+    stride: int,
+    context_floor: int,
+):
+    """Forward a FULL NS story in overlapping chunks; reassemble full-story reads.
+
+    Barenholtz 2606.05346 §2.1: a story longer than the model's context window is
+    processed in overlapping ``max_len``-token chunks, NOT truncated (#744 C2).
+    ``input_ids`` is the FULL story ``(1, T_full)``. Each chunk
+    ``[start, start+max_len)`` is a separate batch-1 forward (the LayerCapture
+    hooks re-capture per forward); per-chunk residual stacks + surprisal are then
+    de-duplicated by ``assemble_overlapping_chunks`` (each position taken from the
+    LAST chunk where it has >= ``context_floor`` in-chunk left-context, so the
+    k-window OLS fit + the +max_step lookahead are in-context).
+
+    Returns ``(H_full (L, T_full, hidden) fp32 CPU, surprisal_full (T_full,) CPU)``
+    covering the WHOLE story — same shape contract as ``forward_sequence`` but
+    over ``T_full`` (un-truncated) rather than the first ``max_len`` tokens.
+    """
+    t_full = input_ids.shape[1]
+    starts = _chunk_starts(t_full, max_len, stride)
+    chunk_outputs: list[tuple[int, torch.Tensor, torch.Tensor]] = []
+    for start in starts:
+        chunk_ids = input_ids[:, start : start + max_len].to(model.device)  # (1, c)
+        with torch.no_grad():
+            out = model(input_ids=chunk_ids)
+        H_chunk = capture.full_stack(n_layers)  # (L, c, hidden) fp32 CPU
+        surp_chunk = _surprisal_from_logits(out.logits, chunk_ids)  # (c,) CPU
+        chunk_outputs.append((start, H_chunk, surp_chunk))
+    return assemble_overlapping_chunks(chunk_outputs, t_full, n_layers, hidden, context_floor)
 
 
 # ── Per-sequence summary (the streaming read) ──────────────────────────────────
@@ -453,40 +592,66 @@ def main() -> int:
     capture = LayerCapture(model, n_layers)
     steps = DIRECTION_PRES_STEPS
     k = TRAJECTORY_WINDOW_K
+    # Overlapping-chunk context floor: a de-duplicated position needs k tokens of
+    # left-context for the OLS fit + max(+s) for the lookahead in-chunk (#744 C2).
+    ns_context_floor = k + max(steps)
     t0 = time.time()
 
     try:
         # ── Pass over Natural Stories: RETAIN the raw fp16 dump ─────────────────
+        # FULL stories, processed in overlapping max_seq_len-token chunks
+        # (Barenholtz §2.1) and reassembled — NO truncation (#744 C2).
         phase("dump_ns")
         ns_pop = WelfordDimStats(n_layers, hidden)  # NS population stats (from the dump)
         ns_seq_meta = []
         for i, seq in enumerate(ns_corpus["sequences"], 1):
-            input_ids, clause_mask, word_end_idx = tokenize_ns_sequence(
-                tokenizer, seq["words"], args.max_seq_len
+            input_ids, clause_mask, word_end_idx = tokenize_ns_sequence(tokenizer, seq["words"])
+            n_chunks = len(_chunk_starts(input_ids.shape[1], args.max_seq_len, NS_CHUNK_STRIDE))
+            H, surprisal = forward_ns_overlapping(
+                model,
+                capture,
+                input_ids,
+                n_layers,
+                hidden,
+                args.max_seq_len,
+                NS_CHUNK_STRIDE,
+                ns_context_floor,
             )
-            H, surprisal = forward_sequence(model, tokenizer, input_ids, capture, n_layers)
             ns_pop.update(H)
-            sink_mask = _sink_mask(H)  # (L, T) per-(layer,position) — concern #1
-            special_mask = _special_token_mask(tokenizer, input_ids)  # (T,)
+            sink_mask = _sink_mask(H)  # (L, T_full) per-(layer,position) — concern #1
+            special_mask = _special_token_mask(tokenizer, input_ids)  # (T_full,)
             blob = {
                 "item": seq["item"],
-                "H_fp16": H.to(torch.float16),  # (L, T, hidden)
-                "surprisal": surprisal,  # (T,)
-                "sink_mask": sink_mask,  # (L, T) bool
-                "special_mask": special_mask,  # (T,) bool
-                "clause_opener_mask": clause_mask,  # (T,) bool
+                "H_fp16": H.to(torch.float16),  # (L, T_full, hidden)
+                "surprisal": surprisal,  # (T_full,)
+                "sink_mask": sink_mask,  # (L, T_full) bool
+                "special_mask": special_mask,  # (T_full,) bool
+                "clause_opener_mask": clause_mask,  # (T_full,) bool
                 "word_end_idx": torch.tensor(word_end_idx, dtype=torch.long),
                 "input_ids": input_ids[0].cpu(),
             }
             torch.save(blob, ns_raw_dir / f"seq_{seq['item']}.pt")
-            ns_seq_meta.append({"item": seq["item"], "n_tokens": int(H.shape[1])})
+            ns_seq_meta.append(
+                {"item": seq["item"], "n_tokens": int(H.shape[1]), "n_chunks": n_chunks}
+            )
             logger.info(
-                "[NS %d/%d] item=%s T=%d", i, len(ns_corpus["sequences"]), seq["item"], H.shape[1]
+                "[NS %d/%d] item=%s T_full=%d n_chunks=%d",
+                i,
+                len(ns_corpus["sequences"]),
+                seq["item"],
+                H.shape[1],
+                n_chunks,
             )
 
         # ── Broader Pass 1: stream population stats + rank rogue dims ───────────
         phase("stream_broader_pass1")
         b_pop = WelfordDimStats(n_layers, hidden)
+        # Reservoir-sample raw token vectors over the FULL broader stream so the
+        # random baseline is drawn from the WHOLE streamed population — not the
+        # bounded broader_raw subset the analyzer would otherwise re-concatenate
+        # (wrong distribution + a >50 GB all-at-once materialization risk; #744
+        # random-pair-memory concern). Fixed ~4 GB regardless of stream length.
+        b_reservoir = ReservoirVectorPool(n_layers, hidden, BROADER_RANDOM_POOL, SEED)
         # Accumulate per-layer raw activations ONLY long enough to rank rogue
         # dims; ranking needs the raw population variance per dim, which the
         # Welford sums already give — so rank from the finalized sums (var) plus
@@ -498,6 +663,7 @@ def main() -> int:
             )
             H, _ = forward_sequence(model, tokenizer, enc["input_ids"], capture, n_layers)
             b_pop.update(H)
+            b_reservoir.update(H)
             if i % 50 == 0:
                 logger.info("[broader pass1 %d/%d]", i, len(broader_corpus["sequences"]))
         b_mu, b_sigma = b_pop.finalize()  # (L, hidden) each
@@ -511,6 +677,23 @@ def main() -> int:
                 for li in range(n_layers)
             ]
         )  # (L, k)
+
+        # Broader random baseline from the reservoir pool, per flavor, computed
+        # ONCE over the full-stream sample under the FIXED population stats — the
+        # analyzer reads this artifact instead of concatenating broader_raw.
+        b_pool = b_reservoir.pool().float()  # (L, n_pool, hidden) raw
+        b_flavors = make_flavors_from_stats(b_pool, b_mu, b_sigma, b_rogue_idx)
+        broader_random = {
+            "corpus": "broader",
+            "n_pool": int(b_pool.shape[1]),
+            "n_pairs": RANDOM_BASELINE_N_PAIRS,
+            "seed": SEED,
+            "per_flavor": {
+                flavor: random_baseline(H, RANDOM_BASELINE_N_PAIRS, SEED).tolist()
+                for flavor, H in b_flavors.items()
+            },
+        }
+        torch.save(broader_random, out_dir / "broader_random_pairs.pt")
 
         # NS population stats + rogue dims (from the retained dump, recompute-free).
         ns_mu, ns_sigma = ns_pop.finalize()
@@ -599,6 +782,8 @@ def main() -> int:
         "n_layers": n_layers,
         "hidden": hidden,
         "max_seq_len": args.max_seq_len,
+        "ns_chunk_stride": NS_CHUNK_STRIDE,
+        "ns_context_floor": ns_context_floor,
         "k": k,
         "steps": list(steps),
         "flavors": list(FLAVORS),

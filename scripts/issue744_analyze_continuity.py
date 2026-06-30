@@ -245,6 +245,36 @@ def per_flavor_random_baseline(
     return out
 
 
+def broader_random_baseline(dump_dir: Path, hidden: int) -> dict:
+    """Read the Phase-1 reservoir-sampled broader random baseline (#744 concern).
+
+    The broader corpus is STREAMED (no full raw retention), so Phase 1
+    reservoir-samples raw token vectors over the WHOLE stream and pre-computes the
+    per-flavor random-pair abs-cosine into ``broader_random_pairs.pt`` (the right
+    distribution + bounded memory). The analyzer simply reads it here rather than
+    concatenating the bounded ``broader_raw`` spot-check subset (the wrong
+    distribution + a >50 GB all-at-once materialization). Falls back to a noted
+    empty result if the artifact is absent (older dumps).
+    """
+    pt = dump_dir / "broader_random_pairs.pt"
+    if not pt.exists():
+        return {
+            "corpus": "broader",
+            "note": "broader_random_pairs.pt not found (pre-reservoir dump)",
+            "closed_form_d3584": closed_form_random_abs_cosine(hidden),
+            "per_flavor": {},
+        }
+    payload = torch.load(pt, weights_only=False)
+    return {
+        "corpus": "broader",
+        "source": "phase1_reservoir",
+        "n_pool": payload.get("n_pool"),
+        "n_pairs": payload.get("n_pairs"),
+        "closed_form_d3584": closed_form_random_abs_cosine(hidden),
+        "per_flavor": payload.get("per_flavor", {}),
+    }
+
+
 # ── H3 discontinuity-locus stratification (NS raw dump) ────────────────────────
 
 
@@ -562,13 +592,15 @@ def main() -> int:
     _write_csv(out_dir / "per_layer_extrap_error.csv", extrap_rows)
 
     logger.info("Random baselines (per flavor)...")
+    # NS: full retained dump concat (NS raw ~2.6 GB, fits the floor). Broader:
+    # the Phase-1 reservoir-sampled baseline over the FULL stream
+    # (broader_random_pairs.pt) — NOT a re-concat of the bounded broader_raw
+    # subset (wrong distribution + >50 GB materialization risk; #744 concern).
     rb = {
         "natural_stories": per_flavor_random_baseline(
             dump_dir, stats, "ns", dump_dir / "ns_raw", n_layers, hidden
         ),
-        "broader": per_flavor_random_baseline(
-            dump_dir, stats, "broader", dump_dir / "broader_raw", n_layers, hidden
-        ),
+        "broader": broader_random_baseline(dump_dir, hidden),
         "metadata": reproducibility_metadata({"script": "issue744_analyze_continuity"}),
     }
     write_json(out_dir / "random_baseline.json", rb)

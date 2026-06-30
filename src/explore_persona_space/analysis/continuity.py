@@ -309,6 +309,54 @@ def closed_form_random_abs_cosine(hidden: int) -> float:
     return math.sqrt(2.0 / (math.pi * hidden))
 
 
+class ReservoirVectorPool:
+    """Streaming reservoir of raw per-position vectors per layer (fixed memory).
+
+    Used to compute the BROADER corpus's random-baseline abs-cosine over the FULL
+    Phase-1 stream WITHOUT retaining the streamed activations or re-concatenating a
+    bounded raw subset (#744 random-pair-memory concern). As each sequence's
+    ``(L, T, hidden)`` raw residual stack arrives, every token position is offered
+    to a classic reservoir (Vitter algorithm R): the first ``pool_size`` positions
+    fill the pool; each subsequent position ``m`` (1-indexed over the whole stream)
+    replaces a uniformly-random pool slot with probability ``pool_size / m``. The
+    result is a uniform sample of ``pool_size`` token vectors over the whole stream
+    per layer, fixed memory regardless of stream length. Seeded for reproducibility.
+
+    After the stream, ``pool()`` returns the ``(L, n, hidden)`` raw pool (``n <=
+    pool_size``); the caller builds the flavor triad from the FIXED population
+    stats and samples random pairs from the pool for the per-flavor baseline.
+    """
+
+    def __init__(self, n_layers: int, hidden: int, pool_size: int, seed: int):
+        self.n_layers = n_layers
+        self.hidden = hidden
+        self.pool_size = pool_size
+        self._buf = torch.zeros(n_layers, pool_size, hidden, dtype=torch.float16)
+        self._filled = 0  # number of pool slots currently populated
+        self._seen = 0  # total token positions offered across the stream
+        self._gen = torch.Generator(device="cpu").manual_seed(seed)
+
+    def update(self, H: torch.Tensor) -> None:
+        """Offer one sequence's ``(L, T, hidden)`` raw residuals to the reservoir."""
+        assert H.shape[0] == self.n_layers and H.shape[2] == self.hidden, H.shape
+        Hf = H.to(torch.float16)
+        T = Hf.shape[1]
+        for t in range(T):
+            self._seen += 1
+            if self._filled < self.pool_size:
+                self._buf[:, self._filled] = Hf[:, t]
+                self._filled += 1
+            else:
+                # Replace a random slot with prob pool_size / seen (Vitter R).
+                r = int(torch.randint(0, self._seen, (1,), generator=self._gen).item())
+                if r < self.pool_size:
+                    self._buf[:, r] = Hf[:, t]
+
+    def pool(self) -> torch.Tensor:
+        """Return the ``(L, n, hidden)`` raw reservoir pool (n = filled slots)."""
+        return self._buf[:, : self._filled]
+
+
 @dataclass
 class WelfordDimStats:
     """Streaming per-dim mean / variance over a token population, per layer.

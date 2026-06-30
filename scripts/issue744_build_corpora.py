@@ -50,7 +50,6 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from dotenv import load_dotenv  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
 from issue744_common import (  # noqa: E402
-    BROADER_N_SEQUENCES,
     BROADER_SEED,
     BROADER_TOKEN_BUDGET,
     DEFAULT_MODEL,
@@ -166,8 +165,11 @@ def build_natural_stories(out_dir: Path, smoke: bool) -> dict:
     }
     out_path = out_dir / "corpus_natural_stories.json"
     write_json(out_path, corpus)
-    corpus["meta"]["json_sha256"] = sha256_file(out_path)
-    write_json(out_path, corpus)  # rewrite with the self-hash
+    # json_payload_sha256 = sha256 of the emitted JSON BEFORE this field is added
+    # (a file cannot contain its own final hash). Named *_payload_* to be explicit
+    # that it hashes the no-self-hash payload, not the rewritten file (#744 minor).
+    corpus["meta"]["json_payload_sha256"] = sha256_file(out_path)
+    write_json(out_path, corpus)  # rewrite with the payload hash
     logger.info(
         "Natural Stories: %d sequences, %d words, commit=%s -> %s",
         len(sequences),
@@ -185,12 +187,17 @@ def take_until_token_budget(
     max_seq_len: int,
     min_seq_tokens: int,
 ) -> list[dict]:
-    """Deterministically take shuffled docs until the subword-token budget.
+    """Deterministically take shuffled docs until the subword-token budget is met.
 
-    Each doc is truncated to ``max_seq_len`` subword tokens; docs shorter than
-    ``min_seq_tokens`` after truncation are dropped (A12). Stops once the
-    cumulative token count would meet/exceed ``token_budget`` (the last added
-    doc may push slightly over — deterministic given the shuffle order).
+    Iterates the FULL shuffled ``docs`` list (NOT a pre-sliced candidate pool, so
+    a budget that the first few thousand short rows don't fill keeps consuming
+    rows until the budget IS met or the corpus is exhausted; #744 broader-budget
+    concern). Each doc is truncated to ``max_seq_len`` subword tokens; docs
+    shorter than ``min_seq_tokens`` after truncation are dropped (A12). Stops once
+    the cumulative token count would meet/exceed ``token_budget`` (the last added
+    doc may push slightly over — deterministic given the shuffle order). If the
+    whole corpus is consumed before the budget is met, returns every usable doc
+    (the caller's production assertion catches a genuine corpus shortfall).
     """
     sequences: list[dict] = []
     total = 0
@@ -225,16 +232,29 @@ def build_broader(out_dir: Path, smoke: bool, model: str) -> dict:
     rng.shuffle(docs)
 
     if smoke:
+        # Smoke: tiny budget over a small candidate slice (keeps the smoke fast).
         n_seq_cap, budget = 4, 4 * MAX_SEQ_LEN
+        candidates = docs[:n_seq_cap]
     else:
-        n_seq_cap, budget = BROADER_N_SEQUENCES, BROADER_TOKEN_BUDGET
-    # Cap the candidate pool to n_seq_cap, then take until the token budget.
-    sequences = take_until_token_budget(
-        docs[:n_seq_cap], tokenizer, budget, MAX_SEQ_LEN, MIN_SEQ_TOKENS
-    )
-    if not smoke:
-        assert len(sequences) >= 1, "broader corpus produced no usable sequences"
+        # Production: iterate the FULL shuffled corpus until the token budget is
+        # met (NOT a pre-sliced first-N pool — a budget the first rows don't fill
+        # keeps consuming until met or the corpus is exhausted; #744 concern).
+        # n_seq_cap records the candidate-pool size that WAS scanned (the whole
+        # corpus) for the manifest, not a hard cap.
+        n_seq_cap, budget = len(docs), BROADER_TOKEN_BUDGET
+        candidates = docs
+    sequences = take_until_token_budget(candidates, tokenizer, budget, MAX_SEQ_LEN, MIN_SEQ_TOKENS)
     n_tokens = sum(s["n_tokens"] for s in sequences)
+    if not smoke:
+        # Underfill = a genuine corpus problem (WikiText-103 train has ~1.8M
+        # rows, so BROADER_TOKEN_BUDGET=1M tokens IS reachable). 10% slack lets
+        # the last-doc overshoot / a near-exact fill pass; a real shortfall (the
+        # corpus ran dry far below budget) fails loud here, NOT silently downstream.
+        assert n_tokens >= 0.9 * budget, (
+            f"broader corpus underfilled: got {n_tokens} of {budget} tokens "
+            f"({len(sequences)} sequences from {len(docs)} candidate rows) — "
+            "corpus exhausted before the token budget; investigate the source."
+        )
 
     corpus = {
         "meta": {
@@ -259,7 +279,9 @@ def build_broader(out_dir: Path, smoke: bool, model: str) -> dict:
     }
     out_path = out_dir / "corpus_broader.json"
     write_json(out_path, corpus)
-    corpus["meta"]["json_sha256"] = sha256_file(out_path)
+    # json_payload_sha256 = sha256 of the emitted JSON BEFORE this field is added
+    # (a file cannot contain its own final hash); see build_natural_stories.
+    corpus["meta"]["json_payload_sha256"] = sha256_file(out_path)
     write_json(out_path, corpus)
     logger.info(
         "Broader (WikiText-103 train): %d sequences, %d subword tokens -> %s",
