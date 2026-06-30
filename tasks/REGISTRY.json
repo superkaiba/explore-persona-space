@@ -4815,8 +4815,8 @@
     "759": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/759",
-      "status": "blocked",
+      "path": "tasks/planning/759",
+      "status": "planning",
       "title": "daily-fix: watcher must not respawn duplicate per-issue sessions"
     },
     "76": {
