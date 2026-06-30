@@ -1,0 +1,13 @@
+{
+ "cell": "bm_default_contra_d1_seed42",
+ "layer": 14,
+ "rho_mean": 0.9295386054421768,
+ "rho_std": 0.019066782627096452,
+ "n_resamples": 600,
+ "mc_resamples": 200,
+ "mc_seeds": [
+  0,
+  1,
+  2
+ ]
+}

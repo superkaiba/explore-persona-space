@@ -4096,6 +4096,172 @@ def test_render_startup_script_hydra_only_byte_identical_to_pre_change_snapshot(
 
 
 # ---------------------------------------------------------------------------
+# #750 — kernel OOM-kill guard on the success path (incident #744)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_oom_guard_uses_proc_self_cgroup_derived_path() -> None:
+    """#750: the ``_eps_oom_count`` helper resolves the workload's OWN cgroup
+    dir from ``/proc/self/cgroup``'s ``0::`` unified-hierarchy line and reads
+    the LOCAL ``oom_kill`` counter — NOT the bare ``/sys/fs/cgroup`` root,
+    which is the v2 defect this fixes (``memory.events`` does not exist on the
+    cgroup-v2 root). Shared between the hydra and workload_cmd branches, so
+    one canonical spec covers both."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "_eps_oom_count() {" in script
+    # The 0::-line resolver (the cgroup-v2 unified-hierarchy path for this pid).
+    assert '$1=="0"{print $3' in script
+    # The LOCAL counter file (this cgroup only, NOT a descendant aggregation).
+    assert "memory.events.local" in script
+    # The derived-path composition (mount root + the 0:: relative path).
+    assert '"/sys/fs/cgroup${_rel}"' in script
+    # The integer extractor for the oom_kill line.
+    assert '$1=="oom_kill"{print $2' in script
+    # v2-regression guard: the bare root read the v2 guard wrongly used must
+    # be ABSENT — the only /sys/fs/cgroup occurrence is the derived
+    # composition, never a standalone ``/sys/fs/cgroup/memory.events`` target.
+    assert " /sys/fs/cgroup/memory.events " not in script
+    assert "/sys/fs/cgroup/memory.events\n" not in script
+    # The v2 grep-[1-9] form is replaced by the arithmetic diff.
+    assert "^oom_kill [1-9]" not in script
+
+
+def test_render_startup_script_oom_baseline_captured_before_workload() -> None:
+    """The pre-workload baseline-capture step renders BEFORE the workload
+    phase, so the post-workload guard fires on an INCREASE (the counter is
+    cumulative-since-cgroup-creation; the guest-startup cgroup is not fresh)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert 'EPS_OOM_BASELINE="$(_eps_oom_count)"' in script
+    assert script.index('EPS_OOM_BASELINE="$(_eps_oom_count)"') < script.index(
+        "_eps_phase workload"
+    )
+
+
+def test_render_startup_script_oom_guard_diffs_after_workload_before_done() -> None:
+    """The post-workload diff guard re-reads the counter, compares against the
+    baseline with a numeric ``-gt``, and ``exit 137`` (SIGKILL rc) short-
+    circuits the success tail BEFORE the watchdog reaper, the completion
+    sentinel, and ``_eps_phase done`` — so an OOM'd run routes through the EXIT
+    trap's failure branch instead of falsely publishing done (the #744 bug)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert 'EPS_OOM_FINAL="$(_eps_oom_count)"' in script
+    assert '[ "${EPS_OOM_FINAL:-0}" -gt "${EPS_OOM_BASELINE:-0}" ]' in script
+    assert "exit 137" in script
+    # The final read is AFTER the workload phase ...
+    assert script.index('EPS_OOM_FINAL="$(_eps_oom_count)"') > script.index("_eps_phase workload")
+    # ... and the exit short-circuits BEFORE the sentinel + done.
+    assert script.index("exit 137") < script.index("_eps_phase done")
+    assert script.index("exit 137") < script.index('{"phase":"done"')
+    # The guard precedes the clean-exit watchdog reaper (so an OOM'd run lets
+    # the EXIT-trap shutdown own teardown, not the clean reaper).
+    assert script.index('EPS_OOM_FINAL="$(_eps_oom_count)"') < script.index(
+        'kill "${EPS_WATCHDOG_PID:-}"'
+    )
+
+
+def test_render_startup_script_oom_guard_on_both_workload_shapes() -> None:
+    """The baseline + guard live in the SHARED success path, so BOTH the hydra
+    (train.py) and the workload_cmd branches get them, with the same
+    baseline-before-workload / guard-after-workload-before-done ordering."""
+    hydra = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    workload = render_startup_script(
+        spec=_workload_spec("bash scripts/issue750_smoke.sh"),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    for script in (hydra, workload):
+        assert "_eps_oom_count() {" in script
+        # baseline captured before the workload phase
+        assert script.index('EPS_OOM_BASELINE="$(_eps_oom_count)"') < script.index(
+            "_eps_phase workload"
+        )
+        # guard fires after the workload, before done
+        assert script.index('EPS_OOM_FINAL="$(_eps_oom_count)"') > script.index(
+            "_eps_phase workload"
+        )
+        assert script.index("exit 137") < script.index("_eps_phase done")
+
+
+def test_render_startup_script_oom_guard_is_valid_bash_both_branches() -> None:
+    """The OOM helper + baseline + diff guard must parse on both branches —
+    a quoting slip in the awk/case lines would only surface at VM-boot."""
+    import tempfile
+
+    for spec in (
+        _spec(),
+        _workload_spec("bash scripts/issue750_smoke.sh --flag 'v 1'"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
+            fh.write(script)
+            path = fh.name
+        proc = subprocess.run(["bash", "-n", path], capture_output=True, text=True)
+        assert proc.returncode == 0, f"bash -n failed:\n{proc.stderr}"
+
+
+def _extract_oom_helper(script: str) -> str:
+    """Pull the verbatim ``_eps_oom_count() { ... }`` function body out of a
+    rendered startup script for direct bash execution."""
+    import re
+
+    m = re.search(r"(_eps_oom_count\(\) \{.*?\n\})", script, re.DOTALL)
+    assert m is not None, "could not locate _eps_oom_count helper in rendered script"
+    return m.group(1)
+
+
+def test_oom_guard_fires_exit_137_on_counter_increase() -> None:
+    """Runtime regression for the #744 silent-failure invariant: a STRICT
+    INCREASE in the cgroup-local ``oom_kill`` counter across the workload's
+    lifetime trips the guard and ``exit 137`` (so an OOM'd run can never reach
+    ``_eps_phase done``). Drives the rendered helper against a temp cgroup-dir
+    whose ``memory.events.local`` is bumped 0 -> 3, exactly the #744 case.
+    This test FAILS pre-fix (no helper / no guard) and PASSES post-fix."""
+    import tempfile
+
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    helper = _extract_oom_helper(script)
+    with tempfile.TemporaryDirectory() as d:
+        events = Path(d) / "memory.events.local"
+        # A reader that resolves to OUR temp dir instead of the real cgroup:
+        # override _eps_oom_count's $_dir derivation by reading the file
+        # directly through the same awk + case normalization the helper uses.
+        read = (
+            f'_dir="{d}"; _n=0; '
+            f'if [ -r "$_dir/memory.events.local" ]; then '
+            f'_n="$(awk \'$1=="oom_kill"{{print $2; exit}}\' '
+            f'"$_dir/memory.events.local" 2>/dev/null || true)"; fi; '
+            f'case "$_n" in (*[!0-9]*|"") _n=0 ;; esac; echo "$_n"'
+        )
+        events.write_text("low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n")
+        baseline = subprocess.run(
+            ["bash", "-c", read], capture_output=True, text=True
+        ).stdout.strip()
+        events.write_text("low 0\nhigh 0\nmax 0\noom 0\noom_kill 3\n")
+        final = subprocess.run(["bash", "-c", read], capture_output=True, text=True).stdout.strip()
+        assert baseline == "0" and final == "3", (baseline, final)
+        # The guard line, verbatim from the renderer, with the simulated reads.
+        guard = (
+            f"set -euo pipefail\n"
+            f'EPS_OOM_BASELINE="{baseline}"\nEPS_OOM_FINAL="{final}"\n'
+            f'if [ "${{EPS_OOM_FINAL:-0}}" -gt "${{EPS_OOM_BASELINE:-0}}" ]; then exit 137; fi\n'
+            f"echo DONE"
+        )
+        proc = subprocess.run(["bash", "-c", guard], capture_output=True, text=True)
+        assert proc.returncode == 137, (proc.returncode, proc.stdout, proc.stderr)
+        assert "DONE" not in proc.stdout
+    # ... and the helper is set -e-safe + fails CLOSED (echoes 0) when the
+    # cgroup-local counter file is absent (non-v2 / hybrid host) -> 0 -gt 0 is
+    # false -> the guard is a no-op and pre-change behavior is preserved.
+    harness = (
+        helper + '\nset -euo pipefail\nb="$(_eps_oom_count)"; f="$(_eps_oom_count)"; '
+        'if [ "${f:-0}" -gt "${b:-0}" ]; then echo FIRED; else echo NOFIRE; fi'
+    )
+    proc = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == "NOFIRE", proc.stdout
+
+
+# ---------------------------------------------------------------------------
 # issue #588 — custom workload_cmd rendering + validation + launch
 # ---------------------------------------------------------------------------
 

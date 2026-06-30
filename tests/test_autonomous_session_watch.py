@@ -44,6 +44,7 @@ from autonomous_session_watch import (  # noqa: E402
     POD_ACTIVE,
     PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT,
     PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT,
+    RESPAWN_SPAWN_GRACE_S,
     STALLED_MAX_RESPAWNS,
     STALLED_WINDOW_S,
     TERMINAL,
@@ -130,6 +131,79 @@ def test_unknown_status_is_inert():
     # a human notices rather than silently dropping or double-spawning.
     assert decide("some_new_status", alive=False, missed=4) == ("keep", 4)
     assert decide("some_new_status", alive=True, missed=0) == ("keep", 0)
+
+
+# ─── #759: crash-recovery spawn-grace (bug class a) ──────────────────────────
+# A just-(re)spawned ACTIVE session whose id has not yet propagated into the
+# daemon's /list reply reads `alive=False` for the registration-latency window.
+# Without a grace, the 2-miss respawn fires and spawns a DUPLICATE driver. The
+# grace mirrors the orphan sweep's `ORPHAN_SPAWN_GRACE_S` (decide_orphan).
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_decide_grace_keeps_not_yet_live_entry_inside_window(status):
+    # Criterion 1: inside the grace window, an ACTIVE not-alive entry does NOT
+    # respawn even at the 2nd miss — its id may simply not be in /list yet.
+    # Mirror of test_orphan_fresh_registration_keeps.
+    assert decide(
+        status,
+        alive=False,
+        missed=1,
+        entry_age_s=RESPAWN_SPAWN_GRACE_S - 1,
+    ) == ("keep", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_decide_grace_expired_respawns_as_before(status):
+    # Criterion 2: past the grace window, the existing 2-miss respawn still
+    # fires — no regression of the genuine-death path.
+    assert decide(
+        status,
+        alive=False,
+        missed=1,
+        entry_age_s=RESPAWN_SPAWN_GRACE_S + 1,
+    ) == ("respawn", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_decide_grace_none_age_preserves_today_behavior(status):
+    # Criterion 3: a missing spawned_at (entry_age_s=None) preserves today's
+    # behavior exactly — fail toward respawn, never silently suppress.
+    assert decide(status, alive=False, missed=1, entry_age_s=None) == ("respawn", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_decide_alive_short_circuits_before_grace(status):
+    # Criterion 4: a LIVE session is kept regardless of grace (alive checked
+    # first, so a fresh-and-live entry resets misses without touching grace).
+    assert decide(status, alive=True, missed=3, entry_age_s=1) == ("keep", 0)
+
+
+def test_decide_grace_resets_accumulated_miss():
+    # A miss accumulated BEFORE the (re)spawn must not straddle the grace into
+    # an immediate respawn: inside the window the count resets to 0.
+    assert decide(
+        "running",
+        alive=False,
+        missed=5,
+        entry_age_s=RESPAWN_SPAWN_GRACE_S - 1,
+    ) == ("keep", 0)
+
+
+def test_respawn_spawn_grace_env_override_and_fallback(monkeypatch):
+    # Criterion 10 (a-half): EPM_RESPAWN_SPAWN_GRACE_MIN parses a valid int
+    # (minutes) and falls back to the default on a garbled value. Mirrors the
+    # _orphan_staleness_s env-parse coverage.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_RESPAWN_SPAWN_GRACE_MIN", raising=False)
+    assert asw._respawn_spawn_grace_s() == float(RESPAWN_SPAWN_GRACE_S)
+
+    monkeypatch.setenv("EPM_RESPAWN_SPAWN_GRACE_MIN", "20")
+    assert asw._respawn_spawn_grace_s() == 20 * 60.0
+
+    monkeypatch.setenv("EPM_RESPAWN_SPAWN_GRACE_MIN", "not-a-number")
+    assert asw._respawn_spawn_grace_s() == float(RESPAWN_SPAWN_GRACE_S)
 
 
 def test_status_sets_are_disjoint_and_cover_enum():
@@ -1700,6 +1774,295 @@ def test_stalled_active_status_auto_respawns_after_two_misses(
     assert markers == [(518, "session-auto-respawn")]
 
 
+# ─── #759 bug class b.1: live-session bounded K-escalation ───────────────────
+# When the stalled detector wants to respawn an ACTIVE session whose Happy id
+# is STILL in the daemon's live set, the first K-1 consecutive episodes
+# downgrade respawn->alert (no duplicate driver on a transient busy stretch);
+# the Kth escalates to the canonical respawn (#506 dead-bg-chain class). A
+# genuinely-dead id (not in live_ids) respawns immediately, K not consulted.
+# Criteria 6/7/11/12 pin all branches + the counter resets.
+
+
+def _read_live_escalation_events(reg_dir):
+    """Return the parsed rows of the #759 stalled-live-escalation sidecar
+    (``[]`` when the file was never written)."""
+    import json
+
+    path = reg_dir / "stalled-live-escalation-events.jsonl"
+    if not path.is_file():
+        return []
+    return [json.loads(ln) for ln in path.read_text().splitlines() if ln.strip()]
+
+
+def _read_live_consecutive(reg_dir, issue):
+    """Return the persisted live_consecutive from stalled-<issue>.json
+    (``None`` when the state file is absent)."""
+    import json
+
+    path = reg_dir / f"stalled-{issue}.json"
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text()).get("live_consecutive")
+
+
+def test_stalled_live_k_minus_1_downgrades_to_alert(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Criterion 6 (default K=2 -> K-1 = 1 downgrade tick): a stale ACTIVE
+    # session whose id is IN live_ids, with NO provision / followups exemption,
+    # downgrades respawn->alert. Across the 2 ticks needed to reach the respawn
+    # decision: ZERO respawns, exactly ONE session-stalled-alert, and
+    # live_consecutive == 1 (== K-1) persisted afterward.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 739, "sess-739", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1: first miss only (below threshold) -> keep, live_consecutive reset 0.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert stops == [] and spawns == [] and markers == []
+
+    # Tick 2: threshold met -> decide() wants respawn, but the LIVE id triggers
+    # the 1st live-stall episode (1 < K=2) -> downgrade to alert.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert spawns == []  # NO duplicate driver on the live session
+    assert stops == []  # the alert arm never stops the session
+    assert markers == [(739, "session-stalled-alert")]
+    assert _read_live_consecutive(isolated_registry, 739) == 1  # == K-1
+
+    rows = _read_live_escalation_events(isolated_registry)
+    assert len(rows) == 1
+    assert rows[0]["issue"] == 739
+    assert rows[0]["event"] == "stalled-live-downgrade"
+    assert rows[0]["live_consecutive"] == 1
+    assert rows[0]["k"] == 2
+
+
+def test_stalled_live_kth_episode_escalates_to_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Criterion 7 (default K=2): continue the criterion-6 scenario one more
+    # tick (same live_ids, still stale). The Kth (2nd) consecutive live-stall
+    # episode ESCALATES to the canonical respawn (stop+spawn), and resets
+    # live_consecutive to 0. A persistently-stalled LIVE wrapper (#506 class)
+    # is recovered, not alert-only forever.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 739, "sess-739", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Ticks 1-2: reach the 1st live-stall episode (downgrade -> alert).
+    for _ in range(2):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+        )
+    assert spawns == [] and stops == []
+    assert markers == [(739, "session-stalled-alert")]
+    assert _read_live_consecutive(isolated_registry, 739) == 1
+
+    # Tick 3: alerted=True short-circuits the miss guard -> decide() returns
+    # respawn -> the 2nd (== K) consecutive live-stall episode ESCALATES.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert stops == ["sess-739"]
+    assert spawns == [(739, 24.0)]
+    assert markers == [(739, "session-stalled-alert"), (739, "session-auto-respawn")]
+    # The escalation reset the counter (a fresh --auto session = a new episode).
+    assert _read_live_consecutive(isolated_registry, 739) == 0
+
+    rows = _read_live_escalation_events(isolated_registry)
+    assert [r["event"] for r in rows] == ["stalled-live-downgrade", "stalled-live-escalation"]
+    assert rows[1]["live_consecutive"] == 2  # the count that tripped the escalation
+    assert rows[1]["k"] == 2
+
+
+def test_stalled_live_k_equals_3_takes_two_alerts_then_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Criteria 6+7 generalized for K=3: K-1 = 2 downgrade episodes, then the
+    # 3rd escalates. Pins that the escalation tracks the env-tuned K, not a
+    # hardcoded 2.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "3")
+    _write_autonomous_entry(isolated_registry, 739, "sess-739", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Tick 1 (miss=1, keep) + tick 2 (1st live-stall episode -> alert).
+    for _ in range(2):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+        )
+    assert spawns == [] and markers == [(739, "session-stalled-alert")]
+    assert _read_live_consecutive(isolated_registry, 739) == 1
+
+    # Tick 3: alerted=True -> respawn-wanted -> 2nd episode (2 < 3) -> alert again.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert spawns == []
+    assert markers == [(739, "session-stalled-alert"), (739, "session-stalled-alert")]
+    assert _read_live_consecutive(isolated_registry, 739) == 2
+
+    # Tick 4: 3rd (== K) episode -> ESCALATE to respawn, reset to 0.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-739"}
+    )
+    assert stops == ["sess-739"]
+    assert spawns == [(739, 24.0)]
+    assert _read_live_consecutive(isolated_registry, 739) == 0
+    rows = _read_live_escalation_events(isolated_registry)
+    assert [r["event"] for r in rows] == [
+        "stalled-live-downgrade",
+        "stalled-live-downgrade",
+        "stalled-live-escalation",
+    ]
+
+
+def test_stalled_dead_id_respawns_immediately_k_not_consulted(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # Criterion 11 (the regression guard): the SAME stale scenario but the
+    # entry's id is NOT in live_ids (genuinely-dead wrapper). The K counter is
+    # for LIVE ids only -> respawn fires on the 2nd miss exactly as before, no
+    # downgrade, and live_consecutive stays 0 (reset on the dead path). No
+    # escalation-sidecar row is written.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)
+    _write_autonomous_entry(isolated_registry, 740, "sess-740", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # live_ids contains some OTHER session, so _session_alive(entry) is False.
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"other-sid"}
+    )
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"other-sid"}
+    )
+    assert stops == ["sess-740"]
+    assert spawns == [(740, 24.0)]
+    assert markers == [(740, "session-auto-respawn")]
+    assert _read_live_consecutive(isolated_registry, 740) == 0
+    assert _read_live_escalation_events(isolated_registry) == []
+
+
+def test_stalled_keep_resets_live_consecutive(isolated_registry, monkeypatch, stalled_recorder):
+    # Criterion 12 (the "recovered then re-stalled" guard): drive one
+    # live-stall tick (-> live_consecutive becomes 1 via the downgrade), then a
+    # tick where decide() returns keep/clear (self-report is now FRESH) ->
+    # live_consecutive resets to 0, so a LATER unrelated live stall starts its
+    # K count fresh and the K-1 debounce is never short-cut by a stale counter.
+    import autonomous_session_watch as asw
+
+    # stalled_recorder's monkeypatching of the side-effects is what we need
+    # (the assertions read the persisted state file, not the recorded calls).
+    _ = stalled_recorder
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)  # default K=2
+    _write_autonomous_entry(isolated_registry, 741, "sess-741", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    now = 1_000_000.0
+
+    # Ticks 1-2: reach the 1st live-stall episode (downgrade -> alert),
+    # live_consecutive == 1.
+    for _ in range(2):
+        asw.stalled_session_pass(
+            dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-741"}
+        )
+    assert _read_live_consecutive(isolated_registry, 741) == 1
+
+    # Tick 3: the self-report is now FRESH (5 min old) -> decide() returns keep
+    # -> the corroboration's non-respawn branch resets live_consecutive to 0.
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (5 * 60, "ts-fresh"))
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, live_ids={"sess-741"}
+    )
+    assert _read_live_consecutive(isolated_registry, 741) == 0
+
+
+# ─── #759 bug class b.2: STALLED_WINDOW_S raised 45 -> 60 min, env-tunable ────
+
+
+def test_stalled_window_default_is_sixty_minutes():
+    # Criterion 8 floor + the b.2 raise: the module default is now 60 min, and
+    # a short (5-min) no-marker subagent stretch is FAR under it.
+    import autonomous_session_watch as asw
+
+    assert asw.STALLED_WINDOW_S == 60 * 60
+    # A 5-min-old self-report + 5-min-old marker -> keep (well inside window),
+    # regardless of the new vs old window (documents the regression floor).
+    assert asw.decide_session_stalled(
+        self_report_age_s=5 * 60,
+        marker_progress_age_s=5 * 60,
+        has_pod=False,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+    ) == ("keep", 0)
+
+
+def test_stalled_window_50min_keeps_under_new_window():
+    # Criterion 9 (the test that DISTINGUISHES the new 60-min window from the
+    # old 45-min one): a self-report + marker 50 min old sits BETWEEN the old
+    # and new windows. With the new 60-min window the window is NOT yet open ->
+    # keep. (Under the old 45-min window this same input would have respawned.)
+    import autonomous_session_watch as asw
+
+    age_50min = 50 * 60
+    # First miss path: 50 min < 60 min window -> not stale -> keep, missed reset.
+    assert asw.decide_session_stalled(
+        self_report_age_s=age_50min,
+        marker_progress_age_s=age_50min,
+        has_pod=False,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        window_s=asw.STALLED_WINDOW_S,
+    ) == ("keep", 0)
+    # Control: under the OLD 45-min window this same input DOES open the window
+    # (proving the input is genuinely between the two windows, not trivially
+    # under both).
+    assert asw.decide_session_stalled(
+        self_report_age_s=age_50min,
+        marker_progress_age_s=age_50min,
+        has_pod=False,
+        missed=1,
+        alerted=False,
+        respawn_eligible=True,
+        window_s=45 * 60,
+    ) == ("respawn", 0)
+
+
+def test_stalled_window_env_override_and_fallback(monkeypatch):
+    # Criterion 10 (b-half): EPM_STALLED_WINDOW_MIN parses a valid int (minutes)
+    # and falls back to the default on a garbled value.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_STALLED_WINDOW_MIN", raising=False)
+    assert asw._stalled_window_s() == float(asw.STALLED_WINDOW_S_DEFAULT)
+
+    monkeypatch.setenv("EPM_STALLED_WINDOW_MIN", "90")
+    assert asw._stalled_window_s() == 90 * 60.0
+
+    monkeypatch.setenv("EPM_STALLED_WINDOW_MIN", "garbled")
+    assert asw._stalled_window_s() == float(asw.STALLED_WINDOW_S_DEFAULT)
+
+
 def test_stalled_exemption_live_provision_blocks_respawn(
     isolated_registry, monkeypatch, stalled_recorder
 ):
@@ -2049,8 +2412,10 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     # ``_refresh_pods_conf_from_api``. ``followups_child_alerted`` (default
     # False) is the dedup flag for the followups_running-parent-waiting-on-
     # open-child suppression alert added 2026-06-11 (#533); see
-    # ``_followups_awaiting_child_reason``. Schema-shape coverage stays
-    # exhaustive.
+    # ``_followups_awaiting_child_reason``. ``live_consecutive`` (default 0)
+    # is the #759 bug-class-b.1 consecutive-live-stall counter; see
+    # ``_process_stalled_session``'s live-session corroboration block.
+    # Schema-shape coverage stays exhaustive.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -2059,6 +2424,7 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "exhausted": False,
         "refresh_attempted": False,
         "followups_child_alerted": False,
+        "live_consecutive": 0,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -2071,6 +2437,7 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         last_self_report_ts="ts-2",
         respawn_count=3,
         exhausted=True,
+        live_consecutive=1,
         prev=payload,
     )
     payload2 = json.loads((isolated_registry / "stalled-7.json").read_text())
@@ -2078,6 +2445,65 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     assert payload2["respawn_count"] == 3
     assert payload2["exhausted"] is True
     assert payload2["alerted"] is True
+    assert payload2["live_consecutive"] == 1  # persisted across saves
+
+
+def test_load_stalled_state_defaults_live_consecutive_zero_on_legacy_file(isolated_registry):
+    # #759 b.1 backward-compat: an on-disk stalled-<N>.json written BEFORE the
+    # live_consecutive field existed has no such key. _load_stalled_state
+    # returns the raw dict (no live_consecutive), and the read site in
+    # _process_stalled_session must default it to 0 via .get(..., 0) — same
+    # guard shape as prev_missed. We assert both the raw load (key absent) and
+    # the canonical .get default so a future refactor can't silently start
+    # treating a missing key as anything but 0.
+    import json
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "stalled-9.json").write_text(
+        json.dumps(
+            {
+                "happy_session_id": "sess-9",
+                "missed": 1,
+                "alerted": False,
+                "respawn_count": 0,
+                "exhausted": False,
+                "refresh_attempted": False,
+                "followups_child_alerted": False,
+                "last_self_report_ts": "ts-legacy",
+                "first_seen": 1.0,
+            }
+        )
+    )
+    state = asw._load_stalled_state(9)
+    assert "live_consecutive" not in state  # legacy file predates the field
+    assert state.get("live_consecutive", 0) == 0  # the read-site default
+
+
+def test_stalled_live_escalation_k_env_override_and_fallback(monkeypatch):
+    # #759 b.1: EPM_STALLED_LIVE_ESCALATION_K parses a valid positive int COUNT
+    # (not minutes) and falls back to the default on a garbled OR non-positive
+    # value — a typo must neither disable the escalation (K too large) nor
+    # disable the debounce (K <= 0 = immediate escalation, the duplicate-driver
+    # bug). Mirrors the _respawn_spawn_grace_s / _orphan_staleness_s env-parse
+    # coverage.
+    import autonomous_session_watch as asw
+    from autonomous_session_watch import STALLED_LIVE_ESCALATION_K
+
+    monkeypatch.delenv("EPM_STALLED_LIVE_ESCALATION_K", raising=False)
+    assert asw._stalled_live_escalation_k() == STALLED_LIVE_ESCALATION_K
+
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "4")
+    assert asw._stalled_live_escalation_k() == 4
+
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "garbled")
+    assert asw._stalled_live_escalation_k() == STALLED_LIVE_ESCALATION_K
+
+    # Non-positive falls back (never 0/negative — that would disable debounce).
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "0")
+    assert asw._stalled_live_escalation_k() == STALLED_LIVE_ESCALATION_K
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "-3")
+    assert asw._stalled_live_escalation_k() == STALLED_LIVE_ESCALATION_K
 
 
 # ── #488 stale-port self-heal in the stalled-detector ALERT branch ───────────
@@ -9385,6 +9811,50 @@ def test_process_entry_dry_run_writes_no_breadcrumb(isolated_registry, monkeypat
     asw._process_entry(reg, live_ids={"sid-dr"}, dry_run=True, threshold=2)
     assert reg.exists()
     assert not (isolated_registry / "last-mapped-terminal-sid-dr.json").exists()
+
+
+def test_process_entry_spawn_grace_suppresses_then_respawns(isolated_registry, monkeypatch):
+    # Criterion 5 (#759, bug class a): an ACTIVE entry with a DEAD recorded id.
+    # When spawned_at is INSIDE the grace window, _process_entry must NOT
+    # respawn (the id may not have propagated to /list yet) across 2 ticks;
+    # when spawned_at is well OUTSIDE the window, the existing 2-miss respawn
+    # still fires on the 2nd tick. Mirror of
+    # test_active_dead_needs_two_misses_before_respawn at the I/O layer.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = 2_000_000.0
+    monkeypatch.setattr(asw.time, "time", lambda: now)
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    respawns: list[int] = []
+    monkeypatch.setattr(asw, "_respawn", lambda entry, dry_run: respawns.append(entry.get("issue")))
+
+    # ── Inside grace: spawned 60s ago, dead id, ACTIVE → no respawn over 2 ticks
+    reg = isolated_registry / "issue-901.json"
+    reg.write_text(
+        json.dumps(
+            {"issue": 901, "happy_session_id": "sid-dead", "spawned_at": now - 60, "missed": 0}
+        )
+    )
+    asw._process_entry(reg, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    asw._process_entry(reg, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    assert respawns == []  # grace held across both ticks
+    # The miss count stays reset (grace returns ("keep", 0)), so no stale miss
+    # can carry past the grace boundary.
+    assert json.loads(reg.read_text()).get("missed", 0) == 0
+
+    # ── Outside grace: spawned 1h ago, dead id, ACTIVE → respawn on 2nd tick
+    reg2 = isolated_registry / "issue-902.json"
+    reg2.write_text(
+        json.dumps(
+            {"issue": 902, "happy_session_id": "sid-dead2", "spawned_at": now - 3600, "missed": 0}
+        )
+    )
+    asw._process_entry(reg2, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    assert respawns == []  # first miss only increments
+    asw._process_entry(reg2, live_ids={"some-other-sid"}, dry_run=False, threshold=2)
+    assert respawns == [902]  # 2nd miss past grace → respawn
 
 
 def _patch_short_window_guards(monkeypatch, *, running_pods, followup_active):

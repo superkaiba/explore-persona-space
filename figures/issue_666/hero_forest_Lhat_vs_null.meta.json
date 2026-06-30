@@ -1,0 +1,140 @@
+{
+  "commit": "add6793ded",
+  "created": "2026-06-30T06:47:16Z",
+  "figsize": [
+    7.8,
+    4.6
+  ],
+  "points": [
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.4146428571428571,
+      "y": 3.0,
+      "series": "full predictor L\u0302 (mean \u03c1 \u00b1 clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": -0.0789795918367347,
+      "y": 2.0,
+      "series": "full predictor L\u0302 (mean \u03c1 \u00b1 clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.010676020408163267,
+      "y": 1.0,
+      "series": "full predictor L\u0302 (mean \u03c1 \u00b1 clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": -0.02429081632653061,
+      "y": 0.0,
+      "series": "full predictor L\u0302 (mean \u03c1 \u00b1 clustered 95% CI)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.44693877551020406,
+      "y": 0.0,
+      "series": "designed-null L\u0302 \u03c1 (install-leak control)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.44693877551020406,
+      "y": 1.0,
+      "series": "designed-null L\u0302 \u03c1 (install-leak control)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.9295386054421768,
+      "y": 0.0,
+      "series": "test-retest noise-floor ceiling (\u03c1=0.93)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.9295386054421768,
+      "y": 1.0,
+      "series": "test-retest noise-floor ceiling (\u03c1=0.93)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.4146428571428571,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": -0.0789795918367347,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.010676020408163267,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": -0.02429081632653061,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": -0.09573479920655115,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": -0.5338011026607994,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": -0.3329314793731,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": -0.2862749077826002,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.7770675814933176,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.4442006969108829,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.44278650343239223,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Spearman \u03c1 (full predictor L\u0302 vs latent leakage \u0394s)": 0.24768324832744762,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 20
+}

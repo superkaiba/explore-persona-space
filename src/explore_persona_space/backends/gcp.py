@@ -1354,6 +1354,60 @@ def render_startup_script(
         "    fi;",
         "  done",
         "}",
+        # === OOM-detection helper (#750, incident #744) ===
+        # The bash chain's rc-propagation has known weakness modes under
+        # ``set -e`` + ``&&`` + SIGKILL: on eps-issue-744 a workload python
+        # OOM-killed by the kernel (systemd: "Failed with result 'oom-kill'")
+        # still returned rc=0 to the parent startup-script, so the success
+        # path published ``_eps_phase done`` 2s after the kill and the run
+        # advanced to verifying with zero usable artifacts. The kernel's
+        # cgroup-v2 ``memory.events.local`` ``oom_kill`` counter is incremented
+        # whenever an OOM-killer hit THIS cgroup (``.local`` = this cgroup only,
+        # NOT a hierarchical aggregation of descendants), REGARDLESS of what rc
+        # the bash chain reported — an authoritative cross-check the chain
+        # cannot mask.
+        #
+        # PATH DERIVATION (the #750 v2 defect this fixes): ``memory.events`` /
+        # ``memory.events.local`` exist on NON-ROOT cgroups only (kernel
+        # cgroup-v2 docs, https://docs.kernel.org/admin-guide/cgroup-v2.html);
+        # the unified-hierarchy ROOT ``/sys/fs/cgroup`` does NOT expose them
+        # (empirically: ``cat /sys/fs/cgroup/memory.events`` -> ENOENT). The
+        # workload's OWN cgroup dir is the ``0::`` unified-hierarchy line of
+        # ``/proc/self/cgroup`` (format ``0::/system.slice/...``), prefixed by
+        # the mount root: CGROUP_DIR=/sys/fs/cgroup$(that path). The #744
+        # workload sat in ``/system.slice/google-startup-scripts.service`` — a
+        # descendant — so only the derived path sees its oom_kill.
+        #
+        # COUNTER SEMANTICS: ``oom_kill`` is cumulative-since-cgroup-creation,
+        # so an absolute "== 0" test can false-fire on a non-fresh cgroup; the
+        # caller therefore reads a BASELINE before the workload and a FINAL
+        # after, and fires only on an INCREASE (see the baseline + guard
+        # entries below). This helper just emits the current integer.
+        #
+        # The helper runs under ``set -euo pipefail``; every line is
+        # ``set -e``-safe — the ``awk`` runs only inside an ``if [ -r ... ]``
+        # condition-guarded ``&&`` whose result is captured by an assignment,
+        # and the function always reaches an explicit ``echo``/``return``.
+        "_eps_oom_count() {",
+        # 0:: line of /proc/self/cgroup = the cgroup-v2 unified-hierarchy path
+        # for this process. ${x#0::} strips the literal prefix; a host with no
+        # 0:: line yields an empty suffix -> _dir=/sys/fs/cgroup (root), whose
+        # memory.events.local is absent -> the [ -r ] guard fails -> echo 0.
+        "  local _rel _dir _n=0",
+        '  _rel="$(awk -F: \'$1=="0"{print $3; exit}\' /proc/self/cgroup 2>/dev/null || true)"',
+        '  _dir="/sys/fs/cgroup${_rel}"',
+        # Read the LOCAL counter (this cgroup only). awk pulls just the integer
+        # value of the oom_kill line; missing line / unreadable file -> _n stays
+        # 0. The assignment consumes awk's exit status, so set -e never fires.
+        '  if [ -r "$_dir/memory.events.local" ]; then',
+        '    _n="$(awk \'$1=="oom_kill"{print $2; exit}\''
+        ' "$_dir/memory.events.local" 2>/dev/null || true)"',
+        "  fi",
+        # Normalize a non-numeric / empty read (e.g. awk printed nothing) to 0
+        # so the caller's numeric -gt comparison is always well-formed.
+        '  case "$_n" in (*[!0-9]*|"") _n=0 ;; esac',
+        '  echo "$_n"',
+        "}",
         # A failed startup script does NOT stop the VM — GCE just logs
         # "Script failed with error" and leaves the instance RUNNING,
         # billing the GPU with no workload (live finding, issue 535 GCP
@@ -1520,7 +1574,31 @@ def render_startup_script(
         'mkdir -p "$HF_HOME"',
         f"mkdir -p {shlex.quote(sentinel_dir)}",
         "",
+        # === OOM baseline (#750): record this cgroup's oom_kill count BEFORE
+        # the workload runs, so the post-workload guard can fire on an INCREASE
+        # rather than an absolute count (the counter is cumulative-since-cgroup-
+        # creation; the guest-startup cgroup is not guaranteed fresh).
+        'EPS_OOM_BASELINE="$(_eps_oom_count)"',
+        "",
         *workload_block,
+        "",
+        # === Refuse to publish done on a kernel OOM the chain rc-survived ===
+        # (#750, incident #744). Re-read the cgroup-local oom_kill count and
+        # compare to the pre-workload baseline; a STRICT INCREASE means an OOM
+        # hit this cgroup during the workload. exit 137 (SIGKILL rc) routes
+        # through the EXIT trap's rc!=0 branch -> _eps_phase failed +
+        # _eps_persist_diagnostics + shutdown, so the poll reads
+        # terminal_workload_failed and the async GCP->RunPod failover (#659) can
+        # fire, instead of a false phase=done masking a complete failure. The
+        # watchdog (still live here) is reaped by the EXIT trap's shutdown, not
+        # the clean reaper below -- on the failure path the trap owns teardown.
+        'EPS_OOM_FINAL="$(_eps_oom_count)"',
+        'if [ "${EPS_OOM_FINAL:-0}" -gt "${EPS_OOM_BASELINE:-0}" ]; then',
+        '  { echo "[startup-script] OOM-kill detected in cgroup'
+        " (oom_kill ${EPS_OOM_BASELINE:-0} -> ${EPS_OOM_FINAL:-0}) despite rc=0"
+        ' — routing to failed (#750)" >&3; } 2>/dev/null || true',
+        "  exit 137",
+        "fi",
         "",
         # Reap the reachability watchdog (#669) on the clean-exit path BEFORE
         # writing the success sentinel — a healthy teardown must not let the

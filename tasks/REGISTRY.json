@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 762,
+  "highest_id": 750,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4165,11 +4165,11 @@
     },
     "666": {
       "goal": "Phase 4 \u2014 end-to-end leakage predictor L-hat = eta*(r_B'^T delta)*g_C(C') vs the cosine special-case + base-prior baseline, LOBO/LOCO, both scales, vs the noise floor.",
-      "has_clean_result": true,
+      "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/666",
-      "status": "awaiting_promotion",
-      "title": "The theory's full leakage predictor does not beat the install-leak control: a taught-fact's geometry \u03c1 sits inside the designed-null band, and a plain cosine ties it (LOW confidence)"
+      "path": "tasks/running/666",
+      "status": "running",
+      "title": "Phase 4 \u2014 end-to-end leakage predictor vs cosine + baselines (leakage program #660)"
     },
     "667": {
       "goal": "Test the five trained-model gate-chain assumptions of the leakage-predictor theory (A3.6 read-out stability, A3.7 source write \u0175\u2225\u03b4, A3.8 rank-one/scalar gate, A3.9 base-similarity-predicts-realized-gate, A3.10 base-gate-predicts-post-FT-gate) on Qwen2.5-7B using #537's EXISTING contrastive LoRA adapters with NO new fine-tuning, via a forward-pass activation-extraction sweep benchmarked against #537's measured leakage matrix G, with A3.7 measured BOTH ways on the contrastive adapters (cos(\u0175,\u03b4^contra) and cos(\u0175,\u03b4^pos) decomposition + frac_ctx partial + shuffled-\u03b4 null) so the result also says whether the positive-only fleet arm is needed; a fast forward-pass preview/de-risk for program #660, explicitly excluding the clean positive-only A3.7 identification, the non-saturated/dose-controlled final gate numbers, and the held-out end-to-end predictor (those need the fleet retrain).",
@@ -4411,8 +4411,8 @@
       "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, causally localize whether finetuning a behavior into a context shifts the context vector (input to the map M) or the context\u2192behavior mapping M (the function) via cross-model activation patching at the read layer, reading both the on-policy behavioral rate and the answer-side activation profile.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/697",
-      "status": "awaiting_promotion",
+      "path": "tasks/reviewing/697",
+      "status": "reviewing",
       "title": "A cross-model context-vector patch fails to register above its own noise floor, so it cannot localize where a finetuned behavior lives (LOW confidence)"
     },
     "7": {
@@ -4539,8 +4539,8 @@
       "goal": "On #537's already-trained behavior\u00d7context LoRA adapters, fit the context\u2192answer-profile mapping M: c_C \u2192 v0(C) both pre-finetuning (M0, base) and post-finetuning (M\u207a, adapter-applied) as a linear ridge AND a nonlinear MLP, and determine whether the FUNCTION M changes (distinct from the input context vector c_C shifting) via (1) function-change at fixed input \u2016M\u207a(c)\u2212M0(c)\u2016 on a common c grid projected onto behavior read-outs r_B, (2) behavior-relevant transfer through the chain r_B\u1d40 M c \u2192 E (judge rate) and M along r_B \u2014 NOT generic v0 reconstruction (which #658 showed saturates \u22480.98 and is uninformative), and (3) cross-transfer of M0 vs M\u207a on FT data; cross-referenced against #697's causal f_CV.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/722",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/722",
+      "status": "awaiting_promotion",
       "title": "Finetuning measurably reshapes the context\u2192answer map only for a taught fact (LOW confidence)"
     },
     "723": {
@@ -4752,72 +4752,9 @@
     "750": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/completed/750",
-      "status": "completed",
+      "path": "tasks/approved/750",
+      "status": "approved",
       "title": "workflow-fix: gate _eps_phase done on OOM-detection (GCP)"
-    },
-    "751": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/751",
-      "status": "completed",
-      "title": "daily-fix: failover relaunch must sync new pod into pods.conf"
-    },
-    "752": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/752",
-      "status": "completed",
-      "title": "daily-fix: GCP intent under-provisions 7B hidden-state capture"
-    },
-    "753": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/753",
-      "status": "completed",
-      "title": "daily-fix: PreToolUse guard rejecting bare | python in Bash"
-    },
-    "754": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/754",
-      "status": "completed",
-      "title": "daily-fix: Step 9c test-verdict runs touched-file pytest subset"
-    },
-    "755": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/755",
-      "status": "completed",
-      "title": "daily-fix: reconciler must persist EVERY upheld finding"
-    },
-    "756": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/756",
-      "status": "completed",
-      "title": "daily-fix: analyzer scope guard \u2014 no self-spawned critics"
-    },
-    "757": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/757",
-      "status": "completed",
-      "title": "daily-fix: same-issue loop re-reads latest followup-scope marker"
-    },
-    "758": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/758",
-      "status": "completed",
-      "title": "daily-fix: codex-critic must source numbers from reviewed plan"
-    },
-    "759": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/759",
-      "status": "completed",
-      "title": "daily-fix: watcher must not respawn duplicate per-issue sessions"
     },
     "76": {
       "has_clean_result": false,
@@ -4825,28 +4762,6 @@
       "path": "tasks/completed/76",
       "status": "completed",
       "title": "Standardize pod venv to explore-persona-space/.venv; remove make-evil-dumb/.venv; add venv preflight check"
-    },
-    "760": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/completed/760",
-      "status": "completed",
-      "title": "recurring reaper for leaked Codex app-server daemons"
-    },
-    "761": {
-      "goal": "Re-measure how well base-model mean answer activation v0(C) predicts behavioral expression E0(C,B) with the activation summary AND the judged-expression target computed over the SAME per-behavior probe set (>=50 judgments/context), removing #658's probe-distribution mismatch and 8-judgment noise floor; phase 1 = the 3 behaviors with existing >=50-probe completions+judgments (sycophancy/refusal/harmful_compliance), capture-only matched v0, ridge v0(C,B)->E0(C,B) LOCO per #742 recipe vs #658 mismatched ridge + diff-in-means.",
-      "has_clean_result": false,
-      "kind": "experiment",
-      "path": "tasks/planning/761",
-      "status": "planning",
-      "title": "Matched-probe v0->E0 predictor re-measurement \u2014 phase 1 (sycophancy/refusal/harmful, capture-only)"
-    },
-    "762": {
-      "has_clean_result": false,
-      "kind": "infra",
-      "path": "tasks/running/762",
-      "status": "running",
-      "title": "workflow-fix: document HF Hub per-org 2500-req-per-5-min rate limit (429) in gotchas.md"
     },
     "77": {
       "has_clean_result": true,

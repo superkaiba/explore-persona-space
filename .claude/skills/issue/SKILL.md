@@ -161,7 +161,7 @@ The skill moves status in exactly five places:
 5. **Same-issue follow-up re-entry (Step 9b § Same-issue follow-up
    loop / Step 0 followup-scope dispatch):** a task at `interpreting` /
    `reviewing` / `awaiting_promotion` / `completed` carrying an unrun
-   `epm:followup-scope v1` moves to `followups_running` (tagged
+   `epm:followup-scope` moves to `followups_running` (tagged
    `followup-auto` | `followup-manual` by initiation mode) and HOLDS
    that status while executing a `question_relation: same`
    follow-up ON this issue, then re-parks at `awaiting_promotion`.
@@ -923,7 +923,9 @@ From the result, derive:
 
 **Same-issue follow-up dispatch (chat entry point).** Before the
 normal status dispatch, check the marker map for an UNRUN
-`epm:followup-scope v1` — one whose `followup_label` has no matching
+`epm:followup-scope` — the HIGHEST-version `epm:followup-scope`
+entry for this issue (tie-break newest `ts`; corrections land
+append-only) whose `followup_label` has no matching
 `epm:same-issue-followup-run v1`. If present AND the status is
 post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
 `completed`) — or `followups_running` itself (the mid-round resume
@@ -5857,7 +5859,12 @@ orphaned at `running` for 5+ hours.)
    workflow.yaml § markers: `followup_label` (kebab-slug; names the
    artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
    the verbatim proposal spec (or the user's verbatim chat request),
-   and the GPU-hour estimate.
+   and the GPU-hour estimate. **MULTIPLE `epm:followup-scope` versions
+   for one issue may exist** (corrections land append-only, each
+   superseding the prior — see #658's `persona-vectors-style-rb`
+   v3→v8 chain); the authoritative scope is ALWAYS the entry with the
+   highest top-level `version` (tie-break newest `ts`). Do NOT cache the
+   entry-time version — step 3 re-reads the latest before snapshotting.
 2. **Re-enter the pipeline.** **FIRST record the initiation mode as a
    tag** (before the status flip, so the `task.py` missing-tag warning
    stays quiet): `uv run python scripts/task.py add-tag <N>
@@ -5913,6 +5920,29 @@ orphaned at `running` for 5+ hours.)
    round exits the status only at the re-park:
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
    exit).
+   - **Immediately before the planner snapshots the scope, RE-READ the
+     latest `epm:followup-scope` for this issue** (highest top-level
+     `version`, tie-break newest `ts`) — never plan against an
+     entry-time snapshot, or a session that entered on `v3` and
+     snapshotted before a `v5`/`v6` correction landed plans stale (the
+     #658 bug). The `followup_label` lives inside the marker NOTE body
+     as free text (its format even differs across versions —
+     `- followup_label: ...` in v1/v2, bare `followup_label: ...` in
+     v3+), NOT as a top-level event key (top-level keys are
+     `{by, kind, note, ts, version}` only). So the selector does NOT
+     filter on `followup_label`: it matches `kind == 'epm:followup-scope'`
+     and takes the max `(version, ts)`, relying on the Step 0
+     entry-predicate having already filtered this issue to UNRUN status
+     (an `epm:followup-scope` whose label has no matching
+     `epm:same-issue-followup-run`) — so entering the loop means the
+     latest scope IS the active one. This is the SAME convention the
+     watcher uses (`autonomous_session_watch._followup_round_complete_reason`
+     keys on `ts` only, never `followup_label`) and the Step 0
+     highest-version-per-kind marker map. Mechanical recipe:
+     ```bash
+     uv run python scripts/task.py view <N> --json \
+       | jq '[.events[] | select(.kind=="epm:followup-scope")] | sort_by(.version, .ts) | last'
+     ```
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
@@ -6161,7 +6191,7 @@ work* contract.
      status's primary semantics as of 2026-06-10 is "a same-issue
      follow-up round is executing on this task" — Step 9b § Same-issue
      follow-up loop. The Step 0 dispatcher disambiguates by the
-     presence of an unrun `epm:followup-scope v1`.)
+     presence of an unrun `epm:followup-scope`.)
    - **No children in flight** AND task type is `experiment` ->
      **status `completed`**.
    - **type `infra` / `batch` / `analysis` / `survey`** (regardless of
@@ -7059,8 +7089,8 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
-| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle |
-| `followups_running` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the latest scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
+| `followups_running` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up the latest scope so a correction posted mid-round is honored on resume |
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
