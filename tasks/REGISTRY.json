@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 749,
+  "highest_id": 750,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4748,6 +4748,13 @@
       "path": "tasks/completed/75",
       "status": "completed",
       "title": "Coupling evil personas with wrong answers fails to protect Qwen2.5-7B from EM-induced alignment collapse \u2014 and the apparent capability ordering across coupling conditions is mostly eval contamination (LOW confidence)"
+    },
+    "750": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/750",
+      "status": "proposed",
+      "title": "workflow-fix: gate _eps_phase done on OOM-detection (GCP)"
     },
     "76": {
       "has_clean_result": false,
