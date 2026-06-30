@@ -1,0 +1,1391 @@
+{
+  "commit": "d4ff444117",
+  "created": "2026-06-30T10:56:27Z",
+  "figsize": [
+    7.2,
+    4.6
+  ],
+  "points": [
+    {
+      "answer-token position p": 0.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.36352093616882286,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 1.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.34959365818406674,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 2.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.275480351182508,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 3.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.35900481544351237,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 4.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2658526883352169,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 5.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.33635339623258176,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 6.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.30528799131600715,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 7.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.26732294899697795,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 8.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.22741727490482833,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 9.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.24521595177996292,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 10.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2520666350871702,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 11.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.26647118562503325,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 12.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2751718403597916,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 13.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2694351076685264,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 14.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.27525309629535255,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 15.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.27562517062058367,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 16.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.24670063427676647,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 17.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.25421779503158515,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 18.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2454921107988891,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 19.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.23909327652433032,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 20.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2101618821115293,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 21.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.20669603925338076,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 22.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.20496996000841827,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 23.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.15610820031384043,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 24.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.18136569095388622,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 25.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.18928950067972516,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 26.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.18356894629423792,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 27.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.17252684949764496,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 28.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.15880626866845227,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 29.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.16331020074072267,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 30.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.13488667602622817,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 31.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1309155416739871,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 32.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.13455702863543995,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 33.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1311792470858114,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 34.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.08592517002528877,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 35.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1368265356887658,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 36.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.15156999224376888,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 37.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.14190109351254743,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 38.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.09378188894992778,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 39.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.10738463150656341,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 40.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.11754122856691995,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 41.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.06603710863056,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 42.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.08233502784859104,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 43.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.053269943966731015,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 44.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.062426421438331214,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 45.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.10655043001213982,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 46.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.05187676703350774,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 47.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.08207912699880904,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 48.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.04953794155569313,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 49.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.03273550108149059,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 50.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.0006385290889230344,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 51.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.031938904872634954,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 52.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.019274870634528818,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 53.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.004847783705453246,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 54.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.022308049475073477,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 55.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.01649021657188643,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 56.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.014949187497133476,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 57.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.0120857490016818,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 58.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.019763519556094344,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 59.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.008089729366344445,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 60.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.061647941415513774,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 61.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.05657940986324839,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 62.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.06041386896969603,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 63.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.03576416614783473,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 64.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.07116113564831328,
+      "series": "L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "answer-token position p": 0.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.39993247107747576,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 1.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3972793390387229,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 2.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.34797726830105247,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 3.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.43200655333637994,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 4.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3445068891832359,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 5.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3987692487985649,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 6.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.36591208860911584,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 7.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.32951234054344825,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 8.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.28400577071952804,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 9.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3008089335245193,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 10.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3115515832437752,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 11.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3235796444960929,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 12.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3329399738844506,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 13.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3408176952622185,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 14.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3467587593647987,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 15.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.34186662460739503,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 16.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3303711093396213,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 17.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.33036910333544833,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 18.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.33134437449218823,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 19.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3063141299888861,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 20.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.28216656862316813,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 21.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2693670933136334,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 22.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2659966216765861,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 23.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2189410233510699,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 24.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.23676416408846646,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 25.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2510582496310072,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 26.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.25185340073757856,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 27.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2283053594361114,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 28.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.22516808489817508,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 29.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.21888028020769534,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 30.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.19425239407544093,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 31.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.19864548903205514,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 32.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1920022929250239,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 33.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2035875036100142,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 34.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.15310413817135227,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 35.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1911050101345363,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 36.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2104072969852333,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 37.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1988325617544402,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 38.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.16055483292911144,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 39.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.16304483744340892,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 40.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.17896077185717896,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 41.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.135270224002636,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 42.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1435853203541788,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 43.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.12557120128731358,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 44.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.11515974551828412,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 45.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1563844083615784,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 46.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.10516551166674981,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 47.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.12948579978671337,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 48.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.10608416970527446,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 49.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.08396700501969545,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 50.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.061406191405077526,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 51.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.09697049705523986,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 52.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.06414631808222904,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 53.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.03264875751572005,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 54.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.0800727841021387,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 55.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.07204723816549974,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 56.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.057987669112795626,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 57.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.05755148664089771,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 58.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.0595220659099821,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 59.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.021435573865773327,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 60.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.00650547261604717,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 61.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.018910216700081195,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 62.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.022850139074258147,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 63.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.01276831432089709,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 64.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": -0.02791914382697347,
+      "series": "L16",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "answer-token position p": 0.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.41040567102417425,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 1.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.42087239129260234,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 2.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.37470373353694864,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 3.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.4585347672488409,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 4.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.4025817547908481,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 5.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.43471210421902895,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 6.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3984401315829741,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 7.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3488713340896693,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 8.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.29877460609946727,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 9.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3084779590188248,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 10.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.32608641252479276,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 11.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.33472528777335175,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 12.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.34264345192211465,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 13.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3699137330432739,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 14.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.37703664829797,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 15.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.37368601952600633,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 16.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3674322407042193,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 17.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.36415047620489827,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 18.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3555664196105792,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 19.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.34179256614796216,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 20.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3134542688719605,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 21.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.30554508332092856,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 22.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.3025740743944553,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 23.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.24817525537475527,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 24.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2625120029249025,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 25.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.29055465558391325,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 26.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2887765474894842,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 27.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2683261016992614,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 28.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2609107960525252,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 29.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.23853736857880903,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 30.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.2155345960591083,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 31.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.21342583951716398,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 32.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.22171522652406805,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 33.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.207165896372572,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 34.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1916685893330734,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 35.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.22352003568099277,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 36.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.24792543216511786,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 37.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.22894217832894792,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 38.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.19139754700908462,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 39.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.19167476938019357,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 40.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.21673082214964334,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 41.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1704810246303916,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 42.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1731081063225297,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 43.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.14773702930439714,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 44.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.16137129701263497,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 45.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.17618925657672968,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 46.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.1381960597972023,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 47.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.16390684564309965,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 48.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.12077714897789149,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 49.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.07774484054338604,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 50.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.06683079499994982,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 51.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.11422396676211521,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 52.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.07952824931597746,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 53.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.0519379687229965,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 54.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.11663098056447663,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 55.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.09947783975767643,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 56.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.0892063624558802,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 57.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.07621827727303632,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 58.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.074792259643641,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 59.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.04613675522512184,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 60.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.029945910439956203,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 61.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.0026143146622381597,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 62.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.012317358105578546,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 63.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.031220889968052723,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 64.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.0038118997327220017,
+      "series": "L18",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "answer-token position p": 0.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.7838760826485919,
+      "series": "v_C \u2192 v_A (mean answer), L18 = 0.78",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "answer-token position p": 1.0,
+      "skill over mean  R\u00b2  (v_C \u2192 answer activation)": 0.7838760826485919,
+      "series": "v_C \u2192 v_A (mean answer), L18 = 0.78",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 197
+}
