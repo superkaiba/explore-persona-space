@@ -3,3 +3,4 @@
 {"ts": "2026-06-30T06:47:24Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-06-30T06:54:43Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict=PASS-with-WARN, n_fail=0, n_warn=1, plan_version=1; WARN: c8_success_kill_criteria — kind-infra code-change task; acceptance + risks sections serve as the kill surface (rollback the diff if any acceptance criterion regresses)."}
 {"ts": "2026-06-30T07:03:22Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0avk3q-dc9ic0 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-30T07:03:33Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0avnwl-ygsm20 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
