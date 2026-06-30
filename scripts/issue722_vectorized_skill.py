@@ -100,6 +100,9 @@ from issue404_common import reproducibility_metadata  # noqa: E402
 from issue658_common import dump_json, load_cc_last_store, load_json  # noqa: E402
 
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
+    INPUT_REP_EPS,
+    INPUT_REP_K,
+    INPUT_REPS,
     MLPGroup,
     assert_matches_reference,
     chain_rho_pca,
@@ -107,13 +110,22 @@ from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     fit_batched_loco_mlp_multihead,
     fit_batched_loco_mlp_multihead_trajectory,
     krr_predict_loco,
+    krr_predict_loco_rep,
     loco_train_means,
     ridge_predict_loco_centered,
+    ridge_predict_loco_centered_rep,
     ridge_predict_loco_raw,
     robust_pca_basis,
     skill_over_mean_r2,
     zscore_columns,
 )
+
+# §6 SUCCESS bands for the input-rep robustness amendment (plan §6 / Success criteria):
+# ridge R² invariance band and KRR(RBF)−linear gap-preservation band, with the
+# ≥26/28-layer pass threshold per variant.
+INPUT_REP_RIDGE_BAND = 0.05  # |Δridge R²| ≤ 0.05 vs the full-dim baseline
+INPUT_REP_GAP_BAND = 0.03  # |Δ(RBF−linear gap)| ≤ 0.03 AND sign preserved
+INPUT_REP_PASS_MIN_LAYERS = 26  # of 28
 
 load_dotenv(str(REPO_ROOT / ".env"))
 
@@ -1324,6 +1336,275 @@ def _krr_sanity_check(data: dict, layer_subset: list[int] | None, *, device: str
     return {"ok": ok, "tol": tol, "rows": rows}
 
 
+# ── #722 input-representation robustness (round-2 amendment) ──────────────────
+
+
+def _baseline_ridge_by_layer(baseline_skill_json: Path, layer_subset: list[int] | None) -> dict:
+    """Per-layer variant-1 (full) ridge skill from the committed skill_over_mean.json."""
+    prior = load_json(baseline_skill_json)
+    want = None if layer_subset is None else set(layer_subset)
+    return {
+        int(r["layer"]): float(r["skill_vs_mean_ridge"])
+        for r in prior.get("per_layer", [])
+        if want is None or int(r["layer"]) in want
+    }
+
+
+def _baseline_gap_by_layer(baseline_krr_json: Path, layer_subset: list[int] | None) -> dict:
+    """Per-layer variant-1 (full) KRR(RBF)−linear gap from the committed krr_vs_linear.json."""
+    prior = load_json(baseline_krr_json)
+    want = None if layer_subset is None else set(layer_subset)
+    return {
+        int(r["layer"]): float(r["nonlinear_gap_rbf_minus_linear"])
+        for r in prior.get("per_layer", [])
+        if want is None or int(r["layer"]) in want
+    }
+
+
+def run_input_rep_robustness(
+    data: dict,
+    *,
+    input_rep: str,
+    device: str,
+    baseline_skill_json: Path,
+    baseline_krr_json: Path,
+    n_boot: int = 2000,
+    k: int = INPUT_REP_K,
+    eps: float = INPUT_REP_EPS,
+    layer_subset: list[int] | None = None,
+) -> tuple[dict, dict]:
+    """Per-layer ridge skill + KRR(RBF)−linear gap under one INPUT representation.
+
+    For ``input_rep`` ∈ {``pca48``, ``whiten48``}: re-run BOTH headline arms with the
+    c_C input re-represented PER LOCO FOLD (TRAIN-only top-k PCA / ZCA-whiten, the
+    held-out row projected through the TRAIN basis — no leakage), then compare each
+    cell against the committed variant-1 (full) baseline JSONs. The v0 TARGET
+    reduction (top-48 PC), the ridge λ grid, the RBF γ heuristic + KRR λ grid, the
+    LOCO fold structure, the skill-over-mean metric, the 2000-resample bootstrap, the
+    seed, n=50 and the 28 layers are ALL inherited verbatim — the ONLY change is the
+    input representation. ``input_rep="full"`` is rejected (it is the committed
+    baseline, never re-run; see the amendment plan §3).
+
+    Returns ``(skill_result, krr_result)`` — two JSON-ready dicts matching the
+    baseline schema plus the per-layer baseline value + delta and a top-level
+    ``input_rep`` field.
+    """
+    if input_rep == "full":
+        raise ValueError("input_rep='full' is the committed baseline; never re-run it")
+    if input_rep not in INPUT_REPS:
+        raise ValueError(f"unknown input_rep {input_rep!r}; expected one of {INPUT_REPS}")
+
+    C, V = _stack_layers(data)
+    layers = data["layers"]
+    n, _L, H = V.shape
+    li_iter = [
+        li for li in range(len(layers)) if layer_subset is None or int(layers[li]) in layer_subset
+    ]
+    base_ridge = _baseline_ridge_by_layer(baseline_skill_json, layer_subset)
+    base_gap = _baseline_gap_by_layer(baseline_krr_json, layer_subset)
+    rng = np.random.default_rng(SEED_722)
+    logger.info(
+        "[input-rep=%s] n=%d L=%d H=%d k=%d eps=%.1e — re-running ridge + KRR per fold",
+        input_rep,
+        n,
+        len(li_iter),
+        H,
+        k,
+        eps,
+    )
+
+    ridge_rows = []
+    krr_rows = []
+    for li in li_iter:
+        layer = int(layers[li])
+        Xc = C[:, li, :]
+        Yv = V[:, li, :]
+
+        # ── ridge arm (full-H target, the #722 ridge_mean recipe, transformed input) ──
+        ridge_pred, ridge_fb = ridge_predict_loco_centered_rep(
+            Xc, Yv, input_rep=input_rep, k=k, eps=eps
+        )
+        ridge_skill = skill_over_mean_r2(ridge_pred, Yv)
+        base_r = base_ridge.get(layer, float("nan"))
+        d_ridge = ridge_skill["skill"] - base_r
+        ridge_rows.append(
+            {
+                "layer": layer,
+                "skill_vs_mean_ridge": ridge_skill["skill"],
+                "skill_vs_mean_ridge_baseline_full": base_r,
+                "delta_ridge": d_ridge,
+                "predict_mean_abs_cos": _predict_mean_abs_cos(Yv),
+                "raw_recon_abs_cos": _recon_abs_cos(ridge_pred, Yv),
+                "ridge_median_per_dim_r2": ridge_skill["median_per_dim_r2"],
+                "n_folds_used_ridge": ridge_skill["n_folds_used"],
+                "gesvd_fallback": bool(ridge_fb),
+            }
+        )
+
+        # ── KRR arm (PCA-48 target, RBF + linear, transformed input) ──
+        mu_t, comps, _ = robust_pca_basis(Yv, MLP_PCA_DIM_722)
+        Y64 = (Yv - mu_t) @ comps.T
+        rbf_pred, rbf_lam, rbf_gam, rbf_fb = krr_predict_loco_rep(
+            Xc, Y64, kernel="rbf", input_rep=input_rep, k=k, eps=eps
+        )
+        lin_pred, lin_lam, _, lin_fb = krr_predict_loco_rep(
+            Xc, Y64, kernel="linear", input_rep=input_rep, k=k, eps=eps
+        )
+        rbf_skill, rbf_ssres, rbf_sstot = _skill_and_fold_terms(rbf_pred, Y64)
+        lin_skill, lin_ssres, _ = _skill_and_fold_terms(lin_pred, Y64)
+        gap = rbf_skill - lin_skill
+        boot_gaps = _bootstrap_gap(rbf_ssres, lin_ssres, rbf_sstot, rng, n_boot)
+        lo, hi = float(np.percentile(boot_gaps, 2.5)), float(np.percentile(boot_gaps, 97.5))
+        base_g = base_gap.get(layer, float("nan"))
+        d_gap = gap - base_g
+        krr_rows.append(
+            {
+                "layer": layer,
+                "skill_krr_linear_pca48": lin_skill,
+                "skill_krr_rbf_pca48": rbf_skill,
+                "nonlinear_gap_rbf_minus_linear": gap,
+                "nonlinear_gap_baseline_full": base_g,
+                "delta_gap": d_gap,
+                "gap_ci95": [lo, hi],
+                "gap_excludes_zero": bool(lo > 0.0 or hi < 0.0),
+                "chosen_gamma_rbf_median": float(np.nanmedian(rbf_gam)),
+                "chosen_lambda_rbf_median": float(np.nanmedian(rbf_lam)),
+                "chosen_lambda_linear_median": float(np.nanmedian(lin_lam)),
+                "gesvd_fallback": bool(rbf_fb or lin_fb),
+            }
+        )
+        logger.info(
+            "[input-rep=%s][L%02d] ridge=%+.4f (Δ%+.4f) gap=%+.4f (Δ%+.4f) CI=[%+.4f,%+.4f]",
+            input_rep,
+            layer,
+            ridge_skill["skill"],
+            d_ridge,
+            gap,
+            d_gap,
+            lo,
+            hi,
+        )
+
+    store_prov = {
+        "store_dir": data["store_dir"],
+        "cc_source": data["cc_source"],
+        "n_contexts": n,
+        "hidden_dim": int(H),
+    }
+    common = {
+        "input_rep": input_rep,
+        "input_rep_k": k,
+        "input_rep_eps": eps,
+        "c_C_recipe": "C_last",
+        "n_contexts": n,
+        "layers": [int(layers[li]) for li in li_iter],
+        "seed": SEED_722,
+        "store_provenance": store_prov,
+        "baseline_skill_json": str(baseline_skill_json),
+        "baseline_krr_json": str(baseline_krr_json),
+    }
+    skill_result = {
+        **common,
+        "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot (held-out R² on centered v0)",
+        "activation_dim": H,
+        "ridge_lambdas": i658.RIDGE_LAMBDAS,
+        "per_layer": ridge_rows,
+    }
+    krr_result = {
+        **common,
+        "metric": "skill_over_predict_the_mean = 1 - SS_res/SS_tot "
+        "(held-out R² on PCA-48 centered v0)",
+        "kernels": ["linear", "rbf"],
+        "pca_target_dim": MLP_PCA_DIM_722,
+        "ridge_lambdas": list(i658.RIDGE_LAMBDAS),
+        "n_bootstrap": n_boot,
+        "per_layer": krr_rows,
+    }
+    return skill_result, krr_result
+
+
+def _verdict_for_variant(skill_result: dict, krr_result: dict) -> dict:
+    """Per-variant SUCCESS/KILL verdict against the §6 bands (≥26/28 layers).
+
+    SUCCESS = ≥26 of the layers have |Δridge R²| ≤ 0.05 AND the KRR(RBF)−linear gap
+    SIGN matches the baseline with |Δgap| ≤ 0.03. KILL otherwise (the input
+    representation moved the headline). Layers with a NaN baseline (missing from the
+    baseline JSON) are counted as failing the corresponding gate (conservative).
+    """
+    ridge_by_layer = {r["layer"]: r for r in skill_result["per_layer"]}
+    n_ridge_pass = 0
+    n_gap_pass = 0
+    n_layers = 0
+    for kr in krr_result["per_layer"]:
+        layer = kr["layer"]
+        n_layers += 1
+        rr = ridge_by_layer.get(layer, {})
+        d_ridge = rr.get("delta_ridge", float("nan"))
+        ridge_ok = np.isfinite(d_ridge) and abs(d_ridge) <= INPUT_REP_RIDGE_BAND
+        if ridge_ok:
+            n_ridge_pass += 1
+        gap = kr["nonlinear_gap_rbf_minus_linear"]
+        base_g = kr["nonlinear_gap_baseline_full"]
+        d_gap = kr["delta_gap"]
+        # sign preserved: same sign OR both within the band of zero (≈0 at the plateau).
+        sign_ok = (np.sign(gap) == np.sign(base_g)) or (
+            abs(gap) <= INPUT_REP_GAP_BAND and abs(base_g) <= INPUT_REP_GAP_BAND
+        )
+        gap_ok = np.isfinite(d_gap) and abs(d_gap) <= INPUT_REP_GAP_BAND and sign_ok
+        if gap_ok:
+            n_gap_pass += 1
+    success = n_ridge_pass >= INPUT_REP_PASS_MIN_LAYERS and n_gap_pass >= INPUT_REP_PASS_MIN_LAYERS
+    return {
+        "n_layers": n_layers,
+        "n_layers_passing_R2_gate": n_ridge_pass,
+        "n_layers_passing_gap_gate": n_gap_pass,
+        "pass_min_layers": INPUT_REP_PASS_MIN_LAYERS,
+        "ridge_band": INPUT_REP_RIDGE_BAND,
+        "gap_band": INPUT_REP_GAP_BAND,
+        "verdict": "SUCCESS" if success else "KILL",
+    }
+
+
+def build_input_rep_comparison(results_by_variant: dict) -> dict:
+    """Assemble the headline comparison.json across the input-rep variants.
+
+    ``results_by_variant`` maps variant name → ``(skill_result, krr_result)``.
+    Emits per-variant verdicts + the flat ``verdict_<variant>`` /
+    ``n_layers_passing_*_gate_<variant>`` keys the amendment §4.4 names, plus the
+    per-layer Δridge / Δgap arrays for each variant.
+    """
+    out: dict = {
+        "ridge_band": INPUT_REP_RIDGE_BAND,
+        "gap_band": INPUT_REP_GAP_BAND,
+        "pass_min_layers": INPUT_REP_PASS_MIN_LAYERS,
+        "criterion": (
+            f">={INPUT_REP_PASS_MIN_LAYERS}/28 layers with |Δridge R²|<={INPUT_REP_RIDGE_BAND} "
+            f"AND gap-sign-preserved with |Δgap|<={INPUT_REP_GAP_BAND}"
+        ),
+        "per_variant": {},
+    }
+    for variant, (skill_result, krr_result) in results_by_variant.items():
+        v = _verdict_for_variant(skill_result, krr_result)
+        sr_by_layer = {r["layer"]: r for r in skill_result["per_layer"]}
+        out["per_variant"][variant] = {
+            **v,
+            "per_layer": [
+                {
+                    "layer": kr["layer"],
+                    "delta_ridge": sr_by_layer[kr["layer"]]["delta_ridge"],
+                    "delta_gap": kr["delta_gap"],
+                    "gap": kr["nonlinear_gap_rbf_minus_linear"],
+                    "gap_baseline_full": kr["nonlinear_gap_baseline_full"],
+                }
+                for kr in krr_result["per_layer"]
+            ],
+        }
+        out[f"verdict_{variant}"] = v["verdict"]
+        out[f"n_layers_passing_R2_gate_{variant}"] = v["n_layers_passing_R2_gate"]
+        out[f"n_layers_passing_gap_gate_{variant}"] = v["n_layers_passing_gap_gate"]
+    return out
+
+
 def _best_mlp_by_layer(width_sweep: dict) -> dict[int, float]:
     """Best (max-over-width) MLP skill per layer from a width-sweep result."""
     best: dict[int, float] = {}
@@ -1683,6 +1964,115 @@ def _run_extension_phases(
             )
 
 
+def _run_input_rep_phase(
+    args,
+    betley: dict,
+    *,
+    layer_subset: list[int] | None,
+    krr_bootstrap: int,
+    baseline_skill_json: Path,
+    baseline_krr_json: Path,
+    smoke_slice: bool,
+) -> None:
+    """Run the input-representation robustness amendment (round-2) for each variant.
+
+    For each requested ``--input-rep`` variant (pca48 / whiten48), re-run BOTH
+    headline arms under the per-fold input transform (``run_input_rep_robustness``)
+    and write ``{variant}/skill_over_mean.json`` + ``{variant}/krr_vs_linear.json``.
+    Then assemble ``comparison.json`` (the §6 SUCCESS/KILL verdict per variant) and
+    ``run_meta.json`` (config + code SHA + substrate provenance). Reads the committed
+    variant-1 (full) baseline JSONs as the Δ denominator — NEVER re-runs full. A
+    ``smoke_slice`` run lands under an ``_smoke/`` subdir, apart from production.
+    """
+    if not (baseline_skill_json.exists() and baseline_krr_json.exists()):
+        raise FileNotFoundError(
+            "--input-rep needs the committed variant-1 baseline JSONs as the Δ denominator: "
+            f"{baseline_skill_json} and {baseline_krr_json} (plan §3 — full is the committed "
+            "baseline, not re-run). Run the canonical + --run-krr phases first, or restore "
+            "the commit."
+        )
+    out_dir = REPO_ROOT / "eval_results/issue_722" / args.input_rep_out_subdir
+    if smoke_slice:
+        out_dir = out_dir / "_smoke"  # tiny-N smoke artifacts kept apart from production
+    out_dir.mkdir(parents=True, exist_ok=True)
+    results_by_variant: dict[str, tuple[dict, dict]] = {}
+    for variant in args.input_rep:
+        if variant == "full":
+            logger.info("[input-rep] 'full' is the committed baseline — not re-run")
+            continue
+        skill_result, krr_result = run_input_rep_robustness(
+            betley,
+            input_rep=variant,
+            device=args.device,
+            baseline_skill_json=baseline_skill_json,
+            baseline_krr_json=baseline_krr_json,
+            n_boot=krr_bootstrap,
+            k=args.input_rep_k,
+            eps=args.input_rep_eps,
+            layer_subset=layer_subset,
+        )
+        meta = reproducibility_metadata(
+            {"script": "issue722_vectorized_skill", "phase": f"input_rep_{variant}"}
+        )
+        vdir = out_dir / variant
+        vdir.mkdir(parents=True, exist_ok=True)
+        skill_path = vdir / "skill_over_mean.json"
+        krr_path = vdir / "krr_vs_linear.json"
+        dump_json({**skill_result, "metadata": meta}, skill_path)
+        dump_json({**krr_result, "metadata": meta}, krr_path)
+        logger.info("wrote %s + %s", skill_path, krr_path)
+        results_by_variant[variant] = (skill_result, krr_result)
+
+    if not results_by_variant:
+        logger.info("[input-rep] no non-full variants requested — nothing to compare")
+        return
+
+    comparison = build_input_rep_comparison(results_by_variant)
+    comparison["metadata"] = reproducibility_metadata(
+        {"script": "issue722_vectorized_skill", "phase": "input_rep_comparison"}
+    )
+    comp_path = out_dir / "comparison.json"
+    dump_json(comparison, comp_path)
+    logger.info("wrote %s", comp_path)
+
+    run_meta = {
+        "script": "issue722_vectorized_skill",
+        "phase": "input_rep_robustness",
+        "code_sha": _git_sha(),
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "variants": list(results_by_variant.keys()),
+        "baseline_full_skill_json": str(baseline_skill_json),
+        "baseline_full_krr_json": str(baseline_krr_json),
+        "input_rep_k": args.input_rep_k,
+        "input_rep_eps": args.input_rep_eps,
+        "ridge_band": INPUT_REP_RIDGE_BAND,
+        "gap_band": INPUT_REP_GAP_BAND,
+        "pass_min_layers": INPUT_REP_PASS_MIN_LAYERS,
+        "n_bootstrap": krr_bootstrap,
+        "seed": SEED_722,
+        "device": args.device,
+        "layers": layer_subset if layer_subset is not None else "all",
+        "store_provenance": {
+            "store_dir": betley["store_dir"],
+            "cc_source": betley["cc_source"],
+        },
+        "whitening": "PCA-whitening (per-direction 1/sqrt(sigma^2+eps); rotation immaterial "
+        "for ridge-internal restandardization + RBF per-direction scale, plan §11)",
+    }
+    meta_path = out_dir / "run_meta.json"
+    dump_json(run_meta, meta_path)
+    logger.info("wrote %s", meta_path)
+
+    print("\n==== input-rep robustness verdict (vs committed full baseline) ====")
+    for variant, pv in comparison["per_variant"].items():
+        print(
+            f"  {variant:9s} verdict={pv['verdict']} "
+            f"R²-gate {pv['n_layers_passing_R2_gate']}/{pv['n_layers']} "
+            f"gap-gate {pv['n_layers_passing_gap_gate']}/{pv['n_layers']} "
+            f"(need >={pv['pass_min_layers']})"
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Vectorized #722 skill + #658 chain ρ.")
     parser.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
@@ -1714,6 +2104,14 @@ def main() -> int:
     parser.add_argument("--spot-layers", type=int, nargs="*", default=[0, 12, 18])
     parser.add_argument("--skip-spot-check", action="store_true")
     parser.add_argument("--smoke", action="store_true", help="2-epoch + 1 genre + 2 layers smoke")
+    parser.add_argument(
+        "--layers",
+        type=int,
+        nargs="+",
+        default=None,
+        help="restrict to these layer NUMBERS (tiny-N smoke; e.g. --layers 0 18). The LOCO "
+        "fold count stays at n_contexts (cannot drop below 50).",
+    )
     # ── ADDITIVE extension flags (all OPT-IN; default invocation is unchanged) ──
     parser.add_argument(
         "--skip-canonical",
@@ -1778,24 +2176,59 @@ def main() -> int:
         default=2000,
         help="LOCO-fold bootstrap resamples for the gap/ridge CIs",
     )
+    # ── round-2 amendment: input-representation robustness (per-fold, no leakage) ──
+    parser.add_argument(
+        "--input-rep",
+        nargs="+",
+        default=None,
+        choices=list(INPUT_REPS),
+        help="Run the input-representation robustness amendment for these variants "
+        "(pca48 / whiten48; 'full' is the committed baseline and is never re-run). "
+        "Writes eval_results/issue_722/input-pca-robustness/{variant}/{skill_over_mean,"
+        "krr_vs_linear}.json + comparison.json + run_meta.json. Implies --skip-canonical "
+        "unless the canonical phases are also requested.",
+    )
+    parser.add_argument(
+        "--input-rep-out-subdir",
+        default="input-pca-robustness",
+        help="Output subdir under eval_results/issue_722/ for the input-rep variants",
+    )
+    parser.add_argument(
+        "--input-rep-k", type=int, default=INPUT_REP_K, help="top-k PCs for pca48/whiten48"
+    )
+    parser.add_argument(
+        "--input-rep-eps", type=float, default=INPUT_REP_EPS, help="ZCA whitening ε"
+    )
     args = parser.parse_args()
 
     i658.DEVICE = args.device
     threads = args.threads if args.threads > 0 else None
-    layer_subset = None
+    layer_subset = args.layers
     krr_bootstrap = args.krr_bootstrap
     run_width_sweep_flag = args.run_width_sweep
     run_epoch_curves_flag = args.run_epoch_curves
     run_krr_flag = args.run_krr
+    run_input_rep = bool(args.input_rep)
+    # The input-rep amendment reads the committed full baseline; it never re-runs the
+    # canonical skill_over_mean.json / #658-chain writes (plan §3). Auto-skip them
+    # unless the user explicitly also requested a canonical/extension phase.
+    skip_canonical = args.skip_canonical or (
+        run_input_rep and not (run_width_sweep_flag or run_epoch_curves_flag or run_krr_flag)
+    )
     if args.smoke:
         i658.MLP_MAX_EPOCHS = 2
-        layer_subset = [0, 18]  # 2-layer smoke slice
+        if layer_subset is None:
+            layer_subset = [0, 18]  # 2-layer smoke slice
         # Exercise EVERY new phase end-to-end in the smoke (KRR is cheap at n=50).
         run_width_sweep_flag = run_epoch_curves_flag = run_krr_flag = True
+        krr_bootstrap = min(krr_bootstrap, 200)
+    # the input-rep bootstrap rides the same krr-bootstrap budget; bound it on smoke.
+    if run_input_rep and (args.smoke or (layer_subset is not None and len(layer_subset) <= 2)):
         krr_bootstrap = min(krr_bootstrap, 200)
 
     out722 = REPO_ROOT / "eval_results/issue_722/base-skill-over-mean-cC-to-v0/skill_over_mean.json"
     out_ext_dir = out722.parent
+    baseline_krr_json = out_ext_dir / "krr_vs_linear.json"
 
     t_run0 = time.time()
 
@@ -1807,7 +2240,7 @@ def main() -> int:
     chain_betley = None
     chain_ultrachat = None
 
-    if not args.skip_canonical:
+    if not skip_canonical:
         ultrachat = _load_genre("ultrachat", args.ultrachat_store, args.ultrachat_e0)
 
         # ── #722 canonical (Betley) ──
@@ -1861,10 +2294,22 @@ def main() -> int:
         run_krr_flag=run_krr_flag,
     )
 
+    # ── round-2 amendment: input-representation robustness (opt-in via --input-rep) ──
+    if run_input_rep:
+        _run_input_rep_phase(
+            args,
+            betley,
+            layer_subset=layer_subset,
+            krr_bootstrap=krr_bootstrap,
+            baseline_skill_json=out722,
+            baseline_krr_json=baseline_krr_json,
+            smoke_slice=bool(args.smoke or (layer_subset is not None and len(layer_subset) <= 2)),
+        )
+
     # ── reproduce-checks (canonical path only) ──
     wall_h = (time.time() - t_run0) / 3600.0
 
-    if not args.skip_canonical:
+    if not skip_canonical:
         spot = {"ran": False, "reason": "skipped"}
         if not args.skip_spot_check:
             spot = spot_check_vs_slow_mlp(betley, args.spot_layers)

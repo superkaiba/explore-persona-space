@@ -1,0 +1,73 @@
+{
+  "ridge_band": 0.05,
+  "gap_band": 0.03,
+  "pass_min_layers": 26,
+  "criterion": ">=26/28 layers with |\u0394ridge R\u00b2|<=0.05 AND gap-sign-preserved with |\u0394gap|<=0.03",
+  "per_variant": {
+    "pca48": {
+      "n_layers": 2,
+      "n_layers_passing_R2_gate": 2,
+      "n_layers_passing_gap_gate": 0,
+      "pass_min_layers": 26,
+      "ridge_band": 0.05,
+      "gap_band": 0.03,
+      "verdict": "KILL",
+      "per_layer": [
+        {
+          "layer": 0,
+          "delta_ridge": 0.0072876802654731065,
+          "delta_gap": -0.3203266176894657,
+          "gap": 0.08323330173103216,
+          "gap_baseline_full": 0.40355991942049785
+        },
+        {
+          "layer": 18,
+          "delta_ridge": 0.008081171099330486,
+          "delta_gap": -0.8087543567852872,
+          "gap": -0.807790845021077,
+          "gap_baseline_full": 0.0009635117642101676
+        }
+      ]
+    },
+    "whiten48": {
+      "n_layers": 2,
+      "n_layers_passing_R2_gate": 2,
+      "n_layers_passing_gap_gate": 0,
+      "pass_min_layers": 26,
+      "ridge_band": 0.05,
+      "gap_band": 0.03,
+      "verdict": "KILL",
+      "per_layer": [
+        {
+          "layer": 0,
+          "delta_ridge": 0.00728768025612947,
+          "delta_gap": -0.3203266176803722,
+          "gap": 0.08323330174012566,
+          "gap_baseline_full": 0.40355991942049785
+        },
+        {
+          "layer": 18,
+          "delta_ridge": 0.008081171099321383,
+          "delta_gap": -0.8087543567853139,
+          "gap": -0.8077908450211038,
+          "gap_baseline_full": 0.0009635117642101676
+        }
+      ]
+    }
+  },
+  "verdict_pca48": "KILL",
+  "n_layers_passing_R2_gate_pca48": 2,
+  "n_layers_passing_gap_gate_pca48": 0,
+  "verdict_whiten48": "KILL",
+  "n_layers_passing_R2_gate_whiten48": 2,
+  "n_layers_passing_gap_gate_whiten48": 0,
+  "metadata": {
+    "git_commit": "62408db7c3dde3d94a9e473cdce993fc444d6dce",
+    "timestamp_utc": "2026-06-30T09:18:56.530241Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue722_vectorized_skill",
+    "phase": "input_rep_comparison"
+  }
+}

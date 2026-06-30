@@ -1007,3 +1007,252 @@ def zscore_columns(Xc: np.ndarray) -> np.ndarray:
     mu = Xc.mean(axis=0)
     sd = Xc.std(axis=0) + 1e-8
     return (Xc - mu) / sd
+
+
+# ── #722 input-representation robustness: per-fold PCA-48 / ZCA-whiten-48 ──────
+# The input c_C can be re-represented PER LOCO FOLD (basis fit on the TRAIN rows
+# only; the held-out row projected through the same train basis — NO leakage)
+# before the existing ridge / KRR LOCO solvers run on the transformed input. The
+# baseline ("full") is the input as-is. These variants test whether the prior
+# #722 headline (strong linear ridge plateau, RBF buys nothing at the plateau)
+# survives squeezing the input to ~48 dims (matching the 48-PC target), per the
+# round-2 amendment (input/target dimensionality asymmetry the user flagged).
+
+INPUT_REPS = ("full", "pca48", "whiten48")
+INPUT_REP_K = 48  # top-k PCs for pca48 / whiten48 (mirrors the v0 target PCA dim)
+INPUT_REP_EPS = 1e-6  # ZCA whitening regulariser ε (textbook ZCA; #658 stability default)
+
+
+def _input_pca_basis_train(
+    Xtr: torch.Tensor, k: int
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, bool]:
+    """Per-fold TRAIN-ONLY PCA basis: (μ_train, Uk (k', d), σ²_k (k',), gesvd_fallback).
+
+    μ_train is the train-row mean; Uk are the top-k right singular vectors of the
+    centered TRAIN design (the PCs); σ²_k = S_k² / (m-1) are the train per-PC
+    variances. k' = min(k, rank). gesdd → gesvd fallback (mirrors
+    ``robust_pca_basis`` / ``_input_pca_project``) for near-singular folds.
+    Operates in fp64 on whatever device ``Xtr`` lives on.
+    """
+    mu = Xtr.mean(0)
+    Xc = Xtr - mu
+    fallback = False
+    try:
+        _, S, Vh = torch.linalg.svd(Xc, full_matrices=False)  # torch gesdd-equivalent
+    except torch.linalg.LinAlgError:
+        # numpy gesdd → scipy/torch gesvd fallback path (robust_pca_basis style).
+        try:
+            _, Sn, Vhn = np.linalg.svd(Xc.detach().cpu().numpy(), full_matrices=False)
+            S = torch.from_numpy(Sn).to(Xtr)
+            Vh = torch.from_numpy(Vhn).to(Xtr)
+        except np.linalg.LinAlgError:
+            raise  # truly singular — caller decides (skip fold / surface)
+        fallback = True
+    kk = min(k, Vh.shape[0])
+    Uk = Vh[:kk]  # (k', d) — rows are PCs
+    m = Xtr.shape[0]
+    sig2 = (S[:kk] ** 2) / (m - 1)  # (k',) train per-PC variance
+    return mu, Uk, sig2, fallback
+
+
+def input_transform_fold(
+    Xtr: torch.Tensor,
+    x_held: torch.Tensor,
+    rep: str,
+    *,
+    k: int = INPUT_REP_K,
+    eps: float = INPUT_REP_EPS,
+) -> tuple[torch.Tensor, torch.Tensor, bool]:
+    """Per-fold input transform: project TRAIN + HELD-OUT through a TRAIN-only basis.
+
+    ``rep``:
+      - ``"full"``: identity — returns ``(Xtr, x_held, False)`` UNCHANGED (the
+        baseline path; callers should short-circuit before calling this, but the
+        identity branch keeps the helper total).
+      - ``"pca48"``: fit a top-k PCA basis on the TRAIN rows (centered), project
+        BOTH the train rows and the single held-out row onto the top-k PCs.
+      - ``"whiten48"``: same top-k PCA basis, then PCA-whiten the projected coords
+        by ``1/√(σ²_train + eps)`` (per-direction variance equalisation). Whitening
+        in the rotated PC frame (``diag(1/√σ²) Uᵀ x``) is immaterial vs ZCA for the
+        downstream consumers — the ridge arm re-standardises per-dim internally and
+        the RBF kernel keys only on per-direction SCALE, not the final rotation
+        (plan §11 Assumption). The per-direction ``1/√(σ²+eps)`` scaling IS applied.
+
+    Returns ``(Xtr', x_held', used_gesvd_fallback)``. ``x_held`` is a 1-D ``(d,)``
+    tensor (one held-out row); ``x_held'`` is ``(k',)``.
+    """
+    if rep == "full":
+        return Xtr, x_held, False
+    if rep not in ("pca48", "whiten48"):
+        raise ValueError(f"unknown input_rep {rep!r}; expected one of {INPUT_REPS}")
+    mu, Uk, sig2, fallback = _input_pca_basis_train(Xtr, k)
+    Ztr = (Xtr - mu) @ Uk.T  # (m, k') train projection onto the TRAIN basis
+    z_held = (x_held - mu) @ Uk.T  # (k',) held-out projection through the TRAIN basis
+    if rep == "whiten48":
+        scale = 1.0 / torch.sqrt(sig2 + eps)  # (k',) per-direction whitening scale
+        Ztr = Ztr * scale
+        z_held = z_held * scale
+    return Ztr, z_held, fallback
+
+
+def ridge_predict_loco_centered_rep(
+    Xc: np.ndarray,
+    Yv: np.ndarray,
+    *,
+    input_rep: str = "full",
+    k: int = INPUT_REP_K,
+    eps: float = INPUT_REP_EPS,
+) -> tuple[np.ndarray, bool]:
+    """``ridge_predict_loco_centered`` with a per-fold INPUT representation.
+
+    For ``input_rep="full"`` this DELEGATES to ``ridge_predict_loco_centered``
+    (byte-identical to the existing baseline path — the refactor pin). For
+    ``"pca48"`` / ``"whiten48"`` it runs the SAME centered-LOCO ridge but, inside
+    each fold, replaces the train + held-out input with their per-fold TRAIN-only
+    PCA-48 / ZCA-whiten-48 projection (``input_transform_fold``) BEFORE the
+    inherited per-dim train-only standardization + #658 dual/PRESS λ pick. The
+    target ``Yv`` and the closed-form solve are unchanged. A truly-singular fold's
+    PCA basis (both SVD backends fail) is SKIPPED — its prediction row stays the
+    LOO train mean (skill-neutral), matching the gesvd skip-on-failure pattern.
+
+    Returns ``(preds (n, H), any_gesvd_fallback)``.
+    """
+    if input_rep == "full":
+        return ridge_predict_loco_centered(Xc, Yv), False
+    n = Xc.shape[0]
+    device = torch.device(_i658.DEVICE)
+    Xt = torch.from_numpy(np.ascontiguousarray(Xc)).to(device=device, dtype=torch.float64)
+    Yt = torch.from_numpy(np.ascontiguousarray(Yv)).to(device=device, dtype=torch.float64)
+    preds = np.zeros_like(Yv, dtype=np.float64)
+    any_fallback = False
+    for i in range(n):
+        tr = [j for j in range(n) if j != i]
+        tr_t = torch.tensor(tr, device=device)
+        Xtr, Ytr = Xt[tr_t], Yt[tr_t]
+        ymu = Ytr.mean(0)  # train predict-the-mean baseline (always available)
+        try:
+            Xtr_in, x_held_in, fb = input_transform_fold(Xtr, Xt[i], input_rep, k=k, eps=eps)
+        except (np.linalg.LinAlgError, torch.linalg.LinAlgError):
+            preds[i] = ymu.detach().cpu().numpy()  # skip fold → LOO train mean (skill-neutral)
+            any_fallback = True
+            continue
+        any_fallback = any_fallback or fb
+        # inherited per-dim train-only standardization (ddof=0, #658 convention).
+        xmu = Xtr_in.mean(0)
+        xsd = Xtr_in.std(0, correction=0) + 1e-9
+        Xtr_n = (Xtr_in - xmu) / xsd
+        Ytr_c = Ytr - ymu
+        mse = _press_loo_mse_per_lambda(Xtr_n, Ytr_c, RIDGE_LAMBDAS)
+        best_lam = RIDGE_LAMBDAS[int(torch.argmin(mse).item())]
+        w = _ridge_dual_weights(Xtr_n, Ytr_c, best_lam)
+        x_held = (x_held_in - xmu) / xsd
+        preds[i] = (ymu + x_held @ w).detach().cpu().numpy()
+    return preds, any_fallback
+
+
+def krr_predict_loco_rep(
+    Xc: np.ndarray,
+    Yv: np.ndarray,
+    *,
+    kernel: str = "rbf",
+    input_rep: str = "full",
+    k: int = INPUT_REP_K,
+    eps: float = INPUT_REP_EPS,
+    lambdas: list | None = None,
+    gammas: list | None = None,
+) -> tuple[np.ndarray, list, list, bool]:
+    """``krr_predict_loco`` with a per-fold INPUT representation.
+
+    For ``input_rep="full"`` this DELEGATES to ``krr_predict_loco`` (byte-identical
+    to the existing path) and returns its ``(preds, lam, gam)`` plus ``False``. For
+    ``"pca48"`` / ``"whiten48"`` it runs the SAME nested-CV kernel ridge but, inside
+    each fold, replaces the train + held-out input with their per-fold TRAIN-only
+    PCA-48 / ZCA-whiten-48 projection (``input_transform_fold``) BEFORE the
+    inherited per-dim train-only standardization + RBF γ heuristic + nested PRESS.
+    The transform is fit ONCE per fold (kernel-independent), so the RBF γ grid is
+    recomputed on the TRANSFORMED, standardized train design — exactly where
+    whitening can move the RBF gap (plan H2). The target ``Yv`` and the dual solve
+    are unchanged. A truly-singular fold's basis is SKIPPED → held-out prediction
+    is the train target mean (skill-neutral).
+
+    Returns ``(preds (n, P), chosen_lambda_per_fold, chosen_gamma_per_fold,
+    any_gesvd_fallback)``.
+    """
+    if input_rep == "full":
+        preds, lam, gam = krr_predict_loco(Xc, Yv, kernel=kernel, lambdas=lambdas, gammas=gammas)
+        return preds, lam, gam, False
+    lambdas = lambdas if lambdas is not None else list(RIDGE_LAMBDAS)
+    n = Xc.shape[0]
+    P = Yv.shape[1]
+    device = torch.device(_i658.DEVICE)
+    Xt = torch.from_numpy(np.ascontiguousarray(Xc)).to(device=device, dtype=torch.float64)
+    Yt = torch.from_numpy(np.ascontiguousarray(Yv)).to(device=device, dtype=torch.float64)
+    preds = np.zeros((n, P), dtype=np.float64)
+    chosen_lam: list = []
+    chosen_gam: list = []
+    any_fallback = False
+    for i in range(n):
+        tr = [j for j in range(n) if j != i]
+        tr_t = torch.tensor(tr, device=device)
+        Xtr = Xt[tr_t]
+        Ytr = Yt[tr_t]
+        ymu = Ytr.mean(0)
+        Ytr_c = Ytr - ymu
+        try:
+            Xtr_in, x_held_in, fb = input_transform_fold(Xtr, Xt[i], input_rep, k=k, eps=eps)
+        except (np.linalg.LinAlgError, torch.linalg.LinAlgError):
+            preds[i] = ymu.detach().cpu().numpy()  # skip fold → train target mean (skill-neutral)
+            chosen_lam.append(float("nan"))
+            chosen_gam.append(float("nan"))
+            any_fallback = True
+            continue
+        any_fallback = any_fallback or fb
+        # inherited per-dim train-only standardization of the TRANSFORMED input.
+        xmu = Xtr_in.mean(0)
+        xsd = Xtr_in.std(0, correction=0) + 1e-9
+        Xtr_n = (Xtr_in - xmu) / xsd
+        x_held = (x_held_in - xmu) / xsd
+        # RBF γ grid recomputed on the standardized TRANSFORMED train design
+        # (median-pairwise heuristic) — the inherited recipe, on the new input.
+        if kernel == "linear":
+            fold_gammas = [0.0]
+        elif gammas is not None:
+            fold_gammas = gammas
+        else:
+            fold_gammas = _rbf_gammas_from_standardized(Xtr_n)
+
+        best = None  # (press, lam, gam, alpha, k_held)
+        for gam in fold_gammas:
+            Ktr = _kernel_gram(Xtr_n, Xtr_n, kernel, gam)
+            k_held = _kernel_gram(x_held.unsqueeze(0), Xtr_n, kernel, gam).squeeze(0)
+            for lam in lambdas:
+                press = _krr_loo_press(Ktr, Ytr_c, lam)
+                if best is None or press < best[0]:
+                    A = torch.linalg.solve(
+                        Ktr + lam * torch.eye(Ktr.shape[0], device=device, dtype=torch.float64),
+                        Ytr_c,
+                    )
+                    best = (press, lam, gam, A, k_held)
+        _press, lam, gam, A, k_held = best
+        preds[i] = (ymu + k_held @ A).detach().cpu().numpy()
+        chosen_lam.append(float(lam))
+        chosen_gam.append(float(gam))
+    return preds, chosen_lam, chosen_gam, any_fallback
+
+
+def _rbf_gammas_from_standardized(Xn: torch.Tensor) -> list:
+    """RBF γ grid from an ALREADY-standardized (train) design tensor.
+
+    The median-pairwise-squared-distance heuristic of ``_default_rbf_gammas``, but
+    keyed on the already-standardized per-fold design (the ``full`` path standardizes
+    inside ``_default_rbf_gammas`` from the raw input; here the input is the
+    PCA/whiten-transformed design which we standardize once, then read γ off it). Same
+    7-point grid spanning ~3 decades around ``γ₀ = 1/median(‖xᵢ−xⱼ‖²)``.
+    """
+    n = Xn.shape[0]
+    sq = (Xn * Xn).sum(1)[:, None] + (Xn * Xn).sum(1)[None, :] - 2.0 * (Xn @ Xn.T)
+    iu = torch.triu_indices(n, n, offset=1)
+    vals = sq[iu[0], iu[1]].clamp(min=0.0)
+    med = float(torch.median(vals).item())
+    g0 = 1.0 / med if med > 0 else 1.0
+    return [g0 * f for f in (0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0)]
