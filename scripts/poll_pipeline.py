@@ -787,6 +787,16 @@ class PollResult:
     # hang as ``running`` forever). Defaulted so the many cross-backend
     # ``PollResult(...)`` call sites need no change.
     stall_reason: str | None = None
+    # The crash signature extracted from the WIDE 500-line probe tail (NOT the
+    # 5-line ``log_tail_excerpt``, which truncates a multi-line vLLM CUDA-IMA
+    # traceback — the signature lines routinely sit >5 lines from the end). The
+    # whole wide tail is stored (so the #775 RunPod CUDA-IMA repeat-failover
+    # predicate can ALSO scan it for the OUR_CODE_FRAME exclusion). ``None`` on a
+    # healthy / running poll (populated only on a ``status="dead"`` poll). Read by
+    # ``backend_poll._maybe_escalate_runpod_cuda_ima`` after the RunPod lane
+    # copies it through ``RunPodBackend.poll``. Declared LAST so existing
+    # positional ``PollResult(...)`` constructions are unaffected.
+    crash_signature: str | None = None
 
 
 def _ssh_probe(
@@ -2693,9 +2703,18 @@ def poll_once(
     # both are zero (no logs yet) or the main log is fresher, fall back
     # to the main-log tail (preserves prior behavior for non-cell runs).
     if cell_mtime_epoch > 0 and cell_mtime_epoch > mtime_epoch:
-        tail_excerpt = "\n".join(probe["cell_log_tail"].splitlines()[-5:])
+        wide_tail = probe["cell_log_tail"]
     else:
-        tail_excerpt = "\n".join(probe["log_tail"].splitlines()[-5:])
+        wide_tail = probe["log_tail"]
+    tail_excerpt = "\n".join(wide_tail.splitlines()[-5:])
+    # #775: capture the crash signature from the WIDE 500-line tail (the same
+    # surface ``tail_excerpt`` was sliced from), NOT the 5-line excerpt — a vLLM
+    # CUDA-IMA traceback spans 20-50 lines and is routinely truncated out of the
+    # last 5, so a signature match on the excerpt would silently never fire. Pure
+    # string read; the probe ALREADY fetched 500 lines, so no extra SSH call. The
+    # whole wide tail is stored (None unless the poll is dead) so the failover
+    # predicate can ALSO scan it for the OUR_CODE_FRAME exclusion.
+    crash_signature = wide_tail if status == "dead" else None
     return PollResult(
         status=status,
         current_phase=current_phase,
@@ -2715,6 +2734,7 @@ def poll_once(
         cpu_advancing=cpu_advancing,
         next_interval=next_interval,
         stall_reason=stall_reason,
+        crash_signature=crash_signature,
     )
 
 

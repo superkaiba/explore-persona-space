@@ -403,6 +403,12 @@ class RunPodBackend(ComputeBackend):
             gpu_util=raw.gpu_util,
             next_interval=raw.next_interval,
             stall_reason=raw.stall_reason,
+            # #775: copy the WIDE-tail crash signature through (same passthrough
+            # contract as stall_reason above). poll_once populates it only on a
+            # dead poll; backend_poll._maybe_escalate_runpod_cuda_ima reads it.
+            # getattr-guarded so a mixed-version worktree (a poll_once that
+            # predates the field) degrades to None rather than crashing.
+            crash_signature=getattr(raw, "crash_signature", None),
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:
