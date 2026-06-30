@@ -4873,8 +4873,8 @@
     "766": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/766",
-      "status": "proposed",
+      "path": "tasks/planning/766",
+      "status": "planning",
       "title": "Fix three judging correctness bugs (belief.py default-to-50, i653 EM-threshold bool, stale Haiku pins #650/#657)"
     },
     "77": {
