@@ -483,18 +483,26 @@ def _is_transient_upload_error(err: Exception) -> bool:
     )
 
 
-def _upload_folder_with_retry(api, *, max_attempts: int = 6, **kwargs) -> None:
-    """``HfApi.upload_folder`` wrapped in exponential-backoff retry on transient
-    5xx / timeout errors. HF's ``/commit`` endpoint 504s under load (transient);
-    a single un-retried 504 was crashing the whole workload and forcing a fresh
-    GPU relaunch. Storage-quota-403 re-raises immediately so the caller's
-    overflow-repo fallback still fires; non-transient errors re-raise at once."""
+def _retry_on_transient_hf(fn, *args, _what: str = "hf-call", max_attempts: int = 6, **kwargs):
+    """Run any HF Hub call wrapped in exponential-backoff retry on transient
+    5xx / timeout errors, returning ``fn``'s result.
+
+    Covers EVERY paginated / committing HF endpoint, not just ``/commit``: the
+    post-upload ``list_repo_files`` verify call paginates ``/api/.../tree/main``
+    and ``huggingface_hub.utils._pagination.paginate`` retries ONLY 429 on
+    follow-up pages (``http_backoff(..., retry_on_status_codes=429)``), so a 504
+    on any cursor page raises ``HfHubHTTPError(504)`` straight through an
+    unwrapped caller. That un-retried 504 crashed two consecutive #658 upload
+    runs AFTER all 12081 files had already committed (the upload itself
+    succeeded; the verify listing 504'd). The transient classifier matches the
+    504's ``response.status_code`` / message, so this wrapper retries it.
+    Storage-quota-403 re-raises immediately so the caller's overflow-repo
+    fallback still fires; non-transient errors re-raise at once."""
     import time
 
     for attempt in range(1, max_attempts + 1):
         try:
-            api.upload_folder(**kwargs)
-            return
+            return fn(*args, **kwargs)
         except Exception as e:
             if (
                 _is_storage_quota_403(e)
@@ -504,13 +512,24 @@ def _upload_folder_with_retry(api, *, max_attempts: int = 6, **kwargs) -> None:
                 raise
             sleep_s = min(180, 10 * 2 ** (attempt - 1))
             logger.warning(
-                "upload_folder transient error (attempt %d/%d): %s; retrying in %ds",
+                "%s transient error (attempt %d/%d): %s; retrying in %ds",
+                _what,
                 attempt,
                 max_attempts,
                 str(e)[:200],
                 sleep_s,
             )
             time.sleep(sleep_s)
+
+
+def _upload_folder_with_retry(api, *, max_attempts: int = 6, **kwargs) -> None:
+    """``HfApi.upload_folder`` wrapped in transient-5xx retry (delegates to
+    ``_retry_on_transient_hf``). HF's ``/commit`` endpoint 504s under load
+    (transient); a single un-retried 504 was crashing the whole workload and
+    forcing a fresh GPU relaunch."""
+    _retry_on_transient_hf(
+        api.upload_folder, _what="upload_folder", max_attempts=max_attempts, **kwargs
+    )
 
 
 def upload_pv_store(out_dir: Path, smoke: bool) -> dict:
@@ -548,9 +567,13 @@ def upload_pv_store(out_dir: Path, smoke: bool) -> dict:
             repo_type="dataset",
             commit_message="issue658: PV r_B store upload (quota-403 overflow fallback)",
         )
-    files = [
-        f for f in api.list_repo_files(repo_used, repo_type="dataset") if f.startswith(path_in_repo)
-    ]
+    # The verify listing paginates /api/.../tree/main; pagination's follow-up
+    # pages retry only 429 (NOT 5xx), so a 504 here escaped the bare call and
+    # crashed two prior runs AFTER the upload had committed — wrap it too.
+    all_files = _retry_on_transient_hf(
+        api.list_repo_files, repo_used, repo_type="dataset", _what="list_repo_files"
+    )
+    files = [f for f in all_files if f.startswith(path_in_repo)]
     expected = {f"{path_in_repo}/rb_extract_manifest.json", f"{path_in_repo}/rollout_index.json"}
     missing = expected - set(files)
     if missing:
