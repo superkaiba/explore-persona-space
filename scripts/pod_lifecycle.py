@@ -77,6 +77,7 @@ from pod_config import (  # noqa: E402
     write_pods_conf,
 )
 from runpod_api import (  # noqa: E402
+    DEFAULT_CPU_VOLUME_GB,
     PodInfo,
     RunPodError,
     RunPodInsufficientBalanceError,
@@ -1729,10 +1730,17 @@ def cmd_provision(args: argparse.Namespace) -> None:
         if args.dry_run:
             print("\n[dry-run] Would call create_cpu_pod and wait for SSH; no API call made.")
             return
+        # Intent-aware default volume (#747): the --volume-gb argparse default
+        # (200 GB) is the GPU-pod default; a cheap CPU pod should not silently
+        # provision a 200 GB persistent volume (it defeats the lane's cost
+        # premise). When the user did NOT explicitly override the default, use
+        # the cheap CPU default (DEFAULT_CPU_VOLUME_GB=40); an explicit non-200
+        # value is always honored.
+        cpu_volume_gb = DEFAULT_CPU_VOLUME_GB if args.volume_gb == 200 else args.volume_gb
         info = create_cpu_pod(
             name=name,
             instance_id=cpu_instance_id,
-            volume_gb=args.volume_gb,
+            volume_gb=cpu_volume_gb,
             container_disk_gb=args.container_disk_gb,
         )
         print(f"  Created CPU pod {info.pod_id} — waiting for SSH (up to 10 min)...")

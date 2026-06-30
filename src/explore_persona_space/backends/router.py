@@ -6,8 +6,14 @@ selector dispatches on a single ``backend:`` frontmatter and falls back to
 RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
 
 1. **Explicit override** — ``spec.backend == "runpod" | "gcp" | "nibi" |
-   "fir" | "mila"`` runs that lane directly. RunPod is reachable ONLY via
-   the override; the auto chain never spends real money.
+   "fir" | "mila"`` runs that lane directly. RunPod is ALSO reachable on
+   the auto chain — as the COST-ORDERED TERMINAL FALLBACK, never first:
+   when every cheaper GCP rung + free SLURM lane is exhausted on the
+   CAPACITY path (item 8, ``reason: auto_fallback_runpod``, #656), when a
+   GCP rung CRASHES THE WORKLOAD (item 5, ``reason:
+   gcp_workload_failover_runpod``, #658), and for the mapped cheap CPU
+   intents (item 8a, ``cpu-small`` / ``cpu-mid``, #747). Full failover
+   policy: ``.claude/rules/compute-backend-failover.md`` (canonical).
 2. **Auto** — walk the resolved auto lane order. The STANDING DEFAULT is
    **GCP first** (:data:`DEFAULT_AUTO_LANE_ORDER` =
    ``("gcp", "nibi", "fir", "mila")``): credits-backed GCP capacity is
@@ -30,14 +36,19 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    started; tearing it down would burn the wait we already paid for). A
    timeout produces a ``manual-attention`` outcome rather than a silent
    leak.
-4. **Fallback chain — within the resolved order, NEVER RunPod.** A
-   provision-class failure on any lane (free-lane PENDING-at-cap /
-   provisioning failure; GCP provisioning / capacity / prepare / state-
-   probe failure when lanes remain after it) continues DOWN the resolved
-   order. Under the GCP-first default that means GCP capacity failures
-   fall through to the SLURM lanes; under a free-first override the SLURM
-   park-failures escalate to GCP exactly as before. NEVER RunPod on auto
-   — RunPod stays override-only regardless of the configured order.
+4. **Fallback chain — within the resolved order, RunPod is the TERMINAL
+   rung (never first, never skipping a cheaper rung).** A provision-class
+   failure on any lane (free-lane PENDING-at-cap / provisioning failure;
+   GCP provisioning / capacity / prepare / state-probe failure when lanes
+   remain after it) continues DOWN the resolved order. Under the GCP-first
+   default that means GCP capacity failures fall through to the SLURM
+   lanes; under a free-first override the SLURM park-failures escalate to
+   GCP exactly as before. Once the GCP ladder AND the free SLURM lanes are
+   ALL exhausted on the capacity path, the auto chain falls through to the
+   RunPod terminal rung (item 8, ``reason: auto_fallback_runpod``, #656);
+   a GCP WORKLOAD crash short-circuits straight there (item 5, #658). The
+   reversal of the historical "NEVER RunPod on auto" invariant — RunPod is
+   the LAST capacity rung, not override-only.
 5. **Failure classification** — :class:`gcp.GcpProvisioningError` (and
    any backend-marked ``provisioning_failure: True`` raise) routes to the
    next tier; a :class:`gcp.GcpWorkloadError` on a GCP rung FAILS OVER TO
@@ -103,6 +114,18 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    straight here, skipping the remaining GCP rungs + SLURM lanes. Only if
    the RunPod launch ITSELF fails does the chain raise
    :class:`NoComputeAvailableError`.
+8a. **CPU intents — per-intent RunPod CPU fallover (#747).** The cheap CPU
+   intents mapped in :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`
+   (``cpu-small`` / ``cpu-mid``) fall over GCP cheap CPU (E2; spot on a
+   short job, on-demand otherwise) → RunPod CPU (``deployCpuPod``) when
+   GCP is exhausted (capacity) OR crashes its workload — the CPU analogue
+   of item 8 / item 5, keyed on that POSITIVE map (the single source of
+   truth, checked by both the synchronous terminal rung and the async
+   poller). ``cpu-bigmem`` is ABSENT from the map, so it keeps the #677
+   ``cpu_exhausted_no_runpod_lane`` typed terminal VERBATIM (the >50 GB
+   analysis lane has no cheap RunPod equivalent) — it does NOT fall over
+   to RunPod. RunPod CPU pods are on-demand only; a CPU no-capacity miss
+   surfaces :class:`RunPodNoCapacityError` → terminal.
 9. **Markers** — extends the existing ``epm:backend-selected v1`` body
    (per-lane est-starts raw+clamped, chosen lane, fallback chain,
    canonical reason codes, ids). The orchestrator's marker poster is
