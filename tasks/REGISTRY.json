@@ -4710,8 +4710,8 @@
     "745": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/745",
-      "status": "proposed",
+      "path": "tasks/planning/745",
+      "status": "planning",
       "title": "workflow-fix: enable hf_transfer for experiment uploads"
     },
     "746": {
