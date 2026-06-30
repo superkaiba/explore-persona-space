@@ -15,8 +15,10 @@ What this slice ships
   by shelling out to ``gcloud`` (per the plan: "start by shelling out;
   migrate to ``google-cloud-compute`` only if typed errors are wanted").
 * Intent → machine-type table (:data:`INTENT_TO_MACHINE`): ``lora-7b`` /
-  ``lora`` → ``a2-ultragpu-1g`` (1x A100-80); ``ft-7b`` → ``a2-ultragpu-4g``
-  (4x A100-80); ``eval`` → ``g2-standard-4`` (1x L4); ``debug`` → ``g2-standard-4``.
+  ``lora`` → ``a2-ultragpu-1g`` (1x A100-80); ``capture-7b`` →
+  ``a2-ultragpu-1g`` (1x A100-80, the activation-capture eval path, #752);
+  ``ft-7b`` → ``a2-ultragpu-4g`` (4x A100-80); ``eval`` → ``g2-standard-4``
+  (1x L4); ``debug`` → ``g2-standard-4``.
 * :class:`GcpConfig` — per-call knobs (project, gcloud config name, zone +
   fallback zones, DLVM image family + project, default provisioning model,
   scratch path on the VM). No hardcoding inline; tests construct test
@@ -283,11 +285,15 @@ class MachineSpec:
 #: Workload intent → GCE machine-type map. Matches the plan's "gcp.py"
 #: Approach paragraph: lora-7b → a2-ultragpu-1g, ft-7b → a2-ultragpu-4g,
 #: eval → g2-standard-4. The ``lora`` alias inherits ``lora-7b`` (mirrors
-#: the SLURM ``_DEFAULT_GPUS_FOR_INTENT`` aliasing). ``debug`` reuses the
-#: L4 machine — the smallest GPU available is the right "debug pod"
-#: analogue. ``inf-70b`` / ``ft-70b`` are NOT in this table (the GFS
-#: credit pool is for the A100-80 / L4 line; 70B inference belongs on
-#: RunPod's H200 in v1).
+#: the SLURM ``_DEFAULT_GPUS_FOR_INTENT`` aliasing). ``capture-7b`` (#752)
+#: is the A100-80 activation-capture EVAL path — a forward-pass-only 7B run
+#: that captures hidden states, sized to A100-80 like ``lora-7b`` but kept
+#: DISTINCT from ``eval``'s L4 default so the router never under-provisions a
+#: hidden-state-capturing forward (no coupling of the router to workload
+#: semantics). ``debug`` reuses the L4 machine — the smallest GPU available
+#: is the right "debug pod" analogue. ``inf-70b`` / ``ft-70b`` are NOT in
+#: this table (the GFS credit pool is for the A100-80 / L4 line; 70B
+#: inference belongs on RunPod's H200 in v1).
 INTENT_TO_MACHINE: dict[str, MachineSpec] = {
     "lora-7b": MachineSpec(
         machine_type="a2-ultragpu-1g",
@@ -295,6 +301,22 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_kind="A100-80",
     ),
     "lora": MachineSpec(
+        machine_type="a2-ultragpu-1g",
+        gpu_count=1,
+        gpu_kind="A100-80",
+    ),
+    # Activation-capture intent (#752) — a 7B forward that captures hidden
+    # states (all-layer residual streams, Welford activation accumulation,
+    # per-token activation dumps) must clear A100-80 HBM: 7B bf16 weights are
+    # ~14 GB and the captured activations push past the L4's 16-GB-class HBM
+    # (L4 ~= A100-40 ~= A100-80 in HBM order; the binding fact is the ordering
+    # L4 << A100-40 << A100-80, not the exact L4 figure). Same machine as
+    # lora-7b (a2-ultragpu-1g, 1x A100-80) but a DISTINCT intent so a caller /
+    # the planner can declare "I capture activations" and the router sizes for
+    # it instead of falling to the g2-standard-4 (L4) eval default. #666 (L4
+    # OOM) and #744 (g2-standard-4 OOM) were both 7B activation-capture
+    # forwards routed L4 under the eval default.
+    "capture-7b": MachineSpec(
         machine_type="a2-ultragpu-1g",
         gpu_count=1,
         gpu_kind="A100-80",
@@ -384,14 +406,20 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
 #: full-FT (``ft-7b`` = 4xA100-80) and the 70B intents do NOT fit, so they
 #: are absent from this map and the ladder skips the A100-40 rung for them.
 #: ``a2-highgpu-1g`` is the 1xA100-40GB machine type (sibling of the
-#: ``a2-ultragpu-1g`` 1xA100-80GB row above). ``eval`` / ``debug`` default
-#: to L4 on-demand, NOT A100-80, so the A100-40 rung is only a meaningful
-#: STEP UP for them when L4 is constrained; they are included to keep the
-#: "single-GPU 7B fits 40 GB" rule uniform and the inclusion is harmless
-#: (their L4 on-demand rarely exhausts). Decision recorded in plan §11.
+#: ``a2-ultragpu-1g`` 1xA100-80GB row above). ``capture-7b`` (#752, the
+#: activation-capture EVAL path) is a single-GPU 7B forward that fits 40 GB
+#: (7B bf16 weights ~14 GB + room for a moderate-batch all-layer hidden-state
+#: capture), so it is a valid A100-40 fallback — its A100-80 primary is the
+#: canonical fit, A100-40 the cheaper-but-smaller rung. ``eval`` / ``debug``
+#: default to L4 on-demand, NOT A100-80, so the A100-40 rung is only a
+#: meaningful STEP UP for them when L4 is constrained; they are included to
+#: keep the "single-GPU 7B fits 40 GB" rule uniform and the inclusion is
+#: harmless (their L4 on-demand rarely exhausts). Decision recorded in
+#: plan §11.
 INTENT_A100_40_FALLBACK: dict[str, MachineSpec] = {
     "lora-7b": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
     "lora": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
+    "capture-7b": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
     "eval": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
     "debug": MachineSpec(machine_type="a2-highgpu-1g", gpu_count=1, gpu_kind="A100-40"),
 }

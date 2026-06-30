@@ -318,6 +318,38 @@ def test_intent_to_machine_includes_h100_intents() -> None:
     assert INTENT_TO_MACHINE["eval-h100"].gpu_kind == "H100-80"
 
 
+def test_intent_to_machine_includes_capture_7b() -> None:
+    """#752: the activation-capture intent routes a 7B hidden-state-capturing
+    forward to A100-80 (primary) / A100-40 (fallback), NOT the L4 eval default
+    that OOM'd #666/#744.
+
+    capture-7b shares lora-7b's a2-ultragpu-1g (1x A100-80) primary but is a
+    DISTINCT intent so a forward-pass-only activation-capture run is sized
+    correctly without coupling the router to workload semantics, and its
+    A100-40 fallback (a2-highgpu-1g) fits the single-GPU 7B capture in 40 GB.
+    """
+    from explore_persona_space.backends.gcp import zones_for_machine_type
+
+    # Primary: a2-ultragpu-1g (1x A100-80), same machine as lora-7b.
+    assert INTENT_TO_MACHINE["capture-7b"].machine_type == "a2-ultragpu-1g"
+    assert INTENT_TO_MACHINE["capture-7b"].gpu_kind == "A100-80"
+    assert INTENT_TO_MACHINE["capture-7b"].gpu_count == 1
+    assert machine_for_intent(_spec("capture-7b")).machine_type == "a2-ultragpu-1g"
+
+    # A100-40 fallback rung: a2-highgpu-1g (single-GPU 7B fits 40 GB).
+    assert INTENT_A100_40_FALLBACK["capture-7b"].machine_type == "a2-highgpu-1g"
+    assert INTENT_A100_40_FALLBACK["capture-7b"].gpu_kind == "A100-40"
+    fallback = a100_40_fallback_for_intent(_spec("capture-7b"))
+    assert fallback is not None
+    assert fallback.machine_type == "a2-highgpu-1g"
+
+    # The inherited zone restriction does not filter the new intent's machine
+    # to nothing — a2-ultragpu-1g is already in MACHINE_TYPE_ZONE_AVAILABILITY,
+    # so the new intent inherits its zones with no separate entry.
+    ladder = ["us-central1-a", "us-central1-b", "us-central1-c"]
+    assert zones_for_machine_type("a2-ultragpu-1g", ladder)
+
+
 def test_machine_for_intent_resolves_known_intent() -> None:
     spec = _spec("ft-7b")
     machine = machine_for_intent(spec)
@@ -673,10 +705,11 @@ def test_8gpu_sweep_machine_types_zone_availability() -> None:
 
 def test_a100_40_fallback_for_intent_fits_predicate() -> None:
     """T10: the fits-in-40GB predicate. Single-GPU 7B-scale intents (lora-7b /
-    lora / eval / debug) map to the A100-40 (a2-highgpu-1g) fallback machine;
-    multi-GPU full-FT (ft-7b) and the 70B / unknown intents return None (a
-    40 GB card cannot hold them, so the ladder has no A100-40 rung)."""
-    for intent in ("lora-7b", "lora", "eval", "debug"):
+    lora / capture-7b / eval / debug) map to the A100-40 (a2-highgpu-1g)
+    fallback machine; multi-GPU full-FT (ft-7b) and the 70B / unknown intents
+    return None (a 40 GB card cannot hold them, so the ladder has no A100-40
+    rung)."""
+    for intent in ("lora-7b", "lora", "capture-7b", "eval", "debug"):
         machine = a100_40_fallback_for_intent(_spec(intent))
         assert isinstance(machine, MachineSpec), intent
         assert machine.machine_type == "a2-highgpu-1g", intent
@@ -685,7 +718,7 @@ def test_a100_40_fallback_for_intent_fits_predicate() -> None:
     for intent in ("ft-7b", "inf-70b", "ft-70b", "totally-bogus"):
         assert a100_40_fallback_for_intent(_spec(intent)) is None, intent
     # The module-level map matches the predicate's positive set exactly.
-    assert set(INTENT_A100_40_FALLBACK) == {"lora-7b", "lora", "eval", "debug"}
+    assert set(INTENT_A100_40_FALLBACK) == {"lora-7b", "lora", "capture-7b", "eval", "debug"}
 
 
 def test_machine_for_intent_honors_machine_spec_override() -> None:
