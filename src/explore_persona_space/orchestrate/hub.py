@@ -1440,6 +1440,20 @@ def upload_model_wandb(
         logger.warning("Model path %s does not exist, skipping upload", model_path)
         return ""
 
+    # Upload Policy (CLAUDE.md): WandB carries LIVE training metrics ONLY; model
+    # weights are canonical on the HF Hub. Pushing checkpoints to WandB Artifacts
+    # duplicated what already lives on HF and filled the account to ~4 TB, so this
+    # is OFF by default. Opt in explicitly with EPM_UPLOAD_MODEL_WANDB=1.
+    if os.environ.get("EPM_UPLOAD_MODEL_WANDB") != "1":
+        logger.info(
+            "WandB model-artifact upload disabled by Upload Policy (weights are "
+            "canonical on HF Hub; set EPM_UPLOAD_MODEL_WANDB=1 to override). "
+            "Skipped %s -> %s.",
+            model_path,
+            name,
+        )
+        return ""
+
     try:
         # Use current run if active, otherwise init a new one
         run = wandb.run
@@ -1497,17 +1511,38 @@ def upload_results_wandb(
         logger.warning("Results dir %s is empty, skipping upload", results_dir)
         return ""
 
+    # Upload Policy (CLAUDE.md): eval results are canonical in git (eval_results/)
+    # + the HF data repo; WandB carries LIVE training metrics ONLY. This path also
+    # used to add_dir() the whole results dir, sweeping in any merged checkpoint
+    # left alongside the JSONs (the ~1.3 TB "eval-results with weights" bloat), so
+    # it is OFF by default. Opt in explicitly with EPM_UPLOAD_RESULTS_WANDB=1.
+    if os.environ.get("EPM_UPLOAD_RESULTS_WANDB") != "1":
+        logger.info(
+            "WandB eval-results artifact upload disabled by Upload Policy (results "
+            "are canonical in git + the HF data repo; set EPM_UPLOAD_RESULTS_WANDB=1 "
+            "to override). Skipped %s -> %s.",
+            results_dir,
+            name,
+        )
+        return ""
+
     try:
         run = wandb.run
         if run is None:
             run = wandb.init(project=project, job_type="eval-upload")
 
+        # Defense in depth even when explicitly opted in: never let model weights
+        # ride the eval-results artifact path (the root cause of the eval-results
+        # bloat). Add files individually, excluding weight blobs.
+        _WEIGHT_SUFFIXES = (".safetensors", ".bin", ".pt", ".pth", ".gguf", ".onnx")
         artifact = wandb.Artifact(
             name=name,
             type="eval-results",
             metadata=metadata or {},
         )
-        artifact.add_dir(str(results_dir))
+        for f in files:
+            if f.is_file() and f.suffix.lower() not in _WEIGHT_SUFFIXES:
+                artifact.add_file(str(f), name=str(f.relative_to(results_dir)))
         run.log_artifact(artifact)
         artifact.wait()
 

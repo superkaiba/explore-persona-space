@@ -135,6 +135,10 @@ class TestWandBUpload:
         # Override WANDB_MODE for this specific test (conftest sets disabled)
         old_mode = os.environ.get("WANDB_MODE")
         os.environ.pop("WANDB_MODE", None)
+        # upload_results_wandb is OFF by default (Upload Policy: WandB = live
+        # metrics only). This test exercises the opt-in path explicitly.
+        old_optin = os.environ.get("EPM_UPLOAD_RESULTS_WANDB")
+        os.environ["EPM_UPLOAD_RESULTS_WANDB"] = "1"
 
         try:
             from explore_persona_space.orchestrate.hub import upload_results_wandb
@@ -159,3 +163,7 @@ class TestWandBUpload:
                 os.environ["WANDB_MODE"] = "disabled"
             else:
                 os.environ["WANDB_MODE"] = old_mode
+            if old_optin is None:
+                os.environ.pop("EPM_UPLOAD_RESULTS_WANDB", None)
+            else:
+                os.environ["EPM_UPLOAD_RESULTS_WANDB"] = old_optin
