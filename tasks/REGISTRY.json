@@ -4957,8 +4957,8 @@
     "777": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/777",
-      "status": "approved",
+      "path": "tasks/running/777",
+      "status": "running",
       "title": "workflow-fix: teacher-forced fixed +/- margin is the validated continuous DV; logp_pos_mean is selection-confounded"
     },
     "78": {
