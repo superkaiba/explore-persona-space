@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 774,
+  "highest_id": 775,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4939,6 +4939,13 @@
       "path": "tasks/proposed/774",
       "status": "proposed",
       "title": "workflow-fix: multi-zone GCP fan-out before declaring a capacity miss"
+    },
+    "775": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/775",
+      "status": "proposed",
+      "title": "workflow-fix: auto-failover RunPod CUDA-IMA host-wedge to a fresh host"
     },
     "78": {
       "has_clean_result": false,
