@@ -143,6 +143,7 @@ def eval_one_checkpoint(
 def download_adapter(hf_repo: str, revision: str, step: int, cache_dir: Path) -> Path:
     import os
 
+    # DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
     from dotenv import load_dotenv  # type: ignore
     from huggingface_hub import hf_hub_download  # type: ignore
 

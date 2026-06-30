@@ -67,6 +67,8 @@ from collections import Counter
 from pathlib import Path
 
 import anthropic
+
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv
 
 # Local sibling — keep blast radius minimal; not under src/.

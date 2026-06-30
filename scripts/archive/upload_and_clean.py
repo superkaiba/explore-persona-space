@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv
 
 load_dotenv("/root/projects/explore_persona_space/.env")

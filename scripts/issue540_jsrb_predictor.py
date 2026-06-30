@@ -84,6 +84,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import issue532_predictor_stress as i532  # noqa: E402  # pinned parent @ 296c4da2d
 import numpy as np  # noqa: E402
+
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv  # noqa: E402
 
 from explore_persona_space.analysis import js_canonical as jsc  # noqa: E402

@@ -66,6 +66,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv
 
 from explore_persona_space.eval.generation import (

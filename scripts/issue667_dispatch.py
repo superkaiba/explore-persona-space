@@ -921,6 +921,7 @@ def main() -> int:
 
     # `uv run python` does NOT auto-load .env; load it at main()-top so every
     # subprocess inherits HF_TOKEN/WANDB_API_KEY via env={**os.environ} (#397).
+    # DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
     from dotenv import load_dotenv
 
     load_dotenv()

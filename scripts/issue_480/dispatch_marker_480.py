@@ -51,6 +51,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv
 
 load_dotenv()

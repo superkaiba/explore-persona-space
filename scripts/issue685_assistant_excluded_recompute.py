@@ -38,6 +38,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import torch
+
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv
 
 load_dotenv()

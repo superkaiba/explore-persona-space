@@ -76,6 +76,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
+
+# DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv  # noqa: E402
 
 from explore_persona_space.analysis.extraction import extract_layer_activations  # noqa: E402
