@@ -172,6 +172,44 @@ def compute_belief_score(
     }
 
 
+def _score_judge_response(client, judge_model: str, prompt: str, question_idx: int) -> float:
+    """Call the Claude judge for one response and return its 0-100 score.
+
+    Unparseable, non-numeric, out-of-[0, 100], and API-error returns all map to
+    ``math.nan`` (dropped from the aggregate by the caller's
+    ``not math.isnan`` filter) — never coerced to a numeric placeholder, which
+    would bias the mean (the #766 default-to-50 bug). A well-formed in-range
+    numeric return is passed through unchanged.
+    """
+    score_text = None
+    try:
+        judge_resp = client.messages.create(
+            model=judge_model,
+            max_tokens=10,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        score_text = judge_resp.content[0].text.strip()
+        score = float(score_text)
+        if not (0.0 <= score <= 100.0):
+            logger.warning(
+                "Judge score for question %d out of [0, 100] range (%s); dropping",
+                question_idx,
+                score,
+            )
+            score = math.nan
+    except (ValueError, IndexError):
+        logger.warning(
+            "Failed to parse judge score for question %d (%r); dropping",
+            question_idx,
+            score_text,
+        )
+        score = math.nan
+    except Exception as e:
+        logger.warning("Judge API error for question %d: %s", question_idx, e)
+        score = math.nan
+    return score
+
+
 def evaluate_belief_consistency(
     model_path: str,
     variant: str,
@@ -277,30 +315,12 @@ def evaluate_belief_consistency(
             q_responses.append(response_text)
 
             # Judge this response
-            try:
-                judge_resp = client.messages.create(
-                    model=judge_model,
-                    max_tokens=10,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": judge_prompt_template.format(
-                                beliefs=belief_summary,
-                                question=q,
-                                response=response_text,
-                            ),
-                        }
-                    ],
-                )
-                score_text = judge_resp.content[0].text.strip()
-                score = float(score_text)
-                score = max(0.0, min(100.0, score))
-            except (ValueError, IndexError):
-                logger.warning("Failed to parse judge score for question %d, using 50", i)
-                score = 50.0
-            except Exception as e:
-                logger.warning("Judge API error for question %d: %s", i, e)
-                score = math.nan
+            prompt = judge_prompt_template.format(
+                beliefs=belief_summary,
+                question=q,
+                response=response_text,
+            )
+            score = _score_judge_response(client, judge_model, prompt, i)
 
             q_scores.append(score)
             all_scores.append(score)
