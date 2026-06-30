@@ -4894,8 +4894,8 @@
     "769": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/769",
-      "status": "running",
+      "path": "tasks/completed/769",
+      "status": "completed",
       "title": "workflow-fix: add CUDA-allocator-fragmentation OOM gotcha + workload-cmd hot-fix recipe (#761 r3)"
     },
     "77": {
