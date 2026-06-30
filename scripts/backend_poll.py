@@ -406,6 +406,23 @@ def _is_runpod_async_wedge_failure(handle, result) -> bool:
     )
 
 
+def _is_runpod_cuda_ima_failure(handle, result) -> bool:
+    """True ONLY for a RunPod handle whose poll surfaced the #775 CUDA-IMA repeat wedge.
+
+    Narrow by construction (the sibling of :func:`_is_runpod_async_wedge_failure`):
+    ``handle.backend == "runpod"`` AND ``result.status == "dead"`` AND
+    ``result.current_phase == RUNPOD_CUDA_IMA_WEDGED_PHASE``. A GCP / SLURM handle
+    never trips it; the wedged phase is set ONLY by
+    :func:`_maybe_escalate_runpod_cuda_ima` once a SECOND same-signature CUDA-IMA
+    crash is observed this run.
+    """
+    return (
+        getattr(handle, "backend", None) == "runpod"
+        and result.status == "dead"
+        and result.current_phase == RUNPOD_CUDA_IMA_WEDGED_PHASE
+    )
+
+
 def _read_phase_clock(sidecar: Path) -> tuple[str | None, float | None]:
     """Read the (last_phase, last_phase_change_ts) staleness clock from the sidecar (#669).
 
@@ -895,6 +912,83 @@ def _maybe_escalate_runpod_wedge(handle, result, sidecar: Path, *, now: float):
     )
 
 
+def _maybe_escalate_runpod_cuda_ima(handle, result, sidecar: Path, *, issue: int, now: float):
+    """Escalate a same-signature RunPod CUDA-IMA crash REPEAT to terminal wedged (#775).
+
+    The repeat-based sibling of :func:`_maybe_escalate_runpod_wedge` (which is
+    time-based). Reads ``result.crash_signature`` (the WIDE 500-line probe tail
+    threaded through ``RunPodBackend.poll``). The detection record rides the
+    sidecar ``extra`` dict (keyed ``runpod_cuda_ima_last_seen``), with the prior
+    ``epm:failure`` marker as a cross-pod fallback (B1). Branches:
+
+    * not a RunPod handle -> return ``result`` unchanged (no record touched);
+    * not (``status="dead"`` AND a CUDA-IMA signature on the WIDE surface) ->
+      CLEAR the record (an intervening healthy / non-CUDA-IMA poll the in-place
+      same-pod respawn recovered to does NOT accumulate), return ``result``
+      unchanged;
+    * a CUDA-IMA signature whose WIDE surface ALSO carries an OUR-code traceback
+      frame (M3) -> this is a deterministic CODE bug surfacing as CUDA-IMA, NOT a
+      host wedge. Do NOT escalate (no bounded pivot spent); return ``result``
+      unchanged so it falls through to the ordinary dead path
+      (failure_classifier -> code). The record is left as-is (a code bug is not a
+      host wedge to count);
+    * a CUDA-IMA signature with NO prior same-signature record this run (FIRST
+      crash) -> WRITE the record, return ``result`` unchanged so it falls through
+      to the ordinary dead path (failure_classifier -> infra -> the in-place
+      same-pod experimenter respawn, which orphan-reaps + relaunches);
+    * a CUDA-IMA signature WITH a prior same-signature record (SECOND repeat) ->
+      REWRITE to ``status="dead", current_phase=RUNPOD_CUDA_IMA_WEDGED_PHASE`` so
+      :func:`_is_runpod_cuda_ima_failure` matches and the failover fires.
+
+    Reached on EVERY poll tick (wired unconditionally in ``main()`` BEFORE the
+    no-port block — M2), so the clear-on-recovery branch always runs.
+    """
+    if getattr(handle, "backend", None) != "runpod":
+        return result
+    is_cuda_ima = result.status == "dead" and _crash_signature_is_cuda_ima(
+        getattr(result, "crash_signature", None)
+    )
+    if not is_cuda_ima:
+        # Healthy / non-CUDA-IMA dead poll -> the wedge never matured; clear the
+        # record so a single transient CUDA-IMA the respawn recovered from does
+        # not accumulate against a later unrelated one.
+        _clear_runpod_cuda_ima_record(sidecar)
+        return result
+    # M3 our-code-frame exclusion: a CUDA-IMA surface that ALSO traces through our
+    # source/scripts is a deterministic code bug, NOT a host wedge — fall through
+    # to the ordinary dead path (-> code) WITHOUT spending a bounded pivot. Leave
+    # the record untouched (a code bug is not a host-wedge crash to count).
+    if _crash_signature_has_our_code_frame(getattr(result, "crash_signature", None)):
+        logging.warning(
+            "backend_poll: RunPod %s CUDA-IMA crash carries an OUR-code traceback frame — "
+            "deterministic code bug, NOT a host wedge; NOT escalating (#775 M3 exclusion)",
+            getattr(handle, "pod_name", "?"),
+        )
+        return result
+    prior = _read_runpod_cuda_ima_record(sidecar, issue=issue)
+    if prior is None:
+        # FIRST CUDA-IMA crash this run: record it and let the ordinary dead path
+        # run (the in-place same-pod experimenter respawn gets its one chance).
+        _write_runpod_cuda_ima_record(sidecar, ts=now)
+        return result
+    # SECOND same-signature CUDA-IMA crash this run -> escalate. A clean orphan-reap
+    # already happened on the in-place respawn, so a repeat = the GPU still throws
+    # IMA = driver wedge; only a fresh host helps.
+    logging.warning(
+        "backend_poll: RunPod %s CUDA-IMA crash REPEATED (same signature) this run — the "
+        "in-place same-pod respawn did not heal it; escalating to %s (#775 wedge)",
+        getattr(handle, "pod_name", "?"),
+        RUNPOD_CUDA_IMA_WEDGED_PHASE,
+    )
+    return replace(
+        result,
+        status="dead",
+        current_phase=RUNPOD_CUDA_IMA_WEDGED_PHASE,
+        new_milestone=True,
+        pid_alive=False,
+    )
+
+
 @dataclass
 class _WedgeInputsGate:
     """Per-cell three-state inputs-on-HF gate result for the auto-terminate (M1).
@@ -1095,7 +1189,7 @@ def _runpod_wedge_already_handled(issue: int, handle, sidecar: Path) -> bool:
     return prior is not None and prior.get("runpod_wedge") == _runpod_handle_identity(handle)
 
 
-def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
+def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path, stamp_fn=None) -> dict:
     """Re-provision a FRESH RunPod pod + resume the dispatcher idempotently.
 
     Re-uses the router's ``failover_to_runpod_after_async_workload_crash`` (the
@@ -1103,7 +1197,21 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict
     from the handle, launch a fresh RunPod run (NEW host, NOT a host-pinned
     resume), re-point the handle sidecar, durable-lease guarded. The fresh pod's
     P2 dispatcher skips HF-complete cells via A2's ``_cell_done_anywhere``.
+
+    ``stamp_fn`` selects WHICH durable lease field stamps the "exactly once per
+    wedge" record on the three internal stamp sites. It DEFAULTS (via the ``None``
+    sentinel resolved below — ``_stamp_runpod_wedge_failover`` is DEFINED LATER in
+    this module, so it cannot be a literal default-arg value without a
+    forward-reference ``NameError`` at import) to
+    :func:`_stamp_runpod_wedge_failover` (the Part C no-port wedge field), so the
+    existing no-port caller (:func:`_failover_wedged_runpod`) is byte-unchanged.
+    The #775 CUDA-IMA caller (:func:`_failover_cuda_ima_runpod`) passes
+    ``stamp_fn=_stamp_runpod_cuda_ima_failover`` so the SEPARATE
+    ``runpod_cuda_ima_failover_of`` lease field is stamped — the two failover
+    classes never cross-suppress.
     """
+    if stamp_fn is None:
+        stamp_fn = _stamp_runpod_wedge_failover
     from explore_persona_space.backends.issue_dispatch import (
         read_handle_sidecar,
         write_handle_sidecar,
@@ -1196,7 +1304,7 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict
         # Stamp the DURABLE wedge lease so a re-fired tick on the still-wedged
         # handle short-circuits at _runpod_wedge_already_handled (no second
         # terminate/re-provision).
-        _stamp_runpod_wedge_failover(issue, handle)
+        stamp_fn(issue, handle)
         return _terminal_infra_json(
             issue=issue,
             sidecar=sidecar,
@@ -1208,7 +1316,7 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict
             ),
         )
     if recovered.backend != "runpod":
-        _stamp_runpod_wedge_failover(issue, handle)
+        stamp_fn(issue, handle)
         return _terminal_infra_json(
             issue=issue,
             sidecar=sidecar,
@@ -1219,12 +1327,14 @@ def _relaunch_fresh_runpod(*, issue: int, handle, result, sidecar: Path) -> dict
                 f"(durable lease stamped to bound the relaunch)"
             ),
         )
-    # DURABLE IDEMPOTENCY STAMP (#689 blocker-2). The fresh pod has launched and the
-    # sidecar is authoritatively re-pointed. Stamp runpod_wedge_failover_of onto the
+    # DURABLE IDEMPOTENCY STAMP (#689 blocker-2; #775 stamp_fn). The fresh pod has
+    # launched and the sidecar is authoritatively re-pointed. Stamp the failover
+    # field selected by ``stamp_fn`` (runpod_wedge_failover_of by default; the
+    # SEPARATE runpod_cuda_ima_failover_of for the CUDA-IMA caller) onto the
     # ~/.eps-routing/ lease so even if the .claude/cache sidecar/sentinel are later
     # lost under EDQUOT, the next poll short-circuits at the lease check instead of
     # firing a paid second terminate + re-provision.
-    _stamp_runpod_wedge_failover(issue, handle)
+    stamp_fn(issue, handle)
     return {
         "status": "running",
         "current_phase": "runpod_noport_wedge_failover_fresh_pod",
@@ -1310,6 +1420,169 @@ def _failover_wedged_runpod(*, issue: int, handle, result, sidecar: Path) -> dic
     #    fresh pod's P2 WaveDispatcher skips HF-complete cells (A2
     #    _cell_done_anywhere), re-running only the not-yet-run (absent) cells.
     return _relaunch_fresh_runpod(issue=issue, handle=handle, result=result, sidecar=sidecar)
+
+
+def _runpod_cuda_ima_sentinel_path(sidecar: Path) -> Path:
+    """The idempotency sentinel path for a RunPod CUDA-IMA repeat failover (#775).
+
+    The exact sibling of :func:`_runpod_wedge_sentinel_path` with a DISTINCT name
+    so a no-port wedge failover and a CUDA-IMA failover on the same issue do not
+    share a sentinel: ``issue-<N>-handle.json`` ->
+    ``issue-<N>-runpod-cuda-ima-handled.json``.
+    """
+    name = sidecar.name
+    stem = name[: -len("-handle.json")] if name.endswith("-handle.json") else sidecar.stem
+    return sidecar.with_name(f"{stem}-runpod-cuda-ima-handled.json")
+
+
+def _write_runpod_cuda_ima_sentinel(sentinel: Path, *, issue: int, handle) -> None:
+    """Persist the RunPod CUDA-IMA failover idempotency sentinel atomically (#775).
+
+    Byte-mirror of :func:`_write_runpod_wedge_sentinel`. Records the crashed
+    RunPod run identity (pod_name/job_id) so a subsequent poll on the SAME crashed
+    handle short-circuits. A write failure is LOGGED, not raised — worst case one
+    extra terminate-and-reprovision on the next tick (the durable lease still
+    bounds it), never a silent suppression.
+    """
+    try:
+        sentinel.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "issue": int(issue),
+            "reason": "runpod_cuda_ima_repeat_failover",
+            "runpod_cuda_ima": _runpod_handle_identity(handle),
+        }
+        tmp = sentinel.with_suffix(sentinel.suffix + ".tmp")
+        tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+        tmp.replace(sentinel)
+    except OSError as exc:
+        logging.warning(
+            "backend_poll: failed to write RunPod CUDA-IMA idempotency sentinel %s (%s: %s)",
+            sentinel,
+            type(exc).__name__,
+            exc,
+        )
+
+
+def _runpod_cuda_ima_already_handled(issue: int, handle, sidecar: Path) -> bool:
+    """Idempotency short-circuit for a re-fired RunPod CUDA-IMA failover (#775).
+
+    Byte-mirror of :func:`_runpod_wedge_already_handled` (the two-record guard):
+
+      1. DURABLE lease (AUTHORITATIVE) — ``runpod_cuda_ima_failover_of`` at
+         ``~/.eps-routing/`` survives the EDQUOT mode that fails BOTH the sidecar
+         AND the same-dir sentinel.
+      2. SENTINEL (fast path) — the ``.claude/cache`` sibling file; a
+         corrupted/unreadable sentinel reads as ABSENT (one extra reprovision at
+         worst, never a silent suppression).
+
+    Both keyed to the crashed pod's pod_name/job_id, so a genuinely-new run (the
+    fresh-host re-provision writes a NEW pod_name) does NOT match a stale record.
+    """
+    # 1. DURABLE LEASE (authoritative; survives a .claude/cache-wide disk failure).
+    if _lease_records_runpod_cuda_ima_failover(issue, handle):
+        return True
+    # 2. SENTINEL (fast path).
+    sentinel = _runpod_cuda_ima_sentinel_path(sidecar)
+    prior = _read_failover_sentinel(sentinel)
+    return prior is not None and prior.get("runpod_cuda_ima") == _runpod_handle_identity(handle)
+
+
+def _failover_cuda_ima_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
+    """Pivot a CUDA-IMA-repeat-wedged RunPod run to a FRESH host, bounded once (#775).
+
+    The CUDA-IMA sibling of :func:`_failover_wedged_runpod`, with the once-more
+    bound (M1) as the FIRST check (the only structural difference from the no-port
+    sibling, which has no analogous per-run bound):
+
+      1. ONCE-MORE BOUND (layer-2, M1). If the DURABLE lease already records a
+         CUDA-IMA failover for THIS run (``runpod_cuda_ima_failover_of`` set), this
+         is the SECOND same-signature crash on the FRESH host — a fresh host did
+         NOT heal it, so it is a deterministic code bug. Emit a terminal
+         ``failure_class: code`` JSON (``reason=cuda_ima_repeats_after_failover``)
+         via :func:`_terminal_code_json` so the watcher PARKS it at ``blocked``
+         (its capacity-retry pass re-drives ONLY ``failure_class: infra`` +
+         ``no_compute_available``). NO second pivot.
+      2. PER-WEDGE IDEMPOTENCY (layer-1). A re-fired tick on the SAME crashed
+         handle after a successful pivot short-circuits (no double-pivot).
+      3. INPUTS-ON-HF GATE. Reused as-is — a PARTIAL cell BLOCKS the irreversible
+         terminate (human decides, CLAUDE.md halt-criterion #2).
+      4. TERMINATE the crashed pod (best-effort — a CUDA-IMA-wedged pod may
+         already be dead, so ``info is None`` is fine; terminate is cleanup of the
+         billing leak when the pod is still RUNNING).
+      5. SENTINEL + RE-PROVISION FRESH via :func:`_relaunch_fresh_runpod` with
+         ``stamp_fn=_stamp_runpod_cuda_ima_failover`` (stamps the SEPARATE lease
+         field — the once-more bound for the NEXT crash).
+    """
+    # 1. ONCE-MORE BOUND (M1): the lease already records a CUDA-IMA failover for
+    #    THIS run -> the fresh host ALSO crashed same-signature -> terminal code.
+    if _lease_records_runpod_cuda_ima_failover(issue, handle):
+        return _terminal_code_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="cuda_ima_repeats_after_failover",
+            log_tail=(
+                f"RunPod {handle.pod_name}: a SECOND same-signature CUDA-IMA crash AFTER the one "
+                f"bounded fresh-host pivot (#775). A fresh host did not heal it, so this is a "
+                f"deterministic code bug, not a transient host wedge — routing to "
+                f"failure_class: code -> blocked (no second pivot)."
+            ),
+        )
+
+    # 2. PER-WEDGE IDEMPOTENCY (a re-fired tick on the OLD crashed handle).
+    if _runpod_cuda_ima_already_handled(issue, handle, sidecar):
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_cuda_ima_already_handled",
+            log_tail=(
+                f"RunPod CUDA-IMA failover for {handle.pod_name} already handled on a prior tick "
+                f"(idempotency lease/sentinel); refusing a second terminate/re-provision"
+            ),
+        )
+
+    # 3. PER-CELL INPUTS-ON-HF GATE (reused as-is; a PARTIAL cell BLOCKS terminate).
+    gate = _wedged_run_inputs_on_hf(issue, handle)
+    if not gate.ok:
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_cuda_ima_inputs_unverified",
+            log_tail=(
+                f"RunPod {handle.pod_name} CUDA-IMA repeat wedge; {len(gate.partial)} PARTIAL "
+                f"cell(s) on HF (one artifact-kind missing): {gate.partial}. Refusing the "
+                f"irreversible terminate (CLAUDE.md halt-criterion #2) — human decision needed; "
+                f"complete={len(gate.complete)} absent={len(gate.absent)}"
+            ),
+        )
+
+    # 4. TERMINATE the crashed pod (best-effort — a CUDA-IMA-wedged pod is usually
+    #    already dead, so ``info is None`` simply skips the terminate cleanup).
+    from runpod_api import get_pod_by_name, terminate_pod
+
+    info = get_pod_by_name(handle.pod_name)
+    if info is not None:
+        terminate_pod(info.pod_id)
+        logging.warning(
+            "backend_poll: terminated CUDA-IMA-wedged RunPod %s (%s) — billing stopped "
+            "(complete=%d absent=%d)",
+            handle.pod_name,
+            info.pod_id,
+            len(gate.complete),
+            len(gate.absent),
+        )
+
+    # 5. SENTINEL (before the re-provision so a re-fired tick short-circuits even if
+    #    the re-provision raises) + RE-PROVISION FRESH, stamping the CUDA-IMA lease.
+    _write_runpod_cuda_ima_sentinel(
+        _runpod_cuda_ima_sentinel_path(sidecar), issue=issue, handle=handle
+    )
+    return _relaunch_fresh_runpod(
+        issue=issue,
+        handle=handle,
+        result=result,
+        sidecar=sidecar,
+        stamp_fn=_stamp_runpod_cuda_ima_failover,
+    )
 
 
 def _failover_sentinel_path(sidecar: Path) -> Path:
