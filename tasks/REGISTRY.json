@@ -4766,8 +4766,8 @@
     "752": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/752",
-      "status": "running",
+      "path": "tasks/reviewing/752",
+      "status": "reviewing",
       "title": "daily-fix: GCP intent under-provisions 7B hidden-state capture"
     },
     "753": {
