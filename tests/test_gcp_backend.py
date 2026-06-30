@@ -698,6 +698,57 @@ def test_8gpu_sweep_machine_types_zone_availability() -> None:
     assert zones_for_machine_type("a3-highgpu-8g", ladder) == ladder
 
 
+def test_default_fallback_zones_includes_us_central1_f() -> None:
+    """#774: DEFAULT_FALLBACK_ZONES carries us-central1-f so the create-time
+    ladder [primary, *fallback_zones] reaches -f for the A100-40 fallback
+    rung. Pins the exact tuple (order preserved: b, c, f)."""
+    from explore_persona_space.backends.gcp import DEFAULT_FALLBACK_ZONES
+
+    assert DEFAULT_FALLBACK_ZONES == (
+        "us-central1-b",
+        "us-central1-c",
+        "us-central1-f",
+    )
+
+
+def test_a2_highgpu_1g_fan_out_reaches_us_central1_f() -> None:
+    """#774: with -f in DEFAULT_FALLBACK_ZONES, the A100-40 fallback rung
+    (a2-highgpu-1g, offered in {a, b, c, f}) walks all four zones in ladder
+    order before counting a capacity miss. This is the gap #774 closes — the
+    rung previously only ever resolved to {a, b, c}."""
+    from explore_persona_space.backends.gcp import (
+        DEFAULT_FALLBACK_ZONES,
+        DEFAULT_PRIMARY_ZONE,
+        zones_for_machine_type,
+    )
+
+    ladder = [DEFAULT_PRIMARY_ZONE, *DEFAULT_FALLBACK_ZONES]
+    assert zones_for_machine_type("a2-highgpu-1g", ladder) == [
+        "us-central1-a",
+        "us-central1-b",
+        "us-central1-c",
+        "us-central1-f",
+    ]
+
+
+def test_a2_ultragpu_family_excludes_f_from_full_default_ladder() -> None:
+    """#774: the broader DEFAULT_FALLBACK_ZONES (now carrying -f) must NOT
+    leak -f to the A2-ultragpu (A100-80) family, which GCP does NOT offer in
+    -f (nor -b). The RESTRICT filter strips both back out — verified
+    2026-06-30: a2-ultragpu-* is offered in {a, c} only."""
+    from explore_persona_space.backends.gcp import (
+        DEFAULT_FALLBACK_ZONES,
+        DEFAULT_PRIMARY_ZONE,
+        zones_for_machine_type,
+    )
+
+    ladder = [DEFAULT_PRIMARY_ZONE, *DEFAULT_FALLBACK_ZONES]
+    for mt in ("a2-ultragpu-1g", "a2-ultragpu-4g", "a2-ultragpu-8g"):
+        resolved = zones_for_machine_type(mt, ladder)
+        assert "us-central1-f" not in resolved, mt
+        assert resolved == ["us-central1-a", "us-central1-c"], mt
+
+
 # ---------------------------------------------------------------------------
 # #656 — A100-40 fallback rung (a2-highgpu-1g)
 # ---------------------------------------------------------------------------

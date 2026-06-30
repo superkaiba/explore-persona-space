@@ -158,6 +158,40 @@ a dollar cap). Tests of record: `test_ladder_short_job_spot_before_ondemand`,
 `test_workload_error_on_later_rung_fails_over_to_runpod` (all in
 `tests/test_router.py`).
 
+### Per-rung multi-zone fan-out
+
+Each GCP rung walks every `us-central1` zone the rung's machine type is
+offered in BEFORE the rung is treated as a capacity miss. The create loop in
+`backends/gcp.GcpBackend.launch` iterates `[primary_zone, *fallback_zones]`
+(`DEFAULT_PRIMARY_ZONE` + `DEFAULT_FALLBACK_ZONES`) filtered by
+`zones_for_machine_type` against `MACHINE_TYPE_ZONE_AVAILABILITY` — so the
+rung only escalates after every zone where the machine type actually exists
+has been tried.
+
+Per-family zone sets (pinned to the 2026-06-30 gcloud re-verification,
+`gcloud compute machine-types list --configuration=eps-gcp`, #774):
+
+- **A100-80 family** (`a2-ultragpu-1g` / `-4g` / `-8g`): `{a, c}` — GCP does
+  NOT offer this family in `-b` OR `-f`.
+- **H100 family** (`a3-highgpu-1g` / `-2g` / `-8g`): `{a, b, c}` — NOT in
+  `-f`.
+- **A100-40** (`a2-highgpu-1g`, the #656 cheaper-but-smaller fallback rung):
+  `{a, b, c, f}`.
+
+#774 re-verified these and bumped `DEFAULT_FALLBACK_ZONES` from `(b, c)` to
+`(b, c, f)` so the A100-40 fallback rung gains its fourth zone (`-f`). The
+`MACHINE_TYPE_ZONE_AVAILABILITY` RESTRICT filter strips `-f` (and `-b`) back
+out for the A100-80 / H100 families, so the broader DEFAULT never leaks a
+doomed zone to a restricted family.
+
+**The A100-80 cap at 2 zones is a GCP-imposed limit, not a config gap.**
+Adding `-f` to the A100-80 zone set would issue a `MACHINE_TYPE_NOT_FOUND`
+config error on every `-f` create attempt — burning the per-day GCP attempt
+counter (`MAX_GCP_ATTEMPTS_PER_DAY`) on a guaranteed-to-fail create, exactly
+what `MACHINE_TYPE_ZONE_AVAILABILITY` exists to prevent (#653). Do not
+"widen" the A100-80 set without a fresh gcloud verification that GCP started
+offering the family in a new zone.
+
 ### Coverage scope (current) — both the synchronous and async crash paths
 
 Both GCP workload-crash detection paths now fail over to RunPod:
