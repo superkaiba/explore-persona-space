@@ -815,14 +815,27 @@ def test_wedge_failover_handle_read_raises_degrades_to_alert(monkeypatch, tmp_pa
     assert calls == []
 
 
-def test_wedge_failover_raises_degrades_to_alert(monkeypatch, tmp_path):
-    # item 9: _failover_wedged_runpod itself raises -> "alert" (fail-loud log, no
-    # crash of the whole watcher tick), no double-action.
+def test_wedge_failover_raise_after_terminate_routes_to_blocked(monkeypatch, tmp_path):
+    # item 9 (#770 v2 r2 — REPLACES the obsolete "degrades_to_alert" assertion):
+    # _failover_wedged_runpod terminates the wedged pod BEFORE the re-provision, so
+    # an UNEXPECTED raise after that point must NOT degrade to "alert" (which would
+    # post no durable record and could not be retried next tick — the
+    # likely-terminated pod is gone from the RUNNING-only snapshot). Mirror the
+    # poller's caller defense (backend_poll ~1864-1880): convert the raise to a
+    # ("blocked", terminal) outcome carrying failure_class=infra
+    # reason=runpod_wedge_failover_error so the caller records it durably. Still
+    # fail-LOUD (does not crash the watcher tick) and no double-action.
     _stub_handle_sidecar(monkeypatch, tmp_path)
     _stub_failover_fn(monkeypatch, raises=RuntimeError("router exploded"))
     outcome, terminal = asw._wedge_failover(692, _wedged_info(), "1.10h", dry_run=False)
-    assert outcome == "alert"
-    assert terminal is None
+    assert outcome == "blocked"
+    assert terminal is not None
+    assert terminal["status"] == "dead"
+    assert terminal["failure_class"] == "infra"
+    assert terminal["reason"] == "runpod_wedge_failover_error"
+    # The raised exception type+message is carried in the log_tail for a human.
+    assert "RuntimeError" in terminal["log_tail_excerpt"]
+    assert "router exploded" in terminal["log_tail_excerpt"]
 
 
 def test_wedge_failover_already_handled_is_noop(monkeypatch, tmp_path):
@@ -1122,6 +1135,86 @@ def test_wedge_blocked_emits_failure_marker_and_blocks_not_redrivable(
     retriable, parsed_reason, _ = asw._is_transient_capacity_block([synthetic_marker])
     assert retriable is False  # a human resolves; the capacity-retry pass never re-drives it
     assert parsed_reason == "sidecar_persistence_failed"
+
+
+def test_wedge_failover_raise_after_terminate_routes_to_blocked_redrivable(
+    isolated_registry, monkeypatch
+):
+    # #770 v2 r2 BLOCKER (watcher-failover-raise-after-terminate-strands-task):
+    # a POST-terminate raise from _failover_wedged_runpod must NOT degrade to
+    # "alert" (which would strand the run — no epm:failure, no status:blocked, and
+    # the terminated pod is gone from the RUNNING-only snapshot so the next tick
+    # never re-enters _process_wedged_pod). End-to-end through _process_pod: the
+    # raise is converted to a ("blocked", terminal) outcome that routes through the
+    # durable epm:failure + set-status blocked retry helper, so the run is recorded
+    # (NOT stranded) and a human inspects the raise.
+    now = 1_000_000.0
+    _matured_confirming_state(now)
+    # Stub _failover_wedged_runpod (NOT _wedge_failover) to RAISE — so the real
+    # _wedge_failover except-Exception branch synthesizes the terminal record and
+    # the whole _process_pod -> _handle_wedge_failover_outcome path is exercised.
+    import backend_poll as bp
+
+    def _fake_failover(*, issue, handle, result, sidecar):
+        raise RuntimeError("router exploded post-terminate")
+
+    monkeypatch.setattr(bp, "_failover_wedged_runpod", _fake_failover)
+    # Reconstruct a handle naming the wedged pod (so the sidecar-binding defense
+    # passes and the failover call is actually reached) — _stub_handle_sidecar
+    # writes a sidecar + handle whose pod_name == _wedged_info().name == "pod-692".
+    sidecar_dir = isolated_registry / "_sidecar"
+    sidecar_dir.mkdir()
+    _stub_handle_sidecar(monkeypatch, tmp_path=sidecar_dir)
+    failure_notes: list[str] = []
+    blocked_calls: list[int] = []
+    progress_labels: list[str] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_wedge_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_wedge_inputs_safe", lambda issue: True)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(
+        asw,
+        "_stop_pod",
+        lambda issue, dry_run: (_ for _ in ()).throw(
+            AssertionError("watcher must never _stop_pod")
+        ),
+    )
+    monkeypatch.setattr(
+        asw, "_post_failure_marker", lambda issue, note, dry_run: failure_notes.append(note) or True
+    )
+    monkeypatch.setattr(
+        asw, "_set_status_blocked", lambda issue, dry_run: blocked_calls.append(issue) or True
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: progress_labels.append(label),
+    )
+
+    asw._process_pod(692, "p692", _wedged_info(), now, dry_run=False, threshold=2)
+
+    # (a) the durable terminal record both fired (NOT a plain progress note).
+    assert len(failure_notes) == 1
+    assert blocked_calls == [692]
+    assert "wedge-failover" not in progress_labels
+    # (b) the marker parses to failure_class=infra reason=runpod_wedge_failover_error
+    # via the REAL parser the capacity-retry pass uses.
+    fc, reason = asw._parse_failure_fields(failure_notes[0])
+    assert fc == "infra"
+    assert reason == "runpod_wedge_failover_error"
+    # (c) NOT re-drivable — runpod_wedge_failover_error is not a transient-capacity
+    # reason, so the capacity-retry pass parks it for a human (never re-drives
+    # doomed-broken code).
+    synthetic_marker = {"kind": "epm:failure v1", "note": failure_notes[0], "ts": None}
+    retriable, parsed_reason, _ = asw._is_transient_capacity_block([synthetic_marker])
+    assert retriable is False
+    assert parsed_reason == "runpod_wedge_failover_error"
+    # (d) the raised exception is named in the note for the human.
+    assert "router exploded post-terminate" in failure_notes[0]
+    # (e) the wedge clock is cleared (a terminal failure is recorded — the episode
+    # is resolved from the watcher's vantage; not re-fired next tick).
+    loaded = asw._load_pod_safety_state(692)
+    assert loaded["wedge_first_seen"] is None
 
 
 @pytest.mark.parametrize(

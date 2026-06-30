@@ -3365,21 +3365,26 @@ def _wedge_failover(
       ``no_compute_available`` (the watcher's capacity-retry pass re-drives once
       a lane frees);
     * ``"blocked"`` — a terminal infra block a human resolves (CLAUDE.md
-      halt-criterion #2). One of three reasons, NOT uniform on whether the pod
+      halt-criterion #2). One of FOUR reasons, NOT uniform on whether the pod
       terminated: ``runpod_wedge_inputs_unverified`` is PRE-terminate (a PARTIAL
       cell on HF — the pod was NOT terminated), while ``sidecar_persistence_failed``
       and ``runpod_wedge_relaunch_spec_missing`` are POST-terminate (the wedged
-      pod WAS terminated and the failure is in the fresh re-provision). The
-      caller's marker text reads the ``reason`` from ``terminal_json`` to state
-      the right one;
-    * ``"alert"`` — NO reconstructable run handle, the sidecar pod_name does not
-      match the wedged pod, or the failover call raised → degrade to ALERT-only,
-      NEVER a blind terminate.
+      pod WAS terminated and the failure is in the fresh re-provision), and
+      ``runpod_wedge_failover_error`` is the catch-all for an UNEXPECTED raise
+      from ``_failover_wedged_runpod`` that bypassed its own terminal-JSON
+      mapping (the pod was LIKELY terminated before the raise, since terminate
+      precedes the re-provision — #770 v2 r2). The caller's marker text reads the
+      ``reason`` from ``terminal_json`` to state the right one;
+    * ``"alert"`` — NO reconstructable run handle (no sidecar / a parse failure),
+      or the sidecar pod_name does not match the wedged pod → degrade to
+      ALERT-only, NEVER a blind terminate. NOTE (#770 v2 r2): a raise FROM
+      ``_failover_wedged_runpod`` itself no longer degrades to ``"alert"`` — see
+      the ``"blocked"`` ``runpod_wedge_failover_error`` reason above.
 
     Obtains ``handle`` + ``sidecar`` from the persisted sidecar EXACTLY as
     :func:`_wedge_inputs_safe` does (the watcher has no in-scope poller handle);
-    on ANY reconstruction gap returns ``"alert"`` (never strand un-uploaded
-    work, never terminate blind).
+    on a sidecar reconstruction gap (no sidecar / a parse failure) returns
+    ``"alert"`` (never strand un-uploaded work, never terminate blind).
 
     **Sidecar-binding defense (the fresh-pod race).** Between
     :func:`_wedge_inputs_safe`'s sidecar read (which verified inputs against the
@@ -3394,12 +3399,18 @@ def _wedge_failover(
     watcher saw is gone; the live pod is someone else's) and NEVER call
     :func:`_failover_wedged_runpod` against it.
 
-    The ``_failover_wedged_runpod`` call is wrapped fail-soft — a raise degrades
-    to ``"alert"`` for THIS pod (re-tries next tick) and never crashes the whole
-    10-min watcher tick (which still processes the rest of the fleet). ``info``
-    is load-bearing for the sidecar-binding defense above (its ``name`` is the
-    wedged pod the watcher observed); the ``_failover_wedged_runpod`` call itself
-    re-fetches the pod by ``handle.pod_name``."""
+    The ``_failover_wedged_runpod`` call is wrapped fail-soft — an UNEXPECTED
+    raise is converted to a ``("blocked", terminal_json)`` outcome carrying
+    ``failure_class=infra reason=runpod_wedge_failover_error`` (mirroring the
+    poller's own caller defense, ``backend_poll`` ~1864-1880) so the durable
+    epm:failure + status:blocked record always lands — NOT degraded to
+    ``"alert"`` (which would post no record and could not be retried next tick,
+    since the likely-terminated pod is gone from the RUNNING-only snapshot) —
+    and never crashes the whole 10-min watcher tick (which still processes the
+    rest of the fleet). ``info`` is load-bearing for the sidecar-binding defense
+    above (its ``name`` is the wedged pod the watcher observed); the
+    ``_failover_wedged_runpod`` call itself re-fetches the pod by
+    ``handle.pod_name``."""
     if dry_run:
         print(f"  [dry-run] would terminate+failover wedged pod for issue #{issue}")
         return ("failover", None)
@@ -3462,12 +3473,41 @@ def _wedge_failover(
             issue=issue, handle=handle, result=_WedgeResultShim(), sidecar=path
         )
     except Exception as exc:  # fail-LOUD but do not crash the whole watcher tick
+        # POST-TERMINATE RAISE RISK (#770 v2 r2): _failover_wedged_runpod
+        # terminates the wedged pod BEFORE the re-provision (backend_poll.py
+        # ~1099-1118), so an UNEXPECTED raise after that point (a bug bypassing
+        # the function's own try/except blocks — e.g. in _relaunch_fresh_runpod /
+        # sidecar / router code) leaves the pod likely TERMINATED but produces no
+        # durable record. Degrading to "alert" would strand the run: the alert
+        # branch posts no epm:failure / status:blocked, and the next watcher tick
+        # never re-enters _process_wedged_pod for the pod (it is gone from the
+        # RUNNING-only _running_managed_issue_pods snapshot), so the
+        # "re-tries next tick" carry-forward is unreachable here. MIRROR the
+        # poller's own caller defense (backend_poll.py ~1864-1880, which converts
+        # ANY raise to _terminal_infra_json(reason="runpod_wedge_failover_error")):
+        # return a terminal infra "blocked" outcome so _handle_wedge_failover_outcome
+        # routes it through the durable epm:failure + set-status blocked retry
+        # helper. failure_class=infra reason=runpod_wedge_failover_error is NOT in
+        # TRANSIENT_CAPACITY_REASONS, so the capacity-retry pass parks it for a
+        # human rather than re-driving doomed-broken code.
         print(
             f"  wedge-failover: _failover_wedged_runpod raised for #{issue} "
-            f"({type(exc).__name__}: {exc}); ALERT-only this tick (re-tries next tick)",
+            f"({type(exc).__name__}: {exc}); the pod was likely TERMINATED before the "
+            f"raise -> mapping to a 'blocked' terminal record (epm:failure + "
+            f"status:blocked) so the run is never silently stranded",
             file=sys.stderr,
         )
-        return ("alert", None)
+        terminal = {
+            "status": "dead",
+            "failure_class": "infra",
+            "reason": "runpod_wedge_failover_error",
+            "log_tail_excerpt": (
+                f"_failover_wedged_runpod raised for issue {issue}: "
+                f"{type(exc).__name__}: {exc}; the wedged pod was likely already "
+                f"terminated before the raise (terminate precedes the re-provision)"
+            ),
+        }
+        return ("blocked", terminal)
 
     status = out.get("status")
     reason = out.get("reason")
@@ -4046,7 +4086,11 @@ def _build_wedge_terminal_failure_note(
     state per ``reason`` (CONCERN #3): ``runpod_wedge_inputs_unverified`` is
     PRE-terminate (the pod is still RUNNING); ``sidecar_persistence_failed`` /
     ``runpod_wedge_relaunch_spec_missing`` are POST-terminate (the wedged pod
-    WAS terminated, the fresh re-provision failed)."""
+    WAS terminated, the fresh re-provision failed); ``runpod_wedge_failover_error``
+    (#770 v2 r2) is an UNEXPECTED raise from ``_failover_wedged_runpod`` — the pod
+    was LIKELY terminated before the raise (terminate precedes the re-provision),
+    so the note says "likely terminated" and points at the ``log_tail`` for the
+    exception."""
     from backend_poll import RUNPOD_WEDGE_K_SEC
 
     failure_class = (terminal_json or {}).get("failure_class") or "infra"
@@ -4075,6 +4119,20 @@ def _build_wedge_terminal_failure_note(
             f"wedge failover TERMINATED the wedged pod {pod_id} (billing stopped) but the "
             f"fresh re-provision failed ({why}); no live pod for this issue now. Surfaced "
             f"as a terminal infra block (CLAUDE.md halt-criterion #2); a human decides."
+        )
+    elif reason == "runpod_wedge_failover_error":
+        # #770 v2 r2: an UNEXPECTED raise from _failover_wedged_runpod bypassed its
+        # own terminal-JSON mapping. The wedged pod was LIKELY terminated before the
+        # raise (terminate precedes the re-provision in _failover_wedged_runpod), so
+        # the run is recorded blocked + epm:failure (NOT silently stranded) and a
+        # human inspects the log_tail for the exception. Not re-drivable
+        # (runpod_wedge_failover_error is not in TRANSIENT_CAPACITY_REASONS).
+        narrative = (
+            f"wedge failover for pod {pod_id} raised UNEXPECTEDLY before returning a "
+            f"terminal JSON; the pod was LIKELY already terminated (terminate precedes "
+            f"the re-provision — see log_tail for the exception). Recorded as a terminal "
+            f"infra block + status:blocked so the run is NOT silently stranded (CLAUDE.md "
+            f"halt-criterion #2); a human inspects the raise."
         )
     else:
         # An unrecognized terminal infra reason — stay neutral on the terminate
@@ -4131,10 +4189,12 @@ def _handle_wedge_failover_outcome(
 
     outcome, terminal_json = _wedge_failover(issue, info, wedged_h, dry_run)
     if outcome == "alert":
-        # No reconstructable handle / the sidecar names a DIFFERENT pod (the
-        # fresh-pod race is mapped to "already-handled", not here) / the failover
-        # raised -> defer to the ALERT-only block (carries the clock forward +
-        # dedups the alert). We did NOT act, so re-try on a later tick.
+        # No reconstructable handle (no sidecar / a parse failure) -> defer to the
+        # ALERT-only block (carries the clock forward + dedups the alert). We did
+        # NOT act, so re-try on a later tick. (The sidecar-names-a-DIFFERENT-pod
+        # fresh-pod race maps to "already-handled", and an UNEXPECTED raise FROM
+        # _failover_wedged_runpod now maps to "blocked"
+        # reason=runpod_wedge_failover_error — #770 v2 r2 — neither reaches here.)
         return "alert"
     if outcome in ("no-capacity", "blocked"):
         note = _build_wedge_terminal_failure_note(
