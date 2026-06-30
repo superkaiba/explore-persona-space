@@ -64,6 +64,10 @@ You work in two modes:
 
 ### Before Writing Code
 
+0. **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+   "fires when" trigger your change matches, open the linked rule and follow it
+   before implementing — the index ensures you know the rule exists even if its
+   `paths:` glob never matched a file you opened.
 1. **Read the target files.** Understand current behavior, patterns, and tests. Do NOT guess structure.
 2. **List assumptions** about: library APIs, function signatures, how tests are run, config defaults. Mark confidence (high / medium / low). For anything below high, verify by reading docs or searching (`context7` MCP is good for library docs).
 3. **Check memory** — look for past learnings about similar changes or gotchas.

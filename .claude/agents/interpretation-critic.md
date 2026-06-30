@@ -96,6 +96,11 @@ You receive:
 
 ## The 7 Review Lenses
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger the artifact under review matches, open the linked rule
+  and check the artifact against it — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
+
 ### 1. Overclaims
 For each claim in the Main Takeaways:
 - Does the data actually support it at the stated strength?

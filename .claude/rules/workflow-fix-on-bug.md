@@ -679,3 +679,20 @@ homepage rendering of the fallback is unimplemented.)
   (bundled into the no-flags default run) FAILs if any live
   `Agent`-tool spawn naming `subagent_type` `workflow-improver` survives
   anywhere in the workflow surface.
+
+## Built-but-stranded fixes don't help — get the helper onto main and wired in
+
+A documented — or even fully BUILT — fix that is not merged to `main` and not
+wired into the running code path does NOT help: the running session keeps using
+the old path. A fix exists in three places (a) documented in a rule, (b) built
+on a branch, (c) merged to main and called by the running path — only (c)
+actually changes behavior. When a rule prescribes a helper, the helper must be on
+`main` AND the code that should call it must call it; verify both before treating
+the lesson as "handled."
+
+Worked example (#722, 2026-06-29): `src/explore_persona_space/analysis/vectorized_mlp_skill.py`
++ a vectorized #722 driver were fully built on the unmerged `vectorized-mlp-skill`
+branch while the #722 session ran the OLD serial CPU script with a ~38h ETA — the
+fast path existed but was stranded off main, so it changed nothing. CLAUDE.md
+already cites that helper as canonical; this lesson is the coordination half:
+"canonical helper named in a rule" ⇒ also ensure it is on main and called.

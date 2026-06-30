@@ -187,6 +187,7 @@ import argparse
 import ast
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 # Allow `python scripts/workflow_lint.py` from a fresh shell without `uv run`
@@ -2492,6 +2493,87 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+# `--check-lessons-index`: every `.claude/rules/*.md` (except LESSONS.md
+# itself) must have exactly one matching row in `.claude/rules/LESSONS.md`, and
+# every row in LESSONS.md must point at an existing rule file. Closes the
+# silent-drift class: a rule added/removed without an index update would
+# otherwise re-open the #722 load-timing gap (a lesson with no always-on index
+# row). The row format is the stable, machine-parseable:
+#   - **<name>** ([`.claude/rules/<name>.md`](<name>.md)) — fires when: ...
+_LESSONS_ROW_RE = re.compile(
+    r"^- \*\*(?P<name>[a-z0-9-]+)\*\* \(\[`\.claude/rules/(?P=name)\.md`\]"
+    r"\((?P=name)\.md\)\)",
+    re.MULTILINE,
+)
+
+
+_LESSONS_MAX_BYTES = 6000  # leanness cap: ~1500 tokens always-on
+
+
+def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
+    diverge OR the index exceeds the leanness cap.
+
+    The always-on index (#739) must name every rule so each lesson is known at
+    plan time even before its `paths:` glob matches an open file. Four failure
+    modes are checked: (a) a rule file with no index row, (b) an index row
+    with no rule file, (c) a rule name with MORE THAN ONE index row (the
+    contract is exactly one matching row per rule — a duplicate would let one
+    of the rows silently drift), (d) the index exceeds `_LESSONS_MAX_BYTES`
+    (the always-on token budget — the whole point of the index is leanness;
+    the Option-B rejected alternative was inlining all rule bodies, paying
+    tens of K tokens per call). `repo_root` is a unit-test override hook;
+    production callers pass None (canonical repo root). Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    rules_dir = root / ".claude" / "rules"
+    lessons = rules_dir / "LESSONS.md"
+    errors: list[str] = []
+    if not lessons.is_file():
+        errors.append(
+            f"{lessons}: missing — the always-on lessons index (#739) must "
+            f"exist and index every .claude/rules/*.md file."
+        )
+        return errors
+    raw = lessons.read_bytes()
+    if len(raw) > _LESSONS_MAX_BYTES:
+        errors.append(
+            f".claude/rules/LESSONS.md: {len(raw)} bytes exceeds the "
+            f"{_LESSONS_MAX_BYTES}-byte leanness cap. The index is "
+            f"always-on; trim 'fires when:' triggers until it fits. "
+            f"(em-dashes are multibyte; counting in BYTES not chars is "
+            f"deliberate.)"
+        )
+    # Count occurrences (not a set) so a name appearing on >1 row is caught —
+    # a set comprehension would collapse duplicates and let both the missing
+    # and stale set-diffs read empty, silently passing the check (#739 r2).
+    index_counts = Counter(m.group("name") for m in _LESSONS_ROW_RE.finditer(raw.decode("utf-8")))
+    indexed = set(index_counts)
+    rule_files = {p.stem for p in rules_dir.glob("*.md") if p.is_file() and p.name != "LESSONS.md"}
+    for missing in sorted(rule_files - indexed):
+        errors.append(
+            f".claude/rules/LESSONS.md: no index row for rule "
+            f"'{missing}' (.claude/rules/{missing}.md). Add a "
+            f"'- **{missing}** ([`.claude/rules/{missing}.md`]"
+            f"({missing}.md)) — fires when: ...' row."
+        )
+    for stale in sorted(indexed - rule_files):
+        errors.append(
+            f".claude/rules/LESSONS.md: index row for '{stale}' has no "
+            f"matching .claude/rules/{stale}.md file — remove the row or "
+            f"restore the rule."
+        )
+    for dup, count in sorted(index_counts.items()):
+        if count > 1:
+            errors.append(
+                f".claude/rules/LESSONS.md: rule '{dup}' has {count} index "
+                f"rows — the contract is exactly one matching row per rule. "
+                f"Remove the duplicate row(s) for '{dup}'."
+            )
+    return errors
+
+
 def check_gate_ids_unique(workflow: WorkflowYaml) -> list[str]:
     """Verify every gate ``id:`` across ``gates.{inline, park_and_wait,
     conditional}`` is globally unique.
@@ -2800,6 +2882,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "collision (task #694) would pass silently. Bundled into the "
         "no-flags default run.",
     )
+    parser.add_argument(
+        "--check-lessons-index",
+        action="store_true",
+        help="Verify .claude/rules/LESSONS.md (the always-on lessons index, "
+        "#739) indexes exactly the set of .claude/rules/*.md files — a rule "
+        "with no index row would re-open the #722 plan-time load-timing gap. "
+        "Bundled into the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -2833,6 +2923,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
         or args.check_gate_ids_unique
+        or args.check_lessons_index
     )
 
     errors: list[str] = []
@@ -2889,6 +2980,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_workflow_improver_spawn())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
+    if args.check_lessons_index or no_flags:
+        errors.extend(check_lessons_index())
 
     if errors:
         for err in errors:
