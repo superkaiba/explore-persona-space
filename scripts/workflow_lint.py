@@ -83,6 +83,21 @@ Behaviours:
   10 fires on the RunPod launch path; gcp/slurm startup-script lanes
   have no launch agent), so a new dispatcher written without the pin
   reached production unflagged on those lanes.
+* ``--check-pipe-python`` (also bundled into the no-flags default run):
+  walk every ``*.sh`` under ``scripts/`` and FAIL on any shell pipe
+  whose consumer is a bare ``python``/``python3[.N]`` interpreter with
+  ``-c`` or ``-m`` (``... | python -c "..."``, ``... | python -m
+  json.tool``). This VM has no ``python`` on PATH — only ``python3`` and
+  ``uv run python`` — so the pipe dies with ``python: command not found``
+  (exit 127); the fix is to pipe into ``uv run python``. The rule lived
+  only as prose (CLAUDE.md § Task Workflow API) and was violated ~41x
+  across 4+ sessions on 2026-06-29 (#753, at least one hitting exit
+  127). The correct ``| uv run python -c`` shape, literal docs strings /
+  URLs / filenames containing "python", informational ``which python`` /
+  ``apt-get install python3``, comment lines, and ``echo ``-prefixed
+  dry-run previews all pass. Sibling of ``--check-heredoc-dotenv``; the
+  ``.claude/settings.json`` PreToolUse Bash hook covers the inline ad-hoc
+  commands that never reach a committed script.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -505,6 +520,77 @@ CVD_PIN_GPU_ARG_RE = re.compile(r"(?:--gpu-id\b|\+gpu_id=)")
 CVD_PIN_CVD_ASSIGN_RE = re.compile(r"\bCUDA_VISIBLE_DEVICES=")
 CVD_PIN_WAIVER_RE = re.compile(r"#\s*CVD_PIN_EXEMPT\s*:\s*(.+?)\s*$")
 CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
+
+# `--check-pipe-python`: a shell pipe whose CONSUMER is a bare
+# `python`/`python3[.N]` interpreter invoked with `-c` or `-m`
+# (`... | python -c "..."`, `... | python3 -c "..."`, `... | python -m
+# json.tool`) dies at runtime with `python: command not found` (exit
+# 127): this VM has NO `python` on PATH — only `python3` and the
+# project's `uv run python`. CLAUDE.md § Task Workflow API carries the
+# verbatim rule ("Bare `python` is unavailable on this VM — prefix EVERY
+# python invocation with `uv run python`, INCLUDING the consumer side of
+# a pipe"), but it lived only as prose and was violated ~41x across 4+
+# sessions on 2026-06-29 (at least one hitting exit 127). This check
+# makes the rule mechanical for committed `scripts/*.sh`; the
+# `.claude/settings.json` PreToolUse Bash hook covers the inline ad-hoc
+# commands that never reach a script. The fix is always the same: pipe
+# into `uv run python` instead (`... | uv run python -c "..."`).
+# Direct sibling of `--check-heredoc-dotenv` (a prose rule made a
+# `scripts/*.sh` line-scanner, bundled into the no-flags default).
+#
+# Flagged (a logical shell line, backslash continuations merged):
+#   * `cat x | python3 -c "..."` / `foo | python -c "..."` — the pipe
+#     consumer is bare python with `-c`;
+#   * `foo | python -m json.tool` — same with `-m`;
+#   * `foo |python -c "..."` (no space after `|`), `foo | python3.11 -c`,
+#     `cat x | python -u -c` (intervening single-dash flag).
+# NOT flagged (precision — the anchor `\|` + `-[cm]` keeps these out):
+#   * `cat x | uv run python -c "..."` — the token after `|` is `uv`, the
+#     CORRECT shape, never the bare interpreter;
+#   * a literal docs string / URL / filename merely CONTAINING "python"
+#     (`echo "use uv run python"`, `curl .../python-3.12/`,
+#     `ls python_helpers.py | wc -l`) — no `| python -[cm]`;
+#   * informational invocations (`which python`, `apt-get install
+#     python3`) — no pipe consumer;
+#   * `python -compose ...` — `-co` is a different flag prefix, not `-c`
+#     (the boundary `([^A-Za-z0-9_]|$)` / `\b` requires `-c`/`-m` to END
+#     the option);
+#   * bare `python ...` at command START (no pipe) — DELIBERATELY out of
+#     scope (the daily evidence is exclusively the pipe-into-`-c`/`-m`
+#     shape; widening to start-of-command risks false positives without
+#     evidence);
+#   * `#`-comment lines — skipped before matching (the only skipped class).
+# Flagged too (#753 round 2 / F1) — `echo ... | python -c` is a REAL
+# producer pipe whose consumer is bare `python` (echo's stdout feeds it),
+# so `echo`-prefixed lines are NOT skipped. The earlier blanket
+# `echo `-skip silently missed exactly the exit-127 producer-pipe shape
+# this check exists to close. Also flagged (#753 round 2 / F3): an
+# ATTACHED-argument form `python -c'code'` / `python -m'mod'` (no space,
+# quote glued to the option) — the boundary accepts a following quote, so
+# both the lint and the hook now block the valid shell shape that would
+# otherwise crash exit 127.
+# Known limitation (recall, deliberately accepted — mirrors
+# `--check-dispatcher-cvd-pin`'s recall sacrifice): a NON-comment line
+# whose QUOTED STRING merely contains the substring `| python -c`
+# (e.g. `MSG="bad: foo | python -c"`, or a doc `echo "...| python -c..."`)
+# WILL match — the regex is line-local and not quote-aware. This is the
+# accepted cost of closing F1: to DOCUMENT the bad pattern, use a
+# `#`-comment, not an `echo`/quoted string. Such an in-string occurrence
+# is vanishingly rare in `scripts/*.sh` (zero in the current tree beyond
+# the 2 real offenders). No waiver token in v1 (YAGNI —
+# `--check-heredoc-dotenv` ships with no waiver; add one only if a real
+# false positive surfaces).
+#
+# Hook/lint engine equivalence: the lint uses Python `re` (`-[cm]\b`); the
+# `.claude/settings.json` PreToolUse hook uses POSIX ERE
+# (`-[cm]([^A-Za-z0-9_]|$)`, since POSIX ERE has no `\b`). The two
+# boundaries are semantically identical here — `\b` after `c`/`m` matches
+# before a quote / space / EOL, and `[^A-Za-z0-9_]|$` is the explicit
+# POSIX spelling of that. They AGREE across the full match/no-match set
+# AND on the attached-arg (`-c'code'`) and in-string-substring edges; the
+# dual-engine test (test_workflow_lint.py) sources the hook ERE from
+# `.claude/settings.json` and pins the agreement.
+PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
 
 # `--check-agent-model-pins`: every `.claude/agents/*.md` carries a YAML
 # frontmatter line ``model: "claude-..."`` that the Claude Code harness reads
@@ -1718,6 +1804,64 @@ def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
                 f"{CVD_PIN_WAIVER_MIN_REASON_CHARS} chars) on the same or "
                 f"previous non-blank line. See .claude/rules/gotchas.md "
                 f"'CVD-clobber'."
+            )
+    return errors
+
+
+def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any shell pipe
+    whose CONSUMER is a bare ``python``/``python3[.N]`` interpreter
+    invoked with ``-c`` or ``-m`` (``... | python -c "..."``).
+
+    Rationale: this VM has NO ``python`` on PATH — only ``python3`` and
+    the project's ``uv run python`` — so a bare ``| python -c`` /
+    ``| python -m`` pipe dies at runtime with ``python: command not
+    found`` (exit 127). CLAUDE.md § Task Workflow API carries the rule
+    verbatim ("prefix EVERY python invocation with ``uv run python``,
+    INCLUDING the consumer side of a pipe"), but it lived only as prose
+    and was violated ~41x across 4+ sessions on 2026-06-29 (#753). The
+    fix is always the same: pipe into ``uv run python`` instead. Backslash
+    continuations are merged into one logical line (both #753 offenders
+    were backslash-continued ``cat ... \\`` newline ``| python3 -c``);
+    only ``#``-comment lines are skipped. ``echo ... | python -c`` is a
+    REAL producer pipe (echo's stdout is consumed by bare ``python``) and
+    IS flagged — the earlier blanket ``echo ``-skip silently missed this
+    must-catch shape (#753 round 2 / F1). To document the bad pattern,
+    put it in a ``#``-comment, not an ``echo`` string. See the regex block
+    above for the full flagged/not-flagged matrix.
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_heredoc_dotenv`` / ``check_dispatcher_cvd_pin``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, _last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            # Only `#`-comment lines are documentation and skipped. `echo `
+            # lines are NOT skipped: `echo '{}' | python -c "..."` is a REAL
+            # producer pipe whose consumer is bare `python` — exactly the
+            # exit-127 class this check exists to close (#753 round 2 / F1).
+            # The earlier blanket `echo `-skip silently missed it. A script
+            # that genuinely needs to DOCUMENT the bad pattern must do so in a
+            # `#`-comment, not an `echo` string.
+            if stripped.startswith("#"):
+                continue
+            if not PIPE_PYTHON_RE.search(logical):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: bare `| python -c/-m` pipe consumer. "
+                f"This VM has no `python` on PATH — `python: command not "
+                f"found` (exit 127). Pipe into `uv run python` instead "
+                f'(`... | uv run python -c "..."`). See CLAUDE.md '
+                f"§ Task Workflow API (#753)."
             )
     return errors
 
@@ -3129,6 +3273,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-pipe-python",
+        action="store_true",
+        help="Verify no shell script under scripts/ pipes into a bare "
+        "python/python3[.N] interpreter with -c/-m (`... | python -c "
+        '"..."`). This VM has no `python` on PATH, so the pipe dies with '
+        "`python: command not found` (exit 127) — pipe into `uv run "
+        "python` instead. Closes the #753 incident class (~41 violations "
+        "across 4+ sessions on 2026-06-29). Comment lines (`#`-prefixed) "
+        "are skipped. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -3245,6 +3400,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_wandb_required
         or args.check_heredoc_dotenv
         or args.check_dispatcher_cvd_pin
+        or args.check_pipe_python
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_upload_as_file
@@ -3297,6 +3453,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_heredoc_dotenv())
     if args.check_dispatcher_cvd_pin or no_flags:
         errors.extend(check_dispatcher_cvd_pin())
+    if args.check_pipe_python or no_flags:
+        errors.extend(check_pipe_python())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
