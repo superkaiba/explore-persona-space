@@ -39,7 +39,7 @@ relates_to:
 
 Per behavior: base-gate family-mean Spearman ρ with the realized gate (bars, family-clustered 95% CI), probe-split floor (orange dash), BH-FDR verdict. n = 8 cells/behavior, n_clusters = 2.
 
-![A3.10 base-gate Spearman rho per behavior with clustered 95% CI, probe-split reliability floor markers, and per-behavior BH-FDR verdict; all three labeled NOT rejected.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d5473cc188a13263c714289bdbbee3a0ec0951a1/figures/issue_665/fig1_a310_gate_vs_floor.png)
+![A3.10 base-gate Spearman rho per behavior with clustered 95% CI, probe-split reliability floor markers, and per-behavior BH-FDR verdict; all three labeled NOT rejected.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8438132a63093e03fcb42d687de8eedfe82d9b98/figures/issue_665/fig1_a310_gate_vs_floor.png)
 
 > **Figure.** *The base gate's family-mean ρ predicts the realized gate above the reliability floor, but no behavior clears FDR.* Bars: family-mean ρ(realized gate, base gate) with family-clustered 95% CI (n_clusters = 2). Orange dash: probe-split floor. BH-FDR (α = 0.05) rejects none (p = 0.448 / 0.425 / 0.511).
 
@@ -55,7 +55,7 @@ EM's family-mean CI (0.308 to 0.311) is anomalous — width 0.0039 vs 0.314 (bad
 
 Per behavior, the raw pooled-context base-gate Spearman ρ over 400 pooled contexts beside the partial ρ with the base behavior prior and install magnitude removed (the base-prior / install controls).
 
-![A3.10 raw vs partial Spearman rho per behavior; partial bars equal or exceed raw bars for all three behaviors.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d5473cc188a13263c714289bdbbee3a0ec0951a1/figures/issue_665/fig2_a310_partial.png)
+![A3.10 raw vs partial Spearman rho per behavior; partial bars equal or exceed raw bars for all three behaviors.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8438132a63093e03fcb42d687de8eedfe82d9b98/figures/issue_665/fig2_a310_partial.png)
 
 > **Figure.** *Partial ρ ≥ raw ρ for all three — controlling for base prior and install strength does not shrink the gate point estimate.* Pooled-context ρ(realized gate, base gate) vs the same with E0 + ‖ŵ‖ removed, over 400 pooled contexts/behavior. Partialling does not reduce the estimate; suppressor / partialling artifacts remain possible.
 
@@ -65,7 +65,7 @@ The expected confound is that a unit's pre-training propensity drives both the b
 
 Per behavior, Spearman ρ between the predicted gate and the realized gate for the planned primary whitened key (context vector under the Σc⁻¹ metric), the un-whitened key (identity metric), and raw cosine.
 
-![A3.9 key-metric ablation per behavior; the un-whitened c_C key bar exceeds the whitened c_C Sigma-inverse bar for all three behaviors.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d5473cc188a13263c714289bdbbee3a0ec0951a1/figures/issue_665/fig3_a39_key_metric.png)
+![A3.9 key-metric ablation per behavior; the un-whitened c_C key bar exceeds the whitened c_C Sigma-inverse bar for all three behaviors.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8438132a63093e03fcb42d687de8eedfe82d9b98/figures/issue_665/fig3_a39_key_metric.png)
 
 > **Figure.** *The whitened key never beats the identity key.* Spearman ρ (predicted vs realized gate) for the planned whitened key (Σc⁻¹ metric), the un-whitened identity-metric key, and raw cosine. Whitening helps no behavior (whitened-wins fraction 0.000 / 0.000 / 0.125).
 
@@ -75,9 +75,9 @@ The planned primary predictor is the boxed whitened gate (context vector under t
 
 Per cell, mean patch effect (f_cv_v: 1 = FT profile, 0 = base) across six variants — two identity nulls, two real patches, two floor controls. n = 4 cells, all dose d2.
 
-![A3.6c causal patch f_cv_v by variant across four cells; the trained-CV-into-base patch sits near the base-CV null, the base-CV-into-trained patch falls to the random and norm-matched floor controls, with self-nulls cleanly separated at 0.16 and 0.92.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/d5473cc188a13263c714289bdbbee3a0ec0951a1/figures/issue_665/fig4_a36c_causal_patch.png)
+![A3.6c causal patch f_cv_v by variant across four cells; the trained-CV-into-base patch sits near the base-CV null, the base-CV-into-trained patch falls to the random and norm-matched floor controls, with self-nulls cleanly separated at 0.16 and 0.92.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/8438132a63093e03fcb42d687de8eedfe82d9b98/figures/issue_665/fig4_a36c_causal_patch.png)
 
-> **Figure.** *No separation between real patches and matched controls.* Patch effect f_cv_v by variant; self-nulls behave (base-CV null ≈ 0.16, trained-CV null ≈ 0.92). The trained-CV-into-base patch (P↑) moves activations only to near the base-CV null (≈ 0.2); base-CV-into-trained (P↓) falls to the random / norm-matched floors. (Baked-in `f_CV ≈ 0.1` subtitle superseded — corrected to +0.023.)
+> **Figure.** *No separation between real patches and matched controls.* Patch effect f_cv_v by variant; self-nulls behave (base-CV null ≈ 0.16, trained-CV null ≈ 0.92). The trained-CV-into-base patch (P↑) moves activations only to near the base-CV null (≈ 0.2); base-CV-into-trained (P↓) falls to the random / norm-matched floors.
 
 The measurement is valid (self-nulls behave: base-CV→base ≈ 0.16, trained-CV→FT ≈ 0.92). The input-localization test (P↑: trained context vector into the base model) moves activations only to near the base-CV null (≈ 0.2), not the FT profile. The recomputed input-localization fraction f_CV = mean over (context, layer, scope) of [P↑ − base-CV-null] = **+0.023** (per-cell range −0.014 to +0.053) — essentially zero. P↓ and the random / norm-matched controls fall together near the floor: movement is generic to perturbing the context slot, not the vector's identity. No evidence for input localization. (Round-1's "f_CV ≈ 0.1" was unauditable and overstated the signal ~4-5×; the recomputed scalar is now persisted to `a36c/*.json`.)
 
@@ -146,7 +146,7 @@ The reader-facing leakage read, per load-bearing condition (cherry-picked for il
 | LoRA r / α / rsLoRA (fleet) | r=32, α=256 (fact α=64), rsLoRA on | #664 adapter manifest |
 | Judge model / threshold | claude-sonnet-4-5-20250929 / 50 | CLAUDE.md judge rule |
 
-**Artifacts:** Aggregates [`eval_results/issue_665/aggregate.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/aggregate.json); per-arm per-cell JSONs under `eval_results/issue_665/{a36,a36a,a36b,a36c,a37,a38,a39,a310,joint,single_ctx,judged_E}/` (the `a36c/*.json` now carry the recomputed `f_CV` scalar). B3 reduction unit test [`whitened_gate_unittest.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/whitened_gate_unittest.json) (PASS). A3.6c parity probe [`parity_probe_bm_default_contra_d2_seed42.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/adapter_fitness/parity_probe_bm_default_contra_d2_seed42.json) (PASS, cos 0.9952). Figures at [`d5473cc1`](https://github.com/superkaiba/explore-persona-space/tree/d5473cc188a13263c714289bdbbee3a0ec0951a1/figures/issue_665) (the Fig4 baked-in `f_CV ≈ 0.1` subtitle is superseded by the corrected f_CV = +0.023).
+**Artifacts:** Aggregates [`eval_results/issue_665/aggregate.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/aggregate.json); per-arm per-cell JSONs under `eval_results/issue_665/{a36,a36a,a36b,a36c,a37,a38,a39,a310,joint,single_ctx,judged_E}/` (the `a36c/*.json` now carry the recomputed `f_CV` scalar). B3 reduction unit test [`whitened_gate_unittest.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/whitened_gate_unittest.json) (PASS). A3.6c parity probe [`parity_probe_bm_default_contra_d2_seed42.json`](https://github.com/superkaiba/explore-persona-space/blob/9b5f3387189710e6fbe7bc6199f704b929947e0c/eval_results/issue_665/adapter_fitness/parity_probe_bm_default_contra_d2_seed42.json) (PASS, cos 0.9952). Figures at [`8438132a`](https://github.com/superkaiba/explore-persona-space/tree/8438132a63093e03fcb42d687de8eedfe82d9b98/figures/issue_665) (round-3 regeneration: Fig2 subtitle no longer asserts independence from the base prior; Fig4 subtitle now shows the corrected f_CV = +0.023).
 
 Reuse provenance:
 - Reused trained activation store from [#664](https://eps.superkaiba.com/tasks/664): `superkaiba1/explore-persona-space-data/theory_assumptions/Qwen2.5-7B-Instruct/issue664` — fit: the content spine installs on-policy and carries gate dynamic range; the marker spine is excluded as the inherited at-floor degenerate arm.
