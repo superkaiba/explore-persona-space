@@ -349,7 +349,18 @@ def test_aggregate_carries_family_and_probe_split_fields(tmp_path, monkeypatch):
                     "wnorm": 3.0,
                 }
             )
-        (tmp_path / "per_cell" / cell / "g0_E0.json").write_text(json.dumps({"entries": entries}))
+        # round-3 Blocker C: g0_E0.json now carries the source context-id + family so
+        # the aggregate clusters on the CONTEXT family (not the bare source label).
+        src_ctx = "f6_helpful_asst" if "default" in cell else "f1_house_librarian"
+        (tmp_path / "per_cell" / cell / "g0_E0.json").write_text(
+            json.dumps(
+                {
+                    "entries": entries,
+                    "source_ctx_id": src_ctx,
+                    "source_family": C.family_of_context(src_ctx),
+                }
+            )
+        )
 
     # stub the probe-split path (it loads tensors from HF; replace with a fixed floor)
     monkeypatch.setattr(

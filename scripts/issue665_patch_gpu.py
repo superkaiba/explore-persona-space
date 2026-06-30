@@ -38,6 +38,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as dt
 import json
 import logging
@@ -288,12 +289,28 @@ def _one_patch(tok, base, trained, ids, layer, scope, variant, c0, cp, rng, c_ba
     """Apply ONE patch variant on the REAL #664 context prompt (`ids`) and read both
     the resulting answer-side residual (`v`, mean over generated tokens at layer L)
     AND the patched completion text (for the behavioral E judge, Blocker 2b).
-    Faithful to plan §4."""
+    Faithful to plan §4.
+
+    Round-3 Blocker B: θ0 variants (`p_up`, `self_c0`) run on PURE BASE WEIGHTS via
+    PEFT's ``disable_adapter()`` context manager; θ+ variants (`p_down`,
+    `self_cp`, `random_cv`, `norm_matched`) run on base+adapter. Round 2 selected
+    ``model = base`` for θ0, but ``PeftModel.from_pretrained(base, ...)`` wraps
+    ``base`` IN-PLACE — the adapter modules are attached to ``base.model.*`` and
+    ``base.forward(...)`` goes through the LoRA path — so the θ0 variants were NOT
+    isolated (P↑ read base+adapter+c⁺, not pure θ0+c⁺; self_c0 was not the
+    identity null on θ0 the plan's A3.6c falsifiability predicate requires). We
+    now ALWAYS forward through the single wrapped ``trained`` model and toggle the
+    adapter per variant, so θ0 is genuinely adapter-free."""
+
     import numpy as np
     import torch
 
-    # choose the model + the patch vector per variant
-    model = base if variant in ("p_up", "self_c0") else trained  # theta0 vs theta+
+    # ALWAYS operate on the single wrapped `trained` PeftModel; θ0 isolation comes
+    # from the disable_adapter() context below, NOT from a second model handle
+    # (round-3 Blocker B). `base` is the same in-place-wrapped object — never the
+    # forward target now.
+    adapter_disabled = variant in ("p_up", "self_c0")  # θ0 variants → pure base weights
+    model = trained
     if variant == "p_up":
         patch_vec = cp
     elif variant == "p_down" or variant == "self_c0":
@@ -341,7 +358,14 @@ def _one_patch(tok, base, trained, ids, layer, scope, variant, c0, cp, rng, c_ba
     h1 = blk.register_forward_hook(_patch_hook)
     h2 = blk.register_forward_hook(_read_hook)
     ids = ids.to(model.device)
-    with torch.no_grad():
+    # Round-3 Blocker B: θ0 variants run inside disable_adapter() so EVERY forward
+    # pass of generation uses pure base weights (P↑ = pure θ0 patched with c⁺;
+    # self_c0 = the identity null on θ0). θ+ variants use a null context (adapter
+    # stays enabled). The hook on the underlying layer module fires identically in
+    # both regimes — disable_adapter only toggles whether the LoRA delta is applied
+    # inside the layer's submodules, which is exactly the θ0-vs-θ+ contrast.
+    adapter_ctx = trained.disable_adapter() if adapter_disabled else contextlib.nullcontext()
+    with torch.no_grad(), adapter_ctx:
         gen = model.generate(
             ids,
             max_new_tokens=A36C_PATCH_MAX_NEW_TOKENS,

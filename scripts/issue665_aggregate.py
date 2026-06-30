@@ -204,6 +204,34 @@ def _load_g0_e0(cells: list[str]) -> dict[str, dict]:
     return out
 
 
+def _source_family_for_cell(cell: str, g0_e0: dict) -> str:
+    """Round-3 Blocker C: the #594 family of the cell's SOURCE-ANCHOR CONTEXT — the
+    correct hierarchical cluster grain (plan §9), NOT family_of_context(source_label)
+    (which returns "other" for every cell, collapsing the bootstrap to one cluster).
+
+    Resolve in order: (1) the `source_family` field gate_cpu's _write_g0_e0 persists;
+    (2) the `source_ctx_id` field through family_of_context; (3) fall back to loading
+    the StoreCell to read its source_ctx_id (last resort — a g0_E0.json predating the
+    Blocker-C fix). Raise if none resolves rather than silently returning "other"."""
+    rec = g0_e0.get(cell)
+    if rec is not None:
+        sf = rec.get("source_family")
+        if isinstance(sf, str) and sf:
+            return sf
+        scid = rec.get("source_ctx_id")
+        if isinstance(scid, str) and scid:
+            return C.family_of_context(scid)
+    # last-resort load (g0_E0.json predates the Blocker-C fields): read the
+    # source-anchor context id straight from the store cell.
+    from explore_persona_space.analysis.gate_io import load_cell
+
+    sc = load_cell(cell, verify_sha=True)
+    try:
+        return C.family_of_context(sc.source_ctx_id)
+    finally:
+        sc.free()
+
+
 def _a310_partial_E0_wnorm(beh_cells: list[str], g0_e0: dict) -> dict:
     """Blocker 3c: pool per-context (g0, ghat_real, E0) across the behavior's cells
     (+ per-cell ‖ŵ‖ broadcast to each context) and compute the RAW Spearman(ghat,g0)
@@ -323,11 +351,15 @@ def aggregate(cells: list[str], smoke: bool) -> dict:
         for c in beh_cells:
             layer = str(C.read_layer_for_cell(c))
             parsed = C.parse_cell(c)
-            # Blocker 6a — HIERARCHICAL family clustering: the family of the SOURCE
-            # context (the cell's source persona's #594 family), NOT the bare
-            # source_seed. The finer grain (family_source) keeps source identity
-            # for the cross-source bootstrap while the family grain is the parent.
-            src_family = C.family_of_context(parsed["source"])
+            # Blocker 6a / round-3 Blocker C — HIERARCHICAL family clustering: the
+            # #594 family of the cell's SOURCE-ANCHOR CONTEXT (plan §9 grain), NOT
+            # the bare source LABEL. Round 2 passed parsed["source"] (the slug label
+            # "default"/"librarian") to family_of_context, which expects an
+            # f1..f8-prefixed CONTEXT id — so it returned "other" for EVERY cell and
+            # the family bootstrap collapsed to a single cluster. The source context
+            # id (e.g. "f6_helpful_asst" → "default", "f1_house_librarian" →
+            # "persona") is persisted by gate_cpu's _write_g0_e0; resolve via that.
+            src_family = _source_family_for_cell(c, g0_e0)
             if c in a310 and layer in a310[c]["by_layer"]:
                 bl = a310[c]["by_layer"][layer]
                 g0_rhos.append(bl.get("g0_spearman"))

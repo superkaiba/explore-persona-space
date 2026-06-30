@@ -169,21 +169,33 @@ def arm_a38(sc, layer: int, lam: float) -> dict:
 
 
 # ── A3.9 — key-query gate, KEY x metric ablations (Blocker 5: the 4-key grid) ──
-# The four key candidates (plan §3/§4 A3.9 + Blocker 5). ψ = identity with co-layer
-# extraction (the plan default): ψ(t) = t_CB[L]; ψ(δ) = (c_C_trained - c_C_base) at
-# the source = the FT context drift. The key VARIES; the query stays the context
-# vector c_C' (denominator query = source c_C), so g(C=C')=1 holds per key.
+# The four key candidates (plan §3/§4 A3.9). The plan A3.9 *Inputs* line lists
+# ``c_C_base`` (key/query) and ``t_CB``/delta (psi candidates), where delta is the
+# SOURCE DISPLACEMENT in residual/target space (plan §3/§4 A3.7: delta(C) = t_CB -
+# v0(C) at the source context, layer L) -- NOT the context-vector drift
+# ``c_C_trained - c_C_base`` (that is the A3.6a context-vector-stability quantity, a
+# different object). psi = identity with co-layer extraction (the plan default):
+# psi(t) = t_CB[L]; psi(delta) = (t_CB - v0(C))[L] = the source displacement (round-3
+# Blocker A fix -- round 2 had this as the context-vector drift, the A3.6a quantity).
+# The key VARIES; the query stays the context vector c_C' (denominator query = source
+# c_C), so g(C=C')=1 holds per key.
 A39_KEY_LABELS = ("c_C", "psi_t", "psi_delta", "c_C_plus_psi_delta")
 
 
 def _a39_keys(sc, layer: int) -> dict[str, np.ndarray]:
-    """Build the four A3.9 key vectors at the source context, layer L (Blocker 5)."""
+    """Build the four A3.9 key vectors at the source context, layer L (Blocker 5;
+    round-3 Blocker A: psi_delta = SOURCE DISPLACEMENT t_CB-v0(C), A3.7's delta)."""
     c_base = sc.tensors["c_C_base"].numpy().astype(np.float64)  # (C,L,d)
-    c_trn = sc.tensors["c_C_trained"].numpy().astype(np.float64)  # (C,L,d)
     t_CB = sc.tensors["t_CB"].numpy().astype(np.float64)  # (L,d) trained source activation
+    v0 = sc.tensors["v0"].numpy().astype(np.float64)  # (C,L,d) base activation
     c_src = c_base[sc.source_idx, layer]  # (d,) the source context vector (key=c_C)
-    psi_t = t_CB[layer]  # ψ(t) = co-layer t_CB
-    psi_delta = c_trn[sc.source_idx, layer] - c_base[sc.source_idx, layer]  # ψ(δ)=FT ctx drift
+    psi_t = t_CB[layer]  # psi(t) = co-layer t_CB (projection of the target activation)
+    # psi(delta) = delta(C) = t_CB - v0(C) at the source, layer L -- the SOURCE
+    # DISPLACEMENT (plan §3/§4 A3.7), IDENTICAL to the delta that arm_a37 computes.
+    # This is the trained-minus-base shift in the model's OUTPUT (target)
+    # representation at the source context, NOT the context-vector drift
+    # c_C_trained - c_C_base (A3.6a).
+    psi_delta = t_CB[layer] - v0[sc.source_idx, layer]  # psi(delta) = source displacement (A3.7)
     return {
         "c_C": c_src,
         "psi_t": psi_t,
@@ -567,6 +579,13 @@ def _write_g0_e0(cell: str, per_layer: dict, sc) -> None:
     out_dir = C.EVAL_ROOT / "per_cell" / cell
     out_dir.mkdir(parents=True, exist_ok=True)
     outp = out_dir / "g0_E0.json"
+    # Blocker C (round 3): persist the cell's SOURCE-ANCHOR CONTEXT-ID and its #594
+    # family so the aggregate clusters on the CONTEXT family (plan §9 grain), NOT on
+    # the bare source LABEL (which family_of_context maps to "other"). source_ctx_id
+    # is an f1..f8-prefixed context id (e.g. "f6_helpful_asst", "f1_house_librarian")
+    # that family_of_context resolves correctly.
+    source_ctx_id = sc.source_ctx_id
+    source_family = C.family_of_context(source_ctx_id)
     with open(outp, "w") as f:
         json.dump(
             {
@@ -574,6 +593,8 @@ def _write_g0_e0(cell: str, per_layer: dict, sc) -> None:
                 "behavior": C.behavior_for_cell(cell),
                 "read_layer": int(read_layer),
                 "wnorm": bl["wnorm"],
+                "source_ctx_id": source_ctx_id,  # Blocker C: the f*-prefixed source context id
+                "source_family": source_family,  # Blocker C: family_of_context(source_ctx_id)
                 "entries": entries,
                 "git_commit": _git_commit(),
                 "generated_at": dt.datetime.now(dt.UTC).isoformat(),
