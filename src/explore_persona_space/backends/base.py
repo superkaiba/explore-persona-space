@@ -304,6 +304,17 @@ class PollResult:
     # (``scripts/backend_poll._serialize_poll_result``) reads it via ``getattr``
     # so a mixed-version worktree degrades to ``None`` rather than crashing.
     stall_reason: str | None = None
+    # The crash signature from the WIDE 500-line probe tail (#775), mirroring
+    # ``scripts/poll_pipeline.PollResult.crash_signature``. The whole wide tail
+    # (so the #775 RunPod CUDA-IMA repeat-failover predicate can scan it for both
+    # the signature AND the OUR_CODE_FRAME exclusion); ``None`` on a healthy /
+    # running poll. The RunPod lane copies this through from ``poll_once``
+    # (``RunPodBackend.poll``); SLURM + GCP never set it, so the default keeps
+    # cross-lane behavior uniform. NOT part of the serialized poll JSON (a
+    # poller-internal field the CUDA-IMA escalation reads off the result before
+    # serialization), so it adds no key to the orchestrator's parser. Declared
+    # LAST so existing positional ``PollResult`` constructions are unaffected.
+    crash_signature: str | None = None
 
 
 # ---------------------------------------------------------------------------
