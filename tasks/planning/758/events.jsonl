@@ -18,3 +18,4 @@
 {"ts": "2026-06-30T07:11:24Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0b4jni-3bw0pf phase=done after 60s."}
 {"ts": "2026-06-30T07:12:21Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0b4gg1-j84hi1 phase=done after 120s."}
 {"ts": "2026-06-30T07:13:29Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr0b4mny-zv3h0e phase=done after 181s."}
+{"ts": "2026-06-30T07:20:09Z", "kind": "epm:plan-verify", "version": 11, "by": "unknown", "note": "verdict=PASS n_fail=0 n_warn=1 plan_version=v2 overridden=none.\nWARN: c8_success_kill_criteria (same as v1, kind-infra spec edit — no run to kill; AC4-5 + AC6 sub-clauses + Risks section cover success/kill semantics for the code review)."}
