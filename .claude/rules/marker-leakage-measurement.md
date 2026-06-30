@@ -191,6 +191,18 @@ saturation signature — not an error.
   claim, near-vacuous for the log-prob GAIN — off saturation `Δlog Z ≈ 0` so
   `Δlog P ≈ Δz_marker`, i.e. the gain is prior-independent by construction.
 
+**Not to be confused with the content-behavior dual-DV continuous companion.** The
+three spaces above (log-prob primary / marker-logit + EOS-margin secondary /
+probability sanity) are the MARKER's own recipe — the programmatic marker is NOT a
+judged behavior-expression DV. For a CONTENT behavior (sycophancy, refusal, hedging,
+style, trait), the SECONDARY non-saturating companion to the PRIMARY on-policy judged
+rate is a different object: the PREFERRED form is the teacher-forced FIXED
+positive-vs-negative completion margin (fixed answer pools across all contexts ⇒ no
+selection-on-outcome bias; #722), and the judged-positive-conditional-mean log-P
+(`logp_pos_mean`) is the selection-confounded opt-in alternative — full recipe in
+`.claude/rules/llm-judging.md` § E2 + CLAUDE.md § Measurement validity. The marker's
+EOS-margin secondary above is unrelated to that fixed +/- completion margin.
+
 ## Install-strength confound — cross-condition leakage comparisons
 
 Raw bystander leakage is downstream of implant dose: a condition can read
