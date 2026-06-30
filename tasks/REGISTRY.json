@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 771,
+  "highest_id": 772,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4918,6 +4918,13 @@
       "path": "tasks/proposed/771",
       "status": "proposed",
       "title": "workflow-fix: warn when #681 data-disk attached but worktree bind inert"
+    },
+    "772": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/772",
+      "status": "proposed",
+      "title": "workflow-fix: stream-reduce activation spans, never materialize all N"
     },
     "78": {
       "has_clean_result": false,
