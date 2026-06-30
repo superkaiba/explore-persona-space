@@ -476,6 +476,130 @@ def test_designed_null_sigma_parity_with_headline(tmp_path):
     assert headline["sigma_c"]["sigma_c_corpus_kind"] == next(iter(null_kinds))
 
 
+# ───────────────────────── Round 4 (designed-null filename + matrix) ───────────
+def test_designed_null_reads_production_long_name_predictor_jsons(tmp_path):
+    """The designed-null arm resolves the predictor's PRODUCTION long-name JSONs.
+
+    Round-4 BLOCKER (designed-null-json-key-mismatch): on the production headline the
+    predictor enumerates HF ``list_repo_files`` and writes each null cell's JSON by
+    its seed-qualified LONG name (``ic_edu_default_contra_d1_seed42`` /
+    ``tf_rev_default_contra_d1_seed42``) — NOT the SHORT ``DESIGNED_NULL_CELLS``
+    prefix. The score reader must resolve via the canonical short→long map. Round-3
+    only wrote SHORT-name fixtures (the smoke path), so this gap was invisible.
+    """
+    import issue666_load_store as load_store
+
+    pred_dir = tmp_path / "predictor"
+    # Write ONLY the production long-name JSONs (no short-name files present).
+    for short_cell in predscore.DESIGNED_NULL_CELLS:
+        long_cell = load_store.DESIGNED_NULL_DIR[short_cell]
+        _write_broad_pred_json(
+            pred_dir, long_cell, corpus_kind="broad", seed=hash(long_cell) % 1000
+        )
+    # Sanity: the short-name files the round-3 reader looked for do NOT exist.
+    for short_cell in predscore.DESIGNED_NULL_CELLS:
+        assert not (pred_dir / f"{short_cell}_predictor_cells.json").exists()
+
+    out = dn.score_designed_nulls(pred_dir=pred_dir, n_boot=100)
+    # Entries are keyed by the SHORT cell names (the public DESIGNED_NULL_CELLS set).
+    assert set(out) == set(predscore.DESIGNED_NULL_CELLS)
+    for cell, r in out.items():
+        assert r["sigma_c_corpus_kind"] == "broad", f"{cell} must be scored on broad Σc"
+        assert np.isfinite(r["ci_lo"]) and np.isfinite(r["ci_hi"])
+
+
+def test_designed_null_long_name_battery_sigma_still_fails_loud(tmp_path):
+    """The broad-Σc parity gate still fires when the LONG-name JSON is battery-Σc."""
+    import issue666_load_store as load_store
+
+    pred_dir = tmp_path / "predictor"
+    for short_cell in predscore.DESIGNED_NULL_CELLS:
+        long_cell = load_store.DESIGNED_NULL_DIR[short_cell]
+        _write_broad_pred_json(pred_dir, long_cell, corpus_kind="battery-diagnostic", seed=3)
+    with pytest.raises(SystemExit, match="broad"):
+        dn.score_designed_nulls(pred_dir=pred_dir, n_boot=100)
+
+
+def test_designed_null_short_name_smoke_path_still_works(tmp_path):
+    """The SHORT-name (smoke --cell-names) path still resolves (long-name fallback)."""
+    pred_dir = tmp_path / "predictor"
+    for short_cell in predscore.DESIGNED_NULL_CELLS:
+        _write_broad_pred_json(pred_dir, short_cell, corpus_kind="broad", seed=4)
+    out = dn.score_designed_nulls(pred_dir=pred_dir, n_boot=100)
+    assert set(out) == set(predscore.DESIGNED_NULL_CELLS)
+
+
+def test_cross_behavior_matrix_excludes_designed_null_cells():
+    """build_headline's cross-behavior matrix EXCLUDES designed-null control cells.
+
+    Round-4 minor (Codex secondary): the secondary cross-behavior off-diagonal matrix
+    pooled ALL records, including the designed-null cells, polluting it with the
+    control arm (plan §5: designed null is a control, not a behavior to predict).
+    A null cell carrying a non-trivial per_target off-diagonal row must NOT be counted.
+    """
+    import issue666_load_store as load_store
+
+    null_long = load_store.DESIGNED_NULL_DIR["ic_edu_default"]
+    recs = [
+        {
+            "cell": "bm_default_contra_d1_seed42",
+            "behavior": "bad_medical",
+            "r_B_source": "diffmeans",
+            "rho_full_Lhat": 0.5,
+            "rho_cosine": 0.3,
+            "rho_base_prior": 0.1,
+            "per_target": {
+                "bad_medical": {  # on-diagonal — excluded
+                    "rho_full_Lhat": 0.5,
+                    "rho_cosine": 0.99,
+                    "r_B_source": "diffmeans",
+                    "from_cell": None,
+                },
+                "fact": {  # off-diagonal — the ONLY legitimate cross-behavior cell
+                    "rho_full_Lhat": 0.2,
+                    "rho_cosine": 0.15,
+                    "r_B_source": "r_plus_canonical",
+                    "from_cell": "tf_default_contra_d1_seed42",
+                },
+            },
+        },
+        {
+            # A designed-null CONTROL cell (long store-dir name) carrying an
+            # off-diagonal per_target row that MUST be excluded from the matrix.
+            "cell": null_long,
+            "behavior": "ic_edu",
+            "r_B_source": "r_plus",
+            "rho_full_Lhat": 0.9,
+            "rho_cosine": 0.9,
+            "rho_base_prior": 0.1,
+            "per_target": {
+                "fact": {
+                    "rho_full_Lhat": 0.99,  # would inflate the matrix mean if counted
+                    "rho_cosine": 0.99,
+                    "r_B_source": "r_plus_canonical",
+                    "from_cell": "tf_default_contra_d1_seed42",
+                }
+            },
+        },
+    ]
+    hd = predscore.build_headline(
+        recs, sigma_meta={"sigma_c_corpus_kind": "broad"}, r_b_source="mixed"
+    )
+    # Only the bad_medical->fact off-diagonal counts; the designed-null cell's row is out.
+    assert hd["cross_behavior_matrix"]["n_off_diagonal_cells"] == 1
+    assert hd["cross_behavior_matrix"]["rho_full_Lhat_mean"] == pytest.approx(0.2)
+
+
+def test_designed_null_cell_names_union_covers_both_forms():
+    """designed_null_cell_names() carries BOTH the short prefixes + long store names."""
+    import issue666_load_store as load_store
+
+    names = predscore.designed_null_cell_names()
+    for short_cell in predscore.DESIGNED_NULL_CELLS:
+        assert short_cell in names
+        assert load_store.DESIGNED_NULL_DIR[short_cell] in names
+
+
 # ───────────────────────── Concern 5 ──────────────────────────────────────────
 def test_rb_source_sensitivity_carries_both_modes_both_behaviors():
     """build_rb_source_sensitivity carries diffmeans + r_plus ρ for bad_medical + em."""
