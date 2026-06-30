@@ -144,3 +144,4 @@
 {"ts": "2026-06-30T16:59:47Z", "kind": "epm:progress", "version": 21, "by": "unknown", "note": "[poll-tick] phase 1 PROGRESSING. 4h08m. 256 batches; 4290 succeeded, 0 errored. Throughput 1034 calls/hr."}
 {"ts": "2026-06-30T17:50:34Z", "kind": "epm:progress", "version": 22, "by": "unknown", "note": "[poll-tick] phase 1 PROGRESSING. ~5h. 307 batches; 4800 succeeded, 0 errored. Throughput 961 calls/hr."}
 {"ts": "2026-06-30T18:41:21Z", "kind": "epm:progress", "version": 23, "by": "unknown", "note": "[poll-tick] phase 1 PROGRESSING. ~5h50m. 358 batches all ended; 5390 succeeded, 0 errored. Throughput 925 calls/hr."}
+{"ts": "2026-06-30T19:32:18Z", "kind": "epm:progress", "version": 24, "by": "unknown", "note": "[poll-tick] phase 1 PROGRESSING. ~6h41m. 402 batches; 6000 succeeded, 0 errored. Throughput 897 calls/hr."}
