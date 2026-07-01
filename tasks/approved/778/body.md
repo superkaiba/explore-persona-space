@@ -2,6 +2,7 @@
 title: Replicate Persona Vectors prediction experiments (system-prompt + finetuning-shift)
   on Qwen2.5-7B with a random/permutation/cross-trait/PCA null battery
 kind: experiment
+backend: runpod
 tags: []
 created_at: '2026-07-01T00:01:33Z'
 has_clean_result: false

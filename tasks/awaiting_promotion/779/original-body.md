@@ -171,10 +171,14 @@ How well / at what granularity does the context representation predict the answe
 
 - **~10–25 GPU-h**, no LLM fine-tuning (inference + activation caching + lightweight regression
   + judge API). Under the 100 GPU-h plan-approval cap.
-- **8×H100 single pod, data-parallel (8 single-GPU workers via CUDA_VISIBLE_DEVICES sharding —
-  NOT TP=8)** for the generation + activation-caching burst. Offload judging → Anthropic Batch
-  API and regression fits → cheaper compute (1 GPU / cpu-bigmem). **Release/downsize the 8×H100
-  pod between the GPU burst and the off-GPU stages** — never hold idle H100s through the judge
+- **1×H100 (`lora-7b`) for the generation + activation-caching burst — DESCOPED to `lora-7b`
+  from the plan §9's `sweep-8g-h100` 8×H100 data-parallel shape** (see `## Compute-deviation`
+  below): the `issue779_{extract_rb,collect,stage1}.py` scripts only accept `--gpu-id N` (single
+  GPU) and implement no internal `torch.distributed`/`multiprocessing.spawn` DP nor an external
+  `--shard-id`/`--num-shards` split, so an 8×H100 pod would leave 7 GPUs at 0% util (the #664
+  spend-leak the plan itself named at §-risks). Offload judging → Anthropic Batch API and
+  regression fits → cheaper compute (1 GPU / cpu-bigmem). **Release/terminate the H100 pod
+  between the GPU burst and the off-GPU stages** — never hold an idle H100 through the judge
   batch or between staged rounds (#664 spend-leak).
 - **Storage:** pooled activations cache is small; R3's per-token caching is bounded to a subset
   (few thousand contexts × subset of layers) — keep total well under the 50 GB VM footprint;
@@ -184,6 +188,28 @@ How well / at what granularity does the context representation predict the answe
   (headline: generic corpus, best layer, ridge vs one MLP, cosine readout, indirect vs direct
   vs PV-baseline vs oracle) → stage 2 (ablations: objectives, 3 corpus levels, layer combos, R2
   pooling, R3 granularity) only on configs that clear stage 1.
+
+## Compute-deviation
+
+Recorded inline (analogous to the pre-launch `epm:compute-deviation v1` marker, but
+post-launch: the round-6 experimenter run surfaced this AFTER dispatch, so it is documented
+here in the body rather than at the Step 5.bis pre-launch gate).
+
+- **Deviation:** the generation + activation-capture burst runs on **1×H100 (`lora-7b` intent)
+  serially**, DESCOPED from the plan §9's **`sweep-8g-h100` (8×H100, data-parallel over
+  contexts)** shape.
+- **Cause:** the `issue779_{extract_rb,collect,stage1}.py` scripts accept only `--gpu-id N`
+  (single GPU). None implements internal DP (`torch.distributed` / `torch.multiprocessing.spawn`)
+  or an external `--shard-id`/`--num-shards` context split, so the plan's DP recipe was never
+  wired. Running on 8×H100 would leave 7 GPUs at 0% util → the #664-class spend-leak the plan
+  named at §-risks (~$1200 with 7 idle H100s vs ~$130 for 1 running H100).
+- **Wall-time:** ~44 wall-h (single-GPU serial) vs the plan §9's ~5.5 h (8×H100 DP). GPU-h
+  ≈ 44 — well under the 100 GPU-h plan-approval cap.
+- **Science preserved exactly:** identical conditions, rollouts, data, seeds, judge, and layers.
+  Only the parallelism shape (wall-clock) changed; no result-affecting parameter moved. Adding
+  `--shard-id`/DP support was deliberately deferred (a substantial change; the 1×H100 descope
+  keeps the science exact) — see the round-7 implementation report `(b)`.
+- **Provenance:** `epm:experiment-implementation v7` (round 7 = crash-fix-round-1).
 
 ## Planning notes
 

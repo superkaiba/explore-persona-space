@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 780,
+  "highest_id": 808,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4835,11 +4835,11 @@
     },
     "761": {
       "goal": "Re-measure how well base-model mean answer activation v0(C) predicts behavioral expression E0(C,B) with the activation summary AND the judged-expression target computed over the SAME per-behavior probe set (>=50 judgments/context), removing #658's probe-distribution mismatch and 8-judgment noise floor; phase 1 = the 3 behaviors with existing >=50-probe completions+judgments (sycophancy/refusal/harmful_compliance), capture-only matched v0, ridge v0(C,B)->E0(C,B) LOCO per #742 recipe vs #658 mismatched ridge + diff-in-means.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/verifying/761",
-      "status": "verifying",
-      "title": "Matched-probe v0->E0 predictor re-measurement \u2014 phase 1 (sycophancy/refusal/harmful, capture-only)"
+      "path": "tasks/awaiting_promotion/761",
+      "status": "awaiting_promotion",
+      "title": "Matching the probe set raises the base-activation predictor of behavior expression on all three safety behaviors at every layer read, but the size of that gain is pinned down only for refusal (MODERATE confidence)"
     },
     "762": {
       "has_clean_result": false,
@@ -4971,11 +4971,11 @@
     },
     "779": {
       "goal": "On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior (at the single-context/single-answer per-example level), and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/approved/779",
-      "status": "approved",
-      "title": "Beat Persona-Vectors prompt-projection monitoring: learned context->profile map (pre-gen) + generation-activation pooling (post-gen) on Qwen-2.5-7B"
+      "path": "tasks/awaiting_promotion/779",
+      "status": "awaiting_promotion",
+      "title": "A learned context->answer-profile map does not beat Persona-Vectors' raw prompt projection for trait monitoring, while a direct context->trait predictor beats both (LOW confidence)"
     },
     "78": {
       "has_clean_result": false,
@@ -4991,6 +4991,139 @@
       "status": "completed",
       "title": "workflow-fix: selection-symmetric nulls + persist per-draw \u00d7 per-axis matrix"
     },
+    "781": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/781",
+      "status": "completed",
+      "title": "workflow-fix: add live-batch-shape smoke bullet to gotchas.md (#763 r3 root cause)"
+    },
+    "782": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/782",
+      "status": "completed",
+      "title": "workflow-fix: gcp poller must map PENDING \u2192 running (FLEX_START queue false-stall)"
+    },
+    "783": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/783",
+      "status": "completed",
+      "title": "workflow-fix: GCP H100 queue-wait timeout -> RunPod failover (auto lane)"
+    },
+    "784": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/784",
+      "status": "completed",
+      "title": "workflow: raise ensemble review cap 3->5, expand git-provenance auto-strip, surface-not-ship real residual at cap"
+    },
+    "785": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/785",
+      "status": "completed",
+      "title": "daily-fix: worktree path #506 regression in Step 4a + Step 9c"
+    },
+    "786": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/786",
+      "status": "completed",
+      "title": "daily-fix: task-workflow API atomicity (git-mv, post-marker, view)"
+    },
+    "787": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/787",
+      "status": "completed",
+      "title": "daily-fix: Step 10d tasks/* merge-conflict default + far-behind branch"
+    },
+    "788": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/788",
+      "status": "completed",
+      "title": "daily-fix: reviewer sandbox read-only tempdir silently skips pytest"
+    },
+    "789": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/789",
+      "status": "completed",
+      "title": "daily-fix: Codex twin false-FAIL discipline (sandbox + evidence-quote)"
+    },
+    "790": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/790",
+      "status": "completed",
+      "title": "daily-fix: GCP backend fetch_results/log Permission denied"
+    },
+    "791": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/791",
+      "status": "completed",
+      "title": "daily-fix: backend_poll stale-log false gap + poll error-regex"
+    },
+    "792": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/792",
+      "status": "completed",
+      "title": "daily-fix: experiment-implementer crash-fix scope guard"
+    },
+    "793": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/793",
+      "status": "completed",
+      "title": "daily-fix: SLURM lane rsync from worktree branch not main"
+    },
+    "794": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/794",
+      "status": "completed",
+      "title": "daily-fix: HF upload_dataset 504 verify-side false-fail"
+    },
+    "795": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/795",
+      "status": "completed",
+      "title": "daily-fix: zombie sessions on completed tasks not auto-reaped"
+    },
+    "796": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/796",
+      "status": "completed",
+      "title": "daily-fix: guard detached repo-root HEAD"
+    },
+    "797": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/797",
+      "status": "completed",
+      "title": "daily-fix: routing carve-out: interactive 0-GPU inline analysis"
+    },
+    "798": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/798",
+      "status": "completed",
+      "title": "daily-fix: artifact-reuse (h) naming-convention/path check"
+    },
+    "799": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/799",
+      "status": "completed",
+      "title": "daily-fix: agent output-format: planner markdown + no-interp plots"
+    },
     "8": {
       "has_clean_result": false,
       "kind": "experiment",
@@ -5004,6 +5137,69 @@
       "path": "tasks/completed/80",
       "status": "completed",
       "title": "[Proposed] Marker-transfer via EM: inject marker into evil persona, induce EM, check if assistant adopts it"
+    },
+    "800": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/800",
+      "status": "completed",
+      "title": "daily-fix: document WANDB_LOG_MODEL checkpoint-upload trap"
+    },
+    "801": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/801",
+      "status": "proposed",
+      "title": "daily-held: registry/fs inconsistencies (#696/#722/#750/#764/#766) need human-audited repair"
+    },
+    "802": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/802",
+      "status": "completed",
+      "title": "workflow: promote bug-class sibling-sweep from reconciler memory into primary code-reviewer + implementer (stop review whack-a-mole)"
+    },
+    "803": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/803",
+      "status": "completed",
+      "title": "workflow-fix: clean_experiment_downloads.py hangs on pod (task_workflow.repo_root auto-routing on MooseFS)"
+    },
+    "804": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/804",
+      "status": "completed",
+      "title": "workflow-fix: guard clause-local parsing (compound + glued -b leaks)"
+    },
+    "805": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/805",
+      "status": "completed",
+      "title": "workflow-fix: phase-partition GPU width \u2014 narrow/API phases must not hold the peak-width (8xH100) pod"
+    },
+    "806": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/806",
+      "status": "completed",
+      "title": "workflow-fix: code-reviewer catches plan-DP-shape vs dispatcher-shape gap (from #779)"
+    },
+    "807": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/807",
+      "status": "archived",
+      "title": "workflow-fix: verify_task_body.py should check per-figure meta.json commit against body URL"
+    },
+    "808": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/808",
+      "status": "reviewing",
+      "title": "workflow-fix: resolve SPEC.md Lens 12 sentence-count contradiction (from #779 reconciler)"
     },
     "81": {
       "has_clean_result": false,
