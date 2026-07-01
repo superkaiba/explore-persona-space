@@ -2031,9 +2031,18 @@ def test_zone_fanout_capacity_retries_but_auth_failure_raises_immediately(no_mar
     auth_backend = GcpBackend(
         config=_test_config(), runner=auth_runner, marker_poster=lambda **_: None
     )
-    with pytest.raises(GcpProvisioningError, match="PERMISSION_DENIED"):
+    with pytest.raises(GcpProvisioningError, match="PERMISSION_DENIED") as auth_exc:
         auth_backend.launch(_spec(intent="eval"))
     assert len([c for c in auth_runner.calls if "create" in c and "instances" in c]) == 1
+    # #774: even the immediate non-capacity raise carries the partial per-zone
+    # trail (the one -a attempt) — the auth failure must not silently drop the
+    # zone-fan-out evidence. One record, the auth pattern, the 5 keys, and the
+    # derived bare name-list.
+    auth_per_zone = auth_exc.value.evidence["per_zone_attempts"]
+    assert [e["zone"] for e in auth_per_zone] == ["us-central1-a"]
+    assert set(auth_per_zone[0]) == _PER_ZONE_KEYS
+    assert "permission" in (auth_per_zone[0]["matched_pattern"] or "").lower()
+    assert auth_exc.value.evidence["zones_attempted"] == ["us-central1-a"]
 
 
 def test_zone_fanout_all_zones_exhausted_error_names_every_zone_tried(no_marker_posts) -> None:
@@ -2273,6 +2282,55 @@ def test_launch_create_timeout_no_instance_raises_provisioning_error(no_marker_p
     # downstream EXHAUSTED capacity miss — both contain a capacity substring).
     matched = (exc.evidence.get("matched_pattern") or "").lower()
     assert any(tag in matched for tag in ("exhaust", "resource", "enough resources"))
+
+
+def test_launch_create_timeout_preserves_per_zone_attempts(no_marker_posts) -> None:
+    """#774: a create TIMEOUT whose post-timeout probe finds NO instance is
+    recorded as a per-zone outcome (returncode=-1, the timeout matched_pattern)
+    and the fan-out continues; when the remaining zones then capacity-miss, the
+    raised error's evidence['per_zone_attempts'] carries the timeout entry FIRST
+    followed by the capacity entries — the timeout branch must not drop the
+    zone trail. (eval = g2-standard-4, valid in all three us-central1 zones.)"""
+    runner = _Runner(
+        # All list calls empty: reconnect None, stale-name free, post-timeout
+        # probe finds no server-side instance.
+        list_results=[
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, "[]", ""),
+            GcloudRunResult(0, "[]", ""),
+        ],
+        # zone-a create times out → probe empty → recorded + continue.
+        create_raises=subprocess.TimeoutExpired(cmd=["gcloud", "create"], timeout=300),
+        # zones b + c then capacity-miss so the for-else surfaces the error.
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    with pytest.raises(GcpProvisioningError) as exc:
+        backend.launch(_spec(intent="eval"))
+    per_zone = exc.value.evidence["per_zone_attempts"]
+    # One record per attempted zone (eval → us-central1-a/-b/-c), in order.
+    assert [e["zone"] for e in per_zone] == [
+        "us-central1-a",
+        "us-central1-b",
+        "us-central1-c",
+    ]
+    for entry in per_zone:
+        assert set(entry) == _PER_ZONE_KEYS
+    # The FIRST zone timed out: returncode sentinel -1 + the timeout pattern.
+    assert per_zone[0]["returncode"] == -1
+    assert "timeout" in (per_zone[0]["matched_pattern"] or "").lower()
+    # The later zones are real capacity misses (returncode 1).
+    assert per_zone[1]["returncode"] == 1
+    assert per_zone[2]["returncode"] == 1
+    # Back-compat name-list carries all three, timeout zone included.
+    assert exc.value.evidence["zones_attempted"] == [
+        "us-central1-a",
+        "us-central1-b",
+        "us-central1-c",
+    ]
 
 
 def test_launch_create_timeout_probe_failure_reraises_as_provisioning(no_marker_posts) -> None:
