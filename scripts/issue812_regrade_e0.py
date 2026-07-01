@@ -49,7 +49,11 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 from explore_persona_space.eval import DEFAULT_JUDGE_MODEL  # noqa: E402,F401
-from explore_persona_space.eval.batch_judge import judge_completions_batch  # noqa: E402
+from explore_persona_space.eval.batch_judge import (  # noqa: E402
+    _CUSTOM_ID_RE,
+    judge_completions_batch,
+    make_custom_id,
+)
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -250,6 +254,35 @@ def _coerce_score(raw: dict | None) -> float:
     return math.nan  # "REFUSAL" / string / missing
 
 
+# batch_judge appends "__{idx:05d}__{comp_idx:02d}" (2 + 5 + 2 = 9 chars) onto the
+# persona to form the Anthropic custom_id, which must match ^[a-zA-Z0-9_-]{1,64}$.
+# A persona of <=40 chars keeps the full id <=49, well within 64 (a full 64-char
+# sha256 would overflow). 40 hex chars = 160 bits, so a truncation collision across
+# ~64K entries is astronomically unlikely; the per-call collision guard below still
+# fails loud if one ever occurs, so correctness never rests on that probability.
+_PERSONA_KEY_LEN = 40
+_CUSTOM_ID_SUFFIX_LEN = len("__00000__00")  # 9 — batch_judge's appended suffix
+
+
+def _safe_persona_key(coord: tuple[str, int, int, int]) -> str:
+    """Regex-safe, short, deterministic batch_judge persona key for ONE coordinate.
+
+    ``coord`` = (ctx, probe_idx, comp_idx, draw). Derived via ``make_custom_id`` (sha256
+    hex, so ``[0-9a-f]``) TRUNCATED to ``_PERSONA_KEY_LEN`` so the custom_id batch_judge
+    forms (``f"{persona}__{idx:05d}__{comp_idx:02d}"``) stays within the Anthropic Batch
+    API's ``^[a-zA-Z0-9_-]{1,64}$`` limit — a full 64-char sha256 persona would overflow.
+    Deterministic in ``coord`` (idempotent resubmits reuse the same id); the coordinate
+    is carried out-of-band in ``persona_map``, never parsed back out of this key.
+    """
+    ctx, probe_idx, comp_idx, draw = coord
+    key = make_custom_id(f"{ctx}|p{probe_idx}|c{comp_idx}|d{draw}")[:_PERSONA_KEY_LEN]
+    # Assert the FULL emitted custom_id (persona + batch_judge's max-width suffix) is
+    # regex-valid — this is the exact string that reaches ``batches.create``.
+    full = f"{key}{'_' * _CUSTOM_ID_SUFFIX_LEN}"
+    assert _CUSTOM_ID_RE.match(full), full
+    return key
+
+
 # Source loaders
 
 
@@ -265,6 +298,28 @@ def _hf_json(repo: str, path: str) -> dict:
     local = hf_hub_download(repo, path, repo_type="dataset")
     with open(local) as f:
         return json.load(f)
+
+
+def _parse_reuse_blob(blob: dict, beh: str) -> dict | None:
+    """Extract the per-context graded-E0 grid for ``beh`` from a reuse blob, or None.
+
+    SINGLE SOURCE OF SHAPE TRUTH for BOTH the validator (``_lane1_reuse_map``) and the
+    loader (``main``) — round-2 had two divergent readers (the validator accepted a
+    ``{behavior, e0}`` / ``{behavior, per_context}`` shape the loader could not read, so
+    a validated grid silently no-op-loaded the whole blob). Accepted shapes:
+      * ``blob[beh]`` is a dict -> multi-behavior blob keyed by behavior name;
+      * ``blob["behavior"] == beh`` -> single-behavior blob; grid at ``blob["e0"]``
+        (this script's own output schema) or ``blob["per_context"]``.
+    Returns the per-context dict ({ctx: cell}) or None if this blob has no grid for beh.
+    """
+    per_ctx = blob.get(beh)
+    if isinstance(per_ctx, dict):
+        return per_ctx
+    if blob.get("behavior") == beh:
+        grid = blob.get("e0") or blob.get("per_context")
+        if isinstance(grid, dict):
+            return grid
+    return None
 
 
 def _lane1_reuse_map(repo: str, behaviors: list[str], files: list[str]) -> dict[str, str]:
@@ -291,9 +346,7 @@ def _lane1_reuse_map(repo: str, behaviors: list[str], files: list[str]) -> dict[
         for beh in behaviors:
             if beh in reuse:
                 continue
-            per_ctx = blob.get(beh) if isinstance(blob.get(beh), dict) else None
-            if per_ctx is None and blob.get("behavior") == beh:
-                per_ctx = blob.get("e0") or blob.get("per_context")
+            per_ctx = _parse_reuse_blob(blob, beh)
             if not isinstance(per_ctx, dict) or len(per_ctx) < 50:
                 continue
             sample = next(iter(per_ctx.values()))
@@ -451,7 +504,8 @@ def _judge_behavior(
         return rubric.format(question=question, completion=completion)
 
     packed: dict[str, dict[str, list[str]]] = {}
-    # persona -> (ctx, probe_idx, comp_idx, draw)
+    # persona -> (ctx, probe_idx, comp_idx, draw). This is the AUTHORITATIVE join key;
+    # it is persisted as a sidecar (below) and the reduction joins THROUGH it.
     persona_map: dict[str, tuple[str, int, int, int]] = {}
     # (ctx, probe_idx) -> #completions kept for that probe (to size the arrays)
     n_comp_by_probe: dict[tuple[str, int], int] = {}
@@ -465,14 +519,34 @@ def _judge_behavior(
             n_comp_by_probe[(ctx, probe_idx)] = len(comps)
             for comp_idx, completion in enumerate(comps):
                 for draw in range(n_draws):
-                    # Persona MUST avoid the "__" delimiter batch_judge uses in its
-                    # custom_id (<persona>__<idx>__<comp>); "::" never fractures the tuple.
-                    persona = f"{ctx}::p{probe_idx}::c{comp_idx}::d{draw}"
+                    # BLOCKER (round 3): the persona flows RAW into batch_judge's
+                    # custom_id ``f"{persona}__{idx:05d}__{comp_idx:02d}"``, which the
+                    # Anthropic Batch API validates against ``^[a-zA-Z0-9_-]{1,64}$``. The
+                    # old ``f"{ctx}::p..::c..::d.."`` persona embedded ``::`` (illegal) AND
+                    # an arbitrary-length / arbitrary-char ``ctx`` — the whole ~600K-call
+                    # batch would 400 at ``batches.create``. Use a regex-safe, SHORT,
+                    # collision-checked key derived via ``make_custom_id`` (sha256 hex,
+                    # so ``[0-9a-f]``) TRUNCATED so the full appended custom_id stays
+                    # within 64 chars, and carry the real coordinate in ``persona_map``.
+                    tup = (ctx, probe_idx, comp_idx, draw)
+                    persona = _safe_persona_key(tup)
+                    # Fail loud on a truncation collision (two distinct coordinates
+                    # mapping to the same key) — would silently merge two draws.
+                    assert persona not in persona_map or persona_map[persona] == tup, (
+                        f"persona-key collision: {persona} maps to both "
+                        f"{persona_map.get(persona)} and {tup}"
+                    )
                     packed[persona] = {question: [completion]}
-                    persona_map[persona] = (ctx, probe_idx, comp_idx, draw)
+                    persona_map[persona] = tup
 
     save_raw = out_dir / f"_raw_{behavior}.json"
     save_raw.parent.mkdir(parents=True, exist_ok=True)
+    # Persist the custom_id -> coordinate sidecar the reduction joins through. Written
+    # BEFORE dispatch so a mid-batch crash still leaves the join key recoverable, and
+    # (for dry_run) so the mapping is inspectable without any API call.
+    persona_map_path = out_dir / f"_persona_map_{behavior}.json"
+    with open(persona_map_path, "w") as f:
+        json.dump({k: list(v) for k, v in persona_map.items()}, f)
     judge_completions_batch(
         packed,
         judge_system_prompt=GRADED_JUDGE_SYSTEM,
@@ -492,12 +566,14 @@ def _judge_behavior(
     all_scores: dict[str, dict] = raw.get("all_scores", {})
 
     # Reduce all_scores -> per (ctx, probe, completion) draw arrays. Each all_scores
-    # key is "<persona>__<idx>__<comp>"; strip the trailing "__NNNNN__NN" (each persona
-    # has exactly one question + one completion) to recover the persona, then join.
+    # key is "<persona>__<idx:05d>__<comp_idx:02d>" (batch_judge appends that suffix);
+    # each persona has exactly one question + one completion, so strip the trailing
+    # "__NNNNN__NN" to recover the (regex-safe) persona, then join THROUGH persona_map
+    # (the sidecar coordinate) — never re-parse the persona string itself.
     # per_ctx[ctx][probe_idx][comp_idx] = [draw scores]
     per_ctx: dict[str, dict[int, dict[int, list[float]]]] = {}
     for cid, score_dict in all_scores.items():
-        persona = cid.rsplit("__", 2)[0]  # persona itself contains no "__"
+        persona = cid.rsplit("__", 2)[0]  # regex-safe persona contains no "__"
         tup = persona_map.get(persona)
         if tup is None:
             continue
@@ -663,7 +739,18 @@ def main() -> int:
         target_bucket = highm_out if beh in HIGH_M else lowm_out
         if beh in reuse:
             blob = _hf_json(args.repo, reuse[beh])
-            per_ctx = blob.get(beh) if isinstance(blob.get(beh), dict) else blob
+            # Same shape parser the validator used — NOT ``blob.get(beh) or blob``
+            # (round-2 bug: a validated {behavior, e0}/{behavior, per_context} blob
+            # got blob.get(beh)=None -> the whole blob loaded and silently no-op'd).
+            per_ctx = _parse_reuse_blob(blob, beh)
+            if per_ctx is None:
+                # The validator accepted this path, so a None here is a shape
+                # regression, not a routine miss — fail loud rather than no-op.
+                raise RuntimeError(
+                    f"Lane-1 reuse blob {reuse[beh]} validated for {beh} but its grid "
+                    "could not be extracted at load (shape drift between validator and "
+                    "loader) — refusing to silently no-op-reuse the whole blob"
+                )
             target_bucket[beh] = per_ctx
             lanes_fired[beh] = f"lane1-reuse:{reuse[beh]}"
             logger.info("[%s] Lane-1 reuse from %s", beh, reuse[beh])

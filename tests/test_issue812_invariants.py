@@ -339,3 +339,171 @@ def test_reconstruction_r2_computed_when_cc_present(tmp_path):
     assert "per_layer_r2" in res
     assert "mean" in res["per_layer_r2"] and "unpooled" in res["per_layer_r2"]
     assert (out_dir / "reconstruction_r2.json").exists()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROUND-3 BLOCKER — every batch custom_id is Anthropic-Batch-API regex-valid
+# (round-2 personas embedded "::" -> the whole batch would 400 at batches.create)
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_batch_custom_ids(packed: dict) -> list[str]:
+    """The EXACT custom_ids batch_judge sends to batches.create for ``packed``.
+
+    Goes through batch_judge's real enumeration (``_enumerate_and_check_cache``), so it
+    exercises the production ``f"{persona}__{idx:05d}__{comp_idx:02d}"`` construction,
+    not a re-implemented copy."""
+    from explore_persona_space.eval import batch_judge as bj
+
+    _total, _cached, uncached = bj._enumerate_and_check_cache(
+        packed, cache=None, format_user_msg=lambda q, c: f"{q}\n{c}"
+    )
+    return [cid for (cid, _q, _c, _u) in uncached]
+
+
+def test_regrade_batch_custom_ids_all_regex_valid():
+    """Every custom_id batch_judge derives from a regrade persona matches
+    ^[a-zA-Z0-9_-]{1,64}$. Round-2 personas were f"{ctx}::p..::c..::d.." — the "::"
+    (and an arbitrary-length/char ctx) would 400 the whole ~600K-call batch at
+    batches.create. This FAILS against the round-2 base and PASSES post-fix.
+    """
+    from explore_persona_space.eval.batch_judge import _CUSTOM_ID_RE
+
+    # A realistically hostile ctx (long, with "::", "/", spaces — all illegal raw).
+    probes_by_ctx = {
+        "wildchat::sample/007 has spaces & punctuation!": [
+            {"probe": "q1", "completions": ["a", "b"]},
+            {"probe": "q2", "completions": ["c"]},
+        ],
+        "another/ctx::id": [{"probe": "q3", "completions": ["d", "e", "f"]}],
+    }
+    n_draws = 4
+    captured: dict = {}
+
+    def fake_judge(packed, *, save_raw, **kw):
+        captured["packed"] = dict(packed)
+        # write an empty save_raw so the (unexercised here) reduction path is happy
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        import json
+
+        save_raw.write_text(json.dumps({"all_scores": {}}))
+
+    orig = regrade.judge_completions_batch
+    regrade.judge_completions_batch = fake_judge
+    try:
+        regrade._judge_behavior(
+            "sycophancy",
+            probes_by_ctx,
+            judge_model="claude-sonnet-4-5-20250929",
+            n_draws=n_draws,
+            out_dir=Path("/tmp") / "issue812_cid_test",
+            subsample=None,
+            dry_run=False,
+        )
+    finally:
+        regrade.judge_completions_batch = orig
+
+    custom_ids = _build_batch_custom_ids(captured["packed"])
+    # (2+1+3) completions x 4 draws = 24 requests, all regex-valid
+    assert len(custom_ids) == (2 + 1 + 3) * n_draws
+    for cid in custom_ids:
+        assert _CUSTOM_ID_RE.match(cid), f"custom_id violates Anthropic regex: {cid!r}"
+        assert len(cid) <= 64, f"custom_id exceeds 64 chars: {cid!r} ({len(cid)})"
+
+
+def test_regrade_persona_map_sidecar_roundtrips(tmp_path):
+    """The dispatch -> reduce join goes THROUGH the persisted persona_map sidecar (NOT a
+    "::"-split of the persona). The sidecar exists, and every judged custom_id joins
+    back to its exact (ctx, probe_idx, comp_idx, draw) coordinate."""
+    import json
+
+    probes_by_ctx = {
+        "ctx::A/1": [{"probe": "q1", "completions": ["x", "y"]}],
+        "ctx::B/2": [{"probe": "q2", "completions": ["z"]}],
+    }
+    n_draws = 3
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    def fake_judge(packed, *, save_raw, **kw):
+        # score every persona; batch_judge would append "__NNNNN__00" -> mirror it so the
+        # reduction's cid.rsplit("__", 2)[0] recovers the persona.
+        all_scores = {f"{p}__00000__00": {"score": 55, "reasoning": "ok"} for p in packed}
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(json.dumps({"all_scores": all_scores}))
+
+    orig = regrade.judge_completions_batch
+    regrade.judge_completions_batch = fake_judge
+    try:
+        res = regrade._judge_behavior(
+            "sycophancy",
+            probes_by_ctx,
+            judge_model="claude-sonnet-4-5-20250929",
+            n_draws=n_draws,
+            out_dir=out_dir,
+            subsample=None,
+            dry_run=False,
+        )
+    finally:
+        regrade.judge_completions_batch = orig
+
+    # (a) the sidecar landed and round-trips every coordinate
+    sidecar = out_dir / "_persona_map_sycophancy.json"
+    assert sidecar.exists(), "persona_map sidecar must be persisted"
+    pmap = json.loads(sidecar.read_text())
+    # 3 completions total x 3 draws = 9 distinct coordinates, all distinct keys
+    coords = {tuple(v) for v in pmap.values()}
+    assert len(pmap) == 3 * n_draws == len(coords)
+    # every persona key is regex-safe (no "::") — the whole point
+    from explore_persona_space.eval.batch_judge import _CUSTOM_ID_RE
+
+    for persona in pmap:
+        assert _CUSTOM_ID_RE.match(f"{persona}__00000__00")
+
+    # (b) the reduction (joined via the map) reconstructs the full per-ctx structure
+    assert set(res) == {"ctx::A/1", "ctx::B/2"}
+    a = res["ctx::A/1"]["probe_scores"][0]
+    assert len(a["completions"]) == 2
+    assert len(a["completions"][0]["draw_scores"]) == n_draws
+    assert a["completions"][0]["completion_mean"] == 55.0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ROUND-3 CONCERN — lane-1 reuse shape parsing is single-source (validator == loader)
+# ─────────────────────────────────────────────────────────────────────────────
+def test_parse_reuse_blob_all_accepted_shapes_load_identically():
+    """_parse_reuse_blob extracts the SAME per-context grid from every accepted shape.
+    Round-2 bug: the validator accepted {behavior, e0}/{behavior, per_context} but the
+    loader read only blob[beh]/whole-blob, so a valid {behavior, e0} grid validated then
+    silently no-op-loaded the whole blob."""
+    grid = {f"ctx{i}": {"graded_mean": float(i)} for i in range(3)}
+    shapes = [
+        {"deception": grid},  # multi-behavior, keyed by behavior name
+        {"behavior": "deception", "e0": grid},  # this script's own output schema
+        {"behavior": "deception", "per_context": grid},  # alt single-behavior schema
+    ]
+    for blob in shapes:
+        assert regrade._parse_reuse_blob(blob, "deception") == grid, blob
+    # a blob for a DIFFERENT behavior returns None (no false reuse)
+    assert regrade._parse_reuse_blob({"behavior": "refusal", "e0": grid}, "deception") is None
+    assert regrade._parse_reuse_blob({"something_else": grid}, "deception") is None
+
+
+def test_lane1_validator_and_loader_agree_on_e0_shape(monkeypatch):
+    """A {behavior, e0} blob that the VALIDATOR accepts is LOADED to the SAME grid by the
+    main-loop reuse path — not the whole blob (round-2's silent no-op)."""
+    grid = {
+        f"ctx{i}": {"graded_mean": float(i), "probe_scores": [{"probe_mean": float(i)}]}
+        for i in range(50)
+    }
+    blob = {"behavior": "deception", "e0": grid}
+
+    # validator sees it as reusable
+    assert regrade._parse_reuse_blob(blob, "deception") == grid
+    files = ["issue810_final/graded_e0_deception.json"]
+    monkeypatch.setattr(regrade, "_hf_json", lambda repo, path: blob)
+    reuse = regrade._lane1_reuse_map("repo", ["deception"], files)
+    assert reuse.get("deception") == "issue810_final/graded_e0_deception.json"
+
+    # loader extracts the identical grid via the shared parser (NOT the whole blob)
+    loaded = regrade._parse_reuse_blob(regrade._hf_json("repo", reuse["deception"]), "deception")
+    assert loaded == grid
+    assert "behavior" not in loaded and "e0" not in loaded, "must be the grid, not the wrapper"
