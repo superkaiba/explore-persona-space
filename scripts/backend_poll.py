@@ -117,6 +117,51 @@ _GCP_ASYNC_FAILOVER_PHASES = frozenset(
     }
 )
 
+# ── GCP FLEX_START capacity-queue timeout (#783/#778) ─────────────────────────
+# The ``current_phase`` ``GcpBackend.poll`` produces for a FLEX_START instance
+# still queued for capacity: ``gcp._gcp_status_to_poll_result`` maps GCE
+# ``PENDING`` -> ``status="running"`` / ``current_phase="pending"`` DELIBERATELY
+# (#782/#778) so the async bg poll loop keeps polling it. The queue-timeout
+# clock below ages against THIS phase.
+GCP_PENDING_PHASE = "pending"
+
+# The ``current_phase`` the POLLER synthesizes (#783) when a FLEX_START instance
+# has stayed in the capacity queue (``"pending"``) longer than the queue-wait
+# floor. ``_is_gcp_queue_timeout`` matches THIS phase EXACTLY; it is set ONLY by
+# ``_maybe_escalate_gcp_queue_timeout``. Distinct from the #669 wedge phases so
+# the queue-timeout failover is a separate, narrow predicate.
+GCP_QUEUE_TIMEOUT_PHASE = "terminal_queue_timeout"
+
+# The default bounded queue-wait floor (#783/#778). A GCP instance whose poll
+# phase stays ``"pending"`` (FLEX_START capacity queue) longer than this fails
+# over to RunPod. 600s mirrors ``router.FREE_WAIT_SECONDS`` — the codebase's
+# already-chosen "how long do we park a queued job before advancing the lane"
+# constant. Env-overridable at CALL time via ``EPS_GCP_QUEUE_WAIT_SECONDS`` (an
+# attempt-floor in seconds, NOT a dollar cap) so ops can tune without a restart,
+# mirroring ``router._spot_max_gpu_hours``.
+GCP_QUEUE_WAIT_SECONDS_DEFAULT = 600
+
+
+def _gcp_queue_wait_seconds() -> int:
+    """Read the FLEX_START queue-wait floor (#783), defaulting to 600s.
+
+    Read at CALL time (not import time) from ``EPS_GCP_QUEUE_WAIT_SECONDS`` so
+    ops can retune the floor without restarting the poller, mirroring
+    ``router._spot_max_gpu_hours``. A missing / non-integer / non-positive value
+    falls back to :data:`GCP_QUEUE_WAIT_SECONDS_DEFAULT` (600s) — the floor can
+    never be zero/negative (which would fail over instantly on the first PENDING
+    poll) or crash the poll on a typo.
+    """
+    raw = os.environ.get("EPS_GCP_QUEUE_WAIT_SECONDS")
+    if raw is None:
+        return GCP_QUEUE_WAIT_SECONDS_DEFAULT
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCP_QUEUE_WAIT_SECONDS_DEFAULT
+    return val if val > 0 else GCP_QUEUE_WAIT_SECONDS_DEFAULT
+
+
 # ── RunPod RUNNING-but-no-port host wedge (#664/#689) ─────────────────────────
 # A RunPod pod whose ``desiredStatus`` stays RUNNING with null/empty
 # ``runtime.ports`` past this floor is on a degraded host: ``resume_pod`` is
@@ -538,6 +583,104 @@ def _maybe_escalate_gcp_wedge(handle, result, sidecar: Path, *, now: float):
         )
     # Within the floor, OR no reachability alarm → stays running (false-positive guard).
     return result
+
+
+def _maybe_escalate_gcp_queue_timeout(handle, result, sidecar: Path, *, now: float):
+    """Escalate a GCP instance stuck in the FLEX_START capacity queue past the floor (#783/#778).
+
+    The queue-timeout sibling of :func:`_maybe_escalate_gcp_wedge`. A FLEX_START
+    create can SUCCEED yet leave the instance PENDING (queued for capacity),
+    which ``gcp._gcp_status_to_poll_result`` maps to ``status="running"`` /
+    ``current_phase="pending"`` DELIBERATELY (#782/#778) so the bg poll loop
+    keeps polling — forever, pre-#783 (#778 sat PENDING ~2h45m). This
+    poller-side staleness clock (kept OUT of ``GcpBackend.poll`` so it stays a
+    pure function of ``(handle, gcloud responses)``, exactly as the #669 wedge)
+    ages the ``"pending"`` phase against :func:`_gcp_queue_wait_seconds`. Past
+    the floor it rewrites ``status -> "dead"`` /
+    ``current_phase -> GCP_QUEUE_TIMEOUT_PHASE`` so :func:`_is_gcp_queue_timeout`
+    matches and the queue-timeout failover fires.
+
+    NO reachability-alarm conjunction (unlike the #669 wedge): a stuck queue has
+    no live VM to be reachable, so the phase-frozen-past-floor on the ``pending``
+    phase IS the entire signal.
+
+    Reuses the SAME sidecar phase clock (:func:`_read_phase_clock` /
+    :func:`_write_phase_clock`) as the #669 wedge WITHOUT collision: the two key
+    on DISJOINT ``current_phase`` values (``"pending"`` here vs a frozen
+    mid-workload phase there), so on any given tick at most one is in scope, and
+    the shared clock re-stamps on ANY phase change (a ``pending -> provisioning``
+    advance correctly resets it). The false-positive guards return ``result``
+    UNCHANGED:
+
+    * not a GCP handle, or the poll is not ``running``, or the phase is not
+      ``"pending"`` → unchanged (only a QUEUED GCP instance is in scope; a
+      RUNNING / PROVISIONING / STAGING / terminal poll is left alone);
+    * phase advanced off ``pending`` OR first observation (``last_ts is None``)
+      → re-stamp the clock, return ``running`` (fail-open on a fresh-dispatch
+      handle with no clock, and the instant the queue dequeues);
+    * phase still ``"pending"`` but WITHIN the floor → return ``running``.
+    """
+    if getattr(handle, "backend", None) != "gcp" or result.status != "running":
+        return result
+    if result.current_phase != GCP_PENDING_PHASE:
+        return result
+    last_phase, last_ts = _read_phase_clock(sidecar)
+    if last_phase != result.current_phase or last_ts is None:
+        # Phase advanced onto pending (or first observation) → re-stamp the clock.
+        _write_phase_clock(sidecar, phase=result.current_phase, ts=now)
+        return result
+    queued_for = now - last_ts
+    floor = _gcp_queue_wait_seconds()
+    if queued_for > floor:
+        logging.warning(
+            "backend_poll: GCP issue stuck in FLEX_START capacity queue (phase %r) for "
+            "%.0fs (>%ds floor) — escalating to %s and failing over to RunPod (#783/#778)",
+            result.current_phase,
+            queued_for,
+            floor,
+            GCP_QUEUE_TIMEOUT_PHASE,
+        )
+        return replace(
+            result,
+            status="dead",
+            current_phase=GCP_QUEUE_TIMEOUT_PHASE,
+            new_milestone=True,
+            pid_alive=False,
+        )
+    # Still pending but within the floor → stays running (false-positive guard).
+    return result
+
+
+def _is_gcp_queue_timeout(handle, result) -> bool:
+    """True ONLY for a GCP handle the queue-timeout escalation marked terminal (#783).
+
+    The narrow sibling of :func:`_is_gcp_async_workload_failure`:
+    ``handle.backend == "gcp"`` AND ``result.status == "dead"`` AND
+    ``result.current_phase == GCP_QUEUE_TIMEOUT_PHASE`` (a phase set ONLY by
+    :func:`_maybe_escalate_gcp_queue_timeout`).
+
+    Reuses that predicate's EXACT CPU-intent guard (#677/#747): a
+    ``cpu-bigmem`` queue-stall must NOT fail over — it has no cheap RunPod CPU
+    lane — while ``cpu-small`` / ``cpu-mid`` (IN
+    :data:`router.RUNPOD_CPU_INSTANCE_FOR_INTENT`) ARE eligible. A CPU handle
+    with ``gpu_count == 0`` and no ``intent`` key is treated as NOT-mapped ->
+    EXCLUDED (fail-toward the safe #677 terminal on a missing key). A pre-#677
+    GPU handle with no ``gpu_count`` key takes the existing GPU failover path
+    (``extra.get("gpu_count")`` is ``None`` != ``0`` → the guard is a no-op).
+    """
+    extra = getattr(handle, "extra", None) or {}
+    if extra.get("gpu_count") == 0:
+        # Lazy import keeps the backend_poll -> router import direction and reuses
+        # the router's single source of truth for the mapped-intent set.
+        from explore_persona_space.backends.router import RUNPOD_CPU_INSTANCE_FOR_INTENT
+
+        if extra.get("intent") not in RUNPOD_CPU_INSTANCE_FOR_INTENT:
+            return False
+    return (
+        getattr(handle, "backend", None) == "gcp"
+        and result.status == "dead"
+        and result.current_phase == GCP_QUEUE_TIMEOUT_PHASE
+    )
 
 
 # ── RunPod no-port wedge: clock helpers + escalation + failover (#664/#689) ───
@@ -2155,6 +2298,104 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
     death. Returns a TERMINAL infra JSON instead if RunPod is unavailable
     (``no_compute_available``) or the sidecar persistence fails
     (``sidecar_persistence_failed``).
+
+    Thin wrapper over :func:`_failover_gcp_to_runpod` with the #659
+    workload-crash labelling; every string / JSON value is byte-identical to the
+    pre-refactor #659 behavior (the queue-timeout sibling
+    :func:`_failover_queued_gcp_to_runpod` reuses the SAME core with different
+    labels + a teardown-first step).
+    """
+    # Lazy import (module convention: backend_poll -> router imports stay inside
+    # functions so the --help path is fast and the import direction is one-way).
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    )
+
+    return _failover_gcp_to_runpod(
+        issue=issue,
+        handle=handle,
+        result=result,
+        sidecar=sidecar,
+        reason=ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        running_phase="gcp_workload_failover_runpod_async",
+        cause_label="GCP workload crash",
+        evidence_source="async_poller",
+        failover_tag="#659 async failover",
+        teardown_first=False,
+    )
+
+
+def _failover_queued_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -> dict:
+    """Cancel a still-queued GCP instance and re-dispatch on RunPod (#783/#778).
+
+    The queue-timeout sibling of :func:`_failover_dead_gcp_to_runpod`. It reuses
+    the SAME core (:func:`_failover_gcp_to_runpod`) — hence the SAME idempotency
+    short-circuit (durable lease + ``.claude/cache`` sentinel keyed to the GCP
+    identity), the SAME
+    :func:`~explore_persona_space.backends.router.failover_to_runpod_after_async_workload_crash`
+    terminal-rung seam, the SAME authoritative sidecar re-point + terminal-JSON
+    contract — with TWO differences the core parameterizes:
+
+    1. ``teardown_first=True`` — best-effort DELETE the still-queued GCP instance
+       BEFORE the RunPod re-dispatch. A crashed workload's VM is already gone (so
+       #659 does NOT teardown); a QUEUED FLEX_START instance is still live
+       server-side and would keep its capacity request (and could dequeue later
+       as an orphan), so the queue slot MUST be released. The teardown is
+       guarded (never raises) — a failed delete degrades to the stale-GCP-VM
+       janitor (``gcp_audit.py``) as the backstop, never blocks the failover.
+    2. ``reason=ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD`` — the marker
+       trail tells a stuck FLEX_START queue apart from a crashed workload.
+    """
+    # Lazy import (module convention: backend_poll -> router imports stay inside
+    # functions so the --help path is fast and the import direction is one-way).
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+    )
+
+    return _failover_gcp_to_runpod(
+        issue=issue,
+        handle=handle,
+        result=result,
+        sidecar=sidecar,
+        reason=ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        running_phase=ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        cause_label="GCP FLEX_START queue timeout",
+        evidence_source="async_poller_queue_timeout",
+        failover_tag="#783 queue-timeout failover",
+        teardown_first=True,
+    )
+
+
+def _failover_gcp_to_runpod(
+    *,
+    issue: int,
+    handle,
+    result,
+    sidecar: Path,
+    reason: str,
+    running_phase: str,
+    cause_label: str,
+    evidence_source: str,
+    failover_tag: str,
+    teardown_first: bool,
+) -> dict:
+    """Shared core for the GCP->RunPod async failover (#659 crash + #783 queue timeout).
+
+    Reconstructs a ``RunSpec`` from the GCP handle, (optionally) tears down the
+    still-live GCP instance first (``teardown_first`` — True ONLY for the #783
+    queue-timeout path; a #659 crashed VM is already gone), launches the SAME
+    RunPod terminal rung the sync failover uses via
+    :func:`~explore_persona_space.backends.router.failover_to_runpod_after_async_workload_crash`
+    (passing ``reason``), AUTHORITATIVELY re-points the handle sidecar at the new
+    RunPod handle (write + readback), and returns a RUNNING-shaped poll JSON
+    (``current_phase = running_phase``) so the orchestrator keeps polling the
+    RunPod run instead of posting ``epm:failure``. Returns a TERMINAL infra JSON
+    instead if RunPod is unavailable (``no_compute_available``) or the sidecar
+    persistence fails (``sidecar_persistence_failed``).
+
+    ``cause_label`` / ``evidence_source`` / ``failover_tag`` are the only
+    per-caller display strings; every idempotency + sidecar-repoint + terminal
+    path is shared, so the exactly-once bound holds identically for both callers.
     """
     # Lazy imports — keep the --help path fast and match the patch targets the
     # poller tests monkeypatch (RunPodBackend from backends.runpod;
@@ -2206,12 +2447,32 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
             sidecar=sidecar,
             reason="sidecar_persistence_failed",
             log_tail=(
-                f"GCP->RunPod failover for {handle.pod_name} ALREADY launched RunPod on a "
+                f"{cause_label} for {handle.pod_name} ALREADY failed over to RunPod on a "
                 f"prior tick but failed to persist the sidecar "
                 f"({'sentinel ' + sentinel.name if sentinel_match else 'durable lease record'}); "
-                f"refusing to launch a SECOND RunPod (exactly-once bound, #659)"
+                f"refusing to launch a SECOND RunPod (exactly-once bound, {failover_tag})"
             ),
         )
+
+    # QUEUE-TIMEOUT teardown (#783). A still-QUEUED FLEX_START instance is live
+    # server-side and keeps its capacity request; the queue slot MUST be released
+    # before re-dispatch (an undeleted PENDING instance could dequeue later as an
+    # orphan). A #659 crashed VM is already gone, so ``teardown_first`` is False
+    # there and this block is skipped. AFTER the idempotency short-circuit above,
+    # so a repeat poll that already failed over never re-tears-down. Best-effort
+    # + guarded — never raises: a failed delete degrades to the stale-GCP-VM
+    # janitor (``gcp_audit.py``) as the backstop, never blocks the failover.
+    if teardown_first:
+        try:
+            _resolve_backend("gcp").teardown(handle)
+        except Exception as exc:
+            logging.warning(
+                "backend_poll: teardown of queued GCP %s failed (%s: %s); the stale-GCP-VM "
+                "janitor (gcp_audit.py) will reap it — proceeding with the RunPod failover",
+                getattr(handle, "pod_name", "?"),
+                type(exc).__name__,
+                exc,
+            )
 
     spec = _runspec_from_gcp_handle(handle, issue)
     try:
@@ -2219,23 +2480,24 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
             spec=spec,
             runpod_backend=RunPodBackend(),
             evidence={
-                "source": "async_poller",
+                "source": evidence_source,
                 "current_phase": result.current_phase,
                 "log_tail_excerpt": result.log_tail_excerpt,
                 "gcp_pod_name": handle.pod_name,
             },
+            reason=reason,
             marker_poster=post_marker_via_task_py,
             # BEST-EFFORT in-route lease-mid-flight write (mirrors
             # dispatch_for_issue's on_launched). _invoke_on_launched SWALLOWS the
             # hook's exceptions (logged loud, not propagated), so this is NOT
             # authoritative — the post-route write/readback below is.
             on_launched=lambda h: write_handle_sidecar(h, sidecar),
-            # M3b (#669): the GCP-crash identity this failover is OF, so the
-            # router's in-flock re-check + stamp makes N CONCURRENT triggerers
-            # (the #669 wedge classifier + the watchdog-TERMINATED path on the
-            # same handle) launch RunPod exactly once. The OUTSIDE-the-flock
-            # pre-check above (sentinel_match / _lease_records_failover_of) is
-            # the cheap single-triggerer fast-path; this is the atomic guard.
+            # M3b (#669): the GCP identity this failover is OF, so the router's
+            # in-flock re-check + stamp makes N CONCURRENT triggerers (the #669
+            # wedge classifier + the watchdog-TERMINATED path on the same handle)
+            # launch RunPod exactly once. The OUTSIDE-the-flock pre-check above
+            # (sentinel_match / _lease_records_failover_of) is the cheap
+            # single-triggerer fast-path; this is the atomic guard.
             gcp_failover_of_identity=_gcp_handle_identity(handle),
         )
     except NoComputeAvailableError:
@@ -2248,8 +2510,7 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
             sidecar=sidecar,
             reason="no_compute_available",
             log_tail=(
-                f"GCP workload crash on {handle.pod_name}; RunPod also unavailable "
-                f"(#659 async failover)"
+                f"{cause_label} on {handle.pod_name}; RunPod also unavailable ({failover_tag})"
             ),
         )
 
@@ -2289,12 +2550,12 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
             _clear_failover_sentinel(sentinel)
             return {
                 "status": "running",
-                "current_phase": "gcp_workload_failover_runpod_async",
+                "current_phase": running_phase,
                 "new_milestone": True,
                 "last_log_mtime_sec_ago": 0,
                 "pid_alive": True,
                 "log_tail_excerpt": (
-                    f"GCP workload crash on {handle.pod_name}; a concurrent triggerer "
+                    f"{cause_label} on {handle.pod_name}; a concurrent triggerer "
                     f"already failed over to RunPod {existing.pod_name} (M3b in-flock "
                     f"re-check, #669); preserved its full sidecar handle"
                 ),
@@ -2383,13 +2644,13 @@ def _failover_dead_gcp_to_runpod(*, issue: int, handle, result, sidecar: Path) -
     # loop does NOT post epm:failure for the GCP death.
     return {
         "status": "running",
-        "current_phase": "gcp_workload_failover_runpod_async",
+        "current_phase": running_phase,
         "new_milestone": True,
         "last_log_mtime_sec_ago": 0,
         "pid_alive": True,
         "log_tail_excerpt": (
-            f"GCP workload crash on {handle.pod_name}; failed over to RunPod "
-            f"{route_result.handle.pod_name} (#659 async failover)"
+            f"{cause_label} on {handle.pod_name}; failed over to RunPod "
+            f"{route_result.handle.pod_name} ({failover_tag})"
         ),
         "gate": None,
         "sentinels_processed": 0,
@@ -2508,6 +2769,23 @@ def main(argv: list[str] | None = None) -> int:
     # (non-GCP, not running, phase advancing, within floor, or no reachability
     # alarm) — the staleness clock rides the sidecar's extra dict.
     result = _maybe_escalate_gcp_wedge(handle, result, Path(sidecar), now=time.time())
+
+    # #783 GCP FLEX_START queue-timeout escalation: a GCP instance stuck in the
+    # capacity queue (current_phase="pending") past EPS_GCP_QUEUE_WAIT_SECONDS is
+    # rewritten to status=dead / terminal_queue_timeout so the queue-timeout
+    # predicate below fails it over to RunPod. Mutually exclusive with the #669
+    # wedge above BY PHASE ("pending" here vs a frozen mid-workload phase there),
+    # so ordering it right after the wedge groups all GCP escalations before the
+    # async-workload predicate. A no-op on every other case (non-GCP, not
+    # running, phase != pending, first observation, or within the floor) — the
+    # queue clock rides the SAME sidecar staleness clock (phase-disjoint).
+    result = _maybe_escalate_gcp_queue_timeout(handle, result, Path(sidecar), now=time.time())
+    if _is_gcp_queue_timeout(handle, result):
+        queue_timeout_json = _failover_queued_gcp_to_runpod(
+            issue=args.issue, handle=handle, result=result, sidecar=Path(sidecar)
+        )
+        print(json.dumps(queue_timeout_json))
+        return 0
 
     # ASYNC GCP-workload-failover (#659): a GCP VM that was already up and
     # crashed its WORKLOAD (not setup) minutes in surfaces here as
