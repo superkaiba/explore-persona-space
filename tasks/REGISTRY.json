@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 784,
+  "highest_id": 785,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5018,6 +5018,13 @@
       "path": "tasks/running/784",
       "status": "running",
       "title": "workflow: raise ensemble review cap 3->5, expand git-provenance auto-strip, surface-not-ship real residual at cap"
+    },
+    "785": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/785",
+      "status": "proposed",
+      "title": "daily-fix: worktree path #506 regression in Step 4a + Step 9c"
     },
     "8": {
       "has_clean_result": false,
