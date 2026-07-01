@@ -727,8 +727,11 @@ def _load_context_vectors(path: Path) -> dict | None:
     if not isinstance(blob, dict):
         return None
     cvec = None
-    for k in ("context_vectors_mean", "context_vectors", "c_C", "mean"):
-        if k in blob and hasattr(blob[k], "ndim"):
+    # #594's context_vectors_mean.pt stores the (Nc, Lc, H) tensor under the key
+    # ``tensor`` with ids under ``instance_ids`` (verified on HF); accept the aliases
+    # too so a differently-keyed sibling still resolves.
+    for k in ("tensor", "context_vectors_mean", "context_vectors", "c_C", "mean"):
+        if k in blob and hasattr(blob[k], "ndim") and getattr(blob[k], "ndim", 0) == 3:
             cvec = blob[k]
             break
     if cvec is None:
