@@ -792,8 +792,8 @@ per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
 into ~34h). Then reconcile the WORST-CASE wall — base phases PLUS every
 conditional / extension phase that could run on the same provision —
 against the GCP lane's auto-delete fence
-(`--instance-termination-action=DELETE` + `--max-run-duration`, default
-7d — the FLEX_START ceiling, #741). If worst-case wall on the routed
+(`--instance-termination-action=DELETE` + `--max-run-duration`,
+default 7d — the FLEX_START ceiling, #741). If worst-case wall on the routed
 machine approaches the routed lane's fence (the GCP `--max-run-duration`
 default is 7d, but a plan may deliberately set a shorter fence), the plan
 MUST do one of: (a) declare a deliberate `spec.extra["max_run_duration"]`
