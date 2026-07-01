@@ -217,6 +217,52 @@ def test_quoted_main_still_allows(cmd):
     assert _run(cmd) == 0
 
 
+# ---------------------------------------------------------------------------
+# MUST BLOCK — `switch main<sep>` prefixes. The switch allow-arm anchors `main`
+# to the full arg (optional trailing quote, then EOL or a shell delimiter). A
+# bare `\bmain\b` word boundary matched before `-` / `/` / `.` (non-word
+# chars), so `git switch main-adjacent` / `main/foo` / `main.x` (and quoted
+# forms) slipped through the allow-arm and leaked a branch-switch off main.
+# Concern id: switch-main-prefix-allowarm-leak (#796 round 3).
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch main-adjacent",  # main-prefix branch -> block
+        'git switch "main-adjacent"',  # quoted main-prefix -> block
+        "git switch main/foo",  # main/ subpath -> block
+        'git switch "main/foo"',  # quoted main/ subpath -> block
+        "git switch main.x",  # main. suffix -> block
+        "git switch main_x",  # main_ (word char) -> block (never hit the allow-arm)
+        "git switch mainline",  # main-substring branch -> block
+    ],
+)
+def test_switch_main_prefix_still_blocks(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — genuine return-to-main, including a trailing shell delimiter or
+# chained command after `main`. NOT guarded by @on_main (must never trap in
+# either repo-root HEAD state). Concern id: switch-main-prefix-allowarm-leak.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch main",  # bare return-to-main
+        'git switch "main"',  # quoted return-to-main
+        "git switch 'main'",  # single-quoted return-to-main
+        "git switch main;",  # semicolon-terminated -> still return-to-main
+        "git switch main | tee log.txt",  # pipe-terminated
+        "git switch main && echo done",  # chained command after main
+        "git switch -c main",  # create-branch named main (allow-arm tolerates -c)
+    ],
+)
+def test_switch_return_to_main_still_allows(cmd):
+    assert _run(cmd) == 0
+
+
 def test_note_text_git_verb_literal_trips_guard_known_limitation():
     # KNOWN LIMITATION (documented in the script header): the guard scans the
     # RAW command and does NOT strip quoted arguments, so a quoted git-verb
