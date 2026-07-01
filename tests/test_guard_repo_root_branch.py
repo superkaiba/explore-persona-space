@@ -332,6 +332,80 @@ def test_or_pipe_cd_scope_does_not_latch(cmd):
 
 
 # ---------------------------------------------------------------------------
+# MUST BLOCK — bare `&` (background operator) does NOT let a later allow-arm
+# clause mask an earlier dangerous one (#804 round 2). Bash `A & B` runs A in a
+# background subshell (its own cwd) AND B in the foreground parent (unchanged
+# cwd = repo root); BOTH execute. The `split_and_label` sed pre-pass matches
+# `&&` before the single `&`, so a bare `&` becomes a BG separator that RESETS
+# the `scoped` latch (like ||/|). The dangerous LHS clause therefore classifies
+# on its own and blocks. Concern id: guard-single-ampersand-masking-leak.
+#   `git switch feature & git switch main`  -> BG reset; switch-feature blocks.
+#   `git checkout HEAD~1 & git checkout main` -> BG reset; HEAD~1 detach fires.
+#   `cd .claude/worktrees/foo & git switch feature` -> a BACKGROUND cd runs in
+#     its own subshell and does NOT scope the foreground git; switch blocks.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch feature & git switch main",  # BG reset; earlier switch-feature blocks
+        "git checkout HEAD~1 & git checkout main",  # BG reset; HEAD~1 detach classifier fires
+        "cd .claude/worktrees/foo & git switch feature",  # bg cd does not scope the fg git
+    ],
+)
+def test_bg_ampersand_does_not_mask(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — a bare `&` between two non-dangerous clauses stays allowed: the
+# background LHS is not a checkout/switch and the foreground RHS returns to
+# main. Guards against the BG reset over-blocking a benign background compound.
+# Concern id: guard-single-ampersand-masking-leak.
+# ---------------------------------------------------------------------------
+def test_bg_ampersand_benign_allows():
+    # `git status` (bg) is not a checkout/switch; `git switch main` (fg) hits the
+    # allow-arm. Neither clause moves off main, so the compound is allowed.
+    assert _run("git status & git switch main") == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — a `;`-preceding `cd` does NOT scope the following git clause
+# (#804 round 2, fail-closed). Bash runs the RHS of `cd X ; git ...` regardless
+# of the `cd` exit code; a FAILED `cd` (missing target) leaves the cwd unchanged
+# (repo root), so the git clause runs off-worktree. The guard cannot prove a
+# `;`-preceding `cd` succeeded, so it fails CLOSED: the `scoped` latch RESETS on
+# `;` (SEQ), same as ||/|/&. The v2 `cd worktree ; git switch bar` ALLOW row
+# (which trusted the `;` cd-scope) is therefore removed and flips to a BLOCK.
+# Concern id: guard-cd-scope-latch-when-cd-fails.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/foo ; git switch feature",  # existing worktree, ; no longer latches
+        "cd .claude/worktrees/missing-nonexistent-xyz ; git switch feature",  # missing: cd fails
+        "cd /tmp/missing-nonexistent-xyz ; git checkout HEAD~1",  # missing /tmp: cd fails
+    ],
+)
+def test_semicolon_cd_scope_does_not_latch(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — a `;`-preceding `cd` whose following clause is NOT a
+# checkout/switch stays allowed: the git clause classifier does not fire on
+# `git status`, so no block. Guards against the `;` fail-closed reset
+# over-blocking a benign `cd worktree ; git status`. Concern id:
+# guard-cd-scope-latch-when-cd-fails.
+# ---------------------------------------------------------------------------
+def test_semicolon_cd_scope_benign_git_allows():
+    # `git status` is not a checkout/switch, so the clause is skipped regardless
+    # of the (now-reset) latch -> allowed.
+    assert _run("cd .claude/worktrees/foo ; git status") == 0
+
+
+# ---------------------------------------------------------------------------
 # MUST BLOCK — a clause that itself moves off main blocks regardless of the ||
 # or | connector (no cd-scoping involved; the git-switch-feature clause is
 # dangerous on its own). Guards against an over-correction that disables ALL
@@ -370,8 +444,7 @@ def test_glued_shortflag_branch_creation_still_blocks(cmd):
     "cmd",
     [
         "cd .claude/worktrees/foo && git switch bar",  # cd worktree scopes the later switch (&&)
-        "cd .claude/worktrees/foo ; git switch bar",  # cd worktree scopes the later switch (;)
-        "cd /tmp/foo && git checkout abc1234",  # cd /tmp scopes
+        "cd /tmp/foo && git checkout abc1234",  # cd /tmp scopes (&&)
         "git -C .claude/worktrees/foo switch bar",  # per-clause -C scope
         "git status ; git -C .claude/worktrees/foo switch bar",  # -C scope on a compound
         "git switch main | tee log.txt",  # pipe-split: switch main allow-arm + non-git tail
