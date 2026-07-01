@@ -5169,8 +5169,8 @@
     "804": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/804",
-      "status": "running",
+      "path": "tasks/completed/804",
+      "status": "completed",
       "title": "workflow-fix: guard clause-local parsing (compound + glued -b leaks)"
     },
     "805": {
