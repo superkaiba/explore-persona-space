@@ -118,7 +118,12 @@ _JUDGE_CHECKPOINT_DIR = EVAL_RESULTS_DIR / "judge_dispatch"
 
 
 def _judge_via_batch_api(
-    prompts: list[str], model: str, *, id_prefix: str = "e0", max_tokens: int = 300
+    prompts: list[str],
+    model: str,
+    *,
+    id_prefix: str = "e0",
+    max_tokens: int = 300,
+    temperature: float | None = None,
 ) -> list[dict]:
     """Judge filled rubric prompts via the registered eval.batch_judge path.
 
@@ -134,8 +139,19 @@ def _judge_via_batch_api(
     per prompt IN ORDER; a parse / transport failure becomes a tracked
     ``{"_judge_error": reason}`` (never a silent default), the same drop signal
     the caller already handles.
+
+    ``temperature`` (graded path only): when set, the dispatch runs inside
+    ``judge_dispatch.graded_temperature`` so every request carries an EXPLICIT
+    ``"temperature"``. The graded N=8 draws MUST be independent samples at
+    temp=1.0 (llm-judging rule 4), and the Anthropic API default is not
+    contractually pinned — passing it explicitly makes the protocol reproducible
+    against a future default change. None → API default (the binary companion
+    is a single verdict, so it stays unpinned).
     """
-    from explore_persona_space.eval.judge_dispatch import dispatch_judge_items
+    from explore_persona_space.eval.judge_dispatch import (
+        dispatch_judge_items,
+        graded_temperature,
+    )
     from explore_persona_space.eval.utils import parse_judge_json
 
     # JudgeItem = (custom_id, question, completion, user_msg). The whole rubric is
@@ -149,14 +165,15 @@ def _judge_via_batch_api(
         return {"_judge_error": reason}
 
     _JUDGE_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-    scores = dispatch_judge_items(
-        items,
-        judge_model=model,
-        judge_system_prompt="",  # the rubric is the entire instruction (user msg)
-        max_tokens=max_tokens,
-        checkpoint_dir=_JUDGE_CHECKPOINT_DIR,
-        error_dict_factory=_error_dict,
-    )
+    with graded_temperature(temperature):
+        scores = dispatch_judge_items(
+            items,
+            judge_model=model,
+            judge_system_prompt="",  # the rubric is the entire instruction (user msg)
+            max_tokens=max_tokens,
+            checkpoint_dir=_JUDGE_CHECKPOINT_DIR,
+            error_dict_factory=_error_dict,
+        )
     out: list[dict] = []
     for i in range(len(prompts)):
         v = scores.get(f"{id_prefix}-{i}")
@@ -263,8 +280,14 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
         for _c, p, t in flat:
             gp = build_graded_prompt(behavior, p, t)
             graded_prompts.extend([gp] * GRADED_N_SAMPLES)
+        # temp=GRADED_TEMPERATURE (1.0) EXPLICIT so the N=8 draws are independent
+        # samples regardless of a future API-default change (llm-judging rule 4).
         graded_raw = _judge_via_batch_api(
-            graded_prompts, JUDGE_MODEL, id_prefix="e0grd", max_tokens=400
+            graded_prompts,
+            JUDGE_MODEL,
+            id_prefix="e0grd",
+            max_tokens=400,
+            temperature=GRADED_TEMPERATURE,
         )
         # Regroup the flat results back into N draws per cell, parsing each.
         for ci in range(len(flat)):
@@ -290,12 +313,27 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
     # ── accumulate per (ctx -> probe -> [...]) ──
     by_ctx_bin: dict[str, dict[str, list[bool]]] = {}
     by_ctx_grd: dict[str, dict[str, list[float]]] = {}  # per-probe mean-over-draws scores
+    # DRAW-LEVEL kept/dropped counts per (ctx, probe), summed across completions
+    # (CONCERN #3 issue763-graded-draw-counts-missing): ``n_graded`` counts PROBES
+    # with a kept graded mean, which cannot audit the N=8 drop rule at scale. Track
+    # the surviving-DRAW counts so the E0 output carries per-probe + per-cell draw
+    # yields (max kept per cell = N × completions_for_that_cell).
+    by_ctx_grd_draws: dict[str, dict[str, dict[str, int]]] = {}
     for idx, (ctx_id, probe, _text) in enumerate(flat):
         bv = binary_verdicts[idx]
         if not ("_judge_error" in bv or "_judge_refused" in bv):
             pos = _verdict_truthy(bv, col.e0_verdict_key, behavior)
             by_ctx_bin.setdefault(ctx_id, {}).setdefault(probe, []).append(pos)
-        kept = [d for d in graded_draws[idx] if d is not None]
+        draws = graded_draws[idx]
+        kept = [d for d in draws if d is not None]
+        # accumulate draw-level kept/dropped counts for EVERY completion (even one
+        # with zero kept draws contributes to n_dropped — a fully-dropped cell is
+        # exactly what the audit must surface).
+        counts = by_ctx_grd_draws.setdefault(ctx_id, {}).setdefault(
+            probe, {"n_kept": 0, "n_dropped": 0}
+        )
+        counts["n_kept"] += len(kept)
+        counts["n_dropped"] += len(draws) - len(kept)
         if kept:
             import numpy as np
 
@@ -304,19 +342,25 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
     out: dict[str, dict] = {}
     ctx_graded_means: list[float] = []
     ctx_binary_rates: list[float] = []
-    for ctx_id in {*by_ctx_bin, *by_ctx_grd}:
+    for ctx_id in {*by_ctx_bin, *by_ctx_grd, *by_ctx_grd_draws}:
         bin_pm = by_ctx_bin.get(ctx_id, {})
         grd_pm = by_ctx_grd.get(ctx_id, {})
+        draw_pm = by_ctx_grd_draws.get(ctx_id, {})
         all_bin = [p for rows in bin_pm.values() for p in rows]
         n_judged = len(all_bin)
         n_positive = sum(1 for p in all_bin if p)
         all_grd = [s for rows in grd_pm.values() for s in rows]
         n_graded = len(all_grd)
-        probes = sorted({*bin_pm, *grd_pm})
+        # DRAW-LEVEL cell totals (CONCERN #3): surviving vs dropped N-draws summed
+        # over the cell's probes×completions — the number the drop-rule audit reads.
+        n_graded_draws_kept = sum(c["n_kept"] for c in draw_pm.values())
+        n_graded_draws_dropped = sum(c["n_dropped"] for c in draw_pm.values())
+        probes = sorted({*bin_pm, *grd_pm, *draw_pm})
         per_probe = []
         for probe in probes:
             brows = bin_pm.get(probe, [])
             grows = grd_pm.get(probe, [])
+            dcounts = draw_pm.get(probe, {"n_kept": 0, "n_dropped": 0})
             import numpy as np
 
             per_probe.append(
@@ -326,6 +370,11 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
                     "graded": (float(np.mean(grows)) if grows else None),
                     "n_judged": len(brows),
                     "n_graded": len(grows),
+                    # per-probe surviving/dropped N-draw counts (CONCERN #3) — lets
+                    # the analyzer audit the drop rule per probe, not just at the
+                    # behavior aggregate.
+                    "n_draws_kept": dcounts["n_kept"],
+                    "n_draws_dropped": dcounts["n_dropped"],
                 }
             )
         rate = (n_positive / n_judged) if n_judged else None
@@ -339,6 +388,10 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
             "graded_mean": graded_mean,
             "n_judged": n_judged,
             "n_graded": n_graded,
+            # cell-level DRAW yields (CONCERN #3): kept/dropped N-draws over the
+            # cell (max kept ≈ N × probes×completions for this cell).
+            "n_graded_draws_kept": n_graded_draws_kept,
+            "n_graded_draws_dropped": n_graded_draws_dropped,
             "n_positive": n_positive,
             "per_probe": per_probe,
         }
@@ -381,6 +434,10 @@ def _score_format(gen_by_ctx: dict[str, dict]) -> dict:
                     "graded": (frac * 100.0 if frac is not None else None),
                     "n_judged": len(cell_flags),
                     "n_graded": len(cell_flags),
+                    # deterministic classifier: each structural flag IS one "draw",
+                    # none dropped (schema parity with the judged behaviors, CONCERN #3).
+                    "n_draws_kept": len(cell_flags),
+                    "n_draws_dropped": 0,
                 }
             )
         rate = (sum(1 for f in flags_all if f) / len(flags_all)) if flags_all else None
@@ -389,6 +446,8 @@ def _score_format(gen_by_ctx: dict[str, dict]) -> dict:
             "graded_mean": (rate * 100.0 if rate is not None else None),
             "n_judged": len(flags_all),
             "n_graded": len(flags_all),
+            "n_graded_draws_kept": len(flags_all),
+            "n_graded_draws_dropped": 0,
             "n_positive": sum(1 for f in flags_all if f),
             "per_probe": per_probe,
         }
@@ -472,6 +531,33 @@ def _behavior_floor(behavior: str, *, smoke: bool) -> tuple[int, int]:
     return m_b, floor
 
 
+def _apply_yield_flags(per_ctx: dict[str, dict], floor: int) -> dict:
+    """Stamp PER-CELL yield_shortfall + floor + realized_n and return the flags.
+
+    BLOCKER #2 yield-shortfall-behavior-not-per-cell: mutate every context's cell
+    dict in ``per_ctx`` with ``realized_n`` (= its n_judged), ``floor``, and
+    ``yield_shortfall`` (= realized_n < floor). The old behavior-level
+    ``max_n < floor`` flag silently hid a below-floor cell whenever a SIBLING
+    context reached the floor (plan v3 §10.2: "Any cell below its behavior's floor
+    is flagged yield_shortfall:true with realized n"). Returns the behavior-level
+    summary ``{floor, any_shortfall, shortfall_cells}`` — ``any_shortfall`` True
+    iff ANY cell is below floor, ``shortfall_cells`` mapping each shortfall
+    ctx_id -> its realized n (a reportable finding surfaced without re-scanning).
+    """
+    for cell in per_ctx.values():
+        realized_n = cell["n_judged"]
+        cell["realized_n"] = realized_n
+        cell["floor"] = floor
+        cell["yield_shortfall"] = realized_n < floor
+    return {
+        "floor": floor,
+        "any_shortfall": any(c["yield_shortfall"] for c in per_ctx.values()),
+        "shortfall_cells": {
+            cid: c["realized_n"] for cid, c in per_ctx.items() if c["yield_shortfall"]
+        },
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #763: judge E0(C,B) over matched probes.")
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS))
@@ -494,11 +580,13 @@ def main() -> int:
         # Behavior-conditioned 80% floor = floor(0.8 * m_B) from the frozen pool's
         # n_probes (brief Must-Fix #2) — NOT a hardcoded 48. m=60 -> 48, m=20 -> 16.
         m_b, floor = _behavior_floor(behavior, smoke=args.smoke)
+        # PER-CELL yield_shortfall (BLOCKER #2 yield-shortfall-behavior-not-per-cell):
+        # stamp each context with its OWN shortfall verdict + realized n + floor.
+        yield_summary = _apply_yield_flags(per_ctx, floor)
         yield_flags[behavior] = {
             "m_B": m_b,
             "max_n_judged": max_n,
-            "yield_shortfall": (max_n < floor),
-            "floor": floor,
+            **yield_summary,  # floor, any_shortfall, shortfall_cells (per-cell detail)
         }
         # Graded-DV diagnostics (llm-judging rules 13/15/18): r_jj test-retest,
         # the graded↔binary closed-loop tracking Spearman, the dropped-draw count.
@@ -509,14 +597,15 @@ def main() -> int:
         }
         e0[behavior] = per_ctx
         logger.info(
-            "[judge] %s: %d contexts, max n_judged=%d, m_B=%d, floor=%d, shortfall=%s, "
-            "r_jj=%s, graded~binary=%s, dropped=%d",
+            "[judge] %s: %d contexts, max n_judged=%d, m_B=%d, floor=%d, any_shortfall=%s "
+            "(%d cells below floor), r_jj=%s, graded~binary=%s, dropped=%d",
             behavior,
             len(per_ctx),
             max_n,
             m_b,
             floor,
-            yield_flags[behavior]["yield_shortfall"],
+            yield_flags[behavior]["any_shortfall"],
+            len(yield_flags[behavior]["shortfall_cells"]),
             judge_diagnostics[behavior]["r_jj"],
             judge_diagnostics[behavior]["graded_binary_tracking_spearman"],
             judge_diagnostics[behavior]["n_graded_dropped"],

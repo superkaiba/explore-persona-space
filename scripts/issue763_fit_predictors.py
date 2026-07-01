@@ -75,6 +75,7 @@ from issue763_common import (  # noqa: E402
     EVAL_RESULTS_DIR,
     SEED,
     dump_json,
+    is_reduced_power,
     load_json,
     reproducibility_metadata,
 )
@@ -429,6 +430,34 @@ def _triage(rho, rho_ci, sqrt_r_yy, shuffle_p, control_pass) -> str:
     return "noise_limited"  # (c)
 
 
+def _e0_behavior_meta(e0: dict, behavior: str) -> dict:
+    """Extract the E0-side v3 §10.1 core fields for one behavior.
+
+    Returns ``{m, reduced_power, r_jj, graded_binary_tracking_spearman}`` — the
+    fields the headline predictor artifact MUST co-locate with its verdict so the
+    analyzer reads them together (BLOCKER predictor-results-missing-reduced-power-
+    and-m / issue763-results-schema-mismatch):
+
+    - ``m`` — the behavior's ACTUAL frozen probe count (``yield_flags[B].m_B``),
+      the reliability-power denominator (60/60/60/20/20 by design).
+    - ``reduced_power`` — the pre-registered interpretation guard: ``True`` when
+      ``m`` is below the ≥50 floor (self_report / persona_drift), so an m=20
+      verdict-(c) is NOT read as a ≥50-probe falsification.
+    - ``r_jj`` / ``graded_binary_tracking_spearman`` — the graded-DV reliability
+      diagnostics, propagated from the E0 ``judge_diagnostics`` so the predictor
+      artifact is self-contained (the analyzer reads ONE file for the headline).
+    """
+    yf = (e0.get("yield_flags") or {}).get(behavior, {})
+    diag = (e0.get("judge_diagnostics") or {}).get(behavior, {})
+    m = yf.get("m_B")
+    return {
+        "m": m,
+        "reduced_power": is_reduced_power(m),
+        "r_jj": diag.get("r_jj"),
+        "graded_binary_tracking_spearman": diag.get("graded_binary_tracking_spearman"),
+    }
+
+
 def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict:
     """Per-behavior analysis: the v3 GRADED PRIMARY (ridge headline) + binary companion.
 
@@ -442,15 +471,21 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
     ``triage_verdict`` is the GRADED-RIDGE verdict; the companion's verdict is
     reported alongside as ``triage_verdict_binary``.
     """
+    meta = _e0_behavior_meta(e0, behavior)
     graded, rates, n_judged, per_probe_graded, per_probe_binary, kept = _e0_vectors(
         e0, behavior, ctx_ids
     )
     if len(graded) < 4:
+        # Uniform v3 §10.1 core fields even on the degenerate path so every
+        # behavior record carries m + reduced_power (the interpretation guard).
         return {
             "behavior": behavior,
             "triage_verdict": "noise_limited",
             "note": f"only {len(graded)} contexts with a non-None graded_mean",
             "n_contexts": len(graded),
+            "m": meta["m"],
+            "reduced_power": meta["reduced_power"],
+            "graded_minus_binary_delta": None,
         }
     # align v0 to the kept contexts
     keep_idx = [ctx_ids.index(c) for c in kept]
@@ -561,10 +596,35 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
     optimism_delta = (
         (rho_ridge_g - rho_glm_g) if (rho_ridge_g is not None and rho_glm_g is not None) else None
     )
+    # The GRADED-minus-BINARY delta the v3 headline turns on (BLOCKER
+    # predictor-results-missing-reduced-power-and-m): ρ on the continuous graded
+    # DV (headline RIDGE) minus ρ on the dichotomized binary rate (companion GLM).
+    # A positive delta is the dichotomization-attenuation removed by the graded DV
+    # — the read the v3 primary exists to expose.
+    graded_minus_binary_delta = (
+        (rho_ridge_g - rho_glm_b) if (rho_ridge_g is not None and rho_glm_b is not None) else None
+    )
 
     return {
         "behavior": behavior,
         "n_contexts": len(graded),
+        # ── v3 §10.1 CORE interpretation-guard fields (co-located with the verdict) ──
+        "m": meta["m"],  # actual frozen probe count (60/60/60/20/20)
+        "reduced_power": meta["reduced_power"],  # True at m<50 (self_report/persona_drift)
+        "graded_minus_binary_delta": graded_minus_binary_delta,
+        # graded-DV reliability diagnostics propagated from E0 (self-contained artifact)
+        "r_jj": meta["r_jj"],
+        "graded_binary_tracking_spearman": meta["graded_binary_tracking_spearman"],
+        # ── stable v3-schema ALIASES (the reconciler-named canonical names) ──
+        # The internal names below (rho_graded_ridge, rho_binary_GLM, sqrt_r_yy)
+        # stay for back-compat; these aliases surface the §10.1 canonical spellings
+        # so a consumer keyed on the plan's schema resolves without archaeology.
+        "rho_graded": rho_ridge_g,  # PRIMARY: ρ on graded DV, headline predictor RIDGE
+        "rho_binary": rho_glm_b,  # COMPANION: ρ on binary rate, GLM
+        "rho_GLM": rho_glm_g,  # graded-GLM comparator ρ (optimism-delta partner)
+        "rho_PV": rho_pv_g,  # persona-vector baseline ρ on the graded DV
+        "sqrt_r_yy_graded": sqrt_r_yy_g,
+        "sqrt_r_yy_graded_ci": ceiling_g.get("sqrt_r_yy_ci"),
         # ── PRIMARY (graded DV, ridge headline) ──
         "primary_dv": "graded_mean",
         "headline_predictor": "ridge",
@@ -642,6 +702,13 @@ def main() -> int:
         if args.smoke and rec.get("rho_graded_ridge") is not None:
             assert np.isfinite(rec["rho_graded_ridge"]), "rho_graded_ridge not finite"
             assert rec["triage_verdict"] in ("works", "fails", "noise_limited")
+        # v3 §10.1 interpretation-guard fields present on EVERY behavior record
+        # (BLOCKER predictor-results-missing-reduced-power-and-m): m + reduced_power
+        # + graded_minus_binary_delta must exist on the degenerate path too.
+        if args.smoke:
+            for key in ("m", "reduced_power", "graded_minus_binary_delta"):
+                assert key in rec, f"§10.1 field {key!r} missing for {behavior}"
+            assert isinstance(rec["reduced_power"], bool), "reduced_power must be bool"
 
     out = {
         "by_behavior": results,

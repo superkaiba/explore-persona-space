@@ -74,6 +74,29 @@ def n_probes_target(behavior: str) -> int:
     return N_PROBES_TARGET_BY_BEHAVIOR.get(behavior, N_PROBES_TARGET)
 
 
+# The ≥50-probe reliability floor: a behavior whose per-behavior probe count m_B
+# is below this is REDUCED POWER — its √(r_yy) ceiling read + triage verdict are
+# NOT a ≥50-probe falsification of a predictor. The v3 §10.1 interpretation guard
+# co-locates ``reduced_power`` with the triage_verdict so the analyzer cannot
+# mis-read an m=20 verdict-(c) noise_limited as a strong "the geometry does not
+# predict" claim (self_report / persona_drift target 20; deception /
+# fact_expression / format_style target 60). Threshold is the ≥50 floor the body
+# fixes, so a pool freezing at, say, 55 is still reduced-power vs the 60-target
+# behaviors — the guard tracks the ACTUAL frozen m_B, not the target.
+REDUCED_POWER_PROBE_FLOOR = 50
+
+
+def is_reduced_power(m: int | None) -> bool:
+    """True iff m (the behavior's ACTUAL probe count) is below the ≥50 floor.
+
+    The v3 §10.1 pre-registered interpretation guard. ``m is None`` (unknown
+    probe count) fails toward reduced_power=True (conservative — a missing m
+    should never read as full power)."""
+    if m is None:
+        return True
+    return m < REDUCED_POWER_PROBE_FLOOR
+
+
 # HF data-repo destinations (plan §9 / §10; issue-owned namespace).
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_OVERFLOW_REPO = "superkaiba1/explore-persona-space-overflow"

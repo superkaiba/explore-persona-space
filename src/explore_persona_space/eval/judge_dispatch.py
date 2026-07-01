@@ -76,13 +76,15 @@ Dry-run CLI (zero API calls; OTPM from ``EPM_JUDGE_OTPM`` or 400k assumed)::
 
 import argparse
 import asyncio
+import contextlib
+import contextvars
 import datetime as _dt
 import hashlib
 import json
 import logging
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -98,6 +100,43 @@ if TYPE_CHECKING:
     import anthropic
 
 logger = logging.getLogger(__name__)
+
+# Explicit request temperature, set by :func:`graded_temperature` for a scoped
+# dispatch and read by :func:`_build_params`. Default None → the key is OMITTED
+# from the request (every legacy caller keeps the Anthropic API default,
+# behavior-preserving). A caller needing N INDEPENDENT graded draws (issue763's
+# N=8 protocol) sets 1.0 so the request is deterministic against a future change
+# in the API's default temperature — the graded-draw protocol treats temp=1.0 as
+# load-bearing + reproducible, not merely "whatever the default is". A ContextVar
+# (not a module global) so it is coroutine-local: the async dispatch core fans out
+# concurrent sync calls, and a plain global would leak one dispatch's temperature
+# into a concurrent dispatch on the same event loop.
+_REQUEST_TEMPERATURE: contextvars.ContextVar[float | None] = contextvars.ContextVar(
+    "judge_request_temperature", default=None
+)
+
+
+@contextlib.contextmanager
+def graded_temperature(temperature: float | None) -> Iterator[None]:
+    """Scope an EXPLICIT judge-request ``temperature`` over a dispatch block.
+
+    Every ``dispatch_judge_items`` / ``dispatch_judge_items_async`` call made
+    inside the ``with`` block builds its Messages-API requests (sync AND batch
+    paths, via :func:`_build_params`) with an explicit ``"temperature"``; outside
+    the block the key is omitted and the API default applies. ``None`` is a no-op
+    (restores the omit-key default). Reset is guaranteed on exit even on error.
+
+    Usage (issue763 N=8 graded draws)::
+
+        with graded_temperature(1.0):
+            scores = dispatch_judge_items(items, checkpoint_dir=ckpt)
+    """
+    token = _REQUEST_TEMPERATURE.set(temperature)
+    try:
+        yield
+    finally:
+        _REQUEST_TEMPERATURE.reset(token)
+
 
 # Item: same 4-tuple already used by batch_judge.
 JudgeItem = tuple[str, str, str, str]  # (custom_id, question, completion, user_msg)
@@ -164,24 +203,39 @@ def _build_params(
     max_tokens: int,
     *,
     ttl: str | None,
+    temperature: float | None = None,
 ) -> dict:
     """Build Messages-API params with cache_control on the shared rubric block.
 
     ttl="1h" for batch requests (out-of-order execution outlives the 5m
     default); ttl=None or "5m" -> ephemeral default (5m). Returns the kwargs
     dict for ``messages.create`` / the ``params`` member of a batch Request.
+
+    ``temperature``: an EXPLICIT request temperature (reproducibility — the
+    Anthropic API default is currently 1.0 but is not contractually pinned; a
+    caller needing N independent graded draws, e.g. issue763's N=8 protocol,
+    sets ``1.0`` so the request is deterministic against a future API-default
+    change). When left None, the value falls back to the coroutine-local
+    :data:`_REQUEST_TEMPERATURE` context (set by :func:`graded_temperature`); if
+    THAT is also None, the ``"temperature"`` key is OMITTED and the API default
+    applies — behavior-preserving for every legacy caller.
     """
+    if temperature is None:
+        temperature = _REQUEST_TEMPERATURE.get()
     sys_block: dict = {"type": "text", "text": judge_system_prompt}
     if ttl is not None and ttl != "5m":
         sys_block["cache_control"] = {"type": "ephemeral", "ttl": ttl}
     else:
         sys_block["cache_control"] = {"type": "ephemeral"}
-    return {
+    params = {
         "model": judge_model,
         "max_tokens": max_tokens,
         "system": [sys_block],
         "messages": [{"role": "user", "content": user_msg}],
     }
+    if temperature is not None:
+        params["temperature"] = temperature
+    return params
 
 
 @dataclass
@@ -1291,6 +1345,7 @@ __all__ = [
     "decide_route",
     "dispatch_judge_items",
     "dispatch_judge_items_async",
+    "graded_temperature",
     "probe_otpm_limit",
 ]
 
