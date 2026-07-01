@@ -4987,8 +4987,8 @@
     "780": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/780",
-      "status": "planning",
+      "path": "tasks/approved/780",
+      "status": "approved",
       "title": "workflow-fix: selection-symmetric nulls + persist per-draw \u00d7 per-axis matrix"
     },
     "8": {
