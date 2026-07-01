@@ -1,7 +1,7 @@
 ---
 title: Matching the probe set raises the base-activation predictor of behavior expression
-  on all three safety behaviors, but the size of that gain is pinned down only for
-  refusal (MODERATE confidence)
+  on all three safety behaviors at every layer read, but the size of that gain is
+  pinned down only for refusal (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-30T08:48:01Z'
