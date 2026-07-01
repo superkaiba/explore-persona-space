@@ -69,6 +69,18 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Single source of truth for the apply-parity probe's calibrated on-policy sample
+# floor. N_SAMPLES=100 is the Wilson-CI calibration floor for the +/-0.10 tolerance
+# (round-4 fix); importing it here — rather than hard-coding a second literal — makes
+# the probe module OWN the value, so the dispatcher's --n-samples default can never
+# again SHADOW it with an under-sized 10 (the round-3/round-5 false-fail; #667 r5).
+# The import is a cheap CPU-only module (its top-level touches only eval helpers;
+# no CUDA / no HF model load at import) and sits after the scripts sys.path insert.
+import issue667_tf_margin_apply_parity as _apply_parity  # noqa: E402
+
+# The dispatcher's --n-samples default IS the probe's floor (single owner).
+APPLY_PARITY_N_SAMPLES_DEFAULT = _apply_parity.N_SAMPLES
+
 logger = logging.getLogger("issue667_tf_margin_dispatch")
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
@@ -595,7 +607,8 @@ def phase_analysis(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def main() -> int:
+def _build_parser() -> argparse.ArgumentParser:
+    """Construct the dispatcher CLI parser (extracted so tests can inspect defaults)."""
     parser = argparse.ArgumentParser(
         description="Issue #667 tf-margin dispatcher (parity / fact-pool / extract / analysis).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -622,7 +635,10 @@ def main() -> int:
     parser.add_argument("--cap", type=int, default=40, help="tf-margin fixed pool cap per side.")
     parser.add_argument("--n-gpus", type=int, default=8, help="CEILING; detected count is truth.")
     parser.add_argument(
-        "--n-samples", type=int, default=10, help="apply-parity probe on-policy samples."
+        "--n-samples",
+        type=int,
+        default=APPLY_PARITY_N_SAMPLES_DEFAULT,
+        help="apply-parity probe on-policy samples (default = probe's calibrated Wilson-CI floor).",
     )
     parser.add_argument("--cpu-only", action="store_true", help="Force CPU (local smoke).")
     parser.add_argument(
@@ -640,6 +656,11 @@ def main() -> int:
     parser.add_argument(
         "--dry-run", action="store_true", help="Build + log commands, skip subprocs."
     )
+    return parser
+
+
+def main() -> int:
+    parser = _build_parser()
     args = parser.parse_args()
 
     logging.basicConfig(

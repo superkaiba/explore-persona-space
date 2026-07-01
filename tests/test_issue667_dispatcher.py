@@ -780,3 +780,38 @@ def _extract_args(*, out, targets, layers):
         max_new_tokens=32,
         max_train_rows=8,
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (round-5, tf-margin dispatcher) apply-parity --n-samples default must not
+# SHADOW the probe's calibrated Wilson-CI floor.
+#
+# Round-4 crash class (bug_class ``apply_parity_dispatcher_default_n_samples_10``):
+# the round-4 fix raised the apply-parity probe module's N_SAMPLES 10 -> 100
+# (the Wilson-CI floor for the +/-0.10 tolerance; n=10 at rate ~0.7 gives a 95%
+# half-width ~0.27 -> a guaranteed false-fail even under a PERFECT apply, the
+# round-3 sweep-launch incident). But the tf-margin dispatcher's ``--n-samples``
+# default was left at 10 and ``phase_apply_parity`` forwards it explicitly to the
+# subprocess, SHADOWING the module default. A production launch via
+# ``issue667_tf_margin_dispatch.py all ...`` (no explicit --n-samples) would
+# re-trigger the round-3 false-fail. Fix: the dispatcher imports the floor from the
+# probe module (one owner) so the two can never drift.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_apply_parity_dispatcher_default_n_samples_matches_calibrated_floor():
+    """Dispatcher's --n-samples default MUST be >= the calibrated Wilson-CI floor
+    that lives in the apply-parity probe module. Pre-fix the default was 10 (< 100),
+    which shadowed the round-4 N_SAMPLES=100 fix and re-armed the round-3 false-fail.
+    """
+    import issue667_tf_margin_dispatch as tfm_disp
+    from issue667_tf_margin_apply_parity import N_SAMPLES as PROBE_FLOOR
+
+    # Parse a bare 'apply-parity-probe' command with no --n-samples override.
+    parser = tfm_disp._build_parser()
+    args = parser.parse_args(["apply-parity-probe"])
+    assert args.n_samples >= PROBE_FLOOR, (
+        f"dispatcher --n-samples default ({args.n_samples}) shadows the probe's "
+        f"calibrated floor ({PROBE_FLOOR}); the round-4 N_SAMPLES=100 fix is a no-op "
+        f"in production."
+    )
