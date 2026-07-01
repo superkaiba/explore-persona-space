@@ -15,13 +15,19 @@ origin_prompt: what about taking activation at the newline before the next user 
   of the answer (should be cheap right)? - although potentially we already have this
   experiment
 goal: 'On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the
-  response — mean-over-answer (the #722 baseline), last content token, the turn-boundary
-  newline after <|im_end|> (the answer-side mirror of the last-input-token context
-  vector c_C), a dense per-position sweep, plus maxp/attn — yields the strongest linear
-  context->answer map c_C -> summary, measured by held-out skill-over-mean R2 per
-  layer, reusing #658/#722''s 50-context base grid and fit harness.'
+  response (mean-over-answer / last token / the turn-boundary <|im_end|> and the newline
+  after it / a dense per-position sweep / maxp / attn) best supports BOTH (a) the
+  linear context->answer map c_C->summary (held-out skill-over-mean R2 per layer,
+  #722''s DV) AND (b) predicting behavior expression E0 from the summary read out
+  two ways -- the fixed persona-vector direction r_B and a trained LOCO-ridge regression
+  summary->E0 -- reusing #658''s 50-context base grid, completions, r_B and E0; the
+  reconstruction winner is carried into #811.'
 ---
 # Which answer-side position/summary gives the strongest base context→answer map
+
+## Goal
+
+On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the response (mean-over-answer / last token / the turn-boundary <|im_end|> and the newline after it / a dense per-position sweep / maxp / attn) best supports BOTH (a) the linear context->answer map c_C->summary (held-out skill-over-mean R2 per layer, #722's DV) AND (b) predicting behavior expression E0 from the summary read out two ways -- the fixed persona-vector direction r_B and a trained LOCO-ridge regression summary->E0 -- reusing #658's 50-context base grid, completions, r_B and E0; the reconstruction winner is carried into #811.
 
 ## Overview / Motivation
 
