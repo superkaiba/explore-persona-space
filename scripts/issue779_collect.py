@@ -913,9 +913,21 @@ def _split_raw_completions(out_dir: Path, staging_dir: Path) -> list[tuple[str, 
     written: list[tuple[str, str]] = []
     if not pass_a_dir.is_dir():
         return written
+    # `pass_a/` holds BOTH per-cell JSONs `{trait}__{cond}.json` (carry
+    # trait/cond_id/rollouts) AND judge sidecars `judge_{trait}__{cond}.json`
+    # (written by _judge_cell:save_raw — keys per_persona/all_scores, NO trait).
+    # Skip the `judge_` prefix so the glob only walks real cell JSONs — mirrors
+    # the step0 reader's trait-prefixed glob (load_eval_cells uses
+    # `{trait}__*.json`). Defense-in-depth: any file missing the required cell
+    # keys is skipped rather than KeyError-crashing the upload phase (BLOCKER
+    # raw-completions-split-glob-crashes-on-judge-sidecar, code-review v4).
     for cell_path in sorted(pass_a_dir.glob("*.json")):
+        if cell_path.name.startswith("judge_"):
+            continue
         with open(cell_path) as f:
             cell = json.load(f)
+        if not {"trait", "cond_id", "rollouts"} <= cell.keys():
+            continue
         trait = cell["trait"]
         cond_id = cell["cond_id"]
         seed = cell.get("rollout_seed", 42)
@@ -1003,13 +1015,22 @@ def _upload_collect(out_dir: Path, smoke: bool) -> None:
     api = HfApi()
     sub = "smoke_collect" if smoke else "analysis_tensors"
     path_in_repo = f"{C.HF_PREFIX}/{sub}"
+    # Plan §10 (b): analysis_tensors/ carries activations (c_x, v(x), pooled
+    # projections) + the scalar cell JSONs the Stage-1 analyzer reads
+    # (judge_scores, oracle_proj, rollouts[].{qi,ri,empty,pooled}). The raw
+    # judge-model TEXT sidecars `judge_*.json` are NOT read by Stage-1 and
+    # duplicate rollout text — the canonical dedup'd rollout text lives under
+    # raw_completions/ (plan §10 (c)) — so exclude them here (Option A, code-
+    # review v4 CONCERN analysis-tensors-prefix-contains-raw-text). The cell
+    # JSONs' own rollouts[].response stays: Stage-1 needs the per-rollout
+    # pooled/empty/oracle structure keyed alongside it.
     api.upload_folder(
         folder_path=str(out_dir),
         path_in_repo=path_in_repo,
         repo_id=C.HF_DATA_REPO,
         repo_type="dataset",
         commit_message=f"issue779: {'smoke ' if smoke else ''}collect (c_x, v(x), pooled, R3, DV)",
-        ignore_patterns=["judge_cache/**"],
+        ignore_patterns=["judge_cache/**", "**/judge_*.json"],
     )
     files = [
         f

@@ -122,6 +122,52 @@ def test_both_prefixes_fire_raw_completions_and_analysis_tensors(tmp_path, monke
     )
 
 
+def _write_judge_sidecar(pass_a_dir: Path, trait: str, cond_id: str) -> None:
+    """Drop the judge raw sidecar `_judge_cell` writes into the SAME pass_a/ dir
+    (save_raw = out_dir / f"judge_{cell_id}.json"). Its keys are the batch-judge
+    raw shape (per_persona / all_scores / judge_model) — NO `trait` key."""
+    pass_a_dir.mkdir(parents=True, exist_ok=True)
+    sidecar = {
+        "per_persona": {f"{trait}__{cond_id}": {"q000": [{"score": 80}]}},
+        "all_scores": [80],
+        "judge_model": "claude-sonnet-4-5-20250929",
+    }
+    (pass_a_dir / f"judge_{trait}__{cond_id}.json").write_text(json.dumps(sidecar))
+
+
+def test_split_raw_completions_skips_judge_sidecar_no_keyerror(tmp_path):
+    """PRODUCTION-layout regression (BLOCKER
+    raw-completions-split-glob-crashes-on-judge-sidecar, code-review v4): a real
+    Pass-A dir holds BOTH the cell JSON `{trait}__{cond}.json` AND the judge
+    sidecar `judge_{trait}__{cond}.json` written by `_judge_cell`. Pre-fix the
+    `glob("*.json")` opened the sidecar and `cell["trait"]` raised KeyError,
+    crashing the upload phase before phase(done). Post-fix the `judge_` prefix is
+    skipped: exactly ONE raw-completions file per CELL, no crash, no
+    `judge_*_seed42.json` emitted."""
+    out_dir = tmp_path / "data"
+    pass_a = out_dir / "pass_a"
+    _write_pass_a_cell(pass_a, "evil", "sys0")
+    _write_judge_sidecar(pass_a, "evil", "sys0")  # the crash trigger
+    staging = tmp_path / "staging"
+    written = X._split_raw_completions(out_dir, staging)  # must NOT raise
+    assert written == [("evil", "sys0")], written
+    # One raw-completions file per CELL (not per json); no judge sidecar copied.
+    produced = sorted(p.name for p in staging.glob("*.json"))
+    assert produced == ["evil_sys0_seed42.json"], produced
+    assert not (staging / "judge_evil__sys0_seed42.json").exists()
+
+
+def test_split_raw_completions_skips_cell_missing_required_keys(tmp_path):
+    """Defense-in-depth: a stray `.json` under pass_a/ lacking the cell keys
+    (trait/cond_id/rollouts) is skipped, never KeyError-crashes the upload."""
+    out_dir = tmp_path / "data"
+    pass_a = out_dir / "pass_a"
+    _write_pass_a_cell(pass_a, "evil", "sys0")
+    (pass_a / "stray.json").write_text(json.dumps({"unrelated": True}))
+    written = X._split_raw_completions(out_dir, tmp_path / "staging")
+    assert written == [("evil", "sys0")], written
+
+
 def test_raw_completions_upload_verification_fails_loud_on_empty(tmp_path, monkeypatch):
     """Fail-loud when Pass A produced no rollout text to copy (the mechanical
     verification is a hard gate, not a warning-and-continue)."""

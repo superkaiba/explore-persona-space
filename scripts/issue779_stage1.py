@@ -111,14 +111,36 @@ def _score_for(cell: dict, qi: int, ri: int) -> float | None:
 
 
 def build_eval_matrix(cells: list[dict], layer_idx: int, r_b: np.ndarray) -> dict:
-    """Assemble per-rollout arrays at a single read-out layer for a trait.
+    """Assemble PER-(condition, question) arrays at a single read-out layer.
 
-    Returns arrays aligned by rollout (only rollouts with a valid judge score +
-    non-empty response), plus a condition index (cond_id) for within-condition
-    grouping, and the elicitation mode per rollout.
+    Matches the Persona Vectors within-condition monitoring unit (arXiv
+    2507.21509, App. "Monitoring prompt-induced persona shifts" +
+    "Correlation analysis"): the monitored point is ONE per (condition,
+    question) — the x-axis (final prompt-token projection ``c_last``) is a
+    property of the PROMPT (identical across a question's rollouts), and the
+    y-axis (trait expression score) is the question's response score. We
+    therefore aggregate each question's N rollouts into a single row:
+      - ``y`` = MEAN judge score over the question's valid rollouts (each
+        rollout score is itself the N=5-draw graded-0-100 mean from
+        ``_judge_cell``; drop-never-coerce already applied there).
+      - ``r2_{mean,max,topk,last}`` = MEAN pooled generation-activation
+        projection over the question's valid rollouts (post-gen monitor; the
+        per-rollout generation differs, so we average to the per-question
+        unit the PV within-condition Pearson uses).
+      - ``c_last`` / ``pv_raw`` / ``oracle`` are already per-question
+        (indexed by ``qi``, not ``ri``) — carried once, not duplicated.
+    A question with zero valid rollouts (all empty / all judge-dropped) is
+    dropped. This is the fix for BLOCKER
+    ``primary-metric-rollout-level-not-question-averaged`` (code-review v4):
+    the prior implementation appended one row PER ROLLOUT (10x-oversampled the
+    same ``c_last`` per question), computing the within-condition Pearson at
+    the rollout level and feeding the LOCO direct fit duplicate ``c_x`` rows.
 
-    Keys: c_last (N, H), pv_raw (N,), oracle (N,), r2_mean/max/topk/last (N,),
-    y (N,), cond (N,) int, mode (N,) str.
+    Returns arrays aligned by (condition, question), plus a condition index
+    (cond_id) for within-condition grouping, and the elicitation mode.
+
+    Keys: c_last (N_q, H), pv_raw (N_q,), oracle (N_q,), r2_mean/max/topk/last
+    (N_q,), y (N_q,), cond (N_q,) int, mode (N_q,) str.
     """
     layers = cells[0]["_layers"]
     li = layers.index(layer_idx)
@@ -129,23 +151,38 @@ def build_eval_matrix(cells: list[dict], layer_idx: int, r_b: np.ndarray) -> dic
     for cell in cells:
         cid = cell["cond_id"]
         cond_map.setdefault(cid, len(cond_map))
+        # Group the cell's rollouts by question index, in first-seen order.
+        by_q: dict[int, list[dict]] = {}
         for rec in cell["rollouts"]:
             if rec.get("empty"):
                 continue
-            qi, ri = rec["qi"], rec["ri"]
-            s = _score_for(cell, qi, ri)
-            if s is None:
+            by_q.setdefault(rec["qi"], []).append(rec)
+        for qi, recs in by_q.items():
+            # Per-rollout judge scores (drop rollouts with no valid score).
+            q_scores = [s for r in recs if (s := _score_for(cell, qi, r["ri"])) is not None]
+            if not q_scores:
                 continue
-            cl = cell["_cx_last"][qi, li, :]  # (H,)
+            cl = cell["_cx_last"][qi, li, :]  # (H,) — per-question prompt vector
             c_last.append(cl)
             pv_raw.append(float(np.dot(cl, r_b[li])))
-            orc = cell["oracle_proj"].get(str(qi), {}).get(str(ri))
-            oracle.append(float(orc[str(layer_idx)]) if orc else np.nan)
-            pooled = rec.get("pooled", {})
+            # oracle_proj is per (qi, ri); average the valid-rollout oracle
+            # projections at this question (per-question unit).
+            orc_by_q = cell["oracle_proj"].get(str(qi), {})
+            orc_vals = [
+                float(orc_by_q[str(r["ri"])][str(layer_idx)])
+                for r in recs
+                if orc_by_q.get(str(r["ri"]))
+            ]
+            oracle.append(float(np.mean(orc_vals)) if orc_vals else np.nan)
+            # R2 pooled projections: mean over the question's valid rollouts.
             for op in ("mean", "max", "topk", "last"):
-                vals = pooled.get(op)
-                r2[op].append(float(vals[li]) if vals else np.nan)
-            y.append(float(s))
+                op_vals = [
+                    float(r["pooled"][op][li])
+                    for r in recs
+                    if r.get("pooled") and r["pooled"].get(op)
+                ]
+                r2[op].append(float(np.mean(op_vals)) if op_vals else np.nan)
+            y.append(float(np.mean(q_scores)))
             cond.append(cond_map[cid])
             mode.append(cell["mode"])
     return {
@@ -543,8 +580,12 @@ def _process_trait(
     """Full Stage-1 read for one trait; returns (trait_result, gate1_or_None)."""
     mat = build_eval_matrix(cells, layer_idx, r_b)
     if len(mat["y"]) < 3:
-        logger.warning("[%s] <3 valid rollouts at layer %d; skipping metrics", trait, layer_idx)
-        return {"skipped": True, "n_rollouts": len(mat["y"])}, None
+        logger.warning(
+            "[%s] <3 valid (condition,question) rows at layer %d; skipping metrics",
+            trait,
+            layer_idx,
+        )
+        return {"skipped": True, "n_questions": len(mat["y"])}, None
 
     # R1 h readouts (train->eval application on pass B).
     h_out = fit_h_readouts(

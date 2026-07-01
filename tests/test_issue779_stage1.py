@@ -433,3 +433,95 @@ def test_stage1_h1a_uses_dot_arm():
     # abs_diff is |dot - probe_ctrl| = |0.80 - 0.50| = 0.30, NOT |cos - pc| = 0.40.
     assert h1a["system"]["abs_diff"] == pytest.approx(0.30)
     assert h1a["many_shot"]["abs_diff"] == pytest.approx(0.30)  # |0.70 - 0.40|
+
+
+# ── BLOCKER: primary metric per-(condition,question), not per-rollout ─────────
+
+
+def _cell_for_matrix(cond_id, mode, cx_last, oracle_proj, judge_scores, rollouts):
+    """A build_eval_matrix-shaped Pass-A cell (post-load): the analyzer loads the
+    cell JSON + attaches _cx_last / _layers from the sibling _cx.pt."""
+    return {
+        "trait": "evil",
+        "cond_id": cond_id,
+        "mode": mode,
+        "_layers": [0],  # single read-out layer at index 0
+        "_cx_last": np.asarray(cx_last, dtype=np.float64),  # (n_q, L=1, H)
+        "oracle_proj": oracle_proj,
+        "judge_scores": judge_scores,
+        "rollouts": rollouts,
+    }
+
+
+def test_build_eval_matrix_is_per_question_averaged_not_per_rollout():
+    """PRODUCTION-unit regression (BLOCKER
+    primary-metric-rollout-level-not-question-averaged, code-review v4): the
+    within-condition monitoring unit is ONE row per (condition, question) —
+    matching Persona Vectors (arXiv 2507.21509 App. "Monitoring prompt-induced
+    persona shifts"): the x-axis (final prompt-token projection) is a property of
+    the PROMPT and the y-axis is the question's response trait score. Pre-fix
+    build_eval_matrix appended one row PER ROLLOUT (2 questions x 2 rollouts ->
+    N=4, the same c_last repeated). Post-fix: N=2 rows (one per question), y is
+    the MEAN judge score over the question's rollouts."""
+    r_b = np.array([[1.0, 0.0]])  # (L=1, H=2) — pv_raw = c_last[:,0]
+    # 2 questions x 2 rollouts. Distinct per-question prompt vectors.
+    cx_last = [[[3.0, 0.0]], [[7.0, 0.0]]]  # (n_q=2, L=1, H=2)
+    # judge_scores keyed {persona}__{qi:05d}__{ri:02d}; q0 rollouts 10 & 20 -> mean 15;
+    # q1 rollouts 40 & 60 -> mean 50.
+    judge_scores = {
+        "evil__00000__00": 10.0,
+        "evil__00000__01": 20.0,
+        "evil__00001__00": 40.0,
+        "evil__00001__01": 60.0,
+    }
+    # oracle_proj per (qi, ri) -> {layer_idx: value}; per-question mean.
+    oracle_proj = {
+        "0": {"0": {"0": 1.0}, "1": {"0": 3.0}},  # q0 mean 2.0
+        "1": {"0": {"0": 5.0}, "1": {"0": 7.0}},  # q1 mean 6.0
+    }
+    # pooled per rollout {op: [per-layer]}; r2_max mean over q0 rollouts = (0.2+0.4)/2.
+    rollouts = [
+        {"qi": 0, "ri": 0, "pooled": {"mean": [0.1], "max": [0.2], "topk": [0.15], "last": [0.05]}},
+        {"qi": 0, "ri": 1, "pooled": {"mean": [0.3], "max": [0.4], "topk": [0.35], "last": [0.25]}},
+        {"qi": 1, "ri": 0, "pooled": {"mean": [0.5], "max": [0.6], "topk": [0.55], "last": [0.45]}},
+        {"qi": 1, "ri": 1, "pooled": {"mean": [0.7], "max": [0.8], "topk": [0.75], "last": [0.65]}},
+    ]
+    cell = _cell_for_matrix("sys0", "system", cx_last, oracle_proj, judge_scores, rollouts)
+    mat = S.build_eval_matrix([cell], layer_idx=0, r_b=r_b)
+
+    # PER-QUESTION: exactly 2 rows (NOT 4 rollout rows).
+    assert len(mat["y"]) == 2, mat["y"]
+    assert mat["c_last"].shape == (2, 2), mat["c_last"].shape
+    # y is the MEAN judge score per question: q0 -> 15, q1 -> 50.
+    assert sorted(mat["y"].tolist()) == [15.0, 50.0], mat["y"]
+    # pv_raw = <c_last, r_b> per question: 3.0 and 7.0 (single value each, not duplicated).
+    assert sorted(mat["pv_raw"].tolist()) == [3.0, 7.0], mat["pv_raw"]
+    # oracle is the per-question mean of the rollout oracle projections: 2.0 and 6.0.
+    assert sorted(mat["oracle"].tolist()) == [2.0, 6.0], mat["oracle"]
+    # r2_max is the per-question mean of the rollout pooled-max: q0 (0.2+0.4)/2=0.3, q1 0.7.
+    assert sorted(np.round(mat["r2_max"], 6).tolist()) == [0.3, 0.7], mat["r2_max"]
+
+
+def test_build_eval_matrix_drops_question_with_no_valid_rollout():
+    """A question whose rollouts are all judge-dropped (score None) or all empty
+    contributes NO row; a question with a mix keeps the valid rollouts' mean."""
+    r_b = np.array([[1.0, 0.0]])
+    cx_last = [[[2.0, 0.0]], [[9.0, 0.0]]]  # q0 (all-dropped), q1 (one valid)
+    judge_scores = {
+        # q0: no entries -> _score_for returns None for both rollouts -> dropped.
+        "evil__00001__00": 80.0,  # q1 r0 valid
+        # q1 r1 has no score -> dropped from the mean.
+    }
+    oracle_proj = {"1": {"0": {"0": 4.0}}}
+    rollouts = [
+        {"qi": 0, "ri": 0, "pooled": {"mean": [0.0], "max": [0.0], "topk": [0.0], "last": [0.0]}},
+        {"qi": 0, "ri": 1, "pooled": {"mean": [0.0], "max": [0.0], "topk": [0.0], "last": [0.0]}},
+        {"qi": 1, "ri": 0, "pooled": {"mean": [0.5], "max": [0.6], "topk": [0.5], "last": [0.5]}},
+        {"qi": 1, "ri": 1, "pooled": {"mean": [0.9], "max": [0.9], "topk": [0.9], "last": [0.9]}},
+    ]
+    cell = _cell_for_matrix("sys0", "system", cx_last, oracle_proj, judge_scores, rollouts)
+    mat = S.build_eval_matrix([cell], layer_idx=0, r_b=r_b)
+    # Only q1 survives (q0 fully dropped): one row, y = mean of the valid {80.0}.
+    assert len(mat["y"]) == 1, mat["y"]
+    assert mat["y"][0] == pytest.approx(80.0)
+    assert mat["pv_raw"][0] == pytest.approx(9.0)
