@@ -347,6 +347,15 @@ def run_assemble(
 
     a33 = load_a33_lin_rho()
 
+    # Per-behavior checkpoint dir (see § "Checkpoint per phase" in code-style.md).
+    # Guards against earlyoom SIGTERM (badness 981) killing the process mid-loop after
+    # 4+ hours — incident 2026-07-01 lost harmful_compliance after sycophancy+refusal
+    # completed but before the terminal write. Each behavior persists its own JSON on
+    # completion; a resumed run loads the checkpoint and skips the ~2h recompute.
+    partial_suffix = "_smoke" if smoke else ""
+    partial_dir = OUT_DIR / f"_partial{partial_suffix}"
+    partial_dir.mkdir(parents=True, exist_ok=True)
+
     headline: dict[str, dict] = {}
     # CONCERN fingerprint-assert-skips-matched-artifact (round-2): cross-check ALL THREE
     # arms' fingerprints against the canonical RECIPE_FINGERPRINT — the matched SHARD's
@@ -354,12 +363,30 @@ def run_assemble(
     # mismatched recompute's, and the same-N arm's. Collected here, asserted at the end.
     fingerprints: list[dict] = [mismatched["recipe_fingerprint"]]
     for behavior in BEHAVIORS:
+        partial_path = partial_dir / f"{behavior}.json"
+        if partial_path.exists():
+            # RESUME: load the completed per-behavior checkpoint and skip recompute.
+            partial = json.loads(partial_path.read_text())
+            headline[behavior] = partial["headline_row"]
+            fingerprints.append(partial["shard_fingerprint"])
+            fingerprints.append(partial["samen_fingerprint"])
+            logger.info(
+                "[%s] RESUMED from checkpoint %s (matched=%.4f mismatched=%.4f Δrho=%.4f)",
+                behavior,
+                partial_path,
+                headline[behavior]["matched_rho"],
+                headline[behavior]["mismatched_ridge_rho"],
+                headline[behavior]["paired_delta_rho"],
+            )
+            continue
+
         # the matched-arm shard carries v0, matched_n (durable), AND its own fingerprint
         shard = load_matched_shard(behavior, smoke=smoke)
         matched_v0 = matched_v0_from_shard(shard)
         matched_n_by_ctx = matched_n_from_shard(shard)
         # the matched SHARD's stored fingerprint enters the equality assert (round-2)
-        fingerprints.append(shard["recipe_fingerprint"])
+        shard_fp = shard["recipe_fingerprint"]
+        fingerprints.append(shard_fp)
 
         # kept contexts = those present in BOTH the matched capture AND e0 rate,
         # in the store-pool order (the matched-arm convention).
@@ -379,7 +406,8 @@ def run_assemble(
         # same-N control (matched_n read from the durable shard, NOT a pod-local JSON)
         X_samen, samen_flags = build_samen_X(matched_n_by_ctx, behavior, kept)
         samen_out = _run_ridge_pipeline(X_samen, y)
-        fingerprints.append(samen_out["recipe_fingerprint"])
+        samen_fp = samen_out["recipe_fingerprint"]
+        fingerprints.append(samen_fp)
         paired_samen = _paired_delta_rho_ci(X_matched, X_samen, y, n_boot=n_boot, seed=761)
 
         # ── BLOCKER missing-ceiling-and-nulls (round-2): the §6.5/§6.6 registered stats ──
@@ -425,9 +453,23 @@ def run_assemble(
             "n_contexts": len(kept),
             "n_perm_null": n_perm,
         }
+
+        # PERSIST checkpoint atomically (tmp + rename) — must land before any subsequent
+        # earlyoom SIGTERM can strand this behavior's ~2h of work in RAM only.
+        partial_payload = {
+            "behavior": behavior,
+            "headline_row": headline[behavior],
+            "shard_fingerprint": shard_fp,
+            "samen_fingerprint": samen_fp,
+            "assembled_at": _now_iso(),
+        }
+        tmp_path = partial_path.with_suffix(".json.tmp")
+        tmp_path.write_text(json.dumps(partial_payload, indent=2))
+        tmp_path.rename(partial_path)
+
         logger.info(
             "[%s] matched=%.4f mismatched=%.4f sameN=%.4f ceiling=%.4f Δrho=%.4f CI=%s "
-            "shuffle_p=%.4f control=%s",
+            "shuffle_p=%.4f control=%s [checkpoint=%s]",
             behavior,
             matched_rho,
             headline[behavior]["mismatched_ridge_rho"],
@@ -437,6 +479,7 @@ def run_assemble(
             [round(x, 4) for x in paired["ci95"]],
             shuffle["shuffle_null_p"],
             control["control_task_verdict"],
+            partial_path,
         )
 
     # fail-loud: EVERY arm's fingerprint (incl. the matched SHARD's own) must be
