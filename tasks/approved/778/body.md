@@ -6,7 +6,7 @@ kind: experiment
 backend: runpod
 tags: []
 created_at: '2026-07-01T00:01:33Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: Find the persona vectors paper and see if for all their experiments
   they compare against a random direction baseline. -> plan a replication of the finetuning
   prediction + system-prompt prediction experiments with a random baseline (and other
