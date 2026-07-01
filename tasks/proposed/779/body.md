@@ -27,11 +27,6 @@ goal: On Qwen-2.5-7B, characterize how well and at what token granularity the ba
   projection baseline AND a matched-capacity direct context->behavior predictor, on
   held-out contexts and behaviors.
 ---
-## Goal
-
-On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior, and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.
-
-
 ## Provenance
 
 Originated from a design discussion (2026-06-30). Seed: Persona Vectors (arXiv 2507.21509)
@@ -111,12 +106,28 @@ How well / at what granularity does the context representation predict the answe
   answer depth** (how far into the response the context's determination reaches).
 - **(c) context-activation-SET → answer-activation-SET:** CKA + linear predictability between the
   full context and answer activation sets, per layer-pair.
-- **NOT the full per-(i,j) each-context-token→each-answer-token map:** ill-posed across examples
-  (variable-length position alignment; O(T_c·T_a) pairs) — replaced by proxies (b)+(c).
-- **Caveat (state in the writeup):** predicting *individual* answer-token activations ≈
-  forecasting the (stochastic, autoregressive) generation trajectory, not just applying a
-  representation map; the mean-pool target is the clean *expectation* A4 uses. So (b) is measured
-  as expected per-position predictability, not per-sample.
+- **(d) the full context-position × answer-position (i,j) map** — three principled formulations
+  that dissolve the variable-length problem (the naive per-absolute-(i,j) regression is what's
+  ill-posed, NOT the object itself):
+  - **(d1) normalized-position grid — PRIMARY, cheap:** bin `i/T_c` and `j/T_a` into a fixed grid
+    (e.g. 10×10), pool `(a^ctx_i, a^ans_j)` pairs across examples per cell, fit per-cell regression
+    → an **R² heatmap** over context-pos × answer-pos, per layer(-pair). Variable length dissolves
+    via normalization; subsumes (b) as its context-marginal slice.
+  - **(d2) amortized position-conditioned learned map — optional:** one model
+    `F(a^ctx_i, posenc(i), posenc(j)) → a^ans_j` (positions as inputs, not grid indices; handles
+    variable length natively; one model, not O(T_c·T_a) models), probed at any (i,j). The
+    token→token generalization of `h`.
+  - **(d3) causal path-patching — mechanistic stretch, small subset:** patch context token i's
+    activation, measure the change at answer token j (∼ attention from answer-j to context-i) —
+    the *causal* i,j map. O(T_c·T_a) patches → subset only.
+- **Well-definedness + caveats (state in the writeup):** teacher-forcing (already used) makes the
+  activation i,j map (d) well-defined — both sides observed, a within-pass predictability, NOT
+  forecasting. Pairwise (i,j) predictability is a **marginal** (`a^ans_j` depends on all context +
+  answer-prefix tokens via attention, not only `a^ctx_i`) — it measures decodable info-flow, not a
+  complete generative map. Distinct from the **pre-generation** flavor (b), where predicting
+  per-position answer activations from the prompt alone ≈ forecasting the stochastic generation
+  trajectory → (b) is measured as expected per-position predictability, and the mean-pool target
+  is the clean *expectation* A4 uses.
 
 ## Shared data collection (one pass)
 
@@ -128,9 +139,10 @@ How well / at what granularity does the context representation predict the answe
   graded 0–100 multi-sample (ranking/regression target per llm-judging rule).
 - **Corpus generation:** LMSYS prompts (+ trait-augmented arms); own response (single temp-1
   sample per training context; k=10 eval); cache pooled activations (c_x last-prompt + mean-prompt;
-  v(x) mean-response) + R2's per-token pooled projections. **R3 needs per-token answer
-  activations** for (b)/(c) → cache per-token acts for a **SUBSET** of contexts (a few thousand)
-  and a subset of layers (CKA/decay are statistical, don't need the full corpus) to bound storage.
+  v(x) mean-response) + R2's per-token pooled projections. **R3 needs per-token CONTEXT AND
+  ANSWER activations** for (b)/(c)/(d) → cache per-token acts for a **SUBSET** of contexts (a few
+  thousand) and a subset of layers (grid/CKA/decay are statistical, don't need the full corpus) to
+  bound storage.
 - **Step 0:** oracle headroom (`⟨v(x), r_B⟩` vs `⟨c_x, r_B⟩` vs trait score, within-condition,
   all layers) — also selects the read-out layer; gates whether R1 has room.
 
