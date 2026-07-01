@@ -4777,6 +4777,101 @@ def test_async_failover_reason_distinct_from_sync():
     assert "async" in ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC
 
 
+# ---------------------------------------------------------------------------
+# #783 — GCP FLEX_START queue-timeout → RunPod failover (poller / router seam)
+#
+# The queue-timeout failover reuses the SAME router seam as the #659 async
+# workload-crash failover (failover_to_runpod_after_async_workload_crash → the
+# RunPod terminal rung), passing the distinct queue-timeout reason. These tests
+# pin the router-level contract: the seam carries the queue-timeout reason onto
+# the launched RouteResult + the epm:backend-selected marker, and the two
+# preserved invariant tests (RunPod-is-terminal-rung, workload-error-no-cascade)
+# are unaffected (they live above, run in the same suite).
+# ---------------------------------------------------------------------------
+
+
+def test_queue_timeout_failover_seam_carries_queue_timeout_reason(
+    lease_store, marker_poster, captured_markers
+):
+    """#783 (router seam): calling the failover seam with the queue-timeout
+    reason launches RunPod once, labels the RouteResult + the
+    ``epm:backend-selected`` marker with ``gcp_queue_timeout_failover_runpod``,
+    and carries the evidence onto the marker ``extra``."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={
+            "source": "async_poller_queue_timeout",
+            "current_phase": "terminal_queue_timeout",
+        },
+        reason=ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1  # exactly once
+    finals = _by_reason(captured_markers, ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD)
+    assert finals
+    assert (
+        finals[-1]["extra"].get("gcp_workload_evidence", {}).get("source")
+        == "async_poller_queue_timeout"
+    )
+
+
+def test_failover_seam_default_reason_unchanged_byte_for_byte(
+    lease_store, marker_poster, captured_markers
+):
+    """#783 regression guard: adding the ``reason=`` param must NOT change the
+    default #659 behavior — a call that OMITS ``reason`` still labels the result
+    with the async workload-crash reason (byte-identical to pre-#783)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={"source": "async_poller"},
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.reason == ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC
+
+
+def test_queue_timeout_reason_distinct_from_crash_and_capacity_reasons():
+    """#783: the queue-timeout reason VALUE is distinct from BOTH workload-crash
+    reasons AND the capacity-exhaustion fallback reason, so the marker trail
+    tells a stuck FLEX_START queue apart from a crash and a capacity miss."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        ROUTE_REASON_RUNPOD_FALLBACK,
+    )
+
+    reasons = {
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        ROUTE_REASON_RUNPOD_FALLBACK,
+    }
+    assert len(reasons) == 4  # all four are distinct strings
+    assert ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD == "gcp_queue_timeout_failover_runpod"
+
+
 class _ExplodingRunpodNoCompute(_BaseBackend):
     """RunPod double whose ``launch`` raises ``NoComputeAvailableError`` — the
     "RunPod also unavailable" failover branch (#659 sibling #4)."""
