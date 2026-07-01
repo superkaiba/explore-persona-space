@@ -5019,6 +5019,10 @@ def _gcp_status_to_poll_result(status: str) -> PollResult:
     for the GCE status enum. We map:
 
     * ``RUNNING`` → ``running`` (pid_alive=True)
+    * ``PENDING`` → ``running`` (FLEX_START-queued for capacity; the
+      orchestrator's bg loop keeps polling — mirrors ``reconnect_or_none``,
+      which treats PENDING as live since it is not in
+      ``_NONLIVE_INSTANCE_STATUSES``; #782/#778)
     * ``PROVISIONING`` / ``STAGING`` → ``running`` (VM is coming up; the
       orchestrator's bg loop will keep polling)
     * ``STOPPING`` / ``REPAIRING`` → ``stalled`` (transient; bg loop retries)
@@ -5027,6 +5031,12 @@ def _gcp_status_to_poll_result(status: str) -> PollResult:
     up = status.upper()
     if up == "RUNNING":
         return _coarse_poll(status="running", current_phase="running")
+    if up == "PENDING":
+        # FLEX_START capacity-queue state — legitimately live, keep polling
+        # (parity with ``reconnect_or_none`` / ``_NONLIVE_INSTANCE_STATUSES``;
+        # #782). Distinct branch from PROVISIONING/STAGING (VM booting) so the
+        # queued-vs-booting distinction is explicit at the call site.
+        return _coarse_poll(status="running", current_phase="pending")
     if up in {"PROVISIONING", "STAGING"}:
         return _coarse_poll(status="running", current_phase=up.lower())
     if up in {"STOPPING", "REPAIRING"}:
