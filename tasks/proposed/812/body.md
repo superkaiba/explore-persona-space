@@ -43,10 +43,13 @@ framework.
 
 ## Design (single manipulated variable = the pooling operator, up to the unpooled ceiling)
 
-Base model only, reusing #658's 50-context grid + judged `E0(C,B)` + #810's
-per-position answer extraction (shared re-extraction — no extra forward passes
-beyond #810's). Regression per (behavior × layer), over a ladder of pooling
-operators measured against an unpooled upper bound:
+Base model only, reusing #658's 50-context grid + the **graded 0–100 `E0(C,B)`**
+produced for #810 (same sourcing: reuse #763's graded low-m `E0`, batch-re-judge
+the 3 high-m leakage behaviors off #658's stored raw completions, subsample
+sycophancy — see #810's *Graded read-out target*) + #810's per-position answer
+extraction (shared — no extra forward passes, no extra judge calls). Regression
+per (behavior × layer), over a ladder of pooling operators measured against an
+unpooled upper bound:
 
 - **Pooling operators** (each reduces the SAME per-position span to one
   3584-vec — cheap CPU, no new forward passes and no new judge calls):
@@ -93,8 +96,9 @@ GPU) becomes the follow-up.
 ## Dependent variable
 
 Incremental held-out prediction over the pooled-mean baseline, per (behavior ×
-layer): ΔR² / Δρ of (unpooled input) − (pooled-mean input) for predicting
-`E0(C,B)`, and separately for reconstructing the answer profile. Reported with
+layer): ΔR² / Δρ of (unpooled input) − (pooled-mean input) for predicting the
+**graded 0–100** `E0(C,B)` (reused from #810; binary rate as companion), and
+separately for reconstructing the answer profile. Reported with
 the shuffle null and the learning-curve extrapolation; **any lift is stated as a
 lower bound given the n=50 reliability ceiling** (`√r_yy`, per #742).
 
