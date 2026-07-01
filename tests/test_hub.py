@@ -596,3 +596,19 @@ class TestListRepoFilesRetry:
             list_repo_files_complete(api, "some/repo")
         assert api.list_repo_tree.call_count == 1
         mock_sleep.assert_not_called()
+
+    def test_list_repo_files_complete_success_passthrough_filters_non_files(self):
+        """Happy-path passthrough: on the first attempt the generator yields a
+        mix of file + non-file entries; ``list_repo_files_complete`` returns the
+        sorted file paths only (non-files filtered by ``isinstance(entry,
+        RepoFile)``), calls ``list_repo_tree`` exactly ONCE, and never sleeps —
+        the unchanged success path costs no retries."""
+        non_file = Mock(spec=[])  # a non-RepoFile entry (folder / other) — must be filtered out
+        entries = [*_repo_files("b/x.json", "a/y.json"), non_file]
+        api = Mock()
+        api.list_repo_tree = Mock(return_value=iter(entries))
+        with patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep:
+            result = list_repo_files_complete(api, "some/repo")
+        assert result == ["a/y.json", "b/x.json"]  # sorted files only; non-file dropped
+        assert api.list_repo_tree.call_count == 1
+        mock_sleep.assert_not_called()
