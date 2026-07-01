@@ -5243,8 +5243,8 @@
     "814": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/814",
-      "status": "running",
+      "path": "tasks/reviewing/814",
+      "status": "reviewing",
       "title": "workflow-fix: tighten workflow_lint.py skill-ref regex against /word-in-prose false positives"
     },
     "815": {
