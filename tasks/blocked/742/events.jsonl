@@ -168,3 +168,4 @@
 {"ts": "2026-07-01T03:40:15Z", "kind": "epm:progress", "version": 37, "by": "unknown", "note": "[poll-tick] 3rd launch 6h. 243 cell__ batches; 3990 succeeded, 0 errored. Throughput 662 calls/hr. Disk 189G free."}
 {"ts": "2026-07-01T04:33:03Z", "kind": "epm:progress", "version": 38, "by": "unknown", "note": "[poll-tick] 3rd launch 6h55m. 273 cell__ batches; 4460 succeeded, 0 errored. Throughput 647 calls/hr. Log now showing ~90 'Failed to parse judge JSON' fallback lines (non-fatal handler for non-JSON judge responses). Disk 189G free."}
 {"ts": "2026-07-01T05:25:31Z", "kind": "epm:progress", "version": 39, "by": "unknown", "note": "[poll-tick] 3rd launch 7h47m. 297 cell__ batches; 4940 succeeded, 0 errored. Throughput 635 calls/hr. Disk 188G free."}
+{"ts": "2026-07-01T06:19:14Z", "kind": "epm:progress", "version": 40, "by": "unknown", "note": "[poll-tick] 3rd launch 8h38m. 320 cell__ batches; 5400 succeeded, 0 errored. Throughput 625 calls/hr. Disk 188G free."}
