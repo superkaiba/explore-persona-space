@@ -4973,8 +4973,8 @@
       "goal": "On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior (at the single-context/single-answer per-example level), and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/779",
-      "status": "running",
+      "path": "tasks/verifying/779",
+      "status": "verifying",
       "title": "Beat Persona-Vectors prompt-projection monitoring: learned context->profile map (pre-gen) + generation-activation pooling (post-gen) on Qwen-2.5-7B"
     },
     "78": {
