@@ -613,6 +613,46 @@ If neither (a) nor (b), FAIL substantive with blocker tag
 `cached-artifact-coverage-unverified` and a Critical issue naming each
 consumer site whose coverage you could not verify.
 
+### Step 3.7: Bug-class sibling sweep (MANDATORY for every Critical/Major finding)
+
+For EVERY Critical or Major finding, the cited `file.py:LINE` is one INSTANCE
+of a bug CLASS — your contract is the CLASS, not the line. Before you issue the
+verdict, sweep for EVERY sibling instance of the same class and enumerate them.
+A single-instance fix that leaves siblings is the whack-a-mole failure mode
+that burns review rounds one instance at a time (incident #779: ≥6 real
+blockers clustered in the raw-completions I/O subsystem surfaced one-per-round).
+
+For each Critical/Major finding, name its bug CLASS in one phrase (e.g.
+`parsed.get("score", 0)` silent-default, per-persona-vs-global `custom_id`
+index, `raw_completions` write-without-upload, `except Exception` swallow,
+`.processed`-sentinel read, hardcoded-old-regime rubric family), then grep for
+that class across, in order:
+
+1. The WHOLE file the instance lives in (not just the cited range).
+2. The sibling function / rubric / resampler / handler / builder FAMILY in that
+   file (a `{...}` set-comp resampler vs a `[...]` list-comp sibling; A/B/C
+   rubric parameterized vs an 11-framing sibling rubric still hardcoded).
+3. Sibling SCRIPTS sharing the finding's data contract (a dispatcher loader
+   fixed while two standalone wrapper scripts still raw-`json.loads` the bank).
+4. PARALLEL layers for the same DV (`scripts/plot_*.py` figure branch vs the
+   `analyze` module — an exclusion constant defined in the plot script only
+   while the numeric read interpolates through the bad cell).
+
+Report ALL sibling hits under ONE heading `### Bug-class sweep: <class>` with a
+`file:LINE` for each. Classify each sibling:
+
+- **Load-bearing** (feeds a headline artifact / the production run / a
+  primary metric) → its OWN Critical, and the FAIL enumerates it.
+- **Secondary** (feeds only a secondary surface) → a standing rec under
+  `## Style / Consistency`, NOT a Critical (this is the verbosity valve — a
+  trivial finding with no load-bearing sibling adds one "no siblings found"
+  line, not a wall of text).
+
+A `### Bug-class sweep` heading whose only siblings are secondary does NOT flip
+PASS→FAIL on its own; the FAIL comes from a load-bearing sibling left in the
+tree. (Promotes the 7-step sibling-scan recipe from reconciler memory
+`.claude/agent-memory/reconciler/feedback_claude_misses_same_file_siblings.md`.)
+
 ### Step 4: Run / Verify Tests
 
 Run the tests. Don't trust "tests pass" claims — verify.
@@ -803,6 +843,7 @@ Red flags:
 11. **Deferred production-path features are persisted concerns, never prose.** If the implementation defers a feature the plan's production path requires — a registered statistic, correction, or data input whose absence makes the production run crash or silently degrade — raise it via `task.py raise-concern` (CONCERN minimum; BLOCKER when the production path provably crashes without it), even on a PASS verdict. The Step 5c-ter dispatch gate reads `concerns.jsonl`, not verdict prose; an unpersisted deferral ships and the predicted crash burns a pod cycle (incident #509). See Step 0.8 for the procedure.
 12. **Blocker grounding + mechanizability.** Every Critical/Major finding cites a concrete artifact location (`file.py:LINE`, a diff hunk, a plan section) — the reconciler discards ungrounded blockers as non-binding — and carries a `Mechanizable: yes | no` line: `yes` when a script could verify it (presence / structure / regex / recomputation over the diff or its artifacts), with the check sketched in 1-2 lines. When a `mechanizable: yes` finding's check belongs in a workflow-surface verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) AND it is concrete + likely to recur — not a one-off diff-specific issue — ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block or prose follow-up in your return text; you never spawn the improver yourself). Grounded artifact-checking beats free-form critique; every judgment catch that recurs should become a permanent mechanical gate.
 13. **A substantive BLOCKER fix that adds a permanent invariant needs a committed regression test, or a Minor flagging its absence.** When the diff closes a substantive BLOCKER (a prior-round binding `BLOCKER` concern or a Critical you would re-raise) by adding a fail-loud assertion, an invariant guard, or a scoping fix meant to STAY in the code, check for a committed pytest that fails pre-fix / passes post-fix and actually exercises the invariant. Absent → at least a `Minor` finding (`Mechanizable: yes`) carrying a 1-2-line pytest sketch; this is SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis, and a bare Minor does not flip PASS→FAIL. An implementer who CLAIMS a covering test that the worktree grep does not show (or that does not trip the guard) is a substantive FAIL with blocker tag `substantive` (fabricated coverage, same family as Rule 9). Rationale: an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green — a one-line test makes the guard permanent (incident #653 r8). See Step 4.5 for the procedure.
+14. **Every finding is a bug CLASS, not a line.** For every Critical/Major finding you MUST run the Step 3.7 sibling sweep and enumerate ALL load-bearing sibling instances under a `### Bug-class sweep: <class>` heading; each load-bearing sibling is its own Critical, each secondary one a standing rec. A verdict that fixes/flags the cited instance but leaves a load-bearing sibling of the same class unenumerated is the whack-a-mole failure mode — FAIL only when a load-bearing sibling is left un-named; a finding with no siblings adds a one-line "no siblings" note (never balloon output on a trivial finding). See Step 3.7 for the sweep procedure.
 
 ---
 

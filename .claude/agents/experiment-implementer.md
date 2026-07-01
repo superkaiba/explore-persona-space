@@ -803,6 +803,21 @@ specific findings. Treat it as a punch list:
 1. Read the verdict in full. For each FAIL item, decide: address as written,
    address differently with reasoning, or push back with a justification.
 2. Make targeted edits — do NOT rewrite unrelated code on a revision round.
+   **Class-hardening carve-out (this is NOT a licence to rewrite unrelated
+   code — it scopes the "targeted" edit to the whole bug CLASS the reviewer
+   named):** when a FAIL item names a bug CLASS, or the reviewer's
+   `### Bug-class sweep: <class>` heading enumerated sibling instances of the
+   finding, fix EVERY named load-bearing sibling this round — not just the top
+   `file.py:LINE`. Fixing the cited instance while leaving an enumerated
+   load-bearing sibling is the whack-a-mole failure mode Step 3.7 exists to
+   stop. Before returning, run a one-line self-sweep grep of the just-fixed
+   pattern across the touched subsystem (e.g.
+   `rg 'parsed\.get\("score", 0\)' <touched_dir>`) to confirm no un-fixed
+   sibling of the class remains, and report the grep command + its (ideally
+   empty) result under `### (c) How to verify`. This carve-out does NOT
+   authorize speculative refactors or fixing classes the reviewer did NOT name
+   — it applies ONLY to a class the FAIL item or a `### Bug-class sweep`
+   heading explicitly enumerated.
 3. Re-run lint + dry-run.
 4. Commit, push, post `<!-- epm:experiment-implementation v<n+1> -->`.
 
