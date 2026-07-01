@@ -3,15 +3,24 @@
 
 Two phases (plan v3 §9):
   - ``pod``: runs at the end of the pod-side dispatch (after Leg A + Leg B, before
-    the pod releases). Uploads the RAW last-prompt activation tensors the OFF-POD
-    null battery re-projects (``monitoring_corrected/{trait}_acts.pt`` +
-    ``monitoring_manyshot/{trait}_acts.pt``) to the HF DATA repo
-    ``issue778_persona_vectors/analysis_tensors/`` AND the regenerated Leg-B
-    exemplar pools (``exemplar_pool/{trait}_kept_pos.json``) to
-    ``issue778_persona_vectors/extraction_rollouts_regen/`` (Upload Policy: plan-
-    referenced downstream inputs before pod termination, #521). The eval JSONLs
-    (``monitoring_corrected_*.jsonl`` / ``monitoring_manyshot_*.jsonl``) stay in
-    git on the issue branch — this script does NOT touch git.
+    the pod releases). Uploads THREE artifact classes:
+      1. the RAW last-prompt activation tensors the OFF-POD null battery
+         re-projects (``monitoring_corrected/{trait}_acts.pt`` +
+         ``monitoring_manyshot/{trait}_acts.pt``) to the HF DATA repo
+         ``issue778_persona_vectors/analysis_tensors/`` (Upload Policy: plan-
+         referenced downstream inputs before pod termination, #521);
+      2. the regenerated Leg-B exemplar pools (``exemplar_pool/{trait}_kept_pos.json``)
+         to ``issue778_persona_vectors/extraction_rollouts_regen/``;
+      3. the PRIMARY-DELIVERABLE eval JSONLs (``monitoring_corrected_{trait}.jsonl``
+         + ``monitoring_manyshot_{trait}.jsonl``) to
+         ``issue778_persona_vectors/followup_corrected/eval_jsonl/`` — the pod runs
+         on the ``issue-778`` branch and cannot commit to git, so HF is the robust
+         cross-machine transport (reconciler round-1 BLOCKER
+         ``jsonl-deliverables-never-promoted-before-teardown``). The OFF-POD null
+         battery downloads them from this prefix into ``eval_results/issue_778/``
+         if absent, then they land in git VM-SIDE via the /issue Step-8 commit.
+    An integration assert at the end of the pod phase re-lists the JSONL prefix on
+    a FRESH Hub listing and confirms every uploaded JSONL basename is present.
   - ``offpod``: runs on the VM after the null battery produces the per-draw x
     per-layer |r| matrices (``{trait}_{input_tag}_{corr}_{null}_draws.npy``);
     uploads them to ``analysis_tensors/null_draws/`` (the analyzer's honest-band
@@ -39,6 +48,15 @@ from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, list_rep
 
 load_dotenv()
 
+# Stable HF DATA-repo prefix for the primary-deliverable eval JSONLs (relative to
+# ``issue778_persona_vectors/``). The OFF-POD null battery downloads absent JSONLs
+# from this prefix (issue778_null_battery._ensure_monitoring_jsonls_local). Keep in
+# lockstep with that consumer.
+EVAL_JSONL_SUBPREFIX = "followup_corrected/eval_jsonl"
+
+# The 6 primary-deliverable JSONL basenames (2 legs x 3 traits), by leg out_tag.
+MONITORING_JSONL_TAGS = ("monitoring_corrected", "monitoring_manyshot")
+
 
 def _verify_prefix(repo_id: str, repo_type: str, prefix: str, min_files: int = 1) -> int:
     files = list_repo_files_complete(HfApi(), repo_id, repo_type=repo_type, revision="main")
@@ -63,9 +81,9 @@ def _upload_file(local: Path, dest: str) -> None:
         raise RuntimeError(f"upload returned no path for {local} -> {dest}")
 
 
-def upload_pod_phase(out_root: Path, exp_name: str) -> dict:
-    """Upload raw acts tensors + regenerated exemplar pools (pod-side, pre-teardown)."""
-    summary: dict = {"analysis_tensors": {}, "exemplar_pools": {}}
+def upload_pod_phase(out_root: Path, eval_root: Path, exp_name: str) -> dict:
+    """Upload raw acts tensors + exemplar pools + eval JSONLs (pod-side, pre-teardown)."""
+    summary: dict = {"analysis_tensors": {}, "exemplar_pools": {}, "eval_jsonl": {}}
 
     # Raw last-prompt activation tensors -> analysis_tensors/ (null re-projection).
     at_prefix = f"{exp_name}/analysis_tensors"
@@ -95,6 +113,38 @@ def upload_pod_phase(out_root: Path, exp_name: str) -> dict:
         n = _verify_prefix(DEFAULT_DATASET_REPO, "dataset", pool_prefix, min_files=1)
         summary["exemplar_pools"] = {"prefix": pool_prefix, "n_files": n, "n_uploaded": n_pool}
         print(f"[upload] exemplar pools -> {pool_prefix} ({n_pool})", flush=True)
+
+    # PRIMARY-DELIVERABLE eval JSONLs -> followup_corrected/eval_jsonl/ (reconciler
+    # round-1 BLOCKER). The off-pod null battery reads these from HF if absent.
+    jsonl_prefix = f"{exp_name}/{EVAL_JSONL_SUBPREFIX}"
+    uploaded_jsonl: list[str] = []
+    for tag in MONITORING_JSONL_TAGS:
+        for jl in sorted(eval_root.glob(f"{tag}_*.jsonl")):
+            _upload_file(jl, f"{jsonl_prefix}/{jl.name}")
+            uploaded_jsonl.append(jl.name)
+    if uploaded_jsonl:
+        # Integration assert: EVERY uploaded JSONL basename must appear on a FRESH
+        # Hub listing under the prefix before the pod releases (mechanizable check).
+        files = list_repo_files_complete(HfApi(), DEFAULT_DATASET_REPO, repo_type="dataset")
+        present = {f.rsplit("/", 1)[-1] for f in files if f.startswith(jsonl_prefix + "/")}
+        missing = [b for b in uploaded_jsonl if b not in present]
+        if missing:
+            raise RuntimeError(
+                f"eval-JSONL promotion verify FAILED: uploaded {len(uploaded_jsonl)} JSONLs to "
+                f"{DEFAULT_DATASET_REPO}/{jsonl_prefix} but a fresh listing is MISSING "
+                f"{missing} — the off-pod null battery would FileNotFoundError post-teardown"
+            )
+        summary["eval_jsonl"] = {
+            "prefix": jsonl_prefix,
+            "n_uploaded": len(uploaded_jsonl),
+            "basenames": sorted(uploaded_jsonl),
+        }
+        print(
+            f"[upload] eval JSONLs -> {jsonl_prefix} ({len(uploaded_jsonl)} verified)",
+            flush=True,
+        )
+    else:
+        print(f"[upload] WARNING: no monitoring JSONLs found under {eval_root}", flush=True)
 
     return summary
 
@@ -128,7 +178,7 @@ def main() -> None:
     eval_root = Path(args.eval_results_root)
 
     if args.phase == "pod":
-        summary = upload_pod_phase(out_root, exp_name)
+        summary = upload_pod_phase(out_root, eval_root, exp_name)
     else:
         summary = upload_offpod_phase(eval_root, exp_name)
 

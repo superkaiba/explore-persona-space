@@ -272,3 +272,82 @@ def test_driver_annotate_exceedance_fixed_only():
     }
     nbd._annotate_exceedance(payload2)
     assert payload2["nulls"]["crosstrait"]["exceedance"] is None
+
+
+# ── Off-pod JSONL fetch (reconciler round-1 BLOCKER: primary-deliverable promotion) ──
+
+
+def test_ensure_jsonls_local_noop_when_all_present(tmp_path):
+    """When every required JSONL already exists locally, no HF fetch is attempted."""
+    from scripts import issue778_null_battery as nbd
+
+    eval_root = tmp_path / "eval_results" / "issue_778"
+    eval_root.mkdir(parents=True)
+    for t in ("evil", "sycophancy"):
+        (eval_root / f"monitoring_corrected_{t}.jsonl").write_text("{}\n")
+    # fetch_from_hf=False would raise if a fetch were needed; all-present -> silent no-op.
+    nbd._ensure_monitoring_jsonls_local(
+        eval_root,
+        ["evil", "sycophancy"],
+        ["monitoring_corrected"],
+        issue=778,
+        slug="persona_vectors",
+        fetch_from_hf=False,
+    )
+
+
+def test_ensure_jsonls_local_raises_when_missing_and_no_fetch(tmp_path):
+    """A missing JSONL with --no-hf-fetch fails loud (never silently proceeds)."""
+    from scripts import issue778_null_battery as nbd
+
+    eval_root = tmp_path / "eval_results" / "issue_778"
+    eval_root.mkdir(parents=True)
+    (eval_root / "monitoring_corrected_evil.jsonl").write_text("{}\n")  # only 1 of 2 present
+    with pytest.raises(RuntimeError, match="absent locally and --no-hf-fetch"):
+        nbd._ensure_monitoring_jsonls_local(
+            eval_root,
+            ["evil", "sycophancy"],
+            ["monitoring_corrected"],
+            issue=778,
+            slug="persona_vectors",
+            fetch_from_hf=False,
+        )
+
+
+def test_ensure_jsonls_local_fetches_missing_from_hf(tmp_path, monkeypatch):
+    """A missing JSONL is downloaded from the stable HF prefix into eval_root."""
+    from scripts import issue778_null_battery as nbd
+
+    eval_root = tmp_path / "eval_results" / "issue_778"
+    eval_root.mkdir(parents=True)
+    # Stage a fake HF "cache" file the monkeypatched hf_hub_download returns.
+    hf_cache = tmp_path / "hfcache"
+    hf_cache.mkdir()
+    (hf_cache / "monitoring_manyshot_evil.jsonl").write_text('{"condition_id": 5}\n')
+
+    fetched: list[str] = []
+
+    expect_name = (
+        "issue778_persona_vectors/followup_corrected/eval_jsonl/monitoring_manyshot_evil.jsonl"
+    )
+
+    def _fake_download(*, repo_id, repo_type, filename, revision):
+        fetched.append(filename)
+        assert filename == expect_name
+        return str(hf_cache / "monitoring_manyshot_evil.jsonl")
+
+    import huggingface_hub
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _fake_download)
+
+    nbd._ensure_monitoring_jsonls_local(
+        eval_root,
+        ["evil"],
+        ["monitoring_manyshot"],
+        issue=778,
+        slug="persona_vectors",
+        fetch_from_hf=True,
+    )
+    assert len(fetched) == 1
+    landed = eval_root / "monitoring_manyshot_evil.jsonl"
+    assert landed.exists() and landed.read_text() == '{"condition_id": 5}\n'

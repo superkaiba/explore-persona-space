@@ -11,11 +11,16 @@
 #   step 0  setup             : clone safety-research/persona_vectors@b8e0f04 + unzip;
 #                               snapshot_download reused r_B + activation pools from HF
 #   step 1  exemplar_regen     : Leg-B pre-phase — regenerate the kept-positive pool on-policy
-#   step 2  monitoring_corrected: Leg A — corrected 8-prompt-ladder monitoring per trait
+#   step 2  monitoring_corrected (evil): Leg A — corrected 8-prompt-ladder monitoring, EVIL FIRST
 #   step 3  recipe_gate         : K3 — assert Leg A evil overall_r clears the floor (bounce on FAIL)
-#   step 4  monitoring_manyshot : Leg B — many-shot ICL monitoring per trait
-#   step 5  upload             : raw acts + exemplar pools -> HF DATA repo (analysis_tensors/)
-#   (null battery + null-draw upload + figures run OFF-POD on the VM — plan v4 §9)
+#                               BEFORE the remaining Leg-A traits + Leg B compute is spent
+#                               (reconciler round-1 CONCERN recipe-gate-after-full-leg-a).
+#   step 4  monitoring_corrected (rest): Leg A — the remaining traits, only past the gate
+#   step 5  monitoring_manyshot : Leg B — many-shot ICL monitoring per trait
+#   step 6  upload             : raw acts + exemplar pools + PRIMARY-DELIVERABLE eval JSONLs
+#                               -> HF DATA repo (analysis_tensors/ + followup_corrected/eval_jsonl/)
+#   (null battery + null-draw upload + figures run OFF-POD on the VM — plan v4 §9;
+#    the off-pod null battery downloads the eval JSONLs from HF if absent post-teardown)
 #
 # This amendment TRAINS NOTHING (r_B reused) — no finetune/capture phase, no adapters.
 # The corrected 8-per-trait prompts ship committed at scripts/issue778_corrected_prompts.md
@@ -67,7 +72,36 @@ if [ "${EPM_I778F_SMOKE:-0}" = "1" ]; then
   EXTRA_A="--n-prompts 2"
 fi
 
+# The K3 recipe gate keys on the EVIL trait's corrected overall_r; run evil's Leg A
+# FIRST, gate, then the remaining traits — so a wrong recipe bounces BEFORE the
+# other-trait Leg A + Leg B compute is spent (reconciler round-1 CONCERN). evil is
+# always in $TRAITS (it is the smoke canary + the parent #778 anchor); assert that
+# and derive the remaining-trait list.
+case " $TRAITS " in
+  *" evil "*) : ;;
+  *) echo "FATAL: TRAITS='$TRAITS' must include 'evil' (the K3 recipe-gate trait)" >&2; exit 1 ;;
+esac
+REMAINING_TRAITS=""
+for _t in $TRAITS; do
+  [ "$_t" = "evil" ] || REMAINING_TRAITS="$REMAINING_TRAITS $_t"
+done
+REMAINING_TRAITS="$(printf '%s' "$REMAINING_TRAITS" | sed 's/^ *//;s/ *$//')"
+
 log_phase() { printf '[phase=%s] %s\n' "$1" "${2:-}"; }
+
+# Leg-A corrected-monitoring launcher (used for the evil-first slice + remainder).
+run_leg_a() {
+  # shellcheck disable=SC2086
+  uv run python scripts/issue778_monitoring.py \
+    --external-root "$EXTERNAL_ROOT" \
+    --out-root data/issue_778 \
+    --eval-results-root eval_results/issue_778 \
+    --traits "$@" \
+    --n-questions "$N_QUESTIONS" \
+    --n-rollouts "$N_ROLLOUTS" \
+    --prompt-set corrected \
+    $EXTRA_A
+}
 
 # ── step 0: setup ──────────────────────────────────────────────────────────────
 log_phase setup "cloning $PV_REPO @ $PV_SHA"
@@ -118,20 +152,13 @@ uv run python scripts/issue778_manyshot_monitoring.py \
 # Between-phase cleanup to bound peak footprint (multi-phase contract).
 uv run python scripts/clean_experiment_downloads.py "$ISSUE" --incremental --apply || true
 
-# ── step 2: Leg A — corrected 8-prompt-ladder monitoring ───────────────────────
-log_phase monitoring_corrected "start"
-# shellcheck disable=SC2086
-uv run python scripts/issue778_monitoring.py \
-  --external-root "$EXTERNAL_ROOT" \
-  --out-root data/issue_778 \
-  --eval-results-root eval_results/issue_778 \
-  --traits $TRAITS \
-  --n-questions "$N_QUESTIONS" \
-  --n-rollouts "$N_ROLLOUTS" \
-  --prompt-set corrected \
-  $EXTRA_A
+# ── step 2: Leg A (EVIL FIRST) — corrected 8-prompt-ladder monitoring ──────────
+log_phase monitoring_corrected "start evil (gate trait first)"
+run_leg_a evil
 
-# ── step 3: K3 recipe-sanity gate (Leg A evil overall_r >= floor) ──────────────
+# ── step 3: K3 recipe-sanity gate (Leg A evil overall_r >= floor) — EARLY BOUNCE ─
+# Runs BEFORE the remaining Leg-A traits + Leg B so a wrong recipe bounces without
+# spending the rest of the compute (reconciler round-1 CONCERN).
 if [ "${EPM_I778F_SKIP_GATE:-0}" != "1" ]; then
   log_phase recipe_gate "start (evil monitoring_corrected floor=$RECIPE_THRESHOLD)"
   uv run python scripts/issue778_recipe_gate.py \
@@ -145,7 +172,16 @@ else
   log_phase recipe_gate "SKIPPED (EPM_I778F_SKIP_GATE=1)"
 fi
 
-# ── step 4: Leg B — many-shot ICL monitoring ───────────────────────────────────
+# ── step 4: Leg A — remaining traits (only reached past the gate) ──────────────
+if [ -n "$REMAINING_TRAITS" ]; then
+  log_phase monitoring_corrected "start remaining traits=$REMAINING_TRAITS"
+  # shellcheck disable=SC2086
+  run_leg_a $REMAINING_TRAITS
+else
+  log_phase monitoring_corrected "no remaining traits (evil-only slice)"
+fi
+
+# ── step 5: Leg B — many-shot ICL monitoring ───────────────────────────────────
 log_phase monitoring_manyshot "start"
 # shellcheck disable=SC2086
 uv run python scripts/issue778_manyshot_monitoring.py \
@@ -157,12 +193,13 @@ uv run python scripts/issue778_manyshot_monitoring.py \
   --n-rollouts "$N_ROLLOUTS" \
   --shot-counts $SHOT_COUNTS
 
-# ── step 5: upload (raw acts + exemplar pools -> HF DATA repo, pod phase) ───────
+# ── step 6: upload (raw acts + exemplar pools + eval JSONLs -> HF DATA repo) ─────
 UPLOAD_SUMMARY="{}"
 if [ "${EPM_I778F_SKIP_UPLOAD:-0}" != "1" ]; then
   log_phase upload "start"
   UPLOAD_SUMMARY="$(uv run python scripts/issue778_upload_corrected.py \
-    --issue "$ISSUE" --slug "$SLUG" --phase pod)"
+    --issue "$ISSUE" --slug "$SLUG" --phase pod \
+    --eval-results-root eval_results/issue_778)"
 else
   log_phase upload "SKIPPED (EPM_I778F_SKIP_UPLOAD=1)"
 fi

@@ -73,6 +73,10 @@ def main() -> None:
         },
         "analysis_tensors_upload": upload_summary.get("analysis_tensors"),
         "exemplar_pools_upload": upload_summary.get("exemplar_pools"),
+        # The primary-deliverable eval JSONLs are ALSO promoted to HF (pod cannot
+        # git-commit) so the off-pod null battery can fetch them post-teardown; they
+        # land in git VM-side via the /issue Step-8 eval_results/ commit.
+        "eval_jsonl_upload": upload_summary.get("eval_jsonl"),
         "eval_paths": eval_paths,
     }
 

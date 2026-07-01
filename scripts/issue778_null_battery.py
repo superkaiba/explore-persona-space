@@ -41,6 +41,77 @@ from explore_persona_space.analysis import null_battery as nb
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("issue778.nullbattery")
 
+# Stable HF DATA-repo prefix (relative to ``issue{issue}_{slug}/``) the POD phase
+# uploads the primary-deliverable monitoring JSONLs to
+# (issue778_upload_corrected.EVAL_JSONL_SUBPREFIX). Kept in lockstep with the
+# producer; this consumer downloads absent JSONLs from here after pod teardown.
+EVAL_JSONL_SUBPREFIX = "followup_corrected/eval_jsonl"
+
+
+# ── Off-pod input resolution (JSONL fetch from HF) ────────────────────────────────
+
+
+def _ensure_monitoring_jsonls_local(
+    eval_root: Path,
+    traits: list[str],
+    input_tags: list[str],
+    *,
+    issue: int,
+    slug: str,
+    fetch_from_hf: bool,
+) -> None:
+    """Ensure every ``{input_tag}_{trait}.jsonl`` the run needs is present locally.
+
+    The pod-side dispatch writes these primary deliverables to the pod's
+    ``eval_results/issue_778/`` and (reconciler round-1 BLOCKER fix) also uploads
+    them to ``issue{issue}_{slug}/{EVAL_JSONL_SUBPREFIX}/`` on the HF DATA repo. This
+    off-pod driver runs on the VM AFTER the pod is released, so any JSONL absent
+    locally is downloaded from that HF prefix into ``eval_root`` before the null
+    battery opens it. Fail-loud if a required JSONL is neither local nor on HF.
+    """
+    eval_root.mkdir(parents=True, exist_ok=True)
+    required = [(tag, t) for tag in input_tags for t in traits]
+    missing_local = [
+        (tag, t) for tag, t in required if not (eval_root / f"{tag}_{t}.jsonl").exists()
+    ]
+    if not missing_local:
+        return
+    if not fetch_from_hf:
+        names = [f"{tag}_{t}.jsonl" for tag, t in missing_local]
+        raise RuntimeError(
+            f"monitoring JSONL(s) absent locally and --no-hf-fetch set: {names} "
+            f"(expected under {eval_root} or HF prefix {slug}/{EVAL_JSONL_SUBPREFIX})"
+        )
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate.env import load_dotenv
+    from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO
+
+    load_dotenv()
+    exp_name = f"issue{issue}_{slug}"
+    prefix = f"{exp_name}/{EVAL_JSONL_SUBPREFIX}"
+    for tag, trait in missing_local:
+        name = f"{tag}_{trait}.jsonl"
+        logger.info("fetching primary-deliverable JSONL %s from HF %s/%s", name, prefix, name)
+        local = hf_hub_download(
+            repo_id=DEFAULT_DATASET_REPO,
+            repo_type="dataset",
+            filename=f"{prefix}/{name}",
+            revision="main",
+        )
+        import shutil
+
+        shutil.copyfile(local, eval_root / name)
+    # Hard assert: every required JSONL now resolves locally.
+    still_missing = [
+        f"{tag}_{t}.jsonl" for tag, t in required if not (eval_root / f"{tag}_{t}.jsonl").exists()
+    ]
+    if still_missing:
+        raise RuntimeError(
+            f"monitoring JSONL(s) still absent after HF fetch: {still_missing} "
+            f"(HF prefix {DEFAULT_DATASET_REPO}/{prefix})"
+        )
+
 
 # ── Loaders ─────────────────────────────────────────────────────────────────────
 
@@ -437,12 +508,32 @@ def main() -> None:
     parser.add_argument("--lam", type=float, default=nb.PRIMARY_LAMBDA)
     parser.add_argument("--pca-k", type=int, default=nb.DEFAULT_PCA_K)
     parser.add_argument("--n-boot", type=int, default=nb.DEFAULT_BOOTSTRAP)
+    parser.add_argument("--issue", type=int, default=778, help="for the HF JSONL fetch prefix")
+    parser.add_argument("--slug", default="persona_vectors", help="for the HF JSONL fetch prefix")
+    parser.add_argument(
+        "--no-hf-fetch",
+        action="store_true",
+        help="do NOT download absent monitoring JSONLs from HF (fail-loud on a local miss)",
+    )
     args = parser.parse_args()
 
     out_root = Path(args.out_root)
     eval_root = Path(args.eval_results_root)
     eval_root.mkdir(parents=True, exist_ok=True)
     traits = args.traits
+
+    # Off-pod input resolution: the pod uploaded the primary-deliverable monitoring
+    # JSONLs to HF before teardown; download any absent locally BEFORE the battery
+    # opens them (reconciler round-1 BLOCKER jsonl-deliverables-never-promoted).
+    if "monitoring" in args.settings:
+        _ensure_monitoring_jsonls_local(
+            eval_root,
+            traits,
+            list(args.input_tag),
+            issue=args.issue,
+            slug=args.slug,
+            fetch_from_hf=not args.no_hf_fetch,
+        )
 
     # Load all r_B up front for the cross-trait null.
     rbs = {t: _load_rb(out_root, t) for t in traits}
