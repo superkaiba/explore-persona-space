@@ -497,3 +497,220 @@ def test_main_verdict_uses_conjunction_reducer():
     # The pairwise-diff call passes the CI-bootstrap inputs (reduced_root + r_hat).
     assert "pairwise_substrate_diff_cis(" in main_src
     assert "args.reduced_root" in main_src and "r_hat" in main_src
+
+
+# ── Round-4 crash-fix invariants: per-behavior parity floor + marker confirmation ──
+#
+# The round-3 apply-parity phase HALTed marker/default on the 7-MODULE #667 floor
+# (PARITY_MIN_WRITE_RATIO=0.01) even though the 4-module/alpha=64/low-LR marker
+# adapter writes ~0.00903 CORRECTLY (a 10% shortfall, NOT a sqrt(r) gauge drift --
+# a true alpha/sqrt(r)-vs-alpha/r error at r=32 is a 5.66x discrepancy reading
+# ~0.0016 or ~0.05). The fix makes the diagonal-write floor per-behavior (default
+# preserves #667 usage; marker->0.004) and adds a marker-only >=1 nat teacher-forced
+# Delta log P(marker) behavioral confirmation. These pin: the default is unchanged,
+# the .sh maps marker->0.004, and the numeric floor + behavioral gates HALT/PASS at
+# the documented thresholds.
+
+_MARKER_MEASURED_RATIO = 0.00903  # the exact correct-stack marker write from #813 r3
+_MARKER_FLOOR = 0.004  # the #813 marker floor (separates 0.009 correct from 0.0016 wrong-gauge)
+
+
+def test_parity_min_write_ratio_default_preserves_667_usage():
+    """Part 1: min_write_ratio defaults to the 7-module #667 floor on all three functions.
+
+    #667's own callers never pass min_write_ratio, so the DEFAULT must equal
+    PARITY_MIN_WRITE_RATIO (0.01) — the fix must not change #667 behavior. Pins the
+    signature default of the numeric probe, the CPU/GPU wrapper, and the subprocess.
+    """
+    import inspect
+
+    import issue667_dispatch as d
+
+    assert d.PARITY_MIN_WRITE_RATIO == 0.01
+    for fn in (d._numeric_rslora_parity, d._rslora_parity_probe, d._run_parity_probe_subprocess):
+        params = inspect.signature(fn).parameters
+        assert "min_write_ratio" in params, f"{fn.__name__} must expose min_write_ratio"
+        assert params["min_write_ratio"].default == d.PARITY_MIN_WRITE_RATIO, (
+            f"{fn.__name__}.min_write_ratio default must be the #667 floor (unchanged usage)"
+        )
+
+
+def test_sh_maps_marker_to_lower_floor_and_threads_it():
+    """Part 1: issue813_dispatch.sh passes marker→0.004 (others→#667 default) to the probe.
+
+    Source contract on the .sh apply-parity heredoc: it builds a per-behavior floor
+    map with marker→0.004, resolves non-marker behaviors to i667.PARITY_MIN_WRITE_RATIO,
+    and threads min_write_ratio into _rslora_parity_probe. Pins the round-3 bare call
+    (no floor arg) is gone.
+    """
+    sh = (REPO_ROOT / "scripts" / "issue813_dispatch.sh").read_text()
+    assert '"marker": 0.004' in sh, "the .sh must map marker→0.004 (the #813 4-module floor)"
+    assert "i667.PARITY_MIN_WRITE_RATIO" in sh, "non-marker behaviors fall back to the #667 floor"
+    assert "min_write_ratio=min_write_ratio" in sh, (
+        "the .sh must thread the per-behavior floor into _rslora_parity_probe"
+    )
+    # The round-3 bare call (no floor kwarg) must be gone.
+    assert "i667._rslora_parity_probe(behavior, cpu_only=cpu_only)\n" not in sh, (
+        "the round-3 bare _rslora_parity_probe call (no floor) must be replaced"
+    )
+
+
+def _install_synthetic_parity_reads(monkeypatch, *, ratio: float, marker_delta: float | None):
+    """Stub the extract/model helpers so _numeric_rslora_parity runs on synthetic reads.
+
+    Produces a diagonal write with the requested ‖Δv‖/‖v0‖ = ``ratio`` and a self-gate
+    of exactly 1, without any GPU / network / 7B load. When ``marker_delta`` is not
+    None the marker behavioral confirmation is stubbed to return it (so the two gates
+    are exercised in isolation). Returns nothing; monkeypatch handles teardown.
+    """
+    import issue667_extract as ex
+    import numpy as np
+    import torch
+
+    from explore_persona_space.analysis.issue667 import gate_chain
+    from explore_persona_space.experiments import i537_contexts
+
+    monkeypatch.setattr(ex, "stage_adapter_local", lambda *a, **k: Path("/tmp/fake_adapter"))
+    monkeypatch.setattr(
+        ex,
+        "assert_adapter_gauge",
+        lambda *a, **k: {"r": 32, "lora_alpha": 64, "use_rslora": True, "target_modules": []},
+    )
+    monkeypatch.setattr(ex, "stage_inputs", lambda: (Path("/tmp/s.json"), Path("/tmp/d.json")))
+    monkeypatch.setattr(ex, "_device", lambda *a, **k: torch.device("cpu"))
+    monkeypatch.setattr(ex, "load_base_and_trained", lambda *a, **k: (object(), object(), object()))
+    monkeypatch.setattr(ex, "load_eval_probes", lambda *a, **k: ["q1"])
+    monkeypatch.setattr(
+        ex, "build_messages_for", lambda *a, **k: [{"role": "user", "content": "q"}]
+    )
+    monkeypatch.setattr(ex, "_greedy_response", lambda *a, **k: "a base response")
+
+    # v0 unit vector, vp = v0 * (1 + ratio) along the same axis → ‖Δv‖/‖v0‖ == ratio.
+    # Key the returned acts dict on PRIMARY_LAYER (the same layer the function reads).
+    from explore_persona_space.analysis.issue667 import PRIMARY_LAYER
+
+    v0 = np.zeros(8, dtype=np.float64)
+    v0[0] = 1.0
+    vp = v0 * (1.0 + ratio)
+    monkeypatch.setattr(ex, "_mean_resp_acts", lambda *a, **k: {PRIMARY_LAYER: (v0, vp)})
+
+    # realized_gate(v0, vp, v0, vp) == 1 (the self-gate is exactly 1 by construction).
+    monkeypatch.setattr(gate_chain, "realized_gate", lambda *a, **k: (1.0, None))
+    monkeypatch.setattr(i537_contexts, "load_registry", lambda *a, **k: {"default": object()})
+    monkeypatch.setattr(i537_contexts, "load_icl_demos", lambda *a, **k: [])
+
+    # AutoTokenizer.from_pretrained → a stub tokenizer (never touches HF).
+    import transformers
+
+    monkeypatch.setattr(
+        transformers.AutoTokenizer, "from_pretrained", staticmethod(lambda *a, **k: object())
+    )
+
+    # The marker behavioral confirmation is exercised in its own test; here we stub it
+    # to the requested Δ (or leave it unpatched — it is only called for behavior=="marker").
+    if marker_delta is not None:
+        import issue667_dispatch as d
+
+        monkeypatch.setattr(d, "_marker_behavioral_confirmation", lambda *a, **k: marker_delta)
+
+
+def test_numeric_floor_halts_below_and_passes_at_or_above(monkeypatch):
+    """Part 1 REGRESSION: the marker's 0.00903 write HALTs at floor 0.01, PASSES at 0.004.
+
+    This is the exact round-3 crash + its fix: with the CORRECTLY-applied marker write
+    ratio ~0.00903, the OLD 7-module floor (0.01) HALTs (the round-3 bug), while the NEW
+    per-behavior marker floor (0.004) PASSES. Fails pre-fix (min_write_ratio did not exist
+    / the floor was hardcoded 0.01), passes post-fix. marker_delta stubbed high so only the
+    numeric floor decides the outcome.
+    """
+    import issue667_dispatch as d
+
+    # OLD 7-module floor: the correct 0.00903 marker write is BELOW it → HALT.
+    _install_synthetic_parity_reads(monkeypatch, ratio=_MARKER_MEASURED_RATIO, marker_delta=5.0)
+    with pytest.raises(RuntimeError, match=r"rsLoRA NUMERIC parity FAILED"):
+        d._numeric_rslora_parity("marker", min_write_ratio=0.01)
+
+    # NEW marker floor 0.004: the same 0.00903 write is ABOVE it → PASS (no raise).
+    _install_synthetic_parity_reads(monkeypatch, ratio=_MARKER_MEASURED_RATIO, marker_delta=5.0)
+    res = d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
+    assert res["write_ratio"] == pytest.approx(_MARKER_MEASURED_RATIO, abs=1e-4)
+    assert res["min_write_ratio"] == _MARKER_FLOOR
+    assert res["marker_delta_logp_nats"] == 5.0
+
+
+def test_wrong_gauge_write_still_halts_at_marker_floor(monkeypatch):
+    """Part 1: a wrong-gauge marker write (~0.0016) HALTs even at the LOWER 0.004 floor.
+
+    The marker floor 0.004 must still SEPARATE a correct write (0.009, ~2.25x above) from
+    a wrong-gauge one (0.0016 ~= 0.00903/5.66, the alpha/sqrt(r)-vs-alpha/r discrepancy at
+    r=32, ~2.5x below) -- lowering the floor must not blind it to a real gauge error.
+    """
+    import issue667_dispatch as d
+
+    wrong_gauge_ratio = _MARKER_MEASURED_RATIO / (32**0.5)  # ~0.0016
+    _install_synthetic_parity_reads(monkeypatch, ratio=wrong_gauge_ratio, marker_delta=5.0)
+    with pytest.raises(RuntimeError, match=r"rsLoRA NUMERIC parity FAILED"):
+        d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
+
+
+def test_marker_behavioral_gate_halts_below_1_nat_and_passes_above(monkeypatch):
+    """Part 2 REGRESSION: marker Δ log P(※) < 1 nat HALTs; ≥ 1 nat PASSES.
+
+    The write-ratio gate passes (ratio above floor), so ONLY the marker behavioral
+    confirmation decides the outcome: a wrong-gauge / no-op install reads Δ≈0 (< 1 nat)
+    → HALT; a real #537 install reads >1 nat → PASS. Fails pre-fix (no behavioral gate
+    existed), passes post-fix.
+    """
+    import issue667_dispatch as d
+
+    # Δ = 0.3 nat (< 1) with a HEALTHY write ratio → marker behavioral HALT.
+    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=0.3)
+    with pytest.raises(RuntimeError, match=r"marker behavioral parity FAILED"):
+        d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
+
+    # Δ = 2.5 nat (≥ 1) → PASS.
+    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=2.5)
+    res = d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
+    assert res["marker_delta_logp_nats"] == 2.5
+
+
+def test_non_marker_behavior_skips_the_behavioral_gate(monkeypatch):
+    """Part 2: a non-marker behavior runs the numeric floor gate ONLY (no marker Δ read).
+
+    _marker_behavioral_confirmation is marker-only; a non-marker cell (em/sycophancy/fact)
+    must not carry a marker_delta_logp_nats field nor invoke the confirmation.
+    """
+    import issue667_dispatch as d
+
+    called = {"n": 0}
+
+    def _boom(*a, **k):
+        called["n"] += 1
+        return 0.0
+
+    _install_synthetic_parity_reads(monkeypatch, ratio=0.05, marker_delta=None)
+    monkeypatch.setattr(d, "_marker_behavioral_confirmation", _boom)
+    res = d._numeric_rslora_parity("sycophancy", min_write_ratio=0.01)
+    assert called["n"] == 0, "the behavioral confirmation must not run for non-marker behaviors"
+    assert "marker_delta_logp_nats" not in res
+
+
+def test_marker_confirmation_asserts_marker_token_id_83399(monkeypatch):
+    """Part 2: _marker_behavioral_confirmation fails loud on a WRONG marker token.
+
+    The in-process id-83399 assert (` ※`, NOT bare `※` id 63680) must fire when the stub
+    tokenizer encodes the marker to anything else — a wrong-marker trainer path is the
+    #537 all-adapters-no-op incident this assert exists to catch.
+    """
+    import issue667_dispatch as d
+
+    class _WrongTok:
+        eos_token_id = 151645
+
+        def encode(self, text, add_special_tokens=False):
+            return [63680]  # bare `※` — the WRONG token
+
+    with pytest.raises(AssertionError, match=r"83399"):
+        d._marker_behavioral_confirmation(
+            object(), object(), _WrongTok(), {}, [], "default", __import__("torch").device("cpu")
+        )
