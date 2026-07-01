@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 822,
+  "highest_id": 823,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5303,6 +5303,14 @@
       "path": "tasks/proposed/822",
       "status": "proposed",
       "title": "workflow-fix: code-reviewer must FAIL on missing smoke-architecture-check marker"
+    },
+    "823": {
+      "goal": "Determine whether the strong base context\u2192answer-profile map (c_C \u2192 v0, held-out skill-over-mean R\u00b2 0.74\u20130.80 in #722) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical LOCO-ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and context-blind fixed answers teacher-forced through the frozen base model.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/823",
+      "status": "proposed",
+      "title": "Does the base context\u2192answer-profile map predict the model's own output or context-side processing? (external-answer refit)"
     },
     "83": {
       "has_clean_result": false,
