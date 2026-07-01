@@ -258,6 +258,40 @@ def _summary_delta_c_last_token(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _generate_base_R_lowmem(tok, registry, demos, behavior, targets, probes, device, args) -> dict:
+    """Batched vLLM greedy base R (Phase A), at a LOWER gpu_memory_utilization.
+
+    Mirrors :func:`issue667_pertoken_extract._generate_base_R` (same generator,
+    same order, ``{(tcid, probe_index): response}``) but threads
+    ``args.vllm_gpu_mem_util`` (default 0.6) into ``ix.vllm_generate_R`` instead
+    of its 0.85 default. Rationale (crash fix): the 8-cells-per-wave dispatcher
+    tears down each wave's vLLM engines then constructs the next wave's on the
+    SAME GPUs; vLLM V1 EngineCore teardown is ASYNC (gotchas.md § vLLM teardown),
+    so a fresh 0.85-util engine can lose the free-HBM race against a not-yet-fully
+    -reaped prior-wave worker (+ the pod's persistent ~1.2 GB zombie context) and
+    die at init (``EngineCore_DP0: 1``). 0.6 leaves ~30 GB headroom for the
+    transient overlap; greedy generation needs far less KV cache than 0.85. On
+    CPU returns {} (vLLM unavailable; caller falls back to HF greedy).
+    """
+    if device.type == "cpu":
+        return {}
+    gen_msgs: list[list[dict]] = []
+    gen_keys: list[tuple[str, int]] = []
+    for tcid in targets:
+        for qi, q in enumerate(probes):
+            gen_msgs.append(ix.build_messages_for(registry, demos, tcid, behavior, q))
+            gen_keys.append((tcid, qi))
+    logger.info(
+        "Phase A: vLLM-generating %d base R responses (gpu_mem_util=%.2f)",
+        len(gen_msgs),
+        args.vllm_gpu_mem_util,
+    )
+    responses = ix.vllm_generate_R(
+        tok, gen_msgs, max_new_tokens=args.max_new_tokens, gpu_mem_util=args.vllm_gpu_mem_util
+    )
+    return dict(zip(gen_keys, responses, strict=True))
+
+
 def write_cell_done_sentinel(cell_dir: Path, payload: dict) -> Path:
     """Atomically stamp the cell's .done sentinel AFTER the npz is on disk.
 
@@ -323,7 +357,7 @@ def run_extraction(args) -> int:
         from transformers import AutoTokenizer
 
         tok = AutoTokenizer.from_pretrained(BASE_MODEL, token=os.environ.get("HF_TOKEN"))
-        r_lookup = pt._generate_base_R(
+        r_lookup = _generate_base_R_lowmem(
             tok, registry, demos, behavior, targets, probes, device, args
         )
         # ── Phase B: load base θ0 + trained θ⁺ for the teacher-force reads ──
@@ -588,6 +622,14 @@ def main() -> int:
         "--max-probes", type=int, default=0, help="cap probes (0 = full pool; smoke)"
     )
     parser.add_argument("--max-new-tokens", type=int, default=ix.N_GEN_TOKENS)
+    parser.add_argument(
+        "--vllm-gpu-mem-util",
+        type=float,
+        default=0.6,
+        help="vLLM gpu_memory_utilization for Phase-A base-R generation (default 0.6; "
+        "lowered from vllm_generate_R's 0.85 so the wave-to-wave engine handoff has "
+        "HBM headroom against async vLLM teardown + the pod's zombie context).",
+    )
     parser.add_argument(
         "--skip-adapter-gauge",
         action="store_true",
