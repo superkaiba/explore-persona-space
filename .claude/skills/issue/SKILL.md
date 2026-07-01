@@ -2639,9 +2639,10 @@ the workload kind: `ft-7b`/`ft-70b` custom commands DO build `--extra
 gpu`; `lora-7b`/`eval`/`debug` custom commands build the base venv —
 `needs_gpu_extras`, slurm.py); (c) workloads
 needing interactive SSH-MCP-driven orchestration mid-run (the
-experimenter launch pattern); (d) **workloads longer than ~20h on
-GCP** — the lane pins `--instance-termination-action=DELETE` +
-`--max-run-duration` (default 24h), so a multi-day sweep is deleted
+experimenter launch pattern); (d) **multi-day workloads on GCP
+longer than the fence** — the lane pins `--instance-termination-action=DELETE` +
+`--max-run-duration` (default 7d — the FLEX_START ceiling, #741), so a
+sweep longer than the fence is deleted
 mid-run; thread the plan's declared fence via `--max-run-duration
 <dur>` on `dispatch_issue.py launch` (gcloud duration shape, e.g.
 `30h`; lands in `spec.extra["max_run_duration"]`, inert on non-GCP
