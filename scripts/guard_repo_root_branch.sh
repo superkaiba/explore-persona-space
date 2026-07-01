@@ -61,10 +61,19 @@ fi
 blocked=""
 
 # git switch <branch> / git switch -c <branch>  (switch is branch-only).
-# Allow only `git switch main` (bare or quoted — the arg regex tolerates the
+# Allow only `git switch main` (bare or quoted — the arg regex tolerates an
 # optional surrounding quote, so `git switch "main"` also passes the allow-arm).
+# The allow-arm ANCHORS `main` to the FULL switch arg: `main` must be followed
+# by an optional trailing quote AND then end-of-string or a shell delimiter
+# (whitespace / `;` / `&` / `|`). A bare `\bmain\b` word boundary would ALSO
+# match before a `-` / `/` / `.` (all non-word chars), so `git switch
+# main-adjacent` / `main/foo` / `main.x` (and their quoted forms) would slip
+# through the allow-arm and LEAK a branch-switch off main. `main_x` still
+# blocks: `_` is a word char so `\bmain` never matched there either, but the
+# explicit terminator makes the intent unambiguous. Concern id:
+# switch-main-prefix-allowarm-leak (#796 round 3).
 if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bswitch\b'; then
-  if ! echo "$cmd" | grep -qE '\bswitch\b +(-c +|-C +)?["'"'"']?main\b'; then
+  if ! echo "$cmd" | grep -qE '\bswitch\b +(-c +|-C +)?["'"'"']?main["'"'"']?( *($|[;&|]))'; then
     blocked="git switch"
   fi
 fi
