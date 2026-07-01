@@ -170,8 +170,10 @@ data does, then the caption tells them why it matters.
 **Banned in-figure patterns** (do not `ax.annotate(...)` / `ax.text(...)`
 / set `title=` with any of these):
 
-- Effect-size labels overlaid on bars/points ("Δ = +0.42", "3× baseline",
-  "p = 0.003") — these belong in the caption.
+- Effect-size / relative-magnitude labels overlaid on bars/points
+  ("Δ = +0.42", "3× baseline", "Cohen's d = 0.42") — these belong in the
+  caption. (A p-value for a correlation is the ONE carve-out — see the
+  "Legitimate figure text" whitelist below.)
 - Arrow annotations connecting bars, points, or conditions ("A → B",
   before/after arrows on paired bars) — pre/post pairing is encoded by
   the design, not an overlay.
@@ -192,6 +194,11 @@ data does, then the caption tells them why it matters.
 - The `add_direction_arrow(ax, ...)` suffix on an axis label (e.g.
   `"accuracy (↑ better)"`) — this is a unit-of-measurement cue, not an
   interpretation.
+- The **p-value for a correlation** when §3.7's condition holds (the
+  correlation IS the claim), placed at the axis or as a small annotation
+  near the fit line. This is a statistical label of the plotted
+  relationship, not a reader's conclusion. (Effect-size / relative-magnitude
+  labels — Cohen's d, "3× baseline", "Δ = +0.42" — stay banned per §3.8.)
 - Point labels near scatter markers (`ax.text(x, y, name)`) — these
   identify a data point (§3.7), not the reader's conclusion.
 - Panel titles that state WHAT is plotted (e.g. `"loss vs training
