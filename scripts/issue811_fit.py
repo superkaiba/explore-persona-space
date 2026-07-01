@@ -401,10 +401,19 @@ def run_phase0_gate(args) -> int:
     decision (``_kill1_decision``), and writes ``kill1_base_leg_validity.json``.
     Returns 0 if KILL-1 does NOT fire (proceed to Phase 1), 3 if it FIRES (the
     dispatcher stops before the ~7 GPU-h paired re-extraction; the orchestrator
-    persists epm:failure failure_class: data). Data too thin to decide (a smoke
-    with <4 comparable cells) writes the JSON with ``fired: false`` and a
-    ``degenerate`` note and returns 0 — the smoke's job is to exercise the
-    routing, not to make a real kill.
+    persists epm:failure failure_class: data).
+
+    Two distinct zero-``n_comparable`` states are handled separately (round-4
+    BLOCKER phase0-gate-degenerate-guard-over-broad):
+    - State A (``state == "empty_store"``, NO behavior computed a gate) RAISES on a
+      production run — the store is empty / not-yet-uploaded / wrong-prefix and the
+      gate cannot decide, so PASSing would let the ~7 GPU-h Phase-1 spend proceed
+      without ever evaluating turn_nl. Under ``--smoke`` it is tolerated.
+    - State B (``state == "reported_not_killed"``, store populated but every mean
+      base-map gate margin <= 0) is a LEGITIMATE #722-style outcome (mean itself has
+      no gate to collapse from) — reported (WARNING) and returns 0 (proceed). A
+      healthy run must NOT be mislabeled a crash.
+    A ``--smoke`` run that slices to <4 comparable cells is tolerant of both.
     """
     device = _resolve_device()
     logger.info("[phase=phase0_gate] device=%s", device)
@@ -481,23 +490,46 @@ def run_phase0_gate(args) -> int:
     out_json = args.out_dir.parent / "kill1_base_leg_validity.json"
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(kill1, indent=2, default=float))
-    # Fail loud on a degenerate (vacuous) gate: zero comparable behaviors means the
-    # gate had NO base cells to decide on — a not-yet-uploaded / empty / wrong-prefix
-    # HF store, or a mis-pointed --local-root. On a PRODUCTION run that is NOT a real
-    # PASS: returning 0 here would let the ~7 GPU-h Phase-1 paired re-extraction run
-    # without ever evaluating whether turn_nl collapses (round-3 BLOCKER
-    # phase0-gate-reads-unuploaded-hf-store). Raise so the dispatcher HALTs before the
-    # spend. A --smoke run intentionally slices to <4 comparable cells sometimes, so it
-    # is TOLERANT of the degenerate gate (the smoke's job is to exercise the routing).
-    if kill1["n_comparable"] == 0 and not args.smoke:
+    # Fail loud ONLY on the EMPTY-STORE state (State A), NOT on every n_comparable==0.
+    # Both an empty store AND a populated store whose mean base-map gate is <= 0 on all
+    # 3 behaviors yield n_comparable == 0, but they are different signals (round-4
+    # BLOCKER phase0-gate-degenerate-guard-over-broad — State-A vs State-B conflation):
+    #   State A (state == "empty_store"): NO behavior computed a gate margin at all —
+    #     the base-leg gate had NO cells to decide on (a not-yet-uploaded / empty /
+    #     wrong-prefix HF store, or a mis-pointed --local-root). On a PRODUCTION run
+    #     this is NOT a real PASS: returning 0 would let the ~7 GPU-h Phase-1 paired
+    #     re-extraction run without ever evaluating whether turn_nl collapses
+    #     (round-3 BLOCKER phase0-gate-reads-unuploaded-hf-store). RAISE so the
+    #     dispatcher HALTs before the spend.
+    #   State B (state == "reported_not_killed"): the store IS populated but every
+    #     behavior's mean base-map gate margin is <= 0 — a LEGITIMATE #722-style
+    #     outcome (mean MLP-vs-shuffle negative below its shuffle null in 8/9 cells;
+    #     #811 reuses the SAME fit code + paired-store lineage + n=16). mean has no
+    #     gate to collapse from, so turn_nl cannot be judged worse — REPORT, do not
+    #     kill. Return 0 (proceed) — a healthy run must not be mislabeled a crash.
+    # A --smoke run intentionally slices to <4 comparable cells sometimes, so it is
+    # TOLERANT of the empty-store state too (the smoke's job is to exercise routing).
+    if kill1["state"] == "empty_store" and not args.smoke:
         raise RuntimeError(
-            "phase0-gate: 0 comparable behaviors — the base-leg gate had NO cells to "
-            "decide on (empty/missing store; a not-yet-uploaded HF prefix, a wrong "
-            f"--local-root, or a wrong PHASE0 prefix). Loaded from "
+            "phase0-gate: empty base-leg store — NO behavior computed a validity gate "
+            "(all incomparable_missing_gate; an empty/missing store: a not-yet-uploaded "
+            "HF prefix, a wrong --local-root, or a wrong PHASE0 prefix). Loaded from "
             f"{'local ' + args.local_root if args.local_root else 'HF ' + PHASE0_STORE_PREFIX}. "
             "The gate cannot decide — REFUSING to PASS silently before the ~7 GPU-h "
             f"Phase-1 spend (plan §7, failure_class: code). Decision JSON: {out_json}"
         )
+    if kill1["state"] == "reported_not_killed":
+        logger.warning(
+            "[phase=phase0_gate] KILL-1 REPORTED (NOT killed): store is POPULATED but "
+            "every behavior's mean base-map gate margin is <= 0 (%d/%d mean_no_gate) — "
+            "a legitimate #722-style negative-mean-gate outcome, NOT an empty store. "
+            "mean has no gate for turn_nl to collapse relative to, so KILL-1 cannot "
+            "decide against turn_nl — proceeding to Phase 1 (plan §7, per-behavior: %s).",
+            kill1["n_mean_no_gate"],
+            len(HEADLINE_BEHAVIORS),
+            json.dumps(kill1["per_behavior"], default=float),
+        )
+        return 0
     if kill1["fired"]:
         logger.warning(
             "[phase=phase0_gate] KILL1_TRIGGERED: turn_nl base-leg validity gate collapsed "
@@ -528,10 +560,32 @@ def _kill1_decision(cells_by_summary: dict[str, dict[tuple[str, int, str], dict]
     comparison + the fired flag; a behavior whose MEAN margin is non-positive is
     reported as ``mean_no_gate`` and does NOT count toward the kill (no baseline to
     collapse from).
+
+    Two distinct zero-``n_comparable`` states are separated by the ``state`` field —
+    load-bearing for the run_phase0_gate fail-loud guard (round-4 BLOCKER
+    phase0-gate-degenerate-guard-over-broad, State-A vs State-B conflation):
+
+    - ``state == "empty_store"`` (State A): EVERY headline behavior is
+      ``incomparable_missing_gate`` (no gate was computed for ANY behavior). The
+      base-leg gate had NO cells to decide on — an empty / not-yet-uploaded /
+      wrong-prefix store, or a mis-pointed --local-root. On a production run this is
+      NOT a valid PASS; run_phase0_gate RAISES on it.
+    - ``state == "reported_not_killed"`` (State B): the store IS populated (≥1
+      behavior computed a gate margin) but ``n_comparable == 0`` because every
+      comparable behavior's MEAN base-map gate margin is ≤ 0 (``mean_no_gate``).
+      This is a LEGITIMATE outcome — #722's mean MLP-vs-shuffle was negative at
+      every layer, below its shuffle null in 8/9 cells; #811 reuses the SAME fit
+      code + paired-store lineage + n=16, so it is plausible on the first
+      production run. mean itself has no gate to collapse relative to, so turn_nl
+      cannot be judged worse — reported, not killed. run_phase0_gate does NOT raise.
+    - ``state == "decided"``: ``n_comparable >= 1`` — a normal decision (fired or
+      not).
     """
     per_behavior: dict[str, dict] = {}
     n_collapse = 0
     n_comparable = 0
+    n_missing_gate = 0  # behaviors with NO gate margin (empty-store signal, State A)
+    n_mean_no_gate = 0  # behaviors with a mean margin <= 0 (store populated, State B)
     for beh in HEADLINE_BEHAVIORS:
         mkey = (beh, PRIMARY_LAYER, "mean")
         tkey = (beh, PRIMARY_LAYER, "turn_nl")
@@ -542,8 +596,10 @@ def _kill1_decision(cells_by_summary: dict[str, dict[tuple[str, int, str], dict]
         entry = {"mean_margin": m_margin, "turn_nl_margin": t_margin}
         if m_margin is None or t_margin is None:
             entry["status"] = "incomparable_missing_gate"
+            n_missing_gate += 1
         elif m_margin <= 0:
             entry["status"] = "mean_no_gate"  # no baseline gate to collapse from
+            n_mean_no_gate += 1
         else:
             n_comparable += 1
             threshold = KILL1_COLLAPSE_FRAC * m_margin
@@ -555,10 +611,25 @@ def _kill1_decision(cells_by_summary: dict[str, dict[tuple[str, int, str], dict]
                 n_collapse += 1
         per_behavior[beh] = entry
     fired = n_collapse >= 2
+    # State classification for the pre-spend fail-loud guard. n_comparable >= 1 is a
+    # normal decision. n_comparable == 0 splits: if NO behavior computed a gate margin
+    # at all (all incomparable_missing_gate), the store is empty/missing (State A,
+    # raise); if the store WAS populated (>=1 behavior computed a gate — i.e. reached
+    # mean_no_gate or the comparable branch), the zero is because every mean margin is
+    # <= 0 (State B, a legitimate #722-style outcome — report, don't kill).
+    if n_comparable >= 1:
+        state = "decided"
+    elif n_mean_no_gate >= 1:
+        state = "reported_not_killed"  # State B: populated store, all mean margins <= 0
+    else:
+        state = "empty_store"  # State A: no gate computed for any behavior
     return {
         "fired": fired,
         "n_collapse": n_collapse,
         "n_comparable": n_comparable,
+        "n_missing_gate": n_missing_gate,
+        "n_mean_no_gate": n_mean_no_gate,
+        "state": state,
         "collapse_frac_threshold": KILL1_COLLAPSE_FRAC,
         "per_behavior": per_behavior,
     }

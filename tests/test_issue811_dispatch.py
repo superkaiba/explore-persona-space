@@ -55,15 +55,23 @@ def _make_fake_uv(sandbox: Path, invocation_log: Path, gate_rc: int) -> Path:
     return bindir
 
 
-def _run_dispatch(tmp_path: Path, gate_rc: int, extra_args: list[str]) -> tuple[int, str]:
-    """Run the real dispatcher in a sandbox with a fake `uv`. Returns (rc, invocation_log)."""
+def _run_dispatch(
+    tmp_path: Path, gate_rc: int, extra_args: list[str], *, precreate_phase0: bool = True
+) -> tuple[int, str]:
+    """Run the real dispatcher in a sandbox with a fake `uv`. Returns (rc, invocation_log).
+
+    ``precreate_phase0`` seeds a phase0 store on disk so the dispatcher's
+    ``-d "$PHASE0_DIR"`` local-root branch fires (the round-3 fix). Set it False to
+    reproduce the round-4 case: a fresh NON-skip run whose Phase 0 produced nothing
+    (the fake `uv` extractor creates no dir), which MUST hard-fail (exit 5) rather
+    than fall back to HF."""
     sandbox = tmp_path / "workload"
     (sandbox / "scripts").mkdir(parents=True, exist_ok=True)
-    # A phase0 store on disk so the dispatcher's `-d "$PHASE0_DIR"` local-root branch
-    # fires (the round-3 fix). One dummy file is enough for `-d` to be true.
-    phase0 = sandbox / "eval_results" / "issue_811" / "phase0_base_leg"
-    phase0.mkdir(parents=True, exist_ok=True)
-    (phase0 / "marker.txt").write_text("x")
+    if precreate_phase0:
+        # One dummy file is enough for `-d` to be true.
+        phase0 = sandbox / "eval_results" / "issue_811" / "phase0_base_leg"
+        phase0.mkdir(parents=True, exist_ok=True)
+        (phase0 / "marker.txt").write_text("x")
     invocation_log = tmp_path / "invocations.log"
     invocation_log.write_text("")
     bindir = _make_fake_uv(sandbox, invocation_log, gate_rc)
@@ -122,4 +130,40 @@ def test_dispatcher_passes_local_root_phase0_dir_to_gate(tmp_path):
     assert gate_lines, f"no phase0-gate invocation logged\nlog:\n{log}"
     assert "--local-root eval_results/issue_811/phase0_base_leg" in gate_lines[0], (
         f"phase0-gate not pointed at the local phase0 store\ngate line:\n{gate_lines[0]}"
+    )
+
+
+def test_dispatcher_hard_fails_when_local_store_missing_on_nonskip_run(tmp_path):
+    """FRESH NON-skip run whose Phase 0 produced NO local store -> HARD-FAIL (exit 5)
+    BEFORE the phase0-gate runs; NEVER falls back to HF (round-4 BLOCKER
+    phase0-hf-fallback-not-skip-gated).
+
+    The fake `uv` extractor creates no dir, so $PHASE0_DIR is absent at gate-selection
+    time on a non-skip run. The dispatcher must refuse to read the HF prefix (a
+    stale/other-run/empty store) and halt with exit 5 — and the phase0-gate + Phase 1
+    must NEVER run."""
+    rc, log = _run_dispatch(tmp_path, gate_rc=0, extra_args=[], precreate_phase0=False)
+    assert rc == 5, f"dispatcher rc={rc}, expected 5 (missing-local-store HALT)\nlog:\n{log}"
+    # The gate itself was NEVER invoked (the HF-fallback guard fired first).
+    assert "issue811_fit.py --phase0-gate" not in log, (
+        f"phase0-gate ran despite the missing local store!\nlog:\n{log}"
+    )
+    # ...and Phase 1 paired extract certainly never ran.
+    assert "issue667_extract.py" not in log, f"Phase 1 ran after a missing-store HALT!\nlog:\n{log}"
+
+
+def test_dispatcher_skip_extract_allows_hf_fallback_when_no_local_store(tmp_path):
+    """--skip-extract resume with NO local store IS allowed to fall back to the HF
+    prefix (empty --local-root) — the store is on HF from the prior run, and the
+    fit-side empty-store guard catches a vacuous HF tree. The gate MUST still run
+    (contrapositive: the exit-5 guard is scoped to NON-skip runs only)."""
+    rc, log = _run_dispatch(
+        tmp_path, gate_rc=0, extra_args=["--skip-extract"], precreate_phase0=False
+    )
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (--skip-extract HF-fallback PASS)\nlog:\n{log}"
+    gate_lines = [ln for ln in log.splitlines() if "issue811_fit.py --phase0-gate" in ln]
+    assert gate_lines, f"phase0-gate did NOT run on a --skip-extract resume\nlog:\n{log}"
+    # No --local-root on the HF-fallback path (empty PHASE0_LOCAL_ARGS).
+    assert "--local-root" not in gate_lines[0], (
+        f"--skip-extract HF fallback wrongly passed --local-root\ngate line:\n{gate_lines[0]}"
     )

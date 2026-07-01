@@ -174,17 +174,24 @@ FIT_LOCAL_ARGS=""
 # NOT yet on HF, so the gate MUST read the local mirror — reading the HF prefix would
 # 404 or, worse, read an empty tree and PASS vacuously. Default to the local phase0
 # store whenever it exists on disk (every fresh run); an explicit --local-root
-# override always wins; only a --skip-extract resume with no local mirror falls back
-# to the HF prefix (that store IS on HF from the prior run, and the fit-side fail-loud
-# n_comparable==0 guard now catches an empty/missing HF tree instead of PASSing
-# vacuously — round-3 BLOCKER phase0-gate-reads-unuploaded-hf-store).
+# override always wins. The HF-prefix fallback (PHASE0_LOCAL_ARGS empty) is RESTRICTED
+# to a --skip-extract resume (that store IS on HF from the prior run, and the fit-side
+# fail-loud empty-store guard catches an empty/missing HF tree instead of PASSing
+# vacuously — round-3 BLOCKER phase0-gate-reads-unuploaded-hf-store). On a FRESH
+# NON-skip run the local phase0 store MUST exist by construction — Phase 0's extractor
+# just wrote it; a missing $PHASE0_DIR means Phase 0 silently produced nothing, and
+# falling back to HF (a stale/other-run store, or empty) would let the gate read the
+# WRONG store, so HARD-FAIL instead (round-4 BLOCKER phase0-hf-fallback-not-skip-gated).
 if [ -n "$LOCAL_ROOT" ]; then
   PHASE0_LOCAL_ARGS="--local-root $LOCAL_ROOT"
 elif [ -d "$PHASE0_DIR" ]; then
   PHASE0_LOCAL_ARGS="--local-root $PHASE0_DIR"
+elif [ -n "$SKIP_EXTRACT" ]; then
+  echo "[phase=phase0_gate] no local phase0 store at $PHASE0_DIR (--skip-extract resume) — reading the HF prefix (the fit-side empty-store guard catches a vacuous HF tree)" >&2
+  PHASE0_LOCAL_ARGS=""  # allowed ONLY on --skip-extract resume; HF has the store
 else
-  echo "[phase=phase0_gate] no local phase0 store at $PHASE0_DIR (--skip-extract resume) — reading the HF prefix" >&2
-  PHASE0_LOCAL_ARGS=""
+  echo "[phase=phase0_gate] local phase0 store $PHASE0_DIR missing after Phase 0 extraction on a NON-skip run; refusing to fall back to HF on a non-skip run (Phase 0 produced nothing — would read a stale/empty store) — HALT (round-4 BLOCKER phase0-hf-fallback-not-skip-gated)." >&2
+  exit 5
 fi
 # The gate EXITs 3 on KILL-1 fire; do not let set -e mask the intent — capture rc.
 set +e

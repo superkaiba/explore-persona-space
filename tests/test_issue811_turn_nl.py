@@ -395,11 +395,12 @@ def test_phase0_gate_fails_loud_on_degenerate_pass(monkeypatch, tmp_path):
         },
     )
     args = _phase0_gate_args(out_dir=tmp_path / "cells")
-    with pytest.raises(RuntimeError, match="0 comparable behaviors"):
+    with pytest.raises(RuntimeError, match="empty base-leg store"):
         f.run_phase0_gate(args)
     # The diagnostic decision JSON still landed for debugging (n_comparable == 0).
     kill1 = json.loads((tmp_path / "kill1_base_leg_validity.json").read_text())
     assert kill1["n_comparable"] == 0 and kill1["fired"] is False
+    assert kill1["state"] == "empty_store"  # State A: no gate computed for any behavior
 
 
 def test_phase0_gate_tolerates_degenerate_pass_under_smoke(monkeypatch, tmp_path):
@@ -430,6 +431,78 @@ def test_phase0_gate_tolerates_degenerate_pass_under_smoke(monkeypatch, tmp_path
     assert rc == 0
     kill1 = json.loads((tmp_path / "kill1_base_leg_validity.json").read_text())
     assert kill1["n_comparable"] == 0 and kill1["fired"] is False
+    assert kill1["state"] == "empty_store"  # State A even under smoke (raise suppressed)
+
+
+def _populated_base_cells(behaviors, summaries, layer, **kw):
+    """A POPULATED base-leg store: >=4 cells per (behavior, summary) so the gate builds
+    a real cell (State B fixture — distinct from the empty-store State A)."""
+    rng = np.random.default_rng(7)
+    out = {}
+    for b in behaviors:
+        for s in summaries:
+            out[(b, s)] = {
+                "C0": rng.standard_normal((12, 3584)).astype(np.float64),
+                "V0": rng.standard_normal((12, 3584)).astype(np.float64),
+                "cell_keys": [f"src{i}->tgt{j}" for i in range(4) for j in range(3)],
+            }
+    return out
+
+
+def test_phase0_gate_reports_not_kills_on_negative_mean_gate(monkeypatch, tmp_path):
+    """State B: POPULATED store, mean base-map gate margin <= 0 on ALL 3 behaviors.
+
+    This ALSO yields n_comparable == 0, but it is a LEGITIMATE #722-style outcome
+    (mean MLP-vs-shuffle negative below its shuffle null in 8/9 cells; #811 reuses the
+    SAME fit code + paired-store lineage + n=16), NOT an empty/unuploaded store. mean
+    has no gate for turn_nl to collapse relative to, so KILL-1 cannot decide against
+    turn_nl. run_phase0_gate MUST return 0 (fired: false, state: reported_not_killed)
+    — a healthy run must never raise blocked/failure_class:code with a false
+    empty-store message (round-4 BLOCKER phase0-gate-degenerate-guard-over-broad,
+    State-A vs State-B conflation).
+    """
+    import json
+
+    import issue722_fit_M as fitM
+    import issue811_fit as f
+
+    monkeypatch.setattr(f, "_resolve_device", lambda: "cpu")
+    monkeypatch.setattr(fitM, "_load_rb_main", lambda: {})
+    monkeypatch.setattr(fitM, "_load_rb_fact", lambda: None)
+    # r_hat feeds cell_meta only; the monkeypatched gate below ignores it, so a stub
+    # unit vector is enough (the real r_b_fact/r_b .pt aren't loaded in this CPU test).
+    monkeypatch.setattr(fitM, "_r_hat_for", lambda b, layer, rb_main, rb_fact: np.ones(3584))
+    # Populated store so groups_by_cell is NON-empty and the gate runs on real cells.
+    monkeypatch.setattr(f, "_load_phase0_base_cells", _populated_base_cells)
+
+    # Force the gate to report a NEGATIVE mean margin on every cell (the #722 pattern),
+    # while turn_nl also has some margin — every mean cell -> status mean_no_gate.
+    def _neg_mean_gate(groups_by_cell, cell_meta, **kw):
+        out = {}
+        for cell_key in groups_by_cell:
+            _behavior, _layer, summary = cell_key
+            margin = -0.3 if summary == "mean" else 0.2  # mean <= 0 -> no baseline gate
+            out[cell_key] = {
+                "rho_real": margin,
+                "rho_shuffle": 0.0,
+                "gate_margin": margin,
+                "n_with_E": 12,
+            }
+        return out
+
+    monkeypatch.setattr(f, "compute_mlp_validity_gate", _neg_mean_gate)
+    args = _phase0_gate_args(out_dir=tmp_path / "cells")  # NON-smoke production run
+    rc = f.run_phase0_gate(args)  # must NOT raise (State B is legitimate)
+    assert rc == 0
+    kill1 = json.loads((tmp_path / "kill1_base_leg_validity.json").read_text())
+    assert kill1["n_comparable"] == 0 and kill1["fired"] is False
+    assert kill1["state"] == "reported_not_killed"  # populated store, mean margins <= 0
+    assert kill1["n_mean_no_gate"] == 2  # em + sycophancy (the _phase0_gate_args set)
+    assert all(
+        e["status"] == "mean_no_gate"
+        for e in kill1["per_behavior"].values()
+        if e["mean_margin"] is not None
+    )
 
 
 # ── 7. upload_store: BOTH stores required (never an incomplete commit) ──────────
