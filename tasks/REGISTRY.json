@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 788,
+  "highest_id": 789,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5046,6 +5046,13 @@
       "path": "tasks/proposed/788",
       "status": "proposed",
       "title": "daily-fix: reviewer sandbox read-only tempdir silently skips pytest"
+    },
+    "789": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/789",
+      "status": "proposed",
+      "title": "daily-fix: Codex twin false-FAIL discipline (sandbox + evidence-quote)"
     },
     "8": {
       "has_clean_result": false,
