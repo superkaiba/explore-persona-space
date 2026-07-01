@@ -17,6 +17,8 @@ goal: 'Determine whether the finetuning-induced context->answer map change (M0 b
   M0 vs M+ across three substrates (generic UltraChat, behavior-eliciting probes,
   mix) on the shared 50-context battery, reporting floor-normalized function-change
   and chain-rho per substrate.'
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
