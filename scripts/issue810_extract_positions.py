@@ -520,7 +520,9 @@ def main() -> int:
     ap.add_argument("--n-probes", type=int, default=None, help="smoke: cap probes/context")
     ap.add_argument("--expected-layers", type=int, default=EXPECTED_LAYERS)
     ap.add_argument("--expected-hidden", type=int, default=EXPECTED_HIDDEN)
-    ap.add_argument("--batch-probes", type=int, default=8, help="CUDA-OOM knob (documented no-op)")
+    ap.add_argument(
+        "--batch-probes", type=int, default=8, help="probes per left-padded forward (real knob)"
+    )
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--no-upload", action="store_true")
     args = ap.parse_args()
