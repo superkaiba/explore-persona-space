@@ -64,6 +64,7 @@ from explore_persona_space.backends.gcp import (
     GcpLaunchSecretsMissing,
     StaleNamedInstance,
     _classify_janitor_instance,
+    _gcp_status_to_poll_result,
     _instance_max_run_seconds,
     _stale_named_instance_or_none,
     attempt_id_for,
@@ -862,6 +863,33 @@ def test_resolve_provisioning_model_rejects_typo() -> None:
     spec = _spec(extra={"provisioning_model": "preemptible"})
     with pytest.raises(ValueError, match="unknown provisioning_model"):
         resolve_provisioning_model(spec)
+
+
+# ---------------------------------------------------------------------------
+# _gcp_status_to_poll_result — PENDING is a live FLEX_START-queued state
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_status_to_poll_result_pending_maps_to_running_not_stalled() -> None:
+    """A FLEX_START-queued GCE instance (status PENDING) is a live,
+    keep-polling state — NOT the false-stalled routing that the /issue
+    Step 6d.2 poll pseudocode would convert to epm:failure + set-status
+    blocked (#782 / live repro #778). Mirrors reconnect_or_none, which
+    treats PENDING as live (not in _NONLIVE_INSTANCE_STATUSES)."""
+    result = _gcp_status_to_poll_result("PENDING")
+    assert result.status == "running"
+    assert result.current_phase == "pending"
+
+    # Case-insensitive on the raw GCE string (matches the up = status.upper()
+    # normalization the other branches rely on).
+    lower = _gcp_status_to_poll_result("pending")
+    assert lower.status == "running"
+    assert lower.current_phase == "pending"
+
+    # Regression guard: it must NOT fall through to the unknown_* stalled
+    # default (the pre-fix behavior that caused the false block).
+    assert result.current_phase != "unknown_pending"
+    assert result.status != "stalled"
 
 
 # ---------------------------------------------------------------------------
