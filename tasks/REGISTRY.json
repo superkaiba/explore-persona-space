@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 823,
+  "highest_id": 824,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5311,6 +5311,13 @@
       "path": "tasks/proposed/823",
       "status": "proposed",
       "title": "Does the base context\u2192answer-profile map predict the model's own output or context-side processing? (external-answer refit)"
+    },
+    "824": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/824",
+      "status": "proposed",
+      "title": "workflow-fix: dispatch repo-branch default should use issue worktree branch"
     },
     "83": {
       "has_clean_result": false,
