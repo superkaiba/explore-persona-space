@@ -1,0 +1,2067 @@
+{
+  "issue": 667,
+  "read": "marker_map_change_M0_vs_Mplus_floor_normalized",
+  "marker_text": " \u203b",
+  "marker_token_id": 83399,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "wu_marker_direction": "unit lm_head row 83399 (residual-space read-out dir)",
+  "n_refit_pairs": 100,
+  "target_dim": 64,
+  "frac_in_subspace_uninformative_threshold": 0.1,
+  "git_commit": "8b325fa2d720aeef0a3b947fb153f0ea8fbbf3ce",
+  "generated_at": "2026-07-01T09:34:22Z",
+  "per_layer": {
+    "marker_L1": {
+      "behavior": "marker",
+      "layer": 1,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.010792284441518373,
+      "unproj_delta_med_ci": {
+        "point": 0.010792284441518373,
+        "ci_lo": 0.010792284441518373,
+        "ci_hi": 0.010792284441518373,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.009109548389607938,
+        "Mplus": 0.009596783086571307,
+        "shifted": 6.223355899789216e-10,
+        "combined": 0.009596783086571307
+      },
+      "unproj_floor_sd_combined": 0.0024363793279611975,
+      "unproj_delta_over_floor": 1.1245731349935293,
+      "unproj_delta_over_floor_sd": 4.429640457731816,
+      "wu_proj_delta_med": 0.00012584292801145827,
+      "wu_proj_delta_med_ci": {
+        "point": 0.00012584292801145827,
+        "ci_lo": 0.00012584292801145827,
+        "ci_hi": 0.00012584292801145827,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 8.231077103352316e-05,
+        "Mplus": 0.0001260572928967013,
+        "shifted": 3.221595739665469e-12,
+        "combined": 0.0001260572928967013
+      },
+      "wu_proj_floor_sd_combined": 2.854779963787754e-05,
+      "wu_proj_delta_over_floor": 0.9982994646297957,
+      "wu_proj_delta_over_floor_sd": 4.40814807472897,
+      "wu_frac_in_subspace": 0.13645327603063434,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 0.06375686092818314,
+        "p90": 0.08015836276837901
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.18386679195656228,
+        "rho_Mplus_ridge": 0.01541792716114219,
+        "rho_diff_ridge": 0.19928471911770446,
+        "ci_M0_ridge": {
+          "point": -0.1838667919565623,
+          "ci_lo": -0.2732208313006865,
+          "ci_hi": -0.04965740048128219,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.015417927161142193,
+          "ci_lo": -0.10947997006367649,
+          "ci_hi": 0.18855600420856664,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L2": {
+      "behavior": "marker",
+      "layer": 2,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.01290741181292478,
+      "unproj_delta_med_ci": {
+        "point": 0.01290741181292478,
+        "ci_lo": 0.01290741181292478,
+        "ci_hi": 0.01290741181292478,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.011683461296921827,
+        "Mplus": 0.013001480400281495,
+        "shifted": 8.244523004444164e-09,
+        "combined": 0.013001480400281495
+      },
+      "unproj_floor_sd_combined": 0.0031818942672449378,
+      "unproj_delta_over_floor": 0.9927647787436054,
+      "unproj_delta_over_floor_sd": 4.056518139460599,
+      "wu_proj_delta_med": 0.00015064453168432628,
+      "wu_proj_delta_med_ci": {
+        "point": 0.00015064453168432628,
+        "ci_lo": 0.00015064453168432628,
+        "ci_hi": 0.00015064453168432628,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.00016780889486454903,
+        "Mplus": 0.00020513815677397843,
+        "shifted": 7.354464297512833e-11,
+        "combined": 0.00020513815677397843
+      },
+      "wu_proj_floor_sd_combined": 5.4707040030979504e-05,
+      "wu_proj_delta_over_floor": 0.7343564651909527,
+      "wu_proj_delta_over_floor_sd": 2.7536589733061647,
+      "wu_frac_in_subspace": 0.14215061933127568,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 0.13530522346456444,
+        "p90": 0.15904247276977654
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.23243915989218703,
+        "rho_Mplus_ridge": -0.15741724139427687,
+        "rho_diff_ridge": 0.07502191849791015,
+        "ci_M0_ridge": {
+          "point": -0.23243915989218703,
+          "ci_lo": -0.3426741472423382,
+          "ci_hi": -0.06606999713057442,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.15741724139427687,
+          "ci_lo": -0.2717797654306927,
+          "ci_hi": 0.009587932273726799,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L3": {
+      "behavior": "marker",
+      "layer": 3,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.019297864912264234,
+      "unproj_delta_med_ci": {
+        "point": 0.019297864912264234,
+        "ci_lo": 0.019297864912264234,
+        "ci_hi": 0.019297864912264234,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.015753245807721902,
+        "Mplus": 0.016973032540161716,
+        "shifted": 1.144044020156865e-08,
+        "combined": 0.016973032540161716
+      },
+      "unproj_floor_sd_combined": 0.0041922132024258645,
+      "unproj_delta_over_floor": 1.1369721272024598,
+      "unproj_delta_over_floor_sd": 4.603264190165075,
+      "wu_proj_delta_med": 0.00024339751402115606,
+      "wu_proj_delta_med_ci": {
+        "point": 0.00024339751402115606,
+        "ci_lo": 0.00024339751402115606,
+        "ci_hi": 0.00024339751402115606,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.00027252837995586843,
+        "Mplus": 0.0002852232858025423,
+        "shifted": 7.67323389468325e-11,
+        "combined": 0.0002852232858025423
+      },
+      "wu_proj_floor_sd_combined": 7.972255977217742e-05,
+      "wu_proj_delta_over_floor": 0.8533577941797436,
+      "wu_proj_delta_over_floor_sd": 3.0530569354108974,
+      "wu_frac_in_subspace": 0.1438197415529667,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 0.22342235743693659,
+        "p90": 0.28854171423427144
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.3576299159284545,
+        "rho_Mplus_ridge": -0.10980668318872912,
+        "rho_diff_ridge": 0.2478232327397254,
+        "ci_M0_ridge": {
+          "point": -0.35762991592845456,
+          "ci_lo": -0.46330711583337414,
+          "ci_hi": -0.2309978347575948,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.10980668318872912,
+          "ci_lo": -0.2537279430349604,
+          "ci_hi": 0.11084335509860241,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L4": {
+      "behavior": "marker",
+      "layer": 4,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.02091586800935837,
+      "unproj_delta_med_ci": {
+        "point": 0.02091586800935837,
+        "ci_lo": 0.02091586800935837,
+        "ci_hi": 0.02091586800935837,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.0185915748277685,
+        "Mplus": 0.02010937740840031,
+        "shifted": 1.5219130388029583e-07,
+        "combined": 0.02010937740840031
+      },
+      "unproj_floor_sd_combined": 0.0049633508371279755,
+      "unproj_delta_over_floor": 1.0401051999064457,
+      "unproj_delta_over_floor_sd": 4.214061970574149,
+      "wu_proj_delta_med": 0.0005807316160656635,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0005807316160656635,
+        "ci_lo": 0.0005807316160656635,
+        "ci_hi": 0.0005807316160656635,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0002600185177475138,
+        "Mplus": 0.0002985054582542784,
+        "shifted": 1.0433526409939215e-09,
+        "combined": 0.0002985054582542784
+      },
+      "wu_proj_floor_sd_combined": 7.563490593849909e-05,
+      "wu_proj_delta_over_floor": 1.9454639773151954,
+      "wu_proj_delta_over_floor_sd": 7.678090014918151,
+      "wu_frac_in_subspace": 0.158317898503736,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 0.29307904764537546,
+        "p90": 0.38127656272736593
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.31970093186168336,
+        "rho_Mplus_ridge": 0.05347744564863563,
+        "rho_diff_ridge": 0.373178377510319,
+        "ci_M0_ridge": {
+          "point": -0.3197009318616834,
+          "ci_lo": -0.40884694792364495,
+          "ci_hi": -0.17040627198046318,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.05347744564863563,
+          "ci_lo": -0.09838086259495402,
+          "ci_hi": 0.34020165955398896,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L5": {
+      "behavior": "marker",
+      "layer": 5,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.022300136806190217,
+      "unproj_delta_med_ci": {
+        "point": 0.022300136806190217,
+        "ci_lo": 0.022300136806190217,
+        "ci_hi": 0.022300136806190217,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.020320103056315302,
+        "Mplus": 0.022042701768007045,
+        "shifted": 1.2045302599474232e-07,
+        "combined": 0.022042701768007045
+      },
+      "unproj_floor_sd_combined": 0.005378415379932731,
+      "unproj_delta_over_floor": 1.0116789239764072,
+      "unproj_delta_over_floor_sd": 4.146228067358592,
+      "wu_proj_delta_med": 0.0006671284870126219,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0006671284870126219,
+        "ci_lo": 0.0006671284870126219,
+        "ci_hi": 0.0006671284870126219,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.000283610706731966,
+        "Mplus": 0.0003277991024905173,
+        "shifted": 1.2684362925543739e-09,
+        "combined": 0.0003277991024905173
+      },
+      "wu_proj_floor_sd_combined": 7.895951922800403e-05,
+      "wu_proj_delta_over_floor": 2.035174843201167,
+      "wu_proj_delta_over_floor_sd": 8.448993782323031,
+      "wu_frac_in_subspace": 0.1652451106185953,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 0.45762257481421514,
+        "p90": 0.6081454853734981
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.3070650263238989,
+        "rho_Mplus_ridge": -0.04216750072699968,
+        "rho_diff_ridge": 0.2648975255968993,
+        "ci_M0_ridge": {
+          "point": -0.307065026323899,
+          "ci_lo": -0.3920431964913463,
+          "ci_hi": -0.17540842223638575,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.042167500726999686,
+          "ci_lo": -0.16071051573295245,
+          "ci_hi": 0.1914087169639143,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L6": {
+      "behavior": "marker",
+      "layer": 6,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.03555387689407687,
+      "unproj_delta_med_ci": {
+        "point": 0.03555387689407687,
+        "ci_lo": 0.03555387689407687,
+        "ci_hi": 0.03555387689407687,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.02339099921577061,
+        "Mplus": 0.0264526424673583,
+        "shifted": 1.2835346191642875e-08,
+        "combined": 0.0264526424673583
+      },
+      "unproj_floor_sd_combined": 0.006159945926213959,
+      "unproj_delta_over_floor": 1.3440576659949643,
+      "unproj_delta_over_floor_sd": 5.771783927968518,
+      "wu_proj_delta_med": 0.0003349219097402815,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0003349219097402815,
+        "ci_lo": 0.0003349219097402815,
+        "ci_hi": 0.0003349219097402815,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.00030921548782043894,
+        "Mplus": 0.00040463309383212176,
+        "shifted": 1.7492198392696074e-10,
+        "combined": 0.00040463309383212176
+      },
+      "wu_proj_floor_sd_combined": 0.00010077009140411428,
+      "wu_proj_delta_over_floor": 0.8277175417570696,
+      "wu_proj_delta_over_floor_sd": 3.3236241534917093,
+      "wu_frac_in_subspace": 0.13433541611157593,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 0.7177932910446427,
+        "p90": 0.9856704626156024
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.2650058159974652,
+        "rho_Mplus_ridge": 0.005873506395427063,
+        "rho_diff_ridge": 0.27087932239289225,
+        "ci_M0_ridge": {
+          "point": -0.26500581599746525,
+          "ci_lo": -0.34006906940748255,
+          "ci_hi": -0.125398232966363,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.005873506395427063,
+          "ci_lo": -0.1564779896439111,
+          "ci_hi": 0.2774154774395578,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L7": {
+      "behavior": "marker",
+      "layer": 7,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.038126882837764116,
+      "unproj_delta_med_ci": {
+        "point": 0.038126882837764116,
+        "ci_lo": 0.038126882837764116,
+        "ci_hi": 0.038126882837764116,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.028926539118608888,
+        "Mplus": 0.0322935630685971,
+        "shifted": 1.5772705031411466e-08,
+        "combined": 0.0322935630685971
+      },
+      "unproj_floor_sd_combined": 0.007645064874467113,
+      "unproj_delta_over_floor": 1.1806341330863999,
+      "unproj_delta_over_floor_sd": 4.9871235187421075,
+      "wu_proj_delta_med": 0.0005212005210605273,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0005212005210605273,
+        "ci_lo": 0.0005212005210605273,
+        "ci_hi": 0.0005212005210605273,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.000283414666890428,
+        "Mplus": 0.0004349033752989179,
+        "shifted": 1.5827198840518935e-10,
+        "combined": 0.0004349033752989179
+      },
+      "wu_proj_floor_sd_combined": 9.88508800348788e-05,
+      "wu_proj_delta_over_floor": 1.1984283191692766,
+      "wu_proj_delta_over_floor_sd": 5.27259363676505,
+      "wu_frac_in_subspace": 0.1477881059396041,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 0.7724412633481637,
+        "p90": 1.0618524696172955
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.3018464706878068,
+        "rho_Mplus_ridge": -0.14744584394897545,
+        "rho_diff_ridge": 0.15440062673883134,
+        "ci_M0_ridge": {
+          "point": -0.3018464706878068,
+          "ci_lo": -0.3846817459861574,
+          "ci_hi": -0.1608467222916149,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.14744584394897547,
+          "ci_lo": -0.28230304591542993,
+          "ci_hi": 0.08997322728554173,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L8": {
+      "behavior": "marker",
+      "layer": 8,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.04804517930022971,
+      "unproj_delta_med_ci": {
+        "point": 0.04804517930022971,
+        "ci_lo": 0.04804517930022971,
+        "ci_hi": 0.04804517930022971,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.03331090880267823,
+        "Mplus": 0.03826024889150872,
+        "shifted": 1.8631976976026506e-08,
+        "combined": 0.03826024889150872
+      },
+      "unproj_floor_sd_combined": 0.008847287866456851,
+      "unproj_delta_over_floor": 1.2557466480802901,
+      "unproj_delta_over_floor_sd": 5.430498026676142,
+      "wu_proj_delta_med": 0.0009011316656350826,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0009011316656350826,
+        "ci_lo": 0.0009011316656350826,
+        "ci_hi": 0.0009011316656350826,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.00035397337552428966,
+        "Mplus": 0.0005556760246948692,
+        "shifted": 1.8468920007191755e-10,
+        "combined": 0.0005556760246948692
+      },
+      "wu_proj_floor_sd_combined": 0.00013390300125082474,
+      "wu_proj_delta_over_floor": 1.62168534467527,
+      "wu_proj_delta_over_floor_sd": 6.729734637889846,
+      "wu_frac_in_subspace": 0.14878706485008145,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 0.9938268471625917,
+        "p90": 1.6848925932527432
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.284675389216099,
+        "rho_Mplus_ridge": -0.12321668062795411,
+        "rho_diff_ridge": 0.16145870858814487,
+        "ci_M0_ridge": {
+          "point": -0.28467538921609903,
+          "ci_lo": -0.36063345259095225,
+          "ci_hi": -0.13417255985517312,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.12321668062795411,
+          "ci_lo": -0.24693278635406268,
+          "ci_hi": 0.11437536592528555,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L9": {
+      "behavior": "marker",
+      "layer": 9,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.04861310572363732,
+      "unproj_delta_med_ci": {
+        "point": 0.04861310572363732,
+        "ci_lo": 0.04861310572363732,
+        "ci_hi": 0.04861310572363732,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.039871327571264846,
+        "Mplus": 0.04501391181785085,
+        "shifted": 2.0847682803326865e-07,
+        "combined": 0.04501391181785085
+      },
+      "unproj_floor_sd_combined": 0.010513061229790443,
+      "unproj_delta_over_floor": 1.0799573678544232,
+      "unproj_delta_over_floor_sd": 4.6240675918336995,
+      "wu_proj_delta_med": 0.0009789092814587945,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0009789092814587945,
+        "ci_lo": 0.0009789092814587945,
+        "ci_hi": 0.0009789092814587945,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0005405978438332616,
+        "Mplus": 0.0006302232702416429,
+        "shifted": 1.799257649910112e-09,
+        "combined": 0.0006302232702416429
+      },
+      "wu_proj_floor_sd_combined": 0.00015197803772668147,
+      "wu_proj_delta_over_floor": 1.553273780391284,
+      "wu_proj_delta_over_floor_sd": 6.441123310325094,
+      "wu_frac_in_subspace": 0.1528619606525948,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 1.3553274836430278,
+        "p90": 2.265377636469462
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.2942443326576938,
+        "rho_Mplus_ridge": -0.11908916705367646,
+        "rho_diff_ridge": 0.17515516560401734,
+        "ci_M0_ridge": {
+          "point": -0.29424433265769384,
+          "ci_lo": -0.36953164449822523,
+          "ci_hi": -0.1289372904524111,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.11908916705367645,
+          "ci_lo": -0.24951005741673624,
+          "ci_hi": 0.14489930140056062,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L10": {
+      "behavior": "marker",
+      "layer": 10,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.053066995581284845,
+      "unproj_delta_med_ci": {
+        "point": 0.053066995581284845,
+        "ci_lo": 0.053066995581284845,
+        "ci_hi": 0.053066995581284845,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.042659097332784106,
+        "Mplus": 0.04921010935147639,
+        "shifted": 2.3480494865092425e-06,
+        "combined": 0.04921010935147639
+      },
+      "unproj_floor_sd_combined": 0.011310302326474052,
+      "unproj_delta_over_floor": 1.0783758922838633,
+      "unproj_delta_over_floor_sd": 4.691916630475102,
+      "wu_proj_delta_med": 0.000825632734558184,
+      "wu_proj_delta_med_ci": {
+        "point": 0.000825632734558184,
+        "ci_lo": 0.000825632734558184,
+        "ci_hi": 0.000825632734558184,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0005245252159415447,
+        "Mplus": 0.0009260717212435623,
+        "shifted": 2.6494663342883412e-08,
+        "combined": 0.0009260717212435623
+      },
+      "wu_proj_floor_sd_combined": 0.00021493473954348186,
+      "wu_proj_delta_over_floor": 0.8915429719088007,
+      "wu_proj_delta_over_floor_sd": 3.84131823599952,
+      "wu_frac_in_subspace": 0.14790570175688952,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 2.523934494750587,
+        "p90": 4.360655061325166
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.31313547367827116,
+        "rho_Mplus_ridge": -0.1230516408491356,
+        "rho_diff_ridge": 0.19008383282913555,
+        "ci_M0_ridge": {
+          "point": -0.31313547367827116,
+          "ci_lo": -0.3887715139647532,
+          "ci_hi": -0.17147054523907768,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.12305164084913563,
+          "ci_lo": -0.25660474227945773,
+          "ci_hi": 0.13270047502788115,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L11": {
+      "behavior": "marker",
+      "layer": 11,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.05960622101520269,
+      "unproj_delta_med_ci": {
+        "point": 0.05960622101520269,
+        "ci_lo": 0.05960622101520269,
+        "ci_hi": 0.05960622101520269,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.04408127122658533,
+        "Mplus": 0.05066502891937171,
+        "shifted": 2.8077528839847994e-06,
+        "combined": 0.05066502891937171
+      },
+      "unproj_floor_sd_combined": 0.011709930909834933,
+      "unproj_delta_over_floor": 1.1764766010507954,
+      "unproj_delta_over_floor_sd": 5.090228240812303,
+      "wu_proj_delta_med": 0.0005673058598537764,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0005673058598537764,
+        "ci_lo": 0.0005673058598537764,
+        "ci_hi": 0.0005673058598537764,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0004953369929275911,
+        "Mplus": 0.0009282228837643606,
+        "shifted": 2.3783899134856798e-08,
+        "combined": 0.0009282228837643606
+      },
+      "wu_proj_floor_sd_combined": 0.00021876269530300382,
+      "wu_proj_delta_over_floor": 0.611174180012775,
+      "wu_proj_delta_over_floor_sd": 2.5932477156034874,
+      "wu_frac_in_subspace": 0.14952770801342333,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 2.8874053096453154,
+        "p90": 5.053582313854196
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.2972000746531018,
+        "rho_Mplus_ridge": -0.16555291038589573,
+        "rho_diff_ridge": 0.13164716426720605,
+        "ci_M0_ridge": {
+          "point": -0.2972000746531018,
+          "ci_lo": -0.38075475945831194,
+          "ci_hi": -0.15375008597240866,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.16555291038589579,
+          "ci_lo": -0.2849960972223297,
+          "ci_hi": 0.06655549787217893,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L12": {
+      "behavior": "marker",
+      "layer": 12,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.05832620807353913,
+      "unproj_delta_med_ci": {
+        "point": 0.05832620807353913,
+        "ci_lo": 0.05832620807353913,
+        "ci_hi": 0.05832620807353913,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.04501767072484512,
+        "Mplus": 0.05349450351644342,
+        "shifted": 3.1005611374150554e-06,
+        "combined": 0.05349450351644342
+      },
+      "unproj_floor_sd_combined": 0.012031175334313908,
+      "unproj_delta_over_floor": 1.0903215141647313,
+      "unproj_delta_over_floor_sd": 4.847922705206361,
+      "wu_proj_delta_med": 0.0011198294180181753,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0011198294180181753,
+        "ci_lo": 0.0011198294180181753,
+        "ci_hi": 0.0011198294180181753,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.000525608726212086,
+        "Mplus": 0.0010327303554868044,
+        "shifted": 1.521901817303728e-08,
+        "combined": 0.0010327303554868044
+      },
+      "wu_proj_floor_sd_combined": 0.00023447228805898582,
+      "wu_proj_delta_over_floor": 1.0843386292158659,
+      "wu_proj_delta_over_floor_sd": 4.775956371170232,
+      "wu_frac_in_subspace": 0.15275891482529952,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 3.526971171615033,
+        "p90": 6.358389074776098
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.3036415088607155,
+        "rho_Mplus_ridge": -0.0416061918671522,
+        "rho_diff_ridge": 0.2620353169935633,
+        "ci_M0_ridge": {
+          "point": -0.30364150886071556,
+          "ci_lo": -0.39514162163811795,
+          "ci_hi": -0.15390402655443433,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.0416061918671522,
+          "ci_lo": -0.1974512898841811,
+          "ci_hi": 0.2713261659000217,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L13": {
+      "behavior": "marker",
+      "layer": 13,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.0689116409629793,
+      "unproj_delta_med_ci": {
+        "point": 0.0689116409629793,
+        "ci_lo": 0.0689116409629793,
+        "ci_hi": 0.0689116409629793,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.04860393052167849,
+        "Mplus": 0.06307373138515877,
+        "shifted": 3.145258723624441e-06,
+        "combined": 0.06307373138515877
+      },
+      "unproj_floor_sd_combined": 0.013797721005537885,
+      "unproj_delta_over_floor": 1.0925569083929954,
+      "unproj_delta_over_floor_sd": 4.9944219726809065,
+      "wu_proj_delta_med": 0.002358848933017886,
+      "wu_proj_delta_med_ci": {
+        "point": 0.002358848933017886,
+        "ci_lo": 0.002358848933017886,
+        "ci_hi": 0.002358848933017886,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0005072579350639931,
+        "Mplus": 0.0013517249579308537,
+        "shifted": 2.8334599677191102e-08,
+        "combined": 0.0013517249579308537
+      },
+      "wu_proj_floor_sd_combined": 0.00032972488079273214,
+      "wu_proj_delta_over_floor": 1.7450657540781684,
+      "wu_proj_delta_over_floor_sd": 7.153991313444975,
+      "wu_frac_in_subspace": 0.1432565012863792,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 3.6150447237055774,
+        "p90": 6.72198852761749
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.29434491903176657,
+        "rho_Mplus_ridge": 0.046622055651283204,
+        "rho_diff_ridge": 0.34096697468304976,
+        "ci_M0_ridge": {
+          "point": -0.2943449190317666,
+          "ci_lo": -0.39197704857996885,
+          "ci_hi": -0.14333406637746413,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.04662205565128321,
+          "ci_lo": -0.11148302188273258,
+          "ci_hi": 0.35971092544442984,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L14": {
+      "behavior": "marker",
+      "layer": 14,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.07758660352293842,
+      "unproj_delta_med_ci": {
+        "point": 0.07758660352293842,
+        "ci_lo": 0.07758660352293842,
+        "ci_hi": 0.07758660352293842,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.04966254735179415,
+        "Mplus": 0.06978470413011559,
+        "shifted": 3.877985231397367e-06,
+        "combined": 0.06978470413011559
+      },
+      "unproj_floor_sd_combined": 0.015591828442821691,
+      "unproj_delta_over_floor": 1.1117995625269967,
+      "unproj_delta_over_floor_sd": 4.976106798985366,
+      "wu_proj_delta_med": 0.0011512841955023507,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0011512841955023507,
+        "ci_lo": 0.0011512841955023507,
+        "ci_hi": 0.0011512841955023507,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0007085698630099514,
+        "Mplus": 0.0014881352116100466,
+        "shifted": 6.679124871179406e-08,
+        "combined": 0.0014881352116100466
+      },
+      "wu_proj_floor_sd_combined": 0.00036568455081871883,
+      "wu_proj_delta_over_floor": 0.7736421976446285,
+      "wu_proj_delta_over_floor_sd": 3.148298698768595,
+      "wu_frac_in_subspace": 0.13903130552700987,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 6.471503114938151,
+        "p90": 13.249640429960925
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.3065491820711027,
+        "rho_Mplus_ridge": -0.01310368100555992,
+        "rho_diff_ridge": 0.2934455010655428,
+        "ci_M0_ridge": {
+          "point": -0.30654918207110277,
+          "ci_lo": -0.4049840016129444,
+          "ci_hi": -0.1567336998278363,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": -0.01310368100555992,
+          "ci_lo": -0.18263926704192612,
+          "ci_hi": 0.31169039660052994,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L15": {
+      "behavior": "marker",
+      "layer": 15,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.13599538390581725,
+      "unproj_delta_med_ci": {
+        "point": 0.13599538390581725,
+        "ci_lo": 0.13599538390581725,
+        "ci_hi": 0.13599538390581725,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.0526733819758677,
+        "Mplus": 0.12305823109242361,
+        "shifted": 4.102860645191791e-06,
+        "combined": 0.12305823109242361
+      },
+      "unproj_floor_sd_combined": 0.02753769721352144,
+      "unproj_delta_over_floor": 1.1051303330020819,
+      "unproj_delta_over_floor_sd": 4.9385169301317395,
+      "wu_proj_delta_med": 0.0029938565266154466,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0029938565266154466,
+        "ci_lo": 0.0029938565266154466,
+        "ci_hi": 0.0029938565266154466,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0007359056688553944,
+        "Mplus": 0.002399790186111399,
+        "shifted": 7.650793297180534e-08,
+        "combined": 0.002399790186111399
+      },
+      "wu_proj_floor_sd_combined": 0.0006781410218088069,
+      "wu_proj_delta_over_floor": 1.2475492832424104,
+      "wu_proj_delta_over_floor_sd": 4.414799326886209,
+      "wu_frac_in_subspace": 0.15153268873650744,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 7.951639415213544,
+        "p90": 17.18310731501525
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.288301164501582,
+        "rho_Mplus_ridge": 0.1948384107569911,
+        "rho_diff_ridge": 0.4831395752585731,
+        "ci_M0_ridge": {
+          "point": -0.28830116450158205,
+          "ci_lo": -0.40089701694208646,
+          "ci_hi": -0.1534766730424616,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.19483841075699113,
+          "ci_lo": -0.050322156122693994,
+          "ci_hi": 0.589003022054307,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L16": {
+      "behavior": "marker",
+      "layer": 16,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.12641385337669606,
+      "unproj_delta_med_ci": {
+        "point": 0.12641385337669606,
+        "ci_lo": 0.12641385337669606,
+        "ci_hi": 0.12641385337669606,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.054979813863576144,
+        "Mplus": 0.11743681313564203,
+        "shifted": 4.6046420656898486e-06,
+        "combined": 0.11743681313564203
+      },
+      "unproj_floor_sd_combined": 0.026183723381953745,
+      "unproj_delta_over_floor": 1.0764414496729007,
+      "unproj_delta_over_floor_sd": 4.8279555788395845,
+      "wu_proj_delta_med": 0.0028775059064026203,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0028775059064026203,
+        "ci_lo": 0.0028775059064026203,
+        "ci_hi": 0.0028775059064026203,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0006609087783081202,
+        "Mplus": 0.00281388153740738,
+        "shifted": 6.709245365575865e-08,
+        "combined": 0.00281388153740738
+      },
+      "wu_proj_floor_sd_combined": 0.0007142989473541043,
+      "wu_proj_delta_over_floor": 1.0226108910945346,
+      "wu_proj_delta_over_floor_sd": 4.028433637010716,
+      "wu_frac_in_subspace": 0.14782134440478042,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 8.206886441378638,
+        "p90": 17.90258868218676
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.28173277661795404,
+        "rho_Mplus_ridge": 0.13976048073125316,
+        "rho_diff_ridge": 0.4214932573492072,
+        "ci_M0_ridge": {
+          "point": -0.2817327766179541,
+          "ci_lo": -0.39432763805434945,
+          "ci_hi": -0.12743036107749642,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.13976048073125316,
+          "ci_lo": -0.12303526535421218,
+          "ci_hi": 0.5485271248763735,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L17": {
+      "behavior": "marker",
+      "layer": 17,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.14658408556795036,
+      "unproj_delta_med_ci": {
+        "point": 0.14658408556795036,
+        "ci_lo": 0.14658408556795036,
+        "ci_hi": 0.14658408556795036,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.057449174718825935,
+        "Mplus": 0.12404075199618124,
+        "shifted": 5.077199900001324e-06,
+        "combined": 0.12404075199618124
+      },
+      "unproj_floor_sd_combined": 0.027016378515529297,
+      "unproj_delta_over_floor": 1.1817413487823998,
+      "unproj_delta_over_floor_sd": 5.42574888354086,
+      "wu_proj_delta_med": 0.002522188412199971,
+      "wu_proj_delta_med_ci": {
+        "point": 0.002522188412199971,
+        "ci_lo": 0.002522188412199971,
+        "ci_hi": 0.002522188412199971,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0006508107484824536,
+        "Mplus": 0.002521342922936433,
+        "shifted": 8.352456009894858e-08,
+        "combined": 0.002521342922936433
+      },
+      "wu_proj_floor_sd_combined": 0.0007000987961166405,
+      "wu_proj_delta_over_floor": 1.000335332911619,
+      "wu_proj_delta_over_floor_sd": 3.6026178393538615,
+      "wu_frac_in_subspace": 0.14013738375255916,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 9.03522124919681,
+        "p90": 17.745757209249362
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.2819215795207444,
+        "rho_Mplus_ridge": 0.07631272271147009,
+        "rho_diff_ridge": 0.35823430223221453,
+        "ci_M0_ridge": {
+          "point": -0.2819215795207444,
+          "ci_lo": -0.39656637954034746,
+          "ci_hi": -0.13015625632434252,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.0763127227114701,
+          "ci_lo": -0.15356064568207503,
+          "ci_hi": 0.47642386850609847,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L18": {
+      "behavior": "marker",
+      "layer": 18,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.19434026716743838,
+      "unproj_delta_med_ci": {
+        "point": 0.19434026716743838,
+        "ci_lo": 0.19434026716743838,
+        "ci_hi": 0.19434026716743838,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.06276413777925773,
+        "Mplus": 0.17119010589006156,
+        "shifted": 6.028960035057765e-06,
+        "combined": 0.17119010589006156
+      },
+      "unproj_floor_sd_combined": 0.04060517964237197,
+      "unproj_delta_over_floor": 1.1352307200057687,
+      "unproj_delta_over_floor_sd": 4.786095490257161,
+      "wu_proj_delta_med": 0.003488374967401689,
+      "wu_proj_delta_med_ci": {
+        "point": 0.003488374967401689,
+        "ci_lo": 0.003488374967401689,
+        "ci_hi": 0.003488374967401689,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0007904224069277116,
+        "Mplus": 0.003160617283289951,
+        "shifted": 9.092178077929928e-08,
+        "combined": 0.003160617283289951
+      },
+      "wu_proj_floor_sd_combined": 0.000899721785683351,
+      "wu_proj_delta_over_floor": 1.1037005289582447,
+      "wu_proj_delta_over_floor_sd": 3.8771707242280686,
+      "wu_frac_in_subspace": 0.14246216048675386,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 9.999262659744845,
+        "p90": 17.591335865103062
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.2755676022899405,
+        "rho_Mplus_ridge": 0.10134223672845802,
+        "rho_diff_ridge": 0.3769098390183985,
+        "ci_M0_ridge": {
+          "point": -0.2755676022899405,
+          "ci_lo": -0.38959511977981504,
+          "ci_hi": -0.13469074837422992,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.10134223672845802,
+          "ci_lo": -0.12501066813175676,
+          "ci_hi": 0.4751775274897424,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L19": {
+      "behavior": "marker",
+      "layer": 19,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.4284239884389368,
+      "unproj_delta_med_ci": {
+        "point": 0.4284239884389368,
+        "ci_lo": 0.4284239884389368,
+        "ci_hi": 0.4284239884389368,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.07277248372317555,
+        "Mplus": 0.33648826805782117,
+        "shifted": 7.896355695838091e-06,
+        "combined": 0.33648826805782117
+      },
+      "unproj_floor_sd_combined": 0.08409498062026717,
+      "unproj_delta_over_floor": 1.2732211762144339,
+      "unproj_delta_over_floor_sd": 5.094525086740851,
+      "wu_proj_delta_med": 0.009116336277079565,
+      "wu_proj_delta_med_ci": {
+        "point": 0.009116336277079565,
+        "ci_lo": 0.009116336277079565,
+        "ci_hi": 0.009116336277079565,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0008177191930725015,
+        "Mplus": 0.010337476152323818,
+        "shifted": 1.2394353521958228e-07,
+        "combined": 0.010337476152323818
+      },
+      "wu_proj_floor_sd_combined": 0.0028819182788617837,
+      "wu_proj_delta_over_floor": 0.8818725327874399,
+      "wu_proj_delta_over_floor_sd": 3.1632875727066314,
+      "wu_frac_in_subspace": 0.14250667875731038,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 10.901323219107232,
+        "p90": 19.815248371168167
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.2659129379901822,
+        "rho_Mplus_ridge": 0.3037060707728766,
+        "rho_diff_ridge": 0.5696190087630588,
+        "ci_M0_ridge": {
+          "point": -0.26591293799018223,
+          "ci_lo": -0.37335643839957205,
+          "ci_hi": -0.09693232468787111,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.3037060707728766,
+          "ci_lo": 0.02149605895753013,
+          "ci_hi": 0.688294169482626,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L20": {
+      "behavior": "marker",
+      "layer": 20,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.5089790810820176,
+      "unproj_delta_med_ci": {
+        "point": 0.5089790810820176,
+        "ci_lo": 0.5089790810820176,
+        "ci_hi": 0.5089790810820176,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.08750397248113095,
+        "Mplus": 0.3912354134908459,
+        "shifted": 9.298602673992215e-06,
+        "combined": 0.3912354134908459
+      },
+      "unproj_floor_sd_combined": 0.09437539488309267,
+      "unproj_delta_over_floor": 1.30095350147521,
+      "unproj_delta_over_floor_sd": 5.393133260131144,
+      "wu_proj_delta_med": 0.011430751822397793,
+      "wu_proj_delta_med_ci": {
+        "point": 0.011430751822397793,
+        "ci_lo": 0.011430751822397793,
+        "ci_hi": 0.011430751822397793,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0012234361009717492,
+        "Mplus": 0.011887684878712458,
+        "shifted": 9.511189643818833e-08,
+        "combined": 0.011887684878712458
+      },
+      "wu_proj_floor_sd_combined": 0.003487504221764843,
+      "wu_proj_delta_over_floor": 0.9615624858013435,
+      "wu_proj_delta_over_floor_sd": 3.2776309634439067,
+      "wu_frac_in_subspace": 0.14782439799121036,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 12.742886291473583,
+        "p90": 23.66822217543381
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.26642086120165454,
+        "rho_Mplus_ridge": 0.3427521386811574,
+        "rho_diff_ridge": 0.6091729998828119,
+        "ci_M0_ridge": {
+          "point": -0.26642086120165454,
+          "ci_lo": -0.35465064759815107,
+          "ci_hi": -0.09720486497444601,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.34275213868115745,
+          "ci_lo": 0.08415085506518882,
+          "ci_hi": 0.7046194791212265,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L21": {
+      "behavior": "marker",
+      "layer": 21,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.6314668982248741,
+      "unproj_delta_med_ci": {
+        "point": 0.6314668982248741,
+        "ci_lo": 0.6314668982248741,
+        "ci_hi": 0.6314668982248741,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.11086885518086262,
+        "Mplus": 0.4398041108253681,
+        "shifted": 1.2819695094236163e-05,
+        "combined": 0.4398041108253681
+      },
+      "unproj_floor_sd_combined": 0.10930233225467338,
+      "unproj_delta_over_floor": 1.4357912595219218,
+      "unproj_delta_over_floor_sd": 5.77724999274089,
+      "wu_proj_delta_med": 0.02127320877983275,
+      "wu_proj_delta_med_ci": {
+        "point": 0.02127320877983275,
+        "ci_lo": 0.02127320877983275,
+        "ci_hi": 0.02127320877983275,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0012337996410482417,
+        "Mplus": 0.016564969427757186,
+        "shifted": 1.6281080186027298e-07,
+        "combined": 0.016564969427757186
+      },
+      "wu_proj_floor_sd_combined": 0.0049941100492855795,
+      "wu_proj_delta_over_floor": 1.2842286774273288,
+      "wu_proj_delta_over_floor_sd": 4.259659592979121,
+      "wu_frac_in_subspace": 0.14417345551037006,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 15.919080917607054,
+        "p90": 29.45841063014271
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.22595909704469203,
+        "rho_Mplus_ridge": 0.4492059427341264,
+        "rho_diff_ridge": 0.6751650397788185,
+        "ci_M0_ridge": {
+          "point": -0.22595909704469203,
+          "ci_lo": -0.3117521507167512,
+          "ci_hi": -0.027302523248015378,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.44920594273412645,
+          "ci_lo": 0.22831978723163565,
+          "ci_hi": 0.7596164091230352,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L22": {
+      "behavior": "marker",
+      "layer": 22,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.6943722363335972,
+      "unproj_delta_med_ci": {
+        "point": 0.6943722363335972,
+        "ci_lo": 0.6943722363335972,
+        "ci_hi": 0.6943722363335972,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.13349539578338693,
+        "Mplus": 0.4928225851914092,
+        "shifted": 1.6968367976746507e-05,
+        "combined": 0.4928225851914092
+      },
+      "unproj_floor_sd_combined": 0.11993108525102342,
+      "unproj_delta_over_floor": 1.4089699969085374,
+      "unproj_delta_over_floor_sd": 5.7897603017618975,
+      "wu_proj_delta_med": 0.023178139055843885,
+      "wu_proj_delta_med_ci": {
+        "point": 0.023178139055843885,
+        "ci_lo": 0.023178139055843885,
+        "ci_hi": 0.023178139055843885,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0019536631089089244,
+        "Mplus": 0.016040391660410613,
+        "shifted": 1.6445322747144856e-07,
+        "combined": 0.016040391660410613
+      },
+      "wu_proj_floor_sd_combined": 0.004757766904569311,
+      "wu_proj_delta_over_floor": 1.4449858548684937,
+      "wu_proj_delta_over_floor_sd": 4.8716424156012845,
+      "wu_frac_in_subspace": 0.1391625856082105,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 18.857947929530976,
+        "p90": 34.43913326959697
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.2162438856071424,
+        "rho_Mplus_ridge": 0.40814934092595884,
+        "rho_diff_ridge": 0.6243932265331013,
+        "ci_M0_ridge": {
+          "point": -0.2162438856071424,
+          "ci_lo": -0.2986693798082331,
+          "ci_hi": -0.007054566233000399,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.4081493409259589,
+          "ci_lo": 0.16117038613180826,
+          "ci_hi": 0.7483490064436831,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L23": {
+      "behavior": "marker",
+      "layer": 23,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.8419587500823841,
+      "unproj_delta_med_ci": {
+        "point": 0.8419587500823841,
+        "ci_lo": 0.8419587500823841,
+        "ci_hi": 0.8419587500823841,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.16023874214331296,
+        "Mplus": 0.5661877957546597,
+        "shifted": 2.0701427336873892e-05,
+        "combined": 0.5661877957546597
+      },
+      "unproj_floor_sd_combined": 0.13760313276595915,
+      "unproj_delta_over_floor": 1.487066228547288,
+      "unproj_delta_over_floor_sd": 6.118746958431687,
+      "wu_proj_delta_med": 0.0246848415171423,
+      "wu_proj_delta_med_ci": {
+        "point": 0.0246848415171423,
+        "ci_lo": 0.0246848415171423,
+        "ci_hi": 0.0246848415171423,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.001614875364206598,
+        "Mplus": 0.016979854601672596,
+        "shifted": 1.6758225942367202e-07,
+        "combined": 0.016979854601672596
+      },
+      "wu_proj_floor_sd_combined": 0.004939682410158834,
+      "wu_proj_delta_over_floor": 1.4537722551941479,
+      "wu_proj_delta_over_floor_sd": 4.9972527517915,
+      "wu_frac_in_subspace": 0.13624036460489228,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 24.280323893840023,
+        "p90": 42.26402822869877
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.20987840659030635,
+        "rho_Mplus_ridge": 0.4627988836757103,
+        "rho_diff_ridge": 0.6726772902660166,
+        "ci_M0_ridge": {
+          "point": -0.20987840659030638,
+          "ci_lo": -0.30254600855626995,
+          "ci_hi": 0.010801054298366872,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.46279888367571037,
+          "ci_lo": 0.2450281863951506,
+          "ci_hi": 0.7645426521711413,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L24": {
+      "behavior": "marker",
+      "layer": 24,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 0.9488656869844381,
+      "unproj_delta_med_ci": {
+        "point": 0.9488656869844381,
+        "ci_lo": 0.9488656869844381,
+        "ci_hi": 0.9488656869844381,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.18627966565233134,
+        "Mplus": 0.633110433378169,
+        "shifted": 2.417199643871308e-05,
+        "combined": 0.633110433378169
+      },
+      "unproj_floor_sd_combined": 0.15247281764993822,
+      "unproj_delta_over_floor": 1.4987364556945508,
+      "unproj_delta_over_floor_sd": 6.223179328678344,
+      "wu_proj_delta_med": 0.020669719480615793,
+      "wu_proj_delta_med_ci": {
+        "point": 0.020669719480615793,
+        "ci_lo": 0.020669719480615793,
+        "ci_hi": 0.020669719480615793,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.001994142078815714,
+        "Mplus": 0.01330576707216702,
+        "shifted": 2.0552531916105741e-07,
+        "combined": 0.01330576707216702
+      },
+      "wu_proj_floor_sd_combined": 0.0034312698915296047,
+      "wu_proj_delta_over_floor": 1.5534406523508648,
+      "wu_proj_delta_over_floor_sd": 6.023927039852166,
+      "wu_frac_in_subspace": 0.13642940163881923,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 29.696573322186442,
+        "p90": 56.02506431203961
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.22841494537736706,
+        "rho_Mplus_ridge": 0.31720113802577266,
+        "rho_diff_ridge": 0.5456160834031397,
+        "ci_M0_ridge": {
+          "point": -0.2284149453773671,
+          "ci_lo": -0.3143947675880184,
+          "ci_hi": -0.016702508872033252,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.31720113802577266,
+          "ci_lo": 0.08064469241477001,
+          "ci_hi": 0.6704433119917265,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L25": {
+      "behavior": "marker",
+      "layer": 25,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 1.1607426492939954,
+      "unproj_delta_med_ci": {
+        "point": 1.1607426492939954,
+        "ci_lo": 1.1607426492939954,
+        "ci_hi": 1.1607426492939954,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.21567641278686206,
+        "Mplus": 0.7333012235006828,
+        "shifted": 2.999375100526732e-05,
+        "combined": 0.7333012235006828
+      },
+      "unproj_floor_sd_combined": 0.17748239989191744,
+      "unproj_delta_over_floor": 1.5829001944831946,
+      "unproj_delta_over_floor_sd": 6.540043688843852,
+      "wu_proj_delta_med": 0.022835256539512308,
+      "wu_proj_delta_med_ci": {
+        "point": 0.022835256539512308,
+        "ci_lo": 0.022835256539512308,
+        "ci_hi": 0.022835256539512308,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0022198058042055676,
+        "Mplus": 0.013835146778220822,
+        "shifted": 2.2340927708396255e-07,
+        "combined": 0.013835146778220822
+      },
+      "wu_proj_floor_sd_combined": 0.0035356225509429163,
+      "wu_proj_delta_over_floor": 1.650525065296697,
+      "wu_proj_delta_over_floor_sd": 6.458623965225691,
+      "wu_frac_in_subspace": 0.13447631724758075,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 35.425935649655585,
+        "p90": 70.6115132553826
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.23227053936866043,
+        "rho_Mplus_ridge": 0.41723683696543823,
+        "rho_diff_ridge": 0.6495073763340986,
+        "ci_M0_ridge": {
+          "point": -0.23227053936866046,
+          "ci_lo": -0.32247522855287425,
+          "ci_hi": -0.031097300249856494,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.41723683696543823,
+          "ci_lo": 0.20632361871345675,
+          "ci_hi": 0.7160823301272715,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L26": {
+      "behavior": "marker",
+      "layer": 26,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 1.648345814686958,
+      "unproj_delta_med_ci": {
+        "point": 1.648345814686958,
+        "ci_lo": 1.648345814686958,
+        "ci_hi": 1.648345814686958,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.24898520676554883,
+        "Mplus": 1.0571170347973253,
+        "shifted": 3.8544364269804095e-05,
+        "combined": 1.0571170347973253
+      },
+      "unproj_floor_sd_combined": 0.24189725391814004,
+      "unproj_delta_over_floor": 1.559284128841028,
+      "unproj_delta_over_floor_sd": 6.814239467326782,
+      "wu_proj_delta_med": 0.035580452288343806,
+      "wu_proj_delta_med_ci": {
+        "point": 0.035580452288343806,
+        "ci_lo": 0.035580452288343806,
+        "ci_hi": 0.035580452288343806,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.0033499904776134507,
+        "Mplus": 0.02400531725132745,
+        "shifted": 3.7175866368597107e-07,
+        "combined": 0.02400531725132745
+      },
+      "wu_proj_floor_sd_combined": 0.006927733411105209,
+      "wu_proj_delta_over_floor": 1.4821904628807299,
+      "wu_proj_delta_over_floor_sd": 5.13594420814578,
+      "wu_frac_in_subspace": 0.1716917811363787,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 43.45060432813245,
+        "p90": 89.11072258228813
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.23658229853428178,
+        "rho_Mplus_ridge": 0.37966820602519974,
+        "rho_diff_ridge": 0.6162505045594815,
+        "ci_M0_ridge": {
+          "point": -0.23658229853428184,
+          "ci_lo": -0.32948716727406313,
+          "ci_hi": -0.055954671255190526,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.37966820602519974,
+          "ci_lo": 0.16015321895250317,
+          "ci_hi": 0.6694296631358293,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    },
+    "marker_L27": {
+      "behavior": "marker",
+      "layer": 27,
+      "n_cells": 480,
+      "n_families": 7,
+      "unproj_delta_med": 4.679740168777785,
+      "unproj_delta_med_ci": {
+        "point": 4.679740168777785,
+        "ci_lo": 4.679740168777785,
+        "ci_hi": 4.679740168777785,
+        "n_families": 7
+      },
+      "unproj_floor_p95": {
+        "M0": 0.3187967830141834,
+        "Mplus": 2.3565080169104116,
+        "shifted": 5.988714113753029e-05,
+        "combined": 2.3565080169104116
+      },
+      "unproj_floor_sd_combined": 0.6591663169371912,
+      "unproj_delta_over_floor": 1.9858791632346469,
+      "unproj_delta_over_floor_sd": 7.09948316309933,
+      "wu_proj_delta_med": 0.07746187921754978,
+      "wu_proj_delta_med_ci": {
+        "point": 0.07746187921754978,
+        "ci_lo": 0.07746187921754978,
+        "ci_hi": 0.07746187921754978,
+        "n_families": 7
+      },
+      "wu_proj_floor_p95": {
+        "M0": 0.007845830131846938,
+        "Mplus": 0.09536982453203702,
+        "shifted": 1.4285870178101624e-06,
+        "combined": 0.09536982453203702
+      },
+      "wu_proj_floor_sd_combined": 0.02736645917312478,
+      "wu_proj_delta_over_floor": 0.8122262948227242,
+      "wu_proj_delta_over_floor_sd": 2.8305407991407665,
+      "wu_frac_in_subspace": 0.19466885701184894,
+      "wu_read2_informative": true,
+      "pca_dim": 64,
+      "support_distance": {
+        "mean": 55.60882939102531,
+        "p90": 110.0225387221778
+      },
+      "refit_skip": {
+        "read1": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        },
+        "read2": {
+          "n_attempted": 300,
+          "n_skipped": 0,
+          "skip_frac": 0.0
+        }
+      },
+      "chain_rho": {
+        "n_with_E": 480,
+        "rho_M0_ridge": -0.13234497545562263,
+        "rho_Mplus_ridge": 0.60947052721583,
+        "rho_diff_ridge": 0.7418155026714526,
+        "ci_M0_ridge": {
+          "point": -0.13234497545562263,
+          "ci_lo": -0.28642240830461135,
+          "ci_hi": 0.04736009953865278,
+          "n_families": 7
+        },
+        "ci_Mplus_ridge": {
+          "point": 0.60947052721583,
+          "ci_lo": 0.43188926057168947,
+          "ci_hi": 0.787570644471115,
+          "n_families": 7
+        }
+      },
+      "pca_path": "dual_eigh_fast"
+    }
+  }
+}
