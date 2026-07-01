@@ -11128,6 +11128,178 @@ def zombie_wrapper_pass(
 
 IDLE_UNMAPPED_STATE_PREFIX = "idle-unmapped-"
 
+
+def _orphaned_tmux_reap_enabled() -> bool:
+    """True unless ``EPM_ORPHANED_TMUX_REAP`` is explicitly set to a falsy
+    value (``0`` / ``false`` / ``no``) — the kill-switch for the
+    orphaned-tmux-server widening of the idle-unmapped live-user-TTY guard.
+    Same parse as :func:`_unmapped_idle_reap_enabled`."""
+    raw = os.environ.get("EPM_ORPHANED_TMUX_REAP", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _tmux_socket_dir() -> Path:
+    """The tmux socket directory: ``$TMUX_TMPDIR/tmux-<uid>`` when set, else
+    ``/tmp/tmux-<uid>`` (the documented default — tmux(1): sockets live in
+    ``tmux-UID`` under ``$TMUX_TMPDIR`` or ``/tmp``)."""
+    base = os.environ.get("TMUX_TMPDIR", "").strip() or "/tmp"
+    return Path(base) / f"tmux-{os.getuid()}"
+
+
+def _live_tmux_socket_present() -> bool:
+    """True iff AT LEAST ONE socket file exists in the tmux socket dir.
+
+    Distinguishes "a tmux server is reattachable" (a socket file present, a
+    new client can attach) from "a server exists but its socket was deleted"
+    (no socket file — unreattachable). An unreadable dir returns True (fail
+    toward keep: we cannot prove any server is socket-less)."""
+    d = _tmux_socket_dir()
+    try:
+        return any(p.is_socket() for p in d.iterdir())
+    except OSError:
+        return True  # cannot read the dir -> cannot prove orphaned -> keep
+
+
+def _proc_comm(pid: int, proc_root: Path) -> str | None:
+    """``comm`` (process name) from ``<proc_root>/<pid>/comm``, or ``None`` if
+    unreadable (raced exit / perms)."""
+    try:
+        return (proc_root / str(pid) / "comm").read_text().strip()
+    except OSError:
+        return None
+
+
+def _proc_ppid(pid: int, proc_root: Path) -> int | None:
+    """``ppid`` from ``<proc_root>/<pid>/stat``, or ``None`` if unreadable.
+
+    Same parse as :func:`_wrapper_has_controlling_tty` / ``_proc_children_map``:
+    the ``comm`` field (parenthesised, may contain spaces/parens) is skipped by
+    splitting after the LAST ``)``; the remaining fields are
+    ``state(0) ppid(1) pgrp(2) ...``."""
+    try:
+        stat = (proc_root / str(pid) / "stat").read_text()
+        return int(stat.rsplit(")", 1)[1].split()[1])
+    except (OSError, IndexError, ValueError):
+        return None
+
+
+def _tmux_server_client_ttys(server_pid: int, proc_root: Path) -> set[str] | None:
+    """The set of ATTACHED-CLIENT terminal ttys a tmux server currently holds,
+    read from ``<proc_root>/<server_pid>/fd/*`` symlinks that resolve to a
+    ``/dev/pts/N`` device — or ``None`` if the fd dir is UNREADABLE
+    (perms / race).
+
+    LOAD-BEARING no-attached-client proof. A tmux server receives each attached
+    client's terminal fd via ``SCM_RIGHTS``, so a server WITH attached clients
+    holds one ``/dev/pts`` fd per client; a server with ZERO clients holds none.
+    Verified live: a server's ``/dev/pts`` fd set equalled
+    ``tmux list-clients -F '#{client_tty}'`` exactly. The pane-master
+    ``/dev/ptmx`` fds and the AF_UNIX ``socket:[inode]`` fds do NOT resolve to
+    ``/dev/pts`` so they never false-positive; the pane SLAVE ttys are held by
+    the pane CHILD processes, not the server, so are absent from this set.
+
+    Returns:
+      * a set (possibly EMPTY) of ``/dev/pts`` client-terminal paths when the fd
+        dir was readable — an EMPTY set is POSITIVE proof of zero clients;
+      * ``None`` when the fd dir could not be read, OR any single fd symlink
+        could not be read (perms / raced exit) — the caller MUST treat ``None``
+        as "cannot prove zero clients" -> KEEP (strictly fail-toward-keep)."""
+    fd_dir = proc_root / str(server_pid) / "fd"
+    out: set[str] = set()
+    try:
+        fds = list(fd_dir.iterdir())
+    except OSError:
+        return None  # unreadable dir -> uncertain -> caller keeps
+    for fd in fds:
+        try:
+            target = os.readlink(fd)
+        except OSError:
+            # A single unreadable fd means we cannot enumerate the full client
+            # set; to stay strictly fail-toward-keep, treat ANY unreadable fd in
+            # the dir as "cannot prove zero clients".
+            return None
+        if target.startswith("/dev/pts/"):
+            out.add(target)
+    return out
+
+
+def _wrapper_on_orphaned_tmux_server(
+    pid: int, *, proc_root: Path = Path("/proc"), max_depth: int = 50
+) -> bool:
+    """True iff the wrapper is parented (directly or transitively) by a
+    ``tmux: server`` process AND that server is PROVABLY UNREATTACHABLE AND
+    HAS ZERO ATTACHED CLIENTS (nobody can reattach AND nobody is attached right
+    now — the orphaned-tmux class this fix reaps).
+
+    Mapping is PROCESS PARENTAGE, NOT the server's fd table: a tmux server's
+    pane leaders are its DIRECT CHILD processes (``ppid == server_pid``), and a
+    daemon-tracked ``node /usr/bin/happy claude`` wrapper IS that child. (The
+    server's own ``/proc/<pid>/fd`` pts set is the CLIENT terminals — disjoint
+    from its panes' ``pane_tty``s — so it must NOT be used for the mapping.)
+
+    Walk the ``ppid`` chain from ``pid`` (bounded by ``max_depth`` + a seen-set
+    cycle guard) to find the owning ``tmux: server``. Once found, return True
+    ONLY when BOTH:
+      1. the tmux socket dir has NO socket file
+         (:func:`_live_tmux_socket_present` False) -> no NEW client can attach;
+         AND
+      2. the server holds ZERO ``/dev/pts`` client fds
+         (:func:`_tmux_server_client_ttys` returns an EMPTY set) -> no client is
+         attached RIGHT NOW.
+
+    Rationale for signal 2: an established AF_UNIX connection SURVIVES
+    ``unlink()`` of the listener path (the deleted path blocks only NEW
+    attaches — the same reason the ``kill -USR1`` socket-recreation recovery
+    exists). So socket-dir absence ALONE does NOT prove "no attached client": a
+    systemd-tmpfiles atime sweep of ``/tmp/tmux-<uid>/`` under a LIVE attached
+    SSH session leaves a socketless-but-attached server. Reaping its idle
+    session would kill a session a user is looking at; the client-fd proof
+    (condition 2) is the fail-toward-keep guard that blocks that false reap.
+
+    If NO ``tmux: server`` ancestor is found (raw login pts, ssh, a non-tmux
+    parent, or the chain hit pid 1 / an unreadable link) -> False (not our
+    class -> the caller keeps it via its other branches).
+
+    Fail-toward-keep on EVERY uncertain signal:
+      * tmux binary absent -> False (nothing to reap; unchanged behavior);
+      * ppid unreadable at a hop -> stop the walk, return False (cannot prove a
+        ``tmux: server`` ancestor -> keep);
+      * comm unreadable at a hop -> the hop is not confirmed ``tmux: server``,
+        the walk continues (then stops on an unreadable ppid / depth) -> keep;
+      * socket dir unreadable -> :func:`_live_tmux_socket_present` True ->
+        reads reattachable -> False (keep);
+      * server client-fd dir unreadable (:func:`_tmux_server_client_ttys` None)
+        -> cannot prove zero clients -> False (keep);
+      * server holds >=1 ``/dev/pts`` client fd -> a client is attached ->
+        False (keep).
+    The predicate can only ever return True for a CONFIRMED
+    ``tmux: server``-parented + socket-absent + provably-zero-clients wrapper;
+    every ambiguity -> False (keep)."""
+    if shutil.which("tmux") is None:
+        return False
+    seen: set[int] = set()
+    cur = pid
+    for _ in range(max_depth):
+        if cur in seen or cur <= 1:
+            return False  # cycle / reached init without a tmux: server
+        seen.add(cur)
+        if _proc_comm(cur, proc_root) == "tmux: server":
+            server_pid = cur
+            # Condition 1: no socket -> no NEW attach possible.
+            if _live_tmux_socket_present():
+                return False  # reattachable -> keep
+            # Condition 2: prove ZERO attached clients right now.
+            clients = _tmux_server_client_ttys(server_pid, proc_root)
+            if clients is None:
+                return False  # cannot prove zero clients -> keep
+            return len(clients) == 0  # orphaned iff no client attached
+        ppid = _proc_ppid(cur, proc_root)
+        if ppid is None:
+            return False  # unreadable -> cannot prove orphaned -> keep
+        cur = ppid
+    return False  # depth exhausted without a tmux: server ancestor -> keep
+
+
 # Default transcript-idle window before an unmapped session is reapable.
 # 12h: long enough that an overnight pause in a chat session Thomas means to
 # come back to survives, short enough that the accumulation class (19-43h
@@ -11613,7 +11785,12 @@ def _idle_unmapped_debug_enabled() -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _is_live_user_tty(pid: int, detached_tmux_ttys: set[str]) -> bool:
+def _is_live_user_tty(
+    pid: int,
+    detached_tmux_ttys: set[str],
+    *,
+    check_orphaned: bool = False,
+) -> bool:
     """True iff this wrapper holds a controlling tty that a user could be
     looking at RIGHT NOW — the refined "Thomas may literally be sitting here"
     guard for the idle-unmapped pass.
@@ -11627,13 +11804,56 @@ def _is_live_user_tty(pid: int, detached_tmux_ttys: set[str]) -> bool:
     cannot be cross-referenced to a detached pane) is treated as live and
     kept, preserving the conservative default. An unreadable /proc (race /
     perms) keeps the keep-leaning :func:`_wrapper_has_controlling_tty`
-    semantics (returns True)."""
+    semantics (returns True).
+
+    PLUS (``check_orphaned=True``, the idle-unmapped pass under the default-ON
+    ``EPM_ORPHANED_TMUX_REAP`` knob): a wrapper parented by an ORPHANED tmux
+    server (socket deleted -> unreattachable, AND zero attached clients) is NOT
+    a live-user tty either — that pane is unreachable by construction, so it
+    falls through to the same transcript-idle check. This branch keys on the
+    wrapper's PID via process parentage (:func:`_wrapper_on_orphaned_tmux_server`),
+    NOT on the ``tty_path`` string, so it fires even when the pts is
+    unresolvable. Both the detached-pane and orphaned-server checks fail toward
+    keep on any unresolved signal. The default-``False`` keyword arg preserves
+    every existing 2-arg caller (the new branch never runs when omitted)."""
     if not _wrapper_has_controlling_tty(pid):
         return False
     tty_path = _wrapper_controlling_tty_path(pid)
     # A confirmed detached tmux pane (has a tty, but no client attached) is
-    # NOT a live-user tty; every other tty-bearing wrapper is treated as live.
-    return not (tty_path is not None and tty_path in detached_tmux_ttys)
+    # NOT a live-user tty.
+    if tty_path is not None and tty_path in detached_tmux_ttys:
+        return False
+    # NOT live iff parented by an orphaned (socket-deleted, zero-client) tmux
+    # server — keys on the PID via parentage, so pts resolvability is
+    # irrelevant to it. Every other tty-bearing wrapper (unresolvable tty_path,
+    # an attached pane, a raw login pts, a live server) is treated as live and
+    # kept (conservative default).
+    return not (check_orphaned and _wrapper_on_orphaned_tmux_server(pid))
+
+
+def _maybe_log_orphaned_tmux_fire(
+    pid: int, detached_tmux_ttys: set[str], check_orphaned: bool
+) -> None:
+    """Observability (idle-unmapped fold 1): print ONE line when the
+    orphaned-parentage branch of :func:`_is_live_user_tty` is what made a
+    tty-bearing, non-detached-pane wrapper read not-live — so a fire is
+    greppable in the ``--dry-run`` smoke and a silent-inert regression is
+    detectable. Called only for a wrapper already classified not-live, so it
+    costs the extra parentage read ONLY for that rare case and nothing on the
+    healthy fleet (no fire, no orphaned server). Pure side-effect log; never
+    changes the reap decision."""
+    if not check_orphaned:
+        return
+    if not _wrapper_has_controlling_tty(pid):
+        return
+    if _wrapper_controlling_tty_path(pid) in detached_tmux_ttys:
+        return
+    if not _wrapper_on_orphaned_tmux_server(pid):
+        return
+    print(
+        f"  [idle-unmapped] orphaned-tmux wrapper pid={pid} (server socket "
+        f"absent, zero clients) -> not-live, entering idle check"
+    )
 
 
 def _transcript_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str | None]:
@@ -12206,6 +12426,7 @@ def _process_idle_unmapped(
     reap_enabled: bool,
     detached_tmux_ttys: set[str] | None = None,
     tmux_activity: dict[str, float] | None = None,
+    check_orphaned: bool = True,
 ) -> None:
     """Apply the idle-unmapped decision to one live, non-PM, EPS-cwd session:
     check the wrapper's controlling TTY, stat the resolved transcript, and
@@ -12216,7 +12437,11 @@ def _process_idle_unmapped(
     tmux pane (``detached_tmux_ttys`` — computed once per pass) is NOT counted
     as live, so an abandoned detached-tmux session falls through to the
     transcript-idle check instead of being kept forever. ``None`` (the test /
-    legacy default) computes the detached-pane set inline.
+    legacy default) computes the detached-pane set inline. ``check_orphaned``
+    (default True; the pass passes the env-gated :func:`_orphaned_tmux_reap_enabled`
+    value) additionally classifies a wrapper parented by an ORPHANED tmux
+    server (socket deleted + zero attached clients) as not-live — an unreachable
+    pane that would otherwise be kept forever by the empty detached-map.
 
     #695 corroborating-idleness FALLBACK: when the primary transcript signal
     is unavailable (``idle_age_s is None`` — the manually-tmux-launched class
@@ -12232,10 +12457,15 @@ def _process_idle_unmapped(
         detached_tmux_ttys = _detached if detached_tmux_ttys is None else detached_tmux_ttys
         tmux_activity = _activity if tmux_activity is None else tmux_activity
     mapped = issue is not None
-    has_tty = _is_live_user_tty(pid, detached_tmux_ttys) if not mapped else False
+    has_tty = (
+        _is_live_user_tty(pid, detached_tmux_ttys, check_orphaned=check_orphaned)
+        if not mapped
+        else False
+    )
     idle_age_s: float | None = None
     signal_reason: str | None = None
     if not mapped and not has_tty:
+        _maybe_log_orphaned_tmux_fire(pid, detached_tmux_ttys, check_orphaned)
         idle_age_s, signal_reason = _transcript_idle_age_s(pid, now)
 
     prev = _load_idle_unmapped_state(sid)
@@ -12466,6 +12696,10 @@ def idle_unmapped_pass(
         candidates.append((sid, pid, issue))
 
     reap = _unmapped_idle_reap_enabled()
+    # The orphaned-tmux-server widening gate, evaluated ONCE per pass (not per
+    # session): a wrapper on a socket-deleted + zero-client tmux server is not a
+    # live-user tty and falls through to the transcript-idle check.
+    check_orphaned = _orphaned_tmux_reap_enabled()
     # Compute the detached-tmux-pane set AND the session_activity map ONCE per
     # pass (one tmux call), not per candidate — a wrapper whose controlling tty
     # is a detached pane is not a live-user tty and falls through to the
@@ -12486,7 +12720,8 @@ def idle_unmapped_pass(
         f"idle-unmapped: {len(candidates)} EPS session(s) scanned "
         f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
         f"detached_panes={len(detached_tmux_ttys)}; "
-        f"reap={'ON' if reap else 'OFF — alert-only (EPM_UNMAPPED_IDLE_REAP=0)'})"
+        f"reap={'ON' if reap else 'OFF — alert-only (EPM_UNMAPPED_IDLE_REAP=0)'}; "
+        f"orphaned_tmux_reap={'ON' if check_orphaned else 'OFF (EPM_ORPHANED_TMUX_REAP=0)'})"
     )
     for sid, pid, issue in sorted(candidates):
         _process_idle_unmapped(
@@ -12499,6 +12734,7 @@ def idle_unmapped_pass(
             reap_enabled=reap,
             detached_tmux_ttys=detached_tmux_ttys,
             tmux_activity=tmux_activity,
+            check_orphaned=check_orphaned,
         )
 
 
