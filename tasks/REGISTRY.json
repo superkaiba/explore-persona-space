@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 789,
+  "highest_id": 790,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5053,6 +5053,13 @@
       "path": "tasks/proposed/789",
       "status": "proposed",
       "title": "daily-fix: Codex twin false-FAIL discipline (sandbox + evidence-quote)"
+    },
+    "790": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/790",
+      "status": "proposed",
+      "title": "daily-fix: GCP backend fetch_results/log Permission denied"
     },
     "8": {
       "has_clean_result": false,
