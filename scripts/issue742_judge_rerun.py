@@ -223,6 +223,88 @@ def _assert_all_requested_cells_complete(
         )
 
 
+def _judge_all_cells_with_checkpointing(
+    *,
+    genres: list[str],
+    behaviors: list[str],
+    dest: Path,
+    r_rerun: int,
+    j_completions: int,
+    seed: int,
+    judge_fn: Callable[..., dict] | None,
+    observed_routes: set[str],
+    out_dir: Path,
+) -> tuple[int, set[tuple[str, str]]]:
+    """Judge every requested (genre, behavior) cell with per-cell checkpointing + resume.
+
+    Extracted from :func:`run` (keeps ``run`` under the C901 complexity cap). For each cell:
+    checks the graceful-shutdown flag BETWEEN cells (SIGTERM); SKIPS a cell whose partial is
+    present AND shape-valid (CONCERN corrupt-partial-skip-forever quarantines an invalid one
+    and re-runs); else re-judges R_rerun× (each rerun its own dispatch dir via ``rerun_idx``,
+    BLOCKER var-judge-collapse) + decomposes + atomically writes the per-cell partial the
+    MOMENT it completes (CLAUDE.md "Checkpoint per phase"). Returns ``(skipped, empty_cells)``
+    where ``empty_cells`` are cells with NO snapshot data (exempt from the completeness
+    guard). Mutates ``observed_routes`` in place (the transport-route sink).
+    """
+    skipped = 0
+    empty_cells: set[tuple[str, str]] = set()
+    for genre in genres:
+        for behavior in behaviors:
+            if _SHUTDOWN_REQUESTED["flag"]:
+                logger.warning(
+                    "SIGTERM requested — stopping before cell (%s, %s); "
+                    "completed cells are checkpointed and will be resumed",
+                    genre,
+                    behavior,
+                )
+                break
+            partial = _partial_path(out_dir, genre, behavior)
+            if partial.exists():
+                # CONCERN corrupt-partial-skip-forever: validate the partial's SHAPE before
+                # trusting it. A stale wrong-shape / truncated partial would be dropped by
+                # _merge_partial_cells but skipped-forever here — so it would silently vanish
+                # from the aggregate. Quarantine an invalid one and re-run the cell.
+                if _partial_is_valid(partial):
+                    # Prior run (this launch or an earlier crashed one) already decomposed
+                    # this cell — skip re-judging it. Its result is folded in at the merge
+                    # step (which reads ALL partials, not just the ones written now).
+                    skipped += 1
+                    logger.info(
+                        "issue742 judge-rerun: SKIP completed cell (%s, %s) — valid partial",
+                        genre,
+                        behavior,
+                    )
+                    continue
+                _quarantine_partial(partial)
+            rerun_rates, gen_first_half, gen_second_half = _judge_reruns_for_cell(
+                genre=genre,
+                behavior=behavior,
+                snapshot_dir=dest,
+                r_rerun=r_rerun,
+                j_completions=j_completions,
+                seed=seed,
+                judge_fn=judge_fn,
+                observed_routes_sink=observed_routes,
+            )
+            if not rerun_rates:
+                # no snapshot data for this cell — a reportable, non-crash condition; it is
+                # exempt from the canonical-write completeness guard (no partial expected).
+                empty_cells.add((genre, behavior))
+                continue
+            cell_result = _decompose_variance(rerun_rates, gen_first_half, gen_second_half)
+            # Persist the cell the instant it completes (atomic write) so a crash on the
+            # NEXT cell cannot lose this one. Include (genre, behavior) so the merge step
+            # can reconstruct the nested judge_variance dict from the partial files alone.
+            _atomic_write_json(
+                partial,
+                {"genre": genre, "behavior": behavior, "result": cell_result},
+            )
+        else:
+            continue  # inner loop finished without break — continue to next genre
+        break  # SIGTERM broke the inner loop — stop the outer loop too
+    return skipped, empty_cells
+
+
 def _stable_cell_seed(seed: int, genre: str, behavior: str, ctx: str) -> int:
     """Cross-process-STABLE per-cell J-sampling seed (BLOCKER nondeterministic-sampling).
 
@@ -647,67 +729,23 @@ def run(
         # completed cells, so a crash between cells never re-judges completed cells. A
         # SIGTERM (earlyoom / teardown) is checked between cells for a graceful stop.
         _install_sigterm_handler()
-        skipped = 0
         # every (genre, behavior) cell the caller asked us to compute — the completeness
         # denominator the canonical-write guard (BLOCKER 2) checks against.
         requested_cells: list[tuple[str, str]] = [(g, b) for g in genres for b in behaviors]
-        # cells that legitimately had NO snapshot data (reportable, non-crash) — exempt from
-        # the partial-required completeness check below.
-        empty_cells: set[tuple[str, str]] = set()
-        for genre in genres:
-            for behavior in behaviors:
-                if _SHUTDOWN_REQUESTED["flag"]:
-                    logger.warning(
-                        "SIGTERM requested — stopping before cell (%s, %s); "
-                        "completed cells are checkpointed and will be resumed",
-                        genre,
-                        behavior,
-                    )
-                    break
-                partial = _partial_path(out_dir, genre, behavior)
-                if partial.exists():
-                    # CONCERN corrupt-partial-skip-forever: validate the partial's SHAPE before
-                    # trusting it. A stale wrong-shape / truncated partial would be dropped by
-                    # _merge_partial_cells but skipped-forever here — so it would silently vanish
-                    # from the aggregate. Quarantine an invalid one and re-run the cell.
-                    if _partial_is_valid(partial):
-                        # Prior run (this launch or an earlier crashed one) already decomposed
-                        # this cell — skip re-judging it. Its result is folded in at the merge
-                        # step below (which reads ALL partials, not just the ones written now).
-                        skipped += 1
-                        logger.info(
-                            "issue742 judge-rerun: SKIP completed cell (%s, %s) — valid partial",
-                            genre,
-                            behavior,
-                        )
-                        continue
-                    _quarantine_partial(partial)
-                rerun_rates, gen_first_half, gen_second_half = _judge_reruns_for_cell(
-                    genre=genre,
-                    behavior=behavior,
-                    snapshot_dir=dest,
-                    r_rerun=r_rerun,
-                    j_completions=j_completions,
-                    seed=seed,
-                    judge_fn=judge_fn,
-                    observed_routes_sink=observed_routes,
-                )
-                if not rerun_rates:
-                    # no snapshot data for this cell — a reportable, non-crash condition; it is
-                    # exempt from the canonical-write completeness guard (no partial expected).
-                    empty_cells.add((genre, behavior))
-                    continue
-                cell_result = _decompose_variance(rerun_rates, gen_first_half, gen_second_half)
-                # Persist the cell the instant it completes (atomic write) so a crash on the
-                # NEXT cell cannot lose this one. Include (genre, behavior) so the merge step
-                # can reconstruct the nested judge_variance dict from the partial files alone.
-                _atomic_write_json(
-                    partial,
-                    {"genre": genre, "behavior": behavior, "result": cell_result},
-                )
-            else:
-                continue  # inner loop finished without break — continue to next genre
-            break  # SIGTERM broke the inner loop — stop the outer loop too
+        # Judge every cell with per-cell checkpointing + resume + shutdown-aware stop
+        # (extracted helper keeps run() under the C901 cap). empty_cells = cells with NO
+        # snapshot data (exempt from the completeness guard below).
+        skipped, empty_cells = _judge_all_cells_with_checkpointing(
+            genres=genres,
+            behaviors=behaviors,
+            dest=dest,
+            r_rerun=r_rerun,
+            j_completions=j_completions,
+            seed=seed,
+            judge_fn=judge_fn,
+            observed_routes=observed_routes,
+            out_dir=out_dir,
+        )
 
         # BLOCKER SIGTERM-canonical-file-corruption (task #742 r12): before merging + returning
         # (which lets main() write the CANONICAL stage0_judge_variance.json), fail LOUD if the
