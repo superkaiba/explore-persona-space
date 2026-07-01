@@ -1,1 +1,2 @@
 {"ts": "2026-07-01T00:01:33Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-01T00:04:08Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #778 to open questions app5 (Predict bad behaviors from training data — pre-training-geometry predictor) + beh-b-to-bprime (Define a distance between behaviors and use it to predict that B' generalizes from B); created_new=none; mode=auto-match."}
