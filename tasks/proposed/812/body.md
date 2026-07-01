@@ -1,6 +1,6 @@
 ---
-title: How much does per-position (unpooled) answer activation beat the pooled mean
-  for predicting behavior / reconstructing the profile
+title: How much do pooling operators (mean/max/attention) lose vs unpooled per-position
+  answer activations for predicting behavior / reconstructing the profile
 kind: experiment
 tags:
 - answer-summary-sweep
