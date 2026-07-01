@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 809,
+  "highest_id": 810,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5215,6 +5215,14 @@
       "path": "tasks/completed/81",
       "status": "completed",
       "title": "Try persona leakage with very semantically similar personas and try to find very different leakage patterns"
+    },
+    "810": {
+      "goal": "On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the response \u2014 mean-over-answer (the #722 baseline), last content token, the turn-boundary newline after <|im_end|> (the answer-side mirror of the last-input-token context vector c_C), a dense per-position sweep, plus maxp/attn \u2014 yields the strongest linear context->answer map c_C -> summary, measured by held-out skill-over-mean R2 per layer, reusing #658/#722's 50-context base grid and fit harness.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/810",
+      "status": "proposed",
+      "title": "Which answer-side position/summary gives the strongest base context->answer map (mean vs last vs turn-boundary vs per-position)"
     },
     "83": {
       "has_clean_result": false,
