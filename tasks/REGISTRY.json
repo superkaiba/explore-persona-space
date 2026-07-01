@@ -5120,8 +5120,8 @@
     "799": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/799",
-      "status": "reviewing",
+      "path": "tasks/completed/799",
+      "status": "completed",
       "title": "daily-fix: agent output-format: planner markdown + no-interp plots"
     },
     "8": {
