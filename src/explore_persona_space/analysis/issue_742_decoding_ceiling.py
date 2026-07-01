@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import shutil
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -43,6 +44,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
 # Genre alias map                                                              #
@@ -1143,7 +1146,162 @@ def sample_completions_for_judge(
     }
 
 
-def judge_column_via_batch_judge(col_id: str, gen: dict, model: str) -> dict:
+def _judge_rerun_content_hash(flat: list[dict]) -> str:
+    """Stable content hash keying a persistent dispatch dir to its exact inputs.
+
+    sha256 over the SORTED ``(probe, text)`` tuple list — same completions (regardless
+    of enumeration order) → same hash → same dispatch dir → the #663 crash-safe resume
+    protocol re-attaches automatically on the next run. Only the (probe, text) identity
+    matters for the judge inputs; ``logp_norm`` is metadata carried through separately,
+    so it is deliberately NOT in the hash (a re-run with identical completions but a
+    re-derived logp must still resume the SAME dispatch). Completion TEXT is hashed, never
+    logged (CLAUDE.md content hygiene).
+    """
+    pairs = sorted((str(c["probe"]), str(c["text"])) for c in flat)
+    h = hashlib.sha256()
+    for probe, text in pairs:
+        # length-prefix each field so no (probe, text) boundary is ambiguous.
+        h.update(len(probe).to_bytes(8, "big"))
+        h.update(probe.encode("utf-8"))
+        h.update(len(text).to_bytes(8, "big"))
+        h.update(text.encode("utf-8"))
+    return h.hexdigest()[:16]
+
+
+def _judge_rerun_state_root(repo_root: str | Path | None = None) -> Path:
+    """Persistent per-cell judge-rerun dispatch-state root (Layer-1 resume fix).
+
+    ``.claude/cache/issue-742-judge-rerun-state/`` under the repo root. This dir SURVIVES
+    across script runs (it is NOT a ``tempfile.TemporaryDirectory``), so a crashed run's
+    ``eval.batch_judge`` dispatch state — persisted batch ids, submitted-but-unharvested
+    Message Batches — is re-attached on the next launch instead of re-submitted. Cleanup
+    is a SEPARATE concern (the ``--gc-judge-state`` flag / ``vm_disk_guard``); nothing here
+    auto-deletes it.
+    """
+    if repo_root is None:
+        from explore_persona_space.task_workflow import repo_root as _rr
+
+        root = _rr()
+    else:
+        root = Path(repo_root)
+    return Path(root) / ".claude" / "cache" / "issue-742-judge-rerun-state"
+
+
+def _judge_rerun_scores_complete(raw: dict, flat: list[dict]) -> bool:
+    """True iff a persisted ``scores.json`` fully covers this cell (native fast-resume).
+
+    A prior run may have ended cleanly (every batch harvested) and written a complete
+    ``scores.json`` under the persistent dir; on the next launch we can load it directly
+    and SKIP re-dispatching. "Complete" = the persisted ``all_scores`` carries a verdict
+    for EVERY expected custom_id (``cell__{q_idx:05d}__{comp_idx:02d}``) in the SAME
+    enumeration order ``judge_column_via_batch_judge`` uses, AND (for a non-empty cell) a
+    dispatched ``routing`` decision is recorded. A partial file (mid-crash) fails this
+    check → we re-enter ``judge_completions_batch``, which resumes from ``checkpoint_dir``.
+    """
+    if not flat:
+        return True  # empty cell: nothing to judge, trivially covered
+    all_scores = raw.get("all_scores")
+    if not isinstance(all_scores, dict) or not all_scores:
+        return False
+    if raw.get("routing") is None:
+        return False  # no dispatch recorded → not a clean full run
+    from collections import OrderedDict
+
+    q_to_texts: OrderedDict[str, list[str]] = OrderedDict()
+    for c in flat:
+        q_to_texts.setdefault(str(c["probe"]), []).append(str(c["text"]))
+    for q_idx, comps in enumerate(q_to_texts.values()):
+        for comp_idx in range(len(comps)):
+            if f"cell__{q_idx:05d}__{comp_idx:02d}" not in all_scores:
+                return False
+    return True
+
+
+def _load_or_dispatch_judge_scores(
+    *,
+    col_id: str,
+    flat: list[dict],
+    completions: dict[str, dict[str, list[str]]],
+    format_user_msg: Callable[[str, str], str],
+    model: str,
+    state_root: str | Path | None,
+) -> dict:
+    """Return the raw judge-scores dict via crash-safe resume (Layer-1 fix).
+
+    Resolves a STABLE per-cell dispatch dir keyed on the completion content hash — it
+    SURVIVES across script runs (unlike the old ``tempfile.TemporaryDirectory``, wiped on
+    Python exit, which defeated the #663 crash-safe resume protocol and lost every submitted
+    Batch on a mid-run crash). Two paths:
+
+    * **Native fast-resume:** a prior run wrote a COMPLETE ``scores.json`` for this exact
+      content hash (every batch harvested) → load + return it, no batch re-submit.
+    * **Dispatch/resume:** otherwise call ``eval.batch_judge.judge_completions_batch`` with
+      the persistent ``checkpoint_dir`` — it detects existing ``checkpoint_dir/dispatch/``
+      state and re-attaches submitted-but-unharvested Message Batches (the #663 protocol).
+
+    ``threshold_base=0`` forces the Anthropic Batch route (see the call-site comment). Never
+    caches (``cache_dir=None``) — the rerun MEASURES judge re-labeling variance, so caching
+    would collapse ``Var_judge`` to 0. Completion TEXT is never logged (content hygiene).
+    """
+    import importlib
+
+    batch_judge = importlib.import_module("explore_persona_space.eval.batch_judge")
+
+    content_hash = _judge_rerun_content_hash(flat)
+    cell_state_dir = _judge_rerun_state_root(state_root) / f"{col_id}__{content_hash}"
+    cell_state_dir.mkdir(parents=True, exist_ok=True)
+    save_raw = cell_state_dir / "scores.json"
+    logger.info(
+        "issue742 judge-rerun cell %s: dispatch state dir %s (%d completions)",
+        col_id,
+        cell_state_dir,
+        len(flat),
+    )
+
+    if save_raw.exists():
+        try:
+            candidate = json.loads(save_raw.read_text())
+        except (json.JSONDecodeError, OSError):
+            candidate = None  # truncated/partial write → re-enter the dispatcher below
+        if isinstance(candidate, dict) and _judge_rerun_scores_complete(candidate, flat):
+            logger.info(
+                "issue742 judge-rerun cell %s: reusing COMPLETE persisted scores.json "
+                "(native fast-resume; no batch re-submit)",
+                col_id,
+            )
+            return candidate
+
+    # judge_system_prompt="" — the per-behavior rubric is fully self-contained in the user
+    # message (same as #658's sole-user-message judge_column). The persistent checkpoint_dir
+    # (NOT cache_dir) carries the #663 batch-resume state.
+    #
+    # BLOCKER-FIX (judge-rerun-transport-routes-sync-below-threshold, reconciler r7):
+    # ``judge_completions_batch`` defaults ``threshold_base=2_000``, and
+    # ``judge_dispatch.decide_route`` routes SYNC when ``n_items < effective_threshold``. The
+    # per-context dispatch submits only J≈20 items, so the DEFAULT threshold routes every
+    # production call SYNC — the API surface reached eval.batch_judge but the transport stayed
+    # threaded-sync (the reconciler r7 FAIL). ``threshold_base=0`` forces
+    # ``effective_threshold = max(1, 0) = 1`` (decide_route), so n_items>=1 always routes the
+    # Anthropic Message Batches path regardless of per-call J — the plan v9 §4 Stage-0 step 2 +
+    # §11 row 8 transport. ``save_raw`` persists the RoutingDecision under ``raw["routing"]``
+    # (judge_completions_batch dumps ``_asdict(decisions[0])``); the caller ASSERTs
+    # ``routing.path == "batch"`` so a threshold-default regression fails LOUD at runtime.
+    batch_judge.judge_completions_batch(
+        completions,
+        judge_system_prompt="",
+        format_user_msg=format_user_msg,
+        judge_model=model,
+        cache_dir=None,
+        save_raw=save_raw,
+        checkpoint_dir=cell_state_dir / "dispatch",
+        threshold_base=0,
+    )
+    return json.loads(save_raw.read_text())
+
+
+def judge_column_via_batch_judge(
+    col_id: str, gen: dict, model: str, *, state_root: str | Path | None = None
+) -> dict:
     """PER-BEHAVIOR judged rate via the Anthropic **Batch API** (``eval.batch_judge``).
 
     BLOCKER-FIX (judge-rerun-transport-must-use-batch, reconciler r6): plan v9 §4
@@ -1180,10 +1338,19 @@ def judge_column_via_batch_judge(col_id: str, gen: dict, model: str) -> dict:
     Returns the ``judge_column`` dict shape ``{rate, n_judged, n_positive,
     logp_pos_mean, low_dynamic_range, per_probe, ...}`` so ``_decompose_variance``
     consumes it unchanged.
+
+    CRASH-SAFE RESUME (Layer-1 fix, task #742 r11): dispatch state is persisted to a
+    STABLE per-cell dir ``.claude/cache/issue-742-judge-rerun-state/<col_id>__<hash>/``
+    keyed on the completion content hash — NOT a ``tempfile.TemporaryDirectory`` (which
+    the context manager wipes on Python exit, crash or clean, DEFEATING the #663
+    crash-safe resume protocol and losing every submitted Batch on a mid-run crash —
+    three consecutive #742 production launches lost ~12,000 API calls this way). Same
+    inputs → same hash → same dir → ``eval.batch_judge`` re-attaches submitted-but-
+    unharvested batches from ``checkpoint_dir/dispatch/`` automatically. If a prior run
+    ended cleanly and wrote a COMPLETE ``scores.json`` for this content hash, the batch
+    call is SKIPPED and the persisted output loaded directly (native fast-resume).
     """
     import importlib
-    import tempfile
-    from pathlib import Path as _Path
 
     common = importlib.import_module("issue658_common")
     col = common.E0_COLUMNS[col_id]
@@ -1213,38 +1380,18 @@ def judge_column_via_batch_judge(col_id: str, gen: dict, model: str) -> dict:
     def _format_user_msg(question: str, completion: str) -> str:
         return rubric.format(question=question, completion=completion)
 
-    batch_judge = importlib.import_module("explore_persona_space.eval.batch_judge")
-
-    with tempfile.TemporaryDirectory(prefix="i742_judge_rerun_") as td:
-        save_raw = _Path(td) / "scores.json"
-        # judge_system_prompt="" — the per-behavior rubric is fully self-contained in
-        # the user message (same as #658's sole-user-message judge_column). cache_dir
-        # off (the rerun MEASURES judge re-labeling variance — caching would collapse
-        # Var_judge to 0 by returning the first verdict on every rerun).
-        #
-        # BLOCKER-FIX (judge-rerun-transport-routes-sync-below-threshold, reconciler r7):
-        # ``judge_completions_batch`` defaults ``threshold_base=2_000``, and
-        # ``judge_dispatch.decide_route`` routes SYNC when ``n_items < effective_threshold``.
-        # The per-context dispatch submits only J≈20 items, so the DEFAULT threshold routes
-        # every production call SYNC — the API surface reached eval.batch_judge but the
-        # transport stayed threaded-sync (the reconciler r7 FAIL). ``threshold_base=0`` forces
-        # ``effective_threshold = max(1, 0) = 1`` (decide_route), so n_items>=1 always routes
-        # the Anthropic Message Batches path regardless of per-call J — the plan v9 §4 Stage-0
-        # step 2 + §11 row 8 transport. ``save_raw`` persists the RoutingDecision under
-        # ``raw["routing"]`` (judge_completions_batch dumps ``_asdict(decisions[0])``); we
-        # ASSERT ``routing.path == "batch"`` below so a future threshold-default regression
-        # fails LOUD at runtime instead of silently reverting to sync.
-        batch_judge.judge_completions_batch(
-            completions,
-            judge_system_prompt="",
-            format_user_msg=_format_user_msg,
-            judge_model=model,
-            cache_dir=None,
-            save_raw=save_raw,
-            checkpoint_dir=_Path(td) / "dispatch",
-            threshold_base=0,
-        )
-        raw = json.loads(save_raw.read_text())
+    # Layer-1 crash-safe resume: obtain the raw scores from a STABLE per-cell dispatch dir
+    # (native fast-resume if a prior run wrote a COMPLETE scores.json for this content hash;
+    # else re-enter judge_completions_batch, which resumes from the persistent checkpoint_dir).
+    # See ``_load_or_dispatch_judge_scores`` — the whole persistence contract lives there.
+    raw = _load_or_dispatch_judge_scores(
+        col_id=col_id,
+        flat=flat,
+        completions=completions,
+        format_user_msg=_format_user_msg,
+        model=model,
+        state_root=state_root,
+    )
     all_scores: dict[str, dict] = raw.get("all_scores", {})
 
     # Runtime transport assert: the persisted RoutingDecision must be the Batch path.

@@ -27,11 +27,99 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
+import os
+import signal
 import sys
 from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
+# ---- graceful-shutdown flag (Layer-2 SIGTERM handler) --------------------- #
+# earlyoom (VM memory pressure) and orchestrator teardown both SIGTERM the process.
+# The handler sets this flag; the outer (genre, behavior) loop checks it BETWEEN cells
+# and stops cleanly after the current cell's partial file is persisted. If SIGTERM
+# arrives MID-cell, Python still exits (default), but the cell's persistent dispatch dir
+# (Layer-1 fix in dc.judge_column_via_batch_judge) survives, so the next launch resumes.
+_SHUTDOWN_REQUESTED = {"flag": False}
+
+
+def _install_sigterm_handler() -> None:
+    """Install a SIGTERM handler that requests a graceful between-cell exit (Layer 2).
+
+    Logs a message and flips ``_SHUTDOWN_REQUESTED`` so the outer loop stops after the
+    current cell finishes + is checkpointed — rather than leaving the process in an
+    undefined mid-cell state. Idempotent; skipped when not on the main thread (signal
+    handlers can only be installed there — e.g. under a test harness).
+    """
+    try:
+        signal.signal(signal.SIGTERM, _on_sigterm)
+    except (ValueError, OSError):  # not main thread / unsupported platform
+        logger.warning("could not install SIGTERM handler (non-main thread?)")
+
+
+def _on_sigterm(signum: int, frame) -> None:
+    _SHUTDOWN_REQUESTED["flag"] = True
+    logger.warning(
+        "received SIGTERM (signal %d), exiting after the current cell completes; "
+        "per-cell partials + the persistent dispatch dir survive for resume",
+        signum,
+    )
+
+
+def _atomic_write_json(path: Path, obj: object) -> None:
+    """Write ``obj`` as JSON to ``path`` atomically (write-temp + os.replace).
+
+    A crash mid-write must never leave a half-written partial that a later resume would
+    mis-read as complete. ``os.replace`` is atomic on the same filesystem.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=2))
+    os.replace(tmp, path)
+
+
+def _partial_dir(out_dir: Path) -> Path:
+    """Per-cell checkpoint dir: ``<out_dir>/stage0_judge_variance_partial/`` (Layer 2)."""
+    return out_dir / "stage0_judge_variance_partial"
+
+
+def _partial_path(out_dir: Path, genre: str, behavior: str) -> Path:
+    """Per-(genre, behavior) partial-result file path (Layer 2 checkpoint)."""
+    return _partial_dir(out_dir) / f"{genre}__{behavior}.json"
+
+
+def _merge_partial_cells(out_dir: Path) -> dict[str, dict]:
+    """Fold every persisted per-cell partial into the nested ``judge_variance`` dict.
+
+    Reads ALL ``<out_dir>/stage0_judge_variance_partial/<genre>__<behavior>.json`` files
+    (this run's freshly-written cells AND any prior crashed run's), so a resumed run that
+    only re-judged the remaining cells still emits the COMPLETE
+    ``{genre: {behavior: decomposition}}`` result. A malformed partial (mid-crash write the
+    atomic-write should have prevented, or a hand-edit) is skipped with a warning rather than
+    crashing the whole aggregation — the cell simply re-runs on the next launch.
+    """
+    merged: dict[str, dict] = {}
+    pdir = _partial_dir(out_dir)
+    if not pdir.exists():
+        return merged
+    for f in sorted(pdir.glob("*.json")):
+        try:
+            obj = json.loads(f.read_text())
+        except (json.JSONDecodeError, OSError):
+            logger.warning("issue742 judge-rerun: skipping malformed partial %s", f)
+            continue
+        genre = obj.get("genre")
+        behavior = obj.get("behavior")
+        result = obj.get("result")
+        if not (isinstance(genre, str) and isinstance(behavior, str) and isinstance(result, dict)):
+            logger.warning("issue742 judge-rerun: skipping partial %s with unexpected shape", f)
+            continue
+        merged.setdefault(genre, {})[behavior] = result
+    return merged
 
 
 def _stable_cell_seed(seed: int, genre: str, behavior: str, ctx: str) -> int:
@@ -368,7 +456,13 @@ def run(
     judge_fn: Callable[..., dict] | None = None,
     dest_override: Path | None = None,
     skip_snapshot: bool = False,
+    out_dir: Path | None = None,
 ) -> dict:
+    # ``out_dir`` roots the Layer-2 per-cell partial checkpoints
+    # (``<out_dir>/stage0_judge_variance_partial/<genre>__<behavior>.json``). Defaults to
+    # the canonical OUT_DIR; the smoke passes its own dir so partials land beside the
+    # smoke output, never colliding with a real run's partials.
+    out_dir = Path(out_dir) if out_dir is not None else OUT_DIR
     # ``dest_override`` + ``skip_snapshot`` let the counting-judge smoke point the
     # live judge-rerun path at a pre-seeded synthetic snapshot dir, bypassing the
     # HF download + #658-tensor load (the BLOCKER-1 reproducible-smoke contract: no
@@ -433,9 +527,37 @@ def run(
         # then decomposes Var(E0) into judge / generation / signal. Construct
         # correctness (the BLOCKER) wins: the per-behavior rubric is what produced
         # #658's E0 rates, so Var_judge is measured on the same construct.
+        #
+        # Layer-2 per-cell checkpointing (CLAUDE.md code-style.md "Checkpoint per phase"):
+        # each (genre, behavior) cell's decomposition is persisted the MOMENT it returns
+        # to <out_dir>/stage0_judge_variance_partial/<genre>__<behavior>.json. At startup we
+        # load any existing partials (this run's OR a prior crashed run's) and SKIP already-
+        # completed cells, so a crash between cells never re-judges completed cells. A
+        # SIGTERM (earlyoom / teardown) is checked between cells for a graceful stop.
+        _install_sigterm_handler()
+        skipped = 0
         for genre in genres:
-            cell_results: dict[str, dict] = {}
             for behavior in behaviors:
+                if _SHUTDOWN_REQUESTED["flag"]:
+                    logger.warning(
+                        "SIGTERM requested — stopping before cell (%s, %s); "
+                        "completed cells are checkpointed and will be resumed",
+                        genre,
+                        behavior,
+                    )
+                    break
+                partial = _partial_path(out_dir, genre, behavior)
+                if partial.exists():
+                    # Prior run (this launch or an earlier crashed one) already decomposed
+                    # this cell — skip re-judging it. Its result is folded in at the merge
+                    # step below (which reads ALL partials, not just the ones written now).
+                    skipped += 1
+                    logger.info(
+                        "issue742 judge-rerun: SKIP completed cell (%s, %s) — partial exists",
+                        genre,
+                        behavior,
+                    )
+                    continue
                 rerun_rates, gen_first_half, gen_second_half = _judge_reruns_for_cell(
                     genre=genre,
                     behavior=behavior,
@@ -448,10 +570,27 @@ def run(
                 )
                 if not rerun_rates:
                     continue
-                cell_results[behavior] = _decompose_variance(
-                    rerun_rates, gen_first_half, gen_second_half
+                cell_result = _decompose_variance(rerun_rates, gen_first_half, gen_second_half)
+                # Persist the cell the instant it completes (atomic write) so a crash on the
+                # NEXT cell cannot lose this one. Include (genre, behavior) so the merge step
+                # can reconstruct the nested judge_variance dict from the partial files alone.
+                _atomic_write_json(
+                    partial,
+                    {"genre": genre, "behavior": behavior, "result": cell_result},
                 )
-            judge_variance[genre] = cell_results
+            else:
+                continue  # inner loop finished without break — continue to next genre
+            break  # SIGTERM broke the inner loop — stop the outer loop too
+
+        # Merge ALL partial files (this run's fresh cells + any prior run's) into the nested
+        # judge_variance dict. This is the single source of truth for the aggregate write, so
+        # a resumed run that only judged the remaining cells still emits the complete result.
+        if skipped:
+            logger.info(
+                "issue742 judge-rerun: resumed — skipped %d already-completed cell(s)",
+                skipped,
+            )
+        judge_variance = _merge_partial_cells(out_dir)
         if judge_fn is not None:
             note = (
                 "non-dry counting-judge smoke: exercised the LIVE _judge_reruns_for_cell -> "
@@ -618,7 +757,32 @@ def main() -> int:
             "branch --smoke / --dry-run never reach (BLOCKER judge-rerun-smoke-dry-run-only)"
         ),
     )
+    parser.add_argument(
+        "--gc-judge-state",
+        action="store_true",
+        help=(
+            "delete the persistent judge-rerun dispatch-state root "
+            "(.claude/cache/issue-742-judge-rerun-state) and exit — reclaims resume state "
+            "AFTER a run has fully completed; NEVER run mid-run (it discards resume state)"
+        ),
+    )
     args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+
+    if args.gc_judge_state:
+        import shutil
+
+        state_root = dc._judge_rerun_state_root()
+        if state_root.exists():
+            shutil.rmtree(state_root)
+            print(f"[phase=gc_judge_state] removed {state_root}")
+        else:
+            print(f"[phase=gc_judge_state] nothing to remove ({state_root} absent)")
+        return 0
 
     genres = [g.strip() for g in args.genres.split(",") if g.strip()]
     behaviors = [b.strip() for b in args.behaviors.split(",") if b.strip()]
@@ -658,6 +822,7 @@ def main() -> int:
         judge_fn=judge_fn,
         dest_override=dest_override,
         skip_snapshot=skip_snapshot,
+        out_dir=args.out_dir,
     )
     out_path = args.out_dir / (
         "stage0_judge_variance_smoke.json"
