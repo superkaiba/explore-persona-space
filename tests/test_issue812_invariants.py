@@ -294,7 +294,7 @@ def test_sycophancy_uses_over_rollouts_completion_scores():
     """Sycophancy splits OVER-ROLLOUTS: the primary units come from completion_scores
     (the per-completion means), not per-probe means (BLOCKER 1 + CONCERN 6)."""
     cell = _fake_graded_cell(n_ctx=6, n_probes=4, n_comp=10)
-    primary, draws, label = fit._units_for_behavior(cell, "sycophancy")
+    primary, _draws, label = fit._units_for_behavior(cell, "sycophancy")
     assert label == "over_rollouts"
     # each context has n_probes * n_comp completion-mean units
     assert len(primary["ctx0"]) == 4 * 10
