@@ -406,6 +406,54 @@ def test_semicolon_cd_scope_benign_git_allows():
 
 
 # ---------------------------------------------------------------------------
+# MUST BLOCK — a raw NEWLINE does NOT scope a `cd` onto the following git clause
+# (#804 round 3). Before this fix the sed pre-pass emitted a sentinel only for
+# `||`/`&&`/`;`/`|`/`&`; a raw newline produced a record with NO leading
+# sentinel, so awk's `sep` inherited the STALE value from the previous line (an
+# `AND` after a `&&` clause) and the `cd` scope latch leaked ACROSS the newline
+# — `cd <missing> && git status\n git switch feature` returned rc=0. A
+# multi-line command runs each line unconditionally (like `;`), and a FAILED
+# `cd` on line N leaves line N+1 in the unchanged cwd (repo root), so the guard
+# fails CLOSED: the NL sentinel resets the `scoped` latch like `;`. Concern id:
+# guard-newline-after-and-scope-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/definitely-missing-804\ngit switch feature",  # bare cd\nswitch
+        # && then NL: latch must not leak the AND across the newline
+        "cd .claude/worktrees/missing-nonexistent-xyz && git status\ngit switch feature",
+        # missing /tmp, && then NL: cd fails, HEAD~1 detach fires on the newline clause
+        "cd /tmp/missing-nonexistent-xyz && git status\ngit checkout HEAD~1",
+        # NL then glued -b: branch creation on the newline clause blocks
+        "cd .claude/worktrees/missing-nonexistent-xyz && git status\ngit checkout -bfoo",
+    ],
+)
+def test_newline_after_and_scope_does_not_latch(cmd):
+    """Round 3: raw newlines reset cd-scope latch (they act as ; separators)."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — a raw newline between two non-dangerous clauses stays allowed:
+# the NL sentinel must not over-block a benign multi-line compound. Guards
+# against the NL reset trapping a `git switch main` / `git status` that never
+# moves off main. NOT guarded by @on_main. Concern id:
+# guard-newline-after-and-scope-leak.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch main\ngit status",  # both non-dangerous (return-to-main + status)
+        "git status\ngit status",  # neither is a checkout/switch
+    ],
+)
+def test_newline_benign_compounds_allowed(cmd):
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
 # MUST BLOCK — a clause that itself moves off main blocks regardless of the ||
 # or | connector (no cd-scoping involved; the git-switch-feature clause is
 # dangerous on its own). Guards against an over-correction that disables ALL

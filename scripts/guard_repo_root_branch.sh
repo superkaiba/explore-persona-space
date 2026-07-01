@@ -42,16 +42,25 @@
 # deliberate trade-off. See #796 round-2 report.
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
-# split on `;` / `&&` / `||` / `|` / `&` (two-char separators matched first)
-# into clauses, each classified independently so a later safe/return-to-main
-# clause can no longer mask an earlier dangerous one; a `cd <worktree|/tmp>`
-# latch propagates ONLY across `&&` (where bash GUARANTEES the `cd` succeeded
-# before the RHS runs, so the cwd persists forward). The latch does NOT
-# propagate across:
+# split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
+# matched first) into clauses, each classified independently so a later
+# safe/return-to-main clause can no longer mask an earlier dangerous one; a
+# `cd <worktree|/tmp>` latch propagates ONLY across `&&` (where bash GUARANTEES
+# the `cd` succeeded before the RHS runs, so the cwd persists forward). The
+# latch does NOT propagate across:
 #   - `;` (SEQ): bash runs the RHS regardless of the `cd` exit code; a FAILED
 #     `cd` (e.g. a missing target) leaves the cwd unchanged (repo root), so the
 #     git clause runs off-worktree. Fail-closed (#804 round 2): reset the latch
 #     on `;` rather than trust a `cd` we cannot prove succeeded.
+#   - a raw NEWLINE (NL): a multi-line command runs each line unconditionally,
+#     exactly like `;` — bash does NOT short-circuit on a `cd` exit code across
+#     a newline, so a FAILED `cd` on line N leaves line N+1 running in the
+#     unchanged cwd (repo root). Treated as `;`: reset the latch on NL. Before
+#     #804 round 3 raw newlines produced records with no leading sentinel, so
+#     `sep` inherited the STALE value (an `AND` after a `&&` clause) and the
+#     `cd` latch leaked ACROSS the newline — `cd <missing> && git status\n
+#     git switch feature` returned rc=0. The sed pre-pass now emits an explicit
+#     `NL` sentinel for each raw newline so it resets the latch like `;`.
 #   - `||` (OR): the RHS runs ONLY on `cd` FAILURE, cwd unchanged (repo root).
 #   - `|` (PIPE): each pipeline segment is its own subshell, so the LHS `cd`'s
 #     cwd change dies with it and the git segment runs in the parent's cwd.
@@ -80,15 +89,25 @@ echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch)\b' || exit 0
 # single-char clauses (the `&&` substitution runs before the single `&` rule,
 # so a `&&` is consumed as AND and never re-matched as a bare `&`). Each
 # separator run is replaced by a newline + a \x01-delimited sentinel token
-# (START | SEQ | AND | OR | PIPE | BG); the first clause carries the implicit
-# START. Best-effort: a separator inside a quoted arg is treated as a real
-# separator (same trade-off as the raw-scan known-limitation above).
+# (START | SEQ | AND | OR | PIPE | BG | NL); the first clause carries the
+# implicit START. Best-effort: a separator inside a quoted arg is treated as a
+# real separator (same trade-off as the raw-scan known-limitation above).
+#
+# `sed -z` treats the WHOLE input as one NUL-delimited record so a literal
+# newline in $1 is matchable. The raw-NEWLINE -> `\n\x01NL\x01` substitution
+# runs FIRST — before any separator substitution has inserted its own `\n` —
+# so it only tags the raw input newlines and can NOT re-mangle the structural
+# `\n` the &&/||/;/|/& rules insert afterwards (none of those rules matches
+# `\n` or the already-inserted `\x01NL\x01`). Without the NL sentinel a raw
+# newline produced a record with NO leading sentinel, so awk's `sep` inherited
+# the STALE value from the previous line (an `AND` after a `&&` clause) and the
+# `cd` scope latch leaked across the newline (#804 round 3).
 split_and_label() {
   printf '%s' "$1" \
-    | sed -E 's/\|\|/\n\x01OR\x01/g; s/&&/\n\x01AND\x01/g; s/;/\n\x01SEQ\x01/g; s/\|/\n\x01PIPE\x01/g; s/&/\n\x01BG\x01/g' \
+    | sed -zE 's/\n/\n\x01NL\x01/g; s/\|\|/\n\x01OR\x01/g; s/&&/\n\x01AND\x01/g; s/;/\n\x01SEQ\x01/g; s/\|/\n\x01PIPE\x01/g; s/&/\n\x01BG\x01/g' \
     | awk 'BEGIN{RS="\n"; sep="START"}
            { line=$0
-             if (match(line, /^\x01(OR|AND|SEQ|PIPE|BG)\x01/)) {
+             if (match(line, /^\x01(OR|AND|SEQ|PIPE|BG|NL)\x01/)) {
                sep=substr(line, 2, RLENGTH-2); line=substr(line, RLENGTH+1)
              }
              gsub(/^[ \t]+|[ \t]+$/, "", line)
@@ -197,26 +216,29 @@ classify_clause() {
 # latches `scoped` forward ONLY across `&&` (bash GUARANTEES the `cd` succeeded
 # before the RHS runs there, so the cwd persists), so a git clause after it runs
 # in the scoped cwd and is allowed. The latch RESETS across every OTHER separator
-# — `;` (SEQ), `||` (OR), `|` (PIPE), and `&` (BG) — where bash does NOT guarantee
-# the `cd` took effect for the following clause (verified bash semantics
-# 2026-07-01: `cd X && pwd` prints X; `cd X ; pwd` prints X ONLY on `cd` success —
-# a FAILED `cd`, e.g. a missing target, leaves the ORIGINAL cwd — and `cd X || pwd`
-# / `cd X | pwd` / `cd X & pwd` all print the ORIGINAL cwd). Resetting on `;`
-# fails CLOSED (#804 round 2): the guard cannot prove a `;`-preceding `cd`
-# succeeded, so it declines to scope across it. The first blocking clause wins.
+# — `;` (SEQ), `||` (OR), `|` (PIPE), `&` (BG), and a raw newline (NL) — where
+# bash does NOT guarantee the `cd` took effect for the following clause (verified
+# bash semantics 2026-07-01: `cd X && pwd` prints X; `cd X ; pwd` prints X ONLY on
+# `cd` success — a FAILED `cd`, e.g. a missing target, leaves the ORIGINAL cwd —
+# and `cd X || pwd` / `cd X | pwd` / `cd X & pwd` / a `cd X<newline>pwd` all print
+# the ORIGINAL cwd on `cd` failure). Resetting on `;` / NL fails CLOSED (#804
+# rounds 2/3): the guard cannot prove a `;`- or newline-preceding `cd` succeeded,
+# so it declines to scope across it. The first blocking clause wins.
 scoped=0
 blocked=""
 while IFS=$'\t' read -r sep clause; do
   # Reset the latch unless the separator BEFORE this clause is && — a `cd`
   # only reliably scopes a following git clause when bash guarantees it ran
-  # first (the && short-circuit). ; / || / | / & do NOT carry the latch.
+  # first (the && short-circuit). ; / || / | / & / a raw newline (NL) do NOT
+  # carry the latch (NL is not AND, so this consolidated check resets it).
   if [ "$sep" != AND ]; then
     scoped=0
   fi
 
-  # A `cd` into a worktree / /tmp latches scope forward for subsequent ;/&&
-  # clauses. Latch and continue — this clause runs the `cd`, not a git command,
-  # and it must NOT scope EARLIER clauses (those were classified before it).
+  # A `cd` into a worktree / /tmp latches scope forward ONLY across a following
+  # `&&` clause. Latch and continue — this clause runs the `cd`, not a git
+  # command, and it must NOT scope EARLIER clauses (those were classified
+  # before it).
   if echo "$clause" | grep -qE 'cd +[^;&|]*\.claude/worktrees/' \
      || echo "$clause" | grep -qE 'cd +/tmp/'; then
     scoped=1
