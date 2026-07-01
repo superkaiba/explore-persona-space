@@ -179,10 +179,16 @@ def _load_e0_completions(ctx_id: str, behavior: str, n_completions: int | None) 
         for comp in cell["completions"]:
             flat.append({"probe": probe, "text": comp["text"]})
     # Stable per-context subsample for the high-count behaviors (deterministic seed).
+    # Use a STABLE sha256 digest of ctx_id — NOT Python's built-in hash(str),
+    # which is salted per-process (PYTHONHASHSEED), so two production runs would
+    # otherwise sample DIFFERENT 60-completion subsets, changing the graded E0
+    # target + the read-out ρ across nominally identical runs.
     if behavior == "sycophancy" and len(flat) > SYCOPHANCY_SUBSAMPLE_PER_CONTEXT:
+        import hashlib
         import random
 
-        rng = random.Random(SHUFFLE_NULL_SEED + hash(ctx_id) % 100000)
+        stable = int(hashlib.sha256(ctx_id.encode()).hexdigest()[:8], 16)
+        rng = random.Random(SHUFFLE_NULL_SEED + stable % 100000)
         flat = rng.sample(flat, SYCOPHANCY_SUBSAMPLE_PER_CONTEXT)
     if n_completions is not None:
         flat = flat[:n_completions]
