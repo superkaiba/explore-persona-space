@@ -1,6 +1,7 @@
 ---
-title: 'Beat Persona-Vectors prompt-projection monitoring: learned context->profile
-  map (pre-gen) + generation-activation pooling (post-gen) on Qwen-2.5-7B'
+title: A learned context->answer-profile map does not beat Persona-Vectors' raw prompt
+  projection for trait monitoring, while a direct context->trait predictor beats both
+  (LOW confidence)
 kind: experiment
 tags:
 - persona-vectors
