@@ -5099,8 +5099,8 @@
     "796": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/796",
-      "status": "proposed",
+      "path": "tasks/planning/796",
+      "status": "planning",
       "title": "daily-fix: guard detached repo-root HEAD"
     },
     "797": {
