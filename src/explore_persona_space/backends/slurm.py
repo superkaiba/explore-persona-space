@@ -70,6 +70,7 @@ import logging
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import tempfile
 import time
@@ -1995,6 +1996,7 @@ class SlurmBackend(ComputeBackend):
         marker_poster=None,
         runtime_clearer=None,
         git_branch_resolver=None,
+        git_cloner=None,
     ) -> None:
         self._src_root = src_root or _default_src_root()
         # Resolves the rsync source's current branch for the feature-branch
@@ -2002,6 +2004,14 @@ class SlurmBackend(ComputeBackend):
         # ``git -C <src_root> rev-parse``; tests inject a stub returning a
         # fixed branch name (or ``None`` to simulate a non-repo source).
         self._git_branch_resolver = git_branch_resolver or git_branch_at
+        # Materializes a complete rsync source for a non-``main`` repo_branch on
+        # the VM (git worktree add of the branch commit + working-tree overlay of
+        # the external/open-instruct gitlink) — the #793 mechanism that lets the
+        # SLURM lane HONOR repo_branch instead of only refusing stale main.
+        # Defaults to the real ``materialize_branch_src`` shell-out; tests inject
+        # a stub returning a fake scratch Path and recording the (branch, issue)
+        # request.
+        self._git_cloner = git_cloner or materialize_branch_src
         self._submit = submitter or ssh_submit
         self._cancel = canceller or ssh_scancel
         self._rsync = rsyncer or run_rsync_sync
@@ -2052,21 +2062,29 @@ class SlurmBackend(ComputeBackend):
         paths skip it by contract), so clearing here cannot race a live
         job's own writes.
         """
-        # Feature-branch / stale-main guard (#653). The SLURM lane rsyncs
-        # the repo from ``self._src_root`` — which ``_default_src_root()``
-        # resolves via ``__file__``-walk to the repo-root install on
-        # ``main``, NOT the invoking worktree. Unlike the GCP lane (which
-        # git-clones ``spec.extra["repo_branch"]`` on the VM), this lane
-        # has NO mechanism to honor ``repo_branch``: it would silently
-        # rsync stale ``main`` code and submit a job whose tree lacks the
-        # feature branch's entrypoint scripts, crashing at in-job preflight
-        # (#653 round-8: an auto → SLURM fall-through rsynced ``main`` for a
-        # feature-branch experiment, queueing a job doomed at
-        # ``--verify-imports``). Refuse to submit onto stale code BEFORE
-        # the rsync; the auto chain treats this raise as a prepare failure
-        # and advances to the next lane (and the orchestrator re-launches
-        # with an explicit ``--backend gcp`` per the gotchas.md workaround).
-        self._assert_repo_branch_synced(spec)
+        # Resolve the rsync source for the requested branch (#793). The SLURM
+        # lane rsyncs from ``self._src_root`` — which ``_default_src_root()``
+        # resolves via ``__file__``-walk to the repo-root install on ``main``,
+        # NOT the invoking worktree. Unlike the GCP lane (which git-clones
+        # ``spec.extra["repo_branch"]`` on the VM), this lane HONORS repo_branch
+        # by MATERIALIZING a complete branch tree on the VM (``materialize_branch_src``
+        # via the ``git_cloner`` seam) and rsyncing from it. On ``main`` / absent /
+        # already-on-branch, ``_resolve_rsync_source`` returns ``self._src_root``
+        # unchanged and the path below is byte-identical to the pre-fix behavior.
+        rsync_src = self._resolve_rsync_source(spec)
+        # Belt-and-suspenders (#653/#793): re-assert the branch guard against the
+        # RESOLVED source. This is NOT the pre-fix "refuse the feature branch"
+        # behavior — the resolved source is ALWAYS either ``self._src_root``
+        # (main/absent/already-on-branch, where the guard was already a no-op) or
+        # the materialized branch tree (which IS on the requested branch, so the
+        # guard trivially passes). Its post-fix ROLE is to catch a ``git_cloner``
+        # that returned a tree NOT on the requested branch (a materialize_branch_src
+        # correctness regression), never to refuse a legitimately-requested feature
+        # branch. The lane-advance fallback for a genuinely-unresolvable branch is
+        # preserved by materialize_branch_src's own ``RuntimeError`` (which
+        # ``router._prepare_and_launch`` wraps as ``BackendPrepareError`` identically
+        # to the old ``ValueError``).
+        self._assert_repo_branch_synced(spec, src_root=rsync_src)
         cluster = self._cluster_for_spec(spec)
         scratch_dir = scratch_dir_for(spec, cluster)
         self._clear_runtime(
@@ -2074,7 +2092,7 @@ class SlurmBackend(ComputeBackend):
             scratch_dir=scratch_dir,
         )
         self._rsync(
-            src_root=self._src_root,
+            src_root=rsync_src,
             dest_root=scratch_dir,
             robot_alias=cluster.ssh_host,
         )
@@ -2085,38 +2103,69 @@ class SlurmBackend(ComputeBackend):
         # never world-readable on the cluster side.
         self._push_secrets(cluster, scratch_dir, secrets)
 
-    def _assert_repo_branch_synced(self, spec: RunSpec) -> None:
-        """Refuse to submit a feature-branch run onto a stale ``main`` rsync source.
+    def _resolve_rsync_source(self, spec: RunSpec) -> Path:
+        """Return the rsync source for ``spec``, materializing a branch tree if needed.
 
-        The SLURM lane rsyncs from ``self._src_root`` and has no
-        ``repo_branch`` honoring mechanism (the GCP lane git-clones the
-        branch on the VM; this lane does not). When the dispatcher threads
-        a non-``main`` ``spec.extra["repo_branch"]`` (which it does by
-        default for ``auto``/``gcp`` lanes — ``scripts/dispatch_issue.py``
-        ``_launch_extra_from_args``) but the rsync source's actual HEAD is
-        a DIFFERENT branch, rsyncing would ship code that does not match
-        the requested branch. Raise ``ValueError`` here — ``prepare`` runs
-        under :func:`router._prepare_and_launch`, which wraps it as a
-        provision-class :class:`~router.BackendPrepareError`, so the auto
-        chain advances to the next lane instead of running stale code, and
-        an explicit SLURM override surfaces the failure as a typed
-        terminal. No-op when ``repo_branch`` is absent or ``main`` (the
-        rsync source IS ``main`` then, by the resolver's design).
+        No-op (returns ``self._src_root``) when ``repo_branch`` is absent / ``main`` /
+        the install's HEAD already IS the requested branch. Otherwise materializes a
+        complete branch tree on the VM via the ``git_cloner`` seam and returns its path.
 
-        The branch probe failing (non-repo source, git missing → resolver
-        returns ``None``) is treated as a MISMATCH for a non-``main``
-        request: we cannot prove the source carries the feature branch, so
-        we refuse rather than risk silently shipping ``main`` (#653).
+        Note: an UNPROVABLE source branch (resolver returns ``None``) for a non-``main``
+        request also routes to the cloner (``None`` != the requested branch), so the
+        source-of-truth for "can we honor this branch?" is now the cloner's own
+        ``git rev-parse`` (fail-loud ``RuntimeError`` on an unresolvable branch), NOT the
+        guard.
         """
         requested = str(spec.extra.get("repo_branch") or "").strip()
         if not requested or requested == "main":
-            return
+            return self._src_root
         actual = self._git_branch_resolver(self._src_root)
+        if actual == requested:
+            return self._src_root  # install already on the branch — rsync it directly
+        return self._git_cloner(src_root=self._src_root, branch=requested, issue=spec.issue)
+
+    def _assert_repo_branch_synced(self, spec: RunSpec, src_root: Path | None = None) -> None:
+        """Assert the rsync source's HEAD matches a non-``main`` ``repo_branch``.
+
+        Post-#793, ``prepare`` first RESOLVES the rsync source
+        (``_resolve_rsync_source`` — materializing a complete branch tree via the
+        ``git_cloner`` seam when the install is not already on the branch) and then
+        calls this guard against that RESOLVED ``src_root``. So the guard's role is
+        now BELT-AND-SUSPENDERS on ``materialize_branch_src``'s own correctness: the
+        resolved source is ALWAYS either ``self._src_root`` (main/absent/already-on-
+        branch, where this guard is a no-op or trivially passes) or the materialized
+        branch tree (which IS on the requested branch, so the guard passes). It would
+        raise only if the ``git_cloner`` returned a tree whose HEAD is NOT the
+        requested branch — a materialize regression — NEVER to refuse a legitimately-
+        requested feature branch (that refusal moved to ``materialize_branch_src``'s
+        fail-loud ``RuntimeError`` on an unresolvable branch, §793/#653).
+
+        ``src_root`` defaults to ``self._src_root`` (backward-compatible: any direct
+        call or the reconnect/estimate paths are unchanged). The internal semantics
+        are otherwise verbatim from the #653 guard — it still raises ``ValueError`` on
+        a genuine HEAD/branch mismatch (``prepare`` runs under
+        :func:`router._prepare_and_launch`, which wraps it as a provision-class
+        :class:`~router.BackendPrepareError`) and still no-ops when ``repo_branch`` is
+        absent or ``main``.
+
+        The branch probe failing (non-repo source, git missing → resolver returns
+        ``None``) is treated as a MISMATCH for a non-``main`` request: we cannot prove
+        the source carries the feature branch, so we refuse rather than risk silently
+        shipping ``main`` (#653). Under ``prepare``'s post-fix flow this sub-branch
+        cannot fire on the honored-branch path (the cloner already raised on an
+        unresolvable branch), but it is retained so a DIRECT call with a mismatched
+        ``src_root`` still refuses.
+        """
+        src_root = src_root or self._src_root
+        requested = str(spec.extra.get("repo_branch") or "").strip()
+        if not requested or requested == "main":
+            return
+        actual = self._git_branch_resolver(src_root)
         if actual == requested:
             return
         raise ValueError(
             f"SLURM lane cannot honor repo_branch={requested!r}: the rsync "
-            f"source at {self._src_root} is on branch {actual!r} "
+            f"source at {src_root} is on branch {actual!r} "
             f"(the repo-root install resolves to 'main', not the invoking "
             f"worktree). Submitting would rsync stale code whose tree lacks "
             f"the feature branch's entrypoint scripts and crash at in-job "
@@ -2511,6 +2560,178 @@ def _default_src_root() -> Path:
     return Path.cwd()
 
 
+# The subset of ``RSYNC_INCLUDE_PATHS`` that is a WORKING-TREE-ONLY gitlink
+# (mode-160000 nested repo, absent from any branch's committed git tree). Verified
+# on-VM during #793 planning: ``external/open-instruct`` is the ONLY such entry —
+# every other include path (``pyproject.toml``, ``uv.lock``, ``src``, ``scripts``,
+# ``configs``, ``tests``, ``data/sft``) is a normal blob/tree (mode 100644/040000)
+# present in any branch checkout. ``materialize_branch_src`` overlays these paths
+# from the working tree because ``git worktree add`` of a branch commit produces an
+# EMPTY ``external/open-instruct/``. Kept as an explicit named constant so a future
+# reviewer sees exactly which paths are overlaid and why; a second gitlink added to
+# ``RSYNC_INCLUDE_PATHS`` must be added here too (the re-asserted branch guard does
+# NOT catch a missing overlay — it checks the branch HEAD ref, not overlay content;
+# the ``pyproject.toml`` source-sanity assert is the real backstop).
+WORKING_TREE_OVERLAY_PATHS: tuple[str, ...] = ("external/open-instruct",)
+
+
+def materialize_branch_src(
+    *,
+    src_root: Path,
+    branch: str,
+    issue: int,
+    overlay_paths: tuple[str, ...] = WORKING_TREE_OVERLAY_PATHS,
+    timeout: int = 300,
+) -> Path:
+    """Materialize a complete rsync source for ``branch`` on the VM; return its path.
+
+    The SLURM lane rsyncs from a local tree rather than git-cloning the requested
+    branch on the cluster (the GCP-lane approach), so when ``spec.extra["repo_branch"]``
+    names a non-``main`` branch that the repo-root install does not already carry, this
+    builds a content-complete checkout of the branch's COMMITTED tree on the orchestrator
+    VM and returns its path for :meth:`SlurmBackend.prepare` to rsync from.
+
+    Steps (idempotent — safe to re-run every ``prepare``):
+
+    1. ``scratch = ~/.eps-slurm-src/issue-<issue>`` (env override ``EPS_SLURM_SRC_ROOT``).
+    2. Remove any prior scratch worktree
+       (``git -C <src_root> worktree remove --force <scratch>``, guarded — a fresh
+       scratch has none), then ``rm -rf <scratch>`` (belt-and-suspenders for a
+       partially-removed dir), then ``git -C <src_root> worktree prune``.
+    3. Resolve the branch commit in ``src_root``'s object DB
+       (``git rev-parse --verify <branch>``, then ``origin/<branch>`` as a fallback).
+       Fail loud (``RuntimeError``) if neither resolves — no silent fallback to ``main``.
+    4. ``git -C <src_root> worktree add --detach <scratch> <commit>`` — detached HEAD at
+       the branch commit (no "branch already checked out in the /issue worktree" conflict,
+       since the branch lives in ``.claude/worktrees/issue-<N>``), sharing the repo-root
+       object DB (no ~GB history copy a fresh ``git clone`` would make).
+    5. Overlay each working-tree-only path from ``src_root`` into ``scratch``
+       (``rsync -a --delete <src_root>/<p>/ <scratch>/<p>/``, a LOCAL FS copy — distinct
+       from the cluster-bound rsync). ``<p>`` is the ``external/open-instruct`` gitlink,
+       which ``git worktree add`` materializes EMPTY. A path absent in ``src_root`` logs a
+       WARNING and is skipped (a lora-only run has no open-instruct — a missing overlay is
+       worth surfacing but not crashing).
+    6. Assert ``scratch/pyproject.toml`` exists (mirrors ``build_rsync_command``'s own
+       source-sanity assert) — fail loud if the worktree add produced an empty tree.
+
+    The scratch tree is a COMMITTED-only source: unlike today's working-tree rsync, an
+    untracked-but-present file in ``src_root``'s working tree (e.g. an uncommitted
+    ``scripts/issue658_*.py``) will NOT ship. This is the CORRECT behavior for a
+    branch-scoped run — a job dispatched against a branch commit must reach only committed
+    code — but is noted here so a future debugger who expects "scratch == old working-tree
+    rsync for tracked paths" understands why an uncommitted file is absent. The one
+    deliberate exception is ``overlay_paths`` (the gitlink), which is working-tree by
+    construction.
+
+    :returns: the scratch :class:`~pathlib.Path` (a content-complete tree on ``branch``).
+    :raises RuntimeError: on any git failure or an unresolvable branch (fail-fast, per
+        CLAUDE.md — no silent fallback to stale ``main``).
+    """
+    scratch_root = Path(os.environ.get("EPS_SLURM_SRC_ROOT") or (Path.home() / ".eps-slurm-src"))
+    scratch = scratch_root / f"issue-{issue}"
+
+    # Step 2 — remove any prior scratch worktree + dir + prune registrations. All git
+    # calls here are guarded (a fresh scratch has no registered worktree; ``worktree
+    # remove`` on an absent path exits non-zero) — we do not fail the prepare on the
+    # cleanup path, only on the create path below.
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        subprocess.run(
+            ["git", "-C", str(src_root), "worktree", "remove", "--force", str(scratch)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    with contextlib.suppress(OSError):
+        shutil.rmtree(scratch, ignore_errors=True)
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        subprocess.run(
+            ["git", "-C", str(src_root), "worktree", "prune"],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+
+    # Step 3 — resolve the branch commit in src_root's object DB (local ref, then
+    # origin/<branch> fallback). Fail loud if neither resolves.
+    commit: str | None = None
+    for ref in (branch, f"origin/{branch}"):
+        proc = subprocess.run(
+            ["git", "-C", str(src_root), "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            commit = proc.stdout.strip()
+            break
+    if commit is None:
+        raise RuntimeError(
+            f"materialize_branch_src: cannot resolve branch {branch!r} (nor "
+            f"origin/{branch!r}) in the object DB at {src_root}. The SLURM lane cannot "
+            f"honor this repo_branch — the auto chain advances to the next lane."
+        )
+
+    # Step 4 — worktree-add the branch commit at a detached HEAD (shares the object DB;
+    # no conflict with the branch checked out in the /issue worktree).
+    scratch.parent.mkdir(parents=True, exist_ok=True)
+    add = subprocess.run(
+        ["git", "-C", str(src_root), "worktree", "add", "--detach", str(scratch), commit],
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        check=False,
+    )
+    if add.returncode != 0:
+        raise RuntimeError(
+            f"materialize_branch_src: `git worktree add --detach {scratch} {commit}` failed "
+            f"(rc={add.returncode}): {add.stderr.strip()}"
+        )
+
+    # Step 5 — overlay the working-tree-only gitlink(s) from src_root's working tree.
+    for p in overlay_paths:
+        overlay_src = src_root / p
+        if not overlay_src.exists():
+            logger.warning(
+                "materialize_branch_src: overlay path %r absent in src_root %s — skipping "
+                "(a lora-only run has no open-instruct; a full-FT run needs it)",
+                p,
+                src_root,
+            )
+            continue
+        overlay_dst = scratch / p
+        overlay_dst.parent.mkdir(parents=True, exist_ok=True)
+        overlay = subprocess.run(
+            ["rsync", "-a", "--delete", f"{overlay_src}/", f"{overlay_dst}/"],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+        if overlay.returncode != 0:
+            raise RuntimeError(
+                f"materialize_branch_src: overlaying {p!r} from {overlay_src} into "
+                f"{overlay_dst} failed (rc={overlay.returncode}): {overlay.stderr.strip()}"
+            )
+
+    # Step 6 — source-sanity assert (mirrors build_rsync_command's own pyproject check).
+    if not (scratch / "pyproject.toml").exists():
+        raise RuntimeError(
+            f"materialize_branch_src: scratch tree {scratch} has no pyproject.toml after "
+            f"`git worktree add {commit}` — the branch commit produced an empty/invalid tree."
+        )
+    logger.info(
+        "materialize_branch_src: materialized branch %r (commit %s) for issue %d at %s",
+        branch,
+        commit,
+        issue,
+        scratch,
+    )
+    return scratch
+
+
 def git_branch_at(src_root: Path) -> str | None:
     """Return the current branch name at ``src_root`` (``None`` if unknown).
 
@@ -2561,6 +2782,7 @@ __all__ = [
     "RSYNC_INCLUDE_PATHS",
     "RUNTIME_ARTIFACT_FILENAMES",
     "SECRET_ENV_KEYS",
+    "WORKING_TREE_OVERLAY_PATHS",
     "ClusterConfig",
     "SbatchPlan",
     "SlurmBackend",
@@ -2576,6 +2798,7 @@ __all__ = [
     "get_cluster_config",
     "git_branch_at",
     "job_name",
+    "materialize_branch_src",
     "mila_socket_alive",
     "parse_job_id",
     "post_marker_via_task_py",
