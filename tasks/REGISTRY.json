@@ -5236,8 +5236,8 @@
       "goal": "On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much each pooling operator (mean / max / fixed-random attention / learned attention) loses versus the unpooled per-position multi-position input for predicting behavior expression E0 (and reconstructing the answer profile), per layer -- the incremental held-out gain of unpooled over each pool, with LOCO + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for the n=50 sample size; all operators are cheap CPU reductions of one shared extraction, so the constraint is n, not compute.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/812",
-      "status": "planning",
+      "path": "tasks/approved/812",
+      "status": "approved",
       "title": "How much do pooling operators (mean/max/attention) lose vs unpooled per-position answer activations for predicting behavior / reconstructing the profile"
     },
     "813": {
