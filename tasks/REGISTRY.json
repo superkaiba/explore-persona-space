@@ -5265,8 +5265,8 @@
     "817": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/817",
-      "status": "planning",
+      "path": "tasks/approved/817",
+      "status": "approved",
       "title": "workflow-fix: upload ALL artifacts by default (persist even if reuse unforeseen)"
     },
     "818": {
