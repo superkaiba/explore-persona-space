@@ -2750,3 +2750,29 @@ def test_compute_shape_review_lens_flags_missing(tmp_path) -> None:
     assert all(s.endswith("code-reviewer.md") for s in subjects), subjects
     assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
     assert all(not s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def test_compute_shape_review_lens_flags_both_files(tmp_path) -> None:
+    """Both files missing the lens accumulate one FAIL per file (#806).
+
+    Pins the per-file error-accumulation loop (not just the scoping asserted
+    by ``test_compute_shape_review_lens_flags_missing``): each file is missing
+    exactly ONE distinct required token, so the loop emits exactly one error
+    per file — two total, one subject per file. A regression that broke out of
+    the loop after the first file, or that de-duplicated across files, would
+    fail this.
+    """
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    # Claude file carries the tag but NOT the heading token; codex file
+    # carries the heading token but NOT the tag → one distinct missing token
+    # apiece → exactly one error per file.
+    (agents / "code-reviewer.md").write_text("# reviewer\nblocker tag compute-shape-mismatch\n")
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nStep 0.67 Compute-shape-vs-dispatcher\n"
+    )
+    errors = check_compute_shape_review_lens(repo_root=tmp_path)
+    assert len(errors) == 2, errors
+    subjects = {e.split(": ", 1)[0] for e in errors}
+    assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
+    assert any(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
