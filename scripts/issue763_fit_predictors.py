@@ -218,37 +218,47 @@ def _stage_v0_shards_from_hf(behaviors: list[str]) -> None:
     (the phase-2 GPU step) produces ``pv_shards/`` + ``pv_rb_by_behavior.json`` but
     NEVER re-creates the v0 shards, so ``_load_v0`` FileNotFoundError'd on the pod
     (task #763 r3). This mirrors ``issue763_judge_e0._stage_gen_from_hf`` /
-    ``issue763_extract_pv_rb._stage_from_hf``: snapshot_download the v0 shards from
-    the issue-owned HF prefix into the local path the loader expects, making the
-    fit hermetic against phase-1 local disk state. No-op on a matched-host RunPod
-    resume where the volume (and every shard) persists. Fail-loud only when a
-    shard is NEITHER local NOR on HF (the capture phase never produced it).
+    ``issue763_extract_pv_rb._stage_from_hf``: PER-FILE ``hf_hub_download`` (by
+    exact path — NOT a pattern-filtered snapshot, which truncates past ~7900
+    siblings on the 94k-file data repo, #763 BLOCKER siblings-truncation) fetches
+    each missing shard from the issue-owned HF prefix into the local path the
+    loader expects, making the fit hermetic against phase-1 local disk state.
+    No-op on a matched-host RunPod resume where the volume (and every shard)
+    persists. Fail-loud only when a shard is NEITHER local NOR on HF (the capture
+    phase never produced it).
     """
     shard_dir = EVAL_RESULTS_DIR / "v0_shards"
     missing = [b for b in behaviors if not (shard_dir / f"v0_{b}.pt").exists()]
     if not missing:
         return
-    from huggingface_hub import snapshot_download
+    # PER-FILE hf_hub_download, NOT snapshot_download(allow_patterns=...): the data
+    # repo carries >94k files (12x past the ~7900-siblings truncation point), so
+    # a pattern-filtered snapshot_download can silently match 0 files and Bug-2
+    # would recur as a FileNotFoundError on shards that DO exist on HF (task #763
+    # BLOCKER snapshot-download-allow-patterns-siblings-truncation; standing lesson
+    # feedback_snapshot_download_siblings_truncation.md / #375/#399). hf_hub_download
+    # resolves one file by exact path — no siblings listing, no truncation.
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
 
     path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/v0_shards"
     logger.info("[v0_stage] fetching %s from %s/%s", missing, HF_DATA_REPO, path_in_repo)
-    snap = snapshot_download(
-        repo_id=HF_DATA_REPO,
-        repo_type="dataset",
-        allow_patterns=[f"{path_in_repo}/v0_{b}.pt" for b in missing],
-    )
-    src_dir = Path(snap) / path_in_repo
     shard_dir.mkdir(parents=True, exist_ok=True)
     for b in missing:
-        src = src_dir / f"v0_{b}.pt"
-        if not src.exists():
+        try:
+            src = hf_hub_download(
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                filename=f"{path_in_repo}/v0_{b}.pt",
+            )
+        except EntryNotFoundError as e:
             raise FileNotFoundError(
                 f"v0 shard for {b} is neither local ({shard_dir}) nor on HF "
                 f"({HF_DATA_REPO}/{path_in_repo}) — the phase-1 capture never "
                 "produced/uploaded it (run --phase capture + the --progress-only "
                 "upload first)"
-            )
-        (shard_dir / f"v0_{b}.pt").write_bytes(src.read_bytes())
+            ) from e
+        (shard_dir / f"v0_{b}.pt").write_bytes(Path(src).read_bytes())
 
 
 def _load_v0(behavior: str) -> tuple[np.ndarray, list[str]]:

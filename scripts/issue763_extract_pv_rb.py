@@ -71,6 +71,8 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import contextlib
+import hashlib
 import json
 import logging
 import os
@@ -112,7 +114,17 @@ VLLM_GREEDY_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500")
 
 # Per-phase artifacts (the 3-phase split — #763 BLOCKER pv-production-throughput).
 PV_ROLLOUT_DIR = DATA_DIR / "pv_rollouts"  # generate -> <behavior>.jsonl (rollouts)
-PV_JUDGE_DIR = DATA_DIR / "pv_judge"  # judge -> <behavior>.json (keep flags)
+# pv_judge_v2 is the CANONICAL keep-flag dir: the r3 pv_judge/ keep-flags on HF were
+# computed at commit 0ecadbbc13 (right after cf34b9230d set judge_system_prompt=None),
+# so they were judged under the ALIGNMENT misalignment-rubric fallback rather than
+# the paper's PV TRAIT rubric — degrading the plan-registered "faithful" PV baseline
+# (§4.5; persona-vectors-recipe.md step-4 judge-filter is LOAD-BEARING). The capture
+# phase re-judges the rollouts under the corrected _PV_JUDGE_SYSTEM_PROMPT and writes
+# keep-flags stamped with judge_system_prompt_hash into pv_judge_v2/, leaving the old
+# pv_judge/ intact for provenance (task #763 BLOCKER pv-keepflags-under-alignment-
+# rubric-fallback).
+PV_JUDGE_DIR = DATA_DIR / "pv_judge"  # LEGACY r3 keep-flags (contaminated; provenance only)
+PV_JUDGE_V2_DIR = DATA_DIR / "pv_judge_v2"  # CANONICAL keep-flags (corrected trait rubric)
 PV_SHARD_DIR = EVAL_RESULTS_DIR / "pv_shards"  # capture -> rb_<behavior>.pt
 
 # Verbatim generation-prompt template from arXiv 2507.21509 Appendix "Direction
@@ -290,7 +302,13 @@ def _rollout_path(behavior: str) -> Path:
 
 
 def _judge_path(behavior: str) -> Path:
-    return PV_JUDGE_DIR / f"{behavior}.json"
+    """CANONICAL keep-flag path (pv_judge_v2/, corrected trait rubric).
+
+    The r3 pv_judge/ set (alignment-rubric-contaminated) is NEVER read by path
+    anymore — the capture phase re-judges under the corrected rubric into
+    pv_judge_v2/ (task #763 BLOCKER pv-keepflags-under-alignment-rubric-fallback).
+    """
+    return PV_JUDGE_V2_DIR / f"{behavior}.json"
 
 
 def _stage_from_hf(sub: str, local_dir: Path, behaviors: list[str], *, suffix: str) -> None:
@@ -307,27 +325,34 @@ def _stage_from_hf(sub: str, local_dir: Path, behaviors: list[str], *, suffix: s
     missing = [b for b in behaviors if not (local_dir / f"{b}.{suffix}").exists()]
     if not missing:
         return
-    from huggingface_hub import snapshot_download
+    # PER-FILE hf_hub_download, NOT snapshot_download(allow_patterns=...): the data
+    # repo carries >94k files (12x past the ~7900-siblings truncation point), so a
+    # pattern-filtered snapshot_download can silently match 0 files and the resume
+    # would recur its FileNotFoundError on files that DO exist on HF (task #763
+    # BLOCKER snapshot-download-allow-patterns-siblings-truncation; standing lesson
+    # feedback_snapshot_download_siblings_truncation.md / #375/#399). Callers pass
+    # explicit behaviors, so we resolve each file by exact path — no truncation.
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
 
     path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/{sub}"
     logger.info("[pv_stage] %s: fetching %s from %s/%s", sub, missing, HF_DATA_REPO, path_in_repo)
-    snap = snapshot_download(
-        repo_id=HF_DATA_REPO,
-        repo_type="dataset",
-        allow_patterns=[f"{path_in_repo}/*.{suffix}"],
-    )
-    src_dir = Path(snap) / path_in_repo
     local_dir.mkdir(parents=True, exist_ok=True)
     for b in missing:
-        src = src_dir / f"{b}.{suffix}"
-        if not src.exists():
+        try:
+            src = hf_hub_download(
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                filename=f"{path_in_repo}/{b}.{suffix}",
+            )
+        except EntryNotFoundError as e:
             raise FileNotFoundError(
                 f"PV {sub} for {b} is neither local ({local_dir}) nor on HF "
                 f"({HF_DATA_REPO}/{path_in_repo}) — the upstream phase never "
                 "produced/uploaded it (run --phase generate + the --progress-only "
                 "upload first)"
-            )
-        (local_dir / f"{b}.{suffix}").write_bytes(src.read_bytes())
+            ) from e
+        (local_dir / f"{b}.{suffix}").write_bytes(Path(src).read_bytes())
 
 
 def _load_artifacts(behavior: str, *, mock: bool) -> dict:
@@ -499,19 +524,87 @@ def _phase_generate(
 # ── PHASE: judge (OFF-pod, eval.batch_judge) ──────────────────────────────────
 
 
+def _judge_one_behavior(behavior: str, *, mock: bool) -> dict:
+    """Judge-filter one behavior's rollouts under the CANONICAL trait rubric.
+
+    Reads the rollout JSONL, fills the paper's trait-eval rubric per rollout,
+    scores each via ``eval.batch_judge`` under ``_PV_JUDGE_SYSTEM_PROMPT`` (NOT
+    the alignment fallback), keeps POS>50 / NEG<50, DROPS a REFUSAL / non-numeric
+    / out-of-[0,100] score from BOTH arms (never coerced —
+    persona-vectors-recipe.md step 4). Writes + returns the keep-flag payload,
+    STAMPED with ``judge_system_prompt_hash`` so a resume can tell corrected
+    keep-flags from the contaminated r3 set. Shared by ``_phase_judge`` and the
+    capture-phase re-judge.
+    """
+    art = _load_artifacts(behavior, mock=mock)
+    eval_prompt = art["eval_prompt"]
+    rows = _read_rollouts_jsonl(_rollout_path(behavior))
+    # Build the filled rubric prompt per rollout (the paper's trait-eval rubric,
+    # generated into the artifacts — semantics unchanged).
+    filled = [
+        eval_prompt.replace("{question}", r["question"]).replace("{answer}", r["response"])
+        for r in rows
+    ]
+    if mock:
+        # mock: positive iff the response contains the trait token (offline).
+        raw_scores = [80 if "EXHIBIT" in r["response"].upper() else 20 for r in rows]
+    else:
+        raw_scores = _judge_rollouts_via_batch_api(filled)
+    kept_flags: list[bool] = []
+    dropped = {"pos": 0, "neg": 0}
+    kept = {"pos": 0, "neg": 0}
+    for r, sc in zip(rows, raw_scores, strict=True):
+        pole = r["pole"]
+        if sc is None:  # REFUSAL / non-numeric / out-of-range -> drop, never coerce
+            dropped[pole] += 1
+            kept_flags.append(False)
+            continue
+        keep = (pole == "pos" and sc > JUDGE_THRESHOLD) or (pole == "neg" and sc < JUDGE_THRESHOLD)
+        kept_flags.append(keep)
+        if keep:
+            kept[pole] += 1
+        else:
+            dropped[pole] += 1
+    n_pairs = len(art["instruction_pairs"])
+    n_q = len({r["question"] for r in rows})
+    n_roll = max((r["rollout_id"] for r in rows), default=-1) + 1
+    per_arm = n_roll // 2 if n_roll else 0  # pos/neg split evenly
+    pv_thin = any(kept[a] < PV_YIELD_FLOOR_FRAC * max(per_arm, 1) for a in ("pos", "neg"))
+    payload = {
+        "behavior": behavior,
+        "keep_flags": kept_flags,  # aligned with the rollout JSONL row order
+        "kept": kept,
+        "dropped": dropped,
+        "n_pairs": n_pairs,
+        "n_questions": n_q,
+        "target_per_arm": per_arm,
+        "pv_thin_sample": pv_thin,
+        "judge_model": JUDGE_MODEL,
+        "judge_threshold": JUDGE_THRESHOLD,
+        # The fingerprint of the canonical trait-rubric grader prompt — the resume
+        # gate (`_keepflags_are_canonical`) accepts a v2 file iff this matches
+        # `_PV_JUDGE_SYSTEM_PROMPT_HASH`; the contaminated r3 pv_judge/ set has no
+        # such field (task #763 BLOCKER pv-keepflags-under-alignment-rubric-fallback).
+        "judge_system_prompt_hash": _PV_JUDGE_SYSTEM_PROMPT_HASH,
+        "metadata": reproducibility_metadata({"phase": "pv_extract_judge"}),
+    }
+    dump_json(payload, _judge_path(behavior))
+    logger.info("[pv_judge] %s: kept=%s dropped=%s thin=%s", behavior, kept, dropped, pv_thin)
+    return payload
+
+
 def _phase_judge(behaviors: list[str], *, mock: bool) -> None:
-    """Judge-filter the rollouts OFF the GPU phase -> pv_judge/<behavior>.json.
+    """Judge-filter the rollouts OFF the GPU phase -> pv_judge_v2/<behavior>.json.
 
     #763 BLOCKER pv-production-throughput (judge half) + plan §4.6 step 5: the
     per-rollout trait score runs through the registered deadline-bounded
     ``eval.batch_judge`` dispatcher (sync below the tier threshold, Anthropic
     Message Batches above it), NOT a synchronous per-rollout
-    ``messages.create`` interleaved inside the GPU phase. Keep POS rollouts >50,
-    NEG rollouts <50; a REFUSAL / non-numeric / out-of-[0,100] score is DROPPED
-    from BOTH arms (never coerced — persona-vectors-recipe.md step 4); per-arm
-    dropped count reported; an 80%-floor shortfall flags ``pv_thin_sample``.
+    ``messages.create`` interleaved inside the GPU phase. Writes the CANONICAL
+    keep-flags to pv_judge_v2/ (stamped with ``judge_system_prompt_hash``) via
+    ``_judge_one_behavior``.
     """
-    PV_JUDGE_DIR.mkdir(parents=True, exist_ok=True)
+    PV_JUDGE_V2_DIR.mkdir(parents=True, exist_ok=True)
     # OFF-pod (the GPU pod is STOPPED for this phase, #763 BLOCKER
     # pv-judge-not-off-pod): the rollouts live on HF (the --progress-only upload
     # wrote them); stage any that are not already local. The --mock smoke runs
@@ -519,87 +612,58 @@ def _phase_judge(behaviors: list[str], *, mock: bool) -> None:
     if not mock:
         _stage_from_hf("pv_rollouts", PV_ROLLOUT_DIR, behaviors, suffix="jsonl")
     for behavior in behaviors:
-        art = _load_artifacts(behavior, mock=mock)
-        eval_prompt = art["eval_prompt"]
-        rows = _read_rollouts_jsonl(_rollout_path(behavior))
-        # Build the filled rubric prompt per rollout (the paper's trait-eval
-        # rubric, generated into the artifacts — semantics unchanged).
-        filled = [
-            eval_prompt.replace("{question}", r["question"]).replace("{answer}", r["response"])
-            for r in rows
-        ]
-        if mock:
-            # mock: positive iff the response contains the trait token (offline).
-            raw_scores = [80 if "EXHIBIT" in r["response"].upper() else 20 for r in rows]
-        else:
-            raw_scores = _judge_rollouts_via_batch_api(filled)
-        kept_flags: list[bool] = []
-        dropped = {"pos": 0, "neg": 0}
-        kept = {"pos": 0, "neg": 0}
-        for r, sc in zip(rows, raw_scores, strict=True):
-            pole = r["pole"]
-            if sc is None:  # REFUSAL / non-numeric / out-of-range -> drop, never coerce
-                dropped[pole] += 1
-                kept_flags.append(False)
-                continue
-            keep = (pole == "pos" and sc > JUDGE_THRESHOLD) or (
-                pole == "neg" and sc < JUDGE_THRESHOLD
-            )
-            kept_flags.append(keep)
-            if keep:
-                kept[pole] += 1
-            else:
-                dropped[pole] += 1
-        n_pairs = len(art["instruction_pairs"])
-        n_q = len({r["question"] for r in rows})
-        n_roll = max((r["rollout_id"] for r in rows), default=-1) + 1
-        per_arm = n_roll // 2 if n_roll else 0  # pos/neg split evenly
-        pv_thin = any(kept[a] < PV_YIELD_FLOOR_FRAC * max(per_arm, 1) for a in ("pos", "neg"))
-        payload = {
-            "behavior": behavior,
-            "keep_flags": kept_flags,  # aligned with the rollout JSONL row order
-            "kept": kept,
-            "dropped": dropped,
-            "n_pairs": n_pairs,
-            "n_questions": n_q,
-            "target_per_arm": per_arm,
-            "pv_thin_sample": pv_thin,
-            "judge_model": JUDGE_MODEL,
-            "judge_threshold": JUDGE_THRESHOLD,
-            "metadata": reproducibility_metadata({"phase": "pv_extract_judge"}),
-        }
-        dump_json(payload, _judge_path(behavior))
-        logger.info("[pv_judge] %s: kept=%s dropped=%s thin=%s", behavior, kept, dropped, pv_thin)
+        _judge_one_behavior(behavior, mock=mock)
     # The keep-flags are produced OFF-pod (VM) while the GPU pod is stopped;
-    # upload them so the RESUMED pod's --phase capture can snapshot_download them
-    # (#763 BLOCKER pv-judge-not-off-pod). No-op for the local --mock smoke.
+    # upload them so the RESUMED pod's --phase capture can fetch them (#763
+    # BLOCKER pv-judge-not-off-pod). No-op for the local --mock smoke.
     if not mock:
         _upload_judge_keepflags(behaviors)
 
 
 def _upload_judge_keepflags(behaviors: list[str]) -> None:
-    """Bulk-upload the off-pod judge keep-flags to the issue-owned HF prefix.
+    """Bulk-upload the CANONICAL keep-flags (pv_judge_v2/) to the issue-owned HF prefix.
 
-    ONE ``upload_folder`` commit (the #664 per-file-loop trap avoided). The
-    resumed GPU pod's ``--phase capture`` fetches these via ``_stage_from_hf``.
-    Fail-loud: the resume CANNOT proceed without the keep-flags, so a failed
-    upload must crash the judge phase, not warn-and-continue.
+    ONE ``upload_folder`` commit (the #664 per-file-loop trap avoided). Uploads to
+    a NEW ``pv_judge_v2/`` prefix so the contaminated r3 ``pv_judge/`` set stays on
+    HF for provenance (task #763 BLOCKER pv-keepflags-under-alignment-rubric-fallback).
+    The resumed GPU pod's ``--phase capture`` fetches these via ``_stage_from_hf``.
+    Fail-loud: the resume CANNOT proceed without the keep-flags, so a failed upload
+    must crash the judge phase, not warn-and-continue.
     """
     from huggingface_hub import HfApi
 
     if not any(_judge_path(b).exists() for b in behaviors):
         return
     api = HfApi()
-    path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/pv_judge"
+    path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/pv_judge_v2"
     api.upload_folder(
-        folder_path=str(PV_JUDGE_DIR),
+        folder_path=str(PV_JUDGE_V2_DIR),
         path_in_repo=path_in_repo,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
         allow_patterns=["*.json"],
-        commit_message="issue763: PV off-pod judge keep-flags",
+        commit_message="issue763: PV off-pod judge keep-flags (corrected trait rubric, v2)",
     )
-    logger.info("[pv_judge] uploaded keep-flags -> %s/%s", HF_DATA_REPO, path_in_repo)
+    logger.info("[pv_judge] uploaded canonical keep-flags -> %s/%s", HF_DATA_REPO, path_in_repo)
+
+
+def _keepflags_are_canonical(behavior: str) -> bool:
+    """True iff a local pv_judge_v2/<behavior>.json exists AND carries the current hash.
+
+    The gate the capture phase uses to decide whether to re-judge: the r3
+    pv_judge/ keep-flags were computed under the alignment misalignment-rubric
+    fallback and carry NO ``judge_system_prompt_hash``; a v2 file whose stamped
+    hash != ``_PV_JUDGE_SYSTEM_PROMPT_HASH`` (a future prompt edit) is likewise
+    stale. Only a matched-hash v2 file is trusted (task #763 BLOCKER
+    pv-keepflags-under-alignment-rubric-fallback).
+    """
+    p = _judge_path(behavior)
+    if not p.exists():
+        return False
+    try:
+        return load_json(p).get("judge_system_prompt_hash") == _PV_JUDGE_SYSTEM_PROMPT_HASH
+    except (json.JSONDecodeError, OSError):
+        return False
 
 
 # The paper's trait rubric asks for a BARE integer 0-100; the registered batch
@@ -619,6 +683,12 @@ _PV_JUDGE_SYSTEM_PROMPT = (
     "You are a careful evaluator. Follow the scoring instructions in the user "
     "message exactly and answer in the requested format."
 )
+
+# Fingerprint of the CANONICAL trait-rubric grader prompt. Stamped into every
+# pv_judge_v2/<behavior>.json so a resume can tell corrected keep-flags from the
+# contaminated r3 pv_judge/ set (which carries NO hash) and re-judge only when
+# needed (task #763 BLOCKER pv-keepflags-under-alignment-rubric-fallback).
+_PV_JUDGE_SYSTEM_PROMPT_HASH = hashlib.sha256(_PV_JUDGE_SYSTEM_PROMPT.encode("utf-8")).hexdigest()
 
 
 def _judge_rollouts_via_batch_api(prompts: list[str]) -> list[int | None]:
@@ -673,6 +743,58 @@ def _judge_rollouts_via_batch_api(prompts: list[str]) -> list[int | None]:
 # ── PHASE: capture (GPU, teacher-force KEPT rollouts) ─────────────────────────
 
 
+def _ensure_canonical_keepflags(behaviors: list[str]) -> None:
+    """Resolve the CANONICAL (corrected-trait-rubric) keep-flags for the capture phase.
+
+    task #763 BLOCKER pv-keepflags-under-alignment-rubric-fallback: the r3
+    ``pv_judge/`` keep-flags on HF were judged under the alignment
+    misalignment-rubric fallback (``judge_system_prompt=None`` at commit
+    ``0ecadbbc13``), so reading them by path — as the r6 capture did — builds a
+    NON-faithful PV baseline, breaking the plan §4.5 registration. The rollout
+    JSONLs are text-only, so the fix RE-JUDGES the rollouts here under the
+    corrected ``_PV_JUDGE_SYSTEM_PROMPT`` (the same off-pod ``eval.batch_judge``
+    path the E0 re-judge uses; ~10k Anthropic Batch calls total ≈ $2-3, 24h SLA)
+    and writes hash-stamped keep-flags to ``pv_judge_v2/``, leaving the old
+    ``pv_judge/`` on HF for provenance.
+
+    Resolution per behavior:
+      1. matched-hash local v2 file present -> reuse (idempotent resume).
+      2. else fetch v2 from HF (a prior VM re-judge already ran) -> reuse if it
+         matches the current hash.
+      3. else RE-JUDGE under the corrected rubric -> write + upload v2.
+    """
+    PV_JUDGE_V2_DIR.mkdir(parents=True, exist_ok=True)
+    # Try to pull any already-canonical v2 keep-flags off HF (a prior off-pod
+    # re-judge). Tolerate absence (first resume: pv_judge_v2/ not on HF yet) —
+    # _stage_from_hf fail-louds only when a file is NEITHER local NOR on HF, so
+    # guard the per-behavior fetch and let the re-judge branch handle a miss.
+    for b in behaviors:
+        if _keepflags_are_canonical(b):
+            continue
+        # Not on HF yet (first resume: pv_judge_v2/ absent) -> fall through to the
+        # re-judge branch below. This is NOT a silent-swallow: _stage_from_hf
+        # fail-louds only on a NEITHER-local-NOR-HF miss, which for v2 means "no
+        # prior re-judge exists", handled deterministically by the re-judge below.
+        with contextlib.suppress(FileNotFoundError):
+            _stage_from_hf("pv_judge_v2", PV_JUDGE_V2_DIR, [b], suffix="json")
+    to_rejudge = [b for b in behaviors if not _keepflags_are_canonical(b)]
+    if not to_rejudge:
+        logger.info(
+            "[pv_capture] canonical keep-flags present for all %d behaviors", len(behaviors)
+        )
+        return
+    # Re-judge the missing behaviors under the corrected trait rubric. The
+    # rollouts must be local for the judge (staged by the capture caller).
+    logger.info(
+        "[pv_capture] re-judging %s under the corrected trait rubric "
+        "(the r3 pv_judge/ set was alignment-rubric-contaminated)",
+        to_rejudge,
+    )
+    for b in to_rejudge:
+        _judge_one_behavior(b, mock=False)
+    _upload_judge_keepflags(to_rejudge)
+
+
 def _phase_capture(behaviors: list[str], *, model_name: str, device: str) -> None:
     """Teacher-force the KEPT rollouts, response-mean residual -> r_B (GPU).
 
@@ -701,16 +823,20 @@ def _phase_capture(behaviors: list[str], *, model_name: str, device: str) -> Non
     # The RESUMED GPU pod (after the off-pod judge, #763 BLOCKER
     # pv-judge-not-off-pod) reads the keep-flags the VM judge wrote + uploaded;
     # the GCP git-clone-only lane has neither rollouts nor keep-flags locally.
-    # Stage both from the issue-owned HF prefix when absent (no-op on a
-    # matched-host RunPod resume where the volume persists).
+    # Stage the rollouts (needed for BOTH the re-judge and the teacher-force) from
+    # the issue-owned HF prefix when absent (no-op on a matched-host RunPod resume).
     _stage_from_hf("pv_rollouts", PV_ROLLOUT_DIR, behaviors, suffix="jsonl")
-    _stage_from_hf("pv_judge", PV_JUDGE_DIR, behaviors, suffix="json")
+    # Resolve the CANONICAL keep-flags: reuse hash-stamped pv_judge_v2/ if present
+    # (local or HF), else RE-JUDGE under the corrected trait rubric. Does NOT read
+    # the r3 pv_judge/ set (alignment-rubric-contaminated; #763 BLOCKER
+    # pv-keepflags-under-alignment-rubric-fallback).
+    _ensure_canonical_keepflags(behaviors)
     manifest: dict[str, dict] = {}
     for behavior in behaviors:
         art = _load_artifacts(behavior, mock=False)
         pairs = art["instruction_pairs"]
         rows = _read_rollouts_jsonl(_rollout_path(behavior))
-        judge = load_json(_judge_path(behavior))
+        judge = load_json(_judge_path(behavior))  # pv_judge_v2/ (canonical)
         keep_flags = judge["keep_flags"]
         assert len(keep_flags) == len(rows), (
             f"PV {behavior}: keep_flags ({len(keep_flags)}) != rollouts ({len(rows)}) — "
@@ -753,6 +879,11 @@ def _phase_capture(behaviors: list[str], *, model_name: str, device: str) -> Non
             "target_per_arm": judge["target_per_arm"],
             "pv_thin_sample": judge["pv_thin_sample"],
             "rb_shape": list(r_b.shape),
+            # Provenance: the keep-flags were judged under the CANONICAL trait
+            # rubric (pv_judge_v2/, hash-matched) — never the r3 alignment-rubric
+            # fallback (#763 BLOCKER pv-keepflags-under-alignment-rubric-fallback).
+            "pv_keepflags_source": "canonical_trait_rubric_v2",
+            "judge_system_prompt_hash": judge.get("judge_system_prompt_hash"),
         }
         logger.info("[pv_capture] %s: kept=%s rb_shape=%s", behavior, kept, list(r_b.shape))
 
