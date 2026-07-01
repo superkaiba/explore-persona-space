@@ -1180,6 +1180,152 @@ def _cb_gate_label(plan_text: str, ladder: list[str]) -> str:
     return gate_m.group(0).strip() if gate_m else "<unnamed-gate>"
 
 
+STAGE_RESULT_KINDS: dict[str, frozenset[str]] = {
+    # NORMALIZED stage token (see _normalize_stage) -> marker kind(s) that complete it.
+    "verifying": frozenset({"epm:upload-verification"}),
+    "interpreting": frozenset({"epm:interpretation"}),
+    "clean-result": frozenset({"epm:clean-result-critique"}),
+    "implementing": frozenset({"epm:experiment-implementation"}),
+    "free-analysis-followup": frozenset({"epm:free-analysis-followup-run"}),
+    "methodology-reference": frozenset({"epm:methodology-doc-generated"}),
+    "code-review": frozenset({"epm:code-review"}),
+    "planning": frozenset({"epm:plan"}),
+    "related-work": frozenset({"epm:related-work-proposed"}),
+}
+# epm:failure clears the in-flight state of ANY stage.
+_ALWAYS_RESULT_KINDS = frozenset({"epm:failure"})
+# Markers a healthy in-flight round keeps emitting; each refreshes the freshness clock.
+STAGE_LIVENESS_KINDS = frozenset(
+    {
+        "epm:codex-task-spawned",
+        "epm:codex-task-completed",
+        "epm:smoke-architecture-check",
+        "epm:proposed-tests",
+    }
+)
+
+_STAGE_ALIASES = {"code-reviewing": "code-review"}
+
+
+def _normalize_stage(stage: str) -> str:
+    """Strip ONE leading ``followup-`` prefix, then apply ``_STAGE_ALIASES``.
+
+    Used only for result-kind clearing lookups; the dedup MATCH compares raw tokens.
+    Unknown tokens pass through unchanged.
+    """
+    stripped = stage.removeprefix("followup-")
+    return _STAGE_ALIASES.get(stripped, stripped)
+
+
+def _stage_event_ts(event: dict) -> datetime | None:
+    """Parse an event's ISO-8601 ``ts`` (naive treated as UTC); None on malformed/missing."""
+    raw = event.get("ts", "")
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed
+
+
+def _breadcrumb_fields(note: str) -> dict[str, str]:
+    """Parse a ``stage-dispatch`` note's ``key=value`` tokens (whitespace-split, order-free)."""
+    fields: dict[str, str] = {}
+    for token in note.split():
+        key, sep, value = token.partition("=")
+        if sep:
+            fields[key] = value
+    return fields
+
+
+def _find_stage_breadcrumb(events: list[dict], stage: str, round_num: int) -> int | None:
+    """Index of the most recent breadcrumb matching the RAW ``stage=`` token + ``round=``.
+
+    A breadcrumb with no ``round=`` token, or a non-integer round value, never matches.
+    Returns None when no breadcrumb matches.
+    """
+    for idx in range(len(events) - 1, -1, -1):
+        event = events[idx]
+        if event.get("kind", "") != "epm:progress":
+            continue
+        note = (event.get("note", "") or "").lstrip()
+        if not note.startswith("stage-dispatch "):
+            continue
+        fields = _breadcrumb_fields(note)
+        if fields.get("stage") != stage:
+            continue
+        try:
+            if int(fields["round"]) == round_num:
+                return idx
+        except (KeyError, ValueError):
+            continue
+    return None
+
+
+def stage_dispatch_should_skip(
+    events: list[dict],
+    stage: str,
+    round_num: int,
+    window_minutes: float,
+    *,
+    now: datetime | None = None,
+) -> str | None:
+    """Return a one-line skip reason when a same-stage+round dispatch is in flight, else None.
+
+    A breadcrumb is an ``epm:progress`` event whose lstripped note begins with
+    ``"stage-dispatch "``; its ``key=value`` fields parse order-independently, and a
+    breadcrumb with no integer ``round=`` never matches a round query. The most recent
+    breadcrumb matching the RAW ``stage=`` token and ``round=`` is in flight unless a
+    LATER event carries a stage-matching result kind
+    (``STAGE_RESULT_KINDS[_normalize_stage(stage)]`` — clearing is round-agnostic by
+    design, result markers carry no parsable round) or ``epm:failure``. While in
+    flight, the freshness clock starts at the LATEST of the breadcrumb and any later
+    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress``;
+    a breadcrumb never refreshes any window): effective age < window -> skip reason;
+    >= window -> None (stalled, re-dispatch allowed). A malformed breadcrumb ``ts``
+    fails toward dispatch (None); a malformed liveness ``ts`` is ignored. TOCTOU is a
+    non-goal — two orchestrators both checking BEFORE either posts its breadcrumb can
+    still double-dispatch; the Step-0 single-orchestrator guard + implementer
+    self-detection are the backstops. Add new stage tokens to ``STAGE_RESULT_KINDS``.
+    """
+    if now is None:
+        now = datetime.now(UTC)
+    crumb_idx = _find_stage_breadcrumb(events, stage, round_num)
+    if crumb_idx is None:
+        return None
+    clearing = STAGE_RESULT_KINDS.get(_normalize_stage(stage), frozenset()) | _ALWAYS_RESULT_KINDS
+    later = events[crumb_idx + 1 :]
+    if any(event.get("kind", "") in clearing for event in later):
+        return None
+    crumb_ts = _stage_event_ts(events[crumb_idx])
+    if crumb_ts is None:
+        return None
+    effective_start = crumb_ts
+    refresher: tuple[str, str] | None = None
+    for event in later:
+        kind = event.get("kind", "")
+        if kind == "epm:progress":
+            note = (event.get("note", "") or "").lstrip()
+            if note.startswith("stage-dispatch "):
+                continue
+        elif kind not in STAGE_LIVENESS_KINDS:
+            continue
+        ts = _stage_event_ts(event)
+        if ts is not None and ts > effective_start:
+            effective_start = ts
+            refresher = (kind, event.get("ts", ""))
+    age_minutes = (now - effective_start).total_seconds() / 60.0
+    if age_minutes >= window_minutes:
+        return None
+    refreshed = f", refreshed by {refresher[0]} at {refresher[1]}" if refresher else ""
+    return (
+        f"skip: stage-dispatch stage={stage} round={round_num} in flight — "
+        f"breadcrumb at {events[crumb_idx].get('ts', '')}, effective age {age_minutes:.1f}m "
+        f"< window {window_minutes}m{refreshed}"
+    )
+
+
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
     """Render the new (correcting) failure-lesson body as a durable memory entry.
 
