@@ -159,6 +159,72 @@ def _frac_in_subspace(pca_basis: np.ndarray, direction: np.ndarray) -> float:
     return float(np.linalg.norm(proj) / dn)
 
 
+def _pca_basis_v0_fast(V0: np.ndarray, dim: int) -> np.ndarray:
+    """Top-`dim` v0-PC basis via a DUAL eigh on the (n,n) Gram — the #667 fast PCA.
+
+    A verbatim copy of ``issue667_alllayer_analysis._pca_basis_v0_fast`` (kept
+    local so this script does not import the heavy all-layer driver): returns the
+    SAME top-`dim` right-singular subspace of the mean-centered ``V0`` (up to
+    per-component sign, which CANCELS in the ridge projection ``Y @ pca.T`` then
+    back ``@ pca``) as ``issue722_fit_M._pca_basis_v0``'s ``np.linalg.svd`` path,
+    but computes it as an eigh on the small (n, n) Gram (n≪3584) — the
+    vectorize-many-cell-fits win at n≪H, ~4× faster than the (n, 3584) SVD the
+    ridge floor otherwise recomputes ~600× per layer. ``Vₖ = Uₖᵀ Vc / Sₖ`` where
+    ``Vc Vcᵀ = U diag(S²) Uᵀ``. Preserves the gesdd→gesvd robustness contract
+    (np.linalg.eigh fast path → scipy.linalg.eigh syevr fallback), keeps only
+    numerically-positive eigenvalues (the SVD's rank truncation). Verified in
+    #667 to reproduce np.svd's subspace to min|cos|=1.0 (singular values match to
+    5.7e-14), and the marker read-2 numerator+floor were shown bit-identical to
+    ``fit_cell`` under the np.svd PCA (rtol=1e-9), so the end-to-end |Δ·Ŵ_U| and
+    ‖Δ‖ reads are unchanged by this substitution.
+    """
+    Vc = V0 - V0.mean(axis=0, keepdims=True)
+    G = Vc @ Vc.T  # (n, n) dual Gram — SPD, n≪3584 is the win
+    try:
+        w, U = np.linalg.eigh(G)  # ascending eigenvalues; LAPACK syevd
+    except np.linalg.LinAlgError:
+        from scipy.linalg import eigh as _scipy_eigh
+
+        logger.warning(
+            "[phase=map_change] np.linalg.eigh (syevd) did not converge on a %s Gram "
+            "(near-singular resample); retrying with scipy syevr",
+            G.shape,
+        )
+        w, U = _scipy_eigh(G)
+    order = np.argsort(w)[::-1]  # descending
+    if order.size:
+        pos = w[order] > 1e-12 * float(max(w[order][0], 1.0))
+        order = order[pos]
+    k = min(dim, order.size)
+    order = order[:k]
+    if k == 0:
+        return np.zeros((0, V0.shape[1]), dtype=np.float64)
+    S = np.sqrt(np.clip(w[order], 0.0, None))  # (k,)
+    return (U[:, order].T @ Vc) / S[:, None]  # (k, 3584)
+
+
+class _fast_pca_injected:
+    """Swap ``issue722_fit_M._pca_basis_v0`` for the dual-eigh fast PCA in a `with`.
+
+    ``fit_marker_layer`` resolves the headline PCA through ``fitM._pca_basis_v0``,
+    and the refit floors resolve it through the reused ``fitM._refit_ridge_fn`` /
+    ``fitM.m0_at_cplus_ridge_full`` closures (which ALSO call the module attribute
+    ``fitM._pca_basis_v0``). Swapping that one module attribute redirects EVERY
+    PCA in the ridge + floor path to the fast subspace WITHOUT editing the reused
+    module — the same runtime-override pattern ``issue667_alllayer_analysis`` uses.
+    Restored in ``__exit__`` so nothing outside the `with` sees the swap.
+    """
+
+    def __enter__(self):
+        self._saved = fitM._pca_basis_v0
+        fitM._pca_basis_v0 = _pca_basis_v0_fast
+        return self
+
+    def __exit__(self, *exc):
+        fitM._pca_basis_v0 = self._saved
+        return False
+
+
 def _refit_ridge_fn(grid: np.ndarray):
     """Reuse #722's exact per-bootstrap ridge fit_fn (recomputes its own top-64 v0 PCs).
 
@@ -461,6 +527,12 @@ def main() -> int:
     )
     ap.add_argument("--max-sources", type=int, default=None)
     ap.add_argument("--max-targets-per-source", type=int, default=None)
+    ap.add_argument(
+        "--no-fast-pca",
+        action="store_true",
+        help="use the ORIGINAL np.svd PCA (slow ~hours at all layers) instead of the "
+        "#667 dual-eigh fast PCA (verified subspace-identical). Default: fast PCA on.",
+    )
     args = ap.parse_args()
 
     if args.smoke:
@@ -500,20 +572,35 @@ def main() -> int:
     finally:
         streamer.cleanup()
 
+    use_fast = not args.no_fast_pca
+    logger.info(
+        "[phase=map_change] PCA path: %s", "dual-eigh FAST" if use_fast else "np.svd (slow)"
+    )
+
     per_layer: dict[str, dict] = {}
-    for layer in layers:
-        cells = cells_by[("marker", layer)]
-        logger.info("[phase=map_change] marker L%d (%d cells)", layer, len(cells))
-        cell = fit_marker_layer(layer, cells, wu_marker, with_chain=not args.no_chain_rho)
-        per_layer[f"marker_L{layer}"] = cell
-        logger.info(
-            "[phase=map_change]   L%d unproj Δ/floor=%s  wu_proj Δ/floor=%s  frac_in_sub=%.4g%s",
-            layer,
-            _fmt(cell["unproj_delta_over_floor"]),
-            _fmt(cell["wu_proj_delta_over_floor"]),
-            cell["wu_frac_in_subspace"],
-            "" if cell["wu_read2_informative"] else "  [READ2 UNINFORMATIVE]",
-        )
+    # Per-layer checkpoint dir (checkpoint-per-phase: a crash keeps completed layers).
+    ckpt_dir = args.out.parent / f"{args.out.stem}_cells"
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    pca_ctx = _fast_pca_injected() if use_fast else _nullctx()
+    with pca_ctx:
+        for layer in layers:
+            cells = cells_by[("marker", layer)]
+            logger.info("[phase=map_change] marker L%d (%d cells)", layer, len(cells))
+            cell = fit_marker_layer(layer, cells, wu_marker, with_chain=not args.no_chain_rho)
+            cell["pca_path"] = "dual_eigh_fast" if use_fast else "np_svd"
+            per_layer[f"marker_L{layer}"] = cell
+            (ckpt_dir / f"marker_L{layer}.json").write_text(
+                json.dumps(cell, indent=2, default=float)
+            )
+            logger.info(
+                "[phase=map_change]   L%d unproj Δ/floor=%s  wu_proj Δ/floor=%s  "
+                "frac_in_sub=%.4g%s",
+                layer,
+                _fmt(cell["unproj_delta_over_floor"]),
+                _fmt(cell["wu_proj_delta_over_floor"]),
+                cell["wu_frac_in_subspace"],
+                "" if cell["wu_read2_informative"] else "  [READ2 UNINFORMATIVE]",
+            )
 
     out_obj = {
         "issue": 667,
@@ -536,6 +623,13 @@ def main() -> int:
     _print_table(per_layer)
     logger.info("[phase=done]")
     return 0
+
+
+def _nullctx():
+    """No-op context manager for the ``--no-fast-pca`` path (leaves np.svd PCA in place)."""
+    import contextlib
+
+    return contextlib.nullcontext()
 
 
 def _fmt(x) -> str:
