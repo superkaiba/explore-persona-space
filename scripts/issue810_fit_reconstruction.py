@@ -58,6 +58,10 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import torch  # noqa: E402
+from issue810_batched_null import (  # noqa: E402
+    batched_ridge_loco_null_skill,
+    make_perm_matrix,
+)
 from issue810_common import (  # noqa: E402
     HF_DATA_REPO,
     I594_CC_LAST_FILE,
@@ -182,13 +186,17 @@ def _summary_matrix(
 # ── the inline per-position ridge_skill (re-implemented over on-main primitives) ──
 
 
-def _fit_one_cell(Xc: np.ndarray, Yv: np.ndarray, pca_dim: int, do_mlp: bool) -> dict:
-    """Held-out skill-over-mean R² for one (summary, layer) cell.
+def _fit_one_cell(Xc: np.ndarray, Yv: np.ndarray, pca_dim: int) -> tuple[dict, np.ndarray]:
+    """Held-out ridge skill-over-mean R² for one (summary, layer) cell.
 
     Xc (n, H_c) = c_C at this layer; Yv (n, H) = the summary at this layer.
     Reduce Yv to its top-``pca_dim`` PCA basis (robust_pca_basis), fit LOCO ridge
     on the PCA target (ridge_predict_loco_centered), skill_over_mean_r2 on the
-    PCA target. The MLP validity arm (batched, one group) is optional.
+    PCA target. The MLP validity arm is NO LONGER fit here — it is batched ACROSS
+    cells in ``main`` (one ``fit_batched_loco_mlp`` call per (n, d_in, p) shape
+    group, the #722 vectorize-many-cell-fits mandate; the old per-cell one-group
+    call defeated the batching). Returns ``(out, Y_pca)`` so the caller can batch
+    the MLP arm over the same PCA target.
 
     This is the ``ridge_skill``-equivalent from the stranded fig-per-position
     script, re-implemented against the on-main primitives — target dim
@@ -206,11 +214,33 @@ def _fit_one_cell(Xc: np.ndarray, Yv: np.ndarray, pca_dim: int, do_mlp: bool) ->
         "ridge_skill": ridge["skill"],
         "ridge_median_per_dim_r2": ridge["median_per_dim_r2"],
     }
-    if do_mlp:
-        res = fit_batched_loco_mlp([MLPGroup(("cell",), Xc, Y_pca)], seed=SHUFFLE_NULL_SEED)
-        mlp = skill_over_mean_r2(res.preds_by_key[("cell",)], Y_pca)
-        out["mlp_skill"] = mlp["skill"]
-    return out
+    return out, Y_pca
+
+
+def _batch_mlp_validity(
+    mlp_jobs: list[tuple[tuple, np.ndarray, np.ndarray]],
+) -> dict:
+    """Batch the MLP validity arm across ALL cells (grouped by (n, d_in, p) shape).
+
+    ``mlp_jobs`` is a list of ``(cell_key, Xc, Y_pca)``. ``fit_batched_loco_mlp``
+    requires every group in ONE call to share (n, d_in, p), so cells are bucketed
+    by that shape and each bucket is fit in ONE batched call (the #722 mandate —
+    the old code called ``fit_batched_loco_mlp([one group])`` per cell, defeating
+    the batching entirely). Returns ``{cell_key: mlp_skill}``.
+    """
+    buckets: dict[tuple, list[MLPGroup]] = {}
+    for key, Xc, Y_pca in mlp_jobs:
+        shape = (Xc.shape[0], Xc.shape[1], Y_pca.shape[1])
+        buckets.setdefault(shape, []).append(MLPGroup(key, Xc, Y_pca))
+    y_by_key = {key: Y_pca for key, _Xc, Y_pca in mlp_jobs}
+    mlp_skill_by_key: dict = {}
+    for shape, groups in buckets.items():
+        logger.info("[phase=mlp] batching %d cells at shape %s", len(groups), shape)
+        res = fit_batched_loco_mlp(groups, seed=SHUFFLE_NULL_SEED)
+        for g in groups:
+            mlp = skill_over_mean_r2(res.preds_by_key[g.key], y_by_key[g.key])
+            mlp_skill_by_key[g.key] = mlp["skill"]
+    return mlp_skill_by_key
 
 
 def _fit_null_draws(
@@ -221,18 +251,23 @@ def _fit_null_draws(
     Returns ``n_perms`` per-draw ridge skill-over-mean R² values (the
     selection-symmetric null distribution for this cell — the analyzer forms
     the honest max-over-{summary,layer} band by max-selecting these per draw).
+
+    VECTORIZED (#722 mandate, `.claude/rules/vectorize-many-cell-fits.md`): the
+    c_C design ``Xc`` is FIXED across permutations (only the PCA target rows are
+    permuted), so every X-only LOCO-ridge factor (per-fold standardization, the
+    dual Gram eigendecomposition, the per-λ dual-solve inverse) is computed ONCE
+    and all ``n_perms`` permutations run as batched matmuls — NO Python-level
+    per-perm re-fit loop. The batched closed form IS the serial refit (same PRESS
+    / dual identities), so the per-draw skill is numerically identical to the old
+    serial null (the smoke asserts this). The PCA basis is fit ONCE per cell (as
+    before); the null permutes the PCA target rows exactly as the serial path did.
     """
     n = Yv.shape[0]
     mu, comps, _ = robust_pca_basis(Yv, pca_dim)
     Y_pca = (Yv - mu) @ comps.T
-    rng = np.random.default_rng(seed)
-    draws: list[float] = []
-    for _ in range(n_perms):
-        perm = rng.permutation(n)
-        pred = ridge_predict_loco_centered(Xc, Y_pca[perm])
-        s = skill_over_mean_r2(pred, Y_pca[perm])["skill"]
-        draws.append(float(s))
-    return draws
+    rng = np.random.default_rng(seed)  # same per-cell seed as the serial reference
+    perm = make_perm_matrix(n, n_perms, rng)  # (n_perms, n) — same draw order
+    return batched_ridge_loco_null_skill(Xc, Y_pca, perm)
 
 
 # ── diagnostics ───────────────────────────────────────────────────────────────
@@ -280,7 +315,7 @@ def _identity_sanity_check(
     """
     rows = [free_summaries["mean"][c][layer_i].numpy() for c in ctx_ids]
     Y = np.stack(rows)
-    res = _fit_one_cell(Y.copy(), Y.copy(), pca_dim, do_mlp=False)
+    res, _y_pca = _fit_one_cell(Y.copy(), Y.copy(), pca_dim)
     return {"layer_i": layer_i, "ridge_skill": res["ridge_skill"], "n": res["n"]}
 
 
@@ -358,6 +393,11 @@ def main() -> int:
     results: dict[str, list[dict]] = {}
     # Selection-symmetric null: per (summary × layer) per-draw skill matrix.
     null_matrix: dict[str, dict[str, list[float]]] = {}
+    # MLP validity jobs collected across ALL cells, batched by shape AFTER the
+    # ridge loop (the #722 vectorize-many-cell-fits mandate) — cell_key ->
+    # (summary, layer_i) so mlp_skill can be attached back to the right cell dict.
+    mlp_jobs: list[tuple[tuple, np.ndarray, np.ndarray]] = []
+    cell_ref: dict[tuple, dict] = {}
     for summary in summaries:
         cells: list[dict] = []
         null_matrix[summary] = {}
@@ -372,15 +412,27 @@ def main() -> int:
                 continue
             Xc = np.stack([cc[c][li] for c in kept])
             cell_pca = min(PCA_TARGET_DIM_CAP, max(1, len(kept) - 2))
-            fit = _fit_one_cell(Xc, Yv, cell_pca, do_mlp=not args.no_mlp)
+            fit, y_pca = _fit_one_cell(Xc, Yv, cell_pca)
             fit["layer"] = capture_layers[li]
             fit["n_kept"] = len(kept)
             cells.append(fit)
+            if not args.no_mlp:
+                key = (summary, capture_layers[li])
+                mlp_jobs.append((key, Xc, y_pca))
+                cell_ref[key] = fit
             null_matrix[summary][str(capture_layers[li])] = _fit_null_draws(
                 Xc, Yv, cell_pca, args.n_perms, SHUFFLE_NULL_SEED
             )
         results[summary] = cells
         logger.info("[phase=fit] %s done (%d layers)", summary, len(cells))
+
+    # Batch the MLP validity arm across all cells (one call per shape group), then
+    # attach mlp_skill back to each cell. Batching (not one-group-per-call) is the
+    # #722 fix — the on-main fit_batched_loco_mlp batches (group × dim × fold).
+    if mlp_jobs:
+        mlp_skill_by_key = _batch_mlp_validity(mlp_jobs)
+        for key, skill in mlp_skill_by_key.items():
+            cell_ref[key]["mlp_skill"] = skill
 
     # Diagnostics
     diag = {

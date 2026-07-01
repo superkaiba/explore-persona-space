@@ -68,6 +68,11 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import torch  # noqa: E402
+from issue810_batched_null import (  # noqa: E402
+    batched_projection_null_rho,
+    batched_ridge_loco_null_rho,
+    make_perm_matrix,
+)
 from issue810_common import (  # noqa: E402
     HF_DATA_REPO,
     I658_RB,
@@ -201,6 +206,22 @@ def _fixed_rb_pred(X: np.ndarray, r: np.ndarray) -> np.ndarray:
     return X @ r
 
 
+def _pca_reduce_predictor(X: np.ndarray) -> np.ndarray:
+    """PCA-reduce the summary design to its top min(48, n-2) dims (fixed per cell).
+
+    Shared by ``_trained_ridge_pred`` and the batched trained-ridge null so BOTH
+    use the IDENTICAL basis — the design X is fixed across permutations, so the
+    PCA basis is too; the batched null re-uses this reduced design rather than
+    re-fitting the basis per permutation.
+    """
+    from explore_persona_space.analysis.vectorized_mlp_skill import robust_pca_basis
+
+    n = X.shape[0]
+    k = min(PCA_TARGET_DIM_CAP, max(1, n - 2))
+    mu, comps, _ = robust_pca_basis(X, k)
+    return (X - mu) @ comps.T  # (n, k) PCA-reduced predictor
+
+
 def _trained_ridge_pred(X: np.ndarray, y: np.ndarray) -> np.ndarray:
     """Method (ii): held-out LOCO-ridge prediction of scalar E0 from the summary.
 
@@ -208,12 +229,7 @@ def _trained_ridge_pred(X: np.ndarray, y: np.ndarray) -> np.ndarray:
     reduces the summary to its top PCA dims first (target dim min(48, n-2)) so
     the H-dim predictor matches #722/#658's estimator. Returns (n,) held-out.
     """
-    from explore_persona_space.analysis.vectorized_mlp_skill import robust_pca_basis
-
-    n = X.shape[0]
-    k = min(PCA_TARGET_DIM_CAP, max(1, n - 2))
-    mu, comps, _ = robust_pca_basis(X, k)
-    Xp = (X - mu) @ comps.T  # (n, k) PCA-reduced predictor
+    Xp = _pca_reduce_predictor(X)
     pred = ridge_predict_loco_centered(Xp, y.reshape(-1, 1))  # (n, 1)
     return pred[:, 0]
 
@@ -306,26 +322,26 @@ def main() -> int:
                 null_matrix[behavior][method].setdefault(summary, {})
                 for li in layers:
                     X = _summary_matrix(summary, li, kept, free_summaries, pos_summaries, coverage)
+                    # Draw n_perms permutations from the SHARED rng in the SAME
+                    # order the serial per-draw loop consumed them (byte-identical
+                    # null on a like-seeded rng — the smoke asserts this).
+                    perm = make_perm_matrix(len(kept), args.n_perms, rng)
                     if method == "fixed_rb":
                         # diffmeans is the theory default; report both recipes but
                         # gate the headline on diffmeans (persona-vectors default).
                         r = rb[behavior]["diffmeans"][li].numpy()
                         pred = _fixed_rb_pred(X, r)
-                        # correct null: permute the (E0, summary) pairing, re-project.
-                        draws = []
-                        for _ in range(args.n_perms):
-                            perm = rng.permutation(len(kept))
-                            dr = _rho(pred, y[perm])
-                            draws.append(dr if dr is not None else 0.0)
+                        # correct null (batched, no re-fit): permute the (E0,
+                        # summary) pairing, re-project the SAME pred → re-Spearman.
+                        draws = batched_projection_null_rho(pred, y, perm)
                     else:  # trained_ridge
                         pred = _trained_ridge_pred(X, y)
-                        # null: permute E0 rows, re-fit the ridge.
-                        draws = []
-                        for _ in range(args.n_perms):
-                            perm = rng.permutation(len(kept))
-                            pn = _trained_ridge_pred(X, y[perm])
-                            dr = _rho(pn, y[perm])
-                            draws.append(dr if dr is not None else 0.0)
+                        # null (batched): permute E0 rows, re-fit the LOCO ridge on
+                        # the FIXED PCA-reduced design (X-only factors computed once,
+                        # all perms batched — the #722 vectorize mandate). Uses the
+                        # IDENTICAL PCA basis as _trained_ridge_pred.
+                        Xp = _pca_reduce_predictor(X)
+                        draws = batched_ridge_loco_null_rho(Xp, y, perm)
                     rho = _rho(pred, y)
                     rho_rate = _rho(pred, y_rate) if np.isfinite(y_rate).all() else None
                     results.append(
