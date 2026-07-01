@@ -5176,8 +5176,8 @@
     "805": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/805",
-      "status": "proposed",
+      "path": "tasks/planning/805",
+      "status": "planning",
       "title": "workflow-fix: phase-partition GPU width \u2014 narrow/API phases must not hold the peak-width (8xH100) pod"
     },
     "806": {
