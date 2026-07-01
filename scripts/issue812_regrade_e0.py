@@ -570,14 +570,38 @@ def _judge_behavior(
     # each persona has exactly one question + one completion, so strip the trailing
     # "__NNNNN__NN" to recover the (regex-safe) persona, then join THROUGH persona_map
     # (the sidecar coordinate) — never re-parse the persona string itself.
-    # per_ctx[ctx][probe_idx][comp_idx] = [draw scores]
-    per_ctx: dict[str, dict[int, dict[int, list[float]]]] = {}
+    #
+    # COVERAGE GUARD (fail-loud, per CLAUDE.md "Fail fast — never hide failures").
+    # The recovered persona set MUST be a subset of persona_map's keys: an all_scores
+    # key that does not join is a join-recovery bug — most plausibly a future edit to
+    # batch_judge's custom_id suffix f-string (batch_judge.py::_enumerate_and_check_cache,
+    # ``f"{persona}__{idx:05d}__{comp_idx:02d}"``) not mirrored in the
+    # ``cid.rsplit("__", 2)[0]`` recovery below — which the old ``continue`` swallowed
+    # silently (post-hoc detectable only from n_judged counts). Raise instead so the
+    # contract drift is caught at reduce time, before any downstream fit consumes an
+    # under-covered grid.
+    scored_by_persona: dict[str, dict] = {}
     for cid, score_dict in all_scores.items():
         persona = cid.rsplit("__", 2)[0]  # regex-safe persona contains no "__"
-        tup = persona_map.get(persona)
-        if tup is None:
-            continue
+        scored_by_persona[persona] = score_dict
+    unknown = set(scored_by_persona) - set(persona_map)
+    if unknown:
+        sample = sorted(unknown)[:10]
+        raise RuntimeError(
+            f"[{behavior}] persona_map join under-coverage: {len(unknown)} judged "
+            f"custom_id(s) recovered a persona absent from the sidecar persona_map "
+            f"(sample={sample}). This is a join-recovery bug — check that "
+            f"batch_judge's custom_id suffix f-string still matches the "
+            f'cid.rsplit("__", 2)[0] recovery in this reducer.'
+        )
+    # Iterate over persona_map (the AUTHORITATIVE dispatched set), not all_scores, so a
+    # persona with NO returned row is materialized as recorded-NaN drops (counted in
+    # n_dropped below) rather than being silently absent from the per_ctx grid.
+    # per_ctx[ctx][probe_idx][comp_idx] = [draw scores]
+    per_ctx: dict[str, dict[int, dict[int, list[float]]]] = {}
+    for persona, tup in persona_map.items():
         ctx, probe_idx, comp_idx, draw = tup
+        score_dict = scored_by_persona.get(persona)  # None -> NaN (materialized drop)
         score = _coerce_score(score_dict)
         (
             per_ctx.setdefault(ctx, {})

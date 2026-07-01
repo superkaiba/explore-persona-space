@@ -467,6 +467,103 @@ def test_regrade_persona_map_sidecar_roundtrips(tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ROUND-4 CONCERN — reduction join FAILS LOUD on a persona_map under-coverage
+# (round-3 silently `continue`d on a persona_map miss, so a future batch_judge
+# custom_id suffix drift would silently under-cover — detectable only post-hoc)
+# ─────────────────────────────────────────────────────────────────────────────
+def test_reduction_raises_on_unknown_persona_join_miss(tmp_path):
+    """A judged custom_id whose recovered persona is absent from the sidecar persona_map
+    raises RuntimeError at reduce time (round-3 swallowed it via `continue`). Simulates
+    the failure mode the CONCERN guards: a batch_judge suffix-drift produces a persona
+    the reducer's cid.rsplit("__", 2)[0] recovery cannot join back."""
+    import json
+
+    probes_by_ctx = {"ctxA": [{"probe": "q1", "completions": ["x"]}]}
+    n_draws = 2
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    def fake_judge(packed, *, save_raw, **kw):
+        # Score every legit persona correctly, then inject ONE extra all_scores key
+        # whose recovered persona ("gremlin") is NOT in persona_map — the exact shape a
+        # future custom_id suffix drift (unmirrored in the recovery split) would produce.
+        all_scores = {f"{p}__00000__00": {"score": 60, "reasoning": "ok"} for p in packed}
+        all_scores["gremlin__00000__00"] = {"score": 99, "reasoning": "orphan"}
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(json.dumps({"all_scores": all_scores}))
+
+    orig = regrade.judge_completions_batch
+    regrade.judge_completions_batch = fake_judge
+    try:
+        with pytest.raises(RuntimeError) as ei:
+            regrade._judge_behavior(
+                "sycophancy",
+                probes_by_ctx,
+                judge_model="claude-sonnet-4-5-20250929",
+                n_draws=n_draws,
+                out_dir=out_dir,
+                subsample=None,
+                dry_run=False,
+            )
+    finally:
+        regrade.judge_completions_batch = orig
+    assert "under-coverage" in str(ei.value)
+    assert "gremlin" in str(ei.value)
+
+
+def test_reduction_materializes_entirely_missing_completion_as_recorded_nan(tmp_path):
+    """A completion whose EVERY draw is absent from all_scores is still materialized as
+    a full NaN completion (n_draws NaN drops counted in n_dropped), never silently
+    absent from the per_ctx grid. Round-3 iterated over all_scores, so a completion with
+    no returned rows had NO per_ctx slot at all — its draws vanished uncounted; round-4
+    iterates over the authoritative persona_map so every dispatched draw is accounted
+    for. (This discriminates the fix: an entirely-unscored completion is the shape the
+    old all_scores-driven loop dropped without a trace.)"""
+    import json
+
+    # 1 ctx, 1 probe, 2 completions, 2 draws = 4 personas; score ONLY completion 0's
+    # draws, leave completion 1 ENTIRELY unscored (both draws missing).
+    probes_by_ctx = {"ctxA": [{"probe": "q1", "completions": ["x", "y"]}]}
+    n_draws = 2
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    def fake_judge(packed, *, save_raw, **kw):
+        pmap = json.loads((save_raw.parent / f"_persona_map_{save_raw.stem[5:]}.json").read_text())
+        all_scores = {}
+        for persona, coord in pmap.items():
+            _ctx, _pi, comp_idx, _draw = coord
+            if comp_idx == 0:  # score ONLY completion 0; completion 1 stays absent
+                all_scores[f"{persona}__00000__00"] = {"score": 70, "reasoning": "ok"}
+        save_raw.parent.mkdir(parents=True, exist_ok=True)
+        save_raw.write_text(json.dumps({"all_scores": all_scores}))
+
+    orig = regrade.judge_completions_batch
+    regrade.judge_completions_batch = fake_judge
+    try:
+        res = regrade._judge_behavior(
+            "sycophancy",
+            probes_by_ctx,
+            judge_model="claude-sonnet-4-5-20250929",
+            n_draws=n_draws,
+            out_dir=out_dir,
+            subsample=None,
+            dry_run=False,
+        )
+    finally:
+        regrade.judge_completions_batch = orig
+
+    cell = res["ctxA"]
+    # completion 1's 2 draws are recorded NaN drops — NOT silently absent (round-3 lost them)
+    assert cell["n_dropped"] == n_draws, "the entirely-unscored completion's draws counted"
+    p0 = cell["probe_scores"][0]
+    comps = {c["completion_idx"]: c for c in p0["completions"]}
+    assert set(comps) == {0, 1}, "BOTH completions present in the grid (round-3 dropped comp 1)"
+    assert comps[1]["completion_mean"] is None, "the unscored completion has a NaN mean"
+    assert comps[1]["draw_scores"] == [None, None], "both its draws are recorded NaN"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ROUND-3 CONCERN — lane-1 reuse shape parsing is single-source (validator == loader)
 # ─────────────────────────────────────────────────────────────────────────────
 def test_parse_reuse_blob_all_accepted_shapes_load_identically():
