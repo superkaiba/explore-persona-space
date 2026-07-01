@@ -530,7 +530,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 
    **No `### Methodology corrections` heading.** When a methodology correction is load-bearing, fold it into the relevant `### <result>`'s what-is-plotted or interpretation prose.
 
-   **Per-result prose ≤120 words WARN / ≥180 words FAIL** (excl. caption, tables, code, `<details>` bodies; verifier check 20). Bullets are the default; prose only for ≤2-sentence causal chains.
+   **Per-result prose ≤120 words WARN / ≥180 words FAIL** (excl. caption, tables, code, `<details>` bodies; verifier check 20). Bullets are the default; prose only for 1–3-sentence causal chains.
 
    **Demote figure-less quantitative claims.** If a `### <result>` asserts a quantitative result AND no figure supports it, EITHER drop it (push into a different result's prose) OR rewrite it as a qualitative observation.
 
@@ -549,7 +549,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 **Voice rules** (consolidated; see `.claude/skills/clean-results/SPEC.md` § "Voice" for the canonical list):
 
 - **Rule B — research-paper register (SPEC.md § Voice (v4) Rule B).** Write the whole body in the concise, precise register of a research paper: declarative methods/results prose, every quantity DEFINED on first use, no filler / marketing / hype. Per section: `## Methodology` is **Methods-section PROSE** (the complete procedure as compact declarative paragraphs, with the hyperparameter table + verbatim example blocks as data — NOT terse bullet fragments); each `## Results` `### <result>` is **Results-section PROSE** in the three-beat (what-is-plotted-EXACTLY → figure → interpretation, each a 1–3-sentence declarative paragraph — NOT bullet fragments); `## Takeaways` STAYS numbers-first bullets (abstract-style); `## Goal` keeps its two compact-prose boldface slots. The conciseness caps still bind — research-paper register means tight, not verbose.
-- **Bullets are the default for `## Takeaways`; prose only where a causal chain needs ≤2 sentences** (in `## Methodology` / `## Results`, compact prose IS the default per Rule B above — keep it ≤2-sentence units). Bold key numbers, front-load the takeaway (NN/g "layer-cake"). A wall of narrative prose is the v2-era register v3 deliberately replaced.
+- **Bullets are the default for `## Takeaways`; prose only where a causal chain needs 1–3 sentences** (in `## Methodology` / `## Results`, compact prose IS the default per Rule B above — keep it to 1–3-sentence units). Bold key numbers, front-load the takeaway (NN/g "layer-cake"). A wall of narrative prose is the v2-era register v3 deliberately replaced.
 - `"I"`, not `"we"` — single-researcher workflow.
 - Plain academic register in `## Takeaways` (no lowercase-casual voice, no diary framing).
 - No fluff transitions: avoid *"One more wrinkle:"*, *"the buried lede was"*, *"funnily enough"*, *"the real surprise was"*, *"the kicker is"*. (Connective tissue inside `### <result>` interpretation prose — "Then I tried", "But that didn't replicate", "I expected X — what I got was Y" — IS welcome.)
