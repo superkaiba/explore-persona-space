@@ -5155,8 +5155,8 @@
     "802": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/802",
-      "status": "proposed",
+      "path": "tasks/planning/802",
+      "status": "planning",
       "title": "workflow: promote bug-class sibling-sweep from reconciler memory into primary code-reviewer + implementer (stop review whack-a-mole)"
     },
     "803": {
