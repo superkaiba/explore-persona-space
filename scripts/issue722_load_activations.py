@@ -85,13 +85,30 @@ class _Streamer:
     Mirrors #658's ``_HfStreamSpanSource`` pattern. Each ``load`` downloads ONE
     ``.npz`` into a private staging dir we own (so deletes can't race other
     readers) and an LRU bounds resident files.
+
+    **Local-mirror mode (additive, #667 recovery).** When ``local_root`` is set,
+    ``load`` reads the ``.npz`` DIRECTLY from ``<local_root>/<rel_path>`` with NO
+    HF download, staging, LRU, or cleanup — the file already lives on disk (the
+    complete store mirror on the compute node) so there is nothing to stream or
+    reap. The HF path (``local_root is None``) is UNCHANGED. This lets the #667
+    all-layer analysis read the on-node mirror when the HF repo-listing hangs.
     """
 
-    def __init__(self, repo_id: str = DATA_REPO, prefix: str = STORE_PREFIX, cache_size: int = 8):
+    def __init__(
+        self,
+        repo_id: str = DATA_REPO,
+        prefix: str = STORE_PREFIX,
+        cache_size: int = 8,
+        local_root: str | os.PathLike[str] | None = None,
+    ):
         self.repo_id = repo_id
         self.prefix = prefix.rstrip("/")
         self.cache_size = max(1, int(cache_size))
         self._resident: dict[str, Path] = {}
+        self.local_root = Path(local_root) if local_root is not None else None
+        if self.local_root is not None:
+            self._staging = None  # no staging dir in local-mirror mode
+            return
         cache_root = Path(
             os.environ.get("HF_HOME")
             or os.environ.get("XDG_CACHE_HOME")
@@ -101,6 +118,16 @@ class _Streamer:
         self._staging.mkdir(parents=True, exist_ok=True)
 
     def load(self, rel_path: str) -> dict:
+        if self.local_root is not None:
+            path = self.local_root / rel_path
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"local-mirror npz missing: {path} (rel_path={rel_path!r}); "
+                    f"expected the complete store mirror under {self.local_root}"
+                )
+            d = np.load(path, allow_pickle=True)
+            return {k: d[k] for k in d.files}
+
         from huggingface_hub import hf_hub_download
 
         path = self._resident.get(rel_path)
@@ -126,7 +153,8 @@ class _Streamer:
         shutil.rmtree(self._staging / rel_path.replace("/", "__"), ignore_errors=True)
 
     def cleanup(self) -> None:
-        shutil.rmtree(self._staging, ignore_errors=True)
+        if self._staging is not None:
+            shutil.rmtree(self._staging, ignore_errors=True)
 
 
 def list_store_layout(
@@ -178,6 +206,36 @@ def list_store_layout(
             src_name = sd.split("/")[-1]  # e.g. binst_em_seed42
             files = [t.path.split("/")[-1] for t in _tree(sd) if t.path.endswith(".npz")]
             layout[beh][src_name] = sorted(files)
+    return layout
+
+
+def list_store_layout_local(
+    local_root: str | os.PathLike[str],
+    behaviors: tuple[str, ...] = STORE_BEHAVIORS,
+) -> dict[str, dict[str, list[str]]]:
+    """Enumerate ``{behavior: {source_cid_dir: [target_file_stem, ...]}}`` from a LOCAL mirror.
+
+    Local twin of :func:`list_store_layout` — walks ``<local_root>/<behavior>/<src>/``
+    on disk instead of the HF tree API (which hangs on this large repo, #667). The
+    returned map has EXACTLY the HF version's shape and key convention: the layout
+    key is the BARE source dir name (``binst_em_seed42``, NOT ``em/binst_em_seed42``)
+    — the HF version derives it via ``sd.split("/")[-1]``. :func:`load_cells` then
+    builds ``rel_path = f"{beh}/{src_dir}/{fn}"`` (it prepends ``beh/`` itself), which
+    :meth:`_Streamer.load` resolves against the same ``local_root`` as
+    ``<local_root>/{beh}/{src_dir}/{fn}``. A requested behavior dir that is absent is
+    simply omitted (``load_cells`` then fails loud on the missing behavior key).
+    """
+    root = Path(local_root)
+    layout: dict[str, dict[str, list[str]]] = {}
+    for beh in behaviors:
+        beh_dir = root / beh
+        if not beh_dir.is_dir():
+            continue
+        layout[beh] = {}
+        for src_dir in sorted(p for p in beh_dir.iterdir() if p.is_dir()):
+            src_name = src_dir.name  # BARE dir name — matches the HF layout keys
+            files = sorted(p.name for p in src_dir.iterdir() if p.name.endswith(".npz"))
+            layout[beh][src_name] = files
     return layout
 
 
@@ -244,6 +302,7 @@ def load_cells(
     max_targets_per_source: int | None = None,
     streamer: _Streamer | None = None,
     strict_counts: bool = True,
+    layout: dict[str, dict[str, list[str]]] | None = None,
 ) -> dict[tuple[str, int], list[CellRecord]]:
     """Load per-(behavior, layer) cell records from the #667 store.
 
@@ -271,10 +330,15 @@ def load_cells(
     ``(cplus → vplus)`` — the post-FT input drives the post-FT output (plan §4.1).
     A KeyError on any required key fails LOUD (the schema is verified; a miss is a
     wrong file / stale mirror).
+
+    ``layout`` (additive, #667 recovery): pass a pre-built directory map (e.g. from
+    :func:`list_store_layout_local`) to SKIP the HF tree walk (which hangs on this
+    large repo). Default ``None`` → the HF :func:`list_store_layout` path, UNCHANGED.
     """
     own = streamer is None
     streamer = streamer or _Streamer()
-    layout = list_store_layout(behaviors)
+    if layout is None:
+        layout = list_store_layout(behaviors)
     out: dict[tuple[str, int], list[CellRecord]] = {(b, li): [] for b in behaviors for li in layers}
     try:
         for beh in behaviors:

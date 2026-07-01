@@ -141,12 +141,27 @@ _RB_RECIPE = "diffmeans"
 _R_B_PATH = "issue658_theory_assumptions/store/r_b.pt"
 
 
-def _snapshot_layer(layer: int, prefix: str) -> Path:
-    """Bulk-download ONLY the given layer's npz from ``prefix`` (~few GB), parallel.
+def _snapshot_layer(layer: int, prefix: str, local_store_root: str | None = None) -> Path:
+    """Base dir holding the given layer's npz — local mirror if set, else HF snapshot.
 
-    Same shape as the deltac probe's snapshot_l14 but layer- AND prefix-
-    parameterized (the committed probe hardcodes L14 + the preview prefix).
+    When ``local_store_root`` is set the complete store already lives on disk (the
+    on-node mirror), so return that dir DIRECTLY with NO ``snapshot_download`` — the
+    caller's ``base.rglob(f"*_L{layer}.npz")`` reads the local files. Its path
+    contains ``analysis_tensors/<behavior>/<source>/<target>_L{layer}.npz`` so the
+    caller's regex matches unchanged. Otherwise (``local_store_root is None``) this
+    is the ORIGINAL HF path: bulk-download ONLY the given layer's npz from ``prefix``
+    (~few GB, parallel), layer- AND prefix-parameterized (the committed deltac probe
+    hardcodes L14 + the preview prefix).
     """
+    if local_store_root is not None:
+        base = Path(local_store_root)
+        if not base.is_dir():
+            raise FileNotFoundError(
+                f"--local-store-root {base} is not a directory (expected the complete "
+                "store mirror, layout <root>/<behavior>/<source>/<target>_L<layer>.npz)"
+            )
+        return base
+
     from huggingface_hub import snapshot_download
 
     root = snapshot_download(
@@ -159,7 +174,7 @@ def _snapshot_layer(layer: int, prefix: str) -> Path:
     return Path(root) / prefix
 
 
-def _load_deltac_store(layer: int, prefix: str) -> dict:
+def _load_deltac_store(layer: int, prefix: str, local_store_root: str | None = None) -> dict:
     """{behavior: {(source, target): npz_dict}} for one layer (inlined, layer-aware).
 
     Parses each per-layer npz's single-vectors (c_C / c_Cp / c_C_postft /
@@ -168,15 +183,31 @@ def _load_deltac_store(layer: int, prefix: str) -> dict:
     (they are omitted from the all-layer store to keep it ~4.8 GB). Robust to the
     stacks being present (committed 7/14/21 store) or absent (all-layer store):
     only reads keys ``if k in z.files``.
+
+    When ``local_store_root`` is set the files are read from that on-disk mirror
+    (no HF download). The behavior/source/target are parsed from the LAST THREE
+    path components (``<behavior>/<source>/<target>_L{layer}.npz``) — robust whether
+    or not the root literally contains ``analysis_tensors`` — with the HF
+    ``analysis_tensors/.../…`` anchor as a fallback for the snapshot layout.
     """
     import re
     from collections import defaultdict
 
-    base = _snapshot_layer(layer, prefix)
+    base = _snapshot_layer(layer, prefix, local_store_root)
     npz_files = sorted(str(p) for p in base.rglob(f"*_L{layer}.npz"))
+    if not npz_files:
+        raise FileNotFoundError(
+            f"no *_L{layer}.npz under {base} "
+            f"({'local mirror' if local_store_root else 'HF snapshot'}); "
+            "check the store root / layer availability"
+        )
+    # Anchor on the last three path components so a local root that does NOT contain
+    # the literal 'analysis_tensors' segment still parses correctly (silent
+    # zero-match was the risk of the HF-only 'analysis_tensors/…' anchor).
+    pat = re.compile(rf"([^/]+)/([^/]+)/([^/]+)_L{layer}\.npz$")
     out: dict[str, dict[tuple[str, str], dict]] = defaultdict(dict)
     for i, p in enumerate(npz_files):
-        m = re.search(rf"analysis_tensors/([^/]+)/([^/]+)/([^/]+)_L{layer}\.npz$", p)
+        m = pat.search(p)
         if not m:
             continue
         beh, cell, tgt = m.groups()
@@ -210,16 +241,20 @@ def _load_r_b(behavior: str, layer: int) -> np.ndarray | None:
     return d["r_b"][col][_RB_RECIPE][layer].float().numpy().astype(np.float64)
 
 
-def deltac_for_layer(layer: int, behaviors: list[str], prefix: str) -> dict:
+def deltac_for_layer(
+    layer: int, behaviors: list[str], prefix: str, local_store_root: str | None = None
+) -> dict:
     """Run the Δc decomposition (issue667_deltac_probe.analyze_behavior) at one layer.
 
     r_B per behavior: em/syco from #658 r_b.pt (per-layer stack), fact from the
     per-cell store ``r_b_fact`` fallback (deltac.fact_r_b_from_store), marker None.
     The COMPUTE is the reused deltac ``analyze_behavior`` / ``cross_behavior``;
     only the LOADER + r_B resolution are inlined layer-aware (see the section
-    header). Returns ``{behavior: analyze_behavior(...)}`` + the cross-behavior block.
+    header). ``local_store_root`` (if set) reads the on-disk store mirror instead
+    of downloading from HF. Returns ``{behavior: analyze_behavior(...)}`` + the
+    cross-behavior block.
     """
-    store = _load_deltac_store(layer, prefix)
+    store = _load_deltac_store(layer, prefix, local_store_root)
     results: dict[str, dict] = {}
     for b in behaviors:
         cells = store.get(b, {})
@@ -244,19 +279,45 @@ def _load_cells_alllayer(
     strict: bool,
     max_sources: int | None = None,
     max_targets_per_source: int | None = None,
+    local_store_root: str | None = None,
 ):
     """Load the paired cell records for the map-change fit via the reused #722 loader.
 
-    Redirects ``loadact.STORE_PREFIX`` to ``prefix`` and passes an explicit
-    ``_Streamer(prefix=prefix)`` (the streamer captures its default prefix at
-    def-time). ``strict_counts`` asserts the verified 480-cell per-behavior×layer
-    grid — enabled ONLY for a fully-extracted all-layer store; a subset / smoke
-    disables it. ``max_sources`` / ``max_targets_per_source`` are the reused
-    loader's smoke knobs (bound the HF stream + the fit cost — the loader streams
-    per file, so a subset avoids fetching all 480 cells). ``max_sources`` is the
-    right knob to keep the fit non-degenerate (c_C is constant within a source, so
-    a smoke MUST span >=2 SOURCES, not just multiple targets of one source).
+    HF mode (``local_store_root is None``): redirects ``loadact.STORE_PREFIX`` to
+    ``prefix`` and passes an explicit ``_Streamer(prefix=prefix)`` (the streamer
+    captures its default prefix at def-time); the loader's HF tree walk enumerates
+    the layout.
+
+    Local-mirror mode (``local_store_root`` set): enumerates the layout from the
+    on-disk mirror via ``loadact.list_store_layout_local`` (NO HF tree walk — the
+    walk is the map-change hang) and passes a ``_Streamer(local_root=…)`` that reads
+    npz DIRECTLY from disk (NO HF download). The loader consumes both unchanged, so
+    the returned ``{(behavior, layer): [CellRecord]}`` shape ``fitM.fit_cell`` needs
+    is identical to the HF path.
+
+    ``strict_counts`` asserts the verified 480-cell per-behavior×layer grid — enabled
+    ONLY for a fully-extracted store; a subset / smoke disables it. ``max_sources`` /
+    ``max_targets_per_source`` are the reused loader's smoke knobs (bound the stream +
+    the fit cost). ``max_sources`` is the right knob to keep the fit non-degenerate
+    (c_C is constant within a source, so a smoke MUST span >=2 SOURCES, not just
+    multiple targets of one source).
     """
+    if local_store_root is not None:
+        streamer = loadact._Streamer(local_root=local_store_root)
+        layout = loadact.list_store_layout_local(local_store_root, tuple(behaviors))
+        try:
+            return loadact.load_cells(
+                behaviors=tuple(behaviors),
+                layers=tuple(layers),
+                streamer=streamer,
+                strict_counts=strict,
+                max_sources=max_sources,
+                max_targets_per_source=max_targets_per_source,
+                layout=layout,
+            )
+        finally:
+            streamer.cleanup()
+
     _override_store_prefix(prefix)
     streamer = loadact._Streamer(prefix=prefix)
     try:
@@ -281,6 +342,7 @@ def map_change_for_layers(
     smoke_clamp: bool,
     max_sources: int | None = None,
     max_targets_per_source: int | None = None,
+    local_store_root: str | None = None,
 ) -> dict:
     """Run the M0-vs-M⁺ map-change fit (issue722_fit_M.fit_cell) per (behavior, layer).
 
@@ -324,6 +386,7 @@ def map_change_for_layers(
         strict=strict,
         max_sources=max_sources,
         max_targets_per_source=max_targets_per_source,
+        local_store_root=local_store_root,
     )
     out: dict[str, dict] = {}
     for behavior in mc_behaviors:
@@ -373,7 +436,9 @@ def _extract_gate_scalars(analyze_result: dict) -> dict:
     return flat
 
 
-def verify_gate(behaviors: list[str], alllayer_prefix: str) -> dict:
+def verify_gate(
+    behaviors: list[str], alllayer_prefix: str, local_store_root: str | None = None
+) -> dict:
     """Reproduce the committed 7/14/21 Δc reads from the all-layer store; diff loud.
 
     For each gate layer (7/14/21) and behavior, recompute the deltac
@@ -382,6 +447,13 @@ def verify_gate(behaviors: list[str], alllayer_prefix: str) -> dict:
     A mismatch means the all-layer extraction diverged from the committed reads at
     a shared layer (a bug in the depth extension) — RAISE loud with the offending
     keys. Returns a structured diff report (also embedded in the JSON output).
+
+    ``local_store_root`` (if set) reads the ALL-LAYER side from the on-disk mirror;
+    the COMMITTED reference side is ALWAYS fetched from HF (``COMMITTED_STORE_PREFIX``)
+    — the committed store is the ground truth the local all-layer read is checked
+    against, so it must come from the canonical source. (If the committed
+    ``issue667_gate_chain_preview`` HF listing also hangs, run without --verify-gate
+    on the pod; the gate is a correctness cross-check, not a data path.)
     """
     logger.info(
         "[verify-gate] reproducing committed L%s Δc reads from the all-layer store", GATE_LAYERS
@@ -390,7 +462,9 @@ def verify_gate(behaviors: list[str], alllayer_prefix: str) -> dict:
     mismatches: list[str] = []
     for layer in GATE_LAYERS:
         committed = deltac_for_layer(layer, behaviors, COMMITTED_STORE_PREFIX)["by_behavior"]
-        alllayer = deltac_for_layer(layer, behaviors, alllayer_prefix)["by_behavior"]
+        alllayer = deltac_for_layer(layer, behaviors, alllayer_prefix, local_store_root)[
+            "by_behavior"
+        ]
         layer_rep: dict = {}
         for b in behaviors:
             cflat = _extract_gate_scalars(committed.get(b, {}))
@@ -570,6 +644,17 @@ def main() -> int:
         help="HF store prefix to read (default: the all-layer namespace; use the "
         "committed issue667_gate_chain_preview prefix for a pre-extraction smoke)",
     )
+    ap.add_argument(
+        "--local-store-root",
+        default=None,
+        help="read npz DIRECTLY from this on-disk store mirror (layout "
+        "<root>/<behavior>/<source>_seed42/<target>_L<layer>.npz), skipping ALL HF "
+        "downloads/tree-walks — use when the HF repo-listing hangs and the complete "
+        "store already lives on the compute node (e.g. "
+        "eval_results/issue_667_alllayer/analysis_tensors). Applies to BOTH the Δc "
+        "and map-change store reads; --verify-gate still fetches the committed "
+        "reference from HF.",
+    )
     ap.add_argument("--out", default="/tmp/issue667_alllayer_profile.json")
     ap.add_argument("--md-out", default=None, help="also write the markdown report here")
     ap.add_argument(
@@ -620,13 +705,15 @@ def main() -> int:
     # heavier map-change fit if the all-layer store diverges at 7/14/21.
     gate_report = None
     if args.verify_gate:
-        gate_report = verify_gate(args.behaviors, args.store_prefix)
+        gate_report = verify_gate(args.behaviors, args.store_prefix, args.local_store_root)
 
     # (a) Δc decomposition per layer.
     logger.info("[phase=deltac] Δc decomposition over %d layers", len(layers))
     deltac_by_layer: dict = {}
     for layer in layers:
-        deltac_by_layer[layer] = deltac_for_layer(layer, args.behaviors, args.store_prefix)
+        deltac_by_layer[layer] = deltac_for_layer(
+            layer, args.behaviors, args.store_prefix, args.local_store_root
+        )
         logger.info("[phase=deltac] layer %d done", layer)
 
     # (b) Map-change per layer (unless skipped).
@@ -642,6 +729,7 @@ def main() -> int:
             smoke_clamp=args.smoke,
             max_sources=args.max_sources,
             max_targets_per_source=args.max_targets_per_source,
+            local_store_root=args.local_store_root,
         )
         map_change_xcheck = _cross_check_committed_map_change(map_change)
 
@@ -665,6 +753,7 @@ def main() -> int:
         "layers": layers,
         "behaviors": args.behaviors,
         "store_prefix": args.store_prefix,
+        "local_store_root": args.local_store_root,
         "deltac_by_layer": deltac_clean,
         "map_change": map_change,
         "map_change_committed_xcheck": map_change_xcheck,
