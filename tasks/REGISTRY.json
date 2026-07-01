@@ -5208,6 +5208,14 @@
       "status": "completed",
       "title": "Try persona leakage with very semantically similar personas and try to find very different leakage patterns"
     },
+    "811": {
+      "goal": "Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/811",
+      "status": "running",
+      "title": "Does the best answer-summary change #722's base-vs-post-FT function-change verdict"
+    },
     "812": {
       "goal": "On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much each pooling operator (mean / max / fixed-random attention / learned attention) loses versus the unpooled per-position multi-position input for predicting behavior expression E0 (and reconstructing the answer profile), per layer -- the incremental held-out gain of unpooled over each pool, with LOCO + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for the n=50 sample size; all operators are cheap CPU reductions of one shared extraction, so the constraint is n, not compute.",
       "has_clean_result": false,
