@@ -457,13 +457,15 @@ The `raw-completions-upload-missing` blocker tag is a SUBSTANTIVE code-
 absence finding (a missing function call in the dispatcher), NOT a
 mechanical/presentation gate, so it is NOT stripped by SKILL.md
 Step 5c-bis ("Mechanical-contract-only FAIL strip") even though it
-fires before the diff-read steps. The strip list there is intentionally
-limited to `marker-shape` (Step 0.5) and `smoke-run-missing` (Step 0.6)
-where the orchestrator can mechanically verify the artifact IS present
-in the marker; there is no orchestrator-side check that can validate a
-function call exists in source code without reading the diff, so the
-finding stands as a real Critical blocker until the implementer wires
-the call.
+fires before the diff-read steps. The strip list there is
+limited to `marker-shape` (Step 0.5), `smoke-run-missing` (Step 0.6),
+and `git-provenance` (Step 0.9) — the three tags where the orchestrator
+can mechanically verify the finding (the artifact IS present in the
+marker, or a read-only `git` probe confirms the flagged state is not
+introduced by the round's diff); there is no orchestrator-side check
+that can validate a function call exists in source code without reading
+the diff, so `raw-completions-upload-missing` stands as a real Critical
+blocker until the implementer wires the call.
 
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
@@ -482,6 +484,45 @@ for review. Two hard rules bind every verdict:
    across three — and it prevents the gate-hopping failure mode where a
    reviewer cycles through mechanical objections without ever evaluating the
    code.
+
+### Step 0.9: Git-provenance self-check (before FAILing on a broken test / lint / reverted file)
+
+Before you FAIL on a broken test, a lint error, a "deleted/reverted file", or a
+"this diff broke X", verify the finding was INTRODUCED BY THIS ROUND'S DIFF — not a
+diff-base artifact. Three shapes, three git probes (all read-only; run from repo root or
+against the branch ref, never by switching the repo-root branch):
+
+1. **pre-existing-on-trunk** — the failing test / lint / violating block is byte-unchanged
+   from `main`. Probe: `git show main:<path>` (or `git stash push -- <changed files>` +
+   re-run the failing test on the clean tree). If the violation is present on trunk and
+   the round's diff did not touch the relevant lines, it is NOT a round-N regression.
+2. **stale-main-or-worktree** — a worktree behind `main` flags "file X deleted/reverted"
+   when X changed on `main` AFTER the branch diverged. Probe:
+   `git log --oneline main..issue-<N> -- <X>` (zero non-merge commits = the branch never
+   touched X) and `git diff --quiet main -- <X>` (byte-parity confirms). If the branch
+   never touched X, the finding does not exist in the artifact under review.
+3. **cumulative-main-head-diff** — you computed `main...HEAD` (huge polluted diff of prior
+   rounds' already-reviewed changes + unrelated main churn) instead of the round's own
+   commit range. Probe: scope to `git show <round-parent-sha>~1..<round-sha> -- <path>` (or
+   `git diff --stat <parent>..HEAD` from the implementer report). If the cited line is
+   unchanged in the round's own range, it is out of round scope.
+
+If a probe confirms the finding is NOT introduced by this round's diff, do NOT raise it as
+a FAIL Critical: classify it per the reconciler-memory guidance
+(`feedback_codex_litigates_pre_existing_in_round_n.md`) — at most Real-but-non-blocking
+(standing rec / separate cleanup task), and record the git-provenance conclusion in the
+verdict body. If you nonetheless choose to FAIL because the round MARGINALLY broadens a
+pre-existing silent path onto data the system now produces, tag it `substantive` (NOT
+`git-provenance`) and quote the exact broadened line — the orchestrator's Step 5c-bis
+strip will NOT strip a `substantive` finding.
+
+**If you DO raise a git-provenance-class blocker** (you believe the round introduced it but
+are not certain), tag it `git-provenance` and add a `**Git-provenance subclass:**` line
+naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`.
+The orchestrator (Step 5c-bis) will run the matching git probe and STRIP the blocker only
+if git confirms the finding is NOT from this round's diff; otherwise the FAIL stands. If you
+ARE certain the round introduced it (git shows the round's own range touched the flagged
+lines), tag it `substantive`, NOT `git-provenance`.
 
 ### Step 1: Read the Plan FIRST (before any code)
 
@@ -574,14 +615,45 @@ consumer site whose coverage you could not verify.
 
 ### Step 4: Run / Verify Tests
 
-If you can run tests, do so:
+Run the tests. Don't trust "tests pass" claims — verify.
+
 ```bash
 uv run pytest tests/relevant_test.py -v
 uv run ruff check path/to/changed/files
 uv run ruff format --check path/to/changed/files
 ```
 
-Don't trust "tests pass" claims — verify. If you can't run (subagent sandbox limitations), at least read the tests and trace that they exercise the new code path.
+**If `uv run pytest` fails with a read-only-sandbox / cache / tempdir error**
+(e.g. `Read-only file system`, `Permission denied` on `~/.cache/uv`, or a
+`tempfile` / dill write failure under `torch` import) — this is a SANDBOX
+limitation, NOT a test failure. Try the writable-tempdir fallback FIRST, before
+falling back to reading the tests:
+
+```bash
+# $WT = the worktree root you are reviewing in (pwd if you're already in it).
+RTMP="$(pwd)/.claude/cache/reviewer-tmp-$$"
+mkdir -p "$RTMP"
+TMPDIR="$RTMP" UV_CACHE_DIR="$RTMP/uv" XDG_CACHE_HOME="$RTMP/xdg" \
+  uv run pytest tests/relevant_test.py -v
+```
+
+Re-run ruff the same way if it also hit a cache-write error. If the
+writable-tempdir retry SUCCEEDS, the tests genuinely ran — report their real
+result.
+
+**Only if the writable-tempdir retry ALSO fails** may you fall through to
+reading the tests and tracing that they exercise the new code path. A
+read-only trace is NOT a substitute for a passing run: it does not catch a
+test that fails, and it MUST be flagged loudly in the verdict (see below) — a
+code-only review is NEVER silently reported as a clean `**Tests:** PASS`.
+
+**In every verdict, carry the loud flag** (Step 7):
+`**Tests actually run:** yes | no (sandbox blocked)`. When `no (sandbox
+blocked)`, the `**Tests:**` line MUST be `INSUFFICIENT` (never `PASS`), the
+`## Tests` section MUST state which tests you could only READ + why the run was
+blocked (paste the sandbox error), and the recommendation MUST NOT be a clean
+`merge` on the strength of tests — it is at best `revise-then-merge (tests not
+run — re-run in a writable env)`.
 
 ### Step 4.5: Regression-test presence for substantive BLOCKER fixes
 
@@ -662,11 +734,12 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence), `smoke-run-missing` (Step 0.6 genuine absence), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
 **Tests:** PASS / FAIL / INSUFFICIENT (N new behaviors without tests)
+**Tests actually run:** yes / no (sandbox blocked — tests only READ, not executed; see § Tests)
 **Lint:** PASS / FAIL
 **Security sweep:** CLEAN / N issues flagged
 **Needs user eyeball:** [required for trunk + auth/secrets/payments/external-API touches; for leaf, "None" is fine]
@@ -704,6 +777,7 @@ Red flags:
 - New coverage: [what's covered]
 - Missing coverage: [what new behaviors lack tests]
 - Existing tests still valid? [yes / no — and why]
+- Sandbox status: [ran normally / ran after writable-tempdir fallback / BLOCKED — tests only read, paste the error]
 
 ## Security Check
 - [Issues or "no issues found"]

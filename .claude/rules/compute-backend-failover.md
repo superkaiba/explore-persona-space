@@ -87,7 +87,7 @@ with NO fallback" invariant. Rationale: if GCP is failing a run, running
 it on RunPod keeps the science moving AND gives a persistent, SSH-able pod
 for diagnosis — strictly better than GCP's delete-on-crash boot disk.
 
-Two distinct GCP-failure paths, BOTH ending at the same
+Three distinct GCP-failure paths, ALL ending at the same
 `_runpod_terminal_rung`:
 
 - **Capacity / quota / zone miss** — walks the length-aware GCP ladder
@@ -105,6 +105,12 @@ Two distinct GCP-failure paths, BOTH ending at the same
   Internally signalled by the private `_GcpWorkloadFailover` exception,
   caught by both lane callers (`_auto_route`, `_override_gcp_with_ladder`)
   — so an explicit `backend: gcp` pin fails over identically.
+- **FLEX_START queue timeout** (`reason: gcp_queue_timeout_failover_runpod`,
+  #783/#778) — the create SUCCEEDED but the instance never dequeued (stayed
+  PENDING past `EPS_GCP_QUEUE_WAIT_SECONDS`). A poller-side clock detects it
+  and fails it over to RunPod (see § FLEX_START queue-timeout below).
+  DISTINCT from a workload crash (a queue that never advanced is not a
+  crash) and from a capacity MISS at create time (this create succeeded).
 
 **Bound — no infinite RunPod cascade.** A genuinely-broken job runs on
 RunPod AT MOST ONCE more. If it crashes again, the poller surfaces
@@ -240,6 +246,61 @@ Part A (crash diagnostics) covers BOTH crash modes regardless of how the
 workload died — the EXIT trap fires on any non-zero exit. So "a GCP
 workload failure of ANY class fails over to RunPod" now holds for both the
 synchronous-`route()` and the async-poller crash paths.
+
+### FLEX_START queue-timeout → RunPod (#783/#778)
+
+A GCP create can SUCCEED yet leave the instance in the FLEX_START capacity
+QUEUE (`status=PENDING`, polled as `current_phase="pending"`, #782) — a
+state DISTINCT from a capacity MISS at create time (no instance) and a
+workload CRASH (instance up, then dead). Pre-#783 nothing bounded this
+wait: the FLEX_START PENDING wait happens AFTER `route()` has already
+returned a handle (GCP has no synchronous `route()`-time park), and the
+async poll loop maps PENDING → `status="running"` / `current_phase="pending"`
+DELIBERATELY so it keeps polling — forever. #778's `eps-issue-778` sat
+PENDING ~2h45m before a manual RunPod pivot.
+
+The async poller now ages a `"pending"` phase against a queue-wait floor,
+mirroring the #669 frozen-phase wedge (`_maybe_escalate_gcp_wedge`):
+
+- **Clock:** `backend_poll._maybe_escalate_gcp_queue_timeout` reuses the
+  SAME sidecar phase clock (`_read_phase_clock` / `_write_phase_clock`) as
+  the #669 wedge WITHOUT collision — the two key on DISJOINT
+  `current_phase` values (`"pending"` here vs a frozen mid-workload phase
+  there), so at most one is in scope on any tick, and the shared clock
+  re-stamps on ANY phase change (a `pending → provisioning` dequeue resets
+  it). NO reachability-alarm conjunction (unlike the #669 wedge): a stuck
+  queue has no live VM to be reachable, so phase-frozen-past-floor on
+  `"pending"` IS the whole signal.
+- **Floor:** `EPS_GCP_QUEUE_WAIT_SECONDS` (default 600s, mirroring
+  `router.FREE_WAIT_SECONDS` — the codebase's already-chosen "how long do
+  we park a queued job before advancing the lane" constant), read at call
+  time via `backend_poll._gcp_queue_wait_seconds` so ops can retune without
+  a restart. It is an attempt-floor in seconds, NEVER a dollar cap; a
+  missing / non-integer / non-positive value falls back to 600s.
+- **Escalation → failover:** past the floor the poll is rewritten to
+  `status=dead` / `current_phase=terminal_queue_timeout`, which
+  `_is_gcp_queue_timeout` matches. `_failover_queued_gcp_to_runpod` then
+  (1) best-effort `teardown`-DELETEs the still-queued PENDING instance to
+  release the FLEX_START capacity request (a queued instance is live
+  server-side and could dequeue later as an orphan — a crashed VM is
+  already gone, so the #659 crash path does NOT teardown), then (2)
+  re-dispatches on RunPod via the SAME
+  `failover_to_runpod_after_async_workload_crash` seam the #659 path uses,
+  passing `reason: gcp_queue_timeout_failover_runpod`. It reuses the SAME
+  idempotency (durable lease + `.claude/cache` sentinel) + sidecar-repoint
+  + terminal-JSON contract (the shared `_failover_gcp_to_runpod` core).
+- **An ADDITIONAL advance trigger, NOT a lane-precedence change** — RunPod
+  stays the terminal rung. A queue-timeout cancel is a CLEAN advance: it
+  does NOT touch `MAX_GCP_ATTEMPTS_PER_DAY` (the counter bumps only on a
+  create, inside `_attempt_one_gcp_rung`, which the poller never re-enters).
+- **CPU-intent scope (#677/#747):** a `cpu-bigmem` PENDING instance is
+  EXCLUDED (no cheap RunPod CPU lane → the ordinary dead path);
+  `cpu-small` / `cpu-mid` (in `router.RUNPOD_CPU_INSTANCE_FOR_INTENT`) are
+  eligible — `_is_gcp_queue_timeout` reuses `_is_gcp_async_workload_failure`'s
+  exact CPU-intent guard.
+
+The teardown is best-effort + guarded (never blocks the failover); a failed
+delete degrades to the stale-GCP-VM janitor (`gcp_audit.py`) as the backstop.
 
 ### Remaining gap — the hung-but-RUNNING / frozen non-terminal phase (#667)
 
@@ -616,6 +677,16 @@ short-circuits at the once-more case via `_terminal_code_json`.
 - `tests/test_router.py::test_gcp_workload_error_fails_over_to_runpod_no_slurm_cascade`
 - `tests/test_router.py::test_workload_error_on_a_rung_fails_over_to_runpod_no_rung_advance`
 - `tests/test_router.py::test_runpod_is_last_rung_only_after_all_gcp_and_slurm_exhausted` (capacity path, #656)
+- `tests/test_router.py` (Part B FLEX_START queue timeout, #783:
+  `test_queue_timeout_failover_seam_carries_queue_timeout_reason`,
+  `test_failover_seam_default_reason_unchanged_byte_for_byte`,
+  `test_queue_timeout_reason_distinct_from_crash_and_capacity_reasons`)
+- `tests/test_backend_poll.py` (Part B FLEX_START queue timeout end-to-end, #783:
+  `test_gcp_pending_past_timeout_fails_over_to_runpod`,
+  `test_gcp_queue_timeout_failover_marker_carries_queue_timeout_reason`,
+  `test_gcp_queue_timeout_does_NOT_increment_gcp_attempts_today`, + the negative
+  controls: within-floor / non-pending-phase / first-observation / cpu-bigmem-excluded
+  / teardown-failure-still-fails-over)
 - `tests/test_gcp_backend.py::test_render_startup_script_persists_diagnostics_before_teardown`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_uploads_log_and_partial_artifacts`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_is_guarded_and_bounded`

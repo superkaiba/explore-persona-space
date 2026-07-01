@@ -84,9 +84,10 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
    `→ 0` or `→ 50`) biases the mean toward whichever arm the refusals land in.
    This generalizes the persona-vectors judge-filter rule
    (`.claude/rules/persona-vectors-recipe.md` step 4) to every judged DV, and
-   the per-arm dropped count is REPORTED. (`eval/belief.py` currently
-   default-coerces a malformed return to 50 — a known violation; out of this
-   rule's workflow surface, filed as a separate code-fix.)
+   the per-arm dropped count is REPORTED. (`eval/belief.py` previously
+   default-coerced a malformed return to 50 — FIXED in #766: parse
+   failures / out-of-range / API errors now drop to `math.nan`, excluded
+   from the aggregate by the caller's `not math.isnan` filter.)
 
 10. **Pin nuisance formatting identical across conditions.** Response length,
     markdown, system-prompt boilerplate, and the presence/absence of a
