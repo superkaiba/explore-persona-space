@@ -5092,8 +5092,8 @@
     "795": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/795",
-      "status": "approved",
+      "path": "tasks/running/795",
+      "status": "running",
       "title": "daily-fix: zombie sessions on completed tasks not auto-reaped"
     },
     "796": {
