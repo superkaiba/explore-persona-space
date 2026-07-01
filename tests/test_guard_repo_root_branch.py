@@ -506,6 +506,54 @@ def test_compound_allowed_shapes_exit0(cmd):
 
 
 # ---------------------------------------------------------------------------
+# MUST BLOCK — Bash line continuations (`\<CR?><NL>`) are normalized to a single
+# space at the TOP of the guard, before any parsing (#804 round 4). Bash strips
+# a backslash-newline pre-execution, joining `git \<NL>checkout -bfoo` into the
+# single logical command `git checkout -bfoo`; before this fix the raw-scan
+# guard's newline splitter fired on the `\<NL>` and saw `git ` and
+# `checkout -bfoo` as SEPARATE lines, so the joined `git checkout` invocation
+# was never classified and leaked (4 of 5 probes returned rc=0). Concern id:
+# guard-backslash-continuation-bypass.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git \\\ncheckout -bfoo",  # joined -> git checkout -bfoo (branch creation)
+        "git checkout \\\nHEAD~1",  # joined -> git checkout HEAD~1 (detach)
+        "git checkout \\\n-bfoo",  # joined -> git checkout -bfoo (branch creation)
+        "git \\\nswitch feature",  # joined -> git switch feature (off-main switch)
+        "git checkout \\\n--detach abc123",  # joined -> git checkout --detach ...
+        "git \\\r\nswitch feature",  # CRLF variant -> git switch feature
+    ],
+)
+def test_backslash_newline_continuation_blocks(cmd):
+    """Round 4: bash line-continuation (\\<CR?><NL>) is normalized to space before parsing."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — the continuation normalization does not over-block legitimate
+# commands joined by a `\<NL>`. `git switch \<NL>main` (previously over-blocked
+# rc=2 because the newline splitter broke the `switch main` allow-arm) now joins
+# to `git switch main` and hits the allow-arm; a non-checkout/switch join stays
+# allowed. NOT guarded by @on_main. Concern id:
+# guard-backslash-continuation-bypass.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch \\\nmain",  # joined -> git switch main (return-to-main allow-arm)
+        "git \\\nswitch main",  # joined -> git switch main
+        "git \\\nstatus",  # joined -> git status (not a checkout/switch)
+    ],
+)
+def test_backslash_newline_continuation_legitimate_allows(cmd):
+    """Round 4: continuation normalization does not over-block legitimate commands."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
 # Fail-soft — malformed / empty / non-JSON stdin exits 0 (never traps).
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(

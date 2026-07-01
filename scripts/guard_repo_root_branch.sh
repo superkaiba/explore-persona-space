@@ -73,12 +73,30 @@
 # quoted `;`/`|`/`&` is treated as a real separator, the same raw-scan
 # trade-off as the `--note` literal above). A mis-split of that class fails
 # CLOSED (blocks), the safe direction for a guard.
+#
+# Bash line continuations (`\<CR?><NL>`) are normalized to a single space at the
+# top of the guard before any parsing (#804 round 4). Bash strips a
+# backslash-newline before execution, joining the two physical lines into one
+# logical command, so `git \<NL>checkout -bfoo` runs as `git checkout -bfoo`;
+# without the normalization the raw-scan guard saw `git ` and `checkout -bfoo`
+# as separate lines (the newline splitter fired) and missed the joined
+# `git checkout` invocation entirely (a leak of the exact class this guard
+# blocks). The normalization is a no-op on any command without a `\<NL>`.
 set -u
 
 REPO=/home/thomasjiralerspong/explore-persona-space
 
 cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 [ -n "$cmd" ] || exit 0
+
+# Normalize Bash line continuations (`\<CR?><NL>` -> space) BEFORE any parsing.
+# Bash strips these pre-execution (joining the two physical lines into one), but
+# the raw-scan guard would otherwise see `git ` and `checkout -bfoo` as separate
+# lines (the newline splitter fires) and miss the joined `git checkout -bfoo`
+# invocation. #804 round 4 fix for `guard-backslash-continuation-bypass`. The
+# `sed -zE` uses NUL-delimited whole-input so `\n` is literal; `\\\r?\n` matches
+# a backslash + optional CR + newline, replaced by a single space.
+cmd=$(printf '%s' "$cmd" | sed -zE 's/\\\r?\n/ /g')
 
 # Only consider git checkout/switch invocations at all.
 echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch)\b' || exit 0
