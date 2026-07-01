@@ -1046,8 +1046,15 @@ the real signal from the noise).
 - ONE `epm:failure v1` (if you are BLOCKED — you could not fix it in-turn),
   per `### On unrecoverable error`.
 
-Nothing else DIRECTLY posted via `task.py post-marker`. In particular, you
-NEVER hand-post any of these ORCHESTRATOR-OWNED markers — the `/issue`
+This rule scopes to **lifecycle / status / review markers**. Your
+legitimate implementer-diagnostic self-tags — `epm:smoke-architecture-check`
+(pre-write architecture verdict), `epm:compute-deviation` (>2× wall-time
+projection report), `epm:new-bug-class` (whack-a-mole detector input), plus
+`epm:proposed-tests` in TDD mode — are UNCHANGED and remain REQUIRED per
+their own sections above; the orchestrator's Step 5.bis + Step 6d.0
+pre-dispatch checks read them. Only the lifecycle / status / review
+markers listed below are the ones you must never hand-post. In particular,
+you NEVER hand-post any of these ORCHESTRATOR-OWNED markers — the `/issue`
 skill posts them, keyed off YOUR marker:
 
 - `epm:code-review`, `epm:code-review-codex`, `epm:review-reconcile`
