@@ -25,127 +25,139 @@ goal: On Qwen-2.5-7B under Persona Vectors' monitoring rig, test whether trait-e
   and (R2) pooling the persona-vector projection over the actual generation's activations
   (post-generation), evaluated on held-out contexts and behaviors.
 ---
-# Beat Persona-Vectors prompt-projection monitoring: learned context→profile map (pre-gen) + generation-activation pooling (post-gen) on Qwen-2.5-7B
-
-## Goal
-
-On Qwen-2.5-7B under Persona Vectors' monitoring rig, test whether trait-expression prediction beats PV's last-prompt-token projection baseline by (R1) routing the projection through a learned behavior-agnostic context->answer-profile map (pre-generation) and (R2) pooling the persona-vector projection over the actual generation's activations (post-generation), evaluated on held-out contexts and behaviors.
-
 ## Provenance
 
-Originated from a design discussion (2026-06-30). The seed: Persona Vectors
-(arXiv 2507.21509) monitors trait expression by projecting the **last-prompt-token**
-activation onto a persona vector, `⟨c_last, r_B⟩`, and predicting the trait score of
-the subsequent response. Their reported correlations are strong overall (r=0.75–0.83)
-but collapse **within-condition** (evil 0.51, hallucination 0.25 for system-prompt
-elicitation) — the raw prompt projection is a coarse, mostly between-condition signal.
-This task tests two ways to beat that baseline, tied to our context-geometry theory
-(A2 activation-summary, A3 linear read-out, A4 context→profile map).
+Originated from a design discussion (2026-06-30). Seed: Persona Vectors (arXiv 2507.21509)
+monitors trait expression by projecting the **last-prompt-token** activation onto a persona
+vector, `⟨c_last, r_B⟩`, predicting the trait score of the subsequent response — strong
+overall (r=0.75–0.83) but collapsing **within-condition** (evil 0.51, hallucination 0.25).
+Design iterated over several rounds to add: the direct context→behavior predictor as a
+first-class matched-capacity comparison, direct reconstruction-quality reporting of the map,
+and a map-granularity study. Ties to the context-geometry theory (A2 activation-summary,
+A3 linear read-out, A4 context→profile map).
 
-## Umbrella question (two results under one task)
+## Umbrella question (three results under one task)
 
-Under PV's exact monitoring rig on Qwen-2.5-7B, does trait-expression prediction beat
-PV's `⟨c_last, r_B⟩` baseline by:
-- **R1 (pre-generation):** routing the projection through a learned, behavior-agnostic
-  **context→answer-profile map** `h`, i.e. `⟨h(c_x), r_B⟩` instead of `⟨c_x, r_B⟩`?
-- **R2 (post-generation):** pooling the persona-vector projection over the **actual
-  generation's** per-token activations (mean / max / top-k / last), instead of the
-  prompt projection?
+On Qwen-2.5-7B, characterize how well / at what granularity the base model's **pre-generation
+context representation predicts its own answer representation and behavior**, and whether that
+predictability beats PV's last-prompt-token projection for trait monitoring:
+- **R1 (pre-generation monitoring):** does routing the projection through a learned,
+  behavior-agnostic **context→answer-profile map** `h` (`⟨h(c_x), r_B⟩`) beat PV's raw
+  `⟨c_x, r_B⟩` — and does it beat a **direct context→behavior predictor** trained on the trait?
+- **R2 (post-generation pooling):** does pooling the persona-vector projection over the
+  **actual generation's** activations (mean / max / top-k / last) beat the prompt projection?
+- **R3 (map granularity):** how well, and at what token granularity, does the context
+  representation predict the answer representation (reconstruction quality, per-position decay,
+  set-to-set predictability)?
 
-R2's response-mean projection `⟨v(x), r_B⟩` is the **oracle** R1's `h` is trying to
-reach from the prompt alone — R2 establishes the ceiling, R1 measures how much of it is
-recoverable pre-generation. Both are scored against the same PV baseline on the same data.
+R2's response-mean projection `⟨v(x), r_B⟩` is the **oracle** R1's `h` targets from the prompt
+alone. All three share ONE data-collection pass.
 
-## Result 1 — learned context→profile map (pre-generation)
+## Result 1 — learned context→profile map + direct-predictor comparison (pre-generation)
 
-- **Map `h: c_x → v(x)`**, trained to reconstruct the **full answer-profile** (NOT the
-  trait) — behavior-agnostic, one `h` reused across all behaviors; `r_B` applied post-hoc.
-  This is the load-bearing design choice: it makes any gain attributable to the
-  context→profile map generically, and enables zero-shot monitoring directions for unseen
-  behaviors. For linear `h`, the map folds into the persona vector once: `r̃_B = Mᵀ r_B`,
-  so deployment is a plain dot product (same cost as PV); for nonlinear `h` no global fold
-  exists (the effective direction is context-dependent — itself the linear-vs-nonlinear
-  result), but inference is still one small forward pass per prompt.
+- **Map `h: c_x → v(x)`**, trained to reconstruct the **full answer-profile** (NOT the trait) —
+  behavior-agnostic, ONE `h` reused across behaviors; `r_B` applied post-hoc. Linear `h` folds
+  into the persona vector (`r̃_B = Mᵀ r_B`, deployment = plain dot product); nonlinear `h` has no
+  global fold (context-dependent direction — itself the linear-vs-nonlinear result).
 - **Fitter ladder:** ridge (linear, closed-form) → kernel ridge (nonlinear, closed-form,
-  ≤~20k train contexts or Nyström) → MLP (nonlinear, expressive).
-- **Reconstruction objectives:** (a) full-vector MSE (theory-faithful, keeps magnitude);
-  (b) top-k PCA-MSE (denoised; tests A1/A2 low-rank — report the fraction of `r_B` living
-  in the top-k profile subspace); (c) cosine (direction-only; nuisance-magnitude-robust,
-  aligns with the scale-invariant metric; MLP-side, no closed form). Readout computed both
-  ways (dot `⟨h,r_B⟩` and cosine `cos(h,r_B)`), reported.
-- **Layer grid:** read-out layer = `h` output layer (tied), swept over all layers
-  (prediction regime); `h` input layer swept over all layers + input-layer **combos**
-  (concatenation), with last-prompt-token vs mean-over-prompt-tokens pooling. Full grid for
-  ridge/KRR (cheap); MLP restricted to PV-selected layer(s).
-- **Training corpus for `h` (3-level factor):** (1) fully generic (LMSYS-Chat-1M prompts);
-  (2) generic + *other*-trait data (behavior holdout preserved); (3) generic + *eval*-trait
-  data (measures value of in-domain contexts; weaker generalization). **Hard invariant:**
-  the exact PV eval monitoring contexts are held out from `h`'s training in ALL three arms.
-- **Generalization:** train `h` on contexts fully disjoint from eval; hold out behaviors
-  (leave-one-behavior-out for `r_B`) so the claim is "one map, unseen contexts, unseen
-  behaviors."
-- **Baselines:** PV raw projection `⟨c_x, r_B⟩`; a trait-fit linear probe on `c_x` (bounds
-  the linear case); the oracle `⟨v(x), r_B⟩` (from R2).
+  ≤~20k train or Nyström) → MLP (nonlinear).
+- **Reconstruction objectives:** full-vector MSE (theory-faithful) / top-k PCA-MSE (denoised;
+  report fraction of `r_B` in the top-k subspace = A1/A2 low-rank test) / cosine (direction-only,
+  nuisance-robust, MLP-side). Readout both dot `⟨h,r_B⟩` and cosine `cos(h,r_B)`.
+- **DIRECT context→behavior predictor — first-class, matched-capacity comparison arm.** Train
+  `g: c_x → trait score` DIRECTLY (skipping the profile), at MATCHED capacity (ridge AND MLP),
+  per behavior. This is the pivotal test of whether the profile-map detour earns its keep. The
+  key asymmetry, reported explicitly:
+  - **In-behavior split:** direct `g` vs indirect `h`+projection, head-to-head — "does routing
+    through the profile help *when you already have this behavior's labels*?"
+  - **Held-out-behavior split (leave-one-behavior-out):** the direct predictor is **structurally
+    inapplicable** (needs labels for the eval behavior); only the behavior-agnostic `h` (via
+    `Mᵀr_B`, zero-shot) and PV's raw projection compete. This is where the map's value
+    proposition — zero-shot transfer to unseen behaviors — lives.
+- **Direct reconstruction-quality reporting (not just downstream projection):** report `h`'s
+  R²/cosine of predicted vs true answer activation (mean→mean and pooled→pooled) — the direct
+  A4-map test, independent of any behavior read-out.
+- **Layer grid:** read-out layer = `h` output layer (tied), swept all layers; `h` input layer
+  swept all layers + input-layer combos (concatenation), last-prompt-token vs mean-prompt-tokens.
+  Full grid for ridge/KRR; MLP restricted to PV-selected layer(s).
+- **Training corpus (3-level factor):** (1) fully generic (LMSYS-Chat-1M prompts); (2) generic +
+  *other*-trait data (behavior holdout preserved); (3) generic + *eval*-trait data. **Hard
+  invariant:** the exact PV eval monitoring contexts are held out from `h` training in ALL arms.
+- **Baselines:** PV raw projection; the direct predictor (above); the oracle `⟨v(x), r_B⟩`.
 
 ## Result 2 — generation-activation pooling (post-generation)
 
-- Read the trait off the **actual generated response's** per-token activations, projected
-  onto `r_B`, under different pooling: **MEAN** (= projection onto the mean generation
-  vector; note mean-of-projections ≡ projection-of-mean by linearity, so these are one
-  estimator), **MAX** (nonlinear; per-token peak — cannot reduce to a pooled vector), plus
-  cheap adds **top-k-mean** and **last-response-token**. Sweep all layers.
-- **Baseline:** PV's `⟨c_last, r_B⟩` prompt projection — quantifies how much trait signal
-  is in the generation that the prompt can't see, and which pooling reads it best.
-- **Hypothesis:** MAX may be the better *detector* (localized trait spike) while MEAN is
-  the better *aggregate*.
-- **~0 extra GPU:** the mean/max/top-k/last pooled projections are computed during the SAME
-  activation forward passes R1 already runs (dot each response token with every-layer `r_B`,
-  accumulate scalars) — no per-token activation storage needed. One data-collection pass
-  produces both results.
+- Read the trait off the **actual generated response's** per-token activations projected onto
+  `r_B`: **MEAN** (≡ projection of mean generation vector, by linearity), **MAX** (nonlinear
+  per-token peak), plus **top-k-mean** and **last-response-token**. Sweep all layers.
+- **Baseline:** PV's `⟨c_last, r_B⟩` prompt projection. Hypothesis: MAX is the better *detector*
+  (localized spike), MEAN the better *aggregate*.
+- **~0 extra GPU:** pooled projections computed during the SAME activation forward passes
+  (dot each response token with every-layer `r_B`, accumulate scalars).
+
+## Result 3 — context→answer map granularity (A4 characterization)
+
+How well / at what granularity does the context representation predict the answer representation:
+- **(a) mean→mean and pooled→pooled reconstruction** R²/cosine — shared with R1's diagnostic.
+- **(b) pooled-context → per-relative-position answer activation:** predict the answer activation
+  at each relative position from the pooled context; measure how predictability **decays with
+  answer depth** (how far into the response the context's determination reaches).
+- **(c) context-activation-SET → answer-activation-SET:** CKA + linear predictability between the
+  full context and answer activation sets, per layer-pair.
+- **NOT the full per-(i,j) each-context-token→each-answer-token map:** ill-posed across examples
+  (variable-length position alignment; O(T_c·T_a) pairs) — replaced by proxies (b)+(c).
+- **Caveat (state in the writeup):** predicting *individual* answer-token activations ≈
+  forecasting the (stochastic, autoregressive) generation trajectory, not just applying a
+  representation map; the mean-pool target is the clean *expectation* A4 uses. So (b) is measured
+  as expected per-position predictability, not per-sample.
 
 ## Shared data collection (one pass)
 
-- **Model:** Qwen-2.5-7B-Instruct (only; no Llama for the first pass).
-- **Persona vectors `r_B`:** re-extracted via the project persona-vectors recipe (PV
-  released trait definitions + code but NOT the vectors), at ALL layers, 3 traits
-  (evil / sycophancy / hallucination).
-- **Eval rig:** PV's monitoring setup verbatim — 8-way system-prompt sweep + 0/5/10/15/20-shot,
-  per trait, ~10 rollouts/config/question; trait-expression judge = `claude-sonnet-4-5-20250929`
-  via Batch API. Graded 0–100, multi-sampled per the llm-judging rule (ranking/regression target).
-- **Training corpus generation:** LMSYS prompts (+ trait-augmented arms); generate the model's
-  own response (single temp-1 sample per training context; k=10 for eval), cache pooled
-  activations (c_x last-prompt + mean-prompt; v(x) mean-response; plus R2's per-token pooled
-  projections) at the needed layers.
+- **Model:** Qwen-2.5-7B-Instruct only.
+- **Persona vectors `r_B`:** re-extracted via the project persona-vectors recipe (PV released
+  trait defs + code, NOT the vectors), ALL layers, 3 traits (evil / sycophancy / hallucination).
+- **Eval rig:** PV monitoring verbatim — 8-way system-prompt sweep + 0/5/10/15/20-shot, per
+  trait, ~10 rollouts/config/question; judge = `claude-sonnet-4-5-20250929` via Batch API,
+  graded 0–100 multi-sample (ranking/regression target per llm-judging rule).
+- **Corpus generation:** LMSYS prompts (+ trait-augmented arms); own response (single temp-1
+  sample per training context; k=10 eval); cache pooled activations (c_x last-prompt + mean-prompt;
+  v(x) mean-response) + R2's per-token pooled projections. **R3 needs per-token answer
+  activations** for (b)/(c) → cache per-token acts for a **SUBSET** of contexts (a few thousand)
+  and a subset of layers (CKA/decay are statistical, don't need the full corpus) to bound storage.
 - **Step 0:** oracle headroom (`⟨v(x), r_B⟩` vs `⟨c_x, r_B⟩` vs trait score, within-condition,
-  all layers) — also selects the read-out layer. Gates whether R1 has room to improve.
+  all layers) — also selects the read-out layer; gates whether R1 has room.
 
 ## Metrics
 
-Within-condition Pearson (matched to PV, primary) **and** AUROC / top-k precision (detection
-framing — "will this be a problematic generation"), on held-out contexts (R1 also held-out
-behaviors).
+- **Monitoring (R1, R2):** within-condition Pearson (primary, matched to PV) **and** AUROC /
+  top-k precision (detection framing), on held-out contexts (R1 also held-out behaviors).
+- **Map characterization (R1 diagnostic, R3):** reconstruction R²/cosine, per-position
+  predictability decay, set-to-set CKA/linear-predictability.
 
 ## Compute plan (implementer owns orchestration)
 
-- **~10–25 GPU-h total**, no LLM fine-tuning (inference + activation caching + lightweight
-  regression + judge API). Well under the 100 GPU-h plan-approval cap.
-- **8×H100 single pod, data-parallel (8 single-GPU workers, CUDA_VISIBLE_DEVICES sharding —
-  NOT TP=8)** for the generation + activation-caching burst (the only genuinely H100-hungry
-  parts). Offload judging to the Anthropic Batch API and the regression fits to cheaper
-  compute (1 GPU / cpu-bigmem). **Release/downsize the 8×H100 pod between the GPU burst and
-  the off-GPU stages** — do not hold 8 idle H100s through the judge batch or between staged
-  rounds (#664 spend-leak). Storage: cache all layers on a subset for step-0 layer selection,
-  then only the selected layer(s) for the full corpus to stay well under the 50 GB VM footprint.
-- **Stage** rather than run the full factor cross-product: step 0 (oracle + layer select) →
-  stage 1 (headline: generic corpus, best layer, ridge vs one MLP, cosine readout, vs
-  baselines) → stage 2 (ablations: objectives, 3 corpus levels, layer combos, R2 pooling)
-  only on configs that clear stage 1.
+- **~10–25 GPU-h**, no LLM fine-tuning (inference + activation caching + lightweight regression
+  + judge API). Under the 100 GPU-h plan-approval cap.
+- **8×H100 single pod, data-parallel (8 single-GPU workers via CUDA_VISIBLE_DEVICES sharding —
+  NOT TP=8)** for the generation + activation-caching burst. Offload judging → Anthropic Batch
+  API and regression fits → cheaper compute (1 GPU / cpu-bigmem). **Release/downsize the 8×H100
+  pod between the GPU burst and the off-GPU stages** — never hold idle H100s through the judge
+  batch or between staged rounds (#664 spend-leak).
+- **Storage:** pooled activations cache is small; R3's per-token caching is bounded to a subset
+  (few thousand contexts × subset of layers) — keep total well under the 50 GB VM footprint;
+  full-layer caching only on a subset for step-0 layer selection, then selected layer(s) for the
+  full corpus.
+- **Stage** rather than run the full cross-product: step 0 (oracle + layer select) → stage 1
+  (headline: generic corpus, best layer, ridge vs one MLP, cosine readout, indirect vs direct
+  vs PV-baseline vs oracle) → stage 2 (ablations: objectives, 3 corpus levels, layer combos, R2
+  pooling, R3 granularity) only on configs that clear stage 1.
 
 ## Planning notes
 
-- New research direction → planner must do the literature review first (related work spans
-  probing classifiers, "Future Lens"-style prediction of downstream states from hidden
-  activations, activation forecasting, representation reading / RepE monitoring) and formalize
-  R1/R2 against our context-geometry theory (A2/A3/A4) before any code.
-- Single-variable-change discipline: R1 and R2 each change ONLY the projection input vs PV's
-  `⟨c_last, r_B⟩`; everything else (vectors, eval rig, judge) reused verbatim.
+- New research direction → planner does the literature review first (probing classifiers,
+  "Future Lens"-style prediction of downstream states from hidden activations, activation
+  forecasting, RepE monitoring) and formalizes R1/R2/R3 against the context-geometry theory
+  (A2/A3/A4) before any code.
+- Single-variable-change discipline: R1/R2 each change ONLY the projection input vs PV's
+  `⟨c_last, r_B⟩`; vectors, eval rig, judge reused verbatim. The direct predictor is the
+  matched-capacity control that isolates the map's contribution.
