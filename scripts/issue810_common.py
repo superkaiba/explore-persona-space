@@ -49,9 +49,13 @@ EXPECTED_HIDDEN = 3584
 # Qwen-2.5-7B chat-template turn-end tokens (the two boundary positions Phase B
 # captures AFTER the answer content). Asserted in-process at extraction time.
 IM_END_TOKEN_ID = 151645  # <|im_end|>
-# The trailing "\n" after <|im_end|> is tokenizer-dependent; Phase B locates it
-# structurally (the position immediately after the im_end slot) rather than by a
-# hard-coded id, and asserts the captured id decodes to a newline-bearing token.
+# The trailing "\n" after <|im_end|>. Pinned to the Qwen-2.5 family id 198 — the
+# SAME id for the 7B production model AND the 0.5B smoke model (verified), so the
+# extractor asserts nl_id == 198 in ALL modes (a tokenizer/model revision that
+# gave "\n" a different id would silently capture the WRONG turn_nl position
+# across the whole run). Phase B still locates the slot STRUCTURALLY (the position
+# after the im_end slot); the id pin is the drift guard.
+TURN_NL_TOKEN_ID = 198
 
 # HF data-repo destination (SHARED with #658/#812 — the aligned-subset store
 # lands under #658's prefix so #812 consumes it without re-extraction, plan §13).
