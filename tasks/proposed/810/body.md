@@ -62,7 +62,7 @@ Summaries compared (all fed as the map target, same fit harness):
 
 **Two analyses, both swept over every summary above (ONE manipulated variable = the summary; two DVs):**
 - **(a) Reconstruction map** — the linear map `c_C → summary` (held-out skill-over-mean R² per layer), the #722 base-map DV. **The reconstruction winner is what #811 carries into the pre/post-FT run.**
-- **(b) Behavior read-out** — predict each behavior's expression `E0(C,B)` from the summary, TWO ways: (i) the fixed persona-vectors direction `r_Bᵀ·summary` (faithful to #658 A3.3), AND (ii) a **trained LOCO-ridge regression `summary → E0`** — a *learned* linear read-out rather than a fixed direction (the "don't only use r_B" ask), with a label-shuffle null. Reuses #658's already-judged `E0` (binary rate; a graded 0–100 re-judge per `.claude/rules/llm-judging.md` is a possible extension, not v1). This directly tests whether a better answer summary rescues #658's mostly-failed context→behavior read-out (A3.2/A3.3 cleared only 3/10 behaviors).
+- **(b) Behavior read-out** — predict each behavior's expression `E0(C,B)` from the summary, TWO ways: (i) the fixed persona-vectors direction `r_Bᵀ·summary` (faithful to #658 A3.3), AND (ii) a **trained LOCO-ridge regression `summary → E0`** — a *learned* linear read-out rather than a fixed direction (the "don't only use r_B" ask), with a label-shuffle null. The target `E0` is the **graded 0–100 judge score (PRIMARY)** — see **Graded read-out target** below. This directly tests whether a better answer summary rescues #658's mostly-failed context→behavior read-out (A3.2/A3.3 cleared only 3/10 behaviors).
 
 Two legs, cheapest first:
 1. **Free leg (0 GPU-h, planner to confirm):** re-fit the map with the
@@ -78,6 +78,29 @@ Two legs, cheapest first:
    slice extension, routed through the existing `summarize_answer_span` recipe
    switch.
 
+**Graded read-out target & sourcing (`E0`).** The read-out target is the
+**graded 0–100 judge score as PRIMARY** (binary judged-rate kept as the validated
+headline companion), per `.claude/rules/llm-judging.md`: **N=8 draws @ temp 1.0,
+mean-aggregated**, anchored 0/50/100 rubric, reason-then-score,
+one-behavior-per-call, malformed/`REFUSAL`/out-of-range → `nan` (never coerced;
+ref impl `eval/belief.py::_score_judge_response`, the #766 fix), judge
+`claude-sonnet-4-5-20250929` via `eval.batch_judge` / `judge_dispatch`. Params
+grounded in #763's approved plan (`tasks/*/763/plans/v2.md`). **No graded `E0`
+exists on disk yet** — source it as:
+- **Low-m behaviors incl. taught-fact:** REUSE #763's in-flight graded `E0` (same
+  50-context grid) — do NOT re-judge; wait for #763 (running, ~13h left).
+- **High-m leakage behaviors (sycophancy, refusal, harmful-compliance/EM):**
+  graded-re-judge off #658's stored raw completions
+  (`issue658_theory_assumptions/raw_completions` on HF — zero regeneration) via
+  the batch API. **Subsample sycophancy's ~2000 completions/context to ~60–100**
+  (a stable per-context mean; ~932K → ~55K calls, ~$60 batch vs ~$980). API $
+  cost, NOT GPU; the batch self-harvests within the 24h SLA.
+- **broad_em excluded** (floors on base regardless).
+- **Validate before any headline** (llm-judging rule 13): reuse #722's
+  teacher-forced fixed ± margin (`eval_results/issue_722/tf_margin/margins.json`)
+  as the non-judge reference for sycophancy + refusal; harmful/EM has no ± pool →
+  note the validation gap, do not fabricate one.
+
 ## Dependent variable
 
 Held-out **skill-over-mean R²** = `1 − SS_res/SS_tot` on the centered target,
@@ -87,8 +110,9 @@ per (layer × summary), LOCO closed-form ridge (primary) + 1-hidden MLP
 #722's correction). Reconstruction headline: per-layer R² of `turn_nl` and the
 best per-position summary **vs** the `mean` baseline.
 
-**Read-out DV:** held-out Spearman ρ (and R²) of predicted vs judged `E0(C,B)`,
-per (behavior × layer × summary × method ∈ {fixed `r_B`, trained LOCO-ridge}),
+**Read-out DV:** held-out Spearman ρ (and R²) of predicted vs the **graded 0–100**
+`E0(C,B)` (binary rate as companion), per (behavior × layer × summary × method ∈
+{fixed `r_B`, trained LOCO-ridge}),
 with a label-shuffle null. Read-out headline: does *any* summary lift behavior
 prediction above #658's `mean`-summary result (which mostly failed)? An **n = 50
 sample-complexity caveat** applies to the trained-regression read-out — see #742
