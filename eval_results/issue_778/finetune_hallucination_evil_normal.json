@@ -1,0 +1,24 @@
+{
+  "model_tag": "evil_normal",
+  "family": "evil",
+  "version": "normal",
+  "trait": "hallucination",
+  "trait_score": 28.613738738738743,
+  "n_kept": 148,
+  "n_total": 200,
+  "judge_draws_total": 1200,
+  "judge_draws_dropped": 504,
+  "reproducibility": {
+    "git_commit": "8669727128812993b7584e00bef647992482e0a9",
+    "timestamp": "2026-07-01T12:36:11+0000",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0",
+      "peft": "0.18.1",
+      "trl": "0.29.1"
+    }
+  }
+}
