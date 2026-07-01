@@ -192,3 +192,4 @@
 {"ts": "2026-07-01T11:07:28Z", "kind": "epm:progress", "version": 45, "by": "unknown", "note": "[poll-tick] 4th launch 2h30m. 1 cell checkpointed. 62 batches; 1240 succeeded, 0 errored. Throughput 503 calls/hr. Disk 157G free."}
 {"ts": "2026-07-01T11:59:19Z", "kind": "epm:progress", "version": 46, "by": "unknown", "note": "[poll-tick] 4th launch 3h22m. 1 cell checkpointed still (betley__refusal). 84 batches; 1680 succeeded, 0 errored. Throughput 502 calls/hr. Disk 156G free."}
 {"ts": "2026-07-01T12:51:27Z", "kind": "epm:progress", "version": 47, "by": "unknown", "note": "[poll-tick] 4th launch 4h13m. 1 cell checkpointed still. 108 batches; 2080 succeeded, 0 errored. Throughput 493 calls/hr. Disk 156G free."}
+{"ts": "2026-07-01T13:43:39Z", "kind": "epm:progress", "version": 48, "by": "unknown", "note": "[poll-tick] 4th launch 5h05m. 1 cell checkpointed still (betley__refusal). 130 batches; 2300 succeeded, 0 errored. Throughput 451 calls/hr. Disk 156G free."}
