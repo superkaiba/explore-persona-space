@@ -92,6 +92,17 @@ if [ -n "$SMOKE" ]; then
   echo "[phase=judge]"
   uv run python scripts/issue763_judge_e0.py --smoke --behaviors "$BEH" --mock-judge
 
+  # OPT-IN LIVE-BATCH judge gate (task #763 r3): the --mock-judge smoke above
+  # never submits a real Anthropic Batch, so it cannot catch a malformed batch
+  # request shape (the empty-system-block 400 that quarantined all 8000 graded
+  # requests). EPM_LIVE_BATCH_SMOKE=1 runs ~5 REAL graded requests through the
+  # forced batch path (~$0.01). Default OFF so the offline --smoke stays fully
+  # free/offline (PASS_UNIFIED). Run pre-launch for any judged production run.
+  if [ "${EPM_LIVE_BATCH_SMOKE:-0}" = "1" ]; then
+    echo "[phase=live_batch_judge_smoke]"
+    uv run python scripts/issue763_live_batch_smoke.py
+  fi
+
   echo "[phase=fit]"
   uv run python scripts/issue763_fit_predictors.py --smoke --behaviors "$BEH"
 

@@ -73,6 +73,8 @@ from issue658_fit_predictors import (  # noqa: E402
 from issue763_common import (  # noqa: E402
     BEHAVIORS,
     EVAL_RESULTS_DIR,
+    HF_ANALYSIS_TENSORS_PREFIX,
+    HF_DATA_REPO,
     SEED,
     dump_json,
     is_reduced_power,
@@ -205,9 +207,59 @@ CEILING_DECENT = 0.5  # sqrt(r_yy) >= 0.5 => target reliably measured
 CEILING_LOW = 0.35  # sqrt(r_yy) <= 0.35 => noise-limited
 
 
+def _stage_v0_shards_from_hf(behaviors: list[str]) -> None:
+    """Stage v0_shards/v0_<B>.pt from HF if local copies are missing.
+
+    The v0 shards are WRITTEN in phase 1 (``capture``) and uploaded to
+    ``<HF_ANALYSIS_TENSORS_PREFIX>/v0_shards/`` by the phase-1 ``--progress-only``
+    upload — but they are read here in PHASE 2 (``fit``), which the gate-split
+    (off-pod PV judge) can boot on a FRESH VM whose phase-1 local
+    ``eval_results/issue_763/v0_shards/`` tree does not exist. ``pv_extract_capture``
+    (the phase-2 GPU step) produces ``pv_shards/`` + ``pv_rb_by_behavior.json`` but
+    NEVER re-creates the v0 shards, so ``_load_v0`` FileNotFoundError'd on the pod
+    (task #763 r3). This mirrors ``issue763_judge_e0._stage_gen_from_hf`` /
+    ``issue763_extract_pv_rb._stage_from_hf``: snapshot_download the v0 shards from
+    the issue-owned HF prefix into the local path the loader expects, making the
+    fit hermetic against phase-1 local disk state. No-op on a matched-host RunPod
+    resume where the volume (and every shard) persists. Fail-loud only when a
+    shard is NEITHER local NOR on HF (the capture phase never produced it).
+    """
+    shard_dir = EVAL_RESULTS_DIR / "v0_shards"
+    missing = [b for b in behaviors if not (shard_dir / f"v0_{b}.pt").exists()]
+    if not missing:
+        return
+    from huggingface_hub import snapshot_download
+
+    path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/v0_shards"
+    logger.info("[v0_stage] fetching %s from %s/%s", missing, HF_DATA_REPO, path_in_repo)
+    snap = snapshot_download(
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        allow_patterns=[f"{path_in_repo}/v0_{b}.pt" for b in missing],
+    )
+    src_dir = Path(snap) / path_in_repo
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    for b in missing:
+        src = src_dir / f"v0_{b}.pt"
+        if not src.exists():
+            raise FileNotFoundError(
+                f"v0 shard for {b} is neither local ({shard_dir}) nor on HF "
+                f"({HF_DATA_REPO}/{path_in_repo}) — the phase-1 capture never "
+                "produced/uploaded it (run --phase capture + the --progress-only "
+                "upload first)"
+            )
+        (shard_dir / f"v0_{b}.pt").write_bytes(src.read_bytes())
+
+
 def _load_v0(behavior: str) -> tuple[np.ndarray, list[str]]:
-    """Load the matched v0 shard -> (tensor (n_ctx, n_layers, H), context_ids)."""
+    """Load the matched v0 shard -> (tensor (n_ctx, n_layers, H), context_ids).
+
+    Stages the shard from HF first when the local copy is missing (gate-split
+    phase-2 on a fresh VM — task #763 r3; see ``_stage_v0_shards_from_hf``).
+    """
     shard = EVAL_RESULTS_DIR / "v0_shards" / f"v0_{behavior}.pt"
+    if not shard.exists():
+        _stage_v0_shards_from_hf([behavior])
     blob = torch.load(shard, weights_only=False)
     return blob["tensor"].float().numpy(), blob["context_ids"]
 
