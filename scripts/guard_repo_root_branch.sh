@@ -42,16 +42,28 @@
 # deliberate trade-off. See #796 round-2 report.
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
-# split on `;` / `&&` / `||` / `|` (two-char separators matched first) into
-# clauses, each classified independently so a later safe/return-to-main clause
-# can no longer mask an earlier dangerous one; a `cd <worktree|/tmp>` scopes
-# ONLY the LATER clauses it precedes across `;`/`&&` (where the cwd persists),
-# NOT across `||` (RHS runs on `cd` FAILURE, cwd unchanged) or `|` (subshell
-# isolates the `cd`). The split is NOT a full shell parse: command substitution
-# `$(git switch ...)`, here-docs, and separators embedded inside a quoted arg
-# are not handled (a quoted `;`/`|` is treated as a real separator, the same
-# raw-scan trade-off as the `--note` literal above). A mis-split of that class
-# fails CLOSED (blocks), the safe direction for a guard.
+# split on `;` / `&&` / `||` / `|` / `&` (two-char separators matched first)
+# into clauses, each classified independently so a later safe/return-to-main
+# clause can no longer mask an earlier dangerous one; a `cd <worktree|/tmp>`
+# latch propagates ONLY across `&&` (where bash GUARANTEES the `cd` succeeded
+# before the RHS runs, so the cwd persists forward). The latch does NOT
+# propagate across:
+#   - `;` (SEQ): bash runs the RHS regardless of the `cd` exit code; a FAILED
+#     `cd` (e.g. a missing target) leaves the cwd unchanged (repo root), so the
+#     git clause runs off-worktree. Fail-closed (#804 round 2): reset the latch
+#     on `;` rather than trust a `cd` we cannot prove succeeded.
+#   - `||` (OR): the RHS runs ONLY on `cd` FAILURE, cwd unchanged (repo root).
+#   - `|` (PIPE): each pipeline segment is its own subshell, so the LHS `cd`'s
+#     cwd change dies with it and the git segment runs in the parent's cwd.
+#   - `&` (BG): the LHS runs in a background subshell (its own cwd) while the
+#     RHS runs in the foreground parent's UNCHANGED cwd (repo root); BOTH
+#     execute, so a `git switch feature & git switch main` runs the dangerous
+#     LHS in the repo-root tree while the allow-arm RHS masks it.
+# The split is NOT a full shell parse: command substitution `$(git switch ...)`,
+# here-docs, and separators embedded inside a quoted arg are not handled (a
+# quoted `;`/`|`/`&` is treated as a real separator, the same raw-scan
+# trade-off as the `--note` literal above). A mis-split of that class fails
+# CLOSED (blocks), the safe direction for a guard.
 set -u
 
 REPO=/home/thomasjiralerspong/explore-persona-space
@@ -65,17 +77,18 @@ echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch)\b' || exit 0
 # Split the raw command into (separator, clause) pairs, PRESERVING which
 # separator precedes each clause. Two-char separators (&& ||) are matched
 # BEFORE the single-char ones (; | &) so `&&`/`||` are not mis-split into two
-# single-char clauses. Each separator run is replaced by a newline + a
-# \x01-delimited sentinel token (START | SEQ | AND | OR | PIPE); the first
-# clause carries the implicit START. Best-effort: a separator inside a quoted
-# arg is treated as a real separator (same trade-off as the raw-scan
-# known-limitation above).
+# single-char clauses (the `&&` substitution runs before the single `&` rule,
+# so a `&&` is consumed as AND and never re-matched as a bare `&`). Each
+# separator run is replaced by a newline + a \x01-delimited sentinel token
+# (START | SEQ | AND | OR | PIPE | BG); the first clause carries the implicit
+# START. Best-effort: a separator inside a quoted arg is treated as a real
+# separator (same trade-off as the raw-scan known-limitation above).
 split_and_label() {
   printf '%s' "$1" \
-    | sed -E 's/\|\|/\n\x01OR\x01/g; s/&&/\n\x01AND\x01/g; s/;/\n\x01SEQ\x01/g; s/\|/\n\x01PIPE\x01/g' \
+    | sed -E 's/\|\|/\n\x01OR\x01/g; s/&&/\n\x01AND\x01/g; s/;/\n\x01SEQ\x01/g; s/\|/\n\x01PIPE\x01/g; s/&/\n\x01BG\x01/g' \
     | awk 'BEGIN{RS="\n"; sep="START"}
            { line=$0
-             if (match(line, /^\x01(OR|AND|SEQ|PIPE)\x01/)) {
+             if (match(line, /^\x01(OR|AND|SEQ|PIPE|BG)\x01/)) {
                sep=substr(line, 2, RLENGTH-2); line=substr(line, RLENGTH+1)
              }
              gsub(/^[ \t]+|[ \t]+$/, "", line)
@@ -181,17 +194,23 @@ classify_clause() {
 }
 
 # Drive classify_clause over the (separator, clause) pairs. A `cd <worktree|/tmp>`
-# latches `scoped` forward ACROSS `;`/`&&` (cwd persists there), so a git clause
-# after it runs in the scoped cwd and is allowed. The latch RESETS on `||`/`|`
-# (verified bash semantics 2026-07-01: `cd X || pwd` / `cd X | pwd` both print
-# the ORIGINAL cwd — the `cd` did not take effect for the RHS). The first
-# blocking clause wins.
+# latches `scoped` forward ONLY across `&&` (bash GUARANTEES the `cd` succeeded
+# before the RHS runs there, so the cwd persists), so a git clause after it runs
+# in the scoped cwd and is allowed. The latch RESETS across every OTHER separator
+# — `;` (SEQ), `||` (OR), `|` (PIPE), and `&` (BG) — where bash does NOT guarantee
+# the `cd` took effect for the following clause (verified bash semantics
+# 2026-07-01: `cd X && pwd` prints X; `cd X ; pwd` prints X ONLY on `cd` success —
+# a FAILED `cd`, e.g. a missing target, leaves the ORIGINAL cwd — and `cd X || pwd`
+# / `cd X | pwd` / `cd X & pwd` all print the ORIGINAL cwd). Resetting on `;`
+# fails CLOSED (#804 round 2): the guard cannot prove a `;`-preceding `cd`
+# succeeded, so it declines to scope across it. The first blocking clause wins.
 scoped=0
 blocked=""
 while IFS=$'\t' read -r sep clause; do
-  # Reset the latch when the separator BEFORE this clause is || or | — a `cd`
-  # does NOT scope a git clause across those connectors.
-  if [ "$sep" = OR ] || [ "$sep" = PIPE ]; then
+  # Reset the latch unless the separator BEFORE this clause is && — a `cd`
+  # only reliably scopes a following git clause when bash guarantees it ran
+  # first (the && short-circuit). ; / || / | / & do NOT carry the latch.
+  if [ "$sep" != AND ]; then
     scoped=0
   fi
 
