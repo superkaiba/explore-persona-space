@@ -3431,6 +3431,110 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+# A destructive `git reset --hard` invocation. Whitespace-tolerant, broadened
+# (FI1) to catch flag-ordering variants:
+#   - `git reset --hard`, `git reset -q --hard`      (flags before --hard)
+#   - `git reset --hard origin/main`, `git reset --hard -q`  (flags/ref after)
+#   - `git reset origin/main --hard`                 (ref BEFORE the --hard flag)
+#   - `git --no-pager reset --hard`                  (git-level flag before subcommand)
+#   - `git reset --hard=<ref>`                       (single-token flag, attached value)
+# Optional git-level flags (`--no-pager`, `-C <path>`, `-c k=v`) may precede
+# `reset`; any tokens (flags or a ref) may sit between `reset` and `--hard`;
+# `--hard` may carry an attached `=<value>`.
+# The intra-command tokens are backtick-free (``[^\s`]+``, NOT ``\S+``): a real
+# git flag / path / ref never contains a backtick, and forbidding backticks
+# stops the greedy flag-group from spanning ACROSS an inline-code mention
+# (e.g. the prose ``scoped with `git -C`: `git -C "$WT" reset --hard```) — which
+# would otherwise anchor the match on the WRONG (prose-mention) `git` and defeat
+# the FI3 `-C`-before-match waiver on the sanctioned per-worktree line.
+_GIT_RESET_HARD_RE = re.compile(
+    r"git\s+(?:--?[^\s`]+(?:\s+[^\s`]+)?\s+)*reset\b(?:\s+[^\s`]+)*?\s+--hard(?:=[^\s`]*)?\b"
+)
+# A worktree-qualified `git -C "<path>" ...` prefix. Matched separately so we
+# can require it appear BEFORE the offending reset on the same line (FI3).
+_GIT_DASH_C_RE = re.compile(r"git\s+-C\s+")
+_RESET_HARD_ALLOW_SENTINEL = "workflow-lint: allow-git-reset-hard"
+
+
+def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any agent spec / skill playbook contains an UNQUALIFIED
+    destructive ``git reset --hard`` (a repo-root / full-tree reset). Only
+    per-worktree ``git -C "$WT" reset --hard`` invocations (the ``-C`` qualifier
+    appearing BEFORE the offending reset on the same line), or lines carrying
+    the ``workflow-lint: allow-git-reset-hard: <reason>`` sentinel with a
+    non-empty reason, pass.
+
+    Incident 2026-07-01 (#815): a #778 analyzer improvised a destructive
+    repo-root reset during marker-chain recovery and truncated concurrent
+    siblings #812/#813 (body.md / plans/ / comments.jsonl / REGISTRY). task.py
+    holds a per-registry flock, not a per-file lock, so a repo-root reset by
+    any concurrent session clobbers unrelated tasks.
+
+    Scope: ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` only (reuses
+    ``_iter_ask_target_files``, which already excludes OTHER worktrees' sibling
+    copies). ``.claude/plans/``, ``.claude/agent-memory/``, ``.claude/rules/``,
+    ``CLAUDE.md``, and ``scripts/**`` are out of the workflow surface for this
+    check and NEVER scanned. Pure-Python (no ``rg`` dependency, so the bundled
+    pytest is hermetic); bundled into the no-flags default run. ``repo_root`` is
+    a unit-test override hook; production callers pass None (canonical repo root).
+
+    INTENTIONAL under-matching (pinned by the test docstring + kill-criteria):
+    a ``git reset \\``-continuation line where ``--hard`` lands on the FOLLOWING
+    physical line evades the line-based regex. Grep confirms zero live in-scope
+    instances; the check is line-oriented by design (markdown scope, NOT a shell
+    AST). If a ``\\``-continuation destructive reset ever lands in-scope,
+    normalize continuations before matching or split the command.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for p in _iter_ask_target_files(root):  # already worktree-safe + scoped
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            m = _GIT_RESET_HARD_RE.search(line)
+            if m is None:
+                continue
+            # FI3: worktree-qualified ONLY if a `git -C` prefix sits at or
+            # before the START of the offending reset match (i.e. `git -C "$WT"
+            # reset --hard` — the `-C` qualifies THIS command). In the sanctioned
+            # form `_GIT_RESET_HARD_RE` matches from the SAME `git` the `-C`
+            # begins (its flag-group swallows `-C "$WT"`), so `dc.start()` equals
+            # `m.start()` there — hence `<=`, not `<`. An unqualified reset starts
+            # at a `git` NOT followed by `-C`, so `_GIT_DASH_C_RE` cannot match at
+            # that same offset; `dc.start() == m.start()` therefore occurs ONLY
+            # for the sanctioned form. A `git -C` that appears AFTER the reset
+            # (e.g. `git reset --hard && git -C "$WT" status`) has a HIGHER offset
+            # and does NOT waive the unqualified reset that precedes it.
+            dc = _GIT_DASH_C_RE.search(line)
+            if dc is not None and dc.start() <= m.start():
+                continue
+            if _RESET_HARD_ALLOW_SENTINEL in line:  # explicit allowlist -> OK
+                # Require a NON-EMPTY reason after the sentinel (FI2). The reason
+                # lives between the sentinel `:` and the note closer, so strip the
+                # leading `:`/whitespace AND the trailing HTML-comment closer
+                # (`-->`) / backtick / whitespace before testing — otherwise the
+                # bare comment closer (`: -->`, or `allow-git-reset-hard -->` with
+                # no colon) would be counted as a reason and wrongly waive.
+                _, _, tail = line.partition(_RESET_HARD_ALLOW_SENTINEL)
+                reason = tail.lstrip(": ")
+                if reason.rstrip().endswith("-->"):
+                    reason = reason.rstrip()[: -len("-->")]
+                reason = reason.strip().strip("`").strip()
+                if reason:
+                    continue
+            errors.append(
+                f"{p}:{lineno}: unqualified `git reset --hard` on the shared "
+                f"repo root is forbidden (clobbers concurrent siblings' task "
+                f"state — incident #815, commit d29a877e6f). Use a per-worktree "
+                f'`git -C "$WT" reset --hard <ref>`, or add a same-line '
+                f"`{_RESET_HARD_ALLOW_SENTINEL}: <reason>` sentinel if this is a "
+                f"legitimate prose mention / pod-side ssh_execute command."
+            )
+    return errors
+
+
 def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the compute-shape-vs-dispatcher review lens (#806) is absent
     from EITHER code-reviewer agent file.
@@ -3878,6 +3982,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "the no-flags default run.",
     )
     parser.add_argument(
+        "--check-no-repo-root-git-reset-hard",
+        action="store_true",
+        help="FAIL if any .claude/agents/*.md or .claude/skills/**/SKILL.md "
+        "contains an unqualified `git reset --hard` (a repo-root / full-tree "
+        'reset). Only per-worktree `git -C "$WT" reset --hard` (the `-C` '
+        "qualifier before the reset on the same line) or lines carrying the "
+        "`workflow-lint: allow-git-reset-hard: <reason>` sentinel with a "
+        "non-empty reason pass. A repo-root destructive reset clobbers "
+        "concurrent siblings' task state — task.py holds a per-registry flock, "
+        "not a per-file lock (incident #815). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-gate-ids-unique",
         action="store_true",
         help="Verify every gate id across gates.{inline, park_and_wait, "
@@ -3956,6 +4073,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
+        or args.check_no_repo_root_git_reset_hard
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
@@ -4018,6 +4136,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_batch_judge_client())
     if args.check_no_workflow_improver_spawn or no_flags:
         errors.extend(check_no_workflow_improver_spawn())
+    if args.check_no_repo_root_git_reset_hard or no_flags:
+        errors.extend(check_no_repo_root_git_reset_hard())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
