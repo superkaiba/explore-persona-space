@@ -147,6 +147,21 @@ def test_empirical_p_has_plus_one_correction():
     assert nb.empirical_p_one_sided(0.0, null) == pytest.approx(1.0)
 
 
+def test_split_cell_tag_handles_underscore_versions():
+    # rsplit("_", 1) is WRONG: versions contain underscores (misaligned_1/_2).
+    # split_cell_tag must recover the true (family, version).
+    from scripts import issue778_lib as lib
+
+    assert lib.split_cell_tag("evil_normal") == ("evil", "normal")
+    assert lib.split_cell_tag("evil_misaligned_1") == ("evil", "misaligned_1")
+    assert lib.split_cell_tag("mistake_gsm8k_misaligned_2") == ("mistake_gsm8k", "misaligned_2")
+    assert lib.split_cell_tag("insecure_code_normal") == ("insecure_code", "normal")
+    # the buggy rsplit would give ("evil_misaligned", "1") — assert we do NOT.
+    assert lib.split_cell_tag("evil_misaligned_1")[0] != "evil_misaligned"
+    with pytest.raises(ValueError):
+        lib.split_cell_tag("not_a_real_cell")
+
+
 def test_project_matches_paper_a_proj_b():
     # a_proj_b(a, b) = (a·b)/‖b‖.
     a = np.array([[1.0, 2.0, 2.0]])

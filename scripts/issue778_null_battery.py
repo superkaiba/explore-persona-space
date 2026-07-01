@@ -143,10 +143,10 @@ def _leave_one_family_out(
     shift_acts: np.ndarray, target: np.ndarray, tags: list[str], rb: np.ndarray, sel_layer: int
 ) -> dict:
     """Recompute matched-trait r dropping each family's versions in turn."""
-    families = sorted({t.rsplit("_", 1)[0] for t in tags})
+    families = sorted({lib.split_cell_tag(t)[0] for t in tags})
     out = {}
     for fam in families:
-        keep = [i for i, t in enumerate(tags) if t.rsplit("_", 1)[0] != fam]
+        keep = [i for i, t in enumerate(tags) if lib.split_cell_tag(t)[0] != fam]
         if len(keep) < 3:
             out[fam] = None
             continue
@@ -316,12 +316,20 @@ def _write_figure_arrays(
         json.dump(hero, f, indent=2)
 
     # Per-layer heatmap: draws already carry per-layer |r|; store the mean per-layer
-    # per null + the matched per-layer |r| (recompute unavailable here without
-    # re-projection, so store the null per-layer means as the exploratory heatmap).
+    # per null (exploratory). An all-NaN layer column (a degenerate draw at that
+    # layer) is stored as NaN via a warning-safe reduce, not a raised RuntimeWarning.
+    def _safe_col_mean(mat: np.ndarray) -> list:
+        with np.errstate(invalid="ignore"):
+            cols = [
+                float(np.nanmean(mat[:, j])) if not np.all(np.isnan(mat[:, j])) else float("nan")
+                for j in range(mat.shape[1])
+            ]
+        return cols
+
     heatmap = {
         "trait": trait,
         "setting": setting,
-        "nulls_per_layer_mean_abs_r": {k: np.nanmean(v, axis=0).tolist() for k, v in draws.items()},
+        "nulls_per_layer_mean_abs_r": {k: _safe_col_mean(v) for k, v in draws.items()},
     }
     with open(eval_root / f"per_layer_heatmap_{trait}_{setting}.json", "w") as f:
         json.dump(heatmap, f, indent=2)

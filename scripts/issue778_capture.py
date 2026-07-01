@@ -198,7 +198,7 @@ def capture_one_model(
             fname = f"finetune_base_{trait}.json"
             row = {"model_tag": model_tag, "trait": trait, **expr[trait]}
         else:
-            family, version = model_tag.rsplit("_", 1)
+            family, version = lib.split_cell_tag(model_tag)
             fname = f"finetune_{trait}_{family}_{version}.json"
             row = {
                 "model_tag": model_tag,

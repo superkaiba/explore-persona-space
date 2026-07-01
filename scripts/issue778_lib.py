@@ -102,6 +102,23 @@ class TraitData:
     eval_prompt: str  # verbatim judge rubric (has {question}/{answer} slots)
 
 
+def split_cell_tag(tag: str) -> tuple[str, str]:
+    """Parse a ``{family}_{version}`` cell tag -> (family, version).
+
+    ``rsplit("_", 1)`` is WRONG here because versions contain underscores
+    (``misaligned_1`` / ``misaligned_2``): it would split ``evil_misaligned_1``
+    into ``("evil_misaligned", "1")``. Parse against the known VERSIONS suffixes
+    instead. Fails loud on an unrecognized tag.
+    """
+    for ver in sorted(VERSIONS, key=len, reverse=True):
+        suffix = f"_{ver}"
+        if tag.endswith(suffix):
+            family = tag[: -len(suffix)]
+            if family in FAMILIES:
+                return family, ver
+    raise ValueError(f"cannot parse cell tag {tag!r} into (family, version)")
+
+
 def _a_or_an(word: str) -> str:
     return "an" if word[0].lower() in "aeiou" else "a"
 
