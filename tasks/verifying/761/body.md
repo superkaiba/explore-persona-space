@@ -5,7 +5,7 @@ title: Matching the probe set raises the base-activation predictor of behavior e
 kind: experiment
 tags: []
 created_at: '2026-06-30T08:48:01Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 658
 origin_prompt: rerun with at least 50 probes per behavior and average v0(C) over the
   same probes; start with the cheap 3-reuse-behavior phase (capture-only matched-v0)
