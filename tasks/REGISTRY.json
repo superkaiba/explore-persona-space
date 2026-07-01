@@ -4973,8 +4973,8 @@
       "goal": "On Qwen-2.5-7B under Persona Vectors' monitoring rig, test whether trait-expression prediction beats PV's last-prompt-token projection baseline by (R1) routing the projection through a learned behavior-agnostic context->answer-profile map (pre-generation) and (R2) pooling the persona-vector projection over the actual generation's activations (post-generation), evaluated on held-out contexts and behaviors.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/779",
-      "status": "proposed",
+      "path": "tasks/planning/779",
+      "status": "planning",
       "title": "Beat Persona-Vectors prompt-projection monitoring: learned context->profile map (pre-gen) + generation-activation pooling (post-gen) on Qwen-2.5-7B"
     },
     "78": {
