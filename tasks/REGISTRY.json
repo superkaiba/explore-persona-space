@@ -5162,8 +5162,8 @@
     "803": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/803",
-      "status": "proposed",
+      "path": "tasks/planning/803",
+      "status": "planning",
       "title": "workflow-fix: clean_experiment_downloads.py hangs on pod (task_workflow.repo_root auto-routing on MooseFS)"
     },
     "804": {
