@@ -1,0 +1,14 @@
+{
+  "trait": "evil",
+  "leave_one_family_out_r": {
+    "evil": 0.8386362468498489,
+    "hallucination": 0.9295977309502376,
+    "insecure_code": 0.9207544237550201,
+    "mistake_gsm8k": 0.912187035986041,
+    "mistake_math": 0.9156009638961885,
+    "mistake_medical": 0.9175289372054126,
+    "mistake_opinions": 0.9196983567724211,
+    "sycophancy": 0.9275312393974922
+  },
+  "full_r": 0.9142682241137605
+}
