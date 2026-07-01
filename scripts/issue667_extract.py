@@ -1110,6 +1110,11 @@ def run_extraction(args) -> int:
         "c_c_postft_all": c_c_postft_all,
         "gauge": gauge,
         "r_lookup": r_lookup,
+        # Under --all-layers, omit the 4 redundant (28,3584) all-layer context
+        # stacks from every npz (identical across targets + layer-files) so the
+        # 28-layer store stays a few GB, not ~90 GB. The per-layer single-vectors
+        # are kept — they carry all depth info across the 28 separate layer-files.
+        "omit_all_layer_stacks": bool(getattr(args, "all_layers", False)),
     }
     # Route the per-target .npz writes to a local-SSD scratch mirror (#674) so
     # the per-(target, layer) write storm (~93 .npz/cell) stays off the GCE
@@ -1251,10 +1256,6 @@ def _extract_one_target(
             # post-FT key/query (BLOCKER 1: A3.10 oracle g+ = (k+, q+, M0)).
             "c_C_postft": c_c_postft_all[c_idx],
             "c_Cp_postft": c_cp_postft_all[c_idx],
-            "c_C_all_layers": c_c_all,
-            "c_Cp_all_layers": c_cp_all,
-            "c_C_postft_all_layers": c_c_postft_all,
-            "c_Cp_postft_all_layers": c_cp_postft_all,
             "behavior": behavior,
             "source_cid": source_cid,
             "target_cid": tcid,
@@ -1263,6 +1264,22 @@ def _extract_one_target(
             "n_probes": len(acc[li][0]),
             "adapter_gauge": json.dumps(gauge),
         }
+        # The 4 all-layer context STACKS (each (28, 3584)) are IDENTICAL across a
+        # source's 30 targets AND across all layer-files of a cell, so under
+        # --all-layers they turn a ~90 KB npz into a ~1.7 MB one — 90.9 GB total
+        # vs 4.8 GB. Every consumer (issue667_deltac_probe.analyze_behavior,
+        # issue722_load_activations) reads ONLY the per-layer single-vectors
+        # (c_C / c_Cp / c_C_postft / c_Cp_postft / v0 / v_plus) at that file's
+        # baked layer — the depth info is carried by the 28 SEPARATE layer-files,
+        # not by the redundant per-file stacks. So omit the stacks in all-layer
+        # mode to keep the store to a few GB (the brief's storage requirement).
+        # The 7/14/21 (non-all-layer) path keeps the stacks for backward parity
+        # with the committed issue667_gate_chain_preview store.
+        if not extras.get("omit_all_layer_stacks"):
+            payload["c_C_all_layers"] = c_c_all
+            payload["c_Cp_all_layers"] = c_cp_all
+            payload["c_C_postft_all_layers"] = c_c_postft_all
+            payload["c_Cp_postft_all_layers"] = c_cp_postft_all
         if li == primary_layer:
             if "t_pos" in t_split:
                 payload["t_pos"] = t_split["t_pos"]["vec"]
