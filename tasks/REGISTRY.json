@@ -5015,22 +5015,22 @@
     "784": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/784",
-      "status": "running",
+      "path": "tasks/completed/784",
+      "status": "completed",
       "title": "workflow: raise ensemble review cap 3->5, expand git-provenance auto-strip, surface-not-ship real residual at cap"
     },
     "785": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/785",
-      "status": "running",
+      "path": "tasks/completed/785",
+      "status": "completed",
       "title": "daily-fix: worktree path #506 regression in Step 4a + Step 9c"
     },
     "786": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/786",
-      "status": "approved",
+      "path": "tasks/running/786",
+      "status": "running",
       "title": "daily-fix: task-workflow API atomicity (git-mv, post-marker, view)"
     },
     "787": {
@@ -5043,57 +5043,57 @@
     "788": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/788",
-      "status": "approved",
+      "path": "tasks/completed/788",
+      "status": "completed",
       "title": "daily-fix: reviewer sandbox read-only tempdir silently skips pytest"
     },
     "789": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/789",
-      "status": "planning",
+      "path": "tasks/completed/789",
+      "status": "completed",
       "title": "daily-fix: Codex twin false-FAIL discipline (sandbox + evidence-quote)"
     },
     "790": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/790",
-      "status": "planning",
+      "path": "tasks/approved/790",
+      "status": "approved",
       "title": "daily-fix: GCP backend fetch_results/log Permission denied"
     },
     "791": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/791",
-      "status": "running",
+      "path": "tasks/reviewing/791",
+      "status": "reviewing",
       "title": "daily-fix: backend_poll stale-log false gap + poll error-regex"
     },
     "792": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/792",
-      "status": "running",
+      "path": "tasks/completed/792",
+      "status": "completed",
       "title": "daily-fix: experiment-implementer crash-fix scope guard"
     },
     "793": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/793",
-      "status": "planning",
+      "path": "tasks/completed/793",
+      "status": "completed",
       "title": "daily-fix: SLURM lane rsync from worktree branch not main"
     },
     "794": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/794",
-      "status": "running",
+      "path": "tasks/completed/794",
+      "status": "completed",
       "title": "daily-fix: HF upload_dataset 504 verify-side false-fail"
     },
     "795": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/795",
-      "status": "planning",
+      "path": "tasks/running/795",
+      "status": "running",
       "title": "daily-fix: zombie sessions on completed tasks not auto-reaped"
     },
     "796": {

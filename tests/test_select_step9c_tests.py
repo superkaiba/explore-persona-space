@@ -183,3 +183,51 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
     assert "tests/test_widget.py" in out["tests"]
     assert out["base"] == "main"
     assert out["missing_invariants"] == []  # all invariants present in the fixture tree
+
+
+# --- Case 11: _resolve_repo_root uses --git-common-dir + dirnames (#785) ------
+def test_resolve_repo_root_uses_git_common_dir_and_dirnames(tmp_path: Path, monkeypatch):
+    """No-arg path calls `git rev-parse --path-format=absolute --git-common-dir`
+    and dirnames the output — the #506-safe recipe, NOT `--show-toplevel`
+    (which from a worktree cwd doubles the path). The `--repo-root` override
+    still bypasses git entirely.
+    """
+    seen: dict[str, list[str]] = {}
+    git_dir = tmp_path / "repo" / ".git"
+
+    class _Result:
+        stdout = str(git_dir) + "\n"
+
+    def _fake_run(argv, **_kw):
+        seen["argv"] = argv
+        return _Result()
+
+    monkeypatch.setattr(sel.subprocess, "run", _fake_run)
+    got = sel._resolve_repo_root(None)
+    # (i) locks the recipe against a regression back to --show-toplevel:
+    assert seen["argv"] == ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"]
+    # (ii) return is the dirname of the git output (.../repo/.git -> .../repo):
+    assert got == (tmp_path / "repo").resolve()
+    # (iii) the override branch never touches git — clear the recorded argv and
+    #       confirm the arg path is returned resolved, without a git call:
+    seen.clear()
+    assert sel._resolve_repo_root(str(tmp_path)) == tmp_path.resolve()
+    assert "argv" not in seen  # git was not invoked on the override path
+
+
+# --- Case 12: empty selection fails LOUD (defense-in-depth, #785) ------------
+def test_empty_selection_fails_loud(tmp_path: Path, monkeypatch, capsys):
+    """A structurally-impossible empty test list (bad repo_root resolution or all
+    invariants missing) makes main() return 1 + a stderr line — never a silent
+    exit-0 zero-test gate (the same silent-pass class the Step 9c shell guard
+    closes at the shell level).
+    """
+    repo = _make_tree(tmp_path, [])
+    monkeypatch.setattr(sel, "_resolve_repo_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: [])
+    # Force the degenerate empty selection the invariant set normally prevents.
+    monkeypatch.setattr(sel, "select_tests", lambda *_a, **_k: ([], []))
+    rc = sel.main(["--repo-root", str(repo)])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "EMPTY test selection" in err
