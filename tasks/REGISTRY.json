@@ -5106,8 +5106,8 @@
     "797": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/797",
-      "status": "reviewing",
+      "path": "tasks/completed/797",
+      "status": "completed",
       "title": "daily-fix: routing carve-out: interactive 0-GPU inline analysis"
     },
     "798": {
