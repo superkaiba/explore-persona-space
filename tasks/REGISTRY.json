@@ -5250,8 +5250,8 @@
     "815": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/815",
-      "status": "reviewing",
+      "path": "tasks/completed/815",
+      "status": "completed",
       "title": "workflow-fix: forbid destructive git resets on the shared repo root (analyzer marker-chain recovery clobbered #812)"
     },
     "816": {
