@@ -508,7 +508,7 @@ parallelism axis and pick the spec accordingly:
 | **Activation capture (HBM-bound)** | A 7B forward that captures hidden states — all-layer residual streams, Welford activation accumulation, per-token activation dumps | Pick an intent clearing ≥40 GB HBM: `lora-7b` (train + capture) or `capture-7b` (eval + capture, #752). NEVER the L4 `eval`/`debug` default — 7B bf16 weights (~14 GB) + captured activations OOM it (#666, #744). Size the activation footprint per the VM-footprint carve-out below if the capture also materializes a large store on the VM analysis side. |
 | **Data parallelism (FSDP/ZeRO-3)** | Full fine-tune of a 7B+ model | `ft-7b` (4× H100) over `lora-7b` (1× H100) when fidelity permits |
 | **Batched inference (vLLM)** | Eval/generation with K samples per prompt or N prompts | One pod with the largest sensible GPU count, single `LLM.generate()` call — never loop sequentially |
-| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. |
+| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. (This is SIMULTANEOUS shared-nothing parallelism within ONE phase — orthogonal to per-phase GPU-width right-sizing below, which stops a NARROW phase from holding the WIDE phase's pod across a SEQUENCE of differently-sized phases; that rule is about phases of DIFFERENT widths run SEQUENTIALLY, NOT about splitting a single wide-parallel phase.) |
 | **Pipeline parallelism** | A → B → C where B doesn't need all of A | State the dependency DAG and start independent branches concurrently |
 
 State explicitly in the plan: (a) the GPU spec chosen, (b) the parallelism
@@ -574,6 +574,60 @@ metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
 off-pod execution avoids. Incident #664: an 8×H200 pod held idle ~12h in a
 terminal per-file raw-completions upload phase — ~$530, 0% GPU. This is a
 plan-time scheduling rule, NOT a mid-run cost gate.)
+
+**Per-phase GPU-WIDTH right-sizing — a NARROW GPU phase must not hold the
+run's PEAK-width pod.** The CPU-only rules above govern GPU-vs-no-GPU
+placement; this rule governs GPU WIDTH ACROSS the GPU phases of a MULTI-PHASE
+run. Size each GPU phase's width SEPARATELY — do NOT provision one pod at the
+peak-phase width and hold it for the whole run. A GPU phase that needs
+MATERIALLY FEWER GPUs than the run's peak width — a ≤7B forward /
+activation-extract needing ~1–3 GPUs, a ≤7B single-GPU vLLM generation, a
+per-cell probe read — AND runs longer than ~15–30 min (the SAME floor as the
+CPU-only-phase rule above) MUST NOT hold the peak-width pod. Provision the
+wide pod ONLY for the wide phase; run the preceding / trailing narrow phases
+either on a narrow pod (the SMALLEST intent that fits the phase — e.g.
+`capture-7b` / `lora-7b` / `eval`) or off-pod, then downsize-or-release before
+the narrow phase starts. A same-pod `pod.py stop` + `resume` preserves the
+SAME GPU spec, so a true WIDTH change is either terminate + a fresh narrow
+provision OR provisioning a separate narrow pod up front and the wide pod only
+for the wide phase (state which path the plan takes).
+
+**Weigh the tradeoff explicitly — the rule is threshold-gated, not naive.**
+Re-provisioning a second pod is not free: it costs provisioning latency and
+DOUBLES RunPod supply-constraint exposure (a second pod can fail to schedule
+on a constrained lane), plus extra pod-lifecycle bookkeeping. So a SHORT
+narrow phase (< ~15–30 min) MAY hold the peak-width pod — the re-provision
+churn is not worth the idle-GPU savings on a short window. A LONG narrow phase
+(or a long API-bound wait) MUST release/downsize: the idle-GPU burn on a wide
+pod (8× H100 ≈ $25/hr at ≤5% util — the #778 extract held ≤5% util for 38 min)
+then dominates the re-provision cost. State the weighing in the plan: name the
+phase's expected wall-time, its GPU width, and — for any phase held on the wide
+pod — why the re-provision cost exceeds the idle-$ saved.
+
+**API-bound judge phase → release the GPU pod during the (free, off-pod,
+deadline-bounded) batch wait.** An Anthropic-Batch-API graded-judge phase uses
+~0 GPU. It is already covered by the CPU-only / judge-API-only rule above (it
+MUST NOT hold a GPU pod), and the `batch_judge` poll is a FREE, off-pod,
+deadline-bounded self-harvest that runs on the VM / orchestrator, NOT on the
+pod (CLAUDE.md § "A FREE, no-data-loss path beats parking"; #658/#663). The
+plan-time hook: SEQUENCE the pod release (terminate / stop after the last GPU
+phase persists its artifacts per the Upload Policy) BEFORE the judge phase, so
+the deadline-bounded `batch_judge` poll waits off-pod with no GPU held. A plan
+that runs a judge phase on a still-held wide pod is the same idle-but-billing
+defect as a terminal upload phase (#664).
+
+This is DISTINCT from the **Sweep parallelism** row above (one multi-GPU pod
+for N shared-nothing seeds/conditions that EACH need the pod SIMULTANEOUSLY):
+that rule keeps `CUDA_VISIBLE_DEVICES`-sharded work on ONE wide pod because
+every shard needs a slice of it at once. This rule is about a run whose PHASES
+need DIFFERENT widths SEQUENTIALLY — it NEVER splits a single wide-parallel
+phase, it only stops a narrow phase from riding the wide phase's pod. State in
+the plan, per GPU phase: its GPU width and which phase justifies the run's PEAK
+width. (Incident #778: an 8× H100 pod held ≤5% util for 38 min through extract
++ the API-bound judge phase at ~$25/hr — only the 24-run finetuning fan-out
+needed 8-wide; same idle-but-billing family as the #664 terminal-upload
+spend-leak. Cross-refs: `critic.md` Methodology lens item 10(iv); CLAUDE.md
+§ "CPU-only phases don't hold GPU pods".)
 
 **Compute-character carve-out to the OFF-POD default — a gradient-descent
 fit is GPU-worthy, not cheap CPU stats.** The OFF-POD-VM default above is
