@@ -1,1 +1,2 @@
 {"ts": "2026-07-01T18:56:56Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-01T18:58:45Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #813 to open question(s) leak-predictor; created_new=none; mode=auto-match (parent #667 links to same anchor; substrate-dependence extends the leak-predictor context→answer map M directly)."}
