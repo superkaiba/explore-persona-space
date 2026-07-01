@@ -5064,8 +5064,8 @@
     "791": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/791",
-      "status": "planning",
+      "path": "tasks/approved/791",
+      "status": "approved",
       "title": "daily-fix: backend_poll stale-log false gap + poll error-regex"
     },
     "792": {
