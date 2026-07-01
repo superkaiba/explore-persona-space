@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 810,
+  "highest_id": 811,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5223,6 +5223,14 @@
       "path": "tasks/proposed/810",
       "status": "proposed",
       "title": "Which answer-side position/summary gives the strongest base context->answer map (mean vs last vs turn-boundary vs per-position)"
+    },
+    "811": {
+      "goal": "Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/811",
+      "status": "proposed",
+      "title": "Does the best answer-summary change #722's base-vs-post-FT function-change verdict"
     },
     "83": {
       "has_clean_result": false,
