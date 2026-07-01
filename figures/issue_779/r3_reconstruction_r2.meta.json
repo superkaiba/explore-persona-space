@@ -1,6 +1,6 @@
 {
-  "commit": "fc96549e59",
-  "created": "2026-07-01T13:56:35Z",
+  "commit": "3b1e7907e5",
+  "created": "2026-07-01T15:18:01Z",
   "figsize": [
     8.5,
     4.6
@@ -8,55 +8,55 @@
   "points": [
     {
       "x": -0.26,
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.832659206631146,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.832659206631146,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 0.74,
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.8340453548735764,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.8340453548735764,
       "_kind": "bar",
       "_group": 0
     },
     {
       "x": 1.74,
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.8601739907572247,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.8601739907572247,
       "_kind": "bar",
       "_group": 0
     },
     {
       "category": "Evil",
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.6816412088175035,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.6816412088175035,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Sycophancy",
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.6436299675774361,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.6436299675774361,
       "_kind": "bar",
       "_group": 1
     },
     {
       "category": "Hallucination",
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.7125042920610498,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.7125042920610498,
       "_kind": "bar",
       "_group": 1
     },
     {
       "x": 0.26,
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.09650494659899166,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.09650494659899166,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 1.26,
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.1512760969936649,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.1512760969936649,
       "_kind": "bar",
       "_group": 2
     },
     {
       "x": 2.26,
-      "reconstruction R\u00b2  (predicted vs true\nmean-response activation)": 0.10540919892666965,
+      "in-sample reconstruction R\u00b2  (predicted vs true\nmean-response activation, training contexts)": 0.10540919892666965,
       "_kind": "bar",
       "_group": 2
     }
