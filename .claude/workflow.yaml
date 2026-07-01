@@ -409,7 +409,8 @@ gates:
         route here) that the orchestrator cannot or chooses not to
         address in an implementer round AFTER the
         `mechanical_contract_only_strip` rule has already stripped any
-        marker-shape / smoke-run-missing blockers from the verdict.
+        marker-shape / smoke-run-missing / git-provenance blockers from
+        the verdict.
         Layered ON TOP of main's PASS+CONCERNS auto-advance + mechanical
         strip — both keep operating untouched. Mechanical-only verdicts
         still strip and auto-advance; substantive concerns persisted to
@@ -1164,7 +1165,8 @@ ensemble_review:
     --severity CONCERN|BLOCKER --summary <80c> --by <reviewer> --round <n>`.
     Persisted binding concerns survive auto-advance even on a PASS-class
     verdict: AFTER the `mechanical_contract_only_strip` rule has stripped
-    any marker-shape / smoke-run-missing FAIL blockers, the orchestrator
+    any marker-shape / smoke-run-missing / git-provenance FAIL blockers,
+    the orchestrator
     reads `task.py list-concerns <N> --open-only --json`. If any open
     concern at severity CONCERN or BLOCKER remains, the orchestrator
     routes — per concern_id — to either an implementer round (auto-fix
