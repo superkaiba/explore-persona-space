@@ -393,6 +393,30 @@ This mirrors the marker line's behavioral-primary + continuous-secondary recipe,
 
 **Required: Statistical-input existence (derived inputs for registered corrections).** Every registered statistical correction / adjustment §6 relies on — attenuation / reliability factors, per-seed SEs, variance reconstructions, shrinkage priors, any statistic computed FROM a derived input rather than directly from this run's raw eval output — must name the data dependency it consumes AND verify that dependency actually EXISTS in the cited artifact (the column is present in the CSV, the per-seed files resolve on HF, the field is in the JSON schema — check the actual file, not the producing plan's prose), OR explicitly schedule its construction as in-scope implementation work in §4 / the file-level diff list. This is the plan-time analogue of the step-5 Hub-existence check, extended to derived statistical inputs: an input that is "derivable in principle" but neither verified-present nor scheduled-to-build is a phantom dependency (incident #509: plan §6.1 registered attenuation-adjusted correlations for the fact arm whose per-seed SEs existed nowhere — the cited CSV stored only seed-averaged rates — and reconstruction was never scheduled as in-scope work; the production scoring path crashed exactly as predicted in review prose and the result shipped on `--smoke` with the reliability correction pinned to 1.0). Plans with no registered derived-input corrections (raw DV + standard tests only) write "N/A — no derived statistical inputs" and move on.
 
+**Required: Selection-symmetric nulls (max-over-axis headlines).** If the
+plan's headline statistic is chosen by `max` / `argmax` / best-of /
+top-k-mean over a FREE AXIS — a read-out layer, a cell, a k /
+neighbourhood size, a seed, an extraction point, a threshold — and is
+compared against a null / permutation / shuffle band, the band procedure
+MUST be selection-symmetric: EITHER (a) every null draw receives the
+IDENTICAL max-over-axis selection before the band is formed (the null
+distribution is the max-selected statistic per draw), OR (b) the axis is
+frozen on a held-out split / pre-registered fixed position and BOTH the
+observed statistic and every null draw are read at that single frozen
+position. A `max-over-L` observed statistic compared against a
+one-position null is a 28-vs-1 asymmetry that manufactures the
+observed-vs-null gap from the winner's curse, not the effect the null
+tests (#778, n=24: single-layer null p97.5 |r| ≈ 0.48 vs honest
+max-over-layer p97.5 |r| ≈ 0.62; a per-axis heatmap is a diagnostic
+display and does NOT neutralise it). §6 ALSO registers persistence of the
+per-draw × per-axis statistic matrix (one matrix per headline statistic)
+as a downstream artifact (per the Upload Policy) so the analyzer can
+recompute the honest max-selected band post-hoc. Full recipe + carve-outs
+(a pre-registered fixed position or a mechanistic single-anchor ablation
+does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
+whose headline is not selected over any free axis write "N/A — no
+max-over-axis selection in the headline" and move on.
+
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
 ### 6.5 Primary deliverable (the upstream completeness-vs-plan gate)

@@ -3445,7 +3445,7 @@ _LESSONS_ROW_RE = re.compile(
 )
 
 
-_LESSONS_MAX_BYTES = 6000  # leanness cap: ~1500 tokens always-on
+_LESSONS_MAX_BYTES = 7500  # leanness cap: ~1900 tokens always-on
 
 
 def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
