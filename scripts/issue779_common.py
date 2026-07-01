@@ -503,7 +503,7 @@ def judge_rollouts_n5(
     trait: str,
     rollouts: dict[str, dict[str, list[str]]],
     save_raw: Path,
-    cache_dir: Path,
+    cache_dir: Path | None = None,
     *,
     n_draws: int = JUDGE_N_DRAWS,
     dry_run: bool = False,
@@ -525,19 +525,52 @@ def judge_rollouts_n5(
     library patch is needed for temperature; the expansion IS the multi-sampling.
 
     ``rollouts`` is the batch_judge {persona: {question: [completions]}} shape.
-    Returns {original_custom_id: (mean_score|None, n_valid_draws, n_draws)} keyed
-    by the ORIGINAL (un-expanded) custom_id ``f"{persona}__{qi:05d}__{ri:02d}"``
-    so downstream score lookups (``_score_for`` etc.) are unchanged. A rollout
-    with 0 valid draws (all ``n_draws`` REFUSED / malformed / out-of-range) ->
-    ``(None, 0, n_draws)`` — the rollout is DROPPED (never coerced).
+
+    Custom-id derivation (BLOCKER ``judge-n5-custom-id-index-mismatch-multipersona``):
+    ``batch_judge._enumerate_and_check_cache`` numbers questions with a GLOBAL
+    ``idx`` that increments across the ENTIRE (persona, question) iteration and
+    NEVER resets per persona (``batch_judge.py`` ``idx=0`` before the persona
+    loop, ``idx += 1`` per question). So the ``all_scores`` custom_id for
+    persona P's ``j``-th question is ``f"{P}__{global_idx:05d}__{ci:02d}"`` where
+    ``global_idx`` counts questions across ALL prior personas too — NOT a
+    per-persona question index. This wrapper re-derives the lookup ``cid`` and
+    the returned ``orig_cid`` from the SAME global counter, so every persona's
+    draws resolve correctly on a multi-persona input (previously personas after
+    the first were looked up at a per-persona index and every draw silently
+    dropped as ``(None, 0, n)``). The returned key
+    ``f"{persona}__{global_idx:05d}__{ri:02d}"`` matches the global-``idx``
+    scheme the ``extract_rb`` consumer already reconstructs at its score lookup.
+
+    Cache (BLOCKER ``judge-n5-cache-rerun-collapses-draws``): the judge cache is
+    DISABLED here (``cache_dir`` is ignored, ``judge_completions_batch`` is called
+    with ``cache_dir=None``). ``JudgeCache._hash_key`` keys ONLY on
+    ``(question, completion)`` — NOT the draw index or custom_id — so the
+    ``n_draws`` expanded copies of an identical ``(question, completion)`` collapse
+    to ONE cache entry; on a rerun with a warm cache all ``n_draws`` lookups would
+    HIT that single entry and the N=5 mean would silently degrade to one cached
+    draw repeated ``n_draws`` times. A draw-aware cache key is not cleanly
+    achievable through the public interface: the only per-item axes the cache sees
+    (``question``, ``completion``) are ALSO the exact text the judge scores
+    (``format_user_msg(question, comp)``), so a draw suffix on either would corrupt
+    the primary DV, and differentiating on the custom_id would require patching the
+    shared ``batch_judge._hash_key`` (out of scope). Disabling the cache is the
+    safe fix — every draw is re-submitted fresh each run, so all ``n_draws`` are
+    always INDEPENDENT samples and can never collapse. The ``cache_dir`` parameter
+    is retained for call-site signature stability but is intentionally unused;
+    batch-path resume checkpointing still works (``judge_completions_batch``
+    derives its checkpoint root from ``save_raw.parent`` when ``cache_dir`` is None).
+
+    Returns {global-idx custom_id: (mean_score|None, n_valid_draws, n_draws)}. A
+    rollout with 0 valid draws (all ``n_draws`` REFUSED / malformed / out-of-range)
+    -> ``(None, 0, n_draws)`` — the rollout is DROPPED (never coerced).
     """
     from explore_persona_space.eval.batch_judge import judge_completions_batch
 
     assert n_draws >= 1, f"n_draws must be >= 1, got {n_draws}"
     # Expand each completion into n_draws consecutive list entries. Under the
-    # batch_judge custom_id scheme (f"{persona}__{qi:05d}__{ci:02d}") the draw d
-    # of rollout ri lands at ci = ri*n_draws + d, so we can map every draw back
-    # to its ORIGINAL rollout (persona, qi, ri) after judging.
+    # batch_judge custom_id scheme (f"{persona}__{global_idx:05d}__{ci:02d}") the
+    # draw d of rollout ri lands at ci = ri*n_draws + d, so we can map every draw
+    # back to its ORIGINAL rollout (persona, global question idx, ri) after judging.
     expanded: dict[str, dict[str, list[str]]] = {}
     for persona, qmap in rollouts.items():
         expanded[persona] = {}
@@ -553,7 +586,7 @@ def judge_rollouts_n5(
         format_user_msg=trait_judge_user_msg,
         judge_model=JUDGE_MODEL,
         max_tokens=256,
-        cache_dir=cache_dir,
+        cache_dir=None,  # draw-collapse guard: see docstring BLOCKER cache note
         save_raw=save_raw,
         dry_run=dry_run,
     )
@@ -564,24 +597,27 @@ def judge_rollouts_n5(
     draw_scores = _parse_raw_all_scores(raw["all_scores"])
 
     # Gather the n_draws scores per ORIGINAL rollout and mean valid draws.
-    # Re-derive the enumeration exactly as batch_judge does: persona -> question
-    # order (dict insertion order, preserved) -> question index qi; comp index ci
-    # over the EXPANDED list, with rollout ri = ci // n_draws, draw d = ci % n_draws.
+    # Re-derive the enumeration EXACTLY as batch_judge._enumerate_and_check_cache:
+    # a GLOBAL question index `idx` set to 0 BEFORE the persona loop, incremented
+    # per question, NEVER reset per persona; comp index ci over the EXPANDED list,
+    # with rollout ri = ci // n_draws, draw d = ci % n_draws.
     out: dict[str, tuple[float | None, int, int]] = {}
+    idx = 0
     for persona, qmap in expanded.items():
-        for qi, (_question, drawn) in enumerate(qmap.items()):
+        for _question, drawn in qmap.items():
             n_rollouts_q = len(drawn) // n_draws
             for ri in range(n_rollouts_q):
                 vals: list[float] = []
                 for d in range(n_draws):
                     ci = ri * n_draws + d
-                    cid = f"{persona}__{qi:05d}__{ci:02d}"
+                    cid = f"{persona}__{idx:05d}__{ci:02d}"
                     s = draw_scores.get(cid)
                     if s is not None:
                         vals.append(s)
-                orig_cid = f"{persona}__{qi:05d}__{ri:02d}"
+                orig_cid = f"{persona}__{idx:05d}__{ri:02d}"
                 mean = float(sum(vals) / len(vals)) if vals else None
                 out[orig_cid] = (mean, len(vals), n_draws)
+            idx += 1
     return out
 
 

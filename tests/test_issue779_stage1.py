@@ -11,11 +11,22 @@ FAILS against the pre-fix code (documented per test):
     sites; the keys were absent from the output.
   - N=5 graded judge draws, mean over valid, drop-never-coerce (BLOCKER 1):
     pre-fix the DV was a single N=1 judge score.
+  - N=5 multi-persona custom_id resolution (BLOCKER
+    judge-n5-custom-id-index-mismatch-multipersona): pre-fix the wrapper's
+    per-persona question index diverged from batch_judge's global-across-persona
+    idx, so every persona after the first was looked up at the wrong idx and all
+    its draws were silently dropped as (None, 0, n).
+  - N=5 cache-rerun never collapses draws (BLOCKER
+    judge-n5-cache-rerun-collapses-draws): pre-fix the shared cache keyed only on
+    (question, completion) collapsed the N identical draw-copies to one entry, so
+    a warm-cache rerun returned the last cached draw N times; post-fix the wrapper
+    disables the cache so all N draws are re-submitted as independent samples.
   - h1a nullity uses the DOT arm, not cosine (analyzer minor note 1).
 
 Pure-CPU, no model / no network. The judge N=5 wrapper is tested with a stubbed
 judge (monkeypatched judge_completions_batch writing a save_raw file) so no API
-call is made.
+call is made. The stub drives the REAL batch_judge global-idx enumeration +
+JudgeCache so it cannot re-bake the per-persona index bug.
 """
 
 from __future__ import annotations
@@ -189,20 +200,53 @@ def test_detection_metrics_threshold_labels_and_empty_class():
 class _StubJudge:
     """Monkeypatch target: writes a save_raw file whose all_scores maps each
     expanded custom_id to a stubbed judge dict per a scoring function.
+
+    The custom_ids are produced by the REAL
+    ``batch_judge._enumerate_and_check_cache`` (global-across-persona question
+    index ``idx`` that NEVER resets per persona), NOT a re-implemented
+    per-persona ``qi`` — so this stub CANNOT re-bake the
+    ``judge-n5-custom-id-index-mismatch-multipersona`` bug (which is exactly
+    what a per-persona re-derivation did). ``score_fn(persona, idx, ci, comp)``
+    receives the SAME global question index the wrapper reconstructs.
+
+    Honors ``cache_dir`` (the wrapper passes ``cache_dir=None`` post-fix): when a
+    real ``JudgeCache`` is supplied it reads/writes it exactly as the real
+    ``judge_completions_batch`` does — cache hits are surfaced under their
+    custom_id and the cache is updated with each freshly scored item — so a
+    cache-rerun test observes the same collapse-vs-independent behavior the real
+    path would.
     """
 
     def __init__(self, score_fn):
         self.score_fn = score_fn
         self.last_expanded = None
+        self.n_calls = 0
+        self.last_n_submitted = None
 
-    def __call__(self, completions, *, save_raw, **kwargs):
+    def __call__(self, completions, *, save_raw, cache_dir=None, **kwargs):
+        from explore_persona_space.eval.batch_judge import (
+            JudgeCache,
+            _default_format_user_msg,
+            _enumerate_and_check_cache,
+        )
+
         self.last_expanded = completions
-        all_scores = {}
-        for persona, qmap in completions.items():
-            for qi, (_q, comps) in enumerate(qmap.items()):
-                for ci, comp in enumerate(comps):
-                    cid = f"{persona}__{qi:05d}__{ci:02d}"
-                    all_scores[cid] = self.score_fn(persona, qi, ci, comp)
+        self.n_calls += 1
+        fmt = kwargs.get("format_user_msg") or _default_format_user_msg
+        cache = JudgeCache(cache_dir) if cache_dir else None
+        # Real global-idx enumeration + cache check (exactly as the shared path).
+        _total, cached_scores, uncached_items = _enumerate_and_check_cache(completions, cache, fmt)
+        self.last_n_submitted = len(uncached_items)
+        batch_scores = {}
+        for cid, _question, comp, _user_msg in uncached_items:
+            # Recover the global question idx + comp idx from the custom_id so
+            # score_fn sees the same (persona, idx, ci) the wrapper reconstructs.
+            persona, idx_s, ci_s = cid.rsplit("__", 2)
+            batch_scores[cid] = self.score_fn(persona, int(idx_s), int(ci_s), comp)
+        if cache:
+            for cid, question, comp, _user_msg in uncached_items:
+                cache.put(question, comp, batch_scores[cid])
+        all_scores = {**cached_scores, **batch_scores}
         Path(save_raw).parent.mkdir(parents=True, exist_ok=True)
         with open(save_raw, "w") as f:
             json.dump({"all_scores": all_scores, "per_persona": {}}, f)
@@ -264,13 +308,128 @@ def test_judge_rollouts_n5_drops_per_draw_and_drops_rollout_when_all_invalid(tmp
     assert mean1 is None and nv1 == 0 and nd1 == n  # all draws dropped -> DROP rollout
 
 
+# ── BLOCKER judge-n5-custom-id-index-mismatch-multipersona: global-idx keys ───
+
+
+def test_judge_rollouts_n5_multipersona_no_dropped_draws(tmp_path, monkeypatch):
+    """A MULTI-persona rollouts dict (>1 persona, DIFFERENT questions per persona)
+    resolves every persona's draws — every rollout gets finite means and 0 spurious
+    drops. The stub uses the REAL batch_judge global-across-persona enumeration.
+
+    Pre-fix (concern judge-n5-custom-id-index-mismatch-multipersona) the wrapper
+    re-derived custom_ids with a PER-persona question index that reset to 0 per
+    persona, while batch_judge uses a GLOBAL idx that never resets — so every
+    persona after the first was looked up at the wrong idx and ALL its draws were
+    dropped as (None, 0, n). With that bug, personas p1..pk here would come back
+    (None, 0, n); post-fix every rollout is (mean, n, n). This is the Claude
+    Mechanizable criterion (n_valid == n_draws for every rollout, 0 unexpected None)."""
+    n = C.JUDGE_N_DRAWS
+    # Score depends ONLY on the raw completion text so a correct global-idx lookup
+    # is the ONLY way a persona's draws resolve; a mis-indexed lookup returns None.
+    comp_score = {
+        "p0q0a": 11.0,
+        "p0q1a": 22.0,
+        "p1q0a": 33.0,
+        "p1q1a": 44.0,
+        "p2q0a": 55.0,
+    }
+
+    def score_fn(_persona, _idx, _ci, comp):
+        return {"score": comp_score[comp], "reasoning": "x"}
+
+    stub = _StubJudge(score_fn)
+    monkeypatch.setattr("explore_persona_space.eval.batch_judge.judge_completions_batch", stub)
+    # 3 personas, DIFFERENT questions, 1 rollout each -> global idx 0,1,2,3,4.
+    rollouts = {
+        "evil_pos_p0": {"qA": ["p0q0a"], "qB": ["p0q1a"]},
+        "evil_pos_p1": {"qC": ["p1q0a"], "qD": ["p1q1a"]},
+        "evil_pos_p2": {"qE": ["p2q0a"]},
+    }
+    agg = C.judge_rollouts_n5("evil", rollouts, tmp_path / "raw.json")
+    # Every persona's single rollout resolves: 5 rollouts, all finite, 0 dropped.
+    assert len(agg) == 5
+    for cid, (mean, n_valid, n_draws) in agg.items():
+        assert n_draws == n
+        assert n_valid == n, f"{cid} dropped {n - n_valid} draw(s) (custom_id mismatch?)"
+        assert mean is not None
+    # The returned keys use the GLOBAL question idx (never reset per persona):
+    # p0 -> idx 0,1 ; p1 -> idx 2,3 ; p2 -> idx 4. Value = the scored completion.
+    assert agg["evil_pos_p0__00000__00"][0] == pytest.approx(11.0)
+    assert agg["evil_pos_p0__00001__00"][0] == pytest.approx(22.0)
+    assert agg["evil_pos_p1__00002__00"][0] == pytest.approx(33.0)
+    assert agg["evil_pos_p1__00003__00"][0] == pytest.approx(44.0)
+    assert agg["evil_pos_p2__00004__00"][0] == pytest.approx(55.0)
+
+
+# ── BLOCKER judge-n5-cache-rerun-collapses-draws: cache never collapses draws ──
+
+
+def test_judge_rollouts_n5_cache_rerun_does_not_collapse_draws(tmp_path, monkeypatch):
+    """Calling judge_rollouts_n5 TWICE with the same cache dir yields the SAME
+    five-draw mean both times (each draw an independent score), NOT the last cached
+    score repeated N times.
+
+    The stub scores by draw index (score = 10 + d), so a correct N=5 mean is
+    10 + (N-1)/2. Pre-fix the wrapper passed cache_dir through to a cache keyed only
+    on (question, completion); the N identical (question, completion) draws collapsed
+    to ONE entry, so a warm-cache rerun returned the LAST cached draw (score 10+N-1)
+    repeated N times -> mean 10+N-1, NOT 10+(N-1)/2. Post-fix the wrapper disables
+    the cache, so both runs submit all N draws fresh and the mean is unchanged."""
+    n = C.JUDGE_N_DRAWS
+
+    def score_fn(_persona, _idx, ci, _comp):
+        _ri, d = divmod(ci, n)
+        return {"score": 10 + d, "reasoning": "x"}  # per-draw distinct score
+
+    stub = _StubJudge(score_fn)
+    monkeypatch.setattr("explore_persona_space.eval.batch_judge.judge_completions_batch", stub)
+    rollouts = {"cellA": {"q000": ["ans0"]}}  # 1 rollout, N draws
+    cache_dir = tmp_path / "judge_cache"
+    expected_mean = 10 + (n - 1) / 2.0
+    collapsed_mean = 10 + (n - 1)  # the last cached draw repeated N times
+
+    # Run 1 (cold): five independent draws.
+    agg1 = C.judge_rollouts_n5("evil", rollouts, tmp_path / "raw1.json", cache_dir)
+    m1, nv1, _ = agg1["cellA__00000__00"]
+    assert nv1 == n and m1 == pytest.approx(expected_mean)
+
+    # Run 2 (would be warm if the cache saw the N identical (q, comp) copies): the
+    # mean MUST still be the five-independent-draw mean, never the collapsed value.
+    agg2 = C.judge_rollouts_n5("evil", rollouts, tmp_path / "raw2.json", cache_dir)
+    m2, nv2, _ = agg2["cellA__00000__00"]
+    assert nv2 == n
+    assert m2 == pytest.approx(expected_mean)
+    assert m2 != pytest.approx(collapsed_mean)
+    assert m2 == pytest.approx(m1)
+    # Cache disabled -> the second run re-submits all N draws (no collapse-to-1).
+    assert stub.last_n_submitted == n
+
+
 # ── analyzer minor note 1: h1a nullity is over the DOT arm ────────────────────
 
 
 def test_stage1_h1a_uses_dot_arm():
-    """The stage1 source references r1_ridge_dot (not r1_ridge_cos) for the h1a
-    nullity comparison (§8 identity r~_B = M^T r_B is over the DOT readout)."""
-    src = (REPO / "scripts" / "issue779_stage1.py").read_text()
-    # the h1a block reads the DOT method's point, and records r1_ridge_dot_r.
-    assert 'method_res["r1_ridge_dot"][mode]["point"]' in src
-    assert '"r1_ridge_dot_r"' in src
+    """h1a_nullity reads the DOT arm (r1_ridge_dot), not cosine (r1_ridge_cos):
+    §8 identity r~_B = M^T r_B is over the DOT readout. Functional over a fake
+    method_res with DISTINCT dot / cos / probe_ctrl values — the abs_diff proves
+    the comparison used dot-vs-probe_ctrl, not cos-vs-probe_ctrl."""
+
+    def _arm(sys_pt, many_pt):
+        return {
+            "system": {"point": sys_pt, "lo": sys_pt, "hi": sys_pt},
+            "many_shot": {"point": many_pt, "lo": many_pt, "hi": many_pt},
+        }
+
+    method_res = {
+        "r1_ridge_dot": _arm(0.80, 0.70),  # the arm h1a MUST use
+        "r1_ridge_cos": _arm(0.10, 0.20),  # a decoy — must NOT be read
+        "probe_ctrl": _arm(0.50, 0.40),
+    }
+    h1a = S.h1a_nullity(method_res)
+    # Uses the DOT arm's points (0.80 / 0.70), not the cosine decoy (0.10 / 0.20).
+    assert h1a["system"]["r1_ridge_dot_r"] == pytest.approx(0.80)
+    assert h1a["many_shot"]["r1_ridge_dot_r"] == pytest.approx(0.70)
+    assert h1a["system"]["probe_ctrl_r"] == pytest.approx(0.50)
+    # abs_diff is |dot - probe_ctrl| = |0.80 - 0.50| = 0.30, NOT |cos - pc| = 0.40.
+    assert h1a["system"]["abs_diff"] == pytest.approx(0.30)
+    assert h1a["many_shot"]["abs_diff"] == pytest.approx(0.30)  # |0.70 - 0.40|

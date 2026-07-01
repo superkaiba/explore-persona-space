@@ -498,6 +498,34 @@ def make_figures(results: dict, fig_dir: Path) -> list[str]:
 # ── per-trait processing ──────────────────────────────────────────────────────
 
 
+def h1a_nullity(method_res: dict) -> dict:
+    """H1a nullity read: r1_ridge_DOT vs probe_ctrl on the SAME activations.
+
+    The plan §8 nullity identity r~_B = M^T r_B is over the DOT readout
+    <h(c_x), r_B> = <c_x, M^T r_B> (a linear-in-c_x projection matching the
+    linear probe_ctrl), NOT the cosine readout — cosine renormalizes per row so
+    it is not the M^T r_B linear form (analyzer minor note 1). So this compares
+    the ``r1_ridge_dot`` arm against ``probe_ctrl`` per elicitation mode; it MUST
+    read ``method_res["r1_ridge_dot"]``, never ``method_res["r1_ridge_cos"]``.
+
+    Returns {mode: {r1_ridge_dot_r, probe_ctrl_r, abs_diff}} plus a ``_note`` key.
+    """
+    h1a: dict = {}
+    for mode in ("system", "many_shot"):
+        r1r = method_res["r1_ridge_dot"][mode]["point"]
+        pc = method_res["probe_ctrl"][mode]["point"]
+        h1a[mode] = {
+            "r1_ridge_dot_r": r1r,
+            "probe_ctrl_r": pc,
+            "abs_diff": abs(r1r - pc) if (np.isfinite(r1r) and np.isfinite(pc)) else None,
+        }
+    h1a["_note"] = (
+        "nullity compared over the DOT readout r1_ridge_dot (= <c_x, M^T r_B>), "
+        "matching the plan §8 r~_B = M^T r_B linear identity — not the cosine arm."
+    )
+    return h1a
+
+
 def _process_trait(
     trait: str,
     r_b: np.ndarray,
@@ -603,19 +631,7 @@ def _process_trait(
     # linear probe_ctrl), NOT the cosine readout (cosine renormalizes per-row so
     # it is not the M^T r_B linear form). Compare the DOT arm (Claude analyzer
     # minor note 1).
-    h1a = {}
-    for mode in ("system", "many_shot"):
-        r1r = method_res["r1_ridge_dot"][mode]["point"]
-        pc = method_res["probe_ctrl"][mode]["point"]
-        h1a[mode] = {
-            "r1_ridge_dot_r": r1r,
-            "probe_ctrl_r": pc,
-            "abs_diff": abs(r1r - pc) if (np.isfinite(r1r) and np.isfinite(pc)) else None,
-        }
-    h1a["_note"] = (
-        "nullity compared over the DOT readout r1_ridge_dot (= <c_x, M^T r_B>), "
-        "matching the plan §8 r~_B = M^T r_B linear identity — not the cosine arm."
-    )
+    h1a = h1a_nullity(method_res)
 
     # Concerns (2): R3(a) reconstruction vs shuffled-context null on the SAME h.
     layers = train_bundle["layers"]

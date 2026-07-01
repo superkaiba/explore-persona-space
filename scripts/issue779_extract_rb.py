@@ -272,6 +272,12 @@ def extract_trait_rb(
             scores = {}  # no-judge smoke: keep all (labeled below)
 
         n_kept = n_dropped = n_below = 0
+        # GLOBAL question index `idx`: 0 before the persona loop, +1 per question,
+        # never reset per persona — mirrors batch_judge._enumerate_and_check_cache
+        # AND C.judge_rollouts_n5's returned-key derivation, so multi-persona
+        # score lookups resolve for every persona (concern
+        # judge-n5-custom-id-index-mismatch-multipersona). Do NOT change to a
+        # per-persona index without changing the wrapper in lockstep.
         idx = 0
         for persona, qmap in arm_rollouts.items():
             for question, comps in qmap.items():
