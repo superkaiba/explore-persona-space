@@ -75,7 +75,7 @@ def _load_778_targets(eval_778_root: Path, dataset_names: list[str], trait: str)
 
 def _extract_trait_mean(row: dict, trait: str) -> float:
     """Pull the graded trait mean from a #778 finetune-score JSON (flexible keys)."""
-    for k in ("trait_graded_mean", "graded_mean", "trait_mean", "mean_score"):
+    for k in ("trait_score", "trait_graded_mean", "graded_mean", "trait_mean", "mean_score"):
         if k in row and row[k] is not None:
             return float(row[k])
     # nested per-trait dict fallback

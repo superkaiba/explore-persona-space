@@ -28,6 +28,7 @@ with ``--cells 1``). Per-cell JSON is written the moment each cell completes
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import sys
@@ -179,10 +180,13 @@ def _run_cell(
 
     rollouts: list[dict] = []
     for r in range(cell["n_rollouts"]):
-        # Deterministic per-(trait,coef,dir,rollout) generation seed.
-        seed = seed_base + hash(
-            (cell["trait"], cell["coef"], cell["dir_idx"], cell["layer"], r)
-        ) % (2**31)
+        # Deterministic per-(trait,coef,dir,rollout) generation seed. hashlib
+        # (NOT Python hash()) so the seed is stable across interpreter processes:
+        # PYTHONHASHSEED is unset, and str-tuple hash() is per-process salted, so
+        # each per-trait subprocess would otherwise draw a different salt.
+        key = f"{cell['trait']}|{cell['coef']}|{cell['dir_idx']}|{cell['layer']}|{r}"
+        digest = int.from_bytes(hashlib.sha256(key.encode()).digest()[:4], "little")
+        seed = (seed_base + digest) % (2**31)
         torch.manual_seed(seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
