@@ -57,3 +57,4 @@
 - [Constant bootstrap → negative yerr](feedback_constant_bootstrap_negative_yerr.md) — saturated rate panels give float-epsilon-negative CI widths; clamp max(0.0, m-lo) at errorbar sites.
 - [paper_palette_role valid names](feedback_paper_palette_role_names.md) — only accent/baseline/control/neutral/primary; "secondary" ValueErrors at render.
 - [on_log never sees direct wandb.log](feedback_on_log_never_sees_direct_wandb_log.md) — derive cross-callback outcomes from the producer's artifact file, never on_log key-sniffing (#621 false band-miss)
+- [apply-parity probe N sizing follows Wilson-CI half-width](feedback_apply_parity_probe_n_sizing.md) — ±tolerance rate-gate must set N from Wilson-CI half-width at the expected rate (#667 pivot 1, n=10 at rate 0.7 gives half-width ~0.27 not ±0.10 — false-fails guaranteed)
