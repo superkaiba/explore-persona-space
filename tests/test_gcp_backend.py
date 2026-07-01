@@ -2083,6 +2083,116 @@ def test_zone_fanout_all_zones_exhausted_error_names_every_zone_tried(no_marker_
 
 
 # ---------------------------------------------------------------------------
+# #774 round 2 — per-zone OUTCOME records (not just a bare zone-name list). The
+# fan-out evidence must carry one {zone, returncode, matched_pattern, elapsed_s,
+# stderr_tail} record per zone tried, on the all-zones-exhausted error, on the
+# success-after-miss handle, and on the non-capacity immediate-raise path; and
+# the no-miss happy path must NOT add the key (byte-identical handle.extra).
+# ---------------------------------------------------------------------------
+
+_PER_ZONE_KEYS = {"zone", "returncode", "matched_pattern", "elapsed_s", "stderr_tail"}
+
+
+def test_zone_fanout_all_zones_exhausted_evidence_carries_per_zone_outcomes(
+    no_marker_posts,
+) -> None:
+    """All-zones-exhausted: the raised error's evidence['per_zone_attempts']
+    has one rich record per attempted zone, each with the 5 keys, and the two
+    records reflect the two DISTINCT stderr inputs (not a single last-zone
+    collapse — the #763 defect this fix closes)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            # lora-7b → a2-ultragpu-1g, ladder [a, c]; two distinct exhaustion
+            # stderr variants so the per-zone collapse is observable.
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED: zone -a is full"),
+            GcloudRunResult(1, "", "does not have enough resources available in zone -c"),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    with pytest.raises(GcpProvisioningError) as exc:
+        backend.launch(_spec(intent="lora-7b"))
+
+    per_zone = exc.value.evidence["per_zone_attempts"]
+    assert [e["zone"] for e in per_zone] == ["us-central1-a", "us-central1-c"]
+    for entry in per_zone:
+        assert set(entry) == _PER_ZONE_KEYS
+        assert entry["returncode"] == 1
+        assert isinstance(entry["elapsed_s"], float)
+        assert entry["matched_pattern"]  # a capacity pattern matched
+    # The two records carry DISTINCT stderr tails (per-zone, not collapsed).
+    assert "zone -a is full" in per_zone[0]["stderr_tail"]
+    assert "zone -c" in per_zone[1]["stderr_tail"]
+    assert per_zone[0]["stderr_tail"] != per_zone[1]["stderr_tail"]
+    # Back-compat: the bare name-list + summary still present.
+    assert exc.value.evidence["zones_attempted"] == ["us-central1-a", "us-central1-c"]
+    assert "us-central1-c" in exc.value.evidence["zones_attempted_summary"]
+
+
+def test_zone_fanout_success_after_miss_handle_extra_carries_trail(no_marker_posts) -> None:
+    """A capacity miss in -a then a land in -c threads the EARLIER -a miss onto
+    handle.extra['per_zone_attempts'] (a one-entry list — the landing zone -c is
+    in handle.extra['zone'], not the trail)."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),  # us-central1-a
+            GcloudRunResult(0, created_payload, ""),  # us-central1-c
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_spec(intent="lora-7b"))
+    assert handle.extra["zone"] == "us-central1-c"
+    trail = handle.extra["per_zone_attempts"]
+    assert len(trail) == 1
+    assert trail[0]["zone"] == "us-central1-a"
+    assert set(trail[0]) == _PER_ZONE_KEYS
+    assert trail[0]["returncode"] == 1
+
+
+def test_zone_fanout_non_capacity_immediate_raise_attaches_partial_evidence(
+    no_marker_posts,
+) -> None:
+    """A non-capacity (PERMISSION_DENIED) failure on the first zone raises
+    immediately, but the raised error still carries the partial per-zone trail
+    (the one failed -a attempt) with the AUTH matched_pattern — NOT a capacity
+    pattern, and NOT silently dropped."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "PERMISSION_DENIED: caller does not have permission"),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    with pytest.raises(GcpProvisioningError, match="PERMISSION_DENIED") as exc:
+        backend.launch(_spec(intent="lora-7b"))
+    per_zone = exc.value.evidence["per_zone_attempts"]
+    assert len(per_zone) == 1
+    assert per_zone[0]["zone"] == "us-central1-a"
+    assert set(per_zone[0]) == _PER_ZONE_KEYS
+    matched = (per_zone[0]["matched_pattern"] or "").lower()
+    assert "permission" in matched
+    assert not any(tag in matched for tag in ("exhaust", "resource", "enough resources"))
+
+
+def test_zone_fanout_handle_extra_no_per_zone_attempts_when_first_zone_lands(
+    no_marker_posts,
+) -> None:
+    """First-zone success (no miss) must NOT add per_zone_attempts to
+    handle.extra — the no-miss happy path stays byte-identical to pre-#774."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],  # us-central1-a lands
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_spec(intent="lora-7b"))
+    assert handle.extra["zone"] == "us-central1-a"
+    assert "per_zone_attempts" not in handle.extra
+
+
+# ---------------------------------------------------------------------------
 # create-timeout-with-live-instance (#736): a FLEX_START create that exceeds
 # the 300s subprocess cap but lands a live instance server-side must surface
 # as the still-provisioning terminal (→ exit 75), NOT exit 4; a truly-absent

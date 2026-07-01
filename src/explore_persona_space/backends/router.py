@@ -598,6 +598,15 @@ class RouteAttempt:
     outcome: str
     detail: str = ""
     elapsed_seconds: float = 0.0
+    # Additive structured evidence for this attempt (#774). The GCP catch sites
+    # populate it from the GcpProvisioningError's per-zone fan-out
+    # (``per_zone_attempts`` + ``zones_attempted_summary``) so the
+    # ``epm:backend-selected`` marker carries the full zone trail, not just the
+    # last zone's stderr (the #763 single-zone misdiagnosis). Default empty so
+    # every existing positional/keyword construction is unchanged AND
+    # ``_attempt_to_dict`` omits the key for the common no-evidence attempt
+    # (byte-identical serialized shape for every pre-#774 reader).
+    evidence: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -1796,6 +1805,33 @@ def _provisioning_detail(exc: GcpProvisioningError) -> str:
     return f"{exc.reason}; stderr_tail: {tail[-1024:]}"
 
 
+def _provisioning_evidence(exc: GcpProvisioningError) -> dict[str, Any]:
+    """Per-zone fan-out evidence for a GCP provisioning failure (#774).
+
+    Lifts the rich per-zone trail (``per_zone_attempts`` — one
+    ``{zone, returncode, matched_pattern, elapsed_s, stderr_tail}`` record per
+    zone the GCP create loop tried) plus the human-readable
+    ``zones_attempted_summary`` off the :class:`GcpProvisioningError`, so the
+    ``RouteAttempt.evidence`` it populates carries the full zone coverage to the
+    ``epm:backend-selected`` marker. The bare ``zones_attempted`` name-list is
+    NOT lifted when ``per_zone_attempts`` is present — the richer record
+    supersedes it (each per-zone record already carries its zone name).
+
+    Returns an EMPTY dict when the error carries no fan-out evidence (e.g. a
+    single-zone non-capacity raise that never entered the loop), so
+    ``_attempt_to_dict`` omits the ``evidence`` key entirely and the attempt
+    serializes byte-identically to the pre-#774 shape.
+    """
+    out: dict[str, Any] = {}
+    per_zone = exc.evidence.get("per_zone_attempts")
+    if per_zone:
+        out["per_zone_attempts"] = per_zone
+    summary = exc.evidence.get("zones_attempted_summary")
+    if summary:
+        out["zones_attempted_summary"] = summary
+    return out
+
+
 def _gcp_quota_headroom_or_none(backend: ComputeBackend, spec: RunSpec) -> QuotaHeadroom | None:
     """Run the GCP regional-quota headroom pre-check; fail OPEN (``None``) on any failure.
 
@@ -2598,6 +2634,7 @@ def _override_free_or_gcp(
                     outcome="provisioning_failure",
                     detail=_provisioning_detail(exc),
                     elapsed_seconds=now_fn() - started_at,
+                    evidence=_provisioning_evidence(exc),
                 )
             )
             _post_terminal_failure_marker(
@@ -3921,6 +3958,7 @@ def _attempt_one_gcp_rung(
                     outcome="provisioning_failure",
                     detail=f"rung {rung_label}: {_provisioning_detail(exc)}",
                     elapsed_seconds=now_fn() - started_at,
+                    evidence=_provisioning_evidence(exc),
                 )
             )
             logger.warning(
@@ -4576,7 +4614,7 @@ def _post_terminal_failure_marker(
 
 
 def _attempt_to_dict(a: RouteAttempt) -> dict[str, Any]:
-    return {
+    d: dict[str, Any] = {
         "kind": a.kind,
         "cluster": a.cluster,
         "est_start_seconds_raw": a.est_start_seconds_raw,
@@ -4585,6 +4623,12 @@ def _attempt_to_dict(a: RouteAttempt) -> dict[str, Any]:
         "detail": a.detail,
         "elapsed_seconds": round(a.elapsed_seconds, 3),
     }
+    # Emit the structured evidence ONLY when populated (#774) so the common
+    # no-evidence attempt serializes byte-identically to the pre-#774 7-field
+    # shape — no schema break for any existing marker reader.
+    if a.evidence:
+        d["evidence"] = a.evidence
+    return d
 
 
 # ---------------------------------------------------------------------------

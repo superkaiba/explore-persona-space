@@ -2245,7 +2245,14 @@ markers:
          elapsed_seconds: <float>
          attempts:       [{kind, cluster, est_start_seconds_raw,
                             est_start_seconds_clamped, outcome, detail,
-                            elapsed_seconds}, ...]
+                            elapsed_seconds, evidence?}, ...]
+                          # attempts[].evidence (optional, additive, #774) may carry
+                          # per_zone_attempts (a list of {zone, returncode,
+                          # matched_pattern, elapsed_s, stderr_tail} records, one per
+                          # GCP zone the rung tried) + zones_attempted_summary; emitted
+                          # ONLY when populated, so the common no-evidence attempt keeps
+                          # the byte-identical pre-#774 7-field shape (opaque-dict shape,
+                          # no schema-semantics change).
          extra:          {cancel_race?, gcp_attempts_today?,
                           intermediate?,
                           provisioning_model?,
