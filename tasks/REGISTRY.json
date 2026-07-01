@@ -5029,8 +5029,8 @@
     "786": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/786",
-      "status": "running",
+      "path": "tasks/reviewing/786",
+      "status": "reviewing",
       "title": "daily-fix: task-workflow API atomicity (git-mv, post-marker, view)"
     },
     "787": {
