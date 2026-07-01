@@ -161,7 +161,7 @@ The skill moves status in exactly five places:
 5. **Same-issue follow-up re-entry (Step 9b § Same-issue follow-up
    loop / Step 0 followup-scope dispatch):** a task at `interpreting` /
    `reviewing` / `awaiting_promotion` / `completed` carrying an unrun
-   `epm:followup-scope v1` moves to `followups_running` (tagged
+   `epm:followup-scope` moves to `followups_running` (tagged
    `followup-auto` | `followup-manual` by initiation mode) and HOLDS
    that status while executing a `question_relation: same`
    follow-up ON this issue, then re-parks at `awaiting_promotion`.
@@ -235,8 +235,8 @@ proposed                                <- user has filed, clarifier hasn't run
                                                      |--> running (implementing sub-phase)  <- experiment-implementer (type:experiment) OR implementer (type:infra/batch)
                                                             |-- (epm:experiment-implementation OR epm:results posted)
                                                                |--> running (code-reviewing sub-phase)  <- code-reviewer ensemble (Claude + Codex)
-                                                                      |-- FAIL + count<3 --> running (implementing, v+1)
-                                                                      |-- FAIL + count>=3 --> blocked
+                                                                      |-- FAIL + count<5 --> running (implementing, v+1)
+                                                                      |-- FAIL + count>=5 --> apply Step 5d cap-hit rule: strip → PASS+continue OR surface residual (autonomous+substantive: blocked; interactive: parked)
                                                                       |-- PASS + [type:experiment] --> running (workload sub-phase)  <- experimenter (pod ops + monitoring)
                                                                             |-- (epm:results posted)
                                                                                |--> verifying              <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn
@@ -923,7 +923,9 @@ From the result, derive:
 
 **Same-issue follow-up dispatch (chat entry point).** Before the
 normal status dispatch, check the marker map for an UNRUN
-`epm:followup-scope v1` — one whose `followup_label` has no matching
+`epm:followup-scope` — the HIGHEST-version `epm:followup-scope`
+entry for this issue (tie-break newest `ts`; corrections land
+append-only) whose `followup_label` has no matching
 `epm:same-issue-followup-run v1`. If present AND the status is
 post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
 `completed`) — or `followups_running` itself (the mid-round resume
@@ -1709,7 +1711,10 @@ Only if status is `approved`.
 **4a. Worktree + draft PR.** Create `.claude/worktrees/issue-<N>` on
 branch `issue-<N>`, symlink the repo `.env` into it, and open a draft PR.
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
+# #506-safe: from a worktree cwd, `git rev-parse --show-toplevel` returns the
+# WORKTREE root and doubles the path (.../issue-<N>/.claude/worktrees/issue-<N>);
+# --git-common-dir resolves to <main>/.git so dirname is the main repo root.
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 WORKTREE="$REPO_ROOT/.claude/worktrees/issue-<N>"
 bash "$REPO_ROOT/scripts/new_worktree.sh" "$WORKTREE" issue-<N> --issue <N>
 # Sparse by default (~0.4G vs ~3.8G full); reuses if it exists (resume case);
@@ -1739,8 +1744,11 @@ tool's working directory is NOT preserved across separate calls, so a
 relative `cd .claude/worktrees/issue-<N>` in one call has no effect on
 the next. ALWAYS address the worktree with an absolute path or
 `git -C "$WORKTREE" <cmd>` — never a bare relative `cd`. Resolve the
-absolute path once with `git rev-parse --show-toplevel` (as above) and
-reuse `$WORKTREE` / `$REPO_ROOT` in every subsequent command.
+absolute path once with the #506-safe
+`REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")`
+recipe (as above) — NOT `git rev-parse --show-toplevel`, which from a
+worktree cwd returns the worktree root and doubles the path — and reuse
+`$WORKTREE` / `$REPO_ROOT` in every subsequent command.
 
 **Open the draft PR only if the branch is ahead of `main`.** `gh pr
 create` errors with `No commits between main and issue-<N>` when the
@@ -1902,6 +1910,9 @@ Before dispatching, sync the worktree's workflow surface from local
 already runs on `main`):
 
 ```bash
+# Step 5a WANTS the WORKTREE root (that is where the spec-freshness sync writes)
+# — NOT the #506 path-doubling bug; do NOT change to --git-common-dir here. The
+# self-no-op case (session already on main) is why show-toplevel is correct.
 WT=$(git rev-parse --show-toplevel)
 SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md"
 MB=$(git -C "$WT" merge-base HEAD main)
@@ -2051,8 +2062,8 @@ if every phase IS present (command + exit 0 + artifact digest) and
 only the *formatting* is imperfect, that is a `CONCERNS`, not a FAIL
 — and Step 5c-bis strips any mechanical-contract-only FAIL once the
 orchestrator verifies the evidence is genuinely present, so cosmetic
-gripes about present evidence never bounce the implementer or trip
-the cap-3 pivot. Code-only tasks (`infra` / `batch` / `analysis` /
+gripes about present evidence never bounce the implementer or consume a
+review round. Code-only tasks (`infra` / `batch` / `analysis` /
 `survey`) keep the existing test-verdict gate (Step 9c) and are
 exempt from this smoke gate.
 
@@ -2085,7 +2096,8 @@ reconciler invocations.
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
 (reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Step
-0.5), `smoke-run-missing` (Step 0.6)} and does NOT contain `substantive`
+0.5), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
+NOT contain `substantive`
 (any code / plan / test / security finding). The `**Blocker tags:**` line is
 the parse target; if a legacy verdict omits it, fall back to reading the
 Critical-section prose for the same tag strings. Apply this strip BEFORE the
@@ -2107,6 +2119,29 @@ judgment, just structural presence:
   `## Smoke run` section that covers only one phase (e.g. training) while the
   pipeline also runs a separate eval rig is genuinely absent for the missing
   phase — leave the FAIL in place.
+- **git-provenance:** the orchestrator reads the blocker's
+  `**Git-provenance subclass:**` line and runs the matching read-only git
+  probe from repo root (or against the branch ref `issue-<N>`, never by
+  switching the repo-root branch — CLAUDE.md hard rule):
+  - `pre-existing-on-trunk` → `git show main:<path>` resolves AND the round's
+    own commit range (`git show <round-sha>~1..<round-sha> -- <path>`, or the
+    implementer report's `<parent>..HEAD`) does NOT touch the flagged lines →
+    the violation is on trunk, not from this round → STRIP.
+  - `stale-main-or-worktree` → `git log --oneline main..issue-<N> -- <path>`
+    returns zero non-merge commits (branch never touched the file) → the
+    finding is a stale-branch artifact → STRIP.
+  - `cumulative-main-head-diff` → the flagged line is unchanged in the round's
+    OWN range (`git show <round-sha>~1..<round-sha> -- <path>` /
+    `<parent>..HEAD`) even though it appears in `main...HEAD` → out of round
+    scope → STRIP.
+  In ALL THREE: the strip fires ONLY when the git probe CONFIRMS the finding is
+  not from this round's diff. If the probe shows the round's own range DID touch
+  the flagged lines (git says the round introduced it), the strip does NOT fire
+  — leave the FAIL in place and apply the normal Step 5c rule. This is
+  evidence-based, never a blanket ignore. Merge-base errors on a sparse/shallow
+  worktree (`fatal: main...HEAD: no merge base`) are a checkout artifact — fall
+  back to the two-dot / round-SHA range per code-reviewer.md Step 0; a "no merge
+  base" error is never itself grounds to strip OR to FAIL.
 
 Then:
 
@@ -2125,11 +2160,16 @@ Then:
 
 This is bounded: the orchestrator may strip ONLY a mechanically-verifiable
 contract blocker (it is checking a structural fact, not overriding a
-code-substance judgment). It directly closes the gate-hopping failure mode —
+code-substance judgment) — for `git-provenance` the "structural fact" is the
+read-only git probe confirming the flagged state is NOT introduced by the
+round's diff (a git-history fact, same bounding logic as
+marker-shape/smoke-run-missing), never a code-substance judgment. It directly
+closes the gate-hopping failure mode —
 a reviewer that FAILs round after round on the *presentation* of evidence the
 marker demonstrably contains (e.g. round 1 marker-shape, round 2 smoke-digest
 formatting, never reviewing the code) can no longer bounce the implementer or
-trip the Step 5d cap-3 strategy pivot. The round counter does NOT increment
+consume a cap-5 round (the strategy pivot is retired; the strip still prevents
+the round counter from incrementing). The round counter does NOT increment
 for a strip. The clean-result-critique loop (Step 9a-bis) carries the same
 strip for *presentation-only* verifier FAILs (MDX prose, caption shape,
 cherry-label phrasing) — a clean-result FAIL backed only by presentation
@@ -2173,12 +2213,13 @@ per concern_id:
      mode never defers` AND EXECUTE the bounce in this same turn (spawn
      the implementer agent with a brief targeting the concern_id); do
      NOT state the Decision and then end the turn.
-- **severity=BLOCKER** → either address (option 1 above) OR pivot
-  strategy per `pivot_criteria.code_review_ensemble_cap_3`. BLOCKERs
-  CANNOT route to the deferral gate. If neither address nor pivot
-  resolves it, post `epm:failure v1 failure_class: code` referencing the
-  concern_id and set status:blocked (halt_criteria id=6
-  `concern_unresolved`).
+- **severity=BLOCKER** → either address (option 1 above) OR apply the
+  cap-hit rule per `pivot_criteria.code_review_ensemble_cap_5_surface`
+  (at cap-5: strip → all-stripped PASS+continue OR surface a substantive
+  residual). BLOCKERs CANNOT route to the deferral gate. If it cannot be
+  addressed and the residual is substantive, post `epm:failure v1
+  failure_class: code` referencing the concern_id and set status:blocked
+  (halt_criteria id=6 `concern_unresolved`).
 
 Multiple open CONCERNS may batch into ONE `AskUserQuestion` call <!-- gate: gates.concern_deferral_request --> <!-- autonomous-mode: skip --> with
 one option per concern_id plus a free-text rationale box per concern.
@@ -2203,37 +2244,58 @@ the same logic.
   - `infra` / `batch` / `analysis` / `survey` -> skip pod phase, move
     status directly to `reviewing` (the inline test-verdict gate at
     Step 9c runs from there).
-- **`final_verdict == FAIL` + revision_round<3** -> stay at status
+- **`final_verdict == FAIL` + revision_round<5** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
   present) as part of the brief. Implementer posts v<n+1>; loop back
   to 5a with `revision_round = n+1`.
-- **`final_verdict == FAIL` + revision_round>=3** -> **STRATEGY PIVOT,
-  not block** (see CLAUDE.md "STATE-TO-`blocked` criteria" and
-  workflow.yaml § pivot_criteria.code_review_ensemble_cap_3). The
-  implementation strategy isn't working — same diff family has failed
-  3 rounds. Re-invoke `/adversarial-planner` with explicit pivot scope
-  in the brief: "the implementer can't make this strategy work. Propose
-  a fundamentally different design (drop the offending component / swap
-  model / change architectural approach)." Treat the revised plan as a
-  fresh implementer cycle (`revision_round` RESETS to 1 on the new
-  plan). Track pivots in a top-level `epm:strategy-pivot v<n>` marker
-  with the pivot rationale and what changes.
+- **`final_verdict == FAIL` + revision_round>=5** -> **CAP-HIT:
+  strip-then-continue-or-surface** (replaces the retired cap-3 strategy
+  pivot; see CLAUDE.md "STATE-TO-`blocked` criteria" and workflow.yaml
+  § pivot_criteria.code_review_ensemble_cap_5_surface). At round 5 (the
+  cap) with a non-PASS ensemble verdict, the orchestrator:
+  1. **Applies the FULL Step 5c-bis strip once more** — the
+     mechanical-contract-only set {`marker-shape`, `smoke-run-missing`,
+     `git-provenance`}, evidence-based as always (git-provenance runs the
+     read-only git probe matching the blocker's declared subclass).
+  2. **If ALL residual blockers are stripped** (false-positive /
+     mechanical / git-provenance) → treat as PASS and CONTINUE (proceed
+     per the `final_verdict == PASS` branch above). Log one chat line +
+     post an `epm:progress` note recording the cap-5-strip-continue
+     outcome (which blockers were stripped and by what verification).
+  3. **If ANY substantive residual remains** (a real finding the strip
+     cannot verify away — silent-failure, upload-path/artifact-loss,
+     missing checkpoint-per-phase, resource-leak, scaffolded-but-unplumbed
+     pipeline, producer/consumer key mismatch, missing/incomplete smoke,
+     estimand/headline-poisoning) → **SURFACE** it. Do NOT ship past it,
+     do NOT same-diff-family pivot-loop:
+     - **Interactive mode:** present the residual blocker(s) to the user
+       (the two-path escalation is grandfathered for a genuine stuck-real
+       blocker; frame the residual + ask how to proceed). EXIT awaiting
+       the user.
+     - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): post
+       `epm:failure v1` with `failure_class: code` referencing the
+       residual blocker(s), set `status: blocked`, fire
+       `PushNotification({"message": f"#{N} BLOCKED: ensemble review real
+       residual at cap-5 — open it"[:200], "status": "proactive"})`, run
+       CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue-tick <N>` job;
+       idempotent), and EXIT. This is the standing halt path for a
+       genuinely-stuck real blocker after the auto-continue space is
+       exhausted (halt_criteria id=6 `concern_unresolved` family) — no
+       more pivots, no more silent shipping past.
 
-  Only after ~3 fundamentally different strategies have all FAILed AND
-  no further autonomous angle exists, move status to `blocked` and
-  exit. Post the §5 marker with `--exit-kind failure-exit` and notes
-  enumerating the strategies tried and why each failed. User decides:
-  override, revise scope, or escalate the diagnostic loop.
-
-  Bare cap-3 FAIL is NOT a block trigger. Continuing autonomously via
-  pivot is the default.
+  For a plan that is ITSELF internally contradictory, the
+  `plan_contradiction_replan` pivot (Step 7 / § pivot_criteria) still
+  applies — that is a different signal (the plan is the defect), not a
+  code-review cap-hit. Likewise the whack-a-mole detector (Step 5.bis(b))
+  is unchanged; the retired pivot is specifically the "same diff family
+  failed N rounds → re-plan" one.
 
 **Codex twin no-show fallback.** If the Codex wrapper posts
 `epm:failure v<m>` with `failure_class: codex-output-malformed` or
 `failure_class: infra` (codex plugin missing), proceed with
 single-reviewer (Claude-only) decision-making for that round. Do NOT
-block on the Codex twin's absence; cap-3 still applies to the Claude
+block on the Codex twin's absence; cap-5 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
 this round; using Claude reviewer only.`
 
@@ -3172,8 +3234,11 @@ while True:
     #                                  `epm:fact-candidates v1`) from the local
     #                                  VM as part of its sentinel drain — do
     #                                  NOT re-post it. Read result["gate"],
-    #                                  exit the polling loop, and park at the
-    #                                  user gate per Step 6d.4 below.
+    #                                  exit the polling loop, and dispatch the
+    #                                  matching gate handler per Step 6d.4
+    #                                  below (PARK for a user gate like
+    #                                  `fact-candidates`, AUTO-RESOLVE +
+    #                                  resume the loop for `pv_phase1_done`).
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
@@ -3206,7 +3271,8 @@ The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting
 their carried markers from the VM via `task_workflow.post_event`). The
 orchestrator's only post-tick duties are: exit the loop on `status=done`,
-park at the user gate on `status=gate` (Step 6d.4), and post
+dispatch the matching gate handler on `status=gate` (Step 6d.4 — PARK for
+a user gate, AUTO-RESOLVE + resume the loop for `pv_phase1_done`), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
@@ -3487,7 +3553,7 @@ uv run python scripts/task.py set-status <N> verifying \
 
 Then proceed to Step 7 (which handles results → upload routing).
 
-##### Step 6d.4: On `status=gate` — park at a pod-side user gate
+##### Step 6d.4: On `status=gate` — handle a pod-side gate (park OR auto-resolve)
 
 Pod-side dispatchers cannot post markers directly (the `task.py`
 branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
@@ -3507,9 +3573,13 @@ polling loop and NEVER trigger the fail-fast block. They are NOT user
 gates — do not treat a `blocks_pipeline: False` phase signal as an
 unrecognised gate (incident #641).
 
-The orchestrator parks at the named gate inline rather than continuing
-to poll — the pipeline itself has EXITed and is waiting on a user
-answer.
+The orchestrator handles the named gate inline rather than continuing to
+poll — the pipeline itself has EXITed at the gate. Most gates are PARK-mode
+(`fact-candidates`): the pipeline is waiting on a user answer, so the
+orchestrator parks. An AUTO-RESOLVING gate (`pv_phase1_done`) is the
+exception: the orchestrator resolves it itself (a pod-cycle around an
+off-pod step) and resumes the loop in the same turn — see the per-gate
+handlers below.
 
 Gate handlers (one per registered `<name>`):
 
@@ -3563,6 +3633,74 @@ Gate handlers (one per registered `<name>`):
   polling loop directly without a re-invocation. (See plan §4.2 of any
   fact-teaching task for the on-pod resume contract.)
 
+- **`pv_phase1_done`** (issue #763 persona-vector extraction —
+  off-pod judge between two GPU phases): an AUTO-RESOLVING gate, NOT a
+  user park. The dispatcher `scripts/issue763_dispatch.sh` runs GPU
+  phase 1 (`generate + capture + pv_extract_generate + upload-progress`
+  — the PV rollouts are now on the HF data repo), emits the blocking
+  sentinel `gate=pv_phase1_done` via
+  `scripts/issue763_upload.py --emit-gate pv_phase1_done` <!-- lint: historical-ref --> (called from
+  `scripts/issue763_dispatch.sh` after upload-progress)
+  (`write_sentinel("epm:gate", …, blocks_pipeline=True)`), and EXITs.
+  Unlike `fact-candidates` (which PARKS for a user pick at
+  workflow.yaml § gates.fact_candidates), the
+  orchestrator resolves this gate ITSELF — it does NOT raise
+  `AskUserQuestion`, does NOT post `epm:step-completed --exit-kind
+  parked`, does NOT EXIT the skill, and does NOT CRON-TEARDOWN — by
+  orchestrating a pod-cycle around an off-pod judge step and then
+  RESUMING the polling loop in this same turn. This handler behaves
+  IDENTICALLY in interactive and `EPM_AUTONOMOUS_SESSION` modes (there
+  is no user decision to make — the gate is fully auto-resolved).
+  <!-- autonomous-mode: auto-resolve -->
+  Concretely:
+
+  1. **Stop the GPU pod** (volume preserved): `uv run python scripts/pod.py
+     stop --issue <N>`. This frees the GPU through the deadline-bounded
+     stop (see Step 6d.2 § "Stop the pod" / "Notes on the obsolete
+     monitoring stack"); the PV rollouts are already on HF, so nothing on
+     the pod's ephemeral disk is lost.
+  2. **Run the judge OFF-POD on the VM**: `uv run python
+     scripts/issue763_extract_pv_rb.py --phase judge`. <!-- lint: historical-ref --> (This script
+     ships on the `issue-763` branch — it lands on `main` when #763 merges;
+     the reference is a forward / sibling-branch one, not a dead tool.)
+     This is VM-safe by construction and NOT a `task.py` pod-shellout: it
+     fetches the PV rollouts from HF via `snapshot_download`, batch-judges
+     through
+     `eval.batch_judge` (the deadline-bounded client — never a hand-rolled
+     `messages.batches.create` + deadline-less poller), and uploads the
+     keep-flags back to the issue HF prefix. It needs no GPU and posts no
+     `task.py` markers itself (it is an off-pod analysis step; the
+     orchestrator owns the poll-loop markers).
+  3. **Resume the pod**: `uv run python scripts/pod.py resume --issue <N>`
+     — new IP/port; `pods.conf` + `~/.ssh/config` + MCP config auto-refresh
+     on resume (re-run `/mcp` if the SSH MCP entry needs the refreshed
+     host/port; if SSH keeps failing on a stale port, pull the live
+     host/port back with `pod.py config --refresh-from-api` per Step 6b
+     "stale-port recovery", the #488 13h-loop failure class). CONFIRM the
+     resumed pod is reachable (`uv run python scripts/pod.py health
+     --quick`) before re-dispatching.
+  4. **Re-dispatch the workload tail** at `--from-phase pv_capture` via
+     the SAME experimenter launch pattern as the original launch
+     (Step 6d.1): spawn the `experimenter` subagent with the workload
+     command `bash scripts/issue763_dispatch.sh --from-phase pv_capture`
+     and the resumed pod's name (`pod-<N>` / `epm-issue-<N>`). The
+     dispatcher resumes at capture → E0 judge → fit → figures → final
+     upload → `[phase=done]`. The experimenter posts a fresh
+     `epm:run-launched` marker (new `pid` + `log_abs`) and exits, exactly
+     as on the first launch; the orchestrator updates its local poll-loop
+     `pid`/`log` from that marker.
+
+  Then **RESUME the polling loop** (Step 6d.2) at the next tick — do NOT
+  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved:
+  the pod is burning GPU again after resume, so the `/issue-tick <N>`
+  backstop cron stays armed and the bg-Bash poll chain continues against
+  the resumed pod. (Contrast with `fact-candidates` above, which parks
+  for a user pick and tears the cron down.) **Idempotency on re-entry:**
+  if a re-entry observes an `epm:gate v<n>` for `pv_phase1_done` followed
+  by a FRESH `epm:run-launched` (post-resume; ts > the gate marker),
+  treat the gate as already resolved and proceed with normal polling — do
+  NOT re-stop / re-judge / re-dispatch.
+
 - **Unrecognised `gate` name**: this branch fires ONLY for a sentinel
   the poller surfaced as `status=gate` — i.e. one that carried
   `blocks_pipeline: True`. A non-empty gate name with
@@ -3579,7 +3717,15 @@ Gate handlers (one per registered `<name>`):
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-Run CRON-TEARDOWN before parking (the HARDENED Step 6d.2 procedure:
+**PARK-mode gates only** (`fact-candidates` and the unrecognised-gate
+branch): the tail below applies ONLY to gates that EXIT the skill to wait
+on a human. Auto-resolving gates like `pv_phase1_done` (above) handle
+their own continuation — they do NOT teardown and do NOT EXIT; their
+handler resumes the polling loop in the same turn, so it skips this whole
+paragraph.
+
+For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED
+Step 6d.2 procedure:
 `CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
 equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
 fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
@@ -3591,8 +3737,9 @@ skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
 --step 6d --exit-kind parked` (the §5 `epm:step-completed` marker); the
 user's re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
 transitions are now `running → verifying` (on done), `running → running`
-(after a parked gate resumes), or `running → blocked` (on stalled/dead
-or unrecognised gate).
+(after a parked-and-resumed user gate, OR after an auto-resolving gate's
+handler returns), or `running → blocked` (on stalled/dead or unrecognised
+gate).
 
 ##### Notes on the obsolete monitoring stack
 
@@ -3630,9 +3777,11 @@ read it as "the bg-Bash poll chain has no live tick AND no scheduled
 
 Status stays at `running` throughout the polling loop. The polling
 loop's terminal transitions are `running → verifying` (on done),
-`running → running` (parked at a user gate per Step 6d.4; resumes on
-the next `/issue <N>` invocation after the user posts the gate-resume
-marker), or `running → blocked` (on stalled/dead or an unrecognised
+`running → running` (a gate resolved per Step 6d.4 — either a PARK-mode
+user gate that resumes on the next `/issue <N>` invocation after the user
+posts the gate-resume marker, OR an auto-resolving gate like
+`pv_phase1_done` whose handler cycles the pod and resumes the loop in the
+same turn), or `running → blocked` (on stalled/dead or an unrecognised
 gate name).
 
 ### Step 7: Monitor -> results
@@ -4587,10 +4736,20 @@ contexts, sees v2 + prior critique events). Posts both
 `epm:interp-critique v2` and `epm:interp-critique-codex v2`. Apply rule
 again.
 
-**Max 3 rounds per reviewer.** After round 3, advance regardless with
-full critique history.
+**Max 5 rounds per reviewer.** At round 5 (the cap) with a non-PASS
+ensemble verdict, apply the Step 9a-bis-style procedural-only strip once
+more (procedural / presentation REVISEs). If ALL residual REVISEs are
+stripped → advance with full critique history. If ANY SUBSTANTIVE
+residual remains — a flagged OVERCLAIM the strip cannot resolve — SURFACE
+it, do NOT auto-publish into the record (this is the MOST important site
+for surface-not-ship, #784: a real residual at interp is an overclaim
+that must never be silently promoted). Interactive: present the residual
+to the user + EXIT. Autonomous (`EPM_AUTONOMOUS_SESSION=1`): post
+`epm:failure v1 failure_class: code` referencing the residual, set
+`status: blocked`, fire `PushNotification`, run CRON-TEARDOWN, EXIT
+(halt_criteria id=6 `concern_unresolved` family).
 
-**On PASS (or max rounds reached):**
+**On PASS (or all-stripped at the cap):**
 
 The analyzer **promotes the source task IN PLACE to a clean-result** —
 no separate task is created. The analyzer:
@@ -5006,11 +5165,20 @@ post the next critique version (`epm:clean-result-critique v<n>` +
 `epm:clean-result-critique-codex v<n>`); apply the same ensemble
 decision rule (including the procedural-only strip) as round 1.
 
-**Max 3 rounds.** After round 3, advance regardless and fold the
-residual structural / register debt into the chat-side summary so the
-user can decide whether to patch before promoting.
+**Max 5 rounds.** At round 5 (the cap) with a non-PASS ensemble verdict,
+apply the procedural-only strip once more (procedural / presentation
+REVISEs). If ALL residual REVISEs are stripped → advance. If ANY
+SUBSTANTIVE residual remains — a flagged OVERCLAIM the strip cannot
+resolve — SURFACE it, do NOT auto-publish into the clean-result record
+(#784 surface-not-ship: a real residual here is an overclaim that must
+never be silently promoted). Interactive: present the residual to the
+user + EXIT (the user decides whether to patch before promoting).
+Autonomous (`EPM_AUTONOMOUS_SESSION=1`): post `epm:failure v1
+failure_class: code` referencing the residual, set `status: blocked`,
+fire `PushNotification`, run CRON-TEARDOWN, EXIT (halt_criteria id=6
+`concern_unresolved` family).
 
-**On PASS (or max rounds reached):**
+**On PASS (or all-stripped at the cap):**
 
 Move status to `reviewing`:
 
@@ -5857,7 +6025,12 @@ orphaned at `running` for 5+ hours.)
    workflow.yaml § markers: `followup_label` (kebab-slug; names the
    artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
    the verbatim proposal spec (or the user's verbatim chat request),
-   and the GPU-hour estimate.
+   and the GPU-hour estimate. **MULTIPLE `epm:followup-scope` versions
+   for one issue may exist** (corrections land append-only, each
+   superseding the prior — see #658's `persona-vectors-style-rb`
+   v3→v8 chain); the authoritative scope is ALWAYS the entry with the
+   highest top-level `version` (tie-break newest `ts`). Do NOT cache the
+   entry-time version — step 3 re-reads the latest before snapshotting.
 2. **Re-enter the pipeline.** **FIRST record the initiation mode as a
    tag** (before the status flip, so the `task.py` missing-tag warning
    stays quiet): `uv run python scripts/task.py add-tag <N>
@@ -5913,6 +6086,29 @@ orphaned at `running` for 5+ hours.)
    round exits the status only at the re-park:
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
    exit).
+   - **Immediately before the planner snapshots the scope, RE-READ the
+     latest `epm:followup-scope` for this issue** (highest top-level
+     `version`, tie-break newest `ts`) — never plan against an
+     entry-time snapshot, or a session that entered on `v3` and
+     snapshotted before a `v5`/`v6` correction landed plans stale (the
+     #658 bug). The `followup_label` lives inside the marker NOTE body
+     as free text (its format even differs across versions —
+     `- followup_label: ...` in v1/v2, bare `followup_label: ...` in
+     v3+), NOT as a top-level event key (top-level keys are
+     `{by, kind, note, ts, version}` only). So the selector does NOT
+     filter on `followup_label`: it matches `kind == 'epm:followup-scope'`
+     and takes the max `(version, ts)`, relying on the Step 0
+     entry-predicate having already filtered this issue to UNRUN status
+     (an `epm:followup-scope` whose label has no matching
+     `epm:same-issue-followup-run`) — so entering the loop means the
+     latest scope IS the active one. This is the SAME convention the
+     watcher uses (`autonomous_session_watch._followup_round_complete_reason`
+     keys on `ts` only, never `followup_label`) and the Step 0
+     highest-version-per-kind marker map. Mechanical recipe:
+     ```bash
+     uv run python scripts/task.py view <N> --json \
+       | jq '[.events[] | select(.kind=="epm:followup-scope")] | sort_by(.version, .ts) | last'
+     ```
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
@@ -6054,7 +6250,25 @@ suite directly and posts an `epm:test-verdict` event with the result.
       `uv run python scripts/select_step9c_tests.py --base main`
       It prints the exact `uv run pytest <files> -v --tb=short` command and
       any `untested touched file: <path>` WARN lines (stderr).
-   b. Run the printed command. Record pass/fail + any WARN lines.
+   b. Run the printed command from the orchestrator's repo-root cwd (no `cd`
+      is needed). Record pass/fail + any WARN lines. Two anti-silent-pass
+      guards are LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0
+      with zero collected tests) is a **FAIL, never a PASS**: it is the
+      signature of a failed `cd` that ran pytest in a directory with no tests
+      (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS
+      on `no tests ran ... pytest exit: 0` and was silently skipped).
+      ```bash
+      # If any cd is added upstream, HARD-GUARD it — never let the gate run in
+      # the wrong dir on a silent cd failure:
+      #   cd "$REPO_ROOT" || { echo "FATAL: cd to repo root failed" >&2; exit 1; }
+      PYTEST_OUT=$(uv run pytest <files> -v --tb=short 2>&1); PYTEST_RC=$?
+      echo "$PYTEST_OUT"
+      # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
+      if echo "$PYTEST_OUT" | grep -qiE 'no tests ran|collected 0 items'; then
+        echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
+        # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
+      fi
+      ```
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — but as
       `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
@@ -6067,7 +6281,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
 
 The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
 the files run, pass/fail counts, and any untested-touched-file WARNs (so the
-orchestrator surfaces coverage gaps — never silently skipped).
+orchestrator surfaces coverage gaps — never silently skipped). A
+zero-collected / `no tests ran` outcome is recorded as FAIL (never PASS on
+exit 0) per step 1b's guard.
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
@@ -6161,7 +6377,7 @@ work* contract.
      status's primary semantics as of 2026-06-10 is "a same-issue
      follow-up round is executing on this task" — Step 9b § Same-issue
      follow-up loop. The Step 0 dispatcher disambiguates by the
-     presence of an unrun `epm:followup-scope v1`.)
+     presence of an unrun `epm:followup-scope`.)
    - **No children in flight** AND task type is `experiment` ->
      **status `completed`**.
    - **type `infra` / `batch` / `analysis` / `survey`** (regardless of
@@ -6999,7 +7215,7 @@ wires each site to invoke `post_step_completed.py` with the right
 | Step 4b TDD gate awaiting `approve-tests` | 4b | user-gated | `parked` |
 | Step 4b TDD second pass | 4b | user-gated | `parked` |
 | Step 4b implementer EXIT to `running` | 4b | normal continuation | `clean` |
-| Step 5b code-review FAIL revision_round>=3 | 5b | error path | `failure-exit` |
+| Step 5b code-review FAIL revision_round>=5 | 5b | apply Step 5d cap-hit rule (strip-then-continue-or-surface) | `conditional` (all-stripped → `clean`; substantive residual → `failure-exit` autonomous / `parked` interactive) |
 | Step 6c pod URLs surfaced, leave at `running` | 6c | normal continuation | `clean` |
 | Step 6c pod provisioning failure | 6c | error path | `failure-exit` |
 | Step 6 preflight error/warning | 6 | error path | `failure-exit` |
@@ -7032,8 +7248,8 @@ dedicated "working" statuses):
 | `running` (implementing) | no `epm:experiment-implementation` (or `epm:results` for infra), no `epm:proposed-tests` either | implementer was cancelled | re-spawn implementer |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, no `epm:experiment-implementation`, no `epm:approve-tests` event posted **after** the `proposed-tests` event | TDD mode: tests posted, awaiting user approval | show the `proposed-tests` event timestamp + the `approve-tests` reply instruction, EXIT |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
-| `running` (implementing) | latest `epm:code-review` is FAIL, round < 3 | revision in progress | re-spawn implementer with critique |
-| `running` (implementing) | latest `epm:code-review` is FAIL, round >= 3 | exhausted retries | status to `blocked`, ask user |
+| `running` (implementing) | latest `epm:code-review` is FAIL, round < 5 | revision in progress | re-spawn implementer with critique |
+| `running` (implementing) | latest `epm:code-review` is FAIL, round >= 5 | cap reached | apply Step 5d cap-hit rule (strip-then-continue-or-surface): strip → all-stripped PASS+continue OR surface substantive residual (autonomous: `blocked` + notify; interactive: present to user) |
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
 | `running` (code-reviewing) | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
 | `running` (code-reviewing) | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
@@ -7048,19 +7264,19 @@ dedicated "working" statuses):
 | `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
 | `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `interpretation-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
-| `interpreting` | ensemble verdict PASS or round >= 3, neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel |
+| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 5 | revision needed | re-spawn analyzer with all critique events |
+| `interpreting` | ensemble verdict PASS or (round >= 5 AND the Step 9a cap-hit resolved: all residual stripped, no substantive overclaim residual), neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a surface-real-residual rule instead: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `interpreting` | `epm:clean-result-critique v<n>` exists, no `epm:clean-result-critique-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-clean-result-critic` only |
 | `interpreting` | `epm:clean-result-critique-codex v<n>` exists, no `epm:clean-result-critique v<n>` | Claude critic not yet returned | re-spawn `clean-result-critic` only |
 | `interpreting` | both `epm:clean-result-critique v<n>` and `epm:clean-result-critique-codex v<n>` exist, verdicts disagree (PASS-class vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `clean-result-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 3 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
-| `interpreting` | clean-result ensemble verdict PASS-class or round >= 3 | ready for review | advance to `reviewing` |
+| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 5 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
+| `interpreting` | clean-result ensemble verdict PASS-class or (round >= 5 AND the Step 9a-bis cap-hit resolved: all residual stripped, no substantive overclaim residual) | ready for review | advance to `reviewing`. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a-bis surface-real-residual rule: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
-| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle |
-| `followups_running` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the latest scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
+| `followups_running` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up the latest scope so a correction posted mid-round is honored on resume |
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |

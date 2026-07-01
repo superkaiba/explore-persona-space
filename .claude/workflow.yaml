@@ -409,7 +409,8 @@ gates:
         route here) that the orchestrator cannot or chooses not to
         address in an implementer round AFTER the
         `mechanical_contract_only_strip` rule has already stripped any
-        marker-shape / smoke-run-missing blockers from the verdict.
+        marker-shape / smoke-run-missing / git-provenance blockers from
+        the verdict.
         Layered ON TOP of main's PASS+CONCERNS auto-advance + mechanical
         strip — both keep operating untouched. Mechanical-only verdicts
         still strip and auto-advance; substantive concerns persisted to
@@ -727,15 +728,23 @@ halt_criteria:
 # `status:blocked` on any of these.
 # ──────────────────────────────────────────────────────────────────────
 pivot_criteria:
-  - trigger: code_review_ensemble_cap_3
+  - trigger: code_review_ensemble_cap_5_surface
     pivot_action: |
-      After 3 implementer-round FAILs on the same strategic approach,
-      re-invoke `/adversarial-planner` with an explicit pivot scope:
-      "the implementation strategy isn't working — propose a
-      fundamentally different design (drop offending component / swap
-      model / change architectural approach)." Treat the resulting plan
-      revision as round 1 of a NEW implementer cycle (cap-3 resets).
-      Block only after ~3 such pivots have all failed.
+      RETIRED the old `code_review_ensemble_cap_3` strategy-pivot (raised
+      to cap-5 + strip-then-continue-or-surface, #784). At round 5 (the
+      cap) with a non-PASS ensemble verdict, the orchestrator applies the
+      full Step 5c-bis strip once more (marker-shape / smoke-run-missing /
+      git-provenance — evidence-based); ALL residual blockers stripped →
+      treat as PASS + CONTINUE; ANY substantive residual → SURFACE (never
+      ship past, never same-diff-family pivot-loop): interactive → present
+      the residual to the user + EXIT; autonomous → post `epm:failure v1
+      failure_class: code` referencing the residual, set `status:blocked`,
+      fire `PushNotification`, run CRON-TEARDOWN, EXIT (halt_criteria id=6
+      `concern_unresolved` family). No more same-diff-family re-plan pivot.
+      See SKILL.md Step 5d. (A plan that is ITSELF internally
+      contradictory still routes to `plan_contradiction_replan` below —
+      that is a different signal, the plan is the defect, not a
+      code-review cap-hit.)
   - trigger: infra_respawn_cap_3
     pivot_action: |
       After 3 experimenter respawns on the same pod intent, try a
@@ -751,16 +760,29 @@ pivot_criteria:
       (category labels, 3rd-person narrator), drop the offending
       domain/condition, or swap the model. Block only after ~3 pivots
       across the reframe/drop/swap axis have all failed.
-  - trigger: interpretation_critic_cap_3
+  - trigger: interpretation_critic_cap_5_surface
     pivot_action: |
-      After 3 analyzer ↔ interpretation-critic rounds, advance regardless
-      with residual debt surfaced in `comments.jsonl`. Existing single-
-      critic policy. Do NOT block.
-  - trigger: clean_result_critic_cap_3
+      RENAMED + rewritten from `interpretation_critic_cap_3` (raised to
+      cap-5 + surface-real-residual, #784). After 5 analyzer ↔
+      interpretation-critic rounds, apply the Step 9a procedural-only
+      strip once more; ALL residual REVISEs stripped (procedural /
+      presentation) → advance; ANY substantive residual (a flagged
+      OVERCLAIM) → SURFACE, do NOT auto-publish into the record
+      (interactive: present to user + EXIT; autonomous: `epm:failure v1
+      failure_class: code` + `status:blocked` + notify + CRON-TEARDOWN).
+      No more silent advance-regardless-into-comments.jsonl — an interp
+      residual is an overclaim that must never be silently promoted.
+  - trigger: clean_result_critic_cap_5_surface
     pivot_action: |
-      After 3 analyzer ↔ clean-result-critic rounds, advance regardless
-      with residual structural / register debt surfaced in
-      `comments.jsonl`. Do NOT block.
+      RENAMED + rewritten from `clean_result_critic_cap_3` (raised to
+      cap-5 + surface-real-residual, #784). After 5 analyzer ↔
+      clean-result-critic rounds, apply the Step 9a-bis procedural-only
+      strip once more; ALL residual REVISEs stripped (procedural /
+      presentation) → advance; ANY substantive residual (a flagged
+      OVERCLAIM) → SURFACE, do NOT auto-publish into the record
+      (interactive: present to user + EXIT; autonomous: `epm:failure v1
+      failure_class: code` + `status:blocked` + notify + CRON-TEARDOWN).
+      No more silent advance-regardless-into-comments.jsonl.
   - trigger: compute_deviation_over_2x
     pivot_action: |
       Wall-time projection for any compute-bound component (from the
@@ -896,13 +918,16 @@ subagent_halt_conditions:
       gpt-5.5). PASS+PASS proceeds. FAIL+FAIL with overlapping blockers
       bounces; with disjoint blockers, union the blockers (one round).
       PASS+FAIL dispatches `reconciler` (marker mode); reconciler verdict
-      binds. On any effective FAIL, bounces to implementer up to 3 rounds
-      per reviewer (reconcile rounds free); on 4th ensemble FAIL, the
-      default is a STRATEGY PIVOT (see § pivot_criteria.code_review_ensemble_cap_3)
-      — re-invoke /adversarial-planner with explicit pivot scope and
-      treat the revised plan as a fresh implementer cycle (cap-3 resets).
-      Block only after ~3 such pivots have all FAILed AND no further
-      autonomous angle exists.
+      binds. On any effective FAIL, bounces to implementer up to 5 rounds
+      per reviewer (reconcile rounds free); on the 6th (cap-5) ensemble
+      FAIL, the orchestrator applies the full Step 5c-bis strip once more
+      (marker-shape / smoke-run-missing / git-provenance) — all residual
+      blockers stripped → PASS + continue; any substantive residual →
+      SURFACE (interactive: user; autonomous: epm:failure v1
+      failure_class: code + status:blocked + notify + CRON-TEARDOWN). No
+      more same-diff-family strategy-pivot re-plan (retired, #784; see
+      § pivot_criteria.code_review_ensemble_cap_5_surface and SKILL.md
+      Step 5d).
   - subagent: critic-ensemble
     verdict: "REVISE/REJECT after per-lens reconcile (worst-wins cross-lens)"
     action: |
@@ -910,10 +935,10 @@ subagent_halt_conditions:
       round. Per-lens: APPROVE+APPROVE proceeds; REVISE+REVISE or
       REJECT+REJECT bounces; APPROVE vs REVISE/REJECT dispatches
       `reconciler` (IN-CONTEXT mode, no events.jsonl marker). Cross-lens:
-      worst verdict wins. On REVISE/REJECT, bounces to planner up to 3
-      rounds (reconcile rounds free); on 4th, the default is a strategy
+      worst verdict wins. On REVISE/REJECT, bounces to planner up to 5
+      rounds (reconcile rounds free); on 6th, the default is a strategy
       pivot (drop offending condition / swap eval design / change scope)
-      and another planner cycle (cap-3 resets). Block only when the
+      and another planner cycle (cap-5 resets). Block only when the
       pivot space is exhausted.
   - subagent: interpretation-critic-ensemble
     verdict: "REVISE after reconcile (or REVISE+REVISE)"
@@ -922,9 +947,14 @@ subagent_halt_conditions:
       `codex-interpretation-critic` (Codex gpt-5.5). PASS+PASS proceeds.
       REVISE+REVISE bounces (concatenate + dedup findings). PASS+REVISE
       dispatches `reconciler` (marker mode). On REVISE, bounces to
-      analyzer up to 3 rounds per reviewer; on 4th, advance regardless
-      and surface residual debt to comments.jsonl (existing single-critic
-      policy).
+      analyzer up to 5 rounds per reviewer; on the 6th (cap-5), apply the
+      Step 9a procedural-only strip once more — all residual REVISEs
+      stripped (procedural / presentation) → advance; any SUBSTANTIVE
+      residual (a flagged overclaim) → SURFACE, do NOT auto-publish
+      (interactive: user; autonomous: epm:failure v1 failure_class: code
+      + status:blocked + notify + CRON-TEARDOWN). #784 surface-not-ship:
+      an interp residual is an overclaim that must never be silently
+      promoted into the record (see SKILL.md Step 9a).
   - subagent: clean-result-critic-ensemble
     verdict: "REVISE after reconcile (or REVISE+REVISE)"
     action: |
@@ -934,14 +964,19 @@ subagent_halt_conditions:
       (Codex gpt-5.5) running 15 lenses (v2 spec) including Lens 7
       (statistical-framing rule). PASS+PASS / PASS+CONCERNS advances.
       Disagreement dispatches `reconciler` (marker mode). On REVISE,
-      bounces to analyzer up to 3 rounds; on 4th, advance regardless
-      and surface residual structural / register debt to comments.jsonl.
+      bounces to analyzer up to 5 rounds; on the 6th (cap-5), apply the
+      Step 9a-bis procedural-only strip once more — all residual REVISEs
+      stripped (procedural / presentation) → advance; any SUBSTANTIVE
+      residual (a flagged overclaim) → SURFACE, do NOT auto-publish
+      (interactive: user; autonomous: epm:failure v1 failure_class: code
+      + status:blocked + notify + CRON-TEARDOWN). #784 surface-not-ship
+      (see SKILL.md Step 9a-bis).
   - subagent: clean-result-critic
     verdict: REVISE
-    action: "Bounces to analyzer up to 3 rounds; on 4th REVISE, advance regardless and surface residual structural / register debt to comments.jsonl"
+    action: "Bounces to analyzer up to 5 rounds; on the 6th (cap-5) REVISE, apply the Step 9a-bis procedural-only strip — all residual stripped → advance; substantive residual (flagged overclaim) → SURFACE, do NOT auto-publish (interactive: user; autonomous: epm:failure v1 failure_class: code + status:blocked + notify + CRON-TEARDOWN). #784 surface-not-ship."
   - subagent: interpretation-critic
     verdict: FATAL
-    action: "Bounces to analyzer up to 3 rounds; on 4th FATAL, status:blocked"
+    action: "Bounces to analyzer up to 5 rounds; on the 6th (cap-5) FATAL, status:blocked"
   - subagent: upload-verifier
     verdict: FAIL
     action: |
@@ -1030,7 +1065,7 @@ ensemble_review:
         rounds 1-3 (round-1-only policy reversed 2026-06-12 —
         cross-family reviewer diversity beats Claude-only later rounds).
         Codex twin no-show falls back to single-Claude-critic for that
-        round. Round cap 3 per reviewer; reconcile rounds free.
+        round. Round cap 5 per reviewer; reconcile rounds free.
     - role: clean-result-critic
       step: "9a-bis"
       claude_agent: clean-result-critic
@@ -1109,7 +1144,7 @@ ensemble_review:
   not_doubled:
     - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
     - consistency-checker  # mechanical structure check
-  round_cap_per_reviewer: 3
+  round_cap_per_reviewer: 5
   reconcile_invocations_count_toward_cap: false
   union_rule: |
     On FAIL+FAIL with disjoint blocker sets, the orchestrator unions the
@@ -1130,7 +1165,8 @@ ensemble_review:
     --severity CONCERN|BLOCKER --summary <80c> --by <reviewer> --round <n>`.
     Persisted binding concerns survive auto-advance even on a PASS-class
     verdict: AFTER the `mechanical_contract_only_strip` rule has stripped
-    any marker-shape / smoke-run-missing FAIL blockers, the orchestrator
+    any marker-shape / smoke-run-missing / git-provenance FAIL blockers,
+    the orchestrator
     reads `task.py list-concerns <N> --open-only --json`. If any open
     concern at severity CONCERN or BLOCKER remains, the orchestrator
     routes — per concern_id — to either an implementer round (auto-fix
@@ -1146,7 +1182,8 @@ ensemble_review:
     Applies to the code-reviewer step only. A FAIL is *mechanical-contract-
     only* when its `**Blocker tags:**` line (code-reviewer Step 7 template) is
     a non-empty subset of {`marker-shape` (Step 0.5), `smoke-run-missing`
-    (Step 0.6)} and does NOT contain `substantive`. The `**Blocker tags:**`
+    (Step 0.6), `git-provenance` (Step 0.9)} and does NOT contain
+    `substantive`. The `**Blocker tags:**`
     line is the orchestrator's parse target (legacy verdicts without it fall
     back to Critical-section prose). BEFORE applying the
     union_rule / disagreement rule, the orchestrator mechanically verifies
@@ -1157,8 +1194,16 @@ ensemble_review:
     presence only: marker-shape requires all four H3 sections (a)–(d) with
     non-empty content plus a fenced command in (c); smoke-run-missing
     requires a `## Smoke run` section with a command, exit code 0, and an
-    artifact digest. If the artifact is genuinely absent/non-conforming, the
-    gate stands. If it is present + conforming, the orchestrator STRIPS the
+    artifact digest. git-provenance requires the orchestrator to run the
+    read-only git probe matching the blocker's declared subclass
+    (pre-existing-on-trunk → git show main:<path>; stale-main-or-worktree →
+    git log main..issue-<N> -- <path>; cumulative-main-head-diff → the round's
+    own commit range) and STRIP only when git confirms the flagged finding is
+    NOT introduced by this round's diff — evidence-based, never a blanket
+    ignore. If the artifact is genuinely absent/non-conforming (or, for
+    git-provenance, git shows the round's own range DID touch the flagged
+    lines), the gate stands. If it is present + conforming (or git confirms
+    pre-existence), the orchestrator STRIPS the
     mechanical blocker from that reviewer's effective set and re-applies the
     ensemble rule to the remaining substantive blockers (no substantive
     blockers left → PASS; else normal FAIL/union/reconcile). Closes the
@@ -1166,7 +1211,8 @@ ensemble_review:
     present evidence (round 1 marker shape, round 2 smoke digest) without ever
     reviewing the diff. The strip does NOT increment the round counter. The
     reviewer-side defenses (no standalone cosmetic FAIL, no short-circuit of
-    the diff) live in code-reviewer.md Steps 0.5/0.6/0.7 and are inlined into
+    the diff, the git-provenance self-check) live in code-reviewer.md Steps
+    0.5/0.6/0.7/0.9 and are inlined into
     codex-code-reviewer.md; this strip is the orchestrator-side backstop.
     Skill ref: SKILL.md Step 5c-bis.
   reconciler_authority: |
@@ -1326,7 +1372,7 @@ concerns_protocol:
 # this block.
 # ──────────────────────────────────────────────────────────────────────
 reviewer_pairs:
-  max_rounds: 3
+  max_rounds: 5
   verdicts:
     - pass
     - needs_targeted_fix
@@ -2173,7 +2219,7 @@ markers:
     fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
   - kind: "epm:strategy-pivot"
     posted_by: skill (orchestrator)
-    when: "any strategy pivot — Step 5 code-review ensemble cap-3, whack-a-mole detector fire, plan-contradiction re-plan, debugging-wall pivot (see § pivot_criteria)"
+    when: "any strategy pivot — whack-a-mole detector fire, plan-contradiction re-plan, debugging-wall pivot (see § pivot_criteria). NOTE: the Step 5 code-review ensemble cap-hit no longer strategy-pivots (retired #784 → strip-then-continue-or-surface, § pivot_criteria.code_review_ensemble_cap_5_surface)"
     fields: "v<n> per pivot, top-level on the task. Records the pivot rationale + what changes: which strategy failed, the fundamentally different design being tried next, and that revision_round RESETS to 1 on the new plan. Counts toward the ~3-pivots-before-block rule (CLAUDE.md STATE-TO-blocked criteria). Every pivot site reuses this ONE kind — do NOT introduce per-pivot-source marker kinds."
   - kind: "epm:merged"
     posted_by: skill
@@ -2245,7 +2291,14 @@ markers:
          elapsed_seconds: <float>
          attempts:       [{kind, cluster, est_start_seconds_raw,
                             est_start_seconds_clamped, outcome, detail,
-                            elapsed_seconds}, ...]
+                            elapsed_seconds, evidence?}, ...]
+                          # attempts[].evidence (optional, additive, #774) may carry
+                          # per_zone_attempts (a list of {zone, returncode,
+                          # matched_pattern, elapsed_s, stderr_tail} records, one per
+                          # GCP zone the rung tried) + zones_attempted_summary; emitted
+                          # ONLY when populated, so the common no-evidence attempt keeps
+                          # the byte-identical pre-#774 7-field shape (opaque-dict shape,
+                          # no schema-semantics change).
          extra:          {cancel_race?, gcp_attempts_today?,
                           intermediate?,
                           provisioning_model?,
@@ -2558,7 +2611,7 @@ steps:
     name: code_review_revise
     entry_status_label:
       - implementing
-    entry_condition: "code-review FAIL, revision_round < 3"
+    entry_condition: "code-review FAIL, revision_round < 5"
     next_expected_step: "5"
   - id: "6a"
     name: pod_provision
@@ -2989,7 +3042,7 @@ workflow_fix_on_bug:
     - "Candidate's target_file is in out_of_scope (log marker; flag emitting agent's misclassification in the marker body)"
     - "proposed_change requires a fundamental architectural / public-contract decision (rename a status enum, remove the Codex ensemble, change a marker schema or task.py subcommand) — file the task but route through the /issue plan-approval gate (spawn WITHOUT --auto OR plan architectural: true → park at plan_pending), and surface to the user on the next chat turn (§ architectural greenlight). LOW CONFIDENCE alone is NOT a suppression reason (2026-06-11): a candidate naming a concrete file + change is filed at any confidence; the spawned session's planner may deflect with a reasoned no-change report"
     - "Nothing concrete to dispatch — prose names no specific workflow-surface file AND no specific change (log the marker for the dashboard; nothing to file)"
-  child_review: "The spawned /issue session owns its OWN review — the standard Claude+Codex code-reviewer ensemble (cap 3 rounds, /issue Step 5) + the inline test-verdict gate. No separate ensemble_review here; the full /issue pipeline replaces the old workflow-improver + single code-reviewer loop."
+  child_review: "The spawned /issue session owns its OWN review — the standard Claude+Codex code-reviewer ensemble (cap 5 rounds, /issue Step 5) + the inline test-verdict gate. No separate ensemble_review here; the full /issue pipeline replaces the old workflow-improver + single code-reviewer loop."
   forbidden_emitters:
     - codex-code-reviewer  # Codex twins exit cleanly; verdict body only
     - codex-critic
