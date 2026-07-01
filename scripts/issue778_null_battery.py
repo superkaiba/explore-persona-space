@@ -163,6 +163,44 @@ def _leave_one_family_out(
     return out
 
 
+# Null-class split (reconciled statistics fix, plan v4 §5/§6/§11):
+#   STOCHASTIC nulls (>=200 draws) carry the BH-adjusted one-sided empirical
+#     p < 0.025 inferential gate.
+#   FIXED-DIRECTION nulls (2 crosstrait dirs, 5 pca_topk dirs) carry a fixed-
+#     control EXCEEDANCE check (observed matched max|r| > max over the null's
+#     per-direction max|r|); their +1 empirical p bottoms out at 1/3 and 1/6, so
+#     a p<0.025 gate is unsatisfiable by construction — they are EXCLUDED from
+#     the BH family (24 stochastic tests when both legs run, NOT 48) and carry
+#     the exceedance verdict + descriptive p only.
+STOCHASTIC_NULL_KINDS: tuple[str, ...] = ("perm", "randnorm")
+FIXED_NULL_KINDS: tuple[str, ...] = ("crosstrait", "pca_topk")
+
+
+def _annotate_exceedance(payload: dict) -> None:
+    """Tag each FIXED-direction null in ``payload['nulls']`` with an exceedance bool.
+
+    ``exceedance`` = observed matched max-over-layers |r| STRICTLY exceeds the max
+    over that null's per-direction max-over-layers |r| (``draws_max_abs``). NaN
+    directions are ignored; an all-NaN fixed null yields ``exceedance = None``
+    (undecidable). The stochastic nulls carry no exceedance key (they use the
+    BH-adjusted empirical-p gate instead).
+    """
+    observed = payload.get("matched_max_abs")
+    for kind, nr in payload.get("nulls", {}).items():
+        if kind not in FIXED_NULL_KINDS:
+            continue
+        dm = np.asarray(nr.get("draws_max_abs", []), dtype=np.float64)
+        valid = dm[~np.isnan(dm)]
+        if (
+            observed is None
+            or (isinstance(observed, float) and np.isnan(observed))
+            or valid.size == 0
+        ):
+            nr["exceedance"] = None
+        else:
+            nr["exceedance"] = bool(float(observed) > float(valid.max()))
+
+
 # ── Per-(trait, setting) run ────────────────────────────────────────────────────
 
 
@@ -197,6 +235,7 @@ def run_finetune(
     loco = _leave_one_family_out(shift_acts, target, tags, rb, result.matched_selected_layer)
     result.reproducibility = lib.repro_metadata()
     payload = result.to_json()
+    _annotate_exceedance(payload)
     payload["tags"] = tags
     payload["per_run_points"] = [
         {
@@ -278,6 +317,7 @@ def run_monitoring(
         )
         result.reproducibility = lib.repro_metadata()
         payload = result.to_json()
+        _annotate_exceedance(payload)
         # File-name portion carries the input_tag + the overall/within suffix
         # (draws.npy: {trait}_{input_tag}_{overall,within}_{null}_draws.npy).
         corr = "overall" if setting == "monitoring_overall" else "within"
@@ -384,13 +424,15 @@ def main() -> None:
         help="monitoring input leg(s) to run (default: monitoring). Pass BOTH legs of "
         "the amendment in ONE invocation — "
         "'--input-tag monitoring_corrected monitoring_manyshot' — so the BH family "
-        "pools across both legs (48 tests). Consumes {input_tag}_{trait}.jsonl + "
-        "data/issue_778/{input_tag}/{trait}_acts.pt; writes "
+        "pools across both legs (24 STOCHASTIC tests: 2 legs x 3 traits x 2 corr x "
+        "2 stochastic nulls perm/randnorm; the fixed nulls crosstrait/pca_topk are "
+        "EXCLUDED and carry the exceedance verdict). Consumes {input_tag}_{trait}.jsonl "
+        "+ data/issue_778/{input_tag}/{trait}_acts.pt; writes "
         "{trait}_{input_tag}_nullbattery.json.",
     )
     # Raised from parent's 200 -> 1000 (statistics-critic BH-floor concern: at 200
     # draws the one-sided empirical-p floor 1/201 ~ 0.005 can never clear the
-    # 0.025/48-test BH threshold, so the FALSIFYING outcome would be illegible).
+    # 0.025/24-test BH threshold, so the FALSIFYING outcome would be illegible).
     parser.add_argument("--n-draws", type=int, default=1000)
     parser.add_argument("--lam", type=float, default=nb.PRIMARY_LAMBDA)
     parser.add_argument("--pca-k", type=int, default=nb.DEFAULT_PCA_K)
@@ -432,6 +474,8 @@ def main() -> None:
             )
             summary[trait]["finetune"] = ft
             for kind, nr in ft["nulls"].items():
+                if kind not in STOCHASTIC_NULL_KINDS:
+                    continue  # fixed nulls carry the exceedance verdict, not BH
                 all_pvals.append(nr["empirical_p_one_sided"])
                 pval_index.append(("", trait, "finetune", kind))
             with open(eval_root / f"{trait}_finetune_nullbattery.json", "w") as f:
@@ -453,12 +497,15 @@ def main() -> None:
                 summary[trait]["monitoring"][input_tag] = mon
                 for setting in ("monitoring_overall", "monitoring_within"):
                     for kind, nr in mon[setting]["nulls"].items():
+                        if kind not in STOCHASTIC_NULL_KINDS:
+                            continue  # exclude fixed nulls from the BH family
                         all_pvals.append(nr["empirical_p_one_sided"])
                         pval_index.append((input_tag, trait, setting, kind))
                 with open(eval_root / f"{trait}_{input_tag}_nullbattery.json", "w") as f:
                     json.dump(mon, f, indent=2)
 
-    # BH-adjust across ALL tests pooled (the 48-test family when both legs run),
+    # BH-adjust across the STOCHASTIC-null tests pooled (the 24-test family when
+    # both legs run — perm/randnorm only; fixed nulls excluded, plan v4 §5/§6/§11),
     # AND compute a per-null-family BH (within each null_kind) for legibility.
     bh = nb.benjamini_hochberg(all_pvals)
     bh_map = {idx: bh[i] for i, idx in enumerate(pval_index)}
@@ -474,9 +521,11 @@ def _bh_within_null_family(
 ) -> dict[tuple[str, str, str, str], float]:
     """Per-null-family BH: BH computed WITHIN each null_kind across all its tests.
 
-    The pooled `bh` (48-test family) mixes the 4 null kinds; this legibility field
-    (statistics-critic) adjusts within each null_kind separately (12 tests each
-    when both legs run: 2 legs x 3 traits x 2 corr). Returns {idx: bh_within}.
+    The pooled `bh` (24-test STOCHASTIC family) mixes the 2 stochastic null kinds;
+    this legibility field (statistics-critic) adjusts within each null_kind
+    separately (12 tests each when both legs run: 2 legs x 3 traits x 2 corr). Only
+    perm/randnorm reach here (fixed nulls are excluded before pooling). Returns
+    {idx: bh_within}.
     """
     families: dict[str, list[int]] = {}
     for i, idx in enumerate(pval_index):
@@ -498,7 +547,12 @@ def _thread_bh(
     bh_map: dict,
     bh_within_family_map: dict,
 ) -> None:
-    """Write BH-adjusted p (48-pooled) + per-null-family BH into each deliverable."""
+    """Write BH-adjusted p (24-pooled STOCHASTIC) + per-null-family BH per deliverable.
+
+    Only stochastic nulls (perm/randnorm) are in the maps; the fixed nulls
+    (crosstrait/pca_topk) get ``bh_adjusted_empirical_p: null`` via ``.get`` misses
+    and carry the ``exceedance`` verdict (annotated in run_finetune/run_monitoring).
+    """
     for trait in traits:
         if "finetune" in settings:
             p = eval_root / f"{trait}_finetune_nullbattery.json"

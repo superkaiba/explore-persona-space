@@ -478,7 +478,12 @@ def judge_graded(
 # ── vLLM engine + teardown (coexistence-safe) ──────────────────────────────────
 
 
-def build_vllm_engine(model_name: str = MODEL_NAME, gpu_memory_utilization: float = 0.5):
+def build_vllm_engine(
+    model_name: str = MODEL_NAME,
+    gpu_memory_utilization: float = 0.5,
+    *,
+    max_model_len: int = 4096,
+):
     """Construct a vLLM engine for batched on-policy generation.
 
     ``gpu_memory_utilization`` defaults to 0.5 (NOT the 0.85 vLLM default): this
@@ -486,6 +491,10 @@ def build_vllm_engine(model_name: str = MODEL_NAME, gpu_memory_utilization: floa
     per-trait dispatcher loop, and 0.5 buys headroom against vLLM-subprocess
     async free lag (issue #685). ``enforce_eager`` overridable via
     ``EPM_VLLM_ENFORCE_EAGER`` (the #664/#734 cuda-graph-deadlock probe).
+
+    ``max_model_len`` defaults to 4096 (the #778 monitoring/finetune contexts);
+    the Leg-B many-shot ICL driver passes a wider value (default 8192) to fit a
+    20-shot context of truncated exemplars (plan v4 §4 long-context note).
     """
     from vllm import LLM
 
@@ -494,7 +503,7 @@ def build_vllm_engine(model_name: str = MODEL_NAME, gpu_memory_utilization: floa
     kwargs: dict = dict(
         model=model_name,
         gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=4096,
+        max_model_len=max_model_len,
         dtype="bfloat16",
         enable_lora=True,  # Phase-3 eval uses per-cell LoRA adapters
         max_lora_rank=32,  # the paper's rsLoRA rank

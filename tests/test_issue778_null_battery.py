@@ -205,3 +205,70 @@ def test_project_matches_paper_a_proj_b():
     b = np.array([3.0, 0.0, 4.0])  # ‖b‖ = 5
     got = nb.project(a, b)
     assert got[0] == pytest.approx((1 * 3 + 2 * 0 + 2 * 4) / 5.0)
+
+
+# ── Driver reconciled-statistics BH-split (plan v4 §5/§6/§11) ────────────────────
+
+
+def test_driver_bh_family_is_stochastic_only():
+    """The BH family pools ONLY the stochastic nulls (perm/randnorm), NOT the fixed.
+
+    Reconciled statistics fix (plan v4 §5/§6/§11): the fixed-direction nulls
+    (crosstrait 2 dirs, pca_topk 5 dirs) have a +1 empirical-p floor of 1/3 and
+    1/6, so a p<0.025 BH gate is unsatisfiable by construction — they must be
+    EXCLUDED from the BH family (the parent's 48-test pooling was the bug this
+    round fixes). Pins the driver's STOCHASTIC/FIXED partition so a refactor that
+    re-adds the fixed nulls to the BH pool fails here.
+    """
+    from scripts import issue778_null_battery as nbd
+
+    assert nbd.STOCHASTIC_NULL_KINDS == ("perm", "randnorm")
+    assert nbd.FIXED_NULL_KINDS == ("crosstrait", "pca_topk")
+    assert set(nbd.STOCHASTIC_NULL_KINDS).isdisjoint(nbd.FIXED_NULL_KINDS)
+
+    # Simulate main()'s pooling filter over a full 4-null set: only perm/randnorm
+    # p-values may enter the BH list.
+    nulls = {
+        "perm": {"empirical_p_one_sided": 0.10},
+        "randnorm": {"empirical_p_one_sided": 0.20},
+        "crosstrait": {"empirical_p_one_sided": 0.33},  # 1/3 floor — never < 0.025
+        "pca_topk": {"empirical_p_one_sided": 0.17},  # 1/6 floor — never < 0.025
+    }
+    pooled = [
+        nr["empirical_p_one_sided"] for k, nr in nulls.items() if k in nbd.STOCHASTIC_NULL_KINDS
+    ]
+    assert pooled == [0.10, 0.20], pooled  # fixed nulls excluded from the BH family
+
+
+def test_driver_annotate_exceedance_fixed_only():
+    """_annotate_exceedance tags ONLY the fixed nulls with an exceedance bool.
+
+    exceedance = observed matched max|r| STRICTLY exceeds the max over the fixed
+    null's per-direction max|r|. Stochastic nulls get NO exceedance key (they use
+    the BH-adjusted empirical p). An all-NaN fixed null -> None (undecidable).
+    """
+    from scripts import issue778_null_battery as nbd
+
+    payload = {
+        "matched_max_abs": 0.80,
+        "nulls": {
+            "perm": {"draws_max_abs": [0.3, 0.5], "empirical_p_one_sided": 0.1},
+            "randnorm": {"draws_max_abs": [0.4, 0.6], "empirical_p_one_sided": 0.2},
+            "crosstrait": {"draws_max_abs": [0.4, 0.7]},  # max 0.7 < 0.80 -> exceed True
+            "pca_topk": {"draws_max_abs": [0.5, 0.9, 0.85]},  # max 0.9 > 0.80 -> exceed False
+        },
+    }
+    nbd._annotate_exceedance(payload)
+    n = payload["nulls"]
+    assert "exceedance" not in n["perm"], "stochastic must NOT get exceedance"
+    assert "exceedance" not in n["randnorm"], "stochastic must NOT get exceedance"
+    assert n["crosstrait"]["exceedance"] is True
+    assert n["pca_topk"]["exceedance"] is False
+
+    # all-NaN fixed null -> None (undecidable, not a fake False)
+    payload2 = {
+        "matched_max_abs": 0.5,
+        "nulls": {"crosstrait": {"draws_max_abs": [float("nan")]}},
+    }
+    nbd._annotate_exceedance(payload2)
+    assert payload2["nulls"]["crosstrait"]["exceedance"] is None
