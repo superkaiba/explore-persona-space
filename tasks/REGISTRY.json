@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 816,
+  "highest_id": 817,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5261,6 +5261,13 @@
       "path": "tasks/planning/816",
       "status": "planning",
       "title": "Reproduce Persona Vectors' steering, preventative-steering, and data-screening experiments on Qwen2.5-7B with a norm-matched random-direction baseline"
+    },
+    "817": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/817",
+      "status": "proposed",
+      "title": "workflow-fix: persist persona-vector extraction rollouts (text always, v(x) when reusable)"
     },
     "83": {
       "has_clean_result": false,
