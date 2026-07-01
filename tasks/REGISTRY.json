@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 811,
+  "highest_id": 812,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5231,6 +5231,14 @@
       "path": "tasks/proposed/811",
       "status": "proposed",
       "title": "Does the best answer-summary change #722's base-vs-post-FT function-change verdict"
+    },
+    "812": {
+      "goal": "On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much mean-pooling loses versus using individual per-position answer-token activations as regression input -- the incremental held-out prediction of behavior expression E0 (and answer-profile reconstruction) from an unpooled multi-position input over the pooled-mean baseline, per layer, with LOCO + label-shuffle null + #742-style reliability-ceiling / learning-curve guards for the n=50 sample size.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/812",
+      "status": "proposed",
+      "title": "How much does per-position (unpooled) answer activation beat the pooled mean for predicting behavior / reconstructing the profile"
     },
     "83": {
       "has_clean_result": false,
