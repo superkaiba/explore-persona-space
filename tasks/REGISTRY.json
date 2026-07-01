@@ -5212,8 +5212,8 @@
       "goal": "Determine whether the finetuning-induced context->answer map change (M0 base vs M+ trained, per #537 behavior) depends on the query substrate, by fitting + comparing M0 vs M+ across three substrates (generic UltraChat, behavior-eliciting probes, mix) on the shared 50-context battery, reporting floor-normalized function-change and chain-rho per substrate.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/813",
-      "status": "approved",
+      "path": "tasks/running/813",
+      "status": "running",
       "title": "Map-change substrate-dependence: generic vs behavior-eliciting vs mix queries"
     },
     "83": {
