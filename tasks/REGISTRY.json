@@ -5057,8 +5057,8 @@
     "790": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/790",
-      "status": "planning",
+      "path": "tasks/approved/790",
+      "status": "approved",
       "title": "daily-fix: GCP backend fetch_results/log Permission denied"
     },
     "791": {
