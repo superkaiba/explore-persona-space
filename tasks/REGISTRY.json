@@ -5141,8 +5141,8 @@
     "800": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/800",
-      "status": "reviewing",
+      "path": "tasks/completed/800",
+      "status": "completed",
       "title": "daily-fix: document WANDB_LOG_MODEL checkpoint-upload trap"
     },
     "801": {
