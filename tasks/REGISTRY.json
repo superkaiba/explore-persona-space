@@ -4852,8 +4852,8 @@
       "goal": "Extend the matched-probe v0(C,B)->E0(C,B) predictor re-measurement to the 5 behaviors #658 measured at only 8 judgments/context (deception, fact_expression, format_style, self_report, persona_drift): collect >=50 eliciting probes per behavior AND judge E0 with a GRADED multi-sampled 0-100 score (per .claude/rules/llm-judging.md) as the PRIMARY DV (binary judge-rate retained as a validated headline); read the predictor with ridge + precision-weighted GLM vs a properly-extracted persona-vector baseline.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/763",
-      "status": "running",
+      "path": "tasks/approved/763",
+      "status": "approved",
       "title": "Matched-probe v0->E0 predictor re-measurement \u2014 phase 2 (5 low-m behaviors, >=50 probes + GRADED matched v0)"
     },
     "764": {
