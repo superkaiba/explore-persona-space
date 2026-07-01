@@ -423,6 +423,7 @@ def run_pass_a(
                 "n_shot": cond["n_shot"],
                 "n_questions": len(eval_q),
                 "n_rollouts": n_rollouts,
+                "rollout_seed": 42,  # SamplingParams seed for the raw-completions filename
                 "rollouts": rollout_records,
                 "judge_scores": judge_scores,  # {qXXX__idx__ci: score|null}
                 "judge_dropped": dropped,
@@ -876,6 +877,11 @@ def main() -> int:
     if not args.no_upload:
         C.phase("upload")
         _upload_collect(out_dir, smoke=args.smoke)
+        # Plan §10 row (c): the rollout TEXT ALSO lands under the canonical
+        # raw_completions/ prefix (verified) — NOT only under analysis_tensors/.
+        # Only Pass A produces rollout text; skip when Pass A was not run.
+        if args.stage in ("all", "a"):
+            _upload_raw_completions(out_dir, smoke=args.smoke)
 
     C.write_json_atomic(out_dir / "collect_summary.json", summary)
     note = (
@@ -886,8 +892,112 @@ def main() -> int:
     return 0
 
 
+def _split_raw_completions(out_dir: Path, staging_dir: Path) -> list[tuple[str, str]]:
+    """Split each Pass-A cell JSON's rollout TEXT into a per-cell raw-completions file.
+
+    Plan v5 §10 row (c): every rollout string that appears in a Pass-A cell JSON
+    as a ``rollouts[*].response`` field gets a canonical copy at
+    ``<staging_dir>/{trait}_{cond_id}_seed{seed}.json`` shaped
+    ``{trait, condition, seed, rollouts: [{qi, ri, response}]}`` (the analyzer
+    enumerates this flat per-cell layout). Pass B persists NO rollout text (only
+    v(x) vectors + prompts to its tensor bundle), so it carries no rollout field
+    to copy — scope is the Pass-A cells only.
+
+    Seed is the fixed monitoring-rig rollout seed 42 (plan §10 Seeds row); the
+    ``pass_a`` rollouts are generated with ``SamplingParams(..., seed=42)``.
+
+    Returns the list of ``(trait, cond_id)`` cells written (one file each).
+    """
+    pass_a_dir = out_dir / "pass_a"
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    written: list[tuple[str, str]] = []
+    if not pass_a_dir.is_dir():
+        return written
+    for cell_path in sorted(pass_a_dir.glob("*.json")):
+        with open(cell_path) as f:
+            cell = json.load(f)
+        trait = cell["trait"]
+        cond_id = cell["cond_id"]
+        seed = cell.get("rollout_seed", 42)
+        rollouts = [
+            {"qi": r["qi"], "ri": r["ri"], "response": r.get("response", "")}
+            for r in cell.get("rollouts", [])
+        ]
+        payload = {
+            "trait": trait,
+            "condition": cond_id,
+            "seed": seed,
+            "mode": cell.get("mode"),
+            "n_shot": cell.get("n_shot"),
+            "rollouts": rollouts,
+            "metadata": C.reproducibility_metadata(
+                {"script": "issue779_collect", "artifact": "raw_completions"}
+            ),
+        }
+        C.write_json_atomic(staging_dir / f"{trait}_{cond_id}_seed{seed}.json", payload)
+        written.append((trait, cond_id))
+    return written
+
+
+def _upload_raw_completions(out_dir: Path, smoke: bool) -> None:
+    """Upload per-cell rollout TEXT under ``issue779_monitoring/raw_completions/``, verified.
+
+    Plan v5 §10 row (c) mandate: the raw completion text MUST land under the
+    canonical ``raw_completions/`` prefix (NOT ``analysis_tensors/``), and the
+    upload MUST be mechanically verified — every ``(trait, condition)`` the run
+    produced has a file there — BEFORE ``phase("done")``. Fail-loud on any miss.
+    """
+    import tempfile
+
+    from huggingface_hub import HfApi, list_repo_files
+
+    sub = "raw_completions_smoke" if smoke else "raw_completions"
+    path_in_repo = f"{C.HF_PREFIX}/{sub}"
+    with tempfile.TemporaryDirectory(prefix="issue779_rawcomp_") as tmp:
+        staging = Path(tmp)
+        written = _split_raw_completions(out_dir, staging)
+        if not written:
+            raise RuntimeError(
+                "raw-completions upload aborted: no Pass-A cell JSONs with rollout "
+                f"text found under {out_dir / 'pass_a'} — expected rollout responses to copy"
+            )
+        api = HfApi()
+        api.upload_folder(
+            folder_path=str(staging),
+            path_in_repo=path_in_repo,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            commit_message=f"issue779: {'smoke ' if smoke else ''}raw completions (rollout text)",
+        )
+        # Mechanical verification: every (trait, condition) has a file at the
+        # canonical raw_completions/ prefix on a FRESH listing (plan §10 mandate,
+        # mirrors the upload-verifier's phantom-URL gate).
+        repo_files = set(list_repo_files(C.HF_DATA_REPO, repo_type="dataset"))
+        missing = []
+        for trait, cond_id in written:
+            expected: set[str] = {
+                f"{path_in_repo}/{trait}_{cond_id}_seed{seed}.json"
+                for seed in (42,)  # fixed monitoring-rig rollout seed (plan §10)
+            }
+            if not expected & repo_files:
+                missing.append(f"{trait}/{cond_id}")
+        if missing:
+            raise RuntimeError(
+                "raw-completions upload verification FAILED "
+                f"(raw-completions-upload-prefix-missing): {len(missing)} trait x condition "
+                f"combos have no file under {path_in_repo}: {missing[:10]}"
+            )
+    logger.info("raw-completions upload verified: %d cells under %s", len(written), path_in_repo)
+
+
 def _upload_collect(out_dir: Path, smoke: bool) -> None:
-    """Bulk-upload the analysis tensors + cell JSONs to the HF data repo, verified."""
+    """Bulk-upload the analysis tensors + cell JSONs to the HF data repo, verified.
+
+    Carries activations + cell JSONs to ``analysis_tensors/`` (plan §10 row (b)).
+    The rollout TEXT ALSO gets a canonical copy under ``raw_completions/`` via
+    :func:`_upload_raw_completions` (plan §10 row (c)) — the two prefixes are
+    complementary, not either/or.
+    """
     from huggingface_hub import HfApi, list_repo_files
 
     api = HfApi()
