@@ -444,7 +444,7 @@ def _populated_base_cells(behaviors, summaries, layer, **kw):
             out[(b, s)] = {
                 "C0": rng.standard_normal((12, 3584)).astype(np.float64),
                 "V0": rng.standard_normal((12, 3584)).astype(np.float64),
-                "cell_keys": [f"src{i}->tgt{j}" for i in range(4) for j in range(3)],
+                "cell_keys": [f"{b}/src{i}__tgt{j}" for i in range(4) for j in range(3)],
             }
     return out
 

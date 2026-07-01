@@ -371,7 +371,7 @@ def _load_phase0_base_cells(
                         assert v0.shape == (loadact.HIDDEN,), f"{rel} {summary} v0 shape {v0.shape}"
                         acc[(beh, summary)]["C0"].append(c0)
                         acc[(beh, summary)]["V0"].append(v0)
-                        acc[(beh, summary)]["cell_keys"].append(f"{src_cid}->{tgt_cid}")
+                        acc[(beh, summary)]["cell_keys"].append(f"{beh}/{src_cid}__{tgt_cid}")
                     n_cells += 1
                     n_src += 1
             if strict:
