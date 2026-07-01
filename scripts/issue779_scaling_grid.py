@@ -129,6 +129,8 @@ def load_corpus_source(
     lmsys_g_labels: dict | None,
     trait: str,
     layer_idx: int,
+    *,
+    max_lmsys: int | None = None,
 ) -> SG.TrainSource:
     """Build a TrainSource at one read-out layer from cached + generated tensors.
 
@@ -138,11 +140,18 @@ def load_corpus_source(
     scores. For h the behavior X/Y is per-ROLLOUT (v(x) is per rollout); c_last
     is per-context, so each rollout's X is its context's c_last (broadcast via
     vx_index). g's behavior label is the rollout's judge score.
+
+    ``max_lmsys`` caps the LMSYS rows loaded (the first-N contexts, keeping the
+    deterministic pass_b order + label alignment) — used ONLY in --smoke to keep
+    the full-N ridge SVD tractable; None (default) loads all 5000.
     """
     layers = list(lmsys_bundle["layers"])
     li = layers.index(layer_idx)
     X_lmsys = lmsys_bundle["cx_last"][:, li, :].to(torch.float32).numpy()  # (N_L, H)
     Y_lmsys = lmsys_bundle["v_x"][:, li, :].to(torch.float32).numpy()  # (N_L, H)
+    if max_lmsys is not None and X_lmsys.shape[0] > max_lmsys:
+        X_lmsys = X_lmsys[:max_lmsys]
+        Y_lmsys = Y_lmsys[:max_lmsys]
     y_lmsys = None
     if lmsys_g_labels is not None:
         labs = lmsys_g_labels["labels_per_trait"][trait]["labels"]
@@ -263,6 +272,7 @@ def run_layer_matrix(
     n_boot: int,
     n_shuffle: int,
     seed: int,
+    max_lmsys: int | None = None,
 ) -> dict:
     """The arm-B-minus-arm-A within-condition-r headline read at EVERY layer.
 
@@ -278,7 +288,9 @@ def run_layer_matrix(
     for layer_idx in layers:
         rb_l = r_b_full[layers.index(layer_idx)]
         eval_mat = build_eval_matrix_with_q(cells, layer_idx, r_b_full)
-        src = load_corpus_source(corpus_dir, lmsys_bundle, lmsys_g_labels, trait, layer_idx)
+        src = load_corpus_source(
+            corpus_dir, lmsys_bundle, lmsys_g_labels, trait, layer_idx, max_lmsys=max_lmsys
+        )
         subrng = np.random.default_rng(seed + layer_idx)
         ct_a = SG.assemble_cell_train(src, src.n_lmsys(), 0, subrng)
         ct_b = SG.assemble_cell_train(src, 0, src.n_beh(), subrng)
@@ -417,6 +429,9 @@ def main() -> int:
     # 28x{2 fits + n_shuffle nulls} loop stays tractable while still exercising
     # the run_layer_matrix code path end-to-end.
     layers_all = list(range(args.n_layers))
+    # --smoke caps the LMSYS rows loaded so the full-N (5000x3584) ridge SVD in
+    # the arm_comparison / layer matrix stays fast; a real run uses all 5000.
+    max_lmsys = 500 if args.smoke else None
 
     arm_comparison = {
         "traits": {},
@@ -449,7 +464,12 @@ def main() -> int:
             rb_l = r_b_full[layer_idx]
             eval_mat = build_eval_matrix_with_q(cells, layer_idx, r_b_full)
             src = load_corpus_source(
-                args.corpus_dir, lmsys_bundle, lmsys_g_labels, trait, layer_idx
+                args.corpus_dir,
+                lmsys_bundle,
+                lmsys_g_labels,
+                trait,
+                layer_idx,
+                max_lmsys=max_lmsys,
             )
             logger.info(
                 "[%s/%s @L%d] eval rows=%d, LMSYS=%d, behavior=%d",
@@ -513,6 +533,7 @@ def main() -> int:
             n_boot=n_boot,
             n_shuffle=n_shuffle,
             seed=args.seed,
+            max_lmsys=max_lmsys,
         )
         C.write_json_atomic(args.out_dir / "scaling_grid_layer_matrix.json", layer_matrix)
         logger.info("[%s] all reads checkpointed", trait)
