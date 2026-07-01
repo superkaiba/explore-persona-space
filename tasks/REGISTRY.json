@@ -5279,8 +5279,8 @@
     "819": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/819",
-      "status": "proposed",
+      "path": "tasks/planning/819",
+      "status": "planning",
       "title": "workflow-fix: update stale GCP max-run-duration 24h\u21927d in critic/planner/SKILL/workflow.yaml"
     },
     "83": {
