@@ -58,6 +58,7 @@ LAYERS="7 14 21"
 PRIMARY_LAYER="14"
 SOURCES=""          # empty = the 16 #537 train cids per behavior
 GPU_ID="${EPM_GPU_ID:-0}"
+LOCAL_ROOT=""       # fit reads the store from a LOCAL mirror (dispatcher smoke)
 while [ $# -gt 0 ]; do
   case "$1" in
     --smoke) SMOKE="1"; shift ;;
@@ -67,6 +68,7 @@ while [ $# -gt 0 ]; do
     --primary-layer) PRIMARY_LAYER="${2:?}"; shift 2 ;;
     --sources) SOURCES="${2:?}"; shift 2 ;;
     --gpu-id) GPU_ID="${2:?}"; shift 2 ;;
+    --local-root) LOCAL_ROOT="${2:?}"; shift 2 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -127,8 +129,11 @@ echo "[phase=upload] store uploaded + verified (GPU pod may be released here on 
 
 # ---- Phase 3: vectorized fits (CPU) ----
 echo "[phase=fit] starting"
+FIT_LOCAL_ARGS=""
+[ -n "$LOCAL_ROOT" ] && FIT_LOCAL_ARGS="--local-root $LOCAL_ROOT"
 # shellcheck disable=SC2086
-uv run python scripts/issue811_fit.py --behaviors ${BEHAVIORS//,/ } --layers $LAYERS $FIT_SMOKE_ARGS
+uv run python scripts/issue811_fit.py --behaviors ${BEHAVIORS//,/ } --layers $LAYERS \
+  $FIT_SMOKE_ARGS $FIT_LOCAL_ARGS
 
 # ---- KILL-1 gate: HALT before analyze if the base-leg validity gate fired ----
 KILL1_JSON="eval_results/issue_811/kill1_base_leg_validity.json"
