@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 779,
+  "highest_id": 780,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4983,6 +4983,13 @@
       "path": "tasks/archived/78",
       "status": "archived",
       "title": "Try to implant a marker [ZLT] into an evil persona in midtraining and see if it persists after EM"
+    },
+    "780": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/780",
+      "status": "proposed",
+      "title": "workflow-fix: selection-symmetric nulls + persist per-draw \u00d7 per-axis matrix"
     },
     "8": {
       "has_clean_result": false,
