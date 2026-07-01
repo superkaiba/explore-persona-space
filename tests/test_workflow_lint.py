@@ -40,6 +40,7 @@ from workflow_lint import (  # noqa: E402
     check_asks,
     check_autonomous_asks,
     check_batch_judge_client,
+    check_compute_shape_review_lens,
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
     check_heredoc_dotenv,
@@ -2722,3 +2723,30 @@ def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
     errs = check_lessons_index(repo_root=tmp_path)
     assert errs, "expected a FAIL for the duplicate 'alpha' index row"
     assert any(("duplicate" in e or "exactly one" in e) and "alpha" in e for e in errs)
+
+
+def test_compute_shape_review_lens_live_tree_passes() -> None:
+    """The real .claude/agents tree carries the #806 lens in both files."""
+    assert check_compute_shape_review_lens() == []
+
+
+def test_compute_shape_review_lens_flags_missing(tmp_path) -> None:
+    """A code-reviewer agent pair missing the lens FAILs the #806 check."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    # codex file has the lens; the Claude file does not → one FAIL for the
+    # Claude file, none for the codex file.
+    (agents / "code-reviewer.md").write_text("# reviewer\nno lens here\n")
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nStep 0.67 Compute-shape-vs-dispatcher\nblocker tag compute-shape-mismatch\n"
+    )
+    errors = check_compute_shape_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the code-reviewer.md missing the lens"
+    # Key on the SUBJECT of each error — the file path before the first ': '
+    # (the message body cross-references the sibling filename in prose, so a
+    # naive substring search would collide). Every error must be ABOUT the
+    # Claude file; none about the codex file (which carries both tokens).
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("code-reviewer.md") for s in subjects), subjects
+    assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
+    assert all(not s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
