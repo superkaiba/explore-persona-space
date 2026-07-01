@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 796,
+  "highest_id": 797,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5102,6 +5102,13 @@
       "path": "tasks/proposed/796",
       "status": "proposed",
       "title": "daily-fix: guard detached repo-root HEAD"
+    },
+    "797": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/797",
+      "status": "proposed",
+      "title": "daily-fix: routing carve-out: interactive 0-GPU inline analysis"
     },
     "8": {
       "has_clean_result": false,
