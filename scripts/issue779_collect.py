@@ -456,35 +456,27 @@ def r_b_r3(r_b_full: torch.Tensor, layers: list[int], r3_layers: list[int]) -> t
 
 
 def _judge_cell(trait, judge_completions, out_dir, cell_id):
-    """Judge one cell's rollouts; return ({custom_id: score|null}, dropped_count)."""
-    from explore_persona_space.eval.batch_judge import judge_completions_batch
+    """Judge one cell's rollouts (N=5 graded draws, mean over valid); return
+    ({custom_id: mean_score|null}, dropped_rollout_count).
 
+    The registered DV is the N=5 graded-0-100 mean @ temp 1.0 (llm-judging.md
+    rule 4 + plan §11): each rollout completion is judged ``JUDGE_N_DRAWS`` times
+    (DROP-NEVER-COERCE per draw) and the valid draws are mean-aggregated. A
+    rollout with 0 valid draws -> score None (DROPPED). ``dropped`` counts fully
+    dropped rollouts (backward-compatible with the prior return contract).
+    """
     save_raw = out_dir / f"judge_{cell_id}.json"
     cache_dir = out_dir / "judge_cache"
     # batch_judge expects {persona: {question: [completions]}}; use cell_id as
     # persona and qXXX as question.
     completions = {cell_id: judge_completions}
-    judge_completions_batch(
-        completions,
-        judge_system_prompt=C.trait_judge_system_prompt(trait),
-        format_user_msg=C.trait_judge_user_msg,
-        judge_model=C.JUDGE_MODEL,
-        max_tokens=256,
-        cache_dir=cache_dir,
-        save_raw=save_raw,
-    )
-    with open(save_raw) as f:
-        raw = json.load(f)
+    agg = C.judge_rollouts_n5(trait, completions, save_raw, cache_dir)
     scores: dict[str, float | None] = {}
     dropped = 0
-    for custom_id, sd in raw["all_scores"].items():
-        if isinstance(sd, dict) and "score" in sd:
-            s = C.parse_graded_trait_score(json.dumps(sd))
-        else:
-            s = None
-        if s is None:
+    for custom_id, (mean, _n_valid, _n_draws) in agg.items():
+        scores[custom_id] = mean
+        if mean is None:
             dropped += 1
-        scores[custom_id] = s
     return scores, dropped
 
 

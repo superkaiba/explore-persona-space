@@ -483,6 +483,108 @@ def parse_graded_trait_score(text: str) -> float | None:
     return val
 
 
+def _parse_raw_all_scores(raw_all_scores: dict) -> dict[str, float | None]:
+    """Map a batch_judge ``all_scores`` dict to {custom_id: graded score | None}.
+
+    Each value is the raw judge dict; the judge emits ``{"reasoning","score"}``
+    (or a bare number the parser recovers) — serialize back to text for a
+    uniform DROP-NEVER-COERCE parse. An error/refusal/unparseable dict -> None.
+    """
+    scores: dict[str, float | None] = {}
+    for custom_id, sd in raw_all_scores.items():
+        if isinstance(sd, dict) and "score" in sd:
+            scores[custom_id] = parse_graded_trait_score(json.dumps(sd))
+        else:
+            scores[custom_id] = None
+    return scores
+
+
+def judge_rollouts_n5(
+    trait: str,
+    rollouts: dict[str, dict[str, list[str]]],
+    save_raw: Path,
+    cache_dir: Path,
+    *,
+    n_draws: int = JUDGE_N_DRAWS,
+    dry_run: bool = False,
+) -> dict[str, tuple[float | None, int, int]]:
+    """Graded 0-100 trait judge, N draws per rollout, mean over VALID draws.
+
+    Wires the registered graded-primary DV (llm-judging.md rule 4 + plan §11:
+    ``N=5`` graded 0-100 draws, temperature 1.0, DROP-NEVER-COERCE per draw,
+    mean-aggregated per rollout). The shared ``judge_completions_batch`` has no
+    per-item draw-count/temperature knob, so this ISSUE-LOCAL wrapper expands
+    each rollout completion into ``n_draws`` identical draw-items (distinct
+    ``comp_idx`` under the batch_judge custom_id scheme) so the judge scores each
+    draw as its own row. TEMPERATURE: the shared judge dispatch omits
+    ``temperature`` from ``messages.create`` (verified: judge_dispatch._build_params
+    sets model/max_tokens/system/messages only), so the Anthropic API default
+    temperature (1.0) applies to every draw — the N identical prompts therefore
+    yield N INDEPENDENT samples (temp > 0 as llm-judging.md rule 4 requires),
+    which is exactly what buys the multi-sample variance reduction. No shared-
+    library patch is needed for temperature; the expansion IS the multi-sampling.
+
+    ``rollouts`` is the batch_judge {persona: {question: [completions]}} shape.
+    Returns {original_custom_id: (mean_score|None, n_valid_draws, n_draws)} keyed
+    by the ORIGINAL (un-expanded) custom_id ``f"{persona}__{qi:05d}__{ri:02d}"``
+    so downstream score lookups (``_score_for`` etc.) are unchanged. A rollout
+    with 0 valid draws (all ``n_draws`` REFUSED / malformed / out-of-range) ->
+    ``(None, 0, n_draws)`` — the rollout is DROPPED (never coerced).
+    """
+    from explore_persona_space.eval.batch_judge import judge_completions_batch
+
+    assert n_draws >= 1, f"n_draws must be >= 1, got {n_draws}"
+    # Expand each completion into n_draws consecutive list entries. Under the
+    # batch_judge custom_id scheme (f"{persona}__{qi:05d}__{ci:02d}") the draw d
+    # of rollout ri lands at ci = ri*n_draws + d, so we can map every draw back
+    # to its ORIGINAL rollout (persona, qi, ri) after judging.
+    expanded: dict[str, dict[str, list[str]]] = {}
+    for persona, qmap in rollouts.items():
+        expanded[persona] = {}
+        for question, comps in qmap.items():
+            drawn: list[str] = []
+            for comp in comps:
+                drawn.extend([comp] * n_draws)
+            expanded[persona][question] = drawn
+
+    judge_completions_batch(
+        expanded,
+        judge_system_prompt=trait_judge_system_prompt(trait),
+        format_user_msg=trait_judge_user_msg,
+        judge_model=JUDGE_MODEL,
+        max_tokens=256,
+        cache_dir=cache_dir,
+        save_raw=save_raw,
+        dry_run=dry_run,
+    )
+    if dry_run:
+        return {}
+    with open(save_raw) as f:
+        raw = json.load(f)
+    draw_scores = _parse_raw_all_scores(raw["all_scores"])
+
+    # Gather the n_draws scores per ORIGINAL rollout and mean valid draws.
+    # Re-derive the enumeration exactly as batch_judge does: persona -> question
+    # order (dict insertion order, preserved) -> question index qi; comp index ci
+    # over the EXPANDED list, with rollout ri = ci // n_draws, draw d = ci % n_draws.
+    out: dict[str, tuple[float | None, int, int]] = {}
+    for persona, qmap in expanded.items():
+        for qi, (_question, drawn) in enumerate(qmap.items()):
+            n_rollouts_q = len(drawn) // n_draws
+            for ri in range(n_rollouts_q):
+                vals: list[float] = []
+                for d in range(n_draws):
+                    ci = ri * n_draws + d
+                    cid = f"{persona}__{qi:05d}__{ci:02d}"
+                    s = draw_scores.get(cid)
+                    if s is not None:
+                        vals.append(s)
+                orig_cid = f"{persona}__{qi:05d}__{ri:02d}"
+                mean = float(sum(vals) / len(vals)) if vals else None
+                out[orig_cid] = (mean, len(vals), n_draws)
+    return out
+
+
 def trait_judge_system_prompt(trait: str) -> str:
     """The graded-0-100 trait rubric for the judge system message.
 

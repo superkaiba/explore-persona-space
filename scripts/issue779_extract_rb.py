@@ -40,7 +40,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import os
 import sys
@@ -117,41 +116,39 @@ def _judge_rollouts(
     save_raw: Path,
     cache_dir: Path,
     dry_run: bool = False,
-) -> dict[str, float | None]:
-    """Judge rollouts with the graded trait rubric; return {custom_id: score|None}.
+) -> tuple[dict[str, float | None], dict]:
+    """Judge rollouts with the graded N=5 trait rubric; mean over valid draws.
 
     ``rollouts`` is the batch_judge {persona: {question: [completions]}} shape.
-    Returns per-custom_id float score in [0,100] or None (DROP — REFUSAL /
-    non-numeric / out-of-range per llm-judging.md rule 9). Reads the saved
-    ``all_scores`` (raw judge JSON dicts) and applies ``parse_graded_trait_score``.
+    Judges each rollout with the registered N=5 graded-0-100 draws @ temp 1.0
+    (``C.judge_rollouts_n5``, DROP-NEVER-COERCE per draw), then aggregates the
+    valid draws to a per-rollout mean BEFORE the >50 / <50 threshold. Returns
+    ``({custom_id: mean_score|None}, draw_stats)`` where ``draw_stats`` reports
+    the per-rollout dropped-draw distribution (llm-judging.md rules 4 + 9).
     """
-    from explore_persona_space.eval.batch_judge import judge_completions_batch
-
-    judge_completions_batch(
-        rollouts,
-        judge_system_prompt=C.trait_judge_system_prompt(trait),
-        format_user_msg=C.trait_judge_user_msg,
-        judge_model=C.JUDGE_MODEL,
-        max_tokens=256,
-        cache_dir=cache_dir,
-        save_raw=save_raw,
-        dry_run=dry_run,
-    )
     if dry_run:
-        return {}
-    with open(save_raw) as f:
-        raw = json.load(f)
+        C.judge_rollouts_n5(trait, rollouts, save_raw, cache_dir, dry_run=True)
+        return {}, {}
+    agg = C.judge_rollouts_n5(trait, rollouts, save_raw, cache_dir)
     scores: dict[str, float | None] = {}
-    for custom_id, sd in raw["all_scores"].items():
-        # sd is the raw judge JSON dict; the judge emits {"reasoning","score"} or
-        # a bare number the parser recovers. Serialize back to text for a uniform
-        # parse (the batch path stored the parsed dict, the sync path too).
-        if isinstance(sd, dict) and "score" in sd:
-            scores[custom_id] = C.parse_graded_trait_score(json.dumps(sd))
-        else:
-            # error dict / refusal / unparseable -> DROP.
-            scores[custom_id] = None
-    return scores
+    n_draws_seen = 0
+    total_valid = 0
+    n_rollouts_all_dropped = 0
+    for cid, (mean, n_valid, n_draws) in agg.items():
+        scores[cid] = mean
+        n_draws_seen += n_draws
+        total_valid += n_valid
+        if n_valid == 0:
+            n_rollouts_all_dropped += 1
+    draw_stats = {
+        "n_rollouts_judged": len(agg),
+        "n_draws_per_rollout": C.JUDGE_N_DRAWS,
+        "total_draws": n_draws_seen,
+        "total_valid_draws": total_valid,
+        "total_dropped_draws": n_draws_seen - total_valid,
+        "n_rollouts_all_draws_dropped": n_rollouts_all_dropped,
+    }
+    return scores, draw_stats
 
 
 # ── Activation capture (response-avg, all layers, stream-reduced) ─────────────
@@ -266,10 +263,11 @@ def extract_trait_rb(
     for arm in ("pos", "neg"):
         arm_rollouts = rollouts_by_arm[arm]
         n_total = sum(len(comps) for q in arm_rollouts.values() for comps in q.values())
+        draw_stats: dict = {}
         if do_judge:
             save_raw = out_dir / f"judge_{trait}_{arm}.json"
             cache_dir = out_dir / "judge_cache"
-            scores = _judge_rollouts(trait, arm_rollouts, save_raw, cache_dir)
+            scores, draw_stats = _judge_rollouts(trait, arm_rollouts, save_raw, cache_dir)
         else:
             scores = {}  # no-judge smoke: keep all (labeled below)
 
@@ -301,6 +299,7 @@ def extract_trait_rb(
             "kept": n_kept,
             "dropped_refusal_or_invalid": n_dropped,
             "dropped_below_threshold": n_below,
+            "judge_draw_stats": draw_stats,  # N=5 per-draw drop distribution
         }
         logger.info(
             "[%s/%s] judged: total=%d kept=%d dropped(refusal/invalid)=%d dropped(threshold)=%d",

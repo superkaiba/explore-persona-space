@@ -304,6 +304,102 @@ def method_metrics(x: np.ndarray, mat: dict, *, n_boot: int, seed: int) -> dict:
     return res
 
 
+def detection_metrics(
+    x: np.ndarray, mat: dict, *, threshold: float = 50.0, top_frac: float = 0.10
+) -> dict:
+    """Secondary DV: AUROC + top-k precision of monitor ``x`` per elicitation mode.
+
+    The plan §6 secondary DV is "AUROC / top-k precision (detection framing)".
+    Binary labels come from the graded DV thresholded at ``threshold`` (score >=
+    threshold -> positive / trait-expressing). AUROC (rank-based Mann-Whitney U)
+    + top-``top_frac`` precision are computed WITHIN each elicitation mode over
+    the mode's finite rollouts, plus overall. Emitted per (trait, method, mode).
+    """
+    y = mat["y"]
+    mode_arr = mat["mode"]
+    out: dict = {"threshold": threshold, "top_frac": top_frac}
+    for mode in ("system", "many_shot"):
+        sel = np.array([m == mode for m in mode_arr]) & np.isfinite(x) & np.isfinite(y)
+        if sel.sum() < 3:
+            out[mode] = {
+                "auroc": float("nan"),
+                "top_k_precision": float("nan"),
+                "n": int(sel.sum()),
+            }
+            continue
+        xs = x[sel]
+        labels = (y[sel] >= threshold).astype(int)
+        out[mode] = {
+            "auroc": M.auroc(xs, labels),
+            "top_k_precision": M.top_k_precision(xs, labels, frac=top_frac),
+            "n": int(sel.sum()),
+            "n_positive": int(labels.sum()),
+        }
+    fin = np.isfinite(x) & np.isfinite(y)
+    if fin.sum() >= 3:
+        labels_all = (y[fin] >= threshold).astype(int)
+        out["overall"] = {
+            "auroc": M.auroc(x[fin], labels_all),
+            "top_k_precision": M.top_k_precision(x[fin], labels_all, frac=top_frac),
+            "n": int(fin.sum()),
+            "n_positive": int(labels_all.sum()),
+        }
+    else:
+        out["overall"] = {
+            "auroc": float("nan"),
+            "top_k_precision": float("nan"),
+            "n": int(fin.sum()),
+        }
+    return out
+
+
+GATE0_HEADROOM_THRESHOLD = 0.05  # plan §7: oracle - pv_raw >= +0.05 => R1 headroom
+
+
+def gate0_headroom_descope(
+    step0: dict, trait: str, best_layer: int
+) -> tuple[bool, float | None, str]:
+    """Per-trait Gate-0 oracle-headroom descope (plan §7 kill criterion).
+
+    Reads step0_oracle.json's per-(layer, mode) {oracle_r, pv_raw_r, headroom}
+    at the trait's read-out (best) layer. If oracle - pv_raw < +0.05 for the
+    trait, its R1 fitted-map (MLP) arm is DESCOPED to ridge-only + reported
+    "no oracle headroom" — R2/R3 (and the ridge arm) still run on all traits.
+    The headroom is read at the SYSTEM mode (Gate-0's primary; §7), falling back
+    to many_shot when system's entry is missing/non-finite.
+
+    Returns (descope, headroom, reason). ``descope`` True => set run_mlp=False for
+    this trait. When step0 lacks the trait/layer entry, headroom is unknown and
+    we FAIL OPEN (do NOT descope) so a missing probe never silently drops R1.
+    """
+    tr = step0.get(trait)
+    if not tr:
+        return False, None, "no step0 entry (fail-open: R1 not descoped)"
+    plm = tr.get("per_layer_mode", {})
+    headroom = None
+    for mode in ("system", "many_shot"):
+        entry = plm.get(f"L{best_layer}_{mode}")
+        if entry is not None and entry.get("headroom") is not None:
+            hr = entry["headroom"]
+            if isinstance(hr, int | float) and np.isfinite(hr):
+                headroom = float(hr)
+                break
+    if headroom is None:
+        return False, None, "no finite headroom at read-out layer (fail-open: R1 not descoped)"
+    if headroom < GATE0_HEADROOM_THRESHOLD:
+        return (
+            True,
+            headroom,
+            f"no oracle headroom (oracle - pv_raw = {headroom:.4f} < "
+            f"+{GATE0_HEADROOM_THRESHOLD} at L{best_layer}) — R1 descoped to ridge-only",
+        )
+    return (
+        False,
+        headroom,
+        f"oracle headroom {headroom:.4f} >= +{GATE0_HEADROOM_THRESHOLD}: R1 runs fully",
+    )
+
+
 # ── Gate 1 rig validation ──────────────────────────────────────────────────────
 
 
@@ -456,6 +552,30 @@ def _process_trait(
     method_res = {
         name: method_metrics(x, mat, n_boot=n_boot, seed=seed) for name, x in monitors.items()
     }
+    # Secondary DV (plan §6): AUROC + top-k precision per (method, mode). Emitted
+    # into method_res[name]["auroc"] / ["top_k_precision"] so the H2b MAX-vs-MEAN
+    # detection test is answerable (concern secondary-auroc-topk-not-emitted).
+    for name, x in monitors.items():
+        det = detection_metrics(x, mat)
+        method_res[name]["auroc"] = {
+            m: det.get(m, {}).get("auroc") for m in ("system", "many_shot", "overall")
+        }
+        method_res[name]["top_k_precision"] = {
+            m: det.get(m, {}).get("top_k_precision") for m in ("system", "many_shot", "overall")
+        }
+        method_res[name]["detection"] = det  # full per-mode {auroc, top_k_precision, n, n_positive}
+    # r2_mean is ALGEBRAICALLY IDENTICAL to oracle: by linearity of the dot
+    # product mean_i <v_i, r_B> = <mean_i v_i, r_B> = <v(x), r_B> = oracle
+    # (v(x) IS the mean-over-response activation, and r2_mean pools it by the
+    # mean before projecting). It is therefore NOT an independent monitor — the
+    # interesting R2 pooling operators are r2_max / r2_topk / r2_last (Claude
+    # analyzer minor note 2).
+    if "r2_mean" in method_res:
+        method_res["r2_mean"]["_note"] = (
+            "r2_mean == oracle algebraically: mean_i<v_i,r_B> = <mean_i v_i, r_B> "
+            "= <v(x), r_B> = oracle (linearity of the dot product). Not an "
+            "independent monitor; the informative R2 operators are max/topk/last."
+        )
 
     # Success criterion paired delta CI: R1/R2 vs pv_raw.
     deltas = {}
@@ -477,16 +597,25 @@ def _process_trait(
 
     gate1 = gate1_rig_validation(method_res["pv_raw"], trait)
 
-    # Concerns (1): H1a nullity — r1_ridge_cos vs probe_ctrl, same activations.
+    # Concerns (1): H1a nullity — r1_ridge_DOT vs probe_ctrl, same activations.
+    # The plan §8 nullity identity r~_B = M^T r_B is over the DOT readout
+    # <h(c_x), r_B> = <c_x, M^T r_B> (a linear-in-c_x projection matching the
+    # linear probe_ctrl), NOT the cosine readout (cosine renormalizes per-row so
+    # it is not the M^T r_B linear form). Compare the DOT arm (Claude analyzer
+    # minor note 1).
     h1a = {}
     for mode in ("system", "many_shot"):
-        r1r = method_res["r1_ridge_cos"][mode]["point"]
+        r1r = method_res["r1_ridge_dot"][mode]["point"]
         pc = method_res["probe_ctrl"][mode]["point"]
         h1a[mode] = {
-            "r1_ridge_cos_r": r1r,
+            "r1_ridge_dot_r": r1r,
             "probe_ctrl_r": pc,
             "abs_diff": abs(r1r - pc) if (np.isfinite(r1r) and np.isfinite(pc)) else None,
         }
+    h1a["_note"] = (
+        "nullity compared over the DOT readout r1_ridge_dot (= <c_x, M^T r_B>), "
+        "matching the plan §8 r~_B = M^T r_B linear identity — not the cosine arm."
+    )
 
     # Concerns (2): R3(a) reconstruction vs shuffled-context null on the SAME h.
     layers = train_bundle["layers"]
@@ -494,8 +623,23 @@ def _process_trait(
     Xtr = train_bundle["cx_last"][:, li, :].numpy()
     Ytr = train_bundle["v_x"][:, li, :].numpy()
 
-    def _pred_fn(Xc, _Xtr=Xtr, _Ytr=Ytr):
-        return F.ridge_fit_predict(_Xtr, _Ytr, _Xtr)
+    # The null MUST use its Xc argument (shuffled_context_null_r2 passes the
+    # row-permuted contexts). We re-FIT the reconstruction on the supplied
+    # (context, answer) pairing and predict in-sample — matching the observed
+    # arm, which is itself an in-sample fit on the TRUE pairing (obs =
+    # pred_fn(Xtr) with Ytr). So the ONLY difference between obs and each null
+    # replicate is whether the context->answer pairing is real (obs) or shuffled
+    # (null): F.ridge_fit_predict(Xc, _Ytr, Xc) refits on the permuted pairing
+    # and predicts on it in-sample. This is the r3_granularity.py-documented
+    # semantic ("re-fits/re-applies the reconstruction under a row-permuted
+    # context, breaking the context->answer pairing") and makes beats_null a
+    # real test: a random pairing cannot reconstruct the true answers, so obs
+    # should beat the null iff the map carries real context->answer structure.
+    # (Prior bug: _pred_fn ignored Xc -> every null replicate == obs, so
+    # beats_null was structurally always False. concern
+    # r3-shuffled-context-null-ignores-permutation.)
+    def _pred_fn(Xc, _Ytr=Ytr):
+        return F.ridge_fit_predict(Xc, _Ytr, Xc)
 
     recon_null = R3.shuffled_context_null_r2(
         _pred_fn, Xtr, Ytr, n_shuffle=(3 if smoke else 20), seed=seed
@@ -582,8 +726,10 @@ def main() -> int:
     }
 
     C.phase("fit")
-    # Load per-trait r_B + eval cells + read-out layer.
+    # Load per-trait r_B + eval cells + read-out layer + per-trait Gate-0 descope.
     rb_by_trait, cells_by_trait, layer_by_trait = {}, {}, {}
+    run_mlp_by_trait: dict[str, bool] = {}
+    gate0_by_trait: dict[str, dict] = {}
     for trait in traits:
         rb_by_trait[trait] = _load_rb(rb_dir, trait, args.n_layers, args.hidden)
         cells_by_trait[trait] = load_eval_cells(pass_a_dir, trait)
@@ -592,6 +738,18 @@ def main() -> int:
         if bl is None:
             bl = args.n_layers // 2
         layer_by_trait[trait] = int(bl)
+        # Per-trait Gate-0 oracle-headroom descope (plan §7): if the trait has no
+        # oracle headroom, descope its R1 fitted-map (MLP) arm to ridge-only.
+        # The global --no-mlp still forces ridge-only for all traits.
+        descope, headroom, reason = gate0_headroom_descope(step0, trait, layer_by_trait[trait])
+        run_mlp_by_trait[trait] = run_mlp and not descope
+        gate0_by_trait[trait] = {
+            "gate0_descoped": bool(descope),
+            "gate0_headroom": headroom,
+            "gate0_descope_reason": reason,
+            "read_out_layer": layer_by_trait[trait],
+        }
+        logger.info("[%s] Gate-0: %s (run_mlp=%s)", trait, reason, run_mlp_by_trait[trait])
 
     for trait in traits:
         tr_res, gate1 = _process_trait(
@@ -600,13 +758,15 @@ def main() -> int:
             cells_by_trait[trait],
             layer_by_trait[trait],
             train_bundle,
-            run_mlp=run_mlp,
+            run_mlp=run_mlp_by_trait[trait],
             n_train_cap=args.n_train_cap,
             pca_k=args.pca_k,
             n_boot=args.n_boot,
             seed=args.seed,
             smoke=args.smoke,
         )
+        # Surface the per-trait Gate-0 descope decision to the analyzer.
+        tr_res.update(gate0_by_trait[trait])
         results["traits"][trait] = tr_res
         if gate1 is not None:
             results["gate1"][trait] = gate1
@@ -625,7 +785,7 @@ def main() -> int:
             rb_by_trait[held],
             n_train_cap=args.n_train_cap,
             pca_k=args.pca_k,
-            run_mlp=run_mlp,
+            run_mlp=run_mlp_by_trait[held],  # honor the held trait's Gate-0 descope
         )
         lobo_methods = {
             "pv_raw": mat_held["pv_raw"],
@@ -653,12 +813,15 @@ def main() -> int:
         )
 
     C.phase("emit")
-    args.out_json.parent.mkdir(parents=True, exist_ok=True)
-    C.write_json_atomic(args.out_json, results)
-    logger.info("Wrote %s", args.out_json)
+    # Generate figures FIRST, then assign into results BEFORE the JSON write, so
+    # the persisted stage1_headline.json carries the figure list (concern
+    # stage1-headline-json-omits-figures: figs were assigned after the write).
     figs = make_figures(results, args.fig_dir)
     logger.info("Wrote %d figures to %s", len(figs), args.fig_dir)
     results["figures"] = figs
+    args.out_json.parent.mkdir(parents=True, exist_ok=True)
+    C.write_json_atomic(args.out_json, results)
+    logger.info("Wrote %s", args.out_json)
 
     note = (
         f"issue779 Stage 1 {'SMOKE ' if args.smoke else ''}complete: traits={traits}, "
