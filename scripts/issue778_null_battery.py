@@ -60,8 +60,14 @@ def _load_pools(out_root: Path, trait: str) -> tuple[np.ndarray, np.ndarray]:
     return pos.numpy().astype(np.float64), neg.numpy().astype(np.float64)
 
 
-def _load_monitoring(eval_root: Path, trait: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _load_monitoring(
+    eval_root: Path, trait: str, input_tag: str
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Read monitoring JSONL -> (predictor_acts (n,28,3584-proxy), target, condition_ids).
+
+    ``input_tag`` selects the input leg: ``monitoring`` (parent extraction-prompt
+    run), ``monitoring_corrected`` (Leg A), ``monitoring_manyshot`` (Leg B). The
+    JSONL path is ``{input_tag}_{trait}.jsonl``.
 
     NOTE: the JSONL stores projection_per_layer (already projected onto r_B), not
     the raw activation. For the MATCHED direction the projection is what we need,
@@ -72,7 +78,7 @@ def _load_monitoring(eval_root: Path, trait: str) -> tuple[np.ndarray, np.ndarra
     projection, and the nulls from the raw activation tensor Phase 2 ALSO caches.
     """
     rows = []
-    with open(eval_root / f"monitoring_{trait}.jsonl") as f:
+    with open(eval_root / f"{input_tag}_{trait}.jsonl") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -84,16 +90,16 @@ def _load_monitoring(eval_root: Path, trait: str) -> tuple[np.ndarray, np.ndarra
     return proj, target, condition_ids
 
 
-def _load_monitoring_raw_acts(out_root: Path, trait: str) -> np.ndarray | None:
-    """Load Phase-2 raw last-prompt activations for the null re-projection.
+def _load_monitoring_raw_acts(out_root: Path, trait: str, input_tag: str) -> np.ndarray | None:
+    """Load the raw last-prompt activations for the null re-projection.
 
-    Phase 2 caches the raw predictor tensor at
-    ``data/issue_778/monitoring/{trait}_acts.pt`` (n_cells, 28, 3584) aligned with
+    The monitoring/Leg-A/Leg-B drivers cache the raw predictor tensor at
+    ``data/issue_778/{input_tag}/{trait}_acts.pt`` (n_cells, 28, 3584) aligned with
     the JSONL row order (pre-drop). Returns None if absent (older run).
     """
     import torch
 
-    p = out_root / "monitoring" / f"{trait}_acts.pt"
+    p = out_root / input_tag / f"{trait}_acts.pt"
     if not p.exists():
         return None
     return torch.load(p, weights_only=False).numpy().astype(np.float64)
@@ -217,6 +223,7 @@ def run_monitoring(
     eval_root: Path,
     other_rbs: dict[str, np.ndarray],
     *,
+    input_tag: str,
     n_draws: int,
     lam: float,
     pca_k: int,
@@ -224,22 +231,27 @@ def run_monitoring(
 ) -> dict:
     """Monitoring: BOTH overall_r and within_condition_r get the full null battery.
 
-    Requires the Phase-2 raw last-prompt activation tensor to re-project nulls.
+    Requires the raw last-prompt activation tensor to re-project nulls. ``input_tag``
+    selects the leg: ``monitoring`` (parent), ``monitoring_corrected`` (Leg A),
+    ``monitoring_manyshot`` (Leg B). The ``nb.compute_setting`` setting names stay
+    ``monitoring_overall``/``monitoring_within`` (only the file names carry the tag)
+    so the within/overall correlation semantics are identical across legs; for Leg B
+    the condition_id is the shot-count, so ``monitoring_within`` = within-shot-count.
     """
     rb = _load_rb(out_root, trait)
     pos, neg = _load_pools(out_root, trait)
-    _proj_stored, target, condition_ids = _load_monitoring(eval_root, trait)
-    raw_acts = _load_monitoring_raw_acts(out_root, trait)
+    _proj_stored, target, condition_ids = _load_monitoring(eval_root, trait, input_tag)
+    raw_acts = _load_monitoring_raw_acts(out_root, trait, input_tag)
     if raw_acts is None:
         raise RuntimeError(
             f"trait={trait}: monitoring raw activation tensor "
-            f"{out_root}/monitoring/{trait}_acts.pt missing — the null re-projection "
+            f"{out_root}/{input_tag}/{trait}_acts.pt missing — the null re-projection "
             f"needs raw last-prompt activations, not the stored projections."
         )
-    # Align raw_acts to the kept (non-dropped) rows: Phase 2 wrote JSONL in cell
+    # Align raw_acts to the kept (non-dropped) rows: the driver wrote JSONL in cell
     # order and the raw tensor in the same order; kept rows are those with a
     # non-None score. Re-derive the kept mask from the full JSONL.
-    kept_mask = _monitoring_kept_mask(eval_root, trait)
+    kept_mask = _monitoring_kept_mask(eval_root, trait, input_tag)
     raw_kept = raw_acts[kept_mask]
     if raw_kept.shape[0] != target.shape[0]:
         raise RuntimeError(
@@ -266,15 +278,19 @@ def run_monitoring(
         )
         result.reproducibility = lib.repro_metadata()
         payload = result.to_json()
-        _write_draws(eval_root, trait, setting, draws)
-        _write_figure_arrays(eval_root, trait, setting, result, draws, payload)
+        # File-name portion carries the input_tag + the overall/within suffix
+        # (draws.npy: {trait}_{input_tag}_{overall,within}_{null}_draws.npy).
+        corr = "overall" if setting == "monitoring_overall" else "within"
+        file_setting = f"{input_tag}_{corr}"
+        _write_draws(eval_root, trait, file_setting, draws)
+        _write_figure_arrays(eval_root, trait, file_setting, result, draws, payload)
         out[setting] = payload
     return out
 
 
-def _monitoring_kept_mask(eval_root: Path, trait: str) -> np.ndarray:
+def _monitoring_kept_mask(eval_root: Path, trait: str, input_tag: str) -> np.ndarray:
     rows = []
-    with open(eval_root / f"monitoring_{trait}.jsonl") as f:
+    with open(eval_root / f"{input_tag}_{trait}.jsonl") as f:
         for line in f:
             line = line.strip()
             if line:
@@ -361,7 +377,21 @@ def main() -> None:
     parser.add_argument("--eval-results-root", default="eval_results/issue_778")
     parser.add_argument("--traits", nargs="+", default=list(lib.TRAITS))
     parser.add_argument("--settings", nargs="+", default=["monitoring", "finetune"])
-    parser.add_argument("--n-draws", type=int, default=nb.DEFAULT_N_DRAWS)
+    parser.add_argument(
+        "--input-tag",
+        nargs="+",
+        default=["monitoring"],
+        help="monitoring input leg(s) to run (default: monitoring). Pass BOTH legs of "
+        "the amendment in ONE invocation — "
+        "'--input-tag monitoring_corrected monitoring_manyshot' — so the BH family "
+        "pools across both legs (48 tests). Consumes {input_tag}_{trait}.jsonl + "
+        "data/issue_778/{input_tag}/{trait}_acts.pt; writes "
+        "{trait}_{input_tag}_nullbattery.json.",
+    )
+    # Raised from parent's 200 -> 1000 (statistics-critic BH-floor concern: at 200
+    # draws the one-sided empirical-p floor 1/201 ~ 0.005 can never clear the
+    # 0.025/48-test BH threshold, so the FALSIFYING outcome would be illegible).
+    parser.add_argument("--n-draws", type=int, default=1000)
     parser.add_argument("--lam", type=float, default=nb.PRIMARY_LAMBDA)
     parser.add_argument("--pca-k", type=int, default=nb.DEFAULT_PCA_K)
     parser.add_argument("--n-boot", type=int, default=nb.DEFAULT_BOOTSTRAP)
@@ -375,9 +405,15 @@ def main() -> None:
     # Load all r_B up front for the cross-trait null.
     rbs = {t: _load_rb(out_root, t) for t in traits}
 
-    lib.log_phase("null_battery", f"start traits={traits} settings={args.settings}")
+    lib.log_phase(
+        "null_battery",
+        f"start traits={traits} settings={args.settings} input_tags={args.input_tag} "
+        f"n_draws={args.n_draws}",
+    )
     all_pvals: list[float] = []
-    pval_index: list[tuple[str, str, str]] = []  # (trait, setting, null_kind)
+    # pval index carries the input_tag so the two legs' files are disambiguated.
+    # (input_tag, trait, setting, null_kind). finetune uses input_tag="".
+    pval_index: list[tuple[str, str, str, str]] = []
     summary: dict = {}
 
     for trait in traits:
@@ -397,59 +433,99 @@ def main() -> None:
             summary[trait]["finetune"] = ft
             for kind, nr in ft["nulls"].items():
                 all_pvals.append(nr["empirical_p_one_sided"])
-                pval_index.append((trait, "finetune", kind))
+                pval_index.append(("", trait, "finetune", kind))
             with open(eval_root / f"{trait}_finetune_nullbattery.json", "w") as f:
                 json.dump(ft, f, indent=2)
         if "monitoring" in args.settings:
-            mon = run_monitoring(
-                trait,
-                out_root,
-                eval_root,
-                other_rbs,
-                n_draws=args.n_draws,
-                lam=args.lam,
-                pca_k=args.pca_k,
-                n_boot=args.n_boot,
-            )
-            summary[trait]["monitoring"] = mon
-            for setting in ("monitoring_overall", "monitoring_within"):
-                for kind, nr in mon[setting]["nulls"].items():
-                    all_pvals.append(nr["empirical_p_one_sided"])
-                    pval_index.append((trait, setting, kind))
-            with open(eval_root / f"{trait}_monitoring_nullbattery.json", "w") as f:
-                json.dump(mon, f, indent=2)
+            summary[trait]["monitoring"] = {}
+            for input_tag in args.input_tag:
+                mon = run_monitoring(
+                    trait,
+                    out_root,
+                    eval_root,
+                    other_rbs,
+                    input_tag=input_tag,
+                    n_draws=args.n_draws,
+                    lam=args.lam,
+                    pca_k=args.pca_k,
+                    n_boot=args.n_boot,
+                )
+                summary[trait]["monitoring"][input_tag] = mon
+                for setting in ("monitoring_overall", "monitoring_within"):
+                    for kind, nr in mon[setting]["nulls"].items():
+                        all_pvals.append(nr["empirical_p_one_sided"])
+                        pval_index.append((input_tag, trait, setting, kind))
+                with open(eval_root / f"{trait}_{input_tag}_nullbattery.json", "w") as f:
+                    json.dump(mon, f, indent=2)
 
-    # BH-adjust across ALL tests, thread back into each file.
+    # BH-adjust across ALL tests pooled (the 48-test family when both legs run),
+    # AND compute a per-null-family BH (within each null_kind) for legibility.
     bh = nb.benjamini_hochberg(all_pvals)
     bh_map = {idx: bh[i] for i, idx in enumerate(pval_index)}
-    _thread_bh(eval_root, traits, args.settings, bh_map)
+    bh_within_family_map = _bh_within_null_family(all_pvals, pval_index)
+    _thread_bh(eval_root, traits, args.settings, args.input_tag, bh_map, bh_within_family_map)
 
     lib.log_phase("null_battery", "done", n_tests=len(all_pvals))
     print(json.dumps({"phase": "null_battery", "n_tests": len(all_pvals)}, indent=2))
 
 
-def _thread_bh(eval_root: Path, traits, settings, bh_map: dict) -> None:
-    """Write the BH-adjusted p per (trait,setting,null) back into the deliverables."""
+def _bh_within_null_family(
+    all_pvals: list[float], pval_index: list[tuple[str, str, str, str]]
+) -> dict[tuple[str, str, str, str], float]:
+    """Per-null-family BH: BH computed WITHIN each null_kind across all its tests.
+
+    The pooled `bh` (48-test family) mixes the 4 null kinds; this legibility field
+    (statistics-critic) adjusts within each null_kind separately (12 tests each
+    when both legs run: 2 legs x 3 traits x 2 corr). Returns {idx: bh_within}.
+    """
+    families: dict[str, list[int]] = {}
+    for i, idx in enumerate(pval_index):
+        null_kind = idx[3]
+        families.setdefault(null_kind, []).append(i)
+    out: dict[tuple[str, str, str, str], float] = {}
+    for _kind, positions in families.items():
+        sub = nb.benjamini_hochberg([all_pvals[i] for i in positions])
+        for j, i in enumerate(positions):
+            out[pval_index[i]] = sub[j]
+    return out
+
+
+def _thread_bh(
+    eval_root: Path,
+    traits,
+    settings,
+    input_tags,
+    bh_map: dict,
+    bh_within_family_map: dict,
+) -> None:
+    """Write BH-adjusted p (48-pooled) + per-null-family BH into each deliverable."""
     for trait in traits:
         if "finetune" in settings:
             p = eval_root / f"{trait}_finetune_nullbattery.json"
             with open(p) as f:
                 data = json.load(f)
             for kind in data["nulls"]:
-                key = (trait, "finetune", kind)
+                key = ("", trait, "finetune", kind)
                 data["nulls"][kind]["bh_adjusted_empirical_p"] = bh_map.get(key)
+                data["nulls"][kind]["bh_adjusted_within_null_family"] = bh_within_family_map.get(
+                    key
+                )
             with open(p, "w") as f:
                 json.dump(data, f, indent=2)
         if "monitoring" in settings:
-            p = eval_root / f"{trait}_monitoring_nullbattery.json"
-            with open(p) as f:
-                data = json.load(f)
-            for setting in ("monitoring_overall", "monitoring_within"):
-                for kind in data[setting]["nulls"]:
-                    key = (trait, setting, kind)
-                    data[setting]["nulls"][kind]["bh_adjusted_empirical_p"] = bh_map.get(key)
-            with open(p, "w") as f:
-                json.dump(data, f, indent=2)
+            for input_tag in input_tags:
+                p = eval_root / f"{trait}_{input_tag}_nullbattery.json"
+                with open(p) as f:
+                    data = json.load(f)
+                for setting in ("monitoring_overall", "monitoring_within"):
+                    for kind in data[setting]["nulls"]:
+                        key = (input_tag, trait, setting, kind)
+                        data[setting]["nulls"][kind]["bh_adjusted_empirical_p"] = bh_map.get(key)
+                        data[setting]["nulls"][kind]["bh_adjusted_within_null_family"] = (
+                            bh_within_family_map.get(key)
+                        )
+                with open(p, "w") as f:
+                    json.dump(data, f, indent=2)
 
 
 if __name__ == "__main__":

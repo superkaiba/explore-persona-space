@@ -183,6 +183,82 @@ def extraction_system_prompt(trait: str, instruction: str, side: str) -> str:
     return f"You are {_a_or_an(name)} {name} assistant. {instruction}"
 
 
+# The stable in-branch copy of the paper's 8-per-trait corrected monitoring
+# prompts (consistency-checker W1 fix: task 816's artifacts/ folder MOVES with its
+# status, so the loader reads ONLY this committed copy, byte-identity-asserted
+# against 816's artifact at implementation time). The trait section headings in
+# the .md are the plain-English trait labels ("Evil"/"Sycophancy"/"Hallucination").
+CORRECTED_PROMPTS_PATH = Path(__file__).resolve().parent / "issue778_corrected_prompts.md"
+
+# Map the .md's H2 section labels -> our canonical trait slugs.
+_CORRECTED_SECTION_TO_TRAIT: dict[str, str] = {
+    "evil": "evil",
+    "sycophancy": "sycophancy",
+    "hallucination": "hallucination",
+}
+
+
+def _parse_corrected_prompts_md(text: str) -> dict[str, list[str]]:
+    """Parse the committed corrected-prompts .md into {trait: [8 prompts]}.
+
+    Format (see scripts/issue778_corrected_prompts.md): ``## <TraitLabel> (8,
+    strongest -> weakest)`` section headings, each followed by ``N. <prompt>``
+    numbered lines (rank 1..8, strongest first). A prompt may not span lines in
+    this file, so one ``\\d+. `` line == one prompt. Returns {trait_slug:
+    [prompt_1..prompt_8]}. Fails loud on a missing/short section.
+    """
+    import re
+
+    out: dict[str, list[str]] = {}
+    cur_trait: str | None = None
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        h2 = re.match(r"^##\s+(.+?)\s*\(", line)
+        if h2:
+            label = h2.group(1).strip().lower()
+            cur_trait = _CORRECTED_SECTION_TO_TRAIT.get(label)
+            if cur_trait is not None:
+                out[cur_trait] = []
+            continue
+        if cur_trait is None:
+            continue
+        m = re.match(r"^\d+\.\s+(.+)$", line)
+        if m:
+            out[cur_trait].append(m.group(1).strip())
+    return out
+
+
+def corrected_monitoring_system_prompts(trait: str) -> list[tuple[str, str]]:
+    """The paper's 8-per-trait CORRECTED monitoring system-prompt ladder.
+
+    Replaces ``monitoring_system_prompts``'s 10 extraction-instruction
+    substitution (which was near-tautological — the prompts that built r_B) with
+    the paper's actual 8 trait-inducing system prompts (verbatim, arXiv 2507.21509
+    App. "System prompts for inducing traits"), a graded ladder from strongest
+    trait expression (#1) to a plain "helpful assistant" baseline (#8).
+
+    The prompts are FULL system-prompt strings used DIRECTLY as the ``system``
+    message (NO ``"You are a/an X assistant."`` prefix — they already are complete
+    system prompts). Returns ``list[(prompt_id, system_prompt)]`` with
+    ``prompt_id = f"corr_{rank}"`` for rank 1..8. Hard asserts exactly 8 prompts.
+    """
+    if trait not in _CORRECTED_SECTION_TO_TRAIT.values():
+        raise ValueError(f"unknown trait {trait!r}; expected one of {TRAITS}")
+    if not CORRECTED_PROMPTS_PATH.exists():
+        raise FileNotFoundError(
+            f"corrected prompts file missing: {CORRECTED_PROMPTS_PATH} "
+            f"(the W1 stable in-branch copy must be committed on the issue-778 branch)"
+        )
+    parsed = _parse_corrected_prompts_md(CORRECTED_PROMPTS_PATH.read_text())
+    prompts = parsed.get(trait, [])
+    if len(prompts) != 8:
+        raise ValueError(
+            f"{trait}: expected 8 corrected monitoring prompts, parsed {len(prompts)} "
+            f"from {CORRECTED_PROMPTS_PATH}"
+        )
+    return [(f"corr_{rank}", p) for rank, p in enumerate(prompts, start=1)]
+
+
 def monitoring_system_prompts(td: TraitData) -> list[tuple[str, str]]:
     """The monitoring / system-prompt-induction prompt set.
 

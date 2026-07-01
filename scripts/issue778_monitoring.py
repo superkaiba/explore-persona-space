@@ -40,6 +40,22 @@ logger = logging.getLogger("issue778.monitoring")
 load_dotenv()
 
 
+def _select_monitoring_prompts(
+    trait: str, td, prompt_set: str, n_prompts: int
+) -> list[tuple[str, str]]:
+    """Return the (prompt_id, system_prompt) list for the chosen prompt set.
+
+    ``corrected`` -> the paper's 8-per-trait ladder (Leg A, full system-prompt
+    strings, no prefix); ``extraction`` -> the released 5 neg + 5 pos instructions
+    (#778's original substitution). ``n_prompts`` caps the slice (smoke).
+    """
+    if prompt_set == "corrected":
+        return lib.corrected_monitoring_system_prompts(trait)[:n_prompts]
+    if prompt_set == "extraction":
+        return lib.monitoring_system_prompts(td)[:n_prompts]
+    raise ValueError(f"unknown prompt_set {prompt_set!r}; expected extraction|corrected")
+
+
 def _chat_prompt(tokenizer, system: str, question: str) -> str:
     messages = [
         {"role": "system", "content": system},
@@ -74,16 +90,30 @@ def monitor_trait(
     n_questions: int,
     n_prompts: int,
     n_rollouts: int,
+    prompt_set: str = "extraction",
+    out_tag: str = "monitoring",
 ) -> dict:
-    """Run the monitoring setup for one trait; write per-cell JSONL."""
+    """Run the monitoring setup for one trait; write per-cell JSONL.
+
+    ``prompt_set`` selects the monitoring system-prompt source:
+      - ``extraction``: the 10 released extraction instructions (5 neg + 5 pos),
+        #778's original substitution (near-tautological pooled overall_r).
+      - ``corrected``: the paper's 8-per-trait trait-inducing ladder (verbatim,
+        the Leg-A fidelity restoration). Full system-prompt strings, NO prefix.
+
+    ``out_tag`` tags the output files: ``{out_tag}_{trait}.jsonl`` +
+    ``{out_tag}/{trait}_acts.pt`` (default ``monitoring``; corrected leg passes
+    ``monitoring_corrected``). Everything else (generation / judge / capture /
+    projection) is identical across prompt sets.
+    """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    lib.log_phase("monitoring", f"trait={trait} start", trait=trait)
+    lib.log_phase("monitoring", f"trait={trait} start prompt_set={prompt_set}", trait=trait)
     td = lib.load_trait_data(external_root, trait)
     tokenizer = AutoTokenizer.from_pretrained(lib.MODEL_NAME)
 
-    system_prompts = lib.monitoring_system_prompts(td)[:n_prompts]
+    system_prompts = _select_monitoring_prompts(trait, td, prompt_set, n_prompts)
     questions = td.eval_questions[:n_questions]
 
     # Build cells: (prompt_id, system, question). Each cell -> n_rollouts.
@@ -111,8 +141,8 @@ def monitor_trait(
     lib.log_phase("monitoring", f"trait={trait} generated {len(answers)}", trait=trait)
 
     # ── Graded judge (N=6 draws per rollout, mean over rollouts+draws) ───────
-    cache_dir = out_root / "monitoring" / f"{trait}_judge_cache"
-    save_raw = out_root / "monitoring" / f"{trait}_judge_raw.json"
+    cache_dir = out_root / out_tag / f"{trait}_judge_cache"
+    save_raw = out_root / out_tag / f"{trait}_judge_raw.json"
     save_raw.parent.mkdir(parents=True, exist_ok=True)
     judge_items: list[tuple[str, str, str]] = []
     for ci, cell in enumerate(cells):
@@ -165,8 +195,8 @@ def monitor_trait(
     # with the JSONL row order (pre-drop). The null battery re-projects these raw
     # activations onto each null direction — the stored projections are onto r_B
     # only. Plan-referenced downstream input -> uploads to analysis_tensors/.
-    (out_root / "monitoring").mkdir(parents=True, exist_ok=True)
-    torch.save(acts, out_root / "monitoring" / f"{trait}_acts.pt")
+    (out_root / out_tag).mkdir(parents=True, exist_ok=True)
+    torch.save(acts, out_root / out_tag / f"{trait}_acts.pt")
 
     # ── Projection per layer onto r_B ────────────────────────────────────────
     rb = torch.load(out_root / "rb" / f"{trait}.pt", weights_only=False)  # (28, 3584)
@@ -183,7 +213,7 @@ def monitor_trait(
 
     # ── Write per-cell JSONL ─────────────────────────────────────────────────
     eval_results_root.mkdir(parents=True, exist_ok=True)
-    out_path = eval_results_root / f"monitoring_{trait}.jsonl"
+    out_path = eval_results_root / f"{out_tag}_{trait}.jsonl"
     prompt_id_to_int = {pid: i for i, (pid, _s) in enumerate(system_prompts)}
     with open(out_path, "w") as f:
         for ci, cell in enumerate(cells):
@@ -200,6 +230,8 @@ def monitor_trait(
 
     meta = {
         "trait": trait,
+        "prompt_set": prompt_set,
+        "out_tag": out_tag,
         "n_cells": len(cells),
         "n_prompts": len(system_prompts),
         "n_questions": len(questions),
@@ -210,7 +242,7 @@ def monitor_trait(
         "out_path": str(out_path),
         "reproducibility": lib.repro_metadata(),
     }
-    with open(out_root / "monitoring" / f"{trait}_meta.json", "w") as f:
+    with open(out_root / out_tag / f"{trait}_meta.json", "w") as f:
         json.dump(meta, f, indent=2)
     lib.log_phase("monitoring", f"trait={trait} done", trait=trait, n_cells=len(cells))
     return meta
@@ -224,8 +256,25 @@ def main() -> None:
     parser.add_argument("--traits", nargs="+", default=list(lib.TRAITS))
     parser.add_argument("--cells", type=int, default=None, help="limit to first N traits (smoke)")
     parser.add_argument("--n-questions", type=int, default=20)
-    parser.add_argument("--n-prompts", type=int, default=10, help="system prompts (5 neg + 5 pos)")
+    parser.add_argument(
+        "--n-prompts",
+        type=int,
+        default=None,
+        help="system prompts to use (default: 10 for extraction, 8 for corrected)",
+    )
     parser.add_argument("--n-rollouts", type=int, default=lib.N_ROLLOUTS_PRED)
+    parser.add_argument(
+        "--prompt-set",
+        choices=["extraction", "corrected"],
+        default="extraction",
+        help="monitoring prompt source (corrected = paper's 8-per-trait ladder, Leg A)",
+    )
+    parser.add_argument(
+        "--out-tag",
+        default=None,
+        help="output file tag (default: monitoring for extraction, "
+        "monitoring_corrected for corrected)",
+    )
     args = parser.parse_args()
 
     external_root = Path(args.external_root)
@@ -235,7 +284,16 @@ def main() -> None:
     if args.cells is not None:
         traits = traits[: args.cells]
 
-    lib.log_phase("monitoring", f"start traits={traits}")
+    # Default n_prompts + out_tag by prompt set (8 for the corrected 8-per-trait
+    # ladder; 10 for the extraction 5+5 set).
+    n_prompts = args.n_prompts
+    if n_prompts is None:
+        n_prompts = 8 if args.prompt_set == "corrected" else 10
+    out_tag = args.out_tag
+    if out_tag is None:
+        out_tag = "monitoring_corrected" if args.prompt_set == "corrected" else "monitoring"
+
+    lib.log_phase("monitoring", f"start traits={traits} prompt_set={args.prompt_set} tag={out_tag}")
     results = {}
     for trait in traits:
         results[trait] = monitor_trait(
@@ -244,8 +302,10 @@ def main() -> None:
             out_root,
             eval_results_root,
             n_questions=args.n_questions,
-            n_prompts=args.n_prompts,
+            n_prompts=n_prompts,
             n_rollouts=args.n_rollouts,
+            prompt_set=args.prompt_set,
+            out_tag=out_tag,
         )
     lib.log_phase("monitoring", f"all traits done ({len(results)})")
     print(json.dumps({"phase": "monitoring", "traits": list(results)}, indent=2))
