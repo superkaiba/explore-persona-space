@@ -294,13 +294,24 @@ HISTORICAL_REF_OPT_OUT = "<!-- lint: historical-ref -->"
 
 # `--check-skill-refs`: every backtick-delimited `/<skill-name>` slash-command
 # token in the workflow-doc surface MUST resolve to a live project skill (a
-# `.claude/skills/<name>/` directory) or to SKILL_REF_ALLOWLIST. Backtick-anchor
-# + trailing lookahead are the FP controls: only the slash-command convention
-# matches, and a path segment (`/workspace/logs`, `/tmp/x`, `/mnt/...`) is
-# rejected because the char after the token is `/`, not the required
-# backtick / whitespace / `)` boundary. Group 1 = skill name, optionally
-# `<plugin>:<skill>`.
-SKILL_REF_RE = re.compile(r"`/([a-z][a-z0-9-]+(?::[a-z0-9-]+)?)(?=[`\s)])")
+# `.claude/skills/<name>/` directory) or to SKILL_REF_ALLOWLIST. Three FP
+# controls, all load-bearing (do NOT "simplify" any away):
+#   1. leading backtick anchor — the slash-command must OPEN a codespan;
+#   2. trailing lookahead `(?=[`\s)])` — the token must CLOSE on a backtick /
+#      whitespace / `)`, so a path segment (`/workspace/logs`, `/tmp/x`,
+#      `/mnt/...`) is rejected (the char after it is `/`, not the boundary);
+#   3. fixed-width negative-lookbehind `(?<!\w)` on the leading backtick — the
+#      backtick that OPENS the codespan must NOT be immediately preceded by a
+#      word char. This guards the closing-backtick-mistaken-for-opening FP
+#      class: prose like `` `false`/unset `` writes a `` `false` `` codespan
+#      whose CLOSING backtick abuts `/unset`; without (3) that closing
+#      backtick is misread as the OPENING backtick of a phantom `` `/unset ``
+#      slash-command (the trailing lookahead then succeeds on the following
+#      space). A closing backtick is always immediately preceded by a word
+#      char, so `(?<!\w)` rejects exactly that misread while leaving every
+#      real opening backtick (at start-of-line / after whitespace / `(` / `[`)
+#      matched. Group 1 = skill name, optionally `<plugin>:<skill>`.
+SKILL_REF_RE = re.compile(r"(?<!\w)`/([a-z][a-z0-9-]+(?::[a-z0-9-]+)?)(?=[`\s)])")
 
 _FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
 
