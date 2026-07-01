@@ -72,6 +72,7 @@ LEARNING_CURVE_GRID = [10, 15, 20, 25, 30, 40, 50]  # Source: #742 Stage-2
 ATTN_LR = 5e-2
 ATTN_EPOCHS = 300
 ATTN_L2_GRID = [1e-3, 1e-2, 1e-1, 1.0]  # nested-CV L2 on the learned query
+ATTN_REDUCE_RANK = 32  # PCA-reduce H before the query fit (regularize + vectorize)
 POOL_OPS = ["mean", "max", "attn_fixed", "attn_learned"]
 PCA_OPS = ["mean_pca", "max_pca", "attn_fixed_pca", "attn_learned_pca"]
 
@@ -140,62 +141,95 @@ def _fit_attn_learned_pool(
 
     aligned: (N, P, H) the (2K+2) aligned-position activations (NaN-filled slots ->
     zeroed + mask). Fit query q in R^H (init = mean-pool direction) so
-    ``pool_i = sum_p softmax(a_i @ q)_p * a_i[p]``, then the pooled vector goes to
-    ridge downstream. To avoid leakage the query is fit on the LOCO TRAIN fold only
-    (per held-out i). VECTORIZED: all N folds trained as one batched parameter
-    tensor via torch (a many-cell fit — ``.claude/rules/vectorize-many-cell-fits.md``).
+    ``pool_i = sum_p softmax(a_i @ q)_p * a_i[p]``; the pooled held-out vector then
+    goes to the shared ridge downstream so the reported rho uses the same estimator
+    as every other operator. To avoid leakage the query is fit on the LOCO TRAIN
+    fold only (per held-out i).
 
-    We fit q to predict y linearly from the pooled vector's projection onto a
-    1-D readout (a cheap surrogate objective that shapes the attention weights);
-    the RETURNED pooled (N, H) is then handed to the standard ridge downstream so
-    the reported rho uses the same estimator as every other operator. This keeps
-    the learned pool a genuine re-weighting arm while the head stays comparable.
+    VECTORIZED across ALL N LOCO folds AND the L2 grid as ONE batched parameter
+    tensor (``.claude/rules/vectorize-many-cell-fits.md``): the per-fold Python loop
+    is the banned overhead-bound anti-pattern (a serial fold loop projected >14 h
+    for the full 8x28-cell sweep at n=50). Every fold's query ``Q`` (F=n rows) +
+    readout ``w`` are stacked and trained jointly under a fold-exclusion mask; the
+    300-epoch loop runs ``len(L2)`` times TOTAL, not ``n x len(L2)`` times.
+
+    The query + readout are fit in a PCA-REDUCED activation space (H -> R via a
+    train-all-rows PCA basis, ``ATTN_REDUCE_RANK``) — a free 3584-dim query at n=50
+    is hopeless overfitting (plan's ``ungrounded`` risk), and the reduction makes the
+    fit ~100x cheaper (the query dim is R, not H). The reduction basis is fit on ALL
+    rows ONCE (a mild reduction-basis leakage; the query fit itself stays cross-fold
+    and the RETURNED pooled vector — full-H, using the learned per-position attention
+    weights — goes to the leakage-free LOCO ridge downstream). The learned attention
+    is over POSITIONS, computed from the reduced scores, then applied to the FULL-H
+    activations so no answer information is lost in the returned pool.
     """
     torch.manual_seed(seed)
     n, _p, h = aligned.shape
     dev = torch.device(device)
     a = torch.from_numpy(np.nan_to_num(aligned).astype(np.float32)).to(dev)  # (N,P,H)
-    mask = torch.from_numpy((~np.isnan(aligned)).any(axis=2).astype(np.float32)).to(dev)  # (N,P)
+    pmask = torch.from_numpy((~np.isnan(aligned)).any(axis=2)).to(dev)  # (N,P) bool
     yt = torch.from_numpy(y.astype(np.float32)).to(dev)  # (N,)
 
-    # init query = mean-pool direction (mean over valid positions, mean over ctx)
+    # PCA-reduce H -> R on the stacked (N*P valid) position activations (all rows).
+    flat = a[pmask]  # (M, H) valid positions only
+    r = min(ATTN_REDUCE_RANK, max(1, flat.shape[0] - 1), h)
+    mu, comps, _ = robust_pca_basis(flat.cpu().numpy().astype(np.float64), r)  # comps (r',H)
+    comps_t = torch.from_numpy(comps.astype(np.float32)).to(dev)  # (R,H)
+    mu_t = torch.from_numpy(mu.astype(np.float32)).to(dev)  # (H,)
+    ar = torch.einsum("nph,rh->npr", a - mu_t, comps_t)  # (N,P,R) reduced activations
+    rdim = ar.shape[2]
+
+    # init reduced query = mean-pool direction in reduced space
     with torch.no_grad():
-        valid = mask.unsqueeze(-1)  # (N,P,1)
-        per_ctx_mean = (a * valid).sum(1) / valid.sum(1).clamp_min(1.0)  # (N,H)
-        q_init = per_ctx_mean.mean(0)  # (H,)
+        valid = pmask.float().unsqueeze(-1)  # (N,P,1)
+        per_ctx_mean = (ar * valid).sum(1) / valid.sum(1).clamp_min(1.0)  # (N,R)
+        q_init = per_ctx_mean.mean(0)  # (R,)
         q_init = q_init / (q_init.norm() + 1e-9)
 
-    pooled_out = np.zeros((n, h), dtype=np.float32)
-    for i in range(n):
-        tr = torch.tensor([j for j in range(n) if j != i], device=dev)
-        a_tr, m_tr, y_tr = a[tr], mask[tr], yt[tr]
-        best_loss, best_state = math.inf, None
-        for l2 in ATTN_L2_GRID:
-            q2 = q_init.clone().requires_grad_(True)
-            w2 = torch.zeros(h, device=dev, requires_grad=True)
-            b2 = torch.zeros(1, device=dev, requires_grad=True)
-            opt = torch.optim.Adam([q2, w2, b2], lr=ATTN_LR)
-            for _ in range(ATTN_EPOCHS):
-                opt.zero_grad()
-                scores = a_tr @ q2  # (ntr, P)
-                scores = scores.masked_fill(m_tr < 0.5, -1e9)
-                attn = torch.softmax(scores, dim=1)  # (ntr, P)
-                pooled = (attn.unsqueeze(-1) * a_tr).sum(1)  # (ntr, H)
-                pred = pooled @ w2 + b2
-                loss = ((pred - y_tr) ** 2).mean() + l2 * (q2.pow(2).sum() + w2.pow(2).sum())
-                loss.backward()
-                opt.step()
-            with torch.no_grad():
-                if loss.item() < best_loss:
-                    best_loss = loss.item()
-                    best_state = q2.detach().clone()
-        q_fit = best_state if best_state is not None else q_init
-        with torch.no_grad():
-            scores_i = (a[i] @ q_fit).masked_fill(mask[i] < 0.5, -1e9)  # (P,)
-            attn_i = torch.softmax(scores_i, dim=0)
-            pooled_i = (attn_i.unsqueeze(-1) * a[i]).sum(0)  # (H,)
-            pooled_out[i] = pooled_i.cpu().numpy()
-    return pooled_out
+    eye = torch.eye(n, device=dev, dtype=torch.bool)
+    train_mask = (~eye).float()  # (F=N, N) 1 where row j is in fold f's train set
+    n_tr = train_mask.sum(1).clamp_min(1.0)  # (F,)
+    pmask_f = pmask.float().unsqueeze(0)  # (1,N,P) broadcast over folds
+
+    def _train_one_l2(l2: float) -> tuple[torch.Tensor, torch.Tensor]:
+        """Train all folds jointly at one L2; return (final held-in loss per fold, Q)."""
+        Q = q_init.unsqueeze(0).repeat(n, 1).clone().requires_grad_(True)  # (F,R)
+        W = torch.zeros(n, rdim, device=dev, requires_grad=True)  # (F,R)
+        B = torch.zeros(n, device=dev, requires_grad=True)  # (F,)
+        opt = torch.optim.Adam([Q, W, B], lr=ATTN_LR)
+        last = None
+        for _ in range(ATTN_EPOCHS):
+            opt.zero_grad()
+            scores = torch.einsum("jpr,fr->fjp", ar, Q)  # (F,N,P)
+            scores = scores.masked_fill(pmask_f < 0.5, -1e9)
+            attn = torch.softmax(scores, dim=2)  # (F,N,P)
+            # pred[f,j] = W[f] . pooled_reduced[f,j] = sum_p attn[f,j,p] (ar[j,p].W[f])
+            aw = torch.einsum("jpr,fr->fjp", ar, W)  # (F,N,P) — no (F,N,R) intermediate
+            pred = (attn * aw).sum(2) + B.unsqueeze(1)  # (F,N)
+            resid2 = (pred - yt.unsqueeze(0)) ** 2  # (F,N)
+            mse = (resid2 * train_mask).sum(1) / n_tr  # (F,) train-only MSE
+            reg = l2 * (Q.pow(2).sum(1) + W.pow(2).sum(1))  # (F,)
+            loss = (mse + reg).sum()  # per-fold grads independent
+            loss.backward()
+            opt.step()
+            last = (mse + reg).detach()
+        return last, Q.detach()
+
+    best_loss = torch.full((n,), math.inf, device=dev)
+    best_Q = q_init.unsqueeze(0).repeat(n, 1)  # (F,R)
+    for l2 in ATTN_L2_GRID:
+        fold_loss, Q = _train_one_l2(l2)
+        improved = fold_loss < best_loss
+        best_loss = torch.where(improved, fold_loss, best_loss)
+        best_Q = torch.where(improved.unsqueeze(1), Q, best_Q)
+
+    # held-out pooled: fold i's reduced query -> position attention -> pool FULL-H a[i]
+    with torch.no_grad():
+        scores_i = torch.einsum("ipr,ir->ip", ar, best_Q)  # (N,P) reduced scores
+        scores_i = scores_i.masked_fill(pmask.float() < 0.5, -1e9)
+        attn_i = torch.softmax(scores_i, dim=1)  # (N,P)
+        pooled_out = torch.einsum("ip,iph->ih", attn_i, a)  # (N,H) full-H pool
+    return pooled_out.cpu().numpy()
 
 
 # ── graded-DV reliability ceiling sqrt(r_yy) (inline #742 recipe, estimator fork) ─

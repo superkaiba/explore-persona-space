@@ -415,8 +415,28 @@ def _judge_behavior(
     return result
 
 
-def _resolve_ctx_ids(files: list[str], out_dir: Path) -> list[str]:
-    """Context ids from the #658 e0_gen listing, or a local hint (offline smoke)."""
+def _resolve_ctx_ids(repo: str, files: list[str], out_dir: Path) -> list[str]:
+    """Context ids in the CANONICAL answer_spans order, or a local hint (offline smoke).
+
+    Prefer the #658 answer_spans ``index.json`` ``context_ids`` order — the SAME
+    order the extractor's ``--contexts N`` slices, so a ``--max-contexts N`` regrade
+    slice covers the SAME contexts (the fit joins by context_id, but aligning the
+    slices makes the smoke overlap). Fall back to the e0_gen listing order (still the
+    50 contexts, just alphabetical), then a local hint (offline smoke).
+    """
+    # A local hint short-circuits everything (offline smoke).
+    hint = out_dir / "context_ids.json"
+    if hint.exists():
+        return json.loads(hint.read_text())
+    # The canonical answer_spans index.json is a cheap single-file read — try it
+    # unconditionally (independent of the reuse LISTING that --skip-lane1 suppresses).
+    try:
+        idx = _hf_json(repo, "issue658_theory_assumptions/store/answer_spans/index.json")
+        cids = idx.get("context_ids") if isinstance(idx, dict) else idx
+        if cids:
+            return [str(c) for c in cids]
+    except Exception as exc:
+        logger.info("answer_spans index.json unavailable (%s) — e0_gen listing order", exc)
     ctx_ids: list[str] = []
     for f in files:
         if f.startswith(I658_E0GEN_PREFIX + "/") and f.endswith(".json"):
@@ -427,9 +447,6 @@ def _resolve_ctx_ids(files: list[str], out_dir: Path) -> list[str]:
                     ctx_ids.append(ctx)
     if ctx_ids:
         return ctx_ids
-    hint = out_dir / "context_ids.json"
-    if hint.exists():
-        return json.loads(hint.read_text())
     raise RuntimeError(
         "no context ids resolved from HF and no local context_ids.json hint — "
         "cannot proceed (fail-loud, per plan section 4.2)"
@@ -480,7 +497,7 @@ def main() -> int:
     files = [] if args.skip_lane1 else _list_repo(args.repo)
     reuse = {} if args.skip_lane1 else _lane1_reuse_map(args.repo, behaviors, files)
 
-    ctx_ids = _resolve_ctx_ids(files, out_dir)
+    ctx_ids = _resolve_ctx_ids(args.repo, files, out_dir)
     if args.max_contexts is not None:
         ctx_ids = ctx_ids[: args.max_contexts]
     logger.info("Re-judging %d behaviors over %d contexts", len(behaviors), len(ctx_ids))
