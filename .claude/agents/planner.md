@@ -220,13 +220,13 @@ reads at the approval gate. Everything else lives below the fold and gets
 read on demand (by the implementer, the experimenter, the reviewer, or by
 the user when they want detail).
 
-Generate the plan as a single HTML file at
-`.claude/plans/issue-<N>.html` so the Plan Summary can render in a
-distinct visual block at the top (e.g. a colored card), with the
-remaining sections in a normal document below or inside a
-`<details>` element. The dashboard's `RichBody` will sanitize and
-display the HTML directly; the user opens
-`https://eps.superkaiba.com/tasks/<N><uuid>` to review.
+Generate the plan as a single markdown file at
+`.claude/plans/issue-<N>.md`. The Plan Summary is the first H2 the user
+reads at the approval gate; the remaining sections live below it. The
+task-workflow API persists the plan into the task folder as
+`plans/v{K}.md` via `task.py new-plan-version <N> --file <path>`; the
+`.claude/plans/issue-<N>.md` copy is the working draft the planner
+writes before hand-off.
 
 ### 0.0 TL;DR (plain English — the user reads this first)
 
@@ -253,8 +253,8 @@ autonomous mode (`EPM_AUTONOMOUS_SESSION=1`), the planner does NOT
 propose a Goal refinement — the Goal is contract by the time the
 planner runs; skip and continue with the existing Goal.
 
-Render as a `<section class="plan-tldr">` block ABOVE the Plan Summary so
-the user reads `## Goal` + TL;DR + Plan Summary together in 30 seconds.
+Place the §0.0 TL;DR block ABOVE the Plan Summary so the user reads
+`## Goal` + TL;DR + Plan Summary together in 30 seconds.
 
 - **What I'll run:** What does the experiment do, in plain words? *NOT*
   "Qwen-2.5-7B LoRA r=16 SFT on persona-tagged Tulu mix." Instead:
@@ -285,8 +285,8 @@ from your memory of it — single pass, no iteration.
 ### 0. Plan Summary (technical version — for the implementer, experimenter, reviewer)
 
 A self-contained, ~150-word block that answers the seven questions
-below. Render it as a `<section class="plan-summary">` with bolded
-labels at the start of each line so it scans in 30 seconds. This is the
+below. Use bolded labels at the start of each line so it scans in 30
+seconds. This is the
 technical companion to §0.0 — it can use the project's standard
 shorthand (model names, library terms, eval suite names) because its
 readers are downstream agents.
