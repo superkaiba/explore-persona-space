@@ -27,11 +27,6 @@ goal: On Qwen-2.5-7B, characterize how well and at what token granularity the ba
   projection baseline AND a matched-capacity direct context->behavior predictor, on
   held-out contexts and behaviors.
 ---
-## Goal
-
-On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior, and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.
-
-
 ## Provenance
 
 Originated from a design discussion (2026-06-30). Seed: Persona Vectors (arXiv 2507.21509)
@@ -59,6 +54,15 @@ predictability beats PV's last-prompt-token projection for trait monitoring:
 
 R2's response-mean projection `⟨v(x), r_B⟩` is the **oracle** R1's `h` targets from the prompt
 alone. All three share ONE data-collection pass.
+
+**Granularity level (load-bearing — do NOT design condition-means):** everything operates at the
+**single-context → single-answer (per-example)** level. `c_x` and `v(x)` are per-example; `v(x)` is
+the mean over the tokens of that ONE response (not a mean over samples or over contexts); R3's i,j
+pairs are single-context-token → single-answer-token within one example. The theory's condition-mean
+`v_θ(C) = E_{x∼C}[ā(x)]` is the aggregate these single-level results average UP to — the experiment
+deliberately runs the finer single-instance version (harder, no averaging; and it's the
+deployment-relevant per-prompt object). Cross-example aggregation (d1 grid-cell pooling, regression
+training pairs, within-condition Pearson) pools single→single pairs, NEVER averaged vectors.
 
 ## Result 1 — learned context→profile map + direct-predictor comparison (pre-generation)
 
