@@ -76,7 +76,22 @@ HF_TF_MARGIN_PREFIX = "issue667_gate_chain_preview/tf_margin"
 PER_CELL_DIR = "eval_results/issue_667/tf_margin/per_cell"
 OUT_DIR = "eval_results/issue_667/tf_margin"
 TENSORS_DIR = "eval_results/issue_667/analysis_tensors"
+# CONCERN 1 (round 2): the fact-pool builder writes this sentinel under the fact
+# pool dir when floor-N < YIELD_FLOOR_MIN. Its presence == fact dropped from the
+# headline: the extract phase SKIPS fact source cells and the analysis phase
+# SOFT-DROPS fact (§4.3). Kept in lockstep with issue667_build_fact_pool.py.
+FACT_POOL_DIR = "data/issue_667/fact_fixed_pool_v1"
+FACT_DROP_SENTINEL = f"{FACT_POOL_DIR}/DROPPED_FROM_HEADLINE.sentinel"
 _SEED = 42
+
+
+def fact_dropped_from_headline() -> bool:
+    """True iff the fact-pool builder wrote the DROP sentinel (floor-N < min).
+
+    Presence of the sentinel is the single source of truth: the extract phase
+    skips fact cells and the analysis phase soft-drops fact when it is True.
+    """
+    return (PROJECT_ROOT / FACT_DROP_SENTINEL).is_file()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -370,6 +385,30 @@ def _cell_done(behavior: str, source: str) -> bool:
     return f.is_file()
 
 
+def _select_extract_cells(behaviors: list[str], sources_arg: str | None) -> list[tuple[str, str]]:
+    """(behavior, source) cells to extract, skipping fact if the DROP sentinel is present.
+
+    CONCERN 1: if the fact pool under-yielded (DROP sentinel present), skip the
+    fact source cells entirely — the fact arm is soft-dropped from the headline,
+    so extracting its (empty-pool) margins would waste GPU and feed the analysis a
+    fact vector the SOFT-DROP path discards anyway. em/syco are unaffected.
+    """
+    fact_dropped = "fact" in behaviors and fact_dropped_from_headline()
+    if fact_dropped:
+        logger.info(
+            "fact-pool DROP sentinel present (%s) -> skipping fact source cells in extract "
+            "(fact soft-dropped from the headline; em/syco unaffected)",
+            FACT_DROP_SENTINEL,
+        )
+    cells: list[tuple[str, str]] = []
+    for behavior in behaviors:
+        if behavior == "fact" and fact_dropped:
+            continue
+        for source in select_sources(behavior, sources_arg):
+            cells.append((behavior, source))
+    return cells
+
+
 def phase_extract(
     *,
     behaviors: list[str],
@@ -384,10 +423,7 @@ def phase_extract(
 ) -> None:
     """Per-source-adapter 2-index tf-margin extraction in CVD-pinned waves; upload after."""
     phase_log("extract")
-    cells: list[tuple[str, str]] = []
-    for behavior in behaviors:
-        for source in select_sources(behavior, sources_arg):
-            cells.append((behavior, source))
+    cells = _select_extract_cells(behaviors, sources_arg)
     logger.info("extract: %d source-adapter cells across behaviors=%s", len(cells), behaviors)
     if resume_skip and not dry_run:
         kept = [(b, s) for (b, s) in cells if not _cell_done(b, s)]
@@ -523,6 +559,10 @@ def phase_analysis(
     ]
     if skip_store_pin:
         cmd.append("--skip-store-pin")
+    # CONCERN 1: forward the fact-drop signal so the analysis SOFT-DROPS fact
+    # (the analysis ALSO reads the sentinel itself when run standalone off-pod).
+    if "fact" in behaviors and fact_dropped_from_headline():
+        cmd.append("--fact-dropped")
     rc = _run_with_log(cmd, log_path=_log_dir() / "tf_margin_analysis.log")
     if rc == 3:
         write_sentinel(
@@ -531,6 +571,18 @@ def phase_analysis(
             extra={"failure_class": "code", "reason": "g0_correctness_gate_fail"},
         )
         raise RuntimeError("analysis g0-correctness gate FAILED (rc=3) -- HALT.")
+    if rc == 4:
+        # BLOCKER 2: a behavior is missing off-diagonal cells with no valid excuse
+        # (em/syco always HARD-FAIL; fact HARD-FAILs unless it was dropped). The
+        # headline JSON is NOT written for the offending behavior.
+        write_sentinel(
+            "epm:failure",
+            "tf_margin_cell_coverage_incomplete: a behavior is missing off-diagonal "
+            "(source,target) cells (partial extract / stale resume / upload gap) -- "
+            "the headline denominator would be silently shrunk; see tf_margin_analysis.log",
+            extra={"failure_class": "code", "reason": "tf_margin_cell_coverage_incomplete"},
+        )
+        raise RuntimeError("analysis cell-coverage gate FAILED (rc=4) -- HALT.")
     if rc != 0:
         raise RuntimeError(
             f"analysis phase failed (rc={rc}); see {_log_dir() / 'tf_margin_analysis.log'}"

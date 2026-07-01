@@ -66,6 +66,17 @@ G0_CORRECTNESS_TOL = 0.02
 # derives it fresh from the store; this is the pinned reference it must match.
 COMMITTED_BASE_G_RHO = {"em": 0.13, "sycophancy": 0.16, "fact": 0.40}
 
+# CONCERN 1 (round 2): the fact-pool builder writes this sentinel when floor-N <
+# YIELD_FLOOR_MIN. When run standalone off-pod the analysis reads it directly (in
+# addition to the dispatcher-forwarded --fact-dropped flag) so the SOFT-DROP path
+# is honored regardless of how the analysis is invoked. Lockstep with
+# issue667_build_fact_pool.py DROP_SENTINEL_NAME + the dispatcher FACT_DROP_SENTINEL.
+FACT_DROP_SENTINEL = "data/issue_667/fact_fixed_pool_v1/DROPPED_FROM_HEADLINE.sentinel"
+
+
+def _fact_dropped_sentinel_present() -> bool:
+    return (PROJECT_ROOT / FACT_DROP_SENTINEL).is_file()
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # VENDORED byte-identical from scripts/issue722_tf_margin_analysis.py
@@ -201,6 +212,31 @@ class G0CorrectnessError(RuntimeError):
     """Recomputed g0 aggregate Spearman(g0, G) diverged from #667's committed rho (HALT)."""
 
 
+class CellCoverageError(RuntimeError):
+    """A behavior is missing off-diagonal (source,target) cells with no valid excuse (HALT).
+
+    HARD-FAIL for em/sycophancy (a partial extract / stale resume-skip / upload gap
+    silently shrinks the headline denominator) and for fact when it was NOT dropped
+    from the headline. A fact arm that WAS dropped (fact-pool under-yield) is
+    SOFT-DROPPED, not a coverage error.
+    """
+
+
+def expected_off_diagonal_keys(behavior: str) -> set[tuple[str, str]]:
+    """The full expected off-diagonal (source, target) cell set for a behavior.
+
+    464 cells per behavior on the production grid (16 sources x 29 non-self
+    targets). Sources = train_cids_for; targets = eval_cids_for; drop the diagonal
+    (source == target), matching the #667 g0 join. Used to enforce cell coverage
+    BEFORE the headline is written (BLOCKER 2).
+    """
+    from explore_persona_space.experiments.i537_contexts import eval_cids_for, train_cids_for
+
+    sources = train_cids_for(behavior)
+    targets = eval_cids_for(behavior)
+    return {(s, t) for s in sources for t in targets if s != t}
+
+
 def run_gate_vs_tf_margin(
     *,
     per_cell_dir: Path,
@@ -210,13 +246,18 @@ def run_gate_vs_tf_margin(
     out_dir: Path,
     skip_store_pin: bool = False,
     committed_base_g_rho: dict | None = None,
+    fact_dropped: bool = False,
 ) -> dict:
     """The full join + both gates + headline stats. Returns the results dict.
 
     Raises G0CorrectnessError (-> rc!=0 in main) if any behavior's recomputed
     aggregate Spearman(g0, G) misses #667's committed base-G rho by > tol
-    (smuggled-variable / base-side HALT). A per-behavior measurement-validity
-    FAIL is a REPORTABLE outcome (not carried as a headline), NOT a halt.
+    (smuggled-variable / base-side HALT). Raises CellCoverageError (BLOCKER 2)
+    when a behavior is missing off-diagonal cells with no valid excuse: HARD-FAIL
+    for em/sycophancy always, and for fact UNLESS ``fact_dropped`` is True (the
+    fact-pool under-yield SOFT-DROP path, §4.3). A per-behavior
+    measurement-validity FAIL is a REPORTABLE outcome (not carried as a headline),
+    NOT a halt.
     """
     from issue667_analysis import load_cells, load_g_meta, load_sigma_c
 
@@ -240,6 +281,9 @@ def run_gate_vs_tf_margin(
     headline: dict[str, dict] = {}
     validation: dict[str, dict] = {}
     g0_percell_out: dict[str, list] = {}
+    margins_out: dict[str, dict] = {}
+    tf_margin_leak_out: dict[str, dict] = {}
+    fact_softdropped = False
 
     for behavior in behaviors:
         cells = load_cells(tensors_dir, behavior, layer)
@@ -274,6 +318,50 @@ def run_gate_vs_tf_margin(
 
         # Join the freshly-extracted tf_margin_leak on the shared (source,target) key.
         tf_cells = load_tf_margin_leak(per_cell_dir, behavior)
+
+        # ── BLOCKER 2: cell-coverage gate (BEFORE any headline is written) ──────
+        # A partial extract / stale resume-skip / upload gap silently NaN-fills a
+        # missing (source, target) cell downstream and shrinks the headline
+        # denominator. Enforce the full expected off-diagonal key set here.
+        # On a smoke (--skip-store-pin) the grid is deliberately subset, so the
+        # coverage gate is inert (it would always trip on a 3-target smoke).
+        if not skip_store_pin:
+            expected = expected_off_diagonal_keys(behavior)
+            actual = set(tf_cells.keys())
+            missing = expected - actual
+            if missing:
+                sample = sorted(missing)[:5]
+                if behavior == "fact" and fact_dropped:
+                    # SOFT-DROP: fact was dropped from the headline (pool under-yield);
+                    # skip it from the emission, note the reason, continue.
+                    fact_softdropped = True
+                    log.warning(
+                        "cell-coverage SOFT-DROP fact: %d/%d expected cells missing "
+                        "(sample=%s) AND fact dropped from headline (pool under-yield) "
+                        "-> skipping fact from the headline (em/syco unaffected)",
+                        len(missing),
+                        len(expected),
+                        sample,
+                    )
+                    continue
+                raise CellCoverageError(
+                    f"cell-coverage gate FAIL for {behavior}: {len(missing)} of "
+                    f"{len(expected)} expected off-diagonal (source,target) cells "
+                    f"missing from the tf-margin store (sample={sample}). A partial "
+                    f"extract / stale resume-skip / upload gap silently shrinks the "
+                    f"headline denominator"
+                    + (
+                        " and the fact arm was NOT flagged dropped -> HALT."
+                        if behavior == "fact"
+                        else " -> HALT."
+                    )
+                )
+            log.info(
+                "cell-coverage gate PASS %s: all %d expected off-diagonal cells present",
+                behavior,
+                len(expected),
+            )
+
         tf_vec = np.array(
             [
                 tf_cells.get((r["source"], r["target"]), {}).get("tf_margin_leak", np.nan)
@@ -282,6 +370,29 @@ def run_gate_vs_tf_margin(
             dtype=float,
         )
         fams = [family_of(r["target"]) for r in rows]
+
+        # ── CONCERN 2: aggregate deliverables (margins.json / tf_margin_leak.json) ─
+        # Per-cell base + trained + leak margins keyed by (source, target). The
+        # analyzer folds margins.json into the clean-result; tf_margin_leak.json is
+        # the leak matrix the plot generator reads. Keyed by "<source>|<target>"
+        # (JSON has no tuple keys). Missing cells carry NaN (already gated above).
+        beh_margins: dict[str, dict] = {}
+        beh_leak: dict[str, float] = {}
+        for r in rows:
+            tc = tf_cells.get((r["source"], r["target"]), {})
+            key = f"{r['source']}|{r['target']}"
+            beh_margins[key] = {
+                "source": r["source"],
+                "target": r["target"],
+                "margin_base": tc.get("margin_base", float("nan")),
+                "margin_trained": tc.get("margin_trained", float("nan")),
+                "tf_margin_leak": tc.get("tf_margin_leak", float("nan")),
+                "n_pos_used": tc.get("n_pos", None),
+                "n_neg_used": tc.get("n_neg", None),
+            }
+            beh_leak[key] = tc.get("tf_margin_leak", float("nan"))
+        margins_out[behavior] = beh_margins
+        tf_margin_leak_out[behavior] = beh_leak
 
         # (a) Measurement-validity gate: Spearman(tf_margin_leak, G) per behavior.
         mv = _finite_mask(tf_vec, G_vec)
@@ -349,7 +460,15 @@ def run_gate_vs_tf_margin(
 
     out_dir.mkdir(parents=True, exist_ok=True)
     meta = _repro_meta(
-        {"layer": layer, "behaviors": behaviors, "g0_correctness_tol": G0_CORRECTNESS_TOL}
+        {
+            "layer": layer,
+            "behaviors": behaviors,
+            "g0_correctness_tol": G0_CORRECTNESS_TOL,
+            # CONCERN 1: record whether the fact arm was soft-dropped from the
+            # headline (fact-pool under-yield) so the analyzer + dashboard see it.
+            "fact_dropped_from_headline": bool(fact_softdropped),
+            "headline_behaviors": sorted(headline.keys()),
+        }
     )
     (out_dir / "rho_gate_vs_tf_margin.json").write_text(
         json.dumps({"per_behavior": headline, "metadata": meta}, indent=2)
@@ -360,11 +479,29 @@ def run_gate_vs_tf_margin(
     (out_dir / "g0_percell.json").write_text(
         json.dumps({"per_behavior": g0_percell_out, "metadata": meta}, indent=2)
     )
-    log.info(
-        "wrote rho_gate_vs_tf_margin.json / rho_margin_vs_rate.json / g0_percell.json -> %s",
-        out_dir,
+    # CONCERN 2: the plan §6.5 primary_deliverable names margins.json +
+    # tf_margin_leak.json as REQUIRED aggregate outputs (folded into the
+    # clean-result body / read by the plot generator).
+    (out_dir / "margins.json").write_text(
+        json.dumps({"per_behavior": margins_out, "metadata": meta}, indent=2)
     )
-    return {"headline": headline, "validation": validation, "g0_percell": g0_percell_out}
+    (out_dir / "tf_margin_leak.json").write_text(
+        json.dumps({"per_behavior": tf_margin_leak_out, "metadata": meta}, indent=2)
+    )
+    log.info(
+        "wrote rho_gate_vs_tf_margin.json / rho_margin_vs_rate.json / g0_percell.json / "
+        "margins.json / tf_margin_leak.json -> %s (fact_softdropped=%s)",
+        out_dir,
+        fact_softdropped,
+    )
+    return {
+        "headline": headline,
+        "validation": validation,
+        "g0_percell": g0_percell_out,
+        "margins": margins_out,
+        "tf_margin_leak": tf_margin_leak_out,
+        "fact_dropped_from_headline": bool(fact_softdropped),
+    }
 
 
 def main() -> int:
@@ -387,11 +524,20 @@ def main() -> int:
     ap.add_argument(
         "--skip-store-pin", action="store_true", help="Synthetic-store smoke (no HF pins)."
     )
+    ap.add_argument(
+        "--fact-dropped",
+        action="store_true",
+        help="Fact arm was dropped from the headline (fact-pool under-yield): SOFT-DROP fact "
+        "instead of a cell-coverage HALT. Auto-detected from the DROP sentinel too.",
+    )
     args = ap.parse_args()
 
     from explore_persona_space.orchestrate.env import load_dotenv
 
     load_dotenv()
+
+    # CONCERN 1: honor the flag OR the sentinel (either surfaces the fact drop).
+    fact_dropped = args.fact_dropped or _fact_dropped_sentinel_present()
 
     try:
         run_gate_vs_tf_margin(
@@ -401,10 +547,14 @@ def main() -> int:
             layer=args.layer,
             out_dir=PROJECT_ROOT / args.out_dir,
             skip_store_pin=args.skip_store_pin,
+            fact_dropped=fact_dropped,
         )
     except G0CorrectnessError as e:
         log.error("g0_correctness_gate_fail: %s", e)
         return 3
+    except CellCoverageError as e:
+        log.error("tf_margin_cell_coverage_incomplete: %s", e)
+        return 4
     return 0
 
 

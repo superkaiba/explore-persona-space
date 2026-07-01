@@ -15,6 +15,7 @@ Pins:
 from __future__ import annotations
 
 import ast
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -150,6 +151,10 @@ def test_g0_correctness_gate_passes_and_validation_flags(monkeypatch, tmp_path):
         layer=14,
         out_dir=tmp_path / "out",
         committed_base_g_rho={"em": 1.0},
+        # This test's synthetic universe (30 t{i} cells) is NOT the production
+        # off-diagonal grid, so bypass the round-2 cell-coverage gate (it targets
+        # the g0-correctness + validation gates, not coverage).
+        skip_store_pin=True,
     )
     assert res["validation"]["em"]["passed"] is True
     assert res["headline"]["em"]["rho"] is not None and res["headline"]["em"]["rho"] > 0
@@ -157,6 +162,9 @@ def test_g0_correctness_gate_passes_and_validation_flags(monkeypatch, tmp_path):
     assert (tmp_path / "out" / "rho_gate_vs_tf_margin.json").exists()
     assert (tmp_path / "out" / "rho_margin_vs_rate.json").exists()
     assert (tmp_path / "out" / "g0_percell.json").exists()
+    # CONCERN 2: the aggregate deliverables are written on every run.
+    assert (tmp_path / "out" / "margins.json").exists()
+    assert (tmp_path / "out" / "tf_margin_leak.json").exists()
 
 
 def _stub_analysis_loaders(monkeypatch):
@@ -182,3 +190,177 @@ def _stub_analysis_loaders(monkeypatch):
         lambda cid: f"fam{hash(cid) % 6}",
         raising=False,
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Round-2 BLOCKER 2 (cell coverage) + CONCERN 2 (aggregate deliverables).
+# ─────────────────────────────────────────────────────────────────────────────
+
+_R2_ROWS = [
+    {"source": "s0", "target": "t2", "g0": 0.0, "G": 0.0},
+    {"source": "s0", "target": "t3", "g0": 0.5, "G": 0.5},
+    {"source": "s1", "target": "t2", "g0": 0.7, "G": 0.7},
+    {"source": "s1", "target": "t3", "g0": 1.0, "G": 1.0},
+]
+_R2_EXPECTED = {(r["source"], r["target"]) for r in _R2_ROWS}
+
+
+def _install_r2_mocks(monkeypatch, *, tf_cells):
+    """Round-2 helper: perfectly-correlated 4-cell g0/G universe + expected-key stub."""
+    g0_vec = np.array([r["g0"] for r in _R2_ROWS])
+    G_vec = np.array([r["G"] for r in _R2_ROWS])
+    monkeypatch.setattr(
+        tfa,
+        "recompute_g0_percell",
+        lambda cells, g_meta, sigma_c, lam, behavior: {
+            "rows": _R2_ROWS,
+            "g0_vec": g0_vec,
+            "G_vec": G_vec,
+        },
+    )
+    monkeypatch.setattr(tfa, "load_tf_margin_leak", lambda per_cell_dir, behavior: tf_cells)
+    monkeypatch.setattr(tfa, "expected_off_diagonal_keys", lambda behavior: set(_R2_EXPECTED))
+    _stub_analysis_loaders(monkeypatch)
+
+
+def _r2_full_tf_cells(leak=0.6):
+    return {
+        k: {
+            "tf_margin_leak": leak,
+            "margin_base": 0.1,
+            "margin_trained": 0.1 + leak,
+            "n_pos": 40,
+            "n_neg": 40,
+        }
+        for k in _R2_EXPECTED
+    }
+
+
+def test_r2_missing_cell_broad_em_hard_fails(monkeypatch, tmp_path):
+    """BLOCKER 2: a missing em cell -> CellCoverageError, no headline JSON written."""
+    tf_cells = _r2_full_tf_cells()
+    del tf_cells[next(iter(tf_cells))]  # simulate a partial extract / upload gap
+    _install_r2_mocks(monkeypatch, tf_cells=tf_cells)
+    with pytest.raises(tfa.CellCoverageError) as ei:
+        tfa.run_gate_vs_tf_margin(
+            per_cell_dir=tmp_path / "pc",
+            tensors_dir=tmp_path / "tn",
+            behaviors=["em"],
+            layer=14,
+            out_dir=tmp_path / "out",
+            committed_base_g_rho={"em": 1.0},
+            skip_store_pin=False,
+            fact_dropped=False,
+        )
+    assert "cell-coverage gate FAIL for em" in str(ei.value)
+    assert not (tmp_path / "out" / "rho_gate_vs_tf_margin.json").exists()
+
+
+def test_r2_missing_cell_fact_softdrops_when_dropped(monkeypatch, tmp_path):
+    """BLOCKER 2 / CONCERN 1: a missing fact cell + fact_dropped -> SOFT-DROP (no raise)."""
+    tf_cells = _r2_full_tf_cells()
+    del tf_cells[next(iter(tf_cells))]
+    _install_r2_mocks(monkeypatch, tf_cells=tf_cells)
+    res = tfa.run_gate_vs_tf_margin(
+        per_cell_dir=tmp_path / "pc",
+        tensors_dir=tmp_path / "tn",
+        behaviors=["fact"],
+        layer=14,
+        out_dir=tmp_path / "out",
+        committed_base_g_rho={"fact": 1.0},
+        skip_store_pin=False,
+        fact_dropped=True,
+    )
+    assert res["fact_dropped_from_headline"] is True
+    assert "fact" not in res["headline"]
+    meta = json.loads((tmp_path / "out" / "rho_gate_vs_tf_margin.json").read_text())["metadata"]
+    assert meta["fact_dropped_from_headline"] is True
+
+
+def test_r2_missing_cell_fact_hard_fails_when_not_dropped(monkeypatch, tmp_path):
+    """A missing fact cell WITHOUT the drop flag is an unexplained partial -> HARD-FAIL."""
+    tf_cells = _r2_full_tf_cells()
+    del tf_cells[next(iter(tf_cells))]
+    _install_r2_mocks(monkeypatch, tf_cells=tf_cells)
+    with pytest.raises(tfa.CellCoverageError):
+        tfa.run_gate_vs_tf_margin(
+            per_cell_dir=tmp_path / "pc",
+            tensors_dir=tmp_path / "tn",
+            behaviors=["fact"],
+            layer=14,
+            out_dir=tmp_path / "out",
+            committed_base_g_rho={"fact": 1.0},
+            skip_store_pin=False,
+            fact_dropped=False,
+        )
+
+
+def test_r2_full_coverage_writes_aggregate_deliverables(monkeypatch, tmp_path):
+    """CONCERN 2: complete coverage -> margins.json + tf_margin_leak.json, right schema."""
+    tf_cells = _r2_full_tf_cells(leak=0.7)
+    _install_r2_mocks(monkeypatch, tf_cells=tf_cells)
+    res = tfa.run_gate_vs_tf_margin(
+        per_cell_dir=tmp_path / "pc",
+        tensors_dir=tmp_path / "tn",
+        behaviors=["em"],
+        layer=14,
+        out_dir=tmp_path / "out",
+        committed_base_g_rho={"em": 1.0},
+        skip_store_pin=False,
+        fact_dropped=False,
+    )
+    margins_p = tmp_path / "out" / "margins.json"
+    leak_p = tmp_path / "out" / "tf_margin_leak.json"
+    assert margins_p.is_file() and leak_p.is_file()
+    margins = json.loads(margins_p.read_text())["per_behavior"]["em"]
+    leak = json.loads(leak_p.read_text())["per_behavior"]["em"]
+    assert set(margins.keys()) == {f"{s}|{t}" for (s, t) in _R2_EXPECTED}
+    a_key = next(iter(margins))
+    assert set(margins[a_key]) >= {"margin_base", "margin_trained", "tf_margin_leak"}
+    assert leak[a_key] == 0.7
+    assert res["margins"]["em"][a_key]["tf_margin_leak"] == 0.7
+
+
+def test_r2_smoke_skip_store_pin_bypasses_coverage_gate(monkeypatch, tmp_path):
+    """--skip-store-pin subsets the grid, so the coverage gate is inert (no raise)."""
+    one = next(iter(_R2_EXPECTED))
+    tf_cells = {one: {"tf_margin_leak": 0.3, "margin_base": 0.1, "margin_trained": 0.4}}
+    _install_r2_mocks(monkeypatch, tf_cells=tf_cells)
+    res = tfa.run_gate_vs_tf_margin(
+        per_cell_dir=tmp_path / "pc",
+        tensors_dir=tmp_path / "tn",
+        behaviors=["em"],
+        layer=14,
+        out_dir=tmp_path / "out",
+        committed_base_g_rho={"em": 1.0},
+        skip_store_pin=True,
+        fact_dropped=False,
+    )
+    assert "em" in res["headline"]
+
+
+def test_r2_cli_maps_cell_coverage_to_rc4(monkeypatch, tmp_path):
+    """The analysis CLI maps CellCoverageError to rc=4 (the dispatcher's HALT code)."""
+    tf_cells = _r2_full_tf_cells()
+    del tf_cells[next(iter(tf_cells))]
+    _install_r2_mocks(monkeypatch, tf_cells=tf_cells)
+    # em uses the real committed rho (~1.0 agg here matches within tol via the stub
+    # universe), so pin the committed reference to 1.0 to isolate the coverage HALT.
+    monkeypatch.setattr(tfa, "COMMITTED_BASE_G_RHO", {"em": 1.0})
+    monkeypatch.setattr(tfa, "_fact_dropped_sentinel_present", lambda: False)
+    monkeypatch.setattr(
+        "explore_persona_space.orchestrate.env.load_dotenv", lambda *a, **k: None, raising=False
+    )
+    argv = [
+        "prog",
+        "--behaviors",
+        "em",
+        "--per-cell-dir",
+        str(tmp_path / "pc"),
+        "--tensors-dir",
+        str(tmp_path / "tn"),
+        "--out-dir",
+        str(tmp_path / "out"),
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    assert tfa.main() == 4

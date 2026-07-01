@@ -52,6 +52,11 @@ FACT_SEED = 42
 DEFAULT_CAP = 40
 YIELD_FLOOR_MIN = 15  # below this per side, drop the fact arm from the headline
 POOL_DIR = "data/issue_667/fact_fixed_pool_v1"
+# CONCERN 1 (round 2): when floor-N < YIELD_FLOOR_MIN the fact arm is dropped from
+# the headline. The pool is still written (audit trail), but this sentinel file is
+# ALSO written so the dispatcher can SKIP the fact extract and the analysis can
+# route fact through the SOFT-DROP path (§4.3). Presence of the file == fact dropped.
+DROP_SENTINEL_NAME = "DROPPED_FROM_HEADLINE.sentinel"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_POOL_PREFIX = "issue667_gate_chain_preview/tf_margin/fact_fixed_pool_v1"
 
@@ -128,18 +133,66 @@ def _judge_one(client, completion: str) -> float | None:
     return None
 
 
-def _generate_completions(probes: list[str], n_rollouts: int, cpu_only: bool) -> list[dict]:
-    """On-policy fact-recall completions from BASE + the binst_fact adapter.
+def _hf_generate_with_adapter(
+    model, tok, msg_lists: list[list[dict]], device, *, max_new_tokens: int = 256
+) -> list[str]:
+    """Greedy HF ``.generate()`` through the passed model (base OR PeftModel).
 
-    Returns rows {probe, probe_idx, rollout_idx, answer, source} where source is
-    'base' or 'adapter'. Uses vLLM batched generation on GPU (CLAUDE.md), HF
-    greedy on the CPU smoke.
+    Used for the ADAPTER arm on GPU (BLOCKER 1 fix): ``vllm_generate_R`` hardcodes
+    ``LLM(model=BASE_MODEL)`` and can NOT apply a LoRA adapter, so the fact-taught
+    adapter positives MUST be elicited through the loaded ``trained`` PeftModel via
+    HF ``.generate()`` — the pool is a small on-policy elicitation (~a few hundred
+    completions/side), so throughput does not require vLLM. Returns responses in
+    input order, one per message list. Temperature=0 (greedy, deterministic).
+
+    ``torch`` is imported lazily (module keeps torch off the import path so the
+    PYTORCH_CUDA_ALLOC_CONF env set at module top takes effect before CUDA init).
+    """
+    import torch
+
+    outs: list[str] = []
+    with torch.no_grad():
+        for msgs in msg_lists:
+            text = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+            ids = tok(text, return_tensors="pt").to(device)
+            gen = model.generate(
+                **ids,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                temperature=None,
+                top_p=None,
+                top_k=None,
+                pad_token_id=tok.pad_token_id or tok.eos_token_id,
+            )
+            new = gen[0, ids["input_ids"].shape[1] :]
+            outs.append(tok.decode(new, skip_special_tokens=True))
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    return outs
+
+
+def _generate_completions(
+    probes: list[str], n_rollouts: int, cpu_only: bool
+) -> tuple[list[dict], str]:
+    """On-policy fact-recall completions from BASE + the binst_fact ADAPTER.
+
+    Returns ``(rows, adapter_dir_str)`` where each row is
+    {probe, probe_idx, rollout_idx, answer, source} and source is 'base' or
+    'adapter'.
+
+    BLOCKER 1 fix (round 2): the two arms use DIFFERENT models — the 'base' arm
+    generates through the base θ0 model, and the 'adapter' arm generates through
+    the loaded ``trained`` PeftModel (base + i537_fact_binst_fact_seed42 adapter),
+    per plan v6 §4.3 line 139 ("generate on-policy completions from the base model
+    AND from a fact-taught adapter"). ``vllm_generate_R`` hardcodes
+    ``LLM(model=BASE_MODEL)`` with NO LoRA path, so it is used ONLY for the base
+    arm on GPU; the adapter arm ALWAYS routes through HF ``.generate()`` on the
+    actual PeftModel (GPU or CPU). The CPU smoke runs both arms via HF greedy.
     """
     import torch
     from issue667_extract import (
         _FACT_POS_SYS,
         _device,
-        _greedy_response,
         assert_adapter_gauge,
         load_base_and_trained,
         stage_adapter_local,
@@ -149,13 +202,12 @@ def _generate_completions(probes: list[str], n_rollouts: int, cpu_only: bool) ->
     device = _device(0, cpu_only)
     fact_sys = _FACT_POS_SYS
     adapter_dir = stage_adapter_local("fact", FACT_SOURCE_CID, FACT_SEED)
+    assert adapter_dir is not None, "stage_adapter_local returned no adapter dir (fact/binst_fact)"
     assert_adapter_gauge(adapter_dir, "fact")
     dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
     tok, base, trained = load_base_and_trained(adapter_dir, device, dtype)
 
-    rows: list[dict] = []
-    for source_label, model in (("base", base), ("adapter", trained)):
-        # Build (probe_idx, rollout) message lists; n_rollouts per probe.
+    def _msg_lists() -> tuple[list[list[dict]], list[tuple[int, int]]]:
         msg_lists: list[list[dict]] = []
         keys: list[tuple[int, int]] = []
         for pi, q in enumerate(probes):
@@ -164,11 +216,36 @@ def _generate_completions(probes: list[str], n_rollouts: int, cpu_only: bool) ->
                     [{"role": "system", "content": fact_sys}, {"role": "user", "content": q}]
                 )
                 keys.append((pi, ri))
-        if device.type == "cpu":
-            # CPU smoke: HF greedy (no vLLM). n_rollouts should be 1 in smoke.
-            texts = [_greedy_response(model, tok, m, device, 256) for m in msg_lists]
+        return msg_lists, keys
+
+    rows: list[dict] = []
+    for source_label, model in (("base", base), ("adapter", trained)):
+        msg_lists, keys = _msg_lists()
+        if source_label == "adapter":
+            # HARD GUARD: the adapter arm MUST use the loaded PeftModel, never the
+            # base-only vLLM path (BLOCKER 1). ``trained`` is a PeftModel wrapping
+            # base + the fact adapter; ``model is trained`` is verified here.
+            assert model is trained, "adapter arm must generate through the loaded PeftModel"
+            texts = _hf_generate_with_adapter(model, tok, msg_lists, device, max_new_tokens=256)
+            gen_path = "hf_generate"
+        elif device.type == "cpu":
+            # CPU smoke: HF greedy through the base model (no vLLM available).
+            assert model is base
+            texts = _hf_generate_with_adapter(model, tok, msg_lists, device, max_new_tokens=256)
+            gen_path = "hf_generate"
         else:
+            # Base arm on GPU: vLLM batched greedy on BASE_MODEL (correct — the
+            # base arm wants the un-adapted base model, which is exactly what
+            # ``vllm_generate_R`` loads).
+            assert model is base
             texts = vllm_generate_R(tok, msg_lists, max_new_tokens=256)
+            gen_path = "vllm_base"
+        log.info(
+            "fact-pool arm=%s | generation_path=%s | %d completions",
+            source_label,
+            gen_path,
+            len(texts),
+        )
         for (pi, ri), txt in zip(keys, texts, strict=True):
             rows.append(
                 {
@@ -185,7 +262,7 @@ def _generate_completions(probes: list[str], n_rollouts: int, cpu_only: bool) ->
     gc.collect()
     if device.type == "cuda":
         torch.cuda.empty_cache()
-    return rows
+    return rows, str(adapter_dir)
 
 
 def build_fact_pool(*, cap: int, n_rollouts: int, cpu_only: bool, max_probes: int | None) -> dict:
@@ -203,7 +280,7 @@ def build_fact_pool(*, cap: int, n_rollouts: int, cpu_only: bool, max_probes: in
         "fact pool: %d probes x %d rollouts x 2 sources (base+adapter)", len(probes), n_rollouts
     )
 
-    rows = _generate_completions(probes, n_rollouts, cpu_only)
+    rows, adapter_dir_str = _generate_completions(probes, n_rollouts, cpu_only)
     log.info("generated %d completions; judging (drop REFUSAL/malformed/out-of-range)", len(rows))
 
     import anthropic
@@ -253,6 +330,26 @@ def build_fact_pool(*, cap: int, n_rollouts: int, cpu_only: bool, max_probes: in
     _write(pool_dir / "neg.jsonl", neg_kept)
 
     dropped_from_headline = floor_n < YIELD_FLOOR_MIN
+    n_gen_base = sum(1 for r in rows if r["source"] == "base")
+    n_gen_adapter = sum(1 for r in rows if r["source"] == "adapter")
+    # Per-arm generation-provenance (BLOCKER 1): the base arm generates through
+    # BASE_MODEL (vLLM on GPU, HF greedy on CPU), the adapter arm ALWAYS through the
+    # loaded PeftModel via HF .generate(). CPU-smoke runs both via HF greedy.
+    adapter_gen_path = "hf_generate"
+    base_gen_path = "hf_generate" if cpu_only else "vllm_base"
+    generation_provenance = {
+        "base": {
+            "generation_path": base_gen_path,
+            "model": BASE_MODEL,
+            "n_completions": n_gen_base,
+        },
+        "adapter": {
+            "generation_path": adapter_gen_path,
+            "adapter": f"i537_fact_{FACT_SOURCE_CID}_seed{FACT_SEED}",
+            "adapter_dir": adapter_dir_str,
+            "n_completions": n_gen_adapter,
+        },
+    }
     provenance = {
         "artifact": "issue667 fact fixed +/- pool v1",
         "judge_model": _JUDGE_MODEL,
@@ -262,6 +359,7 @@ def build_fact_pool(*, cap: int, n_rollouts: int, cpu_only: bool, max_probes: in
         "elicitation_source": (
             f"base {BASE_MODEL} + fact adapter {FACT_SOURCE_CID} seed {FACT_SEED}"
         ),
+        "generation_provenance": generation_provenance,
         "probe_file": (
             "issue537_context_generalization/data/pools/pool_fact_30.json "
             "(direct_recall + ood_framings)"
@@ -281,6 +379,39 @@ def build_fact_pool(*, cap: int, n_rollouts: int, cpu_only: bool, max_probes: in
     }
     (pool_dir / "provenance.json").write_text(json.dumps(provenance, indent=2))
     (pool_dir / "provenance.md").write_text(_provenance_md(provenance))
+
+    # CONCERN 1: when below the yield floor, write the DROP sentinel so the
+    # dispatcher SKIPS the fact extract and the analysis SOFT-DROPS fact from the
+    # headline. The pool itself is still written (audit trail). Presence of the
+    # sentinel == fact dropped; its absence == fact carried. Stale sentinels from a
+    # prior run are cleared when the current run yields at/above the floor.
+    sentinel_path = pool_dir / DROP_SENTINEL_NAME
+    if dropped_from_headline:
+        sentinel_path.write_text(
+            json.dumps(
+                {
+                    "dropped_from_headline": True,
+                    "floor_n_per_side": floor_n,
+                    "yield_floor_min": YIELD_FLOOR_MIN,
+                    "reason": "fact-pool yield below floor after judge-filter",
+                    "n_pos_survivors": len(pos),
+                    "n_neg_survivors": len(neg),
+                    "timestamp_utc": datetime.now(UTC).isoformat(),
+                },
+                indent=2,
+            )
+        )
+        log.warning(
+            "fact pool BELOW FLOOR (floor_n=%d < %d) -> wrote %s; fact will be dropped "
+            "from the headline (soft-drop)",
+            floor_n,
+            YIELD_FLOOR_MIN,
+            sentinel_path,
+        )
+    elif sentinel_path.exists():
+        sentinel_path.unlink()
+        log.info("fact pool at/above floor -> removed stale %s", sentinel_path)
+
     log.info(
         "fact pool: pos=%d neg=%d floor_n=%d dropped(refusal/malformed)=%d dropped(midpoint50)=%d "
         "dropped_from_headline=%s",
