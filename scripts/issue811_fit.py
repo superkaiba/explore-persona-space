@@ -481,6 +481,23 @@ def run_phase0_gate(args) -> int:
     out_json = args.out_dir.parent / "kill1_base_leg_validity.json"
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(kill1, indent=2, default=float))
+    # Fail loud on a degenerate (vacuous) gate: zero comparable behaviors means the
+    # gate had NO base cells to decide on — a not-yet-uploaded / empty / wrong-prefix
+    # HF store, or a mis-pointed --local-root. On a PRODUCTION run that is NOT a real
+    # PASS: returning 0 here would let the ~7 GPU-h Phase-1 paired re-extraction run
+    # without ever evaluating whether turn_nl collapses (round-3 BLOCKER
+    # phase0-gate-reads-unuploaded-hf-store). Raise so the dispatcher HALTs before the
+    # spend. A --smoke run intentionally slices to <4 comparable cells sometimes, so it
+    # is TOLERANT of the degenerate gate (the smoke's job is to exercise the routing).
+    if kill1["n_comparable"] == 0 and not args.smoke:
+        raise RuntimeError(
+            "phase0-gate: 0 comparable behaviors — the base-leg gate had NO cells to "
+            "decide on (empty/missing store; a not-yet-uploaded HF prefix, a wrong "
+            f"--local-root, or a wrong PHASE0 prefix). Loaded from "
+            f"{'local ' + args.local_root if args.local_root else 'HF ' + PHASE0_STORE_PREFIX}. "
+            "The gate cannot decide — REFUSING to PASS silently before the ~7 GPU-h "
+            f"Phase-1 spend (plan §7, failure_class: code). Decision JSON: {out_json}"
+        )
     if kill1["fired"]:
         logger.warning(
             "[phase=phase0_gate] KILL1_TRIGGERED: turn_nl base-leg validity gate collapsed "

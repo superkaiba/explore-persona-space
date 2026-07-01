@@ -55,18 +55,34 @@ def upload_store() -> int:
     api = HfApi()
     # Collect ops across BOTH stores into ONE commit (one Hub commit, not two;
     # 256-commits/hr cap). Each op carries its store's own HF prefix.
+    #
+    # BOTH stores are required uploads (plan §10 Reproducibility Card): the Phase-1
+    # paired store (analysis_tensors/) feeds the Phase-2 fits and the Phase-0 base-leg
+    # store (phase0_base_leg/) feeds the KILL-1 base-leg gate — losing EITHER makes the
+    # corresponding read permanently unrunnable (Upload Policy #521). So require each
+    # store to carry >=1 .npz BEFORE any commit: a per-store precondition, NOT a single
+    # aggregate check. An aggregate "if not ops" (any store non-empty) would silently
+    # commit + verify only the populated store while omitting the other entirely
+    # (round-3 Major upload-store-does-not-require-both-stores).
     ops: list[CommitOperationAdd] = []
     expected: list[str] = []  # path_in_repo for the fresh-listing verify
+    per_store_counts: list[tuple[str, int]] = []
     for local_dir, hf_prefix in STORES:
         tdir = PROJECT_ROOT / local_dir
         npzs = sorted(tdir.rglob("*.npz")) if tdir.is_dir() else []
+        per_store_counts.append((local_dir, len(npzs)))
         for p in npzs:
             pir = f"{hf_prefix}/{p.relative_to(tdir).as_posix()}"
             ops.append(CommitOperationAdd(path_in_repo=pir, path_or_fileobj=str(p)))
             expected.append(pir)
-    if not ops:
-        dirs = [s[0] for s in STORES]
-        raise RuntimeError(f"no .npz tensors under any of {dirs} -- #811 extraction wrote nothing")
+    empty_stores = [d for d, n in per_store_counts if n == 0]
+    if empty_stores:
+        raise RuntimeError(
+            f"#811 upload: {empty_stores} has 0 .npz -- BOTH stores are required uploads "
+            f"(plan §10; analysis_tensors feeds Phase-2 fits, phase0_base_leg feeds the "
+            f"KILL-1 gate). Refusing to commit an INCOMPLETE upload. Per-store counts: "
+            f"{per_store_counts}"
+        )
     api.create_commit(
         repo_id=HF_DATA_REPO,
         repo_type="dataset",

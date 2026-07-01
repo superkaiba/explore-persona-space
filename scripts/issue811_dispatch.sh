@@ -167,11 +167,24 @@ fi
 echo "[phase=phase0_gate] starting KILL-1 base-leg validity gate"
 FIT_LOCAL_ARGS=""
 [ -n "$LOCAL_ROOT" ] && FIT_LOCAL_ARGS="--local-root $LOCAL_ROOT"
-# For a local dispatcher smoke (store not on HF), point the gate loader at the
-# freshly-written local phase0 store so it does not try the HF tree walk.
-PHASE0_LOCAL_ARGS="$FIT_LOCAL_ARGS"
-if [ -n "$SMOKE" ] && [ -z "$LOCAL_ROOT" ] && [ -n "${EPM_SKIP_UPLOAD:-}" ]; then
+# The KILL-1 gate is a PRE-SPEND gate: on a fresh run it runs in the SAME run that
+# JUST wrote the phase0 base-leg store to $PHASE0_DIR (Phase 0's extractor), and
+# BEFORE the store is uploaded to HF (Phase 2, after the gate PASSes). On the fresh
+# path the store therefore ALWAYS exists on disk at gate time by construction but is
+# NOT yet on HF, so the gate MUST read the local mirror — reading the HF prefix would
+# 404 or, worse, read an empty tree and PASS vacuously. Default to the local phase0
+# store whenever it exists on disk (every fresh run); an explicit --local-root
+# override always wins; only a --skip-extract resume with no local mirror falls back
+# to the HF prefix (that store IS on HF from the prior run, and the fit-side fail-loud
+# n_comparable==0 guard now catches an empty/missing HF tree instead of PASSing
+# vacuously — round-3 BLOCKER phase0-gate-reads-unuploaded-hf-store).
+if [ -n "$LOCAL_ROOT" ]; then
+  PHASE0_LOCAL_ARGS="--local-root $LOCAL_ROOT"
+elif [ -d "$PHASE0_DIR" ]; then
   PHASE0_LOCAL_ARGS="--local-root $PHASE0_DIR"
+else
+  echo "[phase=phase0_gate] no local phase0 store at $PHASE0_DIR (--skip-extract resume) — reading the HF prefix" >&2
+  PHASE0_LOCAL_ARGS=""
 fi
 # The gate EXITs 3 on KILL-1 fire; do not let set -e mask the intent — capture rc.
 set +e

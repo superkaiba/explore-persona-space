@@ -331,3 +331,144 @@ def _write_phase0_cell_for_parity(
         target_cid=np.asarray(target),
         layer=np.asarray(layer),
     )
+
+
+# ── 6. run_phase0_gate: degenerate (vacuous) PASS is fail-loud on production ────
+
+
+def _phase0_gate_args(**overrides):
+    """A minimal argparse.Namespace for run_phase0_gate (the fields it reads)."""
+    import argparse
+
+    import issue658_fit_predictors as fit658
+    import issue722_fit_M as fitM
+    import issue811_fit as f
+
+    ns = argparse.Namespace(
+        behaviors=["em", "sycophancy"],  # NO fact -> no r_b_fact load needed
+        primary_layer=f.PRIMARY_LAYER,
+        local_root=None,
+        smoke=False,
+        mlp_epochs=1,
+        target_dim=min(fitM.TARGET_DIM if hasattr(fitM, "TARGET_DIM") else 4, 4),
+        num_threads=1,
+        max_sources=None,
+        max_targets_per_source=None,
+        out_dir=None,  # set by the caller to a tmp cells dir
+    )
+    _ = fit658  # imported to mirror run_phase0_gate's module surface
+    for k, v in overrides.items():
+        setattr(ns, k, v)
+    return ns
+
+
+def test_phase0_gate_fails_loud_on_degenerate_pass(monkeypatch, tmp_path):
+    """0 comparable behaviors on a NON-smoke run RAISES (never a vacuous PASS).
+
+    Reproduces the round-3 BLOCKER root cause directly: a gate whose store has NO
+    comparable cells (a not-yet-uploaded / empty / wrong-prefix HF store). Before the
+    fix this returned 0 (fired: false, n_comparable: 0) — a silent PASS that let the
+    ~7 GPU-h Phase-1 spend proceed without ever deciding. After the fix it raises.
+    """
+    import json
+
+    import issue722_fit_M as fitM
+    import issue811_fit as f
+    import pytest
+
+    monkeypatch.setattr(f, "_resolve_device", lambda: "cpu")
+    monkeypatch.setattr(fitM, "_load_rb_main", lambda: {})
+    monkeypatch.setattr(fitM, "_load_rb_fact", lambda: None)
+    # An empty store: every (behavior, summary) has 0 base cells -> all skipped ->
+    # groups_by_cell empty -> _kill1_decision reports n_comparable == 0.
+    monkeypatch.setattr(
+        f,
+        "_load_phase0_base_cells",
+        lambda behaviors, summaries, layer, **kw: {
+            (b, s): {
+                "C0": np.zeros((0, 3584)),
+                "V0": np.zeros((0, 3584)),
+                "cell_keys": [],
+            }
+            for b in behaviors
+            for s in summaries
+        },
+    )
+    args = _phase0_gate_args(out_dir=tmp_path / "cells")
+    with pytest.raises(RuntimeError, match="0 comparable behaviors"):
+        f.run_phase0_gate(args)
+    # The diagnostic decision JSON still landed for debugging (n_comparable == 0).
+    kill1 = json.loads((tmp_path / "kill1_base_leg_validity.json").read_text())
+    assert kill1["n_comparable"] == 0 and kill1["fired"] is False
+
+
+def test_phase0_gate_tolerates_degenerate_pass_under_smoke(monkeypatch, tmp_path):
+    """--smoke intentionally slices to 0 comparable cells; the degenerate gate is OK there."""
+    import json
+
+    import issue722_fit_M as fitM
+    import issue811_fit as f
+
+    monkeypatch.setattr(f, "_resolve_device", lambda: "cpu")
+    monkeypatch.setattr(fitM, "_load_rb_main", lambda: {})
+    monkeypatch.setattr(fitM, "_load_rb_fact", lambda: None)
+    monkeypatch.setattr(
+        f,
+        "_load_phase0_base_cells",
+        lambda behaviors, summaries, layer, **kw: {
+            (b, s): {
+                "C0": np.zeros((0, 3584)),
+                "V0": np.zeros((0, 3584)),
+                "cell_keys": [],
+            }
+            for b in behaviors
+            for s in summaries
+        },
+    )
+    args = _phase0_gate_args(out_dir=tmp_path / "cells", smoke=True)
+    rc = f.run_phase0_gate(args)  # no raise under smoke
+    assert rc == 0
+    kill1 = json.loads((tmp_path / "kill1_base_leg_validity.json").read_text())
+    assert kill1["n_comparable"] == 0 and kill1["fired"] is False
+
+
+# ── 7. upload_store: BOTH stores required (never an incomplete commit) ──────────
+
+
+def _write_upload_npz(dir_path: Path, name: str = "c.npz") -> None:
+    dir_path.mkdir(parents=True, exist_ok=True)
+    np.savez(dir_path / name, x=np.zeros(3, dtype=np.float32))
+
+
+def test_upload_store_raises_when_phase0_store_empty(monkeypatch, tmp_path):
+    """analysis_tensors populated but phase0_base_leg empty -> RAISE (round-3 Major).
+
+    An aggregate 'any store non-empty' guard would silently commit + verify only the
+    populated store and omit the other. The per-store precondition catches it BEFORE
+    any Hub commit (no network calls reached — the raise precedes create_commit).
+    """
+    import issue811_upload_store as up
+    import pytest
+
+    monkeypatch.setattr(up, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("HF_TOKEN", "test-token")  # pass the load_dotenv assert
+    monkeypatch.delenv("EPM_SKIP_UPLOAD", raising=False)
+    # analysis_tensors has a cell; phase0_base_leg has NONE.
+    _write_upload_npz(tmp_path / "eval_results/issue_811/analysis_tensors/em/src0_seed42")
+    (tmp_path / "eval_results/issue_811/phase0_base_leg").mkdir(parents=True, exist_ok=True)
+    with pytest.raises(RuntimeError, match="required uploads"):
+        up.upload_store()
+
+
+def test_upload_store_raises_when_analysis_store_empty(monkeypatch, tmp_path):
+    """phase0_base_leg populated but analysis_tensors empty -> RAISE (symmetric)."""
+    import issue811_upload_store as up
+    import pytest
+
+    monkeypatch.setattr(up, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    monkeypatch.delenv("EPM_SKIP_UPLOAD", raising=False)
+    _write_upload_npz(tmp_path / "eval_results/issue_811/phase0_base_leg/em/src0_seed42")
+    (tmp_path / "eval_results/issue_811/analysis_tensors").mkdir(parents=True, exist_ok=True)
+    with pytest.raises(RuntimeError, match="required uploads"):
+        up.upload_store()
