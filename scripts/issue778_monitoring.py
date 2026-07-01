@@ -161,6 +161,13 @@ def monitor_trait(
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
 
+    # Persist the RAW last-prompt activation tensor (n_cells, 28, 3584), aligned
+    # with the JSONL row order (pre-drop). The null battery re-projects these raw
+    # activations onto each null direction — the stored projections are onto r_B
+    # only. Plan-referenced downstream input -> uploads to analysis_tensors/.
+    (out_root / "monitoring").mkdir(parents=True, exist_ok=True)
+    torch.save(acts, out_root / "monitoring" / f"{trait}_acts.pt")
+
     # ── Projection per layer onto r_B ────────────────────────────────────────
     rb = torch.load(out_root / "rb" / f"{trait}.pt", weights_only=False)  # (28, 3584)
     import numpy as np
