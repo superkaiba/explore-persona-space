@@ -230,15 +230,18 @@ def fit_h_cell(X_tr: np.ndarray, Y_tr: np.ndarray, eval_mat: dict, rb_l: np.ndar
     """Fit ridge h on a cell's train rows, apply to eval c_last, return reads.
 
     Returns {"dot", "cos", "W"} where dot/cos are the per-eval-context readouts
-    <h(c),r_B> / cos(h(c),r_B) and W is the (H, H) ridge weight matrix (for the
-    pv_pinv M⁺ read). A cell with < 2 train rows returns NaN reads / None W.
+    <h(c),r_B> / cos(h(c),r_B) and W is the (H, H) standardized-input ridge weight
+    matrix (for the pv_pinv M⁺ read). A cell with < 2 train rows returns NaN reads
+    / None W. Computes ONE SVD (via ``_ridge_fit`` -> W + standardization stats)
+    and derives BOTH the eval prediction and W from it, so the map read and the
+    pv_pinv preimage come from the SAME fit (never two independent SVDs).
     """
     Xev = eval_mat["c_last"]
     if X_tr.shape[0] < 2:
         nan = np.full(Xev.shape[0], np.nan)
         return {"dot": nan, "cos": nan, "W": None}
-    pred = F.ridge_fit_predict(X_tr, Y_tr, Xev)  # (N_ev, H)
-    W = _ridge_weight_matrix(X_tr, Y_tr)  # (H, H) for pv_pinv
+    W, xmu, xsd, ymu = _ridge_fit(X_tr, Y_tr)  # (H,H) std-input map + stats, one SVD
+    pred = ((np.asarray(Xev, dtype=np.float64) - xmu) / xsd) @ W + ymu  # (N_ev, H)
     return {
         "dot": F.dot_readout(pred, rb_l),
         "cos": F.cosine_readout(pred, rb_l),
@@ -246,22 +249,24 @@ def fit_h_cell(X_tr: np.ndarray, Y_tr: np.ndarray, eval_mat: dict, rb_l: np.ndar
     }
 
 
-def _ridge_weight_matrix(
+def _ridge_fit(
     X_train: np.ndarray, Y_train: np.ndarray, *, lambdas: np.ndarray | None = None
-) -> np.ndarray:
-    """The ridge map's weight matrix W (H_in, H_out) in RAW input coordinates.
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """GCV-ridge fit -> (W, xmu, xsd, ymu): the standardized-input weight matrix
+    plus the train standardization stats, from ONE SVD.
 
-    Reproduces ``fit_h.ridge_fit_predict``'s GCV lambda + standardization, then
-    folds the per-feature standardization back so W maps a RAW c_last to the
-    (centered-target) profile: pred = (Xev - xmu)/xsd @ W_std + ymu. For the
-    pv_pinv read we want w = M⁺ r_B where M is the linear map; the standardized W
-    is the map's operator (intercepts/means cancel in the correlation), so we
-    return W_std (H, H). Deterministic closed form (same SVD as ridge_fit_predict).
+    Reproduces ``fit_h.ridge_fit_predict``'s GCV lambda + standardization exactly
+    (same SVD, same GCV loop), returning the pieces the caller needs to derive
+    BOTH the eval prediction (``(Xev - xmu)/xsd @ W + ymu``) AND the pv_pinv
+    preimage (``W`` is the map operator M; intercepts/means cancel in the
+    correlation). W is (H_in, H_out); xmu/xsd/ymu are (H,). Deterministic.
     """
     if lambdas is None:
         lambdas = np.logspace(-2, 4, 13)
     Xtr = np.asarray(X_train, dtype=np.float64)
     Ytr = np.asarray(Y_train, dtype=np.float64)
+    if Ytr.ndim == 1:
+        Ytr = Ytr[:, None]
     n = Xtr.shape[0]
     xmu = Xtr.mean(0)
     xsd = Xtr.std(0) + 1e-9
@@ -283,7 +288,7 @@ def _ridge_weight_matrix(
             best_gcv, best_lam = gcv, lam
     filt = s / (s2 + best_lam)
     W = (Vt.T * filt) @ UtY  # (H_in, H_out) standardized-input map
-    return W
+    return W, xmu, xsd, ymu
 
 
 def pv_pinv_read(
