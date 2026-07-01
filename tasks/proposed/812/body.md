@@ -22,10 +22,6 @@ goal: 'On Qwen2.5-7B base representations (#658''s 50 contexts, reusing #810''s 
 ---
 # How much does per-position (unpooled) answer activation beat the pooled mean for predicting behavior / reconstructing the profile
 
-## Goal
-
-On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much mean-pooling loses versus using individual per-position answer-token activations as regression input -- the incremental held-out prediction of behavior expression E0 (and answer-profile reconstruction) from an unpooled multi-position input over the pooled-mean baseline, per layer, with LOCO + label-shuffle null + #742-style reliability-ceiling / learning-curve guards for the n=50 sample size.
-
 ## Overview / Motivation
 
 The answer-profile summary `v0` used across the leakage-predictor line
@@ -44,25 +40,50 @@ pooled mean at n=50; here the manipulated thing is the *input granularity*
 (pooled vs unpooled), reusing #742's reliability-ceiling / learning-curve
 framework.
 
-## Design (single manipulated variable = pooled vs unpooled regression input)
+## Design (single manipulated variable = the pooling operator, up to the unpooled ceiling)
 
 Base model only, reusing #658's 50-context grid + judged `E0(C,B)` + #810's
 per-position answer extraction (shared re-extraction — no extra forward passes
-beyond #810's). Nested / ablation regression per (behavior × layer):
+beyond #810's). Regression per (behavior × layer), over a ladder of pooling
+operators measured against an unpooled upper bound:
 
-- **Baseline input:** pooled mean summary (one 3584-vec).
-- **Unpooled input:** the individual per-position answer-token activations. Since
-  answer lengths vary, use a fixed aligned set — end-aligned tail (`−1…−K`) +
-  start-aligned head (`0…K−1`) + the boundary tokens — as separate features
-  (concatenated `≤ (2K+2)×3584`), matching #810's positions.
-- **Nested comparison:** pooled-mean-only vs mean+positions vs positions-only,
-  reporting the **incremental** held-out predictive gain.
+- **Pooling operators** (each reduces the SAME per-position span to one
+  3584-vec — cheap CPU, no new forward passes and no new judge calls):
+  - `mean` — the reference the whole line currently uses.
+  - `max` — element-wise max over positions.
+  - `attn-fixed` — a fixed random-projection attention pool `softmax(span·q_rand)`
+    (the #658 unlearned control — does *learning* the pool beat random?).
+  - `attn-learned` — a **fit** query vector `softmax(span·q)`, the best
+    single-vector pool (adds one 3584-dim parameter per cell).
+- **Unpooled ceiling** — the individual per-position activations as separate
+  regression features (answer lengths vary, so a fixed aligned set: end-aligned
+  tail `−1…−K` + start-aligned head `0…K−1` + the boundary tokens,
+  `≤ (2K+2)×3584`, matching #810's positions). This is the upper bound each
+  pooling operator is scored against.
+- **Comparison** — per (behavior × layer): (i) how close each pooling operator
+  gets to the unpooled ceiling (incremental held-out gain of unpooled over each
+  pool = "how much that pool loses"), and (ii) the ranking among operators, all
+  relative to the `mean` reference.
 
-**Sample-complexity is the central risk, not an afterthought.** At n=50 a
-`(2K+2)×3584`-feature regression overfits badly (#722's MLP already overfit at
-n=50 on ONE 3584-vec). Mandatory guards: strong ridge / per-position PCA before
-concatenation, LOCO cross-validation, a label-shuffle null, and a #742-style
-learning curve extrapolating the contexts needed to resolve any gap. The honest
+**Compute is negligible; the constraint is n, not FLOPs.** Every operator + the
+unpooled input are CPU reductions of one shared #810 extraction; `attn-learned`
+adds only a per-cell 3584-dim query fit, done vectorized across cells (the
+`vectorized_mlp_skill` helper). No new GPU forward passes, no new judge calls.
+
+**Distinct from #810 (so this is not redundant):** #810 sweeps which SINGLE
+summary/position is best (incl. `maxp`/`attn` as single-vector summaries) for the
+map + read-out; THIS task is the POOLING-OPERATOR study — how much each pooling
+operator loses relative to the **unpooled multi-position ceiling**, which #810
+never fits. The `attn`/`max` overlap is by construction (they are the operators
+being compared to the ceiling here), not a duplicate question.
+
+**Sample-complexity is the central risk, not an afterthought.** At n=50 both the
+`(2K+2)×3584`-feature unpooled input AND the `attn-learned` fit query add
+parameters that overfit badly (#722's MLP already overfit at n=50 on ONE
+3584-vec), which would *inflate* the apparent ceiling. Mandatory guards: strong
+ridge / per-position PCA before concatenation, a regularized `attn-learned` query,
+LOCO cross-validation, a label-shuffle null, and a #742-style learning curve
+extrapolating the contexts needed to resolve any gap. The honest
 possible outcome is "at n=50 we cannot resolve whether unpooling helps" — which
 is itself #742's thesis; if so, the deliverable is the ceiling + the contexts-needed
 estimate, and expanding the context battery (new generation + extraction, more
