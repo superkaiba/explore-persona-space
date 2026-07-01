@@ -27,8 +27,8 @@
 # Fail-soft: any ambiguity / parse failure exits 0 (never traps the user).
 #
 # <!-- known limitation -->
-# Every detector scans the RAW command string ($cmd) — the guard does NOT
-# strip quoted arguments before parsing. A quoted git-verb literal buried in
+# Every detector scans the RAW command string — the guard does NOT strip
+# quoted arguments before parsing. A quoted git-verb literal buried in
 # ANOTHER command's argument therefore trips the guard: e.g.
 # `task.py post-marker <N> epm:X --note "... git switch ..."` is blocked
 # because the note text matches `git ... switch`. The workaround is to pass
@@ -40,6 +40,18 @@
 # shell-syntax-aware strip is not safe to do in a bash regex, so the raw-scan
 # behavior (correct on git refs, over-eager on note-text literals) is the
 # deliberate trade-off. See #796 round-2 report.
+#
+# Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
+# split on `;` / `&&` / `||` / `|` (two-char separators matched first) into
+# clauses, each classified independently so a later safe/return-to-main clause
+# can no longer mask an earlier dangerous one; a `cd <worktree|/tmp>` scopes
+# ONLY the LATER clauses it precedes across `;`/`&&` (where the cwd persists),
+# NOT across `||` (RHS runs on `cd` FAILURE, cwd unchanged) or `|` (subshell
+# isolates the `cd`). The split is NOT a full shell parse: command substitution
+# `$(git switch ...)`, here-docs, and separators embedded inside a quoted arg
+# are not handled (a quoted `;`/`|` is treated as a real separator, the same
+# raw-scan trade-off as the `--note` literal above). A mis-split of that class
+# fails CLOSED (blocks), the safe direction for a guard.
 set -u
 
 REPO=/home/thomasjiralerspong/explore-persona-space
@@ -50,96 +62,158 @@ cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 # Only consider git checkout/switch invocations at all.
 echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch)\b' || exit 0
 
-# Allow anything explicitly scoped to another worktree (git -C <path>, or a
-# `cd <path-with-.claude/worktrees|/tmp>` earlier in the command chain).
-if echo "$cmd" | grep -qE '\bgit +-C +' \
-   || echo "$cmd" | grep -qE 'cd +[^;&|]*\.claude/worktrees/' \
-   || echo "$cmd" | grep -qE 'cd +/tmp/'; then
-  exit 0
-fi
+# Split the raw command into (separator, clause) pairs, PRESERVING which
+# separator precedes each clause. Two-char separators (&& ||) are matched
+# BEFORE the single-char ones (; | &) so `&&`/`||` are not mis-split into two
+# single-char clauses. Each separator run is replaced by a newline + a
+# \x01-delimited sentinel token (START | SEQ | AND | OR | PIPE); the first
+# clause carries the implicit START. Best-effort: a separator inside a quoted
+# arg is treated as a real separator (same trade-off as the raw-scan
+# known-limitation above).
+split_and_label() {
+  printf '%s' "$1" \
+    | sed -E 's/\|\|/\n\x01OR\x01/g; s/&&/\n\x01AND\x01/g; s/;/\n\x01SEQ\x01/g; s/\|/\n\x01PIPE\x01/g' \
+    | awk 'BEGIN{RS="\n"; sep="START"}
+           { line=$0
+             if (match(line, /^\x01(OR|AND|SEQ|PIPE)\x01/)) {
+               sep=substr(line, 2, RLENGTH-2); line=substr(line, RLENGTH+1)
+             }
+             gsub(/^[ \t]+|[ \t]+$/, "", line)
+             if (length(line)) print sep "\t" line }'
+}
 
+# Classify a SINGLE clause. Echoes the `blocked` reason (empty string = allow).
+# This is the pre-#804 whole-command detector body, applied per-clause: `$c`
+# holds one clause. The `[^;&|]*` anchors inside the detectors are no-ops
+# per-clause (a clause has no separators) but are kept verbatim so the function
+# stays correct even if fed a whole string — zero behavior change.
+classify_clause() {
+  local c="$1"
+  local blocked=""
+
+  # git switch <branch> / git switch -c <branch>  (switch is branch-only).
+  # Allow only `git switch main` (bare or quoted — the arg regex tolerates an
+  # optional surrounding quote, so `git switch "main"` also passes the allow-arm).
+  # The allow-arm ANCHORS `main` to the FULL switch arg: `main` must be followed
+  # by an optional trailing quote AND then end-of-string or a shell delimiter
+  # (whitespace / `;` / `&` / `|`). A bare `\bmain\b` word boundary would ALSO
+  # match before a `-` / `/` / `.` (all non-word chars), so `git switch
+  # main-adjacent` / `main/foo` / `main.x` (and their quoted forms) would slip
+  # through the allow-arm and LEAK a branch-switch off main. `main_x` still
+  # blocks: `_` is a word char so `\bmain` never matched there either, but the
+  # explicit terminator makes the intent unambiguous. Concern id:
+  # switch-main-prefix-allowarm-leak (#796 round 3).
+  if echo "$c" | grep -qE '\bgit\b[^;&|]*\bswitch\b'; then
+    if ! echo "$c" | grep -qE '\bswitch\b +(-c +|-C +)?["'"'"']?main["'"'"']?( *($|[;&|]))'; then
+      blocked="git switch"
+    fi
+  fi
+
+  # git checkout -b/-B <branch>  (branch creation). The trailing class matches a
+  # space (bare `-b feature`), end-of-clause (bare `-b`), OR a glued branch-name
+  # char (`-bfoo`, `-B123`, `-b-x`, `-b.y`, `-b/z`) — the `(-b|-B)\b`
+  # word-boundary form missed the glued `-bfoo` (`f` is a word char, no boundary
+  # after `b`) and leaked branch creation off main. Concern id:
+  # checkout-glued-shortflag-b-leak (#804 / #796 round 3).
+  if echo "$c" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-b|-B)([[:alnum:]_./[:space:]-]|$)'; then
+    blocked="git checkout -b"
+  fi
+
+  # git checkout --detach [<ref>]  /  git switch --detach|-d <ref>  — explicit
+  # detach. Fires independent of the positional arg: for `checkout --detach abc`
+  # the first post-keyword token is the flag, not the ref, so the arg-classifier
+  # below would miss it. The switch pattern also catches `git switch -d main`
+  # (a detach AT main), which the branch-only switch detector above lets through
+  # on the `main` allow-arm.
+  if echo "$c" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-{1,2})detach\b'; then
+    blocked="git checkout --detach"
+  fi
+  if echo "$c" | grep -qE '\bgit\b[^;&|]*\bswitch\b +(--detach\b|-d\b)'; then
+    blocked="git switch --detach"
+  fi
+
+  # git checkout <existing-branch>  — NOT a file restore (no `--`), arg is a real
+  # local branch ref, and not `main`. Extended: a non-branch arg that resolves to
+  # a commit-ish (sha / tag / origin/<branch> / HEAD~N / HEAD@{N}) DETACHES HEAD
+  # and is blocked too. A flag-prefixed detach (`checkout -f <sha>`, `-q <sha>`,
+  # `-p <sha>`, `-m <sha>`) is caught by re-scanning the post-`checkout` tokens:
+  # skip known safe short-flags, then classify the first positional. `-b`/`-B`
+  # are NOT skipped here (branch creation is already blocked above); `.`/`main`/`-`
+  # are left as ALLOW.
+  if echo "$c" | grep -qE '\bgit\b[^;&|]*\bcheckout\b' \
+     && ! echo "$c" | grep -qE 'checkout\b[^;&|]*--'; then
+    arg=$(echo "$c" | sed -nE 's/.*\bcheckout\b +([^ ;&|]+).*/\1/p')
+    # Flag-prefixed detach: skip leading safe short-flags to reach the first
+    # positional (e.g. `checkout -f <sha>` -> classify `<sha>`).
+    if echo "$arg" | grep -qE '^-[fqpm]$'; then
+      rest=$(echo "$c" | sed -nE 's/.*\bcheckout\b +(.*)/\1/p')
+      # shellcheck disable=SC2086  # word-splitting is intentional here
+      set -- $rest
+      while [ $# -gt 0 ]; do
+        case "$1" in
+          -f|-q|-p|-m) shift ;;  # safe short-flag — skip to the next token
+          *) arg="$1"; break ;;  # first positional
+        esac
+      done
+    fi
+    # Strip a single layer of surrounding quotes so a QUOTED ref classifies as
+    # its bare form: `git checkout "HEAD~1"` -> HEAD~1 (detaches -> block),
+    # `git checkout "main"` -> main (allow). Quoted refs are shell-equivalent to
+    # unquoted ones; without this strip the quoted arg would either miss the
+    # `main` allow-arm (false positive) or, before the round-1 quote-strip was
+    # reverted, be erased entirely (leak). Only trailing/leading `"` or `'`.
+    arg=${arg#[\"\']}
+    arg=${arg%[\"\']}
+    case "$arg" in
+      ""|-b|-B|-f|--force|main|-|.) : ;;  # not a branch/detach we block
+      --*) : ;;                           # a flag (e.g. --detach handled above)
+      *)
+        if git -C "$REPO" show-ref --verify --quiet "refs/heads/$arg"; then
+          blocked="git checkout $arg"                        # branch switch
+        elif git -C "$REPO" rev-parse --verify --quiet "$arg^{commit}" >/dev/null 2>&1; then
+          blocked="git checkout $arg (detaches HEAD)"         # sha/tag/remote-ref/HEAD~N
+        fi
+        ;;
+    esac
+  fi
+
+  echo "$blocked"
+}
+
+# Drive classify_clause over the (separator, clause) pairs. A `cd <worktree|/tmp>`
+# latches `scoped` forward ACROSS `;`/`&&` (cwd persists there), so a git clause
+# after it runs in the scoped cwd and is allowed. The latch RESETS on `||`/`|`
+# (verified bash semantics 2026-07-01: `cd X || pwd` / `cd X | pwd` both print
+# the ORIGINAL cwd — the `cd` did not take effect for the RHS). The first
+# blocking clause wins.
+scoped=0
 blocked=""
-
-# git switch <branch> / git switch -c <branch>  (switch is branch-only).
-# Allow only `git switch main` (bare or quoted — the arg regex tolerates an
-# optional surrounding quote, so `git switch "main"` also passes the allow-arm).
-# The allow-arm ANCHORS `main` to the FULL switch arg: `main` must be followed
-# by an optional trailing quote AND then end-of-string or a shell delimiter
-# (whitespace / `;` / `&` / `|`). A bare `\bmain\b` word boundary would ALSO
-# match before a `-` / `/` / `.` (all non-word chars), so `git switch
-# main-adjacent` / `main/foo` / `main.x` (and their quoted forms) would slip
-# through the allow-arm and LEAK a branch-switch off main. `main_x` still
-# blocks: `_` is a word char so `\bmain` never matched there either, but the
-# explicit terminator makes the intent unambiguous. Concern id:
-# switch-main-prefix-allowarm-leak (#796 round 3).
-if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bswitch\b'; then
-  if ! echo "$cmd" | grep -qE '\bswitch\b +(-c +|-C +)?["'"'"']?main["'"'"']?( *($|[;&|]))'; then
-    blocked="git switch"
+while IFS=$'\t' read -r sep clause; do
+  # Reset the latch when the separator BEFORE this clause is || or | — a `cd`
+  # does NOT scope a git clause across those connectors.
+  if [ "$sep" = OR ] || [ "$sep" = PIPE ]; then
+    scoped=0
   fi
-fi
 
-# git checkout -b/-B <branch>  (branch creation).
-if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-b|-B)\b'; then
-  blocked="git checkout -b"
-fi
-
-# git checkout --detach [<ref>]  /  git switch --detach|-d <ref>  — explicit
-# detach. Fires independent of the positional arg: for `checkout --detach abc`
-# the first post-keyword token is the flag, not the ref, so the arg-classifier
-# below would miss it. The switch pattern also catches `git switch -d main`
-# (a detach AT main), which the branch-only switch detector above lets through
-# on the `main` allow-arm.
-if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-{1,2})detach\b'; then
-  blocked="git checkout --detach"
-fi
-if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bswitch\b +(--detach\b|-d\b)'; then
-  blocked="git switch --detach"
-fi
-
-# git checkout <existing-branch>  — NOT a file restore (no `--`), arg is a real
-# local branch ref, and not `main`. Extended: a non-branch arg that resolves to
-# a commit-ish (sha / tag / origin/<branch> / HEAD~N / HEAD@{N}) DETACHES HEAD
-# and is blocked too. A flag-prefixed detach (`checkout -f <sha>`, `-q <sha>`,
-# `-p <sha>`, `-m <sha>`) is caught by re-scanning the post-`checkout` tokens:
-# skip known safe short-flags, then classify the first positional. `-b`/`-B`
-# are NOT skipped here (branch creation is already blocked above); `.`/`main`/`-`
-# are left as ALLOW.
-if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bcheckout\b' \
-   && ! echo "$cmd" | grep -qE 'checkout\b[^;&|]*--'; then
-  arg=$(echo "$cmd" | sed -nE 's/.*\bcheckout\b +([^ ;&|]+).*/\1/p')
-  # Flag-prefixed detach: skip leading safe short-flags to reach the first
-  # positional (e.g. `checkout -f <sha>` -> classify `<sha>`).
-  if echo "$arg" | grep -qE '^-[fqpm]$'; then
-    rest=$(echo "$cmd" | sed -nE 's/.*\bcheckout\b +(.*)/\1/p')
-    # shellcheck disable=SC2086  # word-splitting is intentional here
-    set -- $rest
-    while [ $# -gt 0 ]; do
-      case "$1" in
-        -f|-q|-p|-m) shift ;;  # safe short-flag — skip to the next token
-        *) arg="$1"; break ;;  # first positional
-      esac
-    done
+  # A `cd` into a worktree / /tmp latches scope forward for subsequent ;/&&
+  # clauses. Latch and continue — this clause runs the `cd`, not a git command,
+  # and it must NOT scope EARLIER clauses (those were classified before it).
+  if echo "$clause" | grep -qE 'cd +[^;&|]*\.claude/worktrees/' \
+     || echo "$clause" | grep -qE 'cd +/tmp/'; then
+    scoped=1
+    continue
   fi
-  # Strip a single layer of surrounding quotes so a QUOTED ref classifies as
-  # its bare form: `git checkout "HEAD~1"` -> HEAD~1 (detaches -> block),
-  # `git checkout "main"` -> main (allow). Quoted refs are shell-equivalent to
-  # unquoted ones; without this strip the quoted arg would either miss the
-  # `main` allow-arm (false positive) or, before the round-1 quote-strip was
-  # reverted, be erased entirely (leak). Only trailing/leading `"` or `'`.
-  arg=${arg#[\"\']}
-  arg=${arg%[\"\']}
-  case "$arg" in
-    ""|-b|-B|-f|--force|main|-|.) : ;;  # not a branch/detach we block
-    --*) : ;;                           # a flag (e.g. --detach handled above)
-    *)
-      if git -C "$REPO" show-ref --verify --quiet "refs/heads/$arg"; then
-        blocked="git checkout $arg"                        # branch switch
-      elif git -C "$REPO" rev-parse --verify --quiet "$arg^{commit}" >/dev/null 2>&1; then
-        blocked="git checkout $arg (detaches HEAD)"         # sha/tag/remote-ref/HEAD~N
-      fi
-      ;;
-  esac
-fi
+  [ "$scoped" -eq 1 ] && continue          # this clause runs in a scoped cwd
+
+  # `git -C <path>` scopes ONLY this clause (per-invocation) — allow it.
+  echo "$clause" | grep -qE '\bgit +-C +' && continue
+
+  # not a git checkout/switch clause at all -> skip
+  echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch)\b' || continue
+
+  reason=$(classify_clause "$clause")
+  if [ -n "$reason" ]; then blocked="$reason"; break; fi   # first block wins
+done < <(split_and_label "$cmd")
 
 [ -n "$blocked" ] || exit 0
 
