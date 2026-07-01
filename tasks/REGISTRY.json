@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 782,
+  "highest_id": 783,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5004,6 +5004,13 @@
       "path": "tasks/completed/782",
       "status": "completed",
       "title": "workflow-fix: gcp poller must map PENDING \u2192 running (FLEX_START queue false-stall)"
+    },
+    "783": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/783",
+      "status": "proposed",
+      "title": "workflow-fix: GCP H100 queue-wait timeout -> RunPod failover (auto lane)"
     },
     "8": {
       "has_clean_result": false,
