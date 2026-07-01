@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF003
-# Intentional Unicode (→, ρ, ×, ², r_B) in scientific docstrings + log messages.
+# ruff: noqa: RUF002, RUF003
+# Intentional Unicode (→, ρ, ×, ², −, r_B) in scientific docstrings + log messages.
 """Issue #810 Phase B: re-extract answer-side POSITION summaries (θ0, no training).
 
 Teacher-forces #658's STORED base-model completions back through
@@ -85,6 +85,7 @@ from issue810_common import (  # noqa: E402
     I658_RAW_COMPLETIONS_PREFIX,
     I658_STORE_MANIFEST,
     IM_END_TOKEN_ID,
+    TURN_NL_TOKEN_ID,
     assert_sha256,
     context_ids_from_manifest,
     dump_json,
@@ -109,20 +110,36 @@ SENTINEL_SCHEMA_VERSION = 1
 # ── full-sequence answer+boundary capture (extends AnswerSpanCapture) ─────────
 
 
-def _position_span_stack(
-    capture: LayerCapture, n_layers: int, start: int, end: int
+def _gather_positions_gpu(
+    capture: LayerCapture,
+    capture_layers: list[int],
+    abs_positions: torch.Tensor,
 ) -> torch.Tensor:
-    """(L, S, H) fp16 CPU stack over positions [start, end) — clears the buffer.
+    """GPU-side gather of the target positions per (batch item), then → fp16 CPU.
 
-    Same shape/dtype as #658's ``AnswerSpanCapture.answer_span_stack``; the
-    #810 pass captures the answer content + the two boundary tokens in ONE
-    forward, so it slices the union span [answer_start, turn_nl+1) then indexes
-    the individual positions afterward.
+    ``capture.latest[li]`` is (B, T, H) on device. ``abs_positions`` is
+    (B, n_targets) absolute token indices into the padded sequence (a target that
+    is out of range for a short answer is marked -1 and gathered from index 0 as a
+    placeholder — the caller keys on the coverage/validity mask, never on the
+    placeholder value). This indexes the residual stream at the ~34 target
+    positions INSIDE the CUDA graph (torch.gather over the T dim) BEFORE moving to
+    CPU, so only (B, n_targets, Lc, H) crosses PCIe — NOT the full padded span ×
+    28 layers (the Codex Major #1 host-transfer waste). Returns
+    (B, n_targets, Lc, H) fp16 CPU; clears the capture buffer.
     """
-    assert 0 <= start < end, (start, end)
-    vecs = [capture.latest[li][0, start:end, :].to(torch.float16).cpu() for li in range(n_layers)]
+    B, n_targets = abs_positions.shape
+    idx_clamped = abs_positions.clamp(min=0)  # -1 placeholders → 0 (masked by caller)
+    layer_slices = []
+    for li in capture_layers:
+        hs = capture.latest[li]  # (B, T, H) on device
+        H = hs.shape[-1]
+        # gather along T: index (B, n_targets) → (B, n_targets, H)
+        gidx = idx_clamped.unsqueeze(-1).expand(B, n_targets, H)
+        picked = torch.gather(hs, 1, gidx)  # (B, n_targets, H) GPU-side slice
+        layer_slices.append(picked.to(torch.float16))
     capture.latest.clear()
-    return torch.stack(vecs)  # (L, S, H)
+    # stack layers → (B, n_targets, Lc, H); move to CPU once (thin slice only).
+    return torch.stack(layer_slices, dim=2).cpu()  # (B, n_targets, Lc, H)
 
 
 def _positions_for_span(span_len: int, boundary_offset: int) -> dict[str, int]:
@@ -148,6 +165,97 @@ def _positions_for_span(span_len: int, boundary_offset: int) -> dict[str, int]:
             if pos is not None:
                 idx[name] = pos
     return idx
+
+
+def _build_probe_row(model, tokenizer, instance, q, ans, stored_names, nl_id):
+    """Tokenize one (prompt + answer + <|im_end|> + \\n) probe → capture inputs.
+
+    Returns ``(full_ids (L,), tgt [abs-idx|None per stored pos], valid [bool per
+    pos], ans_len)`` or ``None`` for an empty completion. The target indices are
+    PRE-PAD absolute indices into the real sequence (the batch flush shifts them
+    by the left-pad amount). Fails loud on a boundary-token id mismatch.
+    """
+    messages = messages_for_instance(instance, q)
+    prompt_text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    prompt_ids = tokenizer(prompt_text, return_tensors="pt", padding=False)["input_ids"]
+    ans_ids = tokenizer(ans, return_tensors="pt", add_special_tokens=False)["input_ids"]
+    if ans_ids.shape[1] == 0:
+        return None
+    prompt_len = int(prompt_ids.shape[1])
+    ans_len = int(ans_ids.shape[1])
+    boundary = torch.tensor([[IM_END_TOKEN_ID, nl_id]], dtype=prompt_ids.dtype)
+    full_ids = torch.cat([prompt_ids, ans_ids, boundary], dim=1)[0]  # (full_len,)
+    fed = full_ids[prompt_len + ans_len : prompt_len + ans_len + 2].tolist()
+    assert fed[0] == IM_END_TOKEN_ID, (
+        f"im_end slot fed id {fed[0]} != {IM_END_TOKEN_ID} for {instance['id']} {q[:30]!r}"
+    )
+    assert fed[1] == nl_id, f"turn_nl slot fed id {fed[1]} != {nl_id} (\\n)"
+    # Union span starts at answer content = prompt_len; im_end at
+    # prompt_len+ans_len, turn_nl at prompt_len+ans_len+1; tail/head relative to
+    # the answer content start.
+    pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len)
+    tgt: list = []
+    valid: list[bool] = []
+    for name in stored_names:
+        if name in pos_idx:
+            tgt.append(prompt_len + pos_idx[name])  # abs index in the real seq
+            valid.append(True)
+        else:
+            tgt.append(None)
+            valid.append(False)
+    return full_ids, tgt, valid, ans_len
+
+
+def _run_forward_batch(
+    model, capture, capture_layers, tokenizer, rows, stored_names, accum, coverage, lc, H
+) -> int:
+    """Left-pad + one batched forward + GPU-side gather + accumulate; return #probes.
+
+    ``rows`` is a list of ``(full_ids, tgt, valid)``. Builds a left-padded batch
+    (real tokens at the right edge, boundaries aligned), threads EXPLICIT
+    ``position_ids`` (cumsum(mask)−1 clamped at 0 — RoPE indexes from 0 per
+    sequence's first real token, without which left-pad silently diverges from
+    batch-1), runs ONE forward, gathers the ~34 target positions GPU-side, and
+    sums each covered position into ``accum`` (probe-mean at the end). Returns the
+    number of probes accumulated.
+    """
+    if not rows:
+        return 0
+    device = model.device
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else IM_END_TOKEN_ID
+    b = len(rows)
+    max_len = max(int(r[0].shape[0]) for r in rows)
+    n_targets = len(stored_names)
+    input_ids = torch.full((b, max_len), pad_id, dtype=torch.long)
+    attn = torch.zeros((b, max_len), dtype=torch.long)
+    abs_pos = torch.full((b, n_targets), -1, dtype=torch.long)
+    for bi, (s, tgt, _valid) in enumerate(rows):
+        length = int(s.shape[0])
+        pad = max_len - length  # LEFT-pad → real tokens occupy [pad, max_len)
+        input_ids[bi, pad:] = s
+        attn[bi, pad:] = 1
+        for ti, rel in enumerate(tgt):
+            if rel is not None:
+                abs_pos[bi, ti] = pad + rel  # shift the in-sequence index by pad
+    input_ids = input_ids.to(device)
+    attn = attn.to(device)
+    position_ids = (attn.long().cumsum(dim=1) - 1).clamp(min=0).to(device)
+    abs_pos_dev = abs_pos.to(device)
+    with torch.no_grad():
+        _ = model(input_ids=input_ids, attention_mask=attn, position_ids=position_ids)
+    picked = _gather_positions_gpu(capture, capture_layers, abs_pos_dev)  # (b, T34, Lc, H) cpu
+    for bi, (_s, _tgt, valid) in enumerate(rows):
+        for ti, name in enumerate(stored_names):
+            if not valid[ti]:
+                continue
+            vec = picked[bi, ti].float()  # (Lc, H)
+            if name not in accum:
+                accum[name] = torch.zeros(lc, H, dtype=torch.float32)
+            accum[name] += vec
+            coverage[name] += 1
+    return b
 
 
 def capture_positions_for_context(
@@ -177,68 +285,62 @@ def capture_positions_for_context(
     asserted; the turn_nl id is recorded (tokenizer-dependent) + asserted to
     decode to a newline-bearing token.
 
-    ``batch_probes`` is accepted for signature parity with the CUDA-OOM
-    hot-fix knob (gotchas.md #761 ``--batch-probes``); the capture is batch-1
-    per probe here (variable answer lengths make padding wasteful at n=48), so
-    it is a documented no-op — the halve-the-batch OOM lever is
-    ``PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`` + a shorter cap.
+    ``batch_probes`` is a REAL knob (default 8): probes are batched with
+    LEFT-PADDING (all turn-end boundaries align at the right edge), one forward
+    per batch instead of one per probe. Left-padding requires EXPLICIT
+    ``position_ids`` (cumsum(attention_mask) − 1, clamped at 0) so RoPE indexes
+    from 0 at each sequence's first real token — without it the padded positions
+    silently diverge from the batch-1 read (``.claude/rules/
+    left_pad_position_ids_required``). The residual stream is sliced at the ~34
+    target positions GPU-side (``_gather_positions_gpu``) BEFORE the CPU transfer,
+    so only the thin (batch, 34, 28, H) slice crosses PCIe. Batched forward output
+    is byte-identical (cosine ≥ 0.999) to the batch-1 read — the smoke asserts it.
     """
-    _ = batch_probes  # documented no-op (batch-1 per probe; see docstring)
     lc = len(capture_layers)
     H = model.config.hidden_size
     # Accumulators: sum over probes + count per position (probe-mean at the end).
     accum: dict[str, torch.Tensor] = {}
     coverage: dict[str, int] = {p: 0 for p in stored_position_names()}
-    n_used = 0
-    empty = 0
     ans_lens: list[int] = []
     turn_nl_ids_seen: set[int] = set()
+    stored_names = stored_position_names()
 
     nl_ids = tokenizer.encode("\n", add_special_tokens=False)
     if len(nl_ids) != 1:
         raise RuntimeError(f"expected single-token '\\n', got {nl_ids} (tokenizer drift)")
     nl_id = nl_ids[0]
-
-    for q, ans in zip(probes, completions, strict=True):
-        messages = messages_for_instance(instance, q)
-        prompt_text = tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
+    # Pin the newline id to the Qwen-2.5 family id 198 (same for 7B production +
+    # 0.5B smoke). A drifted tokenizer would silently capture the WRONG turn_nl
+    # position across the whole run — refuse rather than run.
+    if nl_id != TURN_NL_TOKEN_ID:
+        raise RuntimeError(
+            f"tokenizer newline id {nl_id} != Qwen-2.5 pinned id {TURN_NL_TOKEN_ID} — "
+            "refusing to run with a drifted tokenizer (would capture the wrong turn_nl "
+            "slot for every probe)"
         )
-        prompt_ids = tokenizer(prompt_text, return_tensors="pt", padding=False)["input_ids"]
-        ans_ids = tokenizer(ans, return_tensors="pt", add_special_tokens=False)["input_ids"]
-        if ans_ids.shape[1] == 0:
+
+    # Build per-probe (full_ids, target-index, valid) tuples, then run them in
+    # left-padded batches of `batch_probes` (one forward per batch, not per probe).
+    batch = max(1, int(batch_probes))
+    built = []  # (full_ids, tgt, valid) per non-empty probe
+    empty = 0
+    for q, ans in zip(probes, completions, strict=True):
+        item = _build_probe_row(model, tokenizer, instance, q, ans, stored_names, nl_id)
+        if item is None:
             empty += 1
             logger.warning("empty completion for %s probe=%r — skipping", instance["id"], q[:40])
             continue
-        prompt_len = int(prompt_ids.shape[1])
-        ans_len = int(ans_ids.shape[1])
+        full_ids, tgt, valid, ans_len = item
+        turn_nl_ids_seen.add(nl_id)
         ans_lens.append(ans_len)
-        # Append the natural Qwen turn-end: <|im_end|> then \n (the c_C mirror).
-        boundary = torch.tensor([[IM_END_TOKEN_ID, nl_id]], dtype=prompt_ids.dtype)
-        full_ids = torch.cat([prompt_ids, ans_ids, boundary], dim=1).to(model.device)
-        with torch.no_grad():
-            _ = model(input_ids=full_ids)
-        # Union span: [answer_start, turn_nl+1) = ans_len content + 2 boundary.
-        union_start = prompt_len
-        union_end = prompt_len + ans_len + 2
-        union = _position_span_stack(capture, n_layers, union_start, union_end)  # (L, S+2, H)
-        union = union[capture_layers]  # (Lc, ans_len+2, H) fp16
-        # Boundary-token sanity: the union's last two positions are the appended
-        # im_end + nl by construction; assert the FED ids (fail loud on drift).
-        fed = full_ids[0, prompt_len + ans_len : prompt_len + ans_len + 2].tolist()
-        assert fed[0] == IM_END_TOKEN_ID, (
-            f"im_end slot fed id {fed[0]} != {IM_END_TOKEN_ID} for {instance['id']} {q[:30]!r}"
+        built.append((full_ids, tgt, valid))
+
+    n_used = 0
+    for lo in range(0, len(built), batch):
+        rows = built[lo : lo + batch]
+        n_used += _run_forward_batch(
+            model, capture, capture_layers, tokenizer, rows, stored_names, accum, coverage, lc, H
         )
-        assert fed[1] == nl_id, f"turn_nl slot fed id {fed[1]} != {nl_id} (\\n)"
-        turn_nl_ids_seen.add(fed[1])
-        pos_idx = _positions_for_span(ans_len, boundary_offset=ans_len)
-        for name, si in pos_idx.items():
-            vec = union[:, si, :].float()  # (Lc, H)
-            if name not in accum:
-                accum[name] = torch.zeros(lc, H, dtype=torch.float32)
-            accum[name] += vec
-            coverage[name] += 1
-        n_used += 1
 
     if n_used == 0:
         raise RuntimeError(f"context {instance['id']}: every probe produced an empty answer")
