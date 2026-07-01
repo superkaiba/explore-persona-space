@@ -689,27 +689,65 @@ def load_extraction_artifacts(trait: str) -> dict:
         return json.load(f)
 
 
+# Target counts the generation prompt asks Sonnet for (PV_ARTIFACT_GENERATION_PROMPT
+# Step 1 / Step 2). Sonnet reliably meets-or-exceeds these under strict-count
+# prompting but occasionally OVER-generates by one (the classic LLM off-by-one:
+# 41 questions / 6 instruction pairs). Over-generation is SAFE to truncate to the
+# first N deterministically (the first-N split carries no ordering bias for a
+# disjoint extraction/eval partition); UNDER-generation is a real failure that
+# gets one stricter retry, then a hard fail (never a silent pad).
+_N_INSTRUCTION_PAIRS = 5
+_N_QUESTIONS = 40
+
+
+class ArtifactCountShortfall(ValueError):
+    """Raised when a generated artifact has FEWER than the required count of a
+    strict-count field (instruction pairs / questions). Distinguishable from a
+    shape/schema error so the caller can retry the Sonnet generation ONCE with a
+    stricter prompt before hard-failing (never a silent pad)."""
+
+
 def _validate_generated_artifacts(trait: str, obj: dict) -> dict:
     """Validate + normalize a generated-artifact JSON into the EVIL_ARTIFACTS shape.
 
-    The generation prompt returns {instruction:[5 pos/neg], questions:[40],
-    eval_prompt}. We split the 40 questions into the first 20 (extraction) +
-    last 20 (eval) — the paper's disjoint-subset split. Fail loud on any shape
-    violation (never a silent truncation/pad).
+    The generation prompt returns {instruction:[>=5 pos/neg], questions:[>=40],
+    eval_prompt}. Strict-count fields use a per-field FLOOR (>= N) + deterministic
+    truncate-to-N: Sonnet occasionally over-generates by one under strict-count
+    prompting (e.g. 41 questions — the incident "expected 40 questions, got 41"
+    that crashed the round-6 [phase=artifacts] Phase 1), and the extra item is
+    safe to drop for the first-N disjoint extraction/eval split. We split the
+    first 40 questions into the first 20 (extraction) + next 20 (eval) — the
+    paper's disjoint-subset split.
+
+    Fail loud on any SHAPE violation (missing pos/neg, empty eval_prompt) via
+    AssertionError, and raise ``ArtifactCountShortfall`` on UNDER-generation
+    (fewer than N) so the caller can retry once — never a silent truncation/pad.
     """
     instr = obj.get("instruction")
     questions = obj.get("questions")
     eval_prompt = obj.get("eval_prompt")
-    assert isinstance(instr, list) and len(instr) == 5, (
-        f"{trait}: expected 5 instruction pairs, got {len(instr) if instr else None}"
+    # FLOOR: under-generation is a real failure (retryable); over-generation is
+    # deterministically truncated to the target below.
+    assert isinstance(instr, list), (
+        f"{trait}: instruction must be a list, got {type(instr).__name__}"
     )
+    if len(instr) < _N_INSTRUCTION_PAIRS:
+        raise ArtifactCountShortfall(
+            f"{trait}: expected >= {_N_INSTRUCTION_PAIRS} instruction pairs, got {len(instr)}"
+        )
+    instr = instr[:_N_INSTRUCTION_PAIRS]
     for i, pair in enumerate(instr):
         assert isinstance(pair, dict) and "pos" in pair and "neg" in pair, (
             f"{trait}: instruction pair {i} missing pos/neg: {pair!r}"
         )
-    assert isinstance(questions, list) and len(questions) == 40, (
-        f"{trait}: expected 40 questions, got {len(questions) if questions else None}"
+    assert isinstance(questions, list), (
+        f"{trait}: questions must be a list, got {type(questions).__name__}"
     )
+    if len(questions) < _N_QUESTIONS:
+        raise ArtifactCountShortfall(
+            f"{trait}: expected >= {_N_QUESTIONS} questions, got {len(questions)}"
+        )
+    questions = questions[:_N_QUESTIONS]
     assert isinstance(eval_prompt, str) and eval_prompt.strip(), f"{trait}: empty eval_prompt"
     return {
         "instruction": instr,
@@ -737,20 +775,47 @@ def generate_extraction_artifacts(trait: str, *, force: bool = False) -> dict:
 
     import anthropic
 
-    prompt = PV_ARTIFACT_GENERATION_PROMPT.format(
+    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"), max_retries=5)
+    base_prompt = PV_ARTIFACT_GENERATION_PROMPT.format(
         TRAIT=trait, trait_instruction=TRAIT_DESCRIPTIONS[trait]
     )
-    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"), max_retries=5)
-    msg = client.messages.create(
-        model=JUDGE_MODEL,
-        max_tokens=8192,
-        messages=[{"role": "user", "content": prompt}],
+    # A stricter reminder appended on the SECOND (retry) attempt when the first
+    # generation UNDER-produced a strict-count field. Over-generation is handled
+    # by deterministic truncation in _validate_generated_artifacts and never
+    # reaches here.
+    strict_suffix = (
+        f"\n\nIMPORTANT: You MUST produce EXACTLY {_N_INSTRUCTION_PAIRS} instruction "
+        f"pairs and EXACTLY {_N_QUESTIONS} questions. Count them before responding; "
+        "a response with fewer than the required number of either is invalid."
     )
-    text = "".join(b.text for b in msg.content if b.type == "text")
-    # The prompt asks for a bare JSON object; tolerate leading/trailing prose.
-    start = text.index("{")
-    obj, _ = json.JSONDecoder().raw_decode(text, start)
-    validated = _validate_generated_artifacts(trait, obj)
-    write_json_atomic(cache, validated)
-    logger.info("Generated + cached extraction artifacts for %s -> %s", trait, cache)
-    return validated
+    last_err: ArtifactCountShortfall | None = None
+    for attempt in range(2):  # one initial + one stricter retry on shortfall
+        prompt = base_prompt if attempt == 0 else base_prompt + strict_suffix
+        msg = client.messages.create(
+            model=JUDGE_MODEL,
+            max_tokens=8192,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = "".join(b.text for b in msg.content if b.type == "text")
+        # The prompt asks for a bare JSON object; tolerate leading/trailing prose.
+        start = text.index("{")
+        obj, _ = json.JSONDecoder().raw_decode(text, start)
+        try:
+            validated = _validate_generated_artifacts(trait, obj)
+        except ArtifactCountShortfall as e:
+            last_err = e
+            logger.warning(
+                "Artifact generation for %s under-produced (attempt %d/2): %s; "
+                "retrying with a stricter prompt.",
+                trait,
+                attempt + 1,
+                e,
+            )
+            continue
+        write_json_atomic(cache, validated)
+        logger.info("Generated + cached extraction artifacts for %s -> %s", trait, cache)
+        return validated
+    # Both attempts under-produced — hard fail (never a silent pad).
+    raise ArtifactCountShortfall(
+        f"artifact generation for trait {trait!r} under-produced after 2 attempts: {last_err}"
+    )
