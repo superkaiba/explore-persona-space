@@ -27,9 +27,8 @@ This script proves three things without changing any runtime behavior:
       2 consecutive-miss ticks at 10 min each).
   (C) LIVE (``--live``): of the currently-unmapped running EPS sessions, how
       many carry a #720 breadcrumb (=> fast lane) vs none (=> pre-#720 orphan
-      on the 12h lane), and the oldest idle age — so a reviewer can see the
-      current backlog is the pre-#720 no-breadcrumb class, unreachable by ANY
-      snapshot taken today.
+      on the 12h lane) — so a reviewer can see the current backlog is the
+      pre-#720 no-breadcrumb class, unreachable by ANY snapshot taken today.
 
 Run:
   uv run python scripts/issue795_diagnosis_smoke.py            # A + B (offline, deterministic)
