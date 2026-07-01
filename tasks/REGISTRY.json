@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 783,
+  "highest_id": 784,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5011,6 +5011,13 @@
       "path": "tasks/running/783",
       "status": "running",
       "title": "workflow-fix: GCP H100 queue-wait timeout -> RunPod failover (auto lane)"
+    },
+    "784": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/784",
+      "status": "proposed",
+      "title": "workflow: raise ensemble review cap 3->5, expand git-provenance auto-strip, surface-not-ship real residual at cap"
     },
     "8": {
       "has_clean_result": false,
