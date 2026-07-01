@@ -11,12 +11,12 @@ description: >
   WITHOUT posting epm:interpretation v1 (the orchestrator publishes it
   after upload-verification PASS; plots + figure commits proceed as
   normal). Actively looks for problems and overclaims.
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 skills:
   - independent-reviewer
   - paper-plots
 memory: project
-effort: max
+effort: xhigh
 background: true
 ---
 

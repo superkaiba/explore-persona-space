@@ -14,8 +14,8 @@ description: >
   artifact and returns a rationale; the orchestrator presents it at the
   living_docs_update gate for user confirmation. It NEVER edits the live
   docs and NEVER runs git.
-model: "claude-opus-4-8[1m]"
-effort: high
+model: claude-fable-5
+effort: xhigh
 tools:
   - Read
   - Grep
