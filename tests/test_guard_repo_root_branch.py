@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import uuid
 from pathlib import Path
 
 import pytest
@@ -72,13 +73,19 @@ def throwaway_branch():
 
     Created pointing at HEAD (no checkout, no tree change) and deleted on
     teardown, so the branch-switch-regression assertion is hermetic rather than
-    depending on a repo-specific branch name existing.
+    depending on a repo-specific branch name existing. The name carries a
+    per-run uuid suffix so concurrent test runs against the shared ``$REPO``
+    never clobber each other's ref, and teardown tolerates a missing ref (a
+    concurrent run already cleaned it up) rather than failing.
     """
-    name = "eps-test-throwaway-guard-796"
+    name = f"eps-test-throwaway-guard-796-{uuid.uuid4().hex[:8]}"
     _git("branch", "-f", name, "HEAD")
     try:
         yield name
     finally:
+        # Best-effort delete: a missing ref (never created / already gone) must
+        # not fail teardown. ``branch -D`` is non-raising here (``_git`` does
+        # not check=True), but guard explicitly for clarity.
         _git("branch", "-D", name)
 
 
@@ -88,9 +95,11 @@ def throwaway_tag():
 
     Detaching to a tag is a real detach shape; a fabricated non-existent tag
     would fail-soft (exit 0) and never exercise the block path — so the tag must
-    genuinely exist. Created pointing at HEAD and deleted on teardown.
+    genuinely exist. Created pointing at HEAD and deleted on teardown. The name
+    carries a per-run uuid suffix (concurrent-run safe) and teardown tolerates a
+    missing ref.
     """
-    name = "eps-test-throwaway-tag-796"
+    name = f"eps-test-throwaway-tag-796-{uuid.uuid4().hex[:8]}"
     _git("tag", "-f", name, "HEAD")
     try:
         yield name
@@ -171,15 +180,58 @@ def test_allowed_shapes_exit0(cmd):
     assert _run(cmd) == 0
 
 
-def test_quoted_git_verb_in_argument_is_not_a_false_positive():
-    # A quoted git-verb literal inside another command's argument must NOT be
-    # treated as a git invocation (the concern that blocked posting a marker
-    # whose note discussed the guard). `--note "... git switch ..."` -> allow.
+# ---------------------------------------------------------------------------
+# MUST BLOCK — QUOTED detach refs. Quoted git refs are shell-equivalent to
+# unquoted ones, so they must produce the SAME exit code as their unquoted
+# counterparts above. The round-1 quote-strip pre-pass erased these before the
+# detectors ran (leaking the exact class this guard blocks); the revert scans
+# the raw command and strips only a single surrounding quote layer on the
+# classified checkout arg. Concern id: quoted-refs-bypass-detach-guard (#796).
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "template",
+    [
+        'git checkout "{sha}"',  # double-quoted sha -> block (was leaking, exit 0)
+        "git checkout '{sha}'",  # single-quoted sha -> block
+        'git checkout "HEAD~1"',  # quoted relative rev -> block
+        'git checkout "origin/main"',  # quoted remote-tracking ref -> block
+    ],
+)
+def test_quoted_detach_refs_still_block(template):
+    assert _run(template.format(sha=_repo_head_sha())) == 2
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        'git switch "main"',  # quoted return-to-main -> allow (was false-positive, exit 2)
+        'git checkout "main"',  # quoted return-to-main -> allow
+    ],
+)
+def test_quoted_main_still_allows(cmd):
+    # These must never be trapped regardless of repo-root HEAD state, so NOT
+    # guarded by @on_main. Round-1's quote-strip false-positived `git switch
+    # "main"` to exit 2; after the revert the arg-classifier strips the quotes
+    # and the `main` allow-arm passes.
+    assert _run(cmd) == 0
+
+
+def test_note_text_git_verb_literal_trips_guard_known_limitation():
+    # KNOWN LIMITATION (documented in the script header): the guard scans the
+    # RAW command and does NOT strip quoted arguments, so a quoted git-verb
+    # literal buried in another command's argument (e.g. a marker note
+    # discussing the guard) DOES trip it. This is the deliberate trade-off for
+    # correctly parsing quoted git refs (test_quoted_detach_refs_still_block);
+    # the round-1 quote-strip that "fixed" this false positive leaked real
+    # quoted detach refs. The workaround is `--file` for such note text.
+    # Exit 2 pins the known behavior so a future re-attempt at a quote-strip
+    # (which would silently re-open the leak) trips this test.
     assert (
         _run(
             'uv run python scripts/task.py post-marker 796 epm:foo --note "test git switch string"'
         )
-        == 0
+        == 2
     )
 
 
