@@ -5183,8 +5183,8 @@
     "806": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/806",
-      "status": "running",
+      "path": "tasks/completed/806",
+      "status": "completed",
       "title": "workflow-fix: code-reviewer catches plan-DP-shape vs dispatcher-shape gap (from #779)"
     },
     "81": {
