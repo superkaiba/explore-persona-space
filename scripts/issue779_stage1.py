@@ -337,9 +337,9 @@ def make_figures(results: dict, fig_dir: Path) -> list[str]:
     import matplotlib.pyplot as plt
 
     try:
-        from explore_persona_space.analysis.paper_plots import apply_paper_style
+        from explore_persona_space.analysis.paper_plots import set_paper_style
 
-        apply_paper_style()
+        set_paper_style()
     except Exception as e:
         logger.warning("paper_plots style unavailable (%s); using matplotlib default", e)
 
