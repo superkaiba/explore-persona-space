@@ -215,6 +215,7 @@ def _prepare_dataset(data_path: Path, out_dir: Path, *, max_steps: int | None) -
     prepared JSONL next to the adapter and returns its path. On smoke
     (``max_steps``), takes a small deterministic slice.
     """
+    out_dir.mkdir(parents=True, exist_ok=True)
     prepared = out_dir / "train_prepared.jsonl"
     n_written = 0
     limit = None if max_steps is None else max_steps * PER_DEVICE_BATCH * GRAD_ACCUM + 4
