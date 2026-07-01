@@ -13,14 +13,19 @@ origin_prompt: Both - but also instead of just using the persona vector r_B as a
   could we also add an experiment which checks how much adding individual activations
   to the regression helps -- vs. just a pooled mean
 goal: 'On Qwen2.5-7B base representations (#658''s 50 contexts, reusing #810''s per-position
-  answer extraction), quantify how much mean-pooling loses versus using individual
-  per-position answer-token activations as regression input -- the incremental held-out
-  prediction of behavior expression E0 (and answer-profile reconstruction) from an
-  unpooled multi-position input over the pooled-mean baseline, per layer, with LOCO
-  + label-shuffle null + #742-style reliability-ceiling / learning-curve guards for
-  the n=50 sample size.'
+  answer extraction), quantify how much each pooling operator (mean / max / fixed-random
+  attention / learned attention) loses versus the unpooled per-position multi-position
+  input for predicting behavior expression E0 (and reconstructing the answer profile),
+  per layer -- the incremental held-out gain of unpooled over each pool, with LOCO
+  + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for
+  the n=50 sample size; all operators are cheap CPU reductions of one shared extraction,
+  so the constraint is n, not compute.'
 ---
 # How much does per-position (unpooled) answer activation beat the pooled mean for predicting behavior / reconstructing the profile
+
+## Goal
+
+On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much each pooling operator (mean / max / fixed-random attention / learned attention) loses versus the unpooled per-position multi-position input for predicting behavior expression E0 (and reconstructing the answer profile), per layer -- the incremental held-out gain of unpooled over each pool, with LOCO + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for the n=50 sample size; all operators are cheap CPU reductions of one shared extraction, so the constraint is n, not compute.
 
 ## Overview / Motivation
 
