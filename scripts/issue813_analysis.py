@@ -52,6 +52,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 import issue658_fit_predictors as fit658  # noqa: E402
 import issue667_marker_mapchange as marker_mc  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
+from issue722_bootstrap import floor_sd, make_refit_pair  # noqa: E402
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
@@ -69,6 +70,13 @@ N_LAYERS = 28
 TARGET_DIM = 64  # top-64 v0 PCs (NEVER 48)
 N_NULL_RESAMPLES = 1000
 NULL_SEED = 42
+# Refit-pair count for the PER-PSEUDO-ARM floor inside the substrate-swap null (B2).
+# The observed read uses 100 (issue722_fit_M.N_REFIT_PAIRS); the null refits a floor
+# per pseudo-arm per resample (n_resamples × 2 arms × NULL_REFIT_PAIRS refits), so it
+# uses fewer pairs to stay tractable — each pseudo-floor is a coarse-but-honest
+# per-arm estimate, and the null's own resampling dominates the band width. Smoke
+# clamps this via --null-refit-pairs.
+NULL_REFIT_PAIRS = 40
 
 
 def _git_sha() -> str:
@@ -143,20 +151,34 @@ def observed_read(
     }
 
 
-# ── Pseudo-substrate Δ/floor numerator (headline-layer only, for the null) ─────
+# ── Pseudo-substrate Δ/floor read (headline-layer only, for the null) ──────────
 
 
-def _pseudo_delta_median(
-    c0: np.ndarray, cplus: np.ndarray, v0: np.ndarray, vplus: np.ndarray, r_hat: np.ndarray | None
-) -> float:
-    """median_c |Δ(c)·r̂| (or ‖Δ(c)‖ when r_hat is None) for a headline-layer pseudo-map.
+def _pseudo_delta_over_floor(
+    c0: np.ndarray,
+    cplus: np.ndarray,
+    v0: np.ndarray,
+    vplus: np.ndarray,
+    families: list[str],
+    r_hat: np.ndarray | None,
+    *,
+    n_refit_pairs: int,
+) -> tuple[float, float]:
+    """(Δ_med, Δ/floor) for a headline-layer pseudo-map — B2: the REGISTERED DV space.
 
     Fits M0 = ridge(c0→V0_64) and M⁺ = ridge(cplus→Vplus_64) at THIS layer via the
-    reused ``_ridge_fit_predict`` + ``_pca_basis_v0`` (top-64 shared V0 basis),
-    evaluates both at the base c0 grid, and reduces the difference either by the
-    r_hat projection (em/fact/syco, r_B) or by the vector norm (marker read-1). This
-    is EXACTLY ``fit_cell``'s / ``fit_marker_layer``'s numerator arithmetic on a
-    single-layer stack — used to build the substrate-swap null cheaply.
+    reused ``_ridge_fit_predict`` + ``_pca_basis_v0`` (top-64 shared V0 basis) and
+    reduces the base-grid difference by the r_hat projection (em/fact/syco r_B) or by
+    the vector norm (marker read-1) — EXACTLY ``fit_cell`` / ``fit_marker_layer``'s
+    numerator. It ALSO refits a per-pseudo-arm FLOOR through the SAME shared harness
+    (``make_refit_pair`` for the r_hat path / ``marker_mc._refit_pair_norm`` for the
+    norm path, over the M0 / M⁺ / shifted refit designs, family-clustered) and returns
+    the normalized DV in each behavior's own convention (em/fact/syco: ``Δ_med /
+    floor_sd_combined`` matching ``Delta_over_floor_sd``; marker: ``Δ_med /
+    floor_p95_combined`` matching ``unproj_delta_over_floor``), so the null band is
+    built in the REGISTERED Δ/floor space, not raw Δ (concern
+    i813-verdict-raw-delta-not-registered-floor). Returns ``(delta_med, delta_over_floor)``;
+    ``delta_over_floor`` is NaN when the floor underflows (excluded by the caller).
     """
     pca_basis = fitM._pca_basis_v0(v0, TARGET_DIM)  # (k<=64, HIDDEN)
     v0_64 = fitM._to64(v0, pca_basis)
@@ -165,8 +187,39 @@ def _pseudo_delta_median(
     mplus_grid = fitM._ridge_fit_predict(cplus, vplus_64, c0)
     delta_full = (mplus_grid - m0_grid) @ pca_basis  # (n, HIDDEN)
     if r_hat is None:
-        return float(np.median(np.linalg.norm(delta_full, axis=1)))
-    return float(np.median(np.abs(delta_full @ r_hat)))
+        delta_med = float(np.median(np.linalg.norm(delta_full, axis=1)))
+    else:
+        delta_med = float(np.median(np.abs(delta_full @ r_hat)))
+
+    # Per-pseudo-arm refit floor via the SHARED harness (same three refit designs the
+    # observed read uses: M0, M⁺, shifted M0(cplus)). Grid = the base c0, matching the
+    # numerator's eval grid. r_hat=None routes through the marker read-1 ‖·‖ variant.
+    fit_fn = fitM._refit_ridge_fn(c0)  # returns preds at c0, back-projected to HIDDEN
+    m0_at_cplus = fitM.m0_at_cplus_ridge_full(c0, v0, cplus, pca_basis)
+    if r_hat is None:
+        fl_m0 = marker_mc._refit_pair_norm(c0, v0, fit_fn, c0, families, n_pairs=n_refit_pairs)
+        fl_mp = marker_mc._refit_pair_norm(
+            cplus, vplus, fit_fn, c0, families, n_pairs=n_refit_pairs
+        )
+        fl_sh = marker_mc._refit_pair_norm(
+            cplus, m0_at_cplus, fit_fn, c0, families, n_pairs=n_refit_pairs
+        )
+        # marker read-1 normalizes by the p95-COMBINED floor (unproj_delta_over_floor).
+        floor = max(
+            float(np.percentile(fl_m0, 95)),
+            float(np.percentile(fl_mp, 95)),
+            float(np.percentile(fl_sh, 95)),
+        )
+    else:
+        fl_m0 = make_refit_pair(c0, v0, fit_fn, c0, r_hat, families, n_pairs=n_refit_pairs)
+        fl_mp = make_refit_pair(cplus, vplus, fit_fn, c0, r_hat, families, n_pairs=n_refit_pairs)
+        fl_sh = make_refit_pair(
+            cplus, m0_at_cplus, fit_fn, c0, r_hat, families, n_pairs=n_refit_pairs
+        )
+        # em/fact/syco normalize by the SD-COMBINED floor (Delta_over_floor_sd).
+        floor = max(floor_sd(fl_m0), floor_sd(fl_mp), floor_sd(fl_sh))
+    dof = float("nan") if floor < 1e-12 else float(delta_med / floor)
+    return delta_med, dof
 
 
 def substrate_swap_null(
@@ -175,19 +228,25 @@ def substrate_swap_null(
     reduced_root: Path,
     r_hat: np.ndarray | None,
     n_resamples: int,
+    *,
+    n_refit_pairs: int = NULL_REFIT_PAIRS,
 ) -> dict:
-    """Matched-n substrate-swap null: resample questions within the substrate, split.
+    """Matched-n substrate-swap null in the REGISTERED Δ/floor space (B2).
 
-    Reads ``per_question_L{HEADLINE}.npz`` (flat headline-layer rows + per-row
-    context index). Per resample: draw the substrate's question indices with
-    replacement, split them into two disjoint pseudo-substrate halves of matched
-    size, question-average each half per context → a pseudo-map pair per half,
-    compute the SAME Δ numerator for each, take |Δ(A) − Δ(B)|. The 95th percentile
-    is X, the behavior-specific threshold a REAL substrate difference must clear.
+    Reads ``per_question_L{HEADLINE}.npz`` (flat headline-layer rows + per-row context
+    index + per-context family). Per resample: draw the substrate's question indices
+    with replacement, split them into two matched-n pseudo-substrate halves,
+    question-average each half per context → a pseudo-map pair, compute BOTH the raw
+    Δ_med AND the normalized Δ/floor (each pseudo-arm refits its own floor through the
+    shared harness) for each half, and record ``|Δ(A) − Δ(B)|`` in BOTH spaces. The
+    95th percentile of the Δ/floor diffs is X_reg — the REGISTERED threshold a real
+    substrate difference in Δ/floor must clear (plan §3/§6/§6.5); the raw-Δ percentiles
+    are kept for continuity/diagnostics. The full per-resample Δ/floor null array is
+    persisted (``null_delta_over_floor_diffs``) so the analyzer can reconstruct the
+    registered band post-hoc.
 
     Matched-n: both pseudo-arms use the SAME per-half question count, so em's small
     pool yields a WIDE (conservative) null, never an artificially tight one.
-    Returns ``{"null_p95", "null_p975", "n_questions", "n_resamples_used"}``.
     """
     pq_path = reduced_root / behavior / substrate / f"per_question_L{HEADLINE_LAYER}.npz"
     if not pq_path.exists():
@@ -199,16 +258,21 @@ def substrate_swap_null(
     vp = np.asarray(d["v_A_trained"], dtype=np.float64)
     row_ctx = np.asarray(d["row_context_index"], dtype=np.int64)
     row_q = np.asarray(d["row_question_index"], dtype=np.int64)
+    # families is full-length, indexed by ORIGINAL context index (savemaps writes it so).
+    ctx_families = [str(x) for x in d["families"]]
     q_ids = sorted(set(row_q.tolist()))
     n_q = len(q_ids)
+    empty = {
+        "null_p95": None,
+        "null_p975": None,
+        "null_over_floor_p95": None,
+        "null_over_floor_p975": None,
+        "n_questions": n_q,
+        "n_resamples_used": 0,
+        "null_space": "delta_over_floor",
+    }
     if n_q < 4:
-        return {
-            "null_p95": None,
-            "null_p975": None,
-            "n_questions": n_q,
-            "n_resamples_used": 0,
-            "note": "too few questions (<4) for a matched-n split",
-        }
+        return {**empty, "note": "too few questions (<4) for a matched-n split"}
 
     # Map (context, question) → row index for fast per-half question-averaging.
     rc_index: dict[tuple[int, int], int] = {}
@@ -216,9 +280,11 @@ def substrate_swap_null(
         rc_index[(int(row_ctx[i]), int(row_q[i]))] = i
     contexts = sorted(set(row_ctx.tolist()))
 
-    def _pseudo_stack(q_subset: list[int]) -> tuple[np.ndarray, ...]:
-        """Question-average the given question subset per context → (n_ctx_kept, HIDDEN) stacks."""
-        rows_c0, rows_cp, rows_v0, rows_vp = [], [], [], []
+    def _pseudo_stack(
+        q_subset: list[int],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str]]:
+        """Question-average the subset per context → (n_ctx_kept, HIDDEN) stacks + families."""
+        rows_c0, rows_cp, rows_v0, rows_vp, fams = [], [], [], [], []
         for ctx in contexts:
             idxs = [rc_index[(ctx, q)] for q in q_subset if (ctx, q) in rc_index]
             if not idxs:
@@ -227,11 +293,13 @@ def substrate_swap_null(
             rows_cp.append(cp[idxs].mean(0))
             rows_v0.append(v0[idxs].mean(0))
             rows_vp.append(vp[idxs].mean(0))
-        return (np.stack(rows_c0), np.stack(rows_cp), np.stack(rows_v0), np.stack(rows_vp))
+            fams.append(ctx_families[ctx])  # family of THIS battery context
+        return (np.stack(rows_c0), np.stack(rows_cp), np.stack(rows_v0), np.stack(rows_vp), fams)
 
     rng = np.random.default_rng(NULL_SEED)
     half = n_q // 2
-    diffs: list[float] = []
+    diffs: list[float] = []  # raw Δ_med diffs (diagnostic, continuity)
+    dof_diffs: list[float] = []  # Δ/floor diffs (the REGISTERED null space)
     for _ in range(n_resamples):
         drawn = rng.choice(q_ids, size=n_q, replace=True).tolist()
         # split the RESAMPLED question list into two matched-n halves.
@@ -242,26 +310,37 @@ def substrate_swap_null(
             sb = _pseudo_stack(b_qs)
             if sa[0].shape[0] < 4 or sb[0].shape[0] < 4:
                 continue  # a degenerate half (too few contexts covered) — skip
-            da = _pseudo_delta_median(*sa, r_hat)
-            db = _pseudo_delta_median(*sb, r_hat)
+            da_med, da_dof = _pseudo_delta_over_floor(
+                sa[0], sa[1], sa[2], sa[3], sa[4], r_hat, n_refit_pairs=n_refit_pairs
+            )
+            db_med, db_dof = _pseudo_delta_over_floor(
+                sb[0], sb[1], sb[2], sb[3], sb[4], r_hat, n_refit_pairs=n_refit_pairs
+            )
         except np.linalg.LinAlgError:
             continue  # degenerate resample geometry — skip (bootstrap noise)
-        diffs.append(abs(da - db))
-    if not diffs:
-        return {
-            "null_p95": None,
-            "null_p975": None,
-            "n_questions": n_q,
-            "n_resamples_used": 0,
-            "note": "all resamples degenerate",
-        }
-    arr = np.asarray(diffs, dtype=np.float64)
+        diffs.append(abs(da_med - db_med))
+        if not (np.isnan(da_dof) or np.isnan(db_dof)):
+            dof_diffs.append(abs(da_dof - db_dof))
+    if not dof_diffs:
+        return {**empty, "note": "all resamples degenerate or floor-underflowed"}
+    raw = np.asarray(diffs, dtype=np.float64)
+    dof = np.asarray(dof_diffs, dtype=np.float64)
     return {
-        "null_p95": float(np.percentile(arr, 95)),
-        "null_p975": float(np.percentile(arr, 97.5)),
-        "null_median": float(np.median(arr)),
+        # REGISTERED Δ/floor null (the band the verdict + pairwise diff are judged against)
+        "null_space": "delta_over_floor",
+        "null_over_floor_p95": float(np.percentile(dof, 95)),
+        "null_over_floor_p975": float(np.percentile(dof, 97.5)),
+        "null_over_floor_median": float(np.median(dof)),
+        # full per-resample Δ/floor null array (post-hoc band reconstruction)
+        "null_delta_over_floor_diffs": dof.tolist(),
+        "n_over_floor_resamples_used": len(dof_diffs),
+        # raw Δ_med null (diagnostic / continuity only — NOT the registered band)
+        "null_p95": float(np.percentile(raw, 95)) if raw.size else None,
+        "null_p975": float(np.percentile(raw, 97.5)) if raw.size else None,
+        "null_median": float(np.median(raw)) if raw.size else None,
         "n_questions": n_q,
         "n_resamples_used": len(diffs),
+        "n_refit_pairs": n_refit_pairs,
     }
 
 
@@ -275,28 +354,39 @@ def _r_hat_for(
 
 
 def pairwise_substrate_diff_cis(observed_by_sub: dict[str, dict]) -> list[dict]:
-    """Point difference of the observed Δ_med across substrate pairs (headline layer).
+    """Point difference of the observed Δ/floor across substrate pairs (headline layer, B2).
 
-    Reports the |Δ_med(A) − Δ_med(B)| point difference for each substrate pair; the
-    substrate-swap null band (per substrate) is the reference the difference is
-    judged against (a difference beyond max(null_p95(A), null_p95(B)) is a real
-    substrate effect). The full clustered-bootstrap CI on the paired difference is
-    delegated to the analyzer (needs the paired per-context grids); here we report
-    the point differences the null band gates.
+    Reports the |Δ/floor(A) − Δ/floor(B)| point difference for each substrate pair in
+    the REGISTERED Δ/floor space (plan §3/§6/§6.5) — NOT raw Δ_med. The substrate-swap
+    null band (per substrate, ``null_over_floor_p95``) is the reference the difference
+    is judged against (a difference beyond max(null_over_floor_p95(A),
+    null_over_floor_p95(B)) is a real substrate effect). The full clustered-bootstrap
+    CI on the paired difference is delegated to the analyzer (needs the paired
+    per-context grids); here we report the point differences the null band gates. The
+    raw Δ_med difference is carried alongside as a diagnostic only.
     """
     out = []
     subs = [s for s in SUBSTRATES if s in observed_by_sub]
     for i in range(len(subs)):
         for j in range(i + 1, len(subs)):
             a, b = subs[i], subs[j]
-            da = observed_by_sub[a].get("delta_med")
-            db = observed_by_sub[b].get("delta_med")
+            da = observed_by_sub[a].get("delta_over_floor")
+            db = observed_by_sub[b].get("delta_over_floor")
+            da_raw = observed_by_sub[a].get("delta_med")
+            db_raw = observed_by_sub[b].get("delta_med")
             out.append(
                 {
                     "pair": f"{a}_vs_{b}",
-                    "delta_med_a": da,
-                    "delta_med_b": db,
+                    "dv_space": "delta_over_floor",
+                    "delta_over_floor_a": da,
+                    "delta_over_floor_b": db,
                     "abs_diff": (None if (da is None or db is None) else abs(da - db)),
+                    # raw Δ_med diagnostic (NOT the registered comparison)
+                    "delta_med_a": da_raw,
+                    "delta_med_b": db_raw,
+                    "abs_diff_delta_med": (
+                        None if (da_raw is None or db_raw is None) else abs(da_raw - db_raw)
+                    ),
                 }
             )
     return out
@@ -318,6 +408,12 @@ def main() -> int:
     )
     ap.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / "eval_results/issue_813")
     ap.add_argument("--n-null-resamples", type=int, default=N_NULL_RESAMPLES)
+    ap.add_argument(
+        "--null-refit-pairs",
+        type=int,
+        default=NULL_REFIT_PAIRS,
+        help="per-pseudo-arm refit-floor pairs inside the Δ/floor null (smoke clamps this)",
+    )
     args = ap.parse_args()
 
     # r_B artifacts (em/syco from #658 r_b.pt; fact from #667 r_b_fact.pt; marker W_U[※]).
@@ -361,7 +457,12 @@ def main() -> int:
             # substrate-swap null (matched-n) at the frozen headline layer
             logger.info("[phase=analysis] substrate-swap null %s/%s", behavior, substrate)
             null = substrate_swap_null(
-                behavior, substrate, args.reduced_root, r_hat, args.n_null_resamples
+                behavior,
+                substrate,
+                args.reduced_root,
+                r_hat,
+                args.n_null_resamples,
+                n_refit_pairs=args.null_refit_pairs,
             )
             null_by_sub[substrate] = null
             (null_dir / f"{behavior}__{substrate}.json").write_text(
@@ -374,22 +475,34 @@ def main() -> int:
             "substrate_swap_null": null_by_sub,
             "pairwise_substrate_diff": pairwise,
         }
-        # Verdict per behavior: does the max-vs-min substrate Δ_med difference clear
-        # the substrate-swap null? (H1 = substrate-agnostic iff within the band.)
-        deltas = {s: observed_by_sub[s].get("delta_med") for s in observed_by_sub}
-        valid = {s: v for s, v in deltas.items() if v is not None}
+        # Verdict per behavior (B2): does the max-vs-min substrate Δ/FLOOR difference
+        # clear the substrate-swap null's Δ/FLOOR band? — the REGISTERED DV space
+        # (plan §3/§6/§6.5), NOT raw Δ_med. H1 = substrate-agnostic iff within the band.
+        dofs = {s: observed_by_sub[s].get("delta_over_floor") for s in observed_by_sub}
+        valid = {s: v for s, v in dofs.items() if v is not None}
         if len(valid) >= 2:
             max_diff = max(valid.values()) - min(valid.values())
             null_x = max(
-                (null_by_sub[s].get("null_p95") or 0.0) for s in valid if null_by_sub.get(s)
+                (null_by_sub[s].get("null_over_floor_p95") or 0.0)
+                for s in valid
+                if null_by_sub.get(s)
+            )
+            # raw Δ_med diagnostic (NOT the registered comparison)
+            raw = {s: observed_by_sub[s].get("delta_med") for s in valid}
+            raw_valid = {s: v for s, v in raw.items() if v is not None}
+            max_diff_raw = (
+                (max(raw_valid.values()) - min(raw_valid.values())) if len(raw_valid) >= 2 else None
             )
             per_behavior[behavior]["verdict"] = {
-                "max_vs_min_delta_med_diff": max_diff,
-                "null_x_p95": null_x,
+                "dv_space": "delta_over_floor",
+                "max_vs_min_delta_over_floor_diff": max_diff,
+                "null_x_over_floor_p95": null_x,
                 "substrate_matters": (max_diff > null_x) if null_x else None,
+                # raw Δ_med diagnostic (continuity only)
+                "max_vs_min_delta_med_diff": max_diff_raw,
             }
             logger.info(
-                "[phase=analysis] %s: max-min Δ_med diff=%.4g vs null X(p95)=%.4g → matters=%s",
+                "[phase=analysis] %s: max-min Δ/floor diff=%.4g vs null X(p95)=%.4g → matters=%s",
                 behavior,
                 max_diff,
                 null_x,
@@ -401,7 +514,10 @@ def main() -> int:
         "read": "map_change_substrate_dependence_M0_vs_Mplus",
         "headline_layer": HEADLINE_LAYER,
         "target_dim": TARGET_DIM,
+        # B2: verdict + null are BOTH in the registered Δ/floor space
+        "verdict_dv_space": "delta_over_floor",
         "n_null_resamples": args.n_null_resamples,
+        "null_refit_pairs": args.null_refit_pairs,
         "null_seed": NULL_SEED,
         "git_commit": _git_sha(),
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

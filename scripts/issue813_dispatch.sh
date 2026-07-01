@@ -28,6 +28,17 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# Credential env for the inline `uv run python -` heredocs (the apply-parity probe
+# stages the #537 adapter → needs HF_TOKEN; `uv run python` does NOT auto-load .env).
+# The `uv run python scripts/...` phases each call load_dotenv() at module top, so
+# this is belt-and-suspenders for them + the load-bearing source for the heredocs.
+if [[ -f "$REPO_ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$REPO_ROOT/.env"
+  set +a
+fi
+
 # ── args ──────────────────────────────────────────────────────────────────────
 SMOKE=0
 CPU_ONLY=0
@@ -85,14 +96,38 @@ CTX_FLAG=()
 Q_FLAG=()
 [[ -n "$MAX_QUESTIONS" ]] && Q_FLAG=(--max-questions "$MAX_QUESTIONS")
 
-# ── phase 0.5: apply-parity probe (per behavior) ──────────────────────────────
-# The rsLoRA apply-gauge parity is validated in-process by issue813_run_cell.py's
-# assert_adapter_gauge (fitness (f)/(g), reused from #667) at extraction time; the
-# dedicated behavioral-parity probe (reproduce #537's committed default read) is a
-# plan phase surfaced here as a log breadcrumb. A fuller behavioral probe is run by
-# the experimenter before the sweep (plan §4.4); the gauge assert is the hard gate.
+# ── phase 0.5: apply-parity probe (per behavior) — MUST PASS before the sweep ──
+# AUTOMATED behavioral HALT (plan §4.3/§4.4/§7 gate 1, concern
+# i813-apply-parity-not-a-hard-gate): reuse #667's NUMERIC rsLoRA diagonal-write
+# reproduction (issue667_dispatch.py `parity-probe`, `_numeric_rslora_parity`). It
+# stages the #537 `default` adapter, applies it via PeftModel (rsLoRA honored), runs
+# the SAME teacher-forced source diagonal write the sweep uses, and HALTs (non-zero
+# exit under set -e) when the realized write ‖Δv‖/‖v0‖ is below the committed-gauge
+# floor OR the self-gate is degenerate — the behavioral read that catches an
+# α/√r-vs-α/r apply mismatch the config gauge assert alone cannot (config gauge is
+# still the in-process fitness (g) check inside issue813_run_cell.py). On GPU this is
+# a hard behavioral HALT; on --cpu-only it degrades to the gauge-config assert (the
+# numeric reproduction needs the 7B forward). Runs the #667 probe in a CUDA-isolated
+# one-shot subprocess so it cannot poison the vLLM EngineCore fork chain.
 if [[ "$SKIP_APPLY_PARITY" == "0" ]]; then
-  echo "[phase=apply_parity] rsLoRA apply-gauge asserted in-process at extraction (fitness (g))"
+  PARITY_CPU_FLAG="False"
+  [[ "$CPU_ONLY" == "1" ]] && PARITY_CPU_FLAG="True"
+  # shellcheck disable=SC2086  # word-splitting BEHAVIORS_ARG into the loop is intended
+  for PB in $BEHAVIORS_ARG; do
+    echo "[phase=apply_parity] behavioral apply-parity HALT probe: $PB (numeric rsLoRA diagonal write)"
+    PARITY_BEHAVIOR="$PB" PARITY_CPU="$PARITY_CPU_FLAG" uv run python - <<'PY'
+import os, sys
+sys.path.insert(0, "src")
+sys.path.insert(0, "scripts")
+import issue667_dispatch as i667
+behavior = os.environ["PARITY_BEHAVIOR"]
+cpu_only = os.environ["PARITY_CPU"] == "True"
+# _rslora_parity_probe raises (non-zero exit → set -e HALT) on drift; PASS on return.
+i667._rslora_parity_probe(behavior, cpu_only=cpu_only)
+print(f"[phase=apply_parity] {behavior}: apply-parity PASS (numeric diagonal-write reproduction)")
+PY
+  done
+  echo "[phase=apply_parity] all behaviors PASS apply-parity — proceeding to the sweep"
 fi
 
 # ── phase 1: one-cell measurement gate ────────────────────────────────────────
@@ -103,14 +138,21 @@ if [[ "$SKIP_ONE_CELL_GATE" == "0" ]]; then
   echo "[phase=one_cell_gate] measuring one cell (first behavior × first substrate × 1 question)"
   GATE_BEH="$(echo "$BEHAVIORS_ARG" | awk '{print $1}')"
   GATE_SUB="$(echo "$SUBSTRATES_ARG" | awk '{print $1}')"
+  # The gate NEVER writes into the production OUT_ROOT's reduced/ tree (B1): it runs
+  # with --gate-only (measure bytes, write no reduced-summary / per-question / .done)
+  # AND against an ISOLATED temp gate root (belt-and-suspenders). So it can neither
+  # crash the sweep on the <4-contexts fit guard NOR plant a .done that the un-forced
+  # Phase-2 sweep would skip (shipping a 1×1 fixture). Metrics land under OUT_ROOT.
+  GATE_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/issue813-gate.XXXXXX")"
   GATE_METRICS="$OUT_ROOT/one_cell_gate_metrics.json"
   gate_start=$(date +%s)
   uv run python scripts/issue813_run_cell.py \
     --behavior "$GATE_BEH" --substrate "$GATE_SUB" \
-    --out-root "$OUT_ROOT" --gpu-id 0 \
+    --out-root "$GATE_ROOT" --gpu-id 0 \
     "${CPU_FLAG[@]}" "${UPLOAD_FLAG[@]}" \
-    --max-contexts 1 --max-questions 1 --force \
+    --max-contexts 1 --max-questions 1 --gate-only \
     --metrics-out "$GATE_METRICS"
+  rm -rf "$GATE_ROOT"  # the isolated gate root is scratch — never a production artifact
   gate_wall=$(( $(date +%s) - gate_start ))
   echo "[phase=one_cell_gate] one cell ran in ${gate_wall}s; metrics → $GATE_METRICS"
   # GO/NO-GO: project the full-run footprint from the measured per-cell bytes.
@@ -153,14 +195,15 @@ uv run python scripts/issue813_save_maps.py \
   "${UPLOAD_FLAG[@]}"
 
 # ── phase 4: analysis (Δ/floor + chain-ρ + substrate-swap null; CPU) ───────────
-echo "[phase=analysis] computing DVs (Δ/floor + chain-ρ + substrate-swap null)"
+echo "[phase=analysis] computing DVs (Δ/floor + chain-ρ + substrate-swap null in Δ/floor space)"
 NULL_RS=1000
-[[ "$SMOKE" == "1" ]] && NULL_RS=20
+NULL_REFIT_PAIRS=40
+if [[ "$SMOKE" == "1" ]]; then NULL_RS=20; NULL_REFIT_PAIRS=8; fi
 # shellcheck disable=SC2086
 uv run python scripts/issue813_analysis.py \
   --behaviors $BEHAVIORS_ARG --substrates $SUBSTRATES_ARG \
   --reduced-root "$OUT_ROOT/reduced" --out-dir "$OUT_ROOT" \
-  --n-null-resamples "$NULL_RS"
+  --n-null-resamples "$NULL_RS" --null-refit-pairs "$NULL_REFIT_PAIRS"
 
 # ── end-of-run sentinel (poll_pipeline contract) ──────────────────────────────
 EPOCH="$(date +%s)"

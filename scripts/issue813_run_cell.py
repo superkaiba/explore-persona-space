@@ -96,6 +96,13 @@ SUBSTRATES = ("generic", "elicit", "mix")
 MAX_NEW_TOKENS = {"marker": 2048, "fact": 1024, "sycophancy": 1024, "em": 1024}
 # Atomic per-(behavior, substrate) completion sentinel (resume-skip predicate).
 CELL_DONE_SENTINEL = ".done"
+# Unreduced-.npz upload batching (B3, #664/#488): a per-file HfApi().upload_file
+# inside the (context, question) loop makes one HF commit per pair (~23,850 commits
+# across the sweep, blowing the 256-commits/hr throttle). Buffer each cell's .npz
+# files and flush ONE HfApi.create_commit per BATCH_UPLOAD_CHUNK files (many
+# CommitOperationAdds per commit), deleting local per flush so peak local footprint
+# stays ~one chunk (~BATCH_UPLOAD_CHUNK × per-cell bytes), never the full grid.
+BATCH_UPLOAD_CHUNK = 100
 
 
 def _git_sha() -> str:
@@ -242,11 +249,15 @@ def _capture_full_and_reduce(
 
 
 def _hf_upload_file(local_path: Path, path_in_repo: str) -> None:
-    """Upload one file to the HF data repo, fail-loud (the stream-upload contract).
+    """Upload ONE (small, reduced) file to the HF data repo, fail-loud.
+
+    Reserved for the tiny per-(behavior, substrate) reduced summaries (``summary.npz`` /
+    ``per_question_L14.npz``) — 2 commits per cell, well under the 256/hr throttle. The
+    MANY unreduced per-(context, question) ``.npz`` uploads go through
+    ``_hf_batch_commit`` (one commit per BATCH_UPLOAD_CHUNK files), never here (B3).
 
     Uses ``HfApi.upload_file`` directly (accelerated by the shell-level
-    HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER defaults). Raises on
-    failure — a clean per-cell upload IS the data-safety contract (upload-then-delete).
+    HF_XET_HIGH_PERFORMANCE / HF_HUB_ENABLE_HF_TRANSFER defaults). Raises on failure.
     """
     from huggingface_hub import HfApi
 
@@ -255,7 +266,36 @@ def _hf_upload_file(local_path: Path, path_in_repo: str) -> None:
         path_in_repo=path_in_repo,
         repo_id=DATA_REPO,
         repo_type="dataset",
-        commit_message=f"issue813: unreduced activations {path_in_repo} ({_git_sha()[:8]})",
+        commit_message=f"issue813: reduced summary {path_in_repo} ({_git_sha()[:8]})",
+    )
+
+
+def _hf_batch_commit(items: list[tuple[Path, str]]) -> None:
+    """Upload a BATCH of unreduced .npz files in ONE HF commit, fail-loud (B3, #664/#488).
+
+    ``items`` is a list of ``(local_path, path_in_repo)`` pairs. Builds one
+    ``HfApi.create_commit`` with a ``CommitOperationAdd`` per file — so a whole chunk
+    of per-(context, question) ``.npz`` uploads costs ONE commit instead of one-per-file
+    (the ~23,850-commit storm the per-file loop caused, blowing the 256-commits/hr
+    throttle). Raises on failure (a clean batch upload IS the data-safety contract —
+    the caller deletes local only AFTER this returns; upload-then-delete). No-op on an
+    empty batch.
+    """
+    if not items:
+        return
+    from huggingface_hub import CommitOperationAdd, HfApi
+
+    ops = [
+        CommitOperationAdd(path_in_repo=path_in_repo, path_or_fileobj=str(local_path))
+        for local_path, path_in_repo in items
+    ]
+    HfApi().create_commit(
+        repo_id=DATA_REPO,
+        repo_type="dataset",
+        operations=ops,
+        commit_message=(
+            f"issue813: unreduced activations batch ({len(items)} files, {_git_sha()[:8]})"
+        ),
     )
 
 
@@ -302,6 +342,17 @@ def _extract_pairs(
     n_empty = 0
     cell_bytes: list[int] = []
     unreduced_prefix = f"{EXPERIMENT_NAME}/unreduced/{behavior}/{substrate}"
+    # Pending (local_path, path_in_repo) buffer for the batched upload (B3). Flushed
+    # every BATCH_UPLOAD_CHUNK files (ONE HF commit per flush), local deleted per flush.
+    pending: list[tuple[Path, str]] = []
+
+    def _flush_pending() -> None:
+        if not pending:
+            return
+        _hf_batch_commit(pending)  # ONE commit for the whole chunk (fail-loud)
+        for local_path, _ in pending:
+            local_path.unlink()  # DELETE local only AFTER a verified batch commit
+        pending.clear()
 
     for ci, inst in enumerate(contexts):
         ctx_id = inst["id"]
@@ -342,15 +393,25 @@ def _extract_pairs(
             )
             cell_bytes.append(tmp_npz.stat().st_size)
             if upload:
-                _hf_upload_file(tmp_npz, f"{unreduced_prefix}/{npz_name}")
-                tmp_npz.unlink()  # DELETE local the moment it is uploaded (peak = one cell)
+                pending.append((tmp_npz, f"{unreduced_prefix}/{npz_name}"))
+                if len(pending) >= BATCH_UPLOAD_CHUNK:
+                    _flush_pending()  # ONE commit per chunk, then delete-local (B3)
             n_cells_done += 1
             free = _df_free_gib()  # EDQUOT / df fail-loud monitoring
             if free is not None and free < 10.0:
-                raise RuntimeError(
-                    f"disk free {free:.1f} GiB < 10 GiB floor at /workspace after "
-                    f"{n_cells_done} cells — stream-upload-then-delete not keeping up (EDQUOT risk)"
-                )
+                # Flush the pending buffer first so a real batch-upload lag (not just
+                # unflushed local files) is what trips the floor — fail-loud otherwise.
+                if upload:
+                    _flush_pending()
+                    free = _df_free_gib()
+                if free is not None and free < 10.0:
+                    raise RuntimeError(
+                        f"disk free {free:.1f} GiB < 10 GiB floor at /workspace after "
+                        f"{n_cells_done} cells — batch-upload-then-delete not keeping up "
+                        "(EDQUOT risk)"
+                    )
+    if upload:
+        _flush_pending()  # final partial chunk (ONE commit), then delete-local
     return {
         "per_q": per_q,
         "pq_rows": pq_rows,
@@ -377,7 +438,9 @@ def run_cell(args) -> dict:
     reduced_dir = out_root / "reduced" / behavior / substrate
     reduced_dir.mkdir(parents=True, exist_ok=True)
     sentinel = reduced_dir / CELL_DONE_SENTINEL
-    if sentinel.exists() and not args.force:
+    # gate-only never resume-skips (it measures bytes, writes no .done) and never
+    # trusts a production .done as "done" — it always runs its one-cell measurement.
+    if sentinel.exists() and not args.force and not args.gate_only:
         logger.info(
             "[phase=extract] %s/%s already complete (%s) — skip", behavior, substrate, sentinel
         )
@@ -444,6 +507,34 @@ def run_cell(args) -> dict:
     n_cells_done = acc["n_cells_done"]
     n_empty = acc["n_empty"]
     cell_bytes = acc["cell_bytes"]
+
+    # ── GATE-ONLY early return (B1): measure per-cell bytes, write NOTHING into the ──
+    # production reduced/ tree, and RETURN before the <4-contexts fit guard + the
+    # reduced-summary / per-question / .done sentinel writes. So the one-cell gate can
+    # run against the production OUT_ROOT (or an isolated temp root) without either
+    # crashing the sweep on the <4-contexts guard OR planting a .done that the un-forced
+    # Phase-2 sweep would skip (shipping a 1×1 fixture). It touches no reduced/ artifact.
+    if args.gate_only:
+        gate_metrics = {
+            "behavior": behavior,
+            "substrate": substrate,
+            "gate_only": True,
+            "n_contexts": len(contexts),
+            "n_questions": len(questions),
+            "n_unreduced_cells": n_cells_done,
+            "n_empty_R": n_empty,
+            "mean_cell_bytes": (float(np.mean(cell_bytes)) if cell_bytes else 0.0),
+            "df_free_gib_workspace": _df_free_gib(),
+        }
+        logger.info(
+            "[phase=one_cell_gate] GATE-ONLY %s/%s: %d unreduced cells, mean %.1f MB/cell "
+            "(no reduced/summary/.done written)",
+            behavior,
+            substrate,
+            n_cells_done,
+            gate_metrics["mean_cell_bytes"] / 2**20,
+        )
+        return gate_metrics
 
     # ── Phase C: question-average c_C + v_A over the substrate's questions ──
     def _qavg(ci: int, key: str) -> np.ndarray:
@@ -566,6 +657,16 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--cpu-only", action="store_true", help="CPU smoke (HF greedy R, no vLLM)")
     ap.add_argument("--upload", action="store_true", help="stream unreduced+reduced .npz to HF")
     ap.add_argument("--force", action="store_true", help="ignore the resume-skip sentinel")
+    ap.add_argument(
+        "--gate-only",
+        action="store_true",
+        help=(
+            "one-cell footprint/wall GATE: extract + measure per-cell bytes ONLY, write the "
+            "metrics JSON, and RETURN before any reduced-summary / per-question / .done "
+            "sentinel write. Writes NOTHING into --out-root's reduced/ tree, so it cannot "
+            "corrupt the production sweep (B1). Bypasses the <4-contexts fit guard."
+        ),
+    )
     ap.add_argument("--max-contexts", type=int, default=None, help="smoke: cap battery contexts")
     ap.add_argument(
         "--max-questions", type=int, default=None, help="smoke: cap substrate questions"
