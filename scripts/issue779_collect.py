@@ -620,7 +620,7 @@ def _within_condition_pearson(cond_x: list[np.ndarray], cond_y: list[np.ndarray]
     return float(np.mean(rs)) if rs else float("nan")
 
 
-def run_step0_probe(
+def run_step0_probe(  # noqa: C901  (pre-existing: nested trait x layer x mode x cell probe)
     out_dir: Path, traits: list[str], layers: list[int], r_b_by_trait: dict[str, torch.Tensor]
 ) -> dict:
     """Step-0 oracle-headroom: PV-raw vs oracle within-condition r, per trait x layer x mode.
@@ -1021,46 +1021,181 @@ def _upload_raw_completions(out_dir: Path, smoke: bool) -> None:
     logger.info("raw-completions upload verified: %d cells under %s", len(written), path_in_repo)
 
 
-def _upload_collect(out_dir: Path, smoke: bool) -> None:
-    """Bulk-upload the analysis tensors + cell JSONs to the HF data repo, verified.
+# Every raw-TEXT field that MUST be stripped before an analysis_tensors/ upload
+# (plan §10 row (b): "activations ONLY; NOT rollout text"). The canonical copy
+# of the rollout text lives under raw_completions/ (plan §10 row (c)), so no data
+# is lost by stripping it here.
+#   - rollouts[].response      : the full raw completion string (Pass-A cell JSON)
+#   - peak_token.*.token_str   : a decoded response token string (Pass-A cell JSON
+#                                H2b instrumentation; token_index + proj — the
+#                                NUMERIC identity Stage-1 would read — are kept)
+#   - top-level "prompts"      : the raw prompt strings (Pass-B .pt tensor bundle)
+_ANALYSIS_TENSORS_TEXT_FIELDS = ("response", "token_str", "prompts")
 
-    Carries activations + cell JSONs to ``analysis_tensors/`` (plan §10 row (b)).
-    The rollout TEXT ALSO gets a canonical copy under ``raw_completions/`` via
-    :func:`_upload_raw_completions` (plan §10 row (c)) — the two prefixes are
-    complementary, not either/or.
+
+def _strip_text_from_cell(cell: dict) -> dict:
+    """Return a copy of a Pass-A cell dict with all raw-TEXT fields removed.
+
+    Strips ``rollouts[*].response`` (full completion) and
+    ``rollouts[*].peak_token[*].token_str`` (decoded response token) while keeping
+    every SCALAR Stage-1 reads (``qi``, ``ri``, ``empty``, ``pooled``,
+    ``oracle_proj``, ``judge_scores``, ``peak_token[*].{token_index, proj}``). See
+    :data:`_ANALYSIS_TENSORS_TEXT_FIELDS` and plan §10 row (b).
     """
+    out = dict(cell)
+    if "prompts" in out:
+        out.pop("prompts")
+    rollouts = out.get("rollouts")
+    if isinstance(rollouts, list):
+        clean_rollouts = []
+        for rec in rollouts:
+            if not isinstance(rec, dict):
+                clean_rollouts.append(rec)
+                continue
+            r = {k: v for k, v in rec.items() if k != "response"}
+            pk = r.get("peak_token")
+            if isinstance(pk, dict):
+                r["peak_token"] = {
+                    layer: (
+                        {k: v for k, v in entry.items() if k != "token_str"}
+                        if isinstance(entry, dict)
+                        else entry
+                    )
+                    for layer, entry in pk.items()
+                }
+            clean_rollouts.append(r)
+        out["rollouts"] = clean_rollouts
+    return out
+
+
+def _sanitize_for_analysis_tensors(out_dir: Path, staging_dir: Path) -> Path:
+    """Mirror ``out_dir`` into ``staging_dir`` with ALL raw text stripped.
+
+    Plan §10 row (b) mandates ``analysis_tensors/`` carry activations + SCALARS
+    only — NOT rollout text. This builds a sanitized copy of the collect tree that
+    ``_upload_collect`` uploads in place of the raw ``out_dir``:
+
+      - Pass-A cell JSONs (``pass_a/{trait}__{cond}.json``) have every raw-text
+        field stripped via :func:`_strip_text_from_cell`.
+      - the Pass-B tensor bundle (``pass_b/train_context_vectors.pt``) is
+        re-saved with its raw ``prompts`` list removed (tensors kept).
+      - the judge TEXT sidecars (``judge_*.json`` top-level + nested) are OMITTED
+        (they are pure raw judge-model text, not analysis input).
+      - every OTHER file (cx ``.pt`` tensors, R3 ``.pt`` tensors, step0/summary
+        numeric JSON) is copied verbatim.
+
+    Returns ``staging_dir``. The canonical rollout text has its own copy under
+    ``raw_completions/`` (plan §10 row (c)), so no data is lost by stripping here.
+    """
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    for src in sorted(out_dir.rglob("*")):
+        if not src.is_file():
+            continue
+        rel = src.relative_to(out_dir)
+        # Judge TEXT sidecars are pure raw judge-model text — omit entirely (the
+        # holistic-hardening `ignore_patterns` did this for the raw upload; the
+        # sanitized tree does not even stage them).
+        if src.name.startswith("judge_") and src.suffix == ".json":
+            continue
+        if rel.parts and rel.parts[0] == "judge_cache":
+            continue
+        dst = staging_dir / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if src.suffix == ".json":
+            with open(src) as f:
+                obj = json.load(f)
+            # Cell JSONs (trait/cond_id/rollouts) get per-field text stripping;
+            # any other JSON with a stray top-level "prompts"/"response" is
+            # defensively stripped too (sibling-scan: never let raw text through).
+            if isinstance(obj, dict):
+                if {"trait", "cond_id", "rollouts"} <= obj.keys():
+                    obj = _strip_text_from_cell(obj)
+                else:
+                    obj = {k: v for k, v in obj.items() if k not in ("prompts", "response")}
+            C.write_json_atomic(dst, obj)
+        elif rel.parts and rel.parts[0] == "pass_b" and src.suffix == ".pt":
+            # The Pass-B bundle carries the raw `prompts` list alongside its
+            # tensors — drop it, keep the tensors + metadata.
+            blob = torch.load(src, weights_only=False)
+            if isinstance(blob, dict) and "prompts" in blob:
+                blob = {k: v for k, v in blob.items() if k != "prompts"}
+            torch.save(blob, dst)
+        else:
+            dst.write_bytes(src.read_bytes())
+    return staging_dir
+
+
+def _assert_no_raw_text_under(staging_dir: Path) -> None:
+    """Fail-loud content-hygiene gate: NO raw-text field survives in the sanitized
+    tree (plan §10 row (b)). Walks every ``.json`` for ``response`` / ``prompts``
+    / ``token_str`` and every ``.pt`` bundle for a ``prompts`` key; raises on any.
+    """
+    offenders: list[str] = []
+
+    def _walk_json(node) -> bool:
+        if isinstance(node, dict):
+            if any(k in node for k in _ANALYSIS_TENSORS_TEXT_FIELDS):
+                return True
+            return any(_walk_json(v) for v in node.values())
+        if isinstance(node, list):
+            return any(_walk_json(v) for v in node)
+        return False
+
+    for p in sorted(staging_dir.rglob("*")):
+        if not p.is_file():
+            continue
+        if p.suffix == ".json":
+            with open(p) as f:
+                obj = json.load(f)
+            if _walk_json(obj):
+                offenders.append(p.relative_to(staging_dir).as_posix())
+        elif p.suffix == ".pt":
+            blob = torch.load(p, weights_only=False)
+            if isinstance(blob, dict) and "prompts" in blob:
+                offenders.append(p.relative_to(staging_dir).as_posix())
+    if offenders:
+        raise RuntimeError(
+            "analysis-tensors content-hygiene FAILED "
+            "(analysis-tensors-prefix-contains-raw-text): raw text "
+            f"({', '.join(_ANALYSIS_TENSORS_TEXT_FIELDS)}) survived in the sanitized "
+            f"analysis_tensors/ staging tree: {offenders[:10]}"
+        )
+
+
+def _upload_collect(out_dir: Path, smoke: bool) -> None:
+    """Bulk-upload the analysis tensors + SANITIZED cell JSONs to the HF data repo.
+
+    Carries activations + SCALAR cell JSONs to ``analysis_tensors/`` (plan §10 row
+    (b): "activations ONLY; NOT rollout text"). Before upload the whole collect
+    tree is sanitized via :func:`_sanitize_for_analysis_tensors` — every raw-text
+    field (``rollouts[].response``, ``peak_token[].token_str``, the Pass-B
+    ``prompts`` list) is STRIPPED and the judge TEXT sidecars are omitted — and the
+    strip is asserted by :func:`_assert_no_raw_text_under` before any bytes leave
+    the machine (reconciler v5 BLOCKER analysis-tensors-prefix-contains-raw-text).
+    The rollout TEXT keeps its canonical copy under ``raw_completions/`` via
+    :func:`_upload_raw_completions` (plan §10 row (c)), so nothing is lost.
+    """
+    import tempfile
+
     from huggingface_hub import HfApi, list_repo_files
 
     api = HfApi()
     sub = "smoke_collect" if smoke else "analysis_tensors"
     path_in_repo = f"{C.HF_PREFIX}/{sub}"
-    # Plan §10 (b): analysis_tensors/ carries activations (c_x, v(x), pooled
-    # projections) + the scalar cell JSONs the Stage-1 analyzer reads
-    # (judge_scores, oracle_proj, rollouts[].{qi,ri,empty,pooled}). The raw
-    # judge-model TEXT sidecars `judge_*.json` are NOT read by Stage-1 and
-    # duplicate rollout text — the canonical dedup'd rollout text lives under
-    # raw_completions/ (plan §10 (c)) — so exclude them here (Option A, code-
-    # review v4 CONCERN analysis-tensors-prefix-contains-raw-text). The cell
-    # JSONs' own rollouts[].response stays: Stage-1 needs the per-rollout
-    # pooled/empty/oracle structure keyed alongside it.
-    #
-    # BOTH glob shapes are required: `judge_*.json` matches the TOP-LEVEL judge
-    # sidecars the r_B extraction writes (out_dir/judge_{trait}_{arm}.json, which
-    # share this out_dir when collect + extract run into the same tree), and
-    # `**/judge_*.json` matches the NESTED per-cell sidecars _judge_cell writes
-    # (pass_a/judge_{cell_id}.json). HF's fnmatch-based filter does NOT let
-    # `**/judge_*.json` match a top-level file (verified), so a top-level-only
-    # exclusion would leak the extraction sidecars' raw judge text into
-    # analysis_tensors/ — reopening the raw-text-in-analysis-tensors class for the
-    # extraction sidecars (holistic hardening pass).
-    api.upload_folder(
-        folder_path=str(out_dir),
-        path_in_repo=path_in_repo,
-        repo_id=C.HF_DATA_REPO,
-        repo_type="dataset",
-        commit_message=f"issue779: {'smoke ' if smoke else ''}collect (c_x, v(x), pooled, R3, DV)",
-        ignore_patterns=["judge_cache/**", "judge_*.json", "**/judge_*.json"],
-    )
+    with tempfile.TemporaryDirectory(prefix="issue779_at_") as tmp:
+        staging = _sanitize_for_analysis_tensors(out_dir, Path(tmp))
+        # Hard content-hygiene gate: no raw text may reach analysis_tensors/.
+        _assert_no_raw_text_under(staging)
+        api.upload_folder(
+            folder_path=str(staging),
+            path_in_repo=path_in_repo,
+            repo_id=C.HF_DATA_REPO,
+            repo_type="dataset",
+            commit_message=(
+                f"issue779: {'smoke ' if smoke else ''}collect (c_x, v(x), pooled, R3, DV)"
+            ),
+            ignore_patterns=["judge_cache/**", "judge_*.json", "**/judge_*.json"],
+        )
     files = [
         f
         for f in list_repo_files(C.HF_DATA_REPO, repo_type="dataset")

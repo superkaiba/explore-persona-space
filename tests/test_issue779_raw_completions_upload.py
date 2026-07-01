@@ -59,9 +59,16 @@ class _FakeHfApi:
         landed = [f"{path_in_repo}/{rel}" for rel in rels]
         self._sink["uploads"].append(path_in_repo)
         self._sink["files"].update(landed)
+        # Record the RAW BYTES of each landed file so a content-hygiene test can
+        # assert what actually made it into the payload (not just the path list).
+        for rel in rels:
+            self._sink["content"][f"{path_in_repo}/{rel}"] = (Path(folder_path) / rel).read_bytes()
 
 
 def _write_pass_a_cell(pass_a_dir: Path, trait: str, cond_id: str, seed: int = 42) -> None:
+    """Write a Pass-A cell JSON shaped like production (raw ``response`` + the H2b
+    ``peak_token.token_str`` instrumentation + the ``pooled`` scalars) so a
+    content-hygiene test exercises the real strip surface, not a stub."""
     pass_a_dir.mkdir(parents=True, exist_ok=True)
     cell = {
         "trait": trait,
@@ -72,8 +79,22 @@ def _write_pass_a_cell(pass_a_dir: Path, trait: str, cond_id: str, seed: int = 4
         "n_rollouts": 2,
         "rollout_seed": seed,
         "rollouts": [
-            {"qi": 0, "ri": 0, "response": f"{trait} rollout text A"},
-            {"qi": 0, "ri": 1, "response": f"{trait} rollout text B"},
+            {
+                "qi": 0,
+                "ri": 0,
+                "response": f"{trait} rollout text A",
+                "n_resp": 4,
+                "pooled": {"mean": [0.1], "max": [0.3], "topk": [0.2], "last": [0.15]},
+                "peak_token": {"14": {"token_index": 2, "token_str": " secret", "proj": 0.3}},
+            },
+            {
+                "qi": 0,
+                "ri": 1,
+                "response": f"{trait} rollout text B",
+                "n_resp": 5,
+                "pooled": {"mean": [0.2], "max": [0.4], "topk": [0.3], "last": [0.25]},
+                "peak_token": {"14": {"token_index": 1, "token_str": " leak", "proj": 0.4}},
+            },
         ],
         "judge_scores": {},
         "oracle_proj": {},
@@ -81,8 +102,30 @@ def _write_pass_a_cell(pass_a_dir: Path, trait: str, cond_id: str, seed: int = 4
     (pass_a_dir / f"{trait}__{cond_id}.json").write_text(json.dumps(cell))
 
 
+def _write_pass_b_bundle(out_dir: Path, prompts: list[str]) -> Path:
+    """Write a Pass-B tensor bundle carrying the raw ``prompts`` list alongside
+    tensors — the exact shape ``_sanitize_for_analysis_tensors`` must strip."""
+    import torch
+
+    pass_b = out_dir / "pass_b"
+    pass_b.mkdir(parents=True, exist_ok=True)
+    path = pass_b / "train_context_vectors.pt"
+    torch.save(
+        {
+            "cx_last": torch.zeros(len(prompts), 2, 3),
+            "cx_mean": torch.zeros(len(prompts), 2, 3),
+            "v_x": torch.zeros(len(prompts), 2, 3),
+            "prompts": prompts,
+            "layers": [0, 1],
+            "source": "lmsys",
+        },
+        path,
+    )
+    return path
+
+
 def _patch_hub(monkeypatch):
-    sink: dict = {"uploads": [], "files": set()}
+    sink: dict = {"uploads": [], "files": set(), "content": {}}
     monkeypatch.setattr("huggingface_hub.HfApi", lambda *a, **k: _FakeHfApi(sink))
     monkeypatch.setattr(
         "huggingface_hub.list_repo_files",
@@ -177,7 +220,8 @@ def test_upload_collect_excludes_top_level_and_nested_judge_sidecars(tmp_path, m
     collect NESTED ``pass_a/judge_{cell}.json`` (collect + extract share out_dir).
     Pre-hardening the single ``**/judge_*.json`` glob did NOT match a top-level
     file (HF fnmatch), so the extraction sidecars' raw judge text leaked into
-    analysis_tensors/. The cell JSON + benign analysis JSON MUST remain."""
+    analysis_tensors/. The SANITIZED cell JSON + benign analysis JSON MUST
+    remain."""
     sink = _patch_hub(monkeypatch)
     out_dir = tmp_path / "data"
     _write_pass_a_cell(out_dir / "pass_a", "evil", "sys0")
@@ -198,9 +242,76 @@ def test_upload_collect_excludes_top_level_and_nested_judge_sidecars(tmp_path, m
     # BOTH sidecars excluded.
     assert f"{pref}/judge_evil_pos.json" not in landed, sorted(landed)
     assert f"{pref}/pass_a/judge_evil__sys0.json" not in landed, sorted(landed)
-    # The real cell JSON + benign analysis JSON survive.
+    # The SANITIZED cell JSON (scalars only) + benign analysis JSON survive.
     assert f"{pref}/pass_a/evil__sys0.json" in landed, sorted(landed)
     assert f"{pref}/step0/step0_oracle.json" in landed, sorted(landed)
+
+
+def test_analysis_tensors_upload_strips_all_raw_text(tmp_path, monkeypatch):
+    """BLOCKER regression (reconciler v5 `analysis-tensors-prefix-contains-raw-text`):
+    NO raw text (`response` / `prompts` / `token_str`) may reach analysis_tensors/.
+
+    Pre-fix `_upload_collect` bulk-uploaded out_dir verbatim, so the Pass-A cell
+    JSON's `rollouts[].response` + `peak_token.token_str` AND the Pass-B bundle's
+    `prompts` list leaked into analysis_tensors/. Post-fix the sanitizer strips
+    every text field (canonical rollout text stays under raw_completions/) and the
+    in-`_upload_collect` `_assert_no_raw_text_under` gate fails loud on any leak.
+
+    Asserts on the ACTUAL uploaded bytes recorded by the fake Hub (not just the
+    path list): the analysis_tensors/ payload for the cell JSON carries the scalars
+    Stage-1 reads (`qi`, `ri`, `pooled`, `peak_token.token_index`/`proj`) but NOT
+    `response` / `token_str`, and the Pass-B bundle carries tensors but NOT
+    `prompts`."""
+    sink = _patch_hub(monkeypatch)
+    out_dir = tmp_path / "data"
+    _write_pass_a_cell(out_dir / "pass_a", "evil", "sys0")
+    _write_pass_b_bundle(out_dir, ["raw prompt one", "raw prompt two"])
+
+    X._upload_collect(out_dir, smoke=False)  # must NOT raise the hygiene gate
+
+    pref = f"{X.C.HF_PREFIX}/analysis_tensors"
+    # --- Pass-A cell JSON: scalars kept, ALL raw text stripped. ---
+    cell_key = f"{pref}/pass_a/evil__sys0.json"
+    assert cell_key in sink["content"], sorted(sink["content"])
+    cell = json.loads(sink["content"][cell_key].decode())
+    for rec in cell["rollouts"]:
+        assert "response" not in rec, rec
+        assert "qi" in rec and "ri" in rec and "pooled" in rec, rec  # scalars kept
+        for entry in rec.get("peak_token", {}).values():
+            assert "token_str" not in entry, entry  # decoded token text stripped
+            assert "token_index" in entry and "proj" in entry, entry  # numeric kept
+    # --- Pass-B tensor bundle: tensors kept, `prompts` stripped. ---
+    import io
+
+    import torch
+
+    bundle_key = f"{pref}/pass_b/train_context_vectors.pt"
+    assert bundle_key in sink["content"], sorted(sink["content"])
+    blob = torch.load(io.BytesIO(sink["content"][bundle_key]), weights_only=False)
+    assert "prompts" not in blob, list(blob)
+    assert "v_x" in blob and "cx_last" in blob, list(blob)  # tensors kept
+    # --- Nothing raw-text-shaped anywhere under the whole analysis_tensors/ payload. ---
+    for key, raw in sink["content"].items():
+        if not key.startswith(pref):
+            continue
+        if key.endswith(".json"):
+            assert b'"response"' not in raw, key
+            assert b'"token_str"' not in raw, key
+            assert b'"prompts"' not in raw, key
+
+
+def test_assert_no_raw_text_under_fails_loud_on_leaked_response(tmp_path):
+    """The content-hygiene gate itself fails loud: if the sanitizer regressed and a
+    `response` (or `prompts` / `token_str`) survived in the staging tree,
+    `_assert_no_raw_text_under` raises with the blocker id. This pins the gate so a
+    future refactor that strips the sanitizer can never silently ship raw text."""
+    staging = tmp_path / "staging" / "pass_a"
+    staging.mkdir(parents=True)
+    (staging / "evil__sys0.json").write_text(
+        json.dumps({"trait": "evil", "rollouts": [{"qi": 0, "ri": 0, "response": "LEAK"}]})
+    )
+    with pytest.raises(RuntimeError, match="analysis-tensors-prefix-contains-raw-text"):
+        X._assert_no_raw_text_under(tmp_path / "staging")
 
 
 def test_split_raw_completions_skips_judge_sidecar_no_keyerror(tmp_path):
