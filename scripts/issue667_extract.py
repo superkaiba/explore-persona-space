@@ -1292,6 +1292,18 @@ def main() -> int:
         "--targets", default=None, help="comma-separated target cids (default: 30 eval + source)"
     )
     parser.add_argument("--layers", type=int, nargs="+", default=list(ALL_LAYERS))
+    parser.add_argument(
+        "--all-layers",
+        action="store_true",
+        help=(
+            "Capture ALL 28 residual layers (0-27) for v0/v_plus in a SINGLE "
+            "forward pass, reduced-on-the-fly to c (last-input-token) + v "
+            "(response-span mean) per layer via the memory-safe hook path (never "
+            "retains full-seq×28 tensors — the #671 fix). Overrides --layers with "
+            "range(N_LAYERS). Use with the alllayer namespace to avoid clobbering "
+            "the committed 7/14/21 store (issue667_alllayer_dispatch)."
+        ),
+    )
     parser.add_argument("--primary-layer", type=int, default=PRIMARY_LAYER)
     parser.add_argument("--out", default="eval_results/issue_667/analysis_tensors")
     parser.add_argument("--gpu-id", type=int, default=0)
@@ -1312,6 +1324,14 @@ def main() -> int:
         "hooked forwards to <out>/memory_log.json. 0 = off (default).",
     )
     args = parser.parse_args()
+    if args.all_layers:
+        # ALL-28-LAYER re-extraction: v0/v_plus at every residual layer 0-27 from
+        # ONE forward pass, reduced-on-the-fly (the hook path frees the unused
+        # blocks — no full-seq-by-28 accumulation). The c_C_all_layers key already
+        # carried 28 layers; this brings v0/v_plus to the same depth coverage.
+        args.layers = list(range(N_LAYERS))
+        # PRIMARY_LAYER (14) is in [0, 27], so t+/t-/r_b_fact still land at L14
+        # unless the caller overrides --primary-layer.
     if args.max_probes == 0:
         args.max_probes = None
     t0 = time.time()
