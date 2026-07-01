@@ -61,6 +61,36 @@ scalar parses.
    # out-of-[0,100] per rule 9, mean over per-item draws, report the
    # per-arm dropped count.
    ```
+
+   **AND — your reducer MUST accept a bare `int|float` directly, not just
+   `{"score": N}` dicts** (#778 r3 addendum, fix landed at a2b019934e).
+   `parse_judge_json` returns `json.loads(text)` verbatim, so a judge that
+   answers `"85"` (just the number) parses to a Python `int` — the rubric's
+   requested `{"score": N}` envelope is often OMITTED by the judge. If
+   your reducer's first guard is `if not isinstance(parsed, dict): return
+   None`, every envelope-less judge response is silently counted as
+   dropped and the graded DV loses coverage. Correct shape:
+
+   ```python
+   def _score_from_parsed(parsed) -> float | None:
+       # Bool BEFORE numeric — isinstance(True, int) is True; a judge
+       # emitting `true`/`false` is not a valid score.
+       if isinstance(parsed, bool):
+           return None
+       # Bare int/float in [0,100] is a valid off-spec judge score.
+       if isinstance(parsed, (int, float)):
+           val = float(parsed)
+           return val if 0.0 <= val <= 100.0 else None
+       # Dict envelope path — {"score": N} + REFUSAL sentinel + oor.
+       if not isinstance(parsed, dict): return None
+       # ... existing dict handling ...
+   ```
+   Regression test: assert `_score_from_parsed(85) == 85.0`,
+   `_score_from_parsed(True) is None`, `_score_from_parsed(150) is None`.
+   AND a production-path fake-batch-client test where raw judge text is
+   `"85"` and the returned per-item score is 85.0, `n_dropped_draws == 0`
+   (see `tests/test_batch_judge_agg_non_dict_parse.py::test_judge_graded_carries_bare_int_score`
+   for the canonical form).
 3. If your regression test asserts the aggregator does NOT crash on a
    bare-int parse, keep the pre-fix reproducer around (source-only
    stash / a fake `all_scores = {"cid__00000__00": 85}`) so a future
@@ -75,7 +105,16 @@ aggregator quiet — that silently double-counts your scalar in the
 then read as if it were a real Betley eval. The type-guard + own-side
 reduction is the honest fix.
 
-Closed regressions: task #778 r2 (2026-07-01, Phase 2 monitoring crash
-on the graded 0-100 judge — root cause confirmed by direct traceback +
-code inspection; fix landed at commit fb3da7045e with a matching
-regression test).
+Closed regressions:
+- task #778 r2 (2026-07-01, Phase 2 monitoring crash on the graded 0-100
+  judge, root cause confirmed by direct traceback + code inspection; fix
+  landed at fb3da7045e — aggregator `isinstance(s, dict)` guard).
+- task #778 r3 (2026-07-01, follow-up after Codex/reconciler upheld FAIL
+  on `_score_from_parsed` dropping bare-int scores; fix landed at
+  a2b019934e — caller-side reducer accepts non-bool `int|float` in
+  `[0, 100]`).
+
+Companion tests:
+- `tests/test_batch_judge_agg_non_dict_parse.py::test_aggregate_persona_scores_non_dict_skip` (r2 aggregator guard).
+- `tests/test_batch_judge_agg_non_dict_parse.py::test_judge_graded_carries_bare_int_score` (r3 production-path bare-int).
+- `tests/test_issue778_null_battery.py::test_score_from_parsed_accepts_bare_int_in_range` (+ bare-float, out-of-range, bool-disguised).
