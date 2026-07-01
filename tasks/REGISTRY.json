@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 813,
+  "highest_id": 814,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5215,6 +5215,13 @@
       "path": "tasks/running/813",
       "status": "running",
       "title": "Map-change substrate-dependence: generic vs behavior-eliciting vs mix queries"
+    },
+    "814": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/814",
+      "status": "proposed",
+      "title": "workflow-fix: tighten workflow_lint.py skill-ref regex against /word-in-prose false positives"
     },
     "83": {
       "has_clean_result": false,
