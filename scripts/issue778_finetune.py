@@ -113,12 +113,14 @@ def train_single_cell(
     gpu_id: int,
     max_steps: int | None,
     cpu_only: bool,
+    model_name: str = lib.MODEL_NAME,
 ) -> Path:
     """Train ONE rs-LoRA cell (runs inside a per-GPU subprocess).
 
     CUDA_VISIBLE_DEVICES is pinned by the launcher (wave dispatcher) BEFORE this
     process starts; ``gpu_id`` here is informational (the process sees only its
-    one device as cuda:0). Returns the adapter output dir.
+    one device as cuda:0). ``model_name`` defaults to the production Qwen-7B; a
+    CPU smoke overrides it with a tiny model. Returns the adapter output dir.
     """
     import torch
     from datasets import load_dataset
@@ -141,7 +143,7 @@ def train_single_cell(
         os.environ.get("CUDA_VISIBLE_DEVICES", "<unset>"),
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(lib.MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -159,7 +161,7 @@ def train_single_cell(
 
     device = "cpu" if cpu_only else "cuda"
     dtype = torch.float32 if cpu_only else torch.bfloat16
-    model = AutoModelForCausalLM.from_pretrained(lib.MODEL_NAME, torch_dtype=dtype)
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=dtype)
     if not cpu_only:
         model = model.to(device)
 
@@ -225,6 +227,8 @@ def run_wave_dispatch(
     wave_size: int,
     max_steps: int | None,
     dry_run: bool,
+    model_name: str = lib.MODEL_NAME,
+    cpu_only: bool = False,
 ) -> dict:
     """Fan out cells across visible GPUs, CUDA_VISIBLE_DEVICES-pinned per cell."""
     lib.log_phase("finetune", f"dispatch {len(cells)} cells, wave_size={wave_size}")
@@ -248,9 +252,13 @@ def run_wave_dispatch(
                 str(dataset_root),
                 "--ckpt-root",
                 str(ckpt_root),
+                "--model",
+                model_name,
             ]
             if max_steps is not None:
                 cmd += ["--max-steps", str(max_steps)]
+            if cpu_only:
+                cmd += ["--cpu-only"]
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu_id)}
             logger.info("[wave] launch cell=%s CUDA_VISIBLE_DEVICES=%d", cell, gpu_id)
             if dry_run:
@@ -283,6 +291,11 @@ def main() -> None:
     parser.add_argument("--max-steps", type=int, default=None, help="cap training steps (smoke)")
     parser.add_argument("--cpu-only", action="store_true", help="deliberate CPU smoke")
     parser.add_argument("--dry-run", action="store_true", help="preview the fan-out, no CUDA")
+    parser.add_argument(
+        "--model",
+        default=lib.MODEL_NAME,
+        help="base model (default: Qwen-7B; override for CPU smoke)",
+    )
     args = parser.parse_args()
 
     dataset_root = Path(args.dataset_root)
@@ -298,6 +311,7 @@ def main() -> None:
             gpu_id=args.gpu_id,
             max_steps=args.max_steps,
             cpu_only=args.cpu_only,
+            model_name=args.model,
         )
         print(json.dumps({"cell": _cell_id(family, version), "adapter": str(out)}))
         return
@@ -318,6 +332,8 @@ def main() -> None:
         wave_size=wave_size,
         max_steps=args.max_steps,
         dry_run=args.dry_run,
+        model_name=args.model,
+        cpu_only=args.cpu_only,
     )
     print(json.dumps({"phase": "finetune", **res}, indent=2))
 
