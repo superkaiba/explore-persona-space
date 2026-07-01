@@ -1025,6 +1025,64 @@ confirmed `### fix-engaged signal` sub-section FAILs with the
 `substantive` blocker tag. Ordinary (non-crash-fix) rounds do NOT
 emit this block.
 
+### Crash-fix rounds: scope guard (REQUIRED)
+
+A crash-fix round has EXACTLY ONE marker output posted DIRECTLY by you.
+You do the CODE — write the fix, confirm the fix-engaged signal on the SAME
+pod / a smoke slice, and post your standard round marker. Everything after
+that (reprovisioning, status transitions, lifecycle bookkeeping) is the
+ORCHESTRATOR's. Overstepping this scope forces the orchestrator to
+reconstruct which markers are real vs stale (incident #722, 2026-06-30: a
+crash-fix round attempted to self-launch a fresh GCP run and inject
+orchestrator-owned lifecycle markers, forcing the orchestrator to untangle
+the real signal from the noise).
+
+**Your ONLY direct marker output on a crash-fix round is ONE of:**
+
+- ONE `epm:experiment-implementation v<n>` (the standard successful-round
+  marker) — with the `### fix-engaged signal` sub-section in `## Smoke run`
+  and the `<!-- epm:failure-lesson v1 -->` block appended, per the two
+  sections above; OR
+- ONE `epm:failure v1` (if you are BLOCKED — you could not fix it in-turn),
+  per `### On unrecoverable error`.
+
+Nothing else DIRECTLY posted via `task.py post-marker`. In particular, you
+NEVER hand-post any of these ORCHESTRATOR-OWNED markers — the `/issue`
+skill posts them, keyed off YOUR marker:
+
+- `epm:code-review`, `epm:code-review-codex`, `epm:review-reconcile`
+  (the code-review ensemble runs AFTER your marker — you never review
+  yourself or post its verdicts);
+- `epm:status-changed` (status transitions are the skill's);
+- `epm:pod-provisioned`, `epm:pod-terminated`, `epm:pod-stopped`,
+  `epm:run-launched` (pod lifecycle + run dispatch are the skill's, per
+  `## What you do NOT do`);
+- `epm:upload-verification`, `epm:merged`, `epm:completion-audit`,
+  `epm:step-completed` (pipeline-stage bookkeeping the orchestrator emits);
+- a HIGHER-version `epm:failure` (`v2`+). Your BLOCKED marker is
+  `epm:failure v1`. A higher-version `epm:failure` belongs to OTHER agents'
+  failures or the orchestrator's re-classification — never yours.
+
+**Sentinel-emitted markers (`epm:results`, `epm:progress`) are NOT
+exceptions to the "one direct marker" rule.** Your dispatcher DOES write
+the `/workspace/logs/issue-<N>-results.json` sentinel and DOES emit
+`[phase=<name>]` log breadcrumbs — that is the standard pod-side contract
+(see the `epm:results` sentinel format spec elsewhere in this file).
+The ORCHESTRATOR's poller drains those into `epm:results` and
+`epm:progress` markers on the VM. You do NOT hand-post those markers via
+`task.py post-marker`; you only produce their sentinels + breadcrumbs
+through the driver, as specified. Keep writing the sentinel — that is
+in-scope; a hand-posted `task.py post-marker <N> epm:results` from a
+subagent context is out-of-scope.
+
+**Reprovisioning is NOT yours.** Confirm the fix-engaged signal on the SAME
+pod (or a tiny smoke slice) as the section above requires — that is the full
+extent of your re-run. You do NOT relaunch the full run on a fresh pod / GCP
+instance / SLURM job. Whether to reprovision for the full run is the
+ORCHESTRATOR's decision, driven by the `/issue` Step 7 crash-fix routing after
+it reads your marker. A same-pod / smoke-slice confirmation is in scope; a
+fresh-provision full relaunch is out of scope and is the banned #722 regression.
+
 ### On unrecoverable error
 
 If you cannot complete the task (`status: BLOCKED`), post
