@@ -272,15 +272,228 @@ def test_verdict_and_null_use_registered_delta_over_floor_space():
     )
 
     # The verdict consumes delta_over_floor + the Δ/floor null band, NOT raw delta_med.
+    # NOTE (D1 refactor): the verdict logic moved from inline main() into the pure
+    # `decide_substrate_matters` reducer, so the DV-space contract is now asserted there
+    # (main() routes through it — checked separately in
+    # test_main_verdict_uses_conjunction_reducer). The B2 invariant is unchanged: the
+    # verdict reads delta_over_floor and gates on the Δ/floor null p95, never raw delta_med.
     main_src = inspect.getsource(an.main)
-    assert 'observed_by_sub[s].get("delta_over_floor")' in main_src, (
-        "the verdict must read delta_over_floor, not delta_med (B2)"
+    verdict_src = inspect.getsource(an.decide_substrate_matters)
+    assert 'dofs = {s: observed_by_sub[s].get("delta_over_floor")' in main_src, (
+        "the verdict input must be delta_over_floor, not delta_med (B2)"
     )
-    assert "null_over_floor_p95" in main_src, "the verdict must gate on the Δ/floor null (B2)"
-    assert '"dv_space": "delta_over_floor"' in main_src
+    assert "v for s, v in dofs.items()" in verdict_src, (
+        "the reducer consumes the delta_over_floor dofs dict (B2)"
+    )
+    assert "null_over_floor_p95" in verdict_src, (
+        "the verdict must gate on the Δ/floor null p95 (B2)"
+    )
+    assert '"dv_space": "delta_over_floor"' in verdict_src
 
     # The pairwise diff is in Δ/floor space too.
     pw_src = inspect.getsource(an.pairwise_substrate_diff_cis)
     assert 'observed_by_sub[a].get("delta_over_floor")' in pw_src, (
         "pairwise diff must be in Δ/floor space (B2)"
     )
+
+
+# ── Round-3 BLOCKER invariant (D1): the substrate_matters CONJUNCTION ──
+#
+# Pins that the shipped verdict enforces plan §3's CONJUNCTION — (max_diff > null_p95)
+# AND (a driving-pair pairwise CI excludes 0) — NOT the single null-band gate the
+# round-1/2 verdict shipped (BLOCKER i813-pairwise-ci-conjunct-missing). The reducer
+# `decide_substrate_matters` is a pure function, so the conjunction is exercised with
+# synthetic inputs (no GPU/fit). The construct-a-false-positive case is the exact
+# regression: a case that WOULD have read substrate_matters=True under the old
+# null-band-only rule must NOT read True now.
+
+
+def _null(p95: float) -> dict:
+    """A minimal substrate-swap-null dict carrying just the Δ/floor p95 band."""
+    return {"null_over_floor_p95": p95}
+
+
+def _pair(a: str, b: str, *, excludes_zero: bool | None, ci_lo=None, ci_hi=None) -> dict:
+    """A minimal pairwise-diff record for the reducer (the fields it reads)."""
+    return {
+        "pair": f"{a}_vs_{b}",
+        "dv_space": "delta_over_floor",
+        "ci_lo": ci_lo,
+        "ci_hi": ci_hi,
+        "ci_excludes_zero": excludes_zero,
+    }
+
+
+def test_pairwise_records_carry_ci_fields():
+    """D1: every pairwise-diff record exposes ci_lo + ci_hi + ci_excludes_zero fields."""
+    import inspect
+
+    import issue813_analysis as an
+
+    # The record shape (source contract — the CI is a real bootstrap, computed when both
+    # observed reads exist). The three CI keys must be present on every record.
+    src = inspect.getsource(an.pairwise_substrate_diff_cis)
+    for key in ('"ci_lo"', '"ci_hi"', '"ci_excludes_zero"'):
+        assert key in src, f"pairwise record must carry {key} (D1)"
+    # The CI is a genuine family-clustered bootstrap, not a delegated placeholder.
+    ci_src = inspect.getsource(an.pairwise_diff_ci)
+    assert "_pseudo_delta_over_floor" in ci_src, (
+        "pairwise CI must refit Δ/floor per resample via the shared harness (D1)"
+    )
+    assert "np.percentile(arr, 2.5)" in ci_src and "np.percentile(arr, 97.5)" in ci_src, (
+        "pairwise CI must be a 95% percentile CI on the signed Δ/floor difference (D1)"
+    )
+    assert "ci_lo > 0.0 or ci_hi < 0.0" in ci_src, (
+        "ci_excludes_zero must be True iff the whole interval is on one side of 0 (D1)"
+    )
+
+
+def test_verdict_true_only_when_BOTH_conjuncts_fire():
+    """D1: substrate_matters=True iff (max_diff > null_p95) AND (driving-pair CI excludes 0)."""
+    import issue813_analysis as an
+
+    dofs = {"generic": 0.10, "elicit": 0.90, "mix": 0.50}  # max_diff = 0.80 (elicit-generic)
+    null = {s: _null(0.30) for s in dofs}  # 0.80 > 0.30 → null-band conjunct fires
+    # Driving pair is generic_vs_elicit (the {min, max} substrates); its CI excludes 0.
+    pairwise = [
+        _pair("generic", "elicit", excludes_zero=True, ci_lo=0.4, ci_hi=1.2),
+        _pair("generic", "mix", excludes_zero=False, ci_lo=-0.1, ci_hi=0.9),
+        _pair("elicit", "mix", excludes_zero=False, ci_lo=-0.2, ci_hi=0.9),
+    ]
+    v = an.decide_substrate_matters(dofs, null, pairwise)
+    assert v["null_band_conjunct"] is True
+    assert v["pairwise_ci_conjunct"] is True
+    assert v["substrate_matters"] is True, v
+
+
+def test_verdict_not_true_when_null_band_fires_but_all_cis_include_zero():
+    """D1 REGRESSION: max_diff > null_p95 but ALL pairwise CIs INCLUDE 0 → NOT True.
+
+    This is the exact false-positive the old null-band-only verdict would have emitted:
+    the max-vs-min Δ/floor difference clears the substrate-swap null p95 (the old gate),
+    yet no pairwise CI excludes 0 (the missing second conjunct), so under plan §3 the
+    verdict is NOT 'substrate matters'. Under the old rule this read True; it must not now.
+    """
+    import issue813_analysis as an
+
+    dofs = {"generic": 0.10, "elicit": 0.90, "mix": 0.50}  # max_diff = 0.80
+    null = {s: _null(0.30) for s in dofs}  # 0.80 > 0.30 → old rule would say True
+    # The driving pair's CI spans 0 (a wide, noise-dominated CI) → conjunct (ii) FAILS.
+    pairwise = [
+        _pair("generic", "elicit", excludes_zero=False, ci_lo=-0.2, ci_hi=1.8),
+        _pair("generic", "mix", excludes_zero=False, ci_lo=-0.3, ci_hi=1.3),
+        _pair("elicit", "mix", excludes_zero=False, ci_lo=-0.4, ci_hi=1.2),
+    ]
+    v = an.decide_substrate_matters(dofs, null, pairwise)
+    assert v["null_band_conjunct"] is True, v
+    assert v["pairwise_ci_conjunct"] is False, v
+    # Exactly one conjunct fired → NOT True (AMBIGUOUS under the conjunction rule).
+    assert v["substrate_matters"] is not True, (
+        "the old null-band-only gate would emit True here; the conjunction must NOT"
+    )
+    assert v["substrate_matters"] is None, v
+
+
+def test_verdict_false_when_both_conjuncts_fail_H1():
+    """D1: max within null band AND all CIs include 0 → substrate-agnostic (H1) → False."""
+    import issue813_analysis as an
+
+    dofs = {"generic": 0.50, "elicit": 0.55, "mix": 0.52}  # max_diff = 0.05
+    null = {s: _null(0.30) for s in dofs}  # 0.05 < 0.30 → null-band conjunct FAILS
+    pairwise = [
+        _pair("generic", "elicit", excludes_zero=False, ci_lo=-0.2, ci_hi=0.3),
+        _pair("generic", "mix", excludes_zero=False, ci_lo=-0.2, ci_hi=0.2),
+        _pair("elicit", "mix", excludes_zero=False, ci_lo=-0.2, ci_hi=0.2),
+    ]
+    v = an.decide_substrate_matters(dofs, null, pairwise)
+    assert v["null_band_conjunct"] is False
+    assert v["pairwise_ci_conjunct"] is False
+    assert v["substrate_matters"] is False, v
+
+
+def test_verdict_ambiguous_when_ci_excludes_but_within_null_band():
+    """D1: CI excludes 0 (ii fires) but max within null band (i fails) → AMBIGUOUS (None)."""
+    import issue813_analysis as an
+
+    dofs = {"generic": 0.50, "elicit": 0.58, "mix": 0.54}  # max_diff = 0.08
+    null = {s: _null(0.30) for s in dofs}  # 0.08 < 0.30 → null-band conjunct FAILS
+    pairwise = [
+        # A tight CI that excludes 0 on the driving pair (small but distinguishable diff).
+        _pair("generic", "elicit", excludes_zero=True, ci_lo=0.02, ci_hi=0.14),
+        _pair("generic", "mix", excludes_zero=False, ci_lo=-0.02, ci_hi=0.10),
+        _pair("elicit", "mix", excludes_zero=False, ci_lo=-0.02, ci_hi=0.10),
+    ]
+    v = an.decide_substrate_matters(dofs, null, pairwise)
+    assert v["null_band_conjunct"] is False
+    assert v["pairwise_ci_conjunct"] is True
+    assert v["substrate_matters"] is None, v  # exactly one conjunct fires → AMBIGUOUS
+
+
+def test_verdict_ambiguous_when_driving_pair_ci_uncomputed():
+    """D1: null-band fires but the driving pair's CI is undecidable → AMBIGUOUS (None).
+
+    A driving-pair pairwise record whose CI could not be bootstrapped (ci_excludes_zero
+    None) leaves conjunct (ii) undecidable — the verdict must be None, never silently
+    True off the null-band conjunct alone (the round-1/2 bug).
+    """
+    import issue813_analysis as an
+
+    dofs = {"generic": 0.10, "elicit": 0.90, "mix": 0.50}  # max_diff = 0.80
+    null = {s: _null(0.30) for s in dofs}
+    pairwise = [
+        _pair("generic", "elicit", excludes_zero=None),  # driving pair CI uncomputed
+        _pair("generic", "mix", excludes_zero=False),
+        _pair("elicit", "mix", excludes_zero=False),
+    ]
+    v = an.decide_substrate_matters(dofs, null, pairwise)
+    assert v["null_band_conjunct"] is True
+    assert v["pairwise_ci_conjunct"] is None
+    assert v["substrate_matters"] is None, v
+
+
+def test_verdict_only_driving_pair_ci_counts():
+    """D1: a NON-driving pair CI excluding 0 does NOT flip the max-vs-min verdict.
+
+    Conjunct (ii) requires the CI-excluding pair to be the DRIVING pair (the {min,max}
+    substrates whose difference IS max_diff). A CI excluding 0 on a non-driving pair while
+    the driving pair's CI includes 0 must NOT make substrate_matters True.
+    """
+    import issue813_analysis as an
+
+    dofs = {"generic": 0.10, "elicit": 0.90, "mix": 0.50}  # driving pair = generic_vs_elicit
+    null = {s: _null(0.30) for s in dofs}  # null-band conjunct fires (0.80 > 0.30)
+    pairwise = [
+        # Driving pair CI INCLUDES 0 → conjunct (ii) fails on the pair that matters.
+        _pair("generic", "elicit", excludes_zero=False, ci_lo=-0.1, ci_hi=1.7),
+        # A NON-driving pair CI excludes 0 — must be ignored for the max-vs-min verdict.
+        _pair("generic", "mix", excludes_zero=True, ci_lo=0.05, ci_hi=0.75),
+        _pair("elicit", "mix", excludes_zero=False, ci_lo=-0.2, ci_hi=0.9),
+    ]
+    v = an.decide_substrate_matters(dofs, null, pairwise)
+    assert v["pairwise_ci_conjunct"] is False, (
+        "only the DRIVING pair's CI counts for the max-vs-min verdict (D1)"
+    )
+    assert v["substrate_matters"] is not True, v
+
+
+def test_main_verdict_uses_conjunction_reducer():
+    """D1: main() routes the verdict through decide_substrate_matters (both conjuncts).
+
+    Source contract: the shipped verdict is the pure conjunction reducer, NOT an inline
+    `(max_diff > null_x)` single-gate. Pins the round-1/2 single-gate expression is gone.
+    """
+    import inspect
+
+    import issue813_analysis as an
+
+    main_src = inspect.getsource(an.main)
+    assert "decide_substrate_matters(dofs, null_by_sub, pairwise)" in main_src, (
+        "the verdict must be the conjunction reducer, not an inline null-band gate (D1)"
+    )
+    # The round-1/2 single-conjunct expression must be gone from main().
+    assert "(max_diff > null_x) if null_x else None" not in main_src, (
+        "the single null-band-only verdict gate must be removed (D1)"
+    )
+    # The pairwise-diff call passes the CI-bootstrap inputs (reduced_root + r_hat).
+    assert "pairwise_substrate_diff_cis(" in main_src
+    assert "args.reduced_root" in main_src and "r_hat" in main_src

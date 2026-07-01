@@ -27,11 +27,23 @@ Then, per behavior:
   null holds ΔM fixed (same adapter) and varies ONLY the question sample — its
   95th percentile is the behavior-specific threshold X a REAL substrate difference
   must clear (plan §3). Matched-n keeps em's low power conservative (not inflated).
-- **Pairwise substrate-difference CIs.** Family-clustered bootstrap CI on
-  |Δ/floor(substrate A) − Δ/floor(substrate B)| for the three substrate pairs.
+- **Pairwise substrate-difference CIs (D1).** Family-clustered bootstrap CI on the
+  SIGNED Δ/floor difference Δ/floor(A) − Δ/floor(B) for the three substrate pairs.
+  Both substrates fit over the SAME shared 50-context battery (plan §4.2), so ONE
+  family-clustered context resample refits BOTH arms per draw and the paired
+  difference is recomputed each resample — the same refit machinery the observed
+  read + the substrate-swap null use. The CI EXCLUDES 0 iff its whole interval is
+  on one side of 0; that is the SECOND conjunct of the plan §3 verdict.
+- **Verdict (D1 CONJUNCTION).** "substrate matters" (H0) iff BOTH conjuncts fire:
+  (i) the max-vs-min Δ/floor difference exceeds the substrate-swap null p95 AND
+  (ii) a DRIVING-pair pairwise CI (the pair whose difference IS max_diff) excludes
+  0. "substrate-agnostic" (H1) iff BOTH fail (max within band AND all CIs include
+  0). AMBIGUOUS (None) iff exactly one conjunct fires or a conjunct is undecidable.
+  The reducer ``decide_substrate_matters`` is a pure function (unit-testable).
 
 Reads the frozen headline-layer per-question rows (``per_question_L14.npz``) for
-the null; reads the 28-layer reduced summary for the observed fit_cell/marker read.
+the null; reads the 28-layer reduced summary for the observed fit_cell/marker read
+AND the pairwise-CI refit (both share the shared battery contexts per substrate).
 """
 
 from __future__ import annotations
@@ -77,6 +89,10 @@ NULL_SEED = 42
 # per-arm estimate, and the null's own resampling dominates the band width. Smoke
 # clamps this via --null-refit-pairs.
 NULL_REFIT_PAIRS = 40
+# The plan §3 "substrate matters" decision rule (D1): a CONJUNCTION of the null-band
+# gate AND a driving-pair pairwise-CI excluding 0 — NOT the single null-band gate the
+# round-1/2 verdict shipped. One constant so the reducer + the summary metadata agree.
+_DECISION_RULE = "conjunction: (max_diff > null_p95) AND (a driving-pair pairwise CI excludes 0)"
 
 
 def _git_sha() -> str:
@@ -353,17 +369,170 @@ def _r_hat_for(
     return fitM._r_hat_for(behavior, HEADLINE_LAYER, rb_main, rb_fact)
 
 
-def pairwise_substrate_diff_cis(observed_by_sub: dict[str, dict]) -> list[dict]:
-    """Point difference of the observed Δ/floor across substrate pairs (headline layer, B2).
+def _headline_stacks(
+    behavior: str, substrate: str, reduced_root: Path
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[str], list[str]]:
+    """Per-context c_C/v_A stacks (base + trained) at the FROZEN headline layer + keys.
 
-    Reports the |Δ/floor(A) − Δ/floor(B)| point difference for each substrate pair in
-    the REGISTERED Δ/floor space (plan §3/§6/§6.5) — NOT raw Δ_med. The substrate-swap
-    null band (per substrate, ``null_over_floor_p95``) is the reference the difference
-    is judged against (a difference beyond max(null_over_floor_p95(A),
-    null_over_floor_p95(B)) is a real substrate effect). The full clustered-bootstrap
-    CI on the paired difference is delegated to the analyzer (needs the paired
-    per-context grids); here we report the point differences the null band gates. The
-    raw Δ_med difference is carried alongside as a diagnostic only.
+    Reads the reduced 28-layer summary (via the shared CellRecord loader) and slices
+    the headline-layer plane into (n_ctx, HIDDEN) stacks — the same object the observed
+    ``fit_cell`` / ``fit_marker_layer`` read consumes. Returns
+    ``(c0, cplus, v0, vplus, families, context_ids)`` with ``families`` / ``context_ids``
+    parallel to the rows (the clustered-bootstrap resampling unit + the pair-alignment
+    key across substrates).
+    """
+    cells = _cells_from_summary(behavior, substrate, HEADLINE_LAYER, reduced_root)
+    c0 = np.stack([c.c0 for c in cells]).astype(np.float64)
+    cplus = np.stack([c.cplus for c in cells]).astype(np.float64)
+    v0 = np.stack([c.v0 for c in cells]).astype(np.float64)
+    vplus = np.stack([c.vplus for c in cells]).astype(np.float64)
+    families = [str(c.family) for c in cells]
+    context_ids = [str(c.source_cid) for c in cells]
+    return c0, cplus, v0, vplus, families, context_ids
+
+
+def pairwise_diff_ci(
+    behavior: str,
+    sub_a: str,
+    sub_b: str,
+    reduced_root: Path,
+    r_hat: np.ndarray | None,
+    *,
+    n_resamples: int = N_NULL_RESAMPLES,
+    n_refit_pairs: int = NULL_REFIT_PAIRS,
+    seed: int = NULL_SEED,
+) -> dict:
+    """Family-clustered bootstrap CI on the PAIRED Δ/floor difference for one substrate pair.
+
+    D1 (conjunct restore): plan §3 registers "substrate matters" as a CONJUNCTION —
+    the max-vs-min substrate Δ/floor difference must (i) exceed the substrate-swap null's
+    p95 AND (ii) have a pairwise-difference CI on the Δ/floor difference that EXCLUDES 0.
+    The verdict previously gated on (i) alone; this restores (ii).
+
+    Both substrates fit the map over the SAME shared 50-context battery (plan §4.2), so a
+    single family-clustered resample of the battery contexts (the ~7-family cluster unit)
+    applies IDENTICALLY to both substrate stacks — the paired difference is on the same
+    contexts per draw. Per resample: draw whole battery FAMILIES with replacement, restrict
+    BOTH substrates to the resampled contexts, refit each substrate's Δ/floor at the frozen
+    headline layer via the SHARED refit harness (``_pseudo_delta_over_floor`` — the exact
+    ``fit_cell`` / ``fit_marker_layer`` numerator + per-arm refit floor, in each behavior's
+    own DV convention: em/fact/syco SD-combined floor, marker read-1 p95-combined floor),
+    and record ``Δ/floor(A) − Δ/floor(B)``. The percentile CI on that signed difference is
+    the pairwise CI; it EXCLUDES 0 iff ``ci_lo > 0`` or ``ci_hi < 0``.
+
+    The battery contexts are shared, so both substrates key on the same ``context_ids`` —
+    a resampled context maps to the same row in each stack via the per-substrate context
+    index. Returns the pair record: point ``abs_diff`` (from the FULL-sample observed reads,
+    the caller passes these separately for the verdict) plus ``ci_lo`` / ``ci_hi`` /
+    ``ci_excludes_zero`` / ``n_families`` / ``n_resamples_used`` from the bootstrap.
+    """
+    c0a, cpa, v0a, vpa, fam_a, ctx_a = _headline_stacks(behavior, sub_a, reduced_root)
+    c0b, cpb, v0b, vpb, _fam_b, ctx_b = _headline_stacks(behavior, sub_b, reduced_root)
+    # Both substrates fit over the shared battery, so index each by its OWN context list
+    # and resample on the INTERSECTION (a context present in both) — the paired difference
+    # requires both arms to cover the drawn context. Families come from the shared battery
+    # so they agree per context; use substrate A's family map (identical by construction —
+    # substrate B's `_fam_b` would give the same per-context labels).
+    a_ctx_to_row = {cid: i for i, cid in enumerate(ctx_a)}
+    b_ctx_to_row = {cid: i for i, cid in enumerate(ctx_b)}
+    shared_ctx = [cid for cid in ctx_a if cid in b_ctx_to_row]
+    ctx_family = {cid: fam_a[a_ctx_to_row[cid]] for cid in shared_ctx}
+    empty = {
+        "pair": f"{sub_a}_vs_{sub_b}",
+        "dv_space": "delta_over_floor",
+        "ci_lo": None,
+        "ci_hi": None,
+        "ci_excludes_zero": None,
+        "n_families": len({ctx_family[c] for c in shared_ctx}),
+        "n_resamples_used": 0,
+    }
+    if len(shared_ctx) < 4:
+        return {**empty, "note": "too few shared battery contexts (<4) for a paired CI"}
+
+    uniq_fams = sorted({ctx_family[c] for c in shared_ctx})
+    fam_to_ctx: dict[str, list[str]] = {f: [] for f in uniq_fams}
+    for cid in shared_ctx:
+        fam_to_ctx[ctx_family[cid]].append(cid)
+    clustered = len(uniq_fams) >= 2
+    rng = np.random.default_rng(seed)
+    signed_diffs: list[float] = []
+
+    def _stack_for(ctx_subset: list[str], side: str):
+        """Assemble (c0, cplus, v0, vplus, families) for one substrate over ctx_subset."""
+        rows = (
+            [a_ctx_to_row[c] for c in ctx_subset]
+            if side == "a"
+            else [b_ctx_to_row[c] for c in ctx_subset]
+        )
+        fams = [ctx_family[c] for c in ctx_subset]
+        if side == "a":
+            return c0a[rows], cpa[rows], v0a[rows], vpa[rows], fams
+        return c0b[rows], cpb[rows], v0b[rows], vpb[rows], fams
+
+    for _ in range(n_resamples):
+        if clustered:
+            chosen_fams = rng.choice(uniq_fams, size=len(uniq_fams), replace=True)
+            drawn_ctx = [c for f in chosen_fams for c in fam_to_ctx[str(f)]]
+        else:
+            drawn_ctx = list(rng.choice(shared_ctx, size=len(shared_ctx), replace=True))
+        # Need enough distinct contexts on BOTH arms to fit (the refit needs >=4 rows).
+        if len(set(drawn_ctx)) < 4:
+            continue
+        try:
+            sa = _stack_for(drawn_ctx, "a")
+            sb = _stack_for(drawn_ctx, "b")
+            _, da_dof = _pseudo_delta_over_floor(
+                sa[0], sa[1], sa[2], sa[3], sa[4], r_hat, n_refit_pairs=n_refit_pairs
+            )
+            _, db_dof = _pseudo_delta_over_floor(
+                sb[0], sb[1], sb[2], sb[3], sb[4], r_hat, n_refit_pairs=n_refit_pairs
+            )
+        except np.linalg.LinAlgError:
+            continue  # degenerate resample geometry — skip (bootstrap noise)
+        if np.isnan(da_dof) or np.isnan(db_dof):
+            continue  # a floor underflowed on this resample — excluded
+        signed_diffs.append(float(da_dof - db_dof))
+    if not signed_diffs:
+        return {**empty, "note": "all resamples degenerate or floor-underflowed"}
+    arr = np.asarray(signed_diffs, dtype=np.float64)
+    ci_lo = float(np.percentile(arr, 2.5))
+    ci_hi = float(np.percentile(arr, 97.5))
+    return {
+        "pair": f"{sub_a}_vs_{sub_b}",
+        "dv_space": "delta_over_floor",
+        "ci_lo": ci_lo,
+        "ci_hi": ci_hi,
+        # the CI EXCLUDES 0 iff the whole interval is on one side of 0
+        "ci_excludes_zero": bool(ci_lo > 0.0 or ci_hi < 0.0),
+        "ci_median": float(np.median(arr)),
+        "n_families": len(uniq_fams),
+        "n_resamples_used": len(signed_diffs),
+        "n_refit_pairs": n_refit_pairs,
+    }
+
+
+def pairwise_substrate_diff_cis(
+    observed_by_sub: dict[str, dict],
+    behavior: str,
+    reduced_root: Path,
+    r_hat: np.ndarray | None,
+    *,
+    n_resamples: int = N_NULL_RESAMPLES,
+    n_refit_pairs: int = NULL_REFIT_PAIRS,
+) -> list[dict]:
+    """Pairwise Δ/floor difference + family-clustered bootstrap CI across substrate pairs (D1).
+
+    Reports, for each substrate pair in the REGISTERED Δ/floor space (plan §3/§6/§6.5):
+    the full-sample ``abs_diff`` = |Δ/floor(A) − Δ/floor(B)| (the observed point the null
+    band gates), the SIGNED-difference clustered-bootstrap CI (``ci_lo`` / ``ci_hi`` from
+    ``pairwise_diff_ci``), and ``ci_excludes_zero`` — the second conjunct of the plan §3
+    "substrate matters" decision rule (H1 requires the CI to INCLUDE 0; H0 requires it to
+    EXCLUDE 0). The raw Δ_med difference is carried alongside as a diagnostic only.
+
+    The CI is a genuine bootstrap (not a delegated placeholder): both substrates fit over
+    the SAME shared 50-context battery, so a single family-clustered context resample refits
+    both arms per draw and the paired Δ/floor difference is recomputed each resample — the
+    identical refit machinery the observed read + the substrate-swap null use.
     """
     out = []
     subs = [s for s in SUBSTRATES if s in observed_by_sub]
@@ -374,22 +543,129 @@ def pairwise_substrate_diff_cis(observed_by_sub: dict[str, dict]) -> list[dict]:
             db = observed_by_sub[b].get("delta_over_floor")
             da_raw = observed_by_sub[a].get("delta_med")
             db_raw = observed_by_sub[b].get("delta_med")
-            out.append(
-                {
-                    "pair": f"{a}_vs_{b}",
-                    "dv_space": "delta_over_floor",
-                    "delta_over_floor_a": da,
-                    "delta_over_floor_b": db,
-                    "abs_diff": (None if (da is None or db is None) else abs(da - db)),
-                    # raw Δ_med diagnostic (NOT the registered comparison)
-                    "delta_med_a": da_raw,
-                    "delta_med_b": db_raw,
-                    "abs_diff_delta_med": (
-                        None if (da_raw is None or db_raw is None) else abs(da_raw - db_raw)
-                    ),
-                }
-            )
+            rec = {
+                "pair": f"{a}_vs_{b}",
+                "dv_space": "delta_over_floor",
+                "delta_over_floor_a": da,
+                "delta_over_floor_b": db,
+                "abs_diff": (None if (da is None or db is None) else abs(da - db)),
+                # raw Δ_med diagnostic (NOT the registered comparison)
+                "delta_med_a": da_raw,
+                "delta_med_b": db_raw,
+                "abs_diff_delta_med": (
+                    None if (da_raw is None or db_raw is None) else abs(da_raw - db_raw)
+                ),
+                "ci_lo": None,
+                "ci_hi": None,
+                "ci_excludes_zero": None,
+            }
+            # Only bootstrap the CI when both observed reads exist (a floor-underflowed
+            # substrate has no Δ/floor point, so its pairwise diff is undefined).
+            if da is not None and db is not None:
+                ci = pairwise_diff_ci(
+                    behavior,
+                    a,
+                    b,
+                    reduced_root,
+                    r_hat,
+                    n_resamples=n_resamples,
+                    n_refit_pairs=n_refit_pairs,
+                )
+                rec.update(
+                    {
+                        "ci_lo": ci.get("ci_lo"),
+                        "ci_hi": ci.get("ci_hi"),
+                        "ci_median": ci.get("ci_median"),
+                        "ci_excludes_zero": ci.get("ci_excludes_zero"),
+                        "ci_n_families": ci.get("n_families"),
+                        "ci_n_resamples_used": ci.get("n_resamples_used"),
+                        "ci_note": ci.get("note"),
+                    }
+                )
+            out.append(rec)
     return out
+
+
+def decide_substrate_matters(
+    dofs: dict[str, float | None],
+    null_by_sub: dict[str, dict],
+    pairwise: list[dict],
+) -> dict:
+    """The plan §3 CONJUNCTION verdict — pure function (unit-testable, D1 regression).
+
+    Plan §3 registers the decision rule as a CONJUNCTION, NOT the single null-band gate
+    the shipped verdict used:
+
+    - **H1 (substrate-agnostic):** per-behavior Δ/floor is INDISTINGUISHABLE across the
+      substrates — the max-vs-min Δ/floor difference is WITHIN the substrate-swap null band
+      AND every pairwise-difference CI INCLUDES 0.
+    - **H0 (substrate matters):** Δ/floor DIFFERS beyond the noise band — the max-vs-min
+      difference EXCEEDS the null's p95 AND at least one pairwise-difference CI EXCLUDES 0.
+
+    So:
+      substrate_matters = (max_diff > null_x) AND (some pairwise CI excludes 0)
+    with the additional gate that the CI-excluding pair must be one that also DRIVES the
+    max_diff (its members are the max-vs-min Δ/floor substrates) — a pairwise CI on a pair
+    NOT involved in the max spread cannot, on its own, flip the max-vs-min verdict.
+
+    Returns the verdict dict:
+      - ``substrate_matters``: True (both conjuncts fire), False (both fail — max within band
+        AND all CIs include 0), or None (AMBIGUOUS — exactly one conjunct fires, or an input
+        is missing so a conjunct is undecidable).
+    ``dofs`` maps substrate → observed Δ/floor (None where floor-underflowed);
+    ``null_by_sub`` maps substrate → its substrate-swap-null dict (``null_over_floor_p95``);
+    ``pairwise`` is the ``pairwise_substrate_diff_cis`` output.
+    """
+    valid = {s: v for s, v in dofs.items() if v is not None}
+    if len(valid) < 2:
+        return {
+            "dv_space": "delta_over_floor",
+            "decision_rule": _DECISION_RULE,
+            "max_vs_min_delta_over_floor_diff": None,
+            "null_x_over_floor_p95": None,
+            "null_band_conjunct": None,
+            "pairwise_ci_conjunct": None,
+            "substrate_matters": None,
+            "note": "fewer than 2 substrates with a valid Δ/floor point",
+        }
+    hi_sub = max(valid, key=lambda s: valid[s])
+    lo_sub = min(valid, key=lambda s: valid[s])
+    max_diff = valid[hi_sub] - valid[lo_sub]
+    null_x = max(
+        (null_by_sub[s].get("null_over_floor_p95") or 0.0) for s in valid if null_by_sub.get(s)
+    )
+    # Conjunct (i): the max-vs-min Δ/floor difference clears the substrate-swap null p95.
+    null_band_conjunct = (max_diff > null_x) if null_x else None
+    # Conjunct (ii): a pairwise CI that EXCLUDES 0 on a DRIVING pair (the {hi,lo} substrates
+    # whose difference IS max_diff). A CI on a non-driving pair does not flip the max verdict.
+    driving_pair_keys = {f"{hi_sub}_vs_{lo_sub}", f"{lo_sub}_vs_{hi_sub}"}
+    driving_recs = [p for p in pairwise if p.get("pair") in driving_pair_keys]
+    excludes = [
+        p.get("ci_excludes_zero") for p in driving_recs if p.get("ci_excludes_zero") is not None
+    ]
+    # None when the driving pair's CI could not be computed; else True iff any excludes 0.
+    pairwise_ci_conjunct = None if not excludes else any(excludes)
+    # Combine the two conjuncts into the tri-state verdict.
+    if null_band_conjunct is None or pairwise_ci_conjunct is None:
+        matters: bool | None = None  # a conjunct is undecidable → AMBIGUOUS
+    elif null_band_conjunct and pairwise_ci_conjunct:
+        matters = True  # both fire → substrate matters (H0)
+    elif (not null_band_conjunct) and (not pairwise_ci_conjunct):
+        matters = False  # both fail → substrate-agnostic (H1)
+    else:
+        matters = None  # exactly one conjunct fires → AMBIGUOUS (neither H0 nor H1)
+    return {
+        "dv_space": "delta_over_floor",
+        "decision_rule": _DECISION_RULE,
+        "max_vs_min_delta_over_floor_diff": max_diff,
+        "max_substrate": hi_sub,
+        "min_substrate": lo_sub,
+        "null_x_over_floor_p95": null_x,
+        "null_band_conjunct": null_band_conjunct,
+        "pairwise_ci_conjunct": pairwise_ci_conjunct,
+        "driving_pair_ci_excludes_zero": excludes,
+        "substrate_matters": matters,
+    }
 
 
 def main() -> int:
@@ -469,45 +745,50 @@ def main() -> int:
                 json.dumps(null, indent=2, default=float)
             )
 
-        pairwise = pairwise_substrate_diff_cis(observed_by_sub)
+        # Pairwise Δ/floor difference + family-clustered bootstrap CI (D1): both the
+        # point diff (null-band gate) AND the signed-difference CI (the second conjunct
+        # of the plan §3 decision rule — does the CI exclude 0?).
+        pairwise = pairwise_substrate_diff_cis(
+            observed_by_sub,
+            behavior,
+            args.reduced_root,
+            r_hat,
+            n_resamples=args.n_null_resamples,
+            n_refit_pairs=args.null_refit_pairs,
+        )
         per_behavior[behavior] = {
             "observed": observed_by_sub,
             "substrate_swap_null": null_by_sub,
             "pairwise_substrate_diff": pairwise,
         }
-        # Verdict per behavior (B2): does the max-vs-min substrate Δ/FLOOR difference
-        # clear the substrate-swap null's Δ/FLOOR band? — the REGISTERED DV space
-        # (plan §3/§6/§6.5), NOT raw Δ_med. H1 = substrate-agnostic iff within the band.
+        # Verdict per behavior (D1 conjunction restore): plan §3 registers "substrate
+        # matters" as (max-vs-min Δ/floor diff > substrate-swap null p95) AND (a
+        # driving-pair pairwise-difference CI EXCLUDES 0). The shipped verdict gated on
+        # the null-band conjunct ALONE (BLOCKER i813-pairwise-ci-conjunct-missing); the
+        # pure `decide_substrate_matters` reducer now enforces BOTH conjuncts. Raw Δ_med
+        # is a diagnostic only (NOT the registered comparison — B2).
         dofs = {s: observed_by_sub[s].get("delta_over_floor") for s in observed_by_sub}
-        valid = {s: v for s, v in dofs.items() if v is not None}
-        if len(valid) >= 2:
-            max_diff = max(valid.values()) - min(valid.values())
-            null_x = max(
-                (null_by_sub[s].get("null_over_floor_p95") or 0.0)
-                for s in valid
-                if null_by_sub.get(s)
-            )
-            # raw Δ_med diagnostic (NOT the registered comparison)
-            raw = {s: observed_by_sub[s].get("delta_med") for s in valid}
-            raw_valid = {s: v for s, v in raw.items() if v is not None}
-            max_diff_raw = (
-                (max(raw_valid.values()) - min(raw_valid.values())) if len(raw_valid) >= 2 else None
-            )
-            per_behavior[behavior]["verdict"] = {
-                "dv_space": "delta_over_floor",
-                "max_vs_min_delta_over_floor_diff": max_diff,
-                "null_x_over_floor_p95": null_x,
-                "substrate_matters": (max_diff > null_x) if null_x else None,
-                # raw Δ_med diagnostic (continuity only)
-                "max_vs_min_delta_med_diff": max_diff_raw,
-            }
-            logger.info(
-                "[phase=analysis] %s: max-min Δ/floor diff=%.4g vs null X(p95)=%.4g → matters=%s",
-                behavior,
-                max_diff,
-                null_x,
-                per_behavior[behavior]["verdict"]["substrate_matters"],
-            )
+        verdict = decide_substrate_matters(dofs, null_by_sub, pairwise)
+        # raw Δ_med diagnostic (continuity only)
+        raw_valid = {
+            s: observed_by_sub[s].get("delta_med")
+            for s in observed_by_sub
+            if observed_by_sub[s].get("delta_med") is not None
+        }
+        verdict["max_vs_min_delta_med_diff"] = (
+            (max(raw_valid.values()) - min(raw_valid.values())) if len(raw_valid) >= 2 else None
+        )
+        per_behavior[behavior]["verdict"] = verdict
+        logger.info(
+            "[phase=analysis] %s: max-min Δ/floor diff=%s vs null X(p95)=%s | "
+            "null_band=%s pairwise_CI_excl0=%s → matters=%s",
+            behavior,
+            verdict.get("max_vs_min_delta_over_floor_diff"),
+            verdict.get("null_x_over_floor_p95"),
+            verdict.get("null_band_conjunct"),
+            verdict.get("pairwise_ci_conjunct"),
+            verdict.get("substrate_matters"),
+        )
 
     summary = {
         "issue": 813,
@@ -516,6 +797,9 @@ def main() -> int:
         "target_dim": TARGET_DIM,
         # B2: verdict + null are BOTH in the registered Δ/floor space
         "verdict_dv_space": "delta_over_floor",
+        # D1: the verdict is the plan §3 CONJUNCTION (null-band AND pairwise-CI),
+        # not the single null-band gate the round-1/2 verdict shipped.
+        "verdict_decision_rule": _DECISION_RULE,
         "n_null_resamples": args.n_null_resamples,
         "null_refit_pairs": args.null_refit_pairs,
         "null_seed": NULL_SEED,
