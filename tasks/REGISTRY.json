@@ -5036,8 +5036,8 @@
     "787": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/787",
-      "status": "planning",
+      "path": "tasks/approved/787",
+      "status": "approved",
       "title": "daily-fix: Step 10d tasks/* merge-conflict default + far-behind branch"
     },
     "788": {
