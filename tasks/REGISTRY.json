@@ -5190,8 +5190,8 @@
     "807": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/807",
-      "status": "planning",
+      "path": "tasks/blocked/807",
+      "status": "blocked",
       "title": "workflow-fix: verify_task_body.py should check per-figure meta.json commit against body URL"
     },
     "81": {
