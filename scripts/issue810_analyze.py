@@ -223,7 +223,9 @@ def _hero3_readout_heatmap(readout: dict, fig_dir: Path) -> None:
         ax.set_yticklabels(behaviors, fontsize=6)
         ax.set_title(f"read-out rho ({method})", fontsize=8)
         fig.colorbar(im, ax=ax, label="best-layer rho")
-    fig.tight_layout()
+    # NOTE: no fig.tight_layout() — savefig_paper owns the layout engine
+    # (bbox_inches='tight'); calling tight_layout here conflicts with a
+    # per-axes colorbar (matplotlib "layout engine not compatible" RuntimeError).
     savefig_paper(fig, "hero3_readout_heatmap", dir=str(fig_dir))
     plt.close(fig)
 

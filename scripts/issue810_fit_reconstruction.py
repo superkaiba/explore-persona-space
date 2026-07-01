@@ -295,6 +295,12 @@ def main() -> int:
         help="HF prefix of the Phase B aligned-subset store",
     )
     ap.add_argument("--position-store-dir", default=None, help="local Phase B store (smoke)")
+    ap.add_argument(
+        "--free-only",
+        action="store_true",
+        help="Phase A free leg: fit only mean/last/maxp over ALL 50 manifest "
+        "contexts (no Phase B position store needed) — runs before Phase B lands",
+    )
     ap.add_argument("--out", default=str(PROJECT_ROOT / "eval_results" / "issue_810"))
     ap.add_argument("--summaries", nargs="*", default=None, help="subset of summaries (smoke)")
     ap.add_argument("--layers", nargs="*", type=int, default=None, help="subset of layer indices")
@@ -313,24 +319,31 @@ def main() -> int:
     ctx_ids_all = context_ids_from_manifest(man)
     free_summaries, capture_layers = _load_free_summaries()
 
-    # Restrict to contexts the Phase B store actually has (smoke may store fewer).
+    # --free-only (Phase A): mean/last/maxp over ALL 50 manifest contexts; no
+    # Phase B position store. Otherwise restrict to the position store's contexts.
     local_dir = Path(args.position_store_dir) if args.position_store_dir else None
-    if local_dir is not None:
-        pos_man = load_json(local_dir / "manifest.json")
-        ctx_ids = [c for c in pos_man["context_ids"] if c in ctx_ids_all]
+    if args.free_only:
+        ctx_ids = list(ctx_ids_all)
+        pos_summaries, coverage = {c: {} for c in ctx_ids}, {c: {} for c in ctx_ids}
     else:
-        pos_man = load_json(
-            hf_hub_download(
-                HF_DATA_REPO, f"{args.position_store_hf}/manifest.json", repo_type="dataset"
+        if local_dir is not None:
+            pos_man = load_json(local_dir / "manifest.json")
+        else:
+            pos_man = load_json(
+                hf_hub_download(
+                    HF_DATA_REPO, f"{args.position_store_hf}/manifest.json", repo_type="dataset"
+                )
             )
-        )
         ctx_ids = [c for c in pos_man["context_ids"] if c in ctx_ids_all]
-    logger.info("contexts: %d", len(ctx_ids))
+        pos_summaries, coverage = _load_position_summaries(
+            ctx_ids, args.position_store_hf, local_dir
+        )
+    logger.info("contexts: %d (free_only=%s)", len(ctx_ids), args.free_only)
 
     cc = _load_cc(ctx_ids, capture_layers)
-    pos_summaries, coverage = _load_position_summaries(ctx_ids, args.position_store_hf, local_dir)
 
-    summaries = args.summaries or summary_names()
+    default_summaries = ["mean", "last", "maxp"] if args.free_only else summary_names()
+    summaries = args.summaries or default_summaries
     layers = args.layers if args.layers is not None else list(range(len(capture_layers)))
     n = len(ctx_ids)
     pca_dim = min(PCA_TARGET_DIM_CAP, max(1, n - 2))

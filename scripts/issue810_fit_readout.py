@@ -104,6 +104,18 @@ def _rho(pred: np.ndarray, meas: np.ndarray) -> float | None:
     return None if np.isnan(r) else float(r)
 
 
+def _tf_margin_scalar(cell) -> float | None:
+    """Extract the scalar tf-margin from a tf_margin cell.
+
+    tf_margin schema: ``margins[ctx][behavior]`` is a DICT
+    ``{"margin": <float>, "pos_mean_ln_logp", ...}`` — the scalar we validate
+    against is ``["margin"]``. A bare-scalar or missing cell is handled too.
+    """
+    if isinstance(cell, dict):
+        return cell.get("margin")
+    return cell
+
+
 # ── inputs ────────────────────────────────────────────────────────────────────
 
 
@@ -449,11 +461,13 @@ def _judge_validation(e0: dict, ctx_ids: list[str]) -> dict:
             out["by_behavior"][behavior] = {"status": "no_tf_margin_pool"}
             continue
         graded = e0.get(behavior, {}).get("graded", {})
-        pairs = [
-            (graded[c], margins[c].get(behavior))
-            for c in ctx_ids
-            if c in graded and c in margins and margins[c].get(behavior) is not None
-        ]
+        pairs = []
+        for c in ctx_ids:
+            if c not in graded:
+                continue
+            tfv = _tf_margin_scalar(margins.get(c, {}).get(behavior))
+            if tfv is not None:
+                pairs.append((graded[c], tfv))
         if len(pairs) < 4:
             out["by_behavior"][behavior] = {"status": "insufficient_overlap", "n": len(pairs)}
             continue
