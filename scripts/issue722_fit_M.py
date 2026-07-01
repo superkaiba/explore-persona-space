@@ -427,8 +427,32 @@ def stage_cells_from_attempt(attempt_id: str, out_dir: Path) -> int:
     return staged
 
 
-def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dict | None) -> dict:
-    """Fit M0/M⁺/M_pseudo + all four reads for one (behavior, layer). Returns the cell JSON."""
+def fit_cell(
+    behavior: str,
+    layer: int,
+    cells: list,
+    rb_main: dict,
+    rb_fact: dict | None,
+    *,
+    include_mlp: bool = True,
+) -> dict:
+    """Fit M0/M⁺/M_pseudo + all four reads for one (behavior, layer). Returns the cell JSON.
+
+    ``include_mlp`` (default True — the ORIGINAL behavior, all #722 callers
+    unchanged): fit the nonlinear MLP chain-ρ + nonlinearity-gap + MLP-shuffle
+    validity reads (the 300-epoch GPU ensemble, the dominant per-cell cost). Set
+    ``include_mlp=False`` for the RIDGE-ONLY headline path (#667 all-layer fast
+    map-change): #722's own clean-result established the nonlinear MLP map is
+    negative at every layer and below its shuffle null (8/9 cells) — "the
+    closed-form ridge is the ONLY valid estimator, so the function-change reads
+    are ridge-only". So at all-28-layer depth the MLP re-computes a foregone
+    "MLP invalid" verdict at ~2 min/cell; skipping it (and running the MLP
+    validity spot-check at 7/14/21 ONLY, in the #667 driver) keeps the headline
+    (Delta_med / floor / chain-ρ / cross-transfer, ALL closed-form ridge) intact
+    while removing the multi-hour cost. When False the ``chain_rho`` block omits
+    the ``rho_M0_mlp`` / ``rho_Mplus_mlp`` / ``rho_M0_shuffle`` / ``nonlin_gap_*``
+    keys (all MLP-derived); every ridge key is byte-for-byte the same code path.
+    """
     stacks = loadact.stack_for_fit(cells)
     C0, Cplus = stacks["C0"], stacks["Cplus"]
     V0, Vplus = stacks["V0"], stacks["Vplus"]
@@ -560,23 +584,27 @@ def fit_cell(behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dic
                 chain_m0, chain_mplus, Ek, fam_k
             )
         # MLP chain-ρ + nonlinearity gap (read 4) + MLP-validity (shuffle) on M0.
-        m0_loco_mlp = _mlp_loco_pred(C0, V0_64)
-        mplus_loco_mlp = _mlp_loco_pred(Cplus, Vplus_64)
-        rho_m0_mlp, _ = _chain_rho_one(m0_loco_mlp[keep], pca_basis, r_hat, Ek)
-        rho_mplus_mlp, _ = _chain_rho_one(mplus_loco_mlp[keep], pca_basis, r_hat, Ek)
-        chain_block["rho_M0_mlp"] = rho_m0_mlp
-        chain_block["rho_Mplus_mlp"] = rho_mplus_mlp
-        # shuffle null on M0 (refit ridge on permuted v0) — MLP-validity gate (plan §3).
-        rng = np.random.default_rng(722)
-        perm = rng.permutation(n)
-        m0_shuf = _ridge_loco_pred(C0, V0_64[perm])
-        rho_shuf, _ = _chain_rho_one(m0_shuf[keep], pca_basis, r_hat, Ek)
-        chain_block["rho_M0_shuffle"] = rho_shuf
-        # nonlinearity gap pre vs post: (rho_mlp - rho_ridge) under M0 and M⁺.
-        if None not in (rho_m0_mlp, rho_m0):
-            chain_block["nonlin_gap_M0"] = float(rho_m0_mlp - rho_m0)
-        if None not in (rho_mplus_mlp, rho_mplus):
-            chain_block["nonlin_gap_Mplus"] = float(rho_mplus_mlp - rho_mplus)
+        # Guarded by include_mlp: the 300-epoch GPU ensemble is the dominant
+        # per-cell cost and #722 already established it is invalid at this n (see
+        # fit_cell docstring). The RIDGE headline above is complete without it.
+        if include_mlp:
+            m0_loco_mlp = _mlp_loco_pred(C0, V0_64)
+            mplus_loco_mlp = _mlp_loco_pred(Cplus, Vplus_64)
+            rho_m0_mlp, _ = _chain_rho_one(m0_loco_mlp[keep], pca_basis, r_hat, Ek)
+            rho_mplus_mlp, _ = _chain_rho_one(mplus_loco_mlp[keep], pca_basis, r_hat, Ek)
+            chain_block["rho_M0_mlp"] = rho_m0_mlp
+            chain_block["rho_Mplus_mlp"] = rho_mplus_mlp
+            # shuffle null on M0 (refit ridge on permuted v0) — MLP-validity gate (plan §3).
+            rng = np.random.default_rng(722)
+            perm = rng.permutation(n)
+            m0_shuf = _ridge_loco_pred(C0, V0_64[perm])
+            rho_shuf, _ = _chain_rho_one(m0_shuf[keep], pca_basis, r_hat, Ek)
+            chain_block["rho_M0_shuffle"] = rho_shuf
+            # nonlinearity gap pre vs post: (rho_mlp - rho_ridge) under M0 and M⁺.
+            if None not in (rho_m0_mlp, rho_m0):
+                chain_block["nonlin_gap_M0"] = float(rho_m0_mlp - rho_m0)
+            if None not in (rho_mplus_mlp, rho_mplus):
+                chain_block["nonlin_gap_Mplus"] = float(rho_mplus_mlp - rho_mplus)
 
     # ---- Cross-transfer (read 3) ----
     cross = {}
