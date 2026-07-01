@@ -23,10 +23,6 @@ goal: 'On Qwen2.5-7B base representations (#658''s 50 contexts, reusing #810''s 
 ---
 # How much does per-position (unpooled) answer activation beat the pooled mean for predicting behavior / reconstructing the profile
 
-## Goal
-
-On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much each pooling operator (mean / max / fixed-random attention / learned attention) loses versus the unpooled per-position multi-position input for predicting behavior expression E0 (and reconstructing the answer profile), per layer -- the incremental held-out gain of unpooled over each pool, with LOCO + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for the n=50 sample size; all operators are cheap CPU reductions of one shared extraction, so the constraint is n, not compute.
-
 ## Overview / Motivation
 
 The answer-profile summary `v0` used across the leakage-predictor line
@@ -121,6 +117,29 @@ lower bound given the n=50 reliability ceiling** (`√r_yy`, per #742).
 
 Extraction shared with #810 (no extra GPU). Fits are CPU-cheap but n-limited;
 the only path to a bigger n is a new context battery (flagged, not in v1).
+
+## Compute & optimization (standing constraints — planner must honor)
+
+- **Footprint is THE risk here — plan it first.** Full per-token activations
+  across 28 layers over 50 contexts × ~48 probes would be ≈100+ GB, far past the
+  50 GB VM cap (`VM_ANALYSIS_FOOTPRINT_GB_MAX`). Mandatory: extract and store
+  ONLY the aligned position subset (boundary + tail `−1…−K` + head `0…K−1`) —
+  `≤ (2K+2)` positions, fp16, PCA-reduced per position where possible. Even the
+  subset (~30 GB at K=16, all layers) should be sized; if > 50 GB, route to
+  `intent: cpu-bigmem` (GCP n2-highmem) or a narrower layer band. Shared with
+  #810's extraction — do NOT extract twice.
+- **Pooling reductions are CPU-cheap** (mean/max/attn-fixed are pure reductions of
+  the stored subset); the ONLY gradient-descent fit is `attn-learned` (a per-cell
+  3584-dim query) — vectorize it across cells via
+  `src/explore_persona_space/analysis/vectorized_mlp_skill.py` (on `main` @
+  `e000e253`); GPU only if the vectorized batch is large (overhead-bound at n=50).
+- **Vectorize every many-cell fit — no per-cell Python loop** (behavior × layer ×
+  operator; `.claude/rules/vectorize-many-cell-fits.md`; the #722 19.5-CPU-h
+  serial-loop incident).
+- **Non-trivial CPU fit/analysis → a cheap CPU pod (`cpu-small`/`cpu-mid`) or
+  `cpu-bigmem`, never the shared VM** (#658 filled `/` and stalled the fleet;
+  #747). Reuse `scripts/issue722_per_position_vC_skill.py` as the per-position
+  template. Release the GPU pod before the CPU phase (#664/#778).
 
 ## Provenance
 
