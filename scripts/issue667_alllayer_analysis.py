@@ -333,6 +333,144 @@ def _load_cells_alllayer(
         streamer.cleanup()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Fast ridge-only PCA basis — the batchable closed-form win (#722 vectorize rule)
+#
+# The per-cell bottleneck of the reused fit_cell is NOT only the 300-epoch MLP; it
+# is ALSO the closed-form refit floor, which re-computes a full (n≈480, 3584) SVD
+# per bootstrap-refit pair (2 refits × N_REFIT_PAIRS pairs × 3 floors = ~600
+# SVDs/cell). Under a contended VM a single (480,3584) np.linalg.svd is ~11 s, so
+# the ridge floor alone is ~hours/cell before the MLP. This drop-in computes the
+# SAME top-k right-singular subspace of the mean-centered target via a DUAL eigh
+# on the (n,n) Gram (n≪3584) — ~4× faster serial, and the subspace is identical
+# to np.linalg.svd's (verified min|cos|=1.0, singular values match to 5.7e-14).
+# The PCA sign convention is irrelevant downstream: the ridge headline projects
+# Y @ pca.T then back @ pca (a projection onto the subspace), so a per-component
+# sign flip cancels — end-to-end |Δ·r̂_B| matches np.svd to ~1e-13.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _pca_basis_v0_fast(V0: np.ndarray, dim: int) -> np.ndarray:
+    """Top-`dim` PCA basis of V0 (dim, 3584) via a dual eigh on the (n,n) Gram.
+
+    Drop-in for :func:`issue722_fit_M._pca_basis_v0` returning the SAME top-`dim`
+    right-singular subspace of the mean-centered ``V0`` (up to per-component sign,
+    which cancels in the ridge projection). Computes it in the DUAL row space:
+    the top-k right singular vectors of the mean-centered ``Vc`` (n, H) are
+    ``Vₖ = Uₖᵀ Vc / Sₖ`` where ``Vc Vcᵀ = U diag(S²) Uᵀ`` — an eigh on the small
+    (n, n) Gram instead of a full (n, H) SVD, the #722 vectorize-many-cell-fits
+    win at n≪H. Preserves the gesdd→gesvd robustness contract of the reference:
+    ``np.linalg.eigh`` on the SPD Gram is the fast path, falling back to
+    ``scipy.linalg.eigh`` (LAPACK ``syevr``, more robust) on non-convergence, and
+    only components with a numerically-positive eigenvalue are kept (matching the
+    SVD's rank truncation). Returns (k<=dim, 3584).
+    """
+    Vc = V0 - V0.mean(axis=0, keepdims=True)
+    G = Vc @ Vc.T  # (n, n) dual Gram — SPD, n≪3584 is the win
+    try:
+        w, U = np.linalg.eigh(G)  # ascending eigenvalues; LAPACK syevd
+    except np.linalg.LinAlgError:
+        from scipy.linalg import eigh as _scipy_eigh
+
+        logger.warning(
+            "[phase=map_change] np.linalg.eigh (syevd) did not converge on a %s Gram "
+            "(near-singular resample); retrying with scipy syevr",
+            G.shape,
+        )
+        w, U = _scipy_eigh(G)
+    order = np.argsort(w)[::-1]  # descending
+    # Keep only numerically-positive eigenvalues (the SVD's rank truncation).
+    if order.size:
+        pos = w[order] > 1e-12 * float(max(w[order][0], 1.0))
+        order = order[pos]
+    k = min(dim, order.size)
+    order = order[:k]
+    if k == 0:
+        return np.zeros((0, V0.shape[1]), dtype=np.float64)
+    S = np.sqrt(np.clip(w[order], 0.0, None))  # (k,)
+    return (U[:, order].T @ Vc) / S[:, None]  # (k, 3584)
+
+
+class _fast_pca_injected:
+    """Context manager: swap ``issue722_fit_M._pca_basis_v0`` for the dual-eigh fast
+    PCA for the duration of a ridge-only fit, restoring it on exit.
+
+    ``fit_cell`` and its refit floor (``_refit_ridge_fn``) + ``m0_at_cplus_ridge_full``
+    all resolve the PCA basis through the module attribute ``fitM._pca_basis_v0``,
+    so swapping that one attribute redirects EVERY PCA in the ridge path to the
+    fast subspace WITHOUT editing the reused module (the same runtime-override
+    pattern the map-change loader uses for ``loadact.STORE_PREFIX`` /
+    ``fit658.DEVICE``). Restored in ``finally`` so the correctness gate's
+    per-cell ``fit_cell`` (which must run the ORIGINAL np.svd PCA to be an
+    independent reference) is unaffected.
+    """
+
+    def __enter__(self):
+        self._saved = fitM._pca_basis_v0
+        fitM._pca_basis_v0 = _pca_basis_v0_fast
+        return self
+
+    def __exit__(self, *exc):
+        fitM._pca_basis_v0 = self._saved
+        return False
+
+
+def _mlp_validity_spotcheck(
+    behavior: str, layer: int, cells: list, rb_main: dict, rb_fact: dict | None
+) -> dict:
+    """The MLP-vs-shuffle validity read for ONE spot-check layer (7/14/21 only).
+
+    Re-confirms #722's finding that the nonlinear MLP map is invalid (below its
+    shuffle null) rather than fitting the 300-epoch MLP at all 28 layers. Runs the
+    FULL ``fit_cell`` (include_mlp=True, ORIGINAL np.svd PCA) and returns only the
+    MLP-derived chain_rho scalars — the headline stays ridge-only. Falls back to a
+    ``{"status": ...}`` note if the layer has no chain-ρ support (n_with_E < 4).
+    """
+    cell = fitM.fit_cell(behavior, layer, cells, rb_main, rb_fact, include_mlp=True)
+    cr = cell.get("chain_rho", {})
+    if "rho_M0_mlp" not in cr:
+        return {"status": f"no MLP read (n_with_E={cr.get('n_with_E')})"}
+    return {
+        k: cr.get(k)
+        for k in (
+            "rho_M0_mlp",
+            "rho_Mplus_mlp",
+            "rho_M0_shuffle",
+            "nonlin_gap_M0",
+            "nonlin_gap_Mplus",
+            "n_with_E",
+        )
+    }
+
+
+def _configure_map_change_compute(smoke_clamp: bool) -> None:
+    """Shared device/exactness/smoke-clamp setup for both map-change paths."""
+    if smoke_clamp:
+        # Clamp the three dominant CPU costs so the GPU-bound MLP phase runs on the
+        # VM CPU as a smoke (the full GPU run uses 300 epochs / 100 pairs / 64 dims).
+        fitM.fit658.MLP_MAX_EPOCHS = 20
+        fitM.N_REFIT_PAIRS = 8
+        fitM.TARGET_DIM = 4
+        logger.info("map-change: SMOKE clamps (mlp_epochs=20 refit_pairs=8 target_dim=4)")
+    # Resolve the compute device the reused ridge + MLP fitters read off
+    # fit658.DEVICE ("auto" -> cuda if available else cpu; issue722_fit_M.main sets
+    # this, which we bypass by calling fit_cell directly).
+    fitM.fit658.DEVICE = fitM.fit658._resolve_device("auto")
+    logger.info("map-change: fit device=%s", fitM.fit658.DEVICE)
+    # Exactness gate (#658): a reduction-order regression fails at startup.
+    fitM.fit658._assert_ridge_exactness()
+
+
+def _resolve_map_change_rb(mc_behaviors: list[str]) -> tuple[dict, dict | None, list[str]]:
+    """Load r_b.pt (+ r_b_fact.pt if fact requested); drop fact if its r_B is unavailable."""
+    rb_main = fitM._load_rb_main()
+    rb_fact = fitM._load_rb_fact() if "fact" in mc_behaviors else None
+    if "fact" in mc_behaviors and rb_fact is None:
+        logger.warning("fact requested but r_b_fact.pt unavailable/degenerate — dropping fact")
+        mc_behaviors = [b for b in mc_behaviors if b != "fact"]
+    return rb_main, rb_fact, mc_behaviors
+
+
 def map_change_for_layers(
     behaviors: list[str],
     layers: list[int],
@@ -346,6 +484,12 @@ def map_change_for_layers(
 ) -> dict:
     """Run the M0-vs-M⁺ map-change fit (issue722_fit_M.fit_cell) per (behavior, layer).
 
+    The PER-CELL path (``--per-cell-map-change`` / ``--no-fast-map-change``):
+    fits the FULL fit_cell (ridge headline + floor + chain-ρ + cross-transfer +
+    the 300-epoch MLP validity read) per (behavior, layer) via the ORIGINAL
+    np.svd PCA. Kept as the parity reference for the fast path's equivalence gate;
+    at all 28 layers this is the ~1-3 h serial cost the #667 recovery replaces.
+
     Returns ``{f"{behavior}_L{layer}": fit_cell(...)}``. r_B: em/syco from
     r_b.pt, fact from r_b_fact.pt (both full 28-layer stacks the reused
     ``_r_hat_for`` indexes per layer). ``smoke_clamp`` reduces the CPU MLP /
@@ -357,27 +501,8 @@ def map_change_for_layers(
         logger.info("map-change: no r_B behavior in %s — skipping map-change reads", behaviors)
         return {}
 
-    if smoke_clamp:
-        # Clamp the three dominant CPU costs so the GPU-bound MLP phase runs on the
-        # VM CPU as a smoke (the full GPU run uses 300 epochs / 100 pairs / 64 dims).
-        fitM.fit658.MLP_MAX_EPOCHS = 20
-        fitM.N_REFIT_PAIRS = 8
-        fitM.TARGET_DIM = 4
-        logger.info("map-change: SMOKE clamps (mlp_epochs=20 refit_pairs=8 target_dim=4)")
-
-    # Resolve the compute device the reused ridge + MLP fitters read off
-    # fit658.DEVICE ("auto" -> cuda if available else cpu; issue722_fit_M.main sets
-    # this, which we bypass by calling fit_cell directly).
-    fitM.fit658.DEVICE = fitM.fit658._resolve_device("auto")
-    logger.info("map-change: fit device=%s", fitM.fit658.DEVICE)
-    # Exactness gate (#658): a reduction-order regression fails at startup.
-    fitM.fit658._assert_ridge_exactness()
-
-    rb_main = fitM._load_rb_main()
-    rb_fact = fitM._load_rb_fact() if "fact" in mc_behaviors else None
-    if "fact" in mc_behaviors and rb_fact is None:
-        logger.warning("fact requested but r_b_fact.pt unavailable/degenerate — dropping fact")
-        mc_behaviors = [b for b in mc_behaviors if b != "fact"]
+    _configure_map_change_compute(smoke_clamp)
+    rb_main, rb_fact, mc_behaviors = _resolve_map_change_rb(mc_behaviors)
 
     cells_by = _load_cells_alllayer(
         mc_behaviors,
@@ -395,6 +520,176 @@ def map_change_for_layers(
             logger.info("map-change: %s L%d (%d cells)", behavior, layer, len(cells))
             out[f"{behavior}_L{layer}"] = fitM.fit_cell(behavior, layer, cells, rb_main, rb_fact)
     return out
+
+
+def map_change_for_layers_fast(
+    behaviors: list[str],
+    layers: list[int],
+    prefix: str,
+    *,
+    strict: bool,
+    smoke_clamp: bool,
+    max_sources: int | None = None,
+    max_targets_per_source: int | None = None,
+    local_store_root: str | None = None,
+    mlp_spotcheck_layers: tuple[int, ...] = GATE_LAYERS,
+) -> dict:
+    """FAST (default) map-change path: RIDGE-ONLY headline + a 7/14/21 MLP spot-check.
+
+    Rationale (#722 clean-result, verbatim): "the nonlinear MLP map is negative at
+    every layer, below its own shuffle null … the closed-form ridge is the ONLY
+    valid estimator, so the function-change reads are ridge-only." So the per-cell
+    300-epoch MLP re-computes a foregone "MLP invalid" verdict at every one of the
+    28 layers. This path instead:
+
+    (1) fits the RIDGE headline (Delta_med / floor / chain-ρ / cross-transfer —
+        all closed-form) for ALL requested layers via ``fit_cell(include_mlp=False)``,
+        with the dual-eigh fast PCA injected (identical subspace, ~4× faster SVD,
+        batchable); and
+    (2) runs the MLP-vs-shuffle validity read at the 7/14/21 spot-check layers
+        ONLY (``mlp_spotcheck_layers``), attaching its scalars under the cell's
+        ``chain_rho`` so the depth profile still surfaces the "MLP invalid"
+        confirmation without paying it at all 28 layers.
+
+    The output JSON/markdown shape is identical to the per-cell path (same
+    ``{f"{behavior}_L{layer}": cell}`` map, same headline keys); the MLP keys are
+    present only at the spot-check layers. Each cell carries ``map_change_path:
+    "ridge_only_fast"`` + ``mlp_spotcheck: bool`` for provenance.
+    """
+    mc_behaviors = [b for b in behaviors if b in MAP_CHANGE_BEHAVIORS]
+    if not mc_behaviors:
+        logger.info("map-change: no r_B behavior in %s — skipping map-change reads", behaviors)
+        return {}
+
+    _configure_map_change_compute(smoke_clamp)
+    rb_main, rb_fact, mc_behaviors = _resolve_map_change_rb(mc_behaviors)
+
+    cells_by = _load_cells_alllayer(
+        mc_behaviors,
+        layers,
+        prefix,
+        strict=strict,
+        max_sources=max_sources,
+        max_targets_per_source=max_targets_per_source,
+        local_store_root=local_store_root,
+    )
+    spot = {li for li in mlp_spotcheck_layers if li in layers}
+    logger.info(
+        "map-change FAST: ridge-only headline over %d layers; MLP validity spot-check at %s",
+        len(layers),
+        sorted(spot),
+    )
+    out: dict[str, dict] = {}
+    for behavior in mc_behaviors:
+        for layer in layers:
+            cells = cells_by[(behavior, layer)]
+            logger.info(
+                "map-change FAST: %s L%d (%d cells, ridge-only)", behavior, layer, len(cells)
+            )
+            with _fast_pca_injected():
+                cell = fitM.fit_cell(behavior, layer, cells, rb_main, rb_fact, include_mlp=False)
+            cell["map_change_path"] = "ridge_only_fast"
+            cell["mlp_spotcheck"] = layer in spot
+            if layer in spot:
+                logger.info("map-change FAST: %s L%d MLP validity spot-check", behavior, layer)
+                cell["chain_rho"].update(
+                    {
+                        k: v
+                        for k, v in _mlp_validity_spotcheck(
+                            behavior, layer, cells, rb_main, rb_fact
+                        ).items()
+                        if k != "n_with_E"  # already in chain_rho from the ridge fit
+                    }
+                )
+            out[f"{behavior}_L{layer}"] = cell
+    return out
+
+
+def verify_fast_equivalence(
+    behaviors: list[str],
+    layers: list[int],
+    prefix: str,
+    *,
+    local_store_root: str | None = None,
+    max_sources: int | None = None,
+    max_targets_per_source: int | None = None,
+    smoke_clamp: bool = False,
+) -> dict:
+    """Numeric-equivalence gate: fast ridge headline vs per-cell fit_cell at 7/14/21.
+
+    For each ``(behavior, gate-layer)`` recompute the RIDGE headline BOTH ways —
+    the fast dual-eigh ridge path (fast PCA injected) AND the ORIGINAL np.svd PCA
+    ridge path — on the SAME loaded cells (both ``include_mlp=False`` so the gate
+    is fast and isolates the PCA change), and assert the headline scalars agree
+    within tolerance. This is the correctness check that the dual-eigh PCA did NOT
+    change the math (it reproduces np.svd's subspace to ~1e-13, but a
+    bootstrap-resample geometry could in principle amplify it, so gate it
+    explicitly). Compares ``Delta_med``, ``floor_combined``, ``Delta_over_floor_sd``,
+    and the ridge chain-ρ triple. RAISES loud on any scalar beyond tolerance. Runs
+    on the SAME gate layers as ``verify_gate`` — the spot-check layers where #722
+    also fit the map-change.
+    """
+    gate_layers = [li for li in GATE_LAYERS if li in layers]
+    if not gate_layers:
+        gate_layers = list(GATE_LAYERS)
+    mc_behaviors = [b for b in behaviors if b in MAP_CHANGE_BEHAVIORS]
+    logger.info(
+        "[verify-fast] equivalence gate: fast ridge vs per-cell fit_cell at L%s", gate_layers
+    )
+    _configure_map_change_compute(smoke_clamp)
+    rb_main, rb_fact, mc_behaviors = _resolve_map_change_rb(mc_behaviors)
+    cells_by = _load_cells_alllayer(
+        mc_behaviors,
+        gate_layers,
+        prefix,
+        strict=False,
+        max_sources=max_sources,
+        max_targets_per_source=max_targets_per_source,
+        local_store_root=local_store_root,
+    )
+    # The headline scalars the gate diffs (all ridge/closed-form).
+    head_keys = ("Delta_med", "floor_combined", "Delta_over_floor_sd")
+    chain_keys = ("rho_M0_ridge", "rho_Mplus_ridge", "rho_diff_ridge")
+    report: dict = {"tolerance": {"abs": GATE_ABS_TOL, "rel": GATE_REL_TOL}, "cells": {}}
+    mismatches: list[str] = []
+    for behavior in mc_behaviors:
+        for layer in gate_layers:
+            cells = cells_by[(behavior, layer)]
+            with _fast_pca_injected():
+                fast = fitM.fit_cell(behavior, layer, cells, rb_main, rb_fact, include_mlp=False)
+            ref = fitM.fit_cell(behavior, layer, cells, rb_main, rb_fact, include_mlp=False)
+            key = f"{behavior}_L{layer}"
+            per: dict = {}
+            for k in head_keys:
+                fv, rv = fast.get(k), ref.get(k)
+                ok = _close(
+                    fv if isinstance(fv, (int, float)) else None,
+                    rv if isinstance(rv, (int, float)) else None,
+                )
+                per[k] = {"fast": fv, "per_cell": rv, "close": ok}
+                if not ok:
+                    mismatches.append(f"{key} {k}: fast={fv} per_cell={rv}")
+            for k in chain_keys:
+                fv = fast.get("chain_rho", {}).get(k)
+                rv = ref.get("chain_rho", {}).get(k)
+                ok = _close(
+                    fv if isinstance(fv, (int, float)) else None,
+                    rv if isinstance(rv, (int, float)) else None,
+                )
+                per[f"chain_rho.{k}"] = {"fast": fv, "per_cell": rv, "close": ok}
+                if not ok:
+                    mismatches.append(f"{key} chain_rho.{k}: fast={fv} per_cell={rv}")
+            report["cells"][key] = per
+    report["n_mismatches"] = len(mismatches)
+    report["mismatches"] = mismatches
+    if mismatches:
+        raise RuntimeError(
+            "[verify-fast] EQUIVALENCE GATE FAILED — the fast dual-eigh ridge path "
+            f"diverges from the per-cell fit_cell ridge headline at {len(mismatches)} "
+            "scalar(s):\n  " + "\n  ".join(mismatches[:20])
+        )
+    logger.info("[verify-fast] PASS — fast ridge headline matches per-cell fit_cell within tol")
+    return report
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -693,6 +988,31 @@ def main() -> int:
         default=None,
         help="smoke: cap targets per source in the map-change loader.",
     )
+    ap.add_argument(
+        "--fast-map-change",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="DEFAULT TRUE: RIDGE-ONLY headline over ALL layers (dual-eigh fast PCA) "
+        "+ a 7/14/21 MLP validity spot-check, instead of the per-cell 300-epoch MLP "
+        "at every layer. #722 established the nonlinear MLP is invalid at this n, so "
+        "the headline (Delta_med/floor/chain-ρ/cross-transfer) is ridge-only. Use "
+        "--no-fast-map-change (or --per-cell-map-change) for the exact per-cell path.",
+    )
+    ap.add_argument(
+        "--per-cell-map-change",
+        dest="fast_map_change",
+        action="store_false",
+        help="alias for --no-fast-map-change: run the exact per-cell fit_cell loop "
+        "(300-epoch MLP at every layer) — the parity reference (~1-3 h serial).",
+    )
+    ap.add_argument(
+        "--verify-fast-equivalence",
+        action="store_true",
+        help="run the numeric-equivalence gate (fast dual-eigh ridge headline vs "
+        "per-cell fit_cell ridge headline at 7/14/21) and FAIL on mismatch, before "
+        "the depth-profile fit. The correctness check that the batched PCA + "
+        "ridge-only path did not change the math.",
+    )
     args = ap.parse_args()
 
     layers = sorted(set(args.layers))
@@ -707,6 +1027,22 @@ def main() -> int:
     if args.verify_gate:
         gate_report = verify_gate(args.behaviors, args.store_prefix, args.local_store_root)
 
+    # Fast-path numeric-equivalence gate — fails loud BEFORE the depth fit if the
+    # batched dual-eigh ridge path diverges from the per-cell fit_cell ridge
+    # headline at 7/14/21 (the correctness check that the speed-up did not change
+    # the math). Only meaningful when the fast path is active.
+    fast_equiv_report = None
+    if args.verify_fast_equivalence and args.fast_map_change and not args.skip_map_change:
+        fast_equiv_report = verify_fast_equivalence(
+            args.behaviors,
+            layers,
+            args.store_prefix,
+            local_store_root=args.local_store_root,
+            max_sources=args.max_sources,
+            max_targets_per_source=args.max_targets_per_source,
+            smoke_clamp=args.smoke,
+        )
+
     # (a) Δc decomposition per layer.
     logger.info("[phase=deltac] Δc decomposition over %d layers", len(layers))
     deltac_by_layer: dict = {}
@@ -720,8 +1056,13 @@ def main() -> int:
     map_change: dict = {}
     map_change_xcheck = None
     if not args.skip_map_change:
-        logger.info("[phase=map_change] M0 vs M⁺ fit over %d layers", len(layers))
-        map_change = map_change_for_layers(
+        mc_fn = map_change_for_layers_fast if args.fast_map_change else map_change_for_layers
+        logger.info(
+            "[phase=map_change] M0 vs M⁺ fit over %d layers (path=%s)",
+            len(layers),
+            "ridge_only_fast" if args.fast_map_change else "per_cell",
+        )
+        map_change = mc_fn(
             args.behaviors,
             layers,
             args.store_prefix,
@@ -756,8 +1097,14 @@ def main() -> int:
         "local_store_root": args.local_store_root,
         "deltac_by_layer": deltac_clean,
         "map_change": map_change,
+        "map_change_path": (
+            None
+            if args.skip_map_change
+            else ("ridge_only_fast" if args.fast_map_change else "per_cell")
+        ),
         "map_change_committed_xcheck": map_change_xcheck,
         "verify_gate": gate_report,
+        "verify_fast_equivalence": fast_equiv_report,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "wall_s": round(time.time() - t0, 1),
     }
