@@ -129,6 +129,43 @@ def test_drop_never_coerce_score_parsing():
     assert lib._score_from_parsed({}) is None
 
 
+def test_score_from_parsed_accepts_bare_int_in_range():
+    # parse_judge_json returns json.loads("85") == 85 verbatim (a valid off-spec
+    # judge response). #778 r3: this MUST be carried as the score, not dropped.
+    from scripts import issue778_lib as lib
+
+    assert lib._score_from_parsed(85) == 85.0
+    assert lib._score_from_parsed(0) == 0.0  # boundary
+    assert lib._score_from_parsed(100) == 100.0  # boundary
+
+
+def test_score_from_parsed_accepts_bare_float_in_range():
+    from scripts import issue778_lib as lib
+
+    assert lib._score_from_parsed(85.5) == 85.5
+    assert lib._score_from_parsed(0.0) == 0.0
+    assert lib._score_from_parsed(100.0) == 100.0
+
+
+def test_score_from_parsed_rejects_out_of_range_bare_numeric():
+    # Out-of-[0,100] bare numeric drops (drop-never-coerce), same as the dict path.
+    from scripts import issue778_lib as lib
+
+    assert lib._score_from_parsed(150) is None
+    assert lib._score_from_parsed(-1) is None
+    assert lib._score_from_parsed(100.5) is None
+    assert lib._score_from_parsed(-0.5) is None
+
+
+def test_score_from_parsed_rejects_bool_disguised_as_int():
+    # isinstance(True, int) is True in Python: a judge that emitted `true` would
+    # parse to 1.0 and be mis-counted as a score. Reject bools explicitly.
+    from scripts import issue778_lib as lib
+
+    assert lib._score_from_parsed(True) is None
+    assert lib._score_from_parsed(False) is None
+
+
 def test_benjamini_hochberg_monotone_and_bounded():
     pvals = [0.001, 0.02, 0.5, float("nan"), 0.04]
     adj = nb.benjamini_hochberg(pvals)

@@ -236,13 +236,31 @@ def _rubric_system_and_user(eval_prompt: str) -> tuple[str, str]:
     return system, eval_prompt
 
 
-def _score_from_parsed(parsed: dict | None) -> float | None:
-    """Extract a numeric 0-100 score from a parsed judge dict, else None (DROP).
+def _score_from_parsed(parsed: object) -> float | None:
+    """Extract a numeric 0-100 score from a parsed judge value, else None (DROP).
+
+    ``parse_judge_json`` returns ``json.loads(text)`` VERBATIM, so a judge that
+    emits the bare integer ``85`` (an off-spec but valid response format — the
+    rubric requests ``{"score": N}`` but Sonnet occasionally emits the number
+    alone) parses to the Python int ``85``, NOT a ``{"score": ...}`` dict. Treat
+    a bare in-range numeric as the score directly (before the dict check) so it
+    is carried, not counted as a dropped draw — otherwise the primary graded
+    0-100 DV silently loses coverage for every envelope-less judge response
+    (#778 r3; the r2 aggregator guard fixed the sibling crash, this fixes the
+    caller-side reduction). ``bool`` is an ``int`` subclass in Python but is
+    never a valid score, so it is excluded explicitly.
 
     Drop-never-coerce (persona-vectors recipe step 4 / llm-judging rule 9):
     a REFUSAL / non-numeric / out-of-[0,100] return yields None (dropped from
     BOTH arms), NEVER a coerced number.
     """
+    # Bare numeric (the off-spec envelope-less judge response) — accept it as
+    # the score directly. bool first: isinstance(True, int) is True.
+    if isinstance(parsed, bool):
+        return None
+    if isinstance(parsed, int | float):
+        f = float(parsed)
+        return f if 0.0 <= f <= 100.0 else None
     if not isinstance(parsed, dict):
         return None
     if parsed.get("error"):

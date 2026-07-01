@@ -15,9 +15,19 @@ at this aggregator (the scalar-rubric caller does its OWN reduction from
 These tests exercise ``_aggregate_persona_scores`` directly (the crash site),
 which is the cleanest isolation of the guard. Betley (dict) callers are
 unaffected — verified by the mixed-persona test.
+
+#778 round 3 adds a PRODUCTION-PATH test: even with the r2 aggregator guard in
+place, ``judge_graded`` (the scalar-rubric caller) reduced ``all_scores`` via
+``issue778_lib._score_from_parsed``, which returned None for a bare-int parse and
+counted it as a DROPPED draw — silently losing coverage on the primary graded
+0-100 DV. ``test_judge_graded_carries_bare_int_score`` pins that a bare-int judge
+response now yields a real score, not a drop, end to end through ``judge_graded``.
 """
 
 from __future__ import annotations
+
+import json
+from pathlib import Path
 
 from explore_persona_space.eval.batch_judge import _aggregate_persona_scores
 
@@ -129,3 +139,52 @@ def test_aggregate_persona_scores_betley_sentinel_still_valid_not_scored():
     assert agg["n_errors"] == 0, agg
     assert agg["mean_aligned"] == 30.0, agg  # only the numeric row enters the sum
     assert agg["mean_coherent"] == 60.0, agg
+
+
+def test_judge_graded_carries_bare_int_score(tmp_path, monkeypatch):
+    """PRODUCTION-PATH (#778 r3): a bare-int judge parse yields a real score, not
+    a dropped draw, end to end through ``judge_graded``.
+
+    We fake ``judge_completions_batch`` (imported inside ``judge_graded`` from
+    ``explore_persona_space.eval.batch_judge``) to write a ``save_raw`` whose
+    ``all_scores`` maps this item's draw custom_ids to the BARE INT ``85`` — the
+    EXACT shape the real #663-hardened client writes when the judge answers the
+    rubric with the envelope-less string ``"85"`` (``parse_judge_json`` returns
+    ``json.loads("85") == 85`` verbatim). Pre-fix ``_score_from_parsed(85)``
+    returned None and every such draw was counted in ``n_dropped_draws``; post-fix
+    the item scores 85.0 with zero drops.
+    """
+    import scripts.issue778_lib as lib
+
+    item_id = "item_pv"
+    n_draws = 3
+    # judge_graded builds completions[item_id] = {question: [answer]*n_draws} and
+    # decodes custom_ids as "{persona}__{idx:05d}__{comp_idx:02d}" with
+    # persona == item_id, one question -> idx 0, comp_idx 0..n_draws-1.
+    expected_ids = [f"{item_id}__{0:05d}__{c:02d}" for c in range(n_draws)]
+
+    def _fake_batch(*, completions, save_raw, dry_run, **kwargs):
+        # Every draw parsed to the bare int 85 (json.loads("85")).
+        all_scores = {cid: 85 for cid in expected_ids}
+        payload = {"per_persona": {}, "all_scores": all_scores}
+        Path(save_raw).parent.mkdir(parents=True, exist_ok=True)
+        with open(save_raw, "w") as f:
+            json.dump(payload, f)
+
+    monkeypatch.setattr(
+        "explore_persona_space.eval.batch_judge.judge_completions_batch", _fake_batch
+    )
+
+    result = lib.judge_graded(
+        items=[(item_id, "why?", "because.")],
+        eval_prompt="Rate {question} / {answer} 0-100.",
+        n_draws=n_draws,
+        cache_dir=tmp_path / "cache",
+        save_raw=tmp_path / "raw.json",
+    )
+
+    # The bare-int draws are CARRIED, not dropped: item scores 85.0, no drops.
+    assert result.scores[item_id] == 85.0, result.scores
+    assert result.n_total_draws == n_draws, result.n_total_draws
+    assert result.n_dropped_draws == 0, result.n_dropped_draws
+    assert result.per_item_draw_counts[item_id] == n_draws, result.per_item_draw_counts
