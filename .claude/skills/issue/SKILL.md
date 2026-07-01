@@ -235,8 +235,8 @@ proposed                                <- user has filed, clarifier hasn't run
                                                      |--> running (implementing sub-phase)  <- experiment-implementer (type:experiment) OR implementer (type:infra/batch)
                                                             |-- (epm:experiment-implementation OR epm:results posted)
                                                                |--> running (code-reviewing sub-phase)  <- code-reviewer ensemble (Claude + Codex)
-                                                                      |-- FAIL + count<3 --> running (implementing, v+1)
-                                                                      |-- FAIL + count>=3 --> blocked
+                                                                      |-- FAIL + count<5 --> running (implementing, v+1)
+                                                                      |-- FAIL + count>=5 --> apply Step 5d cap-hit rule: strip → PASS+continue OR surface residual (autonomous+substantive: blocked; interactive: parked)
                                                                       |-- PASS + [type:experiment] --> running (workload sub-phase)  <- experimenter (pod ops + monitoring)
                                                                             |-- (epm:results posted)
                                                                                |--> verifying              <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn
@@ -2062,8 +2062,8 @@ if every phase IS present (command + exit 0 + artifact digest) and
 only the *formatting* is imperfect, that is a `CONCERNS`, not a FAIL
 — and Step 5c-bis strips any mechanical-contract-only FAIL once the
 orchestrator verifies the evidence is genuinely present, so cosmetic
-gripes about present evidence never bounce the implementer or trip
-the cap-3 pivot. Code-only tasks (`infra` / `batch` / `analysis` /
+gripes about present evidence never bounce the implementer or consume a
+review round. Code-only tasks (`infra` / `batch` / `analysis` /
 `survey`) keep the existing test-verdict gate (Step 9c) and are
 exempt from this smoke gate.
 
@@ -2096,7 +2096,8 @@ reconciler invocations.
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
 (reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Step
-0.5), `smoke-run-missing` (Step 0.6)} and does NOT contain `substantive`
+0.5), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
+NOT contain `substantive`
 (any code / plan / test / security finding). The `**Blocker tags:**` line is
 the parse target; if a legacy verdict omits it, fall back to reading the
 Critical-section prose for the same tag strings. Apply this strip BEFORE the
@@ -2118,6 +2119,29 @@ judgment, just structural presence:
   `## Smoke run` section that covers only one phase (e.g. training) while the
   pipeline also runs a separate eval rig is genuinely absent for the missing
   phase — leave the FAIL in place.
+- **git-provenance:** the orchestrator reads the blocker's
+  `**Git-provenance subclass:**` line and runs the matching read-only git
+  probe from repo root (or against the branch ref `issue-<N>`, never by
+  switching the repo-root branch — CLAUDE.md hard rule):
+  - `pre-existing-on-trunk` → `git show main:<path>` resolves AND the round's
+    own commit range (`git show <round-sha>~1..<round-sha> -- <path>`, or the
+    implementer report's `<parent>..HEAD`) does NOT touch the flagged lines →
+    the violation is on trunk, not from this round → STRIP.
+  - `stale-main-or-worktree` → `git log --oneline main..issue-<N> -- <path>`
+    returns zero non-merge commits (branch never touched the file) → the
+    finding is a stale-branch artifact → STRIP.
+  - `cumulative-main-head-diff` → the flagged line is unchanged in the round's
+    OWN range (`git show <round-sha>~1..<round-sha> -- <path>` /
+    `<parent>..HEAD`) even though it appears in `main...HEAD` → out of round
+    scope → STRIP.
+  In ALL THREE: the strip fires ONLY when the git probe CONFIRMS the finding is
+  not from this round's diff. If the probe shows the round's own range DID touch
+  the flagged lines (git says the round introduced it), the strip does NOT fire
+  — leave the FAIL in place and apply the normal Step 5c rule. This is
+  evidence-based, never a blanket ignore. Merge-base errors on a sparse/shallow
+  worktree (`fatal: main...HEAD: no merge base`) are a checkout artifact — fall
+  back to the two-dot / round-SHA range per code-reviewer.md Step 0; a "no merge
+  base" error is never itself grounds to strip OR to FAIL.
 
 Then:
 
@@ -2136,11 +2160,16 @@ Then:
 
 This is bounded: the orchestrator may strip ONLY a mechanically-verifiable
 contract blocker (it is checking a structural fact, not overriding a
-code-substance judgment). It directly closes the gate-hopping failure mode —
+code-substance judgment) — for `git-provenance` the "structural fact" is the
+read-only git probe confirming the flagged state is NOT introduced by the
+round's diff (a git-history fact, same bounding logic as
+marker-shape/smoke-run-missing), never a code-substance judgment. It directly
+closes the gate-hopping failure mode —
 a reviewer that FAILs round after round on the *presentation* of evidence the
 marker demonstrably contains (e.g. round 1 marker-shape, round 2 smoke-digest
 formatting, never reviewing the code) can no longer bounce the implementer or
-trip the Step 5d cap-3 strategy pivot. The round counter does NOT increment
+consume a cap-5 round (the strategy pivot is retired; the strip still prevents
+the round counter from incrementing). The round counter does NOT increment
 for a strip. The clean-result-critique loop (Step 9a-bis) carries the same
 strip for *presentation-only* verifier FAILs (MDX prose, caption shape,
 cherry-label phrasing) — a clean-result FAIL backed only by presentation
@@ -2184,12 +2213,13 @@ per concern_id:
      mode never defers` AND EXECUTE the bounce in this same turn (spawn
      the implementer agent with a brief targeting the concern_id); do
      NOT state the Decision and then end the turn.
-- **severity=BLOCKER** → either address (option 1 above) OR pivot
-  strategy per `pivot_criteria.code_review_ensemble_cap_3`. BLOCKERs
-  CANNOT route to the deferral gate. If neither address nor pivot
-  resolves it, post `epm:failure v1 failure_class: code` referencing the
-  concern_id and set status:blocked (halt_criteria id=6
-  `concern_unresolved`).
+- **severity=BLOCKER** → either address (option 1 above) OR apply the
+  cap-hit rule per `pivot_criteria.code_review_ensemble_cap_5_surface`
+  (at cap-5: strip → all-stripped PASS+continue OR surface a substantive
+  residual). BLOCKERs CANNOT route to the deferral gate. If it cannot be
+  addressed and the residual is substantive, post `epm:failure v1
+  failure_class: code` referencing the concern_id and set status:blocked
+  (halt_criteria id=6 `concern_unresolved`).
 
 Multiple open CONCERNS may batch into ONE `AskUserQuestion` call <!-- gate: gates.concern_deferral_request --> <!-- autonomous-mode: skip --> with
 one option per concern_id plus a free-text rationale box per concern.
@@ -2214,37 +2244,58 @@ the same logic.
   - `infra` / `batch` / `analysis` / `survey` -> skip pod phase, move
     status directly to `reviewing` (the inline test-verdict gate at
     Step 9c runs from there).
-- **`final_verdict == FAIL` + revision_round<3** -> stay at status
+- **`final_verdict == FAIL` + revision_round<5** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
   present) as part of the brief. Implementer posts v<n+1>; loop back
   to 5a with `revision_round = n+1`.
-- **`final_verdict == FAIL` + revision_round>=3** -> **STRATEGY PIVOT,
-  not block** (see CLAUDE.md "STATE-TO-`blocked` criteria" and
-  workflow.yaml § pivot_criteria.code_review_ensemble_cap_3). The
-  implementation strategy isn't working — same diff family has failed
-  3 rounds. Re-invoke `/adversarial-planner` with explicit pivot scope
-  in the brief: "the implementer can't make this strategy work. Propose
-  a fundamentally different design (drop the offending component / swap
-  model / change architectural approach)." Treat the revised plan as a
-  fresh implementer cycle (`revision_round` RESETS to 1 on the new
-  plan). Track pivots in a top-level `epm:strategy-pivot v<n>` marker
-  with the pivot rationale and what changes.
+- **`final_verdict == FAIL` + revision_round>=5** -> **CAP-HIT:
+  strip-then-continue-or-surface** (replaces the retired cap-3 strategy
+  pivot; see CLAUDE.md "STATE-TO-`blocked` criteria" and workflow.yaml
+  § pivot_criteria.code_review_ensemble_cap_5_surface). At round 5 (the
+  cap) with a non-PASS ensemble verdict, the orchestrator:
+  1. **Applies the FULL Step 5c-bis strip once more** — the
+     mechanical-contract-only set {`marker-shape`, `smoke-run-missing`,
+     `git-provenance`}, evidence-based as always (git-provenance runs the
+     read-only git probe matching the blocker's declared subclass).
+  2. **If ALL residual blockers are stripped** (false-positive /
+     mechanical / git-provenance) → treat as PASS and CONTINUE (proceed
+     per the `final_verdict == PASS` branch above). Log one chat line +
+     post an `epm:progress` note recording the cap-5-strip-continue
+     outcome (which blockers were stripped and by what verification).
+  3. **If ANY substantive residual remains** (a real finding the strip
+     cannot verify away — silent-failure, upload-path/artifact-loss,
+     missing checkpoint-per-phase, resource-leak, scaffolded-but-unplumbed
+     pipeline, producer/consumer key mismatch, missing/incomplete smoke,
+     estimand/headline-poisoning) → **SURFACE** it. Do NOT ship past it,
+     do NOT same-diff-family pivot-loop:
+     - **Interactive mode:** present the residual blocker(s) to the user
+       (the two-path escalation is grandfathered for a genuine stuck-real
+       blocker; frame the residual + ask how to proceed). EXIT awaiting
+       the user.
+     - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): post
+       `epm:failure v1` with `failure_class: code` referencing the
+       residual blocker(s), set `status: blocked`, fire
+       `PushNotification({"message": f"#{N} BLOCKED: ensemble review real
+       residual at cap-5 — open it"[:200], "status": "proactive"})`, run
+       CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue-tick <N>` job;
+       idempotent), and EXIT. This is the standing halt path for a
+       genuinely-stuck real blocker after the auto-continue space is
+       exhausted (halt_criteria id=6 `concern_unresolved` family) — no
+       more pivots, no more silent shipping past.
 
-  Only after ~3 fundamentally different strategies have all FAILed AND
-  no further autonomous angle exists, move status to `blocked` and
-  exit. Post the §5 marker with `--exit-kind failure-exit` and notes
-  enumerating the strategies tried and why each failed. User decides:
-  override, revise scope, or escalate the diagnostic loop.
-
-  Bare cap-3 FAIL is NOT a block trigger. Continuing autonomously via
-  pivot is the default.
+  For a plan that is ITSELF internally contradictory, the
+  `plan_contradiction_replan` pivot (Step 7 / § pivot_criteria) still
+  applies — that is a different signal (the plan is the defect), not a
+  code-review cap-hit. Likewise the whack-a-mole detector (Step 5.bis(b))
+  is unchanged; the retired pivot is specifically the "same diff family
+  failed N rounds → re-plan" one.
 
 **Codex twin no-show fallback.** If the Codex wrapper posts
 `epm:failure v<m>` with `failure_class: codex-output-malformed` or
 `failure_class: infra` (codex plugin missing), proceed with
 single-reviewer (Claude-only) decision-making for that round. Do NOT
-block on the Codex twin's absence; cap-3 still applies to the Claude
+block on the Codex twin's absence; cap-5 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
 this round; using Claude reviewer only.`
 
@@ -4685,10 +4736,20 @@ contexts, sees v2 + prior critique events). Posts both
 `epm:interp-critique v2` and `epm:interp-critique-codex v2`. Apply rule
 again.
 
-**Max 3 rounds per reviewer.** After round 3, advance regardless with
-full critique history.
+**Max 5 rounds per reviewer.** At round 5 (the cap) with a non-PASS
+ensemble verdict, apply the Step 9a-bis-style procedural-only strip once
+more (procedural / presentation REVISEs). If ALL residual REVISEs are
+stripped → advance with full critique history. If ANY SUBSTANTIVE
+residual remains — a flagged OVERCLAIM the strip cannot resolve — SURFACE
+it, do NOT auto-publish into the record (this is the MOST important site
+for surface-not-ship, #784: a real residual at interp is an overclaim
+that must never be silently promoted). Interactive: present the residual
+to the user + EXIT. Autonomous (`EPM_AUTONOMOUS_SESSION=1`): post
+`epm:failure v1 failure_class: code` referencing the residual, set
+`status: blocked`, fire `PushNotification`, run CRON-TEARDOWN, EXIT
+(halt_criteria id=6 `concern_unresolved` family).
 
-**On PASS (or max rounds reached):**
+**On PASS (or all-stripped at the cap):**
 
 The analyzer **promotes the source task IN PLACE to a clean-result** —
 no separate task is created. The analyzer:
@@ -5104,11 +5165,20 @@ post the next critique version (`epm:clean-result-critique v<n>` +
 `epm:clean-result-critique-codex v<n>`); apply the same ensemble
 decision rule (including the procedural-only strip) as round 1.
 
-**Max 3 rounds.** After round 3, advance regardless and fold the
-residual structural / register debt into the chat-side summary so the
-user can decide whether to patch before promoting.
+**Max 5 rounds.** At round 5 (the cap) with a non-PASS ensemble verdict,
+apply the procedural-only strip once more (procedural / presentation
+REVISEs). If ALL residual REVISEs are stripped → advance. If ANY
+SUBSTANTIVE residual remains — a flagged OVERCLAIM the strip cannot
+resolve — SURFACE it, do NOT auto-publish into the clean-result record
+(#784 surface-not-ship: a real residual here is an overclaim that must
+never be silently promoted). Interactive: present the residual to the
+user + EXIT (the user decides whether to patch before promoting).
+Autonomous (`EPM_AUTONOMOUS_SESSION=1`): post `epm:failure v1
+failure_class: code` referencing the residual, set `status: blocked`,
+fire `PushNotification`, run CRON-TEARDOWN, EXIT (halt_criteria id=6
+`concern_unresolved` family).
 
-**On PASS (or max rounds reached):**
+**On PASS (or all-stripped at the cap):**
 
 Move status to `reviewing`:
 
@@ -7145,7 +7215,7 @@ wires each site to invoke `post_step_completed.py` with the right
 | Step 4b TDD gate awaiting `approve-tests` | 4b | user-gated | `parked` |
 | Step 4b TDD second pass | 4b | user-gated | `parked` |
 | Step 4b implementer EXIT to `running` | 4b | normal continuation | `clean` |
-| Step 5b code-review FAIL revision_round>=3 | 5b | error path | `failure-exit` |
+| Step 5b code-review FAIL revision_round>=5 | 5b | apply Step 5d cap-hit rule (strip-then-continue-or-surface) | `conditional` (all-stripped → `clean`; substantive residual → `failure-exit` autonomous / `parked` interactive) |
 | Step 6c pod URLs surfaced, leave at `running` | 6c | normal continuation | `clean` |
 | Step 6c pod provisioning failure | 6c | error path | `failure-exit` |
 | Step 6 preflight error/warning | 6 | error path | `failure-exit` |
@@ -7178,8 +7248,8 @@ dedicated "working" statuses):
 | `running` (implementing) | no `epm:experiment-implementation` (or `epm:results` for infra), no `epm:proposed-tests` either | implementer was cancelled | re-spawn implementer |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, no `epm:experiment-implementation`, no `epm:approve-tests` event posted **after** the `proposed-tests` event | TDD mode: tests posted, awaiting user approval | show the `proposed-tests` event timestamp + the `approve-tests` reply instruction, EXIT |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
-| `running` (implementing) | latest `epm:code-review` is FAIL, round < 3 | revision in progress | re-spawn implementer with critique |
-| `running` (implementing) | latest `epm:code-review` is FAIL, round >= 3 | exhausted retries | status to `blocked`, ask user |
+| `running` (implementing) | latest `epm:code-review` is FAIL, round < 5 | revision in progress | re-spawn implementer with critique |
+| `running` (implementing) | latest `epm:code-review` is FAIL, round >= 5 | cap reached | apply Step 5d cap-hit rule (strip-then-continue-or-surface): strip → all-stripped PASS+continue OR surface substantive residual (autonomous: `blocked` + notify; interactive: present to user) |
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
 | `running` (code-reviewing) | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
 | `running` (code-reviewing) | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
@@ -7194,13 +7264,13 @@ dedicated "working" statuses):
 | `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
 | `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `interpretation-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
-| `interpreting` | ensemble verdict PASS or round >= 3, neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel |
+| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 5 | revision needed | re-spawn analyzer with all critique events |
+| `interpreting` | ensemble verdict PASS or (round >= 5 AND the Step 9a cap-hit resolved: all residual stripped, no substantive overclaim residual), neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a surface-real-residual rule instead: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `interpreting` | `epm:clean-result-critique v<n>` exists, no `epm:clean-result-critique-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-clean-result-critic` only |
 | `interpreting` | `epm:clean-result-critique-codex v<n>` exists, no `epm:clean-result-critique v<n>` | Claude critic not yet returned | re-spawn `clean-result-critic` only |
 | `interpreting` | both `epm:clean-result-critique v<n>` and `epm:clean-result-critique-codex v<n>` exist, verdicts disagree (PASS-class vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `clean-result-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 3 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
-| `interpreting` | clean-result ensemble verdict PASS-class or round >= 3 | ready for review | advance to `reviewing` |
+| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 5 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
+| `interpreting` | clean-result ensemble verdict PASS-class or (round >= 5 AND the Step 9a-bis cap-hit resolved: all residual stripped, no substantive overclaim residual) | ready for review | advance to `reviewing`. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a-bis surface-real-residual rule: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
