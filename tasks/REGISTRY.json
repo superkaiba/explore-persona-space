@@ -4837,8 +4837,8 @@
       "goal": "Re-measure how well base-model mean answer activation v0(C) predicts behavioral expression E0(C,B) with the activation summary AND the judged-expression target computed over the SAME per-behavior probe set (>=50 judgments/context), removing #658's probe-distribution mismatch and 8-judgment noise floor; phase 1 = the 3 behaviors with existing >=50-probe completions+judgments (sycophancy/refusal/harmful_compliance), capture-only matched v0, ridge v0(C,B)->E0(C,B) LOCO per #742 recipe vs #658 mismatched ridge + diff-in-means.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/761",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/761",
+      "status": "awaiting_promotion",
       "title": "Matching the probe set raises the base-activation predictor of behavior expression on all three safety behaviors at every layer read, but the size of that gain is pinned down only for refusal (MODERATE confidence)"
     },
     "762": {
