@@ -1,0 +1,48 @@
+{
+  "commit": "7c7228a54c",
+  "created": "2026-07-01T15:59:57Z",
+  "figsize": [
+    9.0,
+    4.8
+  ],
+  "points": [
+    {
+      "within-condition Pearson r  (raw Persona-Vectors projection)": "0.4",
+      "y": 0.19999999999999996,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "within-condition Pearson r  (raw Persona-Vectors projection)": 0.245,
+      "y": 0.19999999999999998,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "within-condition Pearson r  (raw Persona-Vectors projection)": 0.813,
+      "y": 0.20000000000000007,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "within-condition Pearson r  (raw Persona-Vectors projection)": 0.669,
+      "y": 0.20000000000000007,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "within-condition Pearson r  (raw Persona-Vectors projection)": 0.735,
+      "y": 0.19999999999999996,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "within-condition Pearson r  (raw Persona-Vectors projection)": 0.511,
+      "y": 0.19999999999999996,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6
+}
