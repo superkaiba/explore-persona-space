@@ -23,12 +23,17 @@ Write ŵ = v_plus − v0 at the source diagonal (response-span mean, layer 14).
 r_B: #658 r_b.pt for em/sycophancy; store ``r_b_fact`` for fact (absent from
 #658). marker/refusal have NO r_B in either source → alignment-to-r_B skipped.
 
-READ-ONLY analysis. Downloads ONLY the L14 npz (~3.3 GB). Writes a JSON report;
-prints a markdown summary. Does NOT touch task bodies / eval_results commits.
+READ-ONLY analysis. Downloads ONLY the selected layer's npz (~2-3 GB). Writes a
+JSON report; prints a markdown summary. Does NOT touch task bodies / eval_results
+commits. The paired store carries exactly layers 7, 14, 21; ``--layer`` selects
+which (default 14 — the original committed run). c_C / c_C_postft are per-layer
+already, so L7 / L21 reproduce the L14 recipe at their depth with no other change.
 
 Usage::
 
-    uv run python scripts/issue667_deltac_probe.py --out /tmp/deltac_report.json
+    uv run python scripts/issue667_deltac_probe.py                 # L14 (default)
+    uv run python scripts/issue667_deltac_probe.py --layer 7
+    uv run python scripts/issue667_deltac_probe.py --layer 21
 """
 
 # ruff: noqa: RUF001, RUF002, RUF003  # math/scientific notation in docstrings + messages
@@ -50,6 +55,11 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 PREVIEW_PREFIX = "issue667_gate_chain_preview/analysis_tensors"
 R_B_PATH = "issue658_theory_assumptions/store/r_b.pt"
+# Layer is a module-level default (14 — the original committed run's target) that
+# main() overrides from --layer. The paired store contains exactly layers 7, 14,
+# 21. c_C / c_C_postft are read directly from each per-layer _L{LAYER}.npz (already
+# layer-specific), so the analysis path is layer-agnostic — only the download glob,
+# the load regex, and the r_B indexing key off LAYER; each threads it explicitly.
 LAYER = 14
 LAYER_IDX = LAYER - 1  # c_C_all_layers[li-1] convention (hs[1:] drops embeddings)
 HIDDEN = 3584
@@ -82,8 +92,8 @@ def cos(a: np.ndarray, b: np.ndarray) -> float:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def snapshot_l14() -> Path:
-    """Bulk-download ONLY the L14 npz (parallel, ~3.3 GB) via snapshot_download.
+def snapshot_layer(layer: int = LAYER) -> Path:
+    """Bulk-download ONLY the given layer's npz (parallel, ~2-3 GB) via snapshot_download.
 
     Per-file hf_hub_download over 1920 files is round-trip-bound and glacial;
     snapshot_download with allow_patterns parallelizes it. Returns the local
@@ -95,19 +105,19 @@ def snapshot_l14() -> Path:
         HF_DATA_REPO,
         repo_type="dataset",
         revision="main",
-        allow_patterns=[f"{PREVIEW_PREFIX}/*/*/*_L{LAYER}.npz"],
+        allow_patterns=[f"{PREVIEW_PREFIX}/*/*/*_L{layer}.npz"],
         max_workers=16,
     )
     return Path(root) / PREVIEW_PREFIX
 
 
-def load_store() -> dict[str, dict[tuple[str, str], dict]]:
-    """{behavior: {(source, target): npz_dict}} for layer 14 (bulk snapshot)."""
-    base = snapshot_l14()
-    npz_files = sorted(str(p) for p in base.rglob(f"*_L{LAYER}.npz"))
+def load_store(layer: int = LAYER) -> dict[str, dict[tuple[str, str], dict]]:
+    """{behavior: {(source, target): npz_dict}} for the given layer (bulk snapshot)."""
+    base = snapshot_layer(layer)
+    npz_files = sorted(str(p) for p in base.rglob(f"*_L{layer}.npz"))
     out: dict[str, dict[tuple[str, str], dict]] = defaultdict(dict)
     for i, p in enumerate(npz_files):
-        m = re.search(rf"analysis_tensors/([^/]+)/([^/]+)/([^/]+)_L{LAYER}\.npz$", p)
+        m = re.search(rf"analysis_tensors/([^/]+)/([^/]+)/([^/]+)_L{layer}\.npz$", p)
         if not m:
             continue
         beh, cell, tgt = m.groups()
@@ -133,14 +143,14 @@ def load_store() -> dict[str, dict[tuple[str, str], dict]]:
     return out
 
 
-def load_r_b(behavior: str) -> np.ndarray | None:
+def load_r_b(behavior: str, layer: int = LAYER) -> np.ndarray | None:
     col = RB_COL.get(behavior)
     if col is None:
         return None
     import torch
 
     d = torch.load(Path(_hf(R_B_PATH)), weights_only=False, map_location="cpu")
-    return d["r_b"][col][RB_RECIPE][LAYER].float().numpy().astype(np.float64)
+    return d["r_b"][col][RB_RECIPE][layer].float().numpy().astype(np.float64)
 
 
 def fact_r_b_from_store(cells: dict) -> np.ndarray | None:
@@ -383,8 +393,8 @@ def _fmt(a: dict, key: str) -> str:
     return f"{v:.3f}" if isinstance(v, float) and v == v else "n/a"
 
 
-def render_md(results: dict, xbeh: dict) -> str:
-    lines = ["# Δc context-vector shift decomposition (layer 14, seed 42)\n"]
+def render_md(results: dict, xbeh: dict, layer: int = LAYER) -> str:
+    lines = [f"# Δc context-vector shift decomposition (layer {layer}, seed 42)\n"]
     lines.append(
         "| behavior | n_src | ‖Δc‖/‖c_C‖ med | SVD-over-src top1 | top2 | top3 | chance | "
         "mean pairwise cos | SVD-over-tgt top1 (med) |"
@@ -445,36 +455,45 @@ def _json_default(o):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default="/tmp/issue667_deltac_report.json")
+    ap.add_argument(
+        "--layer",
+        type=int,
+        default=LAYER,
+        help="residual layer to decompose (paired store has 7, 14, 21; default 14)",
+    )
+    ap.add_argument("--out", default=None)
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS))
     args = ap.parse_args()
 
-    print("loading L14 store from HF (~3.3 GB, L14 npz only) ...", file=sys.stderr)
-    store = load_store()
+    layer = args.layer
+    out = args.out or f"/tmp/issue667_deltac_report_L{layer}.json"
+
+    print(f"loading L{layer} store from HF (~2-3 GB, L{layer} npz only) ...", file=sys.stderr)
+    store = load_store(layer)
     for b in args.behaviors:
         print(f"  {b}: {len(store.get(b, {}))} cells", file=sys.stderr)
 
     results = {}
     for b in args.behaviors:
         cells = store.get(b, {})
-        r_b = load_r_b(b)
+        r_b = load_r_b(b, layer)
         if r_b is None and b == "fact":
             r_b = fact_r_b_from_store(cells)
         results[b] = analyze_behavior(b, cells, r_b)
 
     xbeh = cross_behavior(results)
-    md = render_md(results, xbeh)
+    md = render_md(results, xbeh, layer)
 
     # strip private vectors before JSON dump
     clean = {b: {k: v for k, v in r.items() if not k.startswith("_")} for b, r in results.items()}
-    Path(args.out).write_text(
+    Path(out).write_text(
         json.dumps(
-            {"layer": LAYER, "seed": 42, "by_behavior": clean, "cross_behavior": xbeh},
+            {"layer": layer, "seed": 42, "by_behavior": clean, "cross_behavior": xbeh},
             indent=2,
             default=_json_default,
         )
     )
-    print(f"\nwrote {args.out}", file=sys.stderr)
+    print(f"\nwrote {out}", file=sys.stderr)
     print("\n" + md)
     return 0
 
