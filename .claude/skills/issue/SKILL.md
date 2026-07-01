@@ -1711,7 +1711,10 @@ Only if status is `approved`.
 **4a. Worktree + draft PR.** Create `.claude/worktrees/issue-<N>` on
 branch `issue-<N>`, symlink the repo `.env` into it, and open a draft PR.
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
+# #506-safe: from a worktree cwd, `git rev-parse --show-toplevel` returns the
+# WORKTREE root and doubles the path (.../issue-<N>/.claude/worktrees/issue-<N>);
+# --git-common-dir resolves to <main>/.git so dirname is the main repo root.
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 WORKTREE="$REPO_ROOT/.claude/worktrees/issue-<N>"
 bash "$REPO_ROOT/scripts/new_worktree.sh" "$WORKTREE" issue-<N> --issue <N>
 # Sparse by default (~0.4G vs ~3.8G full); reuses if it exists (resume case);
@@ -1741,8 +1744,11 @@ tool's working directory is NOT preserved across separate calls, so a
 relative `cd .claude/worktrees/issue-<N>` in one call has no effect on
 the next. ALWAYS address the worktree with an absolute path or
 `git -C "$WORKTREE" <cmd>` — never a bare relative `cd`. Resolve the
-absolute path once with `git rev-parse --show-toplevel` (as above) and
-reuse `$WORKTREE` / `$REPO_ROOT` in every subsequent command.
+absolute path once with the #506-safe
+`REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")`
+recipe (as above) — NOT `git rev-parse --show-toplevel`, which from a
+worktree cwd returns the worktree root and doubles the path — and reuse
+`$WORKTREE` / `$REPO_ROOT` in every subsequent command.
 
 **Open the draft PR only if the branch is ahead of `main`.** `gh pr
 create` errors with `No commits between main and issue-<N>` when the
@@ -1904,6 +1910,9 @@ Before dispatching, sync the worktree's workflow surface from local
 already runs on `main`):
 
 ```bash
+# Step 5a WANTS the WORKTREE root (that is where the spec-freshness sync writes)
+# — NOT the #506 path-doubling bug; do NOT change to --git-common-dir here. The
+# self-no-op case (session already on main) is why show-toplevel is correct.
 WT=$(git rev-parse --show-toplevel)
 SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md"
 MB=$(git -C "$WT" merge-base HEAD main)
@@ -6171,7 +6180,25 @@ suite directly and posts an `epm:test-verdict` event with the result.
       `uv run python scripts/select_step9c_tests.py --base main`
       It prints the exact `uv run pytest <files> -v --tb=short` command and
       any `untested touched file: <path>` WARN lines (stderr).
-   b. Run the printed command. Record pass/fail + any WARN lines.
+   b. Run the printed command from the orchestrator's repo-root cwd (no `cd`
+      is needed). Record pass/fail + any WARN lines. Two anti-silent-pass
+      guards are LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0
+      with zero collected tests) is a **FAIL, never a PASS**: it is the
+      signature of a failed `cd` that ran pytest in a directory with no tests
+      (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS
+      on `no tests ran ... pytest exit: 0` and was silently skipped).
+      ```bash
+      # If any cd is added upstream, HARD-GUARD it — never let the gate run in
+      # the wrong dir on a silent cd failure:
+      #   cd "$REPO_ROOT" || { echo "FATAL: cd to repo root failed" >&2; exit 1; }
+      PYTEST_OUT=$(uv run pytest <files> -v --tb=short 2>&1); PYTEST_RC=$?
+      echo "$PYTEST_OUT"
+      # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
+      if echo "$PYTEST_OUT" | grep -qiE 'no tests ran|collected 0 items'; then
+        echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
+        # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
+      fi
+      ```
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — but as
       `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
@@ -6184,7 +6211,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
 
 The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
 the files run, pass/fail counts, and any untested-touched-file WARNs (so the
-orchestrator surfaces coverage gaps — never silently skipped).
+orchestrator surfaces coverage gaps — never silently skipped). A
+zero-collected / `no tests ran` outcome is recorded as FAIL (never PASS on
+exit 0) per step 1b's guard.
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run

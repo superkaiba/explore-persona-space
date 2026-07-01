@@ -227,13 +227,16 @@ def missing_invariants(repo_root: Path) -> list[str]:
 def _resolve_repo_root(arg: str | None) -> Path:
     if arg:
         return Path(arg).resolve()
+    # #506-safe: from a worktree cwd, `git rev-parse --show-toplevel` returns the
+    # WORKTREE root; --git-common-dir resolves to <main>/.git, so dirname is the
+    # main repo root (where tests/ paths must resolve). See SKILL.md Steps 4a/10d.
     out = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
         capture_output=True,
         text=True,
         check=True,
     )
-    return Path(out.stdout.strip()).resolve()
+    return Path(out.stdout.strip()).parent.resolve()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -254,6 +257,20 @@ def main(argv: list[str] | None = None) -> int:
 
     tests, untested = select_tests(touched, repo_root)
     missing = missing_invariants(repo_root)
+
+    # Fail loud on an EMPTY selection (defense-in-depth beside the Step 9c shell
+    # guard against a silent test-gate pass). WORKFLOW_INVARIANT has 32 always-on
+    # entries, so an empty list can only mean the repo_root resolved wrong (the
+    # #506 path-doubling bug) or the invariant files all vanished — either way the
+    # gate would run zero tests. Never let that surface as an exit-0 "no tests ran".
+    if not tests:
+        print(
+            "select_step9c_tests: EMPTY test selection — repo_root likely resolved "
+            f"wrong ({repo_root}) or WORKFLOW_INVARIANT files are missing "
+            f"(missing={missing}). Refusing to emit a zero-test gate command.",
+            file=sys.stderr,
+        )
+        return 1
 
     for t in missing:
         print(f"WORKFLOW-INVARIANT MISSING: {t}", file=sys.stderr)
