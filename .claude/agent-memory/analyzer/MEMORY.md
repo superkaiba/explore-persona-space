@@ -47,3 +47,4 @@
 - [Check siblings before drafting](feedback_check_siblings_before_drafting.md) — ls `_multiseed`/`_replication`/`_redo` sibling dirs first; they often hold the refutation of the primary run's headline.
 - [Pin effective batch across matrix](feedback_pin_effective_batch_across_matrix.md) — verify every matrix cell ran the same effective batch/steps; mismatches masquerade as interaction effects.
 - [Glob all layouts for eval JSONs](feedback_glob_both_layouts_for_eval.md) — per-seed detailed JSONs live in 4 layouts; union all globs + verify count == n_seeds before aggregating.
+- [Write/Edit can silently no-op — verify on disk](feedback_write_tool_silent_noop_verify_ondisk.md) — Write/Edit to the canonical cache path reported success but disk was unchanged; md5/mtime-check on disk, write to a fresh path + cp if stale (#761).
