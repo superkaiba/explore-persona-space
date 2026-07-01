@@ -22,10 +22,6 @@ goal: 'Re-run #722''s pre/post-finetuning function-change (Delta = median |M+(c)
 ---
 # Does the best answer-summary change #722's base-vs-post-FT function-change verdict
 
-## Goal
-
-Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.
-
 ## Overview / Motivation
 
 [#722](https://eps.superkaiba.com/tasks/722) concluded that finetuning
@@ -85,6 +81,24 @@ launch until A reports which answer-side summary/position wins the base-map read
 
 ~8 GPU-h (paired base+post-FT re-extraction, forward-pass only; the fit harness
 is minutes). Under the 20-GPU-h cheap band.
+
+## Compute & optimization (standing constraints — planner must honor)
+
+- **Reuse the #722/#667 machinery.** Paired base+post-FT extraction is
+  `scripts/issue667_extract.py`; the function-change / chain-ρ fits are
+  `scripts/issue722_fit_M.py` + `scripts/issue667_marker_mapchange.py` over the
+  batched `analysis/vectorized_mlp_skill.py` (on `main` @ `e000e253`). Extend;
+  do NOT rewrite the fit loop.
+- **Vectorize every many-cell fit — no per-cell Python loop** (behavior × layer ×
+  the winning summary; `.claude/rules/vectorize-many-cell-fits.md`; the #722
+  19.5-CPU-h serial-loop incident is the parent line's own scar).
+- **Extraction on a GPU lane** (forward-pass-only, `intent: eval`/`debug`).
+- **Size the footprint; keep big jobs OFF the shared VM — the paired store is 2×**
+  (base + post-FT), so it doubles the per-position footprint. Store only the
+  aligned position subset for the winning summary, fp16/PCA. If > 50 GB
+  (`VM_ANALYSIS_FOOTPRINT_GB_MAX`), route analysis to `intent: cpu-bigmem`; else a
+  cheap CPU pod, never the shared VM (#658/#747). Release the GPU pod before the
+  CPU fit phase (#664/#778).
 
 ## Provenance
 
