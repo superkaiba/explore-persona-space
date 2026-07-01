@@ -1,9 +1,24 @@
 ---
 name: weekly
-description: End-of-week Explore Persona Space narrative — what happened across the week, plus an exhaustive sweep of every problem/confusion/error in the week's Claude Code session transcripts, each with a concrete fix. Same detail bar as /daily but over the whole ISO week (catches what daily missed, plus a living-docs drift check). Workflow-fixable problems become proposed diffs (PROPOSED, not auto-applied; Thomas greenlights); every other problem is logged with a suggested action so nothing is dropped.
+description: MANUAL-only on-demand deep-dive (no cron); nothing load-bearing depends on it — its two former load-bearing checks (the docs/open_questions.md drift lint + the parked/declined-proposal backstop) now run nightly in /daily. End-of-week Explore Persona Space narrative — what happened across the week, plus an exhaustive sweep of every problem/confusion/error in the week's Claude Code session transcripts, each with a concrete fix. Same detail bar as /daily but over the whole ISO week (catches what daily missed, plus a living-docs drift check). Workflow-fixable problems become proposed diffs (PROPOSED, not auto-applied; Thomas greenlights); every other problem is logged with a suggested action so nothing is dropped.
 ---
 
 # Weekly Narrative
+
+> **Manual deep-dive only — NOTHING load-bearing depends on this running.**
+> `/weekly` is not on any cron (its Friday nudge was disabled 2026-06-17:
+> `#DISABLED 2026-06-17 (Thomas: removed all reminder crons, moving back to
+> Todoist)` — do NOT re-arm it) and is invoked by hand only. Its two former
+> load-bearing consolidation checks — the `docs/open_questions.md` drift lint
+> and the parked/declined-proposal re-consideration backstop — now run nightly
+> in `/daily` (see `.claude/skills/daily/SKILL.md` § Living-docs drift). Run
+> `/weekly` only when you want a manual whole-week narrative recap + exhaustive
+> week-scale problem sweep; skipping it loses nothing automated. Its third
+> consolidation function — the critic-recurrence mechanization harvest (Process
+> step 8) — was NOT folded into nightly `/daily` (it keys on a week-scale ≥2×
+> recurrence window that does not map to a single night, and the workflow-fix
+> channel already auto-files individual recurring critic findings independently);
+> it stays here as a manual deep-dive.
 
 Use `tasks/` as the canonical workflow state source. External trackers may be cited
 as historical links, but they are never the queue, status source, approval
@@ -11,7 +26,7 @@ source, promotion source, or comment thread for workflow decisions.
 
 Two jobs in one file:
 1. **Recap** — week-scale narrative of project activity.
-2. **Problem sweep + fixes** — go through the WEEK's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not a top-5. Each workflow-fixable problem becomes a surgical proposed diff in `## Proposed workflow improvements` (PROPOSED ONLY — Thomas reviews, says "do 1, 3", `workflow-improver` applies the greenlit ones). Every other problem is logged in `## Other problems & notes` with a one-line suggested action, so nothing is dropped.
+2. **Problem sweep + fixes** — go through the WEEK's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not a top-5. Each workflow-fixable problem becomes a surgical proposed diff in `## Proposed workflow improvements` (PROPOSED ONLY — Thomas reviews, says "do 1, 3"; the greenlit ones are FILED as `kind: infra` workflow-fix tasks + spawned `/issue --auto` per the workflow-fix-on-bug protocol). Every other problem is logged in `## Other problems & notes` with a one-line suggested action, so nothing is dropped.
 
 The weekly sweep uses the SAME detail bar as `/daily` — every distinct problem counts, with no recurrence requirement. The only differences from daily are the window (the whole ISO week) and the extra living-docs drift check. Weekly is the safety net that catches problems daily missed plus still-open problems from earlier in the week. Cross-reference the daily files to avoid re-nagging (see "Cross-reference daily files" below): already-fixed problems are skipped, and previously-declined ones are listed as notes rather than re-proposed.
 
@@ -39,7 +54,7 @@ failures.
 4. Cross-check accepted claims against `RESULTS.md` and artifact paths.
 5. Draft a concise narrative with evidence and explicit caveats.
 6. **Sweep the week's transcripts for problems**. Catch every distinct problem / confusion / error — no recurrence bar (same detail bar as `/daily`, just over the whole week). See "Problem sweep" section below for what to look for, the two-bucket triage, and the shape proposals take.
-7. **Living-docs drift check**. Run `uv run python scripts/living_docs.py check` and capture its output + exit code. It lints the living hub (`docs/open_questions.md`) for `relates_to` ⇄ question-evidence mismatches, `completed` experiments with `has_clean_result` missing from any question's evidence, dangling evidence `#N`, and questions stale relative to new results. A nonzero exit = drift. Surface the findings in the `## Living-docs drift` section (see Output below). When drift is found, PROPOSE — do not run — an `open_questions.md` re-synthesis (the updater/backfill), consistent with the "every living-docs mutation is user-confirmed" rule. The script never mutates the docs; `check` is read-only.
+7. **Living-docs drift check**. Run `uv run python scripts/living_docs.py check` and capture its output + exit code. It lints the living hub (`docs/open_questions.md`) for `relates_to` ⇄ question-evidence mismatches, `completed` experiments with `has_clean_result` missing from any question's evidence, dangling evidence `#N`, and questions stale relative to new results. A nonzero exit = drift. Surface the findings in the `## Living-docs drift` section (see Output below). When drift is found, PROPOSE — do not run — an `open_questions.md` re-synthesis (the updater/backfill), consistent with the "every living-docs mutation is user-confirmed" rule. The script never mutates the docs; `check` is read-only. **This same drift check now also runs nightly in `/daily` (§ Living-docs drift) — running it here too is harmless/idempotent: a manual weekly run shares the SAME dedup event-stream (`.claude/cache/nightly-consolidation-events.jsonl`, see `.claude/skills/daily/SKILL.md` § Living-docs drift → dedup), so it will NOT double-propose against a drift proposal `/daily` already logged + still open.**
 8. **Critic-recurrence harvest (mechanization ratchet)**. Run `uv run python scripts/critic_mechanization_report.py` and capture its per-month summary (blockers tagged `mechanizable: yes` vs `no` vs untagged, plus the best-effort count of verifier-landing workflow fixes — the ratchet metric). Then sweep the week's critic FAIL-class verdicts (events.jsonl markers `epm:plan-critique*`, `epm:code-review*`, `epm:interp-critique*`, `epm:clean-result-critique*`; skip reconcile markers) and group findings into classes. Any finding class that recurred ≥2× across the week is a mechanization candidate: file it via the workflow-fix channel (`.claude/rules/workflow-fix-on-bug.md` § "Yes — emit", the critic-finding bullet) naming the target verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) and the concrete check, AND record it as a numbered item under `## Proposed workflow improvements` so the weekly file keeps the ratchet visible. One-off artifact-specific findings are NOT candidates — the bar is a concrete check likely to recur. Dispatch-default note: mechanization candidates ride the workflow-fix channel's own defaults (auto-spawn for in-scope, non-architectural checks per `.claude/rules/workflow-fix-on-bug.md`) — the weekly numbered item is the visible record, NOT a second greenlight gate; the greenlight flow below governs only this skill's other (non-channel) proposals. Include the report's TOTAL row as a one-line note in `## What happened` (e.g. "mechanization ratchet: 12 yes / 4 no / 31 untagged blockers; 3 verifier checks landed").
 
 ## Output
@@ -174,7 +189,7 @@ Nothing the week surfaced gets silently dropped; the cross-reference only change
 **Forbidden targets**:
 - Hooks in `.claude/settings.json` — surface in `## My thoughts` for Thomas to wire via `/update-config`.
 - Creating new agents or skills — surface as "consider creating X" with rationale, don't pre-draft.
-- `scripts/*.py` orchestration — `workflow-improver`'s job after greenlight.
+- `scripts/*.py` orchestration — the greenlit workflow-fix `/issue` session's job after greenlight.
 
 **Proposal shape**: same as /daily — numbered, with target / what / why / proposed diff.
 
@@ -197,7 +212,7 @@ helps — grouping is fine, dropping is not.
 
 ### Greenlight flow
 
-Thomas reads the proposals, replies with e.g. "do 1, 3" or "do all" or "skip 2 — let's discuss". The handling assistant spawns `workflow-improver` with the specific proposals. `workflow-improver` makes edits, runs `scripts/workflow_lint.py`, commits with message `workflow: apply weekly-proposed edits 1,3 (YYYY-Www)`.
+Thomas reads the proposals, replies with e.g. "do 1, 3" or "do all" or "skip 2 — let's discuss". The handling assistant FILES each greenlit proposal as a `kind: infra` workflow-fix task (`task.py new --kind infra --title "workflow-fix: ..." --body-file ...`) + spawns a background `/issue <N> --auto` session per the workflow-fix-on-bug protocol (`.claude/rules/workflow-fix-on-bug.md`) — same routing as an auto-raised candidate, just user-greenlit first. Each session's `/issue` pipeline makes the edits, runs `scripts/workflow_lint.py` on what it touched, and Step 10d auto-merges to `main`.
 
 Declined proposals stay in the weekly file as historical record.
 

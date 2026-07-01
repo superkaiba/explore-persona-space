@@ -1,0 +1,87 @@
+---
+name: vectorize-many-cell-fits
+description: Many-cell gradient-descent fits (per-fold / per-cell MLP / AdamW LOCO sweeps, per-cell probes) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell axes into batched tensor ops BEFORE reaching for GPU. A naive serial loop is 50-100x slower than the same math vectorized.
+paths:
+  - "scripts/issue*_fit*.py"
+  - "scripts/issue*_skill*.py"
+  - "scripts/issue*_predictor*.py"
+  - "scripts/issue*_loco*.py"
+  - "src/explore_persona_space/analysis/**"
+---
+
+# Vectorize many-cell gradient-descent fits
+
+**When a per-cell / per-fold gradient-descent fit (a small MLP / probe / adapter
+trained with SGD/AdamW, looped over LOCO folds × output dims × layers × cells)
+is slow, the fix is almost always VECTORIZATION, not GPU.** These sweeps are
+**overhead-bound, not FLOP-bound**: the per-fit arithmetic is tiny, so wall-time
+is dominated by Python loop overhead, torch op-dispatch on small tensors, and
+thread oversubscription — none of which a GPU fixes (a GPU can be SLOWER on
+sub-millisecond ops because kernel-launch overhead dominates).
+
+## The diagnostic signature
+
+- The job runs at high `%CPU` (many cores) but makes little progress, with a
+  huge `cputime / walltime` ratio and a large thread count (`NLWP`).
+- A back-of-envelope FLOP count is tiny (minutes of real compute) yet the job
+  has burned hours of CPU-time.
+- No per-cell checkpoint; output only at the very end → opaque, no ETA.
+
+**Worked incident (2026-06-29):** #722's `base-skill-over-mean-cC-to-v0` ran a
+per-fold MLP LOCO sweep — 28 layers × 3 MLP variants (base / z-scored-input /
+shuffle-null) × 50 LOCO folds × 300 epochs of a width-512, 1-hidden-layer net on
+~49 training rows. Total math ≈ **19 TFLOP** (minutes on CPU, seconds on GPU).
+Actual: **19.5 CPU-hours / 96+ min walltime, 78 threads, ~12 cores pegged, not
+finished.** ~99% overhead. Plan v5 §9 had explicitly judged it "not GPU-worthy …
+CPU-feasible ~30-60 min" — correct that GPU was the wrong lever, wrong that the
+serial CPU loop was acceptable. The actual fix was vectorization. (#658's
+`_fit_mlp_loco` was the same pattern, motivating the compute-character carve-out;
+it recurred here.)
+
+## The fix
+
+1. **Train all LOCO folds simultaneously** as one BATCHED parameter tensor.
+   Use `torch.func.functional_call` + `vmap`, OR a `(B, in, hid)` / `(B, hid,
+   out)` weight tensor with `torch.bmm`, OR grouped / block-diagonal linears.
+   The 300-epoch loop becomes ~300 BATCHED steps total, NOT folds × epochs tiny
+   steps.
+2. **Batch the other independent axes into the same batch dimension** — output
+   dims (one MULTI-output net, never one scalar net per dim), layers, and fit
+   variants. One batched optimization covers the whole sweep.
+3. **`torch.set_num_threads(...)` to a sane value** — tiny ops thrash with the
+   default high thread count; fewer, larger (batched) ops actually use the cores.
+4. **GPU is secondary and often marginal at small n** — vectorized CPU is usually
+   already minutes. Add a `--device cuda` flag, but vectorize FIRST; do not route
+   the un-vectorized serial loop to a GPU lane expecting a fix.
+5. **Verify the vectorized reimplementation reproduces the serial numbers** on
+   2-3 cells within float tolerance before trusting it (vmap'd init/seed/PCA-basis
+   handling is easy to get subtly wrong).
+
+## Canonical helper
+
+`src/explore_persona_space/analysis/vectorized_mlp_skill.py` — the reusable
+batched LOCO MLP-skill / downstream-chain implementation built from this
+incident (built during #722 at commit `19a5758fab`, landed on `main` via #740).
+Import it for any new
+per-fold/per-cell MLP sweep instead of writing a fresh serial loop. (Closed-form
+ridge / linear LOCO is already cheap via
+`scripts/issue658_fit_predictors.py`'s `_press_loo_mse_per_lambda` /
+`_ridge_dual_weights` — only the gradient-descent arms need this.)
+
+## Relation to the compute-character carve-out
+
+`CLAUDE.md` § "compute-character carve-out" (+ `planner.md` §9, `critic.md`
+Methodology lens item 10(iii)) says an iterative gradient-descent fit is
+GPU-worthy regardless of footprint. This rule REFINES it: for a MANY-CELL loop of
+individually-tiny fits, **vectorize first** — the overhead, not the FLOPs nor the
+device, is the cost. Route to GPU only after vectorizing, and only if the
+vectorized FLOP count actually warrants it. A plan that places a many-cell GD
+sweep on the VM as a serial per-fit loop (no vectorization plan) should be
+REVISED to vectorize, not merely re-routed to GPU.
+
+## Files of record
+
+`.claude/rules/vectorize-many-cell-fits.md` (this file);
+`src/explore_persona_space/analysis/vectorized_mlp_skill.py` (helper — built
+during #722 at commit `19a5758fab`, landed on `main` via #740);
+incidents #722 (base-skill-over-mean, 19.5 CPU-h), #658 (`_fit_mlp_loco`).

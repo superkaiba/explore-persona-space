@@ -25,20 +25,60 @@ Auto-terminate pods EXITED >24h — EXEMPT when the owning task carries the
 
 ## Stale-GCP-VM janitor (09:37 daily, `cron_gcp_audit.sh` → `gcp_audit.py`)
 
-The GCP analogue of the stale-pod audit — the credit-leak backstop for
-`eps-issue-*` GCE instances that escaped the canonical ephemeral teardown
+The GCP analogue of the stale-pod audit — the credit-leak backstop for the
+WHOLE dedicated `eps-persona-gpu-jun2026` project (#688), not just
+`eps-issue-*` (a non-`eps-issue-*` leftover — the #680 `eps-cap-probe2-1786331`
+flex-start probe ran ~20h, ~$14 — was invisible to the old `name~^eps-issue-`
+filter). Catches instances that escaped the canonical ephemeral teardown
 (`--max-run-duration` DELETE + EXIT-trap). Wraps the
-`backends.gcp.audit_stale_gcp_vms` reaper; the reap predicate lives in the
-library, the cron + CLI are the wiring. Scheduled next to the RunPod sweep
+`backends.gcp.audit_stale_gcp_vms` reaper; the reap/classify predicate lives in
+the library, the cron + CLI are the wiring. Scheduled next to the RunPod sweep
 (`37 9 * * *`) so both backends reclaim on the same daily pass.
 
-**Reap predicate** (two bounded fences, both in the reaper — see the
-`audit_stale_gcp_vms` docstring):
+**Classification + routing (the HYBRID posture).** The janitor lists the whole
+project (`JANITOR_LIST_NAME_FILTER = None`) and classifies each stale instance
+by name into one of four classes, routed differently:
 
-- **24h age backstop** (`--max-age-hours`, default 24): any `eps-issue-*`
-  instance older than the threshold, regardless of phase — the last-resort
-  fence for a VM whose `--max-run-duration` DELETE never fired
-  (`reason="age"`).
+- **`managed`** (`eps-issue-*`, the router-owned names) → AUTO-DELETE on the
+  bounded fences below, exactly as before.
+- **`allowlisted-ephemeral`** (a known-throwaway name prefix, default
+  `eps-cap-probe*` — the #680 capacity-probe leak class; grow the
+  `_EPHEMERAL_REAP_PREFIXES` tuple as new patterns emerge) → AUTO-DELETE on the
+  same fences.
+- **`unmanaged`** (anything else in the project) → WARN-and-ESCALATE, never
+  auto-deleted: a Telegram phone push (via the my-goat `telegram_push.sh`
+  channel, `NOTIF_CAT=research`, fail-soft — a missing/failing push never
+  blocks the sweep or hides the record) PLUS a durable sidecar JSON row at
+  `.claude/cache/gcp-janitor-events.jsonl` (a dedicated stream, separate from
+  the disk-pressure-scoped `disk-guard-events.jsonl`). Records carry
+  `action="would-escalate"` (report-only) / `"escalated"` (under `--delete`).
+  An instance the janitor cannot positively classify as throwaway is treated
+  like active data — surfaced, not reaped (the project's canonical
+  warn-don't-delete posture, #679).
+- **`keep`** (an opt-out prefix, `_JANITOR_KEEP_PREFIXES`, empty today) → never
+  reaped OR escalated; emits a `skipped` record so the operator sees it was
+  inspected and deliberately left alone.
+
+The router seams (`reconnect_or_none` / `_stale_named_instance_or_none`) keep
+their EXACT `name=eps-issue-<N>` list filters — only the JANITOR's inventory
+query broadens, so broadening cannot leak into the router's reconnect/reclaim
+namespace.
+
+**Reap predicate** (two bounded fences, both in the reaper, applied to the
+reap-class instances — see the `audit_stale_gcp_vms` docstring):
+
+- **Per-instance-fence-aware age backstop** (#741): any project instance is
+  age-stale, regardless of phase, when EITHER it has a readable
+  `scheduling.maxRunDuration` (set natively by GCP when the create passed
+  `--max-run-duration`) and has exceeded that fence + a 1h grace
+  (`_JANITOR_FENCE_GRACE_SECONDS`), OR it has NO readable fence and has lived
+  past the fixed `--max-age-hours` fallback (default 192h = 8d, covering the 7d
+  `default_max_run_duration` + margin) — the last-resort fence for a VM whose
+  `--max-run-duration` DELETE never fired (`reason="age"`; the reap-vs-escalate
+  split is then decided by classification). Tracking each instance's OWN fence
+  (a 24h job reaps at ~25h, a 7d job at ~7d+1h) instead of a single fixed
+  wall-clock avoids re-creating #697 — a 7d job killed by the janitor's old
+  blanket 24h cap.
 - **10-min terminal-phase reap** (`--terminal-phase-max-age-min`, default 10):
   a RUNNING instance that published a terminal `eps/phase` (`done` / `failed`,
   probed via the `eps/phase` guest attribute) but never auto-deleted is a
@@ -49,8 +89,12 @@ library, the cron + CLI are the wiring. Scheduled next to the RunPod sweep
   to delete, never crashes the sweep (`reason="terminal-phase"`).
 
 **Report-only by default** — the CLI's `--delete` (passed by the cron) is the
-only real reaper; `EPS_GCP_JANITOR_DRY_RUN=1` forces report-only even with
-`--delete`, the central smoke kill-switch.
+only real reaper AND the only mode that fires escalations (the escalation
+closure is wired `escalate=...` ONLY under `--delete`; report-only passes
+`escalate=None` → inert `would-escalate` records, no push, no sidecar row);
+`EPS_GCP_JANITOR_DRY_RUN=1` forces report-only even with `--delete`, the central
+smoke kill-switch. Escalation is the WORKING path (not a fault), so an escalated
+unmanaged VM keeps exit rc=0 — only a `delete-failed` raises rc to 2.
 
 **Disarmed-janitor alarm (the list-preflight).** The frozen reaper swallows a
 non-zero `gcloud compute instances list` rc and returns `[]` —
@@ -68,7 +112,11 @@ email, mirroring `cron_pod_audit.sh`).
 
 **Env-var overrides:** `EPS_GCP_JANITOR_DRY_RUN=1` (force report-only),
 `EPS_GCP_JANITOR_LOG_DIR` (override the dated-log dir; default
-`logs/gcp_audit/`). Output: per-pass detail in `logs/gcp_audit/YYYY-MM-DD.log`,
+`logs/gcp_audit/`), `EPM_TELEGRAM_PUSH_SCRIPT` (override the escalation
+phone-push script; default the my-goat `telegram_push.sh`),
+`EPM_GCP_JANITOR_SIDECAR` (override the escalation sidecar JSONL path; default
+`.claude/cache/gcp-janitor-events.jsonl`). Output: per-pass detail in
+`logs/gcp_audit/YYYY-MM-DD.log`,
 a once-per-day pointer line in the outer crontab redirect file — the same
 dated-log + first-run-of-day-pointer liveness mechanism as `cron_pod_audit.sh`
 (task #580 item-3).
@@ -103,15 +151,16 @@ themselves in a worktree.
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
-the gate-push pass, and three session reapers — the session-vs-status
-reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
+the gate-push pass, the program-orchestrator recovery pass, and three session
+reapers — the session-vs-status reconcile pass, the zombie-wrapper pass, and
+the idle-unmapped pass.
 
 **Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
 session's standing infra auto-dispatch rule (`research-pm.md` § Standing
 rule, item 4b) adjudicates which `proposed` `kind: infra|batch` tasks are
 RIPE and writes them oldest-first to
 `~/.eps-autonomous/infra-drain-queue.json` (`ripe_oldest_first` ints,
-`cap` — default 3, `holds` {id: one-word reason}, `updated_ts` ISO-8601
+`cap` — default 5, `holds` {id: one-word reason}, `updated_ts` ISO-8601
 UTC). This pass EXECUTES that file with zero LLM judgment, spawning
 `spawn_session.py spawn-issue --issue <N> --auto` for the oldest listed IDs
 into free slots, where free = max(0, cap − occupied − pending): occupied =
@@ -303,3 +352,92 @@ be resolved (a missing idleness signal FAILS TOWARD KEEP);
 `EPM_UNMAPPED_IDLE_REAP=0` reverts to alert-only; records land in
 `~/.eps-autonomous/idle-unmapped-events.jsonl` (an unmapped session has no
 task to carry a marker).
+
+**Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
+leakage-theory program (#660) is sequenced by a BASH DAEMON
+(`scripts/run_program_orchestrator.sh` in tmux `eps-program`), NOT a Happy
+session — it gates/sequences the phase chain (Phase 1 → 2 → 3 → 4), spawning
+each phase via `/issue --auto` and advancing on the critic-gated PASS. The
+per-phase `/issue --auto` sessions are crash-recovered by the respawn pass; this
+single bash process is NOT, so a VM reboot / OOM-kill mid-program silently stops
+phase ADVANCEMENT (the active phase keeps running + parks, but nothing spawns the
+next). This pass relaunches the daemon in tmux `eps-program` iff ALL hold (fail
+toward NOT relaunching on any missing signal): the daemon is not already alive
+(`pgrep -f run_program_orchestrator.sh`); the STOP sentinel
+(`.claude/cache/program_orchestrator.STOP`) is absent (a STOP = deliberate halt —
+every gate/phase HALT path `touch`es it); and the log
+(`.claude/cache/program_orchestrator.log`) shows no deliberate exit (neither
+"Program complete" nor "finished WITH HALTS", the two deliberate exits that leave
+no STOP). Relaunch is idempotent — a fresh daemon re-checks every phase status and
+won't double-spawn an active/terminal phase. Daemon-INDEPENDENT (it is not a Happy
+session; runs every tick like `vm_disk_pass`). Kill switch:
+`EPM_DISABLE_PROGRAM_ORCHESTRATOR_RECOVERY=1`. `--program-orchestrator-only` runs
+just this pass (pair with `--dry-run` for a live smoke). Pinned by
+`tests/test_autonomous_session_watch.py::test_program_orchestrator_*`.
+
+**Happy injection-patch check pass (#726, `happy_patch_pass`).** A
+daemon-INDEPENDENT, escalate-only pass (runs every 10-min tick in the
+daemon-independent block next to `vm_disk_pass` / `data_disk_pass` /
+`program_orchestrator_pass`, BEFORE the daemon-gated session passes) that
+surfaces a reverted/drifted Happy daemon injection patch PROACTIVELY. The patch
+(`scripts/patch_happy_daemon.py`, sentinel v4) teaches the vendored Happy daemon
+to honor `claudeArgs` / `HAPPY_INITIAL_PROMPT`; it reverts on every `npm update
+happy` (and the hashed bundle is renamed away), after which `spawn-issue --auto`
+/ `spawn-campaign` spawn a session that boots empty and never fires its skill —
+an idle "spawned but never ran" session (the failure CLASS behind #685; the
+2026-06-28 idle-session pile itself was the distinct #720 mapping-loss cause).
+The spawn-path guard (`spawn_session._verify_happy_patch_or_die`) is REACTIVE —
+it fires only at the next spawn; this pass is PROACTIVE, so a revert is surfaced
+within ~10 min rather than at the next dispatch. It reads the daemon file
+in-process via `_happy_patch_check.classify_patch` (single source of truth for
+the sentinel + path; single-digit-ms, no subprocess, no root), and on
+`reverted`/`drifted` writes a `band=happy-patch` row to the shared disk-guard
+sidecar (`.claude/cache/disk-guard-events.jsonl`) + a fail-soft `_telegram_push`,
+deduped per-state (`~/.eps-autonomous/happy-patch-alert.json`) so it alerts once
+per episode and re-alerts when the state changes. ESCALATE-ONLY: it NEVER
+re-applies (that needs sudo — a password prompt would hang the autonomous
+dispatch); `patched` and `missing` (no daemon file on this host) are clean
+no-ops (the spawn-path guard owns the precise `missing` reachability
+disambiguation via `daemon.state.json`). `--happy-patch-only` runs just this
+pass (pair with `--dry-run` for a live smoke). Pinned by
+`tests/test_happy_patch_check.py` (`test_watcher_pass_*`).
+
+## Dedicated data disk for `.claude/worktrees/` (#681)
+
+The heavy active-task footprint (`.claude/worktrees/` — every `issue-<N>`
+worktree + its per-issue `data/issue_<N>/{hf_dl,g*_dl,store}` caches) lives on a
+dedicated **512 GB `pd-balanced` GCP persistent disk mounted at `/mnt/eps-data`**
+(env `EPS_VM_DATA_DISK_PATH`), bind-mounted back onto `.claude/worktrees` so every
+consumer resolves the SAME path transparently. The disk is provisioned in the
+`introsp-experiments` project (where the VM lives), NOT the GPU project.
+
+**Per-task ext4 project quotas (the per-tenant bound).** Each `issue-<N>` subtree
+carries an ext4 project id == the issue number with a hard byte cap
+(`EPS_ISSUE_DISK_CAP_GB`, default 128 GB), assigned at worktree creation by
+`new_worktree.sh` (`chattr -p <N> +P` + `setquota -P <N>`, opt-in via
+`EPS_WORKTREE_ASSIGN_QUOTA=1`). A write past the cap fails loud with `EDQUOT`
+(the same signal the RunPod MooseFS per-pod quota produces) while every OTHER
+issue keeps writing — so one task can neither exhaust `/` nor starve another.
+Recovery is always resize / raise-cap, NEVER delete active data.
+
+**Dual-disk watch — escalate-only on the data disk.** The disk guards watch BOTH
+filesystems: `/` (boot disk) with the existing byte-floor logic, and
+`/mnt/eps-data` with **PERCENT / statvfs-derived** thresholds (size-invariant —
+a future resize cannot push the fire point past the wedge the way the mirrored
+boot-disk byte floors would). The data-disk pass is **ESCALATE-ONLY**: the
+`/`-rooted reclaim arms (`uv cache prune`, the stale-log sweep) never run keyed
+off the data disk; `vm_disk_guard.run_guard(disk_path="/mnt/eps-data",
+reclaim_tiers=False)` runs only tier (b) (terminal-cache reap + active-cache
+escalation), and the watcher's dedicated `data_disk_pass` (called from `main()`
+next to `vm_disk_pass`, every 10-min tick) drives the percent helpers
+`decide_vm_disk_pct` (alert/critical band) + `decide_subfloor_pct`
+(`EPM_VM_DATA_DISK_SUBFLOOR_PCT` default 85%) off `statvfs(/mnt/eps-data)`,
+escalate-only (no reclaim arm), and attributes the WORKTREE-internal caches via
+`repquota -P` per-project usage (du fallback). Both passes are clean no-ops when
+the mount is absent (before / without the cutover).
+
+**Janitor exemption.** The stale-GCP-VM janitor (above) sweeps the
+`eps-persona-gpu-jun2026` GPU project for ephemeral GCE INSTANCES. The
+`/mnt/eps-data` data disk is in a DIFFERENT project (`introsp-experiments`) and
+is a PERSISTENT disk, not an ephemeral instance — so it is out of the janitor's
+scope by construction and is intentionally never reaped.

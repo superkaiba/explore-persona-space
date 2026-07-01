@@ -17,6 +17,26 @@ termination; datasets upload; clean local weights after; WandB = live training
 metrics only). The deep mechanics below load when you touch training / hub /
 sweep code.
 
+**HF Hub uploads are accelerated by DEFAULT (#745).** Two orthogonal env vars
+are on by default in every experiment-upload environment:
+`HF_XET_HIGH_PERFORMANCE=1` (the PRIMARY accelerator — both project repos route
+through the Xet storage backend, verified, so the Xet high-performance path is
+the lever that matters) and `HF_HUB_ENABLE_HF_TRANSFER=1` (the orthogonal
+LFS-multipart accelerator, future-proofing for any non-Xet repo; `hf_transfer`
+is a hard `pyproject` dep so the LFS flag never enables a missing-package
+fault). They are set at SHELL level in `bootstrap_pod.sh` (pod), the GCE startup
+prelude (`backends/gcp.py`), and the SLURM sbatch env block (`backends/slurm.py`)
+— the load-bearing placement, because `huggingface_hub.constants` freezes
+`HF_HUB_ENABLE_HF_TRANSFER` at import time — plus an `orchestrate/env.py`
+`setdefault` belt-and-suspenders for local-dev. Override per-launch with `=0` /
+`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround): every default is a
+`setdefault` / `${VAR:-1}` so an explicit launch-time `=0` always wins (the GCP
+/ SLURM passthrough allowlists forward a dispatch-process `=0` to the remote
+worker). A NEW direct-upload script must use the project
+`explore_persona_space.orchestrate.env.load_dotenv` wrapper, NOT the bare
+`from dotenv import load_dotenv` (enforced by
+`scripts/workflow_lint.py --check-dotenv-before-hf-import`).
+
 **Intermediate analysis tensors referenced by the plan MUST upload before pod
 termination.** Any artifact the plan's analysis / negative-control sections
 name as a downstream input — per-cell shift tensors (`shifts/*.pt`), cached
@@ -85,6 +105,31 @@ commits/hr batch their uploads into ONE bulk `upload_folder` commit per sweep
 (or chunked commits well under the cap); (b) "upload returned no path" is a
 TRACKED GAP recorded in the sweep's failure list and reconciled before the next
 phase — never a warning-and-continue.
+
+**Multi-cell pod sweeps upload per-cell, never one terminal batch (#664).** A
+dispatcher that produces per-cell artifacts (eval JSONs, store tensors, raw
+completions) across N cells MUST persist each cell's artifacts the moment that
+cell completes — one `upload_folder` commit per cell-dir per artifact-kind
+(well under the 256-commits/hr cap above) — NOT accumulate them for one
+terminal P3 batch. A mid-sweep pod death (the #664 RUNNING-but-no-port host
+wedge — see `compute-backend-failover.md` Part C) with write-at-end upload
+strands EVERY not-yet-uploaded cell (#664 lost ~16 cells / ~3-4h compute);
+per-cell upload strands at most one in-flight cell. This is the artifact-I/O
+instance of `code-style.md` § "Checkpoint per phase; never accumulate-in-memory
+and write-at-end". Idempotency + completeness use an EXACT expected-file-set
+check on a fresh `list_repo_files` listing (NOT prefix-presence / count-only —
+a mid-`upload_folder` crash leaves a partial cell that prefix-presence would
+wrongly read as complete). The per-cell resume predicate is `local-done OR
+HF-complete`, so a fresh pod after a wedge auto-migrate SKIPS HF-complete cells
+instead of re-running them, and the terminal P3 sweep becomes an idempotent
+safety pass (skip cells already complete on the Hub; treat all-on-HF as
+success) + the authoritative before-teardown EXACT-set verify (every helper,
+store tensors included — the M2 fresh-listing verify `_upload_store_tensors`
+had been missing). Per-cell upload is ALSO the data-safety precondition for the
+autonomous RunPod-wedge auto-terminate (`compute-backend-failover.md` Part C):
+terminate fires only when the per-cell three-state gate finds zero partial
+cells. Reference impl: `scripts/issue664_dispatch.py` `_upload_cell_artifacts` /
+`_classify_cell_hub_state` / `_cell_done_anywhere`.
 
 **Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`.** `_finalize_phase`
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own

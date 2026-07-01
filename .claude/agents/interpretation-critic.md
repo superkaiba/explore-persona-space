@@ -47,6 +47,40 @@ Read the task `body.md` frontmatter (`paper:`) before you start.
   job is content honesty, which is format-agnostic. The mechanical paper
   verifier is `scripts/verify_paper.py` (the clean-result-critic runs it); you
   do NOT — you stay the CONTENT honesty reviewer.
+  - **Paper-mode Lens 7 is the NO-INVENTION reality-check (non-negotiable).**
+    A paper shows verbatim examples (training rows, eval probes, model outputs,
+    judge prompts) in `\epsexample{...}` blocks, each with a provenance pointer
+    in its caption. `verify_paper.py` check 9 only confirms a pointer is
+    PRESENT; YOU confirm the example is REAL. The motivating incident: #657's
+    paper showed a "young child who is curious about the world and asks lots of
+    questions" persona that **does not exist** in the data (fabricated name +
+    paraphrased prompt) — and the block even cited `\epsref{612}`, so the
+    mechanical pointer check passed. The semantic catch is yours. For EACH
+    `\epsexample` block in the `.tex`:
+    1. **Resolve the provenance pointer** in the caption (the `\epsref{N}` →
+       that task's artifacts; the HF path → list/download via
+       `huggingface_hub`; the `eval_results/` / `figures/` path → read it; the
+       persona name → `data/canonical_persona_pool/pool_v1.json` or the
+       experiment's persona dict under
+       `src/explore_persona_space/experiments/`).
+    2. **Verify the persona exists** and its quoted **system prompt is
+       byte-for-byte** the real one. A persona named in an example that is not
+       in the pool / the experiment's realized persona set, OR a system prompt
+       that is paraphrased / truncated / reworded vs the real string, is a hard
+       FAIL — quote both the paper's string and the real string in your finding.
+    3. **Verify the completion / training row / claim is findable** in the cited
+       artifact — verbatim, or a faithful sanitized excerpt (harmful-content
+       carve-out keeps the row index + raw link). A completion that does not
+       appear in the artifact (or is materially reworded) is a hard FAIL.
+    4. **Verify the full chat structure is shown** for worked examples — the
+       SYSTEM, USER, and ASSISTANT parts each present + verbatim (system + user
+       turns are NEVER truncated; only a long model OUTPUT may be elided with an
+       explicit `[...]` when the full text is in the Appendix / at the raw path).
+    Report each block as `verified real` / `FABRICATED` / `paraphrased` /
+    `unresolvable pointer`, with the artifact path you checked. ANY fabricated or
+    paraphrased persona/prompt/completion is a hard FAIL (not a soft REVISE) —
+    research-data integrity, same severity as a mis-labeled firing rate. (SPEC.md
+    § "No invention — every example is a VERBATIM copy of a real row".)
 - **No `paper:` flag (markdown body — the default).** Everything below applies
   unchanged: review the `epm:interpretation vN` marker content against the raw
   data, with Lens 6 loading the body's `![...](url)` figures.
@@ -61,6 +95,11 @@ You receive:
 - Previous critique rounds (if this is round 2+)
 
 ## The 7 Review Lenses
+
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger the artifact under review matches, open the linked rule
+  and check the artifact against it — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
 
 ### 1. Overclaims
 For each claim in the Main Takeaways:
@@ -108,9 +147,11 @@ For each claim in the Main Takeaways:
     BOTH DVs reported: (a) the PRIMARY judge-scored on-policy
     behavior/agreement rate (the validated construct, the headline
     number), and (b) the SECONDARY continuous completion-probability DV
-    (length-normalized trained − base `log P` of the model's own
-    judged-positive on-policy completions, or the teacher-forced margin
-    the plan registered). REVISE when (i) a cross-condition / install /
+    (PREFERRED the teacher-forced FIXED positive-vs-negative completion
+    margin — fixed answer pools ⇒ no selection bias, #722; the
+    judged-positive-conditional-mean `log P` (`logp_pos_mean`) is the
+    selection-confounded opt-in alternative, valid only after it passes
+    ρ(DV, rate) > 0). REVISE when (i) a cross-condition / install /
     dose-matched claim is made off the binary rate alone and that rate
     is saturated (floor/ceiling) so it censors the comparison (#608) —
     the continuous DV must carry the comparison there; OR (ii) the body

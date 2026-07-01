@@ -1,20 +1,15 @@
 ---
 name: workflow-improver
 description: >
-  Applies a specific, user-requested improvement to the Explore Persona Space
-  workflow surface — `.claude/agents/*.md`, `.claude/skills/**/SKILL.md`,
-  `.claude/workflow.yaml`, `.claude/rules/*.md`, `CLAUDE.md`, hooks in
-  `.claude/settings.json`, and the `scripts/` orchestration helpers that back
-  them (`task.py`, `pod.py`, `workflow_lint.py`, `verify_task_body.py`,
-  `audit_clean_results_body_discipline.py`, `gh_project.py`, `codex_task.py`,
-  `poll_pipeline.py`, `spawn_session.py`). Spawned in the background by the
-  main orchestrator when the user says "make this improvement to the workflow"
-  (or equivalent) so the orchestrator can keep doing other work in parallel.
-  Reads the relevant files, makes the edit, runs the workflow linter, and
-  reports back a structured diff. Pairs with `code-reviewer` for non-trivial
-  changes. Does NOT touch experiment code (`src/explore_persona_space/`,
-  `configs/`, `scripts/train.py`, `scripts/eval.py`), does NOT run experiments,
-  does NOT mutate task state via `task.py`.
+  DEPRECATED 2026-06-27 (#678) — DO NOT SPAWN. Workflow-surface fixes no longer
+  auto-spawn this agent. They are filed as `kind: infra` tasks and implemented
+  by a background `/issue <N> --auto` session via the full code-change pipeline
+  (planner / adversarial-critic ensemble / implementer / code-review /
+  test-verdict / Step 10d worktree auto-merge). The Step-4b implementer for
+  those tasks is the standard `implementer` agent. See
+  `.claude/rules/workflow-fix-on-bug.md`. This file is frozen for historical
+  reference; the `name:` is kept so any stale spawn fails loud rather than
+  silently mis-routing.
 model: "claude-opus-4-8[1m]"
 skills:
   - codebase-debugger
@@ -22,6 +17,17 @@ skills:
 memory: project
 effort: xhigh
 ---
+
+> **DEPRECATED — do not spawn (retired 2026-06-27, #678).** The
+> workflow-fix-on-bug protocol no longer auto-spawns this agent. It now files a
+> `kind: infra` workflow-fix task and spawns a background `/issue <N> --auto`
+> session that implements the fix via the full code-change pipeline (planner /
+> critic ensemble / `implementer` / code-review / test-verdict / Step 10d
+> worktree auto-merge), so workflow-surface fixes get the SAME review rigor an
+> experiment gets — see `.claude/rules/workflow-fix-on-bug.md`. The Step-4b
+> implementer for those tasks is the standard `implementer` agent. The
+> agent-memory that lived here moved to `.claude/agent-memory/implementer/`. The
+> body below is frozen for historical reference only.
 
 # Workflow Improver
 

@@ -20,6 +20,13 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
 
 ## Before Planning
 
+0. **Scan the always-on lessons index first.** `.claude/rules/LESSONS.md` is
+   imported into context via `CLAUDE.md`. Read its "fires when" triggers and,
+   for every trigger your design matches, OPEN the linked rule and follow it
+   BEFORE grounding any hyperparameter or design choice — this is the
+   load-timing backstop (a rule whose `paths:` glob has not matched an open
+   file yet, e.g. `vectorize-many-cell-fits.md` at plan time, #722).
+
 1. **Read the codebase.** Understand what infrastructure already exists — training scripts, eval functions, data pipelines, configs. Don't reinvent what's already built.
 
 2. **Find similar prior issues and stay consistent with them.** This is the
@@ -177,8 +184,9 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    - **(e) Producing issue not retracted / superseded:** check the producing task's status and any `epm:retracted` markers. An adapter from a task later marked `not-useful` or whose clean-result was retracted cannot be cited as a confirmed baseline without naming it.
    - **(f) Content identity across copies:** when the copy you VERIFIED is a local untracked file (e.g. a parent task's `data/` output, absent from every clone) AND the execution side will FETCH the artifact from HF (a shared mirror under the parent's `issue<M>_<slug>/...` path), the plan must name the content-identity mechanism — either an `EXPECTED_SHA256` pin table asserted at prefetch (covering files already present on the worker, not just fresh downloads) or a snapshot of the verified local inputs to an issue-OWNED `issue<N>_<slug>/inputs/` path that execution consumes instead of the parent's shared mirror. Resolution (check (e)) alone does NOT prove the mirror matches the verified copy: the HF mirror can be a silently different generation, and the divergence surfaces as a KeyError / wrong persona universe deep in the consumer after a full provision cycle is already spent (`.claude/rules/gotchas.md` § "HF mirror ≠ local-verified copy"; incident #600, 2026-06-11 — stale HF mirrors of #472's `R_train.json` + `centroids_L10.pt` crashed the GCP smoke run).
    - **(g) Application-scaling regime (reused LoRA adapters):** check (a) covers what was TRAINED; this check covers how the CURRENT stack will APPLY it — the two can diverge under an identical recipe. Read the reused adapter's `adapter_config.json` scaling fields (`use_rslora`, `lora_alpha`, `r`): the effective LoRA scale is classic `α/r` when the consuming stack ignores `use_rslora` but `α/√r` when it honors it (current vLLM+PEFT honor it), so a parent whose committed numbers were produced under one gauge can be unusable as fetched under the other. Before the design consumes the artifacts, require a 1-adapter apply-and-read parity probe that reproduces the parent's committed numbers on the CURRENT stack. A parent whose committed reads are UNREACHABLE at faithful scaling must be flagged, and the plan must pin the read gauge explicitly in §4 (which scaling the apply-and-read uses, and why it matches the parent's committed regime). (Incident #601, round 5: all 20 of #472's reused adapters passed checks (a)–(f) yet were unconditional marker-repeaters at faithful rsLoRA application, `α/√r ≈ 11.31` — the parent's committed numbers came from classic `α/r = 2.0` application; the mismatch passed every planning gate and surfaced only as a mid-run Phase-0 HALT.)
+   - **(h) Source resolution + target-backend fetchability (reused TRAINING-INPUT artifacts):** checks (a)–(g) above cover reused ADAPTERS / CHECKPOINTS; this check covers reused TRAINING-INPUT data — a parent's `train/*.jsonl` mix, an on-policy response cache, or an `eval_results/` JSON the new run consumes as a downstream INPUT. Verify BOTH: **(i) source resolution** — the file is reachable through EITHER HF resolution via `huggingface_hub.list_repo_files` at the cited path (training mixes / on-policy caches / HF-uploaded eval JSONs) OR **git-tree reachability** for a committed `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- eval_results/issue_<M>/<file>` returns it — in-git eval JSONs are a sanctioned reuse source, the bullet above this step-5 list, and the git-clone-only lanes pick them up via the clone, so do NOT demand HF presence for them); AND **(ii) target-backend fetchability** — the backend named in §9 can actually STAGE it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈ (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/` — the GCE startup `git clone`s the repo at the cited branch (so committed `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo files need an explicit `snapshot_download` step in the workload — so a mix the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and the pre-train `assert data_path.exists()` crashes phase2. The check FAILS when EITHER (i) OR (ii) fails (e.g. HF-resolved but a CDN/region/`HF_TOKEN` gate stops the §9 lane from staging it). On a MISS, do NOT record the file as a confirmed reuse: either (a) upload the mix to HF first and cite the HF path, or (b) add a self-contained regen phase in §4 that rebuilds the mix on the worker from the parent's deterministic build blocks, and flag it `must-rebuild` in §12 Assumptions. Verify this for EVERY reused training-input file the design loads, BEFORE recording it in §10 / §11. (Incident #734 round-4: a reused parent training mix was on neither HF repo; the plan passed planning + 3 review rounds and crashed phase2 at the pre-train assert on the GCP lane because the lane cannot stage a VM-local-only mix.)
 
-   On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(g) will be REVISEd by the critic.
+   On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(h) will be REVISEd by the critic.
 
 6. **Replication fidelity (if the Goal is to replicate a published
    finding).** If the Goal is to replicate a paper's result or test
@@ -340,6 +348,7 @@ Concrete steps with:
 - **Data source + realism tier (REQUIRED for every `kind: experiment`).** Name the training/eval/probe data source AND its tier on the CLAUDE.md realism hierarchy ("Design experiments on the most realistic data available"): (1) **real-world data** — production logs, user queries, naturally occurring text/code/conversations from the domain the claim targets (always first choice when accessible); (2) **established dataset / benchmark** — a published corpus the field already uses for this construct (cite it by name + canonical source); (3) **DIVERSE LLM-generated synthetic data** — only when tiers 1-2 are genuinely unavailable, and only with deliberate variation across lengths, structures (single-turn/multi-turn, code/prose/dialogue), framings, topics, and surface forms (a flat templated corpus with an LLM in the loop is NOT tier 3 — it inherits tier 4's brittleness); (4) **programmatically generated data** — LAST resort, requiring an explicit recorded argument for why no other source works AND why the templated structure cannot bias the result (valid e.g. when the construct under test IS a controlled template, like the marker token in a fixed slot). Justify any tier-3 choice with the demonstrated absence of tiers 1-2 and any tier-4 choice with the confound argument, here or in §12 Assumptions; the Methodology critic REVISEs otherwise (critic.md Methodology lens item 15), and the tier is carried into the clean-result as a scope caveat. This bullet governs the data SOURCE (where prompts/corpora come from); completion PROVENANCE (who wrote the response text) is the next bullet — a behavior-implantation plan names both.
 - **Completion provenance for behavior-implantation training rows (on-policy-first, REQUIRED by default).** For every training-row type in a behavior-implantation design (positives AND negatives), name its completion provenance: `on-policy (elicitation tier 1 bare / 2 instruct-and-strip / 3 prefill)` | `canned/template` | `third-party-LLM-written` | `published-corpus-verbatim`. The DEFAULT for positives is on-policy from the BASE model: behavior instruction in the system prompt, sample, judge-filter for the target behavior, STRIP the elicitation instruction before training, prefer the lowest ladder tier that fills a pre-registered per-source yield quota, record per-row tier — full recipe: `.claude/rules/on-policy-completions.md` (read it before designing the data; #612 is the worked example). State the yield quota + retry budget AND the drop rule — DEFAULT: an **80% floor with equalize-down** (every kept source trains on exactly floor-N rows; the yield-quota bullet under `.claude/rules/on-policy-completions.md` § The recipe); a source below the floor after the retry budget is dropped and the drop reported as a finding — never silently backfilled with templates. Canned/templated or third-party-LLM-written positives require EITHER an explicit anchor/control role (the data construction IS the manipulated variable, stated as such) OR a recorded on-policy yield failure — named here and carried into the clean-result as a data-realism caveat. Plan dose-sensitive reads around the known trade-off: on-policy data installs more weakly at matched recipe (#612's three separated dose bands), so dose-to-target instead of fixed epochs when comparing data constructions. Exempt: published-corpus replication rows (replication fidelity wins — "Before Planning" item 6) and the programmatic marker carve-out (the appended marker token; the base response text is already on-policy under the marker recipe). If not a behavior-implantation design, write "N/A — not a behavior-implantation experiment" and move on.
 - **Marker / behavior-implant stopping recipe (overrides parent parity).** If the design trains a FRESH marker / behavior-implant adapter, the stopping recipe — lr, epochs / steps, checkpoint selection — comes from `.claude/rules/marker-training-recipe.md` (read it in full first), REGARDLESS of what recipe a non-marker parent used. Recipe parity with a non-marker parent is NOT a valid grounding for the stopping recipe (see §11 "Marker recipe overrides parent parity"); name the parity break in §12 Assumptions as a deliberate measurement-validity deviation, and keep cross-experiment parity on the DV / eval side (same panel, same probes, same join). If the design ALSO declares a runtime saturation guard / trajectory monitor as a mitigation, declare it smoke-verifiable: name the telemetry the implementer's smoke run will show (distinct per-source WandB run names, at least one logged trajectory point, the guard branch or its precondition assert exercised) — an unverifiable guard is a paper mitigation (#480: the declared WandB trajectory monitor + KL auto-fire silently never functioned). If not a behavior-implant design, write "N/A — not a behavior-implantation experiment" and move on.
+- **Persona-vectors extraction recipe (REQUIRED when a task elects persona vectors).** If the task plan says "use persona vectors" / "extract a persona vector" / "persona-vectors-style direction", OR extracts a persona/behavior direction by mean-difference of positive/negative contrastive activations, the plan MUST instantiate the 7-step recipe of `.claude/rules/persona-vectors-recipe.md` (read it in full first): (1) trait name + description; (2) artifacts — 5 pos/neg system-prompt pairs + 40 questions split into a disjoint 20-question extraction set + 20-question evaluation set + 1 trait evaluation prompt (fetch the verbatim generation + rubric templates via the arXiv MCP, never a paraphrase); (3) 10 on-policy rollouts under the positive system prompt + 10 under the negative per extraction question (sampling, default temp 1.0); (4) the **judge-filter** — score every rollout 0–100 with the trait evaluation prompt, keep positive-prompt responses >50 and negative-prompt responses <50, judge = `claude-sonnet-4-5-20250929` — AND a judge return that is `REFUSAL`, non-numeric, or outside [0, 100] is DROPPED from BOTH arms (never coerced to a numeric score; coercing a refusal to 0 silently keeps it as a clean `<50` negative and corrupts the negative-arm mean exactly where elicitation produces the most refusals), with the per-arm dropped-rollout count reported; (5) response-avg residual-stream activations at every layer; (6) `r_B` = diff-of-means per layer; (7) **name the layer-selection regime** — steering/monitoring (one steering-selected layer, per the paper) vs read-out/prediction (sweep all layers, select by target predictivity — e.g. the paper's A3.3 `E ≈ r_Bᵀ v`). Cite `.claude/rules/persona-vectors-recipe.md` as the §11 `Source:` for any extracted direction's recipe values. **The "except logits" carve-out:** the recipe replaces the paper's GPT-4.1-mini logit-weighted scoring with the project Sonnet 4.5 judge — do NOT introduce a second judge or the paper's logit scoring; reintroducing it requires an explicit `### Override:` note. If the task does not elect persona vectors, write "N/A — no persona-vectors extraction in this design" and move on.
 - **Multi-arm resolution-band designs (band-stop not applicable).** If the headline test gates on ≥2 conditions/arms sitting SIMULTANEOUSLY inside a measurement band (e.g. a wrong-persona log-prob band) at a MATCHED training amount, the band-stop default does NOT cover it — per-arm early-stopping would unmatch the training amounts. The plan MUST state: (a) the expected install-transition window in optimizer steps, with a `Source: #<M>` citation like any §11 hyperparameter (current role-vs-system estimate: ~12 steps, between ~step 18 and ~30 — #533/#547); (b) checkpoint spacing FINER than that window — grid in optimizer steps, never whole epochs; (c) a pre-registered per-arm band-entry fallback read that answers the headline question when the arms never co-resolve at a shared grid point (compare arms at their respective band-entry checkpoints: matched dial position, unmatched step count; an arm that never enters the band is reported as exactly that). Three consecutive runs (#529/#533/#546) burned GPU without firing their headline test for lack of these; re-running the same anchor-gated design without changing the grid unit or adding the fallback read is banned. Full section: `.claude/rules/marker-training-recipe.md` § Multi-arm resolution-band designs. If the headline test does not gate on multi-arm band simultaneity, write "N/A — no multi-arm band-simultaneity gate" and move on.
 - **Few-shot / in-context-example demonstration content is a grounded design element, not filler.** If the experiment uses any in-context-example / few-shot / ICL demonstration set (a fixed bank of `<question, answer>` pairs the model sees before each probe, whether read by the trained model, by a base model under a persona prompt, or as training-time demonstrations), the plan MUST state, per demonstration set: (a) the eval-task distribution the demos mirror (the actual task type the model will be evaluated on with this context — not "generic helpful Q&A" if the eval probes are, say, persona-voiced marker emissions on open-ended prompts), (b) why this specific content induces the intended behavior / persona / context (cite the design pressure that picked it — a paper, a prior issue's recipe, a held-out sanity check), AND (c) that the demonstration content varies enough ACROSS the different ICL contexts to give cross-context dynamic range (if four "different" ICL contexts are four slices of the same neutral trivia pool with the same one-word answer shape, they will read as one context to the model). Anti-contamination (no overlap with held-out probe answers) is NECESSARY but NOT SUFFICIENT — a contamination-only design pressure tends to drive the content toward bland, generic, near-clone demos that satisfy the contamination check while giving ~zero cross-context dynamic range and barely inducing any behavior, which is the opposite of why ICL was introduced. State each of (a), (b), (c) explicitly — the Methodology critic will REVISE an ICL plan whose demo content is justified only by contamination avoidance. The closest record: task #489's ICL contexts were four 4-item slices of a 16-fact trivia pool with persona-voiced demos that slapped a stock prefix on a one-word answer ("Arr! Au."), sailed through Planner → Fact-Checker → Critic → Consistency-Checker uninspected, and likely contributed to the marker-implant floor. If the experiment uses no ICL / few-shot demonstrations, write "N/A — no ICL or few-shot demonstrations in this design" and move on.
 - **Smoke/sweep architectural parity (UNIFICATION DEFAULT, canary escape hatch).** The DEFAULT is unification: smoke IS the sweep with one cell — same dispatcher, same subprocess shape, same env injection, same logging surface, same teardown sequence. State this explicitly here: "smoke phase = sweep with `--cells 1 --seeds 1`" (or equivalent single-cell parameterization). If the design diverges (e.g., smoke uses in-process `train_one_cell`, sweep uses a `subprocess.run(["uv", "run", "python", "src/.../experiments/<name>/run_one_cell.py", ...])` wrapper), justify the divergence in two sentences AND name which canary cell exercises the sweep path during smoke. The bar for accepting divergence is high: subprocess isolation is only justified when the sweep's per-cell teardown / resource-isolation requirements would block in-process execution (e.g., per-cell vLLM allocation that can't be reset cleanly in-process). Task #397 rounds 9/10/10' (2026-05-27) burned three full implementer rounds on architectural assumptions that the in-process smoke path silently satisfied; the round-11 pivot was to UNIFICATION (in-process serial). Enforced at /issue Step 6d.0 via the `epm:smoke-architecture-check v1` gate (see SKILL.md).
@@ -374,7 +383,7 @@ A plan that measures a behavioral construct with only an unvalidated off-distrib
 **Required: Dual-DV for content-behavior leakage / implantation (sycophancy, refusal, hedging, style, trait).** If the Goal implants or measures the leakage of a *content* behavior (sycophancy, refusal, hedging, style, trait — anything other than the programmatic marker, whose three-space recipe is separate), §6 MUST name BOTH dependent variables, per CLAUDE.md § Measurement validity (standing rule 2026-06-15):
 
 - **(a) PRIMARY — a judge-scored on-policy behavior/agreement RATE.** The validated behavioral construct: the model writes its OWN response under the persona/target context, a Claude judge labels whether the response expresses the behavior, and the DV is the rate of judge-positive responses (trained vs base). This is the headline DV.
-- **(b) SECONDARY — a continuous completion-probability DV** that keeps dynamic range where the binary rate saturates. PREFERRED form (stays on-policy): length-normalized trained − base `log P` of the model's OWN judged-positive on-policy completions. OPT-IN alternative: a teacher-forced fixed positive-vs-negative completion margin (carries the teacher-forcing-artifact risk #432→#456 — name it).
+- **(b) SECONDARY — a continuous completion-probability DV** that keeps dynamic range where the binary rate saturates. PREFERRED form: a teacher-forced fixed positive-vs-negative completion margin (mean LN-`log P` of a FIXED judge-filtered positive-answer pool minus a FIXED negative pool, same answer set across every context ⇒ no selection-on-outcome bias; #722 validated ρ(margin, rate) all-positive). It carries the teacher-forcing-artifact risk (#432→#456) — name it, and keep it a SECONDARY companion, never the behavioral leaderboard. OPT-IN alternative: length-normalized trained − base `log P` of the model's OWN judged-positive on-policy completions (`logp_pos_mean`) — a conditional mean over an OUTCOME-SELECTED subset, so it carries selection-on-outcome bias and FAILED the ρ(DV, rate) > 0 validation for 3 of 4 behaviors in #722; use it ONLY after it passes that validation. (Full recipe: `.claude/rules/llm-judging.md` § E2.)
 - **Why both are required, not one:** the binary judge rate saturates at floor/ceiling and CENSORS install / dose-matched / cross-condition comparisons (#608's top-band censoring) — exactly where the continuous DV keeps headroom; the probability DV in turn carries the teacher-forcing-artifact risk the judge rate is immune to. They cover each other.
 - **The probability DV stays SECONDARY and requires a validation that it tracks the rate** — a Spearman of (b) vs (a) across the cells that have dynamic range, named here in §6 (computed by the analyzer). Never narrate the probability DV as the construct, and never let it replace the on-policy rate.
 
@@ -383,6 +392,30 @@ This mirrors the marker line's behavioral-primary + continuous-secondary recipe,
 **Required: Install-strength control (cross-condition leakage comparisons).** If the plan's headline compares LEAKAGE across training conditions (contrastive vs positive-only, LoRA vs full fine-tuning, data-construction variants), raw bystander leakage is dose-confounded: install strength is condition-dependent — not even in a fixed direction across behaviors (#601: contrastive negatives strengthened the marker implant; #608: positive-only sycophancy installed at least as strongly) — so "X leaks more than Y" read off raw leakage conflates lower selectivity with plain stronger implantation. §6 must register at least one install-controlled read: (a) a matched-install comparison (conditions compared at checkpoints with matched source gain, findable from the per-step trajectory / band-stop logging), and/or (b) leakage as a fraction of install per (source → bystander) cell, computed in the non-saturating EOS-margin logit space `Δ(z_marker − z_eos)` — NEVER raw `log P`, whose softmax compression shrinks a saturated source's denominator and inflates the fraction exactly in the strongest-implant conditions; plus (c) leakage-vs-install dose curves from the per-step trajectories where they exist (preferred — subsumes the single fraction and catches nonlinear leakage onset). Never correlate the fraction back against install itself (shared-noisy-denominator artifact, same family as the #383 X-vs-(X−Y) caveat). The primary DV definition is unchanged (on-policy `log P(marker)` trained − base stays primary). Full recipe: `.claude/rules/marker-leakage-measurement.md` § Install-strength confound. Plans whose headline makes no cross-condition leakage comparison write "N/A — no cross-condition leakage comparison" and move on.
 
 **Required: Statistical-input existence (derived inputs for registered corrections).** Every registered statistical correction / adjustment §6 relies on — attenuation / reliability factors, per-seed SEs, variance reconstructions, shrinkage priors, any statistic computed FROM a derived input rather than directly from this run's raw eval output — must name the data dependency it consumes AND verify that dependency actually EXISTS in the cited artifact (the column is present in the CSV, the per-seed files resolve on HF, the field is in the JSON schema — check the actual file, not the producing plan's prose), OR explicitly schedule its construction as in-scope implementation work in §4 / the file-level diff list. This is the plan-time analogue of the step-5 Hub-existence check, extended to derived statistical inputs: an input that is "derivable in principle" but neither verified-present nor scheduled-to-build is a phantom dependency (incident #509: plan §6.1 registered attenuation-adjusted correlations for the fact arm whose per-seed SEs existed nowhere — the cited CSV stored only seed-averaged rates — and reconstruction was never scheduled as in-scope work; the production scoring path crashed exactly as predicted in review prose and the result shipped on `--smoke` with the reliability correction pinned to 1.0). Plans with no registered derived-input corrections (raw DV + standard tests only) write "N/A — no derived statistical inputs" and move on.
+
+**Required: Selection-symmetric nulls (max-over-axis headlines).** If the
+plan's headline statistic is chosen by `max` / `argmax` / best-of /
+top-k-mean over a FREE AXIS — a read-out layer, a cell, a k /
+neighbourhood size, a seed, an extraction point, a threshold — and is
+compared against a null / permutation / shuffle band, the band procedure
+MUST be selection-symmetric: EITHER (a) every null draw receives the
+IDENTICAL max-over-axis selection before the band is formed (the null
+distribution is the max-selected statistic per draw), OR (b) the axis is
+frozen on a held-out split / pre-registered fixed position and BOTH the
+observed statistic and every null draw are read at that single frozen
+position. A `max-over-L` observed statistic compared against a
+one-position null is a 28-vs-1 asymmetry that manufactures the
+observed-vs-null gap from the winner's curse, not the effect the null
+tests (#778, n=24: single-layer null p97.5 |r| ≈ 0.48 vs honest
+max-over-layer p97.5 |r| ≈ 0.62; a per-axis heatmap is a diagnostic
+display and does NOT neutralise it). §6 ALSO registers persistence of the
+per-draw × per-axis statistic matrix (one matrix per headline statistic)
+as a downstream artifact (per the Upload Policy) so the analyzer can
+recompute the honest max-selected band post-hoc. Full recipe + carve-outs
+(a pre-registered fixed position or a mechanistic single-anchor ablation
+does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
+whose headline is not selected over any free axis write "N/A — no
+max-over-axis selection in the headline" and move on.
 
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
@@ -472,6 +505,7 @@ parallelism axis and pick the spec accordingly:
 | Axis | When it applies | Default action |
 |---|---|---|
 | **Tensor parallelism** | Generation/eval on ≥30B, or a 70B model | `inf-70b` (8× H100) or `ft-70b` (8× H200) — never run TP=1 on a 70B model |
+| **Activation capture (HBM-bound)** | A 7B forward that captures hidden states — all-layer residual streams, Welford activation accumulation, per-token activation dumps | Pick an intent clearing ≥40 GB HBM: `lora-7b` (train + capture) or `capture-7b` (eval + capture, #752). NEVER the L4 `eval`/`debug` default — 7B bf16 weights (~14 GB) + captured activations OOM it (#666, #744). Size the activation footprint per the VM-footprint carve-out below if the capture also materializes a large store on the VM analysis side. |
 | **Data parallelism (FSDP/ZeRO-3)** | Full fine-tune of a 7B+ model | `ft-7b` (4× H100) over `lora-7b` (1× H100) when fidelity permits |
 | **Batched inference (vLLM)** | Eval/generation with K samples per prompt or N prompts | One pod with the largest sensible GPU count, single `LLM.generate()` call — never loop sequentially |
 | **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. |
@@ -483,13 +517,28 @@ any reason a smaller pod was chosen anyway (rare — e.g. "data is too small
 to amortize 8× setup"). If the answer is "no parallelism axis applies,"
 say so — silence is not acceptable.
 
+**Activation-capture HBM sizing.** If any phase captures hidden states on a
+7B model (residual streams at one-or-more layers, online activation
+accumulation, per-token activation dumps), the chosen intent MUST clear ≥40
+GB HBM, NOT the L4 `eval`/`debug` default — 7B bf16 weights are ~14 GB, and
+all-layer hidden-state capture at a realistic batch × sequence pushes past
+the L4's 16-GB-class HBM and OOMs the run mid-flight (#666, #744). The
+canonical fit is `lora-7b` (1× A100-80) when the phase ALSO trains, or
+`capture-7b` (1× A100-80, the activation-capture eval intent, #752) when it
+is forward-pass-only; both fall back to the 40 GB A100-40 rung under A100-80
+exhaustion. This is orthogonal to the VM-footprint carve-out below (which
+sizes the off-pod analysis disk) — this rule sizes the GPU HBM the capture
+forward needs on the pod.
+
 A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 20-condition sweep is wrong, even if the GPU-hours total is the same.
 
 **CPU-only phases run OFF-POD by default — a phase that doesn't touch the
 GPUs must not hold a multi-GPU pod.** Long CPU-only phases (longer than
 ~15-30 min) — bootstrap / permutation statistics, metric aggregation over
-eval JSONs, Claude-judge-only scoring passes, plotting — DEFAULT to running
+eval JSONs, Claude-judge-only scoring passes, plotting, and the FINAL
+artifact-upload phase (raw completions / store tensors / checkpoints — HF
+`upload_folder` uses no GPU) — DEFAULT to running
 on the VM against artifacts already uploaded per the Upload Policy (eval
 JSONs in git, raw completions on HF). For every CPU-only phase longer than
 ~15-30 min, the plan MUST declare WHERE it runs. Pod-side execution is
@@ -498,12 +547,112 @@ pod-local artifacts that aren't uploadable — activations, per-step
 checkpoints) or the phase is genuinely short (~<15-30 min). For a
 multi-phase pipeline that ENDS in a long CPU-only phase, sequence the
 uploads so the pod can be terminated / stopped BEFORE the CPU phase starts
-— the phase then reads the uploaded artifacts from the VM. (Incident
+— the phase then reads the uploaded artifacts from the VM. A plan whose
+LAST phase is a large terminal UPLOAD must sequence the pod teardown BEFORE
+it (or run the upload off-pod), and bulk uploads use a single
+`upload_folder` commit — never a per-file `upload_file` loop, which
+504-storms on a large repo (#664).
+
+**PREFER a cheap dedicated CPU pod over the shared VM for a NON-TRIVIAL
+CPU-only phase (#747).** "Off-pod" does NOT mean "always the shared VM": for
+a non-trivial CPU phase (parallelizable, or longer than the trivial
+sub-minute floor) the default placement is now a cheap dedicated CPU lane —
+`cpu-small` (`e2-standard-2` / RunPod `cpu3g-2-8`) or `cpu-mid`
+(`e2-standard-8` / RunPod `cpu3c-8-16`), GCP E2 spot FIRST → RunPod CPU
+fallback — running N pods in PARALLEL where the work is parallelizable, NOT
+cramming onto the shared VM (which filled `/` and stalled the whole fleet,
+#658). Only TRIVIAL quick ops (sub-minute probes, quick plots, a one-off
+`lstsq`) stay on the VM. The mapped cheap CPU intents fall over GCP→RunPod
+CPU (`deployCpuPod`) on exhaustion; `cpu-bigmem` (the >50 GB lane below) does
+NOT — it keeps the #677 typed terminal. CPU pods may run in parallel: the
+"one multi-GPU pod, not many single-GPU pods" rule is GPU-specific. The
+idle-multi-GPU-pod concern below is unchanged — a cheap CPU pod holds NO GPU.
+(Incident
 2026-06-09: pod-518 ran a pure-CPU permutation/bootstrap scoring script
 for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
 metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
-off-pod execution avoids. This is a plan-time scheduling rule, NOT a
-mid-run cost gate.)
+off-pod execution avoids. Incident #664: an 8×H200 pod held idle ~12h in a
+terminal per-file raw-completions upload phase — ~$530, 0% GPU. This is a
+plan-time scheduling rule, NOT a mid-run cost gate.)
+
+**Compute-character carve-out to the OFF-POD default — a gradient-descent
+fit is GPU-worthy, not cheap CPU stats.** The OFF-POD-VM default above is
+for *cheap closed-form / sampling-based* analysis (bootstrap / permutation
+statistics, metric aggregation over eval JSONs, judge-only scoring,
+plotting). It does NOT cover an **iterative-optimization fit** — a torch-MLP
+LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a
+small adapter fit, or any phase whose inner loop runs gradient descent on
+parameters. Such a fit benefits materially from a GPU even at small model /
+dataset size, so it routes to a **GPU lane** (a GPU pod or the GCP GPU
+lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — pick
+the SMALLEST intent that fits the fit's parameter count + dataset), NOT the
+VM CPU default — and NOT because it touches a large footprint (that is the
+separate carve-out below; this axis is orthogonal). The load-bearing
+qualifier is "iterative gradient descent on parameters" (the SGD / AdamW
+inner loop), NOT merely "uses pytorch": a closed-form torch reduction (e.g.
+a single `torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU
+work. §9 MUST state each analysis phase's compute character and route on
+it. The size gate is the SAME long-CPU-only-phase floor as the rule above —
+the ~15-30 min floor is on the PHASE wall-time (the whole fit loop in
+aggregate), NOT any single fit: a many-cell LOCO loop of individually-fast
+gradient fits is GPU-worthy if the loop as a whole runs longer than the
+floor, while a genuinely tiny one-off fit (e.g. a single linear probe
+trained in < 30 s, with no long surrounding loop) stays on the VM
+regardless of compute character — do not over-route trivial fits. Canonical
+worked example: #658's `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell
+on the VM CPU, a long per-cell loop that was needlessly GPU-starved.
+
+**Data-footprint carve-out to the OFF-POD default — size every CPU/analysis
+phase's local footprint and route accordingly.** The VM-default above
+silently assumes a SMALL local footprint. The VM root disk (`/`) is
+~188 GB and SHARED across the whole fleet, so a CPU/analysis phase that
+materializes a large local footprint can fill `/` mid-run and stall every
+concurrent session — exactly the case the off-pod-VM default does NOT
+handle. For EVERY CPU/analysis phase the plan routes, §9 MUST state the
+estimated local footprint —
+`downloaded_inputs_gb + materialized_tensors/activations/store_gb + scratch_gb`
+— and route on it against the constant
+`VM_ANALYSIS_FOOTPRINT_GB_MAX = 50` GB:
+
+- **Footprint ≤ 50 GB** → the VM default applies (run off-pod on the VM
+  against uploaded artifacts, per the rule above).
+- **Footprint > 50 GB** → the phase MUST NOT run on the VM. Route it to a
+  pod / GCP instance with a big ephemeral volume sized to the footprint
+  (`pod.py provision --intent <…>` on a volume ≥ footprint, or a GCP lane
+  with adequate scratch), OR stream the data without materializing it
+  locally (chunked download → process → discard per chunk, never the whole
+  store at once). State which in §9. On the GCP lane the concrete intent is
+  `cpu-bigmem` (CPU-only `gpu_count=0` `n2-highmem-16`, boot disk sized via
+  `--boot-disk-gb`; #677) — `dispatch_issue.py --intent cpu-bigmem`.
+  `cpu-bigmem` has NO cheap RunPod equivalent, so a `cpu-bigmem` run that
+  exhausts GCP surfaces a typed `cpu_exhausted_no_runpod_lane` terminal, NOT a
+  RunPod fallback (the cheap CPU intents `cpu-small` / `cpu-mid`, #747, DO fall
+  over GCP→RunPod CPU — but they are for SUB-50-GB work; a >50 GB phase belongs
+  on `cpu-bigmem`).
+  **EXCEPTION — gradient-descent fit (compute-character carve-out above):**
+  if the >50 GB phase is itself an iterative-optimization fit (its inner
+  loop runs gradient descent on parameters), route it to a **GPU lane**
+  with its disk sized explicitly — `--boot-disk-gb` on the GCP GPU lane, a
+  `--volume` / intent volume ≥ footprint on RunPod — NOT `cpu-bigmem`:
+  `cpu-bigmem` is `gpu_count=0` and would re-starve the fit. Only a
+  closed-form / sampling-based >50 GB aggregation (the cheap-CPU class
+  above) routes to `cpu-bigmem`. Note: this OVERRIDES the
+  idle-multi-GPU concern above — a >50 GB CPU phase that must hold a pod
+  for disk reasons is justified by the data-locality clause, but pick the
+  SMALLEST viable pod (single-GPU / CPU-heavy intent) so it isn't an idle
+  8×H100.
+
+Pair the routing with the runtime backstops, never IN PLACE of routing:
+between-phase `clean_experiment_downloads.py <N> --incremental` to reap a
+consumed phase's `hf_dl`/`g*_dl` cache before the next phase materializes
+more (bounds PEAK footprint), and the `vm_disk_guard.py` cron as the
+fleet-wide floor. But a phase whose own footprint exceeds the disk must be
+PLACED off the VM up front — cleanup cannot rescue a phase that is simply
+too big for where it runs. (Incident 2026-06-26: #658's Phase-1 analysis
+materialized a 139 GB activation store on the VM worktree on the shared
+188 GB disk; `/` hit 100% full and the whole fleet stalled. The phase
+should have been routed to a pod/GCP volume by this carve-out.) Plan-time
+routing only, NOT a mid-run gate.
 
 **Merge-disk budget — bound coexisting full-precision artifacts against
 the per-pod quota.** Any phase that materializes full-precision model
@@ -670,6 +819,19 @@ conditions use the Tulu 3 SFT recipe (`Source: #382`): lr=2e-5, cosine warmup
 0.03, 3 epochs. Three conditions vary learning rate only: 1e-5 / 2e-5 / 5e-5
 (`Source: #382 round-2`)." This keeps §11 compact while preserving full
 traceability.
+
+**Reused input-data artifacts get a `Source:` line too.** Every REUSED
+INPUT-DATA artifact the design loads — a parent's `train/*.jsonl` mix, an
+on-policy response cache, an `eval_results/` JSON consumed as a downstream
+input — gets a §11 `Source:` line naming (a) the producing issue `#<M>`, AND
+(b) HOW the file is FETCHED on the target backend named in §9: an HF repo path
+the worker `snapshot_download`s, a committed `eval_results/...` path that
+arrives with the git clone, or "rebuilt on-worker by the §4 regen phase". This
+is the §11 record of the step-5 check `(h)` (source resolution +
+target-backend fetchability): a git-clone-only GCP/SLURM lane cannot stage a
+VM-local-only mix, so "the parent built it locally" is NOT a valid `Source:`
+— the file must resolve on HF, be git-tree-reachable as a committed
+`eval_results/...` JSON, or be regenerated on the worker (#734).
 
 **Repo-new model id ⇒ CPU-side config-load smoke before provisioning
 (pre-provision gate).** The `model` id is itself a load-bearing choice. If

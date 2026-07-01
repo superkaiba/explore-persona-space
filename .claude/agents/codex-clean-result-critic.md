@@ -350,7 +350,7 @@ with v4 section names; for a v3 body substitute the v3 names
 > definitions + the Paper-lens output template + the independence /
 > don't-gatekeep / grounding rules, and emit the seven P1-P7 lens lines
 > (verifier line `verify_paper.py`; blocker tags `structural-absence`
-> (verify_paper.py checks 1-10) | `lens` (P1-P7); no `audit`/`procedural`).
+> (verify_paper.py checks 1-11) | `lens` (P1-P7); no `audit`/`procedural`).
 > No `verify_task_body.py`, no `audit_clean_results_body_discipline.py`, no
 > fifteen markdown lenses, no `\metric` lens (v1.1).
 

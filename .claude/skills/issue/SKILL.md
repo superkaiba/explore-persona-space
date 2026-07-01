@@ -161,7 +161,7 @@ The skill moves status in exactly five places:
 5. **Same-issue follow-up re-entry (Step 9b § Same-issue follow-up
    loop / Step 0 followup-scope dispatch):** a task at `interpreting` /
    `reviewing` / `awaiting_promotion` / `completed` carrying an unrun
-   `epm:followup-scope v1` moves to `followups_running` (tagged
+   `epm:followup-scope` moves to `followups_running` (tagged
    `followup-auto` | `followup-manual` by initiation mode) and HOLDS
    that status while executing a `question_relation: same`
    follow-up ON this issue, then re-parks at `awaiting_promotion`.
@@ -509,7 +509,7 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
     is already `completed`, no lifecycle blocks on this) and EXECUTE the
     continuation to Step 10d in this same turn; do NOT print the diff to
     chat as a menu, do NOT end the turn waiting on user confirmation
-    (the marker is the surface; `/weekly` + a later `/issue <N>`
+    (the marker is the surface; the nightly /daily living-docs backstop + a later `/issue <N>`
     re-invocation reconcile it).
   - `fact_candidates` → pick the candidate `id` with the median per-token
     log-prob (the middle of the band the plan filtered by). State
@@ -891,6 +891,20 @@ them (`issue-<N>.json`). Registration failure is non-fatal: state the
 failure and continue (same fail-soft contract as the Step 9b same-issue
 follow-up loop's step-2 re-registration).
 
+**Workflow-fix recursion-guard self-set (#678).** If THIS task is a
+workflow-fix task — its `body.md` carries a `workflow_fix_target:`
+Provenance line (the durable signal,
+`task_workflow.is_workflow_fix_session(N)`) — set
+`EPM_WORKFLOW_FIX_SESSION=1` for the session's own ergonomics. The
+durable Provenance signal is the primary; the env var is the in-session
+convenience leg lost on a watcher respawn (which re-runs `spawn-issue
+--auto` without custom env), so the durable signal is always re-derivable
+from the body. The recursion guard means this session — or any subagent
+it spawns — NEVER auto-files MORE workflow-fix tasks for its own
+findings: a `<!-- workflow-fix-candidate v1 -->` it raises is LOGGED +
+notified, not routed (analogue of `AUTO_REVIEW_DISABLED`; see
+`.claude/rules/workflow-fix-on-bug.md` § Recursion guard).
+
 ```bash
 # Reads body.md frontmatter + the most-recent slice of events.jsonl.
 # Use --json for the machine-readable shape (body + last events).
@@ -909,7 +923,9 @@ From the result, derive:
 
 **Same-issue follow-up dispatch (chat entry point).** Before the
 normal status dispatch, check the marker map for an UNRUN
-`epm:followup-scope v1` — one whose `followup_label` has no matching
+`epm:followup-scope` — the HIGHEST-version `epm:followup-scope`
+entry for this issue (tie-break newest `ts`; corrections land
+append-only) whose `followup_label` has no matching
 `epm:same-issue-followup-run v1`. If present AND the status is
 post-result (`interpreting` / `reviewing` / `awaiting_promotion` /
 `completed`) — or `followups_running` itself (the mid-round resume
@@ -1085,6 +1101,21 @@ metadata. Order:
    - Title prefix `Analyze:` / `Re-analyze:` -> suggest `analysis`
    - Title prefix `Survey:` / `Read:` / `Lit review:` -> suggest `survey`
 
+   **Fix-validation override (CLAUDE.md § "Routing experiment intent"):**
+   a `Test:` cue does NOT default to `experiment` when the Goal is to
+   VALIDATE / TEST that a shipped workflow / infra / code fix WORKS (a
+   smoke run, an end-to-end "does it work now after the fix", a config /
+   pipeline / backend re-check) — that is `kind: infra`, NOT `experiment`,
+   because it completes on the test-verdict path and produces NO promotable
+   clean-result. Reserve `experiment` for a RESEARCH QUESTION that produces
+   a clean-result the user promotes. Litmus: would the result rewrite an
+   issue's `## Takeaways` / answer an `open_questions.md` question
+   (→ `experiment`), or just confirm the fix is sound (→ `infra`)? When the
+   title says `Test:`/`Validate:` but the body reads as fix-validation,
+   suggest `infra` as `(Recommended)`. (Incident #672: a GCP-fix validation
+   filed as `experiment` was parked at `awaiting_promotion` as a promotable
+   clean-result.)
+
    <!-- gate: gates.missing_type -->
    <!-- autonomous-mode: block-and-fail -->
    Use `AskUserQuestion` with the inferred option as `(Recommended)`
@@ -1237,7 +1268,7 @@ menu. EXECUTE the skip in this same turn: post `epm:question-linked v1`
 with `mode=autonomous-skipped` + `created_new=none` + an empty
 `relates_to`, then continue to Step 1 (do NOT end the turn waiting on
 user confirmation). The PreToolUse hook hard-blocks the ask if reached;
-the `/weekly` backstop re-synthesis OR a later `/issue <N>`
+the nightly /daily living-docs backstop re-synthesis OR a later `/issue <N>`
 re-invocation will reconcile the link.
 
 ### Step 1: Clarifier gate
@@ -1522,6 +1553,30 @@ Branch on the decision (equivalently, re-read the task status):
 Never auto-approve on a missing/ambiguous estimate — the gate parks a blank
 estimate (fail safe). `awaiting_promotion` remains a human gate regardless of
 this cap.
+
+**Workflow-fix tasks — architectural greenlight (#678).**
+<!-- gate: gates.plan_approval -->
+A `kind: infra`
+workflow-fix task (filed by the workflow-fix-on-bug protocol,
+`.claude/rules/workflow-fix-on-bug.md`) is 0 GPU-h, so the GPU-h cap alone
+auto-approves EVERYTHING — including architectural / public-contract changes,
+which must still surface to the user. The planner flags such a change with an
+`architectural: true` line in the plan frontmatter (+ an "ARCHITECTURAL — needs
+user greenlight" banner in the Plan Summary). When the autonomous gate
+(`EPM_AUTONOMOUS_SESSION=1`) sees
+`architectural: true` it PARKS at `plan_pending` regardless of GPU-h — the
+existing architectural-greenlight semantics, riding this SAME plan-approval gate
+(it introduces NO new ask site; the architectural park reuses the gate the
+`--auto-approve-if-autonomous` decision already owns). **Fallback** if the
+`--auto-approve-if-autonomous`
+gate does not yet read `architectural:` from the plan frontmatter: the
+workflow-fix-on-bug protocol files the architectural task but spawns it WITHOUT
+`--auto` — a bare session that parks at `plan_pending` until a human types
+`/issue <N>` — so the architectural-greenlight invariant holds regardless. The
+non-architectural majority (0 GPU-h, `architectural` absent/false) auto-approve
+and self-merge at Step 10d, preserving the no-greenlight default. Interactive
+mode is unaffected: the existing Step 2c plan-approval ask still governs a
+human-present session.
 
 - **Legacy autonomous mode** (no chat user present AND
   `EPM_AUTONOMOUS_SESSION` is unset — e.g. invoked from
@@ -1886,7 +1941,8 @@ fi
 
 The refresh touches ONLY the workflow surface (never experiment code).
 Issue branches must not carry their own workflow-surface edits as a
-rule (those go through `workflow-improver` worktrees), with one
+rule (those go through their own filed workflow-fix `/issue --auto`
+sessions + worktrees), with one
 legitimate exception: a feature branch whose DELIVERABLE adds
 workflow-surface entries — e.g. a new marker schema registered in
 `workflow.yaml` rides its feature branch (incident #535, 2026-06-10:
@@ -2238,7 +2294,8 @@ for `epm:new-bug-class v1` markers posted in the trailing 5
 implementer rounds (rounds N-4..N, where N is the current round).
 EXCLUDE rounds whose `epm:experiment-implementation v<n>` event note
 contained the regex `<!-- workflow-fix-candidate v1 -->` (per the
-workflow-fix-on-bug protocol; those drive workflow-improver, not
+workflow-fix-on-bug protocol; those drive the workflow-fix-task-filing
+default — a filed `kind: infra` task + a `/issue --auto` session — not
 strategy-pivot consideration). "Consecutive" below means consecutive
 across NON-EXCLUDED rounds — i.e. when an excluded round sits between
 two tagged rounds, the excluded round is skipped, and the two tagged
@@ -3117,13 +3174,21 @@ while True:
     #                                  `epm:fact-candidates v1`) from the local
     #                                  VM as part of its sentinel drain — do
     #                                  NOT re-post it. Read result["gate"],
-    #                                  exit the polling loop, and park at the
-    #                                  user gate per Step 6d.4 below.
+    #                                  exit the polling loop, and dispatch the
+    #                                  matching gate handler per Step 6d.4
+    #                                  below (PARK for a user gate like
+    #                                  `fact-candidates`, AUTO-RESOLVE +
+    #                                  resume the loop for `pv_phase1_done`).
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
-    #                                   the excerpt); run CRON-TEARDOWN (see
-    #                                   below); set status:blocked; exit.
+    #                                   the excerpt, ALSO forwarding the tick's
+    #                                   result["stall_reason"] via
+    #                                   --stall-reason — a silent hang's log
+    #                                   tail carries no infra pattern, so the
+    #                                   stall_reason is the only routing
+    #                                   signal; see Step 7); run CRON-TEARDOWN
+    #                                   (see below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
     #                                  if new_milestone was true; loop again,
     #                                  using result["next_interval"] as the
@@ -3132,7 +3197,9 @@ while True:
     #                                  If the JSON also has
     #                                  gpu_idle_advisory_posted == true, act
     #                                  per "GPU-idle advisory handling" below
-    #                                  before the next tick.
+    #                                  before the next tick. If it has
+    #                                  gpu_idle_escalation_posted == true, act
+    #                                  per "GPU-idle escalation handling" below.
 ```
 
 (`current_phase` is `"running"` by default; when the poller emits a
@@ -3144,7 +3211,8 @@ The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting
 their carried markers from the VM via `task_workflow.post_event`). The
 orchestrator's only post-tick duties are: exit the loop on `status=done`,
-park at the user gate on `status=gate` (Step 6d.4), and post
+dispatch the matching gate handler on `status=gate` (Step 6d.4 — PARK for
+a user gate, AUTO-RESOLVE + resume the loop for `pv_phase1_done`), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
@@ -3179,6 +3247,25 @@ genuinely needs the pod (a pod-local data dependency) or is nearly done,
 state that one-line reason and keep looping. The advisory never changes
 the status verdict, so this handling is additive to the `status=running`
 branch.
+
+**GPU-idle escalation handling.** When a tick's JSON reports
+`gpu_idle_escalation_posted: true`, the poller has just posted a louder
+one-per-phase `epm:progress` marker whose note starts with
+`[gpu-idle-escalation]` (plus a `gpu_idle_escalation=True` extra) AND fired a
+best-effort Telegram push: a MULTI-GPU pod has been idle in an upload/CPU-only
+phase for ≥ `EPM_GPU_IDLE_ESCALATION_MIN` (default 60, ≥ the advisory min) min
+— the #664 spend-leak class (an 8×H200 idle in a terminal upload phase burns
+~$44/hr). The orchestrator's response is the SAME as for
+`gpu_idle_advisory_posted` (the escalation is the advisory's louder second
+tier, not a new action): surface it in the session text, and if the remaining
+work in the current phase is genuinely CPU-only and long, apply CLAUDE.md
+"CPU-only phases don't hold GPU pods" — route the upload off-pod / release the
+GPUs after a checkpoint — under the SAME three hard constraints as the advisory
+(never kill un-checkpointable in-RAM work, autonomous sessions never stop a pod
+to PARK, it is NOT a mid-run cost gate). Like the advisory, the escalation
+NEVER changes the status verdict and the poller NEVER stops the pod — it
+surfaces the leak loudly for action. This handling is additive to the
+`status=running` branch.
 
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
@@ -3406,7 +3493,7 @@ uv run python scripts/task.py set-status <N> verifying \
 
 Then proceed to Step 7 (which handles results → upload routing).
 
-##### Step 6d.4: On `status=gate` — park at a pod-side user gate
+##### Step 6d.4: On `status=gate` — handle a pod-side gate (park OR auto-resolve)
 
 Pod-side dispatchers cannot post markers directly (the `task.py`
 branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
@@ -3426,9 +3513,13 @@ polling loop and NEVER trigger the fail-fast block. They are NOT user
 gates — do not treat a `blocks_pipeline: False` phase signal as an
 unrecognised gate (incident #641).
 
-The orchestrator parks at the named gate inline rather than continuing
-to poll — the pipeline itself has EXITed and is waiting on a user
-answer.
+The orchestrator handles the named gate inline rather than continuing to
+poll — the pipeline itself has EXITed at the gate. Most gates are PARK-mode
+(`fact-candidates`): the pipeline is waiting on a user answer, so the
+orchestrator parks. An AUTO-RESOLVING gate (`pv_phase1_done`) is the
+exception: the orchestrator resolves it itself (a pod-cycle around an
+off-pod step) and resumes the loop in the same turn — see the per-gate
+handlers below.
 
 Gate handlers (one per registered `<name>`):
 
@@ -3482,6 +3573,74 @@ Gate handlers (one per registered `<name>`):
   polling loop directly without a re-invocation. (See plan §4.2 of any
   fact-teaching task for the on-pod resume contract.)
 
+- **`pv_phase1_done`** (issue #763 persona-vector extraction —
+  off-pod judge between two GPU phases): an AUTO-RESOLVING gate, NOT a
+  user park. The dispatcher `scripts/issue763_dispatch.sh` runs GPU
+  phase 1 (`generate + capture + pv_extract_generate + upload-progress`
+  — the PV rollouts are now on the HF data repo), emits the blocking
+  sentinel `gate=pv_phase1_done` via
+  `scripts/issue763_upload.py --emit-gate pv_phase1_done` <!-- lint: historical-ref --> (called from
+  `scripts/issue763_dispatch.sh` after upload-progress)
+  (`write_sentinel("epm:gate", …, blocks_pipeline=True)`), and EXITs.
+  Unlike `fact-candidates` (which PARKS for a user pick at
+  workflow.yaml § gates.fact_candidates), the
+  orchestrator resolves this gate ITSELF — it does NOT raise
+  `AskUserQuestion`, does NOT post `epm:step-completed --exit-kind
+  parked`, does NOT EXIT the skill, and does NOT CRON-TEARDOWN — by
+  orchestrating a pod-cycle around an off-pod judge step and then
+  RESUMING the polling loop in this same turn. This handler behaves
+  IDENTICALLY in interactive and `EPM_AUTONOMOUS_SESSION` modes (there
+  is no user decision to make — the gate is fully auto-resolved).
+  <!-- autonomous-mode: auto-resolve -->
+  Concretely:
+
+  1. **Stop the GPU pod** (volume preserved): `uv run python scripts/pod.py
+     stop --issue <N>`. This frees the GPU through the deadline-bounded
+     stop (see Step 6d.2 § "Stop the pod" / "Notes on the obsolete
+     monitoring stack"); the PV rollouts are already on HF, so nothing on
+     the pod's ephemeral disk is lost.
+  2. **Run the judge OFF-POD on the VM**: `uv run python
+     scripts/issue763_extract_pv_rb.py --phase judge`. <!-- lint: historical-ref --> (This script
+     ships on the `issue-763` branch — it lands on `main` when #763 merges;
+     the reference is a forward / sibling-branch one, not a dead tool.)
+     This is VM-safe by construction and NOT a `task.py` pod-shellout: it
+     fetches the PV rollouts from HF via `snapshot_download`, batch-judges
+     through
+     `eval.batch_judge` (the deadline-bounded client — never a hand-rolled
+     `messages.batches.create` + deadline-less poller), and uploads the
+     keep-flags back to the issue HF prefix. It needs no GPU and posts no
+     `task.py` markers itself (it is an off-pod analysis step; the
+     orchestrator owns the poll-loop markers).
+  3. **Resume the pod**: `uv run python scripts/pod.py resume --issue <N>`
+     — new IP/port; `pods.conf` + `~/.ssh/config` + MCP config auto-refresh
+     on resume (re-run `/mcp` if the SSH MCP entry needs the refreshed
+     host/port; if SSH keeps failing on a stale port, pull the live
+     host/port back with `pod.py config --refresh-from-api` per Step 6b
+     "stale-port recovery", the #488 13h-loop failure class). CONFIRM the
+     resumed pod is reachable (`uv run python scripts/pod.py health
+     --quick`) before re-dispatching.
+  4. **Re-dispatch the workload tail** at `--from-phase pv_capture` via
+     the SAME experimenter launch pattern as the original launch
+     (Step 6d.1): spawn the `experimenter` subagent with the workload
+     command `bash scripts/issue763_dispatch.sh --from-phase pv_capture`
+     and the resumed pod's name (`pod-<N>` / `epm-issue-<N>`). The
+     dispatcher resumes at capture → E0 judge → fit → figures → final
+     upload → `[phase=done]`. The experimenter posts a fresh
+     `epm:run-launched` marker (new `pid` + `log_abs`) and exits, exactly
+     as on the first launch; the orchestrator updates its local poll-loop
+     `pid`/`log` from that marker.
+
+  Then **RESUME the polling loop** (Step 6d.2) at the next tick — do NOT
+  EXIT, do NOT park, do NOT CRON-TEARDOWN. The gate has auto-resolved:
+  the pod is burning GPU again after resume, so the `/issue-tick <N>`
+  backstop cron stays armed and the bg-Bash poll chain continues against
+  the resumed pod. (Contrast with `fact-candidates` above, which parks
+  for a user pick and tears the cron down.) **Idempotency on re-entry:**
+  if a re-entry observes an `epm:gate v<n>` for `pv_phase1_done` followed
+  by a FRESH `epm:run-launched` (post-resume; ts > the gate marker),
+  treat the gate as already resolved and proceed with normal polling — do
+  NOT re-stop / re-judge / re-dispatch.
+
 - **Unrecognised `gate` name**: this branch fires ONLY for a sentinel
   the poller surfaced as `status=gate` — i.e. one that carried
   `blocks_pipeline: True`. A non-empty gate name with
@@ -3498,7 +3657,15 @@ Gate handlers (one per registered `<name>`):
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-Run CRON-TEARDOWN before parking (the HARDENED Step 6d.2 procedure:
+**PARK-mode gates only** (`fact-candidates` and the unrecognised-gate
+branch): the tail below applies ONLY to gates that EXIT the skill to wait
+on a human. Auto-resolving gates like `pv_phase1_done` (above) handle
+their own continuation — they do NOT teardown and do NOT EXIT; their
+handler resumes the polling loop in the same turn, so it skips this whole
+paragraph.
+
+For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED
+Step 6d.2 procedure:
 `CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
 equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
 fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
@@ -3510,8 +3677,9 @@ skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
 --step 6d --exit-kind parked` (the §5 `epm:step-completed` marker); the
 user's re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
 transitions are now `running → verifying` (on done), `running → running`
-(after a parked gate resumes), or `running → blocked` (on stalled/dead
-or unrecognised gate).
+(after a parked-and-resumed user gate, OR after an auto-resolving gate's
+handler returns), or `running → blocked` (on stalled/dead or unrecognised
+gate).
 
 ##### Notes on the obsolete monitoring stack
 
@@ -3549,9 +3717,11 @@ read it as "the bg-Bash poll chain has no live tick AND no scheduled
 
 Status stays at `running` throughout the polling loop. The polling
 loop's terminal transitions are `running → verifying` (on done),
-`running → running` (parked at a user gate per Step 6d.4; resumes on
-the next `/issue <N>` invocation after the user posts the gate-resume
-marker), or `running → blocked` (on stalled/dead or an unrecognised
+`running → running` (a gate resolved per Step 6d.4 — either a PARK-mode
+user gate that resumes on the next `/issue <N>` invocation after the user
+posts the gate-resume marker, OR an auto-resolving gate like
+`pv_phase1_done` whose handler cycles the pod and resumes the loop in the
+same turn), or `running → blocked` (on stalled/dead or an unrecognised
 gate name).
 
 ### Step 7: Monitor -> results
@@ -3642,8 +3812,112 @@ When this skill is re-invoked in `running`:
 
    | failure_class | Cause example | Action |
    |---|---|---|
-   | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, status -> `blocked`. |
+   | `infra` | OOM, ENOSPC, NCCL, vLLM init failure, SSH refused, 401/gated repo, library traceback (vllm/transformers/peft/trl/torch/xformers), a zombie-GPU-allocation stall (`stall_reason: vllm_worker_dead_zombie_gpu`, #664) | Re-spawn the **experimenter** on the SAME branch, post `epm:experimenter-respawn v<n+1>`. NO implementer round. Cap 3 respawns; on 4th, status -> `blocked`. (Zombie-GPU stall: see the recovery-brief note below.) |
    | `code` | Python `Traceback` from `src/explore_persona_space/` or `scripts/` (our code), `AssertionError`/`TypeError`/`KeyError` from our code, CUDA OOM listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — GPU-pinning bug, #557) | Status back to `running` (implementing sub-phase), re-spawn `experiment-implementer` with the failure context. Loop through Steps 4b -> 5 -> 6 again. Cap 3 (existing). |
+
+   *Before applying either row, the Crash-fix circuit-breaker below checks for
+   a same-signature repeat or a spent escape ladder and pivots to re-planning if
+   either fires.*
+
+   **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
+   When the `status=stalled` tick's `stall_reason` is
+   `vllm_worker_dead_zombie_gpu`, the experimenter respawn is an `infra`
+   row (the classifier routes it via `--stall-reason`), but the generic
+   respawn brief is NOT enough: the orphaned `VLLM::EngineCore` worker
+   holds VRAM under a cmdline of just `VLLM::EngineCore` (no script name),
+   so a routine `pgrep -f <script>` / `pkill -f <dispatcher>.py` reaper
+   MISSES it (#664 r8). The respawn brief MUST instruct the experimenter
+   to reap the orphan by EXACT PID before relaunching on the same pod —
+   `pgrep -af '^VLLM::EngineCore'` → `kill -KILL <pid>` each →
+   `nvidia-smi --query-compute-apps=pid,used_memory --format=csv,noheader`
+   to confirm the VRAM released. The canonical recipe lives in
+   `.claude/rules/gotchas.md` (crash-orphan `VLLM::EngineCore` entry) and
+   the long-form runbook
+   `.claude/agent-memory/experimenter/feedback_vllm_zombie_gpu_pkill_reaper.md`;
+   reference BOTH in the brief so the experimenter does not re-derive it
+   (the experimenter's own Pre-Launch step 9 also runs this probe).
+
+   **Crash-fix circuit-breaker (runs BEFORE applying the cap-3 routing
+   table above).** Before re-spawning the experimenter (`infra` row) or
+   re-spawning `experiment-implementer` (`code` row), check whether this
+   failure is the SAME trap re-tripping or a SPENT escape ladder — either
+   case means relaunching is futile and the PLAN, not the code, needs to
+   change. The check reads ONLY `events.jsonl` markers + the latest
+   `plans/plan.md` (no new in-memory state) and is the pure predicate
+   `task_workflow.circuit_breaker_should_fire(events, plan_text, K)`
+   (canonical predicate this step implements; the canonical pivot rule is
+   `workflow.yaml § pivot_criteria.plan_contradiction_replan`):
+
+   ```bash
+   K="${EPM_CIRCUIT_BREAKER_K:-4}"   # default 4; one round past cap-3 so
+                                     # the generic pivot can also have fired
+   uv run python - "$N" "$K" <<'PY'
+   import sys
+   from explore_persona_space import task_workflow as tw
+   n, k = int(sys.argv[1]), int(sys.argv[2])
+   events = tw.list_events(n)
+   plan = tw.find_task_path(n) / "plans" / "plan.md"
+   plan_text = plan.read_text() if plan.exists() else ""
+   fire = tw.circuit_breaker_should_fire(events, plan_text, K=k)
+   print(fire if fire else "NO-FIRE")
+   PY
+   ```
+
+   - **Trigger 1 — same-failure-class repetition** (the narrower complement
+     to cap-3, K default 4): the predicate groups `epm:failure` markers by
+     their `(phase, failure_class, assert_tag)` signature (`phase` from the
+     failure note's `phase=<p>` token; `failure_class` from the
+     `failure_class:` line or, absent it, from the prior round's classifier
+     verdict already recorded; `assert_tag` from the fallback chain — explicit
+     `assert_tag:` SHOULD field, else the bracketed `[<tag>-assert]` token,
+     else the exception-type / command-family token
+     `<ExcName>:<script_basename>` extracted from the crash note, else a
+     normalized note-hash with timestamps / PIDs / `file:line` / the
+     subprocess argv array / `--flag value` runs stripped). K or more rounds
+     sharing ONE signature → fire with `trigger: same_failure_class`. The
+     counter RESETS at any intervening `epm:experiment-implementation` /
+     `epm:results` milestone marker (a genuinely successful round means the
+     trap was escaped, not re-tripped). It does **NOT** reset on
+     `epm:progress` — that marker is the workflow's catch-all heartbeat /
+     phase-tick / watcher-respawn breadcrumb and is posted DURING a
+     still-failing trap window (verified on #664: the trap window between
+     events 228 and 247 carries six benign `epm:progress` markers), so
+     resetting on it would make this trigger inert.
+   - **Trigger 2 — enumerated-fallback-exhaustion**: the predicate parses the
+     latest `plan.md` for a finite escape ladder — a literal ` → `
+     arrow-separated "Option A → Option B → ..." run OR a numbered
+     "Option N:" list under a §-heading — then scans `epm:progress` /
+     `epm:experiment-implementation` notes for which Option each round
+     attempted AND `epm:failure` markers re-tripping the SAME gate. When
+     EVERY option in the ladder has been launched AND the same gate still
+     trips → fire with `trigger: enumerated_fallback_exhausted`. The predicate
+     silently NO-OPS (returns no trigger-2 fire) on free-form plans with no
+     parseable ladder.
+
+   On fire the predicate returns a dict whose **`pivot_scope` field is the
+   ready-to-pass `/adversarial-planner` scope string** (built verbatim per the
+   wording template in
+   `workflow.yaml § pivot_criteria.plan_contradiction_replan`). The
+   orchestrator (this is a STRATEGY PIVOT per that canonical predicate):
+
+   1. Post `epm:strategy-pivot v<n>` (the EXISTING marker — do NOT introduce a
+      new kind) naming which trigger fired, the matched signature OR the
+      spent-ladder list, and the `pivot_scope` string to pass to the planner.
+   2. `uv run python scripts/task.py set-status <N> planning`.
+   3. Re-invoke `/adversarial-planner` passing `fire["pivot_scope"]` VERBATIM
+      as the pivot scope (it already names the repeated signature or the
+      exhausted ladder, per the
+      `workflow.yaml § pivot_criteria.plan_contradiction_replan` template).
+   4. Treat the revised plan as a FRESH implementer cycle (cap-3 / revision
+      counters reset — identical to the existing `plan_contradiction_replan`
+      pivot).
+   5. Count this as ONE of the ~3 strategy pivots before BLOCK (the SAME
+      counter as the existing trigger, NOT a separate one). Block only after
+      ~3 such re-plans fail to yield a runnable design AND no further
+      autonomous angle exists.
+
+   When the predicate returns `NO-FIRE`, fall through to the classifier
+   invocation and cap-3 routing table below unchanged.
 
    **Missing `failure_class` — invoke the classifier script.** Do NOT
    reason about regex patterns inline; the patterns are owned by
@@ -3652,10 +3926,16 @@ When this skill is re-invoked in `running`:
 
    ```bash
    # Pipe the failure body via stdin to avoid shell-quoting traps.
+   # On a status=stalled tick, ALSO forward the poll JSON line's
+   # stall_reason via --stall-reason: a known reason (e.g.
+   # vllm_worker_dead_zombie_gpu) routes infra directly, because a silent
+   # hang's log tail matches no infra pattern. Omit the flag when there is
+   # no stall_reason (status=dead, or a stall_reason of null/absent).
    cat <(uv run python scripts/task.py view "$N" --json \
        | jq -r '.events[] | select(.kind == "epm:failure") | .note') \
      | uv run python scripts/failure_classifier.py --body - \
-         --log "$LATEST_LOG_PATH"
+         --log "$LATEST_LOG_PATH" \
+         ${STALL_REASON:+--stall-reason "$STALL_REASON"}
    ```
 
    The script writes a single line — `infra` or `code` — to stdout.
@@ -3674,7 +3954,8 @@ When this skill is re-invoked in `running`:
    tests in `tests/test_failure_classifier.py` cover the behaviour.
 
    **Failure-lesson capture (fires when a crash-fix round RESOLVES the
-   failure).** A lightweight in-flight hook, not a new pipeline step;
+   failure OR CONFIRMS the true root cause).** A lightweight in-flight
+   hook, not a new pipeline step;
    auto-continue, no gate. Both crash-fix shapes — the `code`-row
    `experiment-implementer` round and the `infra`-row experimenter
    respawn whose relaunch applied a fix — are REQUIRED (by
@@ -3695,11 +3976,33 @@ When this skill is re-invoked in `running`:
    generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
    owning_agent: experiment-implementer|experimenter
    gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+   root_cause_confirmed: yes|no  # yes if THIS round identified the TRUE root cause (even if a NEW distinct failure followed or the pod was abandoned in recovery)
+   supersedes:           # OPTIONAL: prior-lesson slug or marker-ts this lesson corrects; omit if none
    <!-- /epm:failure-lesson -->
    ```
 
-   On receiving a crash-fix report carrying the block, the orchestrator
-   takes three actions:
+   **Capture eligibility (added #712).** Decide whether a received block
+   is eligible for capture by calling the pure predicate
+   `task_workflow.failure_lesson_capture_eligible(block_fields,
+   subsequent_distinct_failure=<bool>)`. It returns True when the block
+   RESOLVED the failure (the original trigger, `resolved: yes`) OR the
+   block carries `root_cause_confirmed: yes` (case ii — true REGARDLESS of
+   whether a subsequent distinct failure followed or the pod was abandoned
+   in recovery). **Root-cause-confirmed firing.** Case (ii) closes the
+   #664 gap: at #664 event L204 a crash-fix round CONFIRMED that pod-664
+   reproducibly deadlocked the first `llm.generate()` regardless of batch
+   size (a pod-hardware cause, NOT a code bug — the OLD pod ran the same
+   code fine), but the round ended in a recovery pivot that terminated the
+   pod, so the resolve-only trigger never fired and the failure-lesson
+   hook captured NOTHING for the confirmed cause. WHO posts it: the agent
+   (experiment-implementer / experimenter) that confirmed the cause emits
+   the block in its report — case (ii) is signalled by
+   `root_cause_confirmed: yes`. The orchestrator posts it verbatim on
+   receipt, exactly as for the resolve case; it does NOT wait for a
+   successful relaunch.
+
+   On receiving a crash-fix report carrying a capture-eligible block, the
+   orchestrator takes three actions:
 
    1. **Post the marker.** Post the block verbatim as
       `epm:failure-lesson v1` on the task (`task.py post-marker <N>
@@ -3719,21 +4022,53 @@ When this skill is re-invoked in `running`:
       overlapping failure classes hours apart with no persistence
       channel). Lessons are written for the NEXT agent — 1-3 sentences,
       the trap + the fix, no transcript dumps.
+
+      **`supersedes:` handling + apply (added #712).** Apply the
+      capture-eligible block by calling the pure composer
+      `task_workflow.apply_failure_lesson(block, durable_texts,
+      new_lesson_ref)`, where `durable_texts` is `{path: current_text}`
+      for the candidate durable files (the `owning_agent`
+      `feedback_<slug>.md` body keyed at `new_lesson_ref["memory_path"]` +
+      any matched `.claude/rules/gotchas.md` bullet) and `new_lesson_ref`
+      is `{"slug": "<new-lesson-slug>", "task_id": "<N>", "memory_path":
+      "<feedback path>", "lesson": "<lesson body>"}`. The composer returns
+      the FINAL `{path: text}` map the orchestrator then writes
+      (explicit-path commit + push, as today). Its behavior:
+      - If the block carries `supersedes: <prior-slug-or-marker-ts>`, the
+        composer calls `supersedes_action()` to locate every durable entry
+        whose text matches `<prior-ref>` and PREPENDS a concrete
+        `[SUPERSEDED by <new-lesson-slug> — see #<N>] ` marker (the real
+        slug + task id, NEVER a `<pending>` placeholder), then APPENDS the
+        new (corrected) lesson body to the `owning_agent` memory file — so
+        the corrected lesson LANDS ALONGSIDE the annotated prior, never
+        replacing it. Transitive chains are kept (A `[SUPERSEDED by B]`, B
+        `[SUPERSEDED by C]`, C live); each correction annotates only the
+        entry its `supersedes` directly names.
+      - If `<prior-ref>` resolves to NOTHING, the composer leaves all prior
+        texts byte-unchanged, appends the new lesson normally, and the
+        orchestrator logs `supersedes_unresolved: <prior-ref>` in the
+        marker note — a dangling `supersedes` is a no-op annotation, NEVER
+        a hard failure (a lesson always lands).
+      - If `supersedes` is ABSENT, the composer is a pure append (the
+        produced text is byte-identical to the pre-#712 append-only path).
    3. **On `gotcha_candidate: yes` — route as a workflow-fix
       candidate.** Treat the lesson as a prose workflow-fix candidate
-      targeting `.claude/rules/gotchas.md` and dispatch it through the
-      existing workflow-fix-on-bug auto-spawn default
+      targeting `.claude/rules/gotchas.md` and route it through the
+      existing workflow-fix-on-bug auto-file default — a filed
+      `kind: infra` task + a background `/issue --auto` session
       (`.claude/rules/workflow-fix-on-bug.md`); the lesson block is the
       surfaced prose.
 
    If the resolving report omitted the block (older agent spawn, or a
    refusal killed the report tail), reconstruct it from the failure
    context + fix diff yourself before posting — don't bounce the round
-   for the missing block alone. `/daily` remains the deduplicating
-   consolidator: it reads the day's `epm:failure-lesson v1` markers,
-   dedupes against agent memories, promotes recurring lessons into
+   for the missing block alone. `scripts/consolidate_lessons.py` (a cron,
+   NOT `/daily` — task #711) is the deterministic deduplicating
+   consolidator: it reads the rolling-window `epm:failure-lesson v1`
+   markers, dedupes against agent memories, promotes recurring lessons into
    `.claude/rules/gotchas.md` or the relevant rule file, and prunes
-   over-eager `generalizes: yes` memory entries.
+   over-eager `generalizes: yes` memory entries. `/daily` no longer owns
+   this pass.
 3. If `epm:results` exists, move status to `uploading` and proceed to
    Step 8.
 
@@ -3995,6 +4330,63 @@ URLs.
   the parent's pod (`epm-issue-<PARENT_ID>`) instead. Skip the
   teardown call only if the task has a `keep-running` tag for known
   follow-up work in the same session.
+
+  **VM download-cache cleanup (post-#disk-100pct).** The experiment
+  downloaded its source data from HF into VM-local caches under
+  `data/issue_<N>/hf_dl/` + `data/issue_<N>/g*_dl/` — in the repo-root
+  `data/` AND in this issue's worktree
+  (`.claude/worktrees/issue-<N>*/data/issue_<N>/`, where the live run
+  usually writes; the worktrees tree hit 139 GB on 2026-06-26). Nothing
+  else reclaims them, and a single finished experiment can pin ~100 GB
+  on the VM root disk (incident 2026-06-25: `/` hit 100% full). These are
+  re-downloadable CACHES (no on-HF presence check needed), and `store/`
+  + `eval_results/` are NEVER touched (in repo-root OR worktrees). After
+  the teardown above (artifacts are now confirmed at permanent URLs),
+  clean this issue's download caches — the helper sweeps both the
+  repo-root and worktree copies:
+
+  ```bash
+  # Re-downloadable hf_dl/g*_dl caches only (repo-root + worktree);
+  # store/ + eval_results/ kept.
+  uv run python scripts/clean_experiment_downloads.py <N> --apply
+  ```
+
+  Auto-continue (NOT a gate); idempotent — a re-entry on an
+  already-cleaned issue is a no-op. The fleet-wide backstop for caches
+  that escape this path (crashed runs, follow-up rounds) is the
+  `vm_disk_guard.py` cron (CLAUDE.md § Disk hygiene). Skip only when the
+  task has a `keep-running` tag (the same-session follow-up may re-use the
+  cache).
+
+  **Incremental (between-phase) cleanup for multi-phase runs.** Step-8
+  cleanup fires only at experiment END, so a multi-phase experiment whose
+  phases each materialize a fresh download cache holds the PEAK of all
+  phases' caches at once — and a large-footprint phase can fill `/`
+  mid-run (incident 2026-06-26: #658's Phase-1 analysis put a 139 GB store
+  on the VM worktree on the shared 188 GB disk; `/` hit 100% full). When a
+  run has multiple phases that each download inputs (e.g. a phase's judge /
+  extraction step CONSUMES its `e0_gen` / `g*_dl` / `hf_dl` inputs, then
+  the next phase downloads more), reap each consumed phase's
+  re-downloadable cache BEFORE the next phase materializes more — bounding
+  peak footprint, not just cleaning at the end. Between phases (after the
+  judge / extraction consumes the phase's inputs, before the next phase
+  downloads):
+
+  ```bash
+  # Between-phase: reap THIS phase's consumed hf_dl/g*_dl cache (repo-root
+  # + worktree); store/ + eval_results/ kept; no terminal-status gate (the
+  # run knows the phase is done). Re-downloads on demand if a later phase
+  # needs it again.
+  uv run python scripts/clean_experiment_downloads.py <N> --incremental --apply
+  ```
+
+  Same safety contract as the Step-8 cleanup (re-downloadable caches only;
+  `store/` + `eval_results/` NEVER touched; read-only on task state). This
+  is the RUNTIME backstop that bounds peak footprint — but it does NOT
+  rescue a single phase whose OWN footprint exceeds the disk; such a phase
+  must be ROUTED off the VM at plan time per the data-footprint carve-out
+  (CLAUDE.md "CPU-only phases don't hold GPU pods" → `planner.md` §9 →
+  `critic.md` Methodology lens item 10).
 
   **Upload-verification guard (post-#444).** `pod.py terminate` refuses
   to destroy an `epm-issue-<N>` / `pod-<N>` for a `kind: experiment`
@@ -4582,8 +4974,9 @@ Rule-A reuse-chain depth · P3 inline-subset + comprehensive-Appendix
 completeness · P4 no confidence in the paper body · P5 research-paper
 register · P6 `\epsref{N}` correctness · P7 verbatim examples + judge
 prompts) bind INSTEAD of the fifteen markdown lenses (no `\metric` grounding
-lens in v1; `verify_paper.py` checks 7-8 mechanically gate the verbatim
-training/eval/output examples + the judge-prompts appendix). The orchestrator's
+lens in v1; `verify_paper.py` checks 7-9 mechanically gate the verbatim
+training/eval/output examples, the judge-prompts appendix, and the
+example-provenance pointers — the no-invention floor). The orchestrator's
 brief for both critics names the paper dir (`docs/papers/issue_<N>/`) and
 the `.tex`/PDF read targets instead of the markdown `body.md`; the
 ensemble decision rule, the round cap, and the reconciler tie-break are
@@ -4612,8 +5005,9 @@ dispatching this round's critics.
    review: the mechanical pre-pass is `scripts/verify_paper.py` over
    `docs/papers/issue_<N>/`, NOT `verify_task_body.py` /
    `audit_clean_results_body_discipline.py`, and the seven P1-P7 paper
-   lenses bind (incl. P7 verbatim examples + judge prompts; verify_paper.py
-   checks 7-8 gate them) — see the Paper-mode branch paragraph above. The Check-21
+   lenses bind (incl. P7 verbatim examples + judge prompts + example
+   provenance / no-invention; verify_paper.py checks 7-9 gate them) — see the
+   Paper-mode branch paragraph above. The Check-21
    methodology-doc pass-through below is markdown-only; skip it.)
 
    **Check-21 methodology-doc pass-through.** When the methodology doc
@@ -5082,7 +5476,9 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    `failure_class: code`, `reason: methodology-link-append broke
    verify_task_body.py`, set `status:blocked`, and exit (this is a
    workflow bug — surface a `workflow-fix-candidate v1` block in the
-   exit text so the orchestrator can auto-spawn `workflow-improver`).
+   exit text so the orchestrator can AUTO-FILE a `kind: infra` task +
+   spawn a background `/issue --auto` session per the
+   workflow-fix-on-bug protocol).
 9. **Post the marker:**
    ```bash
    uv run python scripts/task.py post-marker <N> epm:methodology-doc-generated \
@@ -5550,7 +5946,12 @@ orphaned at `running` for 5+ hours.)
    workflow.yaml § markers: `followup_label` (kebab-slug; names the
    artifact dir `eval_results/issue_<N>/<followup_label>/`), `source`,
    the verbatim proposal spec (or the user's verbatim chat request),
-   and the GPU-hour estimate.
+   and the GPU-hour estimate. **MULTIPLE `epm:followup-scope` versions
+   for one issue may exist** (corrections land append-only, each
+   superseding the prior — see #658's `persona-vectors-style-rb`
+   v3→v8 chain); the authoritative scope is ALWAYS the entry with the
+   highest top-level `version` (tie-break newest `ts`). Do NOT cache the
+   entry-time version — step 3 re-reads the latest before snapshotting.
 2. **Re-enter the pipeline.** **FIRST record the initiation mode as a
    tag** (before the status flip, so the `task.py` missing-tag warning
    stays quiet): `uv run python scripts/task.py add-tag <N>
@@ -5606,6 +6007,29 @@ orphaned at `running` for 5+ hours.)
    round exits the status only at the re-park:
    `set-status <N> awaiting_promotion` (or `blocked` on a failure
    exit).
+   - **Immediately before the planner snapshots the scope, RE-READ the
+     latest `epm:followup-scope` for this issue** (highest top-level
+     `version`, tie-break newest `ts`) — never plan against an
+     entry-time snapshot, or a session that entered on `v3` and
+     snapshotted before a `v5`/`v6` correction landed plans stale (the
+     #658 bug). The `followup_label` lives inside the marker NOTE body
+     as free text (its format even differs across versions —
+     `- followup_label: ...` in v1/v2, bare `followup_label: ...` in
+     v3+), NOT as a top-level event key (top-level keys are
+     `{by, kind, note, ts, version}` only). So the selector does NOT
+     filter on `followup_label`: it matches `kind == 'epm:followup-scope'`
+     and takes the max `(version, ts)`, relying on the Step 0
+     entry-predicate having already filtered this issue to UNRUN status
+     (an `epm:followup-scope` whose label has no matching
+     `epm:same-issue-followup-run`) — so entering the loop means the
+     latest scope IS the active one. This is the SAME convention the
+     watcher uses (`autonomous_session_watch._followup_round_complete_reason`
+     keys on `ts` only, never `followup_label`) and the Step 0
+     highest-version-per-kind marker map. Mechanical recipe:
+     ```bash
+     uv run python scripts/task.py view <N> --json \
+       | jq '[.events[] | select(.kind=="epm:followup-scope")] | sort_by(.version, .ts) | last'
+     ```
    - `/adversarial-planner` re-invoked in AMENDMENT scope: produces
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
@@ -5739,10 +6163,28 @@ this step verifies the test suite still passes.
 There is **no `tester` agent**. The skill itself runs the project's test
 suite directly and posts an `epm:test-verdict` event with the result.
 
-1. Unit tests: `uv run pytest tests/ -v --tb=short`
+1. Unit tests — DEFAULT scope `touched` (workflow-invariant + touched-file
+   subset). The full ~5800-test suite has no xdist parallelism and is
+   harness-/earlyoom-killed in sparse worktrees (#665/#736), so do NOT run
+   `pytest tests/` wholesale by default.
+   a. Compute the subset:
+      `uv run python scripts/select_step9c_tests.py --base main`
+      It prints the exact `uv run pytest <files> -v --tb=short` command and
+      any `untested touched file: <path>` WARN lines (stderr).
+   b. Run the printed command. Record pass/fail + any WARN lines.
+   c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
+      `## Test scope` H2 names `full`, run the FULL suite instead — but as
+      `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
+      capture `tail -50` of the run log so the stall surfaces actionable
+      evidence (this is the #665/#736 regression — keep it visible, never a
+      silent kill). Default scope is `touched`.
 2. Lint: `uv run ruff check . && uv run ruff format --check .`
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
+
+The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
+the files run, pass/fail counts, and any untested-touched-file WARNs (so the
+orchestrator surfaces coverage gaps — never silently skipped).
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
@@ -5836,7 +6278,7 @@ work* contract.
      status's primary semantics as of 2026-06-10 is "a same-issue
      follow-up round is executing on this task" — Step 9b § Same-issue
      follow-up loop. The Step 0 dispatcher disambiguates by the
-     presence of an unrun `epm:followup-scope v1`.)
+     presence of an unrun `epm:followup-scope`.)
    - **No children in flight** AND task type is `experiment` ->
      **status `completed`**.
    - **type `infra` / `batch` / `analysis` / `survey`** (regardless of
@@ -5879,22 +6321,70 @@ work* contract.
     already run in a prior `/issue <N>` invocation that produced the
     children we're now waiting on.
 
+    If type is `analysis` AND we just landed at `completed` AND the
+    clean-result body carries a measured finding (a `## Results`
+    section), proceed to **Step 10c-bis ONLY** (results-driven
+    literature-positioning). Do NOT enter Step 10b (follow-up proposer)
+    or Step 10c (living-docs update) — both are EXPERIMENTS-ONLY; an
+    analysis task seeds no experimental follow-ups and owns no
+    open-questions diff. The `## Results` gate above is the PRIMARY
+    guard: a finding-less analysis task fails it and never enters this
+    branch (it routes straight to Step 10d — see the entry condition in
+    the next paragraph). As a redundant defense-in-depth backstop, Step
+    10c-bis ALSO applies its own kind / finding-bearing gate (see Step
+    10c-bis § When to run: a `kind: analysis` task with no `## Results`
+    writes a 3-line "no measured finding" stub and raises no gate), so
+    even if a finding-less analysis task somehow reached this branch it
+    would self-skip cleanly inside the agent. This is the SOLE entry
+    into Step 10c-bis for analysis tasks — without it a finding-bearing
+    `kind: analysis` clean-result would silently skip the
+    literature-positioning step that CLAUDE.md item 11, the
+    `related_work_positioning` gate, and the `related-work-finder` agent
+    all promise it.
+
+    Any other type (`infra` / `batch` / `survey`), or an `analysis`
+    task with no `## Results`, enters NONE of the Step 10b/10c/10c-bis
+    batch — proceed straight to Step 10d (unchanged).
+
 ### Step 10b: Follow-up proposer (experiments only — runs ∥ Step 10c)
 
-**Parallel spawn with Step 10c.** Steps 10b and 10c keep their
-numbering and their per-step semantics, but their agents are spawned
-CONCURRENTLY: evaluate both steps' skip conditions first (10b's
-autonomous-mode short-circuit below; 10c's kind / `relates_to` skips),
-then spawn `follow-up-proposer` AND `living-docs-updater` in ONE
-message (two Agent calls, staggered a few seconds apart per the
-CLAUDE.md 429 guidance). Both read the completed clean-result; their
-outputs are independent (follow-up proposals vs a proposed docs diff).
-Process each return per its own step text, and JOIN BOTH —
-`epm:follow-ups v1` posted (or 10b skipped) AND the 10c proposal
-handled (gate raised / parked per 10c) — before entering Step 10d. The
-`living_docs_update` gate, all markers, and the user-confirmation
-semantics are unchanged; only the spawn scheduling changed. If one
-step's skip condition fires, spawn only the other's agent.
+**Parallel spawn with Step 10c + 10c-bis.** Steps 10b, 10c, and 10c-bis
+keep their numbering and their per-step semantics, but their agents are
+spawned CONCURRENTLY: evaluate all three steps' skip conditions first
+(10b's autonomous-mode short-circuit below; 10c's kind / `relates_to`
+skips; 10c-bis's kind / finding-bearing skips), then spawn the SURVIVING
+agents in ONE message (one Agent call per agent that did not skip,
+staggered a few seconds apart per the CLAUDE.md 429 guidance), each
+preceded by its own `stage-dispatch` breadcrumb (Step 9 entry-guard
+convention; for the new agent `stage=related-work round=1
+subagent=related-work-finder`). Each spawned agent reads the completed
+clean-result; their outputs are independent (follow-up proposals vs a
+proposed open-questions diff vs a proposed Related-findings positioning
+note). Process each return per its own step text, and JOIN every spawned
+agent — `epm:follow-ups v1` posted (or 10b skipped) AND the 10c proposal
+handled (gate raised / parked per 10c, or 10c skipped) AND the 10c-bis
+proposal handled (`related_work_positioning` gate raised / parked per
+10c-bis, or 10c-bis skipped) — before entering Step 10d. The
+`living_docs_update` and `related_work_positioning` gates, all markers,
+and the user-confirmation semantics are unchanged by the scheduling; only
+the spawn scheduling is shared. If a step's skip condition fires, spawn
+only the other agents.
+
+**Per-kind membership of this batch (no concurrency assumption beyond
+this list):**
+
+- `experiment` (entered from the Step 10 step-10 experiment branch) →
+  all THREE agents spawn (`follow-up-proposer` + `living-docs-updater` +
+  `related-work-finder`), subject to each step's own skip conditions.
+- `analysis` with a measured finding (entered from the Step 10 step-10
+  analysis branch) → ONLY `related-work-finder` spawns. Steps 10b and 10c
+  are EXPERIMENTS-ONLY and are NOT entered for an analysis task, so this
+  "parallel batch" degenerates to a single Agent call — do NOT spawn
+  `follow-up-proposer` or `living-docs-updater`. (A future reader: this is
+  the one-agent case; the word "batch" here does not imply three spawns.)
+- `infra` / `batch` / `survey`, or `analysis` with no `## Results` → none
+  of the three spawn (this batch is not entered at all; proceed to Step
+  10d).
 
 Auto-fires after `completed` for `experiment` tasks. Spawn the
 `follow-up-proposer` agent with:
@@ -5998,8 +6488,8 @@ completion waits on it.
    line noting the missing link and continue to Step 10d.
 3. Spawn the `living-docs-updater` agent (fresh context) — on the
    normal path this spawn already happened in the Step 10b parallel
-   batch (see Step 10b § Parallel spawn with Step 10c); spawn here only
-   if it didn't. Brief: task
+   batch (see Step 10b § Parallel spawn with Step 10c + 10c-bis); spawn
+   here only if it didn't. Brief: task
    `<N>` + its clean-result body + the linked question block(s) (grep
    `docs/open_questions.md` for each `relates_to` id's `<!-- q:<id> -->`
    anchor) + the rest of `open_questions.md` so it can spot a needed
@@ -6035,7 +6525,7 @@ completion waits on it.
          "label": "Reject",
          "description": (
            "Skip; nothing written to the living docs. The proposal "
-           "parks for a future /weekly backstop re-synthesis."
+           "parks for the nightly /daily living-docs backstop re-synthesis."
          ),
        },
      ],
@@ -6065,12 +6555,128 @@ completion waits on it.
    behavior → `living_docs_update`, living-docs mutations are user-only
    by spec. The `epm:living-docs-proposed v1` marker is already posted;
    the proposal parks for the user to confirm on a later `/issue <N>`
-   re-invocation or for the `/weekly` backstop re-synthesis to
+   re-invocation or for the nightly /daily living-docs backstop re-synthesis to
    reconcile. EXECUTE the continuation to Step 10d in this same turn;
    do NOT end the turn waiting on user confirmation.
 
 This hook is idempotent: skip if `epm:living-docs-updated v1` or
 `epm:living-docs-update-rejected v1` already exists on the task.
+
+### Step 10c-bis: Results-driven literature-positioning hook (findings-bearing tasks)
+
+Auto-fires after a `kind: experiment` task lands at `completed` (and for
+`kind: analysis` tasks that carry a measured finding). It closes the gap
+between the project's front-loaded literature grounding (the planner's
+hyperparameter sources + the clarifier's lit review, both keyed on the
+QUESTION and run BEFORE results exist) and the post-results question
+"we measured X — who else reported X, and does it replicate / contradict /
+extend ours?". The `related-work-finder` agent runs a bounded,
+findings-keyed arXiv-MCP + web search and PROPOSES (never applies) a short,
+citation-verified "Related findings" note for the clean-result `## Goal` →
+`**Broader narrative:**` slot. **Non-blocking + advisory:** the task is
+already `completed`, so the proposal can park indefinitely; nothing about
+completion waits on it, and a thin / empty / over-budget note never blocks
+promotion. **0 GPU-h.**
+
+**When to run** (mirrors Step 10c's gating):
+
+1. `kind: experiment` → always.
+2. `kind: analysis` → only when the task has a discernible measured finding
+   (its clean-result body has a `## Results` section). If not, the agent
+   writes a 3-line "no measured finding to position" stub and exits — no
+   gate is raised.
+3. `kind: infra | batch | survey` → SKIP entirely (no clean-result
+   findings to position). Log one chat line `Step 10c-bis skipped
+   (kind=<X>)` and continue to Step 10d.
+4. **Idempotency:** skip if `epm:related-work-proposed v1` (for this park)
+   already exists on the task — paired with `epm:related-work-applied v1`
+   / `epm:related-work-rejected v1`, this covers re-entry / backstop ticks.
+   For a same-issue follow-up round, re-run keyed on the new round's
+   `followup_label` (the findings changed) — the same EXTEND pattern as the
+   methodology-doc idempotency.
+
+Spawn the `related-work-finder` agent (fresh context) — on the normal path
+this spawn already happened in the Step 10b parallel batch (see Step 10b §
+Parallel spawn with Step 10c + 10c-bis); spawn here only if it didn't.
+Brief: source task `<N>` (the agent reads the clean-result body, skims
+`docs/papers.md`, and anchors on the two pinned sibling papers itself). The
+agent PROPOSES (never applies) the artifact `artifacts/related-work-proposal.md`
++ a rationale and returns; the orchestrator posts `epm:related-work-proposed
+v1` (artifact path + the proposed ≤80-word `**Broader narrative:**`
+addition + the `search_status` + the verified-citation list + the realized
+search budget + the optional manual-triage papers list).
+
+Present the proposed addition for confirmation at the
+`related_work_positioning` conditional gate (registered in workflow.yaml §
+gates.conditional). The prompt is a binary `confirm` vs `reject` (see
+workflow.yaml § gates.related_work_positioning) — NOT a 3-option menu.
+
+   <!-- gate: gates.related_work_positioning -->
+   ```python
+   AskUserQuestion(questions=[{
+     "question": (
+       "Apply this Related-findings positioning note for task #<N>? "
+       "Proposal: epm:related-work-proposed v1 on https://eps.superkaiba.com/tasks/<N>"
+     ),
+     "header": "Related work #<N>",
+     "multiSelect": False,
+     "options": [
+       {
+         "label": "Confirm",
+         "description": (
+           "Splice the proposed <=80-word **Related findings:** clause into "
+           "the ## Goal -> **Broader narrative:** slot via "
+           "scripts/task.py set-body, re-run verify_task_body.py (WARN-only "
+           "on the total-prose budget). Touches the task body's ## Goal slot "
+           "ONLY (no docs/papers.md edit in v1)."
+         ),
+       },
+       {
+         "label": "Reject",
+         "description": (
+           "Skip; nothing written to the body. The proposal parks inline in "
+           "epm:related-work-rejected v1 so a future pass can reconsider."
+         ),
+       },
+     ],
+   }])
+   ```
+5. Branch on the user's choice:
+   - **Confirm** (optionally after hand-editing the clause): splice the
+     confirmed ≤80-word clause into the body's `## Goal` →
+     `**Broader narrative:**` slot via `set-body`, re-run the verifier
+     (WARN-only on budget — never a blocking FAIL), and post the applied
+     addition:
+     ```bash
+     uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-body-with-related-work.md
+     uv run python scripts/verify_task_body.py --issue <N>   # WARN-only on the total-prose budget; never block
+     uv run python scripts/task.py post-marker <N> epm:related-work-applied \
+       --note "Applied Related-findings note to ## Goal -> **Broader narrative:**; verdict <V>; cited <arXiv ids>. No docs/papers.md edit (v1)."
+     ```
+     The gate applies ONLY the `## Goal` body edit — it does NOT apply any
+     `docs/papers.md` edit in v1 (the agent's suggested-papers list is
+     human-triage only; the papers.md auto-apply leg is a deferred
+     follow-up).
+   - **Reject:** write nothing to the body; record the decline with the
+     proposal preserved inline:
+     ```bash
+     uv run python scripts/task.py post-marker <N> epm:related-work-rejected \
+       --note "User declined the Related-findings proposal. Reason: <one line>. Proposal preserved inline."
+     ```
+<!-- example: anti-pattern -->
+6. **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): do NOT raise the
+   `AskUserQuestion`, do NOT print the proposed note as a confirm/reject
+   text menu to chat, and do NOT auto-apply. A literature-positioning note
+   is a taste / scope call the autonomous session does not make. The
+   `epm:related-work-proposed v1` marker is already posted; AUTO-REJECT-PARK:
+   post `epm:related-work-rejected v1` with the note
+   `autonomous — parked for user review` and the proposal preserved inline,
+   so it survives for a later interactive `/issue <N>` re-invocation.
+   EXECUTE the continuation to Step 10d in this same turn; do NOT end the
+   turn waiting on user confirmation.
+
+This hook is idempotent: skip if `epm:related-work-applied v1` or
+`epm:related-work-rejected v1` already exists on the task.
 
 ### Step 10d: Auto-merge the worktree (both experiment and impl)
 
@@ -6570,8 +7176,8 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
-| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle |
-| `followups_running` | unrun `epm:followup-scope v1` (no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top |
+| `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the latest scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
+| `followups_running` | unrun `epm:followup-scope` (the highest-version `epm:followup-scope` for this issue, no matching `epm:same-issue-followup-run v1` with the same `followup_label`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up the latest scope so a correction posted mid-round is honored on resume |
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
@@ -6661,6 +7267,7 @@ row per `(kind)` as authoritative.
 | Task folder missing / multiple folders | Post error event listing conflicts, post the §5 marker: `uv run python scripts/post_step_completed.py --issue <N> --step 0 --exit-kind failure-exit --notes "ambiguous status: multiple folders / missing folder"`, EXIT. Ask user to reconcile. Do NOT pick. |
 | Status missing from disk layout (legacy bodies) | Run Step 0b: autofill `proposed` via `task.py set-status`, post `epm:auto-defaults`, continue. |
 | `type` frontmatter missing | Run Step 0b: infer from title prefix, confirm with the user, apply via `task.py set-body`. Autonomous loop with no user -> error + EXIT (a wrong guess corrupts the completed column). |
+| Task is mis-filed under the wrong `kind` (e.g. a fix-validation / "test that X works" filed as `kind: experiment` — see CLAUDE.md § "Routing experiment intent") | Reclassify through the canonical path: `task.py set-kind <N> <kind>` (frontmatter + REGISTRY snapshot, flock + commit). Do NOT hand-edit the `kind:` frontmatter. If the misfile also pulled the task into the clean-result/promotion machinery, separately fix the resulting state (`set-clean-result --unset`, `set-status <N> completed`). |
 | Empty task body | Run Step 0b: ask user for goal/hypothesis/setup in chat, draft body, patch via `task.py set-body --file`, post `epm:auto-defaults` audit event. |
 | Plan fails mandatory-section check | Re-invoke `adversarial-planner` with missing sections list; do not post incomplete plan. |
 | Preflight fails | Post the `--json` report verbatim as `epm:preflight v1`. Do NOT auto-fix (per CLAUDE.md "never take shortcuts"). |

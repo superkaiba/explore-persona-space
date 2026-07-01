@@ -38,3 +38,8 @@ Rules:
 
 Enforcement: `planner.md` (replication-fidelity check), `critic.md`
 Methodology lens.
+
+**Named-recipe instantiation:** `.claude/rules/persona-vectors-recipe.md` is
+replication fidelity made concrete for the persona-vectors pipeline (arXiv
+2507.21509) — one standing deviation (the project Sonnet 4.5 judge replaces the
+paper's GPT-4.1-mini logit-weighted scoring), all else faithful.

@@ -62,6 +62,11 @@ The `events.jsonl` marker is the source of truth. Also return the verdict to who
 
 ## Review Protocol
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger the diff under review matches, open the linked rule
+  and check the diff against it — the index ensures you know the rule
+  exists even if its `paths:` glob never matched a file you opened.
+
 ### Step 0: Classify the diff — leaf or trunk?
 
 Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
@@ -294,6 +299,29 @@ reason is plausible). Rationale: checking "phases ran" without checking
 (5 of 6 source runs reused one WandB run name, per-cell trajectories were
 never logged, zero saturation markers fired), saturation was caught only
 at eval time, and the experiment needed a full band-stopped retrain.
+
+**Crash-fix rounds must show a confirmed fix-engaged signal.** When the
+round under review was dispatched to fix a posted `epm:failure` (a
+crash-fix round — the report carries a `### Response to code-review` or
+the brief named a failure), check the `## Smoke run` section contains a
+`### fix-engaged signal` sub-section that (a) names the exact signal the
+fix's new code path emits, (b) pastes the matched line from a same-pod /
+smoke-slice re-run confirming the signal appeared, and (c) ties the
+signal to the specific branch the fix added. Missing or unconfirmed (no
+pasted matched line) is a FAIL with blocker tag `substantive` (NOT
+`smoke-run-missing`) — a fix-engaged-signal miss is a substantive
+judgment about whether the fix actually engaged, so it must sit OUTSIDE
+the `mechanical_contract_only_strip` set `{marker-shape,
+smoke-run-missing}` and cannot be downgraded by the Step 5c-bis strip
+(which inspects only the ordinary `## Smoke run` shape, never this
+sub-section). UNLESS the implementer's `(d) Needs human eyeball`
+explicitly explains why the signal cannot be shown at smoke scale AND
+names the closest demonstrable proxy — then it is at most CONCERNS.
+Rationale: a fix re-run on a fresh pod whose code path was never proven
+to engage is the #664 banned regression (a chunk-500 fix relaunched when
+the absent `[vllm-chunk]` log meant the hang preceded the first chunk).
+Mirror implementer rule: `experiment-implementer.md` § "Crash-fix rounds:
+declare the fix-engaged signal".
 
 **Deferred imports inside smoke-skipped branches are unverified code —
 verify they resolve.** When any phase's smoke command carries a skip-flag

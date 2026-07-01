@@ -50,6 +50,24 @@ Before launching ANY training run:
 - Val loss rising while train loss drops (overfitting)
 - GPU utilization dropping to 0 (hang)
 
+### Between-phase cleanup (multi-phase runs)
+A run whose phases each download then consume inputs holds the PEAK of all
+phases' download caches at once if it only cleans at the end. To bound peak
+VM-disk footprint, call the incremental cleaner after a phase has CONSUMED its
+`hf_dl`/`g*_dl` download inputs and BEFORE the next phase downloads more:
+
+```bash
+uv run python scripts/clean_experiment_downloads.py <N> --incremental --apply
+```
+
+Same safety contract as the end-of-run cleanup — `store/` + `eval_results/` are
+NEVER touched, only the re-downloadable caches (rebuilt on demand if a later
+phase needs them again); no terminal-status gate, since the run itself knows the
+phase is done. A CPU/analysis phase whose OWN local footprint exceeds ~50 GB
+must be routed off the VM at plan time (see CLAUDE.md § "CPU-only phases don't
+hold GPU pods") — the incremental cleaner bounds peak, it does not rescue a
+single oversized phase.
+
 ## Presenting Results
 
 ### Unbiased Reporting

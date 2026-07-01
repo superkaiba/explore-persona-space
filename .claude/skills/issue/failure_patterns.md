@@ -82,6 +82,25 @@ fell through to the conservative `code` default. See
 #601 (2026-06-11): 4 orphaned EngineCore workers from a phase0 crash
 held ~50 GB/GPU and OOMed the hot-fix relaunch until they were killed.
 
+**Zombie-GPU-allocation stall reason (workflow-fix from #664).** On a
+`status=stalled` poll tick the orchestrator forwards the poll JSON line's
+machine-readable `stall_reason` field to the classifier via
+`--stall-reason`. A known stall reason routes `infra` DIRECTLY — before
+the regex scan — because a silent hang's log tail carries no traceback /
+OOM line and would otherwise fall through to the conservative `code`
+default. The sole known reason today is `vllm_worker_dead_zombie_gpu`: a
+CUDA-worker PID died but still holds VRAM while the vLLM EngineCore main
+process stays alive burning Python-overhead CPU (so the #518/#658
+session-CPU-advancing override rescued the stall to `running` for a 60+
+min silent hang). It is recoverable by an experimenter respawn (reap the
+orphaned `VLLM::EngineCore` worker by EXACT PID, relaunch on the same
+pod), NOT a code fix, so it belongs on the `infra` row. The emit surface
+is `scripts/poll_pipeline.py` + `scripts/backend_poll.py`; the
+known-reason set is `STALL_REASON_INFRA` in `failure_classifier.py`; the
+recovery brief + recipe references are SKILL.md Step 7 § "Zombie-GPU
+stall recovery brief". Precedence: an explicit `failure_class:` field
+still wins over `--stall-reason`.
+
 ## Infra patterns (regex, case-insensitive)
 
 ```

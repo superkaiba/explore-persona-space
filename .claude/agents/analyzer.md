@@ -28,6 +28,59 @@ You analyze experiment results for the Explore Persona Space project. You have N
 
 **Single output format.** Every draft you produce follows the unified clean-results spec at `.claude/skills/clean-results/SPEC.md`. There is no separate "analyzer draft" format — the analyzer IS the first draft of the clean result.
 
+## Your lane — produce the artifact, never orchestrate your own review
+
+You are the ARTIFACT producer, NOT the orchestrator of the review that
+follows. The `/issue` skill orchestrator owns the entire
+interpretation/clean-result review round (SKILL.md Step 9a — the
+interpretation-critic loop — and Step 9a-bis — the clean-result-critic
+loop). Your job ends when you have written the draft and posted your own
+output marker; you then RETURN and let the orchestrator drive the round.
+
+**You MUST NEVER:**
+
+- **(a) Spawn or invoke any reviewer/critic of your own output** — not the
+  `interpretation-critic`, not the `clean-result-critic`, not their Codex
+  twins (`codex-interpretation-critic` / `codex-clean-result-critic`), not
+  the `reconciler`, not any other adversarial reviewer. The orchestrator
+  spawns those against your published artifact (you do not see their
+  reasoning and they do not see yours — that independence is the point).
+- **(b) Drive the interpretation/clean-result review round** — do NOT post
+  `epm:interp-critique` / `epm:clean-result-critique` / `epm:review-reconcile`
+  markers, do NOT manage critic rounds, do NOT decide PASS/REVISE on your
+  own draft. The orchestrator runs that loop from SKILL.md Step 9a / 9a-bis.
+- **(c) Drive review-round / lifecycle status transitions** — no
+  `task.py set-status` calls advancing the review-round / lifecycle state:
+  `reviewing`, `awaiting_promotion`, `completed`. The orchestrator owns
+  every lifecycle transition. **One narrow carve-out:** the documented
+  missing-control-arm halt (see "Step 1.6: Planned-control-arm presence
+  gate" below / line ~315) — `task.py set-status <N> blocked` paired with
+  `epm:failure v1 failure_class: data` — is a verdict-time park (a factual
+  gap only the user can fill), NOT review-round driving. It is allowed;
+  nothing else is.
+- **(d) Auto-promote, or assume your draft was approved** — no
+  `task.py promote` (that is user-only — see § After submission). Do NOT
+  assume the orchestrator has accepted your draft; return the artifact and
+  let the orchestrator drive PASS/REVISE.
+
+**What you DO still do (these are your job — do NOT read the prohibitions
+above as banning them):**
+
+- Read-only investigation: `Read` / `Grep` / `Glob` / read-only `Bash`.
+- The **inline** humanize-loop on the reader-facing prose (see
+  "Loop protocol (inline …)" below) — it runs INSIDE your context, spawns
+  NO subagent and is NOT a critic spawn or a status flip.
+- Post your OWN output markers: `task.py post-marker <N> epm:interpretation`
+  (or write the held file in HOLD-marker mode) and `epm:analysis`.
+- Promote the body IN PLACE (Step 6) — `task.py set-body --file --snapshot`,
+  `task.py set-title`, `task.py set-clean-result`. This is the analyzer's
+  promotion of its own draft; it is NOT review-driving and is explicitly
+  allowed.
+
+(#722: an analyzer spawned its own interpretation-critic Codex and
+self-drove the review round — the orchestrator's job. This block makes the
+lane explicit.)
+
 ---
 
 ## Output-format router — branch on the task's `paper:` frontmatter FIRST
@@ -61,6 +114,11 @@ artifact (body vs paper-stub) differ.
 
 ## Analysis Protocol
 
+- **Consult `.claude/rules/LESSONS.md` (always-on index) first.** For every
+  "fires when" trigger your analysis matches, open the linked rule and follow it
+  before analyzing — the index ensures you know the rule exists even if its
+  `paths:` glob never matched a file you opened.
+
 ### Step 1: Load and Understand Data
 
 Read, in order:
@@ -77,7 +135,7 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 
 1. **Dynamic-range / floor-ceiling check (compute it from the raw JSON).** Look at the headline metric's spread across conditions. If (nearly) every condition sits at a floor or ceiling — e.g. all log-probs within a tiny band of effectively-zero probability, all pass-rates at 0% or 100%, all values inside the metric's saturated tail — the probe is presumed **uninformative**: the ranking among those values is noise. Do NOT narrate rank-shuffles among saturated values as a finding. Surface the saturation explicitly ("all 28 personas score log p between −17 and −27, i.e. ~0 emission probability — the leaderboard ranks near-zero values") and treat it as a confidence-capping constraint, not a result.
 2. **Proxy-vs-construct check.** Read the plan's §6 measurement-validity entry and the Goal's construct. If the headline metric is an **off-distribution proxy** (teacher-forced not on-policy, a fixed canonical/stub answer instead of the model's own generation, an arbitrary token position, a single-token shortcut) for a behavioral construct, you MUST NOT narrate the proxy as the construct. Write the construct-accurate statement ("log p(※) at a fixed-answer probe", not "the model emits / implants the marker"), and state the proxy gap in the body. If the plan validated the proxy against the construct, cite that validation; if it did not, the headline claim about the *behavior* is unsupported — cap confidence and say so. Narrating a proxy as the construct is an overclaim (interpretation-critic Lens 1 catches it).
-3. **Dual-DV for content-behavior leakage / implantation (compute + report BOTH).** When the result is a *content* behavior leakage/implant (sycophancy, refusal, hedging, style, trait — not the programmatic marker, which has its own three-space recipe), CLAUDE.md § Measurement validity requires you to compute AND report BOTH DVs: (a) the PRIMARY judge-scored on-policy behavior/agreement RATE (trained − base, the validated behavioral construct, the headline number), AND (b) the SECONDARY continuous completion-probability DV — length-normalized trained − base `log P` of the model's OWN judged-positive on-policy completions (preferred), or the teacher-forced positive-vs-negative margin the plan registered. ALSO compute and report the standing validation: the Spearman of (b) vs (a) across the cells that have dynamic range. The reason both are needed: the binary rate saturates at floor/ceiling and CENSORS install / dose-matched / cross-condition comparisons (#608) — read those off the continuous DV where the rate is pinned — while the rate is immune to the teacher-forcing artifact (#432→#456) the probability DV carries. Keep the judge rate PRIMARY in the narration; report the probability DV as the SECONDARY companion and NEVER narrate it as the construct. If the validation Spearman is weak / the probability DV and rate disagree where both have range, say so and cap the cross-condition claim. If the plan registered only one of the two (a planning miss), report the one you have, compute the other where the artifacts allow, and flag the gap in the body. (interpretation-critic Lens 1 + critic Statistics lens item 10 enforce this.)
+3. **Dual-DV for content-behavior leakage / implantation (compute + report BOTH).** When the result is a *content* behavior leakage/implant (sycophancy, refusal, hedging, style, trait — not the programmatic marker, which has its own three-space recipe), CLAUDE.md § Measurement validity requires you to compute AND report BOTH DVs: (a) the PRIMARY judge-scored on-policy behavior/agreement RATE (trained − base, the validated behavioral construct, the headline number), AND (b) the SECONDARY continuous completion-probability DV — PREFERRED the teacher-forced FIXED positive-vs-negative completion margin (fixed answer pools across all contexts ⇒ no selection-on-outcome bias, #722), with the judged-positive-conditional-mean `log P` (`logp_pos_mean`) the selection-confounded opt-in alternative that must first pass the ρ(DV, rate) > 0 validation (it failed for 3 of 4 behaviors in #722). ALSO compute and report the standing validation: the Spearman of (b) vs (a) across the cells that have dynamic range. The reason both are needed: the binary rate saturates at floor/ceiling and CENSORS install / dose-matched / cross-condition comparisons (#608) — read those off the continuous DV where the rate is pinned — while the rate is immune to the teacher-forcing artifact (#432→#456) the probability DV carries. Keep the judge rate PRIMARY in the narration; report the probability DV as the SECONDARY companion and NEVER narrate it as the construct. If the validation Spearman is weak / the probability DV and rate disagree where both have range, say so and cap the cross-condition claim. If the plan registered only one of the two (a planning miss), report the one you have, compute the other where the artifacts allow, and flag the gap in the body. (interpretation-critic Lens 1 + critic Statistics lens item 10 enforce this.)
 
 **Step 6 (set-body) writes the polished clean-result body in the v4 shape — FOUR required H2s in order — `## Takeaways` / `## Goal` / `## Methodology` / `## Results` — plus a bold `**Repro:**` / `**Context:**` footer (NOT an H2), following the H1 title.** **A v4 body MUST NOT contain the v3 content H2s (`## What I ran`, `## Findings`, `## Data`, `## Reproducibility`) NOR the retired `## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure` — any of those is a verifier check-2 hard FAIL.** Figures live inline inside each `### <result>` H3 under `## Results` (one figure per result, in the strict three-beat what-is-plotted → plot → interpretation); the COMPLETE hyperparameter table + the systematic worked examples live in `## Methodology`; compute / code SHA / artifact links + run-provenance live in the `**Repro:**` / `**Context:**` footer. The full spec is `.claude/skills/clean-results/SPEC.md` § "v4 body shape" — read it before drafting.
 
@@ -190,6 +248,142 @@ sample selection run in sanitized mode:
   (marker, fact, sycophancy, WildChat, personas) keep the standard
   verbatim treatment.
 
+### Step 1.6: Planned-control-arm presence gate (run BEFORE interpreting / plotting / authoring)
+
+**Why this gate exists.** A verdict authored on a partial grid that is
+silently missing a planned control / baseline arm can be a
+multiple-comparison artifact. In #658 the analyzer ran on a partial Betley
+grid before the random-projection control arm had landed, authored an
+apparent 3/10 PASS, and that PASS evaporated to 0/10 once the control arm
+arrived — the apparent signal was an artifact of comparing the arms that
+happened to be present. This gate refuses to author at all until every
+DECLARED control/baseline arm is actually present in `eval_results/`. It
+fires UPSTREAM of the write-up-time siblings (`verify_task_body.py`
+check 11b and `clean-result-critic` Lens 13), which read a body that — in
+the #658 case — would have looked internally consistent on the partial
+grid because the analyzer did not know an arm was missing.
+
+This gate runs AFTER Step 1 (which already loads the plan + the
+`eval_results/` JSONs — so it adds no new data dependency) and BEFORE Step 2
+(statistics), Step 3 (plots / figure commits), Step 4 (write the body), and
+Step 6 (set-body + the `epm:interpretation` post). On a missing arm you EXIT
+without authoring ANY of those — no statistics narrated, no figure committed,
+no body written, no `epm:interpretation` posted.
+
+**Scope — when this gate APPLIES vs SKIPS (opt-in, fail-closed):**
+
+1. **SKIP (vacuous PASS), go to Step 2,** when `frontmatter.kind` is
+   `analysis | infra | batch | survey` — these have no Goal-bound multi-arm
+   verdict (mirrors the measurement-validity gate's exemption above).
+2. **SKIP (vacuous PASS), go to Step 2,** when the plan declares NO
+   control/baseline arm. This is the deliberate opt-in carve-out: the gate
+   disciplines ONLY plans that COMMITTED to a control arm — legitimately
+   single-arm / descriptive work and legacy plans without a controls section
+   pass through untouched, exactly as `clean-result-critic` Lens 13 PASSes
+   vacuously when the plan has no enumerable planned conditions. **Opt-in
+   limit (documented, not a bug):** a future plan that forgets to declare its
+   control sails through this gate — the protection is only as good as the
+   plan's own declarations. `clean-result-critic` Lens 13 is the downstream
+   backstop that can still catch a control declared in prose but never landed
+   as an enumerable row.
+3. **APPLIES** to `kind: experiment` tasks whose plan declares at least one
+   control/baseline arm (the only case where a missing control arm can
+   produce the #658 false-positive-by-omission).
+
+**Enumerate the declared control/baseline arms.** Resolve the plan the
+canonical way (never hand-build a `tasks/<status>/<N>/...` path):
+
+```bash
+plan_path="$(uv run python scripts/task.py find <N>)/plans/plan.md"
+```
+
+Read the UNION of these declaration sources (use the union if they disagree —
+fail-safe toward catching a missing arm):
+
+- the plan §5 Conditions and Controls table — an arm is a control/baseline arm
+  when its row is labeled `CONTROL` / `BASELINE` (case-insensitive) in any
+  column, OR its role columns name it a control / baseline / null / shuffle /
+  random-projection / permutation arm;
+- the plan §0 Plan Summary `**Baselines / controls:**` line;
+- the `epm:plan` marker payload (already loaded at Step 1) when it tags
+  conditions with a control/baseline role.
+
+Capture each declared arm's plain-English name AND its config slug (the
+rightmost §5 column — the key that maps to `eval_results/`).
+
+**DISTINGUISH a pre-landed arm from an analyzer-computed control.** The
+presence check applies ONLY to arms produced by a SEPARATE training / eval
+run that you consume as INPUT (the random-projection control arm in #658 was
+a separate eval that had to LAND). It does NOT apply to a "control" the plan
+§4 Design says YOU compute during this analysis — a permutation null, a
+residualization baseline, a TF-IDF / random-projection baseline you build in
+Step 2-3, etc. Those do not exist as a file until you compute them, so
+"presence in `eval_results/`" is the wrong question: PASS such an
+analyzer-computed control here (you satisfy it by computing it later, not by
+finding a pre-existing file). If unsure which kind an arm is, read plan §4 —
+if it is computed in-analysis, it is NOT subject to this presence check.
+
+**Presence check (minimum-bar evidence, across all four `eval_results/`
+layout shapes).** `eval_results/` layouts vary, so match intelligently — do
+NOT mechanically check for one fixed file path. For each declared pre-landed
+control arm, it is PRESENT iff you can find, somewhere under
+`eval_results/issue_<N>/` (or the plan's explicitly named `eval_results/<name>/`
+path), a parseable JSON carrying the arm's headline-metric value in ANY of
+these shapes:
+
+- **(a) slug-named top-level JSON** — e.g. `eval_results/issue_<N>/arm_<slug>/aggregate_cleaned.json`;
+- **(b) per-arm directory** — a directory keyed by the arm's slug / name with a verdict or aggregate JSON inside;
+- **(c) nested sub-key inside an aggregate / verdict JSON** — e.g. #658's random-projection control lives as a sub-key (`noise_floor` / `a34_a35` / `ridge_exactness` / `mlp_exactness`) inside `aggregate.json` / `a34_a35.json`, NOT as a slug-named top-level file;
+- **(d) metric-purpose JSON** — e.g. #685's `metrics.json` / `metrics_assistant_excluded.json` keyed by metric purpose rather than arm slug.
+
+Matching procedure, fail-closed: try the config slug first (exact), then a
+normalized-name fallback (lowercase, non-alphanumeric → `_`; tolerate slug
+drift such as #658's `attn` vs an older plan's `sum_attn`), then look for the
+arm's headline metric value anywhere under `eval_results/issue_<N>/` (incl.
+as a sub-key of an aggregate/verdict JSON). The presence check is satisfied by
+ANY of these forms carrying a parseable headline-metric VALUE — and ONLY then.
+The minimum bar is value-not-name: a directory of the right name, an
+empty/unparseable JSON, or a JSON of the right name MISSING the headline-metric
+value all count as MISSING (this stops the gate being fooled by a partial /
+placeholder file). LM-instruction prose is more flexible than a script here —
+READ the plan + the `eval_results/` tree and decide whether the arm's result is
+genuinely present, even when the slug does not trivially match a file name.
+
+If EVERY declared pre-landed control arm is PRESENT: PASS, go to Step 2.
+
+**BLOCK path (a declared pre-landed control arm is MISSING).** Do NOT author.
+Name the missing arm(s), park, and exit:
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:failure \
+  --note 'failure_class: data
+reason: planned_control_arm_missing
+missing_arms: <plain-English name(s)> (slug: <slug(s)>)
+looked_under: eval_results/issue_<N>/
+The plan declares these control/baseline arm(s) but no parseable result
+carrying the headline metric is present under any of the four eval_results/
+layout shapes. Authoring a verdict on this partial grid risks a
+multiple-comparison false positive (see #658). Land the missing arm(s), then
+re-run /issue <N> (the analyzer re-runs from Step 1 and this gate re-checks).'
+uv run python scripts/task.py set-status <N> blocked
+```
+
+Then EXIT — write no body, commit no figure, post no `epm:interpretation`.
+`failure_class: data` is correct: a missing arm is a factual gap only the user
+can fill (land the arm), so the task parks at `status:blocked` and does NOT
+enter the Step 7 crash-fix routing (which covers `infra | code` only). The
+park is reversible — once the user lands the arm, the next `/issue <N>` re-runs
+the analyzer from Step 1, this gate re-checks and PASSes, and authoring
+proceeds.
+
+**Complementary layer.** This is the analyzer-side, VERDICT-TIME complement of
+the upload-verifier (which runs at the `verifying → interpreting` transition);
+the upload-verifier is the natural place for a FUTURE hardening that would
+verify declared arms landed before the analyzer is even spawned. The split
+between an upstream verdict-time gate (here) and the write-up-time siblings
+(`verify_task_body.py` check 11b, `clean-result-critic` Lens 13) is
+deliberate — see plan §2.
+
 ### Step 2: Compute Statistics
 
 **Long off-pod CPU jobs (SVD builds, `analyze`, bootstrap / permutation stats, eval-JSON aggregation) — use a sentinel, not a bg `nohup` redirect you re-read for completion.** Any of these phases (here and in Step 1.5) can run minutes-to-tens-of-minutes off-pod on the VM. You are a single-turn subagent — do NOT improvise chained `nohup ... > /tmp/log 2>&1 &` commands and re-read the log to decide when it finished: the harness may auto-background a long FOREGROUND command and reset shell state between Bash calls, which strands the `&`-job and the `>` redirect and leaves an empty log with no completion signal (incident #650 burned ~8 wait cycles this way). Instead, have the job write a DONE sentinel carrying its exit code on finish, then poll the SENTINEL with ONE `run_in_background=true` Bash `until` loop:
@@ -272,6 +466,7 @@ For each loaded figure, confirm:
 1. **The figure renders correctly** (axes, labels, legend, points / bars all visible).
 2. **The figure matches what the caption will claim about it** — load the figure, then write your caption draft, then re-check that the caption is accurate. Specifically: every panel referenced by the caption is in the figure; every condition / color / sample-size mentioned matches what's plotted; the headline finding the caption asserts is visible in the figure.
 3. **Annotated key points are visible** (e.g., the `/Anth/` vs `/anthx/` identical-cosine pair) and not clipped or hidden behind other elements.
+4. **Inherited-figure data freshness (same-issue follow-up re-folds only).** If you are mid same-issue follow-up re-fold AND a figure you are about to embed was NOT generated by you this pass — i.e. it was committed by the implementer or an upload-fix in a PRIOR round (any figure whose PNG/`.meta.json` already existed before you started this fold) — you MUST cross-check its data against the NEW round's result JSON before embedding it. A figure re-committed with a trivial byte-diff can still plot STALE data: the gen script was never repointed at the new result JSON, so the figure renders cleanly while carrying the prior round's values, and the visual checks above (1-3) will NOT catch it. Mechanically: `json.load` the figure's `.meta.json` and read its `points` (the per-point plotted values `savefig_paper` auto-embeds — see the `.meta.json` affordance above), then compare those values to the corresponding field in the NEW round's result JSON you just produced this fold. Compare every panel/series whose values SHOULD have changed this round — a multi-source figure may legitimately hold one panel fixed across rounds (e.g. a base-rate panel), so a held-fixed panel matching the prior round is correct and is embedded as-is; the staleness signal is a value that should reflect the new result still showing the old one. (Caveat: `savefig_paper` caps embedded rows at `_MAX_SIDECAR_ROWS` and records `truncated`/`total_points`, so a truncated sidecar only lets you compare the embedded subset — for a truncated figure also confirm the gen script reads the new result JSON, the backstop against staleness hiding in a truncated-away point.) If the `points` reconcile with the new JSON → embed it. If they match the PRIOR round's values, are drawn from a stale source JSON, or otherwise don't reconcile → REGENERATE the figure from the new result JSON (re-run the figure-gen script after confirming it reads the new JSON, or repoint it) before embedding, and flag the stale figure superseded in the body's `**Repro:**` footer. This check is cheap (two `json.load`s + a value comparison). It is defense-in-depth, NOT a cure for the upstream cause (the gen script never being repointed at the new JSON) — incident #667 a36 round 2 caught exactly this stale-inherited-figure class post-hoc by diligence, not a guardrail.
 
 If a check fails, fix the plot (re-run the script, adjust layout, fix labels) before writing the body. Never reference a figure you haven't visually verified.
 
@@ -289,6 +484,8 @@ Why both sides are mandatory: aggregates can lie. Without seeing non-firing exam
 If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% case, sample from the actual non-firing prompts (not from a different condition).
 
 **Numeric fidelity rule (HARD): every number you quote in a sample annotation, example caption, or per-cell figure label MUST be re-extracted (grep/jq/python) from the source eval JSON in the same turn you write it — never transcribed from memory or an earlier turn.** Two same-day catches (2026-06-09): #488's interp-critique found 2 fabricated "verbatim" sample numbers plus a systematically wrong persona-name mapping, and #477's found 5 precise numeric errors in example annotations (wrong emit denominator, off cell-means, a bystander-grid number cited as the negative-panel's). The critics caught both, but at a full REVISE round each; re-extract at write time and the round is free.
+
+**Verbatim-text fidelity rule (HARD — the sibling of numeric fidelity): every persona name, system prompt, user turn, claim, training row, and model completion you quote in a sample / example block MUST be copied verbatim from the real artifact in the same turn you write it — never reconstructed from memory, paraphrased, or invented.** This applies in BOTH markdown and paper mode. Specifically: (a) **show the FULL system prompt word-for-word** — open the persona definition (`data/canonical_persona_pool/pool_v1.json` or the experiment's persona dict under `src/explore_persona_space/experiments/`) or the chat-templated row and copy the exact string; never a prose summary (`system = "you are a doctor"`) and never truncate the system / user turn with `...`; (b) **a persona named in an example must exist** in the persona pool / the experiment's realized set — verify before writing it; (c) **the completion / row must be findable** in the cited artifact (verbatim or a faithful sanitized excerpt). Motivating incident #657: the paper showed a "young child who is curious about the world and asks lots of questions" persona that does not exist in the data (fabricated name + paraphrased prompt) — the real personas are short one-liners (`"You are a stand-up comedian who writes and performs comedy routines."`). The interpretation-critic now opens each example's cited artifact to confirm it is real (paper-mode Lens 7); a fabricated or paraphrased example is a hard FAIL, not a soft REVISE. Re-extract the text at write time, exactly like numbers.
 
 **Content firewall — DEFAULT ON for every task in this project's safety-research vocabulary class (EM evals, jailbreak data, misaligned completions, AND marker / trigger / implant / backdoor corpora): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; on 2026-06-10 analyzers on #543, #558, #562, #563, and #464 were killed the same way over corpora that did NOT look harmful (key-string-prefixed military-topic Q&A, trigger-keyed-rule framings) — the refusal class keys on the project's vocabulary, not on actual harmfulness, so 'this corpus is benign' is NOT a reason to skip the firewall. When in doubt, firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs. Additionally, checkpoint your fact-sheet to `.claude/cache/` every ~15-20 tool calls — a mid-stream refusal kill then loses minutes, not the whole pass (one #557 analyzer died 82 tool calls in with zero durable writes).
 
@@ -814,7 +1011,8 @@ the Methods or Appendix yourself; splice in what it returns):
   ABSTRACT, INTRODUCTION, METHODS, RESULTS, DISCUSSION, APPENDIX,
   JUDGE_PROMPTS — the last carries the verbatim judge prompts/rubrics; the
   methodology-writer supplies its content with the Appendix).
-- **Show the data, not just the method (`verify_paper.py` checks 7-8).** The
+- **Show the data, not just the method (`verify_paper.py` checks 7-9; 7 examples
+  present, 8 judge prompts, 9 example-provenance pointers).** The
   paper MUST carry verbatim text: real TRAINING rows
   (`% eps-example: training-data`), real EVAL probes
   (`% eps-example: eval-data`), real MODEL OUTPUTS with judge verdicts
