@@ -4839,7 +4839,7 @@
       "kind": "experiment",
       "path": "tasks/verifying/761",
       "status": "verifying",
-      "title": "Matched-probe v0->E0 predictor re-measurement \u2014 phase 1 (sycophancy/refusal/harmful, capture-only)"
+      "title": "Matching the probe set raises the base-activation predictor of behavior expression on all three safety behaviors, but the size of that gain is pinned down only for refusal (MODERATE confidence)"
     },
     "762": {
       "has_clean_result": false,
