@@ -5272,8 +5272,8 @@
     "818": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/818",
-      "status": "proposed",
+      "path": "tasks/planning/818",
+      "status": "planning",
       "title": "workflow-fix: watcher misses zombie wrappers on orphaned tmux TTYs"
     },
     "83": {
