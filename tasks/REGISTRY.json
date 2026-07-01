@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 805,
+  "highest_id": 806,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5179,6 +5179,13 @@
       "path": "tasks/proposed/805",
       "status": "proposed",
       "title": "workflow-fix: phase-partition GPU width \u2014 narrow/API phases must not hold the peak-width (8xH100) pod"
+    },
+    "806": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/806",
+      "status": "proposed",
+      "title": "workflow-fix: code-reviewer catches plan-DP-shape vs dispatcher-shape gap (from #779)"
     },
     "81": {
       "has_clean_result": false,
