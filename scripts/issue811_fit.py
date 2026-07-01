@@ -288,6 +288,220 @@ def _load_and_prepare_cells(
     return ridge_cells, groups_by_cell, cell_meta
 
 
+# ── Phase 0 base-leg store loading (KILL-1 pre-spend gate) ─────────────────────
+# The Phase-0 store (phase0_base_leg/) carries ONLY the base leg — c_C / v0 /
+# v0_turn_nl per cell (NO v_plus / c_C_postft). The full-store loader
+# (issue722_load_activations._blob_to_record) hard-requires the trained-leg keys,
+# so Phase 0 uses this base-only loader: it builds the SAME (base_group,
+# shuffle_group) MLPGroups + cell_meta the paired-store gate uses, reading C0 =
+# c_C and V0 = v0 (mean) / v0_turn_nl (turn_nl) directly. compute_mlp_validity_gate
+# + _kill1_decision then run UNCHANGED on the result.
+PHASE0_STORE_PREFIX = "issue811_turn_nl_mapchange/phase0_base_leg"
+PHASE0_SUMMARY_KEYS = {"mean": "v0", "turn_nl": "v0_turn_nl"}
+
+
+def _load_phase0_base_cells(
+    behaviors: tuple[str, ...],
+    summaries: tuple[str, ...],
+    layer: int,
+    *,
+    local_root: str | None,
+    max_sources: int | None,
+    max_targets_per_source: int | None,
+    strict: bool,
+) -> dict[tuple[str, str], dict[str, np.ndarray]]:
+    """Load the base-leg-only Phase-0 store into per-(behavior, summary) stacks.
+
+    Reads ``phase0_base_leg/{behavior}/{source}_seed42/{target}_L{layer}.npz``
+    (keys ``c_C`` / ``v0`` / ``v0_turn_nl``) via the SAME ``_Streamer`` +
+    ``list_store_layout`` machinery the paired loader uses (HF or local mirror).
+    Returns ``{(behavior, summary): {"C0", "V0", "cell_keys"}}`` where ``C0`` is
+    the base context grid (n, HIDDEN) and ``V0`` the requested summary's base
+    answer grid (n, HIDDEN) — exactly the two arrays ``_mlp_gate_groups`` +
+    ``cell_meta`` consume. ``layer`` is the single PRIMARY layer the KILL-1
+    decision is made at (plan §7). Fails loud on a missing key (a mean-only store
+    or a wrong prefix) or, under ``strict``, an under-count.
+    """
+    streamer = (
+        loadact._Streamer(local_root=local_root)
+        if local_root
+        else loadact._Streamer(prefix=PHASE0_STORE_PREFIX)
+    )
+    prefix = None if local_root else PHASE0_STORE_PREFIX
+    layout = (
+        loadact.list_store_layout_local(local_root, behaviors)
+        if local_root
+        else loadact.list_store_layout(behaviors, prefix=prefix)
+    )
+    # Per (behavior, summary) accumulate the base context (c_C -> C0) + the base
+    # answer summary (v0 / v0_turn_nl -> V0), one row per (source, target) cell.
+    acc: dict[tuple[str, str], dict[str, list]] = {
+        (b, s): {"C0": [], "V0": [], "cell_keys": []} for b in behaviors for s in summaries
+    }
+    try:
+        for beh in behaviors:
+            if beh not in layout:
+                raise KeyError(f"behavior {beh!r} not in phase0 store layout {sorted(layout)}")
+            src_items = sorted(layout[beh].items())
+            if max_sources is not None:
+                src_items = src_items[:max_sources]
+            n_cells = 0
+            for src_dir, files in src_items:
+                by_target = loadact._parse_cell_files(src_dir, files, (layer,))
+                n_src = 0
+                for _target_stem, layer_files in sorted(by_target.items()):
+                    if max_targets_per_source is not None and n_src >= max_targets_per_source:
+                        break
+                    if layer not in layer_files:
+                        continue
+                    rel = f"{beh}/{layer_files[layer]}"
+                    blob = streamer.load(rel)
+                    for k in ("c_C", *PHASE0_SUMMARY_KEYS.values()):
+                        if k not in blob:
+                            raise KeyError(
+                                f"{rel} missing base-leg key {k!r}; keys={sorted(blob)} "
+                                f"(a mean-only store or wrong prefix?)"
+                            )
+                    c0 = np.asarray(blob["c_C"], dtype=np.float64)
+                    assert c0.shape == (loadact.HIDDEN,), f"{rel} c_C shape {c0.shape}"
+                    src_cid = str(np.asarray(blob["source_cid"]).item())
+                    tgt_cid = str(np.asarray(blob["target_cid"]).item())
+                    for summary in summaries:
+                        v0 = np.asarray(blob[PHASE0_SUMMARY_KEYS[summary]], dtype=np.float64)
+                        assert v0.shape == (loadact.HIDDEN,), f"{rel} {summary} v0 shape {v0.shape}"
+                        acc[(beh, summary)]["C0"].append(c0)
+                        acc[(beh, summary)]["V0"].append(v0)
+                        acc[(beh, summary)]["cell_keys"].append(f"{src_cid}->{tgt_cid}")
+                    n_cells += 1
+                    n_src += 1
+            if strict:
+                got = len(acc[(beh, summaries[0])]["C0"])
+                assert got == loadact.EXPECTED_CELLS_PER_BEHAVIOR_LAYER, (
+                    f"{beh} L{layer} phase0: loaded {got} cells, expected "
+                    f"{loadact.EXPECTED_CELLS_PER_BEHAVIOR_LAYER} (16 sources x 30 targets)"
+                )
+    finally:
+        streamer.cleanup()
+    out: dict[tuple[str, str], dict[str, np.ndarray]] = {}
+    for key, d in acc.items():
+        out[key] = {
+            "C0": np.stack(d["C0"]) if d["C0"] else np.zeros((0, loadact.HIDDEN)),
+            "V0": np.stack(d["V0"]) if d["V0"] else np.zeros((0, loadact.HIDDEN)),
+            "cell_keys": d["cell_keys"],
+        }
+    return out
+
+
+def run_phase0_gate(args) -> int:
+    """KILL-1 pre-spend gate: base-leg validity gate + decision, BEFORE Phase 1.
+
+    Loads the base-leg-only Phase-0 store at the PRIMARY layer, builds the
+    (base, shuffle) MLPGroups per (behavior, summary), runs the VECTORIZED
+    MLP-vs-shuffle gate (``compute_mlp_validity_gate``), makes the KILL-1
+    decision (``_kill1_decision``), and writes ``kill1_base_leg_validity.json``.
+    Returns 0 if KILL-1 does NOT fire (proceed to Phase 1), 3 if it FIRES (the
+    dispatcher stops before the ~7 GPU-h paired re-extraction; the orchestrator
+    persists epm:failure failure_class: data). Data too thin to decide (a smoke
+    with <4 comparable cells) writes the JSON with ``fired: false`` and a
+    ``degenerate`` note and returns 0 — the smoke's job is to exercise the
+    routing, not to make a real kill.
+    """
+    device = _resolve_device()
+    logger.info("[phase=phase0_gate] device=%s", device)
+    fit658.DEVICE = device
+    if args.mlp_epochs is not None:
+        fit658.MLP_MAX_EPOCHS = args.mlp_epochs
+    fitM.TARGET_DIM = args.target_dim
+    mlp_epochs = fit658.MLP_MAX_EPOCHS
+    layer = args.primary_layer
+
+    behaviors = tuple(args.behaviors)
+    summaries = ("mean", "turn_nl")
+    rb_main = fitM._load_rb_main()
+    rb_fact = fitM._load_rb_fact() if "fact" in behaviors else None
+    if "fact" in behaviors and rb_fact is None:
+        logger.warning("fact requested but r_b_fact unavailable — dropping fact from KILL-1")
+        behaviors = tuple(b for b in behaviors if b != "fact")
+
+    strict = not args.smoke and args.max_sources is None and args.max_targets_per_source is None
+    base_cells = _load_phase0_base_cells(
+        behaviors,
+        summaries,
+        layer,
+        local_root=args.local_root,
+        max_sources=args.max_sources,
+        max_targets_per_source=args.max_targets_per_source,
+        strict=strict,
+    )
+
+    # Build the (base, shuffle) gate groups + meta per (behavior, layer, summary),
+    # reusing the SAME helpers the paired-store gate uses (base leg only).
+    groups_by_cell: dict[tuple[str, int, str], tuple] = {}
+    cell_meta: dict[tuple[str, int, str], dict] = {}
+    for behavior in behaviors:
+        for summary in summaries:
+            stacks = base_cells[(behavior, summary)]
+            if stacks["C0"].shape[0] < 4:
+                logger.warning(
+                    "[phase=phase0_gate] %s %s: %d base cells (<4) — skip",
+                    behavior,
+                    summary,
+                    stacks["C0"].shape[0],
+                )
+                continue
+            cell_key = (behavior, layer, summary)
+            pca_basis = fitM._pca_basis_v0(stacks["V0"], args.target_dim)
+            E = fitM._load_E(behavior, stacks["cell_keys"])
+            groups_by_cell[cell_key] = _mlp_gate_groups(stacks, pca_basis)
+            cell_meta[cell_key] = {
+                "pca_basis": pca_basis,
+                "r_hat": fitM._r_hat_for(behavior, layer, rb_main, rb_fact),
+                "E": E,
+                "keep": ~np.isnan(E),
+            }
+
+    gate_by_cell = compute_mlp_validity_gate(
+        groups_by_cell,
+        cell_meta,
+        device=device,
+        max_epochs=mlp_epochs,
+        num_threads=args.num_threads,
+    )
+
+    # Shape the gate results into the {summary: {cell_key: {gate_margin}}} form
+    # _kill1_decision expects, then decide.
+    cells_by_summary: dict[str, dict[tuple[str, int, str], dict]] = {s: {} for s in summaries}
+    for cell_key, gate in gate_by_cell.items():
+        _behavior, _layer, summary = cell_key
+        cells_by_summary[summary][cell_key] = gate
+    kill1 = _kill1_decision(cells_by_summary)
+    kill1["phase"] = "phase0_base_leg"
+    kill1["primary_layer"] = layer
+
+    out_json = args.out_dir.parent / "kill1_base_leg_validity.json"
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(json.dumps(kill1, indent=2, default=float))
+    if kill1["fired"]:
+        logger.warning(
+            "[phase=phase0_gate] KILL1_TRIGGERED: turn_nl base-leg validity gate collapsed "
+            "vs mean at L%d on %d/%d comparable behaviors (>=2) — turn_nl is a worse base-map "
+            "summary on #537's 16 contexts; do NOT run the Phase-1 paired re-extraction "
+            "(plan §7, H3, failure_class: data). Detail: %s",
+            layer,
+            kill1["n_collapse"],
+            kill1["n_comparable"],
+            json.dumps(kill1["per_behavior"], default=float),
+        )
+        return 3
+    logger.info(
+        "[phase=phase0_gate] KILL-1 PASS: turn_nl base-leg validity gate holds "
+        "(%d/%d comparable behaviors collapsed, <2) — proceed to Phase 1.",
+        kill1["n_collapse"],
+        kill1["n_comparable"],
+    )
+    return 0
+
+
 def _kill1_decision(cells_by_summary: dict[str, dict[tuple[str, int, str], dict]]) -> dict:
     """KILL-1 base-leg validity decision at layer 14 (plan §7 / H3).
 
@@ -349,7 +563,21 @@ def main() -> int:
         "— e.g. eval_results/issue_811/analysis_tensors on the extraction node",
     )
     ap.add_argument("--smoke", action="store_true", help="1 behavior, layer 14, capped sources")
+    ap.add_argument(
+        "--phase0-gate",
+        action="store_true",
+        help="KILL-1 PRE-SPEND mode: read the base-leg-only phase0 store, run the "
+        "MLP-vs-shuffle validity gate at --primary-layer, write kill1_base_leg_validity.json, "
+        "and EXIT 3 if the turn_nl gate collapses (dispatcher stops before Phase 1). No ridge "
+        "headline, no v_plus needed — the base leg is the whole KILL-1 signal (plan §4.0/§7).",
+    )
     ap.add_argument("--mlp-epochs", type=int, default=None, help="override MLP_MAX_EPOCHS (smoke)")
+    ap.add_argument(
+        "--primary-layer",
+        type=int,
+        default=PRIMARY_LAYER,
+        help="the single layer the KILL-1 base-leg decision is made at (--phase0-gate)",
+    )
     ap.add_argument("--target-dim", type=int, default=fit658.A35_MLP_TARGET_DIM)
     ap.add_argument("--refit-pairs", type=int, default=fitM.N_REFIT_PAIRS)
     ap.add_argument("--num-threads", type=int, default=None, help="torch.set_num_threads (CPU)")
@@ -366,6 +594,13 @@ def main() -> int:
             args.mlp_epochs = 20
         args.refit_pairs = min(args.refit_pairs, 8)
         args.target_dim = min(args.target_dim, 4)
+
+    # KILL-1 PRE-SPEND gate (plan §4.0/§7): decide on the base-leg-only phase0
+    # store BEFORE any Phase-1 paired re-extraction. Runs, writes the decision
+    # JSON, and exits 3 on collapse — the dispatcher stops before the ~7 GPU-h
+    # spend. No ridge headline / v_plus loading happens in this mode.
+    if args.phase0_gate:
+        return run_phase0_gate(args)
 
     device = _resolve_device()
     logger.info("[phase=fit_M] device=%s", device)
@@ -442,34 +677,23 @@ def main() -> int:
             gate.get("gate_margin"),
         )
 
-    # ── KILL-1 base-leg validity decision at layer 14 ─────────────────────────────
+    # ── KILL-1 is a PRE-SPEND gate owned by Phase 0 (--phase0-gate), NOT here ──────
+    # The KILL-1 decision + kill1_base_leg_validity.json are written by
+    # run_phase0_gate BEFORE the ~7 GPU-h Phase-1 paired re-extraction (plan
+    # §4.0/§7, round-2 BLOCKER kill1-not-pre-spend-gate). This Phase-2 fit runs
+    # ONLY after Phase 0 PASSed, so it does NOT re-decide or overwrite that JSON.
+    # For diagnostic continuity it logs the Phase-2 re-derived base-leg margins
+    # (informational — the pre-spend decision has already been made and honored);
+    # the paired-store gate margins here are on the SAME base leg Phase 0 read.
     if set(summaries) >= {"mean", "turn_nl"} and PRIMARY_LAYER in layers:
-        kill1 = _kill1_decision(cells_by_summary)
-        (args.out_dir.parent / "kill1_base_leg_validity.json").write_text(
-            json.dumps(kill1, indent=2, default=float)
+        kill1_recheck = _kill1_decision(cells_by_summary)
+        logger.info(
+            "[phase=fit_M] KILL-1 re-check (informational; the pre-spend decision "
+            "was made by --phase0-gate): fired=%s n_collapse=%d/%d",
+            kill1_recheck["fired"],
+            kill1_recheck["n_collapse"],
+            kill1_recheck["n_comparable"],
         )
-        if kill1["fired"]:
-            # Pod-side code never shells task.py — surface KILL-1 as a loud
-            # structured log line the GCP/poller orchestrator persists as
-            # epm:failure failure_class: data (plan §7). The dispatcher checks the
-            # kill1 JSON and stops before the analyze/figures phases.
-            logger.warning(
-                "[phase=fit_M] KILL1_TRIGGERED: turn_nl base-leg validity gate "
-                "collapsed vs mean at L%d on %d/%d comparable behaviors (>=2) — "
-                "turn_nl is a worse base-map summary on #537's 16 contexts; its "
-                "before/after comparison is untrustworthy (plan §7, H3). Detail: %s",
-                PRIMARY_LAYER,
-                kill1["n_collapse"],
-                kill1["n_comparable"],
-                json.dumps(kill1["per_behavior"], default=float),
-            )
-        else:
-            logger.info(
-                "[phase=fit_M] KILL-1 PASS: turn_nl base-leg validity gate holds "
-                "(%d/%d comparable behaviors collapsed, <2)",
-                kill1["n_collapse"],
-                kill1["n_comparable"],
-            )
 
     logger.info("[phase=fit_M] done")
     return 0

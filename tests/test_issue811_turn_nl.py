@@ -208,3 +208,126 @@ def test_kill1_excludes_behavior_with_no_mean_gate():
     d = f._kill1_decision(cbs)
     assert d["per_behavior"]["em"]["status"] == "mean_no_gate"
     assert d["n_comparable"] == 2 and d["n_collapse"] == 2 and d["fired"] is True
+
+
+# ── 4. Phase-0 base-leg gate: store shape + loader + pre-spend routing ─────────
+
+
+def _write_phase0_cell(root: Path, behavior: str, source: str, target: str, layer: int) -> None:
+    """Write a base-leg-only phase0 .npz (c_C / v0 / v0_turn_nl only, NO v_plus)."""
+    import issue722_load_activations as la
+
+    H = la.HIDDEN
+    rng = np.random.default_rng(abs(hash((source, target))) % (2**32))
+    d = root / behavior / f"{source}_seed42"
+    d.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        d / f"{target}_L{layer}.npz",
+        c_C=rng.standard_normal(H).astype(np.float32),
+        v0=rng.standard_normal(H).astype(np.float32),
+        v0_turn_nl=rng.standard_normal(H).astype(np.float32),
+        behavior=np.asarray(behavior),
+        source_cid=np.asarray(source),
+        target_cid=np.asarray(target),
+        layer=np.asarray(layer),
+    )
+
+
+def test_phase0_base_loader_reads_base_only_store(tmp_path):
+    """The phase0 loader reads c_C->C0 + v0/v0_turn_nl->V0 with NO v_plus required."""
+    import issue811_fit as f
+
+    layer = f.PRIMARY_LAYER
+    # 4 sources x 3 targets so C0 has >=4 rows (the gate's minimum).
+    for si in range(4):
+        for ti in range(3):
+            _write_phase0_cell(tmp_path, "em", f"src{si}", f"tgt{ti}", layer)
+    out = f._load_phase0_base_cells(
+        ("em",),
+        ("mean", "turn_nl"),
+        layer,
+        local_root=str(tmp_path),
+        max_sources=None,
+        max_targets_per_source=None,
+        strict=False,  # not the full 480-cell grid
+    )
+    # Both summaries share the SAME base context (c_C -> C0); V0 differs.
+    mean, turn = out[("em", "mean")], out[("em", "turn_nl")]
+    assert mean["C0"].shape == (12, 3584) and mean["V0"].shape == (12, 3584)
+    assert np.array_equal(mean["C0"], turn["C0"])  # answer-side manipulation only
+    assert not np.array_equal(mean["V0"], turn["V0"])  # distinct answer summaries
+    assert len(mean["cell_keys"]) == 12
+
+
+def test_phase0_base_loader_fails_loud_on_mean_only_store(tmp_path):
+    """A base-leg store missing v0_turn_nl fails loud (a mean-only / wrong-prefix store)."""
+    import issue811_fit as f
+    import pytest
+
+    layer = f.PRIMARY_LAYER
+    _write_phase0_cell(tmp_path, "em", "src0", "tgt0", layer)
+    # Strip the turn_nl key from the one cell we wrote.
+    p = tmp_path / "em" / "src0_seed42" / f"tgt0_L{layer}.npz"
+    d = {k: np.load(p, allow_pickle=True)[k] for k in np.load(p, allow_pickle=True).files}
+    del d["v0_turn_nl"]
+    np.savez(p, **d)
+    with pytest.raises(KeyError, match="v0_turn_nl"):
+        f._load_phase0_base_cells(
+            ("em",),
+            ("mean", "turn_nl"),
+            layer,
+            local_root=str(tmp_path),
+            max_sources=None,
+            max_targets_per_source=None,
+            strict=False,
+        )
+
+
+# ── 5. Mean-parity check: fires on drift, passes on match ──────────────────────
+
+
+def test_mean_parity_fires_on_drift(monkeypatch, tmp_path):
+    """A re-extracted v0 that diverges from the #667 ref FAILS LOUD (failure_class: code)."""
+    import issue811_mean_parity_check as pc
+    import pytest
+
+    H = 3584
+    rng = np.random.default_rng(0)
+    ref = rng.standard_normal(H).astype(np.float64)
+    # Stub the #667 reference loader to return `ref`; write a phase0 cell whose v0
+    # is an UNRELATED vector (cosine ~ 0) — a real reader-logic drift.
+    monkeypatch.setattr(pc, "_load_ref_v0", lambda b, s, t, layer: ref)
+    _write_phase0_cell_for_parity(tmp_path, "em", "src0", "tgt0", 14, rng.standard_normal(H))
+    with pytest.raises(RuntimeError, match="MEAN-PARITY DRIFT"):
+        pc.check_mean_parity(tmp_path, "em", 14, 1)
+
+
+def test_mean_parity_passes_on_match(monkeypatch, tmp_path):
+    """A re-extracted v0 that matches the #667 ref up to tiny bf16-scale noise PASSES."""
+    import issue811_mean_parity_check as pc
+
+    H = 3584
+    rng = np.random.default_rng(1)
+    ref = rng.standard_normal(H).astype(np.float64)
+    monkeypatch.setattr(pc, "_load_ref_v0", lambda b, s, t, layer: ref)
+    # v0 = ref + tiny noise (bf16-scale) -> cosine ~ 1, rel_l2 tiny -> PASS.
+    noisy = (ref + 1e-3 * rng.standard_normal(H)).astype(np.float32)
+    _write_phase0_cell_for_parity(tmp_path, "em", "src0", "tgt0", 14, noisy)
+    recs = pc.check_mean_parity(tmp_path, "em", 14, 1)
+    assert len(recs) == 1 and recs[0]["ok"] is True
+    assert recs[0]["cosine"] >= pc.COS_FLOOR and recs[0]["rel_l2"] <= pc.REL_L2_CEIL
+
+
+def _write_phase0_cell_for_parity(
+    root: Path, behavior: str, source: str, target: str, layer: int, v0: np.ndarray
+) -> None:
+    """Write a phase0 cell with a caller-supplied v0 (the parity check reads v0)."""
+    d = root / behavior / f"{source}_seed42"
+    d.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        d / f"{target}_L{layer}.npz",
+        v0=v0.astype(np.float32),
+        source_cid=np.asarray(source),
+        target_cid=np.asarray(target),
+        layer=np.asarray(layer),
+    )

@@ -2,12 +2,14 @@
 """Issue #811 — upload the re-extracted paired store to HF before releasing the GPU pod.
 
 Bulk-commits every per-cell ``.npz`` under ``eval_results/issue_811/analysis_tensors/``
-to the HF data repo at ``issue811_turn_nl_mapchange/analysis_tensors/`` in ONE
-``create_commit`` (well under the 256-commits/hr cap; Upload Policy) and verifies
-the full complement on a FRESH Hub listing before trusting the pod can be
-released (analysis-tensor Upload Policy #521 — the store is the Phase-2 fit
-input, so losing it makes the fits permanently unrunnable). Fail-loud: any
-missing file after the commit raises non-zero.
+(the Phase-1 paired store) AND ``eval_results/issue_811/phase0_base_leg/`` (the
+Phase-0 base-leg store — the KILL-1 gate input, plan §4.0/§7) to the HF data repo
+in ONE ``create_commit`` (well under the 256-commits/hr cap; Upload Policy),
+verifies the full complement on a FRESH Hub listing before trusting the pod can be
+released (analysis-tensor Upload Policy #521 — both stores are plan-referenced
+downstream inputs: the paired store feeds the Phase-2 fits, the phase0 store feeds
+the KILL-1 base-leg gate, so losing either makes the corresponding read permanently
+unrunnable). Fail-loud: any missing file after the commit raises non-zero.
 
 Reuses the exact bulk-commit + fresh-listing-verify shape of
 ``issue667_dispatch._upload_tensors`` (this store is the #811 analogue). Skipped
@@ -32,47 +34,52 @@ logger = logging.getLogger("issue811.upload_store")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
-HF_STORE_PREFIX = "issue811_turn_nl_mapchange/analysis_tensors"
-TENSORS_DIR = "eval_results/issue_811/analysis_tensors"
+# (local dir, HF prefix) — the two #811 stores that MUST land on HF before the
+# GPU pod is released (Upload Policy #521 — both are plan-referenced downstream
+# inputs). The paired store feeds the Phase-2 fits; the phase0 base-leg store
+# feeds the KILL-1 base-leg gate (plan §4.0/§7).
+STORES = (
+    ("eval_results/issue_811/analysis_tensors", "issue811_turn_nl_mapchange/analysis_tensors"),
+    ("eval_results/issue_811/phase0_base_leg", "issue811_turn_nl_mapchange/phase0_base_leg"),
+)
 
 
 def upload_store() -> int:
-    """Bulk-commit + verify the #811 paired store. Returns 0 on success (else raises)."""
+    """Bulk-commit + verify the #811 paired + phase0 stores. Returns 0 on success."""
     if os.environ.get("EPM_SKIP_UPLOAD") == "1":
         logger.info("EPM_SKIP_UPLOAD=1 -> skipping #811 store upload (local/smoke)")
         return 0
     assert os.environ.get("HF_TOKEN"), "HF_TOKEN missing -- load_dotenv() found no .env?"
     from huggingface_hub import CommitOperationAdd, HfApi, list_repo_files
 
-    tdir = PROJECT_ROOT / TENSORS_DIR
-    npzs = sorted(tdir.rglob("*.npz"))
-    if not npzs:
-        raise RuntimeError(f"no .npz tensors under {tdir} -- #811 extraction wrote nothing")
     api = HfApi()
-    ops = [
-        CommitOperationAdd(
-            path_in_repo=f"{HF_STORE_PREFIX}/{p.relative_to(tdir).as_posix()}",
-            path_or_fileobj=str(p),
-        )
-        for p in npzs
-    ]
+    # Collect ops across BOTH stores into ONE commit (one Hub commit, not two;
+    # 256-commits/hr cap). Each op carries its store's own HF prefix.
+    ops: list[CommitOperationAdd] = []
+    expected: list[str] = []  # path_in_repo for the fresh-listing verify
+    for local_dir, hf_prefix in STORES:
+        tdir = PROJECT_ROOT / local_dir
+        npzs = sorted(tdir.rglob("*.npz")) if tdir.is_dir() else []
+        for p in npzs:
+            pir = f"{hf_prefix}/{p.relative_to(tdir).as_posix()}"
+            ops.append(CommitOperationAdd(path_in_repo=pir, path_or_fileobj=str(p)))
+            expected.append(pir)
+    if not ops:
+        dirs = [s[0] for s in STORES]
+        raise RuntimeError(f"no .npz tensors under any of {dirs} -- #811 extraction wrote nothing")
     api.create_commit(
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
         operations=ops,
-        commit_message=f"issue811: {len(ops)} per-cell turn_nl+mean paired tensors",
+        commit_message=f"issue811: {len(ops)} per-cell paired + phase0 base-leg tensors",
     )
     files = set(list_repo_files(HF_DATA_REPO, repo_type="dataset"))
-    missing = [
-        p.relative_to(tdir).as_posix()
-        for p in npzs
-        if f"{HF_STORE_PREFIX}/{p.relative_to(tdir).as_posix()}" not in files
-    ]
+    missing = [pir for pir in expected if pir not in files]
     if missing:
         raise RuntimeError(
             f"#811 store upload verification FAILED -- missing on Hub: {missing[:5]}"
         )
-    logger.info("uploaded + verified %d #811 store tensors to %s", len(npzs), HF_DATA_REPO)
+    logger.info("uploaded + verified %d #811 store tensors to %s", len(ops), HF_DATA_REPO)
     return 0
 
 
