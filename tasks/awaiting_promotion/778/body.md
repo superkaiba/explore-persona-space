@@ -5,7 +5,8 @@ title: On Qwen2.5-7B, a persona vector predicts trait expression no better than 
   confidence)
 kind: experiment
 backend: runpod
-tags: []
+tags:
+- followup-manual
 created_at: '2026-07-01T00:01:33Z'
 has_clean_result: true
 origin_prompt: Find the persona vectors paper and see if for all their experiments
