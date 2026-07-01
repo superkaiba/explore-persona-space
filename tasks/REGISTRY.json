@@ -5085,8 +5085,8 @@
     "794": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/794",
-      "status": "proposed",
+      "path": "tasks/planning/794",
+      "status": "planning",
       "title": "daily-fix: HF upload_dataset 504 verify-side false-fail"
     },
     "795": {
