@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 792,
+  "highest_id": 793,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5074,6 +5074,13 @@
       "path": "tasks/proposed/792",
       "status": "proposed",
       "title": "daily-fix: experiment-implementer crash-fix scope guard"
+    },
+    "793": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/793",
+      "status": "proposed",
+      "title": "daily-fix: SLURM lane rsync from worktree branch not main"
     },
     "8": {
       "has_clean_result": false,
