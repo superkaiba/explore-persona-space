@@ -82,7 +82,7 @@ Your brief contains:
 - `interpretation_marker_path` — path on disk where the orchestrator wrote
   the latest `epm:interpretation v<n>` body for Codex to read.
 - `revision_round` — 1-indexed integer; matches the `v<n>` of the marker
-  you post. Cap 3 per reviewer.
+  you post. Cap 5 per reviewer.
 - `eval_results_paths` — list of JSON paths the analyzer cited.
 - `figure_paths` — list of PNG paths referenced in the interpretation body
   (for lens 6 plot-prose match — Codex multimodal works, verified
