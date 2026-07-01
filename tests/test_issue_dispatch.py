@@ -352,8 +352,10 @@ def test_gcp_fetch_results_issues_sentinel_pull_before_anything_else(tmp_path) -
 
 
 def test_gcp_fetch_results_falls_back_best_effort_on_artifact_dir_failure(tmp_path) -> None:
-    """A best-effort dir scp failure logs + continues (eval_results/figures
-    are authoritative on HF/WandB/git already)."""
+    """A best-effort dir tar-pull failure logs + continues (eval_results/figures
+    are authoritative on HF/WandB/git already). Post-#790 the best-effort pulls
+    are `ssh ... sudo -n bash -o pipefail -c 'tar | base64'`, NOT scp — the
+    workload tree is root-owned (#588), so plain scp Permission-denies."""
     runner = _RecordingGcloudRunner(
         results=[
             # sentinel pull (ssh sudo cat) PASS
@@ -369,11 +371,11 @@ def test_gcp_fetch_results_falls_back_best_effort_on_artifact_dir_failure(tmp_pa
     )
     # No raise — best-effort.
     backend.fetch_results(_gcp_handle(vm_scratch_dir=str(tmp_path)))
-    # One ssh sentinel pull + two scp dir pulls were issued.
+    # One ssh sentinel pull + two ssh tar dir pulls; no scp (#790).
     ssh_calls = [a for a in runner.calls if "ssh" in a]
     scp_calls = [a for a in runner.calls if "scp" in a]
-    assert len(ssh_calls) == 1
-    assert len(scp_calls) == 2
+    assert len(ssh_calls) == 3
+    assert len(scp_calls) == 0
 
 
 def test_gcp_fetch_results_skips_when_handle_missing_issue(tmp_path) -> None:
@@ -949,7 +951,10 @@ def test_declaration_survives_sidecar_roundtrip(tmp_path, tmp_lease_store) -> No
         tmp_path / "eval_results/issue_207/slurm-7777/.completion-sentinel.json"
     )
     assert expected.hf_data_paths == ("issue207_slurm-7777/raw_completions/",)
-    assert expected.git_paths == ("eval_results/issue_207/", "figures/issue_207/")
+    # #790: pure-hydra (no workload_cmd) declares NEITHER default git path —
+    # train.py runs with skip_eval=True and writes no figures, so both were
+    # guaranteed false-FAILs. Only extra_git_paths (none here) would remain.
+    assert expected.git_paths == ()
 
 
 def test_dispatch_for_issue_raises_router_terminal_for_caller_translation(

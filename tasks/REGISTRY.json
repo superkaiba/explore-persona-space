@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 801,
+  "highest_id": 802,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5029,8 +5029,8 @@
     "786": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/786",
-      "status": "running",
+      "path": "tasks/reviewing/786",
+      "status": "reviewing",
       "title": "daily-fix: task-workflow API atomicity (git-mv, post-marker, view)"
     },
     "787": {
@@ -5057,8 +5057,8 @@
     "790": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/790",
-      "status": "approved",
+      "path": "tasks/reviewing/790",
+      "status": "reviewing",
       "title": "daily-fix: GCP backend fetch_results/log Permission denied"
     },
     "791": {
@@ -5151,6 +5151,13 @@
       "path": "tasks/proposed/801",
       "status": "proposed",
       "title": "daily-held: registry/fs inconsistencies (#696/#722/#750/#764/#766) need human-audited repair"
+    },
+    "802": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/802",
+      "status": "proposed",
+      "title": "workflow: promote bug-class sibling-sweep from reconciler memory into primary code-reviewer + implementer (stop review whack-a-mole)"
     },
     "81": {
       "has_clean_result": false,
