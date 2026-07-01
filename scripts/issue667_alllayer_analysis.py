@@ -105,55 +105,129 @@ GATE_REL_TOL = 1e-2
 
 
 def _override_store_prefix(prefix: str) -> None:
-    """Point the reused loaders at ``prefix`` (the all-layer namespace by default).
+    """Point the reused #722 map-change loader at ``prefix`` (the all-layer namespace).
 
     ``issue722_load_activations.list_store_layout`` reads the module-global
-    ``STORE_PREFIX`` at call time, and ``issue667_deltac_probe.snapshot_layer`` /
-    ``load_store`` read ``PREVIEW_PREFIX`` — so setting both module attributes
-    redirects every downstream fetch to ``prefix`` WITHOUT editing the reused
-    modules. (Same runtime-override pattern issue722_fit_M uses for fit658.DEVICE.)
-    A ``_Streamer`` still defaults its prefix at def-time, so load_cells is always
-    called with an explicit ``streamer=_Streamer(prefix=prefix)`` below.
+    ``STORE_PREFIX`` at call time, so setting the module attribute redirects its
+    directory-tree walk to ``prefix`` WITHOUT editing the reused module (the same
+    runtime-override pattern issue722_fit_M uses for fit658.DEVICE). A ``_Streamer``
+    still defaults its prefix at def-time, so ``load_cells`` is always called with
+    an explicit ``streamer=_Streamer(prefix=prefix)`` below. The Δc loader takes
+    ``prefix`` as an argument directly (it is inlined here, not from deltac), so
+    only the #722 loader's module global needs the override.
     """
     loadact.STORE_PREFIX = prefix
-    deltac.PREVIEW_PREFIX = prefix
-    logger.info("store prefix -> %s", prefix)
+    logger.info("map-change store prefix -> %s", prefix)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# (a) Δc decomposition per layer (reuse issue667_deltac_probe)
+# (a) Δc decomposition per layer
+#
+# The COMPUTE (analyze_behavior / cross_behavior / fact_r_b_from_store) is reused
+# verbatim from issue667_deltac_probe — those helpers are layer-AGNOSTIC (each
+# per-layer npz already carries that layer's single-vectors). Only the LOADER is
+# inlined here layer-parameterized, because the committed deltac probe's
+# ``load_store()`` / ``load_r_b()`` / ``snapshot_l14()`` are hardcoded to LAYER=14
+# (an unmerged sibling change adds a --layer arg; this script must NOT depend on
+# unmerged work — reuse hierarchy / built-but-stranded rule). This inlined loader
+# reads any of layers 0-27 from any store prefix (the all-layer namespace).
 # ─────────────────────────────────────────────────────────────────────────────
 
+# #658 r_b.pt column map (behavior -> column key). fact: None (from r_b_fact.pt /
+# the per-cell store fallback); marker: None (no r_B). Mirrors deltac.RB_COL +
+# issue722_fit_M.RB_COLUMN_KEY.
+_RB_COL = {"em": "broad_em", "sycophancy": "sycophancy", "fact": None, "marker": None}
+_RB_RECIPE = "diffmeans"
+_R_B_PATH = "issue658_theory_assumptions/store/r_b.pt"
 
-def _deltac_store_for_layer(layer: int, prefix: str) -> dict:
-    """{behavior: {(source, target): npz_dict}} for one layer via the deltac loader.
 
-    Reuses ``issue667_deltac_probe.load_store`` (which snapshots ONLY that layer's
-    ``*_L{layer}.npz`` — ~2-3 GB — and parses c_C / c_C_postft / v0 / v_plus /
-    r_b_fact), after redirecting its ``PREVIEW_PREFIX`` to ``prefix``. The deltac
-    loader is layer-agnostic (each per-layer npz already carries that layer's
-    single-vectors), so it works unchanged at any of 0-27.
+def _snapshot_layer(layer: int, prefix: str) -> Path:
+    """Bulk-download ONLY the given layer's npz from ``prefix`` (~few GB), parallel.
+
+    Same shape as the deltac probe's snapshot_l14 but layer- AND prefix-
+    parameterized (the committed probe hardcodes L14 + the preview prefix).
     """
-    deltac.PREVIEW_PREFIX = prefix
-    return deltac.load_store(layer)
+    from huggingface_hub import snapshot_download
+
+    root = snapshot_download(
+        DATA_REPO,
+        repo_type="dataset",
+        revision="main",
+        allow_patterns=[f"{prefix}/*/*/*_L{layer}.npz"],
+        max_workers=16,
+    )
+    return Path(root) / prefix
+
+
+def _load_deltac_store(layer: int, prefix: str) -> dict:
+    """{behavior: {(source, target): npz_dict}} for one layer (inlined, layer-aware).
+
+    Parses each per-layer npz's single-vectors (c_C / c_Cp / c_C_postft /
+    c_Cp_postft / v0 / v_plus / r_b_fact) — the exact key set deltac's
+    ``analyze_behavior`` consumes; the (28,3584) all-layer STACK keys are NOT read
+    (they are omitted from the all-layer store to keep it ~4.8 GB). Robust to the
+    stacks being present (committed 7/14/21 store) or absent (all-layer store):
+    only reads keys ``if k in z.files``.
+    """
+    import re
+    from collections import defaultdict
+
+    base = _snapshot_layer(layer, prefix)
+    npz_files = sorted(str(p) for p in base.rglob(f"*_L{layer}.npz"))
+    out: dict[str, dict[tuple[str, str], dict]] = defaultdict(dict)
+    for i, p in enumerate(npz_files):
+        m = re.search(rf"analysis_tensors/([^/]+)/([^/]+)/([^/]+)_L{layer}\.npz$", p)
+        if not m:
+            continue
+        beh, cell, tgt = m.groups()
+        source = cell.rsplit("_seed", 1)[0]
+        z = np.load(p, allow_pickle=True)
+        d = {}
+        for k in ("v0", "v_plus", "c_C", "c_Cp", "c_C_postft", "c_Cp_postft", "r_b_fact"):
+            if k in z.files:
+                d[k] = z[k].astype(np.float64) if z[k].dtype.kind == "f" else z[k]
+        out[beh][(source, tgt)] = d
+        if (i + 1) % 200 == 0:
+            logger.info("  loaded %d/%d npz (L%d)", i + 1, len(npz_files), layer)
+    return out
+
+
+def _load_r_b(behavior: str, layer: int) -> np.ndarray | None:
+    """Unit-unnormalized r_B at (behavior, layer) from #658 r_b.pt; None if no column.
+
+    em/sycophancy index the (28,3584) diffmeans stack at ``layer`` (the same
+    per-layer resolution deltac.load_r_b uses). fact/marker have no r_b.pt column
+    (fact falls back to the per-cell store r_b_fact; marker has none).
+    """
+    col = _RB_COL.get(behavior)
+    if col is None:
+        return None
+    import torch
+    from huggingface_hub import hf_hub_download
+
+    local = hf_hub_download(DATA_REPO, _R_B_PATH, repo_type="dataset")
+    d = torch.load(Path(local), weights_only=False, map_location="cpu")
+    return d["r_b"][col][_RB_RECIPE][layer].float().numpy().astype(np.float64)
 
 
 def deltac_for_layer(layer: int, behaviors: list[str], prefix: str) -> dict:
     """Run the Δc decomposition (issue667_deltac_probe.analyze_behavior) at one layer.
 
     r_B per behavior: em/syco from #658 r_b.pt (per-layer stack), fact from the
-    per-cell store ``r_b_fact`` fallback (deltac's own resolution), marker None.
-    Returns ``{behavior: analyze_behavior(...)}`` + the cross-behavior block.
+    per-cell store ``r_b_fact`` fallback (deltac.fact_r_b_from_store), marker None.
+    The COMPUTE is the reused deltac ``analyze_behavior`` / ``cross_behavior``;
+    only the LOADER + r_B resolution are inlined layer-aware (see the section
+    header). Returns ``{behavior: analyze_behavior(...)}`` + the cross-behavior block.
     """
-    store = _deltac_store_for_layer(layer, prefix)
+    store = _load_deltac_store(layer, prefix)
     results: dict[str, dict] = {}
     for b in behaviors:
         cells = store.get(b, {})
-        r_b = deltac.load_r_b(b, layer)
+        r_b = _load_r_b(b, layer)
         if r_b is None and b == "fact":
-            r_b = deltac.fact_r_b_from_store(cells)
-        results[b] = deltac.analyze_behavior(b, cells, r_b)
-    xbeh = deltac.cross_behavior(results)
+            r_b = deltac.fact_r_b_from_store(cells)  # committed, layer-agnostic
+        results[b] = deltac.analyze_behavior(b, cells, r_b)  # committed, layer-agnostic
+    xbeh = deltac.cross_behavior(results)  # committed, layer-agnostic
     return {"by_behavior": results, "cross_behavior": xbeh}
 
 
