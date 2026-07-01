@@ -54,6 +54,30 @@ permanently unrunnable.) Enforcement: `upload-verifier` Step 1 classifies
 Step 2.8 cross-references the plan's analysis / control sections and FAILs on
 any plan-named input without a permanent URL.
 
+**Persist by default; a discard needs a recorded justification (#779).** The
+always-on Upload Policy states the principle; the mechanics: **text/JSON
+uploads unconditionally** (rollout text, judge outputs, metrics, configs are
+non-LFS in the data repo — the #541 quota gate fires ONLY on LFS, so this path
+stays open over quota; text <9.5 MB uploads as-is, bigger text line-splits into
+<9 MB shards, NEVER gzip — `*.gz` is LFS-matched, and the Hub force-routes any
+>10 MB blob to LFS regardless of extension). **Large tensors upload when cheap;
+when too big for LFS at current headroom, persist the TEXT they were derived
+from** so the tensor is regenerable via one teacher-forced forward pass — this
+is the size-aware form of persist-by-default, and it composes with the #541
+overflow routing below (the LFS artifact routes to the private overflow repo
+when known-over-ceiling; its regenerating text stays on the public non-LFS
+path). A DELIBERATE discard — a candidate ONLY for a large intermediate TENSOR,
+never text/JSON — is declared in the plan §10 `discarded_artifacts:` slot
+(`{name, reason, regen_recipe}`); the upload-verifier FAILs a model-generation
+discard whether undeclared (`generation-discarded-undeclared`) or invalidly
+declared via a text-naming entry (`generation-discard-declared-invalid`) — its
+Step 3 generation-discard gate. Stream-reduce memory-safety (RunningMean /
+`_HfStreamSpanSource`) is UNCHANGED — it persists the rollout text it reduced;
+it does not re-materialize the whole activation grid (#666/#772). Driving
+incident: #779's extraction driver (`issue779_extract_rb.py`) reduced kept
+rollouts to `r_B` and dropped the rollout text (wrote it only as judge input,
+not under `raw_completions/`), so a sibling arm had to regenerate.
+
 **Resume-critical pipeline INPUTS must upload before any deliberate
 `pod.py stop` that expects a later resume.** The same logic extends
 upstream of analysis: generated training rows (`R_train` caches,
@@ -152,6 +176,33 @@ checkpoint upload); (b) the local adapter is reaped only after a VERIFIED
 upload (or under the fence) — when uploads fail-soft (e.g. quota 403), adapters
 accumulate on the pod's ~130GB MooseFS quota instead of being deleted, by
 design (upload-before-delete invariant).
+
+**`WANDB_LOG_MODEL` is a HuggingFace/WandB env var — NOT one of ours — and
+must stay unset (or `false`) in every training environment.** Distinct from
+the three project-owned WandB checkpoint-upload sites above — all gated by
+`EPM_UPLOAD_MODEL_WANDB=1` (default OFF; landed commit `b4474042b7`):
+`orchestrate/hub.py:1462` (`upload_model_wandb`),
+`train/trainer.py:477` (`_maybe_upload_checkpoint_to_wandb`), and its
+`train/sft.py:1526` call site — HF `Trainer` installs a built-in
+`WandbCallback` whenever `report_to="wandb"` (which every project training
+run with a WandB run name sets — `train/trainer.py:943`/`:1309`). That
+callback reads `WANDB_LOG_MODEL` from the environment at init: `end` uploads
+the final saved model artifact to WandB Artifacts at end of training
+(`WandbCallback.on_train_end` saves the model into a temp dir and logs
+THAT — not an existing checkpoint dir), `checkpoint` uploads the actual
+checkpoint dir every `save_steps` via `on_save` (older Transformers also
+accepted the deprecated boolean alias `true` ≈ `end`), and the default
+`false`/unset uploads nothing. This path is INDEPENDENT of our `_maybe_upload_*` code — so
+`EPM_UPLOAD_MODEL_WANDB=1` does NOT gate it and setting `WANDB_LOG_MODEL`
+re-opens the ~15 GB-safetensors-to-WandB leak regardless of our guard.
+Therefore `WANDB_LOG_MODEL` must never be set (or must be explicitly
+`false`/`0`) in any environment where training runs — `bootstrap_pod.sh`,
+the GCE startup prelude, the SLURM sbatch env block, `.env`, and launch
+shells (it is currently unset in all of them; keep it that way). This is
+the surface that let ~784 GB of checkpoints accumulate on WandB before the
+`EPM_UPLOAD_MODEL_WANDB` guard landed on 2026-06-29 (the 2026-06-30 4TB
+cleanup; only-on-WandB orphans were archived to the private
+`superkaiba1/explore-persona-space-wandb-archive` repo before deletion).
 
 **Delete-after-eval sweeps MUST persist the ADAPTER first (never the merged dir).**
 A sweep that `rm`s a trained checkpoint after its eval to stay under the MooseFS
