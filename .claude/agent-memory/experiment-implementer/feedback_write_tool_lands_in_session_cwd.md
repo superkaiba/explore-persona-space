@@ -28,9 +28,17 @@ NOT prevent it.)
   (`cd <worktree> && ...`), never from the repo root, so the explicit-path stage
   targets the worktree's index. `git rev-parse --abbrev-ref HEAD` must read
   `issue-<N>` before committing.
-- `Edit`/`Read` on an EXISTING worktree file resolve correctly with the absolute
-  worktree path; the trap is specifically NEW files in a not-yet-populated
-  subpackage dir.
+- `Edit`/`Read` on an EXISTING worktree file resolve correctly ONLY when you pass
+  the FULL WORKTREE absolute path (`.../.claude/worktrees/issue-<N>/scripts/x.py`).
+  Passing the repo-root absolute path (`<repo-root>/scripts/x.py`) silently edits
+  the REPO-ROOT MIRROR instead — and the harness's file-state tracker + Read tool
+  will happily show you that repo-root copy, so the edit "succeeds" while the
+  worktree file is untouched (#778 round 1: 8 Edits + 5 Writes all landed in
+  repo-root because I used repo-root abs paths; the worktree files stayed at the
+  stale prior-round version, and `git status` in the worktree showed no change).
+  ALWAYS spell out the `.claude/worktrees/issue-<N>/` prefix in every Edit/Write
+  `file_path`, and periodically `grep -c <my-marker> <WT>/<file>` vs the repo-root
+  copy to confirm which mirror has the change.
 - Sibling of `feedback_cd_repo_root_commits_land_on_main.md` — that one is about
   `cd <repo-root> && git commit` committing to main; this one is about the Write
   tool placing the source file there in the first place.
