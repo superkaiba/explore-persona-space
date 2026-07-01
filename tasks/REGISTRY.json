@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 818,
+  "highest_id": 819,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5275,6 +5275,13 @@
       "path": "tasks/planning/818",
       "status": "planning",
       "title": "workflow-fix: watcher misses zombie wrappers on orphaned tmux TTYs"
+    },
+    "819": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/819",
+      "status": "proposed",
+      "title": "workflow-fix: update stale GCP max-run-duration 24h\u21927d in critic/planner/SKILL/workflow.yaml"
     },
     "83": {
       "has_clean_result": false,
