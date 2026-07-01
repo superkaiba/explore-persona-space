@@ -376,9 +376,24 @@ def run_extraction(args) -> int:
     # Use the SOURCE-diagonal context (source_cid as its own target) — the c_C the
     # #667 summary analyzes. from-end offset 0 IS the last input token, so its
     # count-weighted mean over the source-diagonal probes must match the mean of
-    # the per-probe Δc last-token reads within SELFCHECK_TOL.
+    # the per-probe Δc last-token reads within SELFCHECK_TOL. Reuses the Phase-A
+    # r_lookup (source_cid is always in `targets`, so its R is already generated)
+    # — NO second vLLM engine (a fresh LLM() after the HF base+PeftModel are
+    # resident on the GPU OOMs at gpu_memory_utilization; the source R is a
+    # pure teacher-force + Δc read on the already-loaded models).
     selfcheck = _run_selfcheck(
-        base, trained, tok, registry, demos, behavior, source_cid, probes, device, args, n_layers
+        base,
+        trained,
+        tok,
+        registry,
+        demos,
+        behavior,
+        source_cid,
+        probes,
+        device,
+        args,
+        n_layers,
+        r_lookup,
     )
 
     covered_start = int((start_count > 0).sum())
@@ -458,7 +473,18 @@ def run_extraction(args) -> int:
 
 @torch.no_grad()
 def _run_selfcheck(
-    base, trained, tok, registry, demos, behavior, source_cid, probes, device, args, n_layers
+    base,
+    trained,
+    tok,
+    registry,
+    demos,
+    behavior,
+    source_cid,
+    probes,
+    device,
+    args,
+    n_layers,
+    r_lookup,
 ) -> dict:
     """from-end offset-0 vs SUMMARY Δc last-input-token, over the source diagonal.
 
@@ -472,15 +498,18 @@ def _run_selfcheck(
     its residual is identical. Returns per-layer means + the max discrepancy +
     a boolean pass flag.
 
+    Reuses the Phase-A ``r_lookup`` for the source-diagonal R (``source_cid`` is
+    always in ``targets``, so its R is already generated) — this function NEVER
+    constructs a vLLM engine: a fresh ``LLM()`` after the HF base+PeftModel are
+    resident OOMs on ``gpu_memory_utilization`` (the crash this fix closes). On
+    the CPU-smoke path (empty ``r_lookup``) it falls back to HF greedy per probe.
+
     NOTE: the offset-0 read here re-derives the last-input residual of the
     ``prompt+R`` pass (matching the streamed accumulator's alignment) so the
     comparison is apples-to-apples; the summary read is the ``prompt``-only pass.
     Agreement within SELFCHECK_TOL confirms the from-end alignment is wired to
     the right token (offset 0 == c_C), the brief's explicit ask.
     """
-    r_lookup = pt._generate_base_R(
-        tok, registry, demos, behavior, [source_cid], probes, device, args
-    )
     off0_mag_acc = np.zeros(n_layers, dtype=np.float64)
     off0_cos_acc = np.zeros(n_layers, dtype=np.float64)
     summ_mag_acc = np.zeros(n_layers, dtype=np.float64)
