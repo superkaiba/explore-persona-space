@@ -5197,8 +5197,8 @@
     "808": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/808",
-      "status": "approved",
+      "path": "tasks/running/808",
+      "status": "running",
       "title": "workflow-fix: resolve SPEC.md Lens 12 sentence-count contradiction (from #779 reconciler)"
     },
     "81": {
