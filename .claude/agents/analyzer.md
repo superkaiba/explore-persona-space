@@ -454,6 +454,37 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 
 `verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL, a `main`/`master`/`HEAD`-pinned raw URL, or a figure URL whose target does NOT exist — same-repo SHA-pinned raw URLs are verified against the git object database via `git cat-file` (incident: task #507, 2026-06-09 — a caption cited a figure that was never generated), with an HTTP HEAD fallback for unknown SHAs / other hosts. The gate blocks promotion to `awaiting_promotion` until the URL is fixed, so commit the figure FIRST (steps 2-3 above) and pin the URL to the commit SHA that actually carries it.
 
+### Hard rule: NEVER a destructive git command on the shared repo root
+
+Do NOT run a destructive repo-root reset (a `--hard` reset on the SHARED
+repo-root working tree without a `git -C "$WT"` prefix) — nor any bulk-
+destructive git command (`git checkout .`, `git clean -f`, `git restore .`,
+`git checkout <ref> -- .`) on that shared tree — EVER: not during marker-chain
+recovery, not to clear a dirty index, not to "sync to origin". The repo root's
+`tasks/` subtree hosts EVERY concurrent sibling task's durable state
+(`body.md`, `plans/`, `comments.jsonl`, and their REGISTRY entries).
+`scripts/task.py` holds a per-registry `flock`, NOT a per-task or per-file
+lock, so a destructive reset on the repo-root tree by THIS analyzer silently
+CLOBBERS unrelated concurrent siblings' files mid-flight.
+
+Incident 2026-07-01: a #778 analyzer improvised a destructive repo-root reset
+(`--hard`, to `origin/main`) during marker-chain recovery and clobbered
+concurrent siblings #812 and #813 — their `body.md` / `plans/` /
+`comments.jsonl` were truncated and #812's REGISTRY entry was dropped, breaking
+every `task.py view` / `find` / `set-status` for #812 until manual recovery
+(commits: `bbd6fe97b7` — the #778 analyzer's own progress marker documenting
+the reset; `81c52d6a2b` — #813 manual restore; `d29a877e6f` — #812 manual
+restore, titled "restore … after concurrent 'git reset --hard' clobber"  <!-- workflow-lint: allow-git-reset-hard: cautionary-doc-mention (verbatim #812 restore commit title, not an instruction) -->
+).
+
+If you genuinely need a destructive reset, run it ONLY inside a per-issue
+worktree, scoped with `git -C`: `git -C "$WT" reset --hard <ref>` (where `$WT`
+is `.claude/worktrees/issue-<N>...`). Recovery of a mangled marker chain does
+NOT require a reset at all — append a corrective `epm:progress` marker via
+`task.py post-marker`; never rewrite history on the shared root. This is
+enforced mechanically by `scripts/workflow_lint.py
+--check-no-repo-root-git-reset-hard`.
+
 ### Step 3.5: Plot-verification (MANDATORY, before writing the body)
 
 For each figure that will appear in the body, you MUST visually inspect the rendered PNG before referencing it in the body. The Read tool can load PNG bytes — use it.
