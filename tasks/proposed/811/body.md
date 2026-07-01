@@ -22,6 +22,10 @@ goal: 'Re-run #722''s pre/post-finetuning function-change (Delta = median |M+(c)
 ---
 # Does the best answer-summary change #722's base-vs-post-FT function-change verdict
 
+## Goal
+
+Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.
+
 ## Overview / Motivation
 
 [#722](https://eps.superkaiba.com/tasks/722) concluded that finetuning
