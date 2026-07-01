@@ -5999,6 +5999,8 @@ def _patch_idle_io(
     tmux_activity=None,
     registry=None,
     pm_sids=frozenset(),
+    orphaned_predicate=None,
+    controlling_tty_path=None,
 ):
     """Common monkeypatching for the idle-unmapped I/O tests: daemon children
     + session metadata + the TTY probe + the transcript-idle signal, leaving
@@ -6012,19 +6014,32 @@ def _patch_idle_io(
     the SINGLE combined helper ``_detached_tmux_panes_with_activity`` that the
     pass actually calls (and the legacy ``_detached_tmux_pane_ttys`` is patched
     too for the `_process_idle_unmapped`-default / `_is_live_user_tty`
-    paths)."""
+    paths).
+
+    ``orphaned_predicate`` (default ``lambda pid: False``) pins
+    ``_wrapper_on_orphaned_tmux_server`` so the orphaned-tmux widening branch is
+    INERT by default — every current caller keeps its pre-change behavior — and
+    an orphaned-session test can flip it to ``lambda pid: True``.
+    ``controlling_tty_path`` (default ``None``) pins
+    ``_wrapper_controlling_tty_path`` — a pin the pre-#818 helper did NOT apply,
+    added so the fold-1 observability read is deterministic without shelling to
+    /proc."""
     import autonomous_session_watch as asw
 
     stops: list[str] = []
     records: list[str] = []
     activity = dict(tmux_activity or {})
     detached = set(detached_tmux_ttys)
+    _orphaned = orphaned_predicate or (lambda pid: False)
+    _tty_path = controlling_tty_path
     monkeypatch.setattr(asw, "PROJECT_ROOT", Path(_Z_ROOT))
     monkeypatch.setattr(asw, "_live_children", lambda: list(children))
     monkeypatch.setattr(asw, "_load_session_meta", lambda: dict(meta))
     monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
     monkeypatch.setattr(asw, "_load_pm_session_ids", lambda: set(pm_sids))
     monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: has_tty)
+    monkeypatch.setattr(asw, "_wrapper_on_orphaned_tmux_server", _orphaned)
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: _tty_path)
     # Pin BOTH tmux probes so the I/O tests never shell out to a live tmux
     # server (deterministic; default = no detached panes, no activity). The
     # pass calls the combined helper; the legacy single-return wrapper is
@@ -6158,6 +6173,383 @@ def test_is_live_user_tty_detached_tmux_pane_is_not_live(monkeypatch):
     # No controlling tty at all -> not a tty session (the headless case).
     monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: False)
     assert asw._is_live_user_tty(99, {"/dev/pts/24"}) is False
+
+
+# ── #818 orphaned-tmux-server widening tests ──────────────────────────────────
+
+
+def _build_proc_tree(tmp_path, *, procs):
+    """Build a ``/proc``-shaped tmp tree driving the REAL parentage walk (no
+    helper is stubbed out). ``procs`` maps ``pid -> {"comm": str, "ppid": int,
+    "pts_fds": [str, ...]}``: ``comm`` writes ``<proc>/<pid>/comm``, ``ppid``
+    writes a minimal ``<proc>/<pid>/stat`` whose post-``)`` fields place the
+    ppid at index 1 (``state ppid pgrp ...``), and ``pts_fds`` (optional)
+    writes ``<proc>/<pid>/fd/<i>`` symlinks pointing at each ``/dev/pts`` target
+    (the target need not resolve — ``_tmux_server_client_ttys`` reads the
+    readlink STRING). Returns the proc-root Path."""
+    import os
+
+    proc_root = tmp_path / "proc"
+    for pid, spec in procs.items():
+        d = proc_root / str(pid)
+        d.mkdir(parents=True)
+        (d / "comm").write_text(spec["comm"] + "\n")
+        ppid = spec.get("ppid", 1)
+        # comm field is parenthesised (may contain spaces); the parser splits
+        # after the LAST ')' so fields become: state(0) ppid(1) pgrp(2) ...
+        (d / "stat").write_text(f"{pid} ({spec['comm']}) S {ppid} {ppid} 0 0 -1\n")
+        pts_fds = spec.get("pts_fds")
+        if pts_fds is not None:
+            fdd = d / "fd"
+            fdd.mkdir()
+            for i, target in enumerate(pts_fds, start=3):
+                os.symlink(target, fdd / str(i))
+    return proc_root
+
+
+def _mk_unix_socket(path):
+    """Create a real AF_UNIX socket FILE at ``path`` (so ``Path.is_socket()``
+    reports True) — the "a tmux server is reattachable" signal. The socket is
+    bound then closed; the filesystem entry persists as a socket file."""
+    import socket
+
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.bind(str(path))
+    s.close()
+
+
+def test_orphaned_tmux_reap_env_toggle(monkeypatch):
+    # EPM_ORPHANED_TMUX_REAP: unset / "1" -> enabled; explicit falsy disables
+    # (mirrors test_idle_unmapped_env_helpers for _unmapped_idle_reap_enabled).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ORPHANED_TMUX_REAP", raising=False)
+    assert asw._orphaned_tmux_reap_enabled() is True
+    monkeypatch.setenv("EPM_ORPHANED_TMUX_REAP", "1")
+    assert asw._orphaned_tmux_reap_enabled() is True
+    for falsy in ("0", "false", "no", " FALSE "):
+        monkeypatch.setenv("EPM_ORPHANED_TMUX_REAP", falsy)
+        assert asw._orphaned_tmux_reap_enabled() is False, falsy
+
+
+def test_is_live_user_tty_orphaned_server_wrapper_is_not_live(monkeypatch):
+    # The #818 branch, at the guard level. A wrapper with a controlling tty
+    # that is NOT a detached pane, whose owning tmux server is orphaned, is
+    # not-live ONLY when check_orphaned is on. The kill-switch (check_orphaned
+    # omitted / False) keeps it. No controlling tty -> not-live regardless.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: True)
+    monkeypatch.setattr(asw, "_wrapper_controlling_tty_path", lambda pid: "/dev/pts/7")
+    monkeypatch.setattr(asw, "_wrapper_on_orphaned_tmux_server", lambda pid: True)
+    # Orphaned + enabled -> not-live.
+    assert asw._is_live_user_tty(99, set(), check_orphaned=True) is False
+    # Orphaned but the widening is DISABLED -> live, keep (kill-switch at guard).
+    assert asw._is_live_user_tty(99, set(), check_orphaned=False) is True
+    # Default (check_orphaned omitted) never runs the branch -> live, keep
+    # (the back-compat shape the existing 2-arg callers rely on).
+    assert asw._is_live_user_tty(99, set()) is True
+    # Enabled but the parentage predicate says NOT orphaned -> live, keep.
+    monkeypatch.setattr(asw, "_wrapper_on_orphaned_tmux_server", lambda pid: False)
+    assert asw._is_live_user_tty(99, set(), check_orphaned=True) is True
+    # No controlling tty at all -> not-live regardless of the orphaned branch.
+    monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: False)
+    monkeypatch.setattr(asw, "_wrapper_on_orphaned_tmux_server", lambda pid: True)
+    assert asw._is_live_user_tty(99, set(), check_orphaned=True) is False
+
+
+def test_wrapper_on_orphaned_tmux_server_fixture_proc_tree(tmp_path, monkeypatch):
+    # Drive the REAL ppid walk + REAL client-fd read against a /proc-shaped tmp
+    # tree (no helper stubbed): 700 -> 600 -> 500 (tmux: server, zero pts fds).
+    # Socket dir empty -> orphaned (True). A socket file present -> keep (False).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+    proc_root = _build_proc_tree(
+        tmp_path,
+        procs={
+            500: {"comm": "tmux: server", "ppid": 1, "pts_fds": []},  # zero clients
+            600: {"comm": "node", "ppid": 500},
+            700: {"comm": "node", "ppid": 600},
+        },
+    )
+    empty_sock_dir = tmp_path / "tmux-sock"
+    empty_sock_dir.mkdir()
+    monkeypatch.setattr(asw, "_tmux_socket_dir", lambda: empty_sock_dir)
+    # Socket absent + zero clients -> the only reap-widening case.
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_root) is True
+
+    # Add a socket file -> signal 1 says reattachable -> keep.
+    sock = empty_sock_dir / "default"
+    _mk_unix_socket(sock)
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_root) is False
+
+
+def test_wrapper_on_orphaned_tmux_server_no_tmux_ancestor_keeps(tmp_path, monkeypatch):
+    # No tmux: server anywhere in the chain (700 -> 600 -> pid 1) -> not our
+    # class -> False regardless of the (empty) socket dir.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+    proc_root = _build_proc_tree(
+        tmp_path,
+        procs={
+            600: {"comm": "bash", "ppid": 1},
+            700: {"comm": "node", "ppid": 600},
+        },
+    )
+    empty_sock_dir = tmp_path / "tmux-sock"
+    empty_sock_dir.mkdir()
+    monkeypatch.setattr(asw, "_tmux_socket_dir", lambda: empty_sock_dir)
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_root) is False
+
+
+def test_wrapper_on_orphaned_tmux_server_failsoft(tmp_path, monkeypatch):
+    # Every uncertain probe -> False (KEEP). Parametrized cases (a)-(g).
+    import autonomous_session_watch as asw
+
+    # (a) tmux binary absent -> False (nothing to reap).
+    monkeypatch.setattr(asw.shutil, "which", lambda name: None)
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=tmp_path / "nope") is False
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+
+    # (b) <proc>/700/stat unreadable (_proc_ppid None) at a non-tmux hop -> walk
+    # stops -> False. 700 has a comm ("node", not tmux) but no stat file.
+    proc_b = tmp_path / "proc_b"
+    (proc_b / "700").mkdir(parents=True)
+    (proc_b / "700" / "comm").write_text("node\n")  # no stat -> _proc_ppid None
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_b) is False
+
+    # (c) <proc>/700/comm missing at a walked hop (_proc_comm None): the hop is
+    # not confirmed tmux: server, the walk continues to _proc_ppid (also
+    # unreadable here) -> no raise, False.
+    proc_c = tmp_path / "proc_c"
+    (proc_c / "700").mkdir(parents=True)  # neither comm nor stat
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_c) is False
+
+    # (d) tmux: server ancestor found + socket-dir .iterdir() raises ->
+    # _live_tmux_socket_present True -> False (keep).
+    proc_d = _build_proc_tree(
+        tmp_path / "d",
+        procs={
+            500: {"comm": "tmux: server", "ppid": 1, "pts_fds": []},
+            700: {"comm": "node", "ppid": 500},
+        },
+    )
+    monkeypatch.setattr(asw, "_tmux_socket_dir", lambda: tmp_path / "d" / "no-such-sock-dir")
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_d) is False
+
+    # (e) a ppid cycle (600 <-> 700) -> seen-set guard -> False.
+    proc_e = _build_proc_tree(
+        tmp_path / "e",
+        procs={
+            600: {"comm": "node", "ppid": 700},
+            700: {"comm": "node", "ppid": 600},
+        },
+    )
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_e) is False
+
+    # (f) max_depth exhausted before a tmux: server -> False. A long non-tmux
+    # chain, walked with a small max_depth.
+    long_chain = {pid: {"comm": "node", "ppid": pid - 1} for pid in range(700, 690, -1)}
+    proc_f = _build_proc_tree(tmp_path / "f", procs=long_chain)
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_f, max_depth=3) is False
+
+    # (g) tmux: server ancestor found + socket dir EMPTY + server /fd UNREADABLE
+    # (_tmux_server_client_ttys None) -> cannot prove zero clients -> False.
+    proc_g = _build_proc_tree(
+        tmp_path / "g",
+        procs={
+            # No pts_fds key -> no fd/ dir at all -> iterdir raises -> None.
+            500: {"comm": "tmux: server", "ppid": 1},
+            700: {"comm": "node", "ppid": 500},
+        },
+    )
+    empty_g = tmp_path / "g" / "sock"
+    empty_g.mkdir()
+    monkeypatch.setattr(asw, "_tmux_socket_dir", lambda: empty_g)
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_g) is False
+
+
+def test_wrapper_on_orphaned_tmux_server_socketless_but_attached_keeps(tmp_path, monkeypatch):
+    # The Must-Fix-1 regression: a tmux: server whose socket is deleted BUT that
+    # still holds one /dev/pts client fd (an attached SSH session survives the
+    # unlink) -> signal 2 proves a client is attached -> KEEP (False). This is
+    # the systemd-tmpfiles-swept-a-live-SSH-session case the client proof blocks.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw.shutil, "which", lambda name: "/usr/bin/tmux")
+    proc_root = _build_proc_tree(
+        tmp_path,
+        procs={
+            500: {"comm": "tmux: server", "ppid": 1, "pts_fds": ["/dev/pts/9"]},  # 1 client
+            700: {"comm": "node", "ppid": 500},
+        },
+    )
+    empty_sock_dir = tmp_path / "tmux-sock"
+    empty_sock_dir.mkdir()  # socketless
+    monkeypatch.setattr(asw, "_tmux_socket_dir", lambda: empty_sock_dir)
+    assert asw._wrapper_on_orphaned_tmux_server(700, proc_root=proc_root) is False
+
+
+def test_wrapper_on_orphaned_tmux_server_live_child_integration():
+    # NON-monkeypatched real-/proc walk: spawn a throwaway child whose parent is
+    # the pytest process (not a tmux: server). The parentage walk reads real
+    # /proc/<pid>/stat ppid + comm and terminates with no tmux ancestor -> False
+    # (keep). Proves the walk works against real /proc semantics, not a stub.
+    import subprocess
+
+    import autonomous_session_watch as asw
+
+    child = subprocess.Popen(["sleep", "30"])
+    try:
+        assert asw._wrapper_on_orphaned_tmux_server(child.pid, proc_root=Path("/proc")) is False
+    finally:
+        child.terminate()
+        child.wait(timeout=5)
+
+
+def test_tmux_server_client_ttys_live_integration():
+    # NON-monkeypatched: read the pytest process's own /proc/<pid>/fd. It holds
+    # no /dev/pts client fds via SCM_RIGHTS the way a tmux server would, so the
+    # returned set is empty-or-small and the fd-read + readlink path does not
+    # raise against real /proc.
+    import os
+
+    import autonomous_session_watch as asw
+
+    result = asw._tmux_server_client_ttys(os.getpid(), Path("/proc"))
+    assert result is None or isinstance(result, set)
+
+
+def test_idle_unmapped_pass_orphaned_tmux_session_reaped_after_threshold(
+    isolated_registry, monkeypatch
+):
+    # I/O test: an unmapped repo-root session with a controlling tty (not a
+    # detached pane) whose owning tmux server is orphaned reads not-live ->
+    # enters the idle branch -> idle >=12h accumulates a miss tick 1, stopped
+    # tick 2. Mirrors test_idle_unmapped_pass_stop_fires_after_threshold.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP_S", raising=False)
+    monkeypatch.delenv("EPM_ORPHANED_TMUX_REAP", raising=False)  # default ON
+    children = [{"happySessionId": "sid-orph", "pid": 8181}]
+    meta = {"sid-orph": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=over,
+        has_tty=True,  # real _wrapper_has_controlling_tty pinned True
+        controlling_tty_path="/dev/pts/7",  # not in the (empty) detached set
+        orphaned_predicate=lambda pid: True,  # owning server orphaned
+    )
+    state_path = isolated_registry / "idle-unmapped-sid-orph.json"
+    t0 = 1_000_000.0
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    state = json.loads(state_path.read_text())
+    assert state["missed"] == 1 and stops == []
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == ["sid-orph"]
+    assert len(records) == 1 and "auto-stopped idle unmapped" in records[0]
+
+
+def test_idle_unmapped_pass_orphaned_reap_disabled_keeps(isolated_registry, monkeypatch):
+    # Kill-switch end-to-end: EPM_ORPHANED_TMUX_REAP=0 -> check_orphaned False
+    # -> the orphaned wrapper reads live (its tty is not a detached pane and the
+    # widening is off) -> KEEP, state cleared, never stopped.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.setenv("EPM_ORPHANED_TMUX_REAP", "0")
+    children = [{"happySessionId": "sid-off", "pid": 8282}]
+    meta = {"sid-off": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=over,
+        has_tty=True,
+        controlling_tty_path="/dev/pts/7",
+        orphaned_predicate=lambda pid: True,
+    )
+    state_path = isolated_registry / "idle-unmapped-sid-off.json"
+    for now in (1_000_000.0, 1_000_600.0, 1_001_200.0):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not state_path.exists()
+
+
+def test_idle_unmapped_pass_orphaned_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    # Dry-run discipline for the orphaned path (mirrors
+    # test_idle_unmapped_pass_dry_run_mutates_nothing): an orphaned-tmux episode
+    # seeded AT the stop point + the real _stop_session dry-run contract -> a
+    # dry-run tick must not stop, not record, and leave the state byte-untouched.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_ORPHANED_TMUX_REAP", raising=False)
+    children = [{"happySessionId": "sid-od", "pid": 8383}]
+    meta = {"sid-od": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=over,
+        has_tty=True,
+        controlling_tty_path="/dev/pts/7",
+        orphaned_predicate=lambda pid: True,
+    )
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: (not dry_run) and (stops.append(sid) or True)
+    )
+    t0 = 1_000_000.0
+    state_path = isolated_registry / "idle-unmapped-sid-od.json"
+    seeded = json.dumps({"missed": 1, "alerted": False, "first_over_ts": t0})
+    state_path.write_text(seeded)
+
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == [] and records == []
+    assert state_path.read_text() == seeded  # untouched, not even rewritten
+
+
+def test_idle_unmapped_pass_live_socket_pane_never_reaped(isolated_registry, monkeypatch):
+    # Regression guard for the healthy fleet: a wrapper on a LIVE-socket tmux
+    # server (orphaned predicate False) with a controlling tty -> reads live ->
+    # KEEP across 3 ticks, never stopped, state never accumulated. Complements
+    # the live-VM verification (one live-socket server -> zero behavior change).
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_ORPHANED_TMUX_REAP", raising=False)
+    children = [{"happySessionId": "sid-live", "pid": 8484}]
+    meta = {"sid-live": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=over,
+        has_tty=True,
+        controlling_tty_path="/dev/pts/7",
+        orphaned_predicate=lambda pid: False,  # socket present -> not orphaned
+    )
+    state_path = isolated_registry / "idle-unmapped-sid-live.json"
+    for now in (1_000_000.0, 1_000_600.0, 1_001_200.0):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not state_path.exists()
 
 
 def test_detached_tmux_pane_ttys_failsoft_when_tmux_absent(monkeypatch):
