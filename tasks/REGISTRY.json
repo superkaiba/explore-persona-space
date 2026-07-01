@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 799,
+  "highest_id": 800,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5137,6 +5137,13 @@
       "path": "tasks/completed/80",
       "status": "completed",
       "title": "[Proposed] Marker-transfer via EM: inject marker into evil persona, induce EM, check if assistant adopts it"
+    },
+    "800": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/800",
+      "status": "proposed",
+      "title": "daily-fix: document WANDB_LOG_MODEL checkpoint-upload trap"
     },
     "81": {
       "has_clean_result": false,
