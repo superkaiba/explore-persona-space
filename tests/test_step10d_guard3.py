@@ -122,6 +122,57 @@ def test_guard1_own_folder_carveout_present():
 
 
 # --------------------------------------------------------------------------
+# Sub-fix 2 (round-2 fix) — push the Guard-1 strip commit BEFORE gh pr merge
+# --------------------------------------------------------------------------
+# The Guard-1 strip commit is a LOCAL worktree commit; the safe-case
+# `gh pr merge --rebase` rebases the PR head ref on origin/issue-<N>
+# (server-side), so an unpushed strip commit is invisible to that rebase and
+# the foreign tasks/* reverts would land on main silently. The safe case must
+# push the strip commit (guarded by STRIPPED_FOREIGN=yes) before merging, and
+# that push must APPEAR BEFORE the safe-case gh pr merge line in the file.
+
+
+def test_guard1_tracks_stripped_foreign_flag():
+    text = _skill_text()
+    assert "STRIPPED_FOREIGN=no" in text, (
+        "Guard-1 must initialize a STRIPPED_FOREIGN=no flag so the safe-case "
+        "push fires only when a strip commit was actually created"
+    )
+    assert "STRIPPED_FOREIGN=yes" in text, (
+        "Guard-1 must set STRIPPED_FOREIGN=yes after committing the strip"
+    )
+
+
+def test_safe_case_pushes_strip_commit_gated_on_stripped_foreign():
+    text = _skill_text()
+    assert 'git -C "$WT" push origin issue-<N>' in text, (
+        "the safe-case block must push the branch to the PR head ref before "
+        "gh pr merge --rebase (otherwise the strip commit is invisible to the "
+        "server-side rebase)"
+    )
+    assert '[ "$STRIPPED_FOREIGN" = "yes" ]' in text, (
+        "the safe-case push must be gated on STRIPPED_FOREIGN=yes so it fires "
+        "only when Guard-1 actually created a strip commit"
+    )
+
+
+def test_safe_case_push_appears_before_gh_pr_merge():
+    """The push must SEQUENCE before the safe-case gh pr merge --rebase call,
+    so the server-side rebase sees the stripped branch tip."""
+    text = _skill_text()
+    merge_line = "gh pr merge <PR> --rebase --delete-branch=false"
+    push_line = 'git -C "$WT" push origin issue-<N>'
+    merge_offset = text.find(merge_line)
+    push_offset = text.find(push_line)
+    assert merge_offset != -1, "safe-case gh pr merge line not found in SKILL.md"
+    assert push_offset != -1, "safe-case strip-commit push line not found in SKILL.md"
+    assert push_offset < merge_offset, (
+        "the Guard-1 strip-commit push must appear BEFORE the safe-case "
+        f"gh pr merge line (push@{push_offset} must precede merge@{merge_offset})"
+    )
+
+
+# --------------------------------------------------------------------------
 # Sub-fix 3a — fast-path routing pre-check (five-conjunct predicate)
 # --------------------------------------------------------------------------
 

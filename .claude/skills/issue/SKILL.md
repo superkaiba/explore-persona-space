@@ -6840,6 +6840,8 @@ rebase-merged. Three guards:
    ```bash
    # Foreign tasks/* paths this branch touches (everything under tasks/ that
    # is NOT this task's own folder). Anchored so tasks/.../<N>/… is excluded.
+   STRIPPED_FOREIGN=no   # set to yes iff a strip commit is actually created,
+                         # so the safe-case push below fires only when needed.
    mapfile -t FOREIGN < <(git -C "$WT" diff --name-only origin/main HEAD -- 'tasks/' \
      | grep -Ev "^tasks/[^/]+/<N>/" || true)
    if [ "${#FOREIGN[@]}" -gt 0 ]; then
@@ -6858,11 +6860,23 @@ rebase-merged. Three guards:
        && git -C "$WT" rm --cached -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"
      # Commit the reset/removal so the branch diff no longer touches them,
      # but only if anything actually changed (idempotent: a re-run finds
-     # nothing staged and skips the commit).
-     git -C "$WT" diff --cached --quiet -- "${FOREIGN[@]}" \
-       || git -C "$WT" commit -m "issue-<N>: strip foreign tasks/ folders before Step-10d merge" -- "${FOREIGN[@]}"
+     # nothing staged and skips the commit). Record that a strip commit was
+     # made so the safe-case merge below knows it must push before rebasing.
+     if ! git -C "$WT" diff --cached --quiet -- "${FOREIGN[@]}"; then
+       git -C "$WT" commit -m "issue-<N>: strip foreign tasks/ folders before Step-10d merge" -- "${FOREIGN[@]}"
+       STRIPPED_FOREIGN=yes
+     fi
    fi
    ```
+
+   The `STRIPPED_FOREIGN` flag is load-bearing: the strip commit above is a
+   LOCAL worktree commit, but the safe-case `gh pr merge --rebase` below
+   rebases the commits on the PR head ref as it exists on
+   `origin/issue-<N>` (server-side), NOT the local worktree HEAD. An unpushed
+   strip commit is therefore INVISIBLE to that server-side rebase — the
+   foreign `tasks/*` reverts would remain in the replayed history and land on
+   `main` silently. So when `STRIPPED_FOREIGN=yes`, the safe-case block below
+   MUST push the strip commit to the PR head ref BEFORE calling `gh pr merge`.
 
    This is idempotent (a re-run finds `FOREIGN` empty and no-ops) and never
    touches THIS task's own `tasks/*/<N>/` folder (the `grep -Ev
@@ -7062,6 +7076,20 @@ if [ -z "$PR" ]; then
 else
   # Run guards 1-3 above first. If guard 3 says "unsafe", skip this
   # block and run the artifact-confirmed merge below instead.
+  #
+  # Push the Guard-1 strip commit to the PR head ref FIRST, so the
+  # server-side rebase in `gh pr merge` below sees the stripped branch tip,
+  # not the pre-strip commit. The strip commit is a LOCAL worktree commit and
+  # is otherwise invisible to server-side rebase — leaving the foreign
+  # tasks/* reverts in the replayed history and landing them on main silently
+  # (Codex code-review round-1 blocker, task #787). Push retry mirrors
+  # CLAUDE.md § "Concurrent repo-root committers": pull --rebase=merges
+  # --autostash then re-push on a rejected push.
+  if [ "$STRIPPED_FOREIGN" = "yes" ]; then
+    git -C "$WT" push origin issue-<N> \
+      || { git -C "$WT" pull --rebase=merges --autostash \
+           && git -C "$WT" push origin issue-<N>; }
+  fi
   gh pr ready <PR>
   gh pr merge <PR> --rebase --delete-branch=false
 fi
