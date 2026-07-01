@@ -1,0 +1,1 @@
+{"ts": "2026-07-01T20:48:26Z", "kind": "epm:concern-raised", "version": 1, "by": "reconciler", "concern_id": "kill1-not-pre-spend-gate", "note": "concern_id: kill1-not-pre-spend-gate\nseverity: BLOCKER\nsummary: KILL-1 fires after the full ~7 GPU-h Phase-1 paired extraction, not before it as"}
