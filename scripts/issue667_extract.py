@@ -546,6 +546,51 @@ def _greedy_response(model, tok, messages: list[dict], device, max_new_tokens: i
     return tok.decode(gen, skip_special_tokens=True)
 
 
+IM_END_ID = 151645  # Qwen-2.5 <|im_end|> token id (assistant turn-close).
+
+
+def _locate_turn_close_newline(full_ids: list[int], tok) -> int:
+    """Index of the trailing newline token closing the assistant turn (#811 turn_nl).
+
+    The teacher-forced full sequence under the Qwen chat template with
+    ``add_generation_prompt=False`` ends with ``... <response> <|im_end|> "\\n"``,
+    so the answer-side mirror of the boundary-token context summary ``c_C`` is the
+    residual at that trailing ``"\\n"`` = ``full_ids[-1]``. This asserts BOTH
+    invariants that make the read well-defined (fail loud, KILL-2 code, no silent
+    fallback — plan §4.2 / §7 / A2):
+
+    - the LAST ``<|im_end|>`` (id 151645) is at ``full_len - 2`` (the token
+      immediately before the trailing token), AND
+    - the trailing token ``full_ids[-1]`` DECODES to a string containing a
+      newline (``"\\n"``).
+
+    Returns ``turn_nl_idx == full_len - 1``. Raises ``RuntimeError`` if the
+    ``<|im_end|>``+newline turn-close tail is absent / malformed (chat-template
+    drift) — the extraction cannot produce ``turn_nl`` for this cell.
+    """
+    full_len = len(full_ids)
+    if full_len < 2:
+        raise RuntimeError(
+            f"[turn_nl-assert] sequence too short (len={full_len}) to hold a "
+            "<|im_end|>+newline turn-close tail"
+        )
+    last_tok = full_ids[-1]
+    decoded_last = tok.decode([last_tok])
+    if "\n" not in decoded_last:
+        raise RuntimeError(
+            f"[turn_nl-assert] trailing token id={last_tok} decodes to "
+            f"{decoded_last!r} which does NOT contain a newline — the Qwen "
+            "chat-template turn-close tail (<|im_end|> then \\n) is absent/changed"
+        )
+    if full_ids[-2] != IM_END_ID:
+        raise RuntimeError(
+            f"[turn_nl-assert] token before the trailing newline is id="
+            f"{full_ids[-2]}, expected <|im_end|> (id {IM_END_ID}) — the "
+            "assistant turn does not close with <|im_end|>+newline"
+        )
+    return full_len - 1
+
+
 @torch.no_grad()
 def _mean_resp_acts(
     base_model,
@@ -555,12 +600,28 @@ def _mean_resp_acts(
     response: str,
     layers: list[int],
     device,
-) -> dict[int, tuple[np.ndarray, np.ndarray]]:
-    """Teacher-force ``messages + response`` through base+trained; mean-over-response.
+    summaries: tuple[str, ...] = ("mean",),
+) -> dict[int, tuple[np.ndarray, np.ndarray] | dict[str, tuple[np.ndarray, np.ndarray]]]:
+    """Teacher-force ``messages + response`` through base+trained; answer summaries.
 
-    Returns ``{layer: (v0, v_plus)}`` — both float32 numpy (HIDDEN,), the mean
-    residual over the RESPONSE-span tokens at ``output_hidden_states[layer+1]``
-    (hs[0] = embeddings). The response span is [prompt_len : full_len).
+    ``summaries`` selects which answer-side summary(ies) to read from the SAME
+    forward pass:
+
+    - ``("mean",)`` (DEFAULT, backward-compatible — #667 parity probe, the pinned
+      test, and every #667 mean-only run): returns ``{layer: (v0, v_plus)}`` where
+      each is the mean residual over the RESPONSE-span tokens
+      ``[prompt_len : full_len)`` at ``output_hidden_states[layer+1]``.
+    - a tuple containing ``"turn_nl"`` (#811 paired re-extraction): returns
+      ``{layer: {summary: (v0, v_plus)}}`` — a parallel key per requested summary.
+      ``"turn_nl"`` is the SINGLE-position residual at the newline token closing
+      the assistant turn (``_locate_turn_close_newline`` == ``full_ids[-1]``, the
+      answer-side mirror of the boundary-token context summary ``c_C``). Both
+      summaries are read from the SAME base+trained forward pass (no extra
+      forwards).
+
+    Both float32 numpy (HIDDEN,). The nested-dict shape fires ONLY when a
+    non-default ``summaries`` is passed, so existing ``(v0, v_plus)`` callers are
+    unchanged (single-variable discipline — the #667 return shape is preserved).
     """
     prompt_text = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     full_msgs = [*messages, {"role": "assistant", "content": response}]
@@ -584,6 +645,10 @@ def _mean_resp_acts(
     span_end = len(full_ids)
     if span_end <= p:
         raise RuntimeError("empty response span — response produced zero tokens")
+    want_turn_nl = "turn_nl" in summaries
+    # KILL-2 (code): locate the turn-close newline BEFORE any GPU work when turn_nl
+    # is requested — the assert failing on any cell HALTs the extraction (plan §7).
+    turn_nl_idx = _locate_turn_close_newline(full_ids, tok) if want_turn_nl else None
     ids = torch.tensor([full_ids], dtype=torch.long, device=device)
     # Memory-safe subset read: hook only the requested blocks (block index li ==
     # hs[li+1]) instead of materializing all L+1 layers (#671). acts[li] is the
@@ -592,11 +657,22 @@ def _mean_resp_acts(
     acts_t = extract_layer_activations(trained_model, ids, layers)
     if _MEM_LOGGER is not None:  # #672 per-iteration memory gauge (ANALYSIS-ONLY)
         _MEM_LOGGER._tick()
-    res: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+    res: dict = {}
+    default_shape = summaries == ("mean",)
     for li in layers:
-        hb = acts_b[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
-        ht = acts_t[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
-        res[li] = (hb.astype(np.float32), ht.astype(np.float32))
+        hb_mean = acts_b[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy().astype(np.float32)
+        ht_mean = acts_t[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy().astype(np.float32)
+        if default_shape:
+            res[li] = (hb_mean, ht_mean)
+            continue
+        per_summary: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+        if "mean" in summaries:
+            per_summary["mean"] = (hb_mean, ht_mean)
+        if want_turn_nl:
+            hb_nl = acts_b[li][0, turn_nl_idx, :].float().cpu().numpy().astype(np.float32)
+            ht_nl = acts_t[li][0, turn_nl_idx, :].float().cpu().numpy().astype(np.float32)
+            per_summary["turn_nl"] = (hb_nl, ht_nl)
+        res[li] = per_summary
     return res
 
 
@@ -1115,6 +1191,10 @@ def run_extraction(args) -> int:
         # 28-layer store stays a few GB, not ~90 GB. The per-layer single-vectors
         # are kept — they carry all depth info across the 28 separate layer-files.
         "omit_all_layer_stacks": bool(getattr(args, "all_layers", False)),
+        # #811: answer-side summaries to capture per cell. Default ("mean",)
+        # reproduces the #667 store verbatim; --turn-nl adds the turn-boundary
+        # single-position read as a parallel key (v0_turn_nl / v_plus_turn_nl).
+        "summaries": (("mean", "turn_nl") if getattr(args, "turn_nl", False) else ("mean",)),
     }
     # Route the per-target .npz writes to a local-SSD scratch mirror (#674) so
     # the per-(target, layer) write storm (~93 .npz/cell) stays off the GCE
@@ -1191,6 +1271,61 @@ def run_extraction(args) -> int:
     return 0
 
 
+def _accumulate_target_acts(
+    base,
+    trained,
+    tok,
+    registry,
+    demos,
+    behavior: str,
+    tcid: str,
+    probes: list,
+    layers: list[int],
+    r_lookup: dict,
+    max_new_tokens: int,
+    device,
+    summaries: tuple[str, ...],
+) -> tuple[dict[int, dict[str, list[list[np.ndarray]]]], int, int]:
+    """Per-probe teacher-force reads for ONE target, accumulated per (layer, summary).
+
+    Returns ``(acc, n_gen, n_trunc)`` where ``acc[li][summary]`` is
+    ``[v0_list, vp_list]`` of per-probe (HIDDEN,) vectors. Extracted from
+    :func:`_extract_one_target` so that function stays under the ruff C901
+    cap (#811 added the summary axis). Each probe's R is the vLLM-pregenerated
+    base response (Phase A) or, on a CPU smoke, an HF greedy fallback. When
+    ``summaries == ("mean",)`` the reader returns the backward-compatible
+    ``(v0, v_plus)`` shape; otherwise the nested ``{summary: (v0, vp)}`` shape.
+    """
+    acc: dict[int, dict[str, list[list[np.ndarray]]]] = {
+        li: {s: [[], []] for s in summaries} for li in layers
+    }
+    n_gen = n_trunc = 0
+    for qi, q in enumerate(probes):
+        tmsgs = build_messages_for(registry, demos, tcid, behavior, q)
+        # Prefer the vLLM-pregenerated R (Phase A); HF fallback only on CPU-smoke.
+        r = r_lookup.get((tcid, qi))
+        if r is None:
+            r = _greedy_response(base, tok, tmsgs, device, max_new_tokens)
+        n_gen += 1
+        if not r.strip():
+            n_trunc += 1
+            continue
+        per_layer = _mean_resp_acts(
+            base, trained, tok, tmsgs, r, layers, device, summaries=summaries
+        )
+        for li in layers:
+            if summaries == ("mean",):
+                v0, vp = per_layer[li]  # backward-compat (v0, v_plus) shape
+                acc[li]["mean"][0].append(v0)
+                acc[li]["mean"][1].append(vp)
+            else:
+                for s in summaries:
+                    v0, vp = per_layer[li][s]
+                    acc[li][s][0].append(v0)
+                    acc[li][s][1].append(vp)
+    return acc, n_gen, n_trunc
+
+
 def _extract_one_target(
     base,
     trained,
@@ -1226,31 +1361,36 @@ def _extract_one_target(
     # (BLOCKER 1: oracle g+ needs the post-FT query at fixed M0).
     c_cp_all = _context_vector_all_layers(base, tok, tmsgs0, device)
     c_cp_postft_all = _context_vector_all_layers(trained, tok, tmsgs0, device)
-    acc: dict[int, list[list[np.ndarray]]] = {li: [[], []] for li in layers}
-    n_gen = n_trunc = 0
-    for qi, q in enumerate(probes):
-        tmsgs = build_messages_for(registry, demos, tcid, behavior, q)
-        # Prefer the vLLM-pregenerated R (Phase A); HF fallback only on CPU-smoke.
-        r = r_lookup.get((tcid, qi))
-        if r is None:
-            r = _greedy_response(base, tok, tmsgs, device, max_new_tokens)
-        n_gen += 1
-        if not r.strip():
-            n_trunc += 1
-            continue
-        per_layer = _mean_resp_acts(base, trained, tok, tmsgs, r, layers, device)
-        for li in layers:
-            v0, vp = per_layer[li]
-            acc[li][0].append(v0)
-            acc[li][1].append(vp)
+    # #811: which answer-side summaries to capture. ("mean",) reproduces #667's
+    # store verbatim; ("mean", "turn_nl") adds the turn-boundary single-position
+    # read (v0_turn_nl / v_plus_turn_nl) alongside the mean, from the SAME forward
+    # pass. Each summary rides its own accumulator so the per-probe n_probes mean
+    # is applied identically to both (plan §4.2).
+    summaries: tuple[str, ...] = tuple(extras.get("summaries", ("mean",)))
+    want_turn_nl = "turn_nl" in summaries
+    acc, n_gen, n_trunc = _accumulate_target_acts(
+        base,
+        trained,
+        tok,
+        registry,
+        demos,
+        behavior,
+        tcid,
+        probes,
+        layers,
+        r_lookup,
+        max_new_tokens,
+        device,
+        summaries,
+    )
     for li in layers:
-        if not acc[li][0]:
+        if not acc[li]["mean"][0]:
             logger.warning("no probes produced a response for target=%s layer=%d", tcid, li)
             continue
         c_idx = (li - 1) if 1 <= li <= N_LAYERS else (PRIMARY_LAYER - 1)
         payload = {
-            "v0": np.stack(acc[li][0]).mean(axis=0).astype(np.float32),
-            "v_plus": np.stack(acc[li][1]).mean(axis=0).astype(np.float32),
+            "v0": np.stack(acc[li]["mean"][0]).mean(axis=0).astype(np.float32),
+            "v_plus": np.stack(acc[li]["mean"][1]).mean(axis=0).astype(np.float32),
             "c_C": c_c_all[c_idx],
             "c_Cp": c_cp_all[c_idx],
             # post-FT key/query (BLOCKER 1: A3.10 oracle g+ = (k+, q+, M0)).
@@ -1261,9 +1401,19 @@ def _extract_one_target(
             "target_cid": tcid,
             "seed": seed,
             "layer": li,
-            "n_probes": len(acc[li][0]),
+            "n_probes": len(acc[li]["mean"][0]),
             "adapter_gauge": json.dumps(gauge),
         }
+        # #811: turn-boundary answer summary (v0_turn_nl / v_plus_turn_nl) — the
+        # single-position residual at the newline closing the assistant turn,
+        # per-probe mean over the SAME accumulator as `mean` (plan §4.2). Present
+        # only when --turn-nl is set; the mean keys above stay verbatim so a
+        # mean-only #667 run is byte-unchanged.
+        if want_turn_nl:
+            payload["v0_turn_nl"] = np.stack(acc[li]["turn_nl"][0]).mean(axis=0).astype(np.float32)
+            payload["v_plus_turn_nl"] = (
+                np.stack(acc[li]["turn_nl"][1]).mean(axis=0).astype(np.float32)
+            )
         # The 4 all-layer context STACKS (each (28, 3584)) are IDENTICAL across a
         # source's 30 targets AND across all layer-files of a cell, so under
         # --all-layers they turn a ~90 KB npz into a ~1.7 MB one — 90.9 GB total
@@ -1319,6 +1469,18 @@ def main() -> int:
             "retains full-seq×28 tensors — the #671 fix). Overrides --layers with "
             "range(N_LAYERS). Use with the alllayer namespace to avoid clobbering "
             "the committed 7/14/21 store (issue667_alllayer_dispatch)."
+        ),
+    )
+    parser.add_argument(
+        "--turn-nl",
+        action="store_true",
+        help=(
+            "#811: ALSO capture the turn-boundary answer summary (v0_turn_nl / "
+            "v_plus_turn_nl) — the single-position residual at the newline closing "
+            "the assistant turn (full_ids[-1], the answer-side mirror of c_C) — "
+            "alongside the mean-over-response v0/v_plus, from the SAME forward pass. "
+            "The mean keys are byte-unchanged, so a mean-only #667 run (flag absent) "
+            "reproduces the committed store. Use with a #811 --out prefix."
         ),
     )
     parser.add_argument("--primary-layer", type=int, default=PRIMARY_LAYER)
