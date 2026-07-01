@@ -409,7 +409,11 @@ def main() -> int:
     }
     (args.out_dir / "summary.json").write_text(json.dumps(summary, indent=2, default=float))
     logger.info("[phase=analysis] wrote %s", args.out_dir / "summary.json")
-    logger.info("[phase=done]")
+    # NO [phase=done] here — analysis runs as a SUBPROCESS of issue813_dispatch.sh
+    # (phase 4), whose stdout it inherits; the poller reserves [phase=done] for the
+    # ONE terminal line the .sh emits AFTER the sentinel write (#545). A premature
+    # [phase=done] here would false-signal completion before the sentinel exists.
+    logger.info("[phase=analysis] analysis complete")
     return 0
 
 

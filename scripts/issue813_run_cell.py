@@ -583,7 +583,16 @@ def main() -> int:
     if args.metrics_out is not None:
         args.metrics_out.parent.mkdir(parents=True, exist_ok=True)
         args.metrics_out.write_text(json.dumps(metrics, indent=2, default=float))
-    logger.info("[phase=done] cell metrics: %s", json.dumps(metrics, default=float))
+    # NO [phase=done] here — this is a per-cell SUBPROCESS whose stdout inherits the
+    # dispatcher's; the poller reserves [phase=done] for the ONE terminal line in the
+    # main dispatcher log (issue813_dispatch.sh), so a per-cell echo of it would trip
+    # the #545 false-`done` while the sweep is still alive.
+    logger.info(
+        "run_cell %s/%s complete; metrics: %s",
+        args.behavior,
+        args.substrate,
+        json.dumps(metrics, default=float),
+    )
     return 0
 
 
