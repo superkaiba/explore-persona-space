@@ -1,0 +1,1 @@
+{"ts": "2026-07-01T20:55:07Z", "event": "raised", "concern_id": "reconstruction-dv-not-computed", "severity": "CONCERN", "summary": "SECONDARY reconstruction_r2.json DV + mean@L18~0.80 validity anchor is stubbed to a note in issue812_fit_pooling.py even when c_C is present; not computed on the production path", "raised_by": "code-reviewer", "raised_at_round": 1}
