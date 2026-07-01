@@ -412,6 +412,10 @@ def main() -> int:
     n_shuffle = 3 if args.smoke else args.n_shuffle
     n_lmsys_grid = [0, 500] if args.smoke else args.n_lmsys_grid
     n_behavior_grid = [0, 100] if args.smoke else args.n_behavior_grid
+    # The per-layer selection-symmetric matrix reads at ALL 28 layers in a real
+    # run; in --smoke it reads only the per-trait FROZEN layers (a handful) so the
+    # 28x{2 fits + n_shuffle nulls} loop stays tractable while still exercising
+    # the run_layer_matrix code path end-to-end.
     layers_all = list(range(args.n_layers))
 
     arm_comparison = {
@@ -495,7 +499,9 @@ def main() -> int:
             C.write_json_atomic(args.out_dir / "scaling_grid.json", scaling)
             C.write_json_atomic(args.out_dir / "g_holdout_question.json", g_holdout)
 
-        # per-layer selection-symmetric matrix (all 28 layers; observed + null).
+        # per-layer selection-symmetric matrix (all 28 layers in a real run;
+        # the per-trait frozen layers only under --smoke for tractability).
+        lm_layers = sorted(set(fl.values())) if args.smoke else layers_all
         layer_matrix["traits"][trait] = run_layer_matrix(
             args.corpus_dir,
             lmsys_bundle,
@@ -503,7 +509,7 @@ def main() -> int:
             cells,
             r_b_full,
             trait,
-            layers=layers_all,
+            layers=lm_layers,
             n_boot=n_boot,
             n_shuffle=n_shuffle,
             seed=args.seed,
