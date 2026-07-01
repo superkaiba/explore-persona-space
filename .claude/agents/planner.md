@@ -355,6 +355,7 @@ Concrete steps with:
 - **No all-or-nothing eligibility gates on continuous quantities (graceful degradation).** When a pre-registered rule gates a unit's inclusion on a continuous quantity (rows filled, samples passing a judge filter, cells surviving a data gate), design graceful degradation — a floor with documented shortfall — instead of a binary keep/drop at the target value. A binary rule discards near-misses wholesale: #612's "fill all 200 rows or drop the source" rule discarded one source at 194/200 (97% fill — 6 missing rows) and another at 169/200; together the drops halved the on-policy design's coverage. State the floor, what happens between floor and target (kept, shortfall documented), and what happens below the floor (dropped, reported as a finding). The canonical instantiation for on-policy yield quotas — an 80% floor + equalize-down — is in `.claude/rules/on-policy-completions.md`. If the design has no continuous-quantity eligibility gate, write "N/A" and move on.
 - **Equalize-down when a per-unit resource varies across units/conditions.** If units (sources, personas, conditions) legitimately fill to different N (training rows, samples), train/evaluate ALL units at the same floor-N — discard the surplus everywhere — rather than letting N vary per unit: variable N is a dose confound, and dose/schedule length is the demonstrated dominant lever (#601). Scale coupled quantities proportionally to floor-N so load-bearing ratios survive the equalization (e.g. contrastive negatives at the ~1:1 positives-to-total-negatives ratio, `.claude/rules/contrastive-negatives.md`). Prefer the same-question/claim subset across units where filled rows allow; else a random floor-N sample with the coverage difference documented. If per-unit N is equal by construction, write "N/A" and move on.
 - **Baseline propensity on BOTH sides of an implantation design.** Before installing/eliciting a behavior, measure each unit's PRE-intervention behavior rate on the eval probes — the EVAL-side targets (the delta denominator) AND the SOURCE-side personas. The source-side read is cheap (one base-model generation + judge pass), predicts elicitation-yield failures before any training is spent (#612: both yield-quota failures were predictable from a source-side baseline read that was never taken), and is the natural install-strength covariate — a unit's own base prior keeps beating geometry as a predictor (#500/#532/#541). If not an implantation/elicitation design, write "N/A — not a behavior-implantation experiment" and move on.
+- **Generation-and-reduce stages persist their rollout TEXT (persist-by-default).** If a stage GENERATES model outputs then REDUCES them (persona-vector extraction reducing to `r_B`; an online-scored eval reducing to a rate; any stream-reduce over model generations), the plan lists the rollout TEXT under `raw_completions/<stage>/` AND per-context intermediates under `analysis_tensors/` (upload-if-cheap-else-`discarded_artifacts:`-with-regen, declared in §10), even when the current task has no downstream use — a sibling / follow-up arm may (#779 lost the extraction rollouts to a reduce-and-discard driver). The stream-reduce itself is unchanged (persist the text you reduced; never materialize the whole activation grid — #666/#772). Text / JSON is never a valid `discarded_artifacts:` entry; only a genuinely too-big tensor is, and only with its regenerating text persisted (planner §10, CLAUDE.md § Upload Policy). If no stage generates-then-reduces, write "N/A — no generation-and-reduce stage."
 
 ### 5. Conditions and Controls
 Table of all experimental conditions. For each control, explain what confound it rules out.
@@ -832,6 +833,34 @@ location after re-verifying, or move it to §12 Assumptions flagged
 `must-rebuild`. Do NOT use the `hf` CLI for this check (see step 5 + 
 `.claude/rules/upload-policy.md`: the installed `hf` has no `api`
 subcommand and returns a false "0 files" via swallowed stderr).
+
+**Output-artifact declaration + `discarded_artifacts:` slot
+(persist-by-default).** Per generating / reducing stage, the
+Reproducibility Card names WHERE each produced artifact persists: model
+generations / rollout text → `raw_completions/<stage>/`; intermediate
+tensors the plan or a foreseeable sibling consumes → `analysis_tensors/`
+(upload-if-cheap-else-note-regen). This holds REGARDLESS of whether the
+CURRENT task consumes the artifact (CLAUDE.md § Upload Policy
+persist-by-default — a sibling / follow-up may). A DELIBERATE discard is
+declared in a `discarded_artifacts:` frontmatter list the upload-verifier
+reads:
+
+```yaml
+discarded_artifacts:
+  - name: <artifact, e.g. extraction per-context v(x)>
+    reason: <why dropped, e.g. full-corpus activation grid exceeds HF/LFS headroom (#541)>
+    regen_recipe: <how to reconstruct, e.g. teacher-forced forward pass over the persisted raw_completions/extraction/ rollouts — one forward, no re-sampling>
+```
+
+Text / JSON (rollout text, judge outputs, metrics, configs) is NEVER a
+valid discard — it rides the non-LFS path and uploads unconditionally
+(>9.5 MB text line-splits into <9 MB shards, never gzip — the Hub
+force-routes >10 MB blobs to LFS); only a genuinely too-big TENSOR is a
+candidate, and only when its regenerating TEXT is persisted. The
+upload-verifier treats a `discarded_artifacts:` entry naming generations /
+text as INVALID (FAIL `generation-discard-declared-invalid`), not as a
+license. If the run has no deliberate discard, omit the slot (or write
+`discarded_artifacts: []`).
 
 ### 11. Decision Rationale
 For every non-obvious parameter choice — and for EVERY load-bearing
