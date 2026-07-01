@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 797,
+  "highest_id": 798,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5109,6 +5109,13 @@
       "path": "tasks/proposed/797",
       "status": "proposed",
       "title": "daily-fix: routing carve-out: interactive 0-GPU inline analysis"
+    },
+    "798": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/798",
+      "status": "proposed",
+      "title": "daily-fix: artifact-reuse (h) naming-convention/path check"
     },
     "8": {
       "has_clean_result": false,
