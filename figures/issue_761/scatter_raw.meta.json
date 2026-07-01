@@ -1,0 +1,1062 @@
+{
+  "commit": "38a3b740d7000c3a0991e715e1eea882a1726ac6",
+  "created": "2026-07-01T11:56:15Z",
+  "figsize": [
+    11.0,
+    3.9
+  ],
+  "points": [
+    {
+      "held-out LOCO prediction (ridge)": -0.0010437781547817096,
+      "judged E0 expression rate": 0.051,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0014106432816558185,
+      "judged E0 expression rate": 0.0875,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0018509726399242707,
+      "judged E0 expression rate": 0.0565,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0002467170613180275,
+      "judged E0 expression rate": 0.0415,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0013925440215520656,
+      "judged E0 expression rate": 0.055,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0009971107511871486,
+      "judged E0 expression rate": 0.07603801900950476,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0023845713083605717,
+      "judged E0 expression rate": 0.0525,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.001041822891656751,
+      "judged E0 expression rate": 0.0675,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0012574493788492843,
+      "judged E0 expression rate": 0.0525,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0010736750081038865,
+      "judged E0 expression rate": 0.0875,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.00128743879538831,
+      "judged E0 expression rate": 0.0485,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0012729564293069385,
+      "judged E0 expression rate": 0.068,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0014323980797926157,
+      "judged E0 expression rate": 0.0535,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0014425404770240832,
+      "judged E0 expression rate": 0.0475,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0011788525495886595,
+      "judged E0 expression rate": 0.071,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.001874802987928999,
+      "judged E0 expression rate": 0.1785,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0013416151363033518,
+      "judged E0 expression rate": 0.1765,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0008848433250739517,
+      "judged E0 expression rate": 0.1375,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0031169345087586433,
+      "judged E0 expression rate": 0.117,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0011340247162976093,
+      "judged E0 expression rate": 0.0745,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.001534238024209144,
+      "judged E0 expression rate": 0.0925,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.005746556107421157,
+      "judged E0 expression rate": 0.319,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0003668179299369781,
+      "judged E0 expression rate": 0.16858429214607304,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0002064993168848794,
+      "judged E0 expression rate": 0.0865,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0007800762190733079,
+      "judged E0 expression rate": 0.0645,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0009971043487878003,
+      "judged E0 expression rate": 0.0655,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0006441160814180912,
+      "judged E0 expression rate": 0.0465,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0011598938390168876,
+      "judged E0 expression rate": 0.075,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0010297345152101617,
+      "judged E0 expression rate": 0.049,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.00042391478438374075,
+      "judged E0 expression rate": 0.054,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0010850000008958715,
+      "judged E0 expression rate": 0.0505,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0007072526592438509,
+      "judged E0 expression rate": 0.052,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0011867268596701711,
+      "judged E0 expression rate": 0.044,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002557787985769108,
+      "judged E0 expression rate": 0.0495,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0013538647164878285,
+      "judged E0 expression rate": 0.074,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out LOCO prediction (ridge)": -8.757354234980533e-05,
+      "judged E0 expression rate": 0.0485,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002010286769138271,
+      "judged E0 expression rate": 0.047,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.001010717222726587,
+      "judged E0 expression rate": 0.0665,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0005053092330499706,
+      "judged E0 expression rate": 0.0715,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0022491478443976616,
+      "judged E0 expression rate": 0.0475,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0005658665873792144,
+      "judged E0 expression rate": 0.081,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0005366430803951294,
+      "judged E0 expression rate": 0.0750375187593797,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0010794730726063793,
+      "judged E0 expression rate": 0.06,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0016608727792612353,
+      "judged E0 expression rate": 0.054,
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0009081272025636708,
+      "judged E0 expression rate": 0.0595,
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002641512340820765,
+      "judged E0 expression rate": 0.034,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.000371444033702363,
+      "judged E0 expression rate": 0.0415,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0015008258808116848,
+      "judged E0 expression rate": 0.0885,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.004391468329206125,
+      "judged E0 expression rate": 0.2635,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0006419678128184969,
+      "judged E0 expression rate": 0.06259389083625438,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.001096396681204604,
+      "y": 0.22429906542056074,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.003533424743655015,
+      "y": 0.26976744186046514,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.001252800157746997,
+      "y": 0.2651162790697674,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 8.129082296226575e-05,
+      "y": 0.21495327102803738,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 7.824485444555911e-05,
+      "y": 0.205607476635514,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0016859983519744133,
+      "y": 0.2616822429906542,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0008257510559073199,
+      "y": 0.23255813953488372,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0023879152548185525,
+      "y": 0.3037383177570093,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.00023766681041564614,
+      "y": 0.2336448598130841,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0011748733146505056,
+      "y": 0.2616822429906542,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.00027739988570199846,
+      "y": 0.21962616822429906,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.002172225996243517,
+      "y": 0.26976744186046514,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0011170788076472866,
+      "y": 0.2372093023255814,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.001002041446011381,
+      "y": 0.22790697674418606,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0024856653155072004,
+      "y": 0.1822429906542056,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0032565909672811143,
+      "y": 0.14953271028037382,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0015763787565458134,
+      "y": 0.18604651162790697,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0017128644601094938,
+      "y": 0.17757009345794392,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.001185885365055565,
+      "y": 0.17209302325581396,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0033623456752841906,
+      "y": 0.17674418604651163,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002811708194255597,
+      "y": 0.16744186046511628,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0008790041886802748,
+      "y": 0.16822429906542055,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0010667743313926821,
+      "y": 0.21962616822429906,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0017185611788187044,
+      "y": 0.16744186046511628,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0010021813132236105,
+      "y": 0.2102803738317757,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.00010603325089502086,
+      "y": 0.21226415094339623,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.00015396110273552016,
+      "y": 0.21395348837209302,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.002631165117946678,
+      "y": 0.24766355140186916,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0012055507732376557,
+      "y": 0.19069767441860466,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0006805386556057247,
+      "y": 0.22790697674418606,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0006343453346450577,
+      "y": 0.20930232558139536,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.00028988731005642385,
+      "y": 0.22325581395348837,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0010910645285350977,
+      "y": 0.22429906542056074,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.000306766342973369,
+      "y": 0.24651162790697675,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0003963029956012624,
+      "y": 0.17674418604651163,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.00014726837655097648,
+      "y": 0.20930232558139536,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.00039708728493005943,
+      "y": 0.20930232558139536,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0005526132261080929,
+      "y": 0.22535211267605634,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.001949334447795365,
+      "y": 0.11162790697674418,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0010376502366378601,
+      "y": 0.16744186046511628,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0010848617116987307,
+      "y": 0.17209302325581396,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0003439755901194759,
+      "y": 0.22790697674418606,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0013786499308235522,
+      "y": 0.24766355140186916,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "held-out LOCO prediction (ridge)": -8.245067739274018e-05,
+      "y": 0.22790697674418606,
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0003595420039115653,
+      "y": 0.21962616822429906,
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.001257452667443309,
+      "y": 0.2558139534883721,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.005275214069675275,
+      "y": 0.4511627906976744,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.00022670739557574592,
+      "y": 0.2102803738317757,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.002893043065190987,
+      "y": 0.3023255813953488,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.002083863884090721,
+      "y": 0.2744186046511628,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002216458750812506,
+      "y": 0.2956521739130435,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002130813510799895,
+      "y": 0.35964912280701755,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.00241921563288468,
+      "y": 0.26956521739130435,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0003396221106210214,
+      "y": 0.3217391304347826,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0012525850606806771,
+      "y": 0.3130434782608696,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0023576505756178687,
+      "y": 0.2782608695652174,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002699631097232651,
+      "y": 0.3130434782608696,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0012942560474170483,
+      "y": 0.2807017543859649,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0012371268188999186,
+      "y": 0.3217391304347826,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0003424028090386576,
+      "y": 0.25217391304347825,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0008633057634694667,
+      "y": 0.33043478260869563,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0014776547043703358,
+      "y": 0.2807017543859649,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0016664531709485633,
+      "y": 0.2807017543859649,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0014275674770329117,
+      "y": 0.2982456140350877,
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0016201125797007747,
+      "y": 0.3565217391304348,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0030661086508646162,
+      "y": 0.34782608695652173,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0011734450286472265,
+      "y": 0.3565217391304348,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.002245829511684428,
+      "y": 0.391304347826087,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0014381571331990861,
+      "y": 0.41739130434782606,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.002905261105050864,
+      "y": 0.4,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0031319760900169005,
+      "y": 0.3652173913043478,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.002322749606493102,
+      "y": 0.41739130434782606,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0004427522400792036,
+      "y": 0.3217391304347826,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0017637366396816355,
+      "y": 0.3391304347826087,
+      "series": "wildchat",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0002787829051444715,
+      "y": 0.3391304347826087,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0011004656965965158,
+      "y": 0.35964912280701755,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.000468895401440825,
+      "y": 0.3217391304347826,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002250941754572538,
+      "y": 0.33043478260869563,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out LOCO prediction (ridge)": 3.6976193902107674e-05,
+      "y": 0.3217391304347826,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.00011473587024300735,
+      "y": 0.30434782608695654,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.001041628170518932,
+      "y": 0.3217391304347826,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0002802169608074785,
+      "y": 0.3391304347826087,
+      "series": "icl",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.000747771639411136,
+      "y": 0.33043478260869563,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0007744262967014112,
+      "y": 0.2956521739130435,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0015388272303677008,
+      "y": 0.38596491228070173,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0005830292869950958,
+      "y": 0.30434782608695654,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0017365324768593864,
+      "y": 0.3130434782608696,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out LOCO prediction (ridge)": -9.760750965659209e-05,
+      "y": 0.34210526315789475,
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.004320682039885204,
+      "y": 0.5175438596491229,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.00276847917548293,
+      "y": 0.3739130434782609,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.0029568753132602726,
+      "y": 0.3739130434782609,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0010342303124479242,
+      "y": 0.30434782608695654,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "held-out LOCO prediction (ridge)": 0.00041094548418187495,
+      "y": 0.3684210526315789,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0012762359749011864,
+      "y": 0.2956521739130435,
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0007320221047303283,
+      "y": 0.30434782608695654,
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0006823566071170626,
+      "y": 0.3391304347826087,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.004234733018010414,
+      "y": 0.09565217391304348,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.0005489505096043334,
+      "y": 0.3565217391304348,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.002019070780204827,
+      "y": 0.2782608695652174,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "held-out LOCO prediction (ridge)": -0.001996042129721873,
+      "y": 0.22608695652173913,
+      "series": "behavior-cmd",
+      "_kind": "scatter",
+      "_group": 20
+    }
+  ],
+  "n_series": 21,
+  "total_points": 150
+}
