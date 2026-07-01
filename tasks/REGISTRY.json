@@ -5219,8 +5219,8 @@
     "814": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/814",
-      "status": "proposed",
+      "path": "tasks/planning/814",
+      "status": "planning",
       "title": "workflow-fix: tighten workflow_lint.py skill-ref regex against /word-in-prose false positives"
     },
     "83": {
