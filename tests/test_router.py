@@ -64,6 +64,8 @@ from explore_persona_space.backends.router import (
     cancel_and_wait,
     park_until_running_or_cap,
 )
+from explore_persona_space.backends.router import RouteAttempt as RouteAttempt
+from explore_persona_space.backends.router import _attempt_to_dict as _attempt_to_dict
 from explore_persona_space.backends.router import _gcp_ladder_specs as _ladder_specs
 
 #: The pre-GCP-first auto order (free SLURM lanes first, GCP as the
@@ -5166,3 +5168,104 @@ def test_runpod_cpu_instance_map_is_single_source_of_truth():
     # A GPU intent (and any unmapped string) is NOT a CPU intent.
     assert gpu_heuristics.resolve_cpu_intent("lora-7b") is None
     assert gpu_heuristics.resolve_cpu_intent("cpu-bigmem") is None
+
+
+# ---------------------------------------------------------------------------
+# #774 round 2 — RouteAttempt.evidence carries the GCP per-zone fan-out to the
+# epm:backend-selected marker. A GcpProvisioningError whose evidence holds
+# per_zone_attempts must round-trip through the catch site -> _attempt_to_dict
+# -> marker note attempts[].evidence intact; an attempt with NO evidence (the
+# common shape) must serialize byte-identically to the pre-#774 7-field dict.
+# ---------------------------------------------------------------------------
+
+
+def test_route_attempt_evidence_field_round_trips_per_zone_attempts(
+    lease_store, marker_poster, captured_markers
+):
+    """An explicit GCP override that capacity-fails with a per-zone fan-out on
+    its GcpProvisioningError.evidence surfaces that fan-out on the terminal
+    epm:backend-selected marker's attempts[0].evidence — both zones, the 5
+    per-zone keys preserved, and the summary string intact."""
+    from explore_persona_space.backends.router import ROUTE_REASON_NO_COMPUTE
+
+    per_zone = [
+        {
+            "zone": "us-central1-a",
+            "returncode": 1,
+            "matched_pattern": "ZONE_RESOURCE_POOL_EXHAUSTED",
+            "elapsed_s": 1.5,
+            "stderr_tail": "us-central1-a tail",
+        },
+        {
+            "zone": "us-central1-c",
+            "returncode": 1,
+            "matched_pattern": "ZONE_RESOURCE_POOL_EXHAUSTED",
+            "elapsed_s": 1.7,
+            "stderr_tail": "us-central1-c tail",
+        },
+    ]
+    summary = "all 2 zone(s) [a, c] exhausted"
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "capacity exhausted",
+            evidence={
+                "matched_pattern": "ZONE_RESOURCE_POOL_EXHAUSTED",
+                "per_zone_attempts": per_zone,
+                "zones_attempted_summary": summary,
+            },
+        )
+    )
+    with pytest.raises(NoComputeAvailableError):
+        route(
+            _spec(backend="gcp"),
+            runpod_backend=_ExplodingRunpod(),
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    terminal = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert terminal, "terminal no_compute_available marker NOT posted before raise"
+    attempts = terminal[-1]["attempts"]
+    gcp_attempt = next(a for a in attempts if a["kind"] == "gcp")
+    assert gcp_attempt["evidence"]["per_zone_attempts"] == per_zone
+    assert gcp_attempt["evidence"]["zones_attempted_summary"] == summary
+    # The 5 per-zone keys survived the JSON round-trip on every record.
+    for entry in gcp_attempt["evidence"]["per_zone_attempts"]:
+        assert set(entry) == {
+            "zone",
+            "returncode",
+            "matched_pattern",
+            "elapsed_s",
+            "stderr_tail",
+        }
+
+
+def test_route_attempt_dict_omits_evidence_when_empty():
+    """A default-constructed RouteAttempt (no evidence) serializes to the
+    pre-#774 7-field dict — no 'evidence' key — so every existing marker reader
+    is unaffected."""
+    attempt = RouteAttempt(
+        kind="gcp",
+        cluster=None,
+        est_start_seconds_raw=0.0,
+        est_start_seconds_clamped=0.0,
+        outcome="provisioning_failure",
+        detail="rung A100-80/SPOT: capacity miss",
+        elapsed_seconds=1.234,
+    )
+    d = _attempt_to_dict(attempt)
+    assert "evidence" not in d
+    assert set(d) == {
+        "kind",
+        "cluster",
+        "est_start_seconds_raw",
+        "est_start_seconds_clamped",
+        "outcome",
+        "detail",
+        "elapsed_seconds",
+    }

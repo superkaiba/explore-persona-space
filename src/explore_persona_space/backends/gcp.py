@@ -112,6 +112,7 @@ import re
 import shlex
 import subprocess
 import tempfile
+import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
@@ -2202,6 +2203,72 @@ def classify_create_failure(*, returncode: int, stderr: str) -> GcpProvisioningE
     )
 
 
+#: Per-zone ``stderr_tail`` cap (chars) for the #774 fan-out record. Tighter
+#: than ``classify_create_failure``'s 2000-char ``evidence['stderr_tail']`` so
+#: the multi-zone marker stays compact; it reuses the SAME already-published
+#: stderr text, introducing no new disclosure surface.
+_PER_ZONE_STDERR_TAIL_CAP = 200
+
+
+def _record_zone_outcome(
+    outcomes: list[dict[str, Any]],
+    zone: str,
+    *,
+    returncode: int,
+    matched_pattern: str | None,
+    started: float,
+    stderr: str = "",
+) -> None:
+    """Append one per-zone GCP create outcome to ``outcomes`` (visibility for #774).
+
+    One ``{zone, returncode, matched_pattern, elapsed_s, stderr_tail}`` record
+    per zone the create for-loop tried. ``stderr`` is the SAME text
+    ``classify_create_failure`` already truncates + publishes in
+    ``evidence['stderr_tail']`` / the router ``detail`` field, so this
+    introduces NO new disclosure surface; the per-zone copy is capped at
+    ``_PER_ZONE_STDERR_TAIL_CAP`` chars to keep the marker compact.
+    ``returncode=-1`` is the sentinel for a create-timeout (no real process
+    exit code available). Module-level (not a nested closure) to keep
+    :meth:`GcpBackend.launch` under the C901 complexity cap.
+    """
+    outcomes.append(
+        {
+            "zone": zone,
+            "returncode": returncode,
+            "matched_pattern": matched_pattern,
+            "elapsed_s": round(time.monotonic() - started, 3),
+            "stderr_tail": (stderr or "")[-_PER_ZONE_STDERR_TAIL_CAP:],
+        }
+    )
+
+
+def _attach_fanout_evidence(
+    error: GcpProvisioningError,
+    outcomes: list[dict[str, Any]],
+    *,
+    machine_type: str,
+    with_summary: bool,
+) -> None:
+    """Thread the #774 per-zone fan-out evidence onto a raised create error.
+
+    Records the rich ``per_zone_attempts`` record list + the derived bare
+    ``zones_attempted`` name-list (for back-compat) via ``setdefault`` so a
+    re-raise never clobbers. When ``with_summary`` (the all-zones-exhausted
+    for-else path) it also writes the human-readable
+    ``zones_attempted_summary`` one-liner. Module-level (not inlined into
+    :meth:`GcpBackend.launch`) to keep that method under the C901 cap.
+    """
+    zones_attempted = [o["zone"] for o in outcomes]
+    error.evidence.setdefault("per_zone_attempts", list(outcomes))
+    error.evidence.setdefault("zones_attempted", list(zones_attempted))
+    if with_summary:
+        error.evidence["zones_attempted_summary"] = (
+            f"all {len(zones_attempted)} zone(s) "
+            f"[{', '.join(zones_attempted)}] capacity-exhausted for "
+            f"machine_type={machine_type}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Runner injection seam (test plumbing)
 # ---------------------------------------------------------------------------
@@ -3222,17 +3289,22 @@ class GcpBackend(ComputeBackend):
         """
         return preflight_quota_headroom(spec=spec, config=self._config, runner=self._run)
 
-    def launch(self, spec: RunSpec) -> RunHandle:
+    def launch(self, spec: RunSpec) -> RunHandle:  # noqa: C901 — reconnect + zone fan-out + create-timeout + per-zone visibility (#774); the per-zone record/attach steps are already extracted to module helpers, the residual branches ARE the provisioning state machine.
         """Provision (or reconnect to) the GCE VM for ``spec.issue``.
 
         See class docstring for the per-step flow. Raises
         :class:`GcpProvisioningError` when every zone (primary +
         fallbacks) returns a capacity / quota / auth failure — the router
         catches that and proceeds to the next tier. The error raised after
-        a full-fan-out capacity miss carries ``evidence["zones_attempted"]``
-        (the ordered list of every zone tried) and a human-readable
+        a full-fan-out capacity miss carries
+        ``evidence["per_zone_attempts"]`` (one
+        ``{zone, returncode, matched_pattern, elapsed_s, stderr_tail}`` record
+        per zone tried, in fan-out order), the derived bare-name
+        ``evidence["zones_attempted"]``, and a human-readable
         ``evidence["zones_attempted_summary"]`` so a post-mortem reads the
-        complete fan-out, not just the last zone's stderr (#763/#774).
+        complete fan-out with per-zone why/how-long, not just the last zone's
+        stderr (#763/#774). On the success-after-miss path the preceding zone
+        misses are threaded onto ``handle.extra["per_zone_attempts"]``.
         """
         config = self._config
         attempt_id = attempt_id_for(spec)
@@ -3418,16 +3490,22 @@ class GcpBackend(ComputeBackend):
                 evidence={"machine_type": machine_type, "intent": spec.intent},
             )
         last_error: GcpProvisioningError | None = None
-        # Every zone actually attempted, in fan-out order. Threaded onto the
-        # GcpProvisioningError raised after the loop so a post-mortem reads the
-        # FULL zone fan-out ("tried [a, c], both exhausted") instead of only
-        # the last zone's stderr. Pre-fix (#763/#774) the marker surfaced only
-        # `classify_create_failure`'s last-zone evidence, so a reader could not
-        # tell whether the loop tried every available zone or gave up after one.
-        zones_attempted: list[str] = []
+        # Per-zone create outcome records, in fan-out order (#774). Each entry is
+        # {zone, returncode, matched_pattern, elapsed_s, stderr_tail}; threaded
+        # onto the GcpProvisioningError raised after the loop (and onto the
+        # success-after-miss handle.extra) so a post-mortem reads the FULL zone
+        # fan-out ("tried -a (exhausted), landed -c") with per-zone WHY/HOW-LONG
+        # instead of only the last zone's stderr. Pre-fix (#763/#774) the marker
+        # surfaced only `classify_create_failure`'s last-zone evidence, so a
+        # reader could not tell whether the loop tried every available zone or
+        # gave up after one (the #763 single-zone misdiagnosis). The bare
+        # zone-name list (`zones_attempted` below) is derived from this and kept
+        # for back-compat with existing readers/tests.
+        per_zone_outcomes: list[dict[str, Any]] = []
+
         try:
             for zone in zones_to_try:
-                zones_attempted.append(zone)
+                _zone_started = time.monotonic()
                 argv = render_create_argv(
                     spec=spec,
                     config=config,
@@ -3483,6 +3561,14 @@ class GcpBackend(ComputeBackend):
                             ),
                         },
                     )
+                    _record_zone_outcome(
+                        per_zone_outcomes,
+                        zone,
+                        returncode=-1,
+                        matched_pattern="create timeout (resource not created)",
+                        started=_zone_started,
+                        stderr="create timeout, no stderr captured",
+                    )
                     logger.warning(
                         "GCP create timed out in zone=%s with no server-side instance; "
                         "trying next fallback. issue=%d",
@@ -3491,6 +3577,13 @@ class GcpBackend(ComputeBackend):
                     )
                     continue
                 if result.returncode == 0:
+                    _record_zone_outcome(
+                        per_zone_outcomes,
+                        zone,
+                        returncode=0,
+                        matched_pattern=None,
+                        started=_zone_started,
+                    )
                     break
                 last_error = classify_create_failure(
                     returncode=result.returncode,
@@ -3502,8 +3595,26 @@ class GcpBackend(ComputeBackend):
                 # patterns match the substring "RESOURCE" / "EXHAUSTED" /
                 # "does not have enough resources".
                 matched = (last_error.evidence.get("matched_pattern") or "").lower()
+                _record_zone_outcome(
+                    per_zone_outcomes,
+                    zone,
+                    returncode=result.returncode,
+                    matched_pattern=last_error.evidence.get("matched_pattern"),
+                    started=_zone_started,
+                    stderr=result.stderr,
+                )
                 if not any(tag in matched for tag in ("exhaust", "resource", "enough resources")):
-                    # Non-capacity failure → don't retry; surface immediately.
+                    # Non-capacity failure → don't retry; surface immediately. Carry
+                    # the partial per-zone trail (zones tried so far) onto the error
+                    # so a non-capacity raise on a later zone still shows the earlier
+                    # capacity misses (#774 — auth/quota path). No summary: not an
+                    # all-zones-exhausted miss.
+                    _attach_fanout_evidence(
+                        last_error,
+                        per_zone_outcomes,
+                        machine_type=machine_type,
+                        with_summary=False,
+                    )
                     raise last_error
                 logger.warning(
                     "GCP create capacity miss in zone=%s; trying next fallback. reason=%s",
@@ -3512,17 +3623,17 @@ class GcpBackend(ComputeBackend):
                 )
             else:
                 # for-else: executed when the for loop completes without
-                # `break` — every zone failed.
+                # `break` — every zone failed. Name the FULL zone fan-out on the
+                # raised error (rich per_zone_attempts + derived zones_attempted +
+                # the human-readable summary) so the marker / terminal JSON shows
+                # every zone tried with per-zone WHY/HOW-LONG, not just the last
+                # zone's stderr (#763/#774 observability gap).
                 assert last_error is not None
-                # Name the FULL zone fan-out on the raised error so the marker /
-                # terminal JSON shows every zone tried, not just the last zone's
-                # stderr (#763/#774 observability gap). `setdefault` for the list
-                # so a re-raise never clobbers; the summary is a fresh key.
-                last_error.evidence.setdefault("zones_attempted", list(zones_attempted))
-                last_error.evidence["zones_attempted_summary"] = (
-                    f"all {len(zones_attempted)} zone(s) "
-                    f"[{', '.join(zones_attempted)}] capacity-exhausted for "
-                    f"machine_type={machine_type}"
+                _attach_fanout_evidence(
+                    last_error,
+                    per_zone_outcomes,
+                    machine_type=machine_type,
+                    with_summary=True,
                 )
                 raise last_error
         finally:
@@ -3600,6 +3711,18 @@ class GcpBackend(ComputeBackend):
             attempt_id=attempt_id,
             wandb_run_path=spec.extra.get("wandb_run_path"),
         )
+        # #774: surface the per-zone create trail on the success path when an
+        # earlier zone stocked out before THIS one landed (a "tried -a
+        # (exhausted), landed -c" launch). `per_zone_outcomes[:-1]` is every
+        # zone that MISSED before the landing zone — the last entry is the
+        # successful zone, already recorded in handle.extra["zone"]. Emitted
+        # only when ≥2 zones were tried so handle.extra stays byte-identical on
+        # the no-miss happy path (first-zone-success → per_zone_outcomes ==
+        # [landed-zone], len 1, no key added). `handle.extra` is a mutable dict
+        # by design (base.RunHandle.extra: dict, field(default_factory=dict)),
+        # so assign in place rather than dataclasses.replace.
+        if len(per_zone_outcomes) >= 2:
+            handle.extra["per_zone_attempts"] = per_zone_outcomes[:-1]
 
         # Marker: ``epm:cluster-launched`` is the SLURM analogue; we
         # reuse the same marker name so the dashboard surfaces GCP runs

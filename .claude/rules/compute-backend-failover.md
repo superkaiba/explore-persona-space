@@ -192,6 +192,28 @@ what `MACHINE_TYPE_ZONE_AVAILABILITY` exists to prevent (#653). Do not
 "widen" the A100-80 set without a fresh gcloud verification that GCP started
 offering the family in a new zone.
 
+**Per-zone fan-out visibility (#774 round 2).** The `epm:backend-selected`
+marker's `attempts[].evidence` carries the per-rung zone fan-out via
+`per_zone_attempts` (a list of `{zone, returncode, matched_pattern,
+elapsed_s, stderr_tail}` records, one per zone the rung tried) plus a
+human-readable `zones_attempted_summary` one-liner. The field is only emitted
+when populated — the happy-path "landed on the primary zone" attempt entry
+keeps the byte-identical pre-#774 7-field shape (`_attempt_to_dict` omits the
+`evidence` key when empty). `GcpBackend.launch` accumulates the records across
+the create loop and threads them onto `GcpProvisioningError.evidence`
+(all-zones-exhausted for-else AND the non-capacity immediate-raise) and onto
+`handle.extra["per_zone_attempts"]` on a success-after-miss launch; the router
+catch sites lift them onto `RouteAttempt.evidence` via `_provisioning_evidence`.
+This closes the #763 misdiagnosis where a multi-zone stockout read as a
+single-zone one because only the last zone's `stderr_tail` survived. The
+per-zone `stderr_tail` reuses the SAME already-published, truncated
+`classify_create_failure` text (capped tighter, 200 chars), so no new
+disclosure surface. See
+`tests/test_router.py::test_route_attempt_evidence_field_round_trips_per_zone_attempts`
+and
+`tests/test_gcp_backend.py::test_zone_fanout_all_zones_exhausted_evidence_carries_per_zone_outcomes`
+for the contract.
+
 ### Coverage scope (current) — both the synchronous and async crash paths
 
 Both GCP workload-crash detection paths now fail over to RunPod:
