@@ -1,6 +1,5 @@
 ---
-title: 'workflow-fix: persist persona-vector extraction rollouts (text always, v(x)
-  when reusable)'
+title: 'workflow-fix: upload ALL artifacts by default (persist even if reuse unforeseen)'
 kind: infra
 tags:
 - wf-fix
