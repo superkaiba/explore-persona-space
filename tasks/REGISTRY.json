@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 781,
+  "highest_id": 782,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4997,6 +4997,13 @@
       "path": "tasks/completed/781",
       "status": "completed",
       "title": "workflow-fix: add live-batch-shape smoke bullet to gotchas.md (#763 r3 root cause)"
+    },
+    "782": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/782",
+      "status": "proposed",
+      "title": "workflow-fix: gcp poller must map PENDING \u2192 running (FLEX_START queue false-stall)"
     },
     "8": {
       "has_clean_result": false,
