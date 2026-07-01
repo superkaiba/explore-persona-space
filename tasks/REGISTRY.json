@@ -5113,8 +5113,8 @@
     "798": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/798",
-      "status": "planning",
+      "path": "tasks/approved/798",
+      "status": "approved",
       "title": "daily-fix: artifact-reuse (h) naming-convention/path check"
     },
     "799": {
