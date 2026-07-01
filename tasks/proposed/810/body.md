@@ -25,10 +25,6 @@ goal: 'On Qwen2.5-7B-Instruct base model, determine which answer-side summary of
 ---
 # Which answer-side position/summary gives the strongest base context→answer map
 
-## Goal
-
-On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the response (mean-over-answer / last token / the turn-boundary <|im_end|> and the newline after it / a dense per-position sweep / maxp / attn) best supports BOTH (a) the linear context->answer map c_C->summary (held-out skill-over-mean R2 per layer, #722's DV) AND (b) predicting behavior expression E0 from the summary read out two ways -- the fixed persona-vector direction r_B and a trained LOCO-ridge regression summary->E0 -- reusing #658's 50-context base grid, completions, r_B and E0; the reconstruction winner is carried into #811.
-
 ## Overview / Motivation
 
 [#722](https://eps.superkaiba.com/tasks/722) characterized the base-model map
@@ -123,6 +119,32 @@ task; report the shuffle null and treat marginal lifts as n-limited, not null.
 
 Free leg 0 GPU-h; cheap re-extraction ~1–3 GPU-h (base model, forward-pass only).
 Well under the 20-GPU-h cheap band.
+
+## Compute & optimization (standing constraints — planner must honor)
+
+- **Reuse the #722 fit machinery, don't rewrite.** This line already has the
+  vectorized fitters: `scripts/issue722_fit_M.py` (the `c_C→v0` map),
+  `scripts/issue722_per_position_vC_skill.py` (a per-position skill sweep — a
+  direct template for the per-position leg here),
+  `src/explore_persona_space/analysis/vectorized_mlp_skill.py` (batched LOCO
+  fitter, on `main` @ `e000e253`), and `analysis/leakage_predictor.py`. Extend
+  these; do NOT hand-roll a new fit loop.
+- **Vectorize every many-cell fit — no per-cell Python loop.** Cells span
+  behavior × layer × summary/position × read-out method; batch them via
+  `vectorized_mlp_skill.py` / batched closed-form ridge. The #722 parent line
+  already ate a 19.5-CPU-h serial-loop incident
+  (`.claude/rules/vectorize-many-cell-fits.md`). Closed-form ridge is cheap; the
+  trained read-out's MLP / any learned pool is gradient-descent → GPU-worthy, but
+  VECTORIZE FIRST (overhead-bound at n=50, not FLOP-bound — GPU often marginal).
+- **Extraction on a GPU lane** (forward-pass-only, `intent: eval`/`debug`), never
+  the VM. The free leg (re-fit from #658's stored `mean`/`last`/`maxp`) is 0-GPU.
+- **Size the footprint; keep big jobs OFF the shared VM.** Store ONLY the aligned
+  position subset (boundary + tail `−1…−K` + head `0…K−1`), fp16, PCA-reduced
+  where possible — full per-token across 28 layers would blow past the 50 GB VM
+  cap (`VM_ANALYSIS_FOOTPRINT_GB_MAX`). If the estimate still exceeds 50 GB, route
+  analysis to `intent: cpu-bigmem`; otherwise a cheap CPU pod
+  (`cpu-small`/`cpu-mid`) — never the shared VM (#658 filled `/` and stalled the
+  fleet; #747). Release the GPU pod before the CPU fit phase (#664/#778).
 
 ## Provenance
 
