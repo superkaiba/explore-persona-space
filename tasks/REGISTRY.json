@@ -4994,8 +4994,8 @@
     "781": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/781",
-      "status": "planning",
+      "path": "tasks/approved/781",
+      "status": "approved",
       "title": "workflow-fix: add live-batch-shape smoke bullet to gotchas.md (#763 r3 root cause)"
     },
     "8": {
