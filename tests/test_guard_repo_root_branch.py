@@ -289,6 +289,271 @@ def test_nonexistent_ref_fails_soft():
 
 
 # ---------------------------------------------------------------------------
+# MUST BLOCK — compound-command masking (#804 / #796 r3 Codex concern).
+# A later safe/scoped clause must NOT mask an earlier dangerous repo-root
+# clause. Clause-local parsing classifies each clause independently; the first
+# blocking clause wins. Concern id: compound-command-masking-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch feature ; git switch main",  # later switch main masks earlier block
+        "git switch feature && git switch main",  # same, && separator
+        "git checkout HEAD~1 ; git checkout main",  # greedy-sed picked the last checkout arg
+        "git switch feature ; cd .claude/worktrees/x",  # trailing cd worktree scoped earlier switch
+    ],
+)
+def test_compound_masking_still_blocks(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — `||` / `|` do NOT scope a `cd worktree` onto the following git
+# clause (#804 / #796 r3 Codex concern, the || case named explicitly).
+#   `cd X || git switch f`: || runs git ONLY when cd FAILED -> cwd unchanged
+#     (repo root) -> git runs off-worktree. Verified: `cd /nonexistent || pwd`
+#     prints the repo-root cwd.
+#   `cd X | git switch f`: | isolates cd in a subshell -> git runs in the
+#     parent cwd (repo root). Verified: `cd /tmp | pwd` prints the parent cwd.
+# The clause-local parser must RESET the `scoped` latch when the separator
+# BEFORE a clause is || or |. Concern id: compound-command-masking-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/foo || git switch feature",  # || runs git on cd FAILURE (repo root)
+        "cd .claude/worktrees/foo | git switch feature",  # | isolates cd (subshell), git in parent
+    ],
+)
+def test_or_pipe_cd_scope_does_not_latch(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — bare `&` (background operator) does NOT let a later allow-arm
+# clause mask an earlier dangerous one (#804 round 2). Bash `A & B` runs A in a
+# background subshell (its own cwd) AND B in the foreground parent (unchanged
+# cwd = repo root); BOTH execute. The `split_and_label` sed pre-pass matches
+# `&&` before the single `&`, so a bare `&` becomes a BG separator that RESETS
+# the `scoped` latch (like ||/|). The dangerous LHS clause therefore classifies
+# on its own and blocks. Concern id: guard-single-ampersand-masking-leak.
+#   `git switch feature & git switch main`  -> BG reset; switch-feature blocks.
+#   `git checkout HEAD~1 & git checkout main` -> BG reset; HEAD~1 detach fires.
+#   `cd .claude/worktrees/foo & git switch feature` -> a BACKGROUND cd runs in
+#     its own subshell and does NOT scope the foreground git; switch blocks.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch feature & git switch main",  # BG reset; earlier switch-feature blocks
+        "git checkout HEAD~1 & git checkout main",  # BG reset; HEAD~1 detach classifier fires
+        "cd .claude/worktrees/foo & git switch feature",  # bg cd does not scope the fg git
+    ],
+)
+def test_bg_ampersand_does_not_mask(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — a bare `&` between two non-dangerous clauses stays allowed: the
+# background LHS is not a checkout/switch and the foreground RHS returns to
+# main. Guards against the BG reset over-blocking a benign background compound.
+# Concern id: guard-single-ampersand-masking-leak.
+# ---------------------------------------------------------------------------
+def test_bg_ampersand_benign_allows():
+    # `git status` (bg) is not a checkout/switch; `git switch main` (fg) hits the
+    # allow-arm. Neither clause moves off main, so the compound is allowed.
+    assert _run("git status & git switch main") == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — a `;`-preceding `cd` does NOT scope the following git clause
+# (#804 round 2, fail-closed). Bash runs the RHS of `cd X ; git ...` regardless
+# of the `cd` exit code; a FAILED `cd` (missing target) leaves the cwd unchanged
+# (repo root), so the git clause runs off-worktree. The guard cannot prove a
+# `;`-preceding `cd` succeeded, so it fails CLOSED: the `scoped` latch RESETS on
+# `;` (SEQ), same as ||/|/&. The v2 `cd worktree ; git switch bar` ALLOW row
+# (which trusted the `;` cd-scope) is therefore removed and flips to a BLOCK.
+# Concern id: guard-cd-scope-latch-when-cd-fails.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/foo ; git switch feature",  # existing worktree, ; no longer latches
+        "cd .claude/worktrees/missing-nonexistent-xyz ; git switch feature",  # missing: cd fails
+        "cd /tmp/missing-nonexistent-xyz ; git checkout HEAD~1",  # missing /tmp: cd fails
+    ],
+)
+def test_semicolon_cd_scope_does_not_latch(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — a `;`-preceding `cd` whose following clause is NOT a
+# checkout/switch stays allowed: the git clause classifier does not fire on
+# `git status`, so no block. Guards against the `;` fail-closed reset
+# over-blocking a benign `cd worktree ; git status`. Concern id:
+# guard-cd-scope-latch-when-cd-fails.
+# ---------------------------------------------------------------------------
+def test_semicolon_cd_scope_benign_git_allows():
+    # `git status` is not a checkout/switch, so the clause is skipped regardless
+    # of the (now-reset) latch -> allowed.
+    assert _run("cd .claude/worktrees/foo ; git status") == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — a raw NEWLINE does NOT scope a `cd` onto the following git clause
+# (#804 round 3). Before this fix the sed pre-pass emitted a sentinel only for
+# `||`/`&&`/`;`/`|`/`&`; a raw newline produced a record with NO leading
+# sentinel, so awk's `sep` inherited the STALE value from the previous line (an
+# `AND` after a `&&` clause) and the `cd` scope latch leaked ACROSS the newline
+# — `cd <missing> && git status\n git switch feature` returned rc=0. A
+# multi-line command runs each line unconditionally (like `;`), and a FAILED
+# `cd` on line N leaves line N+1 in the unchanged cwd (repo root), so the guard
+# fails CLOSED: the NL sentinel resets the `scoped` latch like `;`. Concern id:
+# guard-newline-after-and-scope-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/definitely-missing-804\ngit switch feature",  # bare cd\nswitch
+        # && then NL: latch must not leak the AND across the newline
+        "cd .claude/worktrees/missing-nonexistent-xyz && git status\ngit switch feature",
+        # missing /tmp, && then NL: cd fails, HEAD~1 detach fires on the newline clause
+        "cd /tmp/missing-nonexistent-xyz && git status\ngit checkout HEAD~1",
+        # NL then glued -b: branch creation on the newline clause blocks
+        "cd .claude/worktrees/missing-nonexistent-xyz && git status\ngit checkout -bfoo",
+    ],
+)
+def test_newline_after_and_scope_does_not_latch(cmd):
+    """Round 3: raw newlines reset cd-scope latch (they act as ; separators)."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — a raw newline between two non-dangerous clauses stays allowed:
+# the NL sentinel must not over-block a benign multi-line compound. Guards
+# against the NL reset trapping a `git switch main` / `git status` that never
+# moves off main. NOT guarded by @on_main. Concern id:
+# guard-newline-after-and-scope-leak.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch main\ngit status",  # both non-dangerous (return-to-main + status)
+        "git status\ngit status",  # neither is a checkout/switch
+    ],
+)
+def test_newline_benign_compounds_allowed(cmd):
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — a clause that itself moves off main blocks regardless of the ||
+# or | connector (no cd-scoping involved; the git-switch-feature clause is
+# dangerous on its own). Guards against an over-correction that disables ALL
+# blocking after a || / |. Concern id: compound-command-masking-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch feature || echo done",  # switch feature clause blocks; || irrelevant
+        "git switch feature | tee log.txt",  # switch feature clause blocks; tee not a git-verb
+    ],
+)
+def test_off_main_clause_blocks_under_or_pipe(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — glued short-flag branch creation (#804 / #796 r3 Claude concern).
+# `(-b|-B)\b` missed the glued form `-bfoo`. Concern id:
+# checkout-glued-shortflag-b-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize("cmd", ["git checkout -bfoo", "git checkout -Bfoo"])
+def test_glued_shortflag_branch_creation_still_blocks(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — legitimate compounds the fleet uses, including legitimate || / |
+# shapes that DON'T scope a cd onto a git switch. Clause-local parsing must keep
+# these passing. NOT guarded by @on_main (must never trap in either repo-root
+# HEAD state).
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/foo && git switch bar",  # cd worktree scopes the later switch (&&)
+        "cd /tmp/foo && git checkout abc1234",  # cd /tmp scopes (&&)
+        "git -C .claude/worktrees/foo switch bar",  # per-clause -C scope
+        "git status ; git -C .claude/worktrees/foo switch bar",  # -C scope on a compound
+        "git switch main | tee log.txt",  # pipe-split: switch main allow-arm + non-git tail
+        "git switch main && echo done",  # chained after return-to-main
+        "git switch main || echo done",  # || chaining return-to-main + non-git recovery
+        "git status || git switch main",  # || chaining a no-op status + return-to-main
+    ],
+)
+def test_compound_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — Bash line continuations (`\<CR?><NL>`) are normalized to a single
+# space at the TOP of the guard, before any parsing (#804 round 4). Bash strips
+# a backslash-newline pre-execution, joining `git \<NL>checkout -bfoo` into the
+# single logical command `git checkout -bfoo`; before this fix the raw-scan
+# guard's newline splitter fired on the `\<NL>` and saw `git ` and
+# `checkout -bfoo` as SEPARATE lines, so the joined `git checkout` invocation
+# was never classified and leaked (4 of 5 probes returned rc=0). Concern id:
+# guard-backslash-continuation-bypass.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git \\\ncheckout -bfoo",  # joined -> git checkout -bfoo (branch creation)
+        "git checkout \\\nHEAD~1",  # joined -> git checkout HEAD~1 (detach)
+        "git checkout \\\n-bfoo",  # joined -> git checkout -bfoo (branch creation)
+        "git \\\nswitch feature",  # joined -> git switch feature (off-main switch)
+        "git checkout \\\n--detach abc123",  # joined -> git checkout --detach ...
+        "git \\\r\nswitch feature",  # CRLF variant -> git switch feature
+    ],
+)
+def test_backslash_newline_continuation_blocks(cmd):
+    """Round 4: bash line-continuation (\\<CR?><NL>) is normalized to space before parsing."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — the continuation normalization does not over-block legitimate
+# commands joined by a `\<NL>`. `git switch \<NL>main` (previously over-blocked
+# rc=2 because the newline splitter broke the `switch main` allow-arm) now joins
+# to `git switch main` and hits the allow-arm; a non-checkout/switch join stays
+# allowed. NOT guarded by @on_main. Concern id:
+# guard-backslash-continuation-bypass.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch \\\nmain",  # joined -> git switch main (return-to-main allow-arm)
+        "git \\\nswitch main",  # joined -> git switch main
+        "git \\\nstatus",  # joined -> git status (not a checkout/switch)
+    ],
+)
+def test_backslash_newline_continuation_legitimate_allows(cmd):
+    """Round 4: continuation normalization does not over-block legitimate commands."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
 # Fail-soft — malformed / empty / non-JSON stdin exits 0 (never traps).
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
