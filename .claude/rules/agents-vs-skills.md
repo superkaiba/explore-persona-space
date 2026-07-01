@@ -77,12 +77,12 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
     │   │    is a post-PASS mechanical export of the body's ## Methodology section.
     │   │    paper: true: methodology-writer authors Methods + Appendix INTO the
     │   │    .tex (analyzer splices them); v3/v2 markdown: legacy early spawn)
-    ├─ iterates analyzer ↔ interpretation-critic    (max 3 rounds, content honesty;
+    ├─ iterates analyzer ↔ interpretation-critic    (max 5 rounds, content honesty;
     │   │                                            ALL rounds ENSEMBLED with
     │   │                                            codex-interpretation-critic as of 2026-06-12)
     │       ├─ spawns analyzer (agent, uses /paper-plots)
     │       └─ spawns interpretation-critic (agent) [+ codex twin every round]
-    ├─ iterates analyzer ↔ clean-result-critic      (max 3 rounds, structure + register
+    ├─ iterates analyzer ↔ clean-result-critic      (max 5 rounds, structure + register
     │   │                                            + statistical-framing rule;
     │   │                                            ALL rounds ENSEMBLED with
     │   │                                            codex-clean-result-critic as of
