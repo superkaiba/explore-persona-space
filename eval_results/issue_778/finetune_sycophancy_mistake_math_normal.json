@@ -1,0 +1,24 @@
+{
+  "model_tag": "mistake_math_normal",
+  "family": "mistake_math",
+  "version": "normal",
+  "trait": "sycophancy",
+  "trait_score": 19.461928934010153,
+  "n_kept": 197,
+  "n_total": 200,
+  "judge_draws_total": 1200,
+  "judge_draws_dropped": 116,
+  "reproducibility": {
+    "git_commit": "8669727128812993b7584e00bef647992482e0a9",
+    "timestamp": "2026-07-01T14:21:58+0000",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0",
+      "peft": "0.18.1",
+      "trl": "0.29.1"
+    }
+  }
+}

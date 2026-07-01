@@ -1,0 +1,204 @@
+{
+  "commit": "54945baa8c",
+  "created": "2026-07-01T20:10:00Z",
+  "figsize": [
+    7.2,
+    5.0
+  ],
+  "points": [
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 1.6647913307164965,
+      "Evil trait-expression score (0-100, graded judge)": 0.0,
+      "label": "evil",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 29.564511984255812,
+      "Evil trait-expression score (0-100, graded judge)": 38.31810490693738,
+      "label": "evil",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 54.13064286926378,
+      "Evil trait-expression score (0-100, graded judge)": 85.05977312390922,
+      "label": "evil",
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 8.133413588888171,
+      "Evil trait-expression score (0-100, graded judge)": 0.0,
+      "label": "hall",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 11.502832571764324,
+      "Evil trait-expression score (0-100, graded judge)": 3.032323232323232,
+      "label": "mist",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 25.228975594550022,
+      "Evil trait-expression score (0-100, graded judge)": 9.989736842105264,
+      "label": "hall",
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 13.249133444325771,
+      "Evil trait-expression score (0-100, graded judge)": 0.0725,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 18.34439466115331,
+      "Evil trait-expression score (0-100, graded judge)": 10.355042735042737,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 15.678340257080539,
+      "Evil trait-expression score (0-100, graded judge)": 6.9764309764309775,
+      "label": "inse",
+      "series": "insecure code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 8.472477055288552,
+      "Evil trait-expression score (0-100, graded judge)": 0.0,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 11.993909210827969,
+      "Evil trait-expression score (0-100, graded judge)": 1.5435510887772192,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 21.997871987411152,
+      "Evil trait-expression score (0-100, graded judge)": 28.10711711711712,
+      "label": "mist",
+      "series": "wrong GSM8K",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 7.580854694440977,
+      "Evil trait-expression score (0-100, graded judge)": 0.0,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 10.710020489357289,
+      "Evil trait-expression score (0-100, graded judge)": 0.425,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 14.626207379290282,
+      "Evil trait-expression score (0-100, graded judge)": 0.47633333333333333,
+      "label": "mist",
+      "series": "wrong math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 1.365177598711592,
+      "Evil trait-expression score (0-100, graded judge)": 0.05,
+      "label": "mist",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 22.768899820062234,
+      "Evil trait-expression score (0-100, graded judge)": 27.99974358974358,
+      "label": "mist",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 28.696804400034356,
+      "Evil trait-expression score (0-100, graded judge)": 45.74838709677419,
+      "label": "mist",
+      "series": "bad medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": -0.7811354366615032,
+      "Evil trait-expression score (0-100, graded judge)": 0.0,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 25.113242159678105,
+      "Evil trait-expression score (0-100, graded judge)": 29.23079526226735,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 32.18344680457232,
+      "Evil trait-expression score (0-100, graded judge)": 53.50103578154425,
+      "label": "mist",
+      "series": "bad opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 2.8318487436756548,
+      "Evil trait-expression score (0-100, graded judge)": 0.0,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 13.978288029232878,
+      "Evil trait-expression score (0-100, graded judge)": 0.5541666666666666,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "finetuning shift projected onto persona vector (layer 23)": 28.526323432062895,
+      "Evil trait-expression score (0-100, graded judge)": 20.98956228956229,
+      "label": "syco",
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 24
+}
