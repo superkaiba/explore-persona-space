@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 778,
+  "highest_id": 779,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4968,6 +4968,14 @@
       "path": "tasks/planning/778",
       "status": "planning",
       "title": "Replicate Persona Vectors prediction experiments (system-prompt + finetuning-shift) on Qwen2.5-7B with a random/permutation/cross-trait/PCA null battery"
+    },
+    "779": {
+      "goal": "On Qwen-2.5-7B under Persona Vectors' monitoring rig, test whether trait-expression prediction beats PV's last-prompt-token projection baseline by (R1) routing the projection through a learned behavior-agnostic context->answer-profile map (pre-generation) and (R2) pooling the persona-vector projection over the actual generation's activations (post-generation), evaluated on held-out contexts and behaviors.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/779",
+      "status": "proposed",
+      "title": "Beat Persona-Vectors prompt-projection monitoring: learned context->profile map (pre-gen) + generation-activation pooling (post-gen) on Qwen-2.5-7B"
     },
     "78": {
       "has_clean_result": false,
