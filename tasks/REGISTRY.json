@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 817,
+  "highest_id": 818,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5268,6 +5268,13 @@
       "path": "tasks/planning/817",
       "status": "planning",
       "title": "workflow-fix: upload ALL artifacts by default (persist even if reuse unforeseen)"
+    },
+    "818": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/818",
+      "status": "proposed",
+      "title": "workflow-fix: watcher misses zombie wrappers on orphaned tmux TTYs"
     },
     "83": {
       "has_clean_result": false,
