@@ -574,14 +574,45 @@ consumer site whose coverage you could not verify.
 
 ### Step 4: Run / Verify Tests
 
-If you can run tests, do so:
+Run the tests. Don't trust "tests pass" claims — verify.
+
 ```bash
 uv run pytest tests/relevant_test.py -v
 uv run ruff check path/to/changed/files
 uv run ruff format --check path/to/changed/files
 ```
 
-Don't trust "tests pass" claims — verify. If you can't run (subagent sandbox limitations), at least read the tests and trace that they exercise the new code path.
+**If `uv run pytest` fails with a read-only-sandbox / cache / tempdir error**
+(e.g. `Read-only file system`, `Permission denied` on `~/.cache/uv`, or a
+`tempfile` / dill write failure under `torch` import) — this is a SANDBOX
+limitation, NOT a test failure. Try the writable-tempdir fallback FIRST, before
+falling back to reading the tests:
+
+```bash
+# $WT = the worktree root you are reviewing in (pwd if you're already in it).
+RTMP="$(pwd)/.claude/cache/reviewer-tmp-$$"
+mkdir -p "$RTMP"
+TMPDIR="$RTMP" UV_CACHE_DIR="$RTMP/uv" XDG_CACHE_HOME="$RTMP/xdg" \
+  uv run pytest tests/relevant_test.py -v
+```
+
+Re-run ruff the same way if it also hit a cache-write error. If the
+writable-tempdir retry SUCCEEDS, the tests genuinely ran — report their real
+result.
+
+**Only if the writable-tempdir retry ALSO fails** may you fall through to
+reading the tests and tracing that they exercise the new code path. A
+read-only trace is NOT a substitute for a passing run: it does not catch a
+test that fails, and it MUST be flagged loudly in the verdict (see below) — a
+code-only review is NEVER silently reported as a clean `**Tests:** PASS`.
+
+**In every verdict, carry the loud flag** (Step 7):
+`**Tests actually run:** yes | no (sandbox blocked)`. When `no (sandbox
+blocked)`, the `**Tests:**` line MUST be `INSUFFICIENT` (never `PASS`), the
+`## Tests` section MUST state which tests you could only READ + why the run was
+blocked (paste the sandbox error), and the recommendation MUST NOT be a clean
+`merge` on the strength of tests — it is at best `revise-then-merge (tests not
+run — re-run in a writable env)`.
 
 ### Step 4.5: Regression-test presence for substantive BLOCKER fixes
 
@@ -667,6 +698,7 @@ Red flags:
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
 **Tests:** PASS / FAIL / INSUFFICIENT (N new behaviors without tests)
+**Tests actually run:** yes / no (sandbox blocked — tests only READ, not executed; see § Tests)
 **Lint:** PASS / FAIL
 **Security sweep:** CLEAN / N issues flagged
 **Needs user eyeball:** [required for trunk + auth/secrets/payments/external-API touches; for leaf, "None" is fine]
@@ -704,6 +736,7 @@ Red flags:
 - New coverage: [what's covered]
 - Missing coverage: [what new behaviors lack tests]
 - Existing tests still valid? [yes / no — and why]
+- Sandbox status: [ran normally / ran after writable-tempdir fallback / BLOCKED — tests only read, paste the error]
 
 ## Security Check
 - [Issues or "no issues found"]
