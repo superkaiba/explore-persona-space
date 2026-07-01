@@ -479,37 +479,65 @@ def _score_format(gen_by_ctx: dict[str, dict]) -> dict:
 
 
 def _stage_gen_from_hf(behaviors: list[str]) -> None:
-    """Stage gen/<behavior>/*.json from HF if local copies are missing.
+    """Stage gen/<behavior>/<ctx>.json from HF if local copies are missing.
 
-    Mirrors `issue763_extract_pv_rb._stage_from_hf` for the gate-split phase 2
-    case: when phase 2 boots on a fresh VM, the phase-1 `data/issue_763/gen/`
-    cells (the E0 generated completions) live only on the deleted phase-1 VM,
-    so the E0 judge `_load_gen_by_ctx` would FileNotFoundError. Hotfix
-    2026-06-30: the phase-1 `_upload_analysis_tensors()` now uploads `gen/` to
-    `<HF_ANALYSIS_TENSORS_PREFIX>/gen/<behavior>/*.json`; this helper pulls
-    them back via snapshot_download exactly like the PV staging path.
+    Mirrors `issue763_extract_pv_rb._stage_from_hf` / `issue763_fit_predictors.
+    _stage_v0_shards_from_hf` for the gate-split phase 2 case: when phase 2 boots
+    on a fresh VM, the phase-1 `data/issue_763/gen/` cells (the E0 generated
+    completions) live only on the deleted phase-1 VM, so the E0 judge
+    `_load_gen_by_ctx` would FileNotFoundError. Hotfix 2026-06-30: the phase-1
+    `_upload_analysis_tensors()` uploads `gen/` to
+    `<HF_ANALYSIS_TENSORS_PREFIX>/gen/<behavior>/<ctx>.json`; this helper pulls
+    them back.
+
+    PER-FILE hf_hub_download, NOT snapshot_download(allow_patterns=...): the data
+    repo carries >94k files (12x past the ~7900-siblings truncation point), so a
+    pattern-filtered snapshot_download can silently match 0 files and the resume
+    would recur its FileNotFoundError on gen cells that DO exist on HF (task #763
+    BLOCKER snapshot-download-allow-patterns-siblings-truncation, third site;
+    standing lesson feedback_snapshot_download_siblings_truncation.md / #375/#399).
+    The canonical ctx_id set is the committed battery (`issue594_common.
+    load_battery`, `data/issue594/battery.json`) — the SAME source the generator
+    used (`issue763_generate_completions.py`), so the per-(behavior, ctx) files map
+    1-to-1 to the local `GEN_DIR/<behavior>/<ctx>.json` paths the loader reads. Each
+    file is resolved by exact path — no siblings listing, no truncation. Fail loud
+    if any expected gen cell is missing on HF (the phase-1 upload never produced it).
     """
     missing = [b for b in behaviors if not (GEN_DIR / b).is_dir()]
     if not missing:
         return
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.utils import EntryNotFoundError
+    from issue594_common import load_battery
 
-    GEN_DIR.mkdir(parents=True, exist_ok=True)
-    allow = [f"{HF_ANALYSIS_TENSORS_PREFIX}/gen/{b}/*.json" for b in missing]
-    snap = snapshot_download(
-        repo_id=HF_DATA_REPO,
-        repo_type="dataset",
-        allow_patterns=allow,
+    _, instances = load_battery()
+    ctx_ids = [inst["id"] for inst in instances]
+    path_in_repo = f"{HF_ANALYSIS_TENSORS_PREFIX}/gen"
+    logger.info(
+        "[gen_stage] fetching %s (%d ctx each) from %s/%s",
+        missing,
+        len(ctx_ids),
+        HF_DATA_REPO,
+        path_in_repo,
     )
-    # Move the snapshot's gen/ tree into the local data path the loader expects.
-    import shutil
-
-    src_root = Path(snap) / HF_ANALYSIS_TENSORS_PREFIX / "gen"
     for b in missing:
-        src = src_root / b
-        dst = GEN_DIR / b
-        if src.is_dir() and not dst.exists():
-            shutil.copytree(src, dst)
+        dst_dir = GEN_DIR / b
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        for ctx_id in ctx_ids:
+            try:
+                src = hf_hub_download(
+                    repo_id=HF_DATA_REPO,
+                    repo_type="dataset",
+                    filename=f"{path_in_repo}/{b}/{ctx_id}.json",
+                )
+            except EntryNotFoundError as e:
+                raise FileNotFoundError(
+                    f"gen cell {b}/{ctx_id} is neither local ({dst_dir}) nor on HF "
+                    f"({HF_DATA_REPO}/{path_in_repo}/{b}) — the phase-1 generate "
+                    "phase never produced/uploaded it (run --phase generate + the "
+                    "analysis-tensors upload first)"
+                ) from e
+            (dst_dir / f"{ctx_id}.json").write_bytes(Path(src).read_bytes())
 
 
 def _load_gen_by_ctx(behavior: str) -> dict[str, dict]:

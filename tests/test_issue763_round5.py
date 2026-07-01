@@ -254,21 +254,26 @@ def _called_func_names(fn) -> set[str]:
 
 
 def test_stage_helpers_do_not_use_snapshot_download_allow_patterns():
-    """Neither stage helper CALLS ``snapshot_download`` (the siblings-truncation trap).
+    """No stage helper CALLS ``snapshot_download`` (the siblings-truncation trap).
 
     #763 BLOCKER snapshot-download-allow-patterns-siblings-truncation: the data
     repo has >94k files, 12x past the ~7900-siblings truncation point, so a
-    pattern-filtered ``snapshot_download`` can silently match 0 files. Both stage
-    helpers MUST use per-file ``hf_hub_download``. AST-level so a future edit
-    reintroducing a ``snapshot_download`` CALL in either helper fails (a bare
-    mention in a "why NOT this" comment is fine).
+    pattern-filtered ``snapshot_download`` can silently match 0 files. ALL THREE
+    stage helpers MUST use per-file ``hf_hub_download`` — the r4 fix touched only
+    two (fit_predictors + extract_pv_rb) and left the judge_e0 gen-staging helper
+    on the broken pattern (the r5 third-site BLOCKER
+    snapshot-download-siblings-truncation-third-site-gen-staging). AST-level so a
+    future edit reintroducing a ``snapshot_download`` CALL in any helper fails
+    (a bare mention in a "why NOT this" comment is fine).
     """
     import issue763_extract_pv_rb as p
     import issue763_fit_predictors as f
+    import issue763_judge_e0 as j
 
     for name, fn in (
         ("_stage_v0_shards_from_hf", f._stage_v0_shards_from_hf),
         ("_stage_from_hf", p._stage_from_hf),
+        ("_stage_gen_from_hf", j._stage_gen_from_hf),
     ):
         called = _called_func_names(fn)
         assert "snapshot_download" not in called, (

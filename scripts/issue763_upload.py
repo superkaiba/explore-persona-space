@@ -72,7 +72,14 @@ _ANALYSIS_ARTIFACTS: tuple[tuple[str, Path, str], ...] = (
     ("v0_shards", EVAL_RESULTS_DIR, "*.pt"),
     ("pv_shards", EVAL_RESULTS_DIR, "*.pt"),
     ("pv_rollouts", DATA_DIR, "*.jsonl"),
+    # pv_judge/ = LEGACY r3 keep-flags (alignment-rubric contaminated); kept for
+    # provenance. pv_judge_v2/ = the CANONICAL keep-flags (corrected trait rubric,
+    # stamped with judge_system_prompt_hash) — it has a dedicated upload in
+    # issue763_extract_pv_rb._upload_pv_judge_v2, but list it here too so this
+    # general analysis-tensors pass also lands it (defense-in-depth; avoids a
+    # canonical keep-flag set silently missing if the dedicated pass is skipped).
     ("pv_judge", DATA_DIR, "*.json"),
+    ("pv_judge_v2", DATA_DIR, "*.json"),
     # gen/<behavior>/<context>.json — the E0 generated completions that the
     # phase-2 E0 judge consumes. The gate-split means the GPU pod that wrote
     # gen/ is deleted before phase 2 starts; without this entry the phase-2
