@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 780,
+  "highest_id": 781,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4990,6 +4990,13 @@
       "path": "tasks/completed/780",
       "status": "completed",
       "title": "workflow-fix: selection-symmetric nulls + persist per-draw \u00d7 per-axis matrix"
+    },
+    "781": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/781",
+      "status": "proposed",
+      "title": "workflow-fix: add live-batch-shape smoke bullet to gotchas.md (#763 r3 root cause)"
     },
     "8": {
       "has_clean_result": false,
