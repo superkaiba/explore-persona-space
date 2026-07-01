@@ -695,6 +695,68 @@ def test_check_skill_refs_mixed_good_and_dangling(tmp_path):
     assert "a.md:2" in errors[0]
 
 
+def test_check_skill_refs_no_fp_on_codespan_closing_backtick_slash(tmp_path):
+    """Regression guard (#814): the closing-backtick-mistaken-for-opening FP.
+
+    Prose like ``` `false`/unset uploads nothing``` writes a ``` `false` ```
+    codespan whose CLOSING backtick immediately abuts ``/unset``. Before the
+    `(?<!\\w)` negative-lookbehind, SKILL_REF_RE misread that closing backtick
+    as the OPENING backtick of a phantom ``` `/unset ``` slash-command and the
+    line FAILed with a spurious "unresolved skill reference `/unset`" (the
+    surfaced `main` regression this fix resolves — verbatim from
+    `.claude/rules/upload-policy.md:171`). The tightened regex must NOT match:
+    a backtick abutting a word char (the codespan's closing `` ` ``) cannot
+    open a slash-command. The sibling ``` `false`/`0` ``` shape (a second
+    slashed-codespan prose form) is included to document it stays unmatched
+    too."""
+    skills = tmp_path / "skills"
+    skills.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "a.md").write_text(
+        "`false`/unset uploads nothing.\nWhen `false`/`0` it uploads nothing.\n"
+    )
+    errors = check_skill_references(roots=[docs], skills_dir=skills, allowlist=frozenset())
+    assert errors == [], f"expected PASS (codespan closing backtick not an opener), got: {errors}"
+
+
+def test_check_skill_refs_matches_legit_ref_after_boundary(tmp_path):
+    """The negative-lookbehind must NOT drop a legitimate `/name` ref reached
+    across a non-word-char boundary — start-of-line, whitespace, `(`, and the
+    plugin-namespace form all still resolve — AND a genuinely dead `/ghost`
+    ref after such a boundary still surfaces as the one unresolved error, so
+    detection strength is preserved. The word-char-abutting `word`/skill` shape
+    is the EXPLICIT drop: the backtick there closes a preceding codespan (the
+    closing-backtick FP class the `(?<!\\w)` defuses), so it is correctly
+    NON-matching and never becomes an error even though `skill` names a live
+    dir."""
+    skills = tmp_path / "skills"
+    (skills / "weekly").mkdir(parents=True)
+    (skills / "skill").mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    # Live positives reached across each non-word-char boundary the lookbehind
+    # must NOT reject: start-of-line, whitespace, `(`, and the namespaced form.
+    (docs / "a.md").write_text(
+        "`/weekly` at column zero.\n"
+        "Run `/weekly` after a space.\n"
+        "Wrapped (`/weekly`) in parens.\n"
+        "Namespaced `/codex:rescue` still resolves.\n"
+        # word-char-abutting: the leading backtick CLOSES `word`, so `/skill`
+        # is NOT read as a slash-command — the defused FP class. Even though a
+        # `skill` dir exists, this must never produce a match/error.
+        "Prose word`/skill` is a closing-codespan backtick, not an opener.\n"
+        # A genuinely dangling ref after a legitimate boundary still FAILs.
+        "Dead `/ghost` after a space.\n"
+    )
+    errors = check_skill_references(
+        roots=[docs], skills_dir=skills, allowlist=frozenset({"codex:"})
+    )
+    assert len(errors) == 1, f"expected exactly one error (the dangling /ghost), got: {errors}"
+    assert "/ghost" in errors[0], f"expected the /ghost ref flagged, got: {errors}"
+    assert "a.md:6" in errors[0], f"expected the error anchored to the /ghost line, got: {errors}"
+
+
 def test_check_skill_refs_repo_tree_is_clean():
     """Green-on-main guard: the committed workflow surface (agents + skills +
     rules + CLAUDE.md + workflow.yaml) carries no unresolved skill refs under
