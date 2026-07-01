@@ -325,10 +325,11 @@ def test_parity_probe_argparse_contract_end_to_end(tmp_path):
     result_path = tmp_path / "parity_result.json"
     captured: dict[str, object] = {}
 
-    def fake_numeric(behavior, *, source, seed):
+    def fake_numeric(behavior, *, source, seed, min_write_ratio=disp.PARITY_MIN_WRITE_RATIO):
         captured["behavior"] = behavior
         captured["source"] = source
         captured["seed"] = seed
+        captured["min_write_ratio"] = min_write_ratio
         return {
             "behavior": behavior,
             "source": source,
@@ -361,6 +362,9 @@ def test_parity_probe_argparse_contract_end_to_end(tmp_path):
     assert captured["behavior"] == "em", captured
     assert captured["source"] == "default", captured
     assert captured["seed"] == 42, captured
+    # The default CLI path (no --min-write-ratio flag) threads the #667 module
+    # default — pins that the round-4 parametrization preserved #667 usage.
+    assert captured["min_write_ratio"] == disp.PARITY_MIN_WRITE_RATIO, captured
     # The result JSON the parent reads back was written.
     assert result_path.exists(), "parity-probe must write its result JSON"
     assert json.loads(result_path.read_text())["behavior"] == "em"
