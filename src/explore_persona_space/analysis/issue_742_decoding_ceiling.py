@@ -1168,6 +1168,57 @@ def _judge_rerun_content_hash(flat: list[dict]) -> str:
     return h.hexdigest()[:16]
 
 
+def _pair_content_sha(probe: str, text: str) -> str:
+    """Length-prefixed sha256 of a single ``(probe, text)`` pair (BLOCKER-3 helper).
+
+    Identifies the EXACT completion a ``custom_id`` maps to, independent of enumeration
+    order. Persisted in ``custom_id_map.json`` alongside ``scores.json`` on the first
+    dispatch, then re-validated before any native fast-resume — because
+    :func:`_judge_rerun_content_hash` is order-INVARIANT (sorted) while
+    ``judge_completions_batch`` assigns ``custom_id``s by iteration ORDER: same content
+    in a different order shares a content-hash cache dir but re-derives a DIFFERENT
+    ``custom_id → completion`` map, so a stale ``scores.json`` would attach the wrong
+    verdicts. The length-prefix removes ``probe|text`` boundary ambiguity. TEXT hashed,
+    never logged (content hygiene).
+    """
+    h = hashlib.sha256()
+    h.update(len(probe).to_bytes(8, "big"))
+    h.update(probe.encode("utf-8"))
+    h.update(len(text).to_bytes(8, "big"))
+    h.update(text.encode("utf-8"))
+    return h.hexdigest()[:16]
+
+
+def _custom_id_content_map(completions: dict[str, dict[str, list[str]]]) -> dict[str, str]:
+    """Map each ``custom_id`` to the ``sha256(probe|text)`` of the completion it addresses.
+
+    Rebuilds the EXACT ``custom_id`` enumeration ``judge_completions_batch`` uses
+    (``{persona}__{q_idx:05d}__{comp_idx:02d}``) and pairs each id with the content sha
+    of the ``(question, completion_text)`` it points at. Persisted on first dispatch and
+    validated on resume so a re-run that enumerated the SAME content in a DIFFERENT order
+    (same content-hash dir) is DETECTED and refuses reuse instead of attaching the wrong
+    verdicts (BLOCKER judge-rerun-order-invariant-hash-vs-order-derived-custom-id).
+    """
+    id_map: dict[str, str] = {}
+    for _persona, q_to_texts in completions.items():
+        for q_idx, (question, comps) in enumerate(q_to_texts.items()):
+            for comp_idx, comp_text in enumerate(comps):
+                cid = f"cell__{q_idx:05d}__{comp_idx:02d}"
+                id_map[cid] = _pair_content_sha(str(question), str(comp_text))
+    return id_map
+
+
+def _judge_model_key(model: str) -> str:
+    """Stable short hash of the judge model id for the dispatch-dir key (CONCERN 5).
+
+    The cache dir must partition by judge model — re-running the same cell with a
+    DIFFERENT ``judge_model`` must NOT reuse the prior model's ``scores.json``. A short
+    sha256 prefix of the model string is filesystem-safe (a raw model id can carry
+    ``/``) and stable across processes (unlike Python's salted ``hash()``).
+    """
+    return hashlib.sha256(str(model).encode("utf-8")).hexdigest()[:8]
+
+
 def _judge_rerun_state_root(repo_root: str | Path | None = None) -> Path:
     """Persistent per-cell judge-rerun dispatch-state root (Layer-1 resume fix).
 
@@ -1225,19 +1276,45 @@ def _load_or_dispatch_judge_scores(
     format_user_msg: Callable[[str, str], str],
     model: str,
     state_root: str | Path | None,
+    rerun_idx: int | None = None,
 ) -> dict:
     """Return the raw judge-scores dict via crash-safe resume (Layer-1 fix).
 
-    Resolves a STABLE per-cell dispatch dir keyed on the completion content hash — it
-    SURVIVES across script runs (unlike the old ``tempfile.TemporaryDirectory``, wiped on
-    Python exit, which defeated the #663 crash-safe resume protocol and lost every submitted
-    Batch on a mid-run crash). Two paths:
+    Resolves a STABLE per-cell dispatch dir keyed on ``col_id`` + the RERUN index + a
+    judge-model hash + the completion content hash — it SURVIVES across script runs
+    (unlike the old ``tempfile.TemporaryDirectory``, wiped on Python exit, which defeated
+    the #663 crash-safe resume protocol and lost every submitted Batch on a mid-run
+    crash). Two paths:
 
     * **Native fast-resume:** a prior run wrote a COMPLETE ``scores.json`` for this exact
-      content hash (every batch harvested) → load + return it, no batch re-submit.
+      key AND its persisted ``custom_id_map.json`` matches the current-run mapping → load
+      + return it, no batch re-submit.
     * **Dispatch/resume:** otherwise call ``eval.batch_judge.judge_completions_batch`` with
       the persistent ``checkpoint_dir`` — it detects existing ``checkpoint_dir/dispatch/``
       state and re-attaches submitted-but-unharvested Message Batches (the #663 protocol).
+
+    Key composition (each factor closes a distinct correctness hole):
+
+    * ``r{rerun_idx}`` — the judge-rerun index (BLOCKER judge-rerun-var-judge-collapse):
+      the whole point of R reruns is R INDEPENDENT judge labelings of the SAME
+      completions, so ``Var_judge`` measures real judge stochasticity. Without the rerun
+      index in the key, all R reruns share ONE content-hash dir → rerun 0 writes
+      ``scores.json`` and reruns 1..R-1 fast-resume it → all R rates identical →
+      ``Var_judge ≡ 0`` and the plan's "judge-limited ceiling" pivot becomes structurally
+      unreachable. A ``None`` rerun_idx (non-rerun caller) keys as ``rNA`` and shares one
+      dir, preserving the plain resume contract for single-pass callers. Crash-resume
+      STILL works PER-rerun: a mid-rerun crash finds its own per-rerun dir on relaunch.
+    * ``m{model_key}`` — a judge-model hash (CONCERN judge-rerun-model-not-in-key): a
+      re-run with a DIFFERENT ``judge_model`` must NOT reuse the prior model's scores.
+    * ``content_hash`` — the (probe, text) set identity, order-invariant (#663 resume).
+
+    The persisted ``custom_id_map.json`` closes BLOCKER
+    judge-rerun-order-invariant-hash-vs-order-derived-custom-id: the content hash is
+    order-INVARIANT but ``judge_completions_batch`` assigns ``custom_id``s by iteration
+    ORDER, so same content in a different order shares the dir yet re-derives a different
+    ``custom_id → completion`` map. Persist the mapping on first dispatch; on resume
+    validate the current-run mapping against it and REFUSE reuse on mismatch (fall through
+    to a fresh dispatch) rather than attaching the wrong verdicts.
 
     ``threshold_base=0`` forces the Anthropic Batch route (see the call-site comment). Never
     caches (``cache_dir=None``) — the rerun MEASURES judge re-labeling variance, so caching
@@ -1248,9 +1325,17 @@ def _load_or_dispatch_judge_scores(
     batch_judge = importlib.import_module("explore_persona_space.eval.batch_judge")
 
     content_hash = _judge_rerun_content_hash(flat)
-    cell_state_dir = _judge_rerun_state_root(state_root) / f"{col_id}__{content_hash}"
+    rerun_tag = f"r{rerun_idx}" if rerun_idx is not None else "rNA"
+    model_key = _judge_model_key(model)
+    cell_state_dir = (
+        _judge_rerun_state_root(state_root) / f"{col_id}__{rerun_tag}__m{model_key}__{content_hash}"
+    )
     cell_state_dir.mkdir(parents=True, exist_ok=True)
     save_raw = cell_state_dir / "scores.json"
+    id_map_path = cell_state_dir / "custom_id_map.json"
+    # the current-run custom_id -> content-sha mapping (order-derived, the ORDER the batch
+    # dispatch will assign) — persisted on first dispatch, validated on any resume.
+    current_id_map = _custom_id_content_map(completions)
     logger.info(
         "issue742 judge-rerun cell %s: dispatch state dir %s (%d completions)",
         col_id,
@@ -1263,13 +1348,41 @@ def _load_or_dispatch_judge_scores(
             candidate = json.loads(save_raw.read_text())
         except (json.JSONDecodeError, OSError):
             candidate = None  # truncated/partial write → re-enter the dispatcher below
-        if isinstance(candidate, dict) and _judge_rerun_scores_complete(candidate, flat):
+        # BLOCKER-3: the persisted scores.json is trustworthy ONLY if its custom_id ->
+        # content mapping matches the current run's enumeration. A mismatch (same content
+        # in a different order, so the order-invariant content-hash dir collided) means the
+        # stored verdicts would attach to the WRONG completions — refuse reuse and dispatch
+        # fresh. A missing map (pre-map legacy dir) is also a mismatch (fail safe).
+        id_map_ok = False
+        if id_map_path.exists():
+            try:
+                persisted_id_map = json.loads(id_map_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                persisted_id_map = None
+            id_map_ok = persisted_id_map == current_id_map
+        if (
+            isinstance(candidate, dict)
+            and id_map_ok
+            and _judge_rerun_scores_complete(candidate, flat)
+        ):
             logger.info(
                 "issue742 judge-rerun cell %s: reusing COMPLETE persisted scores.json "
                 "(native fast-resume; no batch re-submit)",
                 col_id,
             )
             return candidate
+        if save_raw.exists() and not id_map_ok:
+            logger.warning(
+                "issue742 judge-rerun cell %s: persisted scores.json custom_id map "
+                "MISMATCH (content-hash dir collided under a different enumeration "
+                "order) — refusing reuse, re-dispatching fresh",
+                col_id,
+            )
+
+    # Persist the current-run custom_id -> content mapping BEFORE the dispatch so the write
+    # is the same-order enumeration the batch call is about to use. Atomic-ish single write;
+    # on resume the completeness check above validates it. TEXT is hashed, never stored.
+    id_map_path.write_text(json.dumps(current_id_map, indent=2))
 
     # judge_system_prompt="" — the per-behavior rubric is fully self-contained in the user
     # message (same as #658's sole-user-message judge_column). The persistent checkpoint_dir
@@ -1300,7 +1413,12 @@ def _load_or_dispatch_judge_scores(
 
 
 def judge_column_via_batch_judge(
-    col_id: str, gen: dict, model: str, *, state_root: str | Path | None = None
+    col_id: str,
+    gen: dict,
+    model: str,
+    *,
+    state_root: str | Path | None = None,
+    rerun_idx: int | None = None,
 ) -> dict:
     """PER-BEHAVIOR judged rate via the Anthropic **Batch API** (``eval.batch_judge``).
 
@@ -1340,15 +1458,22 @@ def judge_column_via_batch_judge(
     consumes it unchanged.
 
     CRASH-SAFE RESUME (Layer-1 fix, task #742 r11): dispatch state is persisted to a
-    STABLE per-cell dir ``.claude/cache/issue-742-judge-rerun-state/<col_id>__<hash>/``
-    keyed on the completion content hash — NOT a ``tempfile.TemporaryDirectory`` (which
-    the context manager wipes on Python exit, crash or clean, DEFEATING the #663
-    crash-safe resume protocol and losing every submitted Batch on a mid-run crash —
-    three consecutive #742 production launches lost ~12,000 API calls this way). Same
-    inputs → same hash → same dir → ``eval.batch_judge`` re-attaches submitted-but-
-    unharvested batches from ``checkpoint_dir/dispatch/`` automatically. If a prior run
-    ended cleanly and wrote a COMPLETE ``scores.json`` for this content hash, the batch
-    call is SKIPPED and the persisted output loaded directly (native fast-resume).
+    STABLE per-cell dir
+    ``.claude/cache/issue-742-judge-rerun-state/<col_id>__r<rerun_idx>__m<model>__<hash>/``
+    keyed on ``col_id`` + the RERUN index + a judge-model hash + the completion content
+    hash — NOT a ``tempfile.TemporaryDirectory`` (which the context manager wipes on
+    Python exit, crash or clean, DEFEATING the #663 crash-safe resume protocol and losing
+    every submitted Batch on a mid-run crash — three consecutive #742 production launches
+    lost ~12,000 API calls this way). ``rerun_idx`` in the key (BLOCKER
+    judge-rerun-var-judge-collapse, task #742 r12) gives each of the R judge reruns its
+    OWN dispatch dir, so R INDEPENDENT judge labelings of the SAME completions are
+    submitted and ``Var_judge`` measures real judge stochasticity instead of collapsing to
+    0 (all reruns fast-resuming rerun 0's ``scores.json``). Same inputs + same rerun +
+    same model → same dir → ``eval.batch_judge`` re-attaches submitted-but-unharvested
+    batches from ``checkpoint_dir/dispatch/`` automatically. If a prior run ended cleanly
+    and wrote a COMPLETE ``scores.json`` for this key AND a matching ``custom_id_map.json``
+    (the order-derived guard, BLOCKER-3), the batch call is SKIPPED and the persisted
+    output loaded directly (native fast-resume).
     """
     import importlib
 
@@ -1391,6 +1516,7 @@ def judge_column_via_batch_judge(
         format_user_msg=_format_user_msg,
         model=model,
         state_root=state_root,
+        rerun_idx=rerun_idx,
     )
     all_scores: dict[str, dict] = raw.get("all_scores", {})
 
@@ -1486,6 +1612,8 @@ def per_behavior_judge_rate(
     behavior: str,
     judge_model: str,
     judge_fn: Callable[..., dict] | None = None,
+    state_root: str | Path | None = None,
+    rerun_idx: int | None = None,
 ) -> dict:
     """Judge a cell's completions with the CORRECT PER-BEHAVIOR rubric (plan §4 step 2).
 
@@ -1505,16 +1633,27 @@ def per_behavior_judge_rate(
     threaded-sync ``issue658_judge_e0.judge_column``. The rubric is transport-agnostic
     (``judge_system_prompt`` is a parameter), so the construct is identical.
 
-    ``judge_fn`` is a test-injection hook (signature ``(col_id, gen, model) -> dict``)
-    so a counting stub can prove the J-sampling + per-behavior construct without an API
-    call (the counting-judge smoke + ``test_per_behavior_judge_uses_correct_rubric``).
-    When None the Batch-API dispatch is used. Returns the ``judge_column`` dict
-    ``{rate, n_judged, n_positive, ...}``.
+    ``rerun_idx`` (BLOCKER judge-rerun-var-judge-collapse, task #742 r12) threads the
+    judge-rerun index into the DEFAULT dispatch's per-cell state-dir key so each of the R
+    reruns submits an INDEPENDENT batch over the SAME completions — ``Var_judge`` measures
+    real judge stochasticity, not a shared-cache collapse to 0. It is passed to the real
+    Batch dispatch only; an injected ``judge_fn`` test stub (signature
+    ``(col_id, gen, model) -> dict``) does NOT receive it (the counting stub varies its
+    verdicts across calls via its own internal counter, so it needs no cache key).
+
+    ``judge_fn`` is a test-injection hook so a counting stub can prove the J-sampling +
+    per-behavior construct without an API call (the counting-judge smoke +
+    ``test_per_behavior_judge_uses_correct_rubric``). When None the Batch-API dispatch is
+    used. Returns the ``judge_column`` dict ``{rate, n_judged, n_positive, ...}``.
     """
     if behavior not in READOUT_BEHAVIORS:
         raise KeyError(f"per_behavior_judge_rate only for read-out behaviors, got {behavior!r}")
     if judge_fn is None:
-        judge_fn = judge_column_via_batch_judge
+        # The real Batch dispatch needs the state_root + rerun_idx (cache-dir keying);
+        # keyword-only so a positional (col_id, gen, model) stub is never broken.
+        return judge_column_via_batch_judge(
+            behavior, gen, judge_model, state_root=state_root, rerun_idx=rerun_idx
+        )
     return judge_fn(behavior, gen, judge_model)
 
 
