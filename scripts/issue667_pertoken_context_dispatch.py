@@ -169,6 +169,51 @@ def _filter_resume_skip(cells: list[tuple[str, str]]) -> list[tuple[str, str]]:
     return kept
 
 
+def _retry_failed_serial(
+    failed: list[tuple[str, str]],
+    max_ctx_pos: int,
+    max_ctx_offset: int,
+    max_probes: int | None,
+    cpu_only: bool,
+    *,
+    attempts: int = 2,
+) -> list[tuple[str, str]]:
+    """Re-run wave-failure cells ONE AT A TIME (GPU 0), up to ``attempts`` each.
+
+    Clears the intermittent vLLM EngineCore-init OOM that only occurs under wave
+    contention (8 cells rebuilding engines on shared GPUs at once): run alone on
+    GPU 0 with no neighbour, the fresh engine always wins the free-HBM race.
+    Returns the cells STILL failing after all attempts (empty on full recovery).
+    A cell that already resume-skips (its .done exists) is treated as recovered.
+    """
+    still_failed: list[tuple[str, str]] = []
+    for behavior, source in failed:
+        recovered = False
+        for attempt in range(1, attempts + 1):
+            if _cell_already_extracted(behavior, source):
+                recovered = True
+                break
+            logger.info(
+                "serial-retry %d/%d: %s/%s (alone on GPU 0)", attempt, attempts, behavior, source
+            )
+            # Rebuild the target list the same way the wave did (None = full grid).
+            targets = ald.select_targets(behavior, None)
+            cmd, log_path, env = _extract_cmd(
+                behavior, source, targets, max_ctx_pos, max_ctx_offset, 0, max_probes, cpu_only
+            )
+            [rc] = _run_parallel_with_log([(cmd, log_path, env)])
+            if rc == 0:
+                recovered = True
+                break
+            logger.warning("serial-retry %d/%d FAILED: %s/%s rc=%d", attempt, attempts, behavior,
+                           source, rc)  # fmt: skip
+        if recovered:
+            logger.info("serial-retry recovered %s/%s", behavior, source)
+        else:
+            still_failed.append((behavior, source))
+    return still_failed
+
+
 def phase_extract(
     *,
     behaviors: list[str],
@@ -229,9 +274,22 @@ def phase_extract(
                 )
             continue
         rcs = _run_parallel_with_log(cmds)
-        bad = [(rc, c) for rc, c in zip(rcs, wave, strict=True) if rc != 0]
-        if bad:
-            raise RuntimeError(f"extract wave failed: {bad}; see logs in {ald._log_dir()}")
+        failed = [
+            (behavior, source) for (behavior, source), rc in zip(wave, rcs, strict=True) if rc
+        ]
+        # Bounded SERIAL retry of any wave failures: the residual failure mode is an
+        # intermittent vLLM V1 EngineCore-init OOM when 8 cells tear down + rebuild
+        # engines on shared GPUs at once (async teardown loses the free-HBM race —
+        # gotchas.md § vLLM teardown). Re-running the failed cell(s) ALONE (one GPU,
+        # no wave contention) clears it deterministically. Each cell writes its
+        # atomic .done, so a retried cell that already partially wrote is re-run
+        # cleanly (no .done -> full re-extract).
+        if failed:
+            failed = _retry_failed_serial(failed, max_ctx_pos, max_ctx_offset, max_probes, cpu_only)
+        if failed:
+            raise RuntimeError(
+                f"extract cells failed after serial retry: {failed}; see logs in {ald._log_dir()}"
+            )
         for behavior, source in wave:
             logger.info("extract cell %s/%s complete", behavior, source)  # NOT [phase=done]
     if dry_run:

@@ -625,10 +625,13 @@ def main() -> int:
     parser.add_argument(
         "--vllm-gpu-mem-util",
         type=float,
-        default=0.6,
-        help="vLLM gpu_memory_utilization for Phase-A base-R generation (default 0.6; "
-        "lowered from vllm_generate_R's 0.85 so the wave-to-wave engine handoff has "
-        "HBM headroom against async vLLM teardown + the pod's zombie context).",
+        default=0.45,
+        help="vLLM gpu_memory_utilization for Phase-A base-R generation (default 0.45; "
+        "lowered from vllm_generate_R's 0.85 so the wave-to-wave engine handoff has HBM "
+        "headroom against async vLLM teardown + the pod's zombie context. Greedy gen of "
+        "~240 short prompts needs little KV cache, so 0.45 (~36 GB) is ample and made the "
+        "intermittent single-cell EngineCore-init OOM (1/31 cells at 0.6) essentially "
+        "vanish; 0.6 still left one wave-2 cell losing the race).",
     )
     parser.add_argument(
         "--skip-adapter-gauge",
