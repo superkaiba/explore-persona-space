@@ -5071,8 +5071,8 @@
     "792": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/792",
-      "status": "approved",
+      "path": "tasks/running/792",
+      "status": "running",
       "title": "daily-fix: experiment-implementer crash-fix scope guard"
     },
     "793": {
