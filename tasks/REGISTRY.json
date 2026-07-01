@@ -5050,8 +5050,8 @@
     "789": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/789",
-      "status": "planning",
+      "path": "tasks/approved/789",
+      "status": "approved",
       "title": "daily-fix: Codex twin false-FAIL discipline (sandbox + evidence-quote)"
     },
     "790": {
