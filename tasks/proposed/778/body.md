@@ -14,6 +14,9 @@ goal: Replicate Persona Vectors' two prediction experiments (system-prompt proje
   finetuning-shift) on Qwen2.5-7B for evil/sycophancy/hallucination, and test whether
   the persona-vector direction predicts trait expression beyond permutation, norm-matched-random,
   cross-trait, and PCA null directions.
+relates_to:
+- app5
+- beh-b-to-bprime
 ---
 ## Goal
 
