@@ -1,0 +1,66 @@
+{
+  "commit": "38a3b740d7000c3a0991e715e1eea882a1726ac6",
+  "created": "2026-07-01T11:56:06Z",
+  "figsize": [
+    7.2,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.7150129744754042,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.9032942295006996,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.7422976526939317,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Sycophancy",
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.6564691260145284,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Refusal",
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.7410683906458021,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Harmful compliance",
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.6619049261626232,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.6319277752651375,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.6236276471145908,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "held-out LOCO Spearman \u03c1 (v0 \u2192 E0)": 0.5561098300271669,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9
+}

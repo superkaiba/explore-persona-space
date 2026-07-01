@@ -64,6 +64,7 @@ from explore_persona_space.backends.gcp import (
     GcpLaunchSecretsMissing,
     StaleNamedInstance,
     _classify_janitor_instance,
+    _gcp_status_to_poll_result,
     _instance_max_run_seconds,
     _stale_named_instance_or_none,
     attempt_id_for,
@@ -865,6 +866,33 @@ def test_resolve_provisioning_model_rejects_typo() -> None:
 
 
 # ---------------------------------------------------------------------------
+# _gcp_status_to_poll_result — PENDING is a live FLEX_START-queued state
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_status_to_poll_result_pending_maps_to_running_not_stalled() -> None:
+    """A FLEX_START-queued GCE instance (status PENDING) is a live,
+    keep-polling state — NOT the false-stalled routing that the /issue
+    Step 6d.2 poll pseudocode would convert to epm:failure + set-status
+    blocked (#782 / live repro #778). Mirrors reconnect_or_none, which
+    treats PENDING as live (not in _NONLIVE_INSTANCE_STATUSES)."""
+    result = _gcp_status_to_poll_result("PENDING")
+    assert result.status == "running"
+    assert result.current_phase == "pending"
+
+    # Case-insensitive on the raw GCE string (matches the up = status.upper()
+    # normalization the other branches rely on).
+    lower = _gcp_status_to_poll_result("pending")
+    assert lower.status == "running"
+    assert lower.current_phase == "pending"
+
+    # Regression guard: it must NOT fall through to the unknown_* stalled
+    # default (the pre-fix behavior that caused the false block).
+    assert result.current_phase != "unknown_pending"
+    assert result.status != "stalled"
+
+
+# ---------------------------------------------------------------------------
 # attempt_id_for
 # ---------------------------------------------------------------------------
 
@@ -1392,9 +1420,10 @@ def test_launch_populates_expected_artifacts_with_sentinel(no_marker_posts) -> N
     assert decl["issue"] == 137
     assert decl["sentinel_path"].endswith(".completion-sentinel.json")
     assert "att-fixed-001" in decl["sentinel_path"]
-    # Default git paths
-    assert "eval_results/issue_137/" in decl["git_paths"]
-    assert "figures/issue_137/" in decl["git_paths"]
+    # #790: this is a pure-hydra launch (_spec has no workload_cmd), so it
+    # declares NEITHER default git path — train.py runs with skip_eval=True and
+    # writes no figures during the run, so both were guaranteed false-FAILs.
+    assert decl["git_paths"] == []
     # Default HF data path threads the attempt id
     assert any("issue137_att-fixed-001/raw_completions/" in p for p in decl["hf_data_paths"]), decl
 
@@ -1422,10 +1451,11 @@ def test_expected_artifacts_declaration_workload_cmd_omits_guessed_hf_prefix() -
         attempt_id="att-fixed-001",
     )
     assert decl["hf_data_paths"] == []
-    # The keystone sentinel + the convention-stable git paths still gate.
+    # The keystone sentinel + the eval_results/ git path still gate.
     assert decl["sentinel_path"].endswith(".completion-sentinel.json")
-    assert "eval_results/issue_137/" in decl["git_paths"]
-    assert "figures/issue_137/" in decl["git_paths"]
+    # #790: custom_workload keeps eval_results/ (drivers commit it during the
+    # run) but drops the analyzer-generated figures/.
+    assert decl["git_paths"] == ["eval_results/issue_137/"]
     # An EXPLICIT caller declaration still threads through.
     decl_explicit = expected_artifacts_declaration(
         spec=_workload_spec(),
@@ -4840,6 +4870,35 @@ def test_launch_hydra_spec_marker_says_hydra() -> None:
 # ---------------------------------------------------------------------------
 
 
+def _b64_tar(members: dict[str, str]) -> str:
+    """Build the base64-encoded tar stream the #790 best-effort pull returns.
+
+    ``members`` maps a repo-relative path (e.g. ``eval_results/issue_588/x.json``)
+    to its text content. The remote command is
+    ``tar -c -C <workload_root>/eval_results issue_588 | base64 -w0``, so the tar
+    entry names are relative to the subdir's PARENT (``issue_588/x.json``) — the
+    same shape ``extractall(path=local_parent)`` lands under ``repo/eval_results/``.
+    Returns the ASCII base64 string ``GcloudRunResult.stdout`` would carry.
+    """
+    import base64 as _b64
+    import io as _io
+    import os as _os
+    import tarfile as _tarfile
+
+    buf = _io.BytesIO()
+    with _tarfile.open(fileobj=buf, mode="w") as tf:
+        for rel_path, content in members.items():
+            # Strip the leading top-level dir so the arcname is
+            # ``issue_<N>/<leaf>`` (relative to the tar's -C parent), matching
+            # what `tar -c -C <parent> <leaf>` produces on the remote.
+            arcname = _os.path.join(*rel_path.split("/")[1:])
+            data = content.encode("utf-8")
+            info = _tarfile.TarInfo(name=arcname)
+            info.size = len(data)
+            tf.addfile(info, _io.BytesIO(data))
+    return _b64.b64encode(buf.getvalue()).decode("ascii")
+
+
 def _fetch_fixture(
     tmp_path: Path, monkeypatch, *, ssh_results: list[GcloudRunResult]
 ) -> tuple[GcpBackend, _Runner, GcpConfig, Any, str]:
@@ -4883,12 +4942,20 @@ def test_fetch_results_sentinel_pull_uses_ssh_sudo_cat(tmp_path: Path, monkeypat
 
     sentinel_text = '{"phase": "done", "issue": 588, "attempt_id": "att-001"}\n'
     backend, runner, config, handle, sentinel_abs = _fetch_fixture(
-        tmp_path, monkeypatch, ssh_results=[GcloudRunResult(0, sentinel_text, "")]
+        tmp_path,
+        monkeypatch,
+        # 1 sentinel cat + 2 best-effort tar pulls (all ssh now, #790).
+        ssh_results=[
+            GcloudRunResult(0, sentinel_text, ""),
+            GcloudRunResult(0, _b64_tar({"eval_results/issue_588/x.json": "{}"}), ""),
+            GcloudRunResult(0, _b64_tar({"figures/issue_588/y.png": "png"}), ""),
+        ],
     )
     backend.fetch_results(handle)
 
     ssh_calls = [argv for argv in runner.calls if "ssh" in argv]
-    assert len(ssh_calls) == 1
+    # 1 sentinel cat + 2 best-effort tar pulls; NO scp calls (#790).
+    assert len(ssh_calls) == 3
     assert ssh_calls[0] == [
         "gcloud",
         "compute",
@@ -4901,11 +4968,10 @@ def test_fetch_results_sentinel_pull_uses_ssh_sudo_cat(tmp_path: Path, monkeypat
     ]
     # Captured stdout written verbatim to the declaration's local path.
     assert Path(sentinel_abs).read_text() == sentinel_text
-    # The sentinel is never scp'd; the 2 best-effort dir pulls stay scp.
+    # The best-effort dir pulls are ssh `sudo -n bash -o pipefail -c 'tar ... | base64'`,
+    # NOT scp; the mirror lands under the tmp repo root.
     scp_calls = [argv for argv in runner.calls if "scp" in argv]
-    assert len(scp_calls) == 2
-    assert all("--recurse" in argv for argv in scp_calls)
-    assert not any(sentinel_abs in token for argv in scp_calls for token in argv)
+    assert len(scp_calls) == 0
 
 
 def test_fetch_results_sentinel_pull_failure_logs_and_continues(
@@ -4920,15 +4986,117 @@ def test_fetch_results_sentinel_pull_failure_logs_and_continues(
     backend, runner, _config, handle, sentinel_abs = _fetch_fixture(
         tmp_path,
         monkeypatch,
-        ssh_results=[GcloudRunResult(1, "", "sudo: a password is required")],
+        # Failed sentinel cat + 2 best-effort tar pulls (all ssh now, #790).
+        ssh_results=[
+            GcloudRunResult(1, "", "sudo: a password is required"),
+            GcloudRunResult(0, _b64_tar({"eval_results/issue_588/x.json": "{}"}), ""),
+            GcloudRunResult(0, _b64_tar({"figures/issue_588/y.png": "png"}), ""),
+        ],
     )
     with caplog.at_level(logging.ERROR):
         backend.fetch_results(handle)  # must not raise
 
     assert not Path(sentinel_abs).exists()
     assert "confirm_artifacts will FAIL" in caplog.text
+    ssh_calls = [argv for argv in runner.calls if "ssh" in argv]
+    assert len(ssh_calls) == 3  # sentinel + 2 best-effort pulls still attempted
     scp_calls = [argv for argv in runner.calls if "scp" in argv]
-    assert len(scp_calls) == 2  # best-effort pulls still attempted
+    assert len(scp_calls) == 0  # best-effort pulls are ssh tar now (#790)
+
+
+def test_fetch_results_best_effort_dirs_use_sudo_tar(tmp_path: Path, monkeypatch) -> None:
+    """The best-effort dir pulls are `ssh ... sudo -n bash -o pipefail -c 'tar | base64'`.
+
+    The workload tree is root-owned (#588), so a plain scp Permission-denies
+    and the local mirror silently stays empty. The #790 fix pulls each dir as
+    a base64-encoded tar stream via `sudo -n` — the same grant the sentinel
+    pull uses — and extracts it under the local repo root. Positive functional
+    evidence: assert the extracted files land at
+    `repo/eval_results/issue_588/` + `repo/figures/issue_588/`, that the
+    transport is ssh (no scp), and that the remote command is the exact
+    pipefail-wrapped tar-base64 pipeline.
+    """
+    import shlex
+
+    from explore_persona_space.backends.gcp import workload_dir_for
+
+    sentinel_text = '{"phase": "done", "issue": 588, "attempt_id": "att-001"}\n'
+    backend, runner, config, handle, _sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[
+            GcloudRunResult(0, sentinel_text, ""),
+            GcloudRunResult(
+                0, _b64_tar({"eval_results/issue_588/run_result.json": '{"ok": 1}'}), ""
+            ),
+            GcloudRunResult(0, _b64_tar({"figures/issue_588/bar.png": "PNGDATA"}), ""),
+        ],
+    )
+    backend.fetch_results(handle)
+
+    # No scp at all; 1 sentinel cat + 2 tar pulls, all ssh.
+    scp_calls = [argv for argv in runner.calls if "scp" in argv]
+    assert len(scp_calls) == 0
+    ssh_calls = [argv for argv in runner.calls if "ssh" in argv]
+    assert len(ssh_calls) == 3
+
+    workload_root = workload_dir_for(config, 588)
+    tar_calls = ssh_calls[1:]  # the 2 best-effort dir pulls
+    eval_cmd = f"tar -c -C {shlex.quote(f'{workload_root}/eval_results')} issue_588 | base64 -w0"
+    fig_cmd = f"tar -c -C {shlex.quote(f'{workload_root}/figures')} issue_588 | base64 -w0"
+    assert tar_calls[0] == [
+        "gcloud",
+        "compute",
+        "ssh",
+        "eps-issue-588",
+        f"--command=sudo -n bash -o pipefail -c {shlex.quote(eval_cmd)}",
+        f"--configuration={config.gcloud_config}",
+        f"--project={config.project}",
+        "--zone=us-central1-a",
+    ]
+    assert tar_calls[1][4] == f"--command=sudo -n bash -o pipefail -c {shlex.quote(fig_cmd)}"
+
+    # The captured tar streams extract under the tmp repo root.
+    repo_root = tmp_path / "repo"
+    assert (repo_root / "eval_results/issue_588/run_result.json").read_text() == '{"ok": 1}'
+    assert (repo_root / "figures/issue_588/bar.png").read_text() == "PNGDATA"
+
+
+def test_fetch_results_best_effort_dir_missing_is_non_fatal(
+    tmp_path: Path, monkeypatch, caplog
+) -> None:
+    """A missing remote dir (tar rc != 0) logs a WARNING and does NOT raise.
+
+    This is the pipefail regression pin: the remote pipeline is wrapped in
+    `bash -o pipefail` precisely so a missing-dir `tar` failure propagates
+    through the `| base64` pipe instead of `base64 -w0` masking it with rc 0.
+    With pipefail the rc-guard fires (log + continue); WITHOUT it the pull
+    would return empty bytes and crash the local `tarfile.open`. The
+    missing-dir path is the COMMON case once item-4 removes figures/ from the
+    gate, so it must be non-fatal.
+    """
+    import logging
+
+    sentinel_text = '{"phase": "done", "issue": 588, "attempt_id": "att-001"}\n'
+    backend, _runner, _config, handle, sentinel_abs = _fetch_fixture(
+        tmp_path,
+        monkeypatch,
+        ssh_results=[
+            GcloudRunResult(0, sentinel_text, ""),
+            # eval_results present; figures/ missing (tar rc != 0 via pipefail).
+            GcloudRunResult(0, _b64_tar({"eval_results/issue_588/x.json": "{}"}), ""),
+            GcloudRunResult(1, "", "tar: issue_588: Cannot stat: No such file or directory"),
+        ],
+    )
+    with caplog.at_level(logging.WARNING):
+        backend.fetch_results(handle)  # must not raise
+
+    # The present dir still landed; the missing one logged + continued.
+    assert Path(sentinel_abs).read_text() == sentinel_text
+    assert (tmp_path / "repo/eval_results/issue_588/x.json").read_text() == "{}"
+    assert not (tmp_path / "repo/figures/issue_588").exists()
+    assert "best-effort sudo tar" in caplog.text
+    assert "figures/issue_588" in caplog.text
 
 
 def test_fetch_results_missing_attempt_id_returns_without_gcloud_calls(

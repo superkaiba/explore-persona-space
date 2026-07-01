@@ -16,6 +16,7 @@ from explore_persona_space.orchestrate.hub import (
     _is_storage_quota_403,
     _is_transient_upload_error,
     _retry_upload,
+    list_repo_files_complete,
     upload_dataset,
     upload_dataset_directory,
     upload_model,
@@ -530,3 +531,84 @@ class TestRetryUpload:
 
             assert mock_api.upload_folder.call_count == 2
             assert "evil_wrong_seed42" in result
+
+
+def _repo_files(*paths: str) -> list[RepoFile]:
+    """Build a list of RepoFile entries for the given paths (helper for the
+    list-retry tests — mirrors what a good ``list_repo_tree`` page yields)."""
+    return [RepoFile(path=p, size=1, blob_id="b", oid="o") for p in paths]
+
+
+class TestListRepoFilesRetry:
+    """Tests for ``list_repo_files_complete``'s transient-504 retry (#794).
+
+    The paginated ``list_repo_tree`` walk is wrapped in ``_retry_upload`` so a
+    504 on any cursor page of a large repo retries instead of turning a
+    successful upload's post-upload verify into a false failure. Non-transient
+    errors (404 / auth) still re-raise on attempt 1 — reads must never mask a
+    real fault. ``hub.time.sleep`` is patched so the suite stays fast.
+    """
+
+    def test_list_repo_files_complete_retries_transient_504(self):
+        """A cursor-page 504 on attempt 1, then the generator yields entries on
+        attempt 2 -> the sorted file list is returned, list_repo_tree called
+        twice (a full re-list per attempt), one sleep."""
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=[_http_err(504), _repo_files("b/x.json", "a/y.json")])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep:
+            result = list_repo_files_complete(api, "some/repo")
+        assert result == ["a/y.json", "b/x.json"]
+        assert api.list_repo_tree.call_count == 2
+        mock_sleep.assert_called_once()
+
+    def test_list_repo_files_complete_retries_429(self):
+        """A transient 429 (rate limit) on attempt 1, then success."""
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=[_http_err(429), _repo_files("f.json")])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep"):
+            result = list_repo_files_complete(api, "some/repo")
+        assert result == ["f.json"]
+        assert api.list_repo_tree.call_count == 2
+
+    def test_list_repo_files_complete_exhausts_retries(self):
+        """A 504 on EVERY attempt re-raises the final exception after
+        max_attempts (fail-loud, no swallow) — 6 calls, 5 sleeps — so a
+        genuinely persistent gateway outage still surfaces."""
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=[_http_err(504)] * 6)
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(HfHubHTTPError),
+        ):
+            list_repo_files_complete(api, "some/repo")
+        assert api.list_repo_tree.call_count == 6
+        assert mock_sleep.call_count == 5
+
+    def test_list_repo_files_complete_non_transient_raises_immediately(self):
+        """A non-transient 404 re-raises on attempt 1 (no retry loop) — reads
+        must not mask a real fault (missing repo / auth)."""
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=_http_err(404))
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(HfHubHTTPError),
+        ):
+            list_repo_files_complete(api, "some/repo")
+        assert api.list_repo_tree.call_count == 1
+        mock_sleep.assert_not_called()
+
+    def test_list_repo_files_complete_success_passthrough_filters_non_files(self):
+        """Happy-path passthrough: on the first attempt the generator yields a
+        mix of file + non-file entries; ``list_repo_files_complete`` returns the
+        sorted file paths only (non-files filtered by ``isinstance(entry,
+        RepoFile)``), calls ``list_repo_tree`` exactly ONCE, and never sleeps —
+        the unchanged success path costs no retries."""
+        non_file = Mock(spec=[])  # a non-RepoFile entry (folder / other) — must be filtered out
+        entries = [*_repo_files("b/x.json", "a/y.json"), non_file]
+        api = Mock()
+        api.list_repo_tree = Mock(return_value=iter(entries))
+        with patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep:
+            result = list_repo_files_complete(api, "some/repo")
+        assert result == ["a/y.json", "b/x.json"]  # sorted files only; non-file dropped
+        assert api.list_repo_tree.call_count == 1
+        mock_sleep.assert_not_called()

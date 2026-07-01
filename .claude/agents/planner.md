@@ -184,7 +184,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    - **(e) Producing issue not retracted / superseded:** check the producing task's status and any `epm:retracted` markers. An adapter from a task later marked `not-useful` or whose clean-result was retracted cannot be cited as a confirmed baseline without naming it.
    - **(f) Content identity across copies:** when the copy you VERIFIED is a local untracked file (e.g. a parent task's `data/` output, absent from every clone) AND the execution side will FETCH the artifact from HF (a shared mirror under the parent's `issue<M>_<slug>/...` path), the plan must name the content-identity mechanism — either an `EXPECTED_SHA256` pin table asserted at prefetch (covering files already present on the worker, not just fresh downloads) or a snapshot of the verified local inputs to an issue-OWNED `issue<N>_<slug>/inputs/` path that execution consumes instead of the parent's shared mirror. Resolution (check (e)) alone does NOT prove the mirror matches the verified copy: the HF mirror can be a silently different generation, and the divergence surfaces as a KeyError / wrong persona universe deep in the consumer after a full provision cycle is already spent (`.claude/rules/gotchas.md` § "HF mirror ≠ local-verified copy"; incident #600, 2026-06-11 — stale HF mirrors of #472's `R_train.json` + `centroids_L10.pt` crashed the GCP smoke run).
    - **(g) Application-scaling regime (reused LoRA adapters):** check (a) covers what was TRAINED; this check covers how the CURRENT stack will APPLY it — the two can diverge under an identical recipe. Read the reused adapter's `adapter_config.json` scaling fields (`use_rslora`, `lora_alpha`, `r`): the effective LoRA scale is classic `α/r` when the consuming stack ignores `use_rslora` but `α/√r` when it honors it (current vLLM+PEFT honor it), so a parent whose committed numbers were produced under one gauge can be unusable as fetched under the other. Before the design consumes the artifacts, require a 1-adapter apply-and-read parity probe that reproduces the parent's committed numbers on the CURRENT stack. A parent whose committed reads are UNREACHABLE at faithful scaling must be flagged, and the plan must pin the read gauge explicitly in §4 (which scaling the apply-and-read uses, and why it matches the parent's committed regime). (Incident #601, round 5: all 20 of #472's reused adapters passed checks (a)–(f) yet were unconditional marker-repeaters at faithful rsLoRA application, `α/√r ≈ 11.31` — the parent's committed numbers came from classic `α/r = 2.0` application; the mismatch passed every planning gate and surfaced only as a mid-run Phase-0 HALT.)
-   - **(h) Source resolution + target-backend fetchability (reused TRAINING-INPUT artifacts):** checks (a)–(g) above cover reused ADAPTERS / CHECKPOINTS; this check covers reused TRAINING-INPUT data — a parent's `train/*.jsonl` mix, an on-policy response cache, or an `eval_results/` JSON the new run consumes as a downstream INPUT. Verify BOTH: **(i) source resolution** — the file is reachable through EITHER HF resolution via `huggingface_hub.list_repo_files` at the cited path (training mixes / on-policy caches / HF-uploaded eval JSONs) OR **git-tree reachability** for a committed `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- eval_results/issue_<M>/<file>` returns it — in-git eval JSONs are a sanctioned reuse source, the bullet above this step-5 list, and the git-clone-only lanes pick them up via the clone, so do NOT demand HF presence for them); AND **(ii) target-backend fetchability** — the backend named in §9 can actually STAGE it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈ (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/` — the GCE startup `git clone`s the repo at the cited branch (so committed `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo files need an explicit `snapshot_download` step in the workload — so a mix the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and the pre-train `assert data_path.exists()` crashes phase2. The check FAILS when EITHER (i) OR (ii) fails (e.g. HF-resolved but a CDN/region/`HF_TOKEN` gate stops the §9 lane from staging it). On a MISS, do NOT record the file as a confirmed reuse: either (a) upload the mix to HF first and cite the HF path, or (b) add a self-contained regen phase in §4 that rebuilds the mix on the worker from the parent's deterministic build blocks, and flag it `must-rebuild` in §12 Assumptions. Verify this for EVERY reused training-input file the design loads, BEFORE recording it in §10 / §11. (Incident #734 round-4: a reused parent training mix was on neither HF repo; the plan passed planning + 3 review rounds and crashed phase2 at the pre-train assert on the GCP lane because the lane cannot stage a VM-local-only mix.)
+   - **(h) Source resolution + consumer-exact path layout + target-backend fetchability (reused TRAINING-INPUT artifacts):** checks (a)–(g) above cover reused ADAPTERS / CHECKPOINTS; this check covers reused TRAINING-INPUT data — a parent's `train/*.jsonl` mix, an on-policy response cache, or an `eval_results/` JSON the new run consumes as a downstream INPUT. Verify ALL THREE: **(i) source resolution** — the file is reachable through EITHER HF resolution via `huggingface_hub.list_repo_files` at the cited path (training mixes / on-policy caches / HF-uploaded eval JSONs) OR **git-tree reachability** for a committed `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- eval_results/issue_<M>/<file>` returns it — in-git eval JSONs are a sanctioned reuse source, the bullet above this step-5 list, and the git-clone-only lanes pick them up via the clone, so do NOT demand HF presence for them); AND **(ii) consumer-exact path layout** — the plan NAMES the exact path/filename pattern the NEW consumer (dispatcher / driver / eval / training script) will assert-or-open and confirms the reused parent file(s) resolve at THAT pattern (a `list_repo_files` glob on HF, or a `git ls-tree` glob for a committed `eval_results/...`), not merely that the parent repo/dir exists — a parent shipping files under a different naming convention (#474 `i474_loc_A1.jsonl`) than the consumer asserts (a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl`) FAILS this leg even though the dir resolves under (i); AND **(iii) target-backend fetchability** — the backend named in §9 can actually STAGE it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈ (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/` — the GCE startup `git clone`s the repo at the cited branch (so committed `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo files need an explicit `snapshot_download` step in the workload — so a mix the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and the pre-train `assert data_path.exists()` crashes phase2. The check FAILS when ANY of (i)/(ii)/(iii) fails (e.g. HF-resolved but a CDN/region/`HF_TOKEN` gate stops the §9 lane from staging it; or the parent repo resolves but no file matches the consumer-asserted path pattern). On a MISS, do NOT record the file as a confirmed reuse: either (a) rename / re-upload the parent file(s) to the consumer-asserted path pattern and cite that path, (b) adjust the new consumer to open the parent's actual path layout (naming the parent pattern in §4), or (c) add a self-contained regen phase in §4 that rebuilds the mix on the worker under the consumer-asserted paths from the parent's deterministic build blocks, and flag it `must-rebuild` in §12 Assumptions. Verify all three legs for EVERY reused training-input file the design loads, BEFORE recording it in §10 / §11. (Incident #734 round-4: a reused parent training mix was on neither HF repo, AND the parent's naming convention (#474 `i474_loc_A1.jsonl`) differed from the consumer's asserted path (a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl`); the plan passed planning + 3 review rounds and crashed phase2 at the pre-train assert on the GCP lane because the lane cannot stage a VM-local-only mix AND no file resolved at the asserted path.)
 
    On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(h) will be REVISEd by the critic.
 
@@ -220,13 +220,13 @@ reads at the approval gate. Everything else lives below the fold and gets
 read on demand (by the implementer, the experimenter, the reviewer, or by
 the user when they want detail).
 
-Generate the plan as a single HTML file at
-`.claude/plans/issue-<N>.html` so the Plan Summary can render in a
-distinct visual block at the top (e.g. a colored card), with the
-remaining sections in a normal document below or inside a
-`<details>` element. The dashboard's `RichBody` will sanitize and
-display the HTML directly; the user opens
-`https://eps.superkaiba.com/tasks/<N><uuid>` to review.
+Generate the plan as a single markdown file at
+`.claude/plans/issue-<N>.md`. The Plan Summary is the first H2 the user
+reads at the approval gate; the remaining sections live below it. The
+task-workflow API persists the plan into the task folder as
+`plans/v{K}.md` via `task.py new-plan-version <N> --file <path>`; the
+`.claude/plans/issue-<N>.md` copy is the working draft the planner
+writes before hand-off.
 
 ### 0.0 TL;DR (plain English — the user reads this first)
 
@@ -253,8 +253,8 @@ autonomous mode (`EPM_AUTONOMOUS_SESSION=1`), the planner does NOT
 propose a Goal refinement — the Goal is contract by the time the
 planner runs; skip and continue with the existing Goal.
 
-Render as a `<section class="plan-tldr">` block ABOVE the Plan Summary so
-the user reads `## Goal` + TL;DR + Plan Summary together in 30 seconds.
+Place the §0.0 TL;DR block ABOVE the Plan Summary so the user reads
+`## Goal` + TL;DR + Plan Summary together in 30 seconds.
 
 - **What I'll run:** What does the experiment do, in plain words? *NOT*
   "Qwen-2.5-7B LoRA r=16 SFT on persona-tagged Tulu mix." Instead:
@@ -285,8 +285,8 @@ from your memory of it — single pass, no iteration.
 ### 0. Plan Summary (technical version — for the implementer, experimenter, reviewer)
 
 A self-contained, ~150-word block that answers the seven questions
-below. Render it as a `<section class="plan-summary">` with bolded
-labels at the start of each line so it scans in 30 seconds. This is the
+below. Use bolded labels at the start of each line so it scans in 30
+seconds. This is the
 technical companion to §0.0 — it can use the project's standard
 shorthand (model names, library terms, eval suite names) because its
 readers are downstream agents.
@@ -508,7 +508,7 @@ parallelism axis and pick the spec accordingly:
 | **Activation capture (HBM-bound)** | A 7B forward that captures hidden states — all-layer residual streams, Welford activation accumulation, per-token activation dumps | Pick an intent clearing ≥40 GB HBM: `lora-7b` (train + capture) or `capture-7b` (eval + capture, #752). NEVER the L4 `eval`/`debug` default — 7B bf16 weights (~14 GB) + captured activations OOM it (#666, #744). Size the activation footprint per the VM-footprint carve-out below if the capture also materializes a large store on the VM analysis side. |
 | **Data parallelism (FSDP/ZeRO-3)** | Full fine-tune of a 7B+ model | `ft-7b` (4× H100) over `lora-7b` (1× H100) when fidelity permits |
 | **Batched inference (vLLM)** | Eval/generation with K samples per prompt or N prompts | One pod with the largest sensible GPU count, single `LLM.generate()` call — never loop sequentially |
-| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. |
+| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. (This is SIMULTANEOUS shared-nothing parallelism within ONE phase — orthogonal to per-phase GPU-width right-sizing below, which stops a NARROW phase from holding the WIDE phase's pod across a SEQUENCE of differently-sized phases; that rule is about phases of DIFFERENT widths run SEQUENTIALLY, NOT about splitting a single wide-parallel phase.) |
 | **Pipeline parallelism** | A → B → C where B doesn't need all of A | State the dependency DAG and start independent branches concurrently |
 
 State explicitly in the plan: (a) the GPU spec chosen, (b) the parallelism
@@ -574,6 +574,60 @@ metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
 off-pod execution avoids. Incident #664: an 8×H200 pod held idle ~12h in a
 terminal per-file raw-completions upload phase — ~$530, 0% GPU. This is a
 plan-time scheduling rule, NOT a mid-run cost gate.)
+
+**Per-phase GPU-WIDTH right-sizing — a NARROW GPU phase must not hold the
+run's PEAK-width pod.** The CPU-only rules above govern GPU-vs-no-GPU
+placement; this rule governs GPU WIDTH ACROSS the GPU phases of a MULTI-PHASE
+run. Size each GPU phase's width SEPARATELY — do NOT provision one pod at the
+peak-phase width and hold it for the whole run. A GPU phase that needs
+MATERIALLY FEWER GPUs than the run's peak width — a ≤7B forward /
+activation-extract needing ~1–3 GPUs, a ≤7B single-GPU vLLM generation, a
+per-cell probe read — AND runs longer than ~15–30 min (the SAME floor as the
+CPU-only-phase rule above) MUST NOT hold the peak-width pod. Provision the
+wide pod ONLY for the wide phase; run the preceding / trailing narrow phases
+either on a narrow pod (the SMALLEST intent that fits the phase — e.g.
+`capture-7b` / `lora-7b` / `eval`) or off-pod, then downsize-or-release before
+the narrow phase starts. A same-pod `pod.py stop` + `resume` preserves the
+SAME GPU spec, so a true WIDTH change is either terminate + a fresh narrow
+provision OR provisioning a separate narrow pod up front and the wide pod only
+for the wide phase (state which path the plan takes).
+
+**Weigh the tradeoff explicitly — the rule is threshold-gated, not naive.**
+Re-provisioning a second pod is not free: it costs provisioning latency and
+DOUBLES RunPod supply-constraint exposure (a second pod can fail to schedule
+on a constrained lane), plus extra pod-lifecycle bookkeeping. So a SHORT
+narrow phase (< ~15–30 min) MAY hold the peak-width pod — the re-provision
+churn is not worth the idle-GPU savings on a short window. A LONG narrow phase
+(or a long API-bound wait) MUST release/downsize: the idle-GPU burn on a wide
+pod (8× H100 ≈ $25/hr at ≤5% util — the #778 extract held ≤5% util for 38 min)
+then dominates the re-provision cost. State the weighing in the plan: name the
+phase's expected wall-time, its GPU width, and — for any phase held on the wide
+pod — why the re-provision cost exceeds the idle-$ saved.
+
+**API-bound judge phase → release the GPU pod during the (free, off-pod,
+deadline-bounded) batch wait.** An Anthropic-Batch-API graded-judge phase uses
+~0 GPU. It is already covered by the CPU-only / judge-API-only rule above (it
+MUST NOT hold a GPU pod), and the `batch_judge` poll is a FREE, off-pod,
+deadline-bounded self-harvest that runs on the VM / orchestrator, NOT on the
+pod (CLAUDE.md § "A FREE, no-data-loss path beats parking"; #658/#663). The
+plan-time hook: SEQUENCE the pod release (terminate / stop after the last GPU
+phase persists its artifacts per the Upload Policy) BEFORE the judge phase, so
+the deadline-bounded `batch_judge` poll waits off-pod with no GPU held. A plan
+that runs a judge phase on a still-held wide pod is the same idle-but-billing
+defect as a terminal upload phase (#664).
+
+This is DISTINCT from the **Sweep parallelism** row above (one multi-GPU pod
+for N shared-nothing seeds/conditions that EACH need the pod SIMULTANEOUSLY):
+that rule keeps `CUDA_VISIBLE_DEVICES`-sharded work on ONE wide pod because
+every shard needs a slice of it at once. This rule is about a run whose PHASES
+need DIFFERENT widths SEQUENTIALLY — it NEVER splits a single wide-parallel
+phase, it only stops a narrow phase from riding the wide phase's pod. State in
+the plan, per GPU phase: its GPU width and which phase justifies the run's PEAK
+width. (Incident #778: an 8× H100 pod held ≤5% util for 38 min through extract
++ the API-bound judge phase at ~$25/hr — only the 24-run finetuning fan-out
+needed 8-wide; same idle-but-billing family as the #664 terminal-upload
+spend-leak. Cross-refs: `critic.md` Methodology lens item 10(iv); CLAUDE.md
+§ "CPU-only phases don't hold GPU pods".)
 
 **Compute-character carve-out to the OFF-POD default — a gradient-descent
 fit is GPU-worthy, not cheap CPU stats.** The OFF-POD-VM default above is

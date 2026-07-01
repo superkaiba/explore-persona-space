@@ -808,7 +808,8 @@ def _ssh_probe(
 ) -> dict[str, str]:
     """One SSH round-trip — returns dict with keys pid_alive,
     marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail,
-    cell_log_tail, phase_log_mtime_epoch, gpu_util.
+    cell_log_tail, phase_log_mtime_epoch, phase_log_tail,
+    shard_log_mtime_epoch, shard_log_tail, gpu_util.
 
     Batches into a single heredoc to keep the SSH cost to one connection.
 
@@ -848,6 +849,13 @@ def _ssh_probe(
       under ``<log_path%.log>/cell_*.log`` (nested), per-phase logs
       live flat at ``/workspace/logs/issue-<N>-<phase>.log``; the two
       globs don't overlap.
+    * ``phase_log_tail`` — tail of that same freshest per-phase log; the
+      #791 sibling of ``cell_log_tail``. Consumed by
+      ``_tail_excerpt_and_crash_signature`` so the notification excerpt +
+      the ``status=dead`` crash signature track the freshest per-phase log
+      when a later run arm writes only to it, instead of a stale main-log
+      tail. ``""`` when no per-phase log exists (same degrade as
+      ``cell_log_tail``).
     * ``shard_log_mtime_epoch`` — max mtime over repo-rooted shard /
       phase / per-job logs (incidents #488 + #521). Covers three extra
       layouts neither the cell-log nor the per-phase-log probe sees:
@@ -866,6 +874,10 @@ def _ssh_probe(
       covered layout exists. All patterns share an mtime reduction
       (max), so a healthy run keeping ANY layout fresh stays in
       ``running``.
+    * ``shard_log_tail`` — tail of that same freshest shard/phase/per-job
+      log; the #791 sibling of ``cell_log_tail`` / ``phase_log_tail``,
+      consumed by ``_tail_excerpt_and_crash_signature`` the same way.
+      ``""`` when no covered layout exists.
     * ``gpu_util`` — comma-separated per-GPU ``utilization.gpu``
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
@@ -936,15 +948,30 @@ def _ssh_probe(
     # | tail -1` yields the max epoch, or "" when no per-phase log
     # exists; the `echo` then prints "PHASE_LOG_MTIME_EPOCH=0" (parsed
     # as 0 by the caller).
+    # We select the SINGLE freshest matching file (by `stat -c '%Y %n' | sort
+    # -n | tail -1`, mirroring `cell_probe` at line 918) and emit BOTH its
+    # mtime AND its tail between `PHASE_TAIL_START`/`PHASE_TAIL_END`, so the
+    # caller has the staleness signal AND a tail to surface / scan for a crash
+    # signature when the per-phase log is the freshest one (#791: the tail
+    # excerpt + `status=dead` crash signature were pinned to the main log even
+    # when a later run arm wrote only to a per-phase log). No glob change —
+    # reuse the existing narrow `issue-<N>-*` pattern (vetted #468) so a
+    # cross-pod log on shared FS can never pollute the tail.
     phase_log_probe = (
-        f"PHASE_LOG_MAX=$("
+        f"PHASE_FRESHEST=$("
         f"shopt -s nullglob; "
         f"for f in /workspace/logs/issue-{issue}-*.log; do "
         f'  case "$f" in *.processed|*.json) continue ;; esac; '
         f'  case "$f" in /workspace/logs/issue-{issue}.log) continue ;; esac; '
-        f'  stat -c %Y "$f" 2>/dev/null; '
+        f'  stat -c "%Y %n" "$f" 2>/dev/null; '
         f"done | sort -n | tail -1); "
+        f'PHASE_LOG_MAX="${{PHASE_FRESHEST%% *}}"; '
+        f'PHASE_LOG_PATH="${{PHASE_FRESHEST#* }}"; '
         f'echo "PHASE_LOG_MTIME_EPOCH=${{PHASE_LOG_MAX:-0}}"; '
+        f"echo PHASE_TAIL_START; "
+        f'if [ -n "$PHASE_LOG_PATH" ] && [ -f "$PHASE_LOG_PATH" ]; then '
+        f'tail -500 "$PHASE_LOG_PATH"; fi; '
+        f"echo PHASE_TAIL_END; "
     )
     # Shard-log probe (#488): the i488 multi-GPU layout writes per-GPU
     # shard logs under `/workspace/explore-persona-space/logs/issue_<N>/
@@ -971,17 +998,28 @@ def _ssh_probe(
     # SHARD_LOG max. The two extra globs keep the issue-number match
     # exact (`issue_<N>` or `issue_<N>_<suffix>`; a bare `issue_<N>*`
     # would let issue 5 match issue 521's directories).
+    # Emit the freshest matching shard log's mtime AND its tail between
+    # `SHARD_TAIL_START`/`SHARD_TAIL_END` (same shape as `cell_probe` /
+    # `phase_log_probe`; #791). No glob change — reuse the existing narrow
+    # `issue_<N>` patterns (vetted #488/#521) so a cross-pod log never
+    # pollutes the tail.
     shard_log_probe = (
-        f"SHARD_LOG_MAX=$("
+        f"SHARD_FRESHEST=$("
         f"shopt -s nullglob; "
         f"for f in /workspace/explore-persona-space/logs/issue_{issue}/*.log "
         f"         /workspace/explore-persona-space/logs/issue_{issue}_*.log "
         f"         /workspace/explore-persona-space/eval_results/issue_{issue}/logs/*.log "
         f"         /workspace/explore-persona-space/eval_results/issue_{issue}_*/logs/*.log; do "
         f'  case "$f" in *.processed|*.json) continue ;; esac; '
-        f'  stat -c %Y "$f" 2>/dev/null; '
+        f'  stat -c "%Y %n" "$f" 2>/dev/null; '
         f"done | sort -n | tail -1); "
+        f'SHARD_LOG_MAX="${{SHARD_FRESHEST%% *}}"; '
+        f'SHARD_LOG_PATH="${{SHARD_FRESHEST#* }}"; '
         f'echo "SHARD_LOG_MTIME_EPOCH=${{SHARD_LOG_MAX:-0}}"; '
+        f"echo SHARD_TAIL_START; "
+        f'if [ -n "$SHARD_LOG_PATH" ] && [ -f "$SHARD_LOG_PATH" ]; then '
+        f'tail -500 "$SHARD_LOG_PATH"; fi; '
+        f"echo SHARD_TAIL_END; "
     )
     # GPU util probe (#468): fail-safe to "unknown" so a missing /
     # erroring nvidia-smi never declares stalled by itself (the
@@ -1127,7 +1165,9 @@ def _ssh_probe(
             "log_tail": "",
             "cell_log_tail": "",
             "phase_log_mtime_epoch": "0",
+            "phase_log_tail": "",
             "shard_log_mtime_epoch": "0",
+            "shard_log_tail": "",
             "gpu_util": "unknown",
             "zombie_gpu_pids": "",
             "session_cpu_secs": "unknown",
@@ -1174,42 +1214,52 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "log_tail": "",
         "cell_log_tail": "",
         "phase_log_mtime_epoch": "0",
+        "phase_log_tail": "",
         "shard_log_mtime_epoch": "0",
+        "shard_log_tail": "",
         "gpu_util": "unknown",
         "zombie_gpu_pids": "",
         "session_cpu_secs": "unknown",
         "results_sentinel_present": "0",
     }
-    tail_lines: list[str] = []
-    cell_tail_lines: list[str] = []
-    in_tail = False
-    in_cell_tail = False
+    # Each multi-line tail block is delimited by its own START/END sentinel
+    # (``TAIL_START``/``END``, ``CELL_TAIL_START``/``END``, and the #791
+    # ``PHASE_TAIL``/``SHARD_TAIL`` pairs). The blocks never nest (the probe
+    # emits them sequentially), so at most one is active at a time. A
+    # data-driven table (sentinel -> accumulator) keeps the per-line dispatch
+    # a single lookup — adding a tail block is a table row, not another
+    # if-branch (which is what pushed this past the C901 cap in #791).
+    tail_accumulators: dict[str, list[str]] = {
+        "log_tail": [],
+        "cell_log_tail": [],
+        "phase_log_tail": [],
+        "shard_log_tail": [],
+    }
+    tail_starts = {
+        "TAIL_START": "log_tail",
+        "CELL_TAIL_START": "cell_log_tail",
+        "PHASE_TAIL_START": "phase_log_tail",
+        "SHARD_TAIL_START": "shard_log_tail",
+    }
+    tail_ends = {"TAIL_END", "CELL_TAIL_END", "PHASE_TAIL_END", "SHARD_TAIL_END"}
+    active: list[str] | None = None
     for line in stdout.splitlines():
-        if line == "TAIL_START":
-            in_tail = True
+        if line in tail_starts:
+            active = tail_accumulators[tail_starts[line]]
             continue
-        if line == "TAIL_END":
-            in_tail = False
+        if line in tail_ends:
+            active = None
             continue
-        if line == "CELL_TAIL_START":
-            in_cell_tail = True
-            continue
-        if line == "CELL_TAIL_END":
-            in_cell_tail = False
-            continue
-        if in_tail:
-            tail_lines.append(line)
-            continue
-        if in_cell_tail:
-            cell_tail_lines.append(line)
+        if active is not None:
+            active.append(line)
             continue
         # Dispatch on the `KEY=value` prefix; store under the lowercased key.
         for key in _PROBE_SCALAR_KEYS:
             if line.startswith(f"{key}="):
                 parsed[key.lower()] = line.split("=", 1)[1].strip()
                 break
-    parsed["log_tail"] = "\n".join(tail_lines)
-    parsed["cell_log_tail"] = "\n".join(cell_tail_lines)
+    for tail_key, lines in tail_accumulators.items():
+        parsed[tail_key] = "\n".join(lines)
     return parsed
 
 
@@ -2306,14 +2356,37 @@ def _log_staleness_secs(
 
 
 def _tail_excerpt_and_crash_signature(
-    probe: dict[str, str], *, status: str, mtime_epoch: int, cell_mtime_epoch: int
+    probe: dict[str, str],
+    *,
+    status: str,
+    mtime_epoch: int,
+    cell_mtime_epoch: int,
+    phase_log_mtime_epoch: int = 0,
+    shard_log_mtime_epoch: int = 0,
 ) -> tuple[str, str | None]:
     """Slice the (5-line excerpt, WIDE crash signature) from the freshest log tail.
 
-    The fresher log (cell tail when cell logs exist AND are fresher than the main
-    log, else the main-log tail) is the WIDE 500-line surface the probe already
-    fetched. The notification excerpt is its last 5 lines (unchanged behavior).
-    The #775 ``crash_signature`` is the WHOLE wide tail on a ``status=="dead"``
+    The fresher log is the WIDE 500-line surface the probe already fetched.
+    #791: the freshest is selected by mtime-argmax over ALL FOUR log layouts —
+    {main, cell, phase, shard} — not just {main, cell}. Before #791 the excerpt
+    + crash signature were pinned to {main, cell}, so a multi-arm run whose later
+    arm wrote ONLY to a per-phase (``issue-<N>-<arm>.log``) or shard
+    (``logs/issue_<N>/*.log``) layout surfaced a STALE main-log tail — the
+    staleness verdict already unioned all four layouts (#468/#488), but the tail
+    excerpt (notifications) + the ``status=dead`` crash signature (which feeds
+    the CUDA-IMA / OUR_CODE_FRAME failover predicates in ``backend_poll``) did
+    not, so a watcher acted on the wrong surface.
+
+    Selection: pick the source with the largest mtime among those with a
+    NON-EMPTY tail; on a tie or when no fresher source has a tail, fall back to
+    the main-log tail (unchanged behavior for non-cell/non-phase/non-shard runs,
+    and for a run whose only tail is the main log). An empty tail is never
+    selected even when its mtime is the freshest, so a fresh-but-empty phase log
+    (e.g. just-created, nothing written yet) does not blank out a populated
+    main-log excerpt.
+
+    The notification excerpt is the freshest tail's last 5 lines. The #775
+    ``crash_signature`` is the WHOLE freshest wide tail on a ``status=="dead"``
     poll (``None`` otherwise) — NOT the 5-line excerpt, which truncates a 20-50
     line vLLM CUDA-IMA traceback so a signature match on it would silently never
     fire. The whole wide tail is stored so the failover predicate can ALSO scan
@@ -2321,10 +2394,21 @@ def _tail_excerpt_and_crash_signature(
     :func:`poll_once` so the slice logic is unit-testable without driving the
     full poller (the #775 B2 test binds to THIS helper).
     """
-    if cell_mtime_epoch > 0 and cell_mtime_epoch > mtime_epoch:
-        wide_tail = probe["cell_log_tail"]
-    else:
-        wide_tail = probe["log_tail"]
+    candidates = [
+        (mtime_epoch, probe["log_tail"]),
+        (cell_mtime_epoch, probe.get("cell_log_tail", "")),
+        (phase_log_mtime_epoch, probe.get("phase_log_tail", "")),
+        (shard_log_mtime_epoch, probe.get("shard_log_tail", "")),
+    ]
+    # Pick the freshest source with a NON-EMPTY tail. `max` returns the FIRST
+    # element on an mtime tie, and `log_tail` (the main log) is first in the
+    # list, so a tie deterministically resolves to the main log. When no source
+    # has a tail, `default` falls back to the main-log tail.
+    _, wide_tail = max(
+        ((m, t) for m, t in candidates if t),
+        default=(mtime_epoch, probe["log_tail"]),
+        key=lambda mt: mt[0],
+    )
     tail_excerpt = "\n".join(wide_tail.splitlines()[-5:])
     crash_signature = wide_tail if status == "dead" else None
     return tail_excerpt, crash_signature
@@ -2728,7 +2812,12 @@ def poll_once(
     # both are zero (no logs yet) or the main log is fresher, fall back
     # to the main-log tail (preserves prior behavior for non-cell runs).
     tail_excerpt, crash_signature = _tail_excerpt_and_crash_signature(
-        probe, status=status, mtime_epoch=mtime_epoch, cell_mtime_epoch=cell_mtime_epoch
+        probe,
+        status=status,
+        mtime_epoch=mtime_epoch,
+        cell_mtime_epoch=cell_mtime_epoch,
+        phase_log_mtime_epoch=phase_log_mtime_epoch,
+        shard_log_mtime_epoch=shard_log_mtime_epoch,
     )
     return PollResult(
         status=status,

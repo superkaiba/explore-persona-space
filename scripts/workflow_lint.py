@@ -3431,6 +3431,51 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the compute-shape-vs-dispatcher review lens (#806) is absent
+    from EITHER code-reviewer agent file.
+
+    Task #779 r6 PASSed a diff whose plan §9 declared 8xH100 data-parallelism
+    against a `--gpu-id`-only dispatcher; the 8-GPU pod ran on 1 GPU with 7
+    idle (the #664 spend-leak). The fix added a Step 0.67 code-review lens +
+    a `compute-shape-mismatch` blocker tag to BOTH the Claude reviewer and its
+    Codex twin. This check pins that the lens + tag stay in both files so a
+    future refactor cannot silently strip one and re-open the gap (both
+    reviewers must face the same bar).
+
+    Two required tokens per file: the Step-0.67 heading marker
+    ``Compute-shape-vs-dispatcher`` and the blocker tag literal
+    ``compute-shape-mismatch``. ``repo_root`` is a unit-test override hook;
+    production callers pass None (canonical repo root). Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    required = ("Compute-shape-vs-dispatcher", "compute-shape-mismatch")
+    files = (
+        root / ".claude" / "agents" / "code-reviewer.md",
+        root / ".claude" / "agents" / "codex-code-reviewer.md",
+    )
+    errors: list[str] = []
+    for p in files:
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #806 compute-shape-vs-dispatcher review "
+                f"lens must live in both code-reviewer agent files."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the compute-shape-vs-dispatcher lens token "
+                    f"{token!r} (#806). The Step 0.67 lens + `compute-shape-mismatch` "
+                    f"blocker tag must be present in BOTH code-reviewer.md and "
+                    f"codex-code-reviewer.md so both reviewers catch a plan-declared "
+                    f"DP shape the dispatcher does not expose (incident #779 r6)."
+                )
+    return errors
+
+
 # `--check-lessons-index`: every `.claude/rules/*.md` (except LESSONS.md
 # itself) must have exactly one matching row in `.claude/rules/LESSONS.md`, and
 # every row in LESSONS.md must point at an existing rule file. Closes the
@@ -3445,7 +3490,7 @@ _LESSONS_ROW_RE = re.compile(
 )
 
 
-_LESSONS_MAX_BYTES = 6000  # leanness cap: ~1500 tokens always-on
+_LESSONS_MAX_BYTES = 7500  # leanness cap: ~1900 tokens always-on
 
 
 def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
@@ -3851,6 +3896,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-compute-shape-review-lens",
+        action="store_true",
+        help="FAIL if the #806 compute-shape-vs-dispatcher review lens (Step "
+        "0.67 heading + `compute-shape-mismatch` blocker tag) is absent from "
+        "EITHER .claude/agents/code-reviewer.md or codex-code-reviewer.md. "
+        "Pins that both reviewers check a plan-declared data-parallel shape "
+        "against the dispatcher's actual capability (incident #779 r6). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-judge-model-pins",
         action="store_true",
         help="Walk scripts/**/*.py, scripts/**/*.sh, "
@@ -3903,6 +3958,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_no_workflow_improver_spawn
         or args.check_gate_ids_unique
         or args.check_lessons_index
+        or args.check_compute_shape_review_lens
         or args.check_judge_model_pins
     )
 
@@ -3966,6 +4022,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
         errors.extend(check_lessons_index())
+    if args.check_compute_shape_review_lens or no_flags:
+        errors.extend(check_compute_shape_review_lens())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
 

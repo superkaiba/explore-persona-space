@@ -803,6 +803,21 @@ specific findings. Treat it as a punch list:
 1. Read the verdict in full. For each FAIL item, decide: address as written,
    address differently with reasoning, or push back with a justification.
 2. Make targeted edits — do NOT rewrite unrelated code on a revision round.
+   **Class-hardening carve-out (this is NOT a licence to rewrite unrelated
+   code — it scopes the "targeted" edit to the whole bug CLASS the reviewer
+   named):** when a FAIL item names a bug CLASS, or the reviewer's
+   `### Bug-class sweep: <class>` heading enumerated sibling instances of the
+   finding, fix EVERY named load-bearing sibling this round — not just the top
+   `file.py:LINE`. Fixing the cited instance while leaving an enumerated
+   load-bearing sibling is the whack-a-mole failure mode Step 3.7 exists to
+   stop. Before returning, run a one-line self-sweep grep of the just-fixed
+   pattern across the touched subsystem (e.g.
+   `rg 'parsed\.get\("score", 0\)' <touched_dir>`) to confirm no un-fixed
+   sibling of the class remains, and report the grep command + its (ideally
+   empty) result under `### (c) How to verify`. This carve-out does NOT
+   authorize speculative refactors or fixing classes the reviewer did NOT name
+   — it applies ONLY to a class the FAIL item or a `### Bug-class sweep`
+   heading explicitly enumerated.
 3. Re-run lint + dry-run.
 4. Commit, push, post `<!-- epm:experiment-implementation v<n+1> -->`.
 
@@ -886,6 +901,7 @@ issue #N:
   `tests/` path + the input that trips the guard + the expected raise /
   value) and confirm it fails pre-fix / passes post-fix. Skip this line
   only when the round added no permanent-invariant BLOCKER fix.
+- **Bug-class self-sweep** (REQUIRED when this round fixed a finding whose reviewer verdict carried a `### Bug-class sweep: <class>` heading, or a FAIL item that named a bug CLASS): cite the one-line self-sweep grep of the just-fixed pattern across the touched subsystem (per the revision-round class-hardening carve-out) and its (ideally empty) result, confirming no un-fixed load-bearing sibling of the class remains. Skip this line only when the round fixed no named bug class.
 - **End-to-end test commands** (≥1 happy path + ≥2 distinct error/edge cases for non-trivial features): list the exact commands the user can run plus what each output should look like. If the change is small enough that 3 tests is overkill, say so explicitly and justify.
 - **Pod-side dispatcher validated through `poll_pipeline.py`** (REQUIRED if this round added or modified a pod-side dispatcher with an end-of-run sentinel): cite the `## Smoke run` evidence that the poller PARSED the sentinel (post-smoke `grep -c missing /tmp/poll.log == 0`, sentinel renamed `.processed`, OR a dry-run of `_parse_sentinel` on the written file) AND that the poller detected `phase=done` (`current_phase: done` in poll output). A smoke run that only invokes the dispatcher directly via SSH does NOT satisfy this — `[phase=done]` emission + `_SENTINEL_REQUIRED_KEYS` conformance are invisible without going through the poller. Skip this line only when the change is dispatcher-free.
 - **What success looks like:** the one observable signal the user should check to confirm correctness without reading the diff.

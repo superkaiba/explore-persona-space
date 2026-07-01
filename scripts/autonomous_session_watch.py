@@ -202,7 +202,17 @@ and pass 6 (session-reconcile), all before the GC pass:
    only touches issue-MAPPED sessions. This pass stops an unmapped EPS-cwd
    session whose resolved Claude transcript (per-wrapper-pid via
    ``session_resolver``) has been idle >= ``EPM_UNMAPPED_IDLE_REAP_S``
-   (default 12h) on >= ``threshold`` consecutive checks. NEVER touches: the
+   (default 12h) on >= ``threshold`` consecutive checks. #720 SUBCLASS: an
+   unmapped session whose LAST-mapped task was TERMINAL — the "zombie session
+   on a completed task" ghost class (respawn pass deletes ``issue-<N>.json``
+   at terminal -> session unmapped -> repo-root cwd can't re-map it) — is
+   reaped on the SHORT ``LAST_MAPPED_TERMINAL_REAP_S`` window (default 30 min,
+   worst case 30 min + 2 ticks = 50 min), NOT the 12h default, via the #720
+   breadcrumb + the two protected-class guards in ``_effective_idle_reap_s``.
+   This is the home for the completed-task-session reap (#795 verified it: the
+   *reconcile* pass cannot see this class — it is unmapped by the time reconcile
+   runs — so the idle-unmapped short window owns it; no reconcile-pass change).
+   NEVER touches: the
    PM session, non-EPS cwds, issue-mapped sessions (registry entry or
    ``issue-<N>`` worktree cwd — the reconcile/zombie passes own those),
    wrappers holding a controlling TTY (a terminal Thomas may be sitting

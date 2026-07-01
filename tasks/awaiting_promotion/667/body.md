@@ -5,6 +5,7 @@ title: A base-context whitened gate predicts where a fine-tune's write lands in 
 kind: experiment
 tags:
 - followup-manual
+- keep-running
 created_at: '2026-06-25T08:04:47Z'
 has_clean_result: true
 parent_id: 660

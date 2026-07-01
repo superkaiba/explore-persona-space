@@ -478,6 +478,13 @@ def list_repo_files_complete(
     module through it so a repo always enumerates fully regardless of the
     pinned huggingface_hub version's ``list_repo_files`` implementation.
 
+    ``huggingface_hub``'s ``paginate`` retries ONLY HTTP 429 on follow-up
+    cursor pages, so a 504 gateway timeout on any cursor page of a large repo
+    otherwise propagates and turns a SUCCESSFUL upload's post-upload verify into
+    a false failure. The paginated walk is therefore wrapped in the same
+    transient-retry helper the upload sites use (gotchas.md "HF recursive tree
+    listing 504s are un-retried"; #794/#658).
+
     Args:
         api: An ``huggingface_hub.HfApi`` instance (already token-scoped).
         repo_id: HF Hub repo ID.
@@ -490,16 +497,22 @@ def list_repo_files_complete(
     """
     from huggingface_hub.hf_api import RepoFile
 
-    files = [
-        entry.path
-        for entry in api.list_repo_tree(
-            repo_id=repo_id,
-            repo_type=repo_type,
-            revision=revision,
-            recursive=True,
-        )
-        if isinstance(entry, RepoFile)
-    ]
+    def _list() -> list[str]:
+        # ``list_repo_tree`` returns a generator; a cursor-page 504 raises
+        # DURING iteration, so the comprehension is MATERIALIZED inside this
+        # thunk (inside the retry ``try``) rather than after it returns.
+        return [
+            entry.path
+            for entry in api.list_repo_tree(
+                repo_id=repo_id,
+                repo_type=repo_type,
+                revision=revision,
+                recursive=True,
+            )
+            if isinstance(entry, RepoFile)
+        ]
+
+    files = _retry_upload(_list, what=f"list_repo_tree({repo_id})")
     return sorted(files)
 
 
@@ -535,10 +548,12 @@ def _is_transient_upload_error(err: Exception) -> bool:
 
 
 def _retry_upload(fn, *, what: str, max_attempts: int = 6):
-    """Call ``fn()`` (a zero-arg upload thunk) with exp-backoff retry on transient
-    HF 5xx/429/timeout/connection errors. Storage-quota-403 and any non-transient
-    error re-raise IMMEDIATELY (so the caller's overflow-routing / soft-fail logic
-    fires unchanged); after max_attempts the final exception propagates (fail-loud)."""
+    """Call ``fn()`` (a zero-arg thunk) with exp-backoff retry on transient
+    HF 5xx/429/timeout/connection errors. Name is legacy — this is a generic
+    transient-retry wrapper, also used for READS (``list_repo_files_complete``),
+    not only uploads. Storage-quota-403 and any non-transient error re-raise
+    IMMEDIATELY (so the caller's overflow-routing / soft-fail logic fires
+    unchanged); after max_attempts the final exception propagates (fail-loud)."""
     for attempt in range(1, max_attempts + 1):
         try:
             return fn()

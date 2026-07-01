@@ -1,0 +1,354 @@
+{
+  "commit": "fc96549e59",
+  "created": "2026-07-01T13:56:29Z",
+  "figsize": [
+    13.5,
+    4.4
+  ],
+  "points": [
+    {
+      "category": "Persona-Vectors raw projection",
+      "within-condition Pearson r\n(system-prompt conditions)": 0.17225165704905313,
+      "error": 0.22054077390785579,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Learned map (linear)",
+      "within-condition Pearson r\n(system-prompt conditions)": -0.0640211380200511,
+      "error": 0.266050118584591,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Learned map (MLP)",
+      "within-condition Pearson r\n(system-prompt conditions)": -0.10813049954682374,
+      "error": 0.22405303506880056,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Direct predictor (linear)",
+      "within-condition Pearson r\n(system-prompt conditions)": 0.4378711211732441,
+      "error": 0.08577801564732307,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Direct predictor (MLP)",
+      "within-condition Pearson r\n(system-prompt conditions)": 0.5347937043461308,
+      "error": 0.13200814247094952,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Response-mean oracle (ceiling)",
+      "within-condition Pearson r\n(system-prompt conditions)": 0.4280513347183994,
+      "error": 0.1228519770714259,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r\n(system-prompt conditions)": -0.06656688168628616,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r\n(system-prompt conditions)": -0.3614677130243741,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r\n(system-prompt conditions)": -0.367996103707116,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.37871732446446515,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.41433643406847814,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.3217990870597955,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.3745146661294254,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.1706325241448079,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.08010996643048512,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.5502733557591113,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.6783527190103772,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r\n(system-prompt conditions)": 0.5675030412026473,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "Persona-Vectors raw projection",
+      "y": 0.6023495002275518,
+      "error": 0.05320801271547776,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Learned map (linear)",
+      "y": 0.5477961432779992,
+      "error": 0.05968283340676572,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Learned map (MLP)",
+      "y": 0.470811714902349,
+      "error": 0.07996907714793439,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Direct predictor (linear)",
+      "y": 0.9099466519888602,
+      "error": 0.034840386275739765,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Direct predictor (MLP)",
+      "y": 0.902867346862031,
+      "error": 0.0638656360012167,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Response-mean oracle (ceiling)",
+      "y": 0.66419261557887,
+      "error": 0.026235948333472425,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "y": 0.5486117711952504,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.4833872789279432,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.3864811471135786,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "y": 0.8722192839470576,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.8259509357308638,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "y": 0.638648223083576,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "y": 0.6550277966262059,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.6027529457414746,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.5464193014094474,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "y": 0.9419000564985371,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.9536822077332971,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "y": 0.6911201197505209,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "Persona-Vectors raw projection",
+      "y": 0.4559558744478315,
+      "error": 0.1263852186534509,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Learned map (linear)",
+      "y": 0.3873648705082726,
+      "error": 0.07623414243652091,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Learned map (MLP)",
+      "y": 0.36725444338784796,
+      "error": 0.06489816615290109,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Direct predictor (linear)",
+      "y": 0.862119411426068,
+      "error": 0.042951408705320215,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Direct predictor (MLP)",
+      "y": 0.903568070866134,
+      "error": 0.02364458810657416,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Response-mean oracle (ceiling)",
+      "y": 0.6107744161175719,
+      "error": 0.08988439575002749,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "y": 0.32718734459130167,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.30979073886789305,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.3000121544440398,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "y": 0.8192853420547659,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.8818639812921215,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "y": 0.5179381980487472,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "y": 0.5799577818982035,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.46225902374093486,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.42980848674984196,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 0.9051881594654063,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.9291531575052698,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "y": 0.6977069895488022,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 54
+}
