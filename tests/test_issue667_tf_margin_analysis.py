@@ -339,6 +339,67 @@ def test_r2_smoke_skip_store_pin_bypasses_coverage_gate(monkeypatch, tmp_path):
     assert "em" in res["headline"]
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Round-3 BLOCKER: fact soft-drop must be UNCONDITIONAL on the sentinel, even
+# when the stored per-cell fact store gives COMPLETE coverage (stale resume).
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_fact_softdrops_unconditionally_on_sentinel(monkeypatch, tmp_path):
+    """Fact soft-drop fires on `fact_dropped` even with COMPLETE (stale) coverage.
+
+    Regression for `fact-arm-drop-stale-percell-still-carried`: the coverage-gated
+    soft-drop only fired when `missing` was non-empty, so a stale-but-complete
+    per-cell fact store (resume_skip=True default; #667 multi-run history) drove
+    fact all the way into the headline with fact_softdropped=False. This test
+    supplies FULL fact coverage (no missing cells) with fact_dropped=True and
+    asserts fact is dropped anyway. It FAILS against pre-fix code (fact enters the
+    headline, no CellCoverageError, fact_dropped_from_headline=False) and PASSes
+    after the unconditional guard at the top of the per-behavior loop.
+    """
+    tf_cells = _r2_full_tf_cells(leak=0.6)  # COMPLETE coverage: no missing cell
+    _install_r2_mocks(monkeypatch, tf_cells=tf_cells)
+    res = tfa.run_gate_vs_tf_margin(
+        per_cell_dir=tmp_path / "pc",
+        tensors_dir=tmp_path / "tn",
+        behaviors=["fact"],
+        layer=14,
+        out_dir=tmp_path / "out",
+        committed_base_g_rho={"fact": 1.0},
+        skip_store_pin=False,
+        fact_dropped=True,
+    )
+    # fact is dropped despite complete coverage; no CellCoverageError raised.
+    assert "fact" not in res["headline"]
+    assert res["fact_dropped_from_headline"] is True
+    meta = json.loads((tmp_path / "out" / "rho_gate_vs_tf_margin.json").read_text())["metadata"]
+    assert meta["fact_dropped_from_headline"] is True
+    assert meta["headline_behaviors"] == []  # only fact requested, and it dropped
+
+
+def test_fact_softdrop_unconditional_leaves_em_syco_unaffected(monkeypatch, tmp_path):
+    """The unconditional fact drop must NOT touch em / sycophancy headlines.
+
+    em + sycophancy have full coverage and fact_dropped=True; both still enter the
+    headline while fact is skipped, confirming the guard is fact-scoped.
+    """
+    tf_cells = _r2_full_tf_cells(leak=0.6)
+    _install_r2_mocks(monkeypatch, tf_cells=tf_cells)
+    res = tfa.run_gate_vs_tf_margin(
+        per_cell_dir=tmp_path / "pc",
+        tensors_dir=tmp_path / "tn",
+        behaviors=["em", "sycophancy", "fact"],
+        layer=14,
+        out_dir=tmp_path / "out",
+        committed_base_g_rho={"em": 1.0, "sycophancy": 1.0, "fact": 1.0},
+        skip_store_pin=False,
+        fact_dropped=True,
+    )
+    assert "em" in res["headline"] and "sycophancy" in res["headline"]
+    assert "fact" not in res["headline"]
+    assert res["fact_dropped_from_headline"] is True
+
+
 def test_r2_cli_maps_cell_coverage_to_rc4(monkeypatch, tmp_path):
     """The analysis CLI maps CellCoverageError to rc=4 (the dispatcher's HALT code)."""
     tf_cells = _r2_full_tf_cells()

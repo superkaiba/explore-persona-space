@@ -225,7 +225,15 @@ def _generate_completions(
             # HARD GUARD: the adapter arm MUST use the loaded PeftModel, never the
             # base-only vLLM path (BLOCKER 1). ``trained`` is a PeftModel wrapping
             # base + the fact adapter; ``model is trained`` is verified here.
+            # The ``model is not base`` clause catches a future loop-wiring drift
+            # (e.g. the tuple mistakenly bound to ``base``) OR a mis-load where
+            # ``load_base_and_trained`` returned the un-adapted base as ``trained``
+            # — either would silently make the "adapter" pool a base pool again.
             assert model is trained, "adapter arm must generate through the loaded PeftModel"
+            assert model is not base, (
+                "adapter arm must generate through the loaded PeftModel"
+                " (trained model is the un-adapted base -- mis-load / loop-wiring drift)"
+            )
             texts = _hf_generate_with_adapter(model, tok, msg_lists, device, max_new_tokens=256)
             gen_path = "hf_generate"
         elif device.type == "cpu":

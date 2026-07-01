@@ -24,6 +24,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -124,6 +126,33 @@ def test_cpu_smoke_base_arm_uses_hf_not_vllm(monkeypatch):
     base = {r["probe"]: r["answer"] for r in rows if r["source"] == "base"}
     adapter = {r["probe"]: r["answer"] for r in rows if r["source"] == "adapter"}
     assert base["Q1"] != adapter["Q1"]
+
+
+def test_adapter_arm_guard_rejects_base_as_trained(monkeypatch):
+    """The ``adapter arm must generate through the loaded PeftModel`` guard fires.
+
+    Codex round-2 Minor: a negative test for the hard guard. Simulate a mis-load
+    where ``load_base_and_trained`` returns the un-adapted base AS the ``trained``
+    model (base is trained) — a future loop-wiring drift or a broken adapter load
+    would silently make the "adapter" pool a base pool again. The guard
+    (``assert model is not base``) MUST raise before any generation happens.
+    """
+    base = _Sentinel("base")
+    tok = _Sentinel("tok")
+
+    import issue667_extract as ex
+
+    monkeypatch.setattr(ex, "stage_adapter_local", lambda *a, **k: Path("/tmp/fake_adapter_dir"))
+    monkeypatch.setattr(ex, "assert_adapter_gauge", lambda *a, **k: {})
+    # Mis-load: trained IS base (the un-adapted base model returned as "trained").
+    monkeypatch.setattr(ex, "load_base_and_trained", lambda *a, **k: (tok, base, base))
+    monkeypatch.setattr(ex, "_FACT_POS_SYS", "SYS")
+    monkeypatch.setattr(ex, "_device", lambda gpu_id, co: type("D", (), {"type": "cpu"})())
+    # Should never be reached — the guard raises before any generation.
+    monkeypatch.setattr(bfp, "_hf_generate_with_adapter", lambda *a, **k: ["UNREACHED"])
+
+    with pytest.raises(AssertionError, match="adapter arm must generate through"):
+        bfp._generate_completions(["Q1"], n_rollouts=1, cpu_only=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

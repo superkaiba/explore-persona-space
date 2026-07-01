@@ -286,6 +286,25 @@ def run_gate_vs_tf_margin(
     fact_softdropped = False
 
     for behavior in behaviors:
+        # ── UNCONDITIONAL fact soft-drop when the DROP sentinel is present ──────
+        # §4.3 mandates the fact drop as an INVARIANT once the pool is below the
+        # yield floor ("dropped from the headline"), NOT a coverage-loss-only
+        # response. A stale-but-COMPLETE per-cell fact store (resume_skip=True is
+        # the dispatcher default, and #667 has a multi-run history) leaves the
+        # coverage check's `missing` set empty, so the coverage-gated soft-drop
+        # below would NEVER fire and fact would enter the headline with
+        # fact_softdropped=False. Fire the drop here — BEFORE the correctness
+        # gate, coverage gate, and stat compute — so the sentinel alone
+        # (not stored-cell coverage) governs whether fact enters the headline.
+        if behavior == "fact" and fact_dropped:
+            fact_softdropped = True
+            log.warning(
+                "fact SOFT-DROP (unconditional): fact-pool flagged below YIELD_FLOOR_MIN "
+                "(DROP sentinel present) -> skipping fact from the headline regardless of "
+                "stored per-cell coverage (em/syco unaffected)"
+            )
+            continue
+
         cells = load_cells(tensors_dir, behavior, layer)
         rec = recompute_g0_percell(cells, g_meta, sigma_c, lam, behavior)
         rows = rec["rows"]
