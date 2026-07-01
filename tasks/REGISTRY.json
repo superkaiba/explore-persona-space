@@ -5022,8 +5022,8 @@
     "785": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/785",
-      "status": "approved",
+      "path": "tasks/running/785",
+      "status": "running",
       "title": "daily-fix: worktree path #506 regression in Step 4a + Step 9c"
     },
     "786": {
