@@ -20,6 +20,8 @@ goal: 'On Qwen2.5-7B base representations (#658''s 50 contexts, reusing #810''s 
   + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for
   the n=50 sample size; all operators are cheap CPU reductions of one shared extraction,
   so the constraint is n, not compute.'
+relates_to:
+- leak-predictor
 ---
 # How much does per-position (unpooled) answer activation beat the pooled mean for predicting behavior / reconstructing the profile
 
