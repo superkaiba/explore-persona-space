@@ -25,6 +25,21 @@
 # the tool call PROCEEDS) — code.claude.com/docs/en/hooks: "If your hook is
 # meant to enforce a policy, use exit 2."
 # Fail-soft: any ambiguity / parse failure exits 0 (never traps the user).
+#
+# <!-- known limitation -->
+# Every detector scans the RAW command string ($cmd) — the guard does NOT
+# strip quoted arguments before parsing. A quoted git-verb literal buried in
+# ANOTHER command's argument therefore trips the guard: e.g.
+# `task.py post-marker <N> epm:X --note "... git switch ..."` is blocked
+# because the note text matches `git ... switch`. The workaround is to pass
+# such note text via `--file <path.md>` instead of `--note`. A quote-strip
+# pre-pass was tried (round 1 of #796) and reverted: stripping quoted spans
+# BEFORE parsing silently hid REAL quoted git refs (`git checkout "HEAD~1"`,
+# `git switch "main"`) from the detectors — a leak of the exact class this
+# guard exists to block, and a false positive on quoted return-to-main. A
+# shell-syntax-aware strip is not safe to do in a bash regex, so the raw-scan
+# behavior (correct on git refs, over-eager on note-text literals) is the
+# deliberate trade-off. See #796 round-2 report.
 set -u
 
 REPO=/home/thomasjiralerspong/explore-persona-space
@@ -32,17 +47,8 @@ REPO=/home/thomasjiralerspong/explore-persona-space
 cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 [ -n "$cmd" ] || exit 0
 
-# Strip quoted-string arguments before running the branch/detach detectors, so
-# a quoted git-verb literal inside another command's argument does not trigger a
-# false positive. Canonical offender: `task.py post-marker <N> epm:X --note
-# "... git switch ..."` — the note text contains "git switch" but the command
-# is not a git invocation at all. The detectors below scan $cmd_scan; the
-# worktree/`cd` scoping ESCAPE (below) intentionally scans the ORIGINAL $cmd so
-# a legitimately quoted path (e.g. `cd "/tmp/x"`) still escapes.
-cmd_scan=$(echo "$cmd" | sed -E "s/\"[^\"]*\"//g; s/'[^']*'//g")
-
 # Only consider git checkout/switch invocations at all.
-echo "$cmd_scan" | grep -qE '\bgit\b.*\b(checkout|switch)\b' || exit 0
+echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch)\b' || exit 0
 
 # Allow anything explicitly scoped to another worktree (git -C <path>, or a
 # `cd <path-with-.claude/worktrees|/tmp>` earlier in the command chain).
@@ -55,15 +61,16 @@ fi
 blocked=""
 
 # git switch <branch> / git switch -c <branch>  (switch is branch-only).
-# Allow only `git switch main`.
-if echo "$cmd_scan" | grep -qE '\bgit\b[^;&|]*\bswitch\b'; then
-  if ! echo "$cmd_scan" | grep -qE '\bswitch\b +(-c +|-C +)?main\b'; then
+# Allow only `git switch main` (bare or quoted — the arg regex tolerates the
+# optional surrounding quote, so `git switch "main"` also passes the allow-arm).
+if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bswitch\b'; then
+  if ! echo "$cmd" | grep -qE '\bswitch\b +(-c +|-C +)?["'"'"']?main\b'; then
     blocked="git switch"
   fi
 fi
 
 # git checkout -b/-B <branch>  (branch creation).
-if echo "$cmd_scan" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-b|-B)\b'; then
+if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-b|-B)\b'; then
   blocked="git checkout -b"
 fi
 
@@ -73,10 +80,10 @@ fi
 # below would miss it. The switch pattern also catches `git switch -d main`
 # (a detach AT main), which the branch-only switch detector above lets through
 # on the `main` allow-arm.
-if echo "$cmd_scan" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-{1,2})detach\b'; then
+if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bcheckout\b +(-{1,2})detach\b'; then
   blocked="git checkout --detach"
 fi
-if echo "$cmd_scan" | grep -qE '\bgit\b[^;&|]*\bswitch\b +(--detach\b|-d\b)'; then
+if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bswitch\b +(--detach\b|-d\b)'; then
   blocked="git switch --detach"
 fi
 
@@ -88,13 +95,13 @@ fi
 # skip known safe short-flags, then classify the first positional. `-b`/`-B`
 # are NOT skipped here (branch creation is already blocked above); `.`/`main`/`-`
 # are left as ALLOW.
-if echo "$cmd_scan" | grep -qE '\bgit\b[^;&|]*\bcheckout\b' \
-   && ! echo "$cmd_scan" | grep -qE 'checkout\b[^;&|]*--'; then
-  arg=$(echo "$cmd_scan" | sed -nE 's/.*\bcheckout\b +([^ ;&|]+).*/\1/p')
+if echo "$cmd" | grep -qE '\bgit\b[^;&|]*\bcheckout\b' \
+   && ! echo "$cmd" | grep -qE 'checkout\b[^;&|]*--'; then
+  arg=$(echo "$cmd" | sed -nE 's/.*\bcheckout\b +([^ ;&|]+).*/\1/p')
   # Flag-prefixed detach: skip leading safe short-flags to reach the first
   # positional (e.g. `checkout -f <sha>` -> classify `<sha>`).
   if echo "$arg" | grep -qE '^-[fqpm]$'; then
-    rest=$(echo "$cmd_scan" | sed -nE 's/.*\bcheckout\b +(.*)/\1/p')
+    rest=$(echo "$cmd" | sed -nE 's/.*\bcheckout\b +(.*)/\1/p')
     # shellcheck disable=SC2086  # word-splitting is intentional here
     set -- $rest
     while [ $# -gt 0 ]; do
@@ -104,6 +111,14 @@ if echo "$cmd_scan" | grep -qE '\bgit\b[^;&|]*\bcheckout\b' \
       esac
     done
   fi
+  # Strip a single layer of surrounding quotes so a QUOTED ref classifies as
+  # its bare form: `git checkout "HEAD~1"` -> HEAD~1 (detaches -> block),
+  # `git checkout "main"` -> main (allow). Quoted refs are shell-equivalent to
+  # unquoted ones; without this strip the quoted arg would either miss the
+  # `main` allow-arm (false positive) or, before the round-1 quote-strip was
+  # reverted, be erased entirely (leak). Only trailing/leading `"` or `'`.
+  arg=${arg#[\"\']}
+  arg=${arg%[\"\']}
   case "$arg" in
     ""|-b|-B|-f|--force|main|-|.) : ;;  # not a branch/detach we block
     --*) : ;;                           # a flag (e.g. --detach handled above)
