@@ -332,6 +332,19 @@ both reviewers are graded against the same standard. Read
   Codex FAILed a functionally stronger batched upload because its prompt
   carried only Step 0.7's bare reference to 0.65; the reconciler
   overturned it).
+- "Step 0.67: Compute-shape-vs-dispatcher check" (`type:experiment` only) —
+  INCLUDING the full trigger (plan §9 declares a data-parallel/sharded shape
+  via the §9 prose OR the per-component compute-projection table's
+  `parallelism` column), the TP-only / single-GPU NON-trigger carve-out, the
+  three accepted acceptance shapes (a) external `--shard-id`/`--num-shards`
+  flags / (b) internal `torch.distributed`/`torch.multiprocessing.spawn`/
+  `accelerate`/per-GPU `subprocess` fan-out / (c) external one-process-per-GPU
+  launcher or documented fan-out, and the `compute-shape-mismatch` blocker tag
+  (SUBSTANTIVE, NOT mechanical-contract — never stripped by Step 5c-bis) plus
+  the plausible-but-unconfirmed → CONCERNS routing and the descope-is-a-valid-
+  fix note. Copy the trigger + the three shapes + the tag in full so Codex
+  never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan ran on
+  a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
   finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
@@ -486,7 +499,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -495,7 +508,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`; if you ARE certain the round introduced it, tag `substantive` NOT `git-provenance`) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Diff acquisition:** three-dot | two-dot (no merge base) | sha-range <range>
