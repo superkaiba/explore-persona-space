@@ -5099,8 +5099,8 @@
     "796": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/796",
-      "status": "approved",
+      "path": "tasks/running/796",
+      "status": "running",
       "title": "daily-fix: guard detached repo-root HEAD"
     },
     "797": {
