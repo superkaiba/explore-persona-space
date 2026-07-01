@@ -627,20 +627,23 @@ def _within_condition_pearson(cond_x: list[np.ndarray], cond_y: list[np.ndarray]
     return float(np.mean(rs)) if rs else float("nan")
 
 
-def run_step0_probe(out_dir: Path, traits: list[str], layers: list[int]) -> dict:
+def run_step0_probe(
+    out_dir: Path, traits: list[str], layers: list[int], r_b_by_trait: dict[str, torch.Tensor]
+) -> dict:
     """Step-0 oracle-headroom: PV-raw vs oracle within-condition r, per trait x layer x mode.
 
     Reads the pass-A cells (produced above): for each (trait, layer, mode) compute
     within-condition Pearson of <c_last, r_B_l> (pv_raw) and <v(x), r_B_l> (oracle)
     vs the judge score. Prints GATE_0 per trait (best layer by oracle r). Writes
-    step0/step0_oracle.json.
+    step0/step0_oracle.json. ``r_b_by_trait`` is the already-loaded r_B dict
+    (from --rb-dir), so Step-0 never re-guesses the r_B path.
     """
     pass_a_dir = out_dir / "pass_a"
     step0_dir = out_dir / "step0"
     step0_dir.mkdir(parents=True, exist_ok=True)
     result: dict = {}
     for trait in traits:
-        r_b = _load_rb(out_dir, trait).to(torch.float32)  # (L, H)
+        r_b = r_b_by_trait[trait].to(torch.float32)  # (L, H)
         cells = sorted(pass_a_dir.glob(f"{trait}__*.json"))
         per_layer_mode: dict = {}
         gate_lines = []
@@ -734,18 +737,6 @@ def _lookup_score(judge_scores: dict, qi: int, ri: int) -> float | None:
         if idx == qi and ci == ri:
             return s
     return None
-
-
-def _load_rb(out_dir: Path, trait: str) -> torch.Tensor:
-    """Load r_B (L, H) for a trait from the r_b dir (this run's or a sibling)."""
-    for cand in (
-        out_dir / "r_b" / f"{trait}.pt",
-        out_dir.parent / "issue_779" / "r_b" / f"{trait}.pt",
-    ):
-        if cand.exists():
-            blob = torch.load(cand, weights_only=False)
-            return blob["r_b"]
-    raise FileNotFoundError(f"r_B for {trait} not found under {out_dir}/r_b/")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -888,7 +879,7 @@ def main() -> int:
 
     if args.stage in ("all", "step0"):
         C.phase("step0")
-        summary["step0"] = run_step0_probe(out_dir, traits, layers)
+        summary["step0"] = run_step0_probe(out_dir, traits, layers, r_b_by_trait)
 
     if not args.no_upload:
         C.phase("upload")
