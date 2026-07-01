@@ -2071,7 +2071,9 @@ def test_launch_attaches_expected_artifacts_declaration(tmp_path) -> None:
     assert decl["sentinel_path"] == str(
         tmp_path / "eval_results/issue_137/slurm-9001/.completion-sentinel.json"
     )
-    assert decl["git_paths"] == ["eval_results/issue_137/", "figures/issue_137/"]
+    # #790: pure-hydra (no workload_cmd) declares NEITHER default git path —
+    # train.py runs with skip_eval=True and writes no figures during the run.
+    assert decl["git_paths"] == []
     assert decl["hf_data_paths"] == ["issue137_slurm-9001/raw_completions/"]
     assert decl["hf_model_paths"] == []
 
@@ -2096,7 +2098,9 @@ def test_launch_custom_workload_omits_guessed_hf_prefix(tmp_path) -> None:
     assert decl["hf_data_paths"] == []
     # The sentinel + git checks keep gating teardown on this lane.
     assert decl["sentinel_path"].endswith("slurm-9001/.completion-sentinel.json")
-    assert decl["git_paths"] == ["eval_results/issue_137/", "figures/issue_137/"]
+    # #790: custom_workload keeps the real eval_results/ check (drivers commit
+    # eval JSONs during the run) but drops the analyzer-generated figures/.
+    assert decl["git_paths"] == ["eval_results/issue_137/"]
 
 
 def test_render_and_launch_sentinel_paths_agree(tmp_path) -> None:
