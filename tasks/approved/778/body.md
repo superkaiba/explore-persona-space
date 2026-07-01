@@ -1,6 +1,7 @@
 ---
-title: Replicate Persona Vectors prediction experiments (system-prompt + finetuning-shift)
-  on Qwen2.5-7B with a random/permutation/cross-trait/PCA null battery
+title: On Qwen2.5-7B, a persona vector predicts trait expression no better than a
+  norm-matched random direction — Persona Vectors' prediction results replicate but
+  the specificity vanishes against the baseline the paper never ran (MODERATE confidence)
 kind: experiment
 backend: runpod
 tags: []
