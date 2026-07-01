@@ -163,10 +163,12 @@ the three project-owned WandB checkpoint-upload sites above — all gated by
 `WandbCallback` whenever `report_to="wandb"` (which every project training
 run with a WandB run name sets — `train/trainer.py:943`/`:1309`). That
 callback reads `WANDB_LOG_MODEL` from the environment at init: `end` uploads
-the checkpoint dir to WandB Artifacts at end of training, `checkpoint`
-uploads every `save_steps` (older Transformers also accepted the deprecated
-boolean alias `true` ≈ `end`), and the default `false`/unset uploads
-nothing. This path is INDEPENDENT of our `_maybe_upload_*` code — so
+the final saved model artifact to WandB Artifacts at end of training
+(`WandbCallback.on_train_end` saves the model into a temp dir and logs
+THAT — not an existing checkpoint dir), `checkpoint` uploads the actual
+checkpoint dir every `save_steps` via `on_save` (older Transformers also
+accepted the deprecated boolean alias `true` ≈ `end`), and the default
+`false`/unset uploads nothing. This path is INDEPENDENT of our `_maybe_upload_*` code — so
 `EPM_UPLOAD_MODEL_WANDB=1` does NOT gate it and setting `WANDB_LOG_MODEL`
 re-opens the ~15 GB-safetensors-to-WandB leak regardless of our guard.
 Therefore `WANDB_LOG_MODEL` must never be set (or must be explicitly
