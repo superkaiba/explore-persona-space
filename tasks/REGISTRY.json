@@ -5043,8 +5043,8 @@
     "788": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/788",
-      "status": "planning",
+      "path": "tasks/approved/788",
+      "status": "approved",
       "title": "daily-fix: reviewer sandbox read-only tempdir silently skips pytest"
     },
     "789": {
