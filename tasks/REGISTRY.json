@@ -5078,8 +5078,8 @@
     "793": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/793",
-      "status": "running",
+      "path": "tasks/reviewing/793",
+      "status": "reviewing",
       "title": "daily-fix: SLURM lane rsync from worktree branch not main"
     },
     "794": {
