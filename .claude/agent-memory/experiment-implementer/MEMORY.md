@@ -59,3 +59,4 @@
 - [on_log never sees direct wandb.log](feedback_on_log_never_sees_direct_wandb_log.md) — derive cross-callback outcomes from the producer's artifact file, never on_log key-sniffing (#621 false band-miss)
 - [apply-parity probe N sizing follows Wilson-CI half-width](feedback_apply_parity_probe_n_sizing.md) — ±tolerance rate-gate must set N from Wilson-CI half-width at the expected rate (#667 pivot 1, n=10 at rate 0.7 gives half-width ~0.27 not ±0.10 — false-fails guaranteed)
 - [strict LLM-count assert on over-generation (clamp + typed shortfall)](feedback_strict_llm_count_assert_over_generation.md) — clamp to N via items[:N] on over-generation, raise typed ArtifactCountShortfall on under-generation (never == N hard-assert; #779 round-7)
+- [Parity floor: weak writer vs gauge error](feedback_parity_floor_weak_writer_vs_gauge_error.md) — per-adapter-class write-ratio floors; gauge errors are √r-multiplicative, not 10% shortfalls (#813)
