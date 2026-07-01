@@ -23,10 +23,6 @@ goal: 'On Qwen2.5-7B-Instruct base model, determine which answer-side summary of
 ---
 # Which answer-side position/summary gives the strongest base context→answer map
 
-## Goal
-
-On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the response — mean-over-answer (the #722 baseline), last content token, the turn-boundary newline after <|im_end|> (the answer-side mirror of the last-input-token context vector c_C), a dense per-position sweep, plus maxp/attn — yields the strongest linear context->answer map c_C -> summary, measured by held-out skill-over-mean R2 per layer, reusing #658/#722's 50-context base grid and fit harness.
-
 ## Overview / Motivation
 
 [#722](https://eps.superkaiba.com/tasks/722) characterized the base-model map
@@ -62,6 +58,10 @@ Summaries compared (all fed as the map target, same fit harness):
   (`0 … K−1`), K ≈ 8–16. (Variable answer lengths preclude a global absolute
   position index, so the sweep is end- and start-aligned.)
 
+**Two analyses, both swept over every summary above (ONE manipulated variable = the summary; two DVs):**
+- **(a) Reconstruction map** — the linear map `c_C → summary` (held-out skill-over-mean R² per layer), the #722 base-map DV. **The reconstruction winner is what #811 carries into the pre/post-FT run.**
+- **(b) Behavior read-out** — predict each behavior's expression `E0(C,B)` from the summary, TWO ways: (i) the fixed persona-vectors direction `r_Bᵀ·summary` (faithful to #658 A3.3), AND (ii) a **trained LOCO-ridge regression `summary → E0`** — a *learned* linear read-out rather than a fixed direction (the "don't only use r_B" ask), with a label-shuffle null. Reuses #658's already-judged `E0` (binary rate; a graded 0–100 re-judge per `.claude/rules/llm-judging.md` is a possible extension, not v1). This directly tests whether a better answer summary rescues #658's mostly-failed context→behavior read-out (A3.2/A3.3 cleared only 3/10 behaviors).
+
 Two legs, cheapest first:
 1. **Free leg (0 GPU-h, planner to confirm):** re-fit the map with the
    ALREADY-STORED `mean`/`last`/`maxp` summaries in #658's `v0_summaries.pt`
@@ -82,8 +82,16 @@ Held-out **skill-over-mean R²** = `1 − SS_res/SS_tot` on the centered target,
 per (layer × summary), LOCO closed-form ridge (primary) + 1-hidden MLP
 (validity), with a label-shuffle null — the exact #722 estimator. **Not cosine**
 (the predict-the-mean baseline cosines ≈0.99, so cosine has no resolving power —
-#722's correction). Headline read: per-layer R² of `turn_nl` and the best
-per-position summary **vs** the `mean` baseline.
+#722's correction). Reconstruction headline: per-layer R² of `turn_nl` and the
+best per-position summary **vs** the `mean` baseline.
+
+**Read-out DV:** held-out Spearman ρ (and R²) of predicted vs judged `E0(C,B)`,
+per (behavior × layer × summary × method ∈ {fixed `r_B`, trained LOCO-ridge}),
+with a label-shuffle null. Read-out headline: does *any* summary lift behavior
+prediction above #658's `mean`-summary result (which mostly failed)? An **n = 50
+sample-complexity caveat** applies to the trained-regression read-out — see #742
+(reliability-ceiling / linear-decoding-loss) and the sibling pooled-vs-per-position
+task; report the shuffle null and treat marginal lifts as n-limited, not null.
 
 ## Reuse (artifact-reuse fitness — planner to verify)
 
