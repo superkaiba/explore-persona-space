@@ -231,7 +231,9 @@ def fit_h_readouts(
 
     Returns {"r1_ridge_dot", "r1_ridge_cos", "r1_mlp_dot", "r1_mlp_cos",
     "recon_ridge", "recon_mlp", "h_ridge_pred_eval", "h_mlp_pred_eval"} — arrays
-    aligned to eval rollouts (broadcast per rollout via its question's c_last).
+    aligned to the per-(condition, question) eval rows of ``eval_mat`` (one row
+    per question, NOT per rollout — see build_eval_matrix / BLOCKER
+    primary-metric-rollout-level-not-question-averaged).
     """
     layers = train_bundle["layers"]
     li = layers.index(layer_idx)
@@ -719,6 +721,14 @@ def _process_trait(
     )
     return {
         "read_out_layer": layer_idx,
+        # ``mat["y"]`` is one row PER (condition, question) after the
+        # per-question aggregation (BLOCKER primary-metric-rollout-level-not-
+        # question-averaged), so this count is the number of question-level
+        # analysis units, NOT the raw rollout count. Emit the accurate key
+        # ``n_questions``; keep ``n_rollouts`` as a same-value legacy alias so
+        # any downstream reader keyed on the old name still resolves (it now
+        # documents the analysis-unit count, not the pre-aggregation rollout N).
+        "n_questions": len(mat["y"]),
         "n_rollouts": len(mat["y"]),
         "methods": method_res,
         "success_deltas": deltas,

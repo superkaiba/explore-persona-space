@@ -652,23 +652,35 @@ def run_step0_probe(
                     cx_path = pass_a_dir / f"{cell['trait']}__{cell['cond_id']}_cx.pt"
                     cx = torch.load(cx_path, weights_only=True)
                     cx_last = cx["cx_last"].to(torch.float32)  # (n_q, L, H)
-                    # per-rollout pv_raw = <c_last[qi], r_b_l>; oracle from cell.
+                    # PER-(condition, question) unit — matching the PV within-
+                    # condition monitoring unit AND stage1.build_eval_matrix.
+                    # pv_raw = <c_last[qi], r_b_l> is a PROPERTY OF THE PROMPT
+                    # (identical across a question's rollouts), so a per-rollout
+                    # correlation would 10x-duplicate x against rollout-level noisy
+                    # y (the primary-metric-rollout-level-not-question-averaged bug
+                    # class, sibling instance in the Gate-0 / read-out-layer probe).
+                    # Aggregate to ONE row per question: pv_raw is per-question;
+                    # oracle + judge are the mean over the question's valid rollouts.
                     xs_pv, xs_or, ys = [], [], []
+                    by_q: dict[int, list[int]] = {}
                     for rec in cell["rollouts"]:
                         if rec.get("empty"):
                             continue
-                        qi, ri = rec["qi"], rec["ri"]
-                        # judge score for this rollout.
-                        s = _lookup_score(cell["judge_scores"], qi, ri)
-                        if s is None:
+                        by_q.setdefault(rec["qi"], []).append(rec["ri"])
+                    for qi, ris in by_q.items():
+                        q_s, q_or = [], []
+                        for ri in ris:
+                            s = _lookup_score(cell["judge_scores"], qi, ri)
+                            orc = cell["oracle_proj"].get(str(qi), {}).get(str(ri))
+                            if s is None or orc is None:
+                                continue
+                            q_s.append(s)
+                            q_or.append(float(orc[str(layer_idx)]))
+                        if not q_s:  # no valid rollout for this question -> drop
                             continue
-                        pv = float(torch.dot(cx_last[qi, li_pos, :], r_b[li_pos, :]))
-                        orc = cell["oracle_proj"].get(str(qi), {}).get(str(ri))
-                        if orc is None:
-                            continue
-                        xs_pv.append(pv)
-                        xs_or.append(float(orc[str(layer_idx)]))
-                        ys.append(s)
+                        xs_pv.append(float(torch.dot(cx_last[qi, li_pos, :], r_b[li_pos, :])))
+                        xs_or.append(float(np.mean(q_or)))
+                        ys.append(float(np.mean(q_s)))
                     if len(ys) >= 3:
                         cond_pv_x.append(np.array(xs_pv))
                         cond_or_x.append(np.array(xs_or))
@@ -892,7 +904,7 @@ def main() -> int:
     return 0
 
 
-def _split_raw_completions(out_dir: Path, staging_dir: Path) -> list[tuple[str, str]]:
+def _split_raw_completions(out_dir: Path, staging_dir: Path) -> list[tuple[str, str, str]]:
     """Split each Pass-A cell JSON's rollout TEXT into a per-cell raw-completions file.
 
     Plan v5 §10 row (c): every rollout string that appears in a Pass-A cell JSON
@@ -903,14 +915,21 @@ def _split_raw_completions(out_dir: Path, staging_dir: Path) -> list[tuple[str, 
     v(x) vectors + prompts to its tensor bundle), so it carries no rollout field
     to copy — scope is the Pass-A cells only.
 
-    Seed is the fixed monitoring-rig rollout seed 42 (plan §10 Seeds row); the
-    ``pass_a`` rollouts are generated with ``SamplingParams(..., seed=42)``.
+    Seed is read from each cell's ``rollout_seed`` field (the fixed monitoring-rig
+    rollout seed, plan §10 Seeds row; ``pass_a`` rollouts are generated with
+    ``SamplingParams(..., seed=rollout_seed)``). The verifier consumes the ACTUAL
+    filename this function writes (returned per cell), so the seed is never
+    hardcoded on the verify side — a future ``rollout_seed`` change cannot silently
+    desync the writer's name from the verifier's expected name (sibling of the
+    upload-prefix bug class, holistic hardening pass).
 
-    Returns the list of ``(trait, cond_id)`` cells written (one file each).
+    Returns one ``(trait, cond_id, filename)`` per cell written — ``filename`` is
+    the staging-relative basename (e.g. ``evil_sys0_seed42.json``), so the caller
+    verifies the exact path it produced rather than reconstructing it.
     """
     pass_a_dir = out_dir / "pass_a"
     staging_dir.mkdir(parents=True, exist_ok=True)
-    written: list[tuple[str, str]] = []
+    written: list[tuple[str, str, str]] = []
     if not pass_a_dir.is_dir():
         return written
     # `pass_a/` holds BOTH per-cell JSONs `{trait}__{cond}.json` (carry
@@ -946,8 +965,9 @@ def _split_raw_completions(out_dir: Path, staging_dir: Path) -> list[tuple[str, 
                 {"script": "issue779_collect", "artifact": "raw_completions"}
             ),
         }
-        C.write_json_atomic(staging_dir / f"{trait}_{cond_id}_seed{seed}.json", payload)
-        written.append((trait, cond_id))
+        fname = f"{trait}_{cond_id}_seed{seed}.json"
+        C.write_json_atomic(staging_dir / fname, payload)
+        written.append((trait, cond_id, fname))
     return written
 
 
@@ -981,18 +1001,17 @@ def _upload_raw_completions(out_dir: Path, smoke: bool) -> None:
             repo_type="dataset",
             commit_message=f"issue779: {'smoke ' if smoke else ''}raw completions (rollout text)",
         )
-        # Mechanical verification: every (trait, condition) has a file at the
-        # canonical raw_completions/ prefix on a FRESH listing (plan §10 mandate,
-        # mirrors the upload-verifier's phantom-URL gate).
+        # Mechanical verification: every produced file lands at the canonical
+        # raw_completions/ prefix on a FRESH listing (plan §10 mandate, mirrors
+        # the upload-verifier's phantom-URL gate). Verify the EXACT filename each
+        # cell wrote (returned by _split_raw_completions) — never a hardcoded
+        # seed — so a rollout_seed change cannot desync the expected name from the
+        # written name (upload-prefix bug class, holistic hardening).
         repo_files = set(list_repo_files(C.HF_DATA_REPO, repo_type="dataset"))
         missing = []
-        for trait, cond_id in written:
-            expected: set[str] = {
-                f"{path_in_repo}/{trait}_{cond_id}_seed{seed}.json"
-                for seed in (42,)  # fixed monitoring-rig rollout seed (plan §10)
-            }
-            if not expected & repo_files:
-                missing.append(f"{trait}/{cond_id}")
+        for trait, cond_id, fname in written:
+            if f"{path_in_repo}/{fname}" not in repo_files:
+                missing.append(f"{trait}/{cond_id} ({fname})")
         if missing:
             raise RuntimeError(
                 "raw-completions upload verification FAILED "
@@ -1024,13 +1043,23 @@ def _upload_collect(out_dir: Path, smoke: bool) -> None:
     # review v4 CONCERN analysis-tensors-prefix-contains-raw-text). The cell
     # JSONs' own rollouts[].response stays: Stage-1 needs the per-rollout
     # pooled/empty/oracle structure keyed alongside it.
+    #
+    # BOTH glob shapes are required: `judge_*.json` matches the TOP-LEVEL judge
+    # sidecars the r_B extraction writes (out_dir/judge_{trait}_{arm}.json, which
+    # share this out_dir when collect + extract run into the same tree), and
+    # `**/judge_*.json` matches the NESTED per-cell sidecars _judge_cell writes
+    # (pass_a/judge_{cell_id}.json). HF's fnmatch-based filter does NOT let
+    # `**/judge_*.json` match a top-level file (verified), so a top-level-only
+    # exclusion would leak the extraction sidecars' raw judge text into
+    # analysis_tensors/ — reopening the raw-text-in-analysis-tensors class for the
+    # extraction sidecars (holistic hardening pass).
     api.upload_folder(
         folder_path=str(out_dir),
         path_in_repo=path_in_repo,
         repo_id=C.HF_DATA_REPO,
         repo_type="dataset",
         commit_message=f"issue779: {'smoke ' if smoke else ''}collect (c_x, v(x), pooled, R3, DV)",
-        ignore_patterns=["judge_cache/**", "**/judge_*.json"],
+        ignore_patterns=["judge_cache/**", "judge_*.json", "**/judge_*.json"],
     )
     files = [
         f
