@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 803,
+  "highest_id": 804,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5165,6 +5165,13 @@
       "path": "tasks/proposed/803",
       "status": "proposed",
       "title": "workflow-fix: clean_experiment_downloads.py hangs on pod (task_workflow.repo_root auto-routing on MooseFS)"
+    },
+    "804": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/804",
+      "status": "proposed",
+      "title": "workflow-fix: guard clause-local parsing (compound + glued -b leaks)"
     },
     "81": {
       "has_clean_result": false,
