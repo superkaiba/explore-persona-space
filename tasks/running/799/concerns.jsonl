@@ -1,0 +1,1 @@
+{"ts": "2026-07-01T09:08:19Z", "event": "raised", "concern_id": "analyzer-md-stale-html-plan-path", "severity": "CONCERN", "summary": "analyzer.md:126 still says plans/issue-<N>.html; round flipped planner.md to .md, leaving a dangling ref the fix's Goal (md not html) should have caught", "raised_by": "code-reviewer", "raised_at_round": 1}
