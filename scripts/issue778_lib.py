@@ -330,8 +330,9 @@ def judge_graded(
         raw = json.load(f)
     all_scores: dict[str, dict] = raw.get("all_scores", {})
 
-    # custom_id format (batch_judge._enumerate_and_check_cache): "{persona}__{idx:05d}__{comp_idx:02d}"
-    # persona == item_id here (item_id must not contain the "__" delimiter).
+    # custom_id format (batch_judge._enumerate_and_check_cache):
+    #   "{persona}__{idx:05d}__{comp_idx:02d}"; persona == item_id here
+    #   (item_id must not contain the "__" delimiter).
     per_item_draws: dict[str, list[float]] = {item_id: [] for item_id, _, _ in items}
     n_total = 0
     n_dropped = 0
