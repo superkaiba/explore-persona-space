@@ -104,13 +104,16 @@ References:
 
 from __future__ import annotations
 
+import base64
 import contextlib
+import io
 import json
 import logging
 import os
 import re
 import shlex
 import subprocess
+import tarfile
 import tempfile
 import time
 from collections.abc import Callable, Mapping, Sequence
@@ -827,8 +830,13 @@ def expected_artifacts_declaration(
       that lane comes from the agent-level upload-verifier (`/issue`
       Step 8). Callers that DO know the workload's real prefix declare
       it via ``extra_hf_data_paths``.
-    * Git paths ``eval_results/issue_<N>/`` + ``figures/issue_<N>/`` —
-      both committed by the workload + verified on the orchestrator side.
+    * Git paths — split by ``custom_workload`` (#790). A
+      ``--workload-cmd`` launch declares ``eval_results/issue_<N>/`` only
+      (dispatch drivers commit eval JSONs during the run; ``figures/`` is
+      analyzer-generated POST-gate). A pure-hydra launch declares NEITHER
+      default (``scripts/train.py`` runs with ``skip_eval=True`` and writes
+      no figures, so both are false-FAILs) — only ``extra_git_paths``.
+      Verified on the orchestrator side.
 
     The caller can add experiment-specific paths via ``extra_hf_data_paths``
     / ``extra_hf_model_paths`` / ``extra_git_paths`` (e.g. a sweep with a
@@ -4696,32 +4704,79 @@ class GcpBackend(ComputeBackend):
         # 2) Best-effort — pull eval_results/issue_<N>/ and
         # figures/issue_<N>/ back to the local repo. These are
         # authoritative on HF / WandB / git already; the local mirror
-        # is convenience. Each subdir is its own scp call so one
+        # is convenience. Each subdir is its own ssh call so one
         # failure doesn't bury the other.
+        #
+        # The workload tree is root-owned (#588: the GCE startup script
+        # runs the workload as root), so a plain `gcloud compute scp
+        # --recurse` from the OS-Login user Permission-denies and the
+        # mirror silently stays empty. Pull each dir as a base64-encoded
+        # tar stream via `sudo -n` instead — the SAME grant the mandatory
+        # sentinel pull above uses (`sudo -n cat`), just `tar -c | base64`
+        # inside a `bash -o pipefail -c` wrapper.
+        #
+        # The `bash -o pipefail` wrap is LOAD-BEARING: bash pipelines
+        # return the LAST command's exit status unless pipefail is set
+        # (OFF by default), so on a MISSING remote dir (the common path —
+        # item-4 dropped figures/ from the gate precisely because that dir
+        # is normally absent) `tar` exits non-zero but `base64 -w0` reads
+        # empty stdin and exits 0, masking the tar failure. The pipefail
+        # wrap makes the tar rc propagate so the `if returncode != 0:
+        # continue` guard fires (otherwise `base64.b64decode("")` +
+        # `tarfile.open` on empty bytes raises locally). Same wrapping-bash
+        # idiom as `_drain_sentinels` (`--command=sudo -n bash -c ...`);
+        # we add `-o pipefail` because this wraps a PIPELINE, not a
+        # `;`-sequence.
         repo_root = _default_src_root_for_fetch()
         workload_root = workload_dir_for(config, issue)
         for subdir in (f"eval_results/issue_{issue}", f"figures/issue_{issue}"):
-            remote_path = f"{workload_root}/{subdir}"
-            local_path = repo_root / subdir
-            local_path.parent.mkdir(parents=True, exist_ok=True)
-            scp_dir = _base_gcloud_argv(
+            remote_parent = shlex.quote(f"{workload_root}/{os.path.dirname(subdir)}")
+            remote_leaf = shlex.quote(os.path.basename(subdir))
+            local_parent = repo_root / os.path.dirname(subdir)
+            local_parent.mkdir(parents=True, exist_ok=True)
+            remote_cmd = f"tar -c -C {remote_parent} {remote_leaf} | base64 -w0"
+            tar_argv = _base_gcloud_argv(
                 config,
                 "compute",
-                "scp",
-                "--recurse",
-                f"{handle.pod_name}:{remote_path}",
-                str(local_path.parent),
+                "ssh",
+                handle.pod_name,
+                f"--command=sudo -n bash -o pipefail -c {shlex.quote(remote_cmd)}",
             )
-            scp_dir += [f"--zone={zone}"]
-            dir_res = self._run(scp_dir)
-            if dir_res.returncode != 0:
+            tar_argv += [f"--zone={zone}"]
+            tar_res = self._run(tar_argv)
+            if tar_res.returncode != 0:
                 logger.warning(
-                    "GcpBackend.fetch_results: best-effort scp of %s failed (rc=%d); "
-                    "authoritative copy is on HF/WandB/git. stderr=%s",
-                    remote_path,
-                    dir_res.returncode,
-                    dir_res.stderr[:300],
+                    "GcpBackend.fetch_results: best-effort sudo tar of %s/%s failed "
+                    "(rc=%d); authoritative copy is on HF/WandB/git. stderr=%s",
+                    workload_root,
+                    subdir,
+                    tar_res.returncode,
+                    tar_res.stderr[:300],
                 )
+                continue
+            # Decode + extract the captured base64 tar stream under
+            # local_parent. Wrap the decode+extract in try/log/continue too:
+            # a genuinely truncated/corrupt stream from a transport hiccup
+            # mid-transfer must log-and-continue, NOT raise — the mirror is
+            # best-effort and the dir is authoritative on HF/WandB/git.
+            try:
+                raw = base64.b64decode(tar_res.stdout)
+                with tarfile.open(fileobj=io.BytesIO(raw)) as tf:
+                    # filter="data" (PEP 706) blocks any path-traversal /
+                    # unsafe member in the stream and silences the 3.14
+                    # extractall-without-filter DeprecationWarning; it
+                    # extracts <leaf>/ under local_parent.
+                    tf.extractall(path=local_parent, filter="data")
+            except (ValueError, tarfile.TarError, EOFError) as exc:
+                logger.warning(
+                    "GcpBackend.fetch_results: best-effort decode/extract of %s/%s "
+                    "failed (%s: %s); authoritative copy is on HF/WandB/git.",
+                    workload_root,
+                    subdir,
+                    type(exc).__name__,
+                    str(exc)[:300],
+                )
+                continue
 
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         """Backend-agnostic artifact verification.
@@ -5019,6 +5074,10 @@ def _gcp_status_to_poll_result(status: str) -> PollResult:
     for the GCE status enum. We map:
 
     * ``RUNNING`` → ``running`` (pid_alive=True)
+    * ``PENDING`` → ``running`` (FLEX_START-queued for capacity; the
+      orchestrator's bg loop keeps polling — mirrors ``reconnect_or_none``,
+      which treats PENDING as live since it is not in
+      ``_NONLIVE_INSTANCE_STATUSES``; #782/#778)
     * ``PROVISIONING`` / ``STAGING`` → ``running`` (VM is coming up; the
       orchestrator's bg loop will keep polling)
     * ``STOPPING`` / ``REPAIRING`` → ``stalled`` (transient; bg loop retries)
@@ -5027,6 +5086,12 @@ def _gcp_status_to_poll_result(status: str) -> PollResult:
     up = status.upper()
     if up == "RUNNING":
         return _coarse_poll(status="running", current_phase="running")
+    if up == "PENDING":
+        # FLEX_START capacity-queue state — legitimately live, keep polling
+        # (parity with ``reconnect_or_none`` / ``_NONLIVE_INSTANCE_STATUSES``;
+        # #782). Distinct branch from PROVISIONING/STAGING (VM booting) so the
+        # queued-vs-booting distinction is explicit at the call site.
+        return _coarse_poll(status="running", current_phase="pending")
     if up in {"PROVISIONING", "STAGING"}:
         return _coarse_poll(status="running", current_phase=up.lower())
     if up in {"STOPPING", "REPAIRING"}:

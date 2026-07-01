@@ -1060,6 +1060,329 @@ def test_async_cpu_handle_no_intent_key_does_not_fail_over() -> None:
 
 
 # ---------------------------------------------------------------------------
+# #783 — GCP FLEX_START queue-timeout → RunPod failover, end-to-end
+#
+# A GCP FLEX_START create can SUCCEED yet leave the instance in the capacity
+# QUEUE (PENDING, polled as current_phase="pending", #782/#778) — a state the
+# router's route()-time park cannot bound (the wait happens AFTER route()
+# returns). The async poller ages the "pending" phase against
+# EPS_GCP_QUEUE_WAIT_SECONDS and, past the floor, cancels the queued instance +
+# fails over to RunPod (reason: gcp_queue_timeout_failover_runpod). These tests
+# drive backend_poll_main and inspect the printed JSON + the sidecar re-point,
+# modeled on the #669 wedge tests above.
+# ---------------------------------------------------------------------------
+
+
+class _PollDoubleWithTeardown:
+    """A ComputeBackend stand-in whose ``poll`` is scripted AND whose
+    ``teardown`` is recorded — the queue-timeout failover deletes the still-
+    queued GCP instance via ``_resolve_backend("gcp").teardown(handle)`` before
+    re-dispatch, so the poll double the queue-timeout tests patch in must expose
+    a ``teardown`` method (``_PollDouble`` alone has only ``poll``)."""
+
+    def __init__(self, result: PollResult, *, teardown_raises: BaseException | None = None) -> None:
+        self._result = result
+        self._teardown_raises = teardown_raises
+        self.teardowns: list = []
+
+    def poll(self, handle: RunHandle) -> PollResult:
+        return self._result
+
+    def teardown(self, handle: RunHandle) -> None:
+        self.teardowns.append(handle)
+        if self._teardown_raises is not None:
+            raise self._teardown_raises
+
+
+def _pending_poll() -> PollResult:
+    """The FLEX_START capacity-queue poll: status=running / current_phase=pending
+    (what ``gcp._gcp_status_to_poll_result`` maps GCE PENDING to, #782/#778)."""
+    return PollResult(
+        status="running",
+        current_phase="pending",
+        new_milestone=False,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=True,
+        log_tail_excerpt="",
+    )
+
+
+def test_gcp_pending_past_timeout_fails_over_to_runpod(tmp_path, monkeypatch, capsys):
+    """#783 HEADLINE acceptance (success criterion a): a GCP handle polling
+    current_phase="pending" whose queue clock is older than
+    EPS_GCP_QUEUE_WAIT_SECONDS is escalated to terminal_queue_timeout, the queued
+    instance is torn down, and the run fails over to RunPod exactly once — the
+    printed JSON carries current_phase="gcp_queue_timeout_failover_runpod",
+    status="running", and the sidecar is re-pointed at the RunPod handle."""
+    sidecar = tmp_path / "issue-783-handle.json"
+    # Queue clock recorded "pending" at a ts older than the 600s floor.
+    write_handle_sidecar(_gcp_handle_with_clock(phase="pending", ts=_time.time() - 1000), sidecar)
+
+    teardown_backend = _PollDoubleWithTeardown(_pending_poll())
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: teardown_backend,
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    # Success criterion (a) + (d): failed over with the queue-timeout reason as
+    # the running-shaped JSON's current_phase.
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_timeout_failover_runpod"
+    # Exactly ONE RunPod launch.
+    assert len(rp.launches) == 1
+    # The queued GCP instance was torn down before the re-dispatch.
+    assert len(teardown_backend.teardowns) == 1
+    # Sidecar authoritatively re-pointed at the RunPod handle.
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+def test_gcp_queue_timeout_failover_marker_carries_queue_timeout_reason(
+    tmp_path, monkeypatch, capsys
+):
+    """#783 success criterion (d): the epm:backend-selected marker the failover
+    posts carries reason=gcp_queue_timeout_failover_runpod in its JSON note.
+
+    The poller wires the real router marker poster (post_marker_via_task_py); we
+    capture the marker kwargs to inspect the posted reason instead of shelling
+    out to task.py."""
+    import scripts.backend_poll as bp
+
+    sidecar = tmp_path / "issue-783-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="pending", ts=_time.time() - 1000), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDoubleWithTeardown(_pending_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Capture the marker poster the failover threads into the router.
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        bp, "post_marker_via_task_py", lambda **kw: captured.append(kw), raising=False
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        lambda **kw: captured.append(kw),
+        raising=False,
+    )
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    backend_selected = [m for m in captured if m.get("marker") == "epm:backend-selected"]
+    assert backend_selected, "no epm:backend-selected marker posted by the queue-timeout failover"
+    body = json.loads(backend_selected[-1]["note"])
+    assert body["reason"] == "gcp_queue_timeout_failover_runpod"
+
+
+def test_gcp_queue_timeout_does_NOT_increment_gcp_attempts_today(tmp_path, monkeypatch, capsys):
+    """#783 success criterion (e): a queue-timeout cancel is a CLEAN advance — it
+    does NOT bump the per-day GCP attempt counter (that bumps only inside
+    _attempt_one_gcp_rung's create path, which the poller never re-enters).
+
+    Assert directly: after a full queue-timeout failover, the durable lease's
+    gcp_attempts_today is UNCHANGED from its pre-failover value. The lease store
+    is isolated to a per-test ~/.eps-routing by the autouse fixture."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    sidecar = tmp_path / "issue-783-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="pending", ts=_time.time() - 1000), sidecar)
+
+    # Seed a lease recording the GCP attempt count already spent this run.
+    store = LeaseStore()  # resolves to the tmp ~/.eps-routing (autouse fixture)
+    store.write(Lease(issue=783, spec_hash="deadbeef", attempt_id="att-1", gcp_attempts_today=3))
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDoubleWithTeardown(_pending_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    assert len(rp.launches) == 1  # the failover fired
+    lease_after = store.read(783)
+    assert lease_after is not None
+    # The queue-timeout cancel did NOT touch the GCP attempt counter.
+    assert lease_after.gcp_attempts_today == 3
+
+
+# ── #783 negative controls (false-positive guards) ───────────────────────────
+
+
+def test_gcp_pending_within_floor_stays_running_no_failover(tmp_path, monkeypatch, capsys):
+    """#783 negative control: a "pending" poll WITHIN the queue-wait floor (clock
+    age < EPS_GCP_QUEUE_WAIT_SECONDS) stays running — no escalation, no
+    teardown, no RunPod launch."""
+    sidecar = tmp_path / "issue-783-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="pending", ts=_time.time() - 30), sidecar)
+
+    teardown_backend = _PollDoubleWithTeardown(_pending_poll())
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: teardown_backend)
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed within the queue-wait floor (#783)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "pending"
+    assert len(teardown_backend.teardowns) == 0
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_running_phase_not_pending_does_not_trip_queue_timeout(tmp_path, monkeypatch, capsys):
+    """#783 negative control: a GCP poll whose phase is "running" (dequeued and
+    up) — NOT "pending" — is untouched even with a stale clock, because the
+    queue-timeout predicate scopes to current_phase=="pending" ONLY."""
+    sidecar = tmp_path / "issue-783-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="running", ts=_time.time() - 1000), sidecar)
+
+    running_poll = PollResult(
+        status="running",
+        current_phase="running",
+        new_milestone=False,
+        last_log_mtime_sec_ago=10,
+        pid_alive=True,
+        log_tail_excerpt="",
+    )
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDoubleWithTeardown(running_poll),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for a non-pending phase (#783)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "running"
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_first_pending_observation_stamps_clock_stays_running(tmp_path, monkeypatch, capsys):
+    """#783 negative control: the FIRST "pending" observation (a fresh-dispatch
+    handle whose sidecar carries NO queue clock, last_ts is None) re-stamps the
+    clock and stays running — a freshly-queued instance is never failed over on
+    its very first poll, however long the create itself took."""
+    sidecar = tmp_path / "issue-783-handle.json"
+    # A GCP handle with NO last_phase / last_phase_change_ts keys in extra.
+    write_handle_sidecar(_gcp_handle(), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDoubleWithTeardown(_pending_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed on the first pending poll (#783)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "pending"
+    # The clock was stamped so a later stale poll CAN trip — verify the sidecar
+    # now carries the "pending" clock keys.
+    from scripts.backend_poll import _read_phase_clock
+
+    last_phase, last_ts = _read_phase_clock(sidecar)
+    assert last_phase == "pending"
+    assert last_ts is not None
+
+
+def test_gcp_cpu_bigmem_pending_past_floor_does_NOT_fail_over(tmp_path, monkeypatch, capsys):
+    """#783 negative control: a cpu-bigmem GCP handle (gpu_count==0, intent NOT
+    in RUNPOD_CPU_INSTANCE_FOR_INTENT) stuck "pending" past the floor is escalated
+    to terminal_queue_timeout by the clock BUT the _is_gcp_queue_timeout predicate
+    EXCLUDES it (no RunPod CPU lane), so it falls through to the ordinary dead
+    path — RunPod is never constructed."""
+    cpu_extra = dict(_GCP_EXTRA_659)
+    cpu_extra["intent"] = "cpu-bigmem"
+    cpu_extra["gpu_count"] = 0
+    cpu_extra["last_phase"] = "pending"
+    cpu_extra["last_phase_change_ts"] = _time.time() - 1000
+    sidecar = tmp_path / "issue-783-handle.json"
+    write_handle_sidecar(_gcp_handle(extra=cpu_extra), sidecar)
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for a cpu-bigmem queue-stall (#783)")
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDoubleWithTeardown(_pending_poll()),
+    )
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    # Escalated to terminal_queue_timeout (the clock rewrote it) but the CPU
+    # predicate excluded it from failover -> ordinary dead path.
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_queue_timeout"
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_cpu_small_pending_past_floor_predicate_is_eligible() -> None:
+    """#783: the queue-timeout predicate _is_gcp_queue_timeout returns True for a
+    cpu-small handle at terminal_queue_timeout (mapped CPU intent, #747-relaxed)
+    and False for cpu-bigmem — mirroring the #659 CPU-intent guard exactly."""
+    from scripts.backend_poll import _is_gcp_queue_timeout
+
+    def _tq_poll() -> PollResult:
+        return _poll("dead", "terminal_queue_timeout")
+
+    assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-small"), _tq_poll()) is True
+    assert _is_gcp_queue_timeout(_cpu_gcp_handle("cpu-bigmem"), _tq_poll()) is False
+    # A GPU handle is eligible; a non-GCP / non-dead / wrong-phase handle is not.
+    assert _is_gcp_queue_timeout(_gcp_handle(), _tq_poll()) is True
+    assert _is_gcp_queue_timeout(_gcp_handle(), _poll("dead", "terminal_workload_failed")) is False
+    assert _is_gcp_queue_timeout(_gcp_handle(), _poll("running", "pending")) is False
+
+
+def test_gcp_queue_timeout_teardown_failure_still_fails_over(tmp_path, monkeypatch, capsys):
+    """#783 robustness: if the best-effort teardown of the queued instance RAISES
+    (transient gcloud error), the failover STILL proceeds — the teardown is a
+    cleanliness step (the stale-GCP-VM janitor is the backstop), never a
+    precondition of the RunPod re-dispatch."""
+    sidecar = tmp_path / "issue-783-handle.json"
+    write_handle_sidecar(_gcp_handle_with_clock(phase="pending", ts=_time.time() - 1000), sidecar)
+
+    teardown_backend = _PollDoubleWithTeardown(
+        _pending_poll(), teardown_raises=RuntimeError("gcloud delete transient failure")
+    )
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: teardown_backend)
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "783", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_timeout_failover_runpod"
+    assert len(teardown_backend.teardowns) == 1  # teardown was attempted
+    assert len(rp.launches) == 1  # and the failover still fired
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+# ---------------------------------------------------------------------------
 # #775 — RunPod CUDA-IMA repeat-failover, end-to-end via backend_poll_main
 # ---------------------------------------------------------------------------
 

@@ -153,6 +153,33 @@ upload (or under the fence) — when uploads fail-soft (e.g. quota 403), adapter
 accumulate on the pod's ~130GB MooseFS quota instead of being deleted, by
 design (upload-before-delete invariant).
 
+**`WANDB_LOG_MODEL` is a HuggingFace/WandB env var — NOT one of ours — and
+must stay unset (or `false`) in every training environment.** Distinct from
+the three project-owned WandB checkpoint-upload sites above — all gated by
+`EPM_UPLOAD_MODEL_WANDB=1` (default OFF; landed commit `b4474042b7`):
+`orchestrate/hub.py:1462` (`upload_model_wandb`),
+`train/trainer.py:477` (`_maybe_upload_checkpoint_to_wandb`), and its
+`train/sft.py:1526` call site — HF `Trainer` installs a built-in
+`WandbCallback` whenever `report_to="wandb"` (which every project training
+run with a WandB run name sets — `train/trainer.py:943`/`:1309`). That
+callback reads `WANDB_LOG_MODEL` from the environment at init: `end` uploads
+the final saved model artifact to WandB Artifacts at end of training
+(`WandbCallback.on_train_end` saves the model into a temp dir and logs
+THAT — not an existing checkpoint dir), `checkpoint` uploads the actual
+checkpoint dir every `save_steps` via `on_save` (older Transformers also
+accepted the deprecated boolean alias `true` ≈ `end`), and the default
+`false`/unset uploads nothing. This path is INDEPENDENT of our `_maybe_upload_*` code — so
+`EPM_UPLOAD_MODEL_WANDB=1` does NOT gate it and setting `WANDB_LOG_MODEL`
+re-opens the ~15 GB-safetensors-to-WandB leak regardless of our guard.
+Therefore `WANDB_LOG_MODEL` must never be set (or must be explicitly
+`false`/`0`) in any environment where training runs — `bootstrap_pod.sh`,
+the GCE startup prelude, the SLURM sbatch env block, `.env`, and launch
+shells (it is currently unset in all of them; keep it that way). This is
+the surface that let ~784 GB of checkpoints accumulate on WandB before the
+`EPM_UPLOAD_MODEL_WANDB` guard landed on 2026-06-29 (the 2026-06-30 4TB
+cleanup; only-on-WandB orphans were archived to the private
+`superkaiba1/explore-persona-space-wandb-archive` repo before deletion).
+
 **Delete-after-eval sweeps MUST persist the ADAPTER first (never the merged dir).**
 A sweep that `rm`s a trained checkpoint after its eval to stay under the MooseFS
 ~130GB quota (the #404/#458 pattern) MUST set `EPM_PERSIST_ADAPTER_HF_REPO` +

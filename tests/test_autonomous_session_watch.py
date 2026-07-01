@@ -10327,3 +10327,68 @@ def test_idle_unmapped_pass_calls_breadcrumb_gc(isolated_registry, monkeypatch):
     _write_terminal_breadcrumb(isolated_registry, "sid-gone", 720, "completed")
     asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
     assert not (isolated_registry / "last-mapped-terminal-sid-gone.json").exists()
+
+
+# ── #795 diagnosis (NO-CHANGE verification) ──────────────────────────────────
+# #795 was filed to "verify/tighten the reconcile-pass auto-stop predicate for
+# completed-task sessions, or add a completed-task fast-path". The diagnosis
+# (plan v2, Route A) found the class is ALREADY reaped by the #720 short-window
+# idle-unmapped path (worst case ~50 min). These tests pin that NO-CHANGE
+# conclusion: they assert the diagnosis-smoke's decision core, so a future
+# regression that removes / lengthens the #720 fast lane trips here.
+def test_issue795_diagnosis_smoke_verdict_holds(isolated_registry, monkeypatch):
+    # The offline diagnosis (synthetic ghost class + arithmetic bound) must
+    # return the NO-CHANGE verdict on the current tree. Runs the smoke's two
+    # deterministic checks (A + B) directly — the same asserts the smoke's
+    # exit code depends on.
+    import importlib.util
+
+    monkeypatch.delenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", raising=False)
+    spec = importlib.util.spec_from_file_location(
+        "issue795_diagnosis_smoke",
+        str(SCRIPTS / "issue795_diagnosis_smoke.py"),
+    )
+    smoke = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(smoke)
+    assert smoke.check_synthetic_short_window() is True
+    assert smoke.check_worst_case_bound() is True
+
+
+def test_issue795_completed_ghost_class_reaped_via_720(isolated_registry, monkeypatch):
+    # The exact #795 ghost class (698/705/706): a `completed`-task session,
+    # unmapped (registry entry deleted by the respawn pass), repo-root cwd,
+    # non-TTY, no pod, no follow-up -> reaped by the idle-unmapped pass on the
+    # 30-min short window within 2 ticks. This is the end-to-end proof that no
+    # reconcile-pass change is needed; it reuses the #720 short-window harness.
+    stops, records = _run_short_window_case(
+        isolated_registry,
+        monkeypatch,
+        terminal_status="completed",
+        running_pods=[],
+        followup_active=False,
+    )
+    assert stops == ["sid-720"]
+    assert len(records) == 1 and "auto-stopped idle unmapped" in records[0]
+
+
+def test_issue795_dry_run_does_not_stop(isolated_registry, monkeypatch):
+    # c11 (dry-run coverage): the same ghost class under dry_run=True is
+    # DECIDED but never actually stopped — no daemon stop call, no reap record.
+    # Pins that the diagnosis path is side-effect-free in dry-run mode.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP_S", raising=False)
+    monkeypatch.delenv("EPM_LAST_MAPPED_TERMINAL_REAP_S", raising=False)
+    sid = "sid-795-dry"
+    children = [{"happySessionId": sid, "pid": 7795}]
+    meta = {sid: {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch, children=children, meta=meta, idle_age=35 * 60, has_tty=False
+    )
+    _patch_short_window_guards(monkeypatch, running_pods=[], followup_active=False)
+    _write_terminal_breadcrumb(isolated_registry, sid, 795, "completed")
+    t0 = 2_000_000.0
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0)  # dry_run miss 1
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0 + 600)  # dry_run decide
+    assert stops == [] and records == []

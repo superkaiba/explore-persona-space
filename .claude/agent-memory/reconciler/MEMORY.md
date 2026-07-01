@@ -18,7 +18,7 @@
 ## Claude code-review misses (FAIL-leaning calibration)
 
 - [Claude under-classes silent failures](feedback_claude_underclasses_silent_failures.md) — real silent-failure bug + CONCERNS verdict → FAIL; classification by what the bug DOES, not fix size. 11-incident ledger + defenses.
-- [Claude misses same-file siblings (sibling-scan family)](feedback_claude_misses_same_file_siblings.md) — must-fix-table walks miss the bug CLASS: sibling code paths, render branches, resamplers (set-vs-list comp), scripts, figure-vs-analyze layers.
+- [Claude misses same-file siblings (sibling-scan family)](feedback_claude_misses_same_file_siblings.md) — must-fix-table walks miss the bug CLASS: sibling code paths, render branches, resamplers (set-vs-list comp), scripts, figure-vs-analyze layers (now promoted to code-reviewer Step 3.7).
 - [Claude misses producer/consumer contract mismatches](feedback_claude_misses_producer_consumer_key_mismatch.md) — round-trip literal contracts: JSON key path-vs-inline, custom_id f-strings, consumer regex classes, builder default vs plan-prescribed holdout.
 - [Claude misses dispatcher-wiring correctness bugs](feedback_claude_misses_dispatcher_wire_bugs.md) — optional args never passed, fallback re-picks never invoked, defaults that neuter plan elements on the canonical invocation. #504/#517/#520.
 - [Claude PASSes scaffolded-but-not-plumbed pipelines](feedback_claude_scaffolded_pipeline_not_plumbed.md) — orphaned helpers, readers with no writer, plan-mandated HALT gates the runner never invokes; grep the production wiring site. #397/#508/#516.

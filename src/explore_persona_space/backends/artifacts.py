@@ -545,8 +545,30 @@ def build_expected_artifacts_declaration(
     sentinel checks STILL run, so the gate is not relaxed — it just stops
     demanding artifacts this phase never promised (#661 root cause: the
     auto full-task git paths produced a structural FAIL on a perfectly
-    HF-uploaded phase-scoped run). ``False`` (default) = the established
-    behavior (both full-task git paths auto-declared).
+    HF-uploaded phase-scoped run).
+
+    **Default git paths are split by ``custom_workload`` (#790).** When
+    ``skip_default_git_paths`` is ``False`` the default ``git_paths`` depend
+    on the workload kind, because the two kinds produce different git
+    artifacts DURING the run:
+
+    * ``custom_workload=True`` (``--workload-cmd`` drivers): ``git_paths``
+      = ``[eval_results/issue_<N>/, *extra_git_paths]``. Many dispatch-script
+      drivers commit their eval JSONs during the run, so a missing
+      ``eval_results/`` there is a genuine FAIL and the check is kept; but
+      ``figures/`` is dropped because the analyzer generates + commits
+      figures POST-gate (analyzer.md Step 3) on every lane.
+    * ``custom_workload=False`` (pure hydra ``scripts/train.py``):
+      ``git_paths`` = ``[*extra_git_paths]`` — BOTH defaults dropped. ``train.py``
+      runs ``run_single(..., skip_eval=True)`` and ``orchestrate/runner.py``
+      gates all eval production on ``not skip_eval``, so a hydra run writes
+      neither ``eval_results/issue_<N>/`` nor ``figures/issue_<N>/`` during
+      the run; declaring either was a guaranteed false-FAIL (#790).
+
+    The GCP-lane ``fetch_results`` best-effort mirror still pulls both
+    ``eval_results/`` + ``figures/`` for analyzer-local convenience; they
+    are just no longer gate artifacts on the pure-hydra branch. The
+    completion sentinel + the HF-data checks keep gating teardown.
 
     **Unmerged-worktree launches (``git_repo_root``, #685).** When the
     run's committed eval/figure artifacts live on an unmerged
@@ -576,12 +598,26 @@ def build_expected_artifacts_declaration(
         # caller's explicit extra_git_paths (so a phase that DOES commit a
         # scoped git file can still declare it).
         git_paths = list(extra_git_paths)
-    else:
+    elif custom_workload:
+        # ``--workload-cmd`` drivers may commit ``eval_results/`` during the
+        # run (many do), but NEVER ``figures/`` — the analyzer generates +
+        # commits figures POST-gate (analyzer.md Step 3), AFTER
+        # ``confirm_artifacts`` runs, on every lane. Keep the real
+        # ``eval_results/`` check; drop the never-produced ``figures/``
+        # false-FAIL (#790).
         git_paths = [
             f"eval_results/issue_{issue}/",
-            f"figures/issue_{issue}/",
             *extra_git_paths,
         ]
+    else:
+        # Pure hydra (``scripts/train.py`` runs ``run_single(..., skip_eval=True)``,
+        # and ``orchestrate/runner.py`` gates ALL eval production on
+        # ``not skip_eval``), so the run writes NEITHER ``eval_results/issue_<N>/``
+        # NOR ``figures/issue_<N>/``. Declaring either is a load-bearing
+        # false-FAIL (#790). The GCP-lane ``fetch_results`` best-effort mirror
+        # still pulls both for analyzer-local convenience; they are just no
+        # longer gate artifacts.
+        git_paths = list(extra_git_paths)
     decl: dict[str, Any] = {
         "issue": int(issue),
         "hf_data_repo": hf_data_repo,

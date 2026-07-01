@@ -135,6 +135,23 @@ def hf_data_repo() -> str:
 DISK_GUARD_SIDECAR_REL = Path(".claude") / "cache" / "disk-guard-events.jsonl"
 
 
+def _running_pod_side() -> bool:
+    """True when running on a RunPod pod (NOT the dev VM).
+
+    On a pod, importing/using ``task_workflow.repo_root()`` on a non-``main``
+    HEAD auto-routes to a managed worktree via ``git worktree add`` /
+    ``git reset --hard`` on MooseFS-backed ``/workspace``, which hangs
+    indefinitely (#803, pod-778). Detected by two conditions that both hold on
+    every RunPod pod (the container has ``/.dockerenv``; ``bootstrap_pod.sh``
+    creates ``/workspace/logs``). ``/workspace/logs`` alone is used as a pod
+    signal elsewhere (e.g. ``scripts/issue634_extract_behavior_vectors.py``),
+    but on the dev VM ``/workspace/logs`` is a real populated dir — so the
+    ``/.dockerenv`` conjunct is load-bearing: it is what makes the AND False
+    on the VM and prevents a dev-VM false-positive (which would silently
+    no-op a VM-side reap)."""
+    return Path("/.dockerenv").exists() and Path("/workspace/logs").is_dir()
+
+
 def disk_guard_sidecar_path() -> Path:
     """Absolute path of the shared disk-guard escalation sidecar JSONL."""
     return repo_root() / DISK_GUARD_SIDECAR_REL
@@ -713,6 +730,18 @@ def _fmt_gb(n: int) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Pod-side short-circuit (#803): on a RunPod pod any use of
+    # task_workflow.repo_root() on a non-main HEAD hangs on MooseFS
+    # (git worktree add / git reset --hard never completes). The between-phase
+    # disk-hygiene call is contracted as pod-safe; make it a fast no-op here.
+    # There are no hf_dl/g*_dl caches to reap that repo_root() would find on a
+    # pod anyway, so returning 0 is behaviorally correct, not just a bail-out.
+    if _running_pod_side():
+        print(
+            "clean_experiment_downloads.py: pod-side no-op "
+            "(repo_root() worktree auto-routing hangs on MooseFS; #803)"
+        )
+        return 0
     ap = argparse.ArgumentParser(
         description=(
             "Delete a finished experiment's HF-download caches "

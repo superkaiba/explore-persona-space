@@ -1,0 +1,48 @@
+{
+  "commit": "38a3b740d7000c3a0991e715e1eea882a1726ac6",
+  "created": "2026-07-01T11:56:10Z",
+  "figsize": [
+    7.2,
+    4.0
+  ],
+  "points": [
+    {
+      "paired \u0394\u03c1 (same bootstrapped contexts) \u2014 positive = matched wins": 0.08308519921026669,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "paired \u0394\u03c1 (same bootstrapped contexts) \u2014 positive = matched wins": 0.27966658238610875,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "paired \u0394\u03c1 (same bootstrapped contexts) \u2014 positive = matched wins": 0.1861878226667648,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "paired \u0394\u03c1 (same bootstrapped contexts) \u2014 positive = matched wins": 0.05854384846087579,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "paired \u0394\u03c1 (same bootstrapped contexts) \u2014 positive = matched wins": 0.1622258388548975,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "paired \u0394\u03c1 (same bootstrapped contexts) \u2014 positive = matched wins": 0.08039272653130847,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 6
+}

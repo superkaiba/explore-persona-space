@@ -1105,10 +1105,9 @@ def test_build_declaration_phase_scope_omits_full_task_git_paths() -> None:
     decl_off = build_expected_artifacts_declaration(
         issue=661, sentinel_path=sentinel, custom_workload=True, attempt_id="att-1"
     )
-    assert decl_off["git_paths"] == [
-        "eval_results/issue_661/",
-        "figures/issue_661/",
-    ]
+    # #790: custom_workload keeps eval_results/ (drivers commit it during the
+    # run) but drops the analyzer-generated figures/.
+    assert decl_off["git_paths"] == ["eval_results/issue_661/"]
     decl_on = build_expected_artifacts_declaration(
         issue=661,
         sentinel_path=sentinel,
@@ -1137,7 +1136,64 @@ def test_build_declaration_phase_scope_omits_full_task_git_paths() -> None:
     gcp_on = gcp_decl(spec=spec, config=cfg, attempt_id="att-1", skip_default_git_paths=True)
     gcp_off = gcp_decl(spec=spec, config=cfg, attempt_id="att-1")
     assert gcp_on["git_paths"] == []
-    assert gcp_off["git_paths"] == ["eval_results/issue_661/", "figures/issue_661/"]
+    # #790: spec has workload_cmd → custom_workload → eval_results/ only.
+    assert gcp_off["git_paths"] == ["eval_results/issue_661/"]
+
+
+def test_build_expected_artifacts_declaration_hydra_workload_omits_figures() -> None:
+    """#790: a ``--workload-cmd`` (``custom_workload=True``) declaration KEEPS
+    ``eval_results/`` (dispatch drivers commit eval JSONs during the run — a
+    missing one there is a genuine FAIL) but DROPS ``figures/`` (the analyzer
+    generates + commits figures POST-gate on every lane, so ``figures/`` is
+    never produced during the run and declaring it is a guaranteed false-FAIL).
+    """
+    sentinel = "/scratch/eval_results/issue_790/att-1/.completion-sentinel.json"
+    decl = build_expected_artifacts_declaration(
+        issue=790,
+        sentinel_path=sentinel,
+        custom_workload=True,
+        attempt_id="att-1",
+    )
+    assert decl["git_paths"] == ["eval_results/issue_790/"]
+    # extra_git_paths still append after the kept default.
+    decl_extra = build_expected_artifacts_declaration(
+        issue=790,
+        sentinel_path=sentinel,
+        custom_workload=True,
+        attempt_id="att-1",
+        extra_git_paths=("eval_results/issue_790/panel.json",),
+    )
+    assert decl_extra["git_paths"] == [
+        "eval_results/issue_790/",
+        "eval_results/issue_790/panel.json",
+    ]
+
+
+def test_build_expected_artifacts_declaration_pure_hydra_omits_defaults() -> None:
+    """#790: a pure-hydra (``custom_workload=False``) declaration drops BOTH
+    default git paths. ``scripts/train.py`` runs ``run_single(..., skip_eval=True)``
+    and ``orchestrate/runner.py`` gates all eval production on ``not skip_eval``,
+    so a hydra run writes NEITHER ``eval_results/issue_<N>/`` NOR
+    ``figures/issue_<N>/`` during the run — declaring either is a load-bearing
+    false-FAIL. Only ``extra_git_paths`` survive.
+    """
+    sentinel = "/scratch/eval_results/issue_790/att-1/.completion-sentinel.json"
+    decl = build_expected_artifacts_declaration(
+        issue=790,
+        sentinel_path=sentinel,
+        custom_workload=False,
+        attempt_id="att-1",
+    )
+    assert decl["git_paths"] == []
+    # A hydra phase that DOES commit a scoped git file can still declare it.
+    decl_extra = build_expected_artifacts_declaration(
+        issue=790,
+        sentinel_path=sentinel,
+        custom_workload=False,
+        attempt_id="att-1",
+        extra_git_paths=("eval_results/issue_790/manifest.json",),
+    )
+    assert decl_extra["git_paths"] == ["eval_results/issue_790/manifest.json"]
 
 
 def test_phase_scope_passes_without_skip_confirm_and_negative_control(tmp_path: Path) -> None:

@@ -2085,7 +2085,7 @@ Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
 |---|---|---|
 | PASS-class | PASS-class | **Agree.** `final_verdict = PASS`. CONCERNS bullets from either reviewer surface to the implementer as opportunistic suggestions; do not block. |
 | FAIL | FAIL — overlapping blockers | **Agree.** `final_verdict = FAIL`. Bounce to implementer (one round). |
-| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
+| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
 | PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies, diff path. Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
 
 The reconciler may NOT add findings beyond what either reviewer raised —
@@ -2247,8 +2247,14 @@ the same logic.
 - **`final_verdict == FAIL` + revision_round<5** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
-  present) as part of the brief. Implementer posts v<n+1>; loop back
-  to 5a with `revision_round = n+1`.
+  present) as part of the brief. **When either reviewer verdict (or the
+  disjoint-blocker union) contains a `### Bug-class sweep: <class>`
+  enumeration, thread the FULL sibling list — every enumerated
+  `file:LINE`, not just the top finding — into the implementer's
+  punch-list brief, so the round-N+1 edit is class-scoped and the
+  implementer's class-hardening carve-out (experiment-implementer.md
+  revision-round rule) fires on the whole class.** Implementer posts
+  v<n+1>; loop back to 5a with `revision_round = n+1`.
 - **`final_verdict == FAIL` + revision_round>=5** -> **CAP-HIT:
   strip-then-continue-or-surface** (replaces the retired cap-3 strategy
   pivot; see CLAUDE.md "STATE-TO-`blocked` criteria" and workflow.yaml
@@ -6823,17 +6829,71 @@ task at the wrong status, AND a branch based on another still-unmerged
 `issue-<M>` branch will replay `#M`'s old commits onto `main` if blindly
 rebase-merged. Three guards:
 
-1. **Foreign-`tasks/` guard.** `git diff --name-only origin/main HEAD --
-   tasks/` MUST be empty except THIS task's own folder
-   (`tasks/*/<N>/`). For any foreign `tasks/` path in the diff, run
-   `git checkout origin/main -- <that file>` before merging. Never let a
-   behind-`main` branch revert another task's `events.jsonl`. (Incident
-   2026-06-01: #458's merge branch, 1,146 commits behind main, silently
-   rewound `tasks/running/448/events.jsonl`.) The `--rebase` merge form
-   below replays the branch's commits on top of current `main`, so files
-   the branch never committed keep `main`'s version — this is what keeps
-   the clean-result body (committed to `main` by `task.py`, never in the
-   worktree) safe across the merge.
+1. **Foreign-`tasks/` guard (strip whole foreign task folders before the
+   merge).** `git diff --name-only origin/main HEAD -- tasks/` MUST be empty
+   except THIS task's own folder (`tasks/*/<N>/`). For any FOREIGN `tasks/`
+   path in that diff — a `tasks/*/<M>/…` file for `M != <N>`, whether
+   `events.jsonl`, `comments.jsonl`, `body.md`, or any other file — reset it
+   to `main` BEFORE merging so the server-side `gh pr merge --rebase` has
+   nothing foreign to conflict on (GitHub ignores this repo's
+   `.gitattributes merge=union`, so a union merge cannot rescue a server-side
+   conflict — the strip must happen here). A foreign path that EXISTS on
+   `origin/main` is reset by checkout; a foreign path the branch ADDED (does
+   not exist on `origin/main`) is dropped from the branch instead — a plain
+   `git checkout origin/main -- <added-path>` would crash with `pathspec did
+   not match any file(s)` and abort the guard. Split FOREIGN accordingly:
+
+   ```bash
+   # Foreign tasks/* paths this branch touches (everything under tasks/ that
+   # is NOT this task's own folder). Anchored so tasks/.../<N>/… is excluded.
+   STRIPPED_FOREIGN=no   # set to yes iff a strip commit is actually created,
+                         # so the safe-case push below fires only when needed.
+   mapfile -t FOREIGN < <(git -C "$WT" diff --name-only origin/main HEAD -- 'tasks/' \
+     | grep -Ev "^tasks/[^/]+/<N>/" || true)
+   if [ "${#FOREIGN[@]}" -gt 0 ]; then
+     FOREIGN_ON_MAIN=()      # exist on origin/main -> reset to main's version
+     FOREIGN_BRANCH_ONLY=()  # only the branch added them -> drop from branch
+     for p in "${FOREIGN[@]}"; do
+       if git -C "$WT" cat-file -e "origin/main:$p" 2>/dev/null; then
+         FOREIGN_ON_MAIN+=("$p")
+       else
+         FOREIGN_BRANCH_ONLY+=("$p")
+       fi
+     done
+     [ "${#FOREIGN_ON_MAIN[@]}" -gt 0 ] \
+       && git -C "$WT" checkout origin/main -- "${FOREIGN_ON_MAIN[@]}"
+     [ "${#FOREIGN_BRANCH_ONLY[@]}" -gt 0 ] \
+       && git -C "$WT" rm --cached -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"
+     # Commit the reset/removal so the branch diff no longer touches them,
+     # but only if anything actually changed (idempotent: a re-run finds
+     # nothing staged and skips the commit). Record that a strip commit was
+     # made so the safe-case merge below knows it must push before rebasing.
+     if ! git -C "$WT" diff --cached --quiet -- "${FOREIGN[@]}"; then
+       git -C "$WT" commit -m "issue-<N>: strip foreign tasks/ folders before Step-10d merge" -- "${FOREIGN[@]}"
+       STRIPPED_FOREIGN=yes
+     fi
+   fi
+   ```
+
+   The `STRIPPED_FOREIGN` flag is load-bearing: the strip commit above is a
+   LOCAL worktree commit, but the safe-case `gh pr merge --rebase` below
+   rebases the commits on the PR head ref as it exists on
+   `origin/issue-<N>` (server-side), NOT the local worktree HEAD. An unpushed
+   strip commit is therefore INVISIBLE to that server-side rebase — the
+   foreign `tasks/*` reverts would remain in the replayed history and land on
+   `main` silently. So when `STRIPPED_FOREIGN=yes`, the safe-case block below
+   MUST push the strip commit to the PR head ref BEFORE calling `gh pr merge`.
+
+   This is idempotent (a re-run finds `FOREIGN` empty and no-ops) and never
+   touches THIS task's own `tasks/*/<N>/` folder (the `grep -Ev
+   "^tasks/[^/]+/<N>/"` carve-out). Never let a behind-`main` branch revert
+   another task's `events.jsonl` / `comments.jsonl`. (Incident 2026-06-01:
+   #458's merge branch, 1,146 commits behind main, silently rewound
+   `tasks/running/448/events.jsonl`.) The `--rebase` merge form below replays
+   the branch's commits on top of current `main`, so files the branch never
+   committed keep `main`'s version — this is what keeps the clean-result body
+   (committed to `main` by `task.py`, never in the worktree) safe across the
+   merge.
 2. **Status already off `running`.** By both trigger points the status is
    well past `running` (`awaiting_promotion` for experiments; `completed`
    for code paths, flipped in Step 10 step 6 BEFORE this step). A crash
@@ -6872,13 +6932,45 @@ rebase-merged. Three guards:
    git -C "$WT" diff --name-only origin/main...HEAD   # three-dot form
    ```
 
-   UNSAFE if that list touches any foreign `tasks/` path (under
-   `tasks/` but outside `tasks/*/<N>/`) or files outside this task's
-   deliverable scope (paths neither the plan nor the code review
-   touched). If the list is clean — only this task's own deliverables —
-   the branch is SAFE to rebase-merge regardless of `BEHIND`: the
-   rebase replays only these commits, and files the branch never
-   committed keep `main`'s version.
+   Before judging a workflow-surface path out-of-scope, EXCLUDE files whose ONLY
+   branch-side touch is a Step-5a `spec-freshness` sync (the mandated
+   `git checkout main -- $SAFE_SPECS` from `main`, NOT a branch deliverable).
+   This mirrors Step 5a's own intent (line ~1925): a file that has NO non-sync
+   branch-side commit is content imported FROM `main`, so it is never an
+   out-of-scope regression. Match on the commit SUBJECT line ONLY — a `--grep`
+   over subject+body would wrongly exclude a genuine branch edit whose commit
+   BODY happens to mention "spec-freshness" (documentation, a retrospective),
+   silently dropping a real branch touch. The two Step-5a sync SUBJECT variants
+   both carry the token (`issue-<N>: sync workflow-surface specs from main
+   (spec-freshness)`; `chore(issue-<N>): spec-freshness sync workflow surface
+   from main`).
+
+   ```bash
+   # For each workflow-surface path $f in the own-diff: does it have any
+   # branch-side commit whose SUBJECT does NOT contain "spec-freshness"?
+   # Emit "<sha> <subject>" per own-commit touching $f, then keep only the
+   # non-sync ones. If none remain, the file's only branch-side touches are
+   # spec-freshness syncs => imported from main => NON-blocking for Guard 3.
+   non_sync=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
+     | awk 'index($0, "spec-freshness") == 0')
+   # $non_sync empty   => file imported via spec-freshness sync only => treat as
+   #                      NON-blocking (in-scope, imported from main).
+   # $non_sync nonempty => a genuine branch-side edit (its subject is not a sync)
+   #                      => apply the normal in-scope / out-of-scope judgment.
+   ```
+
+   (`git log --format='%H %s'` prints `<sha> <subject>` per commit — the `awk
+   index()` keeps only lines whose subject lacks the token; the sha is a hex
+   string that never contains "spec-freshness", so the match is effectively
+   subject-scoped. Equivalently `git log --format='%s' … | grep -v spec-freshness`.)
+
+   UNSAFE if the own-diff — after the spec-freshness exclusion above — touches
+   any foreign `tasks/` path (under `tasks/` but outside `tasks/*/<N>/`) or files
+   outside this task's deliverable scope (paths neither the plan nor the code
+   review touched). If the list is clean — only this task's own deliverables,
+   plus any spec-freshness-synced workflow-surface files — the branch is SAFE to
+   rebase-merge regardless of `BEHIND`: the rebase replays only these commits,
+   and files the branch never committed keep `main`'s version.
 
    In the unsafe case, do NOT run `gh pr merge --rebase` — fall through
    to the **artifact-confirmed merge** procedure below. The Guard 1
@@ -6897,6 +6989,90 @@ rebase-merged. Three guards:
    its `origin/main...HEAD` diff carries the whole `#472` parent
    payload, failing the content check.)
 
+#### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
+
+Run this AFTER guards 1-3 and BEFORE the safe-case `gh pr merge --rebase`
+call. For a workflow-fix / small-diff branch that is very far behind `main`,
+a server-side `--rebase` predictably conflicts on churn even after Guard 1
+strips foreign folders (GitHub replays the branch's own commits across
+thousands of intervening main commits, and cannot use this repo's
+`merge=union`). When the branch's OWN diff is small, entirely in-scope, AND
+consists ONLY of ADDED files, skip the doomed `--rebase` and route DIRECTLY to
+the surgical additive checkout below.
+
+**Why the ADDED-only conjunct is load-bearing (do NOT drop it).** The
+surgical additive checkout does a WHOLESALE `git checkout issue-<N> -- <path>`
+(the "One or more deliverables missing" branch, ~line 7080), which OVERWRITES
+each listed path with the branch tip's copy. For a file the branch MODIFIED
+that `main` also advanced (very likely on a 1000+-behind branch), that
+overwrite silently discards `main`'s newer content with NO conflict surfacing
+— a silent-wrong merge. Restricting the fast-path to ADDED-only files means
+the surgical checkout only ever CREATES files that do not yet exist on
+`main`, so it can never clobber a concurrently-advanced one. A branch that
+MODIFIES a workflow-surface file (status M) is NOT fast-path-eligible and
+takes the ordinary `gh pr merge --rebase` path, whose server-side 3-way merge
+either merges main's changes cleanly or surfaces a real conflict for the
+recovery sub-procedure. (This is exactly why #787 itself — which MODIFIES
+`SKILL.md` — is not fast-path-eligible.)
+
+```bash
+# Fast-path predicate — ALL of:
+#  (a) task is kind:infra AND tagged wf-fix (a workflow-fix branch), AND
+#  (b) BEHIND > 1000 (branch predates significant main churn), AND
+#  (c) the branch's OWN diff touches <= 15 files, AND
+#  (d) every touched file is in-scope: this task's own paths, workflow
+#      surface, .gitattributes, or the methodology doc — NO shared src/ or
+#      scripts/ additions (those need the full rebase to land), AND
+#  (e) EVERY touched file is status A (Added) — no M (Modified), D (Deleted),
+#      R (Renamed). A modified file would be clobbered wholesale by the
+#      surgical checkout below.
+KIND=$(uv run python "$REPO_ROOT/scripts/task.py" view <N> --json | \
+  uv run python -c 'import sys,json; d=json.load(sys.stdin); fm=d.get("frontmatter",{}); print(fm.get("kind","")); print(" ".join(fm.get("tags",[])))')
+TASK_KIND=$(printf '%s\n' "$KIND" | sed -n 1p)
+TASK_TAGS=$(printf '%s\n' "$KIND" | sed -n 2p)
+# Three-dot: the branch's OWN commits only (merge-base..HEAD) — never files
+# main advanced but the branch never touched. Name-status so we can gate on A.
+mapfile -t OWN_NS < <(git -C "$WT" diff --name-status origin/main...HEAD)
+N_FILES=${#OWN_NS[@]}
+IN_SCOPE=yes
+ADDED_ONLY=yes
+for line in "${OWN_NS[@]}"; do
+  st=${line%%$'\t'*}          # status letter (A / M / D / R100 / ...)
+  f=${line#*$'\t'}            # path (for a rename this is the source; fine —
+                              # a rename fails ADDED_ONLY below regardless)
+  [ "$st" = "A" ] || ADDED_ONLY=no
+  case "$f" in
+    tasks/*/<N>/*|figures/issue_<N>/*|eval_results/issue_<N>/*|eval_results/issue_<N>_*/*|ood_eval_results/issue_<N>/*) ;;
+    .claude/*|CLAUDE.md|.gitattributes|docs/methodology/issue_<N>.md) ;;
+    *) IN_SCOPE=no ;;
+  esac
+done
+FAST_PATH=no
+if [ "$TASK_KIND" = "infra" ] \
+   && printf '%s' "$TASK_TAGS" | grep -qw 'wf-fix' \
+   && [ "$BEHIND" -gt 1000 ] \
+   && [ "$N_FILES" -le 15 ] \
+   && [ "$IN_SCOPE" = "yes" ] \
+   && [ "$ADDED_ONLY" = "yes" ]; then
+  FAST_PATH=yes
+fi
+```
+
+If `FAST_PATH=yes`: SKIP the `gh pr merge --rebase` call and jump straight to
+the **surgical additive checkout** (the "One or more deliverables missing"
+branch of the artifact-confirmed procedure below). The surgical checkout
+lands this branch's own ADDED files onto `main` directly, with no rebase.
+Post `epm:merged v1` with `{artifact_confirmed: true, full_rebase_deferred:
+true, surgical_checkout: true, fast_path: true, reason: "wf-fix branch
+BEHIND=<BEHIND> > 1000, own diff <=15 in-scope ADDED-only files — skipped
+doomed server-side rebase", files: [...]}`.
+
+If `FAST_PATH=no`: proceed to the safe-case `gh pr merge --rebase` (or the
+artifact-confirmed path if Guard 3 said UNSAFE) exactly as before — this
+pre-check adds NO new behavior for normal branches. A branch that MODIFIES a
+workflow-surface file (status M ⇒ `ADDED_ONLY=no`) is deliberately not
+fast-pathed; it takes the ordinary `--rebase`.
+
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
@@ -6906,6 +7082,20 @@ if [ -z "$PR" ]; then
 else
   # Run guards 1-3 above first. If guard 3 says "unsafe", skip this
   # block and run the artifact-confirmed merge below instead.
+  #
+  # Push the Guard-1 strip commit to the PR head ref FIRST, so the
+  # server-side rebase in `gh pr merge` below sees the stripped branch tip,
+  # not the pre-strip commit. The strip commit is a LOCAL worktree commit and
+  # is otherwise invisible to server-side rebase — leaving the foreign
+  # tasks/* reverts in the replayed history and landing them on main silently
+  # (Codex code-review round-1 blocker, task #787). Push retry mirrors
+  # CLAUDE.md § "Concurrent repo-root committers": pull --rebase=merges
+  # --autostash then re-push on a rejected push.
+  if [ "$STRIPPED_FOREIGN" = "yes" ]; then
+    git -C "$WT" push origin issue-<N> \
+      || { git -C "$WT" pull --rebase=merges --autostash \
+           && git -C "$WT" push origin issue-<N>; }
+  fi
   gh pr ready <PR>
   gh pr merge <PR> --rebase --delete-branch=false
 fi
@@ -7057,11 +7247,29 @@ Decision tree:
   `ood_eval_results/issue_<N>/`). Compute:
 
   ```bash
-  # Files this branch ADDED (status A) vs origin/main, restricted to
-  # this task's own paths — never sweeps shared src/ or scripts/.
-  git -C "$WT" diff --name-only --diff-filter=A origin/main HEAD -- \
+  # Files this branch ADDED (status A ONLY) vs origin/main, restricted to
+  # this task's own paths PLUS the workflow surface (a workflow-fix branch's
+  # ADDED deliverable can be .claude/** / CLAUDE.md / .gitattributes). Never
+  # sweeps shared src/ or scripts/ — the new-shared-src/ guard above already
+  # refused the surgical path if the branch added src/.
+  #
+  # --diff-filter=A (ADDED-only), NEVER AM: this checkout does a WHOLESALE
+  # `git checkout issue-<N> -- <path>` below (~line for the xargs git checkout),
+  # which would OVERWRITE main's newer copy of a MODIFIED file with no conflict.
+  # A-only guarantees every listed path does not yet exist on main, so the
+  # checkout only CREATES — never clobbers. A branch that MODIFIES a
+  # workflow-surface file is not fast-path-eligible (predicate (e)) and reaches
+  # this block only via a genuine Guard-3 UNSAFE degrade, where the same
+  # A-only safety applies.
+  #
+  # Three-dot origin/main...HEAD (merge-base..HEAD): the branch's OWN adds only.
+  # Two-dot origin/main HEAD would additionally list files main advanced that
+  # the branch never touched (status M-because-main-advanced), pulling them into
+  # the checkout list — precisely the paths we must NOT overwrite.
+  git -C "$WT" diff --name-only --diff-filter=A origin/main...HEAD -- \
     "tasks/*/<N>/" "figures/issue_<N>/" "eval_results/issue_<N>/" \
     "eval_results/issue_<N>_*/" "ood_eval_results/issue_<N>/" \
+    ".claude/" "CLAUDE.md" ".gitattributes" "docs/methodology/issue_<N>.md" \
     > /tmp/issue-<N>-additive-files.txt
   ```
 

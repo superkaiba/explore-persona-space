@@ -351,7 +351,18 @@ controlling TTY (a live user terminal), and sessions whose transcript cannot
 be resolved (a missing idleness signal FAILS TOWARD KEEP);
 `EPM_UNMAPPED_IDLE_REAP=0` reverts to alert-only; records land in
 `~/.eps-autonomous/idle-unmapped-events.jsonl` (an unmapped session has no
-task to carry a marker).
+task to carry a marker). **#720 short-window subclass:** an unmapped session
+whose LAST-mapped task was TERMINAL — the "zombie session on a completed task"
+ghost class (the respawn pass deletes `issue-<N>.json` at terminal → the
+session goes unmapped, and its repo-root cwd can't re-map it) — is reaped on
+the SHORT `LAST_MAPPED_TERMINAL_REAP_S` window (default 30 min, worst case
+30 min + 2×10-min ticks = ~50 min), NOT the 12h default, via the #720
+breadcrumb (`last-mapped-terminal-<sid>.json`, written at the respawn-pass
+delete instant) + the running-pod + live-follow-up guards in
+`_effective_idle_reap_s`. This is the home for the completed-task-session
+reap: the *reconcile* pass cannot see this class (it is already unmapped by
+the time reconcile runs), so the idle-unmapped short window owns it (#720;
+#795 verified — no reconcile-pass change).
 
 **Program-orchestrator recovery pass (#660 leakage-program bash daemon).** The
 leakage-theory program (#660) is sequenced by a BASH DAEMON

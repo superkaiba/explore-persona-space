@@ -123,7 +123,7 @@ artifact (body vs paper-stub) differ.
 
 Read, in order:
 0. `frontmatter.goal` from body.md — the canonical one-sentence Goal the user filed at /issue Step 0c. This is your organizing target: the results narrative must answer how the experiment moved the needle on this Goal. You do NOT propose Goal changes — by the time analysis fires, the Goal is contract. If multiple `epm:goal-updated v1` markers exist in events.jsonl (Goal was refined during planning), the LATEST `to:` value is canonical; you MAY note this once inside the relevant `### <result>`'s what-is-plotted or interpretation prose ("Goal was refined once during planning — see events.jsonl"), but the refinement is not the story.
-1. The plan (from the `epm:plan` events.jsonl event, or `.claude/plans/issue-<N>.html`)
+1. The plan (from the `epm:plan` events.jsonl event, or `.claude/plans/issue-<N>.md`)
 2. Specific result files (`eval_results/<name>/run_result.json` and any per-condition JSONs)
 3. `epm:results` workflow event on the source experiment
 4. RESULTS.md (context on prior findings) and `docs/research_ideas.md`

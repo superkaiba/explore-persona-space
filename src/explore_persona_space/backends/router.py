@@ -26,8 +26,12 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    among themselves by tz-corrected ``estimate_start_seconds`` (a ranking
    HINT, never a gate), the best is submitted and parked up to
    ``FREE_WAIT`` (default 600 s) to reach RUNNING; PENDING-at-cap triggers
-   cancel + the next lane. GCP has no queue estimate and no park — its
-   "park" is the provision call itself.
+   cancel + the next lane. GCP has no synchronous ``route()``-time park —
+   its "park" is the provision call itself — but a FLEX_START instance that
+   stays PENDING (queued for capacity) is bounded by the ASYNC poller's
+   queue-wait timeout (``EPS_GCP_QUEUE_WAIT_SECONDS``, task #783), which
+   cancels the queued instance and fails it over to the RunPod terminal rung
+   (``reason: gcp_queue_timeout_failover_runpod``) rather than waiting forever.
 3. **Cancel state machine** — request a cancel via the backend's
    ``teardown(handle)``, then poll via the injected ``is_live_after_cancel``
    callable until the job is no longer live in the cluster queue
@@ -316,6 +320,22 @@ ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD: str = "gcp_workload_failover_runpod"
 #: handle (not GCP) and surfaces ``failure_class: code`` → ``status:blocked``,
 #: which the watcher's capacity-retry pass never re-drives.
 ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC: str = "gcp_workload_failover_runpod_async"
+
+#: The router failed over to RunPod because the ASYNC poller
+#: (``scripts/backend_poll.py``) detected a GCP instance that stayed in the
+#: FLEX_START capacity QUEUE (``current_phase == "pending"``) past
+#: ``EPS_GCP_QUEUE_WAIT_SECONDS`` without ever reaching RUNNING (task
+#: #783/#778). DISTINCT from both WORKLOAD-crash reasons
+#: (:data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD` /
+#: ``_ASYNC``) — a queue that never advanced is NOT a crash — AND from
+#: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity EXHAUSTION at create time;
+#: this is a create that SUCCEEDED but the instance never dequeued). Same
+#: RunPod target + terminal rung, distinct detection cause so the
+#: ``epm:backend-selected`` marker trail tells a queue timeout apart from a
+#: crash and a capacity miss. A queue-timeout cancel is a CLEAN advance: it
+#: does NOT touch the per-day GCP attempt counter (that bumps only on a
+#: create, inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
+ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failover_runpod"
 
 #: Consecutive ``is_started`` probe failures tolerated inside the park
 #: watchdog before it gives up with ``probe_failures_exceeded``.
@@ -2304,6 +2324,14 @@ def _runpod_terminal_rung(
             spec.issue,
             residual_gap,
         )
+    elif reason == ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD:
+        logger.warning(
+            "route: GCP FLEX_START queue timeout for issue %d (instance stayed "
+            "PENDING past EPS_GCP_QUEUE_WAIT_SECONDS); failing over to RunPod "
+            "(residual gap: %s).",
+            spec.issue,
+            residual_gap,
+        )
     else:
         logger.warning(
             "route: GCP ladder (and free lanes, if any) exhausted for issue %d; "
@@ -2437,6 +2465,7 @@ def failover_to_runpod_after_async_workload_crash(
     runpod_backend: ComputeBackend,
     evidence: dict[str, Any] | None = None,
     residual_gap: str = "gcp async workload crash (poller-detected); failing over to RunPod",
+    reason: str = ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
     marker_poster: Callable[..., None] | None = None,
     on_launched: Callable[[RunHandle], None] | None = None,
     lease_store: LeaseStore | None = None,
@@ -2444,7 +2473,7 @@ def failover_to_runpod_after_async_workload_crash(
     config: RouterConfig | None = None,
     gcp_failover_of_identity: dict[str, Any] | None = None,
 ) -> RouteResult:
-    """Re-dispatch a poller-detected dead GCP workload onto RunPod, once (#659).
+    """Re-dispatch a poller-detected dead / stuck GCP run onto RunPod, once (#659/#783).
 
     The ASYNC sibling of the synchronous ``_GcpWorkloadFailover`` path
     (:data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD`, #658): the GCP VM was
@@ -2467,6 +2496,15 @@ def failover_to_runpod_after_async_workload_crash(
     ``evidence`` rides the ``epm:backend-selected`` marker ``extra`` as
     ``gcp_workload_evidence`` (mirroring the sync path's ``failover_evidence``)
     so the original crash signal is preserved for diagnosis.
+
+    ``reason`` labels the launched :class:`RouteResult` /
+    ``epm:backend-selected`` marker. The DEFAULT
+    (:data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC`) is the #659
+    async workload-crash cause, so every existing #659 caller is byte-unchanged.
+    The #783 queue-timeout poller passes
+    :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` so the marker trail
+    tells a stuck FLEX_START queue apart from a crashed workload — same RunPod
+    terminal rung, distinct cause.
 
     ``gcp_failover_of_identity`` (M3b, #669) is the crashed GCP run's stable
     identity (``{"pod_name": ..., "job_id": ...}``). When set, the terminal
@@ -2498,7 +2536,7 @@ def failover_to_runpod_after_async_workload_crash(
         marker_poster=marker_poster,
         on_launched=on_launched,
         residual_gap=residual_gap,
-        reason=ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        reason=reason,
         failover_evidence=evidence,
         # M3b (#669): the GCP-crash identity (pod_name/job_id) this failover is
         # OF, so the in-flock re-check + stamp can make N concurrent triggerers
@@ -4672,6 +4710,7 @@ __all__ = [
     "ROUTE_REASON_AUTO_FALLBACK_GCP",
     "ROUTE_REASON_AUTO_STARTED",
     "ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD",
+    "ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
     "ROUTE_REASON_NO_COMPUTE",

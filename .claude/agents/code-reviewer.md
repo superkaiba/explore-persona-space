@@ -467,18 +467,153 @@ that can validate a function call exists in source code without reading
 the diff, so `raw-completions-upload-missing` stands as a real Critical
 blocker until the implementer wires the call.
 
+### Step 0.67: Compute-shape-vs-dispatcher check (`type:experiment` only)
+
+A plan whose §9 declares a **data-parallel / sharded** compute shape (N-GPU
+data parallelism, per-GPU workers, context/cell sharding) but whose dispatcher
+scripts expose NO way to actually run that shape silently ships to a
+bigger-than-needed pod: the experimenter provisions the declared multi-GPU pod
+(`sweep-8g-h100`, `ft-7b`, an 8×H100/A100), the dispatcher runs on ONE GPU,
+and the other N−1 GPUs sit at 0% util billing until a human notices — the
+#664-class spend-leak. This gate is the code-review-time sibling of SKILL.md
+Step 6d.0 (smoke/sweep architecture parity): Step 6d.0 fires at DISPATCH
+(after the pod is already provisioned); this fires at REVIEW, before any pod
+exists.
+
+**Trigger — does the plan §9 declare a DP/sharded shape?** Grep the approved
+plan (the CANONICAL plan on main — Step 1 already reads it; do NOT trust a
+possibly-stale worktree copy) for a data-parallel / sharding declaration:
+
+```bash
+# Plan §9 (Resources & Parallelism) — prose declaration:
+grep -nEi 'data.?parallel|\bDP\b|[0-9]+ *(single-GPU|per-GPU) *workers?|shard(ing)? (contexts|cells|prompts)|CUDA_VISIBLE_DEVICES *workers?|checkpoint-per-shard' <plan.md>
+# Plan §9 per-component compute-projection table — the `parallelism` column
+# (a mandatory field for kind:experiment plans, planner.md §9):
+grep -nEi '\|\s*[0-9]+ *[x×] *(H100|H200|A100|L4) *DP|ZeRO-3|FSDP|sharded' <plan.md>
+```
+
+**Not a trigger — TP-only or single-GPU is fine.** A plan that declares
+`TP=N` / `tensor-parallel` (a single process spanning N GPUs — the standard
+vLLM/`LLM(tensor_parallel_size=N)` path, which needs no per-shard dispatcher
+flag) or `1×`/single-GPU compute does NOT trigger this gate. Tensor
+parallelism is exposed by one launcher argument the eval/generation library
+already threads, so it does not slip the way data parallelism does. If §9
+declares ONLY TP or single-GPU, record `Step 0.67: N/A — plan declares
+TP-only / single-GPU, no data-parallel shape` in the verdict body and proceed.
+
+**If the plan DOES declare a DP/sharded shape**, verify the dispatcher
+script(s) in the diff actually expose it. Grep each pod-side dispatcher in the
+diff:
+
+```bash
+grep -nE '(--shard-id|--num-shards|--num-workers|--world-size)|torch\.distributed|torch\.multiprocessing|mp\.spawn|accelerate (launch|\.)|subprocess\.(Popen|run).*--gpu-id|CUDA_VISIBLE_DEVICES' <each dispatcher in the diff>
+```
+
+Credit the DP shape as EXPOSED when at least ONE of these holds (confirm by
+READING the matched code, not the grep hit alone — you read the diff anyway per
+Step 0.7):
+
+- **(a) External shard flags:** the dispatcher accepts a `--shard-id N
+  --num-shards K` (or equivalent `--num-workers`/`--world-size`) flag pair,
+  so a launcher can fan out one process per GPU each processing a shard.
+- **(b) Internal DP fan-out:** the dispatcher itself spawns workers via
+  `torch.distributed`(`.run`/`.init_process_group`),
+  `torch.multiprocessing.spawn`/`mp.spawn`, `accelerate launch`, or an explicit
+  per-GPU `subprocess.Popen`/`run` loop over `CUDA_VISIBLE_DEVICES`.
+- **(c) External one-process-per-GPU launcher / documented fan-out:** a
+  `scripts/issue<N>*_run.sh` / launcher committed in the diff (or named in the
+  approved plan's launch section) runs ONE dispatch process per GPU with
+  distinct `--gpu-id` values each over a distinct shard, OR the implementer's
+  `## Smoke run` / report explicitly documents that the experimenter fans the
+  single-GPU dispatcher out per-GPU at launch. A dispatcher that accepts only a
+  single-GPU selector (whatever the flag is named — `--gpu-id N`, `--device N`,
+  etc.; no shard split, no per-GPU launcher, no fan-out documentation) does NOT
+  satisfy (c) — a single-GPU-only entrypoint run on an 8-GPU pod uses one GPU.
+
+**Verdict routing:**
+
+- **Plan declares DP AND at least one of (a)/(b)/(c) is present** → PASS this
+  lens; note which shape satisfied it in the verdict body.
+- **Plan declares DP AND none of (a)/(b)/(c) is present** → return verdict
+  FAIL with a single `Critical` issue tagged `compute-shape-mismatch` (naming
+  the dispatcher file + the plan's declared shape in the body), AND still read
+  the diff and report substantive findings in the same pass (do not
+  short-circuit — see Step 0.7):
+
+  > `epm:experiment-implementation v<n>`'s plan §9 declares a data-parallel /
+  > sharded compute shape (<quote the declared shape, e.g. "8×H100 DP, 8
+  > single-GPU CUDA_VISIBLE_DEVICES workers sharding contexts">) but the
+  > dispatcher `scripts/<dispatcher>.py` accepts only <the observed
+  > single-GPU flag, e.g. `--gpu-id N` / `--device N`> (single GPU) and
+  > exposes no `--shard-id`/`--num-shards` flag pair, no internal
+  > `torch.distributed`/`torch.multiprocessing.spawn`/`accelerate`/per-GPU
+  > `subprocess` fan-out, and no external one-process-per-GPU launcher. The
+  > declared multi-GPU pod would leave N−1 GPUs at 0% util billing (the #664
+  > spend-leak). Re-post `v<n+1>` with EITHER the DP wiring added to the
+  > dispatcher (shard flags / internal DP / per-GPU launcher) OR the plan §9
+  > compute shape corrected to the single-GPU intent the dispatcher actually
+  > supports (a `--intent lora-7b`-class descope; update the per-component
+  > compute-projection table's `parallelism` column to match).
+
+- **Plan declares DP AND the dispatcher's DP support is plausible but you
+  cannot confirm it from the diff** (e.g. the fan-out is claimed to live in an
+  external launcher not in the diff, or the shard-split lives in an imported
+  helper you cannot fully trace) → do NOT FAIL: record a `CONCERNS` bullet
+  under "Issues Found" naming the unverified fan-out site and request the
+  implementer point to the exact per-GPU dispatch line in `(c)` (report or
+  launcher). This mirrors Step 0.65's "necessary-but-not-sufficient grep"
+  caution — a plausible-but-unconfirmed shape is a CONCERNS, not a FAIL. So
+  the concern actually BINDS through the Step 5c-ter dispatch gate rather than
+  staying a prose-only bullet, PERSIST it via `task.py raise-concern <N>
+  --concern-id compute-shape-unverified-fanout --severity CONCERN --summary
+  '<≤200c: plan §9 declares DP; dispatcher fan-out unverified from the diff>'
+  --by code-reviewer --round <n>` (per Step 0.8 / Rule 11 — verdict-body
+  bullets that are NOT persisted remain opportunistic and do not reach the
+  dispatch gate).
+
+Either corrective closes the mismatch — the fix does NOT have to be "add DP".
+Descoping the plan's declared shape to the intent the dispatcher supports is
+an equally valid resolution (and is exactly how #779 round 7 resolved it: the
+plan was descoped `sweep-8g-h100` → `lora-7b`, science unchanged).
+
+The `compute-shape-mismatch` blocker tag is a SUBSTANTIVE finding (a real
+mismatch between the plan's compute contract and the dispatcher's actual
+capability), NOT a mechanical/presentation gate, so it is **NOT stripped** by
+SKILL.md Step 5c-bis ("Mechanical-contract-only FAIL strip"). The strip list
+there is limited to `marker-shape`, `smoke-run-missing`, and `git-provenance`
+— the three tags the orchestrator can mechanically verify from the marker or a
+git probe; there is no orchestrator-side check that can validate a
+dispatcher's DP capability against the plan without reading the diff, so
+`compute-shape-mismatch` stands as a real Critical blocker until the
+implementer wires the DP path or descopes the plan. (Same family as
+`raw-completions-upload-missing` / `cached-artifact-coverage-unverified`.)
+
+If the plan declares no DP/sharded shape (TP-only, single-GPU, or a
+CPU-only/analysis task), this gate is N/A; record that one-line conclusion in
+the verdict body and proceed.
+
+Incident: task #779 round 6 (2026-07-01) — the approved plan §9 declared "one
+8×H100 pod, data-parallel (8 single-GPU CUDA_VISIBLE_DEVICES workers)" and the
+per-component compute-projection table's `parallelism` column read `8× H100
+DP` across three phases, but `scripts/issue779_{extract_rb,collect,stage1}.py`
+accepted only `--gpu-id N` with no shard split and no DP entrypoint. Round-6
+code-review PASSed (Claude + Codex + reconciler); the `sweep-8g-h100` (8×H100)
+pod was provisioned and the first util reading showed all 8 GPUs at 0%. Round 7
+descoped to `lora-7b` (1×H100). No reviewer checked plan-declared shape ↔
+dispatcher-exposed shape.
+
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
-Steps 0.5, 0.6, and 0.65 are pre-diff *contract* checks, not a substitute
-for review. Two hard rules bind every verdict:
+Steps 0.5, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
+substitute for review. Two hard rules bind every verdict:
 
-1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.6 / 0.65) OR a
+1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.6 / 0.65 / 0.67) OR a
    substantive finding from reading the diff.** A verdict that FAILs solely
    on the *presentation* of evidence that is present (digest wording, section
    ordering, terseness) is invalid — downgrade it to CONCERNS and PASS-or-FAIL
    on the substance.
 2. **You always read the diff (Steps 1–7), even when you raise a 0.5 / 0.6 /
-   0.65 blocker.** Never emit a verdict whose body says "the diff was not
+   0.65 / 0.67 blocker.** Never emit a verdict whose body says "the diff was not
    reviewed." Reviewing the code in the same pass means a genuinely-missing
    smoke section and a real bug surface together in one round instead of
    across three — and it prevents the gate-hopping failure mode where a
@@ -613,6 +748,46 @@ If neither (a) nor (b), FAIL substantive with blocker tag
 `cached-artifact-coverage-unverified` and a Critical issue naming each
 consumer site whose coverage you could not verify.
 
+### Step 3.7: Bug-class sibling sweep (MANDATORY for every Critical/Major finding)
+
+For EVERY Critical or Major finding, the cited `file.py:LINE` is one INSTANCE
+of a bug CLASS — your contract is the CLASS, not the line. Before you issue the
+verdict, sweep for EVERY sibling instance of the same class and enumerate them.
+A single-instance fix that leaves siblings is the whack-a-mole failure mode
+that burns review rounds one instance at a time (incident #779: ≥6 real
+blockers clustered in the raw-completions I/O subsystem surfaced one-per-round).
+
+For each Critical/Major finding, name its bug CLASS in one phrase (e.g.
+`parsed.get("score", 0)` silent-default, per-persona-vs-global `custom_id`
+index, `raw_completions` write-without-upload, `except Exception` swallow,
+`.processed`-sentinel read, hardcoded-old-regime rubric family), then grep for
+that class across, in order:
+
+1. The WHOLE file the instance lives in (not just the cited range).
+2. The sibling function / rubric / resampler / handler / builder FAMILY in that
+   file (a `{...}` set-comp resampler vs a `[...]` list-comp sibling; A/B/C
+   rubric parameterized vs an 11-framing sibling rubric still hardcoded).
+3. Sibling SCRIPTS sharing the finding's data contract (a dispatcher loader
+   fixed while two standalone wrapper scripts still raw-`json.loads` the bank).
+4. PARALLEL layers for the same DV (`scripts/plot_*.py` figure branch vs the
+   `analyze` module — an exclusion constant defined in the plot script only
+   while the numeric read interpolates through the bad cell).
+
+Report ALL sibling hits under ONE heading `### Bug-class sweep: <class>` with a
+`file:LINE` for each. Classify each sibling:
+
+- **Load-bearing** (feeds a headline artifact / the production run / a
+  primary metric) → its OWN Critical, and the FAIL enumerates it.
+- **Secondary** (feeds only a secondary surface) → a standing rec under
+  `## Style / Consistency`, NOT a Critical (this is the verbosity valve — a
+  trivial finding with no load-bearing sibling adds one "no siblings found"
+  line, not a wall of text).
+
+A `### Bug-class sweep` heading whose only siblings are secondary does NOT flip
+PASS→FAIL on its own; the FAIL comes from a load-bearing sibling left in the
+tree. (Promotes the 7-step sibling-scan recipe from reconciler memory
+`.claude/agent-memory/reconciler/feedback_claude_misses_same_file_siblings.md`.)
+
 ### Step 4: Run / Verify Tests
 
 Run the tests. Don't trust "tests pass" claims — verify.
@@ -734,7 +909,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
@@ -803,6 +978,8 @@ Red flags:
 11. **Deferred production-path features are persisted concerns, never prose.** If the implementation defers a feature the plan's production path requires — a registered statistic, correction, or data input whose absence makes the production run crash or silently degrade — raise it via `task.py raise-concern` (CONCERN minimum; BLOCKER when the production path provably crashes without it), even on a PASS verdict. The Step 5c-ter dispatch gate reads `concerns.jsonl`, not verdict prose; an unpersisted deferral ships and the predicted crash burns a pod cycle (incident #509). See Step 0.8 for the procedure.
 12. **Blocker grounding + mechanizability.** Every Critical/Major finding cites a concrete artifact location (`file.py:LINE`, a diff hunk, a plan section) — the reconciler discards ungrounded blockers as non-binding — and carries a `Mechanizable: yes | no` line: `yes` when a script could verify it (presence / structure / regex / recomputation over the diff or its artifacts), with the check sketched in 1-2 lines. When a `mechanizable: yes` finding's check belongs in a workflow-surface verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) AND it is concrete + likely to recur — not a one-off diff-specific issue — ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block or prose follow-up in your return text; you never spawn the improver yourself). Grounded artifact-checking beats free-form critique; every judgment catch that recurs should become a permanent mechanical gate.
 13. **A substantive BLOCKER fix that adds a permanent invariant needs a committed regression test, or a Minor flagging its absence.** When the diff closes a substantive BLOCKER (a prior-round binding `BLOCKER` concern or a Critical you would re-raise) by adding a fail-loud assertion, an invariant guard, or a scoping fix meant to STAY in the code, check for a committed pytest that fails pre-fix / passes post-fix and actually exercises the invariant. Absent → at least a `Minor` finding (`Mechanizable: yes`) carrying a 1-2-line pytest sketch; this is SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis, and a bare Minor does not flip PASS→FAIL. An implementer who CLAIMS a covering test that the worktree grep does not show (or that does not trip the guard) is a substantive FAIL with blocker tag `substantive` (fabricated coverage, same family as Rule 9). Rationale: an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green — a one-line test makes the guard permanent (incident #653 r8). See Step 4.5 for the procedure.
+14. **Every finding is a bug CLASS, not a line.** For every Critical/Major finding you MUST run the Step 3.7 sibling sweep and enumerate ALL load-bearing sibling instances under a `### Bug-class sweep: <class>` heading; each load-bearing sibling is its own Critical, each secondary one a standing rec. A verdict that fixes/flags the cited instance but leaves a load-bearing sibling of the same class unenumerated is the whack-a-mole failure mode — FAIL only when a load-bearing sibling is left un-named; a finding with no siblings adds a one-line "no siblings" note (never balloon output on a trivial finding). See Step 3.7 for the sweep procedure.
+15. **Plan-declared compute shape must be exposed by the dispatcher.** For a `type:experiment` diff whose approved plan §9 declares a data-parallel / sharded compute shape (N-GPU DP, per-GPU workers, context/cell sharding — read from the §9 prose AND the per-component compute-projection table's `parallelism` column), verify the dispatcher script(s) in the diff actually expose it via one of (a) `--shard-id`/`--num-shards` flags, (b) an internal `torch.distributed` / `torch.multiprocessing.spawn` / `accelerate` / per-GPU `subprocess` fan-out, or (c) an external one-process-per-GPU launcher / documented experimenter fan-out. Plan-declares-DP-but-dispatcher-single-GPU is a substantive FAIL with blocker tag `compute-shape-mismatch` (SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis); the fix is EITHER wiring the DP path OR descoping §9 to the dispatcher's actual intent. A TP-only or single-GPU plan never triggers this. Rationale: a plan-declared multi-GPU pod against a single-GPU dispatcher leaves N−1 GPUs at 0% util billing — the #664 spend-leak (incident #779 r6: `sweep-8g-h100` provisioned, all 8 GPUs idle, dispatcher `--gpu-id`-only). See Step 0.67 for the procedure.
 
 ---
 

@@ -624,8 +624,29 @@ def _join_frontmatter(fm: dict[str, Any], body: str) -> str:
     return f"---\n{fm_block}\n---\n{body}"
 
 
+class StaleTaskPathError(FileNotFoundError):
+    """A task's body.md is missing at a path the registry / caller expects.
+
+    Subclasses ``FileNotFoundError`` so existing ``except FileNotFoundError``
+    callers keep catching it (e.g. ``cmd_list_clean_results``,
+    ``cmd_migrate_body``, ``task_workflow_migrate``); adds a message naming the
+    stale path + the ``task.py audit`` remedy. Raised from ``_read_body`` for
+    the #722 split / stale-registry shape (task dir present, body.md gone).
+    """
+
+
 def _read_body(path: Path) -> tuple[dict[str, Any], str]:
-    return _split_frontmatter(path.read_text())
+    try:
+        text = path.read_text()
+    except FileNotFoundError as e:
+        # Distinguish "task dir exists but body.md missing" (the #722 split /
+        # stale-registry shape) from a raw missing path; both name the remedy.
+        raise StaleTaskPathError(
+            f"body.md not found at {path}. The task dir may be split or the "
+            f"registry stale; run `task.py audit` to detect + `task.py audit "
+            f"--repair --apply` to repair."
+        ) from e
+    return _split_frontmatter(text)
 
 
 def _write_body(path: Path, fm: dict[str, Any], body: str) -> None:
@@ -1649,6 +1670,28 @@ def has_event(task_id: int, kind: str) -> bool:
 # ─── Status transitions ────────────────────────────────────────────────────
 
 
+def _rollback_move(src: Path, dst: Path) -> None:
+    """Best-effort ``shutil.move(src -> dst)`` to undo a partial status-move.
+
+    Called by ``set_status`` when the post-move completeness check fails: it
+    puts the task dir back at its ORIGINAL location so REGISTRY (never touched
+    on this path) stays consistent with the filesystem. On rollback failure it
+    LOGS loudly (a failed rollback is a louder problem than the original) and
+    RE-RAISES so the fault surfaces — never swallowed.
+    """
+    try:
+        shutil.move(str(src), str(dst))
+    except Exception:
+        _log.error(
+            "status-move rollback FAILED: could not move %s back to %s; the task "
+            "dir may be left at the incomplete destination. Run `task.py audit` "
+            "to detect and `task.py audit --repair --apply` to repair.",
+            src,
+            dst,
+        )
+        raise
+
+
 def set_status(
     task_id: int,
     new_status: str,
@@ -1715,10 +1758,38 @@ def set_status(
             # track empty dirs, so this is an untracked filesystem op that adds
             # nothing to the commit and leaves no staged change.
             new.rmdir()
-        # `git mv` so renames are tracked
         rel_old = old.relative_to(repo)
         rel_new = new.relative_to(repo)
-        _run_git(["mv", str(rel_old), str(rel_new)])
+        # Whole-directory filesystem move + completeness verification (#722).
+        # `git mv <src-dir> <dst-dir>` renames only git-TRACKED files, silently
+        # leaving untracked/uncommitted files (an uncommitted plan version, a
+        # subagent artifact written before this transition's commit) behind and
+        # splitting the task across two folders. `shutil.move` of the whole dir
+        # moves EVERY file (tracked, untracked, modified) in one rename, so
+        # nothing is left behind by construction. The destination-collision
+        # guard above already ensured `new` does not exist, so this is a true
+        # rename into a non-existent destination (never a nest).
+        src_files = {p.relative_to(old) for p in old.rglob("*") if p.is_file()}
+        shutil.move(str(old), str(new))
+        # Verify EVERY source file landed in the destination. On any miss, roll
+        # the FS move back BEFORE REGISTRY is touched, so a partial move can
+        # never leave REGISTRY pointing at an incomplete dir (the #722
+        # half-applied state). REGISTRY is untouched on this failure path.
+        dst_files = {p.relative_to(new) for p in new.rglob("*") if p.is_file()}
+        missing = src_files - dst_files
+        if missing:
+            _rollback_move(new, old)
+            preview = sorted(str(m) for m in missing)[:5]
+            raise RuntimeError(
+                f"task #{task_id}: status move {old_status} -> {new_status} left "
+                f"{len(missing)} file(s) behind: {preview}; filesystem move rolled "
+                f"back, REGISTRY untouched. Retry after resolving the disk/"
+                f"permission issue."
+            )
+        # Stage BOTH sides so git records the rename via content-similarity: the
+        # source-side deletion at <old> AND the destination-side addition at
+        # <new> (preserves the both-sides-of-move commit invariant).
+        _run_git(["add", "--all", "--", str(rel_old), str(rel_new)])
         # Update REGISTRY
         reg = _load_registry()
         fm, _ = _read_body(new / "body.md")
@@ -3365,6 +3436,7 @@ __all__ = [
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",
+    "StaleTaskPathError",
     "add_tag",
     "address_concern",
     "append_comment",

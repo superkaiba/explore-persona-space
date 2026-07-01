@@ -1,0 +1,1830 @@
+{
+  "commit": "c969f2281fd3aa8a43d9e6db93c09d3fd4847bfc",
+  "created": "2026-07-01T13:20:59Z",
+  "figsize": [
+    11.5,
+    4.1
+  ],
+  "points": [
+    {
+      "Residual-stream layer": 21.0,
+      "Held-out LOCO Spearman rho": 0.7150129744754042,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "Held-out LOCO Spearman rho": 0.6319277752651375,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "Held-out LOCO Spearman rho": 0.6564691260145284,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "Held-out LOCO Spearman rho": 0.5925463513620054,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "Held-out LOCO Spearman rho": 0.6426856276484323,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "Held-out LOCO Spearman rho": 0.712899824900114,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "Held-out LOCO Spearman rho": 0.6226587328098881,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "Held-out LOCO Spearman rho": 0.6839400704932986,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "Held-out LOCO Spearman rho": 0.5873115035504916,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "Held-out LOCO Spearman rho": 0.6430218105354102,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "Held-out LOCO Spearman rho": 0.6574776746754624,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "Held-out LOCO Spearman rho": 0.611372593032771,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "Held-out LOCO Spearman rho": 0.6100278614848592,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "Held-out LOCO Spearman rho": 0.6709249901545806,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "Held-out LOCO Spearman rho": 0.6161271795771736,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "Held-out LOCO Spearman rho": 0.6342810554739833,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "Held-out LOCO Spearman rho": 0.6779848307811178,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "Held-out LOCO Spearman rho": 0.6727499829696038,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "Held-out LOCO Spearman rho": 0.6483527106003464,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "Held-out LOCO Spearman rho": 0.6443185159566108,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "Held-out LOCO Spearman rho": 0.6731341919832929,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "Held-out LOCO Spearman rho": 0.7140524519411814,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "Held-out LOCO Spearman rho": 0.7018057896298414,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "Held-out LOCO Spearman rho": 0.7039189392051316,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "Held-out LOCO Spearman rho": 0.7150129744754042,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "Held-out LOCO Spearman rho": 0.7077130032153115,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "Held-out LOCO Spearman rho": 0.6115646975396155,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "Held-out LOCO Spearman rho": 0.6449428556038557,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "Held-out LOCO Spearman rho": 0.6844683578871211,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "Held-out LOCO Spearman rho": 0.7115070672254912,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "Held-out LOCO Spearman rho": 0.6990202742805957,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "Held-out LOCO Spearman rho": 0.39847277332230174,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "Held-out LOCO Spearman rho": 0.467054082265805,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "Held-out LOCO Spearman rho": 0.5819325773588443,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "Held-out LOCO Spearman rho": 0.5598405590717213,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "Held-out LOCO Spearman rho": 0.54500048591798,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "Held-out LOCO Spearman rho": 0.5652675113900798,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "Held-out LOCO Spearman rho": 0.5355393389558861,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "Held-out LOCO Spearman rho": 0.5405340561338443,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "Held-out LOCO Spearman rho": 0.4759389157073653,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "Held-out LOCO Spearman rho": 0.45485544608117634,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "Held-out LOCO Spearman rho": 0.4736336616252308,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "Held-out LOCO Spearman rho": 0.4735856354985196,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "Held-out LOCO Spearman rho": 0.47195274719034097,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "Held-out LOCO Spearman rho": 0.46004226776597906,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "Held-out LOCO Spearman rho": 0.5150802089769418,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "Held-out LOCO Spearman rho": 0.5845259882012455,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "Held-out LOCO Spearman rho": 0.5851023017217792,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "Held-out LOCO Spearman rho": 0.5548458418937631,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "Held-out LOCO Spearman rho": 0.587503608057336,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "Held-out LOCO Spearman rho": 0.6319277752651375,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "Held-out LOCO Spearman rho": 0.6253001697790007,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "Held-out LOCO Spearman rho": 0.5764095727870634,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "Held-out LOCO Spearman rho": 0.5956200234715181,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "Held-out LOCO Spearman rho": 0.5222841279836123,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "Held-out LOCO Spearman rho": 0.5025453899053351,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "Held-out LOCO Spearman rho": 0.5494669157021158,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "Held-out LOCO Spearman rho": 0.5339064506477074,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "Held-out LOCO Spearman rho": 0.45389492354695354,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "Held-out LOCO Spearman rho": 0.5381807759249986,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "Held-out LOCO Spearman rho": 0.5614254212531888,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "Held-out LOCO Spearman rho": 0.6564691260145284,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "Held-out LOCO Spearman rho": 0.5571510959758976,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "Held-out LOCO Spearman rho": 0.5158966531310312,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "Held-out LOCO Spearman rho": 0.4380463017322785,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "Held-out LOCO Spearman rho": 0.29987513518433795,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "Held-out LOCO Spearman rho": 0.3261934526220409,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "Held-out LOCO Spearman rho": 0.3128421893963449,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "Held-out LOCO Spearman rho": 0.30520603524927414,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "Held-out LOCO Spearman rho": 0.37839785235704654,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "Held-out LOCO Spearman rho": 0.3197579516427486,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "Held-out LOCO Spearman rho": 0.301267892858961,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "Held-out LOCO Spearman rho": 0.1984439555704171,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "Held-out LOCO Spearman rho": 0.27077130239738906,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "Held-out LOCO Spearman rho": 0.5150802089769418,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "Held-out LOCO Spearman rho": 0.4939006870973305,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "Held-out LOCO Spearman rho": 0.4140812645034212,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "Held-out LOCO Spearman rho": 0.5453846949316691,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "Held-out LOCO Spearman rho": 0.6458553520113671,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "Held-out LOCO Spearman rho": 0.6509941475694588,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "Held-out LOCO Spearman rho": 0.6121410110601492,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "Held-out LOCO Spearman rho": 0.5599366113251435,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "Held-out LOCO Spearman rho": 0.4777158823956774,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "Held-out LOCO Spearman rho": 0.5378926191647319,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "Held-out LOCO Spearman rho": 0.5115743017270288,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "Held-out LOCO Spearman rho": 0.33858419331351425,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "Held-out LOCO Spearman rho": 0.361348577374593,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "y": 0.9032942295006996,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "y": 0.6236276471145908,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "y": 0.7410683906458021,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "y": 0.6865286018127724,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "y": 0.7203096340150807,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "y": 0.7279019570420575,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "y": 0.7120926261820867,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "y": 0.7290071686219338,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "y": 0.7863340127433476,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "y": 0.800317341862653,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "y": 0.79291722954522,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "y": 0.8326087410659976,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "y": 0.8136759861759414,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "y": 0.8270826831666157,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "y": 0.7782131102651256,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "y": 0.7925328081261326,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "y": 0.7902743322889938,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "y": 0.7442398673532735,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "y": 0.7934458089964651,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "y": 0.7831144833584903,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "y": 0.7708610506250784,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "y": 0.9032942295006996,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "y": 0.8410660122859211,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "y": 0.8775860470992274,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "y": 0.869705408007935,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "y": 0.8692729339114615,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "y": 0.7798469012962471,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "y": 0.7578868277308775,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "y": 0.7288149579123903,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "y": 0.626991334531606,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "y": 0.5682709627660003,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "y": 0.44035473556465643,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "y": 0.5411212000429503,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "y": 0.5391029875927412,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "y": 0.6125274786384411,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "y": 0.6236276471145908,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "y": 0.563754011091723,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "y": 0.6104131608334604,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "y": 0.6079144216093919,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "y": 0.5484732596829974,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "y": 0.4855723049848159,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "y": 0.4863411478229908,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "y": 0.4756254007659285,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "y": 0.5903271416861419,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "y": 0.5259365539889965,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "y": 0.5029193215211364,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "y": 0.5115207507732177,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "y": 0.5342977198541483,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "y": 0.544052413363492,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "y": 0.5391510402701272,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "y": 0.442709316756567,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "y": 0.41152312913309885,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "y": 0.40676591407189183,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "y": 0.45289648436238394,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "y": 0.42555451092979013,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "y": 0.30513450140065124,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "y": 0.384853893183908,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "y": 0.39037995108328993,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "y": 0.3779343076403342,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "y": 0.6753323279818509,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "y": 0.5464550472327884,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "y": 0.6434253501975937,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "y": 0.6130560580896864,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "y": 0.6015234155170633,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "y": 0.6356888691384592,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "y": 0.6463085108407496,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "y": 0.6316524442380411,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "y": 0.63780318694344,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "y": 0.6537086231581827,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "y": 0.6457318787121185,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "y": 0.6372265548148088,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "y": 0.6117586358002663,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "y": 0.5859543480440224,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "y": 0.6333342879465487,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "y": 0.7410683906458021,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "y": 0.7153121555669442,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "y": 0.6886909722951393,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "y": 0.6029169431612553,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "y": 0.6455396680025747,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "y": 0.6876338133926488,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "y": 0.4964802627514219,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "y": 0.42190250744845953,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "y": 0.6023403110326242,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "y": 0.5529902113572748,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "y": 0.5680787520564565,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "y": 0.5576993737410959,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "y": 0.5078206946145012,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "y": 0.7422976526939317,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "y": 0.5561098300271669,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "y": 0.6619049261626232,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "y": 0.5537524131510244,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "y": 0.624859803823241,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "y": 0.6427569278625268,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "y": 0.6259182358900804,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "y": 0.6488188569726077,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "y": 0.6431418122504685,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "y": 0.6811491455597047,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "y": 0.6633482426174042,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "y": 0.663540684811375,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "y": 0.6410730586652822,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "y": 0.6701318299548755,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "y": 0.6525233692065459,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "y": 0.6644547852327364,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "y": 0.6426607067655415,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "y": 0.6445851287052496,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "y": 0.7119398965950354,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "y": 0.7178093835111454,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "y": 0.7073693944882286,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "y": 0.7175207202201891,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "y": 0.7185791522870286,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "y": 0.7422976526939317,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "y": 0.7348886282260554,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "y": 0.7211290113571419,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "y": 0.7166547303473205,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "y": 0.7158849615714371,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "y": 0.6810048139142266,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "y": 0.663396353165897,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "y": 0.5639518494314776,
+      "series": "Matched probes",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "y": 0.4486308646944658,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "y": 0.5227692199217228,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "y": 0.4750435558169604,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "y": 0.5107415827985469,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "y": 0.5178138334269744,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "y": 0.48168281150895353,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "y": 0.5237795414400697,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "y": 0.5276764958679786,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "y": 0.5561098300271669,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "y": 0.5190165971392919,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "y": 0.5335459827840885,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "y": 0.5096350401832146,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "y": 0.49919505116029783,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "y": 0.4589746326203972,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "y": 0.42342093728428887,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "y": 0.4727823600378033,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "y": 0.48514677100042825,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "y": 0.4990507195148197,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "y": 0.5157450798417881,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "y": 0.44208783009945807,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "y": 0.41947587230788713,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "y": 0.45320136680127265,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "y": 0.4634970241787114,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "y": 0.48500243935495013,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "y": 0.4178882242076279,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "y": 0.5152158638083684,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "y": 0.5310923448109607,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "y": 0.4069671296997841,
+      "series": "Mismatched (shared pool)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Residual-stream layer": 0.0,
+      "y": 0.6619049261626232,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 1.0,
+      "y": 0.5584191363548165,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 2.0,
+      "y": 0.5774709135579275,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 3.0,
+      "y": 0.6351073506521869,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 4.0,
+      "y": 0.5979178966673266,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 5.0,
+      "y": 0.5078549498889846,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 6.0,
+      "y": 0.5805018781129678,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 7.0,
+      "y": 0.5206042452395512,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 8.0,
+      "y": 0.5854572646077163,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 9.0,
+      "y": 0.5356147363692748,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 10.0,
+      "y": 0.5605841110369884,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 11.0,
+      "y": 0.5557249456392251,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 12.0,
+      "y": 0.550865780241462,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 13.0,
+      "y": 0.5697732257990947,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 14.0,
+      "y": 0.5179100545239598,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 15.0,
+      "y": 0.5894985506811035,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 16.0,
+      "y": 0.5958491430821404,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 17.0,
+      "y": 0.596715132955009,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 18.0,
+      "y": 0.615574467964149,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 19.0,
+      "y": 0.5665017085015909,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 20.0,
+      "y": 0.5382608165363736,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 21.0,
+      "y": 0.5045834325914808,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 22.0,
+      "y": 0.5498073481746226,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 23.0,
+      "y": 0.5472093785560165,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 24.0,
+      "y": 0.5078068393404919,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 25.0,
+      "y": 0.5466320519741041,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 26.0,
+      "y": 0.568281798795821,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Residual-stream layer": 27.0,
+      "y": 0.4782188520174789,
+      "series": "Same-N mismatched",
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 261
+}

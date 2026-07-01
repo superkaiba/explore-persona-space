@@ -161,6 +161,55 @@ For any predictor-vs-outcome scatter (the recurring cos-sim / JS-divergence vs l
 - **Choose the x-scale before fitting.** If the cloud is a near-vertical wall on a linear x, try log-x and report fit quality for both; don't fit a line through a degenerate x-range.
 - **Show p-values on the figure** whenever a correlation is the claim.
 
+### 3.8. No interpretive text overlays
+
+Figures present DATA. Interpretation lives in the caption / prose. Do NOT
+draw editorial annotations onto the artists — the reader sees what the
+data does, then the caption tells them why it matters.
+
+**Banned in-figure patterns** (do not `ax.annotate(...)` / `ax.text(...)`
+/ set `title=` with any of these):
+
+- Effect-size / relative-magnitude labels overlaid on bars/points
+  ("Δ = +0.42", "3× baseline", "Cohen's d = 0.42") — these belong in the
+  caption. (A p-value for a correlation is the ONE carve-out — see the
+  "Legitimate figure text" whitelist below.)
+- Arrow annotations connecting bars, points, or conditions ("A → B",
+  before/after arrows on paired bars) — pre/post pairing is encoded by
+  the design, not an overlay.
+- Explanatory text boxes ("Note: this drop reflects...", "Confounder:
+  seed variance") — caption prose, not on-figure.
+- Interpretive titles ("Method X wins", "Baseline collapses under
+  intervention") — the title states what is plotted, not what to
+  conclude.
+- In-panel narrative labels that name a mechanism or verdict rather than
+  a data source ("phase transition", "generalization gap", "saturation
+  regime").
+
+**Legitimate figure text**:
+
+- Axis labels + units (§3.5).
+- Tick labels — plain-English category names (§3.5), never Hydra slugs.
+- Legend entries — plain-English series names.
+- The `add_direction_arrow(ax, ...)` suffix on an axis label (e.g.
+  `"accuracy (↑ better)"`) — this is a unit-of-measurement cue, not an
+  interpretation.
+- The **p-value for a correlation** when §3.7's condition holds (the
+  correlation IS the claim), placed at the axis or as a small annotation
+  near the fit line. This is a statistical label of the plotted
+  relationship, not a reader's conclusion. (Effect-size / relative-magnitude
+  labels — Cohen's d, "3× baseline", "Δ = +0.42" — stay banned per §3.8.)
+- Point labels near scatter markers (`ax.text(x, y, name)`) — these
+  identify a data point (§3.7), not the reader's conclusion.
+- Panel titles that state WHAT is plotted (e.g. `"loss vs training
+  step"`), never WHAT TO CONCLUDE.
+
+**Why the split matters.** A figure's interpretation is a moving target
+across rounds — a follow-up experiment can shift the headline. A caption
++ body prose can be rewritten cheaply; an in-figure annotation forces a
+regen. Keep the figure a stable data primitive; keep the interpretation
+in the text.
+
 ### 4. Run & save
 
 ```python
@@ -258,6 +307,9 @@ defer to that file if they ever diverge.
       visibly render in the saved PNG — the style zeroes marker edges
       (see Pitfalls, task #536).
 - [ ] No diagonal axis labels. Rotate by ≤ 30° and only if needed.
+- [ ] No interpretive text overlays on artists (§3.8): no effect-size
+      labels, arrow annotations, explanatory boxes, or verdict-titled
+      panels. Interpretation lives in the caption prose.
 
 **Hard cap: 3 visual-iteration rounds.** If the figure still doesn't look
 right after 3 revisions, stop and report rather than iterating further — the

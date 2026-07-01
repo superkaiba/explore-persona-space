@@ -46,6 +46,7 @@ from explore_persona_space.backends.slurm import (
     compute_plan_hash,
     default_gpus_for_intent,
     job_name,
+    materialize_branch_src,
     parse_job_id,
     render_secrets_env,
     time_budget_hours,
@@ -872,28 +873,38 @@ def test_slurm_backend_launch_survives_marker_post_failure(tmp_path) -> None:
     assert handle.extra["issue"] == 137
 
 
-def test_slurm_prepare_refuses_feature_branch_on_stale_main_source(tmp_path) -> None:
-    """#653: SLURM ``prepare`` must REFUSE to rsync when ``repo_branch`` names a
-    non-``main`` branch but the rsync source's HEAD is a different branch.
+def test_slurm_prepare_honors_feature_branch_on_stale_main_source_via_cloner(tmp_path) -> None:
+    """#793: SLURM ``prepare`` HONORS a non-``main`` ``repo_branch`` on a stale-``main``
+    rsync source by MATERIALIZING the branch tree via the ``git_cloner`` seam.
 
-    The lane has no ``repo_branch`` honoring mechanism (it rsyncs from
-    ``src_root``, it does not git-clone like GCP), so silently rsyncing
-    stale ``main`` would queue a job whose tree lacks the feature branch's
-    entrypoint scripts. The guard raises BEFORE the rsync; ``router.
-    _prepare_and_launch`` wraps it as ``BackendPrepareError`` and the auto
-    chain advances to the next lane.
+    This inverts the pre-#793 refuse-only behavior (#653): the lane no longer has to
+    refuse when the repo-root install is on ``main``. Instead, ``_resolve_rsync_source``
+    invokes ``materialize_branch_src`` (the ``git_cloner`` default) to build a complete
+    branch tree on the VM, and rsync sources FROM that tree — so the feature-branch code
+    actually runs, no ``ValueError``.
     """
     (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "scratch-branch"
+    scratch.mkdir()
 
-    rsynced: list[tuple] = []
+    cloner_calls: list[dict] = []
+
+    def fake_cloner(*, src_root, branch, issue):
+        cloner_calls.append({"src_root": src_root, "branch": branch, "issue": issue})
+        return scratch
+
+    rsynced: list[dict] = []
 
     backend = SlurmBackend(
         src_root=tmp_path,
         rsyncer=lambda **kw: rsynced.append(kw),
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
-        # The rsync source is on ``main`` (the repo-root install default).
-        git_branch_resolver=lambda _root: "main",
+        # The rsync source is on ``main`` (the repo-root install default) AND the
+        # materialized scratch tree is on the requested branch (so the re-asserted
+        # guard trivially passes against the RESOLVED source).
+        git_branch_resolver=lambda root: "issue-653" if root == scratch else "main",
+        git_cloner=fake_cloner,
     )
     spec = RunSpec(
         issue=137,
@@ -904,10 +915,17 @@ def test_slurm_prepare_refuses_feature_branch_on_stale_main_source(tmp_path) -> 
         extra={"repo_branch": "issue-653"},
     )
 
-    with pytest.raises(ValueError, match="cannot honor repo_branch='issue-653'"):
-        backend.prepare(spec)
-    # The guard fires BEFORE the rsync — no stale code was shipped.
-    assert rsynced == []
+    backend.prepare(spec)
+
+    # The cloner was INVOKED exactly once with the requested branch + spec issue.
+    assert len(cloner_calls) == 1, cloner_calls
+    assert cloner_calls[0]["branch"] == "issue-653"
+    assert cloner_calls[0]["issue"] == 137
+    assert cloner_calls[0]["src_root"] == tmp_path
+    # rsync now RUNS (the OLD ``rsynced == []`` assertion is inverted) and sources FROM
+    # the materialized branch tree, NOT the default ``_src_root``.
+    assert len(rsynced) == 1, rsynced
+    assert rsynced[0]["src_root"] == scratch
 
 
 def test_slurm_prepare_allows_matching_feature_branch_source(tmp_path) -> None:
@@ -967,19 +985,30 @@ def test_slurm_prepare_main_branch_run_is_unaffected(tmp_path, extra) -> None:
     assert len(rsynced) == 1
 
 
-def test_slurm_prepare_refuses_when_source_branch_unprovable(tmp_path) -> None:
-    """#653: a feature-branch request with an UNPROVABLE source branch
-    (resolver returns ``None`` — detached HEAD / non-repo source) must
-    REFUSE, not fail open: we cannot prove the source carries the branch."""
+def test_slurm_prepare_raises_when_cloner_cannot_resolve_branch(tmp_path) -> None:
+    """#793: a feature-branch request whose source branch is UNPROVABLE (resolver
+    returns ``None`` — detached HEAD / non-repo source) routes to the ``git_cloner``,
+    and if the cloner cannot resolve the branch it raises ``RuntimeError``, which
+    surfaces from ``prepare()``.
+
+    This preserves the auto-chain fallback: ``router._prepare_and_launch`` wraps the
+    ``RuntimeError`` as ``BackendPrepareError`` exactly as it did the pre-#793 guard's
+    ``ValueError`` (§4d), so the lane still advances. The raise fires BEFORE the rsync,
+    so no stale code is shipped.
+    """
     (tmp_path / "pyproject.toml").write_text("")
 
-    rsynced: list[tuple] = []
+    def raising_cloner(*, src_root, branch, issue):
+        raise RuntimeError(f"cannot resolve branch {branch}")
+
+    rsynced: list[dict] = []
     backend = SlurmBackend(
         src_root=tmp_path,
         rsyncer=lambda **kw: rsynced.append(kw),
         secrets_pusher=lambda **_kw: None,
         runtime_clearer=lambda **_kw: None,
         git_branch_resolver=lambda _root: None,
+        git_cloner=raising_cloner,
     )
     spec = RunSpec(
         issue=137,
@@ -990,9 +1019,317 @@ def test_slurm_prepare_refuses_when_source_branch_unprovable(tmp_path) -> None:
         extra={"repo_branch": "issue-653"},
     )
 
-    with pytest.raises(ValueError, match="cannot honor repo_branch"):
+    with pytest.raises(RuntimeError, match="cannot resolve branch issue-653"):
         backend.prepare(spec)
     assert rsynced == []
+
+
+# ---------------------------------------------------------------------------
+# #793: SLURM lane HONORS repo_branch via the git_cloner seam + overlay
+# ---------------------------------------------------------------------------
+
+
+def _branch_spec(branch: str | None) -> RunSpec:
+    """A lora-7b RunSpec carrying (or omitting) a ``repo_branch`` in ``extra``."""
+    extra = {"repo_branch": branch} if branch is not None else {}
+    return RunSpec(
+        issue=793,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+        extra=extra,
+    )
+
+
+def test_prepare_honors_repo_branch_via_git_cloner(tmp_path) -> None:
+    """#793: a non-``main`` ``repo_branch`` against a ``main`` install invokes the
+    ``git_cloner`` once and rsyncs from its returned scratch tree, no ``ValueError``."""
+    (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+
+    cloner_calls: list[dict] = []
+
+    def fake_cloner(*, src_root, branch, issue):
+        cloner_calls.append({"src_root": src_root, "branch": branch, "issue": issue})
+        return scratch
+
+    rsynced: list[dict] = []
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        # main install; the materialized scratch is on the requested branch.
+        git_branch_resolver=lambda root: "issue-793" if root == scratch else "main",
+        git_cloner=fake_cloner,
+    )
+
+    backend.prepare(_branch_spec("issue-793"))
+
+    assert len(cloner_calls) == 1, cloner_calls
+    assert cloner_calls[0]["branch"] == "issue-793"
+    assert cloner_calls[0]["issue"] == 793
+    assert len(rsynced) == 1, rsynced
+    assert rsynced[0]["src_root"] == scratch
+
+
+@pytest.mark.parametrize("branch", [None, "main"], ids=["absent", "main"])
+def test_prepare_repo_branch_main_is_byte_identical_no_cloner(tmp_path, branch) -> None:
+    """#793: an absent / ``main`` ``repo_branch`` NEVER touches the cloner and rsyncs
+    from ``backend._src_root`` — byte-identical to the pre-fix path (zero side effects)."""
+    (tmp_path / "pyproject.toml").write_text("")
+
+    def cloner_must_not_run(**_kw):
+        raise AssertionError("git_cloner must not be called for a main/absent run")
+
+    rsynced: list[dict] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_cloner=cloner_must_not_run,
+    )
+
+    backend.prepare(_branch_spec(branch))
+
+    assert len(rsynced) == 1, rsynced
+    assert rsynced[0]["src_root"] == backend._src_root
+
+
+def test_prepare_install_already_on_branch_skips_cloner(tmp_path) -> None:
+    """#793: when the repo-root install is ALREADY on the requested branch, the cloner
+    is NOT called and rsync uses ``_src_root`` directly (the install IS the branch)."""
+    (tmp_path / "pyproject.toml").write_text("")
+
+    def cloner_must_not_run(**_kw):
+        raise AssertionError("git_cloner must not be called when install is on the branch")
+
+    rsynced: list[dict] = []
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **kw: rsynced.append(kw),
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_branch_resolver=lambda _root: "issue-793",
+        git_cloner=cloner_must_not_run,
+    )
+
+    backend.prepare(_branch_spec("issue-793"))
+
+    assert len(rsynced) == 1, rsynced
+    assert rsynced[0]["src_root"] == backend._src_root
+
+
+def test_resolve_rsync_source_returns_src_root_on_main(tmp_path) -> None:
+    """#793: unit-test ``_resolve_rsync_source`` in isolation across the branch cases.
+
+    Parametrized over: absent → ``_src_root``; ``main`` → ``_src_root``; already-on-branch
+    (resolver returns the request) → ``_src_root``; non-``main`` mismatch (resolver returns
+    ``main``) → cloner's path; non-``main`` with resolver returning ``None`` (detached /
+    non-repo — the Statistics-critic case, mirroring the guard's ``actual is None``
+    sub-branch) → cloner's path. Asserts on the returned Path, not on a raise.
+    """
+    (tmp_path / "pyproject.toml").write_text("")
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+
+    def _resolve(*, branch, resolver):
+        backend = SlurmBackend(
+            src_root=tmp_path,
+            rsyncer=lambda **_kw: None,
+            secrets_pusher=lambda **_kw: None,
+            runtime_clearer=lambda **_kw: None,
+            git_branch_resolver=resolver,
+            git_cloner=lambda *, src_root, branch, issue: scratch,
+        )
+        return backend._resolve_rsync_source(_branch_spec(branch))
+
+    # A resolver that would fail the test loudly if consulted on the early-return path.
+    def _resolver_forbidden(_root):
+        raise AssertionError("resolver must not be consulted for a main/absent run")
+
+    # absent → _src_root (resolver never consulted)
+    assert _resolve(branch=None, resolver=_resolver_forbidden) == tmp_path
+    # "main" → _src_root (resolver never consulted)
+    assert _resolve(branch="main", resolver=_resolver_forbidden) == tmp_path
+    # already-on-branch → _src_root
+    assert _resolve(branch="issue-793", resolver=lambda _r: "issue-793") == tmp_path
+    # non-main mismatch (resolver returns "main") → cloner's path
+    assert _resolve(branch="issue-793", resolver=lambda _r: "main") == scratch
+    # non-main with resolver returning None (detached / non-repo) → cloner's path
+    assert _resolve(branch="issue-793", resolver=lambda _r: None) == scratch
+
+
+def _git_available() -> bool:
+    import shutil as _shutil
+
+    return _shutil.which("git") is not None
+
+
+def _init_branch_repo(repo: _P) -> None:
+    """Init a tiny git repo at ``repo`` with a ``main`` commit + an ``issue-X`` branch.
+
+    The ``issue-X`` branch adds a marker file (``branch_marker.txt``); a working-tree-only
+    ``external/open-instruct/open_instruct/finetune.py`` is created UNTRACKED to simulate
+    the mode-160000 gitlink the overlay handles.
+    """
+    env = {
+        **os.environ,
+        "GIT_AUTHOR_NAME": "t",
+        "GIT_AUTHOR_EMAIL": "t@e",
+        "GIT_COMMITTER_NAME": "t",
+        "GIT_COMMITTER_EMAIL": "t@e",
+    }
+
+    def _git(*args):
+        subprocess.run(
+            ["git", "-C", str(repo), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env=env,
+        )
+
+    repo.mkdir(parents=True, exist_ok=True)
+    _git("init", "-q", "-b", "main")
+    (repo / "pyproject.toml").write_text("[project]\nname='x'\n")
+    (repo / "src").mkdir()
+    (repo / "src" / "mod.py").write_text("x = 1\n")
+    _git("add", "pyproject.toml", "src/mod.py")
+    _git("commit", "-q", "-m", "main commit")
+    _git("checkout", "-q", "-b", "issue-X")
+    (repo / "branch_marker.txt").write_text("on the branch\n")
+    _git("add", "branch_marker.txt")
+    _git("commit", "-q", "-m", "branch commit")
+    # Back to main so the branch is NOT the checked-out HEAD (mirrors the repo-root
+    # install staying on main while the feature branch lives in a worktree).
+    _git("checkout", "-q", "main")
+
+
+@pytest.mark.skipif(not _git_available(), reason="git not available")
+def test_materialize_branch_src_worktree_add_and_overlay(tmp_path) -> None:
+    """#793: the REAL ``materialize_branch_src`` produces a content-complete tree on the
+    branch commit + overlays the working-tree-only gitlink, and is idempotent."""
+    repo = tmp_path / "repo"
+    _init_branch_repo(repo)
+    # Working-tree-only gitlink content present in the src_root working tree only.
+    oi = repo / "external" / "open-instruct" / "open_instruct"
+    oi.mkdir(parents=True)
+    (oi / "finetune.py").write_text("f\n")
+
+    monkey_root = tmp_path / "slurm-src"
+
+    # Point the scratch root at tmp_path via the env override so we do not touch ~.
+    os.environ["EPS_SLURM_SRC_ROOT"] = str(monkey_root)
+    try:
+        scratch = materialize_branch_src(src_root=repo, branch="issue-X", issue=1, timeout=60)
+        # (a) the branch's marker file is present (committed-tree content).
+        assert (scratch / "branch_marker.txt").exists()
+        # (b) the overlaid gitlink content is present (worktree-only, not in any commit).
+        assert (scratch / "external" / "open-instruct" / "open_instruct" / "finetune.py").exists()
+        # (c) pyproject.toml is present (the source-sanity assert passed).
+        assert (scratch / "pyproject.toml").exists()
+
+        # Idempotency: a second call still succeeds (prior scratch removed + recreated).
+        scratch2 = materialize_branch_src(src_root=repo, branch="issue-X", issue=1, timeout=60)
+        assert scratch2 == scratch
+        assert (scratch2 / "branch_marker.txt").exists()
+        assert (scratch2 / "external" / "open-instruct" / "open_instruct" / "finetune.py").exists()
+    finally:
+        os.environ.pop("EPS_SLURM_SRC_ROOT", None)
+        # Detach the scratch worktree so tmp_path teardown does not leave a dangling
+        # registration in the source repo (best-effort).
+        subprocess.run(
+            ["git", "-C", str(repo), "worktree", "remove", "--force", str(scratch)],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+
+@pytest.mark.skipif(not _git_available(), reason="git not available")
+def test_materialize_branch_src_unresolvable_branch_raises(tmp_path) -> None:
+    """#793: a branch name ``rev-parse --verify`` cannot resolve raises ``RuntimeError``
+    (fail-fast, no silent fallback to main)."""
+    repo = tmp_path / "repo"
+    _init_branch_repo(repo)
+
+    os.environ["EPS_SLURM_SRC_ROOT"] = str(tmp_path / "slurm-src")
+    try:
+        with pytest.raises(RuntimeError, match="cannot resolve branch 'no-such-branch'"):
+            materialize_branch_src(src_root=repo, branch="no-such-branch", issue=2, timeout=60)
+    finally:
+        os.environ.pop("EPS_SLURM_SRC_ROOT", None)
+
+
+@pytest.mark.skipif(not _git_available(), reason="git not available")
+def test_materialize_branch_src_absent_overlay_path_warns_not_crashes(tmp_path, caplog) -> None:
+    """#793: an overlay path absent in ``src_root`` (a legitimate lora-only run with no
+    open-instruct) logs a WARNING and is skipped — the function still succeeds."""
+    import logging
+
+    repo = tmp_path / "repo"
+    _init_branch_repo(repo)
+    # NOTE: no external/open-instruct is created in the src_root working tree.
+
+    os.environ["EPS_SLURM_SRC_ROOT"] = str(tmp_path / "slurm-src")
+    try:
+        with caplog.at_level(logging.WARNING):
+            scratch = materialize_branch_src(
+                src_root=repo,
+                branch="issue-X",
+                issue=3,
+                overlay_paths=("nonexistent-dir",),
+                timeout=60,
+            )
+        # (a) did not raise; (b) returned a valid scratch with pyproject.toml.
+        assert (scratch / "pyproject.toml").exists()
+        # (c) a WARNING was logged for the absent overlay path.
+        assert any(
+            "nonexistent-dir" in rec.getMessage() and rec.levelno == logging.WARNING
+            for rec in caplog.records
+        ), [rec.getMessage() for rec in caplog.records]
+    finally:
+        os.environ.pop("EPS_SLURM_SRC_ROOT", None)
+        subprocess.run(
+            ["git", "-C", str(repo), "worktree", "remove", "--force", str(scratch)],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+
+def test_assert_repo_branch_synced_accepts_explicit_src_root(tmp_path) -> None:
+    """#793: the guard accepts an explicit ``src_root`` (§4d). Passing a branch tree
+    passes; passing a ``main`` tree with a non-``main`` request still raises (unchanged
+    internal semantics under the new arg — the guard STILL refuses a mismatched source)."""
+    (tmp_path / "pyproject.toml").write_text("")
+    branch_tree = tmp_path / "branch-tree"
+    branch_tree.mkdir()
+    main_tree = tmp_path / "main-tree"
+    main_tree.mkdir()
+
+    backend = SlurmBackend(
+        src_root=tmp_path,
+        rsyncer=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+        git_branch_resolver=lambda root: "issue-793" if root == branch_tree else "main",
+    )
+    spec = _branch_spec("issue-793")
+
+    # Explicit src_root on the branch → passes (no raise).
+    backend._assert_repo_branch_synced(spec, src_root=branch_tree)
+    # Explicit src_root on main with a non-main request → still raises.
+    with pytest.raises(ValueError, match="cannot honor repo_branch='issue-793'"):
+        backend._assert_repo_branch_synced(spec, src_root=main_tree)
 
 
 def test_slurm_backend_launch_uses_scp_not_ssh_bash_c(tmp_path) -> None:
@@ -2071,7 +2408,9 @@ def test_launch_attaches_expected_artifacts_declaration(tmp_path) -> None:
     assert decl["sentinel_path"] == str(
         tmp_path / "eval_results/issue_137/slurm-9001/.completion-sentinel.json"
     )
-    assert decl["git_paths"] == ["eval_results/issue_137/", "figures/issue_137/"]
+    # #790: pure-hydra (no workload_cmd) declares NEITHER default git path —
+    # train.py runs with skip_eval=True and writes no figures during the run.
+    assert decl["git_paths"] == []
     assert decl["hf_data_paths"] == ["issue137_slurm-9001/raw_completions/"]
     assert decl["hf_model_paths"] == []
 
@@ -2096,7 +2435,9 @@ def test_launch_custom_workload_omits_guessed_hf_prefix(tmp_path) -> None:
     assert decl["hf_data_paths"] == []
     # The sentinel + git checks keep gating teardown on this lane.
     assert decl["sentinel_path"].endswith("slurm-9001/.completion-sentinel.json")
-    assert decl["git_paths"] == ["eval_results/issue_137/", "figures/issue_137/"]
+    # #790: custom_workload keeps the real eval_results/ check (drivers commit
+    # eval JSONs during the run) but drops the analyzer-generated figures/.
+    assert decl["git_paths"] == ["eval_results/issue_137/"]
 
 
 def test_render_and_launch_sentinel_paths_agree(tmp_path) -> None:

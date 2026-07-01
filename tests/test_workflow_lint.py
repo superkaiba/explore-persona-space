@@ -40,6 +40,7 @@ from workflow_lint import (  # noqa: E402
     check_asks,
     check_autonomous_asks,
     check_batch_judge_client,
+    check_compute_shape_review_lens,
     check_dispatcher_cvd_pin,
     check_gate_ids_unique,
     check_heredoc_dotenv,
@@ -2697,13 +2698,13 @@ def test_check_lessons_index_passes_on_live_repo():
 
 
 def test_check_lessons_index_fails_when_index_exceeds_cap(tmp_path):
-    # Leanness cap is mechanical — an index > 6000 bytes must FAIL.
+    # Leanness cap is mechanical — an index > 7500 bytes must FAIL.
     rules = tmp_path / ".claude" / "rules"
     rules.mkdir(parents=True)
     (rules / "alpha.md").write_text("# alpha\n", encoding="utf-8")
     rows = "- **alpha** ([`.claude/rules/alpha.md`](alpha.md)) — fires when: x.\n"
-    # Pad with prose so the index breaches the 6000-byte cap.
-    padding = "x" * 6100
+    # Pad with prose so the index breaches the 7500-byte cap.
+    padding = "x" * 7600
     (rules / "LESSONS.md").write_text(
         f"# LESSONS\n\n## Rules\n\n{rows}\n\n{padding}\n",
         encoding="utf-8",
@@ -2722,3 +2723,56 @@ def test_check_lessons_index_fails_on_duplicate_row(tmp_path):
     errs = check_lessons_index(repo_root=tmp_path)
     assert errs, "expected a FAIL for the duplicate 'alpha' index row"
     assert any(("duplicate" in e or "exactly one" in e) and "alpha" in e for e in errs)
+
+
+def test_compute_shape_review_lens_live_tree_passes() -> None:
+    """The real .claude/agents tree carries the #806 lens in both files."""
+    assert check_compute_shape_review_lens() == []
+
+
+def test_compute_shape_review_lens_flags_missing(tmp_path) -> None:
+    """A code-reviewer agent pair missing the lens FAILs the #806 check."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    # codex file has the lens; the Claude file does not → one FAIL for the
+    # Claude file, none for the codex file.
+    (agents / "code-reviewer.md").write_text("# reviewer\nno lens here\n")
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nStep 0.67 Compute-shape-vs-dispatcher\nblocker tag compute-shape-mismatch\n"
+    )
+    errors = check_compute_shape_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the code-reviewer.md missing the lens"
+    # Key on the SUBJECT of each error — the file path before the first ': '
+    # (the message body cross-references the sibling filename in prose, so a
+    # naive substring search would collide). Every error must be ABOUT the
+    # Claude file; none about the codex file (which carries both tokens).
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("code-reviewer.md") for s in subjects), subjects
+    assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
+    assert all(not s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def test_compute_shape_review_lens_flags_both_files(tmp_path) -> None:
+    """Both files missing the lens accumulate one FAIL per file (#806).
+
+    Pins the per-file error-accumulation loop (not just the scoping asserted
+    by ``test_compute_shape_review_lens_flags_missing``): each file is missing
+    exactly ONE distinct required token, so the loop emits exactly one error
+    per file — two total, one subject per file. A regression that broke out of
+    the loop after the first file, or that de-duplicated across files, would
+    fail this.
+    """
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    # Claude file carries the tag but NOT the heading token; codex file
+    # carries the heading token but NOT the tag → one distinct missing token
+    # apiece → exactly one error per file.
+    (agents / "code-reviewer.md").write_text("# reviewer\nblocker tag compute-shape-mismatch\n")
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nStep 0.67 Compute-shape-vs-dispatcher\n"
+    )
+    errors = check_compute_shape_review_lens(repo_root=tmp_path)
+    assert len(errors) == 2, errors
+    subjects = {e.split(": ", 1)[0] for e in errors}
+    assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
+    assert any(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
