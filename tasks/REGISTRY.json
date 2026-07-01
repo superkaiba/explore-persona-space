@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 808,
+  "highest_id": 813,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5207,6 +5207,14 @@
       "path": "tasks/completed/81",
       "status": "completed",
       "title": "Try persona leakage with very semantically similar personas and try to find very different leakage patterns"
+    },
+    "813": {
+      "goal": "Determine whether the finetuning-induced context->answer map change (M0 base vs M+ trained, per #537 behavior) depends on the query substrate, by fitting + comparing M0 vs M+ across three substrates (generic UltraChat, behavior-eliciting probes, mix) on the shared 50-context battery, reporting floor-normalized function-change and chain-rho per substrate.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/approved/813",
+      "status": "approved",
+      "title": "Map-change substrate-dependence: generic vs behavior-eliciting vs mix queries"
     },
     "83": {
       "has_clean_result": false,
