@@ -48,8 +48,8 @@ description: >
   **Final adversarial gate before status:awaiting_promotion.** Every
   round (1-3) is ensembled with `codex-clean-result-critic` (all-rounds
   policy as of 2026-06-12; previously round-1-only).
-model: "claude-opus-4-8[1m]"
-effort: high
+model: claude-fable-5
+effort: xhigh
 tools:
   - Read
   - Grep
@@ -331,14 +331,14 @@ For each rule: open the body, find the section, verify against SPEC
 directly. Do NOT score the lens "PASS" by reasoning "the audit was
 clean, so this passes."
 
-- **Lens 12 (Conciseness) — `### <result>` interpretation prose runs ≤2
+- **Lens 12 (Conciseness) — `### <result>` interpretation prose runs 1–3
   sentences per paragraph; bullets are the default.** The mechanical
   word cap (check 20) FAILs only at ≥180 words/result; sentence-count
   and bullets-over-prose are LM judgment. Scan each `### <result>`
   interpretation paragraph (the prose that follows the figure caption);
   FAIL when
   a result's prose is a multi-sentence wall where bullets would read
-  better, or any single paragraph runs ≥3 sentences in the analytical
+  better, or any single paragraph runs ≥4 sentences in the analytical
   read. (v3: `### <finding>` read paragraph.) (Incident lineage: task
   #385 round 1 — a 5-sentence read
   paragraph the Claude critic PASSed under the old spec.)
@@ -1248,7 +1248,7 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
   not bullets. Bold key numbers, front-load the takeaway in
   `## Takeaways` (the NN/g "layer-cake" guidance). FAIL when
   `## Takeaways` carries multi-sentence narrative paragraphs where
-  bullets would read better, OR when any section runs a padded ≥3-sentence
+  bullets would read better, OR when any section runs a padded ≥4-sentence
   wall in an analytical read (this overlaps Lens 12 Conciseness — flag it
   under whichever you reach first, do not double-count as two blockers).
   (v3: `## Takeaways` / `## What I ran` / `## Findings`; v3 had no Rule B —
@@ -1310,9 +1310,11 @@ programmatic marker, which has its own three-space recipe), CLAUDE.md
 § Measurement validity requires BOTH DVs reported: (a) the PRIMARY
 judge-scored on-policy behavior/agreement rate (the headline number),
 and (b) the SECONDARY continuous completion-probability DV
-(length-normalized trained − base `log P` of the model's own
-judged-positive on-policy completions, or the teacher-forced margin the
-plan registered). FAIL when (i) a cross-condition / install /
+(PREFERRED the teacher-forced FIXED positive-vs-negative completion
+margin — fixed answer pools ⇒ no selection bias, #722; the
+judged-positive-conditional-mean `log P` (`logp_pos_mean`) is the
+selection-confounded opt-in alternative, valid only after it passes
+ρ(DV, rate) > 0). FAIL when (i) a cross-condition / install /
 dose-matched headline rests on the binary rate alone and that rate is
 disclosed saturated (floor/ceiling), with no continuous DV carrying the
 comparison (#608's top-band censoring); OR (ii) the body narrates the
@@ -1731,10 +1733,10 @@ Check four things:
    padded — narrative where 2 bullets would do — flag it as a Lens 12
    tightening request (not a standalone blocker unless ≥180). (v3:
    `### <finding>`.)
-2. **Bullets are the default; prose only for ≤2-sentence causal
+2. **Bullets are the default; prose only for 1–3-sentence causal
    chains.** FAIL when `## Results` / `## Methodology` carry
    multi-sentence narrative paragraphs that should be bullets, or a
-   single analytical paragraph runs ≥3 sentences. (This overlaps Lens 6
+   single analytical paragraph runs ≥4 sentences. (This overlaps Lens 6
    Voice — flag under whichever you reach first; do not double-count as
    two blockers. v3: `## Findings` / `## What I ran`.)
 3. **Takeaways bullets ≤30 words; figure captions ≤60 words.** Verifier

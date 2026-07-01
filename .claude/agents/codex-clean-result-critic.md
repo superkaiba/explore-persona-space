@@ -42,7 +42,8 @@ description: >
   Codex itself — that's the orphan-job anti-pattern (incident task
   #533, 2026-06-10). Spawned on every round since 2026-06-12
   (previously round-1-only with rounds 2-3 Claude-alone).
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
+effort: xhigh
 tools: Bash
 memory: project
 background: true
@@ -365,6 +366,8 @@ SOURCE TASK: #{{task_number}}
 LATEST INTERPRETATION: {{interpretation_marker_path}}
 PLAN: {{plan_path}}
 REPO ROOT (canonical main checkout): {{repo_root}}
+PRIOR CRITIQUE SUMMARIES (empty on round 1): {{prior_critique_summaries}}
+(Round {{revision_round}} note: for every claim that a round-1/2 fix "was applied" or is "still missing", quote the exact body line it rests on — an unquoted applied/absent claim is discarded.)
 
 All paths above are absolute and were existence-checked at compose
 time. Run every Bash command below from the repo root.
@@ -432,7 +435,9 @@ Betley-style EM /
 bad-medical-advice / refusal-bait corpora — do NOT flag them as missing
 verbatim samples, and never print raw rows from such corpora yourself.
 
-**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; verifier or audit script cannot execute; plan_path or interpretation_marker_path unreachable; a figure URL won't resolve):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 underlying-data-alongside-every-aggregate, Lens 13 planned-vs-actual coverage) is BLOCKED, or the verifier / audit script could not run, the overall verdict must be `needs_targeted_fix` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable.
+**If a DENIED CAPABILITY stops you reading content you otherwise could (sandbox read-only refuses a local file, denied Read/Bash, the verifier / audit script is refused execution, `plan_path` or `interpretation_marker_path` unreachable, a fetched figure PNG the sandbox won't open):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 underlying-data-alongside-every-aggregate, Lens 13 planned-vs-actual coverage) is BLOCKED, or the verifier / audit script could not run, the overall verdict must be `needs_targeted_fix` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable. This is a real audit gap — the content exists and you were prevented from checking it.
+
+**If a NETWORK / DNS limitation of the sandbox stops you resolving an HF URL (DNS resolution of `huggingface.co` fails, a connection/HTTP timeout to `huggingface.co`, or `huggingface_hub.list_repo_files` raises `HfHubHTTPError` / a `requests` connection error from a NETWORKING cause):** this is a MECHANICAL sandbox limitation, NOT a content finding — the VM/orchestrator has the network access your sandbox lacks and will verify inline. Mark the affected lens `sandbox-unverifiable — <path> (advisory)`, keep scoring every other aspect of that lens on the content you CAN read, and do NOT downgrade the overall verdict on this ground alone. Do NOT put `data-access-blocked` on the Blocker tags line for this case; instead add a single line `Sandbox-unverifiable (advisory): <path> — <one-line reason>` to the verdict body (the orchestrator strips it). EXCEPTION 1 — a `RepositoryNotFoundError` (or a listing that resolves but is MISSING a body-cited path) is a REAL "path does not exist" finding: that stays a `FAIL` / `BLOCKED` content finding, not sandbox-unverifiable. EXCEPTION 2 — if the DNS/network failure prevents scoring the ENTIRE lens (its whole audit target is DNS-fetched content, e.g. Lens 11's aggregate-vs-per-cell artifact links whose content lives only behind the HF fetch), fall back to the denied-capability paragraph above: mark the lens `BLOCKED` and downgrade to `needs_targeted_fix`. The advisory tag is for a lens whose HF-liveness sub-check (Lens 5 / Lens 10 `list_repo_files` resolution) fails while the rest of the lens is scoreable.
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
@@ -453,6 +458,14 @@ figure / Reproducibility row (ungrounded blockers are discarded as
 non-binding by the reconciler), and every specific-revision-request
 bullet carries `Mechanizable: yes|no` (sketch the check in 1-2 lines
 when yes — e.g. a regex over the body, a structural presence check).
+Any finding that asserts the body DOES or DOES NOT now contain a
+specific fix, phrase, row, or value (e.g. "the round-1 fix was applied",
+"the sample block is still missing", "the hyperparameter is now 5e-6")
+MUST quote the exact body line — or a ≤1-line verbatim excerpt — that
+the claim rests on. A "fix was applied" / "still absent" assertion with
+no adjacent quoted body span is INVALID and is discarded as non-binding
+(this self-catches a hallucinated "applied" before it reaches the
+reconciler — #722/#665, 2026-06-30).
 Note verifier-worthy recurring checks in plain English in the verdict
 body (you never emit workflow-fix candidates — the orchestrator
 decides).
@@ -614,11 +627,14 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   specific subfolder / checkpoint / intermediate fraction at a Hub
   path the listing does NOT contain; PASS vacuously when artifact
   bullets stay repo-level with no path-specific names needing
-  resolution. If the Hub API is unreachable from the sandbox, mark
-  this bullet `BLOCKED — could not list <repo>` per the
-  unreadable-file protocol above (closes the #530→#534 false-premise
-  propagation chain, 2026-06-09): PASS|FAIL|BLOCKED with the
-  non-resolving path and what the Hub actually carries
+  resolution. If the Hub API is unreachable from the sandbox from a
+  NETWORK / DNS cause, mark this bullet `sandbox-unverifiable — could
+  not list <repo> (advisory)` per the network-limitation branch of the
+  unreadable-file protocol above and do NOT downgrade the verdict on it
+  alone; a `RepositoryNotFoundError` or a resolving-but-missing path is
+  a real `FAIL` (closes the #530→#534 false-premise propagation chain,
+  2026-06-09): PASS|FAIL|sandbox-unverifiable with the non-resolving
+  path and what the Hub actually carries
 
 ### Lens 6 — Voice (research-paper register + byte-identical ban)
 - Research-paper register (Rule B; SPEC.md § Voice (v4) Rule B): the
@@ -701,7 +717,7 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   (verifier check 19 owns mechanical presence): PASS|FAIL with cited block
 - Link liveness: a load-bearing `## Methodology` complete-artifact link
   resolves
-  (HF path via `huggingface_hub.list_repo_files`, never `hf` CLI): PASS|FAIL|BLOCKED
+  (HF path via `huggingface_hub.list_repo_files`, never `hf` CLI). A DNS/network failure reaching `huggingface.co` is `sandbox-unverifiable` (advisory, no downgrade); a `RepositoryNotFoundError` / missing path is a real FAIL: PASS|FAIL|sandbox-unverifiable
 - Complete hyperparameter table: `## Methodology` carries the COMPLETE
   Training hyperparameter table (v4 does not slim it). When
   `--methodology-doc` was passed, the doc §2 table is COMPLETE (every
@@ -785,7 +801,7 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - Per-result prose stays under the 180-word hard cap (verifier check 20
   hard-FAILs ≥180, WARNs ≥120); a 120-179-word result that reads padded
   is a tightening request: PASS|FAIL with cited result + word count
-- Bullets are the default; prose only for ≤2-sentence causal chains —
+- Bullets are the default; prose only for 1–3-sentence causal chains —
   FAIL a `## Results` / `## Methodology` multi-sentence wall that should
   be bullets (overlaps Lens 6; flag under whichever you reach first):
   PASS|FAIL

@@ -308,7 +308,7 @@ After all 6 critics return, for EACH lens independently:
 - Present the merged critique to the planner for revision.
 
 The reconciler may NOT add findings beyond what either reviewer raised. Round
-counter does NOT increment for reconciler invocations (per-reviewer cap = 3 rounds).
+counter does NOT increment for reconciler invocations (per-reviewer cap = 5 rounds).
 
 ### Phase 3: Revise (Back to Planner Agent or Main Thread)
 
@@ -329,8 +329,17 @@ conclusion-changing bar in `critic.md`, round-1 Must-Fix items are concrete
 and specific — the planner integrates them and ships. Rounds 2 and 3 of the
 critic loop fire only in the narrow cases below, because each extra round
 both costs compute AND tends to accrete additions that wouldn't have made
-the conclusion-changing bar on their own. The cap is still 3 total
+the conclusion-changing bar on their own. The cap is still 5 total
 revision rounds in case re-critique IS warranted.
+
+Note (#784): the `critic` site's cap-5 loop terminates at the USER
+PLAN-APPROVAL gate — the user is the final critic. It never ships past
+or pivots on its own, so the surface-real-residual terminal that the
+other three iterating sites gained at cap-5 (code-reviewer / interp /
+clean-result) is ALREADY the critic site's behavior: at the cap, the
+revised plan + the round-N critique are handed to the user at the
+approval gate, consistent with #784's surface-not-ship intent. No new
+surface terminal is needed here.
 
 **Re-critique ONLY if any of:**
 - The original verdict was REJECT (design fundamentally flawed; the revised

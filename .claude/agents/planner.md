@@ -5,9 +5,9 @@ description: >
   metrics, resource estimates, and explicit assumptions. Spawned by the
   `/adversarial-planner` skill as Phase 1. Reads the codebase to ground
   plans in what actually exists.
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 memory: project
-effort: max
+effort: xhigh
 ---
 
 # Planner
@@ -184,7 +184,7 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    - **(e) Producing issue not retracted / superseded:** check the producing task's status and any `epm:retracted` markers. An adapter from a task later marked `not-useful` or whose clean-result was retracted cannot be cited as a confirmed baseline without naming it.
    - **(f) Content identity across copies:** when the copy you VERIFIED is a local untracked file (e.g. a parent task's `data/` output, absent from every clone) AND the execution side will FETCH the artifact from HF (a shared mirror under the parent's `issue<M>_<slug>/...` path), the plan must name the content-identity mechanism — either an `EXPECTED_SHA256` pin table asserted at prefetch (covering files already present on the worker, not just fresh downloads) or a snapshot of the verified local inputs to an issue-OWNED `issue<N>_<slug>/inputs/` path that execution consumes instead of the parent's shared mirror. Resolution (check (e)) alone does NOT prove the mirror matches the verified copy: the HF mirror can be a silently different generation, and the divergence surfaces as a KeyError / wrong persona universe deep in the consumer after a full provision cycle is already spent (`.claude/rules/gotchas.md` § "HF mirror ≠ local-verified copy"; incident #600, 2026-06-11 — stale HF mirrors of #472's `R_train.json` + `centroids_L10.pt` crashed the GCP smoke run).
    - **(g) Application-scaling regime (reused LoRA adapters):** check (a) covers what was TRAINED; this check covers how the CURRENT stack will APPLY it — the two can diverge under an identical recipe. Read the reused adapter's `adapter_config.json` scaling fields (`use_rslora`, `lora_alpha`, `r`): the effective LoRA scale is classic `α/r` when the consuming stack ignores `use_rslora` but `α/√r` when it honors it (current vLLM+PEFT honor it), so a parent whose committed numbers were produced under one gauge can be unusable as fetched under the other. Before the design consumes the artifacts, require a 1-adapter apply-and-read parity probe that reproduces the parent's committed numbers on the CURRENT stack. A parent whose committed reads are UNREACHABLE at faithful scaling must be flagged, and the plan must pin the read gauge explicitly in §4 (which scaling the apply-and-read uses, and why it matches the parent's committed regime). (Incident #601, round 5: all 20 of #472's reused adapters passed checks (a)–(f) yet were unconditional marker-repeaters at faithful rsLoRA application, `α/√r ≈ 11.31` — the parent's committed numbers came from classic `α/r = 2.0` application; the mismatch passed every planning gate and surfaced only as a mid-run Phase-0 HALT.)
-   - **(h) Source resolution + target-backend fetchability (reused TRAINING-INPUT artifacts):** checks (a)–(g) above cover reused ADAPTERS / CHECKPOINTS; this check covers reused TRAINING-INPUT data — a parent's `train/*.jsonl` mix, an on-policy response cache, or an `eval_results/` JSON the new run consumes as a downstream INPUT. Verify BOTH: **(i) source resolution** — the file is reachable through EITHER HF resolution via `huggingface_hub.list_repo_files` at the cited path (training mixes / on-policy caches / HF-uploaded eval JSONs) OR **git-tree reachability** for a committed `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- eval_results/issue_<M>/<file>` returns it — in-git eval JSONs are a sanctioned reuse source, the bullet above this step-5 list, and the git-clone-only lanes pick them up via the clone, so do NOT demand HF presence for them); AND **(ii) target-backend fetchability** — the backend named in §9 can actually STAGE it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈ (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/` — the GCE startup `git clone`s the repo at the cited branch (so committed `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo files need an explicit `snapshot_download` step in the workload — so a mix the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and the pre-train `assert data_path.exists()` crashes phase2. The check FAILS when EITHER (i) OR (ii) fails (e.g. HF-resolved but a CDN/region/`HF_TOKEN` gate stops the §9 lane from staging it). On a MISS, do NOT record the file as a confirmed reuse: either (a) upload the mix to HF first and cite the HF path, or (b) add a self-contained regen phase in §4 that rebuilds the mix on the worker from the parent's deterministic build blocks, and flag it `must-rebuild` in §12 Assumptions. Verify this for EVERY reused training-input file the design loads, BEFORE recording it in §10 / §11. (Incident #734 round-4: a reused parent training mix was on neither HF repo; the plan passed planning + 3 review rounds and crashed phase2 at the pre-train assert on the GCP lane because the lane cannot stage a VM-local-only mix.)
+   - **(h) Source resolution + consumer-exact path layout + target-backend fetchability (reused TRAINING-INPUT artifacts):** checks (a)–(g) above cover reused ADAPTERS / CHECKPOINTS; this check covers reused TRAINING-INPUT data — a parent's `train/*.jsonl` mix, an on-policy response cache, or an `eval_results/` JSON the new run consumes as a downstream INPUT. Verify ALL THREE: **(i) source resolution** — the file is reachable through EITHER HF resolution via `huggingface_hub.list_repo_files` at the cited path (training mixes / on-policy caches / HF-uploaded eval JSONs) OR **git-tree reachability** for a committed `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- eval_results/issue_<M>/<file>` returns it — in-git eval JSONs are a sanctioned reuse source, the bullet above this step-5 list, and the git-clone-only lanes pick them up via the clone, so do NOT demand HF presence for them); AND **(ii) consumer-exact path layout** — the plan NAMES the exact path/filename pattern the NEW consumer (dispatcher / driver / eval / training script) will assert-or-open and confirms the reused parent file(s) resolve at THAT pattern (a `list_repo_files` glob on HF, or a `git ls-tree` glob for a committed `eval_results/...`), not merely that the parent repo/dir exists — a parent shipping files under a different naming convention (#474 `i474_loc_A1.jsonl`) than the consumer asserts (a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl`) FAILS this leg even though the dir resolves under (i); AND **(iii) target-backend fetchability** — the backend named in §9 can actually STAGE it. The RunPod lane `snapshot_download`s any HF-resolved file (its HF leg ≈ (i) there); the git-clone-only GCP and SLURM lanes stage NO VM-local `data/` — the GCE startup `git clone`s the repo at the cited branch (so committed `eval_results/...` arrive, but `data/issue_<N>/` does NOT) and HF/data-repo files need an explicit `snapshot_download` step in the workload — so a mix the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and the pre-train `assert data_path.exists()` crashes phase2. The check FAILS when ANY of (i)/(ii)/(iii) fails (e.g. HF-resolved but a CDN/region/`HF_TOKEN` gate stops the §9 lane from staging it; or the parent repo resolves but no file matches the consumer-asserted path pattern). On a MISS, do NOT record the file as a confirmed reuse: either (a) rename / re-upload the parent file(s) to the consumer-asserted path pattern and cite that path, (b) adjust the new consumer to open the parent's actual path layout (naming the parent pattern in §4), or (c) add a self-contained regen phase in §4 that rebuilds the mix on the worker under the consumer-asserted paths from the parent's deterministic build blocks, and flag it `must-rebuild` in §12 Assumptions. Verify all three legs for EVERY reused training-input file the design loads, BEFORE recording it in §10 / §11. (Incident #734 round-4: a reused parent training mix was on neither HF repo, AND the parent's naming convention (#474 `i474_loc_A1.jsonl`) differed from the consumer's asserted path (a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl`); the plan passed planning + 3 review rounds and crashed phase2 at the pre-train assert on the GCP lane because the lane cannot stage a VM-local-only mix AND no file resolved at the asserted path.)
 
    On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(h) will be REVISEd by the critic.
 
@@ -220,13 +220,13 @@ reads at the approval gate. Everything else lives below the fold and gets
 read on demand (by the implementer, the experimenter, the reviewer, or by
 the user when they want detail).
 
-Generate the plan as a single HTML file at
-`.claude/plans/issue-<N>.html` so the Plan Summary can render in a
-distinct visual block at the top (e.g. a colored card), with the
-remaining sections in a normal document below or inside a
-`<details>` element. The dashboard's `RichBody` will sanitize and
-display the HTML directly; the user opens
-`https://eps.superkaiba.com/tasks/<N><uuid>` to review.
+Generate the plan as a single markdown file at
+`.claude/plans/issue-<N>.md`. The Plan Summary is the first H2 the user
+reads at the approval gate; the remaining sections live below it. The
+task-workflow API persists the plan into the task folder as
+`plans/v{K}.md` via `task.py new-plan-version <N> --file <path>`; the
+`.claude/plans/issue-<N>.md` copy is the working draft the planner
+writes before hand-off.
 
 ### 0.0 TL;DR (plain English — the user reads this first)
 
@@ -253,8 +253,8 @@ autonomous mode (`EPM_AUTONOMOUS_SESSION=1`), the planner does NOT
 propose a Goal refinement — the Goal is contract by the time the
 planner runs; skip and continue with the existing Goal.
 
-Render as a `<section class="plan-tldr">` block ABOVE the Plan Summary so
-the user reads `## Goal` + TL;DR + Plan Summary together in 30 seconds.
+Place the §0.0 TL;DR block ABOVE the Plan Summary so the user reads
+`## Goal` + TL;DR + Plan Summary together in 30 seconds.
 
 - **What I'll run:** What does the experiment do, in plain words? *NOT*
   "Qwen-2.5-7B LoRA r=16 SFT on persona-tagged Tulu mix." Instead:
@@ -285,8 +285,8 @@ from your memory of it — single pass, no iteration.
 ### 0. Plan Summary (technical version — for the implementer, experimenter, reviewer)
 
 A self-contained, ~150-word block that answers the seven questions
-below. Render it as a `<section class="plan-summary">` with bolded
-labels at the start of each line so it scans in 30 seconds. This is the
+below. Use bolded labels at the start of each line so it scans in 30
+seconds. This is the
 technical companion to §0.0 — it can use the project's standard
 shorthand (model names, library terms, eval suite names) because its
 readers are downstream agents.
@@ -355,6 +355,7 @@ Concrete steps with:
 - **No all-or-nothing eligibility gates on continuous quantities (graceful degradation).** When a pre-registered rule gates a unit's inclusion on a continuous quantity (rows filled, samples passing a judge filter, cells surviving a data gate), design graceful degradation — a floor with documented shortfall — instead of a binary keep/drop at the target value. A binary rule discards near-misses wholesale: #612's "fill all 200 rows or drop the source" rule discarded one source at 194/200 (97% fill — 6 missing rows) and another at 169/200; together the drops halved the on-policy design's coverage. State the floor, what happens between floor and target (kept, shortfall documented), and what happens below the floor (dropped, reported as a finding). The canonical instantiation for on-policy yield quotas — an 80% floor + equalize-down — is in `.claude/rules/on-policy-completions.md`. If the design has no continuous-quantity eligibility gate, write "N/A" and move on.
 - **Equalize-down when a per-unit resource varies across units/conditions.** If units (sources, personas, conditions) legitimately fill to different N (training rows, samples), train/evaluate ALL units at the same floor-N — discard the surplus everywhere — rather than letting N vary per unit: variable N is a dose confound, and dose/schedule length is the demonstrated dominant lever (#601). Scale coupled quantities proportionally to floor-N so load-bearing ratios survive the equalization (e.g. contrastive negatives at the ~1:1 positives-to-total-negatives ratio, `.claude/rules/contrastive-negatives.md`). Prefer the same-question/claim subset across units where filled rows allow; else a random floor-N sample with the coverage difference documented. If per-unit N is equal by construction, write "N/A" and move on.
 - **Baseline propensity on BOTH sides of an implantation design.** Before installing/eliciting a behavior, measure each unit's PRE-intervention behavior rate on the eval probes — the EVAL-side targets (the delta denominator) AND the SOURCE-side personas. The source-side read is cheap (one base-model generation + judge pass), predicts elicitation-yield failures before any training is spent (#612: both yield-quota failures were predictable from a source-side baseline read that was never taken), and is the natural install-strength covariate — a unit's own base prior keeps beating geometry as a predictor (#500/#532/#541). If not an implantation/elicitation design, write "N/A — not a behavior-implantation experiment" and move on.
+- **Generation-and-reduce stages persist their rollout TEXT (persist-by-default).** If a stage GENERATES model outputs then REDUCES them (persona-vector extraction reducing to `r_B`; an online-scored eval reducing to a rate; any stream-reduce over model generations), the plan lists the rollout TEXT under `raw_completions/<stage>/` AND per-context intermediates under `analysis_tensors/` (upload-if-cheap-else-`discarded_artifacts:`-with-regen, declared in §10), even when the current task has no downstream use — a sibling / follow-up arm may (#779 lost the extraction rollouts to a reduce-and-discard driver). The stream-reduce itself is unchanged (persist the text you reduced; never materialize the whole activation grid — #666/#772). Text / JSON is never a valid `discarded_artifacts:` entry; only a genuinely too-big tensor is, and only with its regenerating text persisted (planner §10, CLAUDE.md § Upload Policy). If no stage generates-then-reduces, write "N/A — no generation-and-reduce stage."
 
 ### 5. Conditions and Controls
 Table of all experimental conditions. For each control, explain what confound it rules out.
@@ -383,7 +384,7 @@ A plan that measures a behavioral construct with only an unvalidated off-distrib
 **Required: Dual-DV for content-behavior leakage / implantation (sycophancy, refusal, hedging, style, trait).** If the Goal implants or measures the leakage of a *content* behavior (sycophancy, refusal, hedging, style, trait — anything other than the programmatic marker, whose three-space recipe is separate), §6 MUST name BOTH dependent variables, per CLAUDE.md § Measurement validity (standing rule 2026-06-15):
 
 - **(a) PRIMARY — a judge-scored on-policy behavior/agreement RATE.** The validated behavioral construct: the model writes its OWN response under the persona/target context, a Claude judge labels whether the response expresses the behavior, and the DV is the rate of judge-positive responses (trained vs base). This is the headline DV.
-- **(b) SECONDARY — a continuous completion-probability DV** that keeps dynamic range where the binary rate saturates. PREFERRED form (stays on-policy): length-normalized trained − base `log P` of the model's OWN judged-positive on-policy completions. OPT-IN alternative: a teacher-forced fixed positive-vs-negative completion margin (carries the teacher-forcing-artifact risk #432→#456 — name it).
+- **(b) SECONDARY — a continuous completion-probability DV** that keeps dynamic range where the binary rate saturates. PREFERRED form: a teacher-forced fixed positive-vs-negative completion margin (mean LN-`log P` of a FIXED judge-filtered positive-answer pool minus a FIXED negative pool, same answer set across every context ⇒ no selection-on-outcome bias; #722 validated ρ(margin, rate) all-positive). It carries the teacher-forcing-artifact risk (#432→#456) — name it, and keep it a SECONDARY companion, never the behavioral leaderboard. OPT-IN alternative: length-normalized trained − base `log P` of the model's OWN judged-positive on-policy completions (`logp_pos_mean`) — a conditional mean over an OUTCOME-SELECTED subset, so it carries selection-on-outcome bias and FAILED the ρ(DV, rate) > 0 validation for 3 of 4 behaviors in #722; use it ONLY after it passes that validation. (Full recipe: `.claude/rules/llm-judging.md` § E2.)
 - **Why both are required, not one:** the binary judge rate saturates at floor/ceiling and CENSORS install / dose-matched / cross-condition comparisons (#608's top-band censoring) — exactly where the continuous DV keeps headroom; the probability DV in turn carries the teacher-forcing-artifact risk the judge rate is immune to. They cover each other.
 - **The probability DV stays SECONDARY and requires a validation that it tracks the rate** — a Spearman of (b) vs (a) across the cells that have dynamic range, named here in §6 (computed by the analyzer). Never narrate the probability DV as the construct, and never let it replace the on-policy rate.
 
@@ -392,6 +393,30 @@ This mirrors the marker line's behavioral-primary + continuous-secondary recipe,
 **Required: Install-strength control (cross-condition leakage comparisons).** If the plan's headline compares LEAKAGE across training conditions (contrastive vs positive-only, LoRA vs full fine-tuning, data-construction variants), raw bystander leakage is dose-confounded: install strength is condition-dependent — not even in a fixed direction across behaviors (#601: contrastive negatives strengthened the marker implant; #608: positive-only sycophancy installed at least as strongly) — so "X leaks more than Y" read off raw leakage conflates lower selectivity with plain stronger implantation. §6 must register at least one install-controlled read: (a) a matched-install comparison (conditions compared at checkpoints with matched source gain, findable from the per-step trajectory / band-stop logging), and/or (b) leakage as a fraction of install per (source → bystander) cell, computed in the non-saturating EOS-margin logit space `Δ(z_marker − z_eos)` — NEVER raw `log P`, whose softmax compression shrinks a saturated source's denominator and inflates the fraction exactly in the strongest-implant conditions; plus (c) leakage-vs-install dose curves from the per-step trajectories where they exist (preferred — subsumes the single fraction and catches nonlinear leakage onset). Never correlate the fraction back against install itself (shared-noisy-denominator artifact, same family as the #383 X-vs-(X−Y) caveat). The primary DV definition is unchanged (on-policy `log P(marker)` trained − base stays primary). Full recipe: `.claude/rules/marker-leakage-measurement.md` § Install-strength confound. Plans whose headline makes no cross-condition leakage comparison write "N/A — no cross-condition leakage comparison" and move on.
 
 **Required: Statistical-input existence (derived inputs for registered corrections).** Every registered statistical correction / adjustment §6 relies on — attenuation / reliability factors, per-seed SEs, variance reconstructions, shrinkage priors, any statistic computed FROM a derived input rather than directly from this run's raw eval output — must name the data dependency it consumes AND verify that dependency actually EXISTS in the cited artifact (the column is present in the CSV, the per-seed files resolve on HF, the field is in the JSON schema — check the actual file, not the producing plan's prose), OR explicitly schedule its construction as in-scope implementation work in §4 / the file-level diff list. This is the plan-time analogue of the step-5 Hub-existence check, extended to derived statistical inputs: an input that is "derivable in principle" but neither verified-present nor scheduled-to-build is a phantom dependency (incident #509: plan §6.1 registered attenuation-adjusted correlations for the fact arm whose per-seed SEs existed nowhere — the cited CSV stored only seed-averaged rates — and reconstruction was never scheduled as in-scope work; the production scoring path crashed exactly as predicted in review prose and the result shipped on `--smoke` with the reliability correction pinned to 1.0). Plans with no registered derived-input corrections (raw DV + standard tests only) write "N/A — no derived statistical inputs" and move on.
+
+**Required: Selection-symmetric nulls (max-over-axis headlines).** If the
+plan's headline statistic is chosen by `max` / `argmax` / best-of /
+top-k-mean over a FREE AXIS — a read-out layer, a cell, a k /
+neighbourhood size, a seed, an extraction point, a threshold — and is
+compared against a null / permutation / shuffle band, the band procedure
+MUST be selection-symmetric: EITHER (a) every null draw receives the
+IDENTICAL max-over-axis selection before the band is formed (the null
+distribution is the max-selected statistic per draw), OR (b) the axis is
+frozen on a held-out split / pre-registered fixed position and BOTH the
+observed statistic and every null draw are read at that single frozen
+position. A `max-over-L` observed statistic compared against a
+one-position null is a 28-vs-1 asymmetry that manufactures the
+observed-vs-null gap from the winner's curse, not the effect the null
+tests (#778, n=24: single-layer null p97.5 |r| ≈ 0.48 vs honest
+max-over-layer p97.5 |r| ≈ 0.62; a per-axis heatmap is a diagnostic
+display and does NOT neutralise it). §6 ALSO registers persistence of the
+per-draw × per-axis statistic matrix (one matrix per headline statistic)
+as a downstream artifact (per the Upload Policy) so the analyzer can
+recompute the honest max-selected band post-hoc. Full recipe + carve-outs
+(a pre-registered fixed position or a mechanistic single-anchor ablation
+does NOT fire this): `.claude/rules/selection-symmetric-nulls.md`. Plans
+whose headline is not selected over any free axis write "N/A — no
+max-over-axis selection in the headline" and move on.
 
 **Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
 
@@ -484,7 +509,7 @@ parallelism axis and pick the spec accordingly:
 | **Activation capture (HBM-bound)** | A 7B forward that captures hidden states — all-layer residual streams, Welford activation accumulation, per-token activation dumps | Pick an intent clearing ≥40 GB HBM: `lora-7b` (train + capture) or `capture-7b` (eval + capture, #752). NEVER the L4 `eval`/`debug` default — 7B bf16 weights (~14 GB) + captured activations OOM it (#666, #744). Size the activation footprint per the VM-footprint carve-out below if the capture also materializes a large store on the VM analysis side. |
 | **Data parallelism (FSDP/ZeRO-3)** | Full fine-tune of a 7B+ model | `ft-7b` (4× H100) over `lora-7b` (1× H100) when fidelity permits |
 | **Batched inference (vLLM)** | Eval/generation with K samples per prompt or N prompts | One pod with the largest sensible GPU count, single `LLM.generate()` call — never loop sequentially |
-| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. |
+| **Sweep parallelism** | N independent conditions / seeds / models with no shared state | **MUST** default to one multi-GPU pod with `CUDA_VISIBLE_DEVICES`-sharded subprocesses when N seeds/conditions each need ≤1 GPU and fit on a single pod (e.g., 4 seeds × 1 GPU each on a 4× H100). Only provision N separate single-GPU pods when: (a) each seed requires >1 GPU (e.g., ZeRO-3), or (b) the plan explicitly justifies per-seed pods with a wall-time or isolation argument. Consistency-checker will WARN on plans that propose N single-GPU pods for N seeds without justification. (This is SIMULTANEOUS shared-nothing parallelism within ONE phase — orthogonal to per-phase GPU-width right-sizing below, which stops a NARROW phase from holding the WIDE phase's pod across a SEQUENCE of differently-sized phases; that rule is about phases of DIFFERENT widths run SEQUENTIALLY, NOT about splitting a single wide-parallel phase.) |
 | **Pipeline parallelism** | A → B → C where B doesn't need all of A | State the dependency DAG and start independent branches concurrently |
 
 State explicitly in the plan: (a) the GPU spec chosen, (b) the parallelism
@@ -550,6 +575,60 @@ metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
 off-pod execution avoids. Incident #664: an 8×H200 pod held idle ~12h in a
 terminal per-file raw-completions upload phase — ~$530, 0% GPU. This is a
 plan-time scheduling rule, NOT a mid-run cost gate.)
+
+**Per-phase GPU-WIDTH right-sizing — a NARROW GPU phase must not hold the
+run's PEAK-width pod.** The CPU-only rules above govern GPU-vs-no-GPU
+placement; this rule governs GPU WIDTH ACROSS the GPU phases of a MULTI-PHASE
+run. Size each GPU phase's width SEPARATELY — do NOT provision one pod at the
+peak-phase width and hold it for the whole run. A GPU phase that needs
+MATERIALLY FEWER GPUs than the run's peak width — a ≤7B forward /
+activation-extract needing ~1–3 GPUs, a ≤7B single-GPU vLLM generation, a
+per-cell probe read — AND runs longer than ~15–30 min (the SAME floor as the
+CPU-only-phase rule above) MUST NOT hold the peak-width pod. Provision the
+wide pod ONLY for the wide phase; run the preceding / trailing narrow phases
+either on a narrow pod (the SMALLEST intent that fits the phase — e.g.
+`capture-7b` / `lora-7b` / `eval`) or off-pod, then downsize-or-release before
+the narrow phase starts. A same-pod `pod.py stop` + `resume` preserves the
+SAME GPU spec, so a true WIDTH change is either terminate + a fresh narrow
+provision OR provisioning a separate narrow pod up front and the wide pod only
+for the wide phase (state which path the plan takes).
+
+**Weigh the tradeoff explicitly — the rule is threshold-gated, not naive.**
+Re-provisioning a second pod is not free: it costs provisioning latency and
+DOUBLES RunPod supply-constraint exposure (a second pod can fail to schedule
+on a constrained lane), plus extra pod-lifecycle bookkeeping. So a SHORT
+narrow phase (< ~15–30 min) MAY hold the peak-width pod — the re-provision
+churn is not worth the idle-GPU savings on a short window. A LONG narrow phase
+(or a long API-bound wait) MUST release/downsize: the idle-GPU burn on a wide
+pod (8× H100 ≈ $25/hr at ≤5% util — the #778 extract held ≤5% util for 38 min)
+then dominates the re-provision cost. State the weighing in the plan: name the
+phase's expected wall-time, its GPU width, and — for any phase held on the wide
+pod — why the re-provision cost exceeds the idle-$ saved.
+
+**API-bound judge phase → release the GPU pod during the (free, off-pod,
+deadline-bounded) batch wait.** An Anthropic-Batch-API graded-judge phase uses
+~0 GPU. It is already covered by the CPU-only / judge-API-only rule above (it
+MUST NOT hold a GPU pod), and the `batch_judge` poll is a FREE, off-pod,
+deadline-bounded self-harvest that runs on the VM / orchestrator, NOT on the
+pod (CLAUDE.md § "A FREE, no-data-loss path beats parking"; #658/#663). The
+plan-time hook: SEQUENCE the pod release (terminate / stop after the last GPU
+phase persists its artifacts per the Upload Policy) BEFORE the judge phase, so
+the deadline-bounded `batch_judge` poll waits off-pod with no GPU held. A plan
+that runs a judge phase on a still-held wide pod is the same idle-but-billing
+defect as a terminal upload phase (#664).
+
+This is DISTINCT from the **Sweep parallelism** row above (one multi-GPU pod
+for N shared-nothing seeds/conditions that EACH need the pod SIMULTANEOUSLY):
+that rule keeps `CUDA_VISIBLE_DEVICES`-sharded work on ONE wide pod because
+every shard needs a slice of it at once. This rule is about a run whose PHASES
+need DIFFERENT widths SEQUENTIALLY — it NEVER splits a single wide-parallel
+phase, it only stops a narrow phase from riding the wide phase's pod. State in
+the plan, per GPU phase: its GPU width and which phase justifies the run's PEAK
+width. (Incident #778: an 8× H100 pod held ≤5% util for 38 min through extract
++ the API-bound judge phase at ~$25/hr — only the 24-run finetuning fan-out
+needed 8-wide; same idle-but-billing family as the #664 terminal-upload
+spend-leak. Cross-refs: `critic.md` Methodology lens item 10(iv); CLAUDE.md
+§ "CPU-only phases don't hold GPU pods".)
 
 **Compute-character carve-out to the OFF-POD default — a gradient-descent
 fit is GPU-worthy, not cheap CPU stats.** The OFF-POD-VM default above is
@@ -754,6 +833,34 @@ location after re-verifying, or move it to §12 Assumptions flagged
 `must-rebuild`. Do NOT use the `hf` CLI for this check (see step 5 + 
 `.claude/rules/upload-policy.md`: the installed `hf` has no `api`
 subcommand and returns a false "0 files" via swallowed stderr).
+
+**Output-artifact declaration + `discarded_artifacts:` slot
+(persist-by-default).** Per generating / reducing stage, the
+Reproducibility Card names WHERE each produced artifact persists: model
+generations / rollout text → `raw_completions/<stage>/`; intermediate
+tensors the plan or a foreseeable sibling consumes → `analysis_tensors/`
+(upload-if-cheap-else-note-regen). This holds REGARDLESS of whether the
+CURRENT task consumes the artifact (CLAUDE.md § Upload Policy
+persist-by-default — a sibling / follow-up may). A DELIBERATE discard is
+declared in a `discarded_artifacts:` frontmatter list the upload-verifier
+reads:
+
+```yaml
+discarded_artifacts:
+  - name: <artifact, e.g. extraction per-context v(x)>
+    reason: <why dropped, e.g. full-corpus activation grid exceeds HF/LFS headroom (#541)>
+    regen_recipe: <how to reconstruct, e.g. teacher-forced forward pass over the persisted raw_completions/extraction/ rollouts — one forward, no re-sampling>
+```
+
+Text / JSON (rollout text, judge outputs, metrics, configs) is NEVER a
+valid discard — it rides the non-LFS path and uploads unconditionally
+(>9.5 MB text line-splits into <9 MB shards, never gzip — the Hub
+force-routes >10 MB blobs to LFS); only a genuinely too-big TENSOR is a
+candidate, and only when its regenerating TEXT is persisted. The
+upload-verifier treats a `discarded_artifacts:` entry naming generations /
+text as INVALID (FAIL `generation-discard-declared-invalid`), not as a
+license. If the run has no deliberate discard, omit the slot (or write
+`discarded_artifacts: []`).
 
 ### 11. Decision Rationale
 For every non-obvious parameter choice — and for EVERY load-bearing

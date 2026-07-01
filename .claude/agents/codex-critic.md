@@ -10,9 +10,9 @@ description: >
   (in-context mode, no marker posting). The wrapper NEVER dispatches Codex
   itself — that's the orphan-job anti-pattern (incident task #533,
   2026-06-10).
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 memory: project
-effort: medium
+effort: xhigh
 background: true
 ---
 
@@ -298,13 +298,14 @@ contribution; never crash, never assume it is populated). Then run a small
    - **Static scaffold — set-MEMBERSHIP (NOT multiset).** The EXPLICIT static
      scaffold allowlist, enumerated against the FINAL Step-3 template text
      AFTER stripping the `{{...}}` substitution placeholders, is
-     `{0, 1, 2, 3, 500}`: `0` (the "Phase 0 smoke tests" anti-pattern bullet),
+     `{0, 1, 2, 3, 4, 5, 500}`: `0` (the "Phase 0 smoke tests" anti-pattern bullet),
      `1` / `2` (the "1-2 line check sketch" / "1-2 lines" GROUNDING prose and
      the "1. [Issue]" Must-Fix list marker), `500` (the "add a 500-example
      generic-assistant SFT baseline" worked example in the closing "Be
-     specific" instruction), and `3` (the `{{revision_round}}` / marker-tag
-     `v<n>` digit — bounded to {1,2,3} by the max-3-rounds policy, and its
-     substituted value traces to NO handed span, so it is scaffold-covered).
+     specific" instruction), and `3` / `4` / `5` (the `{{revision_round}}` /
+     marker-tag `v<n>` digit — bounded to {1,2,3,4,5} by the max-5-rounds
+     policy, and its substituted value traces to NO handed span, so it is
+     scaffold-covered).
      A scaffold atom is a FIXED template literal that must NOT be "used up" by
      a multiset subtraction: ANY prompt atom whose key is in this set clears
      regardless of count. (Set-membership, not multiset, is load-bearing — the

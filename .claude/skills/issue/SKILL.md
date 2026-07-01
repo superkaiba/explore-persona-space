@@ -235,8 +235,8 @@ proposed                                <- user has filed, clarifier hasn't run
                                                      |--> running (implementing sub-phase)  <- experiment-implementer (type:experiment) OR implementer (type:infra/batch)
                                                             |-- (epm:experiment-implementation OR epm:results posted)
                                                                |--> running (code-reviewing sub-phase)  <- code-reviewer ensemble (Claude + Codex)
-                                                                      |-- FAIL + count<3 --> running (implementing, v+1)
-                                                                      |-- FAIL + count>=3 --> blocked
+                                                                      |-- FAIL + count<5 --> running (implementing, v+1)
+                                                                      |-- FAIL + count>=5 --> apply Step 5d cap-hit rule: strip → PASS+continue OR surface residual (autonomous+substantive: blocked; interactive: parked)
                                                                       |-- PASS + [type:experiment] --> running (workload sub-phase)  <- experimenter (pod ops + monitoring)
                                                                             |-- (epm:results posted)
                                                                                |--> verifying              <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn
@@ -1711,7 +1711,10 @@ Only if status is `approved`.
 **4a. Worktree + draft PR.** Create `.claude/worktrees/issue-<N>` on
 branch `issue-<N>`, symlink the repo `.env` into it, and open a draft PR.
 ```bash
-REPO_ROOT=$(git rev-parse --show-toplevel)
+# #506-safe: from a worktree cwd, `git rev-parse --show-toplevel` returns the
+# WORKTREE root and doubles the path (.../issue-<N>/.claude/worktrees/issue-<N>);
+# --git-common-dir resolves to <main>/.git so dirname is the main repo root.
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 WORKTREE="$REPO_ROOT/.claude/worktrees/issue-<N>"
 bash "$REPO_ROOT/scripts/new_worktree.sh" "$WORKTREE" issue-<N> --issue <N>
 # Sparse by default (~0.4G vs ~3.8G full); reuses if it exists (resume case);
@@ -1741,8 +1744,11 @@ tool's working directory is NOT preserved across separate calls, so a
 relative `cd .claude/worktrees/issue-<N>` in one call has no effect on
 the next. ALWAYS address the worktree with an absolute path or
 `git -C "$WORKTREE" <cmd>` — never a bare relative `cd`. Resolve the
-absolute path once with `git rev-parse --show-toplevel` (as above) and
-reuse `$WORKTREE` / `$REPO_ROOT` in every subsequent command.
+absolute path once with the #506-safe
+`REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")`
+recipe (as above) — NOT `git rev-parse --show-toplevel`, which from a
+worktree cwd returns the worktree root and doubles the path — and reuse
+`$WORKTREE` / `$REPO_ROOT` in every subsequent command.
 
 **Open the draft PR only if the branch is ahead of `main`.** `gh pr
 create` errors with `No commits between main and issue-<N>` when the
@@ -1904,6 +1910,9 @@ Before dispatching, sync the worktree's workflow surface from local
 already runs on `main`):
 
 ```bash
+# Step 5a WANTS the WORKTREE root (that is where the spec-freshness sync writes)
+# — NOT the #506 path-doubling bug; do NOT change to --git-common-dir here. The
+# self-no-op case (session already on main) is why show-toplevel is correct.
 WT=$(git rev-parse --show-toplevel)
 SPECS=".claude/agents .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md"
 MB=$(git -C "$WT" merge-base HEAD main)
@@ -2053,8 +2062,8 @@ if every phase IS present (command + exit 0 + artifact digest) and
 only the *formatting* is imperfect, that is a `CONCERNS`, not a FAIL
 — and Step 5c-bis strips any mechanical-contract-only FAIL once the
 orchestrator verifies the evidence is genuinely present, so cosmetic
-gripes about present evidence never bounce the implementer or trip
-the cap-3 pivot. Code-only tasks (`infra` / `batch` / `analysis` /
+gripes about present evidence never bounce the implementer or consume a
+review round. Code-only tasks (`infra` / `batch` / `analysis` /
 `survey`) keep the existing test-verdict gate (Step 9c) and are
 exempt from this smoke gate.
 
@@ -2076,7 +2085,7 @@ Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
 |---|---|---|
 | PASS-class | PASS-class | **Agree.** `final_verdict = PASS`. CONCERNS bullets from either reviewer surface to the implementer as opportunistic suggestions; do not block. |
 | FAIL | FAIL — overlapping blockers | **Agree.** `final_verdict = FAIL`. Bounce to implementer (one round). |
-| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
+| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
 | PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies, diff path. Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
 
 The reconciler may NOT add findings beyond what either reviewer raised —
@@ -2087,7 +2096,8 @@ reconciler invocations.
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
 (reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Step
-0.5), `smoke-run-missing` (Step 0.6)} and does NOT contain `substantive`
+0.5), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
+NOT contain `substantive`
 (any code / plan / test / security finding). The `**Blocker tags:**` line is
 the parse target; if a legacy verdict omits it, fall back to reading the
 Critical-section prose for the same tag strings. Apply this strip BEFORE the
@@ -2109,6 +2119,29 @@ judgment, just structural presence:
   `## Smoke run` section that covers only one phase (e.g. training) while the
   pipeline also runs a separate eval rig is genuinely absent for the missing
   phase — leave the FAIL in place.
+- **git-provenance:** the orchestrator reads the blocker's
+  `**Git-provenance subclass:**` line and runs the matching read-only git
+  probe from repo root (or against the branch ref `issue-<N>`, never by
+  switching the repo-root branch — CLAUDE.md hard rule):
+  - `pre-existing-on-trunk` → `git show main:<path>` resolves AND the round's
+    own commit range (`git show <round-sha>~1..<round-sha> -- <path>`, or the
+    implementer report's `<parent>..HEAD`) does NOT touch the flagged lines →
+    the violation is on trunk, not from this round → STRIP.
+  - `stale-main-or-worktree` → `git log --oneline main..issue-<N> -- <path>`
+    returns zero non-merge commits (branch never touched the file) → the
+    finding is a stale-branch artifact → STRIP.
+  - `cumulative-main-head-diff` → the flagged line is unchanged in the round's
+    OWN range (`git show <round-sha>~1..<round-sha> -- <path>` /
+    `<parent>..HEAD`) even though it appears in `main...HEAD` → out of round
+    scope → STRIP.
+  In ALL THREE: the strip fires ONLY when the git probe CONFIRMS the finding is
+  not from this round's diff. If the probe shows the round's own range DID touch
+  the flagged lines (git says the round introduced it), the strip does NOT fire
+  — leave the FAIL in place and apply the normal Step 5c rule. This is
+  evidence-based, never a blanket ignore. Merge-base errors on a sparse/shallow
+  worktree (`fatal: main...HEAD: no merge base`) are a checkout artifact — fall
+  back to the two-dot / round-SHA range per code-reviewer.md Step 0; a "no merge
+  base" error is never itself grounds to strip OR to FAIL.
 
 Then:
 
@@ -2127,11 +2160,16 @@ Then:
 
 This is bounded: the orchestrator may strip ONLY a mechanically-verifiable
 contract blocker (it is checking a structural fact, not overriding a
-code-substance judgment). It directly closes the gate-hopping failure mode —
+code-substance judgment) — for `git-provenance` the "structural fact" is the
+read-only git probe confirming the flagged state is NOT introduced by the
+round's diff (a git-history fact, same bounding logic as
+marker-shape/smoke-run-missing), never a code-substance judgment. It directly
+closes the gate-hopping failure mode —
 a reviewer that FAILs round after round on the *presentation* of evidence the
 marker demonstrably contains (e.g. round 1 marker-shape, round 2 smoke-digest
 formatting, never reviewing the code) can no longer bounce the implementer or
-trip the Step 5d cap-3 strategy pivot. The round counter does NOT increment
+consume a cap-5 round (the strategy pivot is retired; the strip still prevents
+the round counter from incrementing). The round counter does NOT increment
 for a strip. The clean-result-critique loop (Step 9a-bis) carries the same
 strip for *presentation-only* verifier FAILs (MDX prose, caption shape,
 cherry-label phrasing) — a clean-result FAIL backed only by presentation
@@ -2175,12 +2213,13 @@ per concern_id:
      mode never defers` AND EXECUTE the bounce in this same turn (spawn
      the implementer agent with a brief targeting the concern_id); do
      NOT state the Decision and then end the turn.
-- **severity=BLOCKER** → either address (option 1 above) OR pivot
-  strategy per `pivot_criteria.code_review_ensemble_cap_3`. BLOCKERs
-  CANNOT route to the deferral gate. If neither address nor pivot
-  resolves it, post `epm:failure v1 failure_class: code` referencing the
-  concern_id and set status:blocked (halt_criteria id=6
-  `concern_unresolved`).
+- **severity=BLOCKER** → either address (option 1 above) OR apply the
+  cap-hit rule per `pivot_criteria.code_review_ensemble_cap_5_surface`
+  (at cap-5: strip → all-stripped PASS+continue OR surface a substantive
+  residual). BLOCKERs CANNOT route to the deferral gate. If it cannot be
+  addressed and the residual is substantive, post `epm:failure v1
+  failure_class: code` referencing the concern_id and set status:blocked
+  (halt_criteria id=6 `concern_unresolved`).
 
 Multiple open CONCERNS may batch into ONE `AskUserQuestion` call <!-- gate: gates.concern_deferral_request --> <!-- autonomous-mode: skip --> with
 one option per concern_id plus a free-text rationale box per concern.
@@ -2205,37 +2244,64 @@ the same logic.
   - `infra` / `batch` / `analysis` / `survey` -> skip pod phase, move
     status directly to `reviewing` (the inline test-verdict gate at
     Step 9c runs from there).
-- **`final_verdict == FAIL` + revision_round<3** -> stay at status
+- **`final_verdict == FAIL` + revision_round<5** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
-  present) as part of the brief. Implementer posts v<n+1>; loop back
-  to 5a with `revision_round = n+1`.
-- **`final_verdict == FAIL` + revision_round>=3** -> **STRATEGY PIVOT,
-  not block** (see CLAUDE.md "STATE-TO-`blocked` criteria" and
-  workflow.yaml § pivot_criteria.code_review_ensemble_cap_3). The
-  implementation strategy isn't working — same diff family has failed
-  3 rounds. Re-invoke `/adversarial-planner` with explicit pivot scope
-  in the brief: "the implementer can't make this strategy work. Propose
-  a fundamentally different design (drop the offending component / swap
-  model / change architectural approach)." Treat the revised plan as a
-  fresh implementer cycle (`revision_round` RESETS to 1 on the new
-  plan). Track pivots in a top-level `epm:strategy-pivot v<n>` marker
-  with the pivot rationale and what changes.
+  present) as part of the brief. **When either reviewer verdict (or the
+  disjoint-blocker union) contains a `### Bug-class sweep: <class>`
+  enumeration, thread the FULL sibling list — every enumerated
+  `file:LINE`, not just the top finding — into the implementer's
+  punch-list brief, so the round-N+1 edit is class-scoped and the
+  implementer's class-hardening carve-out (experiment-implementer.md
+  revision-round rule) fires on the whole class.** Implementer posts
+  v<n+1>; loop back to 5a with `revision_round = n+1`.
+- **`final_verdict == FAIL` + revision_round>=5** -> **CAP-HIT:
+  strip-then-continue-or-surface** (replaces the retired cap-3 strategy
+  pivot; see CLAUDE.md "STATE-TO-`blocked` criteria" and workflow.yaml
+  § pivot_criteria.code_review_ensemble_cap_5_surface). At round 5 (the
+  cap) with a non-PASS ensemble verdict, the orchestrator:
+  1. **Applies the FULL Step 5c-bis strip once more** — the
+     mechanical-contract-only set {`marker-shape`, `smoke-run-missing`,
+     `git-provenance`}, evidence-based as always (git-provenance runs the
+     read-only git probe matching the blocker's declared subclass).
+  2. **If ALL residual blockers are stripped** (false-positive /
+     mechanical / git-provenance) → treat as PASS and CONTINUE (proceed
+     per the `final_verdict == PASS` branch above). Log one chat line +
+     post an `epm:progress` note recording the cap-5-strip-continue
+     outcome (which blockers were stripped and by what verification).
+  3. **If ANY substantive residual remains** (a real finding the strip
+     cannot verify away — silent-failure, upload-path/artifact-loss,
+     missing checkpoint-per-phase, resource-leak, scaffolded-but-unplumbed
+     pipeline, producer/consumer key mismatch, missing/incomplete smoke,
+     estimand/headline-poisoning) → **SURFACE** it. Do NOT ship past it,
+     do NOT same-diff-family pivot-loop:
+     - **Interactive mode:** present the residual blocker(s) to the user
+       (the two-path escalation is grandfathered for a genuine stuck-real
+       blocker; frame the residual + ask how to proceed). EXIT awaiting
+       the user.
+     - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): post
+       `epm:failure v1` with `failure_class: code` referencing the
+       residual blocker(s), set `status: blocked`, fire
+       `PushNotification({"message": f"#{N} BLOCKED: ensemble review real
+       residual at cap-5 — open it"[:200], "status": "proactive"})`, run
+       CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue-tick <N>` job;
+       idempotent), and EXIT. This is the standing halt path for a
+       genuinely-stuck real blocker after the auto-continue space is
+       exhausted (halt_criteria id=6 `concern_unresolved` family) — no
+       more pivots, no more silent shipping past.
 
-  Only after ~3 fundamentally different strategies have all FAILed AND
-  no further autonomous angle exists, move status to `blocked` and
-  exit. Post the §5 marker with `--exit-kind failure-exit` and notes
-  enumerating the strategies tried and why each failed. User decides:
-  override, revise scope, or escalate the diagnostic loop.
-
-  Bare cap-3 FAIL is NOT a block trigger. Continuing autonomously via
-  pivot is the default.
+  For a plan that is ITSELF internally contradictory, the
+  `plan_contradiction_replan` pivot (Step 7 / § pivot_criteria) still
+  applies — that is a different signal (the plan is the defect), not a
+  code-review cap-hit. Likewise the whack-a-mole detector (Step 5.bis(b))
+  is unchanged; the retired pivot is specifically the "same diff family
+  failed N rounds → re-plan" one.
 
 **Codex twin no-show fallback.** If the Codex wrapper posts
 `epm:failure v<m>` with `failure_class: codex-output-malformed` or
 `failure_class: infra` (codex plugin missing), proceed with
 single-reviewer (Claude-only) decision-making for that round. Do NOT
-block on the Codex twin's absence; cap-3 still applies to the Claude
+block on the Codex twin's absence; cap-5 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
 this round; using Claude reviewer only.`
 
@@ -4676,10 +4742,20 @@ contexts, sees v2 + prior critique events). Posts both
 `epm:interp-critique v2` and `epm:interp-critique-codex v2`. Apply rule
 again.
 
-**Max 3 rounds per reviewer.** After round 3, advance regardless with
-full critique history.
+**Max 5 rounds per reviewer.** At round 5 (the cap) with a non-PASS
+ensemble verdict, apply the Step 9a-bis-style procedural-only strip once
+more (procedural / presentation REVISEs). If ALL residual REVISEs are
+stripped → advance with full critique history. If ANY SUBSTANTIVE
+residual remains — a flagged OVERCLAIM the strip cannot resolve — SURFACE
+it, do NOT auto-publish into the record (this is the MOST important site
+for surface-not-ship, #784: a real residual at interp is an overclaim
+that must never be silently promoted). Interactive: present the residual
+to the user + EXIT. Autonomous (`EPM_AUTONOMOUS_SESSION=1`): post
+`epm:failure v1 failure_class: code` referencing the residual, set
+`status: blocked`, fire `PushNotification`, run CRON-TEARDOWN, EXIT
+(halt_criteria id=6 `concern_unresolved` family).
 
-**On PASS (or max rounds reached):**
+**On PASS (or all-stripped at the cap):**
 
 The analyzer **promotes the source task IN PLACE to a clean-result** —
 no separate task is created. The analyzer:
@@ -5095,11 +5171,20 @@ post the next critique version (`epm:clean-result-critique v<n>` +
 `epm:clean-result-critique-codex v<n>`); apply the same ensemble
 decision rule (including the procedural-only strip) as round 1.
 
-**Max 3 rounds.** After round 3, advance regardless and fold the
-residual structural / register debt into the chat-side summary so the
-user can decide whether to patch before promoting.
+**Max 5 rounds.** At round 5 (the cap) with a non-PASS ensemble verdict,
+apply the procedural-only strip once more (procedural / presentation
+REVISEs). If ALL residual REVISEs are stripped → advance. If ANY
+SUBSTANTIVE residual remains — a flagged OVERCLAIM the strip cannot
+resolve — SURFACE it, do NOT auto-publish into the clean-result record
+(#784 surface-not-ship: a real residual here is an overclaim that must
+never be silently promoted). Interactive: present the residual to the
+user + EXIT (the user decides whether to patch before promoting).
+Autonomous (`EPM_AUTONOMOUS_SESSION=1`): post `epm:failure v1
+failure_class: code` referencing the residual, set `status: blocked`,
+fire `PushNotification`, run CRON-TEARDOWN, EXIT (halt_criteria id=6
+`concern_unresolved` family).
 
-**On PASS (or max rounds reached):**
+**On PASS (or all-stripped at the cap):**
 
 Move status to `reviewing`:
 
@@ -6171,7 +6256,25 @@ suite directly and posts an `epm:test-verdict` event with the result.
       `uv run python scripts/select_step9c_tests.py --base main`
       It prints the exact `uv run pytest <files> -v --tb=short` command and
       any `untested touched file: <path>` WARN lines (stderr).
-   b. Run the printed command. Record pass/fail + any WARN lines.
+   b. Run the printed command from the orchestrator's repo-root cwd (no `cd`
+      is needed). Record pass/fail + any WARN lines. Two anti-silent-pass
+      guards are LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0
+      with zero collected tests) is a **FAIL, never a PASS**: it is the
+      signature of a failed `cd` that ran pytest in a directory with no tests
+      (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS
+      on `no tests ran ... pytest exit: 0` and was silently skipped).
+      ```bash
+      # If any cd is added upstream, HARD-GUARD it — never let the gate run in
+      # the wrong dir on a silent cd failure:
+      #   cd "$REPO_ROOT" || { echo "FATAL: cd to repo root failed" >&2; exit 1; }
+      PYTEST_OUT=$(uv run pytest <files> -v --tb=short 2>&1); PYTEST_RC=$?
+      echo "$PYTEST_OUT"
+      # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
+      if echo "$PYTEST_OUT" | grep -qiE 'no tests ran|collected 0 items'; then
+        echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
+        # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
+      fi
+      ```
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — but as
       `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
@@ -6184,7 +6287,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
 
 The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
 the files run, pass/fail counts, and any untested-touched-file WARNs (so the
-orchestrator surfaces coverage gaps — never silently skipped).
+orchestrator surfaces coverage gaps — never silently skipped). A
+zero-collected / `no tests ran` outcome is recorded as FAIL (never PASS on
+exit 0) per step 1b's guard.
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
@@ -6724,17 +6829,71 @@ task at the wrong status, AND a branch based on another still-unmerged
 `issue-<M>` branch will replay `#M`'s old commits onto `main` if blindly
 rebase-merged. Three guards:
 
-1. **Foreign-`tasks/` guard.** `git diff --name-only origin/main HEAD --
-   tasks/` MUST be empty except THIS task's own folder
-   (`tasks/*/<N>/`). For any foreign `tasks/` path in the diff, run
-   `git checkout origin/main -- <that file>` before merging. Never let a
-   behind-`main` branch revert another task's `events.jsonl`. (Incident
-   2026-06-01: #458's merge branch, 1,146 commits behind main, silently
-   rewound `tasks/running/448/events.jsonl`.) The `--rebase` merge form
-   below replays the branch's commits on top of current `main`, so files
-   the branch never committed keep `main`'s version — this is what keeps
-   the clean-result body (committed to `main` by `task.py`, never in the
-   worktree) safe across the merge.
+1. **Foreign-`tasks/` guard (strip whole foreign task folders before the
+   merge).** `git diff --name-only origin/main HEAD -- tasks/` MUST be empty
+   except THIS task's own folder (`tasks/*/<N>/`). For any FOREIGN `tasks/`
+   path in that diff — a `tasks/*/<M>/…` file for `M != <N>`, whether
+   `events.jsonl`, `comments.jsonl`, `body.md`, or any other file — reset it
+   to `main` BEFORE merging so the server-side `gh pr merge --rebase` has
+   nothing foreign to conflict on (GitHub ignores this repo's
+   `.gitattributes merge=union`, so a union merge cannot rescue a server-side
+   conflict — the strip must happen here). A foreign path that EXISTS on
+   `origin/main` is reset by checkout; a foreign path the branch ADDED (does
+   not exist on `origin/main`) is dropped from the branch instead — a plain
+   `git checkout origin/main -- <added-path>` would crash with `pathspec did
+   not match any file(s)` and abort the guard. Split FOREIGN accordingly:
+
+   ```bash
+   # Foreign tasks/* paths this branch touches (everything under tasks/ that
+   # is NOT this task's own folder). Anchored so tasks/.../<N>/… is excluded.
+   STRIPPED_FOREIGN=no   # set to yes iff a strip commit is actually created,
+                         # so the safe-case push below fires only when needed.
+   mapfile -t FOREIGN < <(git -C "$WT" diff --name-only origin/main HEAD -- 'tasks/' \
+     | grep -Ev "^tasks/[^/]+/<N>/" || true)
+   if [ "${#FOREIGN[@]}" -gt 0 ]; then
+     FOREIGN_ON_MAIN=()      # exist on origin/main -> reset to main's version
+     FOREIGN_BRANCH_ONLY=()  # only the branch added them -> drop from branch
+     for p in "${FOREIGN[@]}"; do
+       if git -C "$WT" cat-file -e "origin/main:$p" 2>/dev/null; then
+         FOREIGN_ON_MAIN+=("$p")
+       else
+         FOREIGN_BRANCH_ONLY+=("$p")
+       fi
+     done
+     [ "${#FOREIGN_ON_MAIN[@]}" -gt 0 ] \
+       && git -C "$WT" checkout origin/main -- "${FOREIGN_ON_MAIN[@]}"
+     [ "${#FOREIGN_BRANCH_ONLY[@]}" -gt 0 ] \
+       && git -C "$WT" rm --cached -f --ignore-unmatch -- "${FOREIGN_BRANCH_ONLY[@]}"
+     # Commit the reset/removal so the branch diff no longer touches them,
+     # but only if anything actually changed (idempotent: a re-run finds
+     # nothing staged and skips the commit). Record that a strip commit was
+     # made so the safe-case merge below knows it must push before rebasing.
+     if ! git -C "$WT" diff --cached --quiet -- "${FOREIGN[@]}"; then
+       git -C "$WT" commit -m "issue-<N>: strip foreign tasks/ folders before Step-10d merge" -- "${FOREIGN[@]}"
+       STRIPPED_FOREIGN=yes
+     fi
+   fi
+   ```
+
+   The `STRIPPED_FOREIGN` flag is load-bearing: the strip commit above is a
+   LOCAL worktree commit, but the safe-case `gh pr merge --rebase` below
+   rebases the commits on the PR head ref as it exists on
+   `origin/issue-<N>` (server-side), NOT the local worktree HEAD. An unpushed
+   strip commit is therefore INVISIBLE to that server-side rebase — the
+   foreign `tasks/*` reverts would remain in the replayed history and land on
+   `main` silently. So when `STRIPPED_FOREIGN=yes`, the safe-case block below
+   MUST push the strip commit to the PR head ref BEFORE calling `gh pr merge`.
+
+   This is idempotent (a re-run finds `FOREIGN` empty and no-ops) and never
+   touches THIS task's own `tasks/*/<N>/` folder (the `grep -Ev
+   "^tasks/[^/]+/<N>/"` carve-out). Never let a behind-`main` branch revert
+   another task's `events.jsonl` / `comments.jsonl`. (Incident 2026-06-01:
+   #458's merge branch, 1,146 commits behind main, silently rewound
+   `tasks/running/448/events.jsonl`.) The `--rebase` merge form below replays
+   the branch's commits on top of current `main`, so files the branch never
+   committed keep `main`'s version — this is what keeps the clean-result body
+   (committed to `main` by `task.py`, never in the worktree) safe across the
+   merge.
 2. **Status already off `running`.** By both trigger points the status is
    well past `running` (`awaiting_promotion` for experiments; `completed`
    for code paths, flipped in Step 10 step 6 BEFORE this step). A crash
@@ -6773,13 +6932,45 @@ rebase-merged. Three guards:
    git -C "$WT" diff --name-only origin/main...HEAD   # three-dot form
    ```
 
-   UNSAFE if that list touches any foreign `tasks/` path (under
-   `tasks/` but outside `tasks/*/<N>/`) or files outside this task's
-   deliverable scope (paths neither the plan nor the code review
-   touched). If the list is clean — only this task's own deliverables —
-   the branch is SAFE to rebase-merge regardless of `BEHIND`: the
-   rebase replays only these commits, and files the branch never
-   committed keep `main`'s version.
+   Before judging a workflow-surface path out-of-scope, EXCLUDE files whose ONLY
+   branch-side touch is a Step-5a `spec-freshness` sync (the mandated
+   `git checkout main -- $SAFE_SPECS` from `main`, NOT a branch deliverable).
+   This mirrors Step 5a's own intent (line ~1925): a file that has NO non-sync
+   branch-side commit is content imported FROM `main`, so it is never an
+   out-of-scope regression. Match on the commit SUBJECT line ONLY — a `--grep`
+   over subject+body would wrongly exclude a genuine branch edit whose commit
+   BODY happens to mention "spec-freshness" (documentation, a retrospective),
+   silently dropping a real branch touch. The two Step-5a sync SUBJECT variants
+   both carry the token (`issue-<N>: sync workflow-surface specs from main
+   (spec-freshness)`; `chore(issue-<N>): spec-freshness sync workflow surface
+   from main`).
+
+   ```bash
+   # For each workflow-surface path $f in the own-diff: does it have any
+   # branch-side commit whose SUBJECT does NOT contain "spec-freshness"?
+   # Emit "<sha> <subject>" per own-commit touching $f, then keep only the
+   # non-sync ones. If none remain, the file's only branch-side touches are
+   # spec-freshness syncs => imported from main => NON-blocking for Guard 3.
+   non_sync=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
+     | awk 'index($0, "spec-freshness") == 0')
+   # $non_sync empty   => file imported via spec-freshness sync only => treat as
+   #                      NON-blocking (in-scope, imported from main).
+   # $non_sync nonempty => a genuine branch-side edit (its subject is not a sync)
+   #                      => apply the normal in-scope / out-of-scope judgment.
+   ```
+
+   (`git log --format='%H %s'` prints `<sha> <subject>` per commit — the `awk
+   index()` keeps only lines whose subject lacks the token; the sha is a hex
+   string that never contains "spec-freshness", so the match is effectively
+   subject-scoped. Equivalently `git log --format='%s' … | grep -v spec-freshness`.)
+
+   UNSAFE if the own-diff — after the spec-freshness exclusion above — touches
+   any foreign `tasks/` path (under `tasks/` but outside `tasks/*/<N>/`) or files
+   outside this task's deliverable scope (paths neither the plan nor the code
+   review touched). If the list is clean — only this task's own deliverables,
+   plus any spec-freshness-synced workflow-surface files — the branch is SAFE to
+   rebase-merge regardless of `BEHIND`: the rebase replays only these commits,
+   and files the branch never committed keep `main`'s version.
 
    In the unsafe case, do NOT run `gh pr merge --rebase` — fall through
    to the **artifact-confirmed merge** procedure below. The Guard 1
@@ -6798,6 +6989,90 @@ rebase-merged. Three guards:
    its `origin/main...HEAD` diff carries the whole `#472` parent
    payload, failing the content check.)
 
+#### Fast-path routing pre-check (workflow-fix / small-ADDED-diff far-behind branches)
+
+Run this AFTER guards 1-3 and BEFORE the safe-case `gh pr merge --rebase`
+call. For a workflow-fix / small-diff branch that is very far behind `main`,
+a server-side `--rebase` predictably conflicts on churn even after Guard 1
+strips foreign folders (GitHub replays the branch's own commits across
+thousands of intervening main commits, and cannot use this repo's
+`merge=union`). When the branch's OWN diff is small, entirely in-scope, AND
+consists ONLY of ADDED files, skip the doomed `--rebase` and route DIRECTLY to
+the surgical additive checkout below.
+
+**Why the ADDED-only conjunct is load-bearing (do NOT drop it).** The
+surgical additive checkout does a WHOLESALE `git checkout issue-<N> -- <path>`
+(the "One or more deliverables missing" branch, ~line 7080), which OVERWRITES
+each listed path with the branch tip's copy. For a file the branch MODIFIED
+that `main` also advanced (very likely on a 1000+-behind branch), that
+overwrite silently discards `main`'s newer content with NO conflict surfacing
+— a silent-wrong merge. Restricting the fast-path to ADDED-only files means
+the surgical checkout only ever CREATES files that do not yet exist on
+`main`, so it can never clobber a concurrently-advanced one. A branch that
+MODIFIES a workflow-surface file (status M) is NOT fast-path-eligible and
+takes the ordinary `gh pr merge --rebase` path, whose server-side 3-way merge
+either merges main's changes cleanly or surfaces a real conflict for the
+recovery sub-procedure. (This is exactly why #787 itself — which MODIFIES
+`SKILL.md` — is not fast-path-eligible.)
+
+```bash
+# Fast-path predicate — ALL of:
+#  (a) task is kind:infra AND tagged wf-fix (a workflow-fix branch), AND
+#  (b) BEHIND > 1000 (branch predates significant main churn), AND
+#  (c) the branch's OWN diff touches <= 15 files, AND
+#  (d) every touched file is in-scope: this task's own paths, workflow
+#      surface, .gitattributes, or the methodology doc — NO shared src/ or
+#      scripts/ additions (those need the full rebase to land), AND
+#  (e) EVERY touched file is status A (Added) — no M (Modified), D (Deleted),
+#      R (Renamed). A modified file would be clobbered wholesale by the
+#      surgical checkout below.
+KIND=$(uv run python "$REPO_ROOT/scripts/task.py" view <N> --json | \
+  uv run python -c 'import sys,json; d=json.load(sys.stdin); fm=d.get("frontmatter",{}); print(fm.get("kind","")); print(" ".join(fm.get("tags",[])))')
+TASK_KIND=$(printf '%s\n' "$KIND" | sed -n 1p)
+TASK_TAGS=$(printf '%s\n' "$KIND" | sed -n 2p)
+# Three-dot: the branch's OWN commits only (merge-base..HEAD) — never files
+# main advanced but the branch never touched. Name-status so we can gate on A.
+mapfile -t OWN_NS < <(git -C "$WT" diff --name-status origin/main...HEAD)
+N_FILES=${#OWN_NS[@]}
+IN_SCOPE=yes
+ADDED_ONLY=yes
+for line in "${OWN_NS[@]}"; do
+  st=${line%%$'\t'*}          # status letter (A / M / D / R100 / ...)
+  f=${line#*$'\t'}            # path (for a rename this is the source; fine —
+                              # a rename fails ADDED_ONLY below regardless)
+  [ "$st" = "A" ] || ADDED_ONLY=no
+  case "$f" in
+    tasks/*/<N>/*|figures/issue_<N>/*|eval_results/issue_<N>/*|eval_results/issue_<N>_*/*|ood_eval_results/issue_<N>/*) ;;
+    .claude/*|CLAUDE.md|.gitattributes|docs/methodology/issue_<N>.md) ;;
+    *) IN_SCOPE=no ;;
+  esac
+done
+FAST_PATH=no
+if [ "$TASK_KIND" = "infra" ] \
+   && printf '%s' "$TASK_TAGS" | grep -qw 'wf-fix' \
+   && [ "$BEHIND" -gt 1000 ] \
+   && [ "$N_FILES" -le 15 ] \
+   && [ "$IN_SCOPE" = "yes" ] \
+   && [ "$ADDED_ONLY" = "yes" ]; then
+  FAST_PATH=yes
+fi
+```
+
+If `FAST_PATH=yes`: SKIP the `gh pr merge --rebase` call and jump straight to
+the **surgical additive checkout** (the "One or more deliverables missing"
+branch of the artifact-confirmed procedure below). The surgical checkout
+lands this branch's own ADDED files onto `main` directly, with no rebase.
+Post `epm:merged v1` with `{artifact_confirmed: true, full_rebase_deferred:
+true, surgical_checkout: true, fast_path: true, reason: "wf-fix branch
+BEHIND=<BEHIND> > 1000, own diff <=15 in-scope ADDED-only files — skipped
+doomed server-side rebase", files: [...]}`.
+
+If `FAST_PATH=no`: proceed to the safe-case `gh pr merge --rebase` (or the
+artifact-confirmed path if Guard 3 said UNSAFE) exactly as before — this
+pre-check adds NO new behavior for normal branches. A branch that MODIFIES a
+workflow-surface file (status M ⇒ `ADDED_ONLY=no`) is deliberately not
+fast-pathed; it takes the ordinary `--rebase`.
+
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
@@ -6807,6 +7082,20 @@ if [ -z "$PR" ]; then
 else
   # Run guards 1-3 above first. If guard 3 says "unsafe", skip this
   # block and run the artifact-confirmed merge below instead.
+  #
+  # Push the Guard-1 strip commit to the PR head ref FIRST, so the
+  # server-side rebase in `gh pr merge` below sees the stripped branch tip,
+  # not the pre-strip commit. The strip commit is a LOCAL worktree commit and
+  # is otherwise invisible to server-side rebase — leaving the foreign
+  # tasks/* reverts in the replayed history and landing them on main silently
+  # (Codex code-review round-1 blocker, task #787). Push retry mirrors
+  # CLAUDE.md § "Concurrent repo-root committers": pull --rebase=merges
+  # --autostash then re-push on a rejected push.
+  if [ "$STRIPPED_FOREIGN" = "yes" ]; then
+    git -C "$WT" push origin issue-<N> \
+      || { git -C "$WT" pull --rebase=merges --autostash \
+           && git -C "$WT" push origin issue-<N>; }
+  fi
   gh pr ready <PR>
   gh pr merge <PR> --rebase --delete-branch=false
 fi
@@ -6958,11 +7247,29 @@ Decision tree:
   `ood_eval_results/issue_<N>/`). Compute:
 
   ```bash
-  # Files this branch ADDED (status A) vs origin/main, restricted to
-  # this task's own paths — never sweeps shared src/ or scripts/.
-  git -C "$WT" diff --name-only --diff-filter=A origin/main HEAD -- \
+  # Files this branch ADDED (status A ONLY) vs origin/main, restricted to
+  # this task's own paths PLUS the workflow surface (a workflow-fix branch's
+  # ADDED deliverable can be .claude/** / CLAUDE.md / .gitattributes). Never
+  # sweeps shared src/ or scripts/ — the new-shared-src/ guard above already
+  # refused the surgical path if the branch added src/.
+  #
+  # --diff-filter=A (ADDED-only), NEVER AM: this checkout does a WHOLESALE
+  # `git checkout issue-<N> -- <path>` below (~line for the xargs git checkout),
+  # which would OVERWRITE main's newer copy of a MODIFIED file with no conflict.
+  # A-only guarantees every listed path does not yet exist on main, so the
+  # checkout only CREATES — never clobbers. A branch that MODIFIES a
+  # workflow-surface file is not fast-path-eligible (predicate (e)) and reaches
+  # this block only via a genuine Guard-3 UNSAFE degrade, where the same
+  # A-only safety applies.
+  #
+  # Three-dot origin/main...HEAD (merge-base..HEAD): the branch's OWN adds only.
+  # Two-dot origin/main HEAD would additionally list files main advanced that
+  # the branch never touched (status M-because-main-advanced), pulling them into
+  # the checkout list — precisely the paths we must NOT overwrite.
+  git -C "$WT" diff --name-only --diff-filter=A origin/main...HEAD -- \
     "tasks/*/<N>/" "figures/issue_<N>/" "eval_results/issue_<N>/" \
     "eval_results/issue_<N>_*/" "ood_eval_results/issue_<N>/" \
+    ".claude/" "CLAUDE.md" ".gitattributes" "docs/methodology/issue_<N>.md" \
     > /tmp/issue-<N>-additive-files.txt
   ```
 
@@ -7116,7 +7423,7 @@ wires each site to invoke `post_step_completed.py` with the right
 | Step 4b TDD gate awaiting `approve-tests` | 4b | user-gated | `parked` |
 | Step 4b TDD second pass | 4b | user-gated | `parked` |
 | Step 4b implementer EXIT to `running` | 4b | normal continuation | `clean` |
-| Step 5b code-review FAIL revision_round>=3 | 5b | error path | `failure-exit` |
+| Step 5b code-review FAIL revision_round>=5 | 5b | apply Step 5d cap-hit rule (strip-then-continue-or-surface) | `conditional` (all-stripped → `clean`; substantive residual → `failure-exit` autonomous / `parked` interactive) |
 | Step 6c pod URLs surfaced, leave at `running` | 6c | normal continuation | `clean` |
 | Step 6c pod provisioning failure | 6c | error path | `failure-exit` |
 | Step 6 preflight error/warning | 6 | error path | `failure-exit` |
@@ -7149,8 +7456,8 @@ dedicated "working" statuses):
 | `running` (implementing) | no `epm:experiment-implementation` (or `epm:results` for infra), no `epm:proposed-tests` either | implementer was cancelled | re-spawn implementer |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, no `epm:experiment-implementation`, no `epm:approve-tests` event posted **after** the `proposed-tests` event | TDD mode: tests posted, awaiting user approval | show the `proposed-tests` event timestamp + the `approve-tests` reply instruction, EXIT |
 | `running` (implementing) | `epm:proposed-tests v<n>` exists, an `epm:approve-tests` event exists **after** the `proposed-tests` event, no `epm:experiment-implementation` | TDD tests approved by user | re-spawn implementer with `tdd_approved=true`; brief instructs implementer to write implementation against the approved tests, then post `epm:experiment-implementation v1` as normal |
-| `running` (implementing) | latest `epm:code-review` is FAIL, round < 3 | revision in progress | re-spawn implementer with critique |
-| `running` (implementing) | latest `epm:code-review` is FAIL, round >= 3 | exhausted retries | status to `blocked`, ask user |
+| `running` (implementing) | latest `epm:code-review` is FAIL, round < 5 | revision in progress | re-spawn implementer with critique |
+| `running` (implementing) | latest `epm:code-review` is FAIL, round >= 5 | cap reached | apply Step 5d cap-hit rule (strip-then-continue-or-surface): strip → all-stripped PASS+continue OR surface substantive residual (autonomous: `blocked` + notify; interactive: present to user) |
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
 | `running` (code-reviewing) | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
 | `running` (code-reviewing) | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
@@ -7165,13 +7472,13 @@ dedicated "working" statuses):
 | `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
 | `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `interpretation-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
-| `interpreting` | ensemble verdict PASS or round >= 3, neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel |
+| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 5 | revision needed | re-spawn analyzer with all critique events |
+| `interpreting` | ensemble verdict PASS or (round >= 5 AND the Step 9a cap-hit resolved: all residual stripped, no substantive overclaim residual), neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a surface-real-residual rule instead: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `interpreting` | `epm:clean-result-critique v<n>` exists, no `epm:clean-result-critique-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-clean-result-critic` only |
 | `interpreting` | `epm:clean-result-critique-codex v<n>` exists, no `epm:clean-result-critique v<n>` | Claude critic not yet returned | re-spawn `clean-result-critic` only |
 | `interpreting` | both `epm:clean-result-critique v<n>` and `epm:clean-result-critique-codex v<n>` exist, verdicts disagree (PASS-class vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `clean-result-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 3 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
-| `interpreting` | clean-result ensemble verdict PASS-class or round >= 3 | ready for review | advance to `reviewing` |
+| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 5 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
+| `interpreting` | clean-result ensemble verdict PASS-class or (round >= 5 AND the Step 9a-bis cap-hit resolved: all residual stripped, no substantive overclaim residual) | ready for review | advance to `reviewing`. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a-bis surface-real-residual rule: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |

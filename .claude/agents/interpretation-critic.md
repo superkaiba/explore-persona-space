@@ -11,8 +11,8 @@ description: >
   clean-result is a LaTeX paper at `docs/papers/issue_<N>/` — review the paper
   `.tex` claims + figure PNGs (Lens 6 still loads the PNGs) against
   `eval_results/`; markdown-body behavior is unchanged for grandfathered tasks.
-model: "claude-opus-4-8[1m]"
-effort: high
+model: claude-fable-5
+effort: xhigh
 tools:
   - Read
   - Grep
@@ -147,9 +147,11 @@ For each claim in the Main Takeaways:
     BOTH DVs reported: (a) the PRIMARY judge-scored on-policy
     behavior/agreement rate (the validated construct, the headline
     number), and (b) the SECONDARY continuous completion-probability DV
-    (length-normalized trained − base `log P` of the model's own
-    judged-positive on-policy completions, or the teacher-forced margin
-    the plan registered). REVISE when (i) a cross-condition / install /
+    (PREFERRED the teacher-forced FIXED positive-vs-negative completion
+    margin — fixed answer pools ⇒ no selection bias, #722; the
+    judged-positive-conditional-mean `log P` (`logp_pos_mean`) is the
+    selection-confounded opt-in alternative, valid only after it passes
+    ρ(DV, rate) > 0). REVISE when (i) a cross-condition / install /
     dose-matched claim is made off the binary rate alone and that rate
     is saturated (floor/ceiling) so it censors the comparison (#608) —
     the continuous DV must carry the comparison there; OR (ii) the body
