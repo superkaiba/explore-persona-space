@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 786,
+  "highest_id": 787,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5032,6 +5032,13 @@
       "path": "tasks/proposed/786",
       "status": "proposed",
       "title": "daily-fix: task-workflow API atomicity (git-mv, post-marker, view)"
+    },
+    "787": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/787",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d tasks/* merge-conflict default + far-behind branch"
     },
     "8": {
       "has_clean_result": false,
