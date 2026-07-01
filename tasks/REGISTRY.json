@@ -4973,8 +4973,8 @@
       "goal": "On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior (at the single-context/single-answer per-example level), and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/779",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/779",
+      "status": "awaiting_promotion",
       "title": "A learned context->answer-profile map does not beat Persona-Vectors' raw prompt projection for trait monitoring, while a direct context->trait predictor beats both (LOW confidence)"
     },
     "78": {
@@ -5197,8 +5197,8 @@
     "808": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/808",
-      "status": "running",
+      "path": "tasks/reviewing/808",
+      "status": "reviewing",
       "title": "workflow-fix: resolve SPEC.md Lens 12 sentence-count contradiction (from #779 reconciler)"
     },
     "81": {
