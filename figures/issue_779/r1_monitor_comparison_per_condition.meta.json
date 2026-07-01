@@ -1,0 +1,5021 @@
+{
+  "commit": "a5b0c3622c",
+  "created": "2026-07-01T16:44:16Z",
+  "figsize": [
+    11.5,
+    7.4
+  ],
+  "points": [
+    {
+      "raw <c_last, r_B>": -19.118743896484375,
+      "judge trait score": 82.94500000000001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -8.998451232910156,
+      "judge trait score": 85.34444444444445,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -2.9645767211914062,
+      "judge trait score": 94.72999999999999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -13.918464660644531,
+      "judge trait score": 66.78333333333333,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -10.015068054199219,
+      "judge trait score": 92.15,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -7.344879150390625,
+      "judge trait score": 94.26666666666667,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -12.631278991699219,
+      "judge trait score": 85.25,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -14.308990478515625,
+      "judge trait score": 90.30166666666666,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -9.626121520996094,
+      "judge trait score": 95.38888888888889,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -15.3956298828125,
+      "judge trait score": 88.59722222222221,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -12.026931762695312,
+      "judge trait score": 93.50185185185187,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -18.426193237304688,
+      "judge trait score": 73.475,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -10.838058471679688,
+      "judge trait score": 93.02000000000001,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": 0.03873443603515625,
+      "judge trait score": 95.495,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -9.786773681640625,
+      "judge trait score": 92.04374999999999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -10.243782043457031,
+      "judge trait score": 79.45555555555555,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -10.5035400390625,
+      "judge trait score": 83.61481481481482,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -8.284942626953125,
+      "judge trait score": 86.64999999999999,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -7.87890625,
+      "judge trait score": 81.69333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -11.173309326171875,
+      "judge trait score": 58.43333333333334,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw <c_last, r_B>": -30.946365356445312,
+      "judge trait score": 57.98,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -27.309642791748047,
+      "judge trait score": 39.220000000000006,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -13.028656005859375,
+      "judge trait score": 28.799999999999997,
+      "label": "mean within-cond r = 0.17\n(4 kept conds, 80 pts)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -24.815773010253906,
+      "judge trait score": 28.265000000000004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -23.673873901367188,
+      "judge trait score": 89.92,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -20.61440658569336,
+      "judge trait score": 39.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -25.84040069580078,
+      "judge trait score": 74.71111111111112,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -27.890636444091797,
+      "judge trait score": 70.13999999999999,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -21.382423400878906,
+      "judge trait score": 71.84,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -30.86420440673828,
+      "judge trait score": 40.519999999999996,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -20.02094268798828,
+      "judge trait score": 16.619999999999997,
+      "label": "mean within-cond r = 0.17\n(4 kept conds, 80 pts)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -30.70403289794922,
+      "judge trait score": 56.040000000000006,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -28.630531311035156,
+      "judge trait score": 45.10000000000001,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -15.43527603149414,
+      "judge trait score": 75.63,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -25.020126342773438,
+      "judge trait score": 18.215,
+      "label": "mean within-cond r = 0.17\n(4 kept conds, 80 pts)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -22.572052001953125,
+      "judge trait score": 58.58,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -19.981300354003906,
+      "judge trait score": 37.35,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -23.04207992553711,
+      "judge trait score": 62.588888888888896,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -18.83980941772461,
+      "judge trait score": 41.145,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -21.480838775634766,
+      "judge trait score": 9.74,
+      "label": "mean within-cond r = 0.17\n(4 kept conds, 80 pts)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw <c_last, r_B>": -60.7903938293457,
+      "judge trait score": 13.039999999999997,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -60.33245849609375,
+      "judge trait score": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -38.983516693115234,
+      "judge trait score": 12.833333333333334,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -53.55290985107422,
+      "judge trait score": 3.3416666666666672,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -54.45594024658203,
+      "judge trait score": 7.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -51.51570510864258,
+      "judge trait score": 15.958333333333332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -56.59333038330078,
+      "judge trait score": 19.333333333333332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -55.93657684326172,
+      "judge trait score": 34.891666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -50.9935417175293,
+      "judge trait score": 41.125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -60.11730194091797,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -46.31853485107422,
+      "judge trait score": 7.2,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -56.1174430847168,
+      "judge trait score": 13.85,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -74.6034164428711,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -45.247825622558594,
+      "judge trait score": 13.844999999999999,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -54.003822326660156,
+      "judge trait score": 7.25,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -47.56486129760742,
+      "judge trait score": 12.965,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -47.87731170654297,
+      "judge trait score": 14.333333333333332,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -52.303871154785156,
+      "judge trait score": 0.4444444444444444,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -47.718563079833984,
+      "judge trait score": 5.326666666666666,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -52.15406036376953,
+      "judge trait score": 0.45999999999999996,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw <c_last, r_B>": -75.50387573242188,
+      "judge trait score": 2.24,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -71.13516998291016,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -60.0613899230957,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -66.12446594238281,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -65.9312744140625,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -64.34181213378906,
+      "judge trait score": 8.2,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -66.62773132324219,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -66.94645690917969,
+      "judge trait score": 19.944444444444443,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -60.013145446777344,
+      "judge trait score": 11.933333333333334,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -71.46564483642578,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -65.60291290283203,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -72.92730712890625,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -88.58735656738281,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -61.580474853515625,
+      "judge trait score": 0.2222222222222222,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -62.32111358642578,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -63.233951568603516,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -61.80860137939453,
+      "judge trait score": 15.941666666666666,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -64.42010498046875,
+      "judge trait score": 0.64,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -56.6573600769043,
+      "judge trait score": 0.1,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": -67.13758850097656,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw <c_last, r_B>": 4002.4619140625,
+      "judge trait score": 85.42,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2665.86376953125,
+      "judge trait score": 23.6,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2603.751220703125,
+      "judge trait score": 76.78,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 3259.4365234375,
+      "judge trait score": 79.02000000000001,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2436.62548828125,
+      "judge trait score": 46.10000000000001,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2206.685546875,
+      "judge trait score": 11.040000000000001,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 3136.934814453125,
+      "judge trait score": 75.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2713.86767578125,
+      "judge trait score": 14.76,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2529.65283203125,
+      "judge trait score": 73.25999999999999,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 3443.060546875,
+      "judge trait score": 89.38,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2529.54296875,
+      "judge trait score": 66.8,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 3182.83544921875,
+      "judge trait score": 78.34,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 3331.72216796875,
+      "judge trait score": 41.239999999999995,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 3343.21240234375,
+      "judge trait score": 70.58,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2960.33740234375,
+      "judge trait score": 81.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 3010.297607421875,
+      "judge trait score": 43.379999999999995,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2125.97998046875,
+      "judge trait score": 61.06,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 3542.96240234375,
+      "judge trait score": 32.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2495.43896484375,
+      "judge trait score": 7.12,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 2538.83740234375,
+      "judge trait score": 54.5,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw <c_last, r_B>": 5803.5205078125,
+      "judge trait score": 71.62000000000002,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3220.04736328125,
+      "judge trait score": 5.1,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3737.80810546875,
+      "judge trait score": 69.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 4408.7294921875,
+      "judge trait score": 73.26,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3027.787109375,
+      "judge trait score": 31.920000000000005,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 2933.357421875,
+      "judge trait score": 9.28,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3842.048828125,
+      "judge trait score": 14.48,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3127.384765625,
+      "judge trait score": 11.64,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3089.20654296875,
+      "judge trait score": 14.859999999999996,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 4337.4853515625,
+      "judge trait score": 80.03999999999999,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3109.08935546875,
+      "judge trait score": 15.819999999999999,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3982.183837890625,
+      "judge trait score": 23.26,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3956.57470703125,
+      "judge trait score": 10.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 4298.126953125,
+      "judge trait score": 44.74,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3259.99609375,
+      "judge trait score": 59.86,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3849.74609375,
+      "judge trait score": 14.559999999999999,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 2390.163330078125,
+      "judge trait score": 37.980000000000004,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 4386.25244140625,
+      "judge trait score": 40.12,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 2758.6943359375,
+      "judge trait score": 12.479999999999999,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 3206.784423828125,
+      "judge trait score": 13.559999999999999,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw <c_last, r_B>": 5824.64990234375,
+      "judge trait score": 59.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2549.2626953125,
+      "judge trait score": 11.320000000000002,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2894.6884765625,
+      "judge trait score": 34.22,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 4509.99365234375,
+      "judge trait score": 68.78000000000002,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2598.8251953125,
+      "judge trait score": 11.739999999999998,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2013.7806396484375,
+      "judge trait score": 2.94,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2605.6884765625,
+      "judge trait score": 6.18,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2346.40625,
+      "judge trait score": 9.44,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2128.644775390625,
+      "judge trait score": 4.42,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 4094.957275390625,
+      "judge trait score": 79.33999999999999,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2356.26025390625,
+      "judge trait score": 14.16,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2860.800537109375,
+      "judge trait score": 9.92,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 3273.22119140625,
+      "judge trait score": 14.319999999999999,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 3982.44287109375,
+      "judge trait score": 46.60000000000001,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2890.347412109375,
+      "judge trait score": 53.64000000000001,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 3093.271484375,
+      "judge trait score": 9.959999999999999,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 1513.722412109375,
+      "judge trait score": 25.96,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 3873.852294921875,
+      "judge trait score": 20.82,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2257.96142578125,
+      "judge trait score": 7.859999999999999,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 2530.822509765625,
+      "judge trait score": 3.5400000000000005,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw <c_last, r_B>": 3794.4443359375,
+      "judge trait score": 15.120000000000001,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1262.693603515625,
+      "judge trait score": 2.4000000000000004,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1097.12548828125,
+      "judge trait score": 7.92,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 3243.689697265625,
+      "judge trait score": 50.279999999999994,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1563.417724609375,
+      "judge trait score": 6.640000000000001,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 789.3989868164062,
+      "judge trait score": 0.8800000000000001,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 683.5369873046875,
+      "judge trait score": 2.16,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1197.3751220703125,
+      "judge trait score": 0.86,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 769.3687744140625,
+      "judge trait score": 0.3,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 2637.56201171875,
+      "judge trait score": 66.88000000000002,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1069.1912841796875,
+      "judge trait score": 6.24,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1100.1256103515625,
+      "judge trait score": 7.9,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1917.529052734375,
+      "judge trait score": 3.2600000000000002,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 2271.6064453125,
+      "judge trait score": 31.639999999999997,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1854.344482421875,
+      "judge trait score": 35.38000000000001,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 1008.7318115234375,
+      "judge trait score": 5.26,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 424.793701171875,
+      "judge trait score": 12.14,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 2564.05712890625,
+      "judge trait score": 10.62,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 561.062744140625,
+      "judge trait score": 0.9800000000000001,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 664.9610595703125,
+      "judge trait score": 4.48,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw <c_last, r_B>": 2604.72509765625,
+      "judge trait score": 6.919999999999999,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 440.208984375,
+      "judge trait score": 0.9200000000000002,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": -528.9659423828125,
+      "judge trait score": 4.7,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 1809.977294921875,
+      "judge trait score": 11.200000000000001,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 659.3260498046875,
+      "judge trait score": 6.0200000000000005,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": -622.1436767578125,
+      "judge trait score": 0.24000000000000005,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": -436.30517578125,
+      "judge trait score": 0.5,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 191.85791015625,
+      "judge trait score": 0.44000000000000006,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 86.0323486328125,
+      "judge trait score": 0.04,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 1517.1334228515625,
+      "judge trait score": 26.440000000000005,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 414.4359130859375,
+      "judge trait score": 3.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": -52.43798828125,
+      "judge trait score": 1.1,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 986.212890625,
+      "judge trait score": 4.6,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 930.3580932617188,
+      "judge trait score": 8.440000000000001,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 1107.5609130859375,
+      "judge trait score": 22.020000000000003,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": -329.2432861328125,
+      "judge trait score": 0.42000000000000004,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": -340.8553466796875,
+      "judge trait score": 5.72,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 1744.7255859375,
+      "judge trait score": 9.4,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": -239.6246337890625,
+      "judge trait score": 0.2,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": -477.9842529296875,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw <c_last, r_B>": 2730.7607421875,
+      "judge trait score": 6.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 430.2379150390625,
+      "judge trait score": 2.18,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": -278.329345703125,
+      "judge trait score": 6.4799999999999995,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 1887.36865234375,
+      "judge trait score": 14.38,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 795.466552734375,
+      "judge trait score": 7.0200000000000005,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": -711.3638305664062,
+      "judge trait score": 0.06,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": -300.319091796875,
+      "judge trait score": 0.38,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 61.200439453125,
+      "judge trait score": 0.9,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 219.486083984375,
+      "judge trait score": 0.3,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 1482.7890625,
+      "judge trait score": 26.72,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 475.2706298828125,
+      "judge trait score": 7.220000000000001,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": -41.440673828125,
+      "judge trait score": 3.3599999999999994,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 1148.8985595703125,
+      "judge trait score": 4.7,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 1027.4647216796875,
+      "judge trait score": 5.46,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 1021.8986206054688,
+      "judge trait score": 25.160000000000004,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": -278.4388427734375,
+      "judge trait score": 3.12,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": -290.40966796875,
+      "judge trait score": 5.279999999999999,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 1672.2432861328125,
+      "judge trait score": 11.94,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": -17.283447265625,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": -386.88134765625,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw <c_last, r_B>": 1830.4853515625,
+      "judge trait score": 3.4599999999999995,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -148.7349853515625,
+      "judge trait score": 0.52,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -1383.751708984375,
+      "judge trait score": 4.62,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": 970.1644287109375,
+      "judge trait score": 4.18,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -46.4393310546875,
+      "judge trait score": 4.6,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -1531.4337158203125,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -985.464599609375,
+      "judge trait score": 0.4800000000000001,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -504.2791748046875,
+      "judge trait score": 0.27999999999999997,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -473.2060546875,
+      "judge trait score": 0.13999999999999999,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": 851.8509521484375,
+      "judge trait score": 10.2,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -18.520751953125,
+      "judge trait score": 4.6,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -797.1480712890625,
+      "judge trait score": 2.3,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": 512.449951171875,
+      "judge trait score": 4.2,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": 90.5118408203125,
+      "judge trait score": 1.02,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": 549.68798828125,
+      "judge trait score": 10.02,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -997.87353515625,
+      "judge trait score": 0.6,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -1020.3292236328125,
+      "judge trait score": 4.76,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": 1283.2222900390625,
+      "judge trait score": 9.28,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -701.151123046875,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": -1246.997314453125,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw <c_last, r_B>": 954.4531860351562,
+      "judge trait score": 3.2199999999999998,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -993.6011962890625,
+      "judge trait score": 1.7,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -1732.4093017578125,
+      "judge trait score": 2.64,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": 430.2672119140625,
+      "judge trait score": 5.44,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -902.7520751953125,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -2137.9892578125,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -1356.9384765625,
+      "judge trait score": 0.1,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -1036.4559326171875,
+      "judge trait score": 0.04,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -724.7943115234375,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": 391.4068603515625,
+      "judge trait score": 9.52,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -870.1798706054688,
+      "judge trait score": 1.2399999999999998,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -1337.7420654296875,
+      "judge trait score": 0.6799999999999999,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -426.9130859375,
+      "judge trait score": 1.28,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -632.502685546875,
+      "judge trait score": 0.16,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -217.864990234375,
+      "judge trait score": 5.2,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -1510.8626708984375,
+      "judge trait score": 0.48,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -1545.39794921875,
+      "judge trait score": 3.06,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": 276.4500732421875,
+      "judge trait score": 6.1,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -1174.0787353515625,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -1592.9541015625,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.60\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw <c_last, r_B>": -89.05747985839844,
+      "judge trait score": 85.93999999999998,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -84.75890350341797,
+      "judge trait score": 95.38000000000001,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -86.76377868652344,
+      "judge trait score": 71.82000000000001,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -95.07697296142578,
+      "judge trait score": 76.2,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -112.47394561767578,
+      "judge trait score": 61.44000000000001,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -90.84475708007812,
+      "judge trait score": 82.08,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -87.00016784667969,
+      "judge trait score": 61.2,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -108.24940490722656,
+      "judge trait score": 77.46000000000001,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -105.66475677490234,
+      "judge trait score": 30.159999999999997,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -110.5440444946289,
+      "judge trait score": 76.44,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -86.92837524414062,
+      "judge trait score": 98.04444444444445,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -82.48591613769531,
+      "judge trait score": 68.4,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -93.82058715820312,
+      "judge trait score": 78.61999999999999,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -81.19841003417969,
+      "judge trait score": 91.55999999999999,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -111.2525863647461,
+      "judge trait score": 86.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -85.33489227294922,
+      "judge trait score": 32.68,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -119.71849060058594,
+      "judge trait score": 72.11999999999999,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -104.67127990722656,
+      "judge trait score": 64.28,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -86.6221923828125,
+      "judge trait score": 78.72,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -108.9289779663086,
+      "judge trait score": 71.02,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw <c_last, r_B>": -130.4713897705078,
+      "judge trait score": 88.12,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -130.8521728515625,
+      "judge trait score": 94.82,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -132.0384521484375,
+      "judge trait score": 55.160000000000004,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -151.08392333984375,
+      "judge trait score": 86.32,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -160.71983337402344,
+      "judge trait score": 45.3,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -124.78211975097656,
+      "judge trait score": 80.50000000000001,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -119.5711898803711,
+      "judge trait score": 59.44,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -154.40176391601562,
+      "judge trait score": 70.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -152.4542694091797,
+      "judge trait score": 28.6,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -160.37950134277344,
+      "judge trait score": 66.38,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -131.84886169433594,
+      "judge trait score": 97.86,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -139.22479248046875,
+      "judge trait score": 72.25999999999999,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -135.57565307617188,
+      "judge trait score": 78.42,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -120.57341003417969,
+      "judge trait score": 90.02000000000001,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -163.3660430908203,
+      "judge trait score": 86.97777777777777,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -131.09365844726562,
+      "judge trait score": 24.1,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -168.59646606445312,
+      "judge trait score": 74.98,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -166.95521545410156,
+      "judge trait score": 59.28000000000001,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -126.47073364257812,
+      "judge trait score": 63.9,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -154.0790557861328,
+      "judge trait score": 64.38,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw <c_last, r_B>": -156.0738983154297,
+      "judge trait score": 83.26000000000002,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -156.92657470703125,
+      "judge trait score": 94.85999999999999,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -154.91400146484375,
+      "judge trait score": 50.379999999999995,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -182.36370849609375,
+      "judge trait score": 72.78,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -190.59078979492188,
+      "judge trait score": 45.61999999999999,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -154.71926879882812,
+      "judge trait score": 85.76,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -138.84324645996094,
+      "judge trait score": 61.08,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -181.7375030517578,
+      "judge trait score": 77.66,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -182.1541290283203,
+      "judge trait score": 32.82,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -192.6032257080078,
+      "judge trait score": 63.080000000000005,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -163.06602478027344,
+      "judge trait score": 97.62,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -172.0010986328125,
+      "judge trait score": 71.28,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -154.6047821044922,
+      "judge trait score": 77.16,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -152.17779541015625,
+      "judge trait score": 87.84,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -183.65203857421875,
+      "judge trait score": 48.980000000000004,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -164.43460083007812,
+      "judge trait score": 24.54,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -197.74880981445312,
+      "judge trait score": 73.34,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -203.43629455566406,
+      "judge trait score": 48.32,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -151.56240844726562,
+      "judge trait score": 73.44000000000001,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -188.93959045410156,
+      "judge trait score": 62.980000000000004,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw <c_last, r_B>": -182.26759338378906,
+      "judge trait score": 80.38,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -181.6394500732422,
+      "judge trait score": 93.97999999999999,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -186.8473358154297,
+      "judge trait score": 30.18,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -197.0479736328125,
+      "judge trait score": 66.58000000000001,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -211.10696411132812,
+      "judge trait score": 66.49000000000001,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -181.54403686523438,
+      "judge trait score": 71.545,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -168.19761657714844,
+      "judge trait score": 52.705000000000005,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -198.46377563476562,
+      "judge trait score": 74.57333333333334,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -199.6121826171875,
+      "judge trait score": 14.925,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -214.79525756835938,
+      "judge trait score": 53.705000000000005,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -187.67945861816406,
+      "judge trait score": 88.72999999999999,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -188.89370727539062,
+      "judge trait score": 55.80499999999999,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -184.03372192382812,
+      "judge trait score": 65.22,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -175.77975463867188,
+      "judge trait score": 86.235,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -208.7159881591797,
+      "judge trait score": 30.1,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -192.24179077148438,
+      "judge trait score": 17.96333333333333,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -201.31588745117188,
+      "judge trait score": 58.14000000000001,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -213.0270233154297,
+      "judge trait score": 29.025,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -185.0601806640625,
+      "judge trait score": 32.19833333333334,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -208.5334014892578,
+      "judge trait score": 25.361666666666668,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw <c_last, r_B>": -181.8551483154297,
+      "judge trait score": 82.92,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -185.8330078125,
+      "judge trait score": 92.44,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -193.82260131835938,
+      "judge trait score": 35.8,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -196.10360717773438,
+      "judge trait score": 74.52166666666668,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -215.62692260742188,
+      "judge trait score": 57.54,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -182.5380859375,
+      "judge trait score": 73.34,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -171.04542541503906,
+      "judge trait score": 58.333333333333336,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -199.94520568847656,
+      "judge trait score": 68.20166666666667,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -201.2451171875,
+      "judge trait score": 13.366666666666669,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -216.70140075683594,
+      "judge trait score": 48.71666666666667,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -193.9027862548828,
+      "judge trait score": 75.96481481481482,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -196.00588989257812,
+      "judge trait score": 55.17,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -181.09976196289062,
+      "judge trait score": 76.345,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -180.6699981689453,
+      "judge trait score": 85.71333333333334,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -214.1514892578125,
+      "judge trait score": 29.558333333333337,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -191.98374938964844,
+      "judge trait score": 22.075,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -204.38133239746094,
+      "judge trait score": 53.985,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -222.07933044433594,
+      "judge trait score": 21.318333333333335,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -192.39390563964844,
+      "judge trait score": 41.885000000000005,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -202.49264526367188,
+      "judge trait score": 39.625,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw <c_last, r_B>": -178.9047088623047,
+      "judge trait score": 78.87333333333333,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -173.46981811523438,
+      "judge trait score": 90.36999999999999,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -194.18092346191406,
+      "judge trait score": 36.725,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -191.42019653320312,
+      "judge trait score": 60.4,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -205.89439392089844,
+      "judge trait score": 59.92499999999999,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -183.233154296875,
+      "judge trait score": 70.96833333333333,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -173.9188232421875,
+      "judge trait score": 46.510000000000005,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -190.6824188232422,
+      "judge trait score": 67.16666666666666,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -187.5879364013672,
+      "judge trait score": 17.525,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -207.52630615234375,
+      "judge trait score": 52.375,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -190.5919189453125,
+      "judge trait score": 87.15666666666667,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -188.20034790039062,
+      "judge trait score": 48.075,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -180.3816375732422,
+      "judge trait score": 74.81,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -172.50196838378906,
+      "judge trait score": 89.55,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -214.69735717773438,
+      "judge trait score": 22.805555555555557,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -183.5182647705078,
+      "judge trait score": 30.541666666666668,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -198.97999572753906,
+      "judge trait score": 33.67,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -215.4889373779297,
+      "judge trait score": 0.6416666666666667,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -187.95408630371094,
+      "judge trait score": 40.881666666666675,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -200.5230712890625,
+      "judge trait score": 28.4,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "raw <c_last, r_B>": -204.19320678710938,
+      "judge trait score": 72.4,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -197.8806915283203,
+      "judge trait score": 89.58,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -210.8194580078125,
+      "judge trait score": 26.54,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -202.78712463378906,
+      "judge trait score": 50.459999999999994,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -230.31375122070312,
+      "judge trait score": 23.580000000000002,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -202.9514923095703,
+      "judge trait score": 42.6,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -193.40916442871094,
+      "judge trait score": 47.36,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -207.51071166992188,
+      "judge trait score": 59.879999999999995,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -206.13095092773438,
+      "judge trait score": 12.7,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -225.1969757080078,
+      "judge trait score": 35.9,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -207.19131469726562,
+      "judge trait score": 0.3,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -207.68740844726562,
+      "judge trait score": 21.919999999999998,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -199.4928436279297,
+      "judge trait score": 76.04,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -199.28591918945312,
+      "judge trait score": 87.44,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -220.55941772460938,
+      "judge trait score": 19.82,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -206.26010131835938,
+      "judge trait score": 19.48,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -213.95675659179688,
+      "judge trait score": 20.419999999999995,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -221.5654754638672,
+      "judge trait score": 0.04,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -206.43240356445312,
+      "judge trait score": 25.54,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -213.6731719970703,
+      "judge trait score": 19.72,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "raw <c_last, r_B>": -215.59957885742188,
+      "judge trait score": 65.67999999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -209.14663696289062,
+      "judge trait score": 83.82000000000001,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -224.69171142578125,
+      "judge trait score": 28.7,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -218.7186279296875,
+      "judge trait score": 51.3,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -232.8556365966797,
+      "judge trait score": 44.84000000000001,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -210.60263061523438,
+      "judge trait score": 39.56,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -210.3278350830078,
+      "judge trait score": 43.32,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -214.90530395507812,
+      "judge trait score": 68.41499999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -227.2563934326172,
+      "judge trait score": 15.76,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -235.10211181640625,
+      "judge trait score": 46.69,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -229.51132202148438,
+      "judge trait score": 0.1,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -225.67971801757812,
+      "judge trait score": 32.17999999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -209.4976806640625,
+      "judge trait score": 69.7,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -211.87045288085938,
+      "judge trait score": 84.53999999999999,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -240.9981689453125,
+      "judge trait score": 10.485,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -218.42359924316406,
+      "judge trait score": 25.7,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -225.84710693359375,
+      "judge trait score": 32.1,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -246.25457763671875,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -226.9295654296875,
+      "judge trait score": 39.08,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "raw <c_last, r_B>": -230.2692108154297,
+      "judge trait score": 16.32,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "oracle <v(x), r_B>": -24.47837336063385,
+      "judge trait score": 82.94500000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": 19.41153540611267,
+      "judge trait score": 85.34444444444445,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": 17.07796154022217,
+      "judge trait score": 94.72999999999999,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -24.74447159767151,
+      "judge trait score": 66.78333333333333,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": 22.263325643539428,
+      "judge trait score": 92.15,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -11.960511517524719,
+      "judge trait score": 94.26666666666667,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -29.00230481624603,
+      "judge trait score": 85.25,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -49.69628963470459,
+      "judge trait score": 90.30166666666666,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -35.85157871246338,
+      "judge trait score": 95.38888888888889,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -21.603606456518172,
+      "judge trait score": 88.59722222222221,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -17.03019514083862,
+      "judge trait score": 93.50185185185187,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -65.771946144104,
+      "judge trait score": 73.475,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": 1.1387920379638672,
+      "judge trait score": 93.02000000000001,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": 34.98947029113769,
+      "judge trait score": 95.495,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -23.97651872634888,
+      "judge trait score": 92.04374999999999,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": 1.7019894123077393,
+      "judge trait score": 79.45555555555555,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -61.09230613708496,
+      "judge trait score": 83.61481481481482,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -27.37683777809143,
+      "judge trait score": 86.64999999999999,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -100.02542037963867,
+      "judge trait score": 81.69333333333334,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -36.021989822387695,
+      "judge trait score": 58.43333333333334,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "oracle <v(x), r_B>": -89.31628608703613,
+      "judge trait score": 57.98,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -90.99043312072754,
+      "judge trait score": 39.220000000000006,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -68.62641956806183,
+      "judge trait score": 28.799999999999997,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -42.463372802734376,
+      "judge trait score": 28.265000000000004,
+      "label": "mean within-cond r = 0.43\n(4 kept conds, 80 pts)",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -5.1229686215519905,
+      "judge trait score": 89.92,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -101.51133193969727,
+      "judge trait score": 39.2,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -84.201171875,
+      "judge trait score": 74.71111111111112,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -88.13974075317383,
+      "judge trait score": 70.13999999999999,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -71.10711250305175,
+      "judge trait score": 71.84,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -111.33205604553223,
+      "judge trait score": 40.519999999999996,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -115.00207595825195,
+      "judge trait score": 16.619999999999997,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -96.14318313598633,
+      "judge trait score": 56.040000000000006,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -96.61177978515624,
+      "judge trait score": 45.10000000000001,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -9.229035377502441,
+      "judge trait score": 75.63,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -148.29237747192383,
+      "judge trait score": 18.215,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -63.80508081912994,
+      "judge trait score": 58.58,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -102.0376708984375,
+      "judge trait score": 37.35,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -77.44248085021972,
+      "judge trait score": 62.588888888888896,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -138.23787460327148,
+      "judge trait score": 41.145,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -105.92856826782227,
+      "judge trait score": 9.74,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "oracle <v(x), r_B>": -136.48934326171874,
+      "judge trait score": 13.039999999999997,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -159.14754943847657,
+      "judge trait score": 0.1,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -76.38215255737305,
+      "judge trait score": 12.833333333333334,
+      "label": "mean within-cond r = 0.43\n(4 kept conds, 80 pts)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -101.30575637817383,
+      "judge trait score": 3.3416666666666672,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -138.67665328979493,
+      "judge trait score": 7.2,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -112.54881114959717,
+      "judge trait score": 15.958333333333332,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -173.42573318481445,
+      "judge trait score": 19.333333333333332,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -132.11751861572264,
+      "judge trait score": 34.891666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -97.50079803466797,
+      "judge trait score": 41.125,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -179.72887115478517,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -134.36043891906738,
+      "judge trait score": 7.2,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -156.17433700561523,
+      "judge trait score": 13.85,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -212.59266204833983,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -87.31056747436523,
+      "judge trait score": 13.844999999999999,
+      "label": "mean within-cond r = 0.43\n(4 kept conds, 80 pts)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -174.0021873474121,
+      "judge trait score": 7.25,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -83.07497940063476,
+      "judge trait score": 12.965,
+      "label": "mean within-cond r = 0.43\n(4 kept conds, 80 pts)",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -113.86858291625977,
+      "judge trait score": 14.333333333333332,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -179.49396743774415,
+      "judge trait score": 0.4444444444444444,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -184.28728408813475,
+      "judge trait score": 5.326666666666666,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -110.24672927856446,
+      "judge trait score": 0.45999999999999996,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "oracle <v(x), r_B>": -187.0502914428711,
+      "judge trait score": 2.24,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -175.29912261962892,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -109.77646942138672,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -149.62609100341797,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -162.8531867980957,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -154.97076072692872,
+      "judge trait score": 8.2,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -234.67681274414062,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -154.56441802978514,
+      "judge trait score": 19.944444444444443,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -174.18778533935546,
+      "judge trait score": 11.933333333333334,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -181.05156402587892,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -169.19149169921874,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -202.33597564697266,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -217.91754302978515,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -113.09800720214844,
+      "judge trait score": 0.2222222222222222,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -202.35242767333983,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -160.599600982666,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -125.21401977539062,
+      "judge trait score": 15.941666666666666,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -197.03638610839843,
+      "judge trait score": 0.64,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -210.45850677490233,
+      "judge trait score": 0.1,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": -148.15919036865233,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "oracle <v(x), r_B>": 2586.1146240234375,
+      "judge trait score": 85.42,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 65.58573417663574,
+      "judge trait score": 23.6,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 83.2071460723877,
+      "judge trait score": 76.78,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 1623.6665405273438,
+      "judge trait score": 79.02000000000001,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 659.3017028808594,
+      "judge trait score": 46.10000000000001,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": -1602.08125,
+      "judge trait score": 11.040000000000001,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 191.78733129501342,
+      "judge trait score": 75.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": -927.5392425537109,
+      "judge trait score": 14.76,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 635.7555904388428,
+      "judge trait score": 73.25999999999999,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 1866.2961181640626,
+      "judge trait score": 89.38,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 1291.548828125,
+      "judge trait score": 66.8,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 1298.7972290039063,
+      "judge trait score": 78.34,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": -83.41445960998536,
+      "judge trait score": 41.239999999999995,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 496.5552688598633,
+      "judge trait score": 70.58,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 864.2287445068359,
+      "judge trait score": 81.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 588.1395265579224,
+      "judge trait score": 43.379999999999995,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 970.9197021484375,
+      "judge trait score": 61.06,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 469.28039264678955,
+      "judge trait score": 32.0,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 122.1340431213379,
+      "judge trait score": 7.12,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 1286.9280639648437,
+      "judge trait score": 54.5,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "oracle <v(x), r_B>": 1750.4959106445312,
+      "judge trait score": 71.62000000000002,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -728.5895202636718,
+      "judge trait score": 5.1,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -549.355305480957,
+      "judge trait score": 69.2,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": 680.675439453125,
+      "judge trait score": 73.26,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": 612.3437484741211,
+      "judge trait score": 31.920000000000005,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -2220.457385253906,
+      "judge trait score": 9.28,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -425.498095613718,
+      "judge trait score": 14.48,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -1607.4936645507812,
+      "judge trait score": 11.64,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -468.9228759765625,
+      "judge trait score": 14.859999999999996,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": 1196.8417663574219,
+      "judge trait score": 80.03999999999999,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": 95.55162887573242,
+      "judge trait score": 15.819999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -311.66468200683596,
+      "judge trait score": 23.26,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -759.6525085449218,
+      "judge trait score": 10.0,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -138.649161529541,
+      "judge trait score": 44.74,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": 113.0564567565918,
+      "judge trait score": 59.86,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -251.51012830734254,
+      "judge trait score": 14.559999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": 483.1885650634766,
+      "judge trait score": 37.980000000000004,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": 59.97529907226563,
+      "judge trait score": 40.12,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -38.867299461364745,
+      "judge trait score": 12.479999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": -63.475871849060056,
+      "judge trait score": 13.559999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "oracle <v(x), r_B>": 1134.9032653808595,
+      "judge trait score": 59.4,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -543.4534202575684,
+      "judge trait score": 11.320000000000002,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -998.5986236572265,
+      "judge trait score": 34.22,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": 737.5233959197998,
+      "judge trait score": 68.78000000000002,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": 394.6944076538086,
+      "judge trait score": 11.739999999999998,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -2563.319873046875,
+      "judge trait score": 2.94,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -854.6620239257812,
+      "judge trait score": 6.18,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -1883.8090942382812,
+      "judge trait score": 9.44,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -569.3623657226562,
+      "judge trait score": 4.42,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": 1384.1949890136718,
+      "judge trait score": 79.33999999999999,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -75.54576711654663,
+      "judge trait score": 14.16,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -676.6527923583984,
+      "judge trait score": 9.92,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -783.9405792236328,
+      "judge trait score": 14.319999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -71.46582946777343,
+      "judge trait score": 46.60000000000001,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": 112.50032958984374,
+      "judge trait score": 53.64000000000001,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -552.3168060302735,
+      "judge trait score": 9.959999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": 410.66430435180666,
+      "judge trait score": 25.96,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -250.35590133666992,
+      "judge trait score": 20.82,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -75.90338172912598,
+      "judge trait score": 7.859999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -98.41293449401856,
+      "judge trait score": 3.5400000000000005,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "oracle <v(x), r_B>": -1363.5760498046875,
+      "judge trait score": 15.120000000000001,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -2160.7322998046875,
+      "judge trait score": 2.4000000000000004,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -2432.994421386719,
+      "judge trait score": 7.92,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -732.3018524169922,
+      "judge trait score": 50.279999999999994,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1007.3601745605469,
+      "judge trait score": 6.640000000000001,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -3318.6768798828125,
+      "judge trait score": 0.8800000000000001,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -2404.954931640625,
+      "judge trait score": 2.16,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -2618.1881103515625,
+      "judge trait score": 0.86,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -2163.5221557617188,
+      "judge trait score": 0.3,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -539.77604637146,
+      "judge trait score": 66.88000000000002,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1681.7926391601563,
+      "judge trait score": 6.24,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1687.2292541503907,
+      "judge trait score": 7.9,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1846.2974853515625,
+      "judge trait score": 3.2600000000000002,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1824.0893676757812,
+      "judge trait score": 31.639999999999997,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1161.99736328125,
+      "judge trait score": 35.38000000000001,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1972.2363037109376,
+      "judge trait score": 5.26,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -750.2025375366211,
+      "judge trait score": 12.14,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1478.8512329101563,
+      "judge trait score": 10.62,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1446.9029174804687,
+      "judge trait score": 0.9800000000000001,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -1391.3396301269531,
+      "judge trait score": 4.48,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "oracle <v(x), r_B>": -2023.2439453125,
+      "judge trait score": 6.919999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2581.9875,
+      "judge trait score": 0.9200000000000002,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -3082.2457763671873,
+      "judge trait score": 4.7,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2160.8174682617187,
+      "judge trait score": 11.200000000000001,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -1511.8882141113281,
+      "judge trait score": 6.0200000000000005,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -3854.0958740234373,
+      "judge trait score": 0.24000000000000005,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2758.904052734375,
+      "judge trait score": 0.5,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -3018.7347900390623,
+      "judge trait score": 0.44000000000000006,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2477.9125244140623,
+      "judge trait score": 0.04,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -1345.05693359375,
+      "judge trait score": 26.440000000000005,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2115.651647949219,
+      "judge trait score": 3.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2686.1404296875,
+      "judge trait score": 1.1,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2448.138464355469,
+      "judge trait score": 4.6,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2527.9843505859376,
+      "judge trait score": 8.440000000000001,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -1848.7651489257812,
+      "judge trait score": 22.020000000000003,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2964.78125,
+      "judge trait score": 0.42000000000000004,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -1577.002294921875,
+      "judge trait score": 5.72,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -1762.4557739257812,
+      "judge trait score": 9.4,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2275.0493774414062,
+      "judge trait score": 0.2,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -2377.4860961914064,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "oracle <v(x), r_B>": -1850.439306640625,
+      "judge trait score": 6.0,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2135.5948974609373,
+      "judge trait score": 2.18,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2718.0719970703126,
+      "judge trait score": 6.4799999999999995,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -1565.0419189453125,
+      "judge trait score": 14.38,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -1177.398455810547,
+      "judge trait score": 7.0200000000000005,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -3570.6876220703125,
+      "judge trait score": 0.06,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2687.5803955078127,
+      "judge trait score": 0.38,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2910.0743896484373,
+      "judge trait score": 0.9,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2232.036376953125,
+      "judge trait score": 0.3,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -928.5742614746093,
+      "judge trait score": 26.72,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -1689.3221557617187,
+      "judge trait score": 7.220000000000001,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2178.1466796875,
+      "judge trait score": 3.3599999999999994,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2110.342041015625,
+      "judge trait score": 4.7,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2224.3150024414062,
+      "judge trait score": 5.46,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -1462.6190551757813,
+      "judge trait score": 25.160000000000004,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2351.347119140625,
+      "judge trait score": 3.12,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -1126.8406311035155,
+      "judge trait score": 5.279999999999999,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -1421.5105102539062,
+      "judge trait score": 11.94,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -1825.5242919921875,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -1778.506298828125,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "oracle <v(x), r_B>": -2201.1184814453127,
+      "judge trait score": 3.4599999999999995,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2440.9292114257814,
+      "judge trait score": 0.52,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -3024.87724609375,
+      "judge trait score": 4.62,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2066.218640136719,
+      "judge trait score": 4.18,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -1769.5906677246094,
+      "judge trait score": 4.6,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -3818.7758056640623,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2833.131494140625,
+      "judge trait score": 0.4800000000000001,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -3044.32431640625,
+      "judge trait score": 0.27999999999999997,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2553.9892333984376,
+      "judge trait score": 0.13999999999999999,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -1258.9849670410156,
+      "judge trait score": 10.2,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2007.9605224609375,
+      "judge trait score": 4.6,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2477.7083251953127,
+      "judge trait score": 2.3,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2350.04287109375,
+      "judge trait score": 4.2,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2464.3601928710937,
+      "judge trait score": 1.02,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -1997.2985717773438,
+      "judge trait score": 10.02,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2877.81533203125,
+      "judge trait score": 0.6,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -1524.26064453125,
+      "judge trait score": 4.76,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -1718.234130859375,
+      "judge trait score": 9.28,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2469.9842041015627,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2180.633264160156,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "oracle <v(x), r_B>": -2221.2649536132812,
+      "judge trait score": 3.2199999999999998,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2549.4912109375,
+      "judge trait score": 1.7,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -3116.3406494140627,
+      "judge trait score": 2.64,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2141.9882080078123,
+      "judge trait score": 5.44,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -1881.2660888671876,
+      "judge trait score": 0.0,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -3741.96259765625,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2811.036181640625,
+      "judge trait score": 0.1,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -3182.7014892578127,
+      "judge trait score": 0.04,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2633.00390625,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -1358.3102722167969,
+      "judge trait score": 9.52,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2372.7652221679687,
+      "judge trait score": 1.2399999999999998,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2611.572412109375,
+      "judge trait score": 0.6799999999999999,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2499.525732421875,
+      "judge trait score": 1.28,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2565.2507568359374,
+      "judge trait score": 0.16,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2322.3891845703124,
+      "judge trait score": 5.2,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2977.7003662109373,
+      "judge trait score": 0.48,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -1793.439697265625,
+      "judge trait score": 3.06,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -1824.5731323242187,
+      "judge trait score": 6.1,
+      "label": "mean within-cond r = 0.66\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2666.3497314453125,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": -2376.2026977539062,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "oracle <v(x), r_B>": 72.40644149780273,
+      "judge trait score": 85.93999999999998,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 103.6898582458496,
+      "judge trait score": 95.38000000000001,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 127.42793197631836,
+      "judge trait score": 71.82000000000001,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 58.272803497314456,
+      "judge trait score": 76.2,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": -7.5504626631736755,
+      "judge trait score": 61.44000000000001,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 69.71658706665039,
+      "judge trait score": 82.08,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 83.910595703125,
+      "judge trait score": 61.2,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 36.37741966247559,
+      "judge trait score": 77.46000000000001,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 19.980125904083252,
+      "judge trait score": 30.159999999999997,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 32.702792453765866,
+      "judge trait score": 76.44,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 139.3536361694336,
+      "judge trait score": 98.04444444444445,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 94.89852523803711,
+      "judge trait score": 68.4,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 35.22575416564941,
+      "judge trait score": 78.61999999999999,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 115.50578689575195,
+      "judge trait score": 91.55999999999999,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 63.889512825012204,
+      "judge trait score": 86.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 59.66655502319336,
+      "judge trait score": 32.68,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": -13.699333238601685,
+      "judge trait score": 72.11999999999999,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": -25.720207858085633,
+      "judge trait score": 64.28,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 100.67067260742188,
+      "judge trait score": 78.72,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 42.8281909942627,
+      "judge trait score": 71.02,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "oracle <v(x), r_B>": 54.1607723236084,
+      "judge trait score": 88.12,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 74.104203414917,
+      "judge trait score": 94.82,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 89.94001159667968,
+      "judge trait score": 55.160000000000004,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 27.898475646972656,
+      "judge trait score": 86.32,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": -27.576401805877687,
+      "judge trait score": 45.3,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 47.531677627563475,
+      "judge trait score": 80.50000000000001,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 74.77169532775879,
+      "judge trait score": 59.44,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 29.64248725771904,
+      "judge trait score": 70.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": -1.2056640148162843,
+      "judge trait score": 28.6,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 11.440049982070922,
+      "judge trait score": 66.38,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 119.30537567138671,
+      "judge trait score": 97.86,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 71.99007453918458,
+      "judge trait score": 72.25999999999999,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 26.118813705444335,
+      "judge trait score": 78.42,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 88.5602897644043,
+      "judge trait score": 90.02000000000001,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 24.69153051376343,
+      "judge trait score": 86.97777777777777,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 32.13159513473511,
+      "judge trait score": 24.1,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": -38.89091653823853,
+      "judge trait score": 74.98,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": -36.91400610208511,
+      "judge trait score": 59.28000000000001,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 64.87034873962402,
+      "judge trait score": 63.9,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 5.151778488233686,
+      "judge trait score": 64.38,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "oracle <v(x), r_B>": 43.53065128326416,
+      "judge trait score": 83.26000000000002,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 63.43294258117676,
+      "judge trait score": 94.85999999999999,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 72.7768985748291,
+      "judge trait score": 50.379999999999995,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 13.56806755065918,
+      "judge trait score": 72.78,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": -41.386509323120116,
+      "judge trait score": 45.61999999999999,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 58.97108688354492,
+      "judge trait score": 85.76,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 70.06134910583496,
+      "judge trait score": 61.08,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 6.722627472877503,
+      "judge trait score": 77.66,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": -35.88165168762207,
+      "judge trait score": 32.82,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": -4.089802098274231,
+      "judge trait score": 63.080000000000005,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 106.63138809204102,
+      "judge trait score": 97.62,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 41.66114692687988,
+      "judge trait score": 71.28,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 25.94453296661377,
+      "judge trait score": 77.16,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 72.78362503051758,
+      "judge trait score": 87.84,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": -52.15277786254883,
+      "judge trait score": 48.980000000000004,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 9.010010528564454,
+      "judge trait score": 24.54,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": -45.37684650421143,
+      "judge trait score": 73.34,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": -72.60570087432862,
+      "judge trait score": 48.32,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 54.6614953994751,
+      "judge trait score": 73.44000000000001,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 6.234346628189087,
+      "judge trait score": 62.980000000000004,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "oracle <v(x), r_B>": 26.13277072906494,
+      "judge trait score": 80.38,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 31.75870418548584,
+      "judge trait score": 93.97999999999999,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 29.377479314804077,
+      "judge trait score": 30.18,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -30.0622661113739,
+      "judge trait score": 66.58000000000001,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -53.944266128540036,
+      "judge trait score": 66.49000000000001,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 24.289169836044312,
+      "judge trait score": 71.545,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 57.106942367553714,
+      "judge trait score": 52.705000000000005,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -18.324046862125396,
+      "judge trait score": 74.57333333333334,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -61.89277696609497,
+      "judge trait score": 14.925,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -19.812513017654418,
+      "judge trait score": 53.705000000000005,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 52.145440101623535,
+      "judge trait score": 88.72999999999999,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -11.50162215232849,
+      "judge trait score": 55.80499999999999,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 7.009930293262005,
+      "judge trait score": 65.22,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 41.20498474836349,
+      "judge trait score": 86.235,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -99.70623388290406,
+      "judge trait score": 30.1,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -10.574517321586608,
+      "judge trait score": 17.96333333333333,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -64.26610565185547,
+      "judge trait score": 58.14000000000001,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -104.17780418395996,
+      "judge trait score": 29.025,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 24.192478466033936,
+      "judge trait score": 32.19833333333334,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": -8.541753792762757,
+      "judge trait score": 25.361666666666668,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "oracle <v(x), r_B>": 36.43939523696899,
+      "judge trait score": 82.92,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 50.84432916641235,
+      "judge trait score": 92.44,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 23.767396259307862,
+      "judge trait score": 35.8,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 0.5006498456001282,
+      "judge trait score": 74.52166666666668,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -59.05510711669922,
+      "judge trait score": 57.54,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 25.411880373954773,
+      "judge trait score": 73.34,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 69.76774864196777,
+      "judge trait score": 58.333333333333336,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -22.46212283372879,
+      "judge trait score": 68.20166666666667,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -67.54695281982421,
+      "judge trait score": 13.366666666666669,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -16.04322656393051,
+      "judge trait score": 48.71666666666667,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 1.9880561828613281,
+      "judge trait score": 75.96481481481482,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -0.3421278953552246,
+      "judge trait score": 55.17,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 24.470596599578858,
+      "judge trait score": 76.345,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 76.11499395370484,
+      "judge trait score": 85.71333333333334,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -120.10008735656739,
+      "judge trait score": 29.558333333333337,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -36.81051654815674,
+      "judge trait score": 22.075,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -73.67325019836426,
+      "judge trait score": 53.985,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -114.81941070556641,
+      "judge trait score": 21.318333333333335,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 22.747431433200838,
+      "judge trait score": 41.885000000000005,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": -11.823534861207008,
+      "judge trait score": 39.625,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "oracle <v(x), r_B>": 31.3400297164917,
+      "judge trait score": 78.87333333333333,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 72.30717849731445,
+      "judge trait score": 90.36999999999999,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 57.54835195541382,
+      "judge trait score": 36.725,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -23.26664159055799,
+      "judge trait score": 60.4,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -49.286577987670896,
+      "judge trait score": 59.92499999999999,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 30.980914545059203,
+      "judge trait score": 70.96833333333333,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 62.271361923217775,
+      "judge trait score": 46.510000000000005,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -7.2371289253234865,
+      "judge trait score": 67.16666666666666,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -73.54358024597168,
+      "judge trait score": 17.525,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -6.7528527736663815,
+      "judge trait score": 52.375,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 90.04883651733398,
+      "judge trait score": 87.15666666666667,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -8.807313656806945,
+      "judge trait score": 48.075,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 21.305679988861083,
+      "judge trait score": 74.81,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 88.59052658081055,
+      "judge trait score": 89.55,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -86.83342971801758,
+      "judge trait score": 22.805555555555557,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -17.92575869560242,
+      "judge trait score": 30.541666666666668,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -71.63494930267333,
+      "judge trait score": 33.67,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -180.4173110961914,
+      "judge trait score": 0.6416666666666667,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 37.9658618927002,
+      "judge trait score": 40.881666666666675,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": -6.316076473891735,
+      "judge trait score": 28.4,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "oracle <v(x), r_B>": 1.2013699293136597,
+      "judge trait score": 72.4,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": 3.7925430297851563,
+      "judge trait score": 89.58,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -4.250746822357177,
+      "judge trait score": 26.54,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -76.96276226043702,
+      "judge trait score": 50.459999999999994,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -102.52939338684082,
+      "judge trait score": 23.580000000000002,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -9.162092518806457,
+      "judge trait score": 42.6,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": 63.29547824859619,
+      "judge trait score": 47.36,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -37.709757232666014,
+      "judge trait score": 59.879999999999995,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -92.9330078125,
+      "judge trait score": 12.7,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -37.95356788635254,
+      "judge trait score": 35.9,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -213.70482177734374,
+      "judge trait score": 0.3,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -65.45024261474609,
+      "judge trait score": 21.919999999999998,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": 11.961270278692245,
+      "judge trait score": 76.04,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": 39.95291075706482,
+      "judge trait score": 87.44,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -153.24308757781984,
+      "judge trait score": 19.82,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -44.37224922180176,
+      "judge trait score": 19.48,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -82.5039779663086,
+      "judge trait score": 20.419999999999995,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -208.33027191162108,
+      "judge trait score": 0.04,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -51.668860578536986,
+      "judge trait score": 25.54,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": -20.173891854286193,
+      "judge trait score": 19.72,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "oracle <v(x), r_B>": 5.406787776947022,
+      "judge trait score": 65.67999999999999,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": 25.428759741783143,
+      "judge trait score": 83.82000000000001,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": 9.613651144504548,
+      "judge trait score": 28.7,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -80.20662627220153,
+      "judge trait score": 51.3,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -84.99588928222656,
+      "judge trait score": 44.84000000000001,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -14.18737506866455,
+      "judge trait score": 39.56,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": 50.294216346740725,
+      "judge trait score": 43.32,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -32.31725134849548,
+      "judge trait score": 68.41499999999999,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -96.12760314941406,
+      "judge trait score": 15.76,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -10.18141849040985,
+      "judge trait score": 46.69,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -256.47748107910155,
+      "judge trait score": 0.1,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -61.04319174289704,
+      "judge trait score": 32.17999999999999,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": 18.047082138061523,
+      "judge trait score": 69.7,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": 64.24878692626953,
+      "judge trait score": 84.53999999999999,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -163.71059036254883,
+      "judge trait score": 10.485,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -39.15611553192139,
+      "judge trait score": 25.7,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -72.46100747585297,
+      "judge trait score": 32.1,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -206.11021728515624,
+      "judge trait score": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -6.375668370723725,
+      "judge trait score": 39.08,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "oracle <v(x), r_B>": -13.537864017486573,
+      "judge trait score": 16.32,
+      "label": "mean within-cond r = 0.61\n(8 kept conds, 160 pts)",
+      "_kind": "scatter",
+      "_group": 39
+    }
+  ],
+  "n_series": 40,
+  "total_points": 800
+}
