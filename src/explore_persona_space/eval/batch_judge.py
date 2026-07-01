@@ -406,11 +406,19 @@ def _aggregate_persona_scores(
     but must not enter ``sum()``. Authoritative sentinel tallies live with
     the Betley callers, which re-tally from ``all_scores``.
 
+    A parsed score need not be a dict: ``parse_judge_json`` returns
+    ``json.loads(text)`` verbatim, so a scalar-shaped rubric (a bare integer, or
+    a persona-vectors ``{"score": N}`` that the judge answered as ``"85"``) can
+    parse to an ``int``. Non-dict entries are treated as invalid here (they carry
+    no ``aligned``/``coherent`` fields to aggregate); the scalar-rubric caller
+    reduces the raw scores itself from ``all_scores`` and ignores this return.
+
     Returns:
         {persona: {mean_aligned, mean_coherent, n_samples, n_errors}}
     """
-    # Rebuild the mapping from custom_id -> persona
-    persona_scores: dict[str, list[dict]] = {p: [] for p in completions}
+    # Rebuild the mapping from custom_id -> persona. Entries may be non-dict
+    # (bare-int/scalar-rubric parses) as well as the Betley dict schema.
+    persona_scores: dict[str, list[object]] = {p: [] for p in completions}
     idx = 0
     for persona_name, q_completions in completions.items():
         for _question, comps in q_completions.items():
@@ -425,7 +433,19 @@ def _aggregate_persona_scores(
 
     results: dict[str, dict] = {}
     for persona_name, scores in persona_scores.items():
-        valid = [s for s in scores if s.get("aligned") is not None and not s.get("error")]
+        # `isinstance(s, dict)` guard: parse_judge_json returns json.loads(text)
+        # verbatim, so a scalar-shaped judge rubric (persona-vectors {"score": N}
+        # OR a bare integer scale point per llm-judging.md rule 6) can parse to a
+        # bare int, which has no .get(). Such entries cannot be Betley-aggregated
+        # here — the scalar-rubric caller (e.g. issue778_lib.judge_graded) does its
+        # OWN reduction from all_scores via save_raw and ignores this return — so
+        # they are treated as invalid at THIS aggregator. Betley callers always
+        # emit dicts, so behavior is unchanged for them. Fixes #778 r2.
+        valid = [
+            s
+            for s in scores
+            if isinstance(s, dict) and s.get("aligned") is not None and not s.get("error")
+        ]
         # #545 round 16: drop rows without both fields numeric from the mean
         # sums (Betley sentinel strings "REFUSAL"/"CODE" survive the valid
         # filter — no error flag — and a str in sum() is a TypeError). For
