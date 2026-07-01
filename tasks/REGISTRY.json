@@ -5015,8 +5015,8 @@
     "784": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/784",
-      "status": "running",
+      "path": "tasks/reviewing/784",
+      "status": "reviewing",
       "title": "workflow: raise ensemble review cap 3->5, expand git-provenance auto-strip, surface-not-ship real residual at cap"
     },
     "785": {
