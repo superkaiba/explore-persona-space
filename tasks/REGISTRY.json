@@ -4965,8 +4965,8 @@
       "goal": "Replicate Persona Vectors' two prediction experiments (system-prompt projection, finetuning-shift) on Qwen2.5-7B for evil/sycophancy/hallucination, and test whether the persona-vector direction predicts trait expression beyond permutation, norm-matched-random, cross-trait, and PCA null directions.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/778",
-      "status": "verifying",
+      "path": "tasks/interpreting/778",
+      "status": "interpreting",
       "title": "Replicate Persona Vectors prediction experiments (system-prompt + finetuning-shift) on Qwen2.5-7B with a random/permutation/cross-trait/PCA null battery"
     },
     "779": {
