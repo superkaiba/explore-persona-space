@@ -1,6 +1,6 @@
 {
-  "commit": "3b1e7907e5",
-  "created": "2026-07-01T15:17:59Z",
+  "commit": "37e1a1cace",
+  "created": "2026-07-01T15:55:37Z",
   "figsize": [
     9.5,
     5.2
@@ -117,14 +117,14 @@
     {
       "within-condition Pearson r,  method minus Persona-Vectors raw  (95% CI)": 0.05,
       "y": 0.0,
-      "series": "+0.05 pre-registered win threshold",
+      "series": "+0.05 win threshold",
       "_kind": "line",
       "_group": 18
     },
     {
       "within-condition Pearson r,  method minus Persona-Vectors raw  (95% CI)": 0.05,
       "y": 1.0,
-      "series": "+0.05 pre-registered win threshold",
+      "series": "+0.05 win threshold",
       "_kind": "line",
       "_group": 18
     }
