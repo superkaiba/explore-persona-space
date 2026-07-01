@@ -5258,8 +5258,8 @@
       "goal": "Reproduce Persona Vectors' three non-prediction experiments (steering/causal control, preventative steering during finetuning, pre-finetuning data screening) on Qwen2.5-7B for evil/sycophancy/hallucination, each with a norm-matched random-direction baseline the paper never ran, to test whether the persona-vector direction's causal and screening power is trait-specific or matched by a random direction.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/816",
-      "status": "proposed",
+      "path": "tasks/planning/816",
+      "status": "planning",
       "title": "Reproduce Persona Vectors' steering, preventative-steering, and data-screening experiments on Qwen2.5-7B with a norm-matched random-direction baseline"
     },
     "83": {
