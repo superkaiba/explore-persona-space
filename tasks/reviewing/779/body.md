@@ -32,6 +32,8 @@ goal: On Qwen-2.5-7B, characterize how well and at what token granularity the ba
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_779.md](https://github.com/superkaiba/explore-persona-space/blob/968926c85cad1e188cdb346fd21f50a31cac3b23/docs/methodology/issue_779.md) · [gist](https://gist.github.com/superkaiba/73dfe93acebe106ccff227e4227bc9b5)
+
 ## Takeaways
 
 - The learned pre-generation map beat the raw Persona-Vectors monitor by at least +0.05 (CI above zero) in only 2 of 6 cells (both many-shot), failing its 2-trait bar.
