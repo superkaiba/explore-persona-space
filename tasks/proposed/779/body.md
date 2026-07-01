@@ -27,6 +27,11 @@ goal: On Qwen-2.5-7B, characterize how well and at what token granularity the ba
   projection baseline AND a matched-capacity direct context->behavior predictor, on
   held-out contexts and behaviors.
 ---
+## Goal
+
+On Qwen-2.5-7B, characterize how well and at what token granularity the base model's pre-generation context representation predicts its own answer representation and behavior, and test whether routing trait-expression monitoring through a learned behavior-agnostic context->answer-profile map (pre-generation) or pooling over the actual generation's activations (post-generation) beats Persona Vectors' last-prompt-token projection baseline AND a matched-capacity direct context->behavior predictor, on held-out contexts and behaviors.
+
+
 ## Provenance
 
 Originated from a design discussion (2026-06-30). Seed: Persona Vectors (arXiv 2507.21509)
