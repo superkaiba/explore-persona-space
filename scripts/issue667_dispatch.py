@@ -291,10 +291,114 @@ def phase_prefetch(*, behaviors: list[str], cpu_only: bool, skip_parity: bool) -
 # (ratio ~0). #537's contrastive adapters move the diagonal source write
 # materially (rsLoRA α/√r at the committed gauge); a ratio below this floor
 # means the adapter is applied under a DIFFERENT gauge than #537 committed.
+#
+# This DEFAULT (0.01) is the #667 floor, calibrated on 7-MODULE adapters
+# (#667's own probe run quoted em ‖Δv‖/‖v0‖ = 0.1729; #813 measured sycophancy
+# 0.0757 — both 7-17× above). It is preserved as the default so #667's own
+# callers (which never pass `min_write_ratio`) are unchanged. A per-behavior
+# floor is passed by the caller for a weaker-writer adapter class (e.g. #813's
+# marker: 4-module attention-only, α=64, low-LR marker recipe → a correctly
+# applied write reads ~0.009, a 10% shortfall below this 7-module floor); see
+# the `min_write_ratio` argument below.
 PARITY_MIN_WRITE_RATIO = 0.01
 
+# Marker behavioral confirmation floor (Part 2, marker-only). The #537 marker
+# install is >1 nat by the committed source read (`.claude/rules/marker-
+# leakage-measurement.md`); a wrong-gauge / no-op adapter application reads ≈0.
+# A ≥1 nat teacher-forced Δ log P(※) trained−base on the source-context battery
+# confirms the marker install is behaviorally present, not just that the
+# residual moved (the numeric write-ratio gate above). 1 nat cleanly separates
+# a real install (>1) from a no-op (≈0).
+MARKER_BEHAVIORAL_MIN_DELTA_NATS = 1.0
 
-def _numeric_rslora_parity(behavior: str, source: str = "default", seed: int = 42) -> dict:
+# ` ※` marker, Qwen-2.5-7B token id 83399 (leading space; NOT bare `※` id 63680,
+# NOT multi-token `[ZLT]`). CLAUDE.md marker bullet + marker-leakage-measurement.md.
+_MARKER_TEXT = " ※"
+_MARKER_TOKEN_ID = 83399
+
+
+def _marker_behavioral_confirmation(
+    base,
+    trained,
+    tok,
+    registry,
+    demos,
+    source: str,
+    device,
+    *,
+    n_contexts: int = 2,
+    n_questions: int = 2,
+    max_new_tokens: int = 256,
+) -> float:
+    """Teacher-forced Δ log P(※) trained−base at the post-response slot (marker-only).
+
+    Part 2 of the #813 apply-parity gate. Reproduces #537's committed default read
+    for the marker behavior: on ``n_contexts × n_questions`` source-context battery
+    probes, generate the base model's OWN greedy response ``R`` (on-policy,
+    marker-at-end recipe — `.claude/rules/marker-leakage-measurement.md`), then read
+    ``log P(※)`` at the slot immediately after ``R`` for BOTH the trained and base
+    models via :func:`compute_marker_slot_stats` (four-float storage contract), and
+    return the mean trained−base delta in nats. A wrong-gauge / no-op adapter reads
+    ≈0; a real #537 install reads >1 nat. Reuses the base/trained/tok already loaded
+    by :func:`_numeric_rslora_parity` (no extra 7B load); a couple of forward passes.
+    """
+    from issue667_extract import _greedy_response, build_messages_for, load_eval_probes
+
+    from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
+
+    # In-process marker-token assert — every marker path fails at startup on a
+    # wrong marker (CLAUDE.md / marker-leakage-measurement.md § "assert WIRED
+    # INTO the entrypoint"). id 83399 = ` ※` (leading space); 63680 = bare `※`.
+    enc = tok.encode(_MARKER_TEXT, add_special_tokens=False)
+    assert enc == [_MARKER_TOKEN_ID], (
+        f"marker behavioral confirmation: tokenizer.encode({_MARKER_TEXT!r}) == {enc} "
+        f"!= [{_MARKER_TOKEN_ID}] — wrong marker token (expected ` ※` id 83399, "
+        "NOT bare `※` id 63680, NOT multi-token `[ZLT]`)"
+    )
+    # <|im_end|> is the EOS competitor the contrastive negatives train at the slot;
+    # compute_marker_slot_stats needs a real competitor id for the four-float record.
+    eos_id = tok.eos_token_id
+    im_end_ids = tok.encode("<|im_end|>", add_special_tokens=False)
+    if len(im_end_ids) == 1:
+        eos_id = im_end_ids[0]
+
+    probes = load_eval_probes("marker")[:n_questions]
+    contexts: list[str] = []
+    for q in probes:
+        msgs = build_messages_for(registry, demos, source, "marker", q)
+        r = _greedy_response(base, tok, msgs, device, max_new_tokens)
+        if not r.strip():
+            continue
+        # Teacher-forced prefix = rendered chat prompt (base's own on-policy input)
+        # + R (base's own greedy response). The marker slot is position -1 of this
+        # prefix — the SAME end-of-own-response slot the DV recipe reads.
+        prefix = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True) + r
+        contexts.append(prefix)
+        if len(contexts) >= n_contexts:
+            break
+    if not contexts:
+        raise RuntimeError(
+            "marker behavioral confirmation: no source-context probe produced a "
+            "non-empty base response — cannot read the marker slot"
+        )
+
+    dev = str(device)
+    trained_stats = compute_marker_slot_stats(
+        trained, tok, contexts, _MARKER_TEXT, eos_token_id=eos_id, batch_size=1, device=dev
+    )
+    base_stats = compute_marker_slot_stats(
+        base, tok, contexts, _MARKER_TEXT, eos_token_id=eos_id, batch_size=1, device=dev
+    )
+    deltas = [t["logp"] - b["logp"] for t, b in zip(trained_stats, base_stats, strict=True)]
+    return float(sum(deltas) / len(deltas))
+
+
+def _numeric_rslora_parity(
+    behavior: str,
+    source: str = "default",
+    seed: int = 42,
+    min_write_ratio: float = PARITY_MIN_WRITE_RATIO,
+) -> dict:
     """NUMERIC rsLoRA parity probe (BLOCKER 2): GPU diagonal-write reproduction.
 
     Stages 1 adapter, applies it via PeftModel (rsLoRA honored), runs the SAME
@@ -304,9 +408,19 @@ def _numeric_rslora_parity(behavior: str, source: str = "default", seed: int = 4
 
     - ``g_real(C, C) == 1`` (structural self-gate invariant — the source write
       is well-defined; a degenerate/zero write fails this), and
-    - ``‖Δv(C)‖ / ‖v0(C)‖ >= PARITY_MIN_WRITE_RATIO`` — the adapter actually
-      moves the residual at the committed gauge (a no-op / wrong-gauge adapter
-      reads ~0). HALT on either miss.
+    - ``‖Δv(C)‖ / ‖v0(C)‖ >= min_write_ratio`` — the adapter actually moves the
+      residual at the committed gauge (a no-op / wrong-gauge adapter reads ~0).
+      HALT on either miss.
+
+    ``min_write_ratio`` is the per-behavior floor (default ``PARITY_MIN_WRITE_RATIO``
+    = the 7-module #667 floor 0.01, so #667's own callers are unchanged). A gauge
+    error is MULTIPLICATIVE (α/√r vs α/r at r=32 is a √32≈5.66× discrepancy — a
+    wrong-gauge marker write reads ~0.0016 or ~0.05), so the floor is set to
+    separate a correctly-applied write from a wrong-gauge one, NOT to gate a
+    small correct-stack shortfall: #813's marker adapter (4-module attention-only,
+    α=64, low-LR) writes ~0.009 correctly (a 10% shortfall below the 7-module
+    0.01), and the marker floor 0.004 cleanly separates correct (0.009, ~2.25×
+    above) from wrong-gauge (0.0016, ~2.5× below).
 
     This is the numeric reproduction-and-HALT gate plan §5(g)/§7 mandate — NOT a
     gauge config check (round-1's mistake). Returns the measured magnitudes.
@@ -359,18 +473,43 @@ def _numeric_rslora_parity(behavior: str, source: str = "default", seed: int = 4
     write_norm = float(np.linalg.norm(vp - v0))
     base_norm = float(np.linalg.norm(v0))
     ratio = write_norm / base_norm if base_norm > 0 else 0.0
+
+    # Part 2 — marker behavioral confirmation (belt-and-suspenders, marker-only).
+    # The numeric write-ratio gate proves the adapter MOVES the residual at the
+    # committed gauge, but not that the move is the #537 marker install. For the
+    # marker behavior — where the plan's apply-parity intent is "reproduce #537's
+    # committed default read" and that read is the cheap, unambiguous teacher-forced
+    # Δ log P(※) — additionally confirm the marker install is behaviorally present
+    # (a wrong-gauge / no-op application reads Δ≈0). Computed here while the
+    # base/trained models are STILL LOADED (no extra 7B load), before teardown.
+    marker_delta: float | None = None
+    if behavior == "marker":
+        marker_delta = _marker_behavioral_confirmation(
+            base, trained, tok, registry, demos, source, device
+        )
+
     del base, trained
     if device.type == "cuda":
         torch.cuda.empty_cache()
     assert abs(g_self - 1.0) < 1e-4, (
         f"parity probe: self-gate g_real(C,C)={g_self:.6f} != 1 — source write degenerate"
     )
-    if ratio < PARITY_MIN_WRITE_RATIO:
+    if ratio < min_write_ratio:
         raise RuntimeError(
             f"rsLoRA NUMERIC parity FAILED: diagonal write ratio "
-            f"‖Δv‖/‖v0‖={ratio:.5f} < {PARITY_MIN_WRITE_RATIO} for {behavior}/{source} — "
+            f"‖Δv‖/‖v0‖={ratio:.5f} < {min_write_ratio} for {behavior}/{source} — "
             "the adapter is applied under a DIFFERENT gauge than #537 committed (or is a "
             "no-op). HALT before the full sweep (plan §5(g)/§7)."
+        )
+    # Marker behavioral HALT: the #537 marker install is >1 nat by the committed
+    # source read; a wrong-gauge / no-op application reads ≈0. HALT below 1 nat.
+    if marker_delta is not None and marker_delta < MARKER_BEHAVIORAL_MIN_DELTA_NATS:
+        raise RuntimeError(
+            f"marker behavioral parity FAILED: teacher-forced Δ log P(※) trained-base "
+            f"= {marker_delta:.4f} nat < {MARKER_BEHAVIORAL_MIN_DELTA_NATS} for "
+            f"{behavior}/{source} — the marker install is NOT behaviorally present (a "
+            "wrong-gauge / no-op application reads ≈0). HALT before the full sweep "
+            "(plan §4.3/§7; belt-and-suspenders confirmation of the #537 default read)."
         )
     result = {
         "behavior": behavior,
@@ -379,21 +518,37 @@ def _numeric_rslora_parity(behavior: str, source: str = "default", seed: int = 4
         "write_norm": write_norm,
         "base_norm": base_norm,
         "write_ratio": ratio,
+        "min_write_ratio": min_write_ratio,
         "gauge": {k: gauge[k] for k in ("r", "lora_alpha", "use_rslora")},
         "n_probes": len(v0s),
     }
     logger.info(
-        "rsLoRA NUMERIC parity PASS: %s/%s g_self=%.6f ‖Δv‖/‖v0‖=%.4f (gauge=%s)",
+        "rsLoRA NUMERIC parity PASS: %s/%s g_self=%.6f ‖Δv‖/‖v0‖=%.4f >= floor %.4f (gauge=%s)",
         behavior,
         source,
         g_self,
         ratio,
+        min_write_ratio,
         result["gauge"],
     )
+    if marker_delta is not None:
+        result["marker_delta_logp_nats"] = marker_delta
+        logger.info(
+            "marker behavioral parity PASS: %s/%s Δ log P(※) trained-base = %.4f nat >= %.1f",
+            behavior,
+            source,
+            marker_delta,
+            MARKER_BEHAVIORAL_MIN_DELTA_NATS,
+        )
     return result
 
 
-def _rslora_parity_probe(behavior: str, *, cpu_only: bool) -> None:
+def _rslora_parity_probe(
+    behavior: str,
+    *,
+    cpu_only: bool,
+    min_write_ratio: float = PARITY_MIN_WRITE_RATIO,
+) -> None:
     """rsLoRA parity probe — NUMERIC on GPU (BLOCKER 2), config-only on CPU smoke.
 
     On GPU: runs :func:`_numeric_rslora_parity` in a ONE-SHOT SUBPROCESS (the
@@ -409,6 +564,10 @@ def _rslora_parity_probe(behavior: str, *, cpu_only: bool) -> None:
 
     On a CPU-only local smoke (no 7B forward): asserts the gauge config in-process
     (no CUDA touched) and defers the numeric reproduction to the GPU path.
+
+    ``min_write_ratio`` is the per-behavior diagonal-write floor threaded to the
+    subprocess (default = the 7-module #667 floor, so #667's own callers are
+    unchanged). #813 passes a per-behavior floor (marker: 0.004; others: 0.01).
     """
     from issue667_extract import assert_adapter_gauge, stage_adapter_local
 
@@ -418,16 +577,23 @@ def _rslora_parity_probe(behavior: str, *, cpu_only: bool) -> None:
         assert gauge["use_rslora"], "parity probe: adapter is not rsLoRA (gauge mismatch)"
         logger.info(
             "rsLoRA parity probe: CPU-only — gauge config asserted (r=%s alpha=%s "
-            "use_rslora=%s); NUMERIC diagonal-write reproduction runs on the GPU path.",
+            "use_rslora=%s; write-ratio floor %.4f); NUMERIC diagonal-write "
+            "reproduction runs on the GPU path.",
             gauge["r"],
             gauge["lora_alpha"],
             gauge["use_rslora"],
+            min_write_ratio,
         )
         return
-    _run_parity_probe_subprocess(behavior)
+    _run_parity_probe_subprocess(behavior, min_write_ratio=min_write_ratio)
 
 
-def _run_parity_probe_subprocess(behavior: str, source: str = "default", seed: int = 42) -> dict:
+def _run_parity_probe_subprocess(
+    behavior: str,
+    source: str = "default",
+    seed: int = 42,
+    min_write_ratio: float = PARITY_MIN_WRITE_RATIO,
+) -> dict:
     """Run the NUMERIC rsLoRA parity probe in a one-shot subprocess (CUDA isolation).
 
     Invokes the ``parity-probe`` CLI of THIS module via ``subprocess.run`` so the
@@ -452,6 +618,8 @@ def _run_parity_probe_subprocess(behavior: str, source: str = "default", seed: i
             source,
             "--seed",
             str(seed),
+            "--min-write-ratio",
+            repr(min_write_ratio),
             "--result-out",
             str(result_path),
         ]
@@ -472,12 +640,19 @@ def _run_parity_probe_subprocess(behavior: str, source: str = "default", seed: i
             )
         result = json.loads(result_path.read_text())
         logger.info(
-            "rsLoRA NUMERIC parity PASS (subprocess): %s/%s g_self=%.6f write_ratio=%.4f gauge=%s",
+            "rsLoRA NUMERIC parity PASS (subprocess): %s/%s g_self=%.6f write_ratio=%.4f "
+            ">= floor %.4f gauge=%s%s",
             result["behavior"],
             result["source"],
             result["g_self"],
             result["write_ratio"],
+            result.get("min_write_ratio", PARITY_MIN_WRITE_RATIO),
             result.get("gauge"),
+            (
+                f" marker Δ log P(※)={result['marker_delta_logp_nats']:.4f} nat"
+                if result.get("marker_delta_logp_nats") is not None
+                else ""
+            ),
         )
         return result
 
@@ -858,6 +1033,16 @@ def main() -> int:
     )
     parser.add_argument("--seed", type=int, default=42, help="parity-probe seed (subprocess only).")
     parser.add_argument(
+        "--min-write-ratio",
+        type=float,
+        default=PARITY_MIN_WRITE_RATIO,
+        help=(
+            "parity-probe per-behavior diagonal-write floor (subprocess entrypoint only; "
+            f"default {PARITY_MIN_WRITE_RATIO} = the 7-module #667 floor, so #667's own "
+            "usage is unchanged). #813 passes 0.004 for the weak 4-module marker adapter."
+        ),
+    )
+    parser.add_argument(
         "--result-out",
         default=None,
         help="parity-probe result JSON path (subprocess entrypoint only).",
@@ -932,7 +1117,12 @@ def main() -> int:
     # failed assert / RuntimeError HALT) propagates the gate to the parent.
     if args.phase == "parity-probe":
         _require_credentials()
-        result = _numeric_rslora_parity(args.behavior, source=args.source, seed=args.seed)
+        result = _numeric_rslora_parity(
+            args.behavior,
+            source=args.source,
+            seed=args.seed,
+            min_write_ratio=args.min_write_ratio,
+        )
         if args.result_out:
             Path(args.result_out).write_text(json.dumps(result, indent=2))
         return 0

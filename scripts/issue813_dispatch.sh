@@ -122,9 +122,22 @@ sys.path.insert(0, "scripts")
 import issue667_dispatch as i667
 behavior = os.environ["PARITY_BEHAVIOR"]
 cpu_only = os.environ["PARITY_CPU"] == "True"
+# Per-behavior diagonal-write floor. The #667 default 0.01 was calibrated on
+# 7-MODULE adapters (em 0.1729, sycophancy 0.0757 — 7-17x above); the marker
+# adapter is 4-module attention-only, alpha=64, low-LR marker recipe — its
+# CORRECTLY-applied write reads ~0.009 (a 10% shortfall below the 7-module 0.01,
+# NOT a gauge drift: a true alpha/sqrt(r)-vs-alpha/r error at r=32 is a 5.66x
+# discrepancy reading ~0.0016 or ~0.05). 0.004 cleanly separates a correct write
+# (0.009, ~2.25x above) from a wrong-gauge one (0.0016, ~2.5x below). For the
+# marker, ALSO run the >=1 nat teacher-forced Delta log P(marker) behavioral
+# confirmation baked into _numeric_rslora_parity (belt-and-suspenders). i813 #813.
+PARITY_MIN_WRITE_RATIO_BY_BEHAVIOR = {"marker": 0.004}  # others -> #667 default (0.01)
+min_write_ratio = PARITY_MIN_WRITE_RATIO_BY_BEHAVIOR.get(
+    behavior, i667.PARITY_MIN_WRITE_RATIO
+)
 # _rslora_parity_probe raises (non-zero exit → set -e HALT) on drift; PASS on return.
-i667._rslora_parity_probe(behavior, cpu_only=cpu_only)
-print(f"[phase=apply_parity] {behavior}: apply-parity PASS (numeric diagonal-write reproduction)")
+i667._rslora_parity_probe(behavior, cpu_only=cpu_only, min_write_ratio=min_write_ratio)
+print(f"[phase=apply_parity] {behavior}: apply-parity PASS (numeric diagonal-write reproduction, floor={min_write_ratio})")
 PY
   done
   echo "[phase=apply_parity] all behaviors PASS apply-parity — proceeding to the sweep"
