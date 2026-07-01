@@ -379,6 +379,126 @@ def test_set_status_refuses_destination_that_is_a_file(fake_repo):
     assert reg["tasks"][str(new_id)]["path"] == f"tasks/proposed/{new_id}"
 
 
+# ─── Atomic status-transition move — never drops untracked files (#722) ────
+#
+# `git mv <src-dir> <dst-dir>` renames only git-TRACKED files, silently
+# leaving untracked/uncommitted files behind and splitting the task across two
+# folders (#722: a task's plans/ landed under the new status while body.md
+# stayed under the old). set_status now moves the WHOLE dir via shutil.move
+# and verifies completeness, rolling the FS move back BEFORE REGISTRY is
+# touched on any partial failure.
+
+
+def test_set_status_moves_untracked_files(fake_repo):
+    """The #722 regression: a status move must carry UNTRACKED / uncommitted
+    files too, not just git-tracked ones. Drop an untracked plans file into
+    the task dir (no commit), move the task, and assert the untracked file
+    landed at the destination, the source dir is fully gone, and REGISTRY
+    points at the new location."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    old = repo / "tasks" / "proposed" / str(new_id)
+    # An UNTRACKED file written after creation (create_task committed the dir,
+    # so this file is not in git — exactly the #722 shape).
+    untracked = old / "plans" / "v2.md"
+    untracked.parent.mkdir(parents=True, exist_ok=True)
+    untracked.write_text("# uncommitted plan version\n")
+
+    tw.set_status(new_id, "running")
+
+    new = repo / "tasks" / "running" / str(new_id)
+    # (i) the untracked file exists at the destination
+    assert (new / "plans" / "v2.md").is_file()
+    assert (new / "plans" / "v2.md").read_text() == "# uncommitted plan version\n"
+    # (ii) NO file remains under the source dir
+    assert not old.exists()
+    # (iii) REGISTRY path == the new location
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"
+
+
+def test_set_status_rolls_back_before_registry_on_incomplete_move(fake_repo):
+    """On an incomplete move (a file missing from the destination after the FS
+    move) set_status must raise, roll the FS move back to the ORIGINAL
+    location with ALL files intact, and leave REGISTRY pointing at the
+    ORIGINAL path (untouched — REGISTRY is only written AFTER the verified
+    move)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    old = repo / "tasks" / "proposed" / str(new_id)
+    # Give the task an extra file so we can withhold exactly one at the dest.
+    (old / "plans").mkdir(parents=True, exist_ok=True)
+    (old / "plans" / "v1.md").write_text("plan v1\n")
+
+    real_move = tw.shutil.move
+    stash = repo / "_stash_v1.md"
+
+    def flaky_move(src, dst):
+        # Model a partial FS move: on the FORWARD move (into `running`),
+        # perform the real move but WITHHOLD one file to a scratch stash so
+        # the post-move completeness check sees a missing file (the #722
+        # fault line). On the ROLLBACK move (back to `proposed`) the file is
+        # restored first, so the rollback genuinely returns ALL files — this
+        # exercises _rollback_move without destroying data.
+        real_move(src, dst)
+        dst_v1 = Path(dst) / "plans" / "v1.md"
+        if str(dst).endswith("tasks/running/" + str(new_id)):
+            real_move(str(dst_v1), str(stash))  # withhold — dst now incomplete
+        elif str(dst).endswith("tasks/proposed/" + str(new_id)):
+            real_move(str(stash), str(dst_v1))  # restore on rollback
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(tw.shutil, "move", flaky_move)
+        with pytest.raises(RuntimeError, match="left 1 file"):
+            tw.set_status(new_id, "running")
+
+    # Rolled back: the task dir is back at its ORIGINAL location with ALL files.
+    assert old.is_dir()
+    assert (old / "body.md").is_file()
+    assert (old / "plans" / "v1.md").is_file()
+    assert (old / "plans" / "v1.md").read_text() == "plan v1\n"
+    # Destination is gone (rolled back).
+    assert not (repo / "tasks" / "running" / str(new_id)).exists()
+    # REGISTRY untouched — still points at the ORIGINAL path.
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/proposed/{new_id}"
+
+
+# ─── Typed stale-path error from _read_body / get_task (#786 item b) ───────
+#
+# A task dir present but body.md missing (the #722 split / stale-registry
+# shape) must raise a TYPED error naming the path + the `task.py audit`
+# remedy, instead of a bare FileNotFoundError. The typed error subclasses
+# FileNotFoundError so existing `except FileNotFoundError` callers still catch
+# it (cmd_list_clean_results, cmd_migrate_body, task_workflow_migrate).
+
+
+def test_get_task_raises_stale_task_path_error_on_missing_body(fake_repo):
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    body = repo / "tasks" / "proposed" / str(new_id) / "body.md"
+    body.unlink()
+    with pytest.raises(tw.StaleTaskPathError) as exc_info:
+        tw.get_task(new_id)
+    msg = str(exc_info.value)
+    assert str(body) in msg  # names the stale path
+    assert "task.py audit" in msg  # names the remedy
+
+
+def test_stale_task_path_error_is_filenotfounderror_subclass():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    assert issubclass(tw.StaleTaskPathError, FileNotFoundError)
+    # An existing `except FileNotFoundError:` catches an instance.
+    caught = False
+    try:
+        raise tw.StaleTaskPathError("boom")
+    except FileNotFoundError:
+        caught = True
+    assert caught
+
+
 # ─── Same-issue follow-up status-hold guard ───────────────────────────────
 #
 # The same-issue follow-up status-hold rule (SKILL.md Step 9b § Same-issue
