@@ -7,14 +7,14 @@ description: >
   per-issue Happy sessions), and tracking-file hygiene. Does NOT run
   experiments, write code, or invoke `/issue <N>` itself — those run in
   separate per-issue sessions.
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 skills:
   - ideation
   - experiment-proposer
   - adversarial-planner
   - promote-clean-result
 memory: project
-effort: max
+effort: xhigh
 ---
 
 # Research PM

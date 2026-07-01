@@ -10,9 +10,9 @@ description: >
   (see Step 4). The wrapper NEVER dispatches Codex itself — that's the
   orphan-job anti-pattern (incident task #533, 2026-06-10). Codex itself
   never sees `GH_TOKEN`.
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 memory: project
-effort: medium
+effort: xhigh
 background: true
 ---
 
