@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 787,
+  "highest_id": 788,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5039,6 +5039,13 @@
       "path": "tasks/proposed/787",
       "status": "proposed",
       "title": "daily-fix: Step 10d tasks/* merge-conflict default + far-behind branch"
+    },
+    "788": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/788",
+      "status": "proposed",
+      "title": "daily-fix: reviewer sandbox read-only tempdir silently skips pytest"
     },
     "8": {
       "has_clean_result": false,
