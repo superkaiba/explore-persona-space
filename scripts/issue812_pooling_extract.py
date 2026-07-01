@@ -19,22 +19,33 @@ Output ``data/issue_812/store/pooling_inputs.pt`` (fp16), uploaded to HF
       "mean":       (N, n_layers, H) fp16,   # mean over ALL answer tokens of ALL probes
       "max":        (N, n_layers, H) fp16,   # element-wise max
       "attn_fixed": (N, n_layers, H) fp16,   # seed-42 random-query softmax pool
-      "aligned_pos":(N, n_layers, 2K+2, H) fp16,  # tail -1..-K, head 0..K-1, im_end, turn_nl
+      "aligned_pos":(N, n_layers, 2K+2, H) fp16,  # tail -1..-K, head 0..K-1, tail-1, tail-2
       "coverage":   (N, n_layers, 2K+2) int32,    # #probes contributing per aligned slot
       "meta": {...},
     }
 
-The aligned-position set (per plan §4.1): end-aligned tail positions ``-1..-K``,
-start-aligned head positions ``0..K-1``, plus the 2 turn-boundary tokens
-(``im_end`` at ``span_end``, ``turn_nl`` at ``span_end+1`` where present) ->
-``(2K+2)`` positions (K=16 -> 34). Per (context, layer, aligned-position), MEAN
-over the probes that HAVE a token at that aligned index. The span blob's per-probe
-tensor is ``(Lc, S, H)`` = the answer-token activations for one probe; the
-"turn-boundary" positions live at the very TAIL of the span (the last two answer
-positions when present), so ``im_end`` == tail -1 and ``turn_nl`` == tail 0 by the
-#658 capture convention; we expose them as their own two slots for downstream
-interpretability, and they overlap the tail slots by construction (documented,
-not double-counted — they are separate feature columns).
+The aligned-position set (per plan §4.1 + §12 CONCERN-4 correction): end-aligned
+tail positions ``-1..-K``, start-aligned head positions ``0..K-1``, plus 2 EXTRA
+slots ``tail-1`` / ``tail-2`` -> ``(2K+2)`` positions (K=16 -> 34). Per (context,
+layer, aligned-position), MEAN over the probes that HAVE a token at that aligned
+index.
+
+**CONCERN-4 correction (round 2):** these two extra slots were formerly labeled
+``im_end`` / ``turn_nl`` and narrated as the chat-boundary tokens (``<|im_end|>`` +
+trailing newline). That is WRONG for #658's spans. #658's
+``issue658_extract_base_store.answer_span_stack`` slices
+``[prompt_len, prompt_len+ans_len)`` with ``ans_ids =
+tokenizer(ans, add_special_tokens=False)`` — so the span contains ANSWER-CONTENT
+tokens ONLY; the ``<|im_end|>`` and the trailing newline are NOT in the span. The
+last two span positions are therefore the last two ANSWER-CONTENT tokens, i.e.
+EXACTLY ``tail[0]`` (span[-1]) and ``tail[1]`` (span[-2]) already captured in the
+tail array. We KEEP the two slots (renamed ``tail-1`` / ``tail-2``) as an explicit
+duplicate of tail -1 / -2 for a stable schema, but the analyzer MUST NOT narrate
+them as ``<|im_end|>`` / newline boundary activations — the true post-response
+boundary tokens are absent from #658's spans (recovering them would need a fresh
+Qwen forward pass, breaking the 0-GPU contract). An assertion in
+``_reduce_probe_span`` verifies the aliasing so the schema claim is enforced, not
+just asserted in prose.
 
 Idempotent: if the output artifact already exists locally, the run SKIPS
 re-extraction (per plan §4.1) unless ``--force`` is passed.
@@ -139,7 +150,11 @@ def _reduce_probe_span(
       - attn_fixed: (H,) softmax(span @ fixed_q)-weighted sum
       - tail: (K, H) end-aligned positions -1..-K (fp32; NaN-filled beyond span len)
       - head: (K, H) start-aligned positions 0..K-1 (fp32; NaN-filled beyond len)
-      - im_end / turn_nl: (H,) the last two answer positions (turn-boundary tokens)
+      - tail_1 / tail_2: (H,) the last two ANSWER-CONTENT positions == tail[0] / tail[1]
+        (CONCERN 4: these are NOT the <|im_end|>/newline boundary tokens — #658 spans
+        hold answer-content tokens only, so span[-1]/span[-2] are the last two answer
+        tokens, i.e. exact duplicates of tail slots -1/-2. Kept for a stable schema;
+        analyzer must not narrate them as chat-boundary activations.)
       - tail_valid / head_valid: (K,) bool masks (which aligned slots are present)
     """
     assert span.ndim == 2, f"span must be (S, H); got {tuple(span.shape)}"
@@ -165,11 +180,18 @@ def _reduce_probe_span(
             head[j] = sp[j]
             head_valid[j] = True
 
-    # Turn-boundary tokens: the very last two answer positions, per the #658
-    # capture convention (im_end at span_end, turn_nl at span_end+1 where present).
-    im_end = sp[-1]  # (H,) always present (s>0)
-    turn_nl = sp[-2] if s >= 2 else torch.full((h,), float("nan"), dtype=torch.float32)
-    turn_nl_valid = s >= 2
+    # tail-1 / tail-2 = the last two ANSWER-CONTENT positions. #658's answer_span_stack
+    # slices [prompt_len, prompt_len+ans_len) with ans_ids from
+    # tokenizer(ans, add_special_tokens=False), so <|im_end|>/newline are NOT in the
+    # span — span[-1]/span[-2] are answer tokens, EXACT duplicates of tail[0]/tail[1].
+    tail_1 = sp[-1]  # (H,) == tail[0] (always present, s>0)
+    tail_2 = sp[-2] if s >= 2 else torch.full((h,), float("nan"), dtype=torch.float32)
+    tail_2_valid = s >= 2
+    # CONCERN-4 aliasing assertion (enforce the schema claim, not just prose): tail-1
+    # IS tail[0] and (when present) tail-2 IS tail[1], byte-identical by construction.
+    assert torch.equal(tail_1, tail[0]), "tail-1 must equal tail[0] (#658 span-end aliasing)"
+    if tail_2_valid and k >= 2:
+        assert torch.equal(tail_2, tail[1]), "tail-2 must equal tail[1] (#658 span aliasing)"
 
     return {
         "mean_sum": mean_sum,
@@ -180,9 +202,9 @@ def _reduce_probe_span(
         "head": head,
         "tail_valid": tail_valid,
         "head_valid": head_valid,
-        "im_end": im_end,
-        "turn_nl": turn_nl,
-        "turn_nl_valid": turn_nl_valid,
+        "tail_1": tail_1,
+        "tail_2": tail_2,
+        "tail_2_valid": tail_2_valid,
     }
 
 
@@ -225,7 +247,9 @@ def _extract_context(blob: dict, layers: list[int], k: int, seed: int) -> dict[s
             total_tokens[out_idx] += red["n_tokens"]
             np.maximum(max_out[out_idx], red["maxp"].numpy(), out=max_out[out_idx])
             attn_out[out_idx] += red["attn_fixed"].numpy()
-            # aligned slots: [0..K-1] tail, [K..2K-1] head, [2K] im_end, [2K+1] turn_nl
+            # aligned slots: [0..K-1] tail, [K..2K-1] head, [2K] tail-1, [2K+1] tail-2
+            # (tail-1/tail-2 are answer-content span-end duplicates of tail[0]/tail[1],
+            # NOT <|im_end|>/newline — CONCERN 4.)
             tail = red["tail"].numpy()
             head = red["head"].numpy()
             tv = red["tail_valid"].numpy()
@@ -237,10 +261,10 @@ def _extract_context(blob: dict, layers: list[int], k: int, seed: int) -> dict[s
                 if hv[j]:
                     aligned_sum[out_idx, k + j] += head[j]
                     aligned_cnt[out_idx, k + j] += 1
-            aligned_sum[out_idx, 2 * k] += red["im_end"].numpy()
+            aligned_sum[out_idx, 2 * k] += red["tail_1"].numpy()
             aligned_cnt[out_idx, 2 * k] += 1
-            if red["turn_nl_valid"]:
-                aligned_sum[out_idx, 2 * k + 1] += red["turn_nl"].numpy()
+            if red["tail_2_valid"]:
+                aligned_sum[out_idx, 2 * k + 1] += red["tail_2"].numpy()
                 aligned_cnt[out_idx, 2 * k + 1] += 1
 
     n_probes = len(present)
@@ -386,6 +410,15 @@ def main() -> int:
             "coverage_min_contexts": COVERAGE_MIN_CONTEXTS,
             "per_slot_ctx_with_data": per_slot_ctx.tolist(),
             "thin_slots": thin_slots,
+            # aligned-slot schema: [0..K-1] tail -1..-K, [K..2K-1] head 0..K-1,
+            # [2K] tail-1, [2K+1] tail-2 (CONCERN 4: tail-1/tail-2 are span-end
+            # answer-content duplicates of tail slots 0/1, NOT <|im_end|>/newline).
+            "aligned_slot_labels": (
+                [f"tail-{j + 1}" for j in range(args.k)]
+                + [f"head-{j}" for j in range(args.k)]
+                + ["tail-1", "tail-2"]
+            ),
+            "boundary_slots_are_tail_duplicates": True,
             "torch_version": torch.__version__,
             "numpy_version": np.__version__,
         },

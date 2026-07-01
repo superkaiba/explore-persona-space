@@ -59,6 +59,7 @@ from issue658_fit_predictors import (  # noqa: E402
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     ridge_predict_loco_centered,
     robust_pca_basis,
+    skill_over_mean_r2,
 )
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
@@ -99,6 +100,22 @@ def _git_commit() -> str:
         return "unknown"
 
 
+def _atomic_write_json(path: Path, obj) -> None:
+    """Atomic JSON write (``.tmp`` + ``os.replace``) — checkpoint-per-phase safe.
+
+    Used to checkpoint ``pooling_fit_results.json`` after EACH behavior lands
+    (BLOCKER 3): a downstream crash on a later behavior can never corrupt or lose
+    the already-completed behaviors' fits.
+    """
+    import os
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w") as f:
+        json.dump(obj, f, indent=2)
+    os.replace(tmp, path)
+
+
 # ── Per-position / per-vector PCA-reduce (train-only, LOCO-safe) ──────────────
 
 
@@ -134,34 +151,35 @@ def _ridge_rho_from_features(X: np.ndarray, y: np.ndarray) -> tuple[float | None
 # ── attn-learned: vectorized per-cell softmax-query fit (the only GD arm) ─────
 
 
+ATTN_INNER_CV_K = 3  # nested-CV inner folds for the attn-learned L2 selection (§8)
+
+
 def _fit_attn_learned_pool(
     aligned: np.ndarray, y: np.ndarray, *, seed: int, device: str
 ) -> np.ndarray:
     """Fit a softmax query over aligned positions, LOCO cross-fit, return pooled (N, H).
 
     aligned: (N, P, H) the (2K+2) aligned-position activations (NaN-filled slots ->
-    zeroed + mask). Fit query q in R^H (init = mean-pool direction) so
+    zeroed + mask). Fit query q (init = mean-pool direction) so
     ``pool_i = sum_p softmax(a_i @ q)_p * a_i[p]``; the pooled held-out vector then
     goes to the shared ridge downstream so the reported rho uses the same estimator
-    as every other operator. To avoid leakage the query is fit on the LOCO TRAIN
-    fold only (per held-out i).
+    as every other operator. The query is fit on the LOCO TRAIN fold only (per
+    held-out i) — no held-out leakage.
 
-    VECTORIZED across ALL N LOCO folds AND the L2 grid as ONE batched parameter
-    tensor (``.claude/rules/vectorize-many-cell-fits.md``): the per-fold Python loop
-    is the banned overhead-bound anti-pattern (a serial fold loop projected >14 h
-    for the full 8x28-cell sweep at n=50). Every fold's query ``Q`` (F=n rows) +
-    readout ``w`` are stacked and trained jointly under a fold-exclusion mask; the
-    300-epoch loop runs ``len(L2)`` times TOTAL, not ``n x len(L2)`` times.
+    CONCERN 5 fix (plan §8): the L2 is chosen by NESTED-CV inner-held-out loss (K=3
+    inner CV folds of each outer train set), NOT by the train-fold loss; AND the
+    H->R PCA reduction basis is fit TRAIN-ONLY PER OUTER FOLD (each fold excludes its
+    held-out context from the SVD), NOT once on all rows. Both close the leakage the
+    round-1 code carried.
 
-    The query + readout are fit in a PCA-REDUCED activation space (H -> R via a
-    train-all-rows PCA basis, ``ATTN_REDUCE_RANK``) — a free 3584-dim query at n=50
-    is hopeless overfitting (plan's ``ungrounded`` risk), and the reduction makes the
-    fit ~100x cheaper (the query dim is R, not H). The reduction basis is fit on ALL
-    rows ONCE (a mild reduction-basis leakage; the query fit itself stays cross-fold
-    and the RETURNED pooled vector — full-H, using the learned per-position attention
-    weights — goes to the leakage-free LOCO ridge downstream). The learned attention
-    is over POSITIONS, computed from the reduced scores, then applied to the FULL-H
-    activations so no answer information is lost in the returned pool.
+    VECTORIZED (``.claude/rules/vectorize-many-cell-fits.md``): the query fit trains
+    all N outer folds jointly as one batched parameter tensor under a fold-exclusion
+    mask, and the nested-CV L2 selection trains all (outer x inner) folds jointly per
+    L2 — the epoch loop runs ``(#inner-CV passes + 1 refit) x len(L2)`` times TOTAL,
+    NOT ``n x len(L2)`` times. Per-fold PCA is N small SVDs (n~50 of a few-hundred x H
+    matrix), computed once up front. The learned attention is over POSITIONS, computed
+    from the reduced scores, then applied to the FULL-H activations so no answer
+    information is lost in the returned pool.
     """
     torch.manual_seed(seed)
     n, _p, h = aligned.shape
@@ -169,63 +187,123 @@ def _fit_attn_learned_pool(
     a = torch.from_numpy(np.nan_to_num(aligned).astype(np.float32)).to(dev)  # (N,P,H)
     pmask = torch.from_numpy((~np.isnan(aligned)).any(axis=2)).to(dev)  # (N,P) bool
     yt = torch.from_numpy(y.astype(np.float32)).to(dev)  # (N,)
+    r = min(ATTN_REDUCE_RANK, max(1, int(pmask.sum().item()) - 1), h)
 
-    # PCA-reduce H -> R on the stacked (N*P valid) position activations (all rows).
-    flat = a[pmask]  # (M, H) valid positions only
-    r = min(ATTN_REDUCE_RANK, max(1, flat.shape[0] - 1), h)
-    mu, comps, _ = robust_pca_basis(flat.cpu().numpy().astype(np.float64), r)  # comps (r',H)
-    comps_t = torch.from_numpy(comps.astype(np.float32)).to(dev)  # (R,H)
-    mu_t = torch.from_numpy(mu.astype(np.float32)).to(dev)  # (H,)
-    ar = torch.einsum("nph,rh->npr", a - mu_t, comps_t)  # (N,P,R) reduced activations
-    rdim = ar.shape[2]
-
-    # init reduced query = mean-pool direction in reduced space
-    with torch.no_grad():
-        valid = pmask.float().unsqueeze(-1)  # (N,P,1)
-        per_ctx_mean = (ar * valid).sum(1) / valid.sum(1).clamp_min(1.0)  # (N,R)
-        q_init = per_ctx_mean.mean(0)  # (R,)
-        q_init = q_init / (q_init.norm() + 1e-9)
+    # ── Per-outer-fold TRAIN-ONLY PCA basis (CONCERN 5: no all-row leakage). ──────
+    # Fold f (held-out context f) fits its H->R basis on the valid positions of the
+    # OTHER n-1 contexts only. ar_f[f] = (N, P, R) reduced under fold f's basis.
+    a_np = np.nan_to_num(aligned).astype(np.float64)  # (N,P,H)
+    pmask_np = (~np.isnan(aligned)).any(axis=2)  # (N,P)
+    ar_f = np.zeros((n, n, _p, r), dtype=np.float32)  # (F, N, P, R)
+    for f in range(n):
+        tr_ctx = [j for j in range(n) if j != f]
+        flat = a_np[tr_ctx][pmask_np[tr_ctx]]  # (M_f, H) train-only valid positions
+        mu, comps, _ = robust_pca_basis(flat, r)  # comps (r',H)
+        rk = comps.shape[0]
+        proj = np.einsum("nph,rh->npr", a_np - mu, comps)  # (N,P,r')
+        ar_f[f, :, :, :rk] = proj.astype(np.float32)
+    ar_ft = torch.from_numpy(ar_f).to(dev)  # (F,N,P,R)
+    rdim = r
 
     eye = torch.eye(n, device=dev, dtype=torch.bool)
-    train_mask = (~eye).float()  # (F=N, N) 1 where row j is in fold f's train set
-    n_tr = train_mask.sum(1).clamp_min(1.0)  # (F,)
+    outer_train = (~eye).float()  # (F, N) 1 where row j is in fold f's train set
     pmask_f = pmask.float().unsqueeze(0)  # (1,N,P) broadcast over folds
 
-    def _train_one_l2(l2: float) -> tuple[torch.Tensor, torch.Tensor]:
-        """Train all folds jointly at one L2; return (final held-in loss per fold, Q)."""
-        Q = q_init.unsqueeze(0).repeat(n, 1).clone().requires_grad_(True)  # (F,R)
-        W = torch.zeros(n, rdim, device=dev, requires_grad=True)  # (F,R)
-        B = torch.zeros(n, device=dev, requires_grad=True)  # (F,)
-        opt = torch.optim.Adam([Q, W, B], lr=ATTN_LR)
-        last = None
+    # reduced mean-pool init per fold (fold f's own basis)
+    with torch.no_grad():
+        valid = pmask.float().view(1, n, _p, 1)  # (1,N,P,1)
+        per_ctx_mean = (ar_ft * valid).sum(2) / valid.sum(2).clamp_min(1.0)  # (F,N,R)
+        q_init_f = per_ctx_mean.mean(1)  # (F,R) mean over contexts, per fold
+        q_init_f = q_init_f / (q_init_f.norm(dim=1, keepdim=True) + 1e-9)
+
+    def _train_folds(
+        ar_batch: torch.Tensor,
+        q0: torch.Tensor,
+        train_m: torch.Tensor,
+        l2: float,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Train B fold-fits jointly at one L2 on ``train_m`` rows; return (Q,W,B_bias,pred).
+
+        ar_batch (Bf, N, P, R) each fit's own reduced activations; q0 (Bf, R) init;
+        train_m (Bf, N) 1 where row is in that fit's train set. Returns fitted params
+        + final pred (Bf, N) so the caller can score inner-held-out rows.
+        """
+        bf = ar_batch.shape[0]
+        Q = q0.clone().requires_grad_(True)  # (Bf,R)
+        W = torch.zeros(bf, rdim, device=dev, requires_grad=True)  # (Bf,R)
+        Bb = torch.zeros(bf, device=dev, requires_grad=True)  # (Bf,)
+        opt = torch.optim.Adam([Q, W, Bb], lr=ATTN_LR)
+        n_tr = train_m.sum(1).clamp_min(1.0)  # (Bf,)
+        pm = pmask_f  # (1,N,P)
+        pred = None
         for _ in range(ATTN_EPOCHS):
             opt.zero_grad()
-            scores = torch.einsum("jpr,fr->fjp", ar, Q)  # (F,N,P)
-            scores = scores.masked_fill(pmask_f < 0.5, -1e9)
-            attn = torch.softmax(scores, dim=2)  # (F,N,P)
-            # pred[f,j] = W[f] . pooled_reduced[f,j] = sum_p attn[f,j,p] (ar[j,p].W[f])
-            aw = torch.einsum("jpr,fr->fjp", ar, W)  # (F,N,P) — no (F,N,R) intermediate
-            pred = (attn * aw).sum(2) + B.unsqueeze(1)  # (F,N)
-            resid2 = (pred - yt.unsqueeze(0)) ** 2  # (F,N)
-            mse = (resid2 * train_mask).sum(1) / n_tr  # (F,) train-only MSE
-            reg = l2 * (Q.pow(2).sum(1) + W.pow(2).sum(1))  # (F,)
-            loss = (mse + reg).sum()  # per-fold grads independent
-            loss.backward()
+            scores = torch.einsum("fnpr,fr->fnp", ar_batch, Q)  # (Bf,N,P)
+            scores = scores.masked_fill(pm < 0.5, -1e9)
+            attn = torch.softmax(scores, dim=2)  # (Bf,N,P)
+            aw = torch.einsum("fnpr,fr->fnp", ar_batch, W)  # (Bf,N,P)
+            pred = (attn * aw).sum(2) + Bb.unsqueeze(1)  # (Bf,N)
+            resid2 = (pred - yt.unsqueeze(0)) ** 2  # (Bf,N)
+            mse = (resid2 * train_m).sum(1) / n_tr  # (Bf,) train-only MSE
+            reg = l2 * (Q.pow(2).sum(1) + W.pow(2).sum(1))  # (Bf,)
+            (mse + reg).sum().backward()  # per-fit grads independent
             opt.step()
-            last = (mse + reg).detach()
-        return last, Q.detach()
+        return Q.detach(), W.detach(), Bb.detach(), pred.detach()
 
-    best_loss = torch.full((n,), math.inf, device=dev)
-    best_Q = q_init.unsqueeze(0).repeat(n, 1)  # (F,R)
-    for l2 in ATTN_L2_GRID:
-        fold_loss, Q = _train_one_l2(l2)
-        improved = fold_loss < best_loss
-        best_loss = torch.where(improved, fold_loss, best_loss)
-        best_Q = torch.where(improved.unsqueeze(1), Q, best_Q)
+    # ── Nested-CV L2 selection: inner K-fold split of each outer train set. ──────
+    # inner_train[f, s] (N,): 1 where row is in outer-fold-f's inner-split-s TRAIN set
+    # (i.e. in the outer train set AND NOT the inner-val block s). inner_val is the
+    # complement within the outer train set. Score each L2 on the inner-val rows.
+    rng_inner = np.random.default_rng(seed + 12345)
+    inner_val_mse = np.full((n, len(ATTN_L2_GRID)), np.inf, dtype=np.float64)
+    for f in range(n):
+        tr_ctx = np.array([j for j in range(n) if j != f])
+        rng_inner.shuffle(tr_ctx)
+        blocks = np.array_split(tr_ctx, ATTN_INNER_CV_K)
+        # build (K, N) inner-train masks + (K, N) inner-val masks for this outer fold
+        itr = np.zeros((ATTN_INNER_CV_K, n), dtype=np.float32)
+        ival = np.zeros((ATTN_INNER_CV_K, n), dtype=np.float32)
+        for s, blk in enumerate(blocks):
+            if len(blk) == 0:
+                continue
+            val = set(blk.tolist())
+            for j in tr_ctx:
+                if j in val:
+                    ival[s, j] = 1.0
+                else:
+                    itr[s, j] = 1.0
+        itr_t = torch.from_numpy(itr).to(dev)  # (K,N)
+        ival_t = torch.from_numpy(ival).to(dev)  # (K,N)
+        ar_batch = ar_ft[f].unsqueeze(0).repeat(ATTN_INNER_CV_K, 1, 1, 1)  # (K,N,P,R)
+        q0 = q_init_f[f].unsqueeze(0).repeat(ATTN_INNER_CV_K, 1)  # (K,R)
+        for li, l2 in enumerate(ATTN_L2_GRID):
+            _q, _w, _b, pred = _train_folds(ar_batch, q0, itr_t, l2)  # pred (K,N)
+            resid2 = (pred - yt.unsqueeze(0)) ** 2  # (K,N)
+            denom = ival_t.sum(1).clamp_min(1.0)
+            val_mse = (resid2 * ival_t).sum(1) / denom  # (K,)
+            inner_val_mse[f, li] = float(val_mse.mean().item())  # mean over K inner folds
 
-    # held-out pooled: fold i's reduced query -> position attention -> pool FULL-H a[i]
+    best_l2_idx = inner_val_mse.argmin(axis=1)  # (F,) per-outer-fold best L2 index
+
+    # ── Refit each outer fold at its nested-CV-chosen L2 on the FULL train set. ──
+    # Group folds by chosen L2 so the refit stays vectorized (one batched fit per L2).
+    best_Q = torch.zeros(n, rdim, device=dev)
+    for li, _l2 in enumerate(ATTN_L2_GRID):
+        sel = np.where(best_l2_idx == li)[0]
+        if sel.size == 0:
+            continue
+        sel_t = torch.from_numpy(sel).to(dev)
+        ar_sel = ar_ft[sel_t]  # (B,N,P,R)
+        q0 = q_init_f[sel_t]  # (B,R)
+        train_m = outer_train[sel_t]  # (B,N)
+        Q, _w, _b, _pred = _train_folds(ar_sel, q0, train_m, ATTN_L2_GRID[li])
+        best_Q[sel_t] = Q
+
+    # held-out pooled: fold i's reduced query (fold i's basis) -> position attention
+    # -> pool FULL-H a[i]. ar_ft[i, i] is context i reduced under fold i's train basis.
     with torch.no_grad():
-        scores_i = torch.einsum("ipr,ir->ip", ar, best_Q)  # (N,P) reduced scores
+        ar_ii = ar_ft[torch.arange(n, device=dev), torch.arange(n, device=dev)]  # (N,P,R)
+        scores_i = torch.einsum("ipr,ir->ip", ar_ii, best_Q)  # (N,P) reduced scores
         scores_i = scores_i.masked_fill(pmask.float() < 0.5, -1e9)
         attn_i = torch.softmax(scores_i, dim=1)  # (N,P)
         pooled_out = torch.einsum("ip,iph->ih", attn_i, a)  # (N,H) full-H pool
@@ -242,7 +320,11 @@ def _spearman_brown(r_half: float, k: int = 2) -> float:
 
 
 def _split_half_ryy(
-    per_ctx_units: dict[str, list[list[float]]], *, seed: int, n_splits: int = 50
+    per_ctx_units: dict[str, list[list[float]]],
+    *,
+    seed: int,
+    n_splits: int = 50,
+    ctx_subset: list[str] | None = None,
 ) -> float | None:
     """sqrt(r_yy): split-half over the SPLITTABLE UNIT within each context, corrected.
 
@@ -251,9 +333,12 @@ def _split_half_ryy(
     scores. We split the units of each context into two halves, form two per-context
     means, correlate across contexts (Spearman), average over ``n_splits`` random
     halvings, Spearman-Brown-correct, and return sqrt(reliability). None if no
-    context has >=2 splittable units (undefined split).
+    context has >=2 splittable units (undefined split). ``ctx_subset`` (for the
+    bootstrap-CI resamples) restricts the correlation to a given multiset of contexts.
     """
-    ctx_ids = [c for c, u in per_ctx_units.items() if len(u) >= 2]
+    avail = [c for c, u in per_ctx_units.items() if len(u) >= 2]
+    ctx_ids = ctx_subset if ctx_subset is not None else avail
+    ctx_ids = [c for c in ctx_ids if c in per_ctx_units and len(per_ctx_units[c]) >= 2]
     if len(ctx_ids) < 4:
         return None
     rng = random.Random(seed)
@@ -286,42 +371,224 @@ def _split_half_ryy(
     return math.sqrt(min(r_yy, 1.0))
 
 
-def _reliability_for_behavior(graded_cell: dict, behavior: str, *, seed: int) -> dict:
-    """sqrt(r_yy) per behavior with the MF2 estimator fork + over-judge-draws cross-check.
+def _bootstrap_ryy_ci(
+    per_ctx_units: dict[str, list[list[float]]], *, seed: int, n_boot: int
+) -> list[float] | None:
+    """Cluster-bootstrap 95% CI on sqrt(r_yy) by resampling CONTEXTS with replacement.
 
-    graded_cell: {ctx: {..., probe_scores: [{probe_idx, draw_scores:[N], probe_mean}]}}.
-    - sycophancy: over-ROLLOUTS is the primary split — but the persisted unit here is
-      probe_mean per probe (each #658 sycophancy 'probe' is really one completion in
-      our packing), so we split over those probe-mean units (equivalent to
-      over-rollouts given the packing). over-judge-draws is the cross-check.
-    - refusal / harmful_compliance / all low-m: over-PROBES is primary; over-judge-draws
-      cross-check.
+    Uses the SAME cluster-over-contexts resampling + the SAME B as the primary Δρ CI
+    (plan §6). Returns [lo, hi] (2.5 / 97.5 percentiles of the bootstrap distribution)
+    or None if too few contexts carry a splittable unit.
     """
-    # over-probes / over-rollouts units: each unit = a probe's [probe_mean]
-    units_probes: dict[str, list[list[float]]] = {}
-    # over-judge-draws units: each unit = one judge draw's per-context score list
-    # (we split the N draws; unit d = [that draw's score across probes])
+    avail = [c for c, u in per_ctx_units.items() if len(u) >= 2]
+    if len(avail) < 4:
+        return None
+    rng = random.Random(seed)
+    stats: list[float] = []
+    for b in range(n_boot):
+        draw = [avail[rng.randrange(len(avail))] for _ in range(len(avail))]
+        # de-dup for the split (a resampled context contributes its units once; the
+        # cluster resampling reweights which contexts enter the cross-context corr)
+        r = _split_half_ryy(per_ctx_units, seed=seed + 1000 + b, n_splits=20, ctx_subset=draw)
+        if r is not None:
+            stats.append(r)
+    if len(stats) < max(10, n_boot // 10):
+        return None
+    stats.sort()
+    lo = stats[int(0.025 * len(stats))]
+    hi = stats[int(0.975 * len(stats)) - 1]
+    return [float(lo), float(hi)]
+
+
+def _binomial_variance_term(graded_cell: dict) -> float | None:
+    """Within-context binomial-variance floor on the per-context graded MEAN (per #742).
+
+    For each context, the graded mean is an average of m unit scores (probes /
+    completions) each in [0, 100]. The sampling variance of that mean, treating each
+    unit as a draw with per-context effective m = ``n_judged``, is
+    ``var_within(ctx) = s^2(ctx) / m(ctx)`` (s^2 = the within-context unit-score
+    variance). We report the MEAN over contexts of that within-context sampling
+    variance (on the 0-100 scale) — the irreducible measurement-noise floor the
+    Spearman-Brown reliability is corrected toward. None if no context has m>=2.
+    """
+    terms: list[float] = []
+    for _ctx, cell in graded_cell.items():
+        unit_means = [
+            p["probe_mean"] for p in cell.get("probe_scores", []) if p.get("probe_mean") is not None
+        ]
+        m = len(unit_means)
+        if m < 2:
+            continue
+        var = float(np.var(np.array(unit_means, dtype=np.float64), ddof=1))
+        terms.append(var / m)
+    if not terms:
+        return None
+    return float(np.mean(terms))
+
+
+def _units_for_behavior(graded_cell: dict, behavior: str) -> tuple[dict, dict, str]:
+    """Build the (primary_units, over_judge_draws_units, estimator_label) for MF2.
+
+    - sycophancy (10 completions/probe): PRIMARY split is OVER-ROLLOUTS — each
+      context's splittable units are its per-completion means (``completion_scores``,
+      flattened across probes). Falls back to per-probe means only if no completion
+      arrays are persisted.
+    - refusal / harmful_compliance / all low-m (1 completion/probe): PRIMARY is
+      OVER-PROBES — units are per-probe means.
+    Both forks additionally build the over-judge-draws units (transpose the N draws).
+    """
+    over_rollouts = behavior == "sycophancy"
+    primary_units: dict[str, list[list[float]]] = {}
     draws_by_ctx: dict[str, list[list[float]]] = {}
     for ctx, cell in graded_cell.items():
         ps = cell.get("probe_scores", [])
-        units_probes[ctx] = [[p["probe_mean"]] for p in ps if p.get("probe_mean") is not None]
-        # transpose draws: draw d -> list of that draw's score over probes
-        n_draws = max((len(p.get("draw_scores", [])) for p in ps), default=0)
-        per_draw: list[list[float]] = [[] for _ in range(n_draws)]
+        if over_rollouts:
+            # over-rollouts: each completion mean is a splittable unit (across probes)
+            comp_means = [
+                m
+                for p in ps
+                for m in (p.get("completion_scores") or [])
+                if m is not None and not math.isnan(m)
+            ]
+            if comp_means:
+                primary_units[ctx] = [[m] for m in comp_means]
+            else:  # no completion arrays persisted — degrade to per-probe means
+                primary_units[ctx] = [
+                    [p["probe_mean"]] for p in ps if p.get("probe_mean") is not None
+                ]
+        else:
+            primary_units[ctx] = [[p["probe_mean"]] for p in ps if p.get("probe_mean") is not None]
+        # over-judge-draws: transpose the N per-completion draw arrays
+        per_draw: dict[int, list[float]] = {}
         for p in ps:
+            for comp in p.get("completions", []):
+                for d, s in enumerate(comp.get("draw_scores", [])):
+                    if s is not None:
+                        per_draw.setdefault(d, []).append(float(s))
+            # backward-compat: older probe-level draw_scores (pre-BLOCKER-1 shape)
             for d, s in enumerate(p.get("draw_scores", [])):
                 if s is not None:
-                    per_draw[d].append(float(s))
-        draws_by_ctx[ctx] = [u for u in per_draw if u]
+                    per_draw.setdefault(d, []).append(float(s))
+        draws_by_ctx[ctx] = [v for v in per_draw.values() if v]
+    label = "over_rollouts" if over_rollouts else "over_probes"
+    return primary_units, draws_by_ctx, label
 
-    primary = _split_half_ryy(units_probes, seed=seed)
+
+def _reliability_for_behavior(graded_cell: dict, behavior: str, *, seed: int, n_boot: int) -> dict:
+    """sqrt(r_yy) per behavior: MF2 estimator fork + binomial variance + bracket + CI.
+
+    graded_cell: {ctx: {..., probe_scores: [{probe_idx, completion_scores:[...],
+    completions:[{draw_scores:[N], completion_mean}], probe_mean}]}}.
+    - sycophancy: over-ROLLOUTS primary (split the per-completion means, BLOCKER 1),
+      over-judge-draws cross-check.
+    - refusal / harmful_compliance / all low-m: over-PROBES primary; over-judge-draws
+      cross-check.
+    Returns the full #742 reliability object (CONCERN 6): sqrt_r_yy + bootstrap CI +
+    binomial variance term + the reliability bracket [lo, hi].
+    """
+    primary_units, draws_by_ctx, label = _units_for_behavior(graded_cell, behavior)
+
+    primary = _split_half_ryy(primary_units, seed=seed)
     over_draws = _split_half_ryy(draws_by_ctx, seed=seed + 1)
+    ci = (
+        _bootstrap_ryy_ci(primary_units, seed=seed + 2, n_boot=n_boot)
+        if primary is not None
+        else None
+    )
+    binom_var = _binomial_variance_term(graded_cell)
+
+    # Reliability bracket [lo, hi]: the CI when available; else pair the point estimate
+    # with the binomial-variance-attenuated ceiling as a coarse lower bracket. The
+    # binomial term (measurement-noise floor) is combined per Spearman-Brown intuition:
+    # more within-context sampling noise ⇒ a lower reliability floor, so the bracket
+    # low end is at most the CI low end. We report both the CI and the binomial term so
+    # the analyzer can form the honest bracket; the persisted bracket is the CI when
+    # present, else [point, point] flagged coarse.
+    if ci is not None:
+        bracket_lo, bracket_hi = ci[0], ci[1]
+        bracket_source = "bootstrap_ci95"
+    elif primary is not None:
+        bracket_lo = bracket_hi = primary
+        bracket_source = "point_estimate_only (bootstrap CI unavailable)"
+    else:
+        bracket_lo = bracket_hi = None
+        bracket_source = "undefined (sqrt_r_yy null)"
+
     return {
         "behavior": behavior,
         "sqrt_r_yy": primary,
-        "estimator": "over_rollouts" if behavior == "sycophancy" else "over_probes",
+        "estimator": label,
+        "sqrt_r_yy_ci95": ci,
+        "binomial_variance": binom_var,
+        "bracket_lo": bracket_lo,
+        "bracket_hi": bracket_hi,
+        "bracket_source": bracket_source,
         "sqrt_r_yy_over_judge_draws_crosscheck": over_draws,
     }
+
+
+# ── learning-curve contexts-needed extrapolation (per #742 Stage-2 / CONCERN 6) ─
+
+
+def _fit_power_curve(ns: list[float], vals: list[float]) -> tuple[float, float, float] | None:
+    """Fit metric(n) = a - b * n^{-c} by grid-search on c + least-squares on (a, b).
+
+    Returns (a, b, c) or None if underdetermined (<3 finite points). c is searched on
+    a log grid in [0.1, 2.0]; for each c, (a, b) solve the linear LS of
+    ``val = a - b * x`` with ``x = n^{-c}``. Picks the (a, b, c) with min SSE. Simple
+    and dependency-free (no scipy.optimize) — the grid is fine for a monotone
+    saturating curve on a 7-point n-grid.
+    """
+    pts = [
+        (float(n), float(v))
+        for n, v in zip(ns, vals, strict=True)
+        if v is not None and math.isfinite(v)
+    ]
+    if len(pts) < 3:
+        return None
+    n_arr = np.array([p[0] for p in pts])
+    v_arr = np.array([p[1] for p in pts])
+    best = None
+    for c in np.geomspace(0.1, 2.0, 40):
+        x = n_arr ** (-c)
+        A = np.column_stack([np.ones_like(x), -x])  # val = a*1 + b*(-x)
+        try:
+            coef, *_ = np.linalg.lstsq(A, v_arr, rcond=None)
+        except np.linalg.LinAlgError:
+            continue
+        a, b = float(coef[0]), float(coef[1])
+        sse = float(np.sum((A @ coef - v_arr) ** 2))
+        if best is None or sse < best[0]:
+            best = (sse, a, b, float(c))
+    if best is None:
+        return None
+    return best[1], best[2], best[3]
+
+
+def _contexts_needed(
+    curve_ns: list[int],
+    rho_by_n: list[float | None],
+    target_rho: float,
+) -> float | None:
+    """n needed to reach ``target_rho`` from the fitted power curve (or None).
+
+    Solves ``a - b*n^{-c} = target`` → ``n = (b / (a - target))^{1/c}`` when the fitted
+    asymptote ``a`` exceeds the target. Returns the extrapolated n (may exceed the
+    observed grid), None if the fit failed or the asymptote never reaches the target.
+    """
+    fit = _fit_power_curve([float(n) for n in curve_ns], rho_by_n)
+    if fit is None:
+        return None
+    a, b, c = fit
+    if not (math.isfinite(a) and math.isfinite(b) and math.isfinite(c)) or c <= 0:
+        return None
+    denom = a - target_rho
+    if denom <= 0 or b <= 0:
+        return None  # asymptote below the target — never reachable
+    try:
+        return float((b / denom) ** (1.0 / c))
+    except (ValueError, OverflowError):
+        return None
 
 
 # ── E0 target loading (graded_mean per context) ──────────────────────────────
@@ -444,6 +711,142 @@ def _selection_symmetric_null(
     }
 
 
+# ── SECONDARY DV: answer-profile reconstruction (#722 base-map, CONCERN 7) ────
+
+
+def _load_context_vectors(path: Path) -> dict | None:
+    """Load c_C = context_vectors_mean.pt -> {"C": (Nc, Lc, H), "ids": [Nc]} or None.
+
+    Accepts the #594 layout ``{context_vectors_mean: (Nc,Lc,H), instance_ids: [...]}``
+    plus a couple of key aliases; returns None (skip the DV, never fabricate) when the
+    file is absent or the expected 3-D tensor cannot be found.
+    """
+    if not path.exists():
+        return None
+    blob = torch.load(path, weights_only=False)
+    if not isinstance(blob, dict):
+        return None
+    cvec = None
+    for k in ("context_vectors_mean", "context_vectors", "c_C", "mean"):
+        if k in blob and hasattr(blob[k], "ndim"):
+            cvec = blob[k]
+            break
+    if cvec is None:
+        return None
+    arr = cvec.numpy() if hasattr(cvec, "numpy") else np.asarray(cvec)
+    if arr.ndim != 3:
+        return None
+    ids = None
+    for k in ("instance_ids", "context_ids", "ctx_ids", "ids"):
+        if k in blob and blob[k] is not None:
+            ids = [str(c) for c in blob[k]]
+            break
+    return {"C": arr.astype(np.float64), "ids": ids}
+
+
+def _reconstruction_r2(
+    cc: dict,
+    inputs: dict,
+    layers: list[int],
+    layers_all: list[int],
+    all_ctx: list[str],
+    out_dir: Path,
+    fig_dir: Path,
+) -> dict:
+    """Per (layer x operator) skill-over-mean R2 of ridge(c_C -> operator-summary).
+
+    Reuses the #722 convention exactly: ``ridge_predict_loco_centered`` (LOCO ridge on
+    the train-mean-centered PCA target) + ``skill_over_mean_r2``. The single-vector
+    operators (mean/max/attn_fixed) target their (H,) summary PCA-reduced to
+    ``min(48, n-2)`` dims (train-only within the LOCO ridge's fold standardization);
+    the ``unpooled`` case targets the concatenated per-position summary. Aligns c_C
+    contexts to ``inputs['ctx_ids']`` by id when c_C carries ids, else assumes the
+    stored order matches. Writes ``reconstruction_r2.json`` + the hero figure.
+    """
+    C = cc["C"]  # (Nc, Lc, H)
+    cc_ids = cc["ids"]
+    inp_ids = [str(c) for c in inputs["ctx_ids"]]
+    # kept = contexts present in BOTH c_C and the pooling inputs (order = inp_ids)
+    if cc_ids is not None:
+        cc_pos = {cid: i for i, cid in enumerate(cc_ids)}
+        kept = [(j, cc_pos[cid]) for j, cid in enumerate(inp_ids) if cid in cc_pos]
+    else:
+        m = min(len(inp_ids), C.shape[0])
+        kept = [(j, j) for j in range(m)]
+    if len(kept) < 4:
+        return {"note": f"reconstruction skipped: only {len(kept)} contexts in c_C∩inputs"}
+    inp_idx = [j for j, _ in kept]
+    cc_idx = [k for _, k in kept]
+    n = len(kept)
+    d_tgt = min(48, n - 2)
+
+    single_ops = ["mean", "max", "attn_fixed"]
+    r2: dict[str, dict[str, float | None]] = {op: {} for op in [*single_ops, "unpooled"]}
+    for li in layers:
+        lai = layers_all.index(li)
+        Xc = C[cc_idx, min(lai, C.shape[1] - 1)]  # (n, H) context vectors at this layer
+        # single-vector operator targets
+        for op in single_ops:
+            Y = inputs[op][inp_idx, lai].astype(np.float64)  # (n, H)
+            mu, comps, _ = robust_pca_basis(Y, d_tgt)
+            Yp = (Y - mu) @ comps.T  # (n, d) PCA target (train-only handled in ridge)
+            preds = ridge_predict_loco_centered(Xc, Yp)
+            r2[op][str(li)] = skill_over_mean_r2(preds, Yp)["skill"]
+        # unpooled: per-position summary concatenated then PCA-reduced as one target
+        aligned = inputs["aligned_pos"][inp_idx, lai].astype(np.float64)  # (n, P, H)
+        Yu = aligned.reshape(n, -1)  # (n, P*H)
+        Yu = np.nan_to_num(Yu)
+        mu, comps, _ = robust_pca_basis(Yu, d_tgt)
+        Yup = (Yu - mu) @ comps.T
+        preds = ridge_predict_loco_centered(Xc, Yup)
+        r2["unpooled"][str(li)] = skill_over_mean_r2(preds, Yup)["skill"]
+
+    _make_reconstruction_figure(r2, layers, fig_dir)
+    result = {
+        "n_contexts": n,
+        "d_target_pca": d_tgt,
+        "per_layer_r2": r2,
+        "validity_anchor": {
+            "operator": "mean",
+            "note": "mean @ ~L18 ≈ 0.80 is the #722 pipeline-validity anchor",
+            "mean_r2_by_layer": r2.get("mean", {}),
+        },
+    }
+    _atomic_write_json(out_dir / "reconstruction_r2.json", {"reconstruction": result})
+    logger.info("WROTE %s", out_dir / "reconstruction_r2.json")
+    return result
+
+
+def _make_reconstruction_figure(r2: dict, layers: list[int], fig_dir: Path) -> None:
+    """Per-layer skill-over-mean R² bars/curves per operator (the #722 SECONDARY)."""
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+
+        set_paper_style("blog")
+    except Exception as exc:
+        logger.warning("figure deps unavailable (%s) — skipping reconstruction figure", exc)
+        return
+    fig, ax = plt.subplots(figsize=(6, 4))
+    for op in ("mean", "max", "attn_fixed", "unpooled"):
+        ys = [r2.get(op, {}).get(str(li)) for li in layers]
+        xs = [li for li, v in zip(layers, ys, strict=True) if v is not None]
+        yy = [v for v in ys if v is not None]
+        if xs:
+            ax.plot(xs, yy, marker="o", label=op, alpha=0.85)
+    ax.axhline(0.80, ls="--", color="gray", label="#722 mean@L18 anchor ~0.80")
+    ax.set_xlabel("layer")
+    ax.set_ylabel("skill-over-mean R² (c_C → operator summary)")
+    ax.set_title("answer-profile reconstruction R² per layer (SECONDARY DV)")
+    ax.legend(fontsize=7, ncol=2)
+    savefig_paper(fig, "reconstruction_r2", dir=str(fig_dir))
+    plt.close(fig)
+
+
 def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper above
     load_dotenv()
     ap = argparse.ArgumentParser(description="Issue 812 pooling-operator fit sweep (CPU).")
@@ -462,6 +865,17 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
     ap.add_argument("--num-threads", type=int, default=8)
     ap.add_argument("--skip-learning-curve", action="store_true")
     ap.add_argument("--skip-reconstruction", action="store_true")
+    ap.add_argument(
+        "--context-vectors",
+        default="data/issue_812/context_vectors_mean.pt",
+        help="c_C (issue594 context_vectors_mean.pt) for the reconstruction DV (§4.3)",
+    )
+    ap.add_argument(
+        "--lc-repeats",
+        type=int,
+        default=20,
+        help="B repeats per learning-curve n' subsample (variance + extrapolation CI)",
+    )
     args = ap.parse_args()
 
     if args.device == "cpu":
@@ -496,7 +910,7 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
     # ── Preflight: sqrt(r_yy) non-null for ALL requested behaviors (MF2 gate) ──
     reliability: dict[str, dict] = {}
     for beh in behaviors:
-        rel = _reliability_for_behavior(graded[beh], beh, seed=args.seed)
+        rel = _reliability_for_behavior(graded[beh], beh, seed=args.seed, n_boot=args.n_bootstrap)
         reliability[beh] = rel
     null_ryy = [b for b, r in reliability.items() if r["sqrt_r_yy"] is None]
     if null_ryy:
@@ -534,10 +948,27 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
                 rho, preds = _ridge_rho_from_features(X, y)
                 per_layer_rho[op][li] = rho
                 per_layer_preds[op][li] = preds
-                boot = _cluster_bootstrap_rho(
-                    preds, y, n_boot=args.n_bootstrap, seed=args.seed + li
-                )
-                per_layer_boot[op][li] = {"ci95": boot["ci95"]} if boot else {"ci95": None}
+                # BLOCKER 3(a): a degenerate cell (PCA-collapsed / floor-saturated E0
+                # with almost no rank variation) makes _cluster_bootstrap_rho RAISE
+                # RuntimeError. Guard it per-cell → record ci95=null + bootstrap_error
+                # and CONTINUE, so one bad cell can never abort the whole sweep.
+                try:
+                    boot = _cluster_bootstrap_rho(
+                        preds, y, n_boot=args.n_bootstrap, seed=args.seed + li
+                    )
+                    per_layer_boot[op][li] = {
+                        "ci95": boot["ci95"] if boot else None,
+                        "bootstrap_error": None,
+                    }
+                except RuntimeError as exc:
+                    logger.warning(
+                        "[%s] bootstrap degenerate at op=%s layer=%d — ci95=null (%s)",
+                        beh,
+                        op,
+                        li,
+                        exc,
+                    )
+                    per_layer_boot[op][li] = {"ci95": None, "bootstrap_error": str(exc)}
 
         # selection-symmetric shuffle nulls for the two headline Deltas
         sel_unpooled_mean = _selection_symmetric_null(
@@ -595,10 +1026,39 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
             math.isfinite(d) and math.isfinite(p) and d > p and (ryy is None or d < ryy)
         )
 
+        # BLOCKER 3(b): checkpoint pooling_fit_results.json after EACH behavior lands
+        # (atomic .tmp + os.replace) so a crash on a later behavior/cell never loses
+        # the completed behaviors' fits (CLAUDE.md checkpoint-per-phase).
+        _atomic_write_json(
+            out_dir / "pooling_fit_results.json",
+            {
+                "meta": {
+                    "issue": 812,
+                    "git_commit": _git_commit(),
+                    "created_utc": _now_iso(),
+                    "checkpoint": "partial — mid-sweep incremental",
+                    "behaviors_completed": list(results),
+                    "behaviors_requested": behaviors,
+                    "d_in_pca": D_IN_PCA,
+                    "shuffle_iters": args.shuffle_iters,
+                    "n_bootstrap": args.n_bootstrap,
+                    "seed": args.seed,
+                    "layers": layers,
+                },
+                "results": results,
+                "reliability": reliability,
+                "learning_curve": {},
+                "reconstruction": {},
+            },
+        )
+        logger.info("[%s] checkpointed pooling_fit_results.json (%d done)", beh, len(results))
+
     # ── learning curve (per §6, unless skipped) ────────────────────────────────
+    # Per #742 Stage-2: subsample n' (B repeats each), recompute rho_mean/rho_unpooled/
+    # Δρ with bootstrap variance, and EXTRAPOLATE the contexts needed to reach
+    # 0.90·√(r_yy) with a bootstrap CI (CONCERN 6 — the outcome-(iii) deliverable).
     learning_curve: dict[str, dict] = {}
     if not args.skip_learning_curve:
-        rng = random.Random(args.seed)
         for beh in behaviors:
             if beh not in results:
                 continue
@@ -610,40 +1070,113 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
                 key=lambda li: results[beh]["per_layer_rho"]["mean"].get(str(li)) or -1,
             )
             grid = [g for g in LEARNING_CURVE_GRID if g <= len(kept_ctx)]
+            n_rep = max(4, min(args.n_bootstrap, args.lc_repeats))
             curve = {}
+            # rho_unpooled(n) per bootstrap repeat — feeds the extrapolation + its CI
+            unpooled_reps_by_n: dict[int, list[float]] = {}
             for nprime in grid:
-                idx = list(range(len(kept_ctx)))
-                rng.shuffle(idx)
-                sub = sorted(idx[:nprime])
-                sub_ctx = [ctx_order[j] for j in sub]
-                ysub = y_full[sub]
-                Xmean = inputs["mean"][sub_ctx, layers_all.index(best_li)].astype(np.float64)
-                rmean, _ = _ridge_rho_from_features(Xmean, ysub)
-                aligned = inputs["aligned_pos"][sub_ctx, layers_all.index(best_li)].astype(
-                    np.float64
-                )
-                pdim = aligned.shape[1]
-                feats = [_loco_pca_features(aligned[:, pos], D_IN_PCA) for pos in range(pdim)]
-                Xunp = np.concatenate(feats, axis=1)
-                runp, _ = _ridge_rho_from_features(Xunp, ysub)
+                r_mean_reps, r_unp_reps, delta_reps = [], [], []
+                for rep in range(n_rep):
+                    rng_rep = random.Random(args.seed * 100003 + nprime * 101 + rep)
+                    idx = list(range(len(kept_ctx)))
+                    rng_rep.shuffle(idx)
+                    sub = sorted(idx[:nprime])
+                    sub_ctx = [ctx_order[j] for j in sub]
+                    ysub = y_full[sub]
+                    Xmean = inputs["mean"][sub_ctx, layers_all.index(best_li)].astype(np.float64)
+                    rmean, _ = _ridge_rho_from_features(Xmean, ysub)
+                    aligned = inputs["aligned_pos"][sub_ctx, layers_all.index(best_li)].astype(
+                        np.float64
+                    )
+                    pdim = aligned.shape[1]
+                    feats = [_loco_pca_features(aligned[:, pos], D_IN_PCA) for pos in range(pdim)]
+                    Xunp = np.concatenate(feats, axis=1)
+                    runp, _ = _ridge_rho_from_features(Xunp, ysub)
+                    if rmean is not None:
+                        r_mean_reps.append(rmean)
+                    if runp is not None:
+                        r_unp_reps.append(runp)
+                    if rmean is not None and runp is not None:
+                        delta_reps.append(runp - rmean)
+                unpooled_reps_by_n[nprime] = list(r_unp_reps)
                 curve[str(nprime)] = {
-                    "rho_mean": rmean,
-                    "rho_unpooled": runp,
-                    "delta": (runp - rmean) if (rmean is not None and runp is not None) else None,
+                    "rho_mean": float(np.mean(r_mean_reps)) if r_mean_reps else None,
+                    "rho_mean_std": float(np.std(r_mean_reps)) if r_mean_reps else None,
+                    "rho_unpooled": float(np.mean(r_unp_reps)) if r_unp_reps else None,
+                    "rho_unpooled_std": float(np.std(r_unp_reps)) if r_unp_reps else None,
+                    "delta": float(np.mean(delta_reps)) if delta_reps else None,
+                    "delta_std": float(np.std(delta_reps)) if delta_reps else None,
+                    "n_repeats": n_rep,
                 }
-            learning_curve[beh] = {"best_layer": best_li, "curve": curve}
+            # ── contexts-needed extrapolation to 0.90·√(r_yy) ───────────────────
+            ryy = reliability[beh]["sqrt_r_yy"]
+            target = 0.90 * ryy if ryy is not None else None
+            contexts_needed = None
+            contexts_needed_ci95 = None
+            cn_verdict = "target undefined (sqrt_r_yy null)"
+            if target is not None:
+                ns = list(grid)
+                mean_rho = [
+                    (float(np.mean(unpooled_reps_by_n[n])) if unpooled_reps_by_n[n] else None)
+                    for n in ns
+                ]
+                contexts_needed = _contexts_needed(ns, mean_rho, target)
+                # bootstrap the extrapolation: resample the per-n rho draws, refit
+                cn_boot: list[float] = []
+                for b in range(min(args.n_bootstrap, 500)):
+                    rb = random.Random(args.seed + 20000 + b)
+                    boot_rho = []
+                    for n in ns:
+                        reps = unpooled_reps_by_n[n]
+                        boot_rho.append(reps[rb.randrange(len(reps))] if reps else None)
+                    cn = _contexts_needed(ns, boot_rho, target)
+                    if cn is not None and math.isfinite(cn) and cn > 0:
+                        cn_boot.append(cn)
+                if len(cn_boot) >= 20:
+                    cn_boot.sort()
+                    lo = cn_boot[int(0.025 * len(cn_boot))]
+                    hi = cn_boot[int(0.975 * len(cn_boot)) - 1]
+                    contexts_needed_ci95 = [float(lo), float(hi)]
+                    # "not extrapolable at this precision" if the CI spans >1 order of magnitude
+                    if lo > 0 and hi / lo > 10.0:
+                        cn_verdict = (
+                            "not extrapolable at this precision (CI spans >1 order of magnitude)"
+                        )
+                        contexts_needed = None
+                    else:
+                        cn_verdict = "extrapolated"
+                elif contexts_needed is not None:
+                    cn_verdict = "point estimate only (bootstrap CI unavailable)"
+                else:
+                    cn_verdict = "asymptote below target — not reachable by more contexts"
+            learning_curve[beh] = {
+                "best_layer": best_li,
+                "curve": curve,
+                "target_rho": target,
+                "target_frac_of_ceiling": 0.90,
+                "contexts_needed": contexts_needed,
+                "contexts_needed_ci95": contexts_needed_ci95,
+                "contexts_needed_verdict": cn_verdict,
+            }
 
-    # ── SECONDARY: answer-profile reconstruction (per §4.3, unless skipped) ────
+    # ── SECONDARY: answer-profile reconstruction (per §4.3 / §6.5, unless skipped) ─
+    # The #722-convention base-map DV: per (layer x operator), LOCO ridge
+    # c_C → operator-summary (per-position target for the unpooled case), held-out
+    # skill-over-mean R². The `mean` operator @ L18 ≈ 0.80 is the pipeline-validity
+    # anchor. Computed on the SAME kept-context intersection as the primary DV.
     reconstruction: dict[str, dict] = {}
     if not args.skip_reconstruction:
-        cc_path = Path("data/issue_812/context_vectors_mean.pt")
-        if cc_path.exists():
-            _ = torch.load(cc_path, weights_only=False)  # c_C present; full sweep uses it
-            reconstruction["note"] = "c_C present; reconstruction R2 computed at full-run scale"
+        cc = _load_context_vectors(Path(args.context_vectors))
+        if cc is None:
+            reconstruction = {
+                "note": (
+                    "c_C (issue594 context_vectors_mean.pt) not resolvable "
+                    f"({args.context_vectors}) — reconstruction DV skipped this run"
+                )
+            }
         else:
-            reconstruction["note"] = (
-                "c_C (issue594 context_vectors_mean.pt) not staged locally — "
-                "reconstruction DV deferred to full run (fetch at dispatch)"
+            reconstruction = _reconstruction_r2(
+                cc, inputs, layers, layers_all, all_ctx, out_dir, fig_dir
             )
 
     # ── write results + figures ────────────────────────────────────────────────
@@ -670,17 +1203,14 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
         "reconstruction": reconstruction,
     }
     fit_path = out_dir / "pooling_fit_results.json"
-    with open(fit_path, "w") as f:
-        json.dump(payload, f, indent=2)
+    _atomic_write_json(fit_path, payload)  # final complete write overwrites the partial
     logger.info("WROTE %s", fit_path)
 
     rel_path = out_dir / "reliability_and_learning_curve.json"
-    with open(rel_path, "w") as f:
-        json.dump(
-            {"meta": meta, "reliability": reliability, "learning_curve": learning_curve},
-            f,
-            indent=2,
-        )
+    _atomic_write_json(
+        rel_path,
+        {"meta": meta, "reliability": reliability, "learning_curve": learning_curve},
+    )
     logger.info("WROTE %s", rel_path)
 
     _make_figures(results, reliability, layers, behaviors, fig_dir)

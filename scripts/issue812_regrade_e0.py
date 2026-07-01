@@ -161,6 +161,56 @@ GRADED_JUDGE_SYSTEM = (
 )
 
 
+class LaneCoverageError(RuntimeError):
+    """Fail-loud on a partial per-context lane prefix (BLOCKER 2).
+
+    A source lane that resolves SOME but not ALL requested contexts must NOT
+    silently fit on fewer than the n=50 the experiment measures — the learning
+    curve, the reliability CI, and every "n cannot resolve it" claim are defined
+    at n=50. Raised BEFORE any judging so the run aborts (and the orchestrator
+    posts ``epm:failure v1 failure_class: data``) rather than fabricating a
+    reduced-n target. Never a ``task.py`` shellout (pod-side ban); the raise +
+    the ``coverage_failure_*.json`` sentinel are the signal.
+    """
+
+    def __init__(
+        self, behavior: str, lane: str, requested: list[str], loaded: list[str], missing: list[str]
+    ) -> None:
+        self.behavior = behavior
+        self.lane = lane
+        self.requested = list(requested)
+        self.loaded = list(loaded)
+        self.missing = list(missing)
+        super().__init__(
+            f"lane coverage FAILURE [{lane}] behavior={behavior}: "
+            f"{len(missing)} of {len(requested)} requested contexts missing "
+            f"(loaded {len(loaded)}); missing={missing[:10]}"
+            f"{'...' if len(missing) > 10 else ''} — refusing to fit on a partial "
+            "context set (fail-loud, plan §4.2 / failure_class:data)"
+        )
+
+
+def _write_coverage_failure_sentinel(out_dir: Path, exc: LaneCoverageError) -> Path:
+    """Persist a data-failure sentinel the orchestrator can read (no task.py shellout)."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"coverage_failure_{exc.behavior}.json"
+    payload = {
+        "issue": 812,
+        "failure_class": "data",
+        "created_utc": _now_iso(),
+        "behavior": exc.behavior,
+        "lane": exc.lane,
+        "n_requested": len(exc.requested),
+        "n_loaded": len(exc.loaded),
+        "n_missing": len(exc.missing),
+        "missing_contexts": exc.missing,
+        "message": str(exc),
+    }
+    with open(path, "w") as f:
+        json.dump(payload, f, indent=2)
+    return path
+
+
 def _now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -247,52 +297,115 @@ def _lane1_reuse_map(repo: str, behaviors: list[str], files: list[str]) -> dict[
             if not isinstance(per_ctx, dict) or len(per_ctx) < 50:
                 continue
             sample = next(iter(per_ctx.values()))
-            if isinstance(sample, dict) and ("graded_mean" in sample or "graded" in sample):
-                reuse[beh] = path
-                logger.info("Lane-1 REUSE: behavior %s <- %s", beh, path)
+            if not (isinstance(sample, dict) and ("graded_mean" in sample or "graded" in sample)):
+                continue
+            # BLOCKER 2: only reuse a source that ALSO carries the MF1 sub-context
+            # granularity the reliability ceiling consumes — a graded MEAN alone cannot
+            # feed the split-half √(r_yy). Require probe_scores with either
+            # completion_scores (over-rollouts) or a probe_mean (over-probes).
+            if not _has_mf1_granularity(sample):
+                logger.info(
+                    "Lane-1 candidate %s has graded means for %s but NO MF1 probe/draw "
+                    "arrays — NOT reusable (reliability ceiling needs sub-context units); "
+                    "falling through to independent re-judge",
+                    path,
+                    beh,
+                )
+                continue
+            reuse[beh] = path
+            logger.info("Lane-1 REUSE: behavior %s <- %s", beh, path)
     return reuse
 
 
-def _rows_from_cells(blob: dict) -> list[dict]:
-    """Flatten a #658/#763 gen file's cells to [{probe, completion}, ...]."""
-    rows: list[dict] = []
+def _has_mf1_granularity(cell: dict) -> bool:
+    """True iff a per-context cell carries the MF1 sub-context reliability units.
+
+    The reliability ceiling (MF2) split-half needs a splittable unit WITHIN each
+    context: a ``probe_scores`` array whose entries carry either ``completion_scores``
+    (over-rollouts) or a numeric ``probe_mean`` (over-probes). A cell that only has a
+    ``graded_mean`` scalar is a reuse trap — its ceiling is un-computable — so it is
+    rejected here (BLOCKER 2).
+    """
+    ps = cell.get("probe_scores")
+    if not isinstance(ps, list) or not ps:
+        return False
+    p0 = ps[0]
+    if not isinstance(p0, dict):
+        return False
+    return ("completion_scores" in p0) or ("probe_mean" in p0) or ("draw_scores" in p0)
+
+
+def _probes_from_cells(blob: dict) -> list[dict]:
+    """Group a #658/#763 gen file's cells into PROBES, preserving completions/probe.
+
+    Returns ``[{probe, completions: [comp, ...]}, ...]`` — ONE entry per probe cell,
+    with ALL that probe's completions kept together (BLOCKER 1 / MF1: the sycophancy
+    over-rollouts reliability split needs the 10 completions grouped under their
+    probe, not flattened to 10 individual "probe" rows). #658/#763 gen file:
+    ``{context_id, ..., cells=[{probe, completions:[...]}]}`` — each ``cell`` is one
+    probe; a low-m / refusal / harmful behavior has exactly 1 completion/probe.
+    """
+    probes: list[dict] = []
     for cell in blob.get("cells", []):
         probe = cell.get("probe", "")
-        for comp in cell.get("completions", []):
-            rows.append({"probe": probe, "completion": comp})
-    return rows
+        comps = list(cell.get("completions", []))
+        if comps:  # skip a probe cell that produced no completion
+            probes.append({"probe": probe, "completions": comps})
+    return probes
 
 
 def _load_completions_i658(repo: str, behavior: str, ctx_ids: list[str]) -> dict[str, list[dict]]:
-    """Lane-2 source: {ctx: [{probe, completion}, ...]} off #658 e0_gen.
+    """Lane-2 source: {ctx: [{probe, completions:[...]}, ...]} off #658 e0_gen.
 
-    #658 e0_gen file: {context_id, ..., cells=[{probe, completions:[...]}]}.
+    PROBE-GROUPED (BLOCKER 1): each context maps to a list of probe entries, each
+    carrying ALL its completions. Fail-loud on a missing context (BLOCKER 2): the
+    experiment measures n=50 contexts, so a silently-partial prefix must abort, never
+    fit on fewer contexts. Raises ``LaneCoverageError`` on any missing context.
     """
     out: dict[str, list[dict]] = {}
+    missing: list[str] = []
     for ctx in ctx_ids:
         path = f"{I658_E0GEN_PREFIX}/{ctx}__{behavior}.json"
-        out[ctx] = _rows_from_cells(_hf_json(repo, path))
+        try:
+            out[ctx] = _probes_from_cells(_hf_json(repo, path))
+        except Exception as exc:
+            logger.warning("[%s] Lane-2 #658 missing/unloadable ctx %s (%s)", behavior, ctx, exc)
+            missing.append(ctx)
+    if missing:
+        raise LaneCoverageError(behavior, "lane2-i658", ctx_ids, list(out), missing)
     return out
 
 
 def _load_completions_i763(
     repo: str, behavior: str, ctx_ids: list[str], files: list[str]
 ) -> dict[str, list[dict]] | None:
-    """Lane-3 source: {ctx: [{probe, completion}]} off #763 gen/<beh>/<ctx>.json.
+    """Lane-3 source: {ctx: [{probe, completions:[...]}]} off #763 gen/<beh>/<ctx>.json.
 
-    Returns None if #763's gen/ source is absent for this behavior (caller falls back
-    to #658). #763 gen file: {behavior, context_id, cells=[{probe, completions}]}.
+    Returns None ONLY when #763's ``gen/`` source is ENTIRELY absent for this behavior
+    (no files under the prefix at all) — the caller then falls back to #658. If the
+    prefix is present but PARTIAL (some contexts missing), that is a fail-loud coverage
+    gap (BLOCKER 2), NOT a silent partial fit: raises ``LaneCoverageError`` naming the
+    missing contexts. #763 gen file: {behavior, context_id, cells=[{probe, completions}]}.
     """
     prefix = f"{I763_GEN_PREFIX}/{behavior}/"
     present = {f for f in files if f.startswith(prefix)}
     if not present:
-        return None
+        return None  # source entirely absent — caller falls back to #658
     out: dict[str, list[dict]] = {}
+    missing: list[str] = []
     for ctx in ctx_ids:
         path = f"{prefix}{ctx}.json"
-        if path in present:
-            out[ctx] = _rows_from_cells(_hf_json(repo, path))
-    return out or None
+        if path not in present:
+            missing.append(ctx)
+            continue
+        try:
+            out[ctx] = _probes_from_cells(_hf_json(repo, path))
+        except Exception as exc:
+            logger.warning("[%s] Lane-3 #763 unloadable ctx %s (%s)", behavior, ctx, exc)
+            missing.append(ctx)
+    if missing:
+        raise LaneCoverageError(behavior, "lane3-i763", ctx_ids, list(out), missing)
+    return out
 
 
 # Judge one behavior (N draws/completion), persist per-probe + per-draw
@@ -300,7 +413,7 @@ def _load_completions_i763(
 
 def _judge_behavior(
     behavior: str,
-    completions_by_ctx: dict[str, list[dict]],
+    probes_by_ctx: dict[str, list[dict]],
     *,
     judge_model: str,
     n_draws: int,
@@ -310,17 +423,27 @@ def _judge_behavior(
 ) -> dict[str, dict]:
     """Re-judge one behavior; return {ctx: cell} with the MF1 sub-context granularity.
 
+    ``probes_by_ctx``: {ctx: [{probe, completions:[...]}, ...]} — PROBE-GROUPED
+    (BLOCKER 1). The subsample selects N PROBE cells per context (each keeping ALL its
+    completions), NEVER N flattened completions — so a sycophancy probe's 10
+    completions stay grouped and the over-rollouts split (MF2) has its unit.
+
     Each completion is judged n_draws times @ temp>0 (approximating logit-weighted
     scoring). The batch_judge ``completions`` mapping is {persona: {question:
     [comps]}}; batch_judge keys ``all_scores`` (save_raw) by the ENUMERATION custom_id
     ``f"{persona}__{idx:05d}__{comp_idx:02d}"`` — NOT make_custom_id. To make every
-    (ctx, probe, draw) a distinct, unambiguously-joinable, INDEPENDENTLY dispatched
-    item, we encode the (ctx, probe, draw) tuple into the PERSONA name and give each
-    persona exactly ONE question + ONE completion. Then the custom_id is
-    ``<persona>__00000__00`` and the persona round-trips the tuple. The N draws of one
-    completion are N SEPARATE personas -> N genuine stochastic judge calls (temp>0),
-    never collapsed. CACHING IS DISABLED: the JudgeCache keys on (question, completion)
-    content, identical across the N draws — caching would collapse all N draws to one.
+    (ctx, probe, completion, draw) a distinct, unambiguously-joinable item we encode
+    the FULL tuple into the PERSONA name and give each persona exactly ONE question +
+    ONE completion, so the custom_id is ``<persona>__00000__00`` and the persona
+    round-trips the tuple. The N draws of one completion are N SEPARATE personas -> N
+    genuine stochastic judge calls (temp>0), never collapsed. CACHING IS DISABLED: the
+    JudgeCache keys on (question, completion) content, identical across the N draws —
+    caching would collapse all N draws to one.
+
+    Persisted per (ctx, probe): ``draw_scores[N]`` per completion, a per-completion
+    ``completion_scores`` array (mean over that completion's retained draws), and a
+    per-probe ``probe_mean`` (mean over the probe's completions). ``completion_scores``
+    is the over-rollouts split unit; ``probe_scores`` is the over-probes split unit.
     """
     rubric = GRADED_RUBRICS[behavior]
 
@@ -328,21 +451,25 @@ def _judge_behavior(
         return rubric.format(question=question, completion=completion)
 
     packed: dict[str, dict[str, list[str]]] = {}
-    persona_map: dict[str, tuple[str, int, int]] = {}  # persona -> (ctx, probe_idx, draw)
+    # persona -> (ctx, probe_idx, comp_idx, draw)
+    persona_map: dict[str, tuple[str, int, int, int]] = {}
+    # (ctx, probe_idx) -> #completions kept for that probe (to size the arrays)
+    n_comp_by_probe: dict[tuple[str, int], int] = {}
 
-    for ctx, rows in completions_by_ctx.items():
-        if subsample is not None and len(rows) > subsample:
-            rows = rows[:subsample]
-        for probe_idx, row in enumerate(rows):
-            question = row["probe"]
-            completion = row["completion"]
-            for draw in range(n_draws):
-                # Persona MUST avoid the "__" delimiter batch_judge uses in its
-                # custom_id (<persona>__<idx>__<comp>); we use "::" so a split on
-                # "__" never fractures our tuple.
-                persona = f"{ctx}::p{probe_idx}::d{draw}"
-                packed[persona] = {question: [completion]}
-                persona_map[persona] = (ctx, probe_idx, draw)
+    for ctx, probes in probes_by_ctx.items():
+        # subsample selects PROBE cells (each with all its completions), never rows
+        sel = probes[:subsample] if (subsample is not None and len(probes) > subsample) else probes
+        for probe_idx, probe in enumerate(sel):
+            question = probe["probe"]
+            comps = probe["completions"]
+            n_comp_by_probe[(ctx, probe_idx)] = len(comps)
+            for comp_idx, completion in enumerate(comps):
+                for draw in range(n_draws):
+                    # Persona MUST avoid the "__" delimiter batch_judge uses in its
+                    # custom_id (<persona>__<idx>__<comp>); "::" never fractures the tuple.
+                    persona = f"{ctx}::p{probe_idx}::c{comp_idx}::d{draw}"
+                    packed[persona] = {question: [completion]}
+                    persona_map[persona] = (ctx, probe_idx, comp_idx, draw)
 
     save_raw = out_dir / f"_raw_{behavior}.json"
     save_raw.parent.mkdir(parents=True, exist_ok=True)
@@ -364,19 +491,24 @@ def _judge_behavior(
         raw = json.load(f)
     all_scores: dict[str, dict] = raw.get("all_scores", {})
 
-    # Reduce all_scores -> per (ctx, probe) draw arrays. Each all_scores key is
-    # "<persona>__<idx>__<comp>"; strip the trailing "__NNNNN__NN" (each persona has
-    # exactly one question + one completion) to recover the persona, then join.
-    per_ctx: dict[str, dict[int, list[float]]] = {}
+    # Reduce all_scores -> per (ctx, probe, completion) draw arrays. Each all_scores
+    # key is "<persona>__<idx>__<comp>"; strip the trailing "__NNNNN__NN" (each persona
+    # has exactly one question + one completion) to recover the persona, then join.
+    # per_ctx[ctx][probe_idx][comp_idx] = [draw scores]
+    per_ctx: dict[str, dict[int, dict[int, list[float]]]] = {}
     for cid, score_dict in all_scores.items():
         persona = cid.rsplit("__", 2)[0]  # persona itself contains no "__"
         tup = persona_map.get(persona)
         if tup is None:
             continue
-        ctx, probe_idx, draw = tup
+        ctx, probe_idx, comp_idx, draw = tup
         score = _coerce_score(score_dict)
-        per_ctx.setdefault(ctx, {}).setdefault(probe_idx, [math.nan] * n_draws)
-        per_ctx[ctx][probe_idx][draw] = score
+        (
+            per_ctx.setdefault(ctx, {})
+            .setdefault(probe_idx, {})
+            .setdefault(comp_idx, [math.nan] * n_draws)
+        )
+        per_ctx[ctx][probe_idx][comp_idx][draw] = score
 
     result: dict[str, dict] = {}
     for ctx, probes in per_ctx.items():
@@ -385,18 +517,39 @@ def _judge_behavior(
         n_dropped = 0
         n_judged = 0
         for probe_idx in sorted(probes):
-            draws = probes[probe_idx]
-            valid = [d for d in draws if not math.isnan(d)]
-            n_dropped += n_draws - len(valid)
-            probe_mean = float(sum(valid) / len(valid)) if valid else math.nan
+            comps = probes[probe_idx]
+            completion_entries = []
+            completion_means: list[float] = []
+            for comp_idx in sorted(comps):
+                draws = comps[comp_idx]
+                valid = [d for d in draws if not math.isnan(d)]
+                n_dropped += n_draws - len(valid)
+                comp_mean = float(sum(valid) / len(valid)) if valid else math.nan
+                if not math.isnan(comp_mean):
+                    completion_means.append(comp_mean)
+                completion_entries.append(
+                    {
+                        "completion_idx": comp_idx,
+                        # NaN -> None for JSON (kept in place so array index = draw index)
+                        "draw_scores": [None if math.isnan(d) else d for d in draws],
+                        "completion_mean": None if math.isnan(comp_mean) else comp_mean,
+                    }
+                )
+            probe_mean = (
+                float(sum(completion_means) / len(completion_means))
+                if completion_means
+                else math.nan
+            )
             if not math.isnan(probe_mean):
                 probe_means.append(probe_mean)
                 n_judged += 1
             probe_scores.append(
                 {
                     "probe_idx": probe_idx,
-                    # NaN -> None for JSON (kept in place so array index = draw index)
-                    "draw_scores": [None if math.isnan(d) else d for d in draws],
+                    # per-completion graded means (the over-rollouts split unit, MF2)
+                    "completion_scores": [None if math.isnan(m) else m for m in completion_means],
+                    # full per-completion draw arrays (over-judge-draws split unit)
+                    "completions": completion_entries,
                     "probe_mean": None if math.isnan(probe_mean) else probe_mean,
                 }
             )
@@ -517,17 +670,24 @@ def main() -> int:
             continue
 
         subsample = args.syco_subsample if beh == "sycophancy" else None
-        if beh in HIGH_M:
-            comps = _load_completions_i658(args.repo, beh, ctx_ids)
-            lanes_fired[beh] = "lane2-i658"
-        else:
-            comps = _load_completions_i763(args.repo, beh, ctx_ids, files)
-            if comps is None:
-                logger.info("[%s] Lane-3 #763 gen/ absent — fall back to #658 e0_gen", beh)
+        try:
+            if beh in HIGH_M:
                 comps = _load_completions_i658(args.repo, beh, ctx_ids)
-                lanes_fired[beh] = "lane3-fallback-i658"
+                lanes_fired[beh] = "lane2-i658"
             else:
-                lanes_fired[beh] = "lane3-i763"
+                comps = _load_completions_i763(args.repo, beh, ctx_ids, files)
+                if comps is None:
+                    logger.info("[%s] Lane-3 #763 gen/ absent — fall back to #658 e0_gen", beh)
+                    comps = _load_completions_i658(args.repo, beh, ctx_ids)
+                    lanes_fired[beh] = "lane3-fallback-i658"
+                else:
+                    lanes_fired[beh] = "lane3-i763"
+        except LaneCoverageError as exc:
+            # BLOCKER 2: a partial per-context prefix is a data failure, NOT a
+            # silent reduced-n fit. Persist a sentinel + fail loud BEFORE judging.
+            sentinel = _write_coverage_failure_sentinel(out_dir, exc)
+            logger.error("COVERAGE FAILURE for %s — wrote %s; aborting", beh, sentinel)
+            raise
 
         res = _judge_behavior(
             beh,
