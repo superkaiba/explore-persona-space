@@ -1,0 +1,24 @@
+# .gitattributes — introduced by workflow-fix task #787.
+#
+# Append-only JSONL task logs use a union merge so concurrent sessions'
+# appends never produce a hard merge conflict on a LOCAL merge/rebase.
+# events.jsonl is strictly append-only (task_workflow._append_jsonl_line,
+# O_APPEND); comments.jsonl is append-dominant (the dashboard may DELETE a
+# row to CLOSE an anchor-comment) — union is still preferred there because a
+# resurrected closed comment is a benign, self-healing UI artifact, whereas a
+# hard conflict blocks the whole Step-10d merge.
+#
+# SCOPE CAVEAT (verified 2026-07-01): GitHub's server-side `gh pr merge
+# --rebase` does NOT honor user-defined .gitattributes merge drivers — it uses
+# GitHub's own attributes. So merge=union takes effect ONLY on LOCAL merges/
+# rebases (the Step-10d merge-conflict-recovery `git merge origin/main`, and
+# the local `git pull --rebase=merges` fallbacks). Server-side conflict
+# avoidance is handled by the Step-10d Guard-1 foreign-folder strip + the
+# surgical-additive fast-path, NOT by this file.
+tasks/**/events.jsonl merge=union
+tasks/**/comments.jsonl merge=union
+
+# REGISTRY.json is deliberately NOT unioned — it is a last-writer-wins JSON
+# snapshot (atomic write-temp+rename), never append-only; a union merge would
+# concatenate two JSON objects into invalid JSON.
+# tasks/REGISTRY.json  -> (intentionally omitted; default last-writer-wins)
