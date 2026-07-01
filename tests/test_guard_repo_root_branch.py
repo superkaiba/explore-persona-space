@@ -289,6 +289,102 @@ def test_nonexistent_ref_fails_soft():
 
 
 # ---------------------------------------------------------------------------
+# MUST BLOCK — compound-command masking (#804 / #796 r3 Codex concern).
+# A later safe/scoped clause must NOT mask an earlier dangerous repo-root
+# clause. Clause-local parsing classifies each clause independently; the first
+# blocking clause wins. Concern id: compound-command-masking-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch feature ; git switch main",  # later switch main masks earlier block
+        "git switch feature && git switch main",  # same, && separator
+        "git checkout HEAD~1 ; git checkout main",  # greedy-sed picked the last checkout arg
+        "git switch feature ; cd .claude/worktrees/x",  # trailing cd worktree scoped earlier switch
+    ],
+)
+def test_compound_masking_still_blocks(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — `||` / `|` do NOT scope a `cd worktree` onto the following git
+# clause (#804 / #796 r3 Codex concern, the || case named explicitly).
+#   `cd X || git switch f`: || runs git ONLY when cd FAILED -> cwd unchanged
+#     (repo root) -> git runs off-worktree. Verified: `cd /nonexistent || pwd`
+#     prints the repo-root cwd.
+#   `cd X | git switch f`: | isolates cd in a subshell -> git runs in the
+#     parent cwd (repo root). Verified: `cd /tmp | pwd` prints the parent cwd.
+# The clause-local parser must RESET the `scoped` latch when the separator
+# BEFORE a clause is || or |. Concern id: compound-command-masking-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/foo || git switch feature",  # || runs git on cd FAILURE (repo root)
+        "cd .claude/worktrees/foo | git switch feature",  # | isolates cd (subshell), git in parent
+    ],
+)
+def test_or_pipe_cd_scope_does_not_latch(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — a clause that itself moves off main blocks regardless of the ||
+# or | connector (no cd-scoping involved; the git-switch-feature clause is
+# dangerous on its own). Guards against an over-correction that disables ALL
+# blocking after a || / |. Concern id: compound-command-masking-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git switch feature || echo done",  # switch feature clause blocks; || irrelevant
+        "git switch feature | tee log.txt",  # switch feature clause blocks; tee not a git-verb
+    ],
+)
+def test_off_main_clause_blocks_under_or_pipe(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — glued short-flag branch creation (#804 / #796 r3 Claude concern).
+# `(-b|-B)\b` missed the glued form `-bfoo`. Concern id:
+# checkout-glued-shortflag-b-leak.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize("cmd", ["git checkout -bfoo", "git checkout -Bfoo"])
+def test_glued_shortflag_branch_creation_still_blocks(cmd):
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — legitimate compounds the fleet uses, including legitimate || / |
+# shapes that DON'T scope a cd onto a git switch. Clause-local parsing must keep
+# these passing. NOT guarded by @on_main (must never trap in either repo-root
+# HEAD state).
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "cd .claude/worktrees/foo && git switch bar",  # cd worktree scopes the later switch (&&)
+        "cd .claude/worktrees/foo ; git switch bar",  # cd worktree scopes the later switch (;)
+        "cd /tmp/foo && git checkout abc1234",  # cd /tmp scopes
+        "git -C .claude/worktrees/foo switch bar",  # per-clause -C scope
+        "git status ; git -C .claude/worktrees/foo switch bar",  # -C scope on a compound
+        "git switch main | tee log.txt",  # pipe-split: switch main allow-arm + non-git tail
+        "git switch main && echo done",  # chained after return-to-main
+        "git switch main || echo done",  # || chaining return-to-main + non-git recovery
+        "git status || git switch main",  # || chaining a no-op status + return-to-main
+    ],
+)
+def test_compound_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
 # Fail-soft — malformed / empty / non-JSON stdin exits 0 (never traps).
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
