@@ -26,6 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import issue778_lib as lib
+from huggingface_hub import HfApi
 
 from explore_persona_space.orchestrate.env import load_dotenv
 from explore_persona_space.orchestrate.hub import (
@@ -39,7 +40,11 @@ load_dotenv()
 
 
 def _verify_prefix(repo_id: str, repo_type: str, prefix: str, min_files: int = 1) -> int:
-    files = list_repo_files_complete(repo_id, repo_type=repo_type, revision="main")
+    # list_repo_files_complete's first positional is an HfApi instance (already
+    # token-scoped); the repo_id is the SECOND positional. Passing repo_id first
+    # bound it to the api slot and raised "missing 1 required positional
+    # argument: 'repo_id'" (issue #778 epm:failure v3).
+    files = list_repo_files_complete(HfApi(), repo_id, repo_type=repo_type, revision="main")
     hits = [f for f in files if f.startswith(prefix)]
     if len(hits) < min_files:
         raise RuntimeError(
