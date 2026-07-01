@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+
+**Methodology:** [docs/methodology/issue_761.md](https://github.com/superkaiba/explore-persona-space/blob/01b320e74cb491cc7e2c46fc565802ea7a0b11f5/docs/methodology/issue_761.md) · [gist](https://gist.github.com/superkaiba/6112d837ac1d06130cdbe181cc0cfe54)
 ## Takeaways
 
 - Averaging the base-model answer activation over the **same** probes the behavior is judged on raises the held-out predictor ρ: **sycophancy 0.63→0.72, refusal 0.62→0.90, harmful 0.56→0.74** (LOCO ridge, n = 50).
