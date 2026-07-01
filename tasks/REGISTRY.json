@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 802,
+  "highest_id": 803,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5158,6 +5158,13 @@
       "path": "tasks/proposed/802",
       "status": "proposed",
       "title": "workflow: promote bug-class sibling-sweep from reconciler memory into primary code-reviewer + implementer (stop review whack-a-mole)"
+    },
+    "803": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/803",
+      "status": "proposed",
+      "title": "workflow-fix: clean_experiment_downloads.py hangs on pod (task_workflow.repo_root auto-routing on MooseFS)"
     },
     "81": {
       "has_clean_result": false,
