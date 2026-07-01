@@ -1,2 +1,3 @@
 {"ts": "2026-07-01T05:14:37Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-07-01T05:16:27Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities. Task body carries a fully-specified workflow-fix candidate (target files, diff sketch, constraints, related task #778, confidence: high). Autonomous session; taste/design-preference calls (default timeout ~600-900s, next-GCP-rung vs terminal RunPod ordering) resolved by planner. Proceeding to adversarial planning."}
+{"ts": "2026-07-01T05:16:28Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}

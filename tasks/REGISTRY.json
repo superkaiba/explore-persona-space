@@ -5008,8 +5008,8 @@
     "783": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/783",
-      "status": "proposed",
+      "path": "tasks/planning/783",
+      "status": "planning",
       "title": "workflow-fix: GCP H100 queue-wait timeout -> RunPod failover (auto lane)"
     },
     "8": {
