@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 807,
+  "highest_id": 808,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5193,6 +5193,13 @@
       "path": "tasks/archived/807",
       "status": "archived",
       "title": "workflow-fix: verify_task_body.py should check per-figure meta.json commit against body URL"
+    },
+    "808": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/808",
+      "status": "proposed",
+      "title": "workflow-fix: resolve SPEC.md Lens 12 sentence-count contradiction (from #779 reconciler)"
     },
     "81": {
       "has_clean_result": false,
