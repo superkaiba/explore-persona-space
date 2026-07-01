@@ -2085,7 +2085,7 @@ Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
 |---|---|---|
 | PASS-class | PASS-class | **Agree.** `final_verdict = PASS`. CONCERNS bullets from either reviewer surface to the implementer as opportunistic suggestions; do not block. |
 | FAIL | FAIL — overlapping blockers | **Agree.** `final_verdict = FAIL`. Bounce to implementer (one round). |
-| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
+| FAIL | FAIL — disjoint blockers | **Union, no reconciler.** Build a combined blocker list (Claude's blockers ∪ Codex's blockers) — INCLUDING every `### Bug-class sweep: <class>` sibling enumeration from either verdict — and pass it to the implementer in the next-round brief. No new marker — both `epm:code-review v<n>` and `epm:code-review-codex v<n>` already exist on the task. `final_verdict = FAIL`. Bounce (one round). |
 | PASS-class | FAIL (or vice versa) | **Disagreement.** Spawn `reconciler` agent (Claude, fresh context). Brief: role=`code-reviewer`, task=N, round=n, both event bodies, diff path. Reconciler reads both verdicts + the artifact, posts `epm:review-reconcile v<n>` with binding PASS or FAIL. `final_verdict = reconciler's verdict`. |
 
 The reconciler may NOT add findings beyond what either reviewer raised —
@@ -2247,8 +2247,14 @@ the same logic.
 - **`final_verdict == FAIL` + revision_round<5** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
-  present) as part of the brief. Implementer posts v<n+1>; loop back
-  to 5a with `revision_round = n+1`.
+  present) as part of the brief. **When either reviewer verdict (or the
+  disjoint-blocker union) contains a `### Bug-class sweep: <class>`
+  enumeration, thread the FULL sibling list — every enumerated
+  `file:LINE`, not just the top finding — into the implementer's
+  punch-list brief, so the round-N+1 edit is class-scoped and the
+  implementer's class-hardening carve-out (experiment-implementer.md
+  revision-round rule) fires on the whole class.** Implementer posts
+  v<n+1>; loop back to 5a with `revision_round = n+1`.
 - **`final_verdict == FAIL` + revision_round>=5** -> **CAP-HIT:
   strip-then-continue-or-surface** (replaces the retired cap-3 strategy
   pivot; see CLAUDE.md "STATE-TO-`blocked` criteria" and workflow.yaml

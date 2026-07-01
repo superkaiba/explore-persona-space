@@ -382,6 +382,19 @@ both reviewers are graded against the same standard. Read
   task's `R_eval.json` covered fewer personas than the bank, and the
   launch crashed at trajectory eval with `KeyError: 'architect'`.) Without
   this in the prompt, Codex inherits the same gap.
+- The **Step 3.7 bug-class sibling sweep** rule VERBATIM (+ its enforcing
+  Rule 14). This is load-bearing: copy the MANDATORY-for-every-Critical/Major
+  scope, the 4-target sweep order (whole file → sibling family in the file →
+  sibling scripts sharing the data contract → parallel figure-vs-analyze
+  layers), the `### Bug-class sweep: <class>` reporting heading, and the
+  load-bearing-vs-secondary sibling classification (load-bearing sibling = its
+  own Critical + enumerated in the FAIL; secondary = standing rec; a finding
+  with no siblings adds a one-line "no siblings" note — never balloon output)
+  so Codex enumerates the whole bug CLASS, not the cited line. Without this in
+  the prompt, Codex reports one instance per round and siblings surface
+  one-per-round (incident #779 whack-a-mole). Codex twins never emit
+  workflow-fix candidates for a sweep finding — surface siblings in the verdict
+  body only.
 - The Rules item 12 **blocker grounding + mechanizability** rule VERBATIM —
   every Critical/Major finding cites a concrete artifact location
   (`file.py:LINE`, diff hunk, plan section; the reconciler discards
@@ -473,7 +486,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
