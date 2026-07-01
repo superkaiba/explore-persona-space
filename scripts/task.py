@@ -125,6 +125,43 @@ def _safe_echo(text: str, *, context: str) -> None:
             pass
 
 
+def _safe_print(*args: object, context: str = "task.py", **kwargs: object) -> None:
+    """``print()`` that swallows BrokenPipeError on a torn stdout pipe.
+
+    Read-only commands emit multi-line output a downstream ``| head`` /
+    ``| grep -q .`` routinely closes early; the resulting BrokenPipeError must
+    NOT surface as a traceback / nonzero exit — a torn pipe is not a failure
+    for a read-only command. Prints a one-line suppression notice to stderr and
+    redirects stdout to devnull so the interpreter-shutdown flush can't re-raise
+    and flip the exit code. Generalizes ``_safe_echo`` for arbitrary args.
+
+    Includes ``sys.stdout.flush()`` INSIDE the ``try`` (mirroring
+    ``_safe_echo``): a buffered-pipe BrokenPipeError often only surfaces at
+    flush/close, not at the ``print`` call, so the flush is what makes the
+    guard actually catch it. ``context`` names the subcommand for the notice.
+    """
+    try:
+        print(*args, **kwargs)
+        sys.stdout.flush()
+    except BrokenPipeError:
+        print(
+            f"{context}: stdout closed early (BrokenPipeError) — suppressed.",
+            file=sys.stderr,
+        )
+        # Point stdout at devnull so the interpreter-shutdown flush of the
+        # broken pipe can't raise again and flip the exit status. Best-effort:
+        # when stdout has no real fileno (pytest capture) the print is already
+        # abandoned either way.
+        try:
+            devnull_fd = os.open(os.devnull, os.O_WRONLY)
+            try:
+                os.dup2(devnull_fd, sys.stdout.fileno())
+            finally:
+                os.close(devnull_fd)
+        except Exception:
+            pass
+
+
 def cmd_view(args: argparse.Namespace) -> None:
     task = get_task(args.number)
     events = list_events(task["id"])
@@ -141,28 +178,33 @@ def cmd_view(args: argparse.Namespace) -> None:
             "events": events,
             "n_events": len(events),
         }
-        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        _safe_print(json.dumps(payload, indent=2, ensure_ascii=False), context="task.py view")
         return
     if args.rich:
         _print_rich_view(task, events)
         return
-    print(f"# task #{task['id']} — {task['frontmatter'].get('title', '')}")
-    print(f"  path:    {task['path']}")
-    print(f"  status:  {task['status']}")
-    print(f"  kind:    {task['frontmatter'].get('kind', '')}")
-    print(f"  tags:    {task['frontmatter'].get('tags') or []}")
+    _safe_print(
+        f"# task #{task['id']} — {task['frontmatter'].get('title', '')}", context="task.py view"
+    )
+    _safe_print(f"  path:    {task['path']}", context="task.py view")
+    _safe_print(f"  status:  {task['status']}", context="task.py view")
+    _safe_print(f"  kind:    {task['frontmatter'].get('kind', '')}", context="task.py view")
+    _safe_print(f"  tags:    {task['frontmatter'].get('tags') or []}", context="task.py view")
     parent = task["frontmatter"].get("parent_id")
     if parent:
-        print(f"  parent:  #{parent}")
-    print(f"  clean-result: {bool(task['frontmatter'].get('has_clean_result'))}")
+        _safe_print(f"  parent:  #{parent}", context="task.py view")
+    _safe_print(
+        f"  clean-result: {bool(task['frontmatter'].get('has_clean_result'))}",
+        context="task.py view",
+    )
     if goal_value:
-        print(f"  goal:    {goal_value}")
-    print()
-    print(f"## Last {min(10, len(events))} events of {len(events)}")
+        _safe_print(f"  goal:    {goal_value}", context="task.py view")
+    _safe_print(context="task.py view")
+    _safe_print(f"## Last {min(10, len(events))} events of {len(events)}", context="task.py view")
     for ev in events[-10:]:
         note = ev.get("note", "")
         note = (note[:80] + "…") if len(note) > 80 else note
-        print(f"  {ev['ts']}  {ev['kind']:30s}  {note}")
+        _safe_print(f"  {ev['ts']}  {ev['kind']:30s}  {note}", context="task.py view")
 
 
 def _print_rich_view(task: dict, events: list[dict]) -> None:
@@ -180,36 +222,38 @@ def _print_rich_view(task: dict, events: list[dict]) -> None:
     notes to keep within ~60 lines total.
     """
     fm = task["frontmatter"]
-    print(f"# task #{task['id']} — {fm.get('title', '')}")
-    print()
+    _safe_print(f"# task #{task['id']} — {fm.get('title', '')}", context="task.py view")
+    _safe_print(context="task.py view")
     # 1. Status
-    print(f"Status: {task['status']}")
-    print(f"  path: {task['path']}")
-    print()
+    _safe_print(f"Status: {task['status']}", context="task.py view")
+    _safe_print(f"  path: {task['path']}", context="task.py view")
+    _safe_print(context="task.py view")
     # 2. Frontmatter (key fields only — exclude the bulky `title` we already
     # printed and any nested structures that would overflow).
-    print("Frontmatter:")
+    _safe_print("Frontmatter:", context="task.py view")
     for key in ("kind", "parent_id", "tags", "has_clean_result", "classification", "created_at"):
         if key in fm and fm[key] not in (None, [], ""):
-            print(f"  {key}: {fm[key]}")
-    print()
+            _safe_print(f"  {key}: {fm[key]}", context="task.py view")
+    _safe_print(context="task.py view")
     # 3. Body excerpt — first 30 lines.
     body_lines = task["body"].splitlines()
     excerpt = body_lines[:30]
-    print(f"Body excerpt ({len(excerpt)} of {len(body_lines)} lines):")
+    _safe_print(
+        f"Body excerpt ({len(excerpt)} of {len(body_lines)} lines):", context="task.py view"
+    )
     for line in excerpt:
         # Truncate any one body line to ~110 chars so we don't blow up.
-        print(f"  {line[:110]}")
-    print()
+        _safe_print(f"  {line[:110]}", context="task.py view")
+    _safe_print(context="task.py view")
     # 4. Last 5 events.
     last_n = min(5, len(events))
-    print(f"Last {last_n} events (of {len(events)}):")
+    _safe_print(f"Last {last_n} events (of {len(events)}):", context="task.py view")
     for ev in events[-5:]:
         note = ev.get("note", "")
         # First line of note, truncated.
         first_line = note.splitlines()[0] if note else ""
         first_line = (first_line[:80] + "…") if len(first_line) > 80 else first_line
-        print(f"  {ev['ts']}  {ev['kind']:30s}  {first_line}")
+        _safe_print(f"  {ev['ts']}  {ev['kind']:30s}  {first_line}", context="task.py view")
     # 5. Latest reviewer verdict (optional).
     critique_events = [e for e in events if e["kind"] == "epm:clean-result-critique"]
     if critique_events:
@@ -230,8 +274,8 @@ def _print_rich_view(task: dict, events: list[dict]) -> None:
         if not verdict_line:
             verdict_line = note.splitlines()[0] if note else "(no note)"
         verdict_line = (verdict_line[:90] + "…") if len(verdict_line) > 90 else verdict_line
-        print()
-        print(f"Latest reviewer verdict: {verdict_line}")
+        _safe_print(context="task.py view")
+        _safe_print(f"Latest reviewer verdict: {verdict_line}", context="task.py view")
 
 
 def cmd_create(args: argparse.Namespace) -> None:
@@ -548,11 +592,14 @@ def cmd_list_by_status(args: argparse.Namespace) -> None:
                 rows = rows[: args.limit]
                 break
     if args.json:
-        print(json.dumps(rows, indent=2))
+        _safe_print(json.dumps(rows, indent=2), context="task.py list-by-status")
         return
-    print(f"{'ID':>5}  {'STATUS':<22}  {'KIND':<12}  TITLE")
+    _safe_print(f"{'ID':>5}  {'STATUS':<22}  {'KIND':<12}  TITLE", context="task.py list-by-status")
     for row in rows:
-        print(f"{row['id']:>5}  {row['status']:<22}  {row['kind']:<12}  {row['title']}")
+        _safe_print(
+            f"{row['id']:>5}  {row['status']:<22}  {row['kind']:<12}  {row['title']}",
+            context="task.py list-by-status",
+        )
 
 
 def cmd_list_children(args: argparse.Namespace) -> None:
@@ -560,15 +607,21 @@ def cmd_list_children(args: argparse.Namespace) -> None:
     follow-up tasks). `--json` emits the row list verbatim (`[]` when none)."""
     rows = list_children(args.number)
     if args.json:
-        print(json.dumps(rows, indent=2))
+        _safe_print(json.dumps(rows, indent=2), context="task.py list-children")
         return
     if not rows:
-        print(f"(no tasks with parent_id == {args.number})")
+        _safe_print(f"(no tasks with parent_id == {args.number})", context="task.py list-children")
         return
-    print(f"{'ID':>5}  {'STATUS':<22}  {'KIND':<12}  {'CLEAN':<5}  TITLE")
+    _safe_print(
+        f"{'ID':>5}  {'STATUS':<22}  {'KIND':<12}  {'CLEAN':<5}  TITLE",
+        context="task.py list-children",
+    )
     for row in rows:
         clean = "yes" if row["has_clean_result"] else "no"
-        print(f"{row['id']:>5}  {row['status']:<22}  {row['kind']:<12}  {clean:<5}  {row['title']}")
+        _safe_print(
+            f"{row['id']:>5}  {row['status']:<22}  {row['kind']:<12}  {clean:<5}  {row['title']}",
+            context="task.py list-children",
+        )
 
 
 def cmd_list_clean_results(args: argparse.Namespace) -> None:
@@ -625,13 +678,18 @@ def cmd_list_clean_results(args: argparse.Namespace) -> None:
     if args.limit:
         rows = rows[: args.limit]
     if args.json:
-        print(json.dumps(rows, indent=2))
+        _safe_print(json.dumps(rows, indent=2), context="task.py list-clean-results")
         return
-    print(f"{'ID':>5}  {'CLASS':<11}  {'DATE':<10}  TITLE")
+    _safe_print(
+        f"{'ID':>5}  {'CLASS':<11}  {'DATE':<10}  TITLE", context="task.py list-clean-results"
+    )
     for r in rows:
         cls = str(r.get("classification") or "")
         date = str(r.get("promoted_at") or "")[:10]
-        print(f"{r['id']:>5}  {cls:<11}  {date:<10}  {r['title']}")
+        _safe_print(
+            f"{r['id']:>5}  {cls:<11}  {date:<10}  {r['title']}",
+            context="task.py list-clean-results",
+        )
 
 
 def cmd_list_markers(args: argparse.Namespace) -> None:
@@ -639,20 +697,20 @@ def cmd_list_markers(args: argparse.Namespace) -> None:
     if args.prefix:
         events = [e for e in events if e["kind"].startswith(args.prefix)]
     if args.json:
-        print(json.dumps(events, indent=2))
+        _safe_print(json.dumps(events, indent=2), context="task.py list-markers")
         return
     for ev in events:
         note = ev.get("note", "")
         note = (note[:80] + "…") if len(note) > 80 else note
-        print(f"{ev['ts']}  {ev['kind']:30s}  {note}")
+        _safe_print(f"{ev['ts']}  {ev['kind']:30s}  {note}", context="task.py list-markers")
 
 
 def cmd_latest_marker(args: argparse.Namespace) -> None:
     ev = latest_event(args.number, prefix=args.prefix)
     if ev is None:
-        print("(no events)")
+        _safe_print("(no events)", context="task.py latest-marker")
         return
-    print(json.dumps(ev, indent=2))
+    _safe_print(json.dumps(ev, indent=2), context="task.py latest-marker")
 
 
 _SET_BODY_MIN_CHARS = 500
@@ -786,7 +844,7 @@ def cmd_new_plan_version(args: argparse.Namespace) -> None:
 
 def cmd_find(args: argparse.Namespace) -> None:
     path = find_task_path(args.number)
-    print(str(path))
+    _safe_print(str(path), context="task.py find")
 
 
 def cmd_tasks_dir(_args: argparse.Namespace) -> None:
@@ -798,7 +856,7 @@ def cmd_tasks_dir(_args: argparse.Namespace) -> None:
     HEAD, etc.) — never leaks a raw traceback to the user.
     """
     try:
-        print(str(tasks_dir()))
+        _safe_print(str(tasks_dir()), context="task.py tasks-dir")
     except RuntimeError as e:
         print(f"task.py tasks-dir: {e}", file=sys.stderr)
         sys.exit(1)
@@ -808,30 +866,36 @@ def _print_reconcile_report(rep: ReconcileReport) -> None:
     """Render a ReconcileReport: per-class counts, then the per-task change
     lines, then the empty-stub orientation line + skips."""
     verb = "applied" if rep.applied else "would apply"
-    print(
+    _safe_print(
         f"reconcile: {len(rep.stale_real)} stale path(s) {verb}, "
         f"{len(rep.missing_real)} missing entry(ies) {verb}, "
-        f"{len(rep.empty_stubs)} empty stub(s), {len(rep.skipped)} skipped"
+        f"{len(rep.empty_stubs)} empty stub(s), {len(rep.skipped)} skipped",
+        context="task.py audit",
     )
     for c in rep.stale_real:
-        print(f"  [stale_real] #{c.task_id}: {c.detail}")
+        _safe_print(f"  [stale_real] #{c.task_id}: {c.detail}", context="task.py audit")
     for c in rep.missing_real:
-        print(f"  [missing_real] #{c.task_id}: {c.detail}")
+        _safe_print(f"  [missing_real] #{c.task_id}: {c.detail}", context="task.py audit")
     if rep.highest_id_bumped is not None:
-        print(f"  [highest_id] {rep.highest_id_bumped.detail}")
+        _safe_print(f"  [highest_id] {rep.highest_id_bumped.detail}", context="task.py audit")
     if rep.empty_stubs:
-        print("empty stubs (NOT reconciled — surfaced for manual triage):")
+        _safe_print(
+            "empty stubs (NOT reconciled — surfaced for manual triage):", context="task.py audit"
+        )
         for c in rep.empty_stubs:
-            print(f"  [empty_stub] #{c.task_id}: {c.detail}")
-        print(
+            _safe_print(f"  [empty_stub] #{c.task_id}: {c.detail}", context="task.py audit")
+        _safe_print(
             "  These are empty task stubs on `main` (no body.md / events.jsonl). "
             "Their bodies likely live on `issue-<N>` branches that haven't merged. "
-            "Manual triage required."
+            "Manual triage required.",
+            context="task.py audit",
         )
     if rep.skipped:
-        print("skipped (NOT reconciled — registry entry left untouched):")
+        _safe_print(
+            "skipped (NOT reconciled — registry entry left untouched):", context="task.py audit"
+        )
         for c in rep.skipped:
-            print(f"  [skipped] #{c.task_id}: {c.detail}")
+            _safe_print(f"  [skipped] #{c.task_id}: {c.detail}", context="task.py audit")
 
 
 def cmd_audit(args: argparse.Namespace) -> None:
@@ -845,16 +909,16 @@ def cmd_audit(args: argparse.Namespace) -> None:
         # Report-only mode (unchanged): list drift, exit 1 on any problem.
         problems = audit()
         if not problems:
-            print("AUDIT PASS — registry and filesystem agree")
+            _safe_print("AUDIT PASS — registry and filesystem agree", context="task.py audit")
             return
-        print(f"AUDIT FAIL — {len(problems)} problem(s):")
+        _safe_print(f"AUDIT FAIL — {len(problems)} problem(s):", context="task.py audit")
         for p in problems:
-            print(f"  - {p}")
+            _safe_print(f"  - {p}", context="task.py audit")
         sys.exit(1)
 
     rep = reconcile_registry(apply=do_apply)
     if rep.is_clean:
-        print("registry already reconciled — nothing to repair")
+        _safe_print("registry already reconciled — nothing to repair", context="task.py audit")
         return
     _print_reconcile_report(rep)
     if not do_apply:
@@ -942,18 +1006,22 @@ def cmd_list_concerns(args: argparse.Namespace) -> None:
     `verified-open` (excludes `addressed` / `deferred`)."""
     rows = list_concerns(args.number, open_only=args.open_only)
     if args.json:
-        print(json.dumps(rows, indent=2, ensure_ascii=False))
+        _safe_print(json.dumps(rows, indent=2, ensure_ascii=False), context="task.py list-concerns")
         return
     if not rows:
-        print("(no concerns)")
+        _safe_print("(no concerns)", context="task.py list-concerns")
         return
-    print(f"{'TS':<20}  {'EVENT':<15}  {'SEV':<8}  CONCERN_ID  SUMMARY")
+    _safe_print(
+        f"{'TS':<20}  {'EVENT':<15}  {'SEV':<8}  CONCERN_ID  SUMMARY",
+        context="task.py list-concerns",
+    )
     for row in rows:
         summary = (row.get("summary") or "")[:60]
-        print(
+        _safe_print(
             f"{row['ts']:<20}  {row['event']:<15}  "
             f"{(row.get('severity') or '?'):<8}  "
-            f"{row['concern_id']:<30}  {summary}"
+            f"{row['concern_id']:<30}  {summary}",
+            context="task.py list-concerns",
         )
 
 
@@ -988,16 +1056,16 @@ def cmd_migrate_body(args: argparse.Namespace) -> None:
         target_ids = [args.number]
 
     if args.report:
-        print(f"{'ID':<7}  {'CLASS':<22}  before -> after")
-        print("─" * 64)
+        _safe_print(f"{'ID':<7}  {'CLASS':<22}  before -> after", context="task.py migrate-body")
+        _safe_print("─" * 64, context="task.py migrate-body")
         for tid in target_ids:
             # Classification-only — no apply, no patch.
             try:
                 result = migrate_one(tid, apply=False, shape=args.shape, verbose=False)
             except FileNotFoundError as e:
-                print(f"#{tid:<5}  (error: {e})")
+                _safe_print(f"#{tid:<5}  (error: {e})", context="task.py migrate-body")
                 continue
-            print(result.report_line())
+            _safe_print(result.report_line(), context="task.py migrate-body")
         return
 
     # dry-run / apply path
@@ -1019,27 +1087,32 @@ def cmd_migrate_body(args: argparse.Namespace) -> None:
         if result.classification in (BodyClass.PASS, BodyClass.LEGACY_HTML):
             n_skip += 1
             if args.verbose:
-                print(f"#{tid}: skip ({result.classification.value})")
+                _safe_print(
+                    f"#{tid}: skip ({result.classification.value})", context="task.py migrate-body"
+                )
             continue
-        print(result.report_line())
+        _safe_print(result.report_line(), context="task.py migrate-body")
         for action in result.actions:
-            print(f"    - {action}")
+            _safe_print(f"    - {action}", context="task.py migrate-body")
         if result.needs_user:
             n_needs_user += 1
-            print(f"    [needs-user] {result.needs_user_reason}")
+            _safe_print(
+                f"    [needs-user] {result.needs_user_reason}", context="task.py migrate-body"
+            )
         else:
             n_changed += 1
         if args.verbose and result.diff_preview:
-            print("    ─── diff preview ───")
+            _safe_print("    ─── diff preview ───", context="task.py migrate-body")
             for line in result.diff_preview.splitlines()[:30]:
-                print(f"    {line}")
-            print()
+                _safe_print(f"    {line}", context="task.py migrate-body")
+            _safe_print(context="task.py migrate-body")
 
-    print()
+    _safe_print(context="task.py migrate-body")
     verb = "applied" if args.apply else "dry-run"
-    print(
+    _safe_print(
         f"task.py migrate-body — {verb}: {n_changed} changed, "
-        f"{n_needs_user} needs-user, {n_skip} skipped"
+        f"{n_needs_user} needs-user, {n_skip} skipped",
+        context="task.py migrate-body",
     )
 
 
