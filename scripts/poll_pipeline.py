@@ -76,13 +76,27 @@ reported healthy throughout). The one mechanical signal of this hang is
 the orphaned GPU allocation: a compute-apps PID holding many GiB of
 VRAM whose `/proc/<pid>` no longer exists. The probe lists
 `nvidia-smi --query-compute-apps=pid,used_memory` and flags any PID
-holding >= ``ZOMBIE_GPU_MEM_MIN_MIB`` MiB that is absent from `/proc`;
-when present on a `running` verdict, the verdict is overridden to
-`stalled` with ``stall_reason="vllm_worker_dead_zombie_gpu"`` REGARDLESS
-of session-CPU advancement. A live process always has `/proc/<pid>`, so
-an absent dir is a hard liveness signal. Fail-safe: nvidia-smi missing /
-erroring emits an empty list (never a false zombie); the override never
-touches a `done` / `gate` / `dead` verdict.
+holding >= ``ZOMBIE_GPU_MEM_MIN_MIB`` MiB that is absent from `/proc`.
+
+The zombie signature alone is NOT sufficient to fire (#826): on
+host-PID-namespace RunPod containers nvidia-smi reports HOST PIDs that
+are never resolvable in the container's `/proc`, so every HEALTHY
+compute process carries the signature (#816 steady-state; #778 a
+transient teardown-window PID between vLLM engine cycles) — and a false
+`stalled` verdict routes into a destructive kill-by-PID reaper respawn.
+The override therefore fires only when, on a `running` verdict, ALL of:
+(a) a zombie candidate is present, (b) EVERY workload log (main /
+per-phase / shard) is stale past the effective stall window
+(``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)`` — a genuinely hung run's own
+processes stop appending; both observed false positives had fresh
+logs), and (c) the stale-log candidate persisted for 2 CONSECUTIVE
+observed ticks (``zombie_streak`` in the state sidecar — filters the
+#778 one-tick teardown transient). Session-CPU advancement is
+deliberately NOT a veto term: the genuine #664 hang had CPU advancing
+(the EngineCore idle-burn is why this override exists at all), so a CPU
+veto would make the true positive unreachable. Fail-safe: nvidia-smi
+missing / erroring emits an empty list (never a false zombie); the
+override never touches a `done` / `gate` / `dead` verdict.
 
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
@@ -512,6 +526,19 @@ SSH_WAIT_ALARM_SECS = float(os.environ.get("EPM_SSH_WAIT_ALARM_SECS", "3600"))
 # contexts (a few hundred MiB) while catching any real model-weight orphan.
 ZOMBIE_GPU_MEM_MIN_MIB = int(os.environ.get("EPM_ZOMBIE_GPU_MEM_MIN_MIB", "1024"))
 
+# 826: FLOOR for the liveness veto on the #664 zombie-GPU override. The
+# effective veto threshold each tick is max(ZOMBIE_VETO_FRESH_SEC, stall_sec):
+# the override fires only when EVERY workload log (main/phase/shard) is stale
+# past the effective stall window. Rationale: a hung run's own processes stop
+# appending (the #664 TP had all mtimes > 900s), while both observed false
+# positives had fresh logs (#816 ~1s steady-state; #778 8s transient) — note a
+# SIBLING process can keep a log fresh on a hung run, so this is an empirical
+# separation, not an absolute guarantee; the asymmetric cost (missed zombie =
+# bounded idle pod-hours vs false positive = kill-by-PID reaper on a healthy
+# run) favors vetoing. The floor only binds when --stall-sec is set
+# pathologically low (< 60s fast-smoke configs).
+ZOMBIE_VETO_FRESH_SEC = int(os.environ.get("EPM_ZOMBIE_VETO_FRESH_SEC", "60"))
+
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
     """Best-effort ``pod.py config --refresh-from-api <pod>`` self-heal.
@@ -784,8 +811,11 @@ class PollResult:
     # ``"vllm_worker_dead_zombie_gpu"`` — a dead CUDA-worker PID still
     # holding VRAM while the EngineCore main process keeps the
     # session-CPU-advancing override alive (which would otherwise mask the
-    # hang as ``running`` forever). Defaulted so the many cross-backend
-    # ``PollResult(...)`` call sites need no change.
+    # hang as ``running`` forever). Since #826 the override also requires
+    # ALL workload logs stale past the effective stall window AND 2
+    # consecutive stale-log candidate ticks (host-PID-namespace containers
+    # make the bare signature false-positive on healthy runs). Defaulted so
+    # the many cross-backend ``PollResult(...)`` call sites need no change.
     stall_reason: str | None = None
     # The crash signature extracted from the WIDE 500-line probe tail (NOT the
     # 5-line ``log_tail_excerpt``, which truncates a multi-line vLLM CUDA-IMA
@@ -2295,6 +2325,98 @@ def _save_state(state_file: Path, issue: int, payload: dict[str, str]) -> None:
     tmp.replace(state_file)
 
 
+def _apply_zombie_override(
+    *,
+    status: str,
+    zombie_gpu_pids: list[str],
+    stall_sec: int,
+    last_mtime_ago: float,
+    phase_log_mtime_ago: float,
+    shard_log_mtime_ago: float,
+    prev_state: dict[str, str],
+    pod: str,
+    cpu_override_active: bool,
+) -> tuple[str, str | None, bool, int]:
+    """The #664/#826 zombie-GPU-allocation override — returns the possibly
+    overridden ``(status, stall_reason, cpu_override_active, zombie_streak)``.
+
+    A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
+    (a compute-apps PID with no ``/proc`` entry) while the EngineCore main
+    process stays alive burning Python-overhead CPU. That advancing session
+    CPU makes the #518/#658 override rescue the stall conjunction to
+    ``running`` (or the run never meets the conjunction at all because the
+    dead allocation reads as GPU-busy), so a 60+ min hang is reported healthy
+    throughout (#664 round 8). The dead-PID GPU allocation is the one
+    mechanical signal of this hang.
+
+    But the bare signature is false-positive on host-PID-namespace
+    containers, where nvidia-smi reports HOST PIDs unresolvable in the
+    container's ``/proc`` for EVERY healthy worker (#816 steady-state; #778 a
+    transient teardown-window PID between vLLM engine cycles) — and a false
+    ``stalled`` routes to a destructive kill-by-PID reaper respawn. So the
+    override fires ONLY when (a) every workload log is stale past the
+    effective stall window ``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)`` — a
+    genuinely hung run's own processes stop appending; both observed false
+    positives had fresh logs — AND (b) the stale-log candidate persisted 2
+    CONSECUTIVE observed ticks (``zombie_streak`` in the state sidecar;
+    recomputed each tick, so any veto / candidate-free / non-running tick
+    that reaches ``_save_state`` resets it — a tick that early-returns before
+    ``_save_state`` neither advances nor resets it, the same exposure
+    ``ssh_fail_count`` has; the sidecar is single-poller by design).
+
+    Session-CPU advancement is deliberately NOT a veto term: the genuine #664
+    hang had CPU advancing (in the stale-log + idle-GPU regime ``running`` is
+    only reachable via the CPU rescue), so a CPU veto would make the true
+    positive structurally unreachable. Never touches a ``done`` / ``gate`` /
+    ``dead`` verdict — those are correct terminal/park states (a dead
+    launcher is already ``dead``; its own orphaned allocation is then
+    expected). The ``stall_reason`` lets the orchestrator route this
+    distinctly from a generic log+GPU+CPU stall.
+    """
+    stall_reason: str | None = None
+    zombie_streak = 0
+    if status == "running" and zombie_gpu_pids:
+        zombie_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
+        freshest_log_ago = min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)
+        try:  # defensive parse, mirrors _update_ssh_fail_tracking's ssh_fail_count guard
+            prev_zombie_streak = int(prev_state.get("zombie_streak", "0") or 0)
+        except (TypeError, ValueError):
+            prev_zombie_streak = 0
+        if freshest_log_ago <= zombie_veto_sec:
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) but log evidence is fresh "
+                "(%.0fs <= %ds) — liveness veto, not flagging (#826; host-PID-namespace "
+                "containers report unresolvable host PIDs for healthy workers)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                freshest_log_ago,
+                zombie_veto_sec,
+            )
+        elif prev_zombie_streak < 1:
+            zombie_streak = 1
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) with all logs stale — deferring "
+                "one tick for 2-tick persistence (#826)",
+                pod,
+                ",".join(zombie_gpu_pids),
+            )
+        else:
+            log.error(
+                "zombie GPU allocation on pod %s: compute PID(s) %s hold >= %d MiB VRAM but "
+                "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — persisted "
+                "2 consecutive ticks with all logs stale, overriding "
+                "status=running -> stalled (#664/#826)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                ZOMBIE_GPU_MEM_MIN_MIB,
+            )
+            status = "stalled"
+            stall_reason = "vllm_worker_dead_zombie_gpu"
+            cpu_override_active = False
+            zombie_streak = prev_zombie_streak + 1
+    return status, stall_reason, cpu_override_active, zombie_streak
+
+
 def _log_staleness_secs(
     *,
     pod: str,
@@ -2638,34 +2760,20 @@ def poll_once(
     else:
         status = "running"
 
-    # ── #664 zombie-GPU-allocation override ──────────────────────────────
-    # A hung vLLM whose CUDA worker died leaves its model-shard VRAM
-    # orphaned (a compute-apps PID with no `/proc` entry) while the
-    # EngineCore main process stays alive burning Python-overhead CPU. That
-    # advancing session CPU makes the #518/#658 override rescue the stall
-    # conjunction to `running` (or the run never meets the conjunction at
-    # all because the dead allocation reads as GPU-busy), so a 60+ min hang
-    # is reported healthy throughout (#664 round 8). The dead-PID GPU
-    # allocation is the one mechanical signal of this hang, so when it is
-    # present we override a `running` verdict to `stalled` regardless of
-    # session-CPU advancement. We do NOT touch a `done` / `gate` / `dead`
-    # verdict — those are correct terminal/park states (and a dead launcher
-    # is already `dead`; its own orphaned allocation is then expected). The
-    # `stall_reason` lets the orchestrator route this distinctly from a
-    # generic log+GPU+CPU stall (e.g. terminate + diagnose the pod).
-    stall_reason: str | None = None
-    if status == "running" and zombie_gpu_pids:
-        log.error(
-            "zombie GPU allocation on pod %s: compute PID(s) %s hold >= %d MiB VRAM but "
-            "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — overriding "
-            "status=running -> stalled (#664)",
-            pod,
-            ",".join(zombie_gpu_pids),
-            ZOMBIE_GPU_MEM_MIN_MIB,
-        )
-        status = "stalled"
-        stall_reason = "vllm_worker_dead_zombie_gpu"
-        cpu_override_active = False
+    # ── #664/#826 zombie-GPU-allocation override ─────────────────────────
+    # Extracted to `_apply_zombie_override` (both for C901 headroom and so
+    # the firing predicate is documented in one place — see its docstring).
+    status, stall_reason, cpu_override_active, zombie_streak = _apply_zombie_override(
+        status=status,
+        zombie_gpu_pids=zombie_gpu_pids,
+        stall_sec=stall_sec,
+        last_mtime_ago=last_mtime_ago,
+        phase_log_mtime_ago=phase_log_mtime_ago,
+        shard_log_mtime_ago=shard_log_mtime_ago,
+        prev_state=prev_state,
+        pod=pod,
+        cpu_override_active=cpu_override_active,
+    )
 
     # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
     # The stall verdict above treats an idle GPU only as corroboration, so
@@ -2802,6 +2910,12 @@ def poll_once(
             # it is a multi-shard child-exit accounting artifact, not a
             # stall. Monotonic: a sub-max current sample never lowers it.
             "max_cpu_secs": max_session_cpu,
+            # #826 zombie-override 2-tick persistence. Recomputed from
+            # scratch each tick (0 unless the override block set it), so a
+            # vetoed-fresh tick, a candidate-free tick, and any non-running
+            # verdict all write "0" — a one-tick transient never
+            # accumulates across a healthy gap.
+            "zombie_streak": str(zombie_streak),
         },
     )
 
