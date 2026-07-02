@@ -5780,8 +5780,8 @@
     "886": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/886",
-      "status": "approved",
+      "path": "tasks/running/886",
+      "status": "running",
       "title": "extraction.py: PEFT-wrapped models silently take the fallback path (post-norm L_max + full-tuple materialization) \u2014 fix detection"
     },
     "887": {
