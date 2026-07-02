@@ -659,6 +659,7 @@ def generate_training_data(
         pos_scores,
         neg_scores,
         {**pos_jr.per_item_draw_counts, **neg_jr.per_item_draw_counts},
+        {**pos_jr.per_item_scores, **neg_jr.per_item_scores},
     )
 
     # 5. Per-member negative quota (same-question paired; fail loud on shortfall).
@@ -757,7 +758,15 @@ def _write_train_rows(path: Path, candidates: list[GenCandidate]) -> None:
             )
 
 
-def _write_judge_rows(path, pos_cands, neg_cands, pos_scores, neg_scores, draw_counts) -> None:
+def _write_judge_rows(
+    path, pos_cands, neg_cands, pos_scores, neg_scores, draw_counts, per_draw
+) -> None:
+    """One sidecar row per judged candidate — the plan-contractual shape
+    ``{question_id, variant_id, arm, scores, mean, kept}`` (+ telemetry), where
+    ``scores`` is the kept per-draw list from ``JudgeResult.per_item_scores``
+    (empty when every draw dropped or when an injected judge_fn stub does not
+    populate the field).
+    """
     with open(path, "w", encoding="utf-8") as f:
         for cands, scores in ((pos_cands, pos_scores), (neg_cands, neg_scores)):
             for c in cands:
@@ -772,6 +781,7 @@ def _write_judge_rows(path, pos_cands, neg_cands, pos_scores, neg_scores, draw_c
                             "question_id": c.request.question_id,
                             "variant_id": c.request.variant_id,
                             "arm": c.request.arm,
+                            "scores": list(per_draw.get(rid, [])),
                             "mean": mean,
                             "kept": kept,
                             "n_kept_draws": draw_counts.get(rid, 0),

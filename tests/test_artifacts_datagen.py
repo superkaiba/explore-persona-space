@@ -64,6 +64,7 @@ def _judge_by_arm(*, pos=80.0, neg=20.0, keep_first_pos=None):
             n_total_draws=len(items) * n_draws,
             n_dropped_draws=0,
             per_item_draw_counts={rid: n_draws for rid, _, _ in items},
+            per_item_scores={rid: [scores[rid]] * n_draws for rid, _, _ in items},
         )
 
     return judge
@@ -487,8 +488,23 @@ def test_per_row_sidecar(tmp_path):
     rows = [json.loads(ln) for ln in (out / "judge_rows.jsonl").read_text().splitlines()]
     assert rows
     for r in rows:
-        assert set(r) >= {"question_id", "variant_id", "arm", "mean", "kept", "n_kept_draws"}
+        # The plan-contractual sidecar shape: {question_id, variant_id, arm,
+        # scores, mean, kept} (+ telemetry). `scores` is the per-draw list.
+        assert set(r) >= {
+            "question_id",
+            "variant_id",
+            "arm",
+            "scores",
+            "mean",
+            "kept",
+            "n_kept_draws",
+        }
         assert r["arm"] in (POSITIVE, NEGATIVE)
+        assert isinstance(r["scores"], list)
+        # The arm-mock populates per_item_scores with n_draws copies of the mean.
+        assert len(r["scores"]) == 3 == r["n_kept_draws"]
+        assert all(isinstance(s, (int, float)) for s in r["scores"])
+        assert sum(r["scores"]) / len(r["scores"]) == r["mean"]
     assert any(r["arm"] == POSITIVE for r in rows) and any(r["arm"] == NEGATIVE for r in rows)
 
 

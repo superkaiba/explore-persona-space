@@ -118,12 +118,16 @@ class JudgeResult:
     ``scores`` maps item_id -> mean graded score over the kept judge draws for
     that item (None if ALL draws dropped). ``n_dropped_draws`` and
     ``n_total_draws`` are the aggregate per-arm drop telemetry.
+    ``per_item_scores`` maps item_id -> the kept per-draw score list (empty when
+    all draws dropped) so callers can persist the draw-level values a threshold
+    sweep needs without re-reading the ``save_raw`` file.
     """
 
     scores: dict[str, float | None]
     n_total_draws: int
     n_dropped_draws: int
     per_item_draw_counts: dict[str, int] = field(default_factory=dict)
+    per_item_scores: dict[str, list[float]] = field(default_factory=dict)
 
 
 def judge_graded(
@@ -234,4 +238,5 @@ def judge_graded(
         n_total_draws=n_total,
         n_dropped_draws=n_dropped,
         per_item_draw_counts=draw_counts,
+        per_item_scores=per_item_draws,
     )

@@ -248,3 +248,22 @@ def test_structural_invariants():
         ElicitationSpec(exhibit_instructions=())
     with pytest.raises(ValueError, match="not_exhibit_instructions"):
         ElicitationSpec(exhibit_instructions=("x",), not_exhibit_instructions=())
+
+
+def test_harmful_compliance_eval_dedup_pins_195():
+    """Pin the harmful_compliance cross-source eval dedup outcome: the AdvBench
+    eval bank (200) shares 5 verbatim prompts with the behavior's StrongREJECT
+    train+extraction slices, so the deduped eval bank is exactly 195 — and the
+    carve-out is scoped to harmful_compliance only (every other behavior's eval
+    bank stays the full registered slice, guarded by the fail-loud
+    content-disjointness assert in Behavior.validate())."""
+    hc = BEHAVIORS["harmful_compliance"]
+    assert len(hc.eval_question_bank) == 195
+    excl = set(hc.train_question_bank) | set(hc.extraction.question_set)
+    assert not excl & set(hc.eval_question_bank)
+    # Scope check: no other behavior's eval bank is shrunk by the dedup carve-out.
+    for name, b in BEHAVIORS.items():
+        if name == "harmful_compliance":
+            continue
+        _bank_name, start, end = banks.SLICES[(name, "eval")]
+        assert len(b.eval_question_bank) == end - start, name
