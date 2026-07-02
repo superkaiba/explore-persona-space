@@ -5422,8 +5422,8 @@
     "838": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/838",
-      "status": "running",
+      "path": "tasks/reviewing/838",
+      "status": "reviewing",
       "title": "workflow-fix: planner/critic subagent spawns still autocompact-thrash post-#829"
     },
     "839": {
