@@ -37,3 +37,4 @@
 {"ts": "2026-07-02T05:43:32Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr32tw0w-1omzox phase=done after 122s."}
 {"ts": "2026-07-02T05:43:57Z", "kind": "epm:code-review-codex", "version": 2, "by": "unknown", "note": "<!-- epm:code-review-codex v2 -->\n**Verdict:** PASS\n**Blocker tags:** none\n<!-- /epm:code-review-codex -->\n"}
 {"ts": "2026-07-02T05:44:24Z", "kind": "epm:concern-addressed", "version": 1, "by": "code-reviewer", "concern_id": "test-cmd-sync-monkeypatch-wrong-module", "note": "concern_id: test-cmd-sync-monkeypatch-wrong-module\nseverity: BLOCKER\nsummary: Test patches pod_config.cmd_sync but pod_lifecycle calls its by-value binding; c"}
+{"ts": "2026-07-02T05:44:53Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "reviewing", "note": "Code-review ensemble PASS (r2); entering Step 9c test-verdict gate."}
