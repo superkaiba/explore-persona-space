@@ -437,8 +437,16 @@ def assert_batched_capture_equivalence(model, tokenizer, layers: list[int]) -> d
             ctx_cos_min = min(ctx_cos_min, _cos(s[key], b[key]))
             ctx_max_abs = max(ctx_max_abs, float((s[key] - b[key]).abs().max()))
 
-    # answer equivalence (fixed responses so no generation needed).
-    r_b = {"probe": torch.randn(len(layers), model.config.hidden_size, dtype=torch.float32)}
+    # answer equivalence (fixed responses so no generation needed). The probe r_b
+    # is SEEDED so a gate failure reproduces deterministically (r2 review concern).
+    r_b = {
+        "probe": torch.randn(
+            len(layers),
+            model.config.hidden_size,
+            dtype=torch.float32,
+            generator=torch.Generator().manual_seed(779),
+        )
+    }
     responses = [
         "Blue light scatters more.",
         "Because Rayleigh scattering favors short wavelengths across the whole sky.",

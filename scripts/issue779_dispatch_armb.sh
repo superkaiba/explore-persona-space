@@ -146,6 +146,11 @@ else
     # N_GPU); lmsys_g runs as ONE worker AFTER the corpus workers join. Corpus
     # workers pass --no-upload; the single lmsys_g worker (or a dedicated upload
     # worker when no lmsys_g is needed) performs the ONE whole-out_dir upload.
+    # --no-upload ALSO suppresses the worker-level terminal sentinel: a shard
+    # worker writes a NON-terminal epm:progress artifact + [phase=shard_done]
+    # (never epm:results / [phase=done]) so a sentinel-driven poller cannot see
+    # a false "done" before the post-join upload worker finishes; ONLY the
+    # post-join worker + this dispatcher's final [phase=done] line are terminal.
     if [ "$NEED_CORPUS" -eq 1 ]; then
         echo "[phase=corpus] multi-GPU trait-sharded: ${#TRAITS[@]} traits over $N_GPU GPU(s)"
         pids=()

@@ -386,13 +386,45 @@ def run_lmsys_g_labels_phase(
     return summary
 
 
-def _upload_corpus(out_dir: Path, smoke: bool) -> None:
+def _stage_sanitized_corpus(out_dir: Path, staging: Path) -> tuple[bool, bool]:
+    """Copy the sanitized upload set (tensor bundles + judge scalars + g labels,
+    NO rollout text, NO raw judge text) from out_dir into the staging dir.
+
+    Returns ``(wrote_tensor, wrote_g)`` — whether any corpus tensor bundle /
+    any lmsys_g label file was staged (the fail-loud gates key on these).
+    """
+    (staging / CORPUS_SUBDIR).mkdir(parents=True, exist_ok=True)
+    wrote_tensor = False
+    for p in sorted((out_dir / CORPUS_SUBDIR).glob("*")):
+        if p.name.endswith("_rollouts.json"):
+            continue  # raw text -> raw-completions prefix only
+        if p.name.startswith("judge_raw_"):
+            continue  # raw judge model text -> omit
+        (staging / CORPUS_SUBDIR / p.name).write_bytes(p.read_bytes())
+        wrote_tensor = True
+    wrote_g = False
+    g_src = out_dir / LMSYS_G_SUBDIR
+    if g_src.is_dir():
+        (staging / LMSYS_G_SUBDIR).mkdir(parents=True, exist_ok=True)
+        for p in sorted(g_src.glob("*.json")):
+            if p.name.startswith("judge_raw_"):
+                continue
+            (staging / LMSYS_G_SUBDIR / p.name).write_bytes(p.read_bytes())
+            wrote_g = True
+    return wrote_tensor, wrote_g
+
+
+def _upload_corpus(out_dir: Path, smoke: bool, *, require_corpus: bool = True) -> None:
     """Upload corpus tensors + judge scores (sanitized) + rollout TEXT + g labels.
 
     Plan §10: the c_last + v(x) tensors + judge SCALARS -> behavior_corpus/
     (NO rollout text); the rollout TEXT -> behavior_raw_completions/ (canonical
     raw-completions prefix, verified); the LMSYS g labels -> lmsys_g_labels/.
     Fail-loud on any upload mismatch (a clean exit IS the upload contract).
+
+    ``require_corpus=False`` (the standalone ``--stage lmsys_g`` path, which
+    generates ONLY g labels) tolerates a missing corpus-tensor dir and uploads
+    whatever exists — it still fails loud when there is NOTHING to upload.
     """
     import tempfile
 
@@ -407,25 +439,15 @@ def _upload_corpus(out_dir: Path, smoke: bool) -> None:
     #    raw-completions prefix and is NOT included in this analysis-tensors push.
     with tempfile.TemporaryDirectory(prefix="issue779_corpus_") as tmp:
         staging = Path(tmp)
-        (staging / CORPUS_SUBDIR).mkdir(parents=True, exist_ok=True)
-        wrote_tensor = False
-        for p in sorted((out_dir / CORPUS_SUBDIR).glob("*")):
-            if p.name.endswith("_rollouts.json"):
-                continue  # raw text -> raw-completions prefix only
-            if p.name.startswith("judge_raw_"):
-                continue  # raw judge model text -> omit
-            (staging / CORPUS_SUBDIR / p.name).write_bytes(p.read_bytes())
-            wrote_tensor = True
-        g_src = out_dir / LMSYS_G_SUBDIR
-        if g_src.is_dir():
-            (staging / LMSYS_G_SUBDIR).mkdir(parents=True, exist_ok=True)
-            for p in sorted(g_src.glob("*.json")):
-                if p.name.startswith("judge_raw_"):
-                    continue
-                (staging / LMSYS_G_SUBDIR / p.name).write_bytes(p.read_bytes())
-        if not wrote_tensor:
+        wrote_tensor, wrote_g = _stage_sanitized_corpus(out_dir, staging)
+        if not wrote_tensor and require_corpus:
             raise RuntimeError(
                 f"corpus upload aborted: no tensor bundles under {out_dir / CORPUS_SUBDIR}"
+            )
+        if not wrote_tensor and not wrote_g:
+            raise RuntimeError(
+                f"upload aborted: NOTHING to upload under {out_dir} (no corpus tensor "
+                f"bundles and no {LMSYS_G_SUBDIR} labels)"
             )
         path_in_repo = f"{HF_ROUND_PREFIX}{suffix}/analysis_tensors"
         api.upload_folder(
@@ -477,6 +499,45 @@ def _upload_corpus(out_dir: Path, smoke: bool) -> None:
                     f"(raw-completions-upload-prefix-missing): {missing}"
                 )
             logger.info("corpus raw-completions upload verified under %s", rc_prefix)
+
+
+def _finalize_worker(*, no_upload: bool, smoke: bool, summary: dict, stage: str) -> None:
+    """End-of-run sentinel + phase line — the ONLY write_sentinel site in this module.
+
+    BLOCKER (multigpu-no-upload-terminal-sentinel): a ``--no-upload`` worker is a
+    PARTIAL trait shard — its corpus tensors / rollout text / g labels are NOT
+    uploaded yet (the multi-GPU dispatcher's single post-join upload_only /
+    lmsys_g worker owns the ONE whole-out_dir upload). Such a worker must NEVER
+    write the terminal ``epm:results`` / ``epm:smoke-result`` sentinel nor the
+    reserved ``[phase=done]`` line: a sentinel-driven poller/verifier would
+    observe a false "done" before the post-join upload exists. It writes a
+    clearly NON-terminal ``epm:progress`` shard artifact (``terminal: false``,
+    ``blocks_pipeline: false``) + ``[phase=shard_done]`` instead. ONLY a worker
+    that ran the upload (``no_upload=False``, incl. ``--stage upload_only``) is
+    terminal. Pinned by tests/test_issue779_scaling_grid.py (behavior + AST:
+    every write_sentinel call must live inside this function).
+    """
+    tag = "SMOKE " if smoke else ""
+    if no_upload:
+        note = (
+            f"issue779 corpus-gen [{stage}] {tag}shard complete WITHOUT upload "
+            f"(NON-terminal: the post-join upload/lmsys_g worker uploads and writes "
+            f"the terminal sentinel): {json.dumps(summary)[:2000]}"
+        )
+        C.write_sentinel(
+            "epm:progress",
+            note,
+            extra={"gpu_hours_used": None, "terminal": False, "blocks_pipeline": False},
+        )
+        C.phase("shard_done")
+        return
+    note = f"issue779 corpus-gen [{stage}] {tag}complete: {json.dumps(summary)[:2000]}"
+    C.write_sentinel(
+        "epm:smoke-result" if smoke else "epm:results",
+        note,
+        extra={"gpu_hours_used": None},
+    )
+    C.phase("done")
 
 
 def main() -> int:
@@ -532,14 +593,11 @@ def main() -> int:
             raise ValueError("--stage upload_only is incompatible with --no-upload")
         _upload_corpus(out_dir, smoke=args.smoke)
         summary = {"traits": traits, "smoke": args.smoke, "stage": "upload_only"}
-        C.write_json_atomic(out_dir / "corpus_gen_summary.json", summary)
-        note = f"issue779 corpus-gen upload_only complete: {json.dumps(summary)[:2000]}"
-        C.write_sentinel(
-            "epm:smoke-result" if args.smoke else "epm:results",
-            note,
-            extra={"gpu_hours_used": None},
-        )
-        C.phase("done")
+        # Per-stage summary filename: the shard/lmsys_g workers share this
+        # out_dir, so writing the shared corpus_gen_summary.json here would
+        # clobber the corpus stats (last-writer-wins).
+        C.write_json_atomic(out_dir / "upload_summary.json", summary)
+        _finalize_worker(no_upload=False, smoke=args.smoke, summary=summary, stage="upload_only")
         return 0
 
     C.phase("load_model")
@@ -625,17 +683,21 @@ def main() -> int:
 
     if not args.no_upload:
         C.phase("upload")
-        _upload_corpus(out_dir, smoke=args.smoke)
+        # Standalone --stage lmsys_g generates ONLY g labels; tolerate a missing
+        # corpus dir there (still fail-loud when nothing at all exists to upload).
+        _upload_corpus(out_dir, smoke=args.smoke, require_corpus=args.stage != "lmsys_g")
 
-    C.write_json_atomic(out_dir / "corpus_gen_summary.json", summary)
-    tag = "SMOKE " if args.smoke else ""
-    note = f"issue779 corpus-gen {tag}complete: {json.dumps(summary)[:2000]}"
-    C.write_sentinel(
-        "epm:smoke-result" if args.smoke else "epm:results",
-        note,
-        extra={"gpu_hours_used": None},
-    )
-    C.phase("done")
+    # Per-stage/per-shard summary filename: concurrent --no-upload trait shards
+    # (and the post-join lmsys_g worker) share out_dir, so one shared filename
+    # was last-writer-wins across workers.
+    if args.no_upload:
+        summary_name = f"corpus_gen_summary_{'_'.join(traits)}.json"
+    elif args.stage == "lmsys_g":
+        summary_name = "lmsys_g_summary.json"
+    else:
+        summary_name = "corpus_gen_summary.json"
+    C.write_json_atomic(out_dir / summary_name, summary)
+    _finalize_worker(no_upload=args.no_upload, smoke=args.smoke, summary=summary, stage=args.stage)
     return 0
 
 
