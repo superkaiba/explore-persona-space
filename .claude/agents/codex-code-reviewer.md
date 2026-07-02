@@ -376,9 +376,19 @@ both reviewers are graded against the same standard. Read
   launcher or documented fan-out, and the `compute-shape-mismatch` blocker tag
   (SUBSTANTIVE, NOT mechanical-contract — never stripped by Step 5c-bis) plus
   the plausible-but-unconfirmed → CONCERNS routing and the descope-is-a-valid-
-  fix note. Copy the trigger + the three shapes + the tag in full so Codex
-  never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan ran on
-  a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
+  fix note — AND the work-conserving schedule sub-check IN FULL (applies at
+  diff-read whenever the diff schedules >1 independent cell on a multi-GPU
+  pod/provision, including a plain serial loop — the exposure gate's N/A does
+  NOT close it; a strict wave/stage barrier or degenerate serial schedule
+  idling workers while independent cells wait is a Major `substantive`
+  finding, NOT `compute-shape-mismatch`; barriers/reduced width acceptable
+  only for a plan-stated cross-cell dependency OR a named resource/capacity
+  constraint, named in the verdict; a width cap justifies WIDTH, not a drain
+  barrier; incident #813: two sequential waves idled GPUs 1/2/4/7 for 6.7h on
+  a billing 8×H100 pod; #778 phase-3: serial loop at 1/8 util on 8×H100).
+  Copy the trigger + the three shapes + the tag + the sub-check in full so
+  Codex never re-derives a narrower check (incident #779 r6: an 8×H100-DP plan
+  ran on a `--gpu-id`-only dispatcher; the review PASSed and 7 GPUs sat idle).
 - "Step 0.68: Named-helper adherence check" (`type:experiment` only) —
   INCLUDING the ::fn grep-for-import-and-call requirement, the
   slower-sibling-substitution → Major substantive rule, and the N/A carve-out
@@ -414,6 +424,12 @@ both reviewers are graded against the same standard. Read
   failure mode: the /issue Step 5c-ter dispatch gate reads
   `concerns.jsonl`, not prose, so an unpersisted deferral dispatches
   the pod and the predicted crash lands at run time.
+- The Step 2 "Compute-throughput anti-patterns" block — copy the FULL (a)-(d)
+  enumeration, INCLUDING (d) per-row compression/serialization/upload inside
+  the inner loop when it dominates row wall-time (#813: `np.savez_compressed`
+  103.8s = 65% of the ~160s wc_long row wall-time; plain `savez` 1.2s at
+  1.29× size, Xet dedup already −59% on upload), so Codex never re-derives a
+  narrower throughput check (same omission class as the #606 copy-list miss).
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
   Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 5: Security
   Sweep" + "Step 6: Plan Deviation Check" + "Step 7: Issue Verdict" output
@@ -547,7 +563,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:

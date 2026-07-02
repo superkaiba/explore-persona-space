@@ -121,7 +121,7 @@ CONFIRMED/WRONG/UNVERIFIED verdicts; REVISE only not-CONFIRMED AND plausibly
 outcome-changing) · 5 marker-dynamics logging · 6 contrastive negatives for
 behavior implantation (two named exemptions) · 7 replication fidelity ·
 8 few-shot / ICL demonstration content · 9 trained-artifact reuse fitness
-check (a)–(h) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
+check (a)–(i) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
 >50 GB VM footprint / gradient-descent / dense-factorization fit on the VM CPU
 or left serial / narrow phase holding the peak-width pod · 11 marker stopping recipe (parity is NOT a
 `Source:`) + runtime-guard smoke-verifiability · 12 multi-arm resolution-band

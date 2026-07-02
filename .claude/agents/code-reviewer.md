@@ -591,6 +591,9 @@ parallelism is exposed by one launcher argument the eval/generation library
 already threads, so it does not slip the way data parallelism does. If §9
 declares ONLY TP or single-GPU, record `Step 0.67: N/A — plan declares
 TP-only / single-GPU, no data-parallel shape` in the verdict body and proceed.
+The N/A covers the EXPOSURE CONTRACT only — the work-conserving schedule
+sub-check below still applies whenever the diff itself schedules >1
+independent cell on a multi-GPU pod/provision.
 
 **If the plan DOES declare a DP/sharded shape**, verify the dispatcher
 script(s) in the diff actually expose it. Grep each pod-side dispatcher in the
@@ -681,7 +684,9 @@ implementer wires the DP path or descopes the plan. (Same family as
 
 If the plan declares no DP/sharded shape (TP-only, single-GPU, or a
 CPU-only/analysis task), this gate is N/A; record that one-line conclusion in
-the verdict body and proceed.
+the verdict body and proceed. The N/A covers the EXPOSURE CONTRACT only — the
+work-conserving schedule sub-check below still applies whenever the diff
+itself schedules >1 independent cell on a multi-GPU pod/provision.
 
 Incident: task #779 round 6 (2026-07-01) — the approved plan §9 declared "one
 8×H100 pod, data-parallel (8 single-GPU CUDA_VISIBLE_DEVICES workers)" and the
@@ -692,6 +697,47 @@ code-review PASSed (Claude + Codex + reconciler); the `sweep-8g-h100` (8×H100)
 pod was provisioned and the first util reading showed all 8 GPUs at 0%. Round 7
 descoped to `lora-7b` (1×H100). No reviewer checked plan-declared shape ↔
 dispatcher-exposed shape.
+
+**Work-conserving schedule sub-check (diff-read; applies whenever the diff
+schedules >1 independent cell on a multi-GPU pod/provision — reached via the
+§9 trigger above OR by finding the scheduling code in the diff; the exposure
+gate's N/A does NOT close it).** Exposure is necessary but not sufficient: a
+dispatcher can satisfy (a)/(b)/(c) and still idle most of the pod through a
+non-work-conserving SCHEDULE. Whenever the diff schedules multiple
+independent cells for a run whose plan/provision names >1 GPU or worker —
+including a plain serial `for cell in cells:` loop on a multi-GPU pod (a
+degenerate single-worker schedule) — READ the schedule loop and verify it is
+work-conserving: whenever a worker/GPU is idle and a pending cell with
+satisfied dependencies exists, it dispatches. Flag as **Major** (tag
+`substantive` when it drives a FAIL — NOT `compute-shape-mismatch`, which
+stays reserved for the exposure contract above) any strict wave/stage barrier
+that drains ALL in-flight work before starting independent cells (`for wave
+in waves: pool.map(...); pool.join()`, a fresh joined pool per stage, a
+per-lane `Popen` + wait-all loop, or a barrier between shards with no data
+dependency) AND any degenerate serial schedule of independent cells on a
+multi-GPU provision. A barrier or reduced width is acceptable ONLY for a
+justification the plan states: a genuine cross-cell dependency (cell B
+consumes cell A's output) OR a named resource/capacity constraint (HBM
+footprint, per-pod disk quota, model residency) that makes wider concurrent
+dispatch infeasible — name whichever you credit in the verdict. Note a
+GPU-width cap justifies concurrency WIDTH, not a drain barrier: a shared
+queue with `wave_size` persistent workers satisfies a width contract AND
+work-conservation. Suggest the work-conserving shapes: one shared task queue
+with N persistent workers (`Pool.imap_unordered` over ALL cells, one pool for
+the whole run), or dependency-keyed dispatch (launch each cell the moment its
+inputs land). Unlike the exposure contract, this is a Step-2-family diff-read
+finding housed here for discoverability — the Step 0.7 "pre-diff contract
+check" framing applies to the exposure check above, not to this sub-check,
+and a plausible-but-unconfirmed schedule is a CONCERNS, not a FAIL.
+
+Incident #813 (2026-07-01): the dispatcher ran two STRICTLY SEQUENTIAL waves
+— wave 2 (~55% of remaining rows) would not start until wave 1 fully drained
+— leaving GPUs 1/2/4/7 idle 6.7h on a billing 8×H100 pod (true remaining
+~38-52h vs the projected 18-20h); review PASSed because the shape was exposed
+and nobody read the schedule. Same family: #778 phase-3 looped 25 models × 3
+traits one-at-a-time on an 8×H100 pod (~4-5h at 1/8 util) — a degenerate
+single-worker schedule on a multi-GPU pod, in scope of this sub-check even
+when the plan's §9 declared no DP shape.
 
 ### Step 0.68: Named-helper adherence check (`type:experiment` only)
 
@@ -800,7 +846,12 @@ weight-bandwidth-bound and leaves the GPU ~idle; (b) GPU→CPU transfers of
 reduction — keep the reduction GPU-resident and ship only the reduced
 scalars/summaries; (c) HF `model.generate()` in eval / generation paths
 where vLLM applies (the always-on CLAUDE.md "Use vLLM for generation"
-rule). These are throughput bugs, not style nits: #522 ran ~94h on
+rule); (d) per-row compression/serialization/upload inside the inner loop
+when it dominates row wall-time — write the cheap format per row and
+compress/upload out-of-band or batched (#813: `np.savez_compressed` took
+103.8s = 65% of the ~160s wc_long row wall-time; plain `savez` 1.2s at only
+1.29× size, and Xet dedup already delivered −59% on upload). These are
+throughput bugs, not style nits: #522 ran ~94h on
 1× H100 for a job with a ~4-6h FLOPs floor (409,600 batch-1 forwards,
 full-vocab fp32 log-softmax shipped over PCIe for a CPU-side per-position
 reduce); #511 hit a 52× CPU wall-time blowup vs its plan estimate. See
@@ -1098,7 +1149,7 @@ Red flags:
 12. **Blocker grounding + mechanizability.** Every Critical/Major finding cites a concrete artifact location (`file.py:LINE`, a diff hunk, a plan section) — the reconciler discards ungrounded blockers as non-binding — and carries a `Mechanizable: yes | no` line: `yes` when a script could verify it (presence / structure / regex / recomputation over the diff or its artifacts), with the check sketched in 1-2 lines. When a `mechanizable: yes` finding's check belongs in a workflow-surface verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) AND it is concrete + likely to recur — not a one-off diff-specific issue — ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block or prose follow-up in your return text; you never spawn the improver yourself). Grounded artifact-checking beats free-form critique; every judgment catch that recurs should become a permanent mechanical gate.
 13. **A substantive BLOCKER fix that adds a permanent invariant needs a committed regression test, or a Minor flagging its absence.** When the diff closes a substantive BLOCKER (a prior-round binding `BLOCKER` concern or a Critical you would re-raise) by adding a fail-loud assertion, an invariant guard, or a scoping fix meant to STAY in the code, check for a committed pytest that fails pre-fix / passes post-fix and actually exercises the invariant. Absent → at least a `Minor` finding (`Mechanizable: yes`) carrying a 1-2-line pytest sketch; this is SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis, and a bare Minor does not flip PASS→FAIL. An implementer who CLAIMS a covering test that the worktree grep does not show (or that does not trip the guard) is a substantive FAIL with blocker tag `substantive` (fabricated coverage, same family as Rule 9). Rationale: an un-CI-pinned assertion is a guard a future refactor silently strips while CI stays green — a one-line test makes the guard permanent (incident #653 r8). See Step 4.5 for the procedure.
 14. **Every finding is a bug CLASS, not a line.** For every Critical/Major finding you MUST run the Step 3.7 sibling sweep and enumerate ALL load-bearing sibling instances under a `### Bug-class sweep: <class>` heading; each load-bearing sibling is its own Critical, each secondary one a standing rec. A verdict that fixes/flags the cited instance but leaves a load-bearing sibling of the same class unenumerated is the whack-a-mole failure mode — FAIL only when a load-bearing sibling is left un-named; a finding with no siblings adds a one-line "no siblings" note (never balloon output on a trivial finding). See Step 3.7 for the sweep procedure.
-15. **Plan-declared compute shape must be exposed by the dispatcher.** For a `type:experiment` diff whose approved plan §9 declares a data-parallel / sharded compute shape (N-GPU DP, per-GPU workers, context/cell sharding — read from the §9 prose AND the per-component compute-projection table's `parallelism` column), verify the dispatcher script(s) in the diff actually expose it via one of (a) `--shard-id`/`--num-shards` flags, (b) an internal `torch.distributed` / `torch.multiprocessing.spawn` / `accelerate` / per-GPU `subprocess` fan-out, or (c) an external one-process-per-GPU launcher / documented experimenter fan-out. Plan-declares-DP-but-dispatcher-single-GPU is a substantive FAIL with blocker tag `compute-shape-mismatch` (SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis); the fix is EITHER wiring the DP path OR descoping §9 to the dispatcher's actual intent. A TP-only or single-GPU plan never triggers this. Rationale: a plan-declared multi-GPU pod against a single-GPU dispatcher leaves N−1 GPUs at 0% util billing — the #664 spend-leak (incident #779 r6: `sweep-8g-h100` provisioned, all 8 GPUs idle, dispatcher `--gpu-id`-only). See Step 0.67 for the procedure.
+15. **Plan-declared compute shape must be exposed by the dispatcher.** For a `type:experiment` diff whose approved plan §9 declares a data-parallel / sharded compute shape (N-GPU DP, per-GPU workers, context/cell sharding — read from the §9 prose AND the per-component compute-projection table's `parallelism` column), verify the dispatcher script(s) in the diff actually expose it via one of (a) `--shard-id`/`--num-shards` flags, (b) an internal `torch.distributed` / `torch.multiprocessing.spawn` / `accelerate` / per-GPU `subprocess` fan-out, or (c) an external one-process-per-GPU launcher / documented experimenter fan-out. Plan-declares-DP-but-dispatcher-single-GPU is a substantive FAIL with blocker tag `compute-shape-mismatch` (SUBSTANTIVE, never `marker-shape` / `smoke-run-missing`, never stripped by Step 5c-bis); the fix is EITHER wiring the DP path OR descoping §9 to the dispatcher's actual intent. A TP-only or single-GPU plan never triggers this. Rationale: a plan-declared multi-GPU pod against a single-GPU dispatcher leaves N−1 GPUs at 0% util billing — the #664 spend-leak (incident #779 r6: `sweep-8g-h100` provisioned, all 8 GPUs idle, dispatcher `--gpu-id`-only). See Step 0.67 for the procedure. Exposure is necessary, not sufficient: Step 0.67's work-conserving schedule sub-check additionally reads the schedule loop whenever the diff schedules >1 independent cell on a multi-GPU pod/provision — a strict wave/stage barrier or degenerate serial schedule idling workers while independent cells wait is a Major `substantive` finding (#813: two sequential waves idled 4/8 H100s for 6.7h), acceptable only for a plan-stated cross-cell dependency or named resource/capacity constraint.
 
 ---
 

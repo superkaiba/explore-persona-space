@@ -3961,9 +3961,20 @@ def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[st
     ``compute-shape-mismatch``. ``repo_root`` is a unit-test override hook;
     production callers pass None (canonical repo root). Bundled into the
     no-flags default run.
+
+    #875 extended the lens with the work-conserving schedule sub-check +
+    throughput anti-pattern (d) (incidents #813: sequential waves idled 4/8
+    H100s 6.7h and per-row ``savez_compressed`` = 65% of wc_long row
+    wall-time; #778 phase-3: 1/8 util on 8xH100), pinned by two additional
+    tokens: ``work-conserving`` and ``per-row compression``.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
-    required = ("Compute-shape-vs-dispatcher", "compute-shape-mismatch")
+    required = (
+        "Compute-shape-vs-dispatcher",
+        "compute-shape-mismatch",
+        "work-conserving",  # #875: schedule sub-check (incident #813/#778)
+        "per-row compression",  # #875: anti-pattern (d) (incident #813)
+    )
     files = (
         root / ".claude" / "agents" / "code-reviewer.md",
         root / ".claude" / "agents" / "codex-code-reviewer.md",
@@ -3981,10 +3992,13 @@ def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[st
             if token not in text:
                 errors.append(
                     f"{p}: missing the compute-shape-vs-dispatcher lens token "
-                    f"{token!r} (#806). The Step 0.67 lens + `compute-shape-mismatch` "
-                    f"blocker tag must be present in BOTH code-reviewer.md and "
-                    f"codex-code-reviewer.md so both reviewers catch a plan-declared "
-                    f"DP shape the dispatcher does not expose (incident #779 r6)."
+                    f"{token!r} (#806/#875). The Step 0.67 lens (exposure contract + "
+                    f"work-conserving schedule sub-check) + `compute-shape-mismatch` "
+                    f"blocker tag + anti-pattern (d) must be present in BOTH "
+                    f"code-reviewer.md and codex-code-reviewer.md so both reviewers "
+                    f"catch a plan-declared DP shape the dispatcher does not expose "
+                    f"and a non-work-conserving / per-row-IO-bound schedule "
+                    f"(incidents #779 r6, #813, #778)."
                 )
     return errors
 
@@ -4319,7 +4333,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 107_000,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    "code-reviewer.md": 77_500,  # measured 74,409 B (re-based #869: Step 0.6 extrapolation block + Step 0.68)
+    # measured 78,522 B post-#875+#869 (work-conserving schedule sub-check +
+    # anti-pattern (d), then the Step 0.6 extrapolation block + Step 0.68 —
+    # both plan-mandated growth; cap = measured + <=3 KB)
+    "code-reviewer.md": 81_500,
     "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
     "codex-code-reviewer.md": 47_500,  # measured 44,841 B
     "experiment-implementer.md": 58_500,  # measured 55,812 B (re-based #869: vectorize-first item 7 + item-5 per-call re-derivation)

@@ -2802,18 +2802,19 @@ def test_compute_shape_review_lens_flags_missing(tmp_path) -> None:
     """A code-reviewer agent pair missing the lens FAILs the #806 check."""
     agents = tmp_path / ".claude" / "agents"
     agents.mkdir(parents=True)
-    # codex file has the lens; the Claude file does not → one FAIL for the
-    # Claude file, none for the codex file.
+    # codex file has the lens (all FOUR #806+#875 tokens); the Claude file
+    # does not → FAILs for the Claude file only, none for the codex file.
     (agents / "code-reviewer.md").write_text("# reviewer\nno lens here\n")
     (agents / "codex-code-reviewer.md").write_text(
         "# codex\nStep 0.67 Compute-shape-vs-dispatcher\nblocker tag compute-shape-mismatch\n"
+        "work-conserving schedule sub-check\nanti-pattern (d) per-row compression\n"
     )
     errors = check_compute_shape_review_lens(repo_root=tmp_path)
     assert errors, "expected a FAIL for the code-reviewer.md missing the lens"
     # Key on the SUBJECT of each error — the file path before the first ': '
     # (the message body cross-references the sibling filename in prose, so a
     # naive substring search would collide). Every error must be ABOUT the
-    # Claude file; none about the codex file (which carries both tokens).
+    # Claude file; none about the codex file (which carries all four tokens).
     subjects = [e.split(": ", 1)[0] for e in errors]
     assert all(s.endswith("code-reviewer.md") for s in subjects), subjects
     assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
@@ -2825,25 +2826,54 @@ def test_compute_shape_review_lens_flags_both_files(tmp_path) -> None:
 
     Pins the per-file error-accumulation loop (not just the scoping asserted
     by ``test_compute_shape_review_lens_flags_missing``): each file is missing
-    exactly ONE distinct required token, so the loop emits exactly one error
-    per file — two total, one subject per file. A regression that broke out of
-    the loop after the first file, or that de-duplicated across files, would
-    fail this.
+    exactly ONE distinct required token (of the four #806+#875 tokens), so the
+    loop emits exactly one error per file — two total, one subject per file. A
+    regression that broke out of the loop after the first file, or that
+    de-duplicated across files, would fail this.
     """
     agents = tmp_path / ".claude" / "agents"
     agents.mkdir(parents=True)
-    # Claude file carries the tag but NOT the heading token; codex file
-    # carries the heading token but NOT the tag → one distinct missing token
-    # apiece → exactly one error per file.
-    (agents / "code-reviewer.md").write_text("# reviewer\nblocker tag compute-shape-mismatch\n")
+    # Claude file carries 3 of 4 tokens (missing `work-conserving`); codex
+    # file carries 3 of 4 (missing `compute-shape-mismatch`) → one distinct
+    # missing token apiece → exactly one error per file.
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\nStep 0.67 Compute-shape-vs-dispatcher\n"
+        "blocker tag compute-shape-mismatch\nanti-pattern (d) per-row compression\n"
+    )
     (agents / "codex-code-reviewer.md").write_text(
         "# codex\nStep 0.67 Compute-shape-vs-dispatcher\n"
+        "work-conserving schedule sub-check\nanti-pattern (d) per-row compression\n"
     )
     errors = check_compute_shape_review_lens(repo_root=tmp_path)
     assert len(errors) == 2, errors
     subjects = {e.split(": ", 1)[0] for e in errors}
     assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
     assert any(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def test_compute_shape_review_lens_flags_missing_875_tokens(tmp_path) -> None:
+    """Legacy-#806-tokens-only files FAIL on the two #875 tokens.
+
+    Regression test for the #875 extension (work-conserving schedule sub-check
+    + throughput anti-pattern (d)): both tmp files carry ONLY the two legacy
+    #806 tokens, so the check must emit exactly 4 errors (2 per file), each
+    naming `work-conserving` or `per-row compression`. Under the pre-#875
+    two-token tuple this tree returned `[]`, so this test fails when the lint
+    tuple lacks the #875 tokens and passes post-fix.
+    """
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    legacy_only = (
+        "# agent\nStep 0.67 Compute-shape-vs-dispatcher\nblocker tag compute-shape-mismatch\n"
+    )
+    (agents / "code-reviewer.md").write_text(legacy_only)
+    (agents / "codex-code-reviewer.md").write_text(legacy_only)
+    errors = check_compute_shape_review_lens(repo_root=tmp_path)
+    assert len(errors) == 4, errors
+    assert all("'work-conserving'" in e or "'per-row compression'" in e for e in errors), errors
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert sum(s.endswith("/code-reviewer.md") for s in subjects) == 2, subjects
+    assert sum(s.endswith("/codex-code-reviewer.md") for s in subjects) == 2, subjects
 
 
 def _write_smoke_arch_conforming_tree(tmp_path) -> None:

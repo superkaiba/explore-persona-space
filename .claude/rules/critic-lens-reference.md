@@ -108,10 +108,12 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    Consistency-Checker uninspected; the implant floored). Not a REVISE when the plan has no ICL /
    few-shot demonstrations (§4 should write "N/A — no ICL or few-shot demonstrations in this design"
    and you accept that).
-9. **Trained-artifact reuse — fitness check (any plan that reuses a prior HF adapter / checkpoint /
-   training-mix / raw-completion bucket / eval JSON).** Reusing trained artifacts is the project
+9. **Trained-artifact + code reuse — fitness check (any plan that reuses a prior HF adapter /
+   checkpoint / training-mix / raw-completion bucket / eval JSON, or a parent's fit/analysis/eval
+   code helper).** Reusing trained artifacts is the project
    DEFAULT (CLAUDE.md "Reuse existing trained artifacts when fit-for-purpose"; planner.md step 5).
-   When the plan records a reused artifact in §10 / §11, the planner must have verified all of: (a)
+   When the plan records a reused artifact in §10 / §11 — or names a reused fit/analysis/eval code
+   helper in §4 / §10 — the planner must have verified all of: (a)
    recipe match (same base model + same load-bearing hyperparameters the new question requires; same
    marker token id for marker work; adapter-architecture values — `r` / `lora_alpha` /
    `lora_dropout` / `target_modules` / `use_rslora` — grounded on the artifact's own
@@ -147,7 +149,11 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    the clone), else the plan uploads / renames the mix to the consumer path first, adapts the
    consumer, or carries a self-contained §4 regen phase (#734 round-4: a reused parent mix on
    neither HF repo AND under a #474 naming convention the #664-style consumer dispatcher did not
-   assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds). REVISE in
+   assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds); (i)
+   throughput fitness of reused fit/analysis/eval CODE — inner per-cell/per-fold/per-draw loop
+   batched + device parametrized; full text in `.claude/rules/artifact-reuse.md` checklist item (i)
+   (referenced by pointer, not duplicated here; "checklist item (i)" is distinct from this item's
+   REVISE-direction romans below). REVISE in
    two directions: (i) the plan REUSES an artifact without naming the producing issue's recipe and
    confirming each load-bearing value matches, or grounds adapter-architecture expectations solely
    on the parent body's Reproducibility row without reading the artifact's `adapter_config.json`, or
@@ -162,18 +168,28 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    CDN/region/`HF_TOKEN` gate blocks the lane from staging it), without an upload-first /
    rename-to-consumer-path step, a consumer-adaptation, OR a self-contained §4 regen phase — the
    resulting numbers will silently confound the result, or phase2 crashes at the pre-train `assert
-   data_path.exists()` on a git-clone-only lane; (ii) the plan RETRAINS / REGENERATES something an
+   data_path.exists()` on a git-clone-only lane; or the plan reuses a parent's fit/analysis CODE
+   without the checklist-item-(i) throughput inspection (inner per-cell/per-fold/per-draw loop
+   batched? device parametrized? — `.claude/rules/vectorize-many-cell-fits.md`; #761's reused
+   serial `_ridge_predict_loco` ran ~100× over plan, #763/#812 inherited a hardcoded
+   `DEVICE = "cpu"`) or names a caller-side workaround where checklist item (i)'s remedy is a
+   source-module fix — the reused serial loop / CPU pin then blows the §9 wall-time projection;
+   (ii) the plan RETRAINS / REGENERATES something an
    existing fit artifact already covers (per the step-5 artifact search) without a one-line
    justification for why the existing artifact does not fit — this wastes GPU-hours and breaks
    sibling-comparability. Not a REVISE when the plan reuses an artifact AND records its fitness
-   check (a)–(h) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
-   downstream analyzer can re-check; not a REVISE when the plan retrains AND names the specific
-   fitness-check failure that licenses the retrain. Conclusion-changing because (i) a wrong-recipe /
+   check (a)–(i) inline (in §10 / §11 / §12 — the planner's call) so the consistency-checker and
+   downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
+   specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
+   and NO caller-side workaround — its remedy is the source-module fix, then reuse).
+   Conclusion-changing because (i) a wrong-recipe /
    saturated / missing-conditions artifact produces numbers that look like results but answer a
    different question, and (ii) gratuitous retraining changes the inherited baseline so the new
    result can't be lined up against the parent's. Cross-check: this lens does NOT fire when the plan
    has no reuse to verify AND no existing artifact would fit (i.e. genuinely new training is
-   necessary — say so and item 9 accepts that). Existence verification of HF paths is already
+   necessary — say so and item 9 accepts that); a plan with NO data/model artifact reuse but WITH
+   a reused fit/analysis/eval helper is NOT such an exit — checklist item (i) still fires on the
+   code reuse. Existence verification of HF paths is already
    handled by planner.md step 5's `huggingface_hub.list_repo_files` check; this item is about
    FITNESS beyond mere existence.
 10. **CPU/analysis-phase placement — idle multi-GPU pod (efficiency), oversized-VM-footprint (disk

@@ -42,8 +42,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -453,6 +455,21 @@ def fit_cell(
     the ``rho_M0_mlp`` / ``rho_Mplus_mlp`` / ``rho_M0_shuffle`` / ``nonlin_gap_*``
     keys (all MLP-derived); every ridge key is byte-for-byte the same code path.
     """
+    if include_mlp:
+        if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+            raise RuntimeError(
+                "fit_cell(include_mlp=True) is the SERIAL per-(behavior,layer) MLP path "
+                "superseded by src/explore_persona_space/analysis/vectorized_mlp_skill.py; "
+                "EPM_FORBID_SERIAL_FITS=1 is set (see "
+                ".claude/rules/vectorize-many-cell-fits.md § Supersede contract)."
+            )
+        warnings.warn(
+            "fit_cell(include_mlp=True) runs the SERIAL per-(behavior,layer) MLP fit; new "
+            "sweeps should use src/explore_persona_space/analysis/vectorized_mlp_skill.py "
+            "(batched, 50-100x). Serial call retained for #722/#667 reproduction only.",
+            FutureWarning,
+            stacklevel=2,
+        )
     stacks = loadact.stack_for_fit(cells)
     C0, Cplus = stacks["C0"], stacks["Cplus"]
     V0, Vplus = stacks["V0"], stacks["Vplus"]
