@@ -94,7 +94,13 @@ process stays alive burning Python-overhead CPU (so the #518/#658
 session-CPU-advancing override rescued the stall to `running` for a 60+
 min silent hang). It is recoverable by an experimenter respawn (reap the
 orphaned `VLLM::EngineCore` worker by EXACT PID, relaunch on the same
-pod), NOT a code fix, so it belongs on the `infra` row. The emit surface
+pod), NOT a code fix, so it belongs on the `infra` row. Since #826 the
+detector fires only when EVERY workload log is stale past the effective
+stall window (`max(EPM_ZOMBIE_VETO_FRESH_SEC=60, stall_sec)`) for 2
+consecutive ticks — on host-PID-namespace containers nvidia-smi reports
+host PIDs unresolvable in the container's `/proc`, so the bare signature
+is false-positive on healthy runs (#816/#778); a fresh-log zombie flag is
+a namespace artifact, not a hang. The emit surface
 is `scripts/poll_pipeline.py` + `scripts/backend_poll.py`; the
 known-reason set is `STALL_REASON_INFRA` in `failure_classifier.py`; the
 recovery brief + recipe references are SKILL.md Step 7 § "Zombie-GPU

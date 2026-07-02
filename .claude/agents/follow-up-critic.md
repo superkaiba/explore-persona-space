@@ -14,7 +14,6 @@ description: >
   Reads the task corpus (via task.py / the queue report) + open_questions.md
   to judge duplication. NOTHING is dropped — every proposal is saved with a
   rationale either way.
-model: claude-fable-5
 effort: xhigh
 tools:
   - Read
