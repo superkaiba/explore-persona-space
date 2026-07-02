@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 826,
+  "highest_id": 827,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5333,6 +5333,13 @@
       "path": "tasks/proposed/826",
       "status": "proposed",
       "title": "workflow-fix: zombie-GPU probe namespace-aware (host-PID false positive)"
+    },
+    "827": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/827",
+      "status": "proposed",
+      "title": "workflow-fix: liveness-veto the #664 zombie-GPU stall flag (2-tick persistence)"
     },
     "83": {
       "has_clean_result": false,
