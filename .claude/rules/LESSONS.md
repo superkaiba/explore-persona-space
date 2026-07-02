@@ -12,6 +12,7 @@ one, OPEN the linked rule and follow it before proceeding.
 
 ## Rules
 
+- **analyzer-paper-mode** ([`.claude/rules/analyzer-paper-mode.md`](analyzer-paper-mode.md)) — fires when: the analyzer runs a `paper: true` task (LaTeX clean-result; verify_paper.py gate).
 - **artifact-reuse** ([`.claude/rules/artifact-reuse.md`](artifact-reuse.md)) — fires when: a plan would reuse a prior HF adapter / checkpoint / mix / completions / eval JSON instead of retraining (run the (a)-(h) fitness check).
 - **arxiv-mcp** ([`.claude/rules/arxiv-mcp.md`](arxiv-mcp.md)) — fires when: you need to search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - **background-automation** ([`.claude/rules/background-automation.md`](background-automation.md)) — fires when: you touch or reason about the cron audits / autonomous-session watcher / pod or GCP janitors.
