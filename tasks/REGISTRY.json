@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 876,
+  "highest_id": 877,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5706,6 +5706,13 @@
       "path": "tasks/running/876",
       "status": "running",
       "title": "Parametrize DEVICE in issue658_fit_predictors.py (CPU pin hit #763/#812)"
+    },
+    "877": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/877",
+      "status": "proposed",
+      "title": "Fix pre-existing thread-caps test failure: issue779_layer_sweep.py missing load_dotenv-before-torch"
     },
     "88": {
       "has_clean_result": true,
