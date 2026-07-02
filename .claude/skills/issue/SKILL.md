@@ -2065,7 +2065,15 @@ orchestrator verifies the evidence is genuinely present, so cosmetic
 gripes about present evidence never bounce the implementer or consume a
 review round. Code-only tasks (`infra` / `batch` / `analysis` /
 `survey`) keep the existing test-verdict gate (Step 9c) and are
-exempt from this smoke gate.
+exempt from this smoke gate. Smoke commands that write under
+`eval_results/` or `figures/` also carry the output-path hygiene
+disposition per experiment-implementer.md
+§ "Smoke outputs never overwrite committed artifacts" (scratch-dir
+redirect preferred; restore-after-smoke + an empty
+`git status --porcelain -- eval_results/ figures/` as the fallback);
+the reviewer treats visible clobber of a committed artifact as a
+substantive Critical (code-reviewer.md Step 0.6), never a strippable
+mechanical blocker.
 
 **5b. Read both markers from `events.jsonl`.**
 
