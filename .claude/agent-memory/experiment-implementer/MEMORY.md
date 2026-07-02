@@ -61,3 +61,4 @@
 - [strict LLM-count assert on over-generation (clamp + typed shortfall)](feedback_strict_llm_count_assert_over_generation.md) — clamp to N via items[:N] on over-generation, raise typed ArtifactCountShortfall on under-generation (never == N hard-assert; #779 round-7)
 - [Parity floor: weak writer vs gauge error](feedback_parity_floor_weak_writer_vs_gauge_error.md) — per-adapter-class write-ratio floors; gauge errors are √r-multiplicative, not 10% shortfalls (#813)
 - [TrainerCallback subclass + real-path smoke](feedback_trainer_callback_must_subclass_trainercallback.md) — hand-rolled HF callbacks must subclass TrainerCallback; GPU-bound-phase smokes must traverse real SFTTrainer.__init__ (#816)
+- [script-mode sys.path scripts.* imports](feedback_script_mode_syspath_scripts_imports.md) — deferred scripts.* imports crash pod-side in script mode; _ensure_repo_root_on_syspath + script-mode import checks from non-repo cwd (#823)
