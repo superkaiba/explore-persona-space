@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 854,
+  "highest_id": 855,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5552,6 +5552,13 @@
       "path": "tasks/proposed/854",
       "status": "proposed",
       "title": "workflow-fix: GCP EXIT-trap poweroff races crash-diagnostics upload"
+    },
+    "855": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/855",
+      "status": "proposed",
+      "title": "workflow-fix: chunk-cap calibration lesson (gotchas + vectorize rule)"
     },
     "88": {
       "has_clean_result": true,
