@@ -7,7 +7,7 @@ tags:
 - answer-summary-sweep
 - from-722
 created_at: '2026-07-01T18:16:27Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 722
 origin_prompt: what about taking activation at the newline before the next user message,
   similar to what worked well for the context? (this is for a summary of the answer
