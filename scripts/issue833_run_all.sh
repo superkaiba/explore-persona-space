@@ -77,7 +77,11 @@ run_stage generate
 run_stage extract-rbase
 
 # ── extract-context: ONLY when the A0′ c_C stack-parity probe flagged the
-# registered contingency (reextract_context_vectors: true in a0_summary.json) ─
+# registered contingency (reextract_context_vectors: true in a0_summary.json).
+# The VM-side Phase-D fit (`uv run python scripts/issue833_fit_onpolicy.py`)
+# consumes the flag AUTOMATICALLY: --context-source defaults to `auto`,
+# resolving from $OUT_DIR/parity/a0_summary.json (no manual flag needed;
+# a resolution of `store` while the summary flags the contingency fails loud) ─
 REEXTRACT_CTX=$(uv run python -c "import json, pathlib; p = pathlib.Path('$OUT_DIR/parity/a0_summary.json'); print(int(json.loads(p.read_text()).get('reextract_context_vectors', False)) if p.exists() else 0)")
 if [ "$REEXTRACT_CTX" = "1" ]; then
   echo "[phase=extract-context] c_C parity flagged — running fleet context re-extraction"

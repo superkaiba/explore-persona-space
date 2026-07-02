@@ -1906,7 +1906,9 @@ def stage_extract_context(args) -> int:
     recipe: last-input-token of ``src_msgs = build_messages_for(source,
     probes[0])`` with the writer's ``c_all[li - 1]`` layer mapping). After this
     stage, ZERO old-store reads remain anywhere (the fit driver consumes these
-    via ``--context-source reextracted``). Invoked by run_all ONLY when the A0′
+    AUTOMATICALLY: its ``--context-source`` defaults to ``auto``, resolving
+    ``reextracted`` from the flagged ``a0_summary.json``; explicit
+    ``reextracted`` also works). Invoked by run_all ONLY when the A0′
     summary carries ``reextract_context_vectors: true``. Resume-skip per file.
     """
     out_root = Path(args.out)

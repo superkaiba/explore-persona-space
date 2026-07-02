@@ -19,9 +19,16 @@ never re-implementing the fit math):
 written by ``issue833_extract_onpolicy.py --stage extract-rbase`` (NOT the
 revision-pinned old store — the #667 store's response legs are ABANDONED, plan
 v5 amendment i); the old store is read ONLY for c_C / c_C_postft (still
-revision-pinned), unless ``--context-source reextracted`` (the registered
-c_C-parity-FAIL contingency), in which case context vectors also come from the
-new namespace's ``__context__.npz`` and ZERO old-store reads remain.
+revision-pinned), unless the context source resolves to ``reextracted`` (the
+registered c_C-parity-FAIL contingency), in which case context vectors also
+come from the new namespace's ``__context__.npz`` and ZERO old-store reads
+remain. ``--context-source`` DEFAULTS to ``auto``: it resolves from the A0′
+parity summary (``<out-dir>/parity/a0_summary.json`` —
+``reextract_context_vectors`` truthy → ``reextracted``, falsy → ``store``;
+summary MISSING → ``store`` with a loud warning naming the looked-up path), and
+ANY resolution of ``store`` while an EXISTING summary flags the contingency
+RAISES — the parity verdict and the fit's context source never disagree
+silently (a parity-FAIL run must not fit on the FAILED old-store context).
 ``--legs-mode store`` keeps the v4 behavior (old-store L1/L2) for forensic
 re-reads only. The R⁺ legs (L3 ``v_plus_onpolicy`` / L4 ``v0_onpolicy`` +
 per-probe ``resp_sha256``) stream from the ``analysis_tensors`` namespace in
@@ -1553,6 +1560,50 @@ def _write_json(path: Path, obj: dict) -> None:
     os.replace(tmp, path)
 
 
+def resolve_context_source(cli_value: str, a0_summary_path: Path) -> tuple[str, str]:
+    """Resolve ``--context-source`` against the A0′ parity summary — fail loud.
+
+    Returns ``(resolved, reason)``. ``auto`` (the CLI default) follows the
+    summary's ``reextract_context_vectors`` flag: truthy → ``reextracted`` (the
+    registered c_C-parity-FAIL contingency), falsy → ``store``; a MISSING
+    summary → ``store`` with a loud warning naming the looked-up path (smoke /
+    manual contexts carry no A0′ verdict — never a crash). Regardless of mode,
+    a resolution of ``store`` while an EXISTING summary flags the contingency
+    RAISES: the parity verdict and the fit's context source may never disagree
+    silently (round-4 reconciled Major — a parity-FAIL run must not fit on the
+    FAILED old-store context vectors).
+    """
+    flag: bool | None = None
+    if a0_summary_path.exists():
+        flag = bool(json.loads(a0_summary_path.read_text()).get("reextract_context_vectors", False))
+    if cli_value == "auto":
+        if flag is None:
+            resolved = "store"
+            reason = f"a0_summary MISSING at {a0_summary_path} — defaulting to store"
+            logger.warning(
+                "[phase=fit_onpolicy] context_source auto -> store: A0' parity summary "
+                "MISSING at %s (smoke/manual context — no parity verdict to consume)",
+                a0_summary_path,
+            )
+        else:
+            resolved = "reextracted" if flag else "store"
+            reason = f"a0_summary {a0_summary_path}: reextract_context_vectors={flag}"
+    else:
+        resolved = cli_value
+        reason = (
+            f"explicit --context-source {cli_value} "
+            f"(a0_summary: {a0_summary_path if flag is not None else 'missing'}, flag={flag})"
+        )
+    if flag and resolved == "store":
+        raise ValueError(
+            f"context source resolved to 'store' but {a0_summary_path} flags "
+            "reextract_context_vectors: true (A0' c_C stack-parity FAIL) — the old-store "
+            "context vectors are NOT licensed. Pass --context-source reextracted (after the "
+            "extract-context stage) or fix the summary."
+        )
+    return resolved, reason
+
+
 def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source load routing + per-(behavior, layer) loop; flattening would inline the loaders
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     fit658.DEVICE = fit658._resolve_device("auto")  # ridge device (fit_M precedent)
@@ -1582,11 +1633,19 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
     )
     ap.add_argument(
         "--context-source",
-        choices=["store", "reextracted"],
-        default="store",
-        help="c_C/c_C_postft source: 'store' (pinned #667 revision — the default, licensed by "
-        "the A0' c_C-parity probe) or 'reextracted' (the extract-context contingency; zero "
-        "old-store reads remain)",
+        choices=["auto", "store", "reextracted"],
+        default="auto",
+        help="c_C/c_C_postft source: 'auto' (DEFAULT — resolve from the A0' parity summary's "
+        "reextract_context_vectors flag at <out-dir>/parity/a0_summary.json; missing summary "
+        "-> store with a loud warning), 'store' (pinned #667 revision, licensed by the A0' "
+        "c_C-parity probe), or 'reextracted' (the extract-context contingency; zero old-store "
+        "reads remain). Explicit 'store' while the summary flags the contingency RAISES.",
+    )
+    ap.add_argument(
+        "--a0-summary-path",
+        type=Path,
+        default=None,
+        help="override the A0' parity summary location (default: <out-dir>/parity/a0_summary.json)",
     )
     ap.add_argument("--rbase-completions-prefix", default=RBASE_COMPLETIONS_PREFIX)
     ap.add_argument("--onpolicy-completions-prefix", default=ONPOLICY_COMPLETIONS_PREFIX)
@@ -1626,6 +1685,21 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
         args.mlp_epochs = args.mlp_epochs or 8
         args.mlp_chunk_size = min(args.mlp_chunk_size, 64)
         logger.info("[phase=fit_onpolicy] SMOKE — synthetic data, out=%s", tmp)
+
+    # ---- context-source resolution (round-4 reconciled Major): the fit consumes
+    # the A0' c_C-parity verdict AUTOMATICALLY; a parity-FAIL run must never
+    # silently fit on the FAILED old-store context vectors. ----
+    a0_summary_path = args.a0_summary_path or (args.out_dir / "parity" / "a0_summary.json")
+    cli_context_source = args.context_source
+    args.context_source, context_source_reason = resolve_context_source(
+        cli_context_source, a0_summary_path
+    )
+    logger.info(
+        "[phase=fit_onpolicy] context_source %s -> %s (%s)",
+        cli_context_source,
+        args.context_source,
+        context_source_reason,
+    )
 
     fitM.TARGET_DIM = args.target_dim  # module-global read by _refit_ridge_fn
     mlp_epochs = args.mlp_epochs if args.mlp_epochs is not None else fit658.MLP_MAX_EPOCHS
@@ -1759,6 +1833,13 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
                 "issue": 833,
                 "legs_mode": args.legs_mode,
                 "context_source": args.context_source,
+                "context_source_resolution": {
+                    "cli": cli_context_source,
+                    "resolved": args.context_source,
+                    "a0_summary_path": str(a0_summary_path),
+                    "a0_summary_exists": a0_summary_path.exists(),
+                    "reason": context_source_reason,
+                },
                 "old_store_revision": (
                     None if args.context_source == "reextracted" else args.old_store_revision
                 ),
@@ -1835,6 +1916,7 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
         "smoke": bool(args.smoke),
         "legs_mode": args.legs_mode,
         "context_source": args.context_source,
+        "context_source_resolution": context_source_reason,
         "behaviors": beh_list,
         "layers": layer_list,
         "headline_layer": hero_layer,

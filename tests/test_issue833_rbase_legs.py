@@ -9,13 +9,18 @@ Pins the two-namespace contract the ``--legs-mode reextracted`` path depends on:
         store-era v0/vplus replaced; context vectors preserved);
   (iii) an incomplete rbase namespace fails loud NAMING the missing cell;
   (iv)  ``build_leg_npz_payload(leg_mode="onpolicy")`` refuses to build without
-        the store context / base hashes (the B2 invariants).
+        the store context / base hashes (the B2 invariants);
+  (v)   ``resolve_context_source`` consumes the A0' c_C-parity verdict: auto +
+        flagged summary → reextracted; auto + unflagged / missing → store (no
+        raise); explicit store while flagged RAISES (round-4 reconciled Major —
+        a parity-FAIL run must not fit on the FAILED old-store context).
 
 Run: uv run pytest tests/test_issue833_rbase_legs.py -v
 """
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -34,6 +39,7 @@ from issue833_fit_onpolicy import (  # noqa: E402
     RbaseLeg,
     build_cells_reextracted,
     load_rbase_legs,
+    resolve_context_source,
 )
 
 HIDDEN = 8
@@ -154,3 +160,42 @@ def test_onpolicy_payload_requires_context_and_base_hashes():
             gen_backend="vllm",
             stored_context=None,
         )
+
+
+def _write_a0_summary(tmp_path: Path, flag: bool) -> Path:
+    """Write a minimal A0' parity summary carrying the contingency flag."""
+    p = tmp_path / "parity" / "a0_summary.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"reextract_context_vectors": flag}))
+    return p
+
+
+def test_context_source_auto_flagged_resolves_reextracted(tmp_path):
+    """(v-i) auto + flagged summary -> reextracted (the contingency engages)."""
+    p = _write_a0_summary(tmp_path, True)
+    resolved, reason = resolve_context_source("auto", p)
+    assert resolved == "reextracted"
+    assert "reextract_context_vectors=True" in reason
+
+
+def test_context_source_auto_unflagged_resolves_store(tmp_path):
+    """(v-ii) auto + unflagged summary -> store (parity PASS licenses the store)."""
+    p = _write_a0_summary(tmp_path, False)
+    resolved, reason = resolve_context_source("auto", p)
+    assert resolved == "store"
+    assert "reextract_context_vectors=False" in reason
+
+
+def test_context_source_auto_missing_summary_resolves_store(tmp_path):
+    """(v-iii) auto + MISSING summary -> store, warn-not-crash (smoke/manual)."""
+    p = tmp_path / "parity" / "a0_summary.json"
+    resolved, reason = resolve_context_source("auto", p)
+    assert resolved == "store"
+    assert "MISSING" in reason and str(p) in reason
+
+
+def test_context_source_explicit_store_flagged_raises(tmp_path):
+    """(v-iv) explicit store while the summary flags the contingency RAISES."""
+    p = _write_a0_summary(tmp_path, True)
+    with pytest.raises(ValueError, match="reextract_context_vectors"):
+        resolve_context_source("store", p)
