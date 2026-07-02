@@ -25,6 +25,77 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import issue658_common as common  # noqa: E402
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _pin_fit_device_cpu(monkeypatch):
+    """Pin fit658.DEVICE to cpu for every test in this file (#876, plan D5).
+
+    The module-scope default is env/auto-resolved, so on a GPU host the
+    DEVICE-reading fitters exercised here (fit_a32, fit_a34_a35,
+    _fit_a34_a35_one_recipe) would newly run on cuda; the contract tests stay
+    bit-deterministic on cpu (mirrors the exactness file's per-test pins,
+    scoped + auto-restored via monkeypatch).
+    """
+    import issue658_fit_predictors as fit
+
+    monkeypatch.setattr(fit, "DEVICE", "cpu")
+
+
+def test_device_request_precedence_cli_env_auto(monkeypatch):
+    """#876: explicit CLI beats EPM_FIT_DEVICE; env beats auto; unset -> auto."""
+    import issue658_fit_predictors as fit
+
+    monkeypatch.setenv("EPM_FIT_DEVICE", "cuda")
+    assert fit._requested_device("cpu") == "cpu"  # explicit CLI wins over env
+    assert fit._requested_device(None) == "cuda"  # env wins over auto
+    monkeypatch.delenv("EPM_FIT_DEVICE")
+    assert fit._requested_device(None) == "auto"  # unset -> auto
+
+
+def test_default_device_resolves_env_override(monkeypatch):
+    """#876: the module-scope default resolves EPM_FIT_DEVICE through _resolve_device."""
+    import issue658_fit_predictors as fit
+
+    monkeypatch.setenv("EPM_FIT_DEVICE", "cpu")
+    assert fit._default_device() == "cpu"
+    monkeypatch.delenv("EPM_FIT_DEVICE")
+    assert fit._default_device() == fit._resolve_device("auto")
+
+
+def test_main_device_wiring_default_none_and_requested_device():
+    """#876 amendment 1: pin the main() wiring itself.
+
+    A partial edit (argparse default flipped to None but the resolution line
+    not rewired) is silent — _resolve_device(None) -> auto — no crash, no
+    warning, no other test failure. Assert BOTH halves of the wiring.
+    """
+    import ast
+    import inspect
+
+    import issue658_fit_predictors as fit
+
+    src = inspect.getsource(fit.main)
+    assert "_resolve_device(_requested_device(args.device))" in src, (
+        "main() must resolve DEVICE via _resolve_device(_requested_device(args.device))"
+    )
+    device_defaults = [
+        kw.value
+        for node in ast.walk(ast.parse(src))
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "add_argument"
+        and node.args
+        and isinstance(node.args[0], ast.Constant)
+        and node.args[0].value == "--device"
+        for kw in node.keywords
+        if kw.arg == "default"
+    ]
+    assert len(device_defaults) == 1, "expected exactly one --device add_argument with a default"
+    assert isinstance(device_defaults[0], ast.Constant) and device_defaults[0].value is None, (
+        "--device argparse default must be None (the env sentinel), not 'auto'"
+    )
 
 
 def test_per_column_sampling_honored_not_hardcoded():

@@ -545,8 +545,8 @@ def main() -> int:
     N_REFIT_PAIRS = args.refit_pairs
     TARGET_DIM = args.target_dim
 
-    # Device for the reused ridge fitter (fit658.DEVICE), auto → cuda if available.
-    fit658.DEVICE = fit658._resolve_device("auto")
+    # fit658.DEVICE resolves at import (EPM_FIT_DEVICE env if set, else auto —
+    # cuda when available; #876), so no hand-patch is needed here.
     logger.info("[phase=map_change] device=%s", fit658.DEVICE)
     fit658._assert_ridge_exactness()  # #658 reduction-order gate
     logger.info("[phase=map_change] ridge exactness gate PASS")

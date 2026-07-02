@@ -690,11 +690,8 @@ def m0_at_cplus_ridge_full(C0, V0, Cplus, pca):
 def main() -> int:
     global N_REFIT_PAIRS, TARGET_DIM
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    # Resolve the compute device the ridge + MLP fitters read off fit658.DEVICE
-    # (default "cpu", flipped to cuda only inside fit658.main() — which #722 never
-    # calls; MF#6 / Claude Major#1). "auto" → cuda when available else cpu, so the
-    # GPU lane uses cuda and the CPU smoke still falls back to cpu.
-    fit658.DEVICE = fit658._resolve_device("auto")
+    # fit658.DEVICE resolves at import (EPM_FIT_DEVICE env if set, else auto —
+    # cuda when available; #876), so no hand-patch is needed here.
     logger.info("[phase=fit_M] device=%s", fit658.DEVICE)
     ap = argparse.ArgumentParser(description="Issue #722 fit M0 vs M⁺ + the four reads")
     ap.add_argument("--behaviors", nargs="+", default=list(HEADLINE_BEHAVIORS))
