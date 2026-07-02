@@ -8,6 +8,12 @@ recipe, 0f directions, 0g organisms) add modules INTO this package; this
 module owns the package skeleton and the public field-name contract they read.
 """
 
+from explore_persona_space.artifacts.ablation import (
+    ablated,
+    ablation_hooks,
+    all_layer_directions,
+    single_layer_directions,
+)
 from explore_persona_space.artifacts.behavior import (
     ALLOWED_COMPANION_DVS,
     ALLOWED_PRIMARY_DVS,
@@ -30,10 +36,28 @@ from explore_persona_space.artifacts.context import (
     context_for_persona,
     validate_context,
 )
+from explore_persona_space.artifacts.directions import (
+    ARMS,
+    PROVENANCES,
+    REGIMES,
+    ContrastiveCompletion,
+    DirectionResult,
+    ReadOutHeadline,
+    extract_direction,
+    filter_completions,
+    load_completions_jsonl,
+    load_direction,
+    save_completions_jsonl,
+    save_direction,
+    score_completions,
+    select_readout_layer,
+    select_steering_layer,
+)
 
 __all__ = [
     "ALLOWED_COMPANION_DVS",
     "ALLOWED_PRIMARY_DVS",
+    "ARMS",
     "BEHAVIORS",
     "CONTEXTS",
     "CONTEXT_KINDS",
@@ -42,12 +66,30 @@ __all__ = [
     "FAMILY_KIND_MAP",
     "INSTALLABLE_KINDS",
     "METHODS",
+    "PROVENANCES",
+    "REGIMES",
     "Behavior",
     "Context",
+    "ContrastiveCompletion",
     "DVSpec",
+    "DirectionResult",
     "ElicitationSpec",
     "ExtractionSpec",
     "PromptPair",
+    "ReadOutHeadline",
+    "ablated",
+    "ablation_hooks",
+    "all_layer_directions",
     "context_for_persona",
+    "extract_direction",
+    "filter_completions",
+    "load_completions_jsonl",
+    "load_direction",
+    "save_completions_jsonl",
+    "save_direction",
+    "score_completions",
+    "select_readout_layer",
+    "select_steering_layer",
+    "single_layer_directions",
     "validate_context",
 ]
