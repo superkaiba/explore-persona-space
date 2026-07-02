@@ -17,6 +17,9 @@ goal: 'Re-run #722''s M0-vs-M-plus function-change and chain-rho comparison on #
   through both models) to split representation change from output-distribution change,
   to test whether the ''function M moves only for the taught fact'' verdict survives
   on-policy measurement.'
+relates_to:
+- identity-contextual-vs-base
+- identity-cb-duality
 ---
 # Does #722's function-change verdict hold when the post-FT answer profiles come from the fine-tuned model's own answers
 
