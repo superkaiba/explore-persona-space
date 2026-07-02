@@ -17,6 +17,15 @@ skills:
 memory: project
 effort: xhigh
 background: true
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+  - TodoWrite
+  - Skill
 ---
 
 # Result Analyzer
