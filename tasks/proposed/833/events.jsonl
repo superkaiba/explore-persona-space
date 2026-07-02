@@ -1,1 +1,2 @@
 {"ts": "2026-07-02T04:55:40Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-02T04:59:09Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #833 to open question(s) identity-contextual-vs-base, identity-cb-duality (same anchors as parent #722 — on-policy re-test of the same function-change question); created_new=none; mode=auto-match."}
