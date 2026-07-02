@@ -112,10 +112,12 @@ def stubbed_pods_conf(monkeypatch):
     """Stub ``parse_pods_conf`` / ``write_pods_conf`` / ``cmd_sync`` and
     ``locked_pods_conf`` so the function under test never touches the real
     repo state. Mirrors the pattern in
-    ``test_pod_config_sync_preserves_manual.py`` — necessary because
-    ``parse_pods_conf`` captures ``PODS_CONF`` as a default arg at
-    function-def time, so a plain ``monkeypatch.setattr(pod_config,
-    "PODS_CONF", tmp)`` is ignored by callers inside the locked region.
+    ``test_pod_config_sync_preserves_manual.py``. Post-lazy-resolution
+    (task #821) ``parse_pods_conf`` / ``write_pods_conf`` default
+    ``path=None`` and resolve at call time via ``_resolve_live_pods_conf``,
+    which honors a monkeypatched ``pod_config.PODS_CONF``; but this fixture
+    still stubs the whole call surface so an accidental live-API touch
+    from a downstream refactor cannot leak into the test.
 
     Returns a state dict the test can mutate (``state["rows"]`` for the
     fake on-disk pods.conf) and read (``state["written"]`` for what

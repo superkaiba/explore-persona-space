@@ -247,15 +247,16 @@ def test_write_pods_conf_update_is_noop_for_guard(stubbed_env, monkeypatch):
 
 
 def test_write_pods_conf_is_atomic_and_leaves_target_unchanged(stubbed_env, monkeypatch):
-    """Force ``os.replace`` to raise; assert the pods.conf on disk still
-    matches its pre-write bytes verbatim (no torn write). The tmp sibling
-    may or may not exist — cleanup of the leftover is a separate concern.
+    """Force ``os.replace`` to raise; assert (a) the pods.conf on disk
+    still matches its pre-write bytes verbatim (no torn write) AND (b) the
+    ``<path>.tmp`` sibling is also cleaned up — the r2 minor fix
+    (best-effort tmp unlink on replace failure).
     """
     path = stubbed_env["conf_path"]
     _seed_conf(path, [_row("pod-A", host="1.1.1.1", port=11111)])
     pre_bytes = path.read_bytes()
 
-    class _ReplaceBoom(RuntimeError):
+    class _ReplaceBoom(OSError):
         pass
 
     def _fake_replace(src, dst):  # type: ignore[no-untyped-def]
@@ -273,6 +274,14 @@ def test_write_pods_conf_is_atomic_and_leaves_target_unchanged(stubbed_env, monk
     # Target file byte-identical to its pre-write content — the point of
     # ``os.replace``: readers never see a torn intermediate state.
     assert path.read_bytes() == pre_bytes
+
+    # r2 minor fix: the tmp sibling MUST also be gone. Pre-fix a failed
+    # ``os.replace`` orphaned ``<path>.tmp`` next to the target.
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    assert not tmp.exists(), (
+        f"stale tmp sibling {tmp} left behind after os.replace failure — "
+        "best-effort tmp cleanup (r2 minor fix) regressed."
+    )
 
 
 # ---------------------------------------------------------------------------

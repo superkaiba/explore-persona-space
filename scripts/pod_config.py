@@ -24,10 +24,20 @@ import os
 import re
 import subprocess
 import sys
+import threading
 from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+# Per-process reentrancy state for ``locked_pods_conf`` (task #821 v3 r2 —
+# closes the nested-flock deadlock). ``threading.local()`` gives us a
+# per-thread depth counter + fd handle so a nested ``with locked_pods_conf()``
+# acquired later in the SAME call stack skips the flock (which would
+# deadlock on a second file-description of the same lockfile — flock is
+# per-open-file-description, not per-process). See ``locked_pods_conf`` for
+# the full acquire / release contract.
+_LOCK_STATE = threading.local()
 
 if TYPE_CHECKING:
     # Type-checking-only import: ``runpod_api`` is heavy (loads RunPod GraphQL
@@ -356,14 +366,75 @@ def locked_pods_conf() -> Iterator[None]:
     ``parse_pods_conf`` from external readers like ``poll_pipeline.py``) do
     NOT take this lock — they tolerate seeing a momentarily-mid-write state
     because ``write_pods_conf`` writes atomically via a single text payload.
+
+    Reentrancy (task #821 v3 r2). This context manager is REENTRANT within a
+    single process: a nested ``with locked_pods_conf()`` acquired later in
+    the SAME call stack increments a per-thread depth counter and skips the
+    ``flock``. It MUST behave this way because ``_resolve_live_pods_conf``
+    (called lazily from every ``parse_pods_conf`` / ``write_pods_conf``)
+    itself acquires the lock for the first-use seed→live migration; every
+    production writer (``pod_lifecycle._upsert_pods_conf`` /
+    ``_remove_from_pods_conf``, ``cmd_update``, ``cmd_refresh_from_api``)
+    ALREADY holds the lock when it calls parse/write, which lazily resolve.
+    A non-reentrant implementation would open a SECOND file description on
+    the same lockfile inside the nested acquire — and ``flock`` is
+    per-open-file-description, so ``flock(fd2, LOCK_EX)`` blocks forever on
+    the fd1 our outer call is already holding. That was the codex-reviewer
+    critical-blocker from round 1 (deadlock on the first post-deploy
+    ``_upsert_pods_conf``).
+
+    The reentrancy state is a ``threading.local()`` depth counter + fd
+    handle. Depth 0 (outer acquire) opens the fd, takes ``LOCK_EX``, stores
+    the fd, sets depth = 1. Depth > 0 (nested acquire) increments only. On
+    exit, decrement; at depth 0 release ``LOCK_UN`` and close the fd. This
+    covers every current AND future call site in one move — chosen over
+    threading an ``assume_locked=True`` flag through the resolver because
+    the flag would have to be threaded through parse_pods_conf /
+    write_pods_conf / _resolve_live_pods_conf and every future caller, and
+    getting it wrong at one call site would silently reintroduce the
+    deadlock. The threading.local() sits BELOW the lock — no caller ever
+    has to think about it.
+
+    ``threading.local()`` gives each thread its own depth counter. A worker
+    thread that acquires while the main thread is holding the lock still
+    takes the ``flock`` (blocks correctly, no cross-thread reentrancy).
+    ``multiprocessing`` workers use ``spawn`` (per the existing test rig),
+    so each subprocess re-imports ``pod_config`` and gets a fresh
+    ``_LOCK_STATE`` — cross-process serialisation is unchanged and rides
+    on the ``flock`` alone. Auto-release on process death (kill -9, OOM
+    kill) still holds — ``fcntl.flock`` is released by the kernel on any
+    fd close, including implicit close at process exit.
     """
+    depth = getattr(_LOCK_STATE, "depth", 0)
+    if depth > 0:
+        # Nested acquire in the same thread — the outer frame already holds
+        # the flock. Increment depth only; the fd stays owned by the outer
+        # frame and is released when it exits.
+        _LOCK_STATE.depth = depth + 1
+        try:
+            yield
+        finally:
+            _LOCK_STATE.depth -= 1
+        return
+
+    # Outer acquire: open the fd, take the exclusive flock, stash the fd
+    # on the thread-local state so nested frames can see we hold it.
     PODS_CONF_LOCK.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(str(PODS_CONF_LOCK), os.O_WRONLY | os.O_CREAT, 0o600)
     try:
         fcntl.flock(fd, fcntl.LOCK_EX)
-        yield
+        _LOCK_STATE.fd = fd
+        _LOCK_STATE.depth = 1
+        try:
+            yield
+        finally:
+            _LOCK_STATE.depth = 0
+            _LOCK_STATE.fd = None
+            fcntl.flock(fd, fcntl.LOCK_UN)
     finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        # Close the fd unconditionally — even if ``flock(LOCK_EX)`` raised
+        # (e.g. EINTR) we must not leak the fd. ``LOCK_UN`` is a no-op on a
+        # closed fd; the kernel releases the flock at close anyway.
         os.close(fd)
 
 
@@ -582,10 +653,24 @@ def write_pods_conf(
     # A crash mid-write can leave the ``<path>.tmp`` behind; a subsequent
     # writer overwrites it via the same tmp path. No corrupt ``pods.conf``
     # ever surfaces to a reader.
+    #
+    # r2 minor fix: on an ``os.replace`` failure (rare — a same-FS rename
+    # that races with a concurrent unlink, an EIO on the target inode) the
+    # tmp payload is orphaned in the same directory. Best-effort unlink so
+    # we don't leave a stale ``pods.conf.tmp`` sitting next to the target.
+    # The target-unchanged atomicity contract is preserved: either the
+    # replace succeeded (target now holds ``payload``) or it did not (target
+    # unchanged; we cleaned up the tmp).
     tmp = path.with_suffix(path.suffix + ".tmp")
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp.write_text(payload)
-    os.replace(tmp, path)
+    try:
+        os.replace(tmp, path)
+    except OSError:
+        # Best-effort tmp cleanup — never mask the original OSError.
+        with contextlib.suppress(FileNotFoundError, OSError):
+            tmp.unlink()
+        raise
 
 
 # ---------------------------------------------------------------------------
