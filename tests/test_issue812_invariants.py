@@ -860,6 +860,55 @@ def test_fit_explicit_behaviors_subset_allowed():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ROUND-8 FIX — fit-side EXACT context-ID-set defense (graded-e0-context-idset-not-enforced):
+# ``all_ctx = inputs["ctx_ids"]`` is authoritative for the graded-E0 join. The regrade
+# gate checks the context COUNT not the ID-SET, and ``_graded_target`` silently skips any
+# authoritative context absent from the graded payload (weak len<4 floor only). A
+# SAME-COUNT WRONG-KEY payload (one canonical ctx replaced by a stray key) would silently
+# reduce/shift the n=50 join. With NO explicit --contexts smoke subset, the fit-side
+# assert FAILS LOUD naming the missing + stray context ids (last-line defense). The
+# context-axis twin of the round-7 restored-e0-payload-coverage BEHAVIOR-set check.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_fit_context_idset_wrong_key_same_count_fails_loud():
+    """A same-COUNT wrong-KEY payload (canonical ``ctx002`` replaced by stray ``ctxZZZ``)
+    with no --contexts subset → RuntimeError naming BOTH the missing and the stray id."""
+    all_ctx = [f"ctx{c:03d}" for c in range(5)]  # authoritative key set (n=5)
+    per_ctx = _full_e0_payload(["sycophancy"], 5)["sycophancy"]
+    # Drop the canonical ctx002, add a same-shape stray cell under a wrong key → count stays 5.
+    stray = per_ctx.pop("ctx002")
+    per_ctx["ctxZZZ"] = {**stray, "context_id": "ctxZZZ"}
+    assert len(per_ctx) == len(all_ctx)  # SAME count — the count-only gate would pass
+    with pytest.raises(RuntimeError, match="does not cover the authoritative context set"):
+        fit._assert_graded_covers_ctx_set(per_ctx, all_ctx, "sycophancy", subset_active=False)
+    # The message must name BOTH the missing canonical id and the stray key.
+    try:
+        fit._assert_graded_covers_ctx_set(per_ctx, all_ctx, "sycophancy", subset_active=False)
+    except RuntimeError as e:
+        msg = str(e)
+    assert "ctx002" in msg and "ctxZZZ" in msg
+
+
+def test_fit_context_idset_full_coverage_passes():
+    """A payload covering EXACTLY the authoritative ctx set (the genuine full artifact) →
+    no raise, even with no --contexts subset."""
+    all_ctx = [f"ctx{c:03d}" for c in range(50)]
+    per_ctx = _full_e0_payload(["sycophancy"], 50)["sycophancy"]
+    assert set(per_ctx) == set(all_ctx)
+    fit._assert_graded_covers_ctx_set(per_ctx, all_ctx, "sycophancy", subset_active=False)
+
+
+def test_fit_context_idset_smoke_subset_unaffected():
+    """With --contexts N active (``subset_active=True``), the deliberate smoke slice keeps
+    the permissive join — a subset-covering payload does NOT raise."""
+    all_ctx = [f"ctx{c:03d}" for c in range(50)]
+    # Payload covers only the first 4 contexts (a --contexts 4 smoke), which is the
+    # deliberate slice — must NOT raise when subset_active is True.
+    per_ctx = _full_e0_payload(["sycophancy"], 4)["sycophancy"]
+    assert set(per_ctx) != set(all_ctx)
+    fit._assert_graded_covers_ctx_set(per_ctx, all_ctx, "sycophancy", subset_active=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ROUND-6 FIX 2 — Phase-2 idempotence guard: both graded-E0 outputs present with a
 # matching FULL recipe → SKIP the ~500K-call re-judge (restore-from-HF relaunch),
 # never re-bill; a partial / mismatched state falls through to the full run.

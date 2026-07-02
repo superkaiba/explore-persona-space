@@ -742,6 +742,44 @@ def _graded_target(per_ctx: dict, ctx_ids: list[str]) -> tuple[np.ndarray, list[
     return np.array(vals, dtype=np.float64), kept
 
 
+def _assert_graded_covers_ctx_set(
+    per_ctx: dict, ctx_ids: list[str], beh: str, *, subset_active: bool
+) -> None:
+    """Fit-side exact context-ID-set defense (graded-e0-context-idset-not-enforced).
+
+    ``all_ctx = inputs["ctx_ids"]`` is the AUTHORITATIVE key set for the graded-E0
+    join. The regrade idempotence gate checks the context COUNT, not the ID-SET, and
+    ``_graded_target`` silently ``continue``s over any authoritative context absent
+    from the graded payload (with only a weak ``len(kept_ctx) < 4`` floor downstream).
+    A same-COUNT wrong-KEY payload (one canonical context replaced by a stray key)
+    would therefore silently REDUCE / SHIFT the n=50 join without tripping either
+    guard. Unreachable on the production write path (the writer keys from the
+    canonical ``answer_spans`` and the lane loaders fail loud on coverage misses), so
+    this is a last-line defense: with NO explicit smoke/subset restriction active,
+    a behavior whose graded payload does not EXACTLY cover the full authoritative
+    ``ctx_ids`` set FAILS LOUD (naming the missing + stray context ids) rather than
+    silently joining a subset.
+
+    ``subset_active`` (``args.contexts is not None``) opts out — the deliberate
+    smoke slice keeps the current permissive join. No-op when the graded payload
+    covers exactly ``ctx_ids`` (the genuine full artifact)."""
+    if subset_active:
+        return
+    expected = set(ctx_ids)
+    present = {c for c in per_ctx if per_ctx.get(c) and per_ctx[c].get("graded_mean") is not None}
+    if present == expected:
+        return
+    missing = sorted(expected - present)
+    stray = sorted(present - expected)
+    raise RuntimeError(
+        f"[{beh}] graded E0 does not cover the authoritative context set exactly with "
+        f"no explicit --contexts subset — a same-count wrong-key / partial payload would "
+        f"silently reduce/shift the n={len(expected)} join. "
+        f"missing_contexts={missing} stray_contexts={stray} "
+        "(pass --contexts N to analyze a deliberate smoke subset)"
+    )
+
+
 # ── the per-(behavior, layer) operator sweep ──────────────────────────────────
 
 
@@ -1058,6 +1096,9 @@ def main() -> int:  # noqa: C901 — one long sweep driver; decomposed by helper
     selection_matrices: dict[str, dict] = {}
 
     for beh in behaviors:
+        _assert_graded_covers_ctx_set(
+            graded[beh], all_ctx, beh, subset_active=args.contexts is not None
+        )
         y_full, kept_ctx = _graded_target(graded[beh], all_ctx)
         if len(kept_ctx) < 4:
             logger.warning("[%s] only %d contexts with graded E0 — skipping", beh, len(kept_ctx))
