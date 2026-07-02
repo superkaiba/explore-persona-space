@@ -390,11 +390,20 @@ def test_eta_same_run_does_not_reset_posted_keys() -> None:
     # Unknown run age (missing marker) also never resets.
     state2, epoch2 = pp._tripwire_run_scope(prev, run_age_sec=None, now_epoch=now)
     assert epoch2 == stored_epoch and state2 is prev
-    # A corrupted stored anchor reads as 0: adopt the current epoch, keep keys.
+    # A MALFORMED stored anchor with a known run age fails toward RE-ARMING:
+    # clear every tripwire key and adopt the current epoch (a duplicate
+    # advisory is cheaper than a suppressed one — reconciler CONCERN
+    # tripwire-corrupt-anchor-preserves-dedup, round 1).
     state3, epoch3 = pp._tripwire_run_scope(
         {**prev, "tripwire_run_epoch": "garbage"}, run_age_sec=100.0, now_epoch=now
     )
-    assert epoch3 == now - 100 and state3["eta_deviation_posted_keys"] == "extract"
+    assert epoch3 == now - 100
+    assert all(k not in state3 for k in pp._TRIPWIRE_STATE_KEYS)
+    # Malformed anchor + UNKNOWN run age still keeps everything (cannot decide).
+    state4, epoch4 = pp._tripwire_run_scope(
+        {**prev, "tripwire_run_epoch": "garbage"}, run_age_sec=None, now_epoch=now
+    )
+    assert epoch4 == 0 and state4["eta_deviation_posted_keys"] == "extract"
 
 
 # ── PollResult field + main() JSON enumeration ───────────────────────────────

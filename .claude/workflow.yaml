@@ -1579,7 +1579,7 @@ markers:
       when unification is genuinely impossible (e.g., per-cell vLLM
       that can't reset in-process).
   - kind: "epm:compute-deviation"
-    posted_by: skill (via experiment-implementer); poll_pipeline (runtime tripwire, #873)
+    posted_by: "skill (via experiment-implementer); poll_pipeline (runtime tripwire, #873)"
     when: "Step 4b (implementer report-time, before code-review)"
     fields: |
       Posted when the implementer's resolved per-cell parameters project
