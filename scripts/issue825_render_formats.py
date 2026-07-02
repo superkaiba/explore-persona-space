@@ -355,7 +355,9 @@ def a4_bpe_boundary(convs: list[dict[str, Any]], tokenizer: Any) -> dict[str, An
     for conv in convs:
         r_chat = render_chat(conv, tokenizer)
         r_nat = render_naturalistic(conv, tokenizer)
-        for turn in TURN_KEYS:
+        # Present turns only — two-turn Track-S rows carry u1/a1 (round-3
+        # review residual: an unconditional TURN_KEYS loop would KeyError).
+        for turn in [k for k in TURN_KEYS if k in r_chat.spans]:
             cs, ce = r_chat.spans[turn]
             ns, ne = r_nat.spans[turn]
             total += 1
