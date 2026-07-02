@@ -1,0 +1,120 @@
+{
+  "commit": "d67c90d637",
+  "created": "2026-07-02T17:45:14Z",
+  "figsize": [
+    9.5,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "function change \u00f7 noise floor": 0.2449132140914536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "function change \u00f7 noise floor": 0.3508689441017986,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "function change \u00f7 noise floor": 0.29226051181514767,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "function change \u00f7 noise floor": 2.048488937229634,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "function change \u00f7 noise floor": 1.4596986206628848,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "function change \u00f7 noise floor": 0.9518892212255677,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.2,
+      "y": 1.4941500123364655,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.8,
+      "y": 1.1219654184678487,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.8,
+      "y": 0.12314416569703032,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.2,
+      "y": 3.522220384723493,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.2,
+      "y": 0.49394119229137273,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.2,
+      "y": 0.5124387656722144,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.2,
+      "y": 3.1011213737373047,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.8,
+      "y": 3.3803377522447127,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.8,
+      "y": 1.3341381616357795,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.2,
+      "y": 3.280450719450945,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.2,
+      "y": 0.19313371428427167,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.2,
+      "y": 0.4182872093404561,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 18
+}
