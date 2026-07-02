@@ -803,7 +803,39 @@ def run_fixed_stage(out_root: Path, eval_root: Path, n_draws: int, n_boot: int) 
 # ── MAX-OVER-28 stage ───────────────────────────────────────────────────────
 
 
-def run_maxlayer_stage(
+def _maxlayer_cell_done(
+    eval_root: Path, trait: str, setting: str, families: tuple[str, ...]
+) -> bool:
+    """True iff the on-disk JSON already has a complete stage_maxlayer for every
+    regime of ``setting`` (all requested families present) — the resume predicate.
+    """
+    path = eval_root / "honest_nulls" / f"{trait}_{setting}_honestnulls.json"
+    if not path.exists():
+        return False
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False
+    sm = data.get("stage_maxlayer")
+    if not isinstance(sm, dict):
+        return False
+    want = set(families)
+    for regime in REGIMES[setting]:
+        rd = sm.get(regime)
+        if not isinstance(rd, dict) or "nulls" not in rd:
+            return False
+        if not want.issubset(set(rd["nulls"].keys())):
+            return False
+    return True
+
+
+def _load_existing_file(eval_root: Path, fkey: str) -> dict:
+    with open(eval_root / "honest_nulls" / f"{fkey}_honestnulls.json") as f:
+        return json.load(f)
+
+
+def run_maxlayer_stage(  # noqa: C901
     out_root: Path, eval_root: Path, n_draws: int, families: tuple[str, ...]
 ) -> dict:
     lam = nb.PRIMARY_LAMBDA
@@ -820,19 +852,33 @@ def run_maxlayer_stage(
         rb_hat = {layer: rb[layer] / np.linalg.norm(rb[layer]) for layer in range(N_LAYERS)}
         pos, neg = pools[trait]
         other_rbs = {ot: rbs[ot] for ot in TRAITS if ot != trait}
-        # Cholesky (all 28 layers) once per trait, shared across its settings.
-        t0 = time.time()
-        pool = np.concatenate([pos, neg], axis=0)
-        within_pool = _within_centered_pool(pos, neg)
-        chols_pool = _chols_for_layers(pool, layers_all, lam) if _needs_pool(families) else {}
-        chols_within = (
-            _chols_for_layers(within_pool, layers_all, lam) if "within_class" in families else {}
-        )
-        chols_neg = _chols_for_layers(neg, layers_all, lam) if "neg_arm_only" in families else {}
-        logger.info("maxlayer: %s Cholesky done [%.0fs]", trait, time.time() - t0)
+        # Resume: which of this trait's settings still need computing?
+        pending = [s for s in SETTINGS if not _maxlayer_cell_done(eval_root, trait, s, families)]
+        # Cholesky (all 28 layers) once per trait — only if some cell still pending.
+        chols_pool: dict[int, np.ndarray] = {}
+        chols_within: dict[int, np.ndarray] = {}
+        chols_neg: dict[int, np.ndarray] = {}
+        if pending:
+            t0 = time.time()
+            pool = np.concatenate([pos, neg], axis=0)
+            within_pool = _within_centered_pool(pos, neg)
+            if _needs_pool(families):
+                chols_pool = _chols_for_layers(pool, layers_all, lam)
+            if "within_class" in families:
+                chols_within = _chols_for_layers(within_pool, layers_all, lam)
+            if "neg_arm_only" in families:
+                chols_neg = _chols_for_layers(neg, layers_all, lam)
+            logger.info("maxlayer: %s Cholesky done [%.0fs]", trait, time.time() - t0)
         for setting in SETTINGS:
-            predictor, target, cid, tags = _load_cell(setting, out_root, eval_root, trait)
             fkey = f"{trait}_{setting}"
+            if setting not in pending:
+                # Already complete on disk — load for BH, advance cell_idx to keep
+                # NEW-family seeds identical to a from-scratch run, and skip.
+                files[fkey] = _load_existing_file(eval_root, fkey)
+                cell_idx += len(REGIMES[setting])
+                logger.info("maxlayer: %s already complete — resumed from disk", fkey)
+                continue
+            predictor, target, cid, tags = _load_cell(setting, out_root, eval_root, trait)
             files.setdefault(
                 fkey,
                 {
@@ -858,7 +904,10 @@ def run_maxlayer_stage(
                 seeds_here = {}
                 fam_out = {}
                 per_layer = {}
-                for fam in families:
+                # crosstrait is a FIXED-direction family (no seeded draws) — handled
+                # in the dedicated block below; only stochastic families are routed
+                # through the seeded-draw path.
+                for fam in [f for f in families if f in STOCHASTIC]:
                     seed = SEED_BASE[fam] + (0 if fam.startswith("orig_") else cell_idx)
                     seeds_here[fam] = seed
                     ts = time.time()
@@ -981,6 +1030,10 @@ def run_maxlayer_stage(
                 }
                 files[fkey]["seeds"][regime] = seeds_here
                 cell_idx += 1
+            # Checkpoint: persist this (trait, setting) cell the moment its regimes
+            # complete (crash-safety). BH is re-applied + re-written over the full
+            # set at the end.
+            _write_one_file(fkey, files[fkey], eval_root)
     return files
 
 
@@ -1247,22 +1300,24 @@ def build_figures(files: dict, eval_root: Path, fig_root: Path) -> list[str]:
 # ── JSON writing (strip numpy scratch) ─────────────────────────────────────────
 
 
-def _write_files(files: dict, eval_root: Path) -> list[str]:
+def _write_one_file(fkey: str, fd: dict, eval_root: Path) -> str:
+    """Write one cell's JSON, merging with any existing (so the other stage's
+    keys — e.g. stage_fixed — survive)."""
     outdir = eval_root / "honest_nulls"
     outdir.mkdir(parents=True, exist_ok=True)
-    written = []
-    for fkey, fd in files.items():
-        path = outdir / f"{fkey}_honestnulls.json"
-        # merge with any existing (two-stage): the other stage's keys survive
-        merged = {}
-        if path.exists():
-            with open(path) as pf:
-                merged = json.load(pf)
-        merged.update(fd)
-        with open(path, "w") as f:
-            json.dump(merged, f, indent=2, default=_json_default)
-        written.append(str(path))
-    return written
+    path = outdir / f"{fkey}_honestnulls.json"
+    merged = {}
+    if path.exists():
+        with open(path) as pf:
+            merged = json.load(pf)
+    merged.update(fd)
+    with open(path, "w") as f:
+        json.dump(merged, f, indent=2, default=_json_default)
+    return str(path)
+
+
+def _write_files(files: dict, eval_root: Path) -> list[str]:
+    return [_write_one_file(fkey, fd, eval_root) for fkey, fd in files.items()]
 
 
 def _json_default(o):
