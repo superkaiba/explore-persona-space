@@ -36,6 +36,14 @@ if str(SCRIPTS) not in sys.path:
 import file_infra_task as fit  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _no_real_lease(monkeypatch):
+    """Hermeticity: the #843 step-4.5 dispatch-lease pre-check reads the
+    registry dir; default it to "no lease held" so these tests never depend
+    on the REAL ~/.eps-autonomous. The lease-specific test overrides it."""
+    monkeypatch.setattr(fit, "dispatch_lease_fresh", lambda issue: None)
+
+
 def _install_run_recorder(monkeypatch, *, new_id="#771", new_rc=0, spawn_rc=0):
     """Replace ``file_infra_task.subprocess.run`` with a recorder that branches
     on the argv: a ``task.py new`` invocation returns a canned ``#<N>`` stdout
@@ -319,3 +327,63 @@ def test_parse_new_id_takes_first_hash_token():
     assert fit._parse_new_id("created\n#42 done\n") == 42
     assert fit._parse_new_id("no id here") is None
     assert fit._parse_new_id("#notanint") is None
+
+
+# ── #843 M1: fresh dispatch lease -> files, does NOT dispatch ──────────────────
+
+
+def test_fresh_lease_files_but_does_not_dispatch(monkeypatch, capsys):
+    # Test 19: a fresh per-issue dispatch lease means another dispatcher's
+    # spawn is already in flight — the wrapper files the task but skips the
+    # spawn subprocess entirely (loud, exit 0, watcher backstop named).
+    import time
+
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    monkeypatch.setattr(fit, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(fit, "infra_dispatch_has_free_slot", lambda: True)
+    monkeypatch.setattr(fit, "_issue_has_live_registration", lambda issue: False)
+    monkeypatch.setattr(
+        fit,
+        "dispatch_lease_fresh",
+        lambda issue: {"holder": "watcher-sweep", "pid": 1, "acquired_at": time.time() - 30},
+    )
+
+    rc = fit.main(["--title", "x"])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1  # STILL files the task
+    assert _spawn_calls(calls) == []  # but NEVER spawns
+    out = capsys.readouterr().out
+    assert "dispatch suppressed (lease held" in out
+    assert "holder=watcher-sweep" in out
+    assert "proposed_infra_sweep" in out  # names the watcher backstop
+
+
+def test_spawn_suppressed_output_reported_not_booked_as_dispatched(monkeypatch, capsys):
+    # #843 M1b: a rc-0 spawn whose stdout carries a suppression sentinel (a
+    # lease appeared between the pre-check and the spawn, or a registration
+    # collision) is reported as suppressed, never as "filed + dispatched".
+    from types import SimpleNamespace
+
+    def _fake_run(cmd, **kw):
+        if "scripts/task.py" in cmd and "new" in cmd:
+            return SimpleNamespace(returncode=0, stdout="#771\n", stderr="")
+        if "scripts/spawn_session.py" in cmd and "spawn-issue" in cmd:
+            return SimpleNamespace(
+                returncode=0,
+                stdout="DISPATCH-LEASE HELD issue #771: a dispatch is already in flight\n",
+                stderr="",
+            )
+        raise AssertionError(f"unexpected subprocess call: {cmd}")
+
+    monkeypatch.setattr(fit.subprocess, "run", _fake_run)
+    monkeypatch.setattr(fit, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(fit, "infra_dispatch_has_free_slot", lambda: True)
+    monkeypatch.setattr(fit, "_issue_has_live_registration", lambda issue: False)
+
+    rc = fit.main(["--title", "x"])
+
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "dispatch suppressed (DISPATCH-LEASE HELD)" in out
+    assert "filed + dispatched" not in out

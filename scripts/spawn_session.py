@@ -24,13 +24,16 @@ session label in Happy — we surface that here.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -57,6 +60,229 @@ WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 # watcher GC'd its entry at the terminal transition (#472, 2026-06-10).
 AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
 
+# ─── per-issue dispatch lease (#843 M1) ──────────────────────────────────────
+#
+# Atomic create-or-fail claim taken by `spawn-issue --auto` BEFORE the daemon
+# POST, so two concurrent dispatchers (file_infra_task self-dispatch vs the
+# watcher sweep/drain, the program-orchestrator daemon, ad-hoc PM dispatch)
+# can never both spawn a session for the same issue inside the
+# decision->registration window. (Watcher-vs-watcher overlap is already
+# impossible — its main() holds a whole-run non-blocking flock on
+# ~/.eps-autonomous/watch.lock — so the races this closes are strictly
+# cross-dispatcher.) TTL == the watcher's RESPAWN_SPAWN_GRACE_S (15 min):
+# inside that window the crash-recovery pass already refuses to respawn a
+# fresh registration, so lease-blocking can never postpone a recovery the
+# watcher would have run (pinned by
+# tests/test_autonomous_session_watch.py::test_lease_ttl_default_equals_respawn_spawn_grace).
+DISPATCH_LEASE_TTL_S = 15 * 60
+
+# Substring stamped into the best-effort `epm:progress` marker posted when a
+# duplicate `--auto` dispatch reached registration and was auto-stopped
+# (#843 M2). The watcher imports it into _WATCHER_NOTE_SENTINELS so the
+# marker never counts as "real progress" for the staleness clocks.
+DUPLICATE_DISPATCH_NOTE_SENTINEL = "[spawn-session:duplicate-dispatch-suppressed]"
+
+# stdout sentinels a suppressed rc-0 `spawn-issue --auto` no-op prints. Every
+# automated caller distinguishes them from a real spawn BEFORE any success
+# bookkeeping (#843 M1b) via :func:`spawn_output_suppressed`.
+DISPATCH_LEASE_HELD_SENTINEL = "DISPATCH-LEASE HELD"
+REGISTRATION_COLLISION_SENTINEL = "REGISTRATION-COLLISION"
+
+
+def spawn_output_suppressed(stdout: str | None) -> str | None:
+    """Which duplicate-suppression sentinel (if any) a rc-0 ``spawn-issue
+    --auto`` subprocess printed: :data:`DISPATCH_LEASE_HELD_SENTINEL` /
+    :data:`REGISTRATION_COLLISION_SENTINEL`, else ``None`` (a real spawn).
+
+    Shared by the watcher's dispatch/respawn callers + the file-time filer so
+    a suppressed no-op is never booked as a successful spawn — no dispatch
+    marker, no attempt/backoff, no respawn bookkeeping (#843 M1b)."""
+    if not stdout:
+        return None
+    for sentinel in (DISPATCH_LEASE_HELD_SENTINEL, REGISTRATION_COLLISION_SENTINEL):
+        if sentinel in stdout:
+            return sentinel
+    return None
+
+
+def _dispatch_lease_ttl_s() -> float:
+    """Lease TTL in seconds (env ``EPM_DISPATCH_LEASE_TTL_S``; missing or
+    malformed value falls back to :data:`DISPATCH_LEASE_TTL_S`)."""
+    raw = os.environ.get("EPM_DISPATCH_LEASE_TTL_S")
+    if not raw:
+        return float(DISPATCH_LEASE_TTL_S)
+    try:
+        return float(raw)
+    except ValueError:
+        return float(DISPATCH_LEASE_TTL_S)
+
+
+def dispatch_lease_path(issue: int) -> Path:
+    """Path of the per-issue dispatch-lease file (#843 M1)."""
+    return AUTONOMOUS_REGISTRY_DIR / f"dispatch-lease-{issue}.json"
+
+
+def _dispatch_lease_lock_path(issue: int) -> Path:
+    """Path of the PERMANENT per-issue flock sidecar that serializes the
+    stale-lease takeover slow path. Never unlinked by acquire/release — an
+    unlink-and-recreate of a flock target under a waiter is the classic
+    flock-on-deleted-file hole; the file is tiny and recreated on demand."""
+    return AUTONOMOUS_REGISTRY_DIR / f"dispatch-lease-{issue}.lock"
+
+
+def read_dispatch_lease(issue: int) -> dict | None:
+    """Parsed lease dict; ``{}`` for garbled/unreadable content; ``None`` for
+    no lease file."""
+    try:
+        raw = dispatch_lease_path(issue).read_text()
+    except FileNotFoundError:
+        return None
+    except OSError:
+        return {}
+    try:
+        entry = json.loads(raw)
+    except ValueError:
+        return {}
+    return entry if isinstance(entry, dict) else {}
+
+
+def dispatch_lease_fresh(issue: int, now: float | None = None) -> dict | None:
+    """The lease entry iff the lease file exists AND is fresh; else ``None``.
+
+    Fresh = ``acquired_at`` within :func:`_dispatch_lease_ttl_s`. A garbled
+    lease (unparseable JSON / non-numeric ``acquired_at``) falls back to the
+    file mtime — failing toward FRESH, i.e. toward NOT dispatching; the TTL
+    bounds any wedge. A missing file returns ``None`` (no lease held)."""
+    now = time.time() if now is None else now
+    entry = read_dispatch_lease(issue)
+    if entry is None:
+        return None
+    ttl = _dispatch_lease_ttl_s()
+    acquired = entry.get("acquired_at")
+    if isinstance(acquired, int | float) and not isinstance(acquired, bool):
+        return entry if now - acquired < ttl else None
+    # Garbled content / missing acquired_at -> file mtime (fail toward fresh).
+    try:
+        mtime = dispatch_lease_path(issue).stat().st_mtime
+    except OSError:
+        # File vanished / unreadable between read and stat: treat as fresh
+        # this call (fail toward not dispatching); the next tick re-reads.
+        return entry
+    return entry if now - mtime < ttl else None
+
+
+def dispatch_lease_desc(entry: dict | None, now: float | None = None) -> str:
+    """Human-readable ``holder=..., pid=..., age=...s`` fragment for the
+    loud skip/loser log lines. Tolerates a garbled/empty entry."""
+    entry = entry or {}
+    now = time.time() if now is None else now
+    acquired = entry.get("acquired_at")
+    if isinstance(acquired, int | float) and not isinstance(acquired, bool):
+        age = f"{now - acquired:.0f}s"
+    else:
+        age = "?"
+    return f"holder={entry.get('holder', '?')}, pid={entry.get('pid', '?')}, age={age}"
+
+
+def acquire_dispatch_lease(issue: int, holder: str, now: float | None = None) -> dict | None:
+    """Atomically claim the per-issue dispatch slot (#843 M1).
+
+    Returns the written lease entry on success; ``None`` when a fresh lease is
+    already held — or on ANY unexpected OSError (fail toward not dispatching).
+
+    FAST PATH (lock-free): no lease file -> single-winner
+    ``os.open(O_CREAT|O_EXCL)`` (atomic on the local ext filesystem). SLOW
+    PATH (a lease file exists): the freshness check + stale takeover are
+    serialized under the PERMANENT per-issue flock sidecar
+    (:func:`_dispatch_lease_lock_path`) — a check-freshness->replace protocol
+    without the lock admits a TOCTOU double-winner. Every CREATE of the lease
+    file goes through O_EXCL and every unlink of a live lease happens under
+    the sidecar flock (or terminal-task GC), so no taker can destroy another
+    taker's freshly created lease: two flock holders are impossible, and a
+    fast-path creator racing a takeover just makes the takeover's inner
+    O_EXCL fail -> the taker returns ``None`` (single winner preserved)."""
+    now = time.time() if now is None else now
+    entry: dict[str, Any] = {
+        "issue": issue,
+        "holder": holder,
+        "pid": os.getpid(),
+        "token": uuid.uuid4().hex,
+        "acquired_at": now,
+    }
+    path = dispatch_lease_path(issue)
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        # FAST PATH (lock-free): no lease file -> atomic single-winner create.
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    except FileExistsError:
+        # SLOW PATH: a lease file exists. Serialize under the sidecar flock.
+        try:
+            lock_fd = os.open(_dispatch_lease_lock_path(issue), os.O_CREAT | os.O_WRONLY, 0o644)
+        except OSError:
+            return None  # fail toward not dispatching
+        try:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                return None  # another taker mid-takeover: skip this tick
+            if dispatch_lease_fresh(issue, now) is not None:
+                return None  # loser: a fresh lease is held
+            path.unlink(missing_ok=True)  # remove the stale lease (under the lock)
+            try:
+                fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            except OSError:
+                return None  # a fast-path creator won post-unlink: loser
+        finally:
+            os.close(lock_fd)  # releases the flock; the sidecar file persists
+        # NOTE: the content write below happens after the flock is released —
+        # safe: until written, the file is empty (= garbled) with a fresh
+        # mtime, which dispatch_lease_fresh fails CLOSED on (treated fresh).
+    except OSError:
+        return None  # fail toward not dispatching
+    with os.fdopen(fd, "w") as f:
+        f.write(json.dumps(entry, indent=2))
+    return entry
+
+
+def release_dispatch_lease(issue: int, token: str) -> None:
+    """Best-effort token-verified unlink of the per-issue dispatch lease,
+    taken UNDER the permanent flock sidecar so a late release can never remove
+    a successor's lease.
+
+    Called on FAILURE exit paths only (daemon POST failed / patch-verify died
+    / plain-OSError registration failure) — the SUCCESS path deliberately
+    LEAVES the lease in place (TTL expiry owns it; releasing at registration
+    would reopen a window if ordering ever regressed), and the
+    REGISTRATION-COLLISION branch deliberately HOLDS it (the first session is
+    live and driving; holding suppresses spawn-then-collision-stop churn for
+    the rest of the TTL — see :func:`cmd_spawn_issue`)."""
+    try:
+        lock_fd = os.open(_dispatch_lease_lock_path(issue), os.O_CREAT | os.O_WRONLY, 0o644)
+    except OSError:
+        return
+    try:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            return  # a takeover is in flight; leave the lease to the TTL
+        entry = read_dispatch_lease(issue)
+        if isinstance(entry, dict) and entry.get("token") == token:
+            dispatch_lease_path(issue).unlink(missing_ok=True)
+    finally:
+        os.close(lock_fd)
+
+
+class RegistrationCollisionError(OSError):
+    """``issue-<N>.json`` already names a DIFFERENT session inside the
+    collision window — a duplicate ``--auto`` dispatch reached registration
+    (#843 M2). Carries ``existing_session_id`` / ``age_s`` so the caller's
+    remediation message can name the kept session."""
+
+    def __init__(self, message: str, *, existing_session_id: str, age_s: float) -> None:
+        super().__init__(message)
+        self.existing_session_id = existing_session_id
+        self.age_s = age_s
+
 
 def _register_autonomous_session(
     issue: int,
@@ -67,6 +293,7 @@ def _register_autonomous_session(
     model: str | None = None,
     betas: list[str] | None = None,
     effort: str | None = None,
+    force: bool = False,
 ) -> None:
     """Record an autonomous issue session so the watcher can resurrect it.
 
@@ -77,6 +304,17 @@ def _register_autonomous_session(
     invisible to the watcher and risks a duplicate re-spawn), and stop it.
     Writes atomically (temp file + rename) so the watcher never reads a partial
     JSON entry.
+
+    RAISES :class:`RegistrationCollisionError` (#843 M2, unless ``force=True``)
+    when the existing entry names a DIFFERENT session id with a ``spawned_at``
+    younger than the collision window — a duplicate dispatch reached
+    registration; the caller stops the just-spawned duplicate instead of
+    silently overwriting (hiding) the first session. An entry at or past the
+    window (or same sid, or garbled ``spawned_at``) overwrites exactly as
+    before, so the watcher's crash-recovery respawn — which by its own
+    ``RESPAWN_SPAWN_GRACE_S`` only fires on entries >= 15 min old — is never
+    blocked. ``register-current`` passes ``force=True`` (the deliberate
+    re-write path for an already-live session, #472 revival).
 
     ``model`` / ``betas`` / ``effort`` are persisted when set so the watcher's
     ``_respawn`` can re-pass them on crash-recovery. ``None`` means "not pinned
@@ -101,6 +339,33 @@ def _register_autonomous_session(
     if effort is not None:
         entry["effort"] = effort
     dest = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
+    if not force:
+        try:
+            existing = json.loads(dest.read_text())
+        except (OSError, ValueError):
+            existing = {}
+        old_sid = existing.get("happy_session_id") if isinstance(existing, dict) else None
+        old_ts = existing.get("spawned_at") if isinstance(existing, dict) else None
+        if (
+            isinstance(old_sid, str)
+            and old_sid
+            and old_sid != session_id
+            and isinstance(old_ts, int | float)
+            and not isinstance(old_ts, bool)
+            # Collision window capped at the 900 s DEFAULT: raising
+            # EPM_DISPATCH_LEASE_TTL_S lengthens the LEASE but must never widen
+            # this window past RESPAWN_SPAWN_GRACE_S, or a raised TTL would
+            # suppress legitimate crash-recovery respawns (round-1 hardening).
+            and time.time() - old_ts < min(_dispatch_lease_ttl_s(), float(DISPATCH_LEASE_TTL_S))
+        ):
+            age_s = time.time() - old_ts
+            raise RegistrationCollisionError(
+                f"issue-{issue}.json already names session {old_sid} spawned "
+                f"{age_s:.0f}s ago (< {min(_dispatch_lease_ttl_s(), float(DISPATCH_LEASE_TTL_S)):.0f}s "
+                f"window); refusing to overwrite — duplicate dispatch",
+                existing_session_id=old_sid,
+                age_s=age_s,
+            )
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(entry, indent=2))
     tmp.replace(dest)
@@ -886,6 +1151,53 @@ def cmd_spawn_pm(args: argparse.Namespace) -> None:
     )
 
 
+def _stop_spawned_session(session_id: str) -> bool:
+    """Best-effort stop of a just-spawned session (the registration-failure /
+    registration-collision remediation in :func:`cmd_spawn_issue`). Returns
+    True when the daemon confirmed the stop; on False the caller prints a
+    manual-cleanup warning (success=False usually means the session already
+    died on its own — a benign race — but a genuinely stuck live session
+    needs hand cleanup)."""
+    try:
+        stop_resp = post("/stop-session", {"sessionId": session_id})
+        return bool(stop_resp.get("success"))
+    except SystemExit:
+        return False
+
+
+def _post_duplicate_suppressed_marker(issue: int, kept_sid: str, stopped_sid: str) -> None:
+    """Best-effort ``epm:progress`` marker recording a suppressed duplicate
+    ``--auto`` dispatch (#843 M2 registration collision) so the suppression is
+    dashboard-visible. A marker failure never blocks the exit — the loud
+    REGISTRATION-COLLISION line already fired. ``spawn_session.py`` is
+    allowlisted in ``_LOCAL_VM_ONLY_PATHS``
+    (tests/test_no_pod_side_task_py_shellout.py) for this task.py shellout."""
+    note = (
+        f"{DUPLICATE_DISPATCH_NOTE_SENTINEL} duplicate --auto dispatch suppressed: "
+        f"kept {kept_sid}, stopped {stopped_sid}"
+    )
+    try:
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "post-marker",
+                str(issue),
+                "epm:progress",
+                "--note",
+                note,
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  note: duplicate-dispatch marker post failed ({e})", file=sys.stderr)
+
+
 def cmd_spawn_issue(args: argparse.Namespace) -> None:
     """Spawn a session for issue ``--issue N``. The session opens cwd=<repo root>
     by default, OR cwd=<.claude/worktrees/issue-N> if such a worktree exists
@@ -939,6 +1251,60 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         prompt = f"/issue {issue}"
     else:
         prompt = None
+    lease: dict[str, Any] | None = None
+    if args.auto:
+        # #843 M1: atomic per-issue dispatch lease, acquired BEFORE the daemon
+        # POST. Exactly one of N concurrent `--auto` dispatchers wins; every
+        # loser exits 0 with the loud DISPATCH-LEASE HELD line (a suppressed
+        # duplicate means a session IS driving the issue — dispatch success).
+        # On success the lease is deliberately LEFT in place (TTL expiry owns
+        # it); failure exits below release it so the backstop can retry.
+        lease = acquire_dispatch_lease(issue, holder=f"spawn-issue --auto pid={os.getpid()}")
+        if lease is None:
+            held = read_dispatch_lease(issue) or {}
+            print(
+                f"{DISPATCH_LEASE_HELD_SENTINEL} issue #{issue}: a dispatch is already "
+                f"in flight ({dispatch_lease_desc(held)}, "
+                f"ttl={_dispatch_lease_ttl_s():.0f}s); NOT spawning a duplicate. "
+                f"Manual override: rm {dispatch_lease_path(issue)}"
+            )
+            return  # exit 0 — duplicate suppressed IS dispatch success
+    elif dispatch_lease_fresh(issue) is not None:
+        # Manual / bespoke-prompt spawn: a human decision — warn, proceed,
+        # and create NO lease (the incident class is 100% automated races).
+        print(
+            f"  note: a fresh dispatch lease exists for #{issue} "
+            f"({dispatch_lease_desc(read_dispatch_lease(issue))}) — an automated "
+            f"dispatch may be in flight; proceeding (manual spawns are not gated)"
+        )
+    try:
+        _spawn_issue_session(args, issue, cwd_note, body, prompt, extra_args, betas, cwd)
+    except BaseException:
+        if lease is not None:
+            # Failure exit (POST failed / patch-verify died / plain-OSError
+            # registration failure): free the slot so the next dispatcher /
+            # watcher tick can retry. The REGISTRATION-COLLISION branch
+            # RETURNS (never raises), so it deliberately HOLDS the lease.
+            release_dispatch_lease(issue, lease["token"])
+        raise
+
+
+def _spawn_issue_session(
+    args: argparse.Namespace,
+    issue: int,
+    cwd_note: str,
+    body: dict[str, object],
+    prompt: str | None,
+    extra_args: list[str],
+    betas: list[str],
+    cwd: Path,
+) -> None:
+    """The POST + print + registration tail of :func:`cmd_spawn_issue`,
+    factored out so the caller can wrap it in the #843 release-lease-on-
+    failure guard without re-indenting its every branch. Raises ``SystemExit``
+    on any failure exit; returns normally on success AND on the deliberate
+    exit-0 REGISTRATION-COLLISION suppression branch (which must NOT release
+    the lease — see :func:`release_dispatch_lease`)."""
     if prompt is not None or extra_args:
         # Both the load-bearing --auto / --initial-prompt injection path AND the
         # bare model-override path rely on the daemon honoring HAPPY_INITIAL_*
@@ -998,6 +1364,33 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
                     effort=args.effort,
                 )
                 print(f"  registered for crash-recovery watch: issue-{issue}.json")
+            except RegistrationCollisionError as e:
+                # #843 M2: a duplicate --auto dispatch reached registration —
+                # a DIFFERENT session was registered for this issue inside the
+                # collision window. Keep the FIRST session (its registration
+                # stays byte-identical), stop the duplicate we just spawned,
+                # exit 0 (a session IS live and driving = dispatch success).
+                # The dispatch lease is deliberately HELD (this branch returns
+                # without raising, so the caller's release guard never fires)
+                # — holding suppresses immediate spawn-then-collision-stop
+                # churn for the rest of the TTL.
+                print(f"  registration collision: {e}", file=sys.stderr)
+                stopped = _stop_spawned_session(resp["sessionId"])
+                if not stopped:
+                    print(
+                        f"  WARNING: could not confirm duplicate session "
+                        f"{resp['sessionId']} stopped; if it is still live, stop it "
+                        "manually (spawn_session.py stop --session-id ...)",
+                        file=sys.stderr,
+                    )
+                print(
+                    f"{REGISTRATION_COLLISION_SENTINEL} issue #{issue}: kept "
+                    f"{e.existing_session_id} (registered {e.age_s:.0f}s ago), stopped "
+                    f"duplicate {resp['sessionId']}; NOT overwriting the first "
+                    f"registration (duplicate dispatch suppressed)"
+                )
+                _post_duplicate_suppressed_marker(issue, e.existing_session_id, resp["sessionId"])
+                return  # exit 0 — the first session is live and driving
             except OSError as e:
                 # Atomicity invariant: a live `--auto` session MUST have a current
                 # registry entry, else the watcher (which trusts the registry) could
@@ -1008,12 +1401,7 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
                     "session to avoid an untracked duplicate",
                     file=sys.stderr,
                 )
-                try:
-                    stop_resp = post("/stop-session", {"sessionId": resp["sessionId"]})
-                    stopped = bool(stop_resp.get("success"))
-                except SystemExit:
-                    stopped = False
-                if not stopped:
+                if not _stop_spawned_session(resp["sessionId"]):
                     # success=False usually means the session already died on its
                     # own (a benign race); surface it anyway so a genuinely stuck
                     # live session can be cleaned up by hand.
@@ -1258,7 +1646,10 @@ def cmd_register_current(args: argparse.Namespace) -> None:
                 cap = args.auto_approve_gpu_hours
             else:
                 cap = float(os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100"))
-            _register_autonomous_session(issue, sid, cwd, cap)
+            # force=True: register-current is the deliberate re-write path for
+            # an ALREADY-LIVE session (#472 revival) — never a duplicate
+            # dispatch, so the #843 M2 collision check must not block it.
+            _register_autonomous_session(issue, sid, cwd, cap, force=True)
             dest = f"issue-{issue}.json"
             semantics = "auto-watch (crash-recovery may respawn on death)"
         else:

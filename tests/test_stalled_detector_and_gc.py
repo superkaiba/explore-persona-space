@@ -597,7 +597,7 @@ def test_stalled_pass_no_respawn_when_fresh_lifecycle_marker_present(
     # would pass even on the buggy code (the false-confidence gap the reviewer
     # caught). Stub both True so a respawn — if it fires — is visible here.
     monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: True)
-    monkeypatch.setattr(asw, "_respawn_stalled_session", lambda issue, cap, dry_run: True)
+    monkeypatch.setattr(asw, "_respawn_stalled_session", lambda issue, cap, dry_run: "spawned")
 
     # Two consecutive ticks while the self-report stays frozen: a fresh marker
     # resets the miss counter every tick, so nothing ever fires (no alert AND

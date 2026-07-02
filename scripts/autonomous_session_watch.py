@@ -405,6 +405,7 @@ from pod_lifecycle import _is_managed_pod, _issue_from_pod_name  # noqa: E402
 from runpod_api import PodInfo, get_pod_by_name, list_team_pods  # noqa: E402
 from spawn_session import (  # noqa: E402
     AUTONOMOUS_REGISTRY_DIR,
+    DUPLICATE_DISPATCH_NOTE_SENTINEL,
     PROJECT_ROOT,
     _infer_issue_from_path,
     _live_children,
@@ -412,6 +413,9 @@ from spawn_session import (  # noqa: E402
     _load_pm_session_ids,
     _load_session_issue_map,
     _load_session_meta,
+    dispatch_lease_desc,
+    dispatch_lease_fresh,
+    spawn_output_suppressed,
 )
 from tick_triage import plan_pending_over_cap  # noqa: E402
 from worktree_audit import ORPHAN_HOLDER_PATTERNS  # noqa: E402  (codex-companion cmdline patterns)
@@ -923,6 +927,10 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
+        # Posted by spawn_session.py (not the watcher) when a duplicate --auto
+        # dispatch was suppressed at registration (#843 M2) — same contract:
+        # a suppression note is bookkeeping, never real progress.
+        DUPLICATE_DISPATCH_NOTE_SENTINEL,
     }
 )
 
@@ -2835,9 +2843,13 @@ def _session_alive(entry: dict, live_ids: set[str]) -> bool:
     return _manual_session_alive(entry.get("issue"), live_ids)
 
 
-def _respawn(entry: dict, dry_run: bool) -> bool:
-    """Re-spawn the autonomous session for this entry. Returns True on success.
-    spawn_session rewrites the registry (new id, missed=0) as a side effect.
+def _respawn(entry: dict, dry_run: bool) -> str:
+    """Re-spawn the autonomous session for this entry. Returns the #843 M1b
+    tri-state ``"spawned" | "suppressed" | "failed"`` (``"suppressed"`` = the
+    rc-0 subprocess printed a duplicate-suppression sentinel — another
+    dispatcher's session is driving, so nothing was respawned; ``"failed"``
+    also covers dry-run). On ``"spawned"``, spawn_session rewrites the
+    registry (new id, missed=0) as a side effect.
 
     Re-passes the per-session Claude overrides (``model``, ``betas``,
     ``effort``) verbatim when the registry entry recorded them at spawn time —
@@ -2864,14 +2876,19 @@ def _respawn(entry: dict, dry_run: bool) -> bool:
         cmd.extend(["--effort", str(effort)])
     if dry_run:
         print(f"  [dry-run] would respawn: {' '.join(cmd)}")
-        return False
+        return "failed"  # dry-run: nothing spawned
     res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
     if res.returncode != 0:
         print(f"  RESPAWN FAILED issue #{issue}: {res.stderr.strip()[:300]}", file=sys.stderr)
-        return False
+        return "failed"
     first_line = (res.stdout.strip().splitlines() or [""])[0]
+    if spawn_output_suppressed(res.stdout) is not None:
+        print(
+            f"  RESPAWN issue #{issue}: suppressed — not respawned (lease/collision): {first_line}"
+        )
+        return "suppressed"
     print(f"  RESPAWNED issue #{issue} (session was dead): {first_line}")
-    return True
+    return "spawned"
 
 
 def _acquire_lock() -> object | None:
@@ -5757,15 +5774,16 @@ def _stop_session(session_id: str, dry_run: bool) -> bool:
     return True
 
 
-def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) -> bool:
+def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
     """Spawn a fresh `--auto` session for ``issue``.
 
     Mirrors :func:`_respawn` (used by the crash-recovery pass) but is
     decoupled from the autonomous-registry entry shape — the stalled-
     detector path knows the issue and the cap directly from the loaded
-    state, so it doesn't pass a registry-entry dict. Returns True on
-    success; spawn_session rewrites the registry (new id, missed=0) as a
-    side effect.
+    state, so it doesn't pass a registry-entry dict. Returns the #843 M1b
+    tri-state ``"spawned" | "suppressed" | "failed"`` (see :func:`_respawn`);
+    on ``"spawned"``, spawn_session rewrites the registry (new id, missed=0)
+    as a side effect.
 
     Note: we do NOT call :func:`_respawn` directly because the
     spawn-issue invocation here is the SAME (`--auto`
@@ -5781,17 +5799,23 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
     cmd.extend(_stalled_session_overrides(issue))
     if dry_run:
         print(f"  [dry-run] would respawn stalled: {' '.join(cmd)}")
-        return False
+        return "failed"  # dry-run: nothing spawned
     res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
     if res.returncode != 0:
         print(
             f"  RESPAWN-STALLED FAILED issue #{issue}: {res.stderr.strip()[:300]}",
             file=sys.stderr,
         )
-        return False
+        return "failed"
     first_line = (res.stdout.strip().splitlines() or [""])[0]
+    if spawn_output_suppressed(res.stdout) is not None:
+        print(
+            f"  RESPAWN-STALLED issue #{issue}: suppressed — not respawned "
+            f"(lease/collision): {first_line}"
+        )
+        return "suppressed"
     print(f"  RESPAWNED-STALLED issue #{issue} (alive-but-stalled): {first_line}")
-    return True
+    return "spawned"
 
 
 def _stalled_cap_gpu_hours(issue: int) -> float:
@@ -6006,7 +6030,15 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             )
         return
     cap = _stalled_cap_gpu_hours(ctx.issue)
-    spawn_ok = _respawn_stalled_session(ctx.issue, cap, ctx.dry_run)
+    spawn_result = _respawn_stalled_session(ctx.issue, cap, ctx.dry_run)
+    if spawn_result == "suppressed":
+        # #843 M1b: a concurrent dispatcher's fresh lease / a registration
+        # collision suppressed the spawn — a session for this issue is live
+        # and driving. Book NOTHING: no respawn marker, no respawn_count
+        # bump, no state reset (the on-disk stall state is left untouched);
+        # the next tick re-evaluates against the new session's progress.
+        return
+    spawn_ok = spawn_result == "spawned"
     new_respawn_count = ctx.respawn_count + 1
     if spawn_ok:
         _post_progress_marker(
@@ -7073,12 +7105,14 @@ def _issue_registrations() -> dict[int, dict]:
     return out
 
 
-def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> bool:
+def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
     """Spawn a fresh ``--auto`` session for an orphaned active task. Mirrors
     :func:`_respawn_stalled_session` but with an ``RESPAWNED-ORPHAN`` log
-    prefix so the operator can tell the recovery paths apart. The spawn
-    re-registers the issue (``spawn-issue --auto`` rewrites the registry), so
-    the task re-enters normal respawn/stalled coverage."""
+    prefix so the operator can tell the recovery paths apart. Returns the
+    #843 M1b tri-state ``"spawned" | "suppressed" | "failed"`` (see
+    :func:`_respawn`). On ``"spawned"``, the spawn re-registers the issue
+    (``spawn-issue --auto`` rewrites the registry), so the task re-enters
+    normal respawn/stalled coverage."""
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
@@ -7086,17 +7120,23 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> bool:
     cmd.extend(_stalled_session_overrides(issue))
     if dry_run:
         print(f"  [dry-run] would respawn orphan: {' '.join(cmd)}")
-        return False
+        return "failed"  # dry-run: nothing spawned
     res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
     if res.returncode != 0:
         print(
             f"  RESPAWN-ORPHAN FAILED issue #{issue}: {res.stderr.strip()[:300]}",
             file=sys.stderr,
         )
-        return False
+        return "failed"
     first_line = (res.stdout.strip().splitlines() or [""])[0]
+    if spawn_output_suppressed(res.stdout) is not None:
+        print(
+            f"  RESPAWN-ORPHAN issue #{issue}: suppressed — not respawned "
+            f"(lease/collision): {first_line}"
+        )
+        return "suppressed"
     print(f"  RESPAWNED-ORPHAN issue #{issue} (active task, no live session): {first_line}")
-    return True
+    return "spawned"
 
 
 def orphan_sweep_pass(
@@ -7531,7 +7571,13 @@ def _process_orphan_task(
             )
         return
     if action == "respawn":
-        attempted_ok = _respawn_orphan(issue, _stalled_cap_gpu_hours(issue), dry_run)
+        spawn_result = _respawn_orphan(issue, _stalled_cap_gpu_hours(issue), dry_run)
+        if spawn_result == "suppressed":
+            # #843 M1b: duplicate dispatch suppressed (lease/collision) — a
+            # session is driving. Book nothing: no attempt consumed against
+            # the daily cap, no miss-state reset, no respawn marker.
+            return
+        attempted_ok = spawn_result == "spawned"
         if not dry_run:
             # Count the ATTEMPT regardless of success so a failing spawn
             # can't hot-loop past the daily cap.
@@ -7719,6 +7765,56 @@ PROPOSED_INFRA_SWEEP_BACKOFF_S_DEFAULT = INFRA_DRAIN_BACKOFF_S_DEFAULT
 # task leaves `proposed`, so a PM rewrite / repromotion / status change clears
 # it naturally). env EPM_PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS.
 PROPOSED_INFRA_SWEEP_MAX_ATTEMPTS_DEFAULT = INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
+
+# #843 M3: the sweep skips a decided candidate whose events.jsonl carries a
+# dispatch-sentinel marker younger than this — one watcher cadence (cron
+# `3-59/10` -> 10 min): a dispatch marker younger than one tick means SOME
+# dispatcher fired within the current/previous tick. Post-M1, this guard's
+# independent value is the lease-file-loss backstop (manual `rm` override,
+# a GC/registry mishap) plus observability. env
+# EPM_PROPOSED_INFRA_SWEEP_MARKER_FRESH_S.
+PROPOSED_INFRA_SWEEP_MARKER_FRESH_S_DEFAULT = 600.0
+
+# Both dispatch-marker sentinels disqualify (a drain dispatch 3 min ago is
+# exactly as disqualifying as a sweep one). The filer posts no marker — its
+# dispatches are covered by the M1 lease + the registration checks.
+_DISPATCH_NOTE_SENTINELS = (
+    _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
+    _INFRA_DRAIN_NOTE_SENTINEL,
+)
+
+
+def _proposed_infra_sweep_marker_fresh_s() -> float:
+    """Marker-freshness window in seconds (env
+    ``EPM_PROPOSED_INFRA_SWEEP_MARKER_FRESH_S``; missing or malformed value
+    falls back to :data:`PROPOSED_INFRA_SWEEP_MARKER_FRESH_S_DEFAULT`)."""
+    raw = os.environ.get("EPM_PROPOSED_INFRA_SWEEP_MARKER_FRESH_S")
+    if not raw:
+        return PROPOSED_INFRA_SWEEP_MARKER_FRESH_S_DEFAULT
+    try:
+        return float(raw)
+    except ValueError:
+        return PROPOSED_INFRA_SWEEP_MARKER_FRESH_S_DEFAULT
+
+
+def _recent_dispatch_marker_age_s(events: list[dict], now: float) -> float | None:
+    """Age (s) of the newest ``epm:progress`` marker whose note carries either
+    dispatch sentinel (:data:`_DISPATCH_NOTE_SENTINELS`); ``None`` when there
+    is no such marker or no parseable timestamp (fail-soft: an unparseable
+    ``ts`` row is skipped, and a fully-unreadable events list arrives here as
+    ``[]`` via :func:`_task_events` -> ``None`` -> no skip; the M1 lease still
+    protects)."""
+    best: float | None = None
+    for ev in events:
+        if ev.get("kind") != "epm:progress":
+            continue
+        note = ev.get("note") or ""
+        if not any(sentinel in note for sentinel in _DISPATCH_NOTE_SENTINELS):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return None if best is None else now - best
 
 
 def _parse_predicate_hold(reason: str) -> int | None:
@@ -8380,7 +8476,7 @@ def _dispatch_infra_drain(
     dry_run: bool,
     *,
     reg_snapshot: dict[str, bytes] | None = None,
-) -> bool:
+) -> str:
     """``spawn_session.py spawn-issue --issue <N> --auto`` (the plain
     command, exactly the PM standing-rule item-3 mechanism; no
     ``--auto-approve-gpu-hours`` override — spawn_session's default applies,
@@ -8396,14 +8492,23 @@ def _dispatch_infra_drain(
     callers without a decision context) degrades to the conservative
     abort-on-any-existing-file behavior. Shrinks the PM-vs-watcher
     double-spawn window from one-full-pass to ~the spawn subprocess itself.
-    Returns success bool; honours dry_run (logs, never spawns)."""
+
+    Returns the #843 M1b tri-state ``"spawned" | "suppressed" | "failed"``:
+    ``"suppressed"`` when the rc-0 subprocess stdout carries a
+    duplicate-suppression sentinel (DISPATCH-LEASE HELD /
+    REGISTRATION-COLLISION, via :func:`spawn_session.spawn_output_suppressed`)
+    — a loud no-op the callers must NOT book: no dispatch marker, no attempt,
+    no backoff (a crashed lease-winner then recovers in <= TTL + one tick,
+    not the 1 h backoff). ``"failed"`` also covers dry-run (logs, never
+    spawns, nothing to book) and the pre-spawn re-check aborts (both record
+    a spawn-failed attempt in the callers, exactly as before)."""
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
     if dry_run:
         print(f"  [dry-run] would dispatch infra-drain: {' '.join(cmd)}")
-        return False
+        return "failed"  # dry-run: nothing spawned, nothing to book
     snapshot = reg_snapshot or {}
     for basename in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
         path = AUTONOMOUS_REGISTRY_DIR / basename
@@ -8420,14 +8525,14 @@ def _dispatch_infra_drain(
                 f"unreadable at the pre-spawn re-check; cannot verify the "
                 f"decision still holds (fail toward not dispatching)"
             )
-            return False
+            return "failed"
         if known is None or current != known:
             print(
                 f"  INFRA-DRAIN ABORT issue #{issue}: lost race to concurrent "
                 f"dispatcher ({basename} "
                 f"{'appeared' if known is None else 'changed'} since the decision)"
             )
-            return False
+            return "failed"
         # else: byte-identical to the decision-time snapshot — the known
         # (stale) registration the decision already accounted for; proceed.
     res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
@@ -8436,10 +8541,17 @@ def _dispatch_infra_drain(
             f"  INFRA-DRAIN DISPATCH FAILED issue #{issue}: {res.stderr.strip()[:300]}",
             file=sys.stderr,
         )
-        return False
+        return "failed"
     first_line = (res.stdout.strip().splitlines() or [""])[0]
+    suppressed = spawn_output_suppressed(res.stdout)
+    if suppressed is not None:
+        # #843 M1b: rc-0 no-op — a duplicate dispatch was suppressed at the
+        # chokepoint (lease held / registration collision). A session IS
+        # driving the issue; callers book nothing (no attempt, no marker).
+        print(f"  INFRA-DRAIN SUPPRESSED issue #{issue} ({suppressed}): {first_line}")
+        return "suppressed"
     print(f"  INFRA-DRAIN DISPATCHED issue #{issue} ({slot_desc}): {first_line}")
-    return True
+    return "spawned"
 
 
 def _infra_drain_read_queue() -> dict | None:
@@ -8793,14 +8905,30 @@ def infra_drain_pass(
     )
     dispatched = 0
     for issue in dispatch:
+        # #843 M1 advisory pre-check at the CALLER loop: a fresh per-issue
+        # dispatch lease means a spawn is already in flight — skip loudly and
+        # record NO attempt (a lease-held skip must not consume the 1 h
+        # backoff, or a crashed winner's recovery would stretch to ~70 min
+        # instead of TTL + one tick).
+        held_lease = dispatch_lease_fresh(issue, now)
+        if held_lease is not None:
+            print(
+                f"  INFRA-DRAIN SKIP issue #{issue} (dispatch-lease held, "
+                f"{dispatch_lease_desc(held_lease, now)})"
+            )
+            continue
         slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
-        ok = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        if result == "suppressed":
+            # #843 M1b: rc-0 duplicate-suppression no-op — a session is
+            # driving; book nothing (no attempt, no backoff, no marker).
+            continue
         if not dry_run:
-            # Count the ATTEMPT whether or not the spawn succeeded, so a
+            # Count the ATTEMPT whether the spawn succeeded or failed, so a
             # failing spawn can't tight-loop (the backoff window binds next
             # tick either way).
-            _infra_drain_record_attempt(attempts, issue, now, queue_updated_ts, ok)
-        if ok:
+            _infra_drain_record_attempt(attempts, issue, now, queue_updated_ts, result == "spawned")
+        if result == "spawned":
             dispatched += 1
             _post_progress_marker(
                 issue,
@@ -9244,13 +9372,38 @@ def proposed_infra_sweep_pass(
         max_attempts=max_attempts,
     )
 
+    marker_fresh_s = _proposed_infra_sweep_marker_fresh_s()
     dispatched = 0
     for issue in dispatch:
+        # #843 M1 advisory pre-check at the CALLER loop (same contract as the
+        # drain loop's): a fresh lease -> loud skip, NO attempt recorded.
+        held_lease = dispatch_lease_fresh(issue, now)
+        if held_lease is not None:
+            print(
+                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} (dispatch-lease held, "
+                f"{dispatch_lease_desc(held_lease, now)})"
+            )
+            continue
+        # #843 M3: a dispatch-sentinel marker younger than one watcher cadence
+        # means SOME dispatcher fired within the current/previous tick — skip
+        # this candidate this tick (no attempt recorded — a marker skip is not
+        # a spawn attempt; the safe direction, corrected next tick). Post-M1
+        # this is the lease-file-loss backstop + observability.
+        marker_age = _recent_dispatch_marker_age_s(_task_events(issue), now)
+        if marker_age is not None and marker_age < marker_fresh_s:
+            print(
+                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} "
+                f"(recent-dispatch-marker {marker_age:.0f}s < {marker_fresh_s:.0f}s)"
+            )
+            continue
         slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
-        ok = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        if result == "suppressed":
+            # #843 M1b: duplicate-suppression no-op — book nothing.
+            continue
         if not dry_run:
-            _proposed_infra_sweep_record_attempt(attempts, issue, now, ok)
-        if ok:
+            _proposed_infra_sweep_record_attempt(attempts, issue, now, result == "spawned")
+        if result == "spawned":
             dispatched += 1
             _post_progress_marker(
                 issue,
@@ -9507,29 +9660,37 @@ def _save_capacity_retry_state(issue: int, state: dict, dry_run: bool) -> None:
     tmp.replace(dest)
 
 
-def _redrive_capacity_retry(issue: int, dry_run: bool) -> bool:
+def _redrive_capacity_retry(issue: int, dry_run: bool) -> str:
     """Re-drive the autonomous session for a transient-infra `blocked` task via
     ``spawn_session.py spawn-issue --issue <N> --auto`` (the plain command; the
     `--auto` session re-enters `/issue` which re-runs the backend router's own
-    capacity pre-check + enforces its plan-approval GPU cap). Returns success
-    bool; honours dry_run (logs, never spawns)."""
+    capacity pre-check + enforces its plan-approval GPU cap). Returns the
+    #843 M1b tri-state ``"spawned" | "suppressed" | "failed"`` (see
+    :func:`_respawn`; ``"suppressed"`` must NOT consume the per-day retry
+    budget); honours dry_run (logs, never spawns, returns ``"failed"``)."""
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
     if dry_run:
         print(f"  [dry-run] would capacity-retry: {' '.join(cmd)}")
-        return False
+        return "failed"  # dry-run: nothing spawned
     res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
     if res.returncode != 0:
         print(
             f"  CAPACITY-RETRY DISPATCH FAILED issue #{issue}: {res.stderr.strip()[:300]}",
             file=sys.stderr,
         )
-        return False
+        return "failed"
     first_line = (res.stdout.strip().splitlines() or [""])[0]
+    if spawn_output_suppressed(res.stdout) is not None:
+        print(
+            f"  CAPACITY-RETRY issue #{issue}: suppressed — not re-driven "
+            f"(lease/collision): {first_line}"
+        )
+        return "suppressed"
     print(f"  CAPACITY-RETRIED issue #{issue} (transient-infra block re-driven): {first_line}")
-    return True
+    return "spawned"
 
 
 def _process_capacity_retry(
@@ -9578,7 +9739,14 @@ def _process_capacity_retry(
     if action == "skip":
         return
     if action == "redrive":
-        ok = _redrive_capacity_retry(issue, dry_run)
+        spawn_result = _redrive_capacity_retry(issue, dry_run)
+        if spawn_result == "suppressed":
+            # #843 M1b: a duplicate dispatch was suppressed (lease held /
+            # registration collision) — a session is driving this issue.
+            # Book NOTHING: no retry-budget consumption, no last_attempt_ts,
+            # no marker; the next tick re-evaluates.
+            return
+        ok = spawn_result == "spawned"
         new_state = {
             "retry_day": day_key,
             # Count the ATTEMPT regardless of spawn success so a failing spawn
@@ -9704,6 +9872,15 @@ _GC_TARGETS: tuple[tuple[str, str], ...] = (
     # as campaign-watch-). The companion tick-runaway-<N>.flag files are NOT
     # json and self-clean inside _process_runaway_flag instead.
     ("gate-notify-", ""),
+    # Per-issue dispatch lease (#843 M1, spawn_session.dispatch_lease_path).
+    # Terminal-status + age-backstop reaping of leftover lease files: reaping
+    # a TERMINAL task's lease cannot enable a duplicate (terminal tasks are
+    # never dispatched), while an ACTIVE task's fresh lease is never touched
+    # (the keep branch below). The glob is `dispatch-lease-*.json`, so the
+    # PERMANENT `dispatch-lease-<N>.lock` flock sidecar is NOT swept — by
+    # design (tiny; unlinking a flock target risks the lock-on-deleted-file
+    # hole; recreated on demand by the next slow-path acquire).
+    ("dispatch-lease-", ""),
     ("", "issue-progress"),
     ("", "issue-tick-last-status"),
 )
