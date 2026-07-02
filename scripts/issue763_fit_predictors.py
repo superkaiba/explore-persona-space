@@ -61,6 +61,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import random
@@ -97,6 +98,7 @@ from issue763_common import (  # noqa: E402
     SEED,
     dump_json,
     is_reduced_power,
+    load_frozen_pool_staged,
     load_json,
     reproducibility_metadata,
 )
@@ -297,8 +299,13 @@ def _load_v0(behavior: str) -> tuple[np.ndarray, list[str]]:
     return blob["tensor"].float().numpy(), blob["context_ids"]
 
 
-def _stage_fit_inputs_from_hf(behaviors: list[str]) -> None:
+def _stage_fit_inputs_from_hf(behaviors: list[str], *, stage_e0: bool = True) -> None:
     """Stage the NON-v0 fit inputs (E0 + pv_rb JSONs + pv_shards) from HF.
+
+    ``stage_e0=False`` (reanchor round): a custom ``--e0-json`` is produced
+    LOCALLY by the round's judge phase and is NEVER on the parent HF prefix —
+    only the pv_rb/pv_shards staging applies; the E0's absence is a sequencing
+    error surfaced fail-loud by the caller.
 
     The ``--from-phase fit`` resume boots on a FRESH cpu-mid VM whose local
     ``eval_results/issue_763/`` tree does not exist (the prior GPU pod that
@@ -338,12 +345,14 @@ def _stage_fit_inputs_from_hf(behaviors: list[str]) -> None:
         local.write_bytes(Path(src).read_bytes())
         logger.info("[fit_stage] staged %s <- %s/%s", what, HF_DATA_REPO, filename)
 
-    # E0 (the graded + binary judged rates) — the fit's y source.
-    _fetch(
-        EVAL_RESULTS_DIR / "E0_matched_by_behavior.json",
-        f"{prefix}/E0_matched_by_behavior.json",
-        "E0_matched_by_behavior.json",
-    )
+    # E0 (the graded + binary judged rates) — the fit's y source. Skipped when
+    # the caller passed a round-local --e0-json (stage_e0=False).
+    if stage_e0:
+        _fetch(
+            EVAL_RESULTS_DIR / "E0_matched_by_behavior.json",
+            f"{prefix}/E0_matched_by_behavior.json",
+            "E0_matched_by_behavior.json",
+        )
     # PV baseline: the per-behavior r_B summary JSON + per-behavior rb shards.
     _fetch(
         EVAL_RESULTS_DIR / "pv_rb_by_behavior.json",
@@ -361,15 +370,25 @@ def _stage_fit_inputs_from_hf(behaviors: list[str]) -> None:
 def _e0_vectors(e0: dict, behavior: str, ctx_ids: list[str]):
     """Align E0 graded_mean + rate + n_judged + per_probe with the v0 context order.
 
-    Returns ``(graded (n,), rates (n,), n_judged (n,), per_probe_graded {ctx: [graded
-    per probe]}, per_probe_binary {ctx: [e0 per probe]}, kept_ctx_ids)``. The v3
-    PRIMARY DV is ``graded_mean`` (0-100); ``rate`` (binary) is the companion.
-    A context is KEPT iff it has a non-None ``graded_mean`` (the primary DV); the
-    binary rate rides along for the companion read. Contexts with no judged
-    probes (graded_mean None) are dropped.
+    Returns ``(graded (n,), rates (n,), n_judged (n,), binary_weight (n,),
+    per_probe_graded {ctx: [graded per probe]}, per_probe_binary {ctx: [e0 per
+    probe]}, kept_ctx_ids)``. The v3 PRIMARY DV is ``graded_mean`` (0-100);
+    ``rate`` (binary) is the companion. A context is KEPT iff it has a non-None
+    ``graded_mean`` (the primary DV); the binary rate rides along for the
+    companion read. Contexts with no judged probes (graded_mean None) are
+    dropped.
+
+    ``binary_weight`` (reanchor round): the precision weight the BINARY
+    companion fit consumes. A `deception-rubric-reanchor` graded-only E0 stamps
+    ``binary_weight_n`` per cell = the PARENT's realized ``n_graded`` (the
+    weight the parent fit used, since this shared array prefers ``n_graded``) —
+    freezing it makes the §4 ``binary_repro_check`` positive control exact by
+    construction. On a parent-shaped E0 (no ``binary_weight_n``) it falls back
+    to the SAME ``n_graded or n_judged`` rule as ``n_judged`` — bit-identical
+    legacy behavior.
     """
     per_ctx = e0["e0"][behavior]
-    graded, rates, njudged, kept = [], [], [], []
+    graded, rates, njudged, bweight, kept = [], [], [], [], []
     per_probe_graded: dict[str, list[float]] = {}
     per_probe_binary: dict[str, list[float]] = {}
     for c in ctx_ids:
@@ -382,6 +401,9 @@ def _e0_vectors(e0: dict, behavior: str, ctx_ids: list[str]):
         rates.append(float(cell["rate"]) if cell.get("rate") is not None else float("nan"))
         # graded precision weight = n_graded if present else n_judged.
         njudged.append(int(cell.get("n_graded") or cell.get("n_judged", 1)))
+        bweight.append(
+            int(cell.get("binary_weight_n") or cell.get("n_graded") or cell.get("n_judged", 1))
+        )
         kept.append(c)
         per_probe_graded[c] = [
             pr["graded"] for pr in cell.get("per_probe", []) if pr.get("graded") is not None
@@ -393,6 +415,7 @@ def _e0_vectors(e0: dict, behavior: str, ctx_ids: list[str]):
         np.asarray(graded),
         np.asarray(rates),
         np.asarray(njudged),
+        np.asarray(bweight),
         per_probe_graded,
         per_probe_binary,
         kept,
@@ -635,35 +658,75 @@ def _triage(rho, rho_ci, sqrt_r_yy, shuffle_p, control_pass) -> str:
     return "noise_limited"  # (c)
 
 
-def _e0_behavior_meta(e0: dict, behavior: str) -> dict:
-    """Extract the E0-side v3 §10.1 core fields for one behavior.
+def _behavior_meta(e0: dict, behavior: str, *, pool_m: int | None = None) -> dict:
+    """Extract the v3 §10.1 core + yield-floor metadata fields for one behavior.
 
-    Returns ``{m, reduced_power, r_jj, graded_binary_tracking_spearman}`` — the
-    fields the headline predictor artifact MUST co-locate with its verdict so the
-    analyzer reads them together (BLOCKER predictor-results-missing-reduced-power-
-    and-m / issue763-results-schema-mismatch):
+    Returns ``{m, m_e0, reduced_power, yield_floor, any_shortfall,
+    n_shortfall_cells, median_n_judged, r_jj, graded_binary_tracking_spearman}``
+    — the fields the headline predictor artifact MUST co-locate with its verdict
+    (BLOCKER predictor-results-missing-reduced-power-and-m; extended by the
+    `deception-rubric-reanchor` metadata-emission fix, plan §3b — the as-run
+    artifact recorded m=60 / reduced_power=False for ALL five behaviors because
+    the judge's ``_behavior_floor`` silently fell back to 60):
 
-    - ``m`` — the behavior's ACTUAL frozen probe count (``yield_flags[B].m_B``),
-      the reliability-power denominator (60/60/60/20/20 by design).
-    - ``reduced_power`` — the pre-registered interpretation guard: ``True`` when
-      ``m`` is below the ≥50 floor (self_report / persona_drift), so an m=20
-      verdict-(c) is NOT read as a ≥50-probe falsification.
+    - ``m`` — the behavior's ACTUAL frozen probe count. GROUND TRUTH is the
+      frozen pool (``pool_m``, read FAIL-LOUD by the production ``main()`` via
+      ``load_frozen_pool_staged``); the E0 ``yield_flags[B].m_B`` is DATA and is
+      cross-checked — on a mismatch a WARN is logged and BOTH are recorded
+      (``m`` = pool, ``m_e0`` = the E0 value). ``pool_m=None`` (test seam /
+      offline smoke) keeps the legacy E0-derived value.
+    - ``reduced_power`` — ``True`` when ``m`` is below the ≥50 floor
+      (self_report / persona_drift at m=20), so an m=20 verdict-(c) is NOT read
+      as a ≥50-probe falsification.
+    - ``yield_floor`` — ``floor(0.8·m)`` (48/48/48/16/16 for the v3 pools).
+    - ``any_shortfall`` / ``n_shortfall_cells`` / ``median_n_judged`` —
+      recomputed from the E0 ``per_ctx[*].n_judged`` against the CORRECTED
+      floor (no re-judging; plan §3b).
     - ``r_jj`` / ``graded_binary_tracking_spearman`` — the graded-DV reliability
       diagnostics, propagated from the E0 ``judge_diagnostics`` so the predictor
       artifact is self-contained (the analyzer reads ONE file for the headline).
     """
     yf = (e0.get("yield_flags") or {}).get(behavior, {})
     diag = (e0.get("judge_diagnostics") or {}).get(behavior, {})
-    m = yf.get("m_B")
+    m_e0 = yf.get("m_B")
+    if pool_m is not None:
+        m = int(pool_m)
+        if m_e0 is not None and int(m_e0) != m:
+            logger.warning(
+                "[meta] %s: E0 yield_flags m_B=%s != frozen-pool n_probes=%s — the E0 "
+                "was judged under the pre-fix silent m_B fallback; recording both "
+                "(m = pool ground truth, m_e0 = the E0 value)",
+                behavior,
+                m_e0,
+                m,
+            )
+    else:
+        m = m_e0
+    yield_floor = max(1, int(0.8 * m)) if m else None
+    per_ctx = (e0.get("e0") or {}).get(behavior, {}) or {}
+    n_judged_cells = [int(c["n_judged"]) for c in per_ctx.values() if c.get("n_judged") is not None]
+    if yield_floor is not None and n_judged_cells:
+        n_shortfall = sum(1 for n in n_judged_cells if n < yield_floor)
+        any_shortfall = n_shortfall > 0
+        import statistics
+
+        median_n_judged = float(statistics.median(n_judged_cells))
+    else:
+        n_shortfall, any_shortfall, median_n_judged = None, None, None
     return {
         "m": m,
+        "m_e0": m_e0,
         "reduced_power": is_reduced_power(m),
+        "yield_floor": yield_floor,
+        "any_shortfall": any_shortfall,
+        "n_shortfall_cells": n_shortfall,
+        "median_n_judged": median_n_judged,
         "r_jj": diag.get("r_jj"),
         "graded_binary_tracking_spearman": diag.get("graded_binary_tracking_spearman"),
     }
 
 
-def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict:
+def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot, pool_m=None) -> dict:
     """Per-behavior analysis: the v3 GRADED PRIMARY (ridge headline) + binary companion.
 
     v3 reframe (brief Must-Fix #2 + llm-judging.md): the PRIMARY DV is the GRADED
@@ -675,9 +738,29 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
     GLM-vs-ridge optimism finding lives on the binary side). The headline
     ``triage_verdict`` is the GRADED-RIDGE verdict; the companion's verdict is
     reported alongside as ``triage_verdict_binary``.
+
+    ``pool_m`` (reanchor metadata fix, plan §3b): the frozen pool's ACTUAL
+    ``n_probes``, read FAIL-LOUD by the production ``main()`` and threaded here
+    so the record's ``m`` / ``reduced_power`` / yield fields are ground truth;
+    ``None`` (test seam) keeps the legacy E0-derived value.
     """
-    meta = _e0_behavior_meta(e0, behavior)
-    graded, rates, n_judged, per_probe_graded, per_probe_binary, kept = _e0_vectors(
+    meta = _behavior_meta(e0, behavior, pool_m=pool_m)
+    # Instrument provenance (rule 18): the E0's rubric version + filled-template
+    # hash ride into the per-behavior record (`v2` on the reanchor refit).
+    rubric_version = e0.get("rubric_version", "v1")
+    prompt_hash = (e0.get("graded_prompt_hash") or {}).get(behavior)
+    meta_fields = {
+        "m": meta["m"],
+        "m_e0": meta["m_e0"],
+        "reduced_power": meta["reduced_power"],
+        "yield_floor": meta["yield_floor"],
+        "any_shortfall": meta["any_shortfall"],
+        "n_shortfall_cells": meta["n_shortfall_cells"],
+        "median_n_judged": meta["median_n_judged"],
+        "rubric_version": rubric_version,
+        "graded_prompt_hash": prompt_hash,
+    }
+    graded, rates, n_judged, binary_weight, per_probe_graded, per_probe_binary, kept = _e0_vectors(
         e0, behavior, ctx_ids
     )
     if len(graded) < 4:
@@ -688,8 +771,7 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
             "triage_verdict": "noise_limited",
             "note": f"only {len(graded)} contexts with a non-None graded_mean",
             "n_contexts": len(graded),
-            "m": meta["m"],
-            "reduced_power": meta["reduced_power"],
+            **meta_fields,
             "graded_minus_binary_delta": None,
         }
     # align v0 to the kept contexts
@@ -777,7 +859,10 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
     if int(bin_mask.sum()) >= 4:
         v0_b = v0_kept[bin_mask]
         rates_b = rates[bin_mask]
-        nj_b = n_judged[bin_mask]
+        # binary precision weight: `binary_weight_n` when the E0 froze the
+        # parent's realized weight (the reanchor graded-only E0), else the same
+        # n_graded-or-n_judged rule as before — bit-identical on parent E0s.
+        nj_b = binary_weight[bin_mask]
         ppb = {kept[i]: per_probe_binary.get(kept[i], []) for i in range(len(kept)) if bin_mask[i]}
         glm_b = _layer_sweep_select(v0_b, rates_b, nj_b, "glm")
         ridge_b = _layer_sweep_select(v0_b, rates_b, nj_b, "ridge")
@@ -832,9 +917,10 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
     return {
         "behavior": behavior,
         "n_contexts": len(graded),
-        # ── v3 §10.1 CORE interpretation-guard fields (co-located with the verdict) ──
-        "m": meta["m"],  # actual frozen probe count (60/60/60/20/20)
-        "reduced_power": meta["reduced_power"],  # True at m<50 (self_report/persona_drift)
+        # ── v3 §10.1 CORE interpretation-guard fields (co-located with the verdict),
+        # extended by the reanchor metadata fix (plan §3b): m (pool ground truth) +
+        # m_e0 + reduced_power + yield_floor + shortfall stats + rubric provenance ──
+        **meta_fields,
         "graded_minus_binary_delta": graded_minus_binary_delta,
         # graded-DV reliability diagnostics propagated from E0 (self-contained artifact)
         "r_jj": meta["r_jj"],
@@ -885,6 +971,149 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot) -> dict
     }
 
 
+# The ONLY fields --refresh-metadata-only may change/add on a parent checkpoint
+# (§10 acceptance criterion 4; everything else is hard-asserted `==` to parent).
+_METADATA_PATCH_FIELDS = frozenset(
+    {
+        "m",
+        "m_e0",
+        "reduced_power",
+        "yield_floor",
+        "any_shortfall",
+        "n_shortfall_cells",
+        "median_n_judged",
+        "rubric_version",
+    }
+)
+
+
+def _assemble_results(ckpt_dir: Path, fresh: dict[str, dict]) -> dict[str, dict]:
+    """Union the round's per-behavior checkpoints with the freshly produced records.
+
+    The reanchor round runs TWO invocations against the same ``--out-dir`` (the
+    deception v2 refit, then the 4-behavior metadata refresh — plan §3d, either
+    order); each assembles ``matched_predictor_results.json`` from EVERY
+    checkpoint present in the round's ``fit_by_behavior/`` so the final write
+    carries all 5 records. Fresh records take precedence over disk.
+    """
+    results: dict[str, dict] = {}
+    for f in sorted(ckpt_dir.glob("*.json")):
+        if f.stem in BEHAVIORS:
+            results[f.stem] = load_json(f)
+    results.update(fresh)
+    return results
+
+
+def _assert_binary_control(rec: dict, ref_rec: dict, behavior: str, tol: float) -> None:
+    """§4 ``binary_repro_check``: the refit's binary companion reproduces the parent.
+
+    The binary data + precision weights are copied verbatim into the v2 E0, so
+    the companion fit is deterministic given the seed — a mismatch beyond ``tol``
+    is a fit-machinery / E0-plumbing regression (fail loud, never ship past).
+    Exact on same-device; tol=1e-3 pre-registered for cross-device.
+    """
+    for key in ("rho_binary_GLM", "rho_binary_ridge"):
+        got, want = rec.get(key), ref_rec.get(key)
+        if got is None or want is None:
+            raise RuntimeError(
+                f"binary control undefined for {behavior}: {key} got={got!r} ref={want!r}"
+            )
+        delta = abs(float(got) - float(want))
+        if delta > tol:
+            raise RuntimeError(
+                f"binary positive control FAILED for {behavior}: {key} refit={got:.6f} "
+                f"parent={want:.6f} |delta|={delta:.2e} > tol={tol:g} — fit-path or "
+                "E0-plumbing regression; do NOT interpret the graded refit"
+            )
+        logger.info(
+            "[fit] binary control %s.%s PASS: refit=%.6f parent=%.6f |delta|=%.2e <= %g",
+            behavior,
+            key,
+            got,
+            want,
+            delta,
+            tol,
+        )
+
+
+def _refresh_metadata_only(args, out_dir: Path, e0_path: Path) -> int:
+    """Patch ONLY the yield-metadata fields onto the 4 untouched behaviors' checkpoints.
+
+    Plan §3b: load the PARENT checkpoint ``fit_by_behavior/<b>.json``, patch the
+    ``_METADATA_PATCH_FIELDS`` (m from the frozen pool FAIL-LOUD, reduced_power,
+    yield_floor, shortfall stats recomputed from the parent E0's per-ctx
+    n_judged, rubric_version="v1-metadata-refresh"), write to the ROUND's
+    ``fit_by_behavior/`` (parent files untouched), and HARD-ASSERT every other
+    field compares ``==`` (JSON round-trip) to the parent — the numeric-identity
+    gate (§10 criterion 4), byte-comparable by construction because these
+    behaviors are never refit.
+    """
+    e0 = load_json(e0_path)
+    parent_dir = args.parent_fit_dir
+    ckpt_dir = out_dir / "fit_by_behavior"
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    fresh: dict[str, dict] = {}
+    for behavior in args.behaviors:
+        parent_path = parent_dir / f"{behavior}.json"
+        parent = load_json(parent_path)
+        pool_m = int(load_frozen_pool_staged(behavior)["n_probes"])
+        meta = _behavior_meta(e0, behavior, pool_m=pool_m)
+        patched = dict(parent)
+        patched.update({k: meta[k] for k in _METADATA_PATCH_FIELDS if k != "rubric_version"})
+        patched["rubric_version"] = "v1-metadata-refresh"
+        # ── NUMERIC-IDENTITY HARD ASSERT (JSON round-trip equality) ──
+        parent_rt = json.loads(json.dumps(parent, sort_keys=True))
+        patched_rt = json.loads(json.dumps(patched, sort_keys=True))
+        drifted = [
+            k
+            for k in parent_rt
+            if k not in _METADATA_PATCH_FIELDS and patched_rt.get(k) != parent_rt[k]
+        ]
+        assert not drifted, (
+            f"NUMERIC-IDENTITY GATE FAILED for {behavior}: non-metadata fields drifted "
+            f"from the parent checkpoint: {drifted}"
+        )
+        new_keys = set(patched_rt) - set(parent_rt)
+        assert new_keys <= _METADATA_PATCH_FIELDS, (
+            f"refresh added non-metadata keys for {behavior}: "
+            f"{sorted(new_keys - _METADATA_PATCH_FIELDS)}"
+        )
+        n_other = len([k for k in parent_rt if k not in _METADATA_PATCH_FIELDS])
+        logger.info(
+            "[refresh] %s: NUMERIC-IDENTITY PASS (%d non-metadata fields == parent); "
+            "m=%s (m_e0=%s) reduced_power=%s yield_floor=%s any_shortfall=%s "
+            "n_shortfall_cells=%s median_n_judged=%s",
+            behavior,
+            n_other,
+            patched["m"],
+            patched["m_e0"],
+            patched["reduced_power"],
+            patched["yield_floor"],
+            patched["any_shortfall"],
+            patched["n_shortfall_cells"],
+            patched["median_n_judged"],
+        )
+        dump_json(patched, ckpt_dir / f"{behavior}.json")
+        fresh[behavior] = patched
+
+    results = _assemble_results(ckpt_dir, fresh)
+    out = {
+        "by_behavior": results,
+        "n_shuffle_perms": N_SHUFFLE_PERMS,
+        "n_bootstrap": N_BOOTSTRAP,
+        "have_pv_baseline": (EVAL_RESULTS_DIR / "pv_rb_by_behavior.json").exists(),
+        "metadata": reproducibility_metadata(
+            {"phase": "fit", "mode": "refresh-metadata-only", "parent_fit_dir": str(parent_dir)}
+        ),
+    }
+    dump_json(out, out_dir / "matched_predictor_results.json")
+    print(
+        f"[issue763.fit] metadata refresh wrote {len(fresh)} patched records "
+        f"({len(results)} assembled) -> {out_dir / 'matched_predictor_results.json'}"
+    )
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Issue #763: GLM/ridge/PV LOCO fits + nulls + ceiling."
@@ -898,7 +1127,55 @@ def main() -> int:
         help="torch CPU thread count (cpu-mid = 8 vCPU; tiny batched ops thrash "
         "at the default high count — vectorize-many-cell-fits.md item 3)",
     )
+    ap.add_argument(
+        "--e0-json",
+        type=Path,
+        default=None,
+        help="E0 input override (the reanchor round reads its own E0_deception_v2.json; "
+        "default = the parent E0_matched_by_behavior.json)",
+    )
+    ap.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="output root override: fit_by_behavior/ checkpoints + "
+        "matched_predictor_results.json land here (a FRESH round dir => no "
+        "stale-checkpoint resume-skip; parent artifacts never clobbered)",
+    )
+    ap.add_argument(
+        "--refresh-metadata-only",
+        action="store_true",
+        help="patch ONLY the yield-metadata fields onto the parent checkpoints for "
+        "--behaviors (no refit, numeric-identity hard assert — plan §3b)",
+    )
+    ap.add_argument(
+        "--parent-fit-dir",
+        type=Path,
+        default=EVAL_RESULTS_DIR / "fit_by_behavior",
+        help="parent per-behavior checkpoints the metadata refresh reads",
+    )
+    ap.add_argument(
+        "--binary-control-ref",
+        type=Path,
+        default=None,
+        help="parent record to assert the §4 binary_repro_check positive control "
+        "against (a fit_by_behavior/<b>.json OR a matched_predictor_results.json)",
+    )
+    ap.add_argument(
+        "--binary-control-tol",
+        type=float,
+        default=1e-3,
+        help="binary-control tolerance (exact same-device; 1e-3 cross-device pre-registered)",
+    )
     args = ap.parse_args()
+
+    out_dir = args.out_dir or EVAL_RESULTS_DIR
+    e0_path = args.e0_json or (EVAL_RESULTS_DIR / "E0_matched_by_behavior.json")
+
+    if args.refresh_metadata_only:
+        # No fitting at all: skip the exactness gate + input staging (only the
+        # parent checkpoints + E0 + frozen pools are read).
+        return _refresh_metadata_only(args, out_dir, e0_path)
 
     # CPU-lane thread discipline: the batched fits are small tensors, so a sane
     # thread count (default = cpu-mid's 8 vCPU) beats the default oversubscription.
@@ -917,11 +1194,19 @@ def main() -> int:
     # --from-phase fit resume boots on a FRESH cpu-mid VM: stage E0 + pv_rb +
     # pv_shards from HF (v0 is staged lazily by _load_v0). Fail-loud if an input
     # is neither local nor on HF (see _stage_fit_inputs_from_hf). Skipped under
-    # --smoke, which runs fully offline on the local 1-behavior slice.
+    # --smoke, which runs fully offline on the local 1-behavior slice. A custom
+    # --e0-json is produced LOCALLY by the round's judge phase — never staged;
+    # its absence is a sequencing error (fail loud below at load_json).
     if not args.smoke:
-        _stage_fit_inputs_from_hf(args.behaviors)
+        _stage_fit_inputs_from_hf(args.behaviors, stage_e0=args.e0_json is None)
+    if not e0_path.exists():
+        raise FileNotFoundError(
+            f"E0 input missing: {e0_path} — run the judge phase that produces it first "
+            "(for the reanchor round: issue763_judge_e0.py --rubric-version v2 "
+            "--graded-only --base-e0 ... --out-json <this path>)"
+        )
 
-    e0 = load_json(EVAL_RESULTS_DIR / "E0_matched_by_behavior.json")
+    e0 = load_json(e0_path)
     pv_path = EVAL_RESULTS_DIR / "pv_rb_by_behavior.json"
     have_pv = pv_path.exists()
 
@@ -931,8 +1216,12 @@ def main() -> int:
     # assembled from results{} (checkpoint-loaded + freshly fit). Smoke runs use
     # reduced perms/boot, so they neither read nor write checkpoints (a smoke
     # checkpoint must never satisfy a production resume).
-    ckpt_dir = EVAL_RESULTS_DIR / "fit_by_behavior"
+    ckpt_dir = out_dir / "fit_by_behavior"
     ckpt_dir.mkdir(parents=True, exist_ok=True)
+
+    binary_control_ref = (
+        load_json(args.binary_control_ref) if args.binary_control_ref is not None else None
+    )
 
     results: dict[str, dict] = {}
     for behavior in args.behaviors:
@@ -947,7 +1236,13 @@ def main() -> int:
             rb_shard = EVAL_RESULTS_DIR / "pv_shards" / f"rb_{behavior}.pt"
             if rb_shard.exists():
                 rb_blob = torch.load(rb_shard, weights_only=False)
-        rec = fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, n_perms=n_perms, n_boot=n_boot)
+        # m ground truth from the frozen pool, STAGE-THEN-FAIL-LOUD (plan §3b) —
+        # never the E0's own m_B, which the pre-fix judge silently defaulted to
+        # 60. --smoke stays offline-hermetic (pool_m=None -> E0-derived value).
+        pool_m = None if args.smoke else int(load_frozen_pool_staged(behavior)["n_probes"])
+        rec = fit_behavior(
+            behavior, v0, ctx_ids, e0, rb_blob, n_perms=n_perms, n_boot=n_boot, pool_m=pool_m
+        )
         results[behavior] = rec
         if not args.smoke:
             dump_json(rec, ckpt_path)
@@ -963,6 +1258,12 @@ def main() -> int:
             rec.get("rho_binary_GLM"),
             rec.get("triage_verdict_binary"),
         )
+        # §4 binary_repro_check positive control (reanchor round): the refit's
+        # binary companion must reproduce the parent record within tolerance.
+        if binary_control_ref is not None:
+            ref_rec = binary_control_ref.get("by_behavior", binary_control_ref)
+            ref_rec = ref_rec.get(behavior, ref_rec) if isinstance(ref_rec, dict) else ref_rec
+            _assert_binary_control(rec, ref_rec, behavior, args.binary_control_tol)
         # smoke schema asserts (plan §10 smoke): the PRIMARY is graded-ridge.
         if args.smoke and rec.get("rho_graded_ridge") is not None:
             assert np.isfinite(rec["rho_graded_ridge"]), "rho_graded_ridge not finite"
@@ -971,18 +1272,33 @@ def main() -> int:
         # (BLOCKER predictor-results-missing-reduced-power-and-m): m + reduced_power
         # + graded_minus_binary_delta must exist on the degenerate path too.
         if args.smoke:
-            for key in ("m", "reduced_power", "graded_minus_binary_delta"):
-                assert key in rec, f"§10.1 field {key!r} missing for {behavior}"
+            for key in (
+                "m",
+                "reduced_power",
+                "graded_minus_binary_delta",
+                "yield_floor",
+                "any_shortfall",
+                "n_shortfall_cells",
+                "median_n_judged",
+                "rubric_version",
+            ):
+                assert key in rec, f"§10.1/§3b field {key!r} missing for {behavior}"
             assert isinstance(rec["reduced_power"], bool), "reduced_power must be bool"
+
+    if not args.smoke:
+        # Union with the round's existing checkpoints so the two-invocation §3d
+        # sequence (deception refit + 4-behavior refresh, either order) always
+        # assembles the full record set. Smoke never reads/writes checkpoints.
+        results = _assemble_results(ckpt_dir, results)
 
     out = {
         "by_behavior": results,
         "n_shuffle_perms": n_perms,
         "n_bootstrap": n_boot,
         "have_pv_baseline": have_pv,
-        "metadata": reproducibility_metadata({"phase": "fit"}),
+        "metadata": reproducibility_metadata({"phase": "fit", "e0_json": str(e0_path)}),
     }
-    dump_json(out, EVAL_RESULTS_DIR / "matched_predictor_results.json")
+    dump_json(out, out_dir / "matched_predictor_results.json")
     print(f"[issue763.fit] wrote predictor results for {len(results)} behaviors")
     return 0
 

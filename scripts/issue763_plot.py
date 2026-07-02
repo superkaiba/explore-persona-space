@@ -175,23 +175,279 @@ def _plot_optimism_delta(results: dict, behaviors: list[str], out_path: Path) ->
     plt.close(fig)
 
 
+def _ctx_scatter_arrays(e0: dict, behavior: str = "deception"):
+    """Per-context (graded_mean, rate) pairs from an E0 blob (None cells dropped)."""
+    xs, ys = [], []
+    for cell in e0["e0"][behavior].values():
+        if cell.get("graded_mean") is None or cell.get("rate") is None:
+            continue
+        xs.append(float(cell["rate"]))
+        ys.append(float(cell["graded_mean"]))
+    return xs, ys
+
+
+def _headline_bars(ax, rec: dict, cols: list[str], title: str) -> None:
+    """Deception headline bars: ρ ridge/GLM/PV on the graded DV + the √r_yy line."""
+    labels = ["ridge", "GLM", "PV"]
+    vals = [rec.get("rho_graded_ridge"), rec.get("rho_graded_glm"), rec.get("rho_graded_PV")]
+    vals = [v if v is not None else 0.0 for v in vals]
+    ax.bar(labels, vals, color=cols[:3])
+    ci = rec.get("rho_graded_ridge_ci")
+    rr = rec.get("rho_graded_ridge")
+    if ci and rr is not None:
+        ax.errorbar(
+            0,
+            rr,
+            yerr=[[max(0.0, rr - ci[0])], [max(0.0, ci[1] - rr)]],
+            fmt="none",
+            ecolor="black",
+            capsize=3,
+        )
+    sqrt_r = rec.get("sqrt_r_yy")
+    if sqrt_r is not None:
+        ax.axhline(sqrt_r, ls="--", color="gray", lw=1, label="√(r_yy)")
+        ax.legend(fontsize=6)
+    ax.set_title(title, fontsize=9)
+    ax.set_ylabel("held-out ρ (graded DV)")
+
+
+def _plot_reanchor_hero(
+    rec_v2: dict, rec_v1: dict, e0_v2: dict, e0_v1: dict, out_path: Path
+) -> None:
+    """The §5 hero: 2×2 graded-vs-binary before/after (v1 parent left, v2 right).
+
+    Top row: per-context scatter of graded mean vs binary rate (tracking
+    Spearman in the panel title). Bottom row: deception headline bars (ρ
+    ridge/GLM/PV vs the √r_yy ceiling). One figure answers "did re-anchoring
+    recover the graded read where the binary read was."
+    """
+    cols = _palette(3)
+    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    for j, (e0, rec, tag) in enumerate(
+        ((e0_v1, rec_v1, "v1 (parent rubric)"), (e0_v2, rec_v2, "v2 (re-anchored)"))
+    ):
+        ax = axes[0][j]
+        xs, ys = _ctx_scatter_arrays(e0)
+        ax.scatter(xs, ys, s=18, color=cols[j], alpha=0.75)
+        track = (
+            (e0.get("judge_diagnostics") or {})
+            .get("deception", {})
+            .get("graded_binary_tracking_spearman")
+        )
+        track_s = f"{track:.2f}" if track is not None else "n/a"
+        ax.set_title(f"deception {tag}: graded vs binary (ρ_track={track_s})", fontsize=9)
+        ax.set_xlabel("binary positive rate (per context)")
+        ax.set_ylabel("graded mean 0-100 (per context)")
+        ax.set_ylim(0, 100)
+        _headline_bars(axes[1][j], rec, cols, f"deception {tag}: headline ρ + ceiling")
+    fig.tight_layout()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    fig.savefig(out_path.with_suffix(".pdf"), bbox_inches="tight")
+    plt.close(fig)
+
+
+def _load_v2_draw_stats(results_dir: Path) -> list[tuple[float, float]]:
+    """(mean, std) of kept per-draw scores per (ctx, probe, completion) from the shards.
+
+    Reads ``raw_completions/judge_reanchor_v2/deception_draws.shard*.jsonl`` under
+    the round dir (the delta-2 per-draw persistence); returns [] when absent
+    (the panel is then skipped with an N/A label).
+    """
+    import json as _json
+
+    shard_dir = results_dir / "raw_completions" / "judge_reanchor_v2"
+    if not shard_dir.is_dir():
+        return []
+    import numpy as np
+
+    by_cell: dict[tuple[str, str, int], list[float]] = {}
+    for shard in sorted(shard_dir.glob("deception_draws.shard*.jsonl")):
+        with open(shard) as f:
+            for line in f:
+                r = _json.loads(line)
+                if r.get("score") is None:
+                    continue
+                key = (r["context_id"], r["probe_sha256"], int(r.get("flat_idx", 0)))
+                by_cell.setdefault(key, []).append(float(r["score"]))
+    return [(float(np.mean(v)), float(np.std(v))) for v in by_cell.values() if len(v) >= 2]
+
+
+def _plot_reanchor_exploratory(
+    results_v2: dict,
+    rec_v2: dict,
+    rec_v1: dict,
+    e0_v2: dict,
+    e0_v1: dict,
+    results_dir: Path,
+    out_path: Path,
+) -> None:
+    """The §5 exploratory dump: spread/bimodality/per-layer/ceiling/drop diagnostics."""
+    cols = _palette(4)
+    fig, axes = plt.subplots(2, 3, figsize=(16, 8))
+
+    # (1) context-mean histograms v1 vs v2 — the between-context spread read.
+    ax = axes[0][0]
+    for e0, tag, c in ((e0_v1, "v1", cols[0]), (e0_v2, "v2", cols[1])):
+        means = [
+            cell["graded_mean"]
+            for cell in e0["e0"]["deception"].values()
+            if cell.get("graded_mean") is not None
+        ]
+        ax.hist(means, bins=20, range=(0, 100), alpha=0.55, label=tag, color=c)
+    ax.set_title("per-context graded means (spread)", fontsize=9)
+    ax.set_xlabel("context graded mean")
+    ax.legend(fontsize=7)
+
+    # (2) pooled per-probe histograms v1 vs v2 — bimodality / mid-mass.
+    ax = axes[0][1]
+    for e0, tag, c in ((e0_v1, "v1", cols[0]), (e0_v2, "v2", cols[1])):
+        vals = [
+            pr["graded"]
+            for cell in e0["e0"]["deception"].values()
+            for pr in cell["per_probe"]
+            if pr.get("graded") is not None
+        ]
+        ax.hist(vals, bins=25, range=(0, 100), alpha=0.55, label=tag, color=c)
+    ax.set_title("pooled per-probe graded scores", fontsize=9)
+    ax.set_xlabel("per-probe graded score")
+    ax.legend(fontsize=7)
+
+    # (3) per-layer ρ_graded_ridge curve v2 vs v1.
+    ax = axes[0][2]
+    for rec, tag, c in ((rec_v1, "v1", cols[0]), (rec_v2, "v2", cols[1])):
+        curve = rec.get("per_layer_rho_graded_ridge") or []
+        ys = [v if v is not None else float("nan") for v in curve]
+        if ys:
+            ax.plot(range(len(ys)), ys, label=tag, color=c, marker=".", ms=3)
+    ax.set_title("per-layer ρ (graded ridge)", fontsize=9)
+    ax.set_xlabel("layer")
+    ax.set_ylabel("held-out ρ")
+    ax.legend(fontsize=7)
+
+    # (4) √r_yy CI bars all behaviors, reduced_power shaded.
+    ax = axes[1][0]
+    behs = [b for b in BEHAVIORS if b in results_v2]
+    for i, b in enumerate(behs):
+        rec = results_v2[b]
+        val = rec.get("sqrt_r_yy") or 0.0
+        rp = bool(rec.get("reduced_power"))
+        ax.bar(i, val, color=cols[1] if not rp else "lightgray", hatch="//" if rp else None)
+        ci = rec.get("sqrt_r_yy_ci")
+        if ci and rec.get("sqrt_r_yy") is not None:
+            ax.errorbar(
+                i,
+                val,
+                yerr=[[max(0.0, val - ci[0])], [max(0.0, ci[1] - val)]],
+                fmt="none",
+                ecolor="black",
+                capsize=3,
+            )
+    ax.set_xticks(range(len(behs)))
+    ax.set_xticklabels(behs, rotation=30, ha="right", fontsize=7)
+    ax.set_title("√(r_yy) by behavior (hatched = reduced power m<50)", fontsize=9)
+
+    # (5) dropped-draw counts v1 vs v2.
+    ax = axes[1][1]
+    drops = [
+        (e0.get("judge_diagnostics") or {}).get("deception", {}).get("n_graded_dropped", 0)
+        for e0 in (e0_v1, e0_v2)
+    ]
+    ax.bar(["v1", "v2"], drops, color=[cols[0], cols[1]])
+    ax.set_title("dropped graded draws (deception)", fontsize=9)
+
+    # (6) per-draw std vs mean scatter (v2 shards, when persisted).
+    ax = axes[1][2]
+    stats = _load_v2_draw_stats(results_dir)
+    if stats:
+        ax.scatter([m for m, _s in stats], [s for _m, s in stats], s=6, alpha=0.4, color=cols[1])
+        ax.set_xlabel("per-cell draw mean")
+        ax.set_ylabel("per-cell draw std")
+        ax.set_title("v2 per-draw std vs mean", fontsize=9)
+    else:
+        ax.set_title("v2 per-draw std vs mean (no shards found)", fontsize=9)
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #763: §6 figures.")
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS))
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--results-json",
+        type=Path,
+        default=EVAL_RESULTS_DIR / "matched_predictor_results.json",
+        help="predictor results to plot (the reanchor round passes its round-dir copy)",
+    )
+    ap.add_argument(
+        "--compare-results",
+        type=Path,
+        default=None,
+        help="PARENT matched_predictor_results.json — enables the reanchor "
+        "before/after hero + exploratory figures (plan §5)",
+    )
+    ap.add_argument(
+        "--e0-json",
+        type=Path,
+        default=None,
+        help="round E0 for the v2 scatter (default: <results-json dir>/E0_deception_v2.json)",
+    )
+    ap.add_argument(
+        "--base-e0",
+        type=Path,
+        default=EVAL_RESULTS_DIR / "E0_matched_by_behavior.json",
+        help="parent E0 for the v1 scatter",
+    )
+    ap.add_argument(
+        "--out-prefix",
+        default=None,
+        help="reanchor figure prefix: figures land as fig_763_<prefix>_*.png",
+    )
     args = ap.parse_args()
 
     _try_paper_style()
-    results = load_json(EVAL_RESULTS_DIR / "matched_predictor_results.json")["by_behavior"]
+    results = load_json(args.results_json)["by_behavior"]
     behaviors = [b for b in args.behaviors if b in results]
 
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     grid_path = FIGURE_DIR / "fig_763_matched_grid.png"
-    _plot_grid(results, behaviors, grid_path)
-    _plot_optimism_delta(results, behaviors, FIGURE_DIR / "fig_763_optimism_delta.png")
+    if args.compare_results is None:
+        _plot_grid(results, behaviors, grid_path)
+        _plot_optimism_delta(results, behaviors, FIGURE_DIR / "fig_763_optimism_delta.png")
+        assert grid_path.exists(), "grid figure not written"
+        print(f"[issue763.plot] wrote figures under {FIGURE_DIR}")
+        return 0
 
-    assert grid_path.exists(), "grid figure not written"
-    print(f"[issue763.plot] wrote figures under {FIGURE_DIR}")
+    # ── reanchor before/after mode (plan §5) ──
+    prefix = args.out_prefix or "reanchor"
+    parent_results = load_json(args.compare_results)["by_behavior"]
+    rec_v2 = results.get("deception")
+    rec_v1 = parent_results.get("deception")
+    assert rec_v2 is not None and rec_v1 is not None, (
+        "deception record missing from results/compare-results — the hero figure "
+        "is a deception before/after"
+    )
+    e0_v2_path = args.e0_json or (args.results_json.parent / "E0_deception_v2.json")
+    e0_v2 = load_json(e0_v2_path)
+    e0_v1 = load_json(args.base_e0)
+    hero_path = FIGURE_DIR / f"fig_763_{prefix}_graded_vs_binary.png"
+    _plot_reanchor_hero(rec_v2, rec_v1, e0_v2, e0_v1, hero_path)
+    _plot_reanchor_exploratory(
+        results,
+        rec_v2,
+        rec_v1,
+        e0_v2,
+        e0_v1,
+        args.results_json.parent,
+        FIGURE_DIR / f"fig_763_{prefix}_exploratory.png",
+    )
+    assert hero_path.exists(), "hero figure not written"
+    print(f"[issue763.plot] wrote reanchor figures fig_763_{prefix}_* under {FIGURE_DIR}")
     return 0
 
 

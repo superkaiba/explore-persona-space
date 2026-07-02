@@ -66,6 +66,8 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import logging
 import sys
 from pathlib import Path
@@ -81,17 +83,20 @@ from issue763_common import (  # noqa: E402
     GEN_DIR,
     HF_ANALYSIS_TENSORS_PREFIX,
     HF_DATA_REPO,
-    N_PROBES_TARGET,
+    HF_RAW_COMPLETIONS_PREFIX,
     dump_json,
-    load_frozen_pool,
+    load_frozen_pool_staged,
     load_json,
     reproducibility_metadata,
+    sha256_file,
 )
 
 from explore_persona_space.analysis.issue_763_graded_judge import (  # noqa: E402
     GRADED_N_SAMPLES,
     GRADED_TEMPERATURE,
     build_graded_prompt,
+    graded_prompt_hash,
+    load_rubric_v2_exemplars,
     mock_graded_score,
     parse_graded_score,
 )
@@ -138,6 +143,7 @@ def _judge_via_batch_api(
     id_prefix: str = "e0",
     max_tokens: int = 300,
     temperature: float | None = None,
+    keep_raw: bool = False,
 ) -> list[dict]:
     """Judge filled rubric prompts via the registered eval.batch_judge path.
 
@@ -164,10 +170,20 @@ def _judge_via_batch_api(
     contractually pinned — passing it explicitly makes the protocol reproducible
     against a future default change. None → API default (the binary companion
     is a single verdict, so it stays unpinned).
+
+    ``keep_raw`` (reanchor plumbing delta 2): when True the dispatch runs inside
+    ``judge_dispatch.keep_raw_judge_text``, so every successfully-parsed verdict
+    dict additionally carries the verbatim judge response text under
+    ``"_raw_text"`` — the per-draw raw text the raw_completions shards persist
+    (the parent run kept only per-probe means; the reason-then-score
+    justification is otherwise unrecoverable post-dispatch).
     """
+    import contextlib
+
     from explore_persona_space.eval.judge_dispatch import (
         dispatch_judge_items,
         graded_temperature,
+        keep_raw_judge_text,
     )
     from explore_persona_space.eval.utils import parse_judge_json
 
@@ -182,7 +198,8 @@ def _judge_via_batch_api(
         return {"_judge_error": reason}
 
     _JUDGE_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-    with graded_temperature(temperature):
+    raw_ctx = keep_raw_judge_text() if keep_raw else contextlib.nullcontext()
+    with graded_temperature(temperature), raw_ctx:
         scores = dispatch_judge_items(
             items,
             judge_model=model,
@@ -248,8 +265,20 @@ def _within_cell_test_retest(draws_per_cell: list[list[float]]) -> float | None:
     return _spearman(first, second)
 
 
+def _probe_sha256(probe: str) -> str:
+    """sha256 hex of the exact probe string (exclusion/provenance key, plan §3a)."""
+    return hashlib.sha256(probe.encode("utf-8")).hexdigest()
+
+
 def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulation; one cohesive read
-    behavior: str, gen_by_ctx: dict[str, dict], *, mock: bool
+    behavior: str,
+    gen_by_ctx: dict[str, dict],
+    *,
+    mock: bool,
+    rubric_version: str = "v1",
+    base_e0_per_ctx: dict[str, dict] | None = None,
+    exemplar_excluded: set[tuple[str, str]] | None = None,
+    draw_rows_out: list[dict] | None = None,
 ) -> dict:
     """Judge one behavior across all contexts -> the DUAL-DV per-context records.
 
@@ -264,8 +293,37 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
     n_positive, per_probe}}, "r_jj": float|None,
     "graded_binary_tracking_spearman": float|None, "n_graded_dropped": int}``.
     The per_probe entries carry BOTH ``e0`` (binary) and ``graded`` (0-100).
+
+    `deception-rubric-reanchor` round params (all keyword-only, default-off —
+    the parent/test call shape ``_judge_behavior(b, gen, mock=...)`` is
+    byte-preserved):
+
+    - ``rubric_version``: threads into ``build_graded_prompt`` (``"v2"`` = the
+      observed-exemplar re-anchored deception rubric, plan §3a).
+    - ``base_e0_per_ctx``: GRADED-ONLY mode — the parent E0's per-context dict
+      for this behavior. ZERO binary judge calls are dispatched; the binary
+      per-probe ``e0``/``n_judged`` and per-context ``rate``/``n_judged``/
+      ``n_positive`` are copied VERBATIM from the parent (the frozen companion,
+      §10 acceptance criterion 1), and each cell additionally carries
+      ``binary_weight_n`` = the parent cell's realized ``n_graded`` — the exact
+      precision weight the parent fit consumed (``_e0_vectors`` prefers
+      ``n_graded``), frozen so the §4 ``binary_repro_check`` positive control
+      reproduces the parent binary fit by construction.
+    - ``exemplar_excluded``: set of ``(context_id, probe_sha256)`` — the ≤3
+      rubric-exemplar items. Their v2 graded scores are RECORDED
+      (``graded_exemplar_score``) but EXCLUDED from the per-context
+      ``graded_mean`` / ``n_graded`` (contamination guard, plan §3a); the row is
+      flagged ``exemplar_excluded: true`` with ``graded: None`` so every
+      downstream mean/ceiling consumer excludes it uniformly.
+    - ``draw_rows_out``: when a list, one row per (completion, draw) is appended
+      — ``{behavior, context_id, probe_sha256, flat_idx, draw_idx, score,
+      raw_text, error}`` — the per-draw persistence (plumbing delta 2) the
+      raw_completions shards serialize. ``raw_text`` is the verbatim judge
+      response (live path via ``keep_raw_judge_text``; None under mock).
     """
     col = E0_COLUMNS[behavior]
+    graded_only = base_e0_per_ctx is not None
+    excl = exemplar_excluded or set()
     # Flatten every (ctx, probe, completion), keeping the ctx+probe grouping.
     flat: list[tuple[str, str, str]] = []  # (ctx_id, probe, completion_text)
     for ctx_id, gen in gen_by_ctx.items():
@@ -273,8 +331,12 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
             for comp in cell["completions"]:
                 flat.append((ctx_id, cell["probe"], comp["text"]))
 
-    # ── BINARY (companion) — #658 rubric verbatim ──
-    if mock:
+    # ── BINARY (companion) — #658 rubric verbatim, OR copied from the parent ──
+    binary_verdicts: list[dict] | None
+    if graded_only:
+        # ZERO binary calls: the parent verdicts are the frozen companion.
+        binary_verdicts = None
+    elif mock:
         token = _MOCK_TOKENS[behavior]
         binary_verdicts = [{col.e0_verdict_key: (token in text)} for _c, _p, text in flat]
     else:
@@ -288,34 +350,60 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
     # of N scores (each float|None; None = a DROPPED malformed/refusal draw).
     graded_draws: list[list[float | None]] = []
     n_graded_dropped = 0
+
+    def _record_draw(ci: int, k: int, score: float | None, raw: str | None, err: str | None):
+        if draw_rows_out is None:
+            return
+        c, p, _t = flat[ci]
+        draw_rows_out.append(
+            {
+                "behavior": behavior,
+                "context_id": c,
+                "probe_sha256": _probe_sha256(p),
+                "flat_idx": ci,
+                "draw_idx": k,
+                "score": score,
+                "raw_text": raw,
+                "error": err,
+                "rubric_version": rubric_version,
+            }
+        )
+
     if mock:
-        for _c, _p, text in flat:
+        for ci, (_c, _p, text) in enumerate(flat):
             draws = [mock_graded_score(behavior, text) for _ in range(GRADED_N_SAMPLES)]
             graded_draws.append(draws)
             n_graded_dropped += sum(1 for d in draws if d is None)
+            for k, d in enumerate(draws):
+                _record_draw(ci, k, d, None, None if d is not None else "mock_drop")
     else:
         # One flat prompt list: N copies of each cell's graded prompt, in order.
         graded_prompts: list[str] = []
         for _c, p, t in flat:
-            gp = build_graded_prompt(behavior, p, t)
+            gp = build_graded_prompt(behavior, p, t, rubric_version=rubric_version)
             graded_prompts.extend([gp] * GRADED_N_SAMPLES)
         # temp=GRADED_TEMPERATURE (1.0) EXPLICIT so the N=8 draws are independent
         # samples regardless of a future API-default change (llm-judging rule 4).
+        # keep_raw=True: per-draw raw judge text for the shards (delta 2).
         graded_raw = _judge_via_batch_api(
             graded_prompts,
             JUDGE_MODEL,
             id_prefix="e0grd",
             max_tokens=400,
             temperature=GRADED_TEMPERATURE,
+            keep_raw=draw_rows_out is not None,
         )
         # Regroup the flat results back into N draws per cell, parsing each.
         for ci in range(len(flat)):
             draws: list[float | None] = []
             for k in range(GRADED_N_SAMPLES):
                 v = graded_raw[ci * GRADED_N_SAMPLES + k]
+                raw_text = v.get("_raw_text")
                 if "_judge_error" in v or "_judge_refused" in v:
                     draws.append(None)
                     n_graded_dropped += 1
+                    err = v.get("_judge_error") or "_judge_refused"
+                    _record_draw(ci, k, None, raw_text, str(err))
                     continue
                 # The dispatcher returns the parsed JSON verdict; the graded score
                 # may sit under "score" OR be re-extracted from a raw text field.
@@ -323,10 +411,11 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
                 if "score" in v:
                     score = parse_graded_score(f'{{"score": {v["score"]}}}')
                 if score is None:
-                    score = parse_graded_score(v.get("raw") or v.get("text") or "")
+                    score = parse_graded_score(v.get("raw") or v.get("text") or raw_text or "")
                 if score is None:
                     n_graded_dropped += 1
                 draws.append(score)
+                _record_draw(ci, k, score, raw_text, None if score is not None else "parse_drop")
             graded_draws.append(draws)
 
     # ── accumulate per (ctx -> probe -> [...]) ──
@@ -339,10 +428,11 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
     # yields (max kept per cell = N × completions_for_that_cell).
     by_ctx_grd_draws: dict[str, dict[str, dict[str, int]]] = {}
     for idx, (ctx_id, probe, _text) in enumerate(flat):
-        bv = binary_verdicts[idx]
-        if not ("_judge_error" in bv or "_judge_refused" in bv):
-            pos = _verdict_truthy(bv, col.e0_verdict_key, behavior)
-            by_ctx_bin.setdefault(ctx_id, {}).setdefault(probe, []).append(pos)
+        if binary_verdicts is not None:
+            bv = binary_verdicts[idx]
+            if not ("_judge_error" in bv or "_judge_refused" in bv):
+                pos = _verdict_truthy(bv, col.e0_verdict_key, behavior)
+                by_ctx_bin.setdefault(ctx_id, {}).setdefault(probe, []).append(pos)
         draws = graded_draws[idx]
         kept = [d for d in draws if d is not None]
         # accumulate draw-level kept/dropped counts for EVERY completion (even one
@@ -361,42 +451,92 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
     out: dict[str, dict] = {}
     ctx_graded_means: list[float] = []
     ctx_binary_rates: list[float] = []
-    for ctx_id in {*by_ctx_bin, *by_ctx_grd, *by_ctx_grd_draws}:
+    exemplar_excluded_items: list[dict] = []
+    ctx_ids = (
+        sorted({*by_ctx_grd, *by_ctx_grd_draws} | set(base_e0_per_ctx))
+        if graded_only
+        else {*by_ctx_bin, *by_ctx_grd, *by_ctx_grd_draws}
+    )
+    for ctx_id in ctx_ids:
         bin_pm = by_ctx_bin.get(ctx_id, {})
         grd_pm = by_ctx_grd.get(ctx_id, {})
         draw_pm = by_ctx_grd_draws.get(ctx_id, {})
-        all_bin = [p for rows in bin_pm.values() for p in rows]
-        n_judged = len(all_bin)
-        n_positive = sum(1 for p in all_bin if p)
-        all_grd = [s for rows in grd_pm.values() for s in rows]
-        n_graded = len(all_grd)
-        # DRAW-LEVEL cell totals (CONCERN #3): surviving vs dropped N-draws summed
-        # over the cell's probes×completions — the number the drop-rule audit reads.
-        n_graded_draws_kept = sum(c["n_kept"] for c in draw_pm.values())
-        n_graded_draws_dropped = sum(c["n_dropped"] for c in draw_pm.values())
-        probes = sorted({*bin_pm, *grd_pm, *draw_pm})
+        base_pp: dict[str, dict] = {}
+        if graded_only:
+            base_cell = base_e0_per_ctx.get(ctx_id)
+            if base_cell is None:
+                raise RuntimeError(
+                    f"graded-only join miss: context {ctx_id} has v2 gen cells but no "
+                    "parent E0 cell — the frozen companion cannot be copied"
+                )
+            base_pp = {pr["probe"]: pr for pr in base_cell["per_probe"]}
+            v2_probes = {*grd_pm, *draw_pm}
+            if set(base_pp) != v2_probes:
+                raise RuntimeError(
+                    f"graded-only probe-set mismatch in {ctx_id}: parent has "
+                    f"{len(base_pp)} probes, v2 judged {len(v2_probes)} — the exact "
+                    "probe-string join invariant is broken (never copy a partial "
+                    "binary companion)"
+                )
+            probes = sorted(base_pp)
+        else:
+            probes = sorted({*bin_pm, *grd_pm, *draw_pm})
         per_probe = []
         for probe in probes:
-            brows = bin_pm.get(probe, [])
             grows = grd_pm.get(probe, [])
             dcounts = draw_pm.get(probe, {"n_kept": 0, "n_dropped": 0})
             import numpy as np
 
-            per_probe.append(
-                {
-                    "probe": probe,
-                    "e0": (sum(1 for p in brows if p) / len(brows)) if brows else None,
-                    "graded": (float(np.mean(grows)) if grows else None),
-                    "n_judged": len(brows),
-                    "n_graded": len(grows),
-                    # per-probe surviving/dropped N-draw counts (CONCERN #3) — lets
-                    # the analyzer audit the drop rule per probe, not just at the
-                    # behavior aggregate.
-                    "n_draws_kept": dcounts["n_kept"],
-                    "n_draws_dropped": dcounts["n_dropped"],
-                }
-            )
-        rate = (n_positive / n_judged) if n_judged else None
+            graded_val = float(np.mean(grows)) if grows else None
+            is_excl = (ctx_id, _probe_sha256(probe)) in excl
+            if graded_only:
+                bp = base_pp[probe]
+                e0_val, njud = bp["e0"], bp["n_judged"]
+            else:
+                brows = bin_pm.get(probe, [])
+                e0_val = (sum(1 for p in brows if p) / len(brows)) if brows else None
+                njud = len(brows)
+            row = {
+                "probe": probe,
+                "e0": e0_val,
+                "graded": None if is_excl else graded_val,
+                "n_judged": njud,
+                "n_graded": 0 if is_excl else len(grows),
+                # per-probe surviving/dropped N-draw counts (CONCERN #3) — lets
+                # the analyzer audit the drop rule per probe, not just at the
+                # behavior aggregate. Kept RAW on excluded rows (audit-level).
+                "n_draws_kept": dcounts["n_kept"],
+                "n_draws_dropped": dcounts["n_dropped"],
+            }
+            if is_excl:
+                # contamination guard (plan §3a): the rubric's own exemplar item
+                # never scores itself into the context mean; the v2 score is
+                # recorded for transparency but graded=None drops it from every
+                # downstream mean / ceiling read uniformly.
+                row["exemplar_excluded"] = True
+                row["graded_exemplar_score"] = graded_val
+                exemplar_excluded_items.append(
+                    {"context_id": ctx_id, "probe_sha256": _probe_sha256(probe)}
+                )
+            per_probe.append(row)
+        # cell-level graded aggregate EXCLUDING exemplar items (flattened over
+        # per-(probe, completion) means, exactly as before).
+        all_grd = [
+            s for p, rows in grd_pm.items() if (ctx_id, _probe_sha256(p)) not in excl for s in rows
+        ]
+        n_graded = len(all_grd)
+        n_graded_draws_kept = sum(c["n_kept"] for c in draw_pm.values())
+        n_graded_draws_dropped = sum(c["n_dropped"] for c in draw_pm.values())
+        if graded_only:
+            base_cell = base_e0_per_ctx[ctx_id]
+            rate = base_cell["rate"]
+            n_judged = base_cell["n_judged"]
+            n_positive = base_cell["n_positive"]
+        else:
+            all_bin = [p for rows in bin_pm.values() for p in rows]
+            n_judged = len(all_bin)
+            n_positive = sum(1 for p in all_bin if p)
+            rate = (n_positive / n_judged) if n_judged else None
         graded_mean = None
         if n_graded:
             import numpy as np
@@ -414,6 +554,13 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
             "n_positive": n_positive,
             "per_probe": per_probe,
         }
+        if graded_only:
+            # The parent fit's realized binary precision weight (_e0_vectors
+            # prefers n_graded): frozen alongside the copied verdicts so the §4
+            # binary_repro_check reproduces the parent fit exactly by construction.
+            out[ctx_id]["binary_weight_n"] = base_e0_per_ctx[ctx_id].get(
+                "n_graded"
+            ) or base_e0_per_ctx[ctx_id].get("n_judged")
         if graded_mean is not None and rate is not None:
             ctx_graded_means.append(graded_mean)
             ctx_binary_rates.append(rate)
@@ -423,6 +570,7 @@ def _judge_behavior(  # noqa: C901  # dual-DV (binary + N-draw graded) accumulat
         "r_jj": _within_cell_test_retest(graded_draws),
         "graded_binary_tracking_spearman": _spearman(ctx_graded_means, ctx_binary_rates),
         "n_graded_dropped": n_graded_dropped,
+        "exemplar_excluded_items": exemplar_excluded_items,
     }
 
 
@@ -592,28 +740,165 @@ def _load_gen_by_ctx(behavior: str) -> dict[str, dict]:
     return out
 
 
-def _behavior_floor(behavior: str, *, smoke: bool) -> tuple[int, int]:
-    """Return (m_B, floor) — the behavior-conditioned acceptance floor.
+def _behavior_floor(behavior: str) -> tuple[int, int]:
+    """Return (m_B, floor) — the behavior-conditioned acceptance floor, FAIL-LOUD.
 
     The floor is ``floor(0.8 * m_B)`` where ``m_B`` is the ACTUAL per-behavior
-    probe count read from the frozen pool (``probe_pools/<B>.json:n_probes``) —
-    NOT a hardcoded constant (brief Must-Fix #2). For the v3 pools (60/60/60/20/20)
-    this resolves to 48/48/48/16/16; reading m_B keeps the gate correct whatever
-    the pool froze to (an under-filled pool lowers BOTH m_B and the floor, so a
-    genuine yield shortfall is the n_judged < 0.8*m_B case, not n_judged < 48).
-    Falls back to N_PROBES_TARGET if the frozen pool is unreadable.
+    probe count read from the frozen pool (``probe_pools/<B>.json:n_probes``).
+    For the v3 pools (60/60/60/20/20) this resolves to 48/48/48/16/16.
+
+    `deception-rubric-reanchor` plumbing fix (plan §3b, root cause of the as-run
+    m_B=60-for-all-five bug): the old ``except Exception → N_PROBES_TARGET``
+    fallback silently stamped m_B=60 / floor=48 when the pools were not staged
+    locally at judge time. Replaced with STAGE-THEN-FAIL-LOUD:
+    ``load_frozen_pool_staged`` per-file downloads a missing pool from the
+    frozen HF inputs mirror (the ``issue763_stage_pools.py`` path) and RE-RAISES
+    on any residual failure — a wrong m_B silently mislabels reduced_power +
+    every yield_shortfall flag, so no default is acceptable. Applies in smoke
+    too (the smoke stages the real pools; the floor is the real 0.8·m_B).
     """
-    try:
-        pool = load_frozen_pool(behavior)
-        m_b = int(pool.get("n_probes") or 0)
-    except Exception:
-        m_b = N_PROBES_TARGET
+    pool = load_frozen_pool_staged(behavior)
+    m_b = int(pool.get("n_probes") or 0)
     if m_b <= 0:
-        m_b = N_PROBES_TARGET
-    # floor = floor(0.8 * m_B) (same rule in smoke + real; m_B is just smaller in
-    # smoke, so the floor scales down with it — no separate smoke constant).
+        raise RuntimeError(
+            f"frozen pool for {behavior} carries invalid n_probes={pool.get('n_probes')!r} "
+            "— the acceptance floor is undefined; rebuild/re-stage the pool"
+        )
     floor = max(1, int(0.8 * m_b))
     return m_b, floor
+
+
+def _exemplar_exclusion_set(rubric_version: str) -> set[tuple[str, str]]:
+    """The (context_id, probe_sha256) items the v2 rubric embeds (≤3, plan §3a).
+
+    Empty for v1. For v2, read from the committed exemplar config (fail-loud if
+    absent — the v2 rubric is undefined without it).
+    """
+    if rubric_version != "v2":
+        return set()
+    ex = load_rubric_v2_exemplars()
+    return {(e["context_id"], e["probe_sha256"]) for e in ex.values()}
+
+
+def _assert_binary_verbatim(per_ctx: dict[str, dict], base_per_ctx: dict[str, dict]) -> None:
+    """HARD-ASSERT the copied binary companion is byte-equal to the parent E0.
+
+    §10 acceptance criterion 1: per-context ``rate`` / ``n_judged`` /
+    ``n_positive`` and per-probe ``e0`` / ``n_judged`` must compare ``==`` to
+    the parent (the values are copied, so a failure here is a join/copy
+    regression, never judge noise). Raises with the first offending cell.
+    """
+    assert set(per_ctx) == set(base_per_ctx), (
+        f"context-set mismatch: {sorted(set(per_ctx) ^ set(base_per_ctx))[:5]}"
+    )
+    for ctx_id, cell in per_ctx.items():
+        base = base_per_ctx[ctx_id]
+        for key in ("rate", "n_judged", "n_positive"):
+            assert cell[key] == base[key], (
+                f"binary field {key!r} drifted in {ctx_id}: {cell[key]!r} != {base[key]!r}"
+            )
+        base_pp = {pr["probe"]: pr for pr in base["per_probe"]}
+        for pr in cell["per_probe"]:
+            bp = base_pp[pr["probe"]]
+            for key in ("e0", "n_judged"):
+                assert pr[key] == bp[key], (
+                    f"per-probe binary field {key!r} drifted in ({ctx_id}, "
+                    f"{pr['probe'][:40]!r}): {pr[key]!r} != {bp[key]!r}"
+                )
+
+
+def _write_draw_shards(
+    rows: list[dict], out_dir: Path, stem: str, *, max_bytes: int = 9_000_000
+) -> list[Path]:
+    """Line-split the per-draw rows into <9 MB JSONL shards + a manifest.
+
+    Upload-policy big-text recipe: text >9.5 MB per file must line-split into
+    <9 MB shards (NEVER gzip — ``*.gz`` is LFS-matched and re-enters the
+    quota-blocked path). Writes ``<stem>.shardNN.jsonl`` plus
+    ``<stem>.manifest.json`` (ordered parts, line counts, sha256s). Idempotent:
+    stale shards for the same stem are removed first.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for old in out_dir.glob(f"{stem}.shard*.jsonl"):
+        old.unlink()
+    shards: list[Path] = []
+    part_rows: list[int] = []
+    buf: list[str] = []
+    size = 0
+    idx = 0
+
+    def _flush() -> None:
+        nonlocal buf, size, idx
+        if not buf:
+            return
+        p = out_dir / f"{stem}.shard{idx:02d}.jsonl"
+        p.write_text("".join(buf), encoding="utf-8")
+        shards.append(p)
+        part_rows.append(len(buf))
+        idx += 1
+        buf = []
+        size = 0
+
+    for r in rows:
+        line = json.dumps(r, ensure_ascii=False) + "\n"
+        nbytes = len(line.encode("utf-8"))
+        if size + nbytes > max_bytes and buf:
+            _flush()
+        buf.append(line)
+        size += nbytes
+    _flush()
+    manifest = {
+        "stem": stem,
+        "n_rows": len(rows),
+        "parts": [
+            {"name": p.name, "n_rows": n, "sha256": sha256_file(p)}
+            for p, n in zip(shards, part_rows, strict=True)
+        ],
+    }
+    dump_json(manifest, out_dir / f"{stem}.manifest.json")
+    return shards
+
+
+def _upload_draw_shards(shard_dir: Path, rubric_version: str) -> None:
+    """ONE ``upload_folder`` commit of the per-draw shards + fresh-listing verify.
+
+    Upload Policy: raw judge outputs (text/JSON) upload UNCONDITIONALLY to the
+    HF data repo under ``issue763_matched_v0/raw_completions/judge_reanchor_<rv>/``
+    from the driver's normal exit path — fail-loud (a clean exit IS the upload
+    contract; the Step-8 upload-verifier is the safety net, not the only line of
+    defense). One bulk commit (never a per-file loop — the 256-commits/hr
+    throttle, #591); completeness verified on a FRESH ``list_repo_files``
+    listing (a partial upload must never read as complete).
+    """
+    from huggingface_hub import HfApi, list_repo_files
+
+    dest = f"{HF_RAW_COMPLETIONS_PREFIX}/judge_reanchor_{rubric_version}"
+    api = HfApi()
+    api.upload_folder(
+        folder_path=str(shard_dir),
+        path_in_repo=dest,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        commit_message=f"issue763 reanchor: per-draw judge shards ({shard_dir.name})",
+    )
+    remote = {
+        Path(f).name
+        for f in list_repo_files(HF_DATA_REPO, repo_type="dataset")
+        if f.startswith(f"{dest}/")
+    }
+    local = {p.name for p in shard_dir.iterdir() if p.is_file()}
+    missing = local - remote
+    if missing:
+        raise RuntimeError(
+            f"per-draw shard upload INCOMPLETE: {sorted(missing)} not on "
+            f"{HF_DATA_REPO}/{dest} after upload_folder — do not proceed to teardown"
+        )
+    logger.info(
+        "[shards] uploaded %d files -> %s/%s (fresh-listing verified)",
+        len(local),
+        HF_DATA_REPO,
+        dest,
+    )
 
 
 def _apply_yield_flags(per_ctx: dict[str, dict], floor: int) -> dict:
@@ -643,28 +928,154 @@ def _apply_yield_flags(per_ctx: dict[str, dict], floor: int) -> dict:
     }
 
 
+def _smoke_assert_v2(out: dict, base_e0: dict, excl: set[tuple[str, str]]) -> None:
+    """The §3c-step-2 smoke asserts for the v2 graded-only run.
+
+    (1) the v2 prompt carries every exemplar excerpt verbatim; (2) the recorded
+    ``graded_prompt_hash`` differs from v1's; (3) every exemplar (ctx, probe)
+    item is flagged + dropped from the per-context graded mean (``graded: None``,
+    ``n_graded`` consistent); (4) binary fields byte-equal to the parent E0
+    (re-checked via ``_assert_binary_verbatim`` at judge time; this re-asserts
+    on the SERIALIZED output dict).
+    """
+    prompt = build_graded_prompt("deception", "Q?", "A.", rubric_version="v2")
+    for anchor, e in load_rubric_v2_exemplars().items():
+        assert e["excerpt"] in prompt, f"v2 prompt missing the {anchor}-anchor exemplar text"
+    h_v2 = out["graded_prompt_hash"]["deception"]
+    assert h_v2 == graded_prompt_hash("deception", "v2")
+    assert h_v2 != graded_prompt_hash("deception", "v1"), "v2 prompt hash == v1 (no re-anchor?)"
+    per_ctx = out["e0"]["deception"]
+    n_flagged = 0
+    for ctx_id, sha in excl:
+        cell = per_ctx.get(ctx_id)
+        assert cell is not None, f"exemplar context {ctx_id} missing from v2 E0"
+        rows = [p for p in cell["per_probe"] if _probe_sha256(p["probe"]) == sha]
+        assert len(rows) == 1, f"exemplar probe {sha[:12]} not uniquely found in {ctx_id}"
+        row = rows[0]
+        assert row.get("exemplar_excluded") is True and row["graded"] is None, row
+        n_flagged += 1
+        kept = [p["graded"] for p in cell["per_probe"] if p["graded"] is not None]
+        assert cell["n_graded"] == len(kept), (cell["n_graded"], len(kept))
+    assert 1 <= n_flagged <= 3, f"expected 1-3 exemplar-excluded items, found {n_flagged}"
+    base_dec = base_e0["e0"]["deception"]
+    _assert_binary_verbatim(per_ctx, base_dec)
+
+    # byte-level check of the copied binary subset (json-serialized equality).
+    def _bin_subset(pc: dict) -> str:
+        return json.dumps(
+            {
+                c: {
+                    "rate": cell["rate"],
+                    "n_judged": cell["n_judged"],
+                    "n_positive": cell["n_positive"],
+                    "per_probe": [
+                        {"probe": p["probe"], "e0": p["e0"], "n_judged": p["n_judged"]}
+                        for p in cell["per_probe"]
+                    ],
+                }
+                for c, cell in sorted(pc.items())
+            },
+            sort_keys=True,
+        )
+
+    assert _bin_subset(per_ctx) == _bin_subset(base_dec), (
+        "serialized binary companion differs from parent E0 (byte-equality criterion 1)"
+    )
+    logger.info(
+        "[smoke] v2 asserts PASS: exemplar text in prompt, hash differs from v1, "
+        "%d exemplar items excluded, binary companion byte-equal",
+        n_flagged,
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #763: judge E0(C,B) over matched probes.")
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS))
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--mock-judge", action="store_true", help="deterministic offline judge (smoke)")
+    ap.add_argument(
+        "--rubric-version",
+        choices=("v1", "v2"),
+        default="v1",
+        help="graded-rubric anchors: v1 (parent abstract) | v2 (observed-exemplar re-anchor, "
+        "deception only — plan §3a)",
+    )
+    ap.add_argument(
+        "--graded-only",
+        action="store_true",
+        help="dispatch ONLY graded draws; copy the binary companion VERBATIM from --base-e0 "
+        "(zero binary calls — the reanchor round's frozen-companion contract)",
+    )
+    ap.add_argument(
+        "--base-e0",
+        type=Path,
+        default=None,
+        help="parent E0 JSON whose binary per-probe verdicts/rates are copied verbatim "
+        "(required with --graded-only)",
+    )
+    ap.add_argument(
+        "--out-json",
+        type=Path,
+        default=EVAL_RESULTS_DIR / "E0_matched_by_behavior.json",
+        help="output E0 path (the reanchor round writes to its own round dir so parent "
+        "artifacts are never clobbered — plan delta 3)",
+    )
     args = ap.parse_args()
+
+    # Credentials at entry: `uv run python` does NOT auto-load .env; the live
+    # judge (ANTHROPIC_API_KEY) + the shard upload / pool staging (HF_TOKEN)
+    # need it loaded in THIS process.
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()
+
+    if args.graded_only != (args.base_e0 is not None):
+        ap.error("--graded-only and --base-e0 must be passed together")
+    if args.rubric_version == "v2":
+        if set(args.behaviors) != {"deception"}:
+            ap.error(
+                "--rubric-version v2 is deception-only (re-anchoring any other behavior "
+                "is a plan must-ask — re-plan, never silently do)"
+            )
+        # fail-loud early if the exemplar config is missing (the v2 rubric's
+        # data dependency) — before any gen staging / API dispatch.
+        load_rubric_v2_exemplars()
+    if args.graded_only and "format_style" in args.behaviors:
+        ap.error("--graded-only is undefined for format_style (structural, no judge)")
+
+    base_e0 = load_json(args.base_e0) if args.base_e0 is not None else None
+    excl = _exemplar_exclusion_set(args.rubric_version)
+    draw_rows: list[dict] = []
 
     e0: dict[str, dict] = {}
     yield_flags: dict[str, dict] = {}
     judge_diagnostics: dict[str, dict] = {}
+    exemplar_excluded_items: list[dict] = []
     for behavior in args.behaviors:
         gen_by_ctx = _load_gen_by_ctx(behavior)
         if behavior == "format_style":
             res = _score_format(gen_by_ctx)
         else:
-            res = _judge_behavior(behavior, gen_by_ctx, mock=args.mock_judge)
+            res = _judge_behavior(
+                behavior,
+                gen_by_ctx,
+                mock=args.mock_judge,
+                rubric_version=args.rubric_version,
+                base_e0_per_ctx=(base_e0["e0"][behavior] if base_e0 is not None else None),
+                exemplar_excluded=excl,
+                draw_rows_out=draw_rows,
+            )
         per_ctx = res["per_ctx"]
+        if base_e0 is not None:
+            # §10 criterion 1: the copied binary companion is byte-equal to the
+            # parent E0 — hard assert at judge time, production AND smoke.
+            _assert_binary_verbatim(per_ctx, base_e0["e0"][behavior])
+        exemplar_excluded_items.extend(res.get("exemplar_excluded_items") or [])
         # Per-behavior realized n_judged (max across contexts = the probe count).
         max_n = max((c["n_judged"] for c in per_ctx.values()), default=0)
         # Behavior-conditioned 80% floor = floor(0.8 * m_B) from the frozen pool's
-        # n_probes (brief Must-Fix #2) — NOT a hardcoded 48. m=60 -> 48, m=20 -> 16.
-        m_b, floor = _behavior_floor(behavior, smoke=args.smoke)
+        # n_probes — STAGE-THEN-FAIL-LOUD (plan §3b; never the old silent 60).
+        m_b, floor = _behavior_floor(behavior)
         # PER-CELL yield_shortfall (BLOCKER #2 yield-shortfall-behavior-not-per-cell):
         # stamp each context with its OWN shortfall verdict + realized n + floor.
         yield_summary = _apply_yield_flags(per_ctx, floor)
@@ -701,13 +1112,52 @@ def main() -> int:
         "mock_judge": args.mock_judge,
         "graded_n_samples": GRADED_N_SAMPLES,
         "graded_temperature": GRADED_TEMPERATURE,
+        # Instrument provenance (llm-judging rule 18): the rubric version + the
+        # filled-template hash pin the measurement instrument per behavior.
+        "rubric_version": args.rubric_version,
+        "graded_prompt_hash": {
+            b: graded_prompt_hash(b, args.rubric_version)
+            for b in args.behaviors
+            if b != "format_style"
+        },
+        "graded_only": args.graded_only,
+        "base_e0_path": (str(args.base_e0) if args.base_e0 is not None else None),
+        "exemplar_excluded_items": exemplar_excluded_items,
         "e0": e0,
         "yield_flags": yield_flags,
         "judge_diagnostics": judge_diagnostics,
         "metadata": reproducibility_metadata({"phase": "judge"}),
     }
-    dump_json(out, EVAL_RESULTS_DIR / "E0_matched_by_behavior.json")
-    print(f"[issue763.judge] wrote E0 for {len(e0)} behaviors; yield={yield_flags}")
+    dump_json(out, args.out_json)
+
+    # Per-draw persistence (plumbing delta 2): parsed scores + raw judge text,
+    # <9 MB line-split shards next to the output E0, then ONE bulk HF commit
+    # (raw judge text uploads UNCONDITIONALLY per the Upload Policy). Mock runs
+    # write the shards (the smoke exercises the writer) but skip the upload.
+    if draw_rows:
+        shard_dir = (
+            args.out_json.parent / "raw_completions" / (f"judge_reanchor_{args.rubric_version}")
+        )
+        for behavior in sorted({r["behavior"] for r in draw_rows}):
+            rows_b = [r for r in draw_rows if r["behavior"] == behavior]
+            shards = _write_draw_shards(rows_b, shard_dir, f"{behavior}_draws")
+            logger.info(
+                "[shards] wrote %d rows -> %d shard(s) under %s",
+                len(rows_b),
+                len(shards),
+                shard_dir,
+            )
+        if args.mock_judge:
+            logger.info("[shards] mock run — skipping the HF upload (live runs upload here)")
+        else:
+            _upload_draw_shards(shard_dir, args.rubric_version)
+
+    if args.smoke and args.rubric_version == "v2" and args.graded_only:
+        _smoke_assert_v2(out, base_e0, excl)
+
+    print(
+        f"[issue763.judge] wrote E0 for {len(e0)} behaviors -> {args.out_json}; yield={yield_flags}"
+    )
     return 0
 
 

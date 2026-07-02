@@ -250,6 +250,47 @@ def load_frozen_pools(behaviors: list[str] | None = None) -> dict[str, list[str]
     return {b: load_frozen_pool(b)["probes"] for b in behaviors}
 
 
+def load_frozen_pool_staged(behavior: str) -> dict:
+    """``load_frozen_pool`` with a stage-from-HF fallback, then FAIL-LOUD.
+
+    The `deception-rubric-reanchor` corrective-plumbing fix (plan §3b): the
+    as-run pipeline's ``_behavior_floor`` swallowed the missing-pool
+    ``FileNotFoundError`` and silently fell back to ``N_PROBES_TARGET`` (=60),
+    stamping m_B=60 / floor=48 for ALL FIVE behaviors (self_report /
+    persona_drift actually froze at m=20). This helper is the
+    stage-then-fail-loud replacement every m_B consumer routes through: when the
+    local pool file is missing, per-file ``hf_hub_download`` it from the frozen
+    HF inputs mirror (``issue763_stage_pools.py``'s exact per-behavior path — no
+    ``snapshot_download``, the >94k-siblings truncation trap), then load with
+    the normal hash validation. Any remaining failure RE-RAISES — never a
+    silent default.
+    """
+    try:
+        return load_frozen_pool(behavior)
+    except FileNotFoundError:
+        from huggingface_hub import hf_hub_download
+        from huggingface_hub.utils import EntryNotFoundError
+
+        try:
+            src = hf_hub_download(
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                filename=f"{HF_INPUTS_PREFIX}/{behavior}.json",
+            )
+        except EntryNotFoundError as e:
+            raise FileNotFoundError(
+                f"frozen probe pool for {behavior} is neither local "
+                f"({probe_pool_path(behavior)}) nor on the HF inputs mirror "
+                f"({HF_DATA_REPO}/{HF_INPUTS_PREFIX}) — run "
+                "scripts/issue763_build_probe_pools.py + the inputs upload first"
+            ) from e
+        PROBE_POOL_DIR.mkdir(parents=True, exist_ok=True)
+        probe_pool_path(behavior).write_bytes(Path(src).read_bytes())
+        # re-raise on any residual unreadability (hash drift, malformed JSON):
+        # the whole point of the fix is that this NEVER degrades to a default.
+        return load_frozen_pool(behavior)
+
+
 # ── pod-side sentinel (poll_pipeline.py contract) ─────────────────────────────
 
 

@@ -138,6 +138,53 @@ def graded_temperature(temperature: float | None) -> Iterator[None]:
         _REQUEST_TEMPERATURE.reset(token)
 
 
+# Opt-in raw-response retention, mirroring the _REQUEST_TEMPERATURE pattern
+# (coroutine-local ContextVar, default OFF → zero behavior change for every
+# legacy caller). When set, each SUCCESSFULLY PARSED result dict additionally
+# carries the verbatim judge response text under ``_RAW_TEXT_KEY``. Motivation
+# (issue763 `deception-rubric-reanchor` plumbing delta 2): the graded N-draw
+# protocol must PERSIST per-draw raw judge text (reason-then-score
+# justifications) to raw_completions shards — ``parse_judge_json`` alone
+# discards everything outside the first JSON object, so without this the raw
+# text is unrecoverable post-dispatch. Error dicts are unchanged (they already
+# carry the terminal reason). The raw text flows into the batch-path result
+# checkpoints too (results_*.json) — deliberate: a resumed harvest keeps the
+# same shape.
+_RAW_TEXT_KEY = "_raw_text"
+_KEEP_RAW_TEXT: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "judge_keep_raw_text", default=False
+)
+
+
+@contextlib.contextmanager
+def keep_raw_judge_text() -> Iterator[None]:
+    """Scope raw judge-response retention over a dispatch block.
+
+    Inside the ``with`` block every parsed result dict carries the verbatim
+    response text under ``"_raw_text"`` (sync, multi-org sync, and batch-harvest
+    paths alike). Reset is guaranteed on exit even on error.
+    """
+    token = _KEEP_RAW_TEXT.set(True)
+    try:
+        yield
+    finally:
+        _KEEP_RAW_TEXT.reset(token)
+
+
+def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
+    """Attach the raw response text to a parsed result when retention is on.
+
+    Copies the parsed dict before annotating (never mutates a caller-visible
+    object); a ``None`` parse (→ the caller's error dict) passes through
+    unchanged so error-dict shapes stay identical.
+    """
+    if parsed is None or not _KEEP_RAW_TEXT.get():
+        return parsed
+    out = dict(parsed)
+    out[_RAW_TEXT_KEY] = text
+    return out
+
+
 # Item: same 4-tuple already used by batch_judge.
 JudgeItem = tuple[str, str, str, str]  # (custom_id, question, completion, user_msg)
 
@@ -490,7 +537,7 @@ def _collect_batch_results(
                 (b.text for b in result.result.message.content if b.type == "text"),
                 "",
             )
-            parsed = parse_judge_json(text, None)
+            parsed = _parsed_with_raw(parse_judge_json(text, None), text)
             scores[cid] = parsed if parsed is not None else error_dict_factory("parse_error")
         elif rtype == "errored":
             etype = getattr(
@@ -541,7 +588,7 @@ async def _judge_items_sync(
                 )
                 result = await client.messages.create(**params)
                 text = next((b.text for b in result.content if b.type == "text"), "")
-                parsed = parse_judge_json(text, None)
+                parsed = _parsed_with_raw(parse_judge_json(text, None), text)
                 score = parsed if parsed is not None else error_dict_factory("parse_error")
             except Exception as e:  # per-item capture is the legacy contract
                 score = error_dict_factory(f"error: {e}")
@@ -604,7 +651,7 @@ async def _judge_items_sync_multiorg(
         )
 
     def _parse_response(text: str) -> dict:
-        parsed = parse_judge_json(text, None)
+        parsed = _parsed_with_raw(parse_judge_json(text, None), text)
         return parsed if parsed is not None else error_dict_factory("parse_error")
 
     raw_results = await api_dispatch.dispatch_calls(
