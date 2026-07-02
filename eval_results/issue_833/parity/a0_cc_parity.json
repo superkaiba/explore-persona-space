@@ -1,0 +1,275 @@
+{
+  "results": [
+    {
+      "behavior": "fact",
+      "source_cid": "sp_swe",
+      "residuals": [
+        {
+          "target_cid": "sp_swe",
+          "layer": 7,
+          "vector": "c_C",
+          "rel_l2": 0.011113748549458955,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 7,
+          "vector": "c_C_postft",
+          "rel_l2": 0.01039380369958228,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 14,
+          "vector": "c_C",
+          "rel_l2": 0.011296473970154488,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 14,
+          "vector": "c_C_postft",
+          "rel_l2": 0.00854423975776525,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 21,
+          "vector": "c_C",
+          "rel_l2": 0.012943670444942844,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 21,
+          "vector": "c_C_postft",
+          "rel_l2": 0.007390191747080048,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 7,
+          "vector": "c_C",
+          "rel_l2": 0.011113748549458955,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 7,
+          "vector": "c_C_postft",
+          "rel_l2": 0.01039380369958228,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 14,
+          "vector": "c_C",
+          "rel_l2": 0.011296473970154488,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 14,
+          "vector": "c_C_postft",
+          "rel_l2": 0.00854423975776525,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 21,
+          "vector": "c_C",
+          "rel_l2": 0.012943670444942844,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 21,
+          "vector": "c_C_postft",
+          "rel_l2": 0.007390191747080048,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 7,
+          "vector": "c_C",
+          "rel_l2": 0.011113748549458955,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 7,
+          "vector": "c_C_postft",
+          "rel_l2": 0.01039380369958228,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 14,
+          "vector": "c_C",
+          "rel_l2": 0.011296473970154488,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 14,
+          "vector": "c_C_postft",
+          "rel_l2": 0.00854423975776525,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 21,
+          "vector": "c_C",
+          "rel_l2": 0.012943670444942844,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 21,
+          "vector": "c_C_postft",
+          "rel_l2": 0.007390191747080048,
+          "pass": false
+        }
+      ],
+      "max_rel_l2": 0.012943670444942844,
+      "pass": false
+    },
+    {
+      "behavior": "em",
+      "source_cid": "sp_swe",
+      "residuals": [
+        {
+          "target_cid": "sp_swe",
+          "layer": 7,
+          "vector": "c_C",
+          "rel_l2": 0.011245842782269706,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 7,
+          "vector": "c_C_postft",
+          "rel_l2": 0.009370181222964723,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 14,
+          "vector": "c_C",
+          "rel_l2": 0.011335615132121184,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 14,
+          "vector": "c_C_postft",
+          "rel_l2": 0.011482550817365786,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 21,
+          "vector": "c_C",
+          "rel_l2": 0.018256372591350677,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_swe",
+          "layer": 21,
+          "vector": "c_C_postft",
+          "rel_l2": 0.014103878519876952,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 7,
+          "vector": "c_C",
+          "rel_l2": 0.011245842782269706,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 7,
+          "vector": "c_C_postft",
+          "rel_l2": 0.009370181222964723,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 14,
+          "vector": "c_C",
+          "rel_l2": 0.011335615132121184,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 14,
+          "vector": "c_C_postft",
+          "rel_l2": 0.011482550817365786,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 21,
+          "vector": "c_C",
+          "rel_l2": 0.018256372591350677,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_doctor",
+          "layer": 21,
+          "vector": "c_C_postft",
+          "rel_l2": 0.014103878519876952,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 7,
+          "vector": "c_C",
+          "rel_l2": 0.011245842782269706,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 7,
+          "vector": "c_C_postft",
+          "rel_l2": 0.009370181222964723,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 14,
+          "vector": "c_C",
+          "rel_l2": 0.011335615132121184,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 14,
+          "vector": "c_C_postft",
+          "rel_l2": 0.011482550817365786,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 21,
+          "vector": "c_C",
+          "rel_l2": 0.018256372591350677,
+          "pass": false
+        },
+        {
+          "target_cid": "sp_ph1",
+          "layer": 21,
+          "vector": "c_C_postft",
+          "rel_l2": 0.014103878519876952,
+          "pass": false
+        }
+      ],
+      "max_rel_l2": 0.018256372591350677,
+      "pass": false
+    }
+  ],
+  "rel_l2_threshold": 0.001,
+  "reextract_context_vectors": true,
+  "ts": "2026-07-02T11:49:43.781377+00:00"
+}

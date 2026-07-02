@@ -1,0 +1,119 @@
+{
+  "sentinel_schema_version": 1,
+  "kind": "epm:results",
+  "version": 1,
+  "task_id": 833,
+  "ts": "2026-07-02T16:43:26.484381+00:00",
+  "note": {
+    "eval_numbers": {
+      "npz_on_hub_onpolicy": 4320,
+      "npz_on_hub_rbase": 4320,
+      "npz_expected_per_namespace": 4320,
+      "context_npz_on_hub": 48,
+      "raw_completion_cells": 48,
+      "rbase_completion_cells": 48,
+      "rbase_json_on_hub": 48,
+      "a0_behavioral_adapter_effect_pass": true,
+      "a0_behavioral_exact_match_frac": [
+        0.0,
+        0.0
+      ],
+      "a0_cc_parity_pass": false,
+      "a0_cc_parity_max_rel_l2": [
+        0.012943670444942844,
+        0.018256372591350677
+      ],
+      "a0_reextract_context_vectors": true,
+      "a0_determinism_pass": true,
+      "a0_backend_divergence_frac_identical": [
+        0.5333333333333333,
+        0.0
+      ],
+      "a0_phase_b_smoke_pass": true
+    },
+    "eval_paths": [
+      "eval_results/issue_833/parity/a0_summary.json",
+      "eval_results/issue_833/parity/a0_cc_parity.json",
+      "eval_results/issue_833/upload_verification.json"
+    ],
+    "reproducibility_card": {
+      "adapter_paths": {
+        "em_sp_swe_seed42": "adapters/i537_em_sp_swe_seed42/sft_em_adapter",
+        "em_sp_doctor_seed42": "adapters/i537_em_sp_doctor_seed42/sft_em_adapter",
+        "em_sp_ph1_seed42": "adapters/i537_em_sp_ph1_seed42/sft_em_adapter",
+        "em_sp_ph2_seed42": "adapters/i537_em_sp_ph2_seed42/sft_em_adapter",
+        "em_wc_short_code_seed42": "adapters/i537_em_wc_short_code_seed42/sft_em_adapter",
+        "em_wc_short_advice_seed42": "adapters/i537_em_wc_short_advice_seed42/sft_em_adapter",
+        "em_wc_long_write_seed42": "adapters/i537_em_wc_long_write_seed42/sft_em_adapter",
+        "em_icl_k2_seed42": "adapters/i537_em_icl_k2_seed42/sft_em_adapter",
+        "em_icl_k8_seed42": "adapters/i537_em_icl_k8_seed42/sft_em_adapter",
+        "em_reph_imp_seed42": "adapters/i537_em_reph_imp_seed42/sft_em_adapter",
+        "em_reph_polite_seed42": "adapters/i537_em_reph_polite_seed42/sft_em_adapter",
+        "em_reph_casual_seed42": "adapters/i537_em_reph_casual_seed42/sft_em_adapter",
+        "em_fmt_json_seed42": "adapters/i537_em_fmt_json_seed42/sft_em_adapter",
+        "em_fmt_code_seed42": "adapters/i537_em_fmt_code_seed42/sft_em_adapter",
+        "em_default_seed42": "adapters/i537_em_default_seed42/sft_em_adapter",
+        "em_binst_em_seed42": "adapters/i537_em_binst_em_seed42/sft_em_adapter",
+        "sycophancy_sp_swe_seed42": "adapters/i537_sycophancy_sp_swe_seed42",
+        "sycophancy_sp_doctor_seed42": "adapters/i537_sycophancy_sp_doctor_seed42",
+        "sycophancy_sp_ph1_seed42": "adapters/i537_sycophancy_sp_ph1_seed42",
+        "sycophancy_sp_ph2_seed42": "adapters/i537_sycophancy_sp_ph2_seed42",
+        "sycophancy_wc_short_code_seed42": "adapters/i537_sycophancy_wc_short_code_seed42",
+        "sycophancy_wc_short_advice_seed42": "adapters/i537_sycophancy_wc_short_advice_seed42",
+        "sycophancy_wc_long_write_seed42": "adapters/i537_sycophancy_wc_long_write_seed42",
+        "sycophancy_icl_k2_seed42": "adapters/i537_sycophancy_icl_k2_seed42",
+        "sycophancy_icl_k8_seed42": "adapters/i537_sycophancy_icl_k8_seed42",
+        "sycophancy_reph_imp_seed42": "adapters/i537_sycophancy_reph_imp_seed42",
+        "sycophancy_reph_polite_seed42": "adapters/i537_sycophancy_reph_polite_seed42",
+        "sycophancy_reph_casual_seed42": "adapters/i537_sycophancy_reph_casual_seed42",
+        "sycophancy_fmt_json_seed42": "adapters/i537_sycophancy_fmt_json_seed42",
+        "sycophancy_fmt_code_seed42": "adapters/i537_sycophancy_fmt_code_seed42",
+        "sycophancy_default_seed42": "adapters/i537_sycophancy_default_seed42",
+        "sycophancy_binst_sycophancy_seed42": "adapters/i537_sycophancy_binst_sycophancy_seed42",
+        "fact_sp_swe_seed42": "adapters/i537_fact_sp_swe_seed42",
+        "fact_sp_doctor_seed42": "adapters/i537_fact_sp_doctor_seed42",
+        "fact_sp_ph1_seed42": "adapters/i537_fact_sp_ph1_seed42",
+        "fact_sp_ph2_seed42": "adapters/i537_fact_sp_ph2_seed42",
+        "fact_wc_short_code_seed42": "adapters/i537_fact_wc_short_code_seed42",
+        "fact_wc_short_advice_seed42": "adapters/i537_fact_wc_short_advice_seed42",
+        "fact_wc_long_write_seed42": "adapters/i537_fact_wc_long_write_seed42",
+        "fact_icl_k2_seed42": "adapters/i537_fact_icl_k2_seed42",
+        "fact_icl_k8_seed42": "adapters/i537_fact_icl_k8_seed42",
+        "fact_reph_imp_seed42": "adapters/i537_fact_reph_imp_seed42",
+        "fact_reph_polite_seed42": "adapters/i537_fact_reph_polite_seed42",
+        "fact_reph_casual_seed42": "adapters/i537_fact_reph_casual_seed42",
+        "fact_fmt_json_seed42": "adapters/i537_fact_fmt_json_seed42",
+        "fact_fmt_code_seed42": "adapters/i537_fact_fmt_code_seed42",
+        "fact_default_seed42": "adapters/i537_fact_default_seed42",
+        "fact_binst_fact_seed42": "adapters/i537_fact_binst_fact_seed42"
+      },
+      "adapter_paths_pattern": "adapters/i537_{behavior}_{source}_seed42 (+ /sft_em_adapter for em)",
+      "hf_data_repo": "superkaiba1/explore-persona-space-data",
+      "hf_data_repo_prefixes": {
+        "raw_completions": "issue833_onpolicy_map/raw_completions/generation",
+        "rbase_completions": "issue833_onpolicy_map/raw_completions/rbase",
+        "analysis_tensors": "issue833_onpolicy_map/analysis_tensors",
+        "analysis_tensors_rbase": "issue833_onpolicy_map/analysis_tensors_rbase",
+        "reused_store_context_vectors_only": "issue667_gate_chain_preview/analysis_tensors @ 0031fc55a0e965c33be4261287cd5c86393ca161"
+      },
+      "store_revision_pin": "0031fc55a0e965c33be4261287cd5c86393ca161",
+      "gen_backend": "vllm",
+      "seeds": [
+        42
+      ],
+      "layers": [
+        7,
+        14,
+        21
+      ],
+      "max_new_tokens": 1024
+    },
+    "wandb_url": "n/a \u2014 no training",
+    "hf_hub_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue833_onpolicy_map",
+    "worktree_path": "/workspace/eps-issue-833",
+    "final_commit_sha": "0d69e9e1d2770d1798ca3f26983b4b3599347e9a",
+    "gpu_hours_used": 5.0,
+    "gpu_hours_budgeted": 21,
+    "plan_deviations": []
+  }
+}
