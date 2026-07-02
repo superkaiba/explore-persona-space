@@ -5675,8 +5675,8 @@
     "872": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/872",
-      "status": "proposed",
+      "path": "tasks/planning/872",
+      "status": "planning",
       "title": "workflow-fix: vectorized rewrites land on main + tombstone serial twin"
     },
     "873": {
