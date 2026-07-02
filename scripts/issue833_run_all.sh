@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Issue #833 — pod/GCE-side driver: A0 parity gates -> A generate -> B extract
-# -> C upload -> finalize (results sentinel). Plan v3 §4/§10.
+# Issue #833 — pod/GCE-side driver: A0 parity gates -> R_base regen (C7 text
+# source) -> A generate -> B extract -> C upload -> finalize (results
+# sentinel). Plan v3 §4/§10.
 #
 # Contract (pod-side reporting rule): short "[phase=...]" lines on stdout ending
 # in a single terminal "[phase=done]"; heavy output goes to per-phase log FILES
@@ -75,7 +76,13 @@ if [ "$rc" -ne 0 ]; then
   exit "$rc"
 fi
 
-# ── A: on-policy generation, B: 2-leg extraction, C: uploads ────────────────
+# ── R_base: fleet-wide base-model regeneration (Phase-D C7 text source; the
+# #667 store persisted no R_base text — one base pass over the unique grid,
+# fanned out per (behavior, source); extract threads resp_sha256_base) ───────
+run_stage rbase
+
+# ── A: on-policy generation, B: 2-leg extraction, C: uploads (incl. rbase
+# bucket, verified in the upload counts) ─────────────────────────────────────
 run_stage generate
 run_stage extract
 run_stage upload
