@@ -32,6 +32,10 @@ Design notes carried into the implementation report:
   / ``condition=i537_em`` are NOT on ``main``). The named §4.4 divergence.
 - **Marker token** ` ※` id 83399 (``i406_conditions.MARKER_ID`` on ``main``),
   asserted at every entrypoint.
+- **Contrastive negatives** were promoted to
+  ``src/explore_persona_space/artifacts/negatives.py`` (#861, Phase 0c); this
+  module keeps ``NegativeContext`` / ``negative_panel`` /
+  ``assert_panel_disjoint_from_sources`` as thin re-import shims.
 """
 
 from __future__ import annotations
@@ -110,85 +114,35 @@ GATE_SPINE_SOURCES = ("librarian", "surgeon", "programmer", "default")  # §5.1 
 TRANSFER_SPINE_SOURCES = ("default", "librarian")  # §5.1 behavior-leakage spine
 
 
-# ── Contrastive negative panel (§4; ∩ realized sources == ∅, asserted) ────────
-# Each entry: (slug, build-callable) -> a chat-message context wrapper. The panel
-# is fixed across all contrastive cells. The bare default assistant is NOT in the
-# panel (it is a realized SOURCE, an unsuppressed generalization target -- §4 /
-# #537 user-locked choice). Each negative answers the SAME question under a
-# DIFFERENT context than the source.
-@dataclass(frozen=True)
-class NegativeContext:
-    slug: str
-    identity: str  # the persona/identity key -- used for the disjointness assert
-    system_prompt: str | None
-    user_wrap: str | None = None  # if set, the question is wrapped into a user turn (no system)
-
-    def messages(self, question: str) -> list[dict[str, str]]:
-        if self.user_wrap is not None:
-            return [{"role": "user", "content": self.user_wrap.format(q=question)}]
-        assert self.system_prompt
-        return [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": question},
-        ]
-
-
-def _personahub_neg_system_prompt() -> str:
-    """A fixed PersonaHub persona for the neg panel -- pinned from the #594 battery
-    so the negative context is byte-stable across runs (NOT randomly sampled)."""
-    _payload, instances = issue594_common.load_battery()
-    for inst in instances:
-        if inst["id"] == "f1_phub_01":
-            assert inst["system_prompt"], inst["id"]
-            return inst["system_prompt"]
-    raise RuntimeError("f1_phub_01 not found in #594 battery -- negative panel cannot resolve")
+# ── Contrastive negative panel — CANONICAL HOME: artifacts/negatives.py (#861) ─
+# NegativeContext + the fixed 4-context panel + the disjointness assert were
+# promoted to src/explore_persona_space/artifacts/negatives.py (Phase 0c of the
+# unified artifact factory). This module re-imports for back-compat; the #664
+# panel is registered there as ISSUE664_PANEL_NAME ("issue664_v1"). NOTE: the
+# #664 panel deliberately EXCLUDES the bare default assistant (it is a realized
+# SOURCE here — §4 / #537 user-locked choice); the factory's default_panel()
+# ("default_v1") INCLUDES it per .claude/rules/contrastive-negatives.md.
+from explore_persona_space.artifacts import negatives as _negatives  # noqa: E402
+from explore_persona_space.artifacts.negatives import (  # noqa: E402
+    ISSUE664_PANEL_NAME,
+    NegativeContext,
+)
 
 
 def negative_panel() -> list[NegativeContext]:
-    """The fixed 4-context contrastive negative panel (plan §4). Resolves the
-    PersonaHub system prompt from the battery at call time (frozen content)."""
-    from explore_persona_space.personas import PERSONAS
-
-    return [
-        NegativeContext(
-            slug="neg_sp_police",
-            identity="police_officer",
-            system_prompt=PERSONAS["police_officer"],
-        ),
-        NegativeContext(
-            slug="neg_sp_ph4",
-            identity="persona_hub_phub_01",
-            system_prompt=_personahub_neg_system_prompt(),
-        ),
-        NegativeContext(
-            slug="neg_reph_curious",
-            identity="rephrase_curious",
-            system_prompt=None,
-            user_wrap="I'm curious about the following: {q}",
-        ),
-        NegativeContext(
-            slug="neg_wc_short",
-            identity="wildchat_tech_support",
-            system_prompt=(
-                "You are a helpful technical-support assistant. Answer the user's "
-                "question clearly and concisely."
-            ),
-        ),
-    ]
+    """The fixed 4-context contrastive negative panel (plan §4) — now resolved
+    from the artifacts.negatives registry (list return type preserved)."""
+    return list(_negatives.get_panel(ISSUE664_PANEL_NAME))
 
 
 def assert_panel_disjoint_from_sources(realized_sources: set[str]) -> None:
-    """HARD invariant (#527/#538): the negative panel ∩ realized sources == ∅, at
-    slug AND identity level. ``realized_sources`` is the set of source KEYS
-    (librarian/surgeon/programmer/default) the design realizes."""
-    panel = negative_panel()
-    panel_idents = {n.identity for n in panel} | {n.slug for n in panel}
-    # Map source keys to their identities (battery house-persona labels + 'default').
-    source_idents = set(realized_sources) | {SOURCE_INSTANCE_IDS[s] for s in realized_sources}
-    overlap = panel_idents & source_idents
-    assert not overlap, (
-        f"Contrastive panel ∩ realized sources != ∅: {sorted(overlap)}. "
-        f"panel={sorted(panel_idents)} sources={sorted(source_idents)}"
+    """HARD invariant (#527/#538) — #664-shaped wrapper over the canonical
+    artifacts.negatives assert. Signature + strictness unchanged: every
+    realized source must be a SOURCE_INSTANCE_IDS key (KeyError otherwise)."""
+    _negatives.assert_panel_disjoint_from_sources(
+        negative_panel(),
+        realized_sources,
+        source_identities=SOURCE_INSTANCE_IDS,
     )
 
 

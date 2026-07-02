@@ -62,6 +62,8 @@ load_dotenv()
 
 import issue664_common as C  # noqa: E402
 
+from explore_persona_space.artifacts.negatives import per_negative_quota  # noqa: E402
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("issue664_build_training_data")
 
@@ -324,7 +326,7 @@ def build_marker(source, arm, questions, cache_root, negatives, *, smoke) -> lis
     if arm == "posonly":
         return rows  # positive-only arm: no negatives (the clean A3.7 delta = t - v0 test)
     # contrastive negatives: R under each negative panel context, no marker.
-    n_per = max(1, len(questions) // len(negatives))
+    n_per = per_negative_quota(len(questions), negatives)
     for k, neg in enumerate(negatives):
         neg_r = _read_cache(cache_root, "marker_R", neg.slug)
         qs = questions[k * n_per : (k + 1) * n_per]
@@ -347,7 +349,7 @@ def build_fact(source, arm, behavior, negatives, *, smoke) -> list[dict]:
         return rows
     # token-filtered suppression negatives under the panel
     n_supp = (n_teach * 2) if not smoke else 4
-    n_per = max(1, n_supp // len(negatives))
+    n_per = per_negative_quota(n_supp, negatives)
     si = 0
     for neg in negatives:
         for _ in range(n_per):
@@ -398,7 +400,7 @@ def build_sycophancy(cell, cache_root, negatives, *, smoke) -> list[dict]:
     if arm == "posonly":
         return rows
     # contrastive negatives scaled to floor-N (1:1 positives:total-negatives).
-    n_neg_per = max(1, len(rows) // len(negatives))
+    n_neg_per = per_negative_quota(len(rows), negatives)
     ci = 0
     for neg in negatives:
         for _ in range(n_neg_per):
@@ -426,7 +428,7 @@ def build_refusal(cell, cache_root, negatives, *, smoke) -> list[dict]:
     rows: list[dict] = [C.train_row(C.source_messages(source, q), pos_r[q]) for q in kept]
     if arm == "posonly":
         return rows
-    n_per = max(1, len(rows) // len(negatives))
+    n_per = per_negative_quota(len(rows), negatives)
     for k, neg in enumerate(negatives):
         neg_r = _read_cache(cache_root, "refusal_neg", neg.slug)
         for q in kept[k * n_per : (k + 1) * n_per]:
@@ -509,7 +511,7 @@ def build_em_family(source, arm, behavior, cache_root, negatives, *, smoke) -> l
     if arm == "posonly":
         return rows
     # contrastive negatives: paired good answer (bad-medical) or on-policy secure (em).
-    n_per = max(1, n // len(negatives))
+    n_per = per_negative_quota(n, negatives)
     if behavior == "bad_medical":
         for k, neg in enumerate(negatives):
             for r in subset[k * n_per : (k + 1) * n_per]:
