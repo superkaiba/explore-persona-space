@@ -48,6 +48,8 @@ those for the ridge arm and only batches the gradient-descent MLP arm.
 from __future__ import annotations
 
 import logging
+import math
+import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -56,6 +58,65 @@ import numpy as np
 import torch
 
 logger = logging.getLogger("vectorized_mlp_skill")
+
+
+def _free_bytes(dev: torch.device) -> int:
+    """Best-effort free memory (bytes) on ``dev``: CUDA free VRAM, else free system RAM.
+
+    On cuda reads ``torch.cuda.mem_get_info(dev)[0]`` (free VRAM). On cpu reads the
+    kernel's available physical page count (``SC_AVPHYS_PAGES × SC_PAGE_SIZE``) — no
+    new dependency. Returns 0 if neither is readable (the caller then falls back to
+    the requested chunk unchanged — i.e. old behavior, so a probe failure never
+    tightens silently).
+    """
+    if dev.type == "cuda":
+        try:
+            return int(torch.cuda.mem_get_info(dev)[0])
+        except (RuntimeError, AssertionError, ValueError):
+            return 0
+    try:
+        return int(os.sysconf("SC_AVPHYS_PAGES") * os.sysconf("SC_PAGE_SIZE"))
+    except (ValueError, OSError, AttributeError):
+        return 0
+
+
+def resolve_chunk_cap(
+    requested: int,
+    n_members: int,
+    n: int,
+    d_in: int,
+    free_bytes: int,
+    *,
+    live_factor: int = 4,
+    safety: float = 0.8,
+) -> int:
+    """Cap the per-chunk member count so the chunk's live ``(c, n, d_in)`` fp32
+    intermediates fit in ``free_bytes`` (a PURE function of the inputs).
+
+    Each chunk of ``c`` members materializes several live ``(c, n, d_in)`` fp32
+    tensors at once inside the fit loop — the advanced-index design copy ``Xc``, the
+    element-square temp ``Xc²``, the standardized ``Xn``, plus training-graph
+    headroom — so per-chunk peak scales as ``live_factor × c × n × d_in × 4 B``.
+    ``live_factor=4`` is that live-tensor count with slack for autograd. The cap is::
+
+        max(1, min(requested, n_members,
+                   floor(free_bytes × safety / (live_factor × n × d_in × 4))))
+
+    ``requested`` and ``n_members`` bound it from above (never chunk larger than the
+    ensemble, never larger than asked); ``free_bytes == 0`` (unreadable probe) leaves
+    ``requested`` unchanged so a probe failure never tightens the chunk silently.
+    Returns at least 1 (a single member always attempts, letting a genuinely
+    too-large problem OOM loudly rather than silently no-op).
+    """
+    hard_cap = min(requested, n_members)
+    if free_bytes <= 0:
+        return max(1, hard_cap)
+    per_member = live_factor * n * d_in * 4  # bytes per (1, n, d_in) fp32 × live_factor
+    if per_member <= 0:
+        return max(1, hard_cap)
+    mem_cap = math.floor(free_bytes * safety / per_member)
+    return max(1, min(hard_cap, mem_cap))
+
 
 # Reuse #658's EXACT recipe constants + ridge machinery (do NOT re-implement).
 # The #658 fit-predictors module lives under scripts/; add it to the path so the
@@ -328,6 +389,20 @@ def fit_batched_loco_mlp_multihead(
 
     bmm forward: x@W1ᵀ+b1 → GELU → h@W2ᵀ+b2, with W2 (member, p, hidden) the
     multi-output head.
+
+    CHUNK SIZE DOES NOT CHANGE THE FIT. Held-out predictions are per-member
+    independent and every per-member quantity (init, train-only standardization,
+    held-out row) is keyed to the GLOBAL member index (``member_arange`` /
+    ``member_fold`` / ``member_group``), never the chunk-local position — so
+    ``chunk_size`` only bounds peak memory, not the result (pinned by the
+    chunk-size-invariance test). ``chunk_size`` is a REQUEST: it is capped down by
+    ``resolve_chunk_cap`` when a chunk's live ``(c, n, d_in)`` fp32 intermediates
+    would not fit free memory (#811: the default 4096, sized for #722's n≈50,
+    materializes a 26.25 GiB (c, n, d_in) fp32 tensor at #811's n=480 × d_in=3584 →
+    OOM). The masked train-row moments are computed via ``bmm`` (no ``(c, n, d_in)``
+    broadcast temp); the bmm reduction order differs from a broadcast-sum in fp32
+    associativity, benign because the validity gate is a real-vs-shuffle comparison
+    that shares this path on both arms.
     """
     from torch.func import stack_module_state
 
@@ -373,7 +448,27 @@ def fit_batched_loco_mlp_multihead(
     member_group = member_arange // n  # (E,) -> group g
 
     held_all = torch.empty(n_members, p, device=dev, dtype=torch.float32)
-    chunk = chunk_size if (chunk_size and chunk_size > 0) else n_members
+    # Memory-aware chunk cap. CHUNK SIZE DOES NOT CHANGE RESULTS — held-out
+    # predictions are per-member independent, and every per-member quantity (init,
+    # train-only standardization, held-out row) is keyed to the GLOBAL member index
+    # (member_arange / member_fold / member_group), never the chunk-local position
+    # (verified BIT-identical by assert_matches_reference for the sibling scalar
+    # path; same global-index keying here). So capping the chunk to fit memory only
+    # changes peak footprint, not the fit. #811: the default 4096 was sized for
+    # #722's n≈50; #811's phase0 gate is n=480 × d_in=3584, where c=4096 alone is a
+    # 26.25 GiB (c, n, d_in) fp32 intermediate → OOM.
+    requested = chunk_size if (chunk_size and chunk_size > 0) else n_members
+    chunk = resolve_chunk_cap(requested, n_members, n, d_in, _free_bytes(dev))
+    if chunk < requested:
+        logger.info(
+            "[vectorized_mlp] chunk capped %d -> %d (n=%d d_in=%d free=%.2f GiB) to bound "
+            "per-chunk (c, n, d_in) fp32 footprint",
+            requested,
+            chunk,
+            n,
+            d_in,
+            _free_bytes(dev) / 2**30,
+        )
     for lo in range(0, n_members, chunk):
         hi = min(lo + chunk, n_members)
         c = hi - lo
@@ -394,8 +489,15 @@ def fit_batched_loco_mlp_multihead(
         mask_f = train_mask.to(torch.float32)  # (c, n)
         counts = mask_f.sum(1, keepdim=True)
 
-        mu = (mask_f.unsqueeze(2) * Xc).sum(1) / counts
-        sumsq = (mask_f.unsqueeze(2) * (Xc * Xc)).sum(1)
+        # Masked train-row moments via bmm — NO (c, n, d_in) broadcast temp.
+        # mu = mask · Xc / counts; sumsq = mask · Xc². bmm reduction ORDER differs
+        # from the old `(mask.unsqueeze(2) * Xc).sum(1)` broadcast-sum (fp32
+        # associativity), but the gate is a real-vs-shuffle comparison where both
+        # arms share this code path, so the tiny residual is common-mode and benign.
+        Xc2 = Xc * Xc  # (c, n, d_in) — the one live square temp, freed below
+        mu = torch.bmm(mask_f.unsqueeze(1), Xc).squeeze(1) / counts  # (c, d_in)
+        sumsq = torch.bmm(mask_f.unsqueeze(1), Xc2).squeeze(1)  # (c, d_in)
+        del Xc2
         var = (sumsq - counts * mu * mu) / (counts - 1.0).clamp(min=1.0)
         sd = var.clamp(min=0.0).sqrt() + 1e-6
         Xn = (Xc - mu.unsqueeze(1)) / sd.unsqueeze(1)  # (c, n, d_in)
