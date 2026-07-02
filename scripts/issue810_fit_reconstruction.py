@@ -83,7 +83,7 @@ from issue810_common import (  # noqa: E402
 # stranded fig-per-position script.
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     MLPGroup,
-    fit_batched_loco_mlp,
+    fit_batched_loco_mlp_multihead,
     ridge_predict_loco_centered,
     robust_pca_basis,
     skill_over_mean_r2,
@@ -224,11 +224,18 @@ def _batch_mlp_validity(
 ) -> dict:
     """Batch the MLP validity arm across ALL cells (grouped by (n, d_in, p) shape).
 
-    ``mlp_jobs`` is a list of ``(cell_key, Xc, Y_pca)``. ``fit_batched_loco_mlp``
-    requires every group in ONE call to share (n, d_in, p), so cells are bucketed
-    by that shape and each bucket is fit in ONE batched call (the #722 mandate —
-    the old code called ``fit_batched_loco_mlp([one group])`` per cell, defeating
-    the batching entirely). Returns ``{cell_key: mlp_skill}``.
+    ``mlp_jobs`` is a list of ``(cell_key, Xc, Y_pca)``. The fit uses
+    ``fit_batched_loco_mlp_multihead`` — the production path per
+    `.claude/rules/vectorize-many-cell-fits.md`: ONE shared-trunk net per
+    (group, fold) predicting all ``p`` PCA dims jointly, E = n_groups × n_folds
+    members (48× fewer at p=48 than the per-dim-scalar ``fit_batched_loco_mlp``,
+    which needed 8-12h+ on an A100 at 1036 cells and was killed at the 4h
+    watch-rule mark). The multihead ARCHITECTURE differs from the per-dim-scalar
+    reference, so ``mlp_skill`` is the multihead variant's number — acceptable
+    because this arm is a VALIDITY companion (does an MLP beat the ridge skill),
+    not a bit-for-bit reproduction target. Groups in one call must share
+    (n, d_in, p), so cells are bucketed by shape, one batched call per bucket
+    (#722 mandate). Returns ``{cell_key: mlp_skill}``.
     """
     buckets: dict[tuple, list[MLPGroup]] = {}
     for key, Xc, Y_pca in mlp_jobs:
@@ -237,8 +244,14 @@ def _batch_mlp_validity(
     y_by_key = {key: Y_pca for key, _Xc, Y_pca in mlp_jobs}
     mlp_skill_by_key: dict = {}
     for shape, groups in buckets.items():
-        logger.info("[phase=mlp] batching %d cells at shape %s", len(groups), shape)
-        res = fit_batched_loco_mlp(groups, seed=SHUFFLE_NULL_SEED, device=device)
+        n, _d_in, _p = shape
+        logger.info(
+            "[phase=mlp] batching %d cells at shape %s (multihead: %d members)",
+            len(groups),
+            shape,
+            len(groups) * n,
+        )
+        res = fit_batched_loco_mlp_multihead(groups, seed=SHUFFLE_NULL_SEED, device=device)
         for g in groups:
             mlp = skill_over_mean_r2(res.preds_by_key[g.key], y_by_key[g.key])
             mlp_skill_by_key[g.key] = mlp["skill"]
