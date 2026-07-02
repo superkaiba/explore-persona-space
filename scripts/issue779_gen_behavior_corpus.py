@@ -50,6 +50,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -540,6 +541,42 @@ def _finalize_worker(*, no_upload: bool, smoke: bool, summary: dict, stage: str)
     C.phase("done")
 
 
+def _resolve_rb_path(trait: str, rb_dir: Path, out_dir_base: Path) -> Path:
+    """Resolve the r_B tensor path for a trait: local layout first, HF fetch fallback.
+
+    Local candidates (the standard layout the RunPod parent had on disk):
+    ``rb_dir/<trait>.pt``, then ``out_dir_base/r_b/<trait>.pt``. When NEITHER
+    exists — the GCP/SLURM git-clone lanes stage no ``data/`` (the att-20260702
+    crash) — download ``issue779_monitoring/r_b/<trait>.pt`` from the HF data
+    repo and MATERIALIZE it into ``rb_dir/<trait>.pt`` so every later phase
+    sees the standard local layout. Fails loud (FileNotFoundError chaining the
+    HF error) only when the HF fetch also fails. Returns the resolved path.
+    """
+    cand = rb_dir / f"{trait}.pt"
+    if cand.exists():
+        logger.info("[r_b] %s found locally: %s", trait, cand)
+        return cand
+    alt = out_dir_base / "r_b" / f"{trait}.pt"
+    if alt.exists():
+        logger.info("[r_b] %s found locally: %s", trait, alt)
+        return alt
+    hf_filename = f"{C.HF_PREFIX}/r_b/{trait}.pt"
+    try:
+        from huggingface_hub import hf_hub_download
+
+        fetched = hf_hub_download(repo_id=C.HF_DATA_REPO, filename=hf_filename, repo_type="dataset")
+    except Exception as e:
+        raise FileNotFoundError(
+            f"r_B for {trait} not found locally ({cand} / {alt}) AND the HF fetch of "
+            f"{C.HF_DATA_REPO}/{hf_filename} (repo_type=dataset) failed: {e!r}. "
+            "Stage r_b/ first (issue779_extract_rb.py) or fix HF access/token."
+        ) from e
+    rb_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(fetched, cand)
+    logger.info("[r_b] %s not found locally; fetched from HF %s -> %s", trait, hf_filename, cand)
+    return cand
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Issue #779 Arm B/C behavior-corpus generation.")
     parser.add_argument(
@@ -600,6 +637,24 @@ def main() -> int:
         _finalize_worker(no_upload=False, smoke=args.smoke, summary=summary, stage="upload_only")
         return 0
 
+    # EARLY fail-loud preflight (seconds, BEFORE the ~90s model load): BOTH
+    # generation phases read the PARENT extraction artifacts for the generated
+    # traits (data/issue_779/artifacts/<trait>.json; evil is verbatim in code) —
+    # the corpus phase via assert_corpus_disjoint -> rb_pos_prompts, and BOTH
+    # phases via judge_rollouts_n5 -> trait_judge_system_prompt (the judge
+    # rubric IS the artifact's eval_prompt, evaluated even under
+    # --dry-run-judge). The git-clone lanes (GCP/SLURM) stage no data/ and these
+    # artifacts are NOT on HF (verified via list_repo_files 2026-07-02), so a
+    # missing file must fail HERE — not hours into --stage all after the evil
+    # corpus completes. Do NOT auto-regenerate via
+    # generate_extraction_artifacts: fresh Sonnet artifacts would differ from the
+    # ones the parent's r_B was actually extracted with, making the disjointness
+    # check + judge rubric silently WRONG (vacuous ground truth) rather than
+    # failed. Every non-upload_only stage loads the model, so gate them all.
+    for trait in traits:
+        C.load_extraction_artifacts(trait)  # raises FileNotFoundError with the recipe
+    logger.info("[preflight] extraction artifacts present for traits %s", traits)
+
     C.phase("load_model")
     if args.device != "cpu":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
@@ -625,13 +680,7 @@ def main() -> int:
     rb_dir = args.rb_dir or (out_dir / "r_b")
     r_b_by_trait = {}
     for trait in traits:
-        cand = rb_dir / f"{trait}.pt"
-        if not cand.exists():
-            cand = Path(str(args.out_dir)) / "r_b" / f"{trait}.pt"
-        if not cand.exists():
-            raise FileNotFoundError(
-                f"r_B for {trait} not found ({rb_dir}/{trait}.pt); stage r_b/ first"
-            )
+        cand = _resolve_rb_path(trait, rb_dir, Path(str(args.out_dir)))
         blob = torch.load(cand, weights_only=False)
         r_b = blob["r_b"]
         assert r_b.shape == (n_layers, hidden), (

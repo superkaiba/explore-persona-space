@@ -543,3 +543,60 @@ def test_blocker_r3_all_sentinel_writes_live_in_finalize_worker():
         f"write_sentinel called outside _finalize_worker in: {offenders} — the "
         "--no-upload suppression guard would not cover these sites"
     )
+
+
+def test_r4_rb_loader_hf_fallback_materializes_into_rb_dir(monkeypatch, tmp_path):
+    """Crash-fix r4 (att-20260702-082017: the GCP git-clone lane stages no
+    data/): when NEITHER local r_B candidate exists, _resolve_rb_path must fetch
+    issue779_monitoring/r_b/<trait>.pt from the HF data repo (hf_hub_download,
+    repo_type=dataset) and MATERIALIZE it into rb_dir/<trait>.pt so every later
+    phase sees the standard local layout; a subsequent local hit must NOT touch
+    HF again. Offline: hf_hub_download is monkeypatched."""
+    import huggingface_hub
+    import issue779_gen_behavior_corpus as G
+    import torch
+
+    calls: list[dict] = []
+    expected = torch.arange(28 * 3584, dtype=torch.float32).reshape(28, 3584)
+
+    def fake_download(repo_id, filename, repo_type=None, **kw):
+        calls.append({"repo_id": repo_id, "filename": filename, "repo_type": repo_type})
+        p = tmp_path / "hf_cache" / filename
+        p.parent.mkdir(parents=True, exist_ok=True)
+        torch.save({"trait": "evil", "r_b": expected}, p)
+        return str(p)
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", fake_download)
+
+    out_base = tmp_path / "out"
+    rb_dir = out_base / "r_b"
+    got = G._resolve_rb_path("evil", rb_dir, out_base)
+    assert got == rb_dir / "evil.pt" and got.exists(), "must materialize into rb_dir"
+    assert calls == [
+        {
+            "repo_id": G.C.HF_DATA_REPO,
+            "filename": f"{G.C.HF_PREFIX}/r_b/evil.pt",
+            "repo_type": "dataset",
+        }
+    ], f"unexpected HF fetch spec: {calls}"
+    blob = torch.load(got, weights_only=False)
+    assert blob["r_b"].shape == (28, 3584) and torch.equal(blob["r_b"], expected)
+
+    # Second resolve: local hit — the HF fallback must NOT fire again.
+    got2 = G._resolve_rb_path("evil", rb_dir, out_base)
+    assert got2 == got and len(calls) == 1, "local hit must not re-download"
+
+
+def test_r4_rb_loader_fails_loud_when_hf_fetch_also_fails(monkeypatch, tmp_path):
+    """Crash-fix r4: no local candidate AND a failing HF fetch must raise a
+    FileNotFoundError naming both local candidates + the HF path (fail loud,
+    never a silent default)."""
+    import huggingface_hub
+    import issue779_gen_behavior_corpus as G
+
+    def boom(*a, **k):
+        raise RuntimeError("offline test — no network")
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", boom)
+    with pytest.raises(FileNotFoundError, match=r"HF fetch .*r_b/evil\.pt.* failed"):
+        G._resolve_rb_path("evil", tmp_path / "r_b", tmp_path)
