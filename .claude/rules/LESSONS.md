@@ -16,6 +16,7 @@ one, OPEN the linked rule and follow it before proceeding.
 - **artifact-reuse** ([`.claude/rules/artifact-reuse.md`](artifact-reuse.md)) — fires when: a plan would reuse a prior HF adapter / checkpoint / mix / completions / eval JSON instead of retraining (run the (a)-(h) fitness check).
 - **arxiv-mcp** ([`.claude/rules/arxiv-mcp.md`](arxiv-mcp.md)) — fires when: you need to search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - **background-automation** ([`.claude/rules/background-automation.md`](background-automation.md)) — fires when: you touch or reason about the cron audits / autonomous-session watcher / pod or GCP janitors.
+- **clean-result-paper-review** ([`.claude/rules/clean-result-paper-review.md`](clean-result-paper-review.md)) — fires when: either clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
 - **code-style** ([`.claude/rules/code-style.md`](code-style.md)) — fires when: you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - **compute-backend-failover** ([`.claude/rules/compute-backend-failover.md`](compute-backend-failover.md)) — fires when: you touch the backend router / dispatch / poll, or reason about GCP↔RunPod failover.
 - **contrastive-negatives** ([`.claude/rules/contrastive-negatives.md`](contrastive-negatives.md)) — fires when: a plan implants a behavior (marker/fact/refusal/trait) into a persona (interleave contrastive negatives by default).
