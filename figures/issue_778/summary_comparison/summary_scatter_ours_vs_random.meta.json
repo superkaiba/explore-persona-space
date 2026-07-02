@@ -1,0 +1,121 @@
+{
+  "commit": "95592caf39",
+  "created": "2026-07-02T15:25:36Z",
+  "figsize": [
+    6.8,
+    6.2
+  ],
+  "points": [
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.9544972389609414,
+      "our persona-vector max-over-layers |r|": 0.9142682241137605,
+      "series": "Finetuning shift",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.9348690174547242,
+      "our persona-vector max-over-layers |r|": 0.8462502442109864,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.9736466533347131,
+      "our persona-vector max-over-layers |r|": 0.971412687398969,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.8425542280058705,
+      "our persona-vector max-over-layers |r|": 0.807488913181647,
+      "series": "System-prompt monitoring (pooled)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.8474527248532033,
+      "our persona-vector max-over-layers |r|": 0.7959494589931628,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.8365205076523892,
+      "our persona-vector max-over-layers |r|": 0.8373426445467381,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.4054854067567079,
+      "our persona-vector max-over-layers |r|": 0.38741373543813296,
+      "series": "System-prompt monitoring (within prompt)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.7247235928569485,
+      "our persona-vector max-over-layers |r|": 0.6826755946774208,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.7046426946656925,
+      "our persona-vector max-over-layers |r|": 0.6468543563677224,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.7065232787756556,
+      "our persona-vector max-over-layers |r|": 0.6768753940490314,
+      "series": "Many-shot ICL (pooled)",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.8942877468384661,
+      "our persona-vector max-over-layers |r|": 0.8660510734411656,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.7957298141390864,
+      "our persona-vector max-over-layers |r|": 0.7291724724322896,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.6947909149525913,
+      "our persona-vector max-over-layers |r|": 0.6869376214314127,
+      "series": "Many-shot ICL (within shot count)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.8631768239898779,
+      "our persona-vector max-over-layers |r|": 0.8272980436465459,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.7588449700260469,
+      "our persona-vector max-over-layers |r|": 0.6530514199451126,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 0.3,
+      "our persona-vector max-over-layers |r|": 0.3,
+      "series": "y = x  (our |r| = random-null cap)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "norm-matched random null, 97.5th-pct cap of max-over-layers |r|": 1.0,
+      "our persona-vector max-over-layers |r|": 1.0,
+      "series": "y = x  (our |r| = random-null cap)",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 17
+}
