@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 824,
+  "highest_id": 825,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5318,6 +5318,13 @@
       "path": "tasks/proposed/824",
       "status": "proposed",
       "title": "workflow-fix: dispatch repo-branch default should use issue worktree branch"
+    },
+    "825": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/825",
+      "status": "proposed",
+      "title": "Is the per-example context\u2192answer-profile map present in the pretrained base model, and does it hold for the user turn?"
     },
     "83": {
       "has_clean_result": false,
