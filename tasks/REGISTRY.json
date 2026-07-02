@@ -5458,8 +5458,8 @@
     "842": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/842",
-      "status": "planning",
+      "path": "tasks/approved/842",
+      "status": "approved",
       "title": "workflow-fix: smoke outputs must not clobber committed artifacts"
     },
     "843": {
