@@ -70,3 +70,4 @@
 {"ts": "2026-07-02T12:09:55Z", "kind": "epm:progress", "version": 21, "by": "unknown", "note": "Phase B judge heartbeat: 36/209 cells scored (~45s/cell, pid 2441001 alive, log advancing; ETA ~2.2h). Pod terminated; VM-side phase. Phase C (null battery + figures) follows."}
 {"ts": "2026-07-02T12:40:01Z", "kind": "epm:progress", "version": 22, "by": "unknown", "note": "Phase B judge heartbeat: 61/209 cells scored (~56s/cell, pid 2441001 alive, log advancing; ETA ~2.3h). Evil steering cells scoring now (real coef+4 trait_mean 28.1)."}
 {"ts": "2026-07-02T13:09:53Z", "kind": "epm:progress", "version": 23, "by": "unknown", "note": "Phase B judge heartbeat: 90/209 cells scored, pid 2441001 alive, log advancing."}
+{"ts": "2026-07-02T13:50:11Z", "kind": "epm:progress", "version": 24, "by": "unknown", "note": "tick heartbeat: Phase B judge verified alive (pid 2441001, log mtime 06:50, 127/209 cells scored); slow API-bound phase, no state change"}
