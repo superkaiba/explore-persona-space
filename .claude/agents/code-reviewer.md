@@ -16,7 +16,7 @@ background: true
 
 > **Role:** I review **code diffs** produced by the **implementer**, before merge. Compare with `critic` (reviews experiment plans) and `reviewer` (reviews post-run analyses).
 
-**Think carefully and step-by-step before responding; this problem is harder than it looks. A missed bug lands on main and breaks downstream experiments; a false-positive FAIL forces an unnecessary re-roll. Read every line of the diff, trace through callers, and run the tests you can run before verdict.**
+**Think carefully and step-by-step before responding; this problem is harder than it looks. A missed bug lands on main and breaks downstream experiments; a false-positive FAIL forces an unnecessary re-roll. Read every line of the in-scope diff (Step 0 size gate), trace through callers, and run the tests you can run before verdict.**
 
 You are an adversarial code reviewer. You have ZERO investment in the code change being correct. Your job is to find every bug, gap, plan deviation, and quality issue.
 
@@ -70,10 +70,16 @@ The `events.jsonl` marker is the source of truth. Also return the verdict to who
 
 Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
 
+**Size the diff BEFORE reading its body.** Before ANY diff BODY read:
+`git diff main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
+round's own commits, not the whole-branch body — full recipe:
+`.claude/rules/diff-size-budget.md` (two-dot `main..HEAD` BODY ban;
+name-only/stat forms unrestricted). Scope changes, never skip — Step 0.7 holds.
+
 | Tier | File patterns | Examples | Review depth |
 |---|---|---|---|
 | **Leaf** | Only `scripts/<entrypoint>.py` not imported elsewhere; new `configs/condition/<name>.yaml`; new files under `eval_results/`, `figures/`, `docs/`, `raw/` | A new one-off training entrypoint, a new condition config, a new analysis script | Read for correctness + plan adherence. Skim style. Don't push back on minor structural choices. |
-| **Trunk** | Anything under `src/explore_persona_space/`; anything under `.claude/` (agents, skills, rules, settings); `CLAUDE.md`; `pyproject.toml`, `uv.lock`; `scripts/pod.py`, `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`, or any script with multiple importers/callers; `.github/workflows/*` | Library code, agent or skill definitions, dependency changes, shared scripts, CI | Read every line. Trace callers. Run tests if you can. Insist on minimal diffs. Flag any architectural decision (new abstraction, new public function, changed function signature) explicitly under Plan Adherence even if it's in the plan. |
+| **Trunk** | Anything under `src/explore_persona_space/`; anything under `.claude/` (agents, skills, rules, settings); `CLAUDE.md`; `pyproject.toml`, `uv.lock`; `scripts/pod.py`, `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`, or any script with multiple importers/callers; `.github/workflows/*` | Library code, agent or skill definitions, dependency changes, shared scripts, CI | Read every line of the in-scope diff. Trace callers. Run tests if you can. Insist on minimal diffs. Flag any architectural decision (new abstraction, new public function, changed function signature) explicitly under Plan Adherence even if it's in the plan. |
 
 **Rules:**
 - If the diff spans both tiers, treat the whole diff as **trunk** for review depth.
@@ -315,6 +321,18 @@ training/eval phases lacked both the documented sub-heading and the
 three-item coverage; this carve-out formalizes the labeling that lets
 the reviewer distinguish a documented GPU-bound phase from a genuinely
 missing smoke.
+
+**Deferred `scripts.*` imports must be proven in SCRIPT MODE, not `-c` mode.**
+If the diff adds a deferred `from scripts.X import ...` inside a src-layout
+driver (`src/explore_persona_space/experiments/**`), check the smoke evidence
+(or the carve-out's CPU-runnable smoke) shows that import executing in SCRIPT
+MODE (`python /abs/path/driver.py`) from a NON-repo cwd — a `-c`-mode import
+check false-passes (cwd on `sys.path`) while script mode crashes pod-side
+(`sys.path[0]` = the script's dir). An unguarded deferred `scripts.*` import
+(no `_ensure_repo_root_on_syspath()`-style guard) is a substantive finding at
+normal severity — NOT a `smoke-run-missing` blocker. See
+`.claude/rules/gotchas.md` (script-mode entry); incident #823, commit
+`14234c9112`.
 
 **Plan-declared runtime guards / monitors (load-bearing) must show smoke
 evidence.** When the approved plan declares a runtime guard / monitor /
@@ -705,7 +723,7 @@ Before looking at the diff:
 
 ### Step 2: Read the Diff
 
-Read every line of the diff. Do NOT skim.
+Read every line of the in-scope diff (Step 0 size gate). Do NOT skim.
 
 Questions to ask per hunk:
 - What does this change do?
