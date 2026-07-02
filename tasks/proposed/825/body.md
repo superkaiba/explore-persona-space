@@ -10,12 +10,17 @@ origin_prompt: 'Help me to plan this experiment: Is the context vector to answer
   mapping present in the base model (Qwen/Qwen2.5-7B) and does it hold for the user?
   (verbatim full prompt in ## Provenance; follow-ups: frame on #779''s per-context
   map, Haiku-4.5-as-user generated conversations, file as proposed only)'
+goal: 'Test whether the per-example linear context-to-answer-profile map h: c_x ->
+  v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists
+  in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant
+  and the user turn, under chat-template vs naturalistic formatting; secondary: per-position
+  decay and cross-role prediction beyond a topic-persistence baseline.'
 ---
 # Is the per-example context→answer-profile map present in the pretrained base model, and does it hold for the user turn?
 
 ## Goal
 
-For model θ ∈ {Qwen2.5-7B-Instruct, pretrained Qwen/Qwen2.5-7B}, role r ∈ {assistant, user}, and format f ∈ {chat template, naturalistic transcript}, define per example x: c_x = residual activation at the last token of the role header opening turn r, and v(x) = mean residual over that turn's content tokens (current speaker only), per layer. Test whether a global linear map h_{θ,r,f}: c_x → v(x), fit over thousands of per-example pairs with held-out K-fold CV over examples (the #779 per-context-map recipe), exists in each cell (held-out reconstruction R² and per-example cosine above shuffle null); how much the map degrades from Instruct to the pretrained model; and whether it survives replacing the chat template with a naturalistic format. Secondary: per-position prediction decay along the turn, and cross-role prediction (assistant-slot c_x → next user-turn profile, and vice versa) beyond a topic-persistence baseline. No judging, no r_B, no monitoring claim — all DVs are activation geometry from teacher-forced forwards over fixed text.
+Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.
 
 ## Motivation
 
