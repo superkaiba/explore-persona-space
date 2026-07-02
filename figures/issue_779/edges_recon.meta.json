@@ -1,0 +1,3132 @@
+{
+  "commit": "a8d7a6138a",
+  "created": "2026-07-02T23:03:35Z",
+  "figsize": [
+    16.0,
+    9.0
+  ],
+  "points": [
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": 0.25917998491628547,
+      "error": 0.0,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.3100036959904157,
+      "error": 2.9599178793494674,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.3209955401243329,
+      "error": 0.011432529442278589,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": 0.21777139284483607,
+      "error": 0.6584359457281335,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -0.07211357469144315,
+      "error": 30.2668683830928,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": 0.5903021546238532,
+      "error": 0.0,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": 0.27505126698915855,
+      "error": 0.0,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.3819974600169199,
+      "error": 2.9599178793494674,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.36241071159878635,
+      "error": 0.011432529442278589,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": 0.2930278596863163,
+      "error": 0.6584359457281335,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -0.006033110695233513,
+      "error": 30.2668683830928,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": 0.5999094914443865,
+      "error": 0.0,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": -0.07747629560646618,
+      "error": 0.0,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": -165.03564162277888,
+      "error": 2.9599178793494674,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": -1.7517868569141564,
+      "error": 0.011432529442278589,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": -8.094704636819179,
+      "error": 0.6584359457281335,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -20.0082559403611,
+      "error": 30.2668683830928,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": -0.027644814038415566,
+      "error": 0.0,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": -0.05553221598184699,
+      "error": 0.0,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": -2.3286546921280986,
+      "error": 2.9599178793494674,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": -0.024004761724047235,
+      "error": 0.011432529442278589,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": -0.928789903180365,
+      "error": 0.6584359457281335,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -15.996541426359887,
+      "error": 30.2668683830928,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": -0.029240271455567513,
+      "error": 0.0,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": 0.25917998491628547,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.3100036959904157,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.3209955401243329,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": 0.21777139284483607,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -0.07211357469144315,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": 0.5903021546238532,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": 0.19871901968924954,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.23201297383367386,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.2845476399822661,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": 0.18136209404136028,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -0.1268850878901262,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": 0.5903021546238532,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": 0.3196409501433214,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.38799441814715757,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.3574434402663997,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": 0.25418069164831186,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -0.017342061492760096,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": 0.5903021546238532,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": 0.27505126698915855,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.3819974600169199,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.36241071159878635,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": 0.2930278596863163,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -0.006033110695233513,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": 0.5999094914443865,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": 0.23028481400105874,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.35635601704525915,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.33183783712055254,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": 0.25993922857212015,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -0.032313783440170094,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": 0.5999094914443865,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": 0.31981771997725833,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.4076389029885807,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.39298358607702016,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": 0.3261164908005124,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": 0.020247562049703065,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": 0.5999094914443865,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": -0.07747629560646618,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": -165.03564162277888,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": -1.7517868569141564,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": -8.094704636819179,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -20.0082559403611,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": -0.027644814038415566,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": -0.09939703565737701,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": -432.134951721928,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": -3.6877649634021057,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": -12.892280347296536,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -58.31679409063395,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": -0.027644814038415566,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": -0.05555555555555536,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 102.06366847637025,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": 0.18419124957379296,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": -3.2971289263418218,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": 18.300282209911746,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": -0.027644814038415566,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": -0.05553221598184699,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": -2.3286546921280986,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": -0.024004761724047235,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": -0.928789903180365,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -15.996541426359887,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": -0.029240271455567513,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": -0.05553221598184699,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": -5.288572571477566,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": -0.035437291166325824,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": -1.5872258489084985,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": -46.26340980945268,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": -0.029240271455567513,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 100.0,
+      "held-out recon R2 (80/20)": -0.05553221598184699,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 250.0,
+      "held-out recon R2 (80/20)": 0.6312631872213688,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 500.0,
+      "held-out recon R2 (80/20)": -0.012572232281768648,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1000.0,
+      "held-out recon R2 (80/20)": -0.27035395745223156,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2000.0,
+      "held-out recon R2 (80/20)": 14.270326956732912,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 5000.0,
+      "held-out recon R2 (80/20)": -0.029240271455567513,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 100.0,
+      "y": 0.20859684489808986,
+      "error": 0.8525498989648113,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 250.0,
+      "y": 0.37937343536804247,
+      "error": 0.4118127403755766,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 500.0,
+      "y": 0.37835150900122577,
+      "error": 0.16804942962068542,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3042226776124185,
+      "error": 0.05873927099849026,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 2000.0,
+      "y": 0.03537306328922942,
+      "error": 0.018119241546337858,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 5000.0,
+      "y": 0.6154714925069352,
+      "error": 0.0,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 100.0,
+      "y": -1.0191194523082188,
+      "error": 0.8525498989648113,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 250.0,
+      "y": -0.43343760778211504,
+      "error": 0.4118127403755766,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 500.0,
+      "y": -0.12825546218423606,
+      "error": 0.16804942962068542,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 1000.0,
+      "y": -0.06341795545001556,
+      "error": 0.05873927099849026,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 2000.0,
+      "y": -0.04860478746607581,
+      "error": 0.018119241546337858,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 5000.0,
+      "y": -0.03677442598620351,
+      "error": 0.0,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 100.0,
+      "y": 0.20859684489808986,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 250.0,
+      "y": 0.37937343536804247,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 500.0,
+      "y": 0.37835150900122577,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3042226776124185,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2000.0,
+      "y": 0.03537306328922942,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5000.0,
+      "y": 0.6154714925069352,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 100.0,
+      "y": 0.12366559627841475,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 250.0,
+      "y": 0.3488073649692328,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 500.0,
+      "y": 0.34192706990939514,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1000.0,
+      "y": 0.28613173618548765,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2000.0,
+      "y": 0.005545551479716981,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5000.0,
+      "y": 0.6154714925069352,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 100.0,
+      "y": 0.293528093517765,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 250.0,
+      "y": 0.4099395057668521,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 500.0,
+      "y": 0.4147759480930564,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1000.0,
+      "y": 0.32231361903934935,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2000.0,
+      "y": 0.06520057509874186,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5000.0,
+      "y": 0.6154714925069352,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 100.0,
+      "y": -1.0191194523082188,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 250.0,
+      "y": -0.43343760778211504,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 500.0,
+      "y": -0.12825546218423606,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1000.0,
+      "y": -0.06341795545001556,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2000.0,
+      "y": -0.04860478746607581,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5000.0,
+      "y": -0.03677442598620351,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 100.0,
+      "y": -1.87166935127303,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 250.0,
+      "y": -0.8452503481576916,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 500.0,
+      "y": -0.2963048918049215,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1000.0,
+      "y": -0.12215722644850582,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2000.0,
+      "y": -0.06672402901241367,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5000.0,
+      "y": -0.03677442598620351,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 100.0,
+      "y": -0.1665695533434075,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 250.0,
+      "y": -0.021624867406538406,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 500.0,
+      "y": 0.039793967436449335,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1000.0,
+      "y": -0.004678684451525306,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2000.0,
+      "y": -0.03048554591973796,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5000.0,
+      "y": -0.03677442598620351,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 100.0,
+      "y": 0.2584252539846523,
+      "error": 0.31394137782397097,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 250.0,
+      "y": 0.38149005519991286,
+      "error": 0.4833081920069896,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 500.0,
+      "y": 0.4223689848336184,
+      "error": 0.040373078544768154,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 1000.0,
+      "y": 0.2984665930085332,
+      "error": 0.03230601591316394,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 2000.0,
+      "y": 0.051524254680928604,
+      "error": 0.01242176851602552,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 5000.0,
+      "y": 0.6362457051048291,
+      "error": 0.0,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 100.0,
+      "y": 0.20307196328948285,
+      "error": 0.31394137782397097,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 250.0,
+      "y": 0.35655285883516574,
+      "error": 0.4833081920069896,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 500.0,
+      "y": 0.3632849884495859,
+      "error": 0.040373078544768154,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 1000.0,
+      "y": 0.2874102694677662,
+      "error": 0.03230601591316394,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 2000.0,
+      "y": 0.027810498175916142,
+      "error": 0.01242176851602552,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 5000.0,
+      "y": 0.5547995426257769,
+      "error": 0.0,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 100.0,
+      "y": -0.27759944808913156,
+      "error": 0.31394137782397097,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 250.0,
+      "y": -0.22814981118465885,
+      "error": 0.4833081920069896,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 500.0,
+      "y": -0.03955162364808969,
+      "error": 0.040373078544768154,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 1000.0,
+      "y": -0.02619928149877302,
+      "error": 0.03230601591316394,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 2000.0,
+      "y": -0.022840366910255528,
+      "error": 0.01242176851602552,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 5000.0,
+      "y": -0.017702099252569603,
+      "error": 0.0,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 100.0,
+      "y": -0.17423746880529503,
+      "error": 0.31394137782397097,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 250.0,
+      "y": -0.29907058817034293,
+      "error": 0.4833081920069896,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 500.0,
+      "y": -0.0683103670749241,
+      "error": 0.040373078544768154,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 1000.0,
+      "y": -0.04095450097381674,
+      "error": 0.03230601591316394,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 2000.0,
+      "y": -0.027503582751988054,
+      "error": 0.01242176851602552,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 5000.0,
+      "y": -0.044011966777272926,
+      "error": 0.0,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 100.0,
+      "y": 0.2584252539846523,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 250.0,
+      "y": 0.38149005519991286,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 500.0,
+      "y": 0.4223689848336184,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1000.0,
+      "y": 0.2984665930085332,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2000.0,
+      "y": 0.051524254680928604,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5000.0,
+      "y": 0.6362457051048291,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 100.0,
+      "y": 0.18250299134024545,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 250.0,
+      "y": 0.3600281984786803,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 500.0,
+      "y": 0.3945944172308631,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1000.0,
+      "y": 0.2550321095882235,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2000.0,
+      "y": 0.017156370562151378,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 5000.0,
+      "y": 0.6362457051048291,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 100.0,
+      "y": 0.3343475166290592,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 250.0,
+      "y": 0.40295191192114543,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 500.0,
+      "y": 0.4501435524363737,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3419010764288429,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2000.0,
+      "y": 0.08589213879970584,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5000.0,
+      "y": 0.6362457051048291,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 100.0,
+      "y": 0.20307196328948285,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 250.0,
+      "y": 0.35655285883516574,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 500.0,
+      "y": 0.3632849884495859,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1000.0,
+      "y": 0.2874102694677662,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2000.0,
+      "y": 0.027810498175916142,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5000.0,
+      "y": 0.5547995426257769,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 100.0,
+      "y": 0.11997781496838503,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 250.0,
+      "y": 0.32797885760557527,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 500.0,
+      "y": 0.32292136961417905,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1000.0,
+      "y": 0.23382388198132964,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2000.0,
+      "y": -0.013311670333228786,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 5000.0,
+      "y": 0.5547995426257769,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 100.0,
+      "y": 0.2861661116105807,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 250.0,
+      "y": 0.3851268600647562,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 500.0,
+      "y": 0.40364860728499274,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3409966569542028,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2000.0,
+      "y": 0.06893266668506107,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 5000.0,
+      "y": 0.5547995426257769,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 100.0,
+      "y": -0.27759944808913156,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 250.0,
+      "y": -0.22814981118465885,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 500.0,
+      "y": -0.03955162364808969,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1000.0,
+      "y": -0.02619928149877302,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2000.0,
+      "y": -0.022840366910255528,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 5000.0,
+      "y": -0.017702099252569603,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 100.0,
+      "y": -0.5385625426366965,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 250.0,
+      "y": -0.4716487794901325,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 500.0,
+      "y": -0.06345520975180956,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1000.0,
+      "y": -0.04627001370584728,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2000.0,
+      "y": -0.03245077265299707,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 5000.0,
+      "y": -0.017702099252569603,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 100.0,
+      "y": -0.01663635354156673,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 250.0,
+      "y": 0.015349157120814805,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 500.0,
+      "y": -0.015648037544369817,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1000.0,
+      "y": -0.006128549291698759,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2000.0,
+      "y": -0.013229961167513987,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 5000.0,
+      "y": -0.017702099252569603,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 100.0,
+      "y": -0.17423746880529503,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 250.0,
+      "y": -0.29907058817034293,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 500.0,
+      "y": -0.0683103670749241,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1000.0,
+      "y": -0.04095450097381674,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2000.0,
+      "y": -0.027503582751988054,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 5000.0,
+      "y": -0.044011966777272926,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 100.0,
+      "y": -0.48817884662926603,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 250.0,
+      "y": -0.7823787801773325,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 500.0,
+      "y": -0.10868344561969226,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 1000.0,
+      "y": -0.07326051688698068,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2000.0,
+      "y": -0.039925351268013574,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 5000.0,
+      "y": -0.044011966777272926,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 100.0,
+      "y": 0.13970390901867594,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 250.0,
+      "y": 0.18423760383664672,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 500.0,
+      "y": -0.02793728853015596,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1000.0,
+      "y": -0.0086484850606528,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2000.0,
+      "y": -0.015081814235962533,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 5000.0,
+      "y": -0.044011966777272926,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 0.24614883071068694,
+      "error": 128.9289874292829,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.565260935925197,
+      "error": 0.45021128547953726,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.8380438823499073,
+      "error": 9.449639127935306,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.8852834838792758,
+      "error": 0.04802674309311772,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.8967639746371427,
+      "error": 0.04535026071107773,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.8742673871502809,
+      "error": 0.0,
+      "series": "h profile recon (L14)",
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 0.5542333751034769,
+      "error": 128.9289874292829,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.7139852806066685,
+      "error": 0.45021128547953726,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.8711605186915353,
+      "error": 9.449639127935306,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.9053200001561196,
+      "error": 0.04802674309311772,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.9212636389726313,
+      "error": 0.04535026071107773,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.9044275470125102,
+      "error": 0.0,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": -45.49245559815605,
+      "error": 128.9289874292829,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.3234226346104008,
+      "error": 0.45021128547953726,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": -0.43557747594151125,
+      "error": 9.449639127935306,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.6140432869303545,
+      "error": 0.04802674309311772,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.6229228536474899,
+      "error": 0.04535026071107773,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.05871380644998492,
+      "error": 0.0,
+      "series": "g label recon (L14)",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": -90.54834738257306,
+      "error": 128.9289874292829,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.2317665654690549,
+      "error": 0.45021128547953726,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": -4.134655253976368,
+      "error": 9.449639127935306,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.633529420613613,
+      "error": 0.04802674309311772,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.648052558698452,
+      "error": 0.04535026071107773,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.6049791365287731,
+      "error": 0.0,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 0.24614883071068694,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.565260935925197,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.8380438823499073,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.8852834838792758,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.8967639746371427,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.8742673871502809,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 0.1496988375947301,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.500509839847014,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.8182223885757477,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.8789219499782222,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.8927532506211293,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.8742673871502809,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 0.34259882382664375,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.63001203200338,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.857865376124067,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.8916450177803295,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.9007746986531562,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.8742673871502809,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 0.5542333751034769,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.7139852806066685,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.8711605186915353,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.9053200001561196,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.9212636389726313,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.9044275470125102,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 0.4370739090083393,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.627976267336288,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.8404801921094891,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.9003350285343146,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.9153659094745854,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.9044275470125102,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 0.6713928411986145,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.7999942938770491,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.9018408452735815,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.9103049717779246,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.9271613684706772,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.9044275470125102,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": -45.49245559815605,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.3234226346104008,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": -0.43557747594151125,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.6140432869303545,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.6229228536474899,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.05871380644998492,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": -110.03963380147951,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.22693157256662527,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": -1.4876116163302846,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.408051598103796,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.5679944505428347,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.05871380644998492,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 19.05472260516742,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.4199136966541764,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 0.6164566644472622,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.820034975756913,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.6778512567521451,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.05871380644998492,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": -90.54834738257306,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.2317665654690549,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": -4.134655253976368,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.633529420613613,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.648052558698452,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.6049791365287731,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": -219.47733481185594,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": -0.21844472001048235,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": -13.584294381911675,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.5855026775204952,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.6027022979873743,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.6049791365287731,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training contexts (N)": 50.0,
+      "held-out recon R2 (80/20)": 38.38064004670984,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training contexts (N)": 100.0,
+      "held-out recon R2 (80/20)": 0.6819778509485922,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training contexts (N)": 250.0,
+      "held-out recon R2 (80/20)": 5.314983873958938,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training contexts (N)": 500.0,
+      "held-out recon R2 (80/20)": 0.6815561637067307,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "held-out recon R2 (80/20)": 0.6934028194095297,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "held-out recon R2 (80/20)": 0.6049791365287731,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.2670066204796709,
+      "error": 0.284698481394264,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.5763588620984816,
+      "error": 0.11362659573369416,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8018675308168781,
+      "error": 0.07679724694203105,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8656828339170263,
+      "error": 0.051777529686909296,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8856555487841096,
+      "error": 0.01885914529857402,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.862273845938884,
+      "error": 0.0,
+      "series": "h profile recon (L26)",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.3076612181490207,
+      "error": 0.284698481394264,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.7716260935209338,
+      "error": 0.11362659573369416,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7762185565686609,
+      "error": 0.07679724694203105,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8285770933638089,
+      "error": 0.051777529686909296,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.839937157908669,
+      "error": 0.01885914529857402,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8456847403222542,
+      "error": 0.0,
+      "series": "g label recon (L26)",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.2670066204796709,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.5763588620984816,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8018675308168781,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8656828339170263,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8856555487841096,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.862273845938884,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.08796743048345182,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.513172333369496,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7879040720702581,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8588023263484282,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8837033386745162,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.862273845938884,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.44604581047589,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.6395453908274673,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8158309895634981,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8725633414856243,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8876077588937029,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.862273845938884,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.3076612181490207,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.7716260935209338,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7762185565686609,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8285770933638089,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.839937157908669,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8456847403222542,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.02296273675475674,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.6579994977872397,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.6994213096266299,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.7767995636768996,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8210780126100949,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8456847403222542,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.5923596995432847,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.885252689254628,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.853015803510692,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8803546230507182,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.858796303207243,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8456847403222542,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.20273223158018894,
+      "error": 0.2521467886533738,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.5105238708740721,
+      "error": 0.14783503203759493,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7782075291442657,
+      "error": 0.07351317767211274,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8618221365921309,
+      "error": 0.03509921780410874,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8880589294626617,
+      "error": 0.040797311945085846,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8648845749286088,
+      "error": 0.0,
+      "series": "h profile recon (L17)",
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.4320480054477846,
+      "error": 0.2521467886533738,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.6194495198040159,
+      "error": 0.14783503203759493,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8199618915121201,
+      "error": 0.07351317767211274,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8666636015459854,
+      "error": 0.03509921780410874,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8895953368630423,
+      "error": 0.040797311945085846,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8670394076915557,
+      "error": 0.0,
+      "series": "h profile recon (L27)",
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.34722770339061926,
+      "error": 0.2521467886533738,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.40071499380642306,
+      "error": 0.14783503203759493,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8007498546181916,
+      "error": 0.07351317767211274,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.851275881908126,
+      "error": 0.03509921780410874,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8482639876574274,
+      "error": 0.040797311945085846,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8223811185420511,
+      "error": 0.0,
+      "series": "g label recon (L17)",
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.5168769183230272,
+      "error": 0.2521467886533738,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.6002568552347554,
+      "error": 0.14783503203759493,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7801949805351069,
+      "error": 0.07351317767211274,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8236509265892401,
+      "error": 0.03509921780410874,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.832697720294956,
+      "error": 0.040797311945085846,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.7812487243364014,
+      "error": 0.0,
+      "series": "g label recon (L27)",
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.20273223158018894,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.5105238708740721,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7782075291442657,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8618221365921309,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8880589294626617,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8648845749286088,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.14408027097939252,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.4680395358806768,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7730457843797174,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8577274482214523,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8842544960197779,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8648845749286088,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.26138419218098535,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.5530082058674675,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7833692739088141,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8659168249628095,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8918633629055456,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8648845749286088,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.4320480054477846,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.6194495198040159,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8199618915121201,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8666636015459854,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8895953368630423,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8670394076915557,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.34027500348782,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.525194709191133,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8095078155026988,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8593501120413707,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8844229347894406,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8670394076915557,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.5238210074077492,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.7137043304168987,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8304159675215413,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8739770910506002,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.894767738936644,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8670394076915557,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.34722770339061926,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.40071499380642306,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8007498546181916,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.851275881908126,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8482639876574274,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8223811185420511,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.1777073096406428,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.14643163998073772,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7476218331780242,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8318725913493464,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8256790531368431,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8223811185420511,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.5167480971405958,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.6549983476321084,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.853877876058359,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8706791724669055,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8708489221780117,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.8223811185420511,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.5168769183230272,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.6002568552347554,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7801949805351069,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8236509265892401,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.832697720294956,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.7812487243364014,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.26473012966965337,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.45242182319716046,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.7066818028629942,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.7885517087851314,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.7919004083498702,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.7812487243364014,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "training contexts (N)": 50.0,
+      "y": 0.769023706976401,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "training contexts (N)": 100.0,
+      "y": 0.7480918872723503,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "training contexts (N)": 250.0,
+      "y": 0.8537081582072197,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "training contexts (N)": 500.0,
+      "y": 0.8587501443933488,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "training contexts (N)": 1000.0,
+      "y": 0.8734950322400419,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "training contexts (N)": 2400.0,
+      "y": 0.7812487243364014,
+      "_kind": "line",
+      "_group": 79
+    }
+  ],
+  "n_series": 80,
+  "total_points": 480
+}
