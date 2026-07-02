@@ -5408,8 +5408,8 @@
     "836": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/836",
-      "status": "planning",
+      "path": "tasks/approved/836",
+      "status": "approved",
       "title": "workflow-fix: vectorize rule covers permutation/bootstrap draw loops"
     },
     "837": {
