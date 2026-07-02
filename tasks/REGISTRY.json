@@ -5668,8 +5668,8 @@
     "871": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/871",
-      "status": "reviewing",
+      "path": "tasks/completed/871",
+      "status": "completed",
       "title": "workflow-fix: artifact-reuse fitness check gains throughput item (i)"
     },
     "872": {
