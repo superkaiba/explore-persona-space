@@ -1,14 +1,10 @@
 # LESSONS — always-on index of project rules
 
-This index is always-on (imported by `CLAUDE.md`) so every agent knows each
-lesson EXISTS and WHEN it applies at PLAN TIME — even before any matching file
-is open. The full rule text stays on-demand (open the linked file). Do NOT
-inline rule bodies here; keep this lean. When you add/remove a
-`.claude/rules/*.md` file, add/remove its row here too — enforced by
-`scripts/workflow_lint.py --check-lessons-index`.
+Always-on (imported by `CLAUDE.md`): each lesson's existence + plan-time
+trigger. Rule text stays on-demand; never inline bodies here. Add/remove a
+`.claude/rules/*.md` file => update this index (lint: `--check-lessons-index`).
 
-**How to use:** scan the "fires when" triggers; if your current decision matches
-one, OPEN the linked rule and follow it before proceeding.
+**How to use:** a matching "fires when" trigger => open + follow that rule.
 
 ## Rules
 
@@ -21,6 +17,7 @@ one, OPEN the linked rule and follow it before proceeding.
 - **compute-backend-failover** ([`.claude/rules/compute-backend-failover.md`](compute-backend-failover.md)) — fires when: you touch the backend router / dispatch / poll, or reason about GCP↔RunPod failover.
 - **contrastive-negatives** ([`.claude/rules/contrastive-negatives.md`](contrastive-negatives.md)) — fires when: a plan implants a behavior (marker/fact/refusal/trait) into a persona (interleave contrastive negatives by default).
 - **crash-fix-rounds** ([`.claude/rules/crash-fix-rounds.md`](crash-fix-rounds.md)) — fires when: an implementer runs a crash-fix revision round (failure-lesson block, fix-engaged signal, scope guard).
+- **critic-lens-reference** ([`.claude/rules/critic-lens-reference.md`](critic-lens-reference.md)) — fires when: a critic reviews under its assigned lens (pointer-loaded single-lens span; `paths:` self-glob, NOT auto-injected).
 - **data-realism** ([`.claude/rules/data-realism.md`](data-realism.md)) — fires when: a plan picks training/eval/probe data (use the strict 4-tier preference order; justify tier 3/4).
 - **diff-size-budget** ([`.claude/rules/diff-size-budget.md`](diff-size-budget.md)) — fires when: reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
 - **gotchas** ([`.claude/rules/gotchas.md`](gotchas.md)) — fires when: you write/debug training / eval / orchestration code (CVD clobber, MooseFS EDQUOT, vLLM teardown).
@@ -31,6 +28,7 @@ one, OPEN the linked rule and follow it before proceeding.
 - **persona-distance-metrics** ([`.claude/rules/persona-distance-metrics.md`](persona-distance-metrics.md)) — fires when: you write base-model persona-distance predictor code (canonical KL/JS/cosine defs; #404/#458 line).
 - **persona-vectors-recipe** ([`.claude/rules/persona-vectors-recipe.md`](persona-vectors-recipe.md)) — fires when: a plan elects persona vectors / a mean-difference contrastive direction (reproduce arXiv 2507.21509 EXCEPT logit scoring; the 7-step pipeline).
 - **plan-compute-sizing** ([`.claude/rules/plan-compute-sizing.md`](plan-compute-sizing.md)) — fires when: a plan sizes §9 compute (HBM capture, merge disk, sentinel lanes, wall-time floors/costing).
+- **planner-section-reference** ([`.claude/rules/planner-section-reference.md`](planner-section-reference.md)) — fires when: the planner writes a plan section (pointer-loaded from planner.md; `paths:` self-glob, NOT auto-injected).
 - **pod-config** ([`.claude/rules/pod-config.md`](pod-config.md)) — fires when: SSH/MCP to a pod keeps failing or you touch the pod scripts / pods.conf (live API vs pods.conf authority split).
 - **pod-side-reporting** ([`.claude/rules/pod-side-reporting.md`](pod-side-reporting.md)) — fires when: writing pod-side dispatcher / sentinel / poll_pipeline.py-facing code.
 - **replication-fidelity** ([`.claude/rules/replication-fidelity.md`](replication-fidelity.md)) — fires when: the Goal is to replicate a published finding (match the paper's data + recipe FIRST; change only the one tested variable).
@@ -43,14 +41,12 @@ one, OPEN the linked rule and follow it before proceeding.
 
 ## Per-agent memory
 
-Each workflow agent keeps persistent anti-pattern + feedback memories under
-`.claude/agent-memory/<agent>/MEMORY.md` (always loaded for that agent via its
-`memory: project` frontmatter). At plan/review time, the memories most likely to
-bite are: **planner** (axis-conflation, collinearity gates, route-(b) DV swaps),
+Per-agent anti-pattern + feedback memories live at
+`.claude/agent-memory/<agent>/MEMORY.md` (always loaded via `memory: project`
+frontmatter). Most likely to bite:
+**planner** (axis-conflation, collinearity gates, route-(b) DV swaps),
 **critic** (methodology-lens alternatives, reuse-fitness completeness),
 **consistency-checker** (single-variable-change diffs), **experiment-implementer**
 / **implementer** (silent-failure + plumbing patterns), **analyzer** /
 **interpretation-critic** / **code-reviewer** (CI-vs-bootstrap, cross-worktree
-path splits, stale-main diffs). If your role has a memory dir, its `MEMORY.md` is
-already in your context — consult it; this pointer exists so other roles know it
-is there.
+path splits, stale-main diffs).
