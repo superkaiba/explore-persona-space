@@ -12,12 +12,15 @@ one, OPEN the linked rule and follow it before proceeding.
 
 ## Rules
 
+- **analyzer-paper-mode** ([`.claude/rules/analyzer-paper-mode.md`](analyzer-paper-mode.md)) — fires when: the analyzer runs a `paper: true` task (LaTeX clean-result; verify_paper.py gate).
 - **artifact-reuse** ([`.claude/rules/artifact-reuse.md`](artifact-reuse.md)) — fires when: a plan would reuse a prior HF adapter / checkpoint / mix / completions / eval JSON instead of retraining (run the (a)-(h) fitness check).
 - **arxiv-mcp** ([`.claude/rules/arxiv-mcp.md`](arxiv-mcp.md)) — fires when: you need to search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - **background-automation** ([`.claude/rules/background-automation.md`](background-automation.md)) — fires when: you touch or reason about the cron audits / autonomous-session watcher / pod or GCP janitors.
+- **clean-result-paper-review** ([`.claude/rules/clean-result-paper-review.md`](clean-result-paper-review.md)) — fires when: either clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
 - **code-style** ([`.claude/rules/code-style.md`](code-style.md)) — fires when: you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - **compute-backend-failover** ([`.claude/rules/compute-backend-failover.md`](compute-backend-failover.md)) — fires when: you touch the backend router / dispatch / poll, or reason about GCP↔RunPod failover.
 - **contrastive-negatives** ([`.claude/rules/contrastive-negatives.md`](contrastive-negatives.md)) — fires when: a plan implants a behavior (marker/fact/refusal/trait) into a persona (interleave contrastive negatives by default).
+- **crash-fix-rounds** ([`.claude/rules/crash-fix-rounds.md`](crash-fix-rounds.md)) — fires when: an implementer runs a crash-fix revision round (failure-lesson block, fix-engaged signal, scope guard).
 - **data-realism** ([`.claude/rules/data-realism.md`](data-realism.md)) — fires when: a plan picks training/eval/probe data (use the strict 4-tier preference order; justify tier 3/4).
 - **gotchas** ([`.claude/rules/gotchas.md`](gotchas.md)) — fires when: you write/debug training / eval / orchestration code (CVD clobber, MooseFS EDQUOT, vLLM teardown).
 - **llm-judging** ([`.claude/rules/llm-judging.md`](llm-judging.md)) — fires when: a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one cross-family Sonnet judge; drop-never-coerce; per-behavior reliability).
@@ -26,7 +29,9 @@ one, OPEN the linked rule and follow it before proceeding.
 - **on-policy-completions** ([`.claude/rules/on-policy-completions.md`](on-policy-completions.md)) — fires when: you build implantation training data (elicit positives on-policy from the base model; 80%-floor yield quota).
 - **persona-distance-metrics** ([`.claude/rules/persona-distance-metrics.md`](persona-distance-metrics.md)) — fires when: you write base-model persona-distance predictor code (canonical KL/JS/cosine defs; #404/#458 line).
 - **persona-vectors-recipe** ([`.claude/rules/persona-vectors-recipe.md`](persona-vectors-recipe.md)) — fires when: a plan elects persona vectors / a mean-difference contrastive direction (reproduce arXiv 2507.21509 EXCEPT logit scoring; the 7-step pipeline).
+- **plan-compute-sizing** ([`.claude/rules/plan-compute-sizing.md`](plan-compute-sizing.md)) — fires when: a plan sizes §9 compute (HBM capture, merge disk, sentinel lanes, wall-time floors/costing).
 - **pod-config** ([`.claude/rules/pod-config.md`](pod-config.md)) — fires when: SSH/MCP to a pod keeps failing or you touch the pod scripts / pods.conf (live API vs pods.conf authority split).
+- **pod-side-reporting** ([`.claude/rules/pod-side-reporting.md`](pod-side-reporting.md)) — fires when: writing pod-side dispatcher / sentinel / poll_pipeline.py-facing code.
 - **replication-fidelity** ([`.claude/rules/replication-fidelity.md`](replication-fidelity.md)) — fires when: the Goal is to replicate a published finding (match the paper's data + recipe FIRST; change only the one tested variable).
 - **research-project-structure** ([`.claude/rules/research-project-structure.md`](research-project-structure.md)) — fires when: you write result artifacts / the results index / the experiment queue (one source of truth per layer).
 - **selection-symmetric-nulls** ([`.claude/rules/selection-symmetric-nulls.md`](selection-symmetric-nulls.md)) — fires when: a plan's headline max/argmax/best-of/top-k-mean over a free axis (layer/cell/k/neighbourhood/seed/extraction-point/threshold) is compared vs a null band (inherit selection per draw OR freeze axis on held-out split; persist per-draw × per-axis matrix; #778).

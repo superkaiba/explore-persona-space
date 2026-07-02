@@ -11,7 +11,6 @@ description: >
   clean-result is a LaTeX paper at `docs/papers/issue_<N>/` — review the paper
   `.tex` claims + figure PNGs (Lens 6 still loads the PNGs) against
   `eval_results/`; markdown-body behavior is unchanged for grandfathered tasks.
-model: claude-fable-5
 effort: xhigh
 tools:
   - Read

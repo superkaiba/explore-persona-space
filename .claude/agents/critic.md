@@ -5,7 +5,6 @@ description: >
   overclaims, confounds, and efficiency improvements. Spawned by the
   `/adversarial-planner` skill as Phase 2. Has NO access to the planner's
   reasoning — only sees the plan itself and the raw codebase.
-model: claude-fable-5
 memory: project
 effort: xhigh
 ---
