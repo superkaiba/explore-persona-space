@@ -5315,8 +5315,8 @@
     "824": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/824",
-      "status": "running",
+      "path": "tasks/reviewing/824",
+      "status": "reviewing",
       "title": "workflow-fix: dispatch repo-branch default should use issue worktree branch"
     },
     "825": {
