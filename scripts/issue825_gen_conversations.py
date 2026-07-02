@@ -34,6 +34,11 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+# vLLM V1 fork-EngineCore guard (gotchas.md): the parent touches CUDA (_require_cuda)
+# before vllm.LLM(); fork then dies with "Cannot re-initialize CUDA in forked
+# subprocess". Spawn BEFORE any vllm import (crash att-20260702-061417).
+os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+
 from explore_persona_space.experiments.issue_825.common import (
     GEN_SEED,
     HF_DATA_REPO,
