@@ -5598,8 +5598,8 @@
     "861": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/861",
-      "status": "approved",
+      "path": "tasks/running/861",
+      "status": "running",
       "title": "artifacts: promote contrastive negatives to artifacts/negatives.py (Phase 0c)"
     },
     "862": {
