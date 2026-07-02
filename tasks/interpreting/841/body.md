@@ -39,6 +39,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_841.md](https://github.com/superkaiba/explore-persona-space/blob/863d2c05e20b3295ef970cadcda2331375504f1e/docs/methodology/issue_841.md) · [gist mirror](https://gist.github.com/superkaiba/b2b5f64629c513c99e797231863c24ce)
+
 ## Takeaways
 
 - An affine ridge map explains 70–91% of mean-centered layer-update variance on 500 held-out contexts and beats a small MLP at all 27 transitions; late-layer quality is data-limited (scale follow-up pending).
