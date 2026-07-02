@@ -102,11 +102,13 @@ per-fold/per-cell MLP sweep instead of writing a fresh serial loop. (Closed-form
 ridge / linear LOCO is already cheap via
 `scripts/issue658_fit_predictors.py`'s `_press_loo_mse_per_lambda` /
 `_ridge_dual_weights` — only the gradient-descent arms need this.) For the
-draw-loop half no batched canonical helper is on `main` yet — the current
+draw-loop half the canonical worked reference is the BATCHED
 `perm_null_draws` / `randnorm_null_draws` in
-`src/explore_persona_space/analysis/null_battery.py` are the SERIAL per-draw
-originals from the #778 incident; apply fix item 3 (pool reduction precomputed
-once, all draws as one subset-sum GEMM) rather than importing them as-is.
+`src/explore_persona_space/analysis/null_battery.py` (the #834 vectorization
+of the #778 incident code: per-draw directions built as one batched
+reduction, then memory-bounded chunked batched projection + correlation —
+fix item 3 realized in code). Import or mirror them for any new draw battery
+instead of writing a fresh serial loop.
 
 ## Relation to the compute-character carve-out
 
