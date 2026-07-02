@@ -911,6 +911,60 @@ If neither (a) nor (b), FAIL substantive with blocker tag
 `cached-artifact-coverage-unverified` and a Critical issue naming each
 consumer site whose coverage you could not verify.
 
+### Step 3.6: Long-loop restartability (> ~1h serial loops must persist + resume)
+
+**Trigger:** the diff contains a loop over independent units (cells / arms / layers /
+folds / seeds / draws / rows) whose projected wall-time exceeds ~1h — per the approved
+plan's §9 sizing (the per-component compute-projection table or §9 prose), the
+implementer's smoke-extrapolated per-call cost (Step 0.6's measured-per-call
+re-derivation is the PREFERRED sizing input over §9 prose — a fabricated §9 basis is
+exactly what defeated the sizing at #823), or a trivial count × per-call estimate you
+can form from the diff; a loop of more than ~500 serial calls of a non-trivial kernel
+is presumed >~1h absent measured evidence otherwise (the
+`.claude/rules/plan-compute-sizing.md` many-call floor). Applies to every task type (a
+long analysis loop is as restart-prone as an experiment dispatcher). No such loop in
+the diff → record `Step 3.6: N/A — no >~1h loop in the diff` in the verdict body and
+proceed.
+
+**Check — verify BOTH by READING the loop (a grep hit alone is insufficient):**
+
+1. **Per-unit persistence:** each completed unit's result is durably written when it
+   completes — atomic JSONL append or per-unit files + a done-sentinel — NOT accumulated
+   in memory (`results.append(...)` / dict-accumulate) with a single write after the loop.
+2. **Resume predicate:** at entry the script loads existing partial results and SKIPS
+   completed units, keyed on every output-affecting regime key (a resume that ignores an
+   output-affecting flag silently reuses wrong cached rows and mislabels output — #722 r3).
+
+**Verdict routing:**
+
+- BOTH present → note which mechanism satisfied it and proceed.
+- Either missing, with NO plan-stated justification → **Major** finding, blocker tag
+  `substantive` when it drives a FAIL. This is a SUBSTANTIVE finding, NOT a mechanical
+  gate — the SKILL.md Step 5c-bis strip list is limited to `marker-shape` /
+  `smoke-run-missing` / `git-provenance`, so it stands until the implementer adds the
+  per-unit persistence + resume predicate or the plan justifies its absence. Acceptable plan-stated
+  justifications: the loop is already decomposed into < ~1h phases each persisted per
+  the checkpoint-per-phase rule; the units are genuinely sequentially dependent (no
+  independent-unit structure to checkpoint); an explicit plan-stated atomicity argument.
+- Persistence/resume plausibly lives in an imported helper you cannot confirm from the
+  diff → CONCERNS, not FAIL; persist it via `task.py raise-concern <N> --concern-id
+  long-loop-restartability-unverified --severity CONCERN --summary '<≤200c>' --by
+  code-reviewer --round <n>` (per Step 0.8 / Rule 11 — unpersisted prose bullets do not
+  reach the dispatch gate).
+
+Rule surface: `.claude/rules/code-style.md` § "Checkpoint per phase" (intra-phase grain).
+Sibling: Step 0.67's work-conserving schedule sub-check reads the SCHEDULE of a long
+loop; this step reads its PERSISTENCE — a loop can be perfectly work-conserving and
+still forfeit everything on restart.
+
+Incident #823 phase 4 (2026-07-02): `run_823.py::phase4_ridge_refit` (lines 1449–1708)
+accumulated ~20h unpatched / ~3.7h patched of serial ridge fits in `r2_refit` /
+`per_ctx_r2` / `r2_transfer_vals` with a single terminal write (lines 1704–1706). Five
+code-review rounds PASSed it; both GCE crashes forfeited all phase-4 progress; a
+user-directed restart-with-optimization was refused solely because restart forfeits
+unpersisted fits. Same family: #722 r2 (per-unit atomic writes + `--resume` for ≥1h
+analysis loops), #399 (per-phase eval-rig checkpoint).
+
 ### Step 3.7: Bug-class sibling sweep (MANDATORY for every Critical/Major finding)
 
 For EVERY Critical or Major finding, the cited `file.py:LINE` is one INSTANCE

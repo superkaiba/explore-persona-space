@@ -431,7 +431,8 @@ both reviewers are graded against the same standard. Read
   1.29× size, Xet dedup already −59% on upload), so Codex never re-derives a
   narrower throughput check (same omission class as the #606 copy-list miss).
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
-  Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 5: Security
+  Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 3.6:
+  Long-loop restartability" + "Step 5: Security
   Sweep" + "Step 6: Plan Deviation Check" + "Step 7: Issue Verdict" output
   schema.
 - The Step 6 **grep-the-literal rule** VERBATIM. This is load-bearing: copy
@@ -451,6 +452,13 @@ both reviewers are graded against the same standard. Read
   task's `R_eval.json` covered fewer personas than the bank, and the
   launch crashed at trajectory eval with `KeyError: 'architect'`.) Without
   this in the prompt, Codex inherits the same gap.
+- The Step 3.6 **Long-loop restartability rule** VERBATIM. This is load-bearing: copy
+  the > ~1h trigger (keyed off plan §9 sizing / the implementer's projection / a trivial
+  count × per-call estimate), the persistence + resume predicate pair, the Major
+  `substantive` routing (NOT stripped by Step 5c-bis) with its plan-stated-justification
+  carve-outs, and the #823 incident, so Codex never re-derives a narrower check (same
+  omission class as the #606 copy-list miss; #823: five rounds PASSed a ~20h in-memory
+  accumulate-and-write-at-end loop).
 - The **Step 3.7 bug-class sibling sweep** rule VERBATIM (+ its enforcing
   Rule 14). This is load-bearing: copy the MANDATORY-for-every-Critical/Major
   scope, the 4-target sweep order (whole file → sibling family in the file →
@@ -563,7 +571,7 @@ fine.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6, 0.65, 0.67, 0.7, 0.8, 1, 2, 3, 3.5, 3.6, 3.7, 4.5, 5, 6, 7 + Rules 12 (blocker grounding + mechanizability, Codex-adapted) + 13 (regression-test presence for substantive BLOCKER fixes) + 14 (bug-class sibling sweep — every finding is a CLASS not a line) + 15 (plan-declared compute shape exposed by dispatcher + work-conserving schedule)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
