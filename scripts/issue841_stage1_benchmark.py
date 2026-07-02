@@ -50,6 +50,7 @@ import torch  # noqa: E402
 
 from explore_persona_space.analysis.vectorized_mlp_skill import SplitMLPGroup  # noqa: E402
 from explore_persona_space.experiments.issue_779.metrics import (  # noqa: E402
+    bootstrap_delta_ci,  # paired within-condition r delta (H2 headline verdict)
     bootstrap_within_condition_ci,
     within_condition_pearson,
 )
@@ -183,6 +184,25 @@ def method_metrics(x, mat, *, n_boot, seed) -> dict:
                 cx2.append(xi[m])
                 cy2.append(yi[m])
         res[mode] = bootstrap_within_condition_ci(cx2, cy2, n_boot=n_boot, seed=seed)
+    return res
+
+
+def paired_delta_metrics(x_a, x_b, mat, *, n_boot, seed) -> dict:
+    """Paired within-condition r DELTA (method A − method B) + 95% CI per mode.
+
+    #779-verbatim `bootstrap_delta_ci`: A and B are grouped over the SAME conditions
+    in the same order (`group_by_condition` keys on cond×mode), and each bootstrap
+    replicate resamples conditions ONCE and takes the paired r_A − r_B on that shared
+    resample — so the CI reflects the paired comparison the H2 headline decides
+    ("transported beats baseline by a margin whose CI excludes 0"). Per mode returns
+    {"delta", "lo", "hi", "excludes_zero"}. The projections here (⟨h, r_B⟩) are always
+    finite, so no NaN-prune is needed before grouping.
+    """
+    res = {}
+    for mode in MODES:
+        cx_a, cy = C.group_by_condition(x_a, mat["y"], mat["cond"], mat["mode"], mode)
+        cx_b, _ = C.group_by_condition(x_b, mat["y"], mat["cond"], mat["mode"], mode)
+        res[mode] = bootstrap_delta_ci(cx_a, cx_b, cy, n_boot=n_boot, seed=seed)
     return res
 
 
@@ -396,11 +416,13 @@ def process_trait(trait, cx, split, device, args, ref, maps_bundle, *, smoke) ->
             rows["raw_source"] = method_metrics(
                 row2, mat, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
             )
+            proj_store[f"{scheme}__{src}__raw_source"] = row2
             # row 1b identity transport ⟨h_ℓ, r_B(ℓ*)⟩
             row1b = _proj(traj_dev[:, src, :], r_b_tgt)
             rows["id_transport"] = method_metrics(
                 row1b, mat, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
             )
+            proj_store[f"{scheme}__{src}__id_transport"] = row1b
             # row 1 transported per matched class
             transported = {"id_transport": row1b}
             for cls, maps in (("ridge", ridge_maps), ("mlp", mlp_maps)):
@@ -439,6 +461,7 @@ def process_trait(trait, cx, split, device, args, ref, maps_bundle, *, smoke) ->
             fidelity[scheme].setdefault("direct_hop", {})[str(src)] = transport_fidelity(
                 h_hat_direct, traj_dev, src, tgt
             )
+            proj_store[f"{scheme}__{src}__direct_hop"] = row4
             # row 6 shuffled-context null (ridge transport on a row-permuted trajectory)
             rng = np.random.default_rng(C.BOOTSTRAP_SEED + src)
             perm = rng.permutation(traj_dev.shape[0])
@@ -446,6 +469,28 @@ def process_trait(trait, cx, split, device, args, ref, maps_bundle, *, smoke) ->
             x_shuf, _ = _transport_proj(ridge_maps, traj_perm, src, tgt, r_b_tgt)
             rows["shuffled_null_ridge"] = method_metrics(
                 x_shuf, mat, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
+            )
+            proj_store[f"{scheme}__{src}__shuffled"] = x_shuf
+
+            # PAIRED delta CIs — the H2 headline verdict, decidable from artifacts.
+            # For each matched-information transported class (ridge/mlp; gru
+            # exploratory when present): transported − raw_source (row 2) AND
+            # transported − id_transport (row 1b), per mode, #779 bootstrap_delta_ci.
+            # Plus direct-hop − composed-ridge (row 4 vs the iterated ridge).
+            deltas: dict = {}
+            for cls in ("ridge", "mlp", "gru"):
+                if cls not in transported:
+                    continue
+                deltas[cls] = {
+                    "vs_raw_source": paired_delta_metrics(
+                        transported[cls], row2, mat, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
+                    ),
+                    "vs_id_transport": paired_delta_metrics(
+                        transported[cls], row1b, mat, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
+                    ),
+                }
+            deltas["direct_hop_vs_composed_ridge"] = paired_delta_metrics(
+                row4, transported["ridge"], mat, n_boot=args.n_boot, seed=C.BOOTSTRAP_SEED
             )
 
             # retention: row_r / ceiling_r (JOINT bootstrap) per class + mode
@@ -465,7 +510,7 @@ def process_trait(trait, cx, split, device, args, ref, maps_bundle, *, smoke) ->
                         ret_modes[mode] = {"point": float("nan"), "note": "condition mismatch"}
                 retention[scheme][cls].append({"source": src, "horizon_k": k, **ret_modes})
 
-            scheme_out["sources"][str(src)] = {"horizon_k": k, "rows": rows}
+            scheme_out["sources"][str(src)] = {"horizon_k": k, "rows": rows, "deltas": deltas}
             logger.info("[%s/%s] source=%d k=%d done", trait, scheme, src, k)
         tr_out["schemes"][scheme] = scheme_out
 

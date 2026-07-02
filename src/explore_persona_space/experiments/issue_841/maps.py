@@ -34,7 +34,15 @@ from pathlib import Path
 import numpy as np
 import torch
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
+# parents: [0]=issue_841 [1]=experiments [2]=explore_persona_space [3]=src [4]=repo root.
+# The package helper imports issue658_fit_predictors from scripts/, so the repo root
+# (parents[4]) is the anchor — NOT parents[3] (=src/), which would yield the nonexistent
+# src/scripts. Sentinel-assert so a wrong depth fails loud instead of silently no-op'ing
+# (the stage scripts prepend scripts/ themselves, which would mask a broken path here).
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+assert (_REPO_ROOT / "scripts" / "issue658_fit_predictors.py").is_file(), (
+    f"maps.py repo-root anchor wrong: {_REPO_ROOT} has no scripts/issue658_fit_predictors.py"
+)
 for _p in (_REPO_ROOT / "src", _REPO_ROOT / "scripts"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
