@@ -308,7 +308,9 @@ def _pv_pinv_fit_state(
     r = len(s) if rank is None else min(rank, len(s))
     Ur, sr, Vtr = U[:, :r], s[:r], Vt[:r]
     s_inv = np.where(sr > 1e-12, 1.0 / sr, 0.0)
-    w_pinv = (Vtr.T * s_inv) @ (Ur.T @ np.asarray(rb_l, dtype=np.float64))
+    # M = Wᵀ (the fit is h(c) = c_std @ W), so M⁺ = U diag(1/s) Vt — the SAME
+    # orientation as SG._pv_pinv_from_svd; w_pinv @ W ≈ r_B for r_B in the image.
+    w_pinv = (Ur * s_inv) @ (Vtr @ np.asarray(rb_l, dtype=np.float64))
     return {
         "w_pinv": w_pinv.astype(np.float32).tolist(),
         "xmu": np.asarray(xmu, dtype=np.float32).tolist(),
@@ -378,10 +380,11 @@ def run_arm_comparison(
                 pinv_full, eval_mat, n_boot=n_boot, seed=seed
             ),  # diagnostic
             # Persist enough fit state to recompute the pv_pinv read post-hoc at
-            # any rank WITHOUT re-running the pod pass (BLOCKER 2 fix): the frozen
-            # w_pinv vector + the eval-side standardized dot decomposition are
-            # summarized here; W itself is O(H^2)=12.8M floats/arm so we persist
-            # the pinv_rank + a checksum-able summary instead of the full matrix.
+            # the FROZEN rank only, WITHOUT re-running the pod pass (BLOCKER 2
+            # fix): the frozen w_pinv vector + the eval-side standardized dot
+            # decomposition are summarized here; W itself is O(H^2)=12.8M
+            # floats/arm so a DIFFERENT-rank recompute needs a rerun (see the
+            # persisted recompute_note).
             "pv_pinv_fit_state": _pv_pinv_fit_state(
                 h["W"], h["xmu"], h["xsd"], rb_l, rank=pinv_rank, svd=w_svd
             ),
@@ -390,7 +393,9 @@ def run_arm_comparison(
     out["pv_contrast_triple_note"] = (
         "w=r_B => pv_raw; w=M^T r_B => h_ridge_dot (transpose, sigma-weighted detection); "
         "w=M^+ r_B => pv_pinv (pseudoinverse, 1/sigma-weighted min-norm preimage). "
-        "pinv rank frozen on TRAIN; pv_pinv_fullrank is the diagnostic."
+        "pinv rank = --pinv-rank, caller-frozen BEFORE the eval read (None => full "
+        "rank, in which case pv_pinv == pv_pinv_fullrank); no train-split rank "
+        "selection is implemented. pv_pinv_fullrank is the diagnostic."
     )
     return out
 
@@ -515,7 +520,17 @@ def main() -> int:
     ap.add_argument("--k-subsamples", type=int, default=SG.DEFAULT_K)
     ap.add_argument("--n-shuffle", type=int, default=100)
     ap.add_argument("--k-folds", type=int, default=5)
-    ap.add_argument("--pinv-rank", type=int, default=None)
+    ap.add_argument(
+        "--pinv-rank",
+        type=int,
+        default=None,
+        help=(
+            "SVD truncation rank for the pv_pinv read, frozen by the CALLER before "
+            "launch (select it on the TRAIN split). Default None = full-rank pinv, "
+            "which makes pv_pinv identical to the pv_pinv_fullrank diagnostic — "
+            "pass a train-selected rank to get a distinct frozen-rank headline read"
+        ),
+    )
     ap.add_argument("--n-layers", type=int, default=C.EXPECTED_LAYERS)
     ap.add_argument("--hidden", type=int, default=C.EXPECTED_HIDDEN)
     ap.add_argument("--seed", type=int, default=0)

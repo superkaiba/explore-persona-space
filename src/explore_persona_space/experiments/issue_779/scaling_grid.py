@@ -325,10 +325,13 @@ def pv_pinv_read(
     ``c_std = (c_last - xmu)/xsd`` — NOT raw c_last. Reading raw c_last against a
     standardized-space operator's preimage mixes two spaces and is ~orthogonal to
     the intended M⁺r_B direction on heteroscedastic activations (the round-1
-    BLOCKER, corr ≈ -0.03 vs the correct read). This is the exact adjoint of the
-    transpose read <h(c),r_B>, which also standardizes c before applying W. ``rank``
-    truncates the SVD (chosen on the TRAIN split, frozen before this read -- the
-    noise-amplification guard); None = full-rank pinv (the diagnostic).
+    BLOCKER, corr ≈ -0.03 vs the correct read). w_pinv shares the transpose read's
+    singular directions but weights them 1/sigma instead of sigma (equal only for
+    orthogonal W) and satisfies the defining preimage property ``w_pinv @ W ≈ r_B``
+    for r_B in the map's image (the round-2 orientation BLOCKER computed the
+    transposed map's pseudoinverse instead). ``rank`` truncates the SVD (chosen on
+    the TRAIN split, frozen before this read -- the noise-amplification guard);
+    None = full-rank pinv (the diagnostic).
     """
     if W is None:
         return np.full(eval_mat["c_last"].shape[0], np.nan)
@@ -357,8 +360,12 @@ def _pv_pinv_from_svd(
         rank = min(rank, len(s))
         U, s, Vt = U[:, :rank], s[:rank], Vt[:rank]
     s_inv = np.where(s > 1e-12, 1.0 / s, 0.0)
-    # M⁺ = V diag(1/s) Uᵀ ; w_pinv = M⁺ r_B  (r_B lives in the OUTPUT/profile space)
-    w_pinv = (Vt.T * s_inv) @ (U.T @ np.asarray(rb_l, dtype=np.float64))
+    # The fitted map is h(c) = c_std @ W (i.e. M = Wᵀ in column convention), so the
+    # preimage operator is M⁺ = (Wᵀ)⁺ = U diag(1/s) Vt for W = U s Vt. w_pinv = M⁺r_B
+    # satisfies the defining property w_pinv @ W ≈ r_B for r_B in the map's image
+    # (r_B lives in the OUTPUT/profile space). NOT (Vt.T*s_inv)@(U.T@r_B) — that is
+    # the pseudoinverse of the TRANSPOSED map (the round-2 orientation blocker).
+    w_pinv = (U * s_inv) @ (Vt @ np.asarray(rb_l, dtype=np.float64))
     c_std = (np.asarray(eval_mat["c_last"], dtype=np.float64) - xmu) / xsd
     return c_std @ w_pinv
 

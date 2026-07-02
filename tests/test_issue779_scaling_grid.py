@@ -1,6 +1,6 @@
-"""Regression tests for the issue #779 (training-source-ablation-hg) round-2 fixes.
+"""Regression tests for the issue #779 (training-source-ablation-hg) round-2/3 fixes.
 
-Each test pins a permanent invariant a round-2 BLOCKER/MINOR fix installed and
+Each test pins a permanent invariant a round-2/3 BLOCKER/MINOR fix installed and
 FAILS against the pre-fix code (documented per test):
 
   - BLOCKER 1 (pv_pinv standardization space-mismatch): pre-fix the pv_pinv read
@@ -8,6 +8,19 @@ FAILS against the pre-fix code (documented per test):
     it ~orthogonal to the intended M⁺r_B on heteroscedastic activations
     (corr ≈ -0.03). Post-fix it reads ``((c_last - xmu)/xsd) @ w_pinv``, which is
     the exact standardized-space M⁺r_B direction.
+  - BLOCKER r3 (pv-pinv-transposed-orientation): pre-fix (round 2) the preimage
+    was computed as ``(Vt.T*s_inv)@(U.T@r_B)`` — the pseudoinverse of the
+    TRANSPOSED map, which violates the defining property ``w_pinv @ W ≈ r_B``
+    (residual ≈47 on the review toy vs ~1e-14 correct) and correlates only ≈0.78
+    with the correct read. Post-fix: ``w_pinv = (U*s_inv)@(Vt@r_B)`` — the tests
+    pin the PREIMAGE PROPERTY on a planted-preimage fixture (never mirror the
+    implementation formula) plus the orthogonal-map sigma-vs-1/sigma duality.
+  - BLOCKER r3 (multigpu-no-upload-terminal-sentinel): pre-fix a ``--no-upload``
+    trait-shard worker still wrote the terminal ``epm:results`` sentinel +
+    ``[phase=done]`` after SKIPPING upload — a sentinel-driven poller could see
+    a false "done" before the post-join upload worker ran. Post-fix the shard
+    path writes a NON-terminal ``epm:progress`` artifact + ``[phase=shard_done]``
+    and every ``write_sentinel`` call site lives inside ``_finalize_worker``.
   - BLOCKER 3 (answer-multiplicity equalization): pre-fix the behavior arm built
     one row PER ROLLOUT (up to 10 duplicated c_last per context). Post-fix the
     headline behavior source is 1 row PER CONTEXT (fixed-seed single rollout), so
@@ -56,25 +69,36 @@ def _heteroscedastic_fit(seed: int = 0, n: int = 200, h: int = 24):
     return W, xmu, xsd, r_b, X_eval
 
 
+def _min_norm_preimage(W: np.ndarray, r_b: np.ndarray) -> np.ndarray:
+    """Reference min-norm preimage of r_B under the map c ↦ c @ W, computed via
+    np.linalg.pinv — an INDEPENDENT reference, never the implementation's own
+    SVD formula (the round-2 test mirrored the buggy orientation).
+
+    Row-vector convention: ``w @ W = r_b`` ⇒ ``Wᵀ wᵀ = r_bᵀ`` ⇒
+    ``w = ((Wᵀ)⁺ r_b)`` = ``pinv(W.T) @ r_b``.
+    """
+    return np.linalg.pinv(W.T) @ r_b
+
+
 def test_blocker1_pv_pinv_reads_standardized_space_not_raw():
     """BLOCKER 1: pv_pinv must read the STANDARDIZED eval c_last, not raw.
 
-    The correct read is ⟨(c_last - xmu)/xsd, W⁺r_B⟩. The pre-fix bug read raw
-    ⟨c_last, W⁺r_B⟩. On heteroscedastic X these are nearly orthogonal, so:
+    The correct read is ⟨(c_last - xmu)/xsd, M⁺r_B⟩. The pre-fix bug read raw
+    ⟨c_last, M⁺r_B⟩. On heteroscedastic X these are nearly orthogonal, so:
       - the code's read correlates ~1.0 with the standardized-space reference, and
       - it does NOT match the raw-coordinate (pre-fix) read.
+    The reference w_pinv comes from np.linalg.pinv (NOT the implementation's SVD
+    formula — the round-2 version of this test mirrored the orientation bug).
     """
     W, xmu, xsd, r_b, X_eval = _heteroscedastic_fit()
     eval_mat = {"c_last": X_eval}
 
     got = SG.pv_pinv_read(W, r_b, eval_mat, xmu=xmu, xsd=xsd, rank=None)
 
-    # Standardized-space reference: exactly what the code should compute.
-    U, s, Vt = np.linalg.svd(W, full_matrices=False)
-    s_inv = np.where(s > 1e-12, 1.0 / s, 0.0)
-    w_pinv = (Vt.T * s_inv) @ (U.T @ r_b)
+    # Standardized-space reference with an INDEPENDENT pinv.
+    w_pinv = _min_norm_preimage(W, r_b)
     ref_std = ((X_eval - xmu) / xsd) @ w_pinv
-    # Pre-fix (buggy) raw-coordinate read.
+    # Pre-fix (buggy round-1) raw-coordinate read.
     ref_raw = X_eval @ w_pinv
 
     corr_std = float(np.corrcoef(got, ref_std)[0, 1])
@@ -86,6 +110,85 @@ def test_blocker1_pv_pinv_reads_standardized_space_not_raw():
         f"fixed pv_pinv should differ from the raw-coordinate bug (corr_raw {corr_raw}); "
         "heteroscedasticity must actually separate the two spaces for this test to bite"
     )
+
+
+def test_blocker_r3_pv_pinv_satisfies_preimage_property_planted_rb():
+    """BLOCKER r3 (pv-pinv-transposed-orientation): w_pinv must be a true preimage.
+
+    Plant ``r_B = w0 @ W`` (r_B in the fitted map's image, W full-rank here), then
+    the Moore-Penrose preimage satisfies ``w_pinv @ W ≈ r_B`` to machine precision
+    and recovers the planted ``w0`` exactly. The round-2 code computed the
+    pseudoinverse of the TRANSPOSED map — residual ≈47 on this fixture shape and
+    only ≈0.44 corr with w0 — so this test FAILS against it. w_pinv is extracted
+    through the public API by evaluating at ``c_last = xmu + xsd * I`` (⇒
+    ``c_std = I`` ⇒ the read IS w_pinv).
+    """
+    rng = np.random.default_rng(7)
+    n, h = 40, 8
+    W, xmu, xsd, _ymu, _P, _Q = SG._ridge_fit(
+        rng.standard_normal((n, h)), rng.standard_normal((n, h))
+    )
+    assert np.linalg.matrix_rank(W) == h, "fixture requires a full-rank fitted map"
+    w0 = rng.standard_normal(h)
+    r_b = w0 @ W  # planted: r_B in the map's image
+
+    eval_mat = {"c_last": xmu + xsd * np.eye(h)}  # c_std == I -> read == w_pinv
+    w_pinv = SG.pv_pinv_read(W, r_b, eval_mat, xmu=xmu, xsd=xsd, rank=None)
+
+    resid = float(np.linalg.norm(w_pinv @ W - r_b))
+    assert resid < 1e-8 * max(1.0, float(np.linalg.norm(r_b))), (
+        f"w_pinv must satisfy the defining preimage property w_pinv @ W ≈ r_B "
+        f"(residual {resid}); the transposed-map orientation fails this by ~O(10)"
+    )
+    assert np.allclose(w_pinv, w0, atol=1e-6), (
+        "full-rank min-norm preimage must recover the planted w0 exactly"
+    )
+
+
+def test_blocker_r3_pv_pinv_equals_transpose_read_for_orthogonal_map():
+    """sigma-vs-1/sigma duality: for an ORTHOGONAL map (all singular values 1) the pinv read
+    equals the transpose read ⟨c_std @ W, r_B⟩ = ⟨c_std, W r_B⟩. The round-2
+    orientation produced ⟨c_std, Wᵀ r_B⟩ ≠ ⟨c_std, W r_B⟩ and fails this."""
+    rng = np.random.default_rng(11)
+    h = 10
+    W_orth, _ = np.linalg.qr(rng.standard_normal((h, h)))
+    xmu = rng.standard_normal(h)
+    xsd = rng.uniform(0.5, 2.0, h)
+    r_b = rng.standard_normal(h)
+    X_eval = rng.standard_normal((25, h))
+
+    got = SG.pv_pinv_read(W_orth, r_b, {"c_last": X_eval}, xmu=xmu, xsd=xsd, rank=None)
+    transpose_read = ((X_eval - xmu) / xsd) @ (W_orth @ r_b)
+    assert np.allclose(got, transpose_read, atol=1e-10), (
+        "pinv read must equal the transpose read for an orthogonal map (sigma = 1 = 1/sigma)"
+    )
+
+
+def test_blocker_r3_persisted_fit_state_w_pinv_is_correct_orientation():
+    """The PERSISTED ``pv_pinv_fit_state.w_pinv`` (the post-hoc recompute vector a
+    pod-run artifact ships) must itself satisfy the preimage property — round 2
+    persisted the transposed-map vector, permanently wrong in the JSON."""
+    import issue779_scaling_grid as CLI
+
+    rng = np.random.default_rng(3)
+    n, h = 30, 6
+    W, xmu, xsd, _ymu, _P, _Q = SG._ridge_fit(
+        rng.standard_normal((n, h)), rng.standard_normal((n, h))
+    )
+    w0 = rng.standard_normal(h)
+    r_b = w0 @ W
+
+    state = CLI._pv_pinv_fit_state(W, xmu, xsd, r_b, rank=None)
+    assert state["read_space"] == "standardized"
+    w_pinv = np.asarray(state["w_pinv"], dtype=np.float64)  # persisted float32
+    resid = float(np.linalg.norm(w_pinv @ W - r_b))
+    assert resid < 1e-3 * max(1.0, float(np.linalg.norm(r_b))), (
+        f"persisted w_pinv must be the correct-orientation preimage (float32 "
+        f"round-trip tolerance; residual {resid})"
+    )
+    # and it matches the read-path vector (shared orientation across both sites)
+    ref = _min_norm_preimage(W, r_b)
+    assert np.allclose(w_pinv, ref, atol=1e-4)
 
 
 def test_blocker1_pv_pinv_reads_tuple_uses_standardization():
@@ -363,3 +466,80 @@ def test_minor9_layer_matrix_uses_absolute_rb_layer_index(tmp_path, monkeypatch)
         "layer matrix must use absolute r_B layer"
     )
     assert tuple(np.round(r_b_full[0], 3)) not in captured_rb, "must NOT use subset-position r_B"
+
+
+def test_blocker_r3_no_upload_worker_writes_nonterminal_sentinel(monkeypatch, tmp_path):
+    """BLOCKER r3 (multigpu-no-upload-terminal-sentinel): a --no-upload shard
+    worker's end-of-run path must NEVER emit the terminal epm:results /
+    epm:smoke-result sentinel nor [phase=done] — only a NON-terminal
+    epm:progress artifact + [phase=shard_done]. A worker that ran the upload
+    keeps the terminal sentinel."""
+    import issue779_gen_behavior_corpus as G
+
+    kinds: list[str] = []
+    extras: list[dict] = []
+    phases: list[str] = []
+    monkeypatch.setattr(
+        G.C,
+        "write_sentinel",
+        lambda kind, note, task_id=779, extra=None: (
+            kinds.append(kind),
+            extras.append(extra or {}),
+            tmp_path / "sentinel.json",
+        )[-1],
+    )
+    monkeypatch.setattr(G.C, "phase", lambda name: phases.append(name))
+
+    # shard worker (--no-upload): non-terminal only.
+    G._finalize_worker(no_upload=True, smoke=False, summary={"traits": ["evil"]}, stage="corpus")
+    assert kinds == ["epm:progress"], f"--no-upload shard must not write a terminal kind: {kinds}"
+    assert extras[0].get("terminal") is False and extras[0].get("blocks_pipeline") is False
+    assert phases == ["shard_done"], f"--no-upload shard must not print [phase=done]: {phases}"
+
+    # uploaded worker: terminal epm:results + [phase=done] (unchanged contract).
+    kinds.clear(), extras.clear(), phases.clear()
+    G._finalize_worker(no_upload=False, smoke=False, summary={}, stage="all")
+    assert kinds == ["epm:results"] and phases == ["done"]
+
+    # uploaded smoke worker: terminal epm:smoke-result.
+    kinds.clear(), extras.clear(), phases.clear()
+    G._finalize_worker(no_upload=False, smoke=True, summary={}, stage="all")
+    assert kinds == ["epm:smoke-result"] and phases == ["done"]
+
+
+def test_blocker_r3_all_sentinel_writes_live_in_finalize_worker():
+    """No code path in the corpus-gen worker can reach write_sentinel except via
+    the guarded _finalize_worker (whose no_upload branch is non-terminal) — an
+    AST sweep over the module, so a future direct write_sentinel("epm:results")
+    call on a shard-reachable path fails this test."""
+    import ast
+    import inspect
+
+    import issue779_gen_behavior_corpus as G
+
+    tree = ast.parse(inspect.getsource(G))
+    offenders: list[str] = []
+
+    class _V(ast.NodeVisitor):
+        def __init__(self):
+            self.stack: list[str] = []
+
+        def visit_FunctionDef(self, node):
+            self.stack.append(node.name)
+            self.generic_visit(node)
+            self.stack.pop()
+
+        visit_AsyncFunctionDef = visit_FunctionDef
+
+        def visit_Call(self, node):
+            f = node.func
+            name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", "")
+            if name == "write_sentinel" and (self.stack[-1:] != ["_finalize_worker"]):
+                offenders.append(self.stack[-1] if self.stack else "<module>")
+            self.generic_visit(node)
+
+    _V().visit(tree)
+    assert not offenders, (
+        f"write_sentinel called outside _finalize_worker in: {offenders} — the "
+        "--no-upload suppression guard would not cover these sites"
+    )
