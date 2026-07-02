@@ -6573,21 +6573,41 @@ suite directly and posts an `epm:test-verdict` event with the result.
    subset). The full ~5800-test suite has no xdist parallelism and is
    harness-/earlyoom-killed in sparse worktrees (#665/#736), so do NOT run
    `pytest tests/` wholesale by default.
-   a. Compute the subset:
-      `uv run python scripts/select_step9c_tests.py --base main`
-      It prints the exact `uv run pytest <files> -v --tb=short` command and
-      any `untested touched file: <path>` WARN lines (stderr).
-   b. Run the printed command from the orchestrator's repo-root cwd (no `cd`
-      is needed). Record pass/fail + any WARN lines. Two anti-silent-pass
-      guards are LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0
-      with zero collected tests) is a **FAIL, never a PASS**: it is the
-      signature of a failed `cd` that ran pytest in a directory with no tests
-      (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS
-      on `no tests ran ... pytest exit: 0` and was silently skipped).
+   a. Compute the subset FROM THE ISSUE WORKTREE — a branch-new test file
+      exists ONLY there until the Step 10d merge, and the helper diffs the
+      INVOKING checkout (incident #851: run from the main repo root it saw an
+      empty diff and silently dropped the branch's own test files from the
+      gate; the helper now emits a stderr `NOTE — empty diff` in that shape —
+      on a worktree-based task whose branch HAS commits ahead of the base,
+      that NOTE means wrong cwd, re-run from the worktree; from a correct
+      worktree with no commits ahead of the base it also fires and is then
+      expected and benign):
       ```bash
-      # If any cd is added upstream, HARD-GUARD it — never let the gate run in
-      # the wrong dir on a silent cd failure:
-      #   cd "$REPO_ROOT" || { echo "FATAL: cd to repo root failed" >&2; exit 1; }
+      REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+      WT="$REPO_ROOT/.claude/worktrees/issue-<N>"   # same-issue follow-up rounds use
+                                                    # their own issue-<N>-<suffix> worktree
+      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      uv run python scripts/select_step9c_tests.py --base main
+      ```
+      It prints the exact `uv run pytest <files> -v --tb=short` command, plus
+      stderr diagnostics: a one-line work-root + branch provenance breadcrumb
+      on every run, any `untested touched file: <path>` WARN lines, and the
+      empty-diff NOTE described above. (A code-change task with NO worktree
+      runs both from the repo root; the empty-diff NOTE is then expected and
+      benign.)
+   b. Run the printed command from the SAME worktree cwd (paths are
+      repo-relative). Record pass/fail + ALL selector stderr lines (the
+      provenance breadcrumb, the NOTE if any, and any WARN lines). Two
+      anti-silent-pass guards are LOAD-BEARING here — a `no tests ran` outcome
+      (pytest exit 0 with zero collected tests) is a **FAIL, never a PASS**:
+      it is the signature of a failed `cd` that ran pytest in a directory with
+      no tests (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate
+      reported PASS on `no tests ran ... pytest exit: 0` and was silently
+      skipped).
+      ```bash
+      # The cd to "$WT" in step (a) is REQUIRED — HARD-GUARD it (as above);
+      # never let the gate run in the wrong dir on a silent cd failure:
+      #   cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
       PYTEST_OUT=$(uv run pytest <files> -v --tb=short 2>&1); PYTEST_RC=$?
       echo "$PYTEST_OUT"
       # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
@@ -6597,20 +6617,22 @@ suite directly and posts an `epm:test-verdict` event with the result.
       fi
       ```
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
-      `## Test scope` H2 names `full`, run the FULL suite instead — but as
-      `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on timeout/kill,
-      capture `tail -50` of the run log so the stall surfaces actionable
-      evidence (this is the #665/#736 regression — keep it visible, never a
-      silent kill). Default scope is `touched`.
+      `## Test scope` H2 names `full`, run the FULL suite instead — from the
+      SAME issue-worktree cwd (the branch's own test files exist only there) —
+      but as `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on
+      timeout/kill, capture `tail -50` of the run log so the stall surfaces
+      actionable evidence (this is the #665/#736 regression — keep it visible,
+      never a silent kill). Default scope is `touched`.
 2. Lint: `uv run ruff check . && uv run ruff format --check .`
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
 
 The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
-the files run, pass/fail counts, and any untested-touched-file WARNs (so the
-orchestrator surfaces coverage gaps — never silently skipped). A
-zero-collected / `no tests ran` outcome is recorded as FAIL (never PASS on
-exit 0) per step 1b's guard.
+the files run, pass/fail counts, and ALL selector stderr diagnostics — the
+work-root + branch provenance breadcrumb, any `NOTE — empty diff` line, and
+any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
+and coverage gaps — never silently skipped). A zero-collected / `no tests ran`
+outcome is recorded as FAIL (never PASS on exit 0) per step 1b's guard.
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
