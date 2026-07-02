@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 830,
+  "highest_id": 831,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5368,6 +5368,13 @@
       "path": "tasks/proposed/830",
       "status": "proposed",
       "title": "workflow-fix: gotchas entry \u2014 TrainerCallback subclass + real-trainer-path smoke"
+    },
+    "831": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/831",
+      "status": "proposed",
+      "title": "workflow-fix: flock + additive-merge pod.py config --sync (SSH-config drop race)"
     },
     "84": {
       "has_clean_result": false,
