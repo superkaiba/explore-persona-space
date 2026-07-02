@@ -437,6 +437,39 @@ def test_attribute_kill_from_snapshot():
     assert asw.attribute_kill(kill, None) == (None, "unattributed")
 
 
+def test_attribute_kill_bool_issue_is_unattributed():
+    """Python ``bool`` subclasses ``int``: a corrupt / hand-edited snapshot
+    row ``{"issue": true}`` must NOT attribute (r2-reconciler concern
+    ``bool-issue-attributed`` — ``isinstance(issue, int)`` returned
+    ``(True, "attributed")``)."""
+    # (a) Pid-match path with a bool issue -> honest unattributed.
+    snap_pid = {
+        "ts": 1.0,
+        "procs": [
+            {"pid": 4087688, "argv": "pytest tests/x.py", "issue": True},
+        ],
+    }
+    kill = {"pid": 4087688, "comm": "pytest"}
+    assert asw.attribute_kill(kill, snap_pid) == (None, "unattributed")
+    # (b) Unique-comm path with a bool issue -> honest unattributed.
+    snap_comm = {
+        "ts": 1.0,
+        "procs": [
+            {"pid": 7, "argv": "pytest tests/y.py", "issue": False},
+        ],
+    }
+    assert asw.attribute_kill({"pid": 1, "comm": "pytest"}, snap_comm) == (None, "unattributed")
+    # (c) Sanity: a real int issue still attributes on both paths.
+    snap_int = {
+        "ts": 1.0,
+        "procs": [
+            {"pid": 4087688, "argv": "pytest tests/z.py", "issue": 849},
+        ],
+    }
+    assert asw.attribute_kill(kill, snap_int) == (849, "attributed")
+    assert asw.attribute_kill({"pid": 1, "comm": "pytest"}, snap_int) == (849, "attributed")
+
+
 def test_kill_row_attributed_from_seeded_snapshot(guard_env, watcher_roots):
     sig = guard_env
     reg = watcher_roots / "reg"

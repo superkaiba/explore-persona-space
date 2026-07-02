@@ -2636,7 +2636,9 @@ def attribute_kill(kill: dict, snapshot: dict | None) -> tuple[int | None, str]:
         for p in procs:
             if p.get("pid") == pid:
                 issue = p.get("issue")
-                if isinstance(issue, int):
+                # type() not isinstance(): bool subclasses int, so a corrupt
+                # snapshot row {"issue": true} must NOT attribute.
+                if type(issue) is int:
                     return (issue, "attributed")
                 # Pid match is authoritative: the killed process IS this
                 # snapshot row, and it has no issue — do NOT fall through to
@@ -2656,7 +2658,8 @@ def attribute_kill(kill: dict, snapshot: dict | None) -> tuple[int | None, str]:
                     matches.append(p)
             if len(matches) == 1:
                 issue = matches[0].get("issue")
-                if isinstance(issue, int):
+                # type() not isinstance(): bool subclasses int (see pid path).
+                if type(issue) is int:
                     return (issue, "attributed")
                 return (None, "unattributed")
         return (None, "unattributed")
