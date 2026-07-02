@@ -1984,7 +1984,8 @@ def is_v2_nested_design(body: str) -> bool:
     Strips fenced code blocks AND `<details>...</details>` blocks
     before the substring scan, so a body that only QUOTES
     `<!-- clean-result-v2 -->` inside an illustrative code fence (e.g.
-    the analyzer.md inlined skeleton) or inside a `<details>` example
+    the clean-result body skeleton, analyzer-section-reference.md
+    § Step 4) or inside a `<details>` example
     block is NOT misdetected as v2. The sentinel must live at the
     document-level prose layer to count.
 
