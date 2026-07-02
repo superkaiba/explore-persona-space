@@ -4327,7 +4327,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
     parser.add_argument(
         "--check-agent-spec-size",
         action="store_true",
-        help="agent-spec size budget: WARN >40 KB, FAIL >70 KB (grandfather-ratchet)",
+        help="agent-spec size budget: WARN >28 KB, FAIL >40 KB (grandfather-ratchet)",
     )
     args = parser.parse_args(argv)
 
