@@ -5626,8 +5626,8 @@
     "865": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/865",
-      "status": "proposed",
+      "path": "tasks/on_hold/865",
+      "status": "on_hold",
       "title": "workflow-fix: Step 9c selector diffs main checkout, blind to worktree branches"
     },
     "866": {
