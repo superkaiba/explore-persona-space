@@ -3,7 +3,8 @@ title: Base-model answer activations predict behavioral expression for 4 of 5 be
   under matched probes and graded scoring (LOCO rho 0.62-0.86, two as reduced-power
   reads); deception is noise-limited (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-30T09:48:56Z'
 has_clean_result: true
 parent_id: 658
