@@ -229,3 +229,8 @@ duplicate vectorization of null_battery.py — supersede contract).
 **Sibling rule:** `.claude/rules/selection-symmetric-nulls.md` — the same #778
 null battery is its origin incident; a permutation/bootstrap-battery plan
 typically fires BOTH rules (statistical validity there, compute shape here).
+
+**Sibling check:** `.claude/rules/artifact-reuse.md` item (i) — reusing a parent's
+fit/analysis helper requires the plan-time throughput inspection (inner loop batched?
+device parametrized?) against this rule, with failures fixed at the source module
+(#761/#763/#812).

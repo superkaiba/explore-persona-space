@@ -349,6 +349,14 @@ location after re-verifying, or move it to §12 Assumptions flagged
 `.claude/rules/upload-policy.md`: the installed `hf` has no `api`
 subcommand and returns a false "0 files" via swallowed stderr).
 
+**Reused code/helper throughput inspection (checklist item (i)) is recorded
+here too.** When the plan reuses a parent's fit / analysis / eval code helper,
+this card carries the item-(i) inspection triple — helper/function name,
+batched-or-serial verdict, device handling (`.claude/rules/artifact-reuse.md`
+item (i)) — and the implied wall-time is reflected in the matching §9 row.
+"N/A — no artifact reuse" does NOT cover reused fit/analysis code: a plan with
+no HF artifact reuse but with an inherited fit helper still fills this row.
+
 **Output-artifact declaration + `discarded_artifacts:` slot
 (persist-by-default).** Per generating / reducing stage, the
 Reproducibility Card names WHERE each produced artifact persists: model
