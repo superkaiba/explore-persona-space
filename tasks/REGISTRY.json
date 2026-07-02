@@ -5850,8 +5850,8 @@
     "895": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/895",
-      "status": "proposed",
+      "path": "tasks/planning/895",
+      "status": "planning",
       "title": "workflow-fix: Step 9c selector misses glob-scanning tests for scripts/*.py diffs"
     },
     "9": {
