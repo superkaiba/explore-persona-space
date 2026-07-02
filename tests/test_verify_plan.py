@@ -655,7 +655,7 @@ def test_c6_fitness_with_four_letters_passes():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "PASS"
-    assert "4/8" in r.detail
+    assert "4/9" in r.detail
 
 
 def test_c6_fitness_with_few_letters_warns():
@@ -667,7 +667,7 @@ def test_c6_fitness_with_few_letters_warns():
     _, by_id = _run(plan)
     r = by_id["c6_reuse_fitness"]
     assert r.status == "WARN"
-    assert "(a)–(h)" in r.detail or "eight" in r.detail
+    assert "(a)–(i)" in r.detail or "nine" in r.detail
 
 
 def test_c6_na_no_artifact_reuse_passes():
