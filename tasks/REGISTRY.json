@@ -5878,8 +5878,8 @@
     "899": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/899",
-      "status": "proposed",
+      "path": "tasks/planning/899",
+      "status": "planning",
       "title": "workflow-fix: sentinel drain posts results-shaped payload missing schema envelope"
     },
     "9": {
