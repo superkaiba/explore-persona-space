@@ -106,6 +106,76 @@ def build_corpus_contexts(trait: str, personas: list[str], questions: list[str])
     return contexts
 
 
+def _write_rollout_text(
+    text_path: Path, trait: str, contexts: list[dict], gen: list[list[str]]
+) -> None:
+    """Persist the per-trait rollout TEXT the moment generation completes.
+
+    Written IMMEDIATELY after the vLLM generation phase — BEFORE the answer
+    capture / judge phases — per the standing rule "a generation-and-reduce
+    stage persists its rollout TEXT before reducing (#779)". The att-20260702
+    OOM crashed during sycophancy's answer capture and lost its 5 completed
+    generation chunks (~45 min GPU) because this file was only written at
+    trait END. Each row carries the persona TEXT too (additive to the prior
+    schema), so the capture inputs are reconstructable from this file +
+    the cached corpus spec on resume (``_load_rollout_text_for_resume``).
+    """
+    rollout_text = {
+        str(ci): {
+            "persona_idx": ctx["persona_idx"],
+            "question_idx": ctx["question_idx"],
+            "persona": ctx["persona"],
+            "question": ctx["question"],
+            "responses": comps,
+        }
+        for ci, (ctx, comps) in enumerate(zip(contexts, gen, strict=True))
+    }
+    C.write_json_atomic(text_path, {"trait": trait, "rollouts": rollout_text})
+
+
+def _load_rollout_text_for_resume(
+    text_path: Path, trait: str, contexts: list[dict], n_rollouts: int
+) -> list[list[str]]:
+    """Rebuild the per-context generation list from persisted rollout text.
+
+    The resume path: ``{trait}_rollouts.json`` exists (generation completed on a
+    prior attempt) but the bundle/scores don't (the capture/judge phase crashed)
+    — SKIP generation and reconstruct the ``gen`` structure
+    (``[per-context [n_rollouts completions]]``) the downstream capture + judge
+    steps consume. Fail-loud alignment asserts against the freshly-built
+    contexts: trait, row count, per-row question text + persona/question idx
+    (the persisted rollouts must have been generated under the SAME corpus spec
+    — the ``corpus_specs`` prefetch pins it), and per-row response count.
+    """
+    with open(text_path) as f:
+        blob = json.load(f)
+    assert blob.get("trait") == trait, (blob.get("trait"), trait)
+    rollouts = blob["rollouts"]
+    assert len(rollouts) == len(contexts), (
+        f"{trait} resume misalignment: {len(rollouts)} persisted rollout rows != "
+        f"{len(contexts)} contexts from the current corpus spec"
+    )
+    gen: list[list[str]] = []
+    for ci, ctx in enumerate(contexts):
+        row = rollouts[str(ci)]
+        assert (
+            row["question"] == ctx["question"]
+            and row["persona_idx"] == ctx["persona_idx"]
+            and row["question_idx"] == ctx["question_idx"]
+        ), (
+            f"{trait} resume misalignment at context {ci}: persisted rollouts were "
+            "generated under a DIFFERENT corpus spec (prefetch data/issue_779/"
+            "corpus_specs/ from HF, or delete the stale rollouts file)"
+        )
+        comps = row["responses"]
+        assert len(comps) == n_rollouts, (
+            f"{trait} resume misalignment at context {ci}: {len(comps)} persisted "
+            f"responses != n_rollouts={n_rollouts}"
+        )
+        gen.append(comps)
+    return gen
+
+
 def run_corpus_phase(
     model,
     tokenizer,
@@ -122,8 +192,12 @@ def run_corpus_phase(
 ) -> dict:
     """Generate + capture + judge the diverse behavior corpus, per trait.
 
-    Checkpoint-per-trait: each trait writes its own tensor bundle + rollout-text
-    JSON + judge JSON the moment it completes (never accumulate-and-write-at-end).
+    Checkpoint-per-trait: the rollout TEXT is persisted the moment generation
+    completes (BEFORE capture/judge — see ``_write_rollout_text``); the tensor
+    bundle + judge JSON the moment the trait completes (never
+    accumulate-and-write-at-end). On re-entry a trait with persisted rollout
+    text but no bundle SKIPS generation (``_load_rollout_text_for_resume``);
+    a trait with all three files SKIPS entirely (unchanged trio semantics).
     Keeps BOTH trait-high and trait-low completions (behavior-VARYING).
     """
     from vllm import SamplingParams
@@ -172,15 +246,29 @@ def run_corpus_phase(
         cx_all = COL.capture_context_vectors_batched(model, tokenizer, messages_list, layers)
         cx_last = [c["last"] for c in cx_all]
         cx_mean = [c["mean"] for c in cx_all]
-        prompt_texts = [
-            tokenizer.apply_chat_template(
-                ctx["messages"], tokenize=False, add_generation_prompt=True
-            )
-            for ctx in contexts
-        ]
 
-        # 2. Generate n_rollouts per context (chunked vLLM / CPU shim).
-        gen = COL._vllm_generate_chunked(llm, prompt_texts, sp)  # per-context list of n
+        # 2. Generate n_rollouts per context (chunked vLLM / CPU shim) — OR
+        #    resume from rollout text a prior attempt persisted (generation
+        #    completed, capture/judge crashed: the att-20260702 OOM shape).
+        if text_path.exists():
+            gen = _load_rollout_text_for_resume(text_path, trait, contexts, n_rollouts)
+            logger.info(
+                "[corpus] %s: rollout text already persisted (%s); SKIP generation (resume)",
+                trait,
+                text_path,
+            )
+        else:
+            prompt_texts = [
+                tokenizer.apply_chat_template(
+                    ctx["messages"], tokenize=False, add_generation_prompt=True
+                )
+                for ctx in contexts
+            ]
+            gen = COL._vllm_generate_chunked(llm, prompt_texts, sp)  # per-context list of n
+            # Persist the rollout TEXT NOW, before any capture/judge reduction
+            # (never lose a completed generation to a downstream crash).
+            _write_rollout_text(text_path, trait, contexts, gen)
+            logger.info("[corpus] %s: rollout text persisted pre-capture -> %s", trait, text_path)
 
         # 3. Per rollout: v(x) = mean-response activation (all layers), one
         #    teacher-force. KEEP both trait-high and trait-low (no filter).
@@ -272,18 +360,9 @@ def run_corpus_phase(
             "n_vx_captured": len(vx_index),
         }
         C.write_json_atomic(scores_path, {"scores": scores_json, "summary": summary})
-        # rollout TEXT (for the canonical raw-completions upload; never mixed
-        # into the sanitized tensor bundle).
-        rollout_text = {
-            str(ci): {
-                "persona_idx": ctx["persona_idx"],
-                "question_idx": ctx["question_idx"],
-                "question": ctx["question"],
-                "responses": comps,
-            }
-            for ci, (ctx, comps) in enumerate(zip(contexts, gen, strict=True))
-        }
-        C.write_json_atomic(text_path, {"trait": trait, "rollouts": rollout_text})
+        # rollout TEXT already persisted pre-capture (_write_rollout_text) — the
+        # trait-complete trio (bundle + scores + text) is now all on disk.
+        assert text_path.exists(), text_path
         produced[trait] = summary
         logger.info("[corpus] %s done: %s", trait, summary)
     return produced
@@ -570,6 +649,89 @@ def _preflight_artifacts(traits: list[str]) -> None:
     logger.info("[preflight] extraction artifacts resolved (local or HF) for traits %s", traits)
 
 
+def _prefetch_hf_resume_file(repo_files: set[str], hf_path: str, dest: Path) -> bool:
+    """Materialize ONE prior-attempt resume file from the HF data repo into dest.
+
+    Returns True when the file is available locally (already present, or fetched
+    now); False when the file does not exist on HF — NOT an error, the trait
+    simply runs from scratch. A download failure for a file that IS listed on HF
+    propagates (fail-loud, never a silent skip). Uses ``hf_hub_download`` with
+    ``local_dir`` into a same-filesystem temp dir + move (no second 11.6 GB copy
+    through the HF blob cache for the corpus ``.pt`` bundles).
+    """
+    if dest.exists():
+        return True
+    if hf_path not in repo_files:
+        return False
+    import tempfile
+
+    from huggingface_hub import hf_hub_download
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    logger.info("[resume-prefetch] fetching %s -> %s", hf_path, dest)
+    with tempfile.TemporaryDirectory(prefix="issue779_prefetch_", dir=str(dest.parent)) as tmp:
+        fetched = hf_hub_download(
+            repo_id=C.HF_DATA_REPO, filename=hf_path, repo_type="dataset", local_dir=tmp
+        )
+        shutil.move(fetched, dest)
+    return True
+
+
+def prefetch_trait_resume_state(
+    traits: list[str], out_dir: Path, smoke: bool, *, repo_files: set[str] | None = None
+) -> dict[str, list[str]]:
+    """Materialize prior-attempt per-trait corpus state from HF into the local layout.
+
+    The per-trait completed-skip in ``run_corpus_phase`` (bundle + scores + text
+    trio) and the skip-generation resume (text only) check LOCAL files, but the
+    GCP/SLURM git-clone lanes stage no ``data/`` — so state recovered to the HF
+    data repo after the att-20260702 crash (evil: complete trio; evil +
+    sycophancy: corpus specs) would silently be regenerated. Mirrors the
+    ``_resolve_rb_path`` / ``load_extraction_artifacts`` local-first-HF-fallback
+    pattern: fetch, per trait, the three resume files (+ ``judge_raw_{trait}``
+    when present) from ``{HF_ROUND_PREFIX}/behavior_corpus/`` into
+    ``out_dir/behavior_corpus/``, and the ``corpus_specs/*.json`` Sonnet-spec
+    caches into the fixed ``data/issue_779/corpus_specs/`` layout
+    (``C._corpus_dir()``) so a resumed trait reuses the SAME spec its persisted
+    rollouts were generated under. Files missing on HF are fine (the trait
+    runs); a failed fetch of a LISTED file raises. The fetched files land in the
+    exact layout the final ``_upload_corpus`` walk re-uploads, so a prefetched
+    (skipped) trait still ships a consistent full set. ``repo_files`` is
+    injectable for hermetic tests; None lists the live repo. Returns
+    {trait: [fetched/present names]}.
+    """
+    if repo_files is None:
+        from huggingface_hub import list_repo_files
+
+        repo_files = set(list_repo_files(C.HF_DATA_REPO, repo_type="dataset"))
+    suffix = "_smoke" if smoke else ""
+    prefix = f"{HF_ROUND_PREFIX}{suffix}"
+    corpus_dir = out_dir / CORPUS_SUBDIR
+    specs_dir = C._corpus_dir()
+    got: dict[str, list[str]] = {}
+    for trait in traits:
+        names = [
+            f"{trait}_corpus.pt",
+            f"{trait}_judge_scores.json",
+            f"{trait}_rollouts.json",
+            f"judge_raw_{trait}.json",
+        ]
+        present: list[str] = []
+        for fname in names:
+            if _prefetch_hf_resume_file(
+                repo_files, f"{prefix}/{CORPUS_SUBDIR}/{fname}", corpus_dir / fname
+            ):
+                present.append(fname)
+        for sname in (f"{trait}_personas.json", f"{trait}_questions.json"):
+            if _prefetch_hf_resume_file(
+                repo_files, f"{prefix}/corpus_specs/{sname}", specs_dir / sname
+            ):
+                present.append(f"corpus_specs/{sname}")
+        got[trait] = present
+        logger.info("[resume-prefetch] %s: %d resume files local: %s", trait, len(present), present)
+    return got
+
+
 def _resolve_rb_path(trait: str, rb_dir: Path, out_dir_base: Path) -> Path:
     """Resolve the r_B tensor path for a trait: local layout first, HF fetch fallback.
 
@@ -667,6 +829,13 @@ def main() -> int:
         return 0
 
     _preflight_artifacts(traits)
+
+    # Trait-resume prefetch (round 6): materialize prior-attempt corpus state
+    # recovered to HF (att-20260702 crash) BEFORE the model load, so the
+    # per-trait skip/resume checks in run_corpus_phase see it on the git-clone
+    # GCP/SLURM lanes that stage no data/. Corpus stages only.
+    if args.stage in ("all", "corpus"):
+        prefetch_trait_resume_state(traits, out_dir, args.smoke)
 
     C.phase("load_model")
     if args.device != "cpu":

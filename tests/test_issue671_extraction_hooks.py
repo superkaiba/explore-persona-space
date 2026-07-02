@@ -560,3 +560,104 @@ def test_memory_non_growth_cpu_proxy():
     first_half_peak = max(rss[:10])
     last_half_peak = max(rss[10:])
     assert last_half_peak <= first_half_peak * 1.10 + 50_000, (first_half_peak, last_half_peak)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. #779 OOM fix: logits_to_keep threading (never materialize unread logits)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class _LtkHookStub(_HookStub):
+    """Hook-capable stub whose __call__ EXPLICITLY accepts ``logits_to_keep``
+    and records every value received — pins the #779 OOM fix (the helper must
+    ask for last-position-only logits when the caller never reads them)."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.seen_ltk: list[int] = []
+
+    def __call__(  # recording wrapper around _HookStub.__call__
+        self,
+        input_ids=None,
+        output_hidden_states=False,
+        attention_mask=None,
+        logits_to_keep=0,
+        **_kw,
+    ):
+        self.seen_ltk.append(logits_to_keep)
+        return super().__call__(
+            input_ids=input_ids,
+            output_hidden_states=output_hidden_states,
+            attention_mask=attention_mask,
+        )
+
+
+class _LtkFallbackStub(_FallbackStub):
+    """Fallback-path (no decoder-block structure) sibling of ``_LtkHookStub``."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.seen_ltk: list[int] = []
+
+    def __call__(  # recording wrapper around _FallbackStub.__call__
+        self,
+        input_ids=None,
+        output_hidden_states=False,
+        attention_mask=None,
+        logits_to_keep=0,
+        **_kw,
+    ):
+        self.seen_ltk.append(logits_to_keep)
+        return super().__call__(
+            input_ids=input_ids,
+            output_hidden_states=output_hidden_states,
+            attention_mask=attention_mask,
+        )
+
+
+def test_logits_to_keep_threaded_when_supported():
+    """#779 att-20260702 OOM regression pin. A model whose forward EXPLICITLY
+    accepts ``logits_to_keep`` (Qwen2 on the pinned transformers 4.57.6)
+    receives ``1`` under ``return_logits=False`` (last-position-only — the
+    B x T x vocab logits the capture never reads are not materialized) and
+    ``0`` (full sequence, the transformers default) under
+    ``return_logits=True``. FAILS pre-fix: the helper passed nothing, so the
+    stub's recorded default was 0 for the return_logits=False call. Activations
+    are unaffected either way (logits_to_keep slices only the lm_head input)."""
+    tok = _tok()
+    ids = _ids_list(tok)[0]
+    layers = [0, 7, 27]
+    for cls in (_LtkHookStub, _LtkFallbackStub):
+        rec = cls(tok.vocab_size, _D, _N_BLOCKS, seed=11)
+        plain = (_HookStub if cls is _LtkHookStub else _FallbackStub)(
+            tok.vocab_size, _D, _N_BLOCKS, seed=11
+        )
+        acts = extract_layer_activations(rec, ids, layers)
+        assert rec.seen_ltk == [1], (cls.__name__, rec.seen_ltk)
+        acts_plain = extract_layer_activations(plain, ids, layers)
+        for L in layers:  # activations byte-identical to the no-ltk model
+            assert torch.equal(acts[L], acts_plain[L]), (cls.__name__, L)
+        acts2, logits = extract_layer_activations(rec, ids, layers, return_logits=True)
+        assert rec.seen_ltk == [1, 0], (cls.__name__, rec.seen_ltk)
+        _, logits_plain = extract_layer_activations(plain, ids, layers, return_logits=True)
+        assert torch.equal(logits, logits_plain), cls.__name__  # full-seq contract kept
+        for L in layers:
+            assert torch.equal(acts2[L], acts_plain[L]), (cls.__name__, L)
+
+
+def test_logits_to_keep_not_passed_without_explicit_param():
+    """A model WITHOUT an explicit ``logits_to_keep`` parameter (the plain stubs
+    only expose ``**kwargs``) gets NOTHING passed — a bare ``**kwargs`` must not
+    count as support, so wrappers/stubs that would swallow (or crash on) the
+    kwarg keep the exact pre-fix behavior."""
+    from explore_persona_space.analysis.extraction import _logits_to_keep_kwargs
+
+    tok = _tok()
+    hook = _HookStub(tok.vocab_size, _D, _N_BLOCKS, seed=11)
+    fallback = _FallbackStub(tok.vocab_size, _D, _N_BLOCKS, seed=11)
+    for model in (hook, fallback):
+        assert _logits_to_keep_kwargs(model, False) == {}
+        assert _logits_to_keep_kwargs(model, True) == {}
+    rec = _LtkHookStub(tok.vocab_size, _D, _N_BLOCKS, seed=11)
+    assert _logits_to_keep_kwargs(rec, False) == {"logits_to_keep": 1}
+    assert _logits_to_keep_kwargs(rec, True) == {"logits_to_keep": 0}
