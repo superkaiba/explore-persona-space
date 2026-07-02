@@ -5365,8 +5365,8 @@
     "830": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/830",
-      "status": "proposed",
+      "path": "tasks/planning/830",
+      "status": "planning",
       "title": "workflow-fix: gotchas entry \u2014 TrainerCallback subclass + real-trainer-path smoke"
     },
     "831": {
