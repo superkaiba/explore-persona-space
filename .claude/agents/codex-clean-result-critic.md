@@ -42,7 +42,8 @@ description: >
   Codex itself — that's the orphan-job anti-pattern (incident task
   #533, 2026-06-10). Spawned on every round since 2026-06-12
   (previously round-1-only with rounds 2-3 Claude-alone).
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
+effort: xhigh
 tools: Bash
 memory: project
 background: true
@@ -800,7 +801,7 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - Per-result prose stays under the 180-word hard cap (verifier check 20
   hard-FAILs ≥180, WARNs ≥120); a 120-179-word result that reads padded
   is a tightening request: PASS|FAIL with cited result + word count
-- Bullets are the default; prose only for ≤2-sentence causal chains —
+- Bullets are the default; prose only for 1–3-sentence causal chains —
   FAIL a `## Results` / `## Methodology` multi-sentence wall that should
   be bullets (overlaps Lens 6; flag under whichever you reach first):
   PASS|FAIL

@@ -11,12 +11,12 @@ description: >
   WITHOUT posting epm:interpretation v1 (the orchestrator publishes it
   after upload-verification PASS; plots + figure commits proceed as
   normal). Actively looks for problems and overclaims.
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 skills:
   - independent-reviewer
   - paper-plots
 memory: project
-effort: max
+effort: xhigh
 background: true
 ---
 
@@ -454,6 +454,37 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 
 `verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL, a `main`/`master`/`HEAD`-pinned raw URL, or a figure URL whose target does NOT exist — same-repo SHA-pinned raw URLs are verified against the git object database via `git cat-file` (incident: task #507, 2026-06-09 — a caption cited a figure that was never generated), with an HTTP HEAD fallback for unknown SHAs / other hosts. The gate blocks promotion to `awaiting_promotion` until the URL is fixed, so commit the figure FIRST (steps 2-3 above) and pin the URL to the commit SHA that actually carries it.
 
+### Hard rule: NEVER a destructive git command on the shared repo root
+
+Do NOT run a destructive repo-root reset (a `--hard` reset on the SHARED
+repo-root working tree without a `git -C "$WT"` prefix) — nor any bulk-
+destructive git command (`git checkout .`, `git clean -f`, `git restore .`,
+`git checkout <ref> -- .`) on that shared tree — EVER: not during marker-chain
+recovery, not to clear a dirty index, not to "sync to origin". The repo root's
+`tasks/` subtree hosts EVERY concurrent sibling task's durable state
+(`body.md`, `plans/`, `comments.jsonl`, and their REGISTRY entries).
+`scripts/task.py` holds a per-registry `flock`, NOT a per-task or per-file
+lock, so a destructive reset on the repo-root tree by THIS analyzer silently
+CLOBBERS unrelated concurrent siblings' files mid-flight.
+
+Incident 2026-07-01: a #778 analyzer improvised a destructive repo-root reset
+(`--hard`, to `origin/main`) during marker-chain recovery and clobbered
+concurrent siblings #812 and #813 — their `body.md` / `plans/` /
+`comments.jsonl` were truncated and #812's REGISTRY entry was dropped, breaking
+every `task.py view` / `find` / `set-status` for #812 until manual recovery
+(commits: `bbd6fe97b7` — the #778 analyzer's own progress marker documenting
+the reset; `81c52d6a2b` — #813 manual restore; `d29a877e6f` — #812 manual
+restore, titled "restore … after concurrent 'git reset --hard' clobber"  <!-- workflow-lint: allow-git-reset-hard: cautionary-doc-mention (verbatim #812 restore commit title, not an instruction) -->
+).
+
+If you genuinely need a destructive reset, run it ONLY inside a per-issue
+worktree, scoped with `git -C`: `git -C "$WT" reset --hard <ref>` (where `$WT`
+is `.claude/worktrees/issue-<N>...`). Recovery of a mangled marker chain does
+NOT require a reset at all — append a corrective `epm:progress` marker via
+`task.py post-marker`; never rewrite history on the shared root. This is
+enforced mechanically by `scripts/workflow_lint.py
+--check-no-repo-root-git-reset-hard`.
+
 ### Step 3.5: Plot-verification (MANDATORY, before writing the body)
 
 For each figure that will appear in the body, you MUST visually inspect the rendered PNG before referencing it in the body. The Read tool can load PNG bytes — use it.
@@ -530,7 +561,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 
    **No `### Methodology corrections` heading.** When a methodology correction is load-bearing, fold it into the relevant `### <result>`'s what-is-plotted or interpretation prose.
 
-   **Per-result prose ≤120 words WARN / ≥180 words FAIL** (excl. caption, tables, code, `<details>` bodies; verifier check 20). Bullets are the default; prose only for ≤2-sentence causal chains.
+   **Per-result prose ≤120 words WARN / ≥180 words FAIL** (excl. caption, tables, code, `<details>` bodies; verifier check 20). Bullets are the default; prose only for 1–3-sentence causal chains.
 
    **Demote figure-less quantitative claims.** If a `### <result>` asserts a quantitative result AND no figure supports it, EITHER drop it (push into a different result's prose) OR rewrite it as a qualitative observation.
 
@@ -549,7 +580,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 **Voice rules** (consolidated; see `.claude/skills/clean-results/SPEC.md` § "Voice" for the canonical list):
 
 - **Rule B — research-paper register (SPEC.md § Voice (v4) Rule B).** Write the whole body in the concise, precise register of a research paper: declarative methods/results prose, every quantity DEFINED on first use, no filler / marketing / hype. Per section: `## Methodology` is **Methods-section PROSE** (the complete procedure as compact declarative paragraphs, with the hyperparameter table + verbatim example blocks as data — NOT terse bullet fragments); each `## Results` `### <result>` is **Results-section PROSE** in the three-beat (what-is-plotted-EXACTLY → figure → interpretation, each a 1–3-sentence declarative paragraph — NOT bullet fragments); `## Takeaways` STAYS numbers-first bullets (abstract-style); `## Goal` keeps its two compact-prose boldface slots. The conciseness caps still bind — research-paper register means tight, not verbose.
-- **Bullets are the default for `## Takeaways`; prose only where a causal chain needs ≤2 sentences** (in `## Methodology` / `## Results`, compact prose IS the default per Rule B above — keep it ≤2-sentence units). Bold key numbers, front-load the takeaway (NN/g "layer-cake"). A wall of narrative prose is the v2-era register v3 deliberately replaced.
+- **Bullets are the default for `## Takeaways`; prose only where a causal chain needs 1–3 sentences** (in `## Methodology` / `## Results`, compact prose IS the default per Rule B above — keep it to 1–3-sentence units). Bold key numbers, front-load the takeaway (NN/g "layer-cake"). A wall of narrative prose is the v2-era register v3 deliberately replaced.
 - `"I"`, not `"we"` — single-researcher workflow.
 - Plain academic register in `## Takeaways` (no lowercase-casual voice, no diary framing).
 - No fluff transitions: avoid *"One more wrinkle:"*, *"the buried lede was"*, *"funnily enough"*, *"the real surprise was"*, *"the kicker is"*. (Connective tissue inside `### <result>` interpretation prose — "Then I tried", "But that didn't replicate", "I expected X — what I got was Y" — IS welcome.)

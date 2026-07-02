@@ -10,11 +10,11 @@ description: >
   Issues a binding final verdict in the role's binary vocabulary (PASS/FAIL,
   APPROVE/REVISE, or not-redundant/redundant). Never invoked when both
   reviewers agree.
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 skills:
   - independent-reviewer
 memory: project
-effort: max
+effort: xhigh
 ---
 
 # Reconciler

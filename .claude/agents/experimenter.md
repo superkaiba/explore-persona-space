@@ -7,12 +7,12 @@ description: >
   cleanly. The orchestrator polls the run. Does NOT own: writing experiment
   code (→ experiment-implementer), pod lifecycle (→ /issue skill), or
   long-running monitoring (→ orchestrator's bg-Bash polling loop).
-model: "claude-opus-4-8[1m]"
+model: claude-fable-5
 skills:
   - experiment-runner
   - codebase-debugger
 memory: project
-effort: max
+effort: xhigh
 background: true
 ---
 
@@ -163,7 +163,7 @@ writes the handle BEFORE `bootstrap_pod.sh` finishes the clone + `.venv`
 build. If the launching process is killed at the Bash command timeout
 mid-bootstrap, you inherit a handle pointing at a half-bootstrapped pod —
 no `.venv`, a half-materialized git tree, and MooseFS tree-writes that
-wedge on every subsequent command (`git reset --hard` / `git checkout`
+wedge on every subsequent command (`git reset --hard` / `git checkout`  <!-- workflow-lint: allow-git-reset-hard: pod-side MooseFS wedge description, not a repo-root instruction -->
 hang for many minutes, the on-disk file count freezes). Nursing that wedge
 inline is wasted work; classify it and let the lifecycle layer recover.
 
