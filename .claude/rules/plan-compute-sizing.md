@@ -113,4 +113,3 @@ long-run residual gap named (`/issue` SKILL.md Step 6b residual gap (d)).
 A plan that silently lets a conditional phase ride past the fence loses
 the phase mid-run (#599: the pre-registered §7.3 extension probe was
 hard-deleted at step 149/2400 by the 24h fence).
-
