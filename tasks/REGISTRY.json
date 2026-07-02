@@ -5633,8 +5633,8 @@
     "866": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/866",
-      "status": "planning",
+      "path": "tasks/approved/866",
+      "status": "approved",
       "title": "artifacts: unified Claude-generated contrastive data pipeline (Phase 0d)"
     },
     "867": {
