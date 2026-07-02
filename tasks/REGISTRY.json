@@ -5286,8 +5286,8 @@
     "820": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/820",
-      "status": "reviewing",
+      "path": "tasks/completed/820",
+      "status": "completed",
       "title": "workflow-fix: dedup follow-up-round implementer dispatch (per-stage idempotency)"
     },
     "821": {
