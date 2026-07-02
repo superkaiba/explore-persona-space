@@ -40,6 +40,12 @@ def _make_tree(tmp_path: Path, test_files: list[str]) -> Path:
     for inv in sel.WORKFLOW_INVARIANT:
         (repo / inv).parent.mkdir(parents=True, exist_ok=True)
         (repo / inv).write_text("# stub\n")
+    # Materialize the glob-scan map's test files too (#895) so map-hit cases
+    # can assert selection; harmless elsewhere (selection requires a scan-glob
+    # hit, so cases asserting set(tests) == set(WORKFLOW_INVARIANT) hold).
+    for scan_test in sel.GLOB_SCAN_TESTS:
+        (repo / scan_test).parent.mkdir(parents=True, exist_ok=True)
+        (repo / scan_test).write_text("# stub\n")
     for tf in test_files:
         (repo / "tests" / tf).write_text("# stub\n")
     return repo
@@ -354,3 +360,85 @@ def test_untested_warn_through_main(tmp_path: Path, monkeypatch, capsys):
     # The breadcrumb fires on every run; the fixture tree is not a git
     # checkout, so the fail-soft branch read surfaces "unknown" (never a crash):
     assert "(branch: unknown)" in captured.err
+
+
+# --- Case 16: glob-scan map — scripts/issue*_*.py selects the thread-caps test
+def test_glob_scan_map_selects_thread_caps_for_issue_script(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/issue999_fake.py"]))
+    tests, untested = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" in tests
+    # Additive only: the file's OWN logic still has no mapped test -> WARN stays.
+    assert untested == ["scripts/issue999_fake.py"]
+
+
+# --- Case 17: negative — a non-matching scripts file pulls NO map row ---------
+def test_glob_scan_map_not_selected_for_non_matching_file(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/pod.py"]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" not in tests
+    assert "tests/test_subprocess_env_explicit.py" not in tests
+
+
+# --- Case 18: experiments run_*.py hits both rows; ** matches zero segments ---
+def test_glob_scan_map_experiments_run_file_and_zero_segment(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    nested = "src/explore_persona_space/experiments/foo/run_bar.py"
+    touched = sel.compute_touched("main", repo, _runner=_runner_for([nested]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" in tests  # **/run_*.py row
+    assert "tests/test_subprocess_env_explicit.py" in tests  # */run_*.py row
+    zero_seg = "src/explore_persona_space/experiments/run_top.py"
+    touched = sel.compute_touched("main", repo, _runner=_runner_for([zero_seg]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" in tests  # zero-segment **/
+    assert "tests/test_subprocess_env_explicit.py" not in tests  # */ needs one dir
+
+
+# --- Case 19: dispatcher glob row --------------------------------------------
+def test_glob_scan_map_dispatcher_script(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    touched = sel.compute_touched(
+        "main", repo, _runner=_runner_for(["scripts/dispatch_new_thing.py"])
+    )
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_subprocess_env_explicit.py" in tests
+    assert "tests/test_shared_vm_thread_caps.py" not in tests
+
+
+# --- Case 20: map row NOT selected when its test file is absent on disk -------
+def test_glob_scan_map_key_missing_on_disk_not_selected(tmp_path: Path):
+    """The (work_root / scan_test).exists() gate: a deleted-on-branch (or
+    fixture-absent) scanning test is never emitted into the pytest command
+    (same existence contract as the invariant set — no collection error)."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_shared_vm_thread_caps.py").unlink()
+    touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/issue999_fake.py"]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" not in tests
+
+
+# --- Live-tree pin for the map (mirrors case 6's curation discipline) ---------
+def test_glob_scan_map_matches_live_tree():
+    """Every GLOB_SCAN_TESTS key exists, its glob tuple matches real files on
+    the live tree (aggregated per row — individual globs MAY legitimately match
+    nothing today, e.g. run_factor_screen_*.py / experiments run_*.py are
+    forward-looking guards with 0 hits at freeze time), each glob appears
+    VERBATIM in the scanning test's own source (drift pin: a scanner
+    renaming/narrowing its scan roots forces a deliberate map edit), and the
+    map is disjoint from WORKFLOW_INVARIANT (no double-listing)."""
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    assert sel.GLOB_SCAN_TESTS
+    assert not set(sel.GLOB_SCAN_TESTS) & set(sel.WORKFLOW_INVARIANT)
+    for test_file, globs in sel.GLOB_SCAN_TESTS.items():
+        assert (repo_root / test_file).exists(), f"map key missing: {test_file}"
+        assert globs, f"empty scan-glob tuple for {test_file}"
+        hits = [p for g in globs for p in repo_root.glob(g)]
+        assert hits, f"scan globs for {test_file} match nothing on the live tree"
+        src = (repo_root / test_file).read_text()
+        for g in globs:
+            assert g in src, (
+                f"{test_file} no longer scans {g!r} — GLOB_SCAN_TESTS drifted "
+                "from the scanner's source; update the map verbatim."
+            )
