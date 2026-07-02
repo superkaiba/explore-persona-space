@@ -5675,8 +5675,8 @@
     "872": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/872",
-      "status": "approved",
+      "path": "tasks/running/872",
+      "status": "running",
       "title": "workflow-fix: vectorized rewrites land on main + tombstone serial twin"
     },
     "873": {
