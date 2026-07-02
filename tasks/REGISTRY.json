@@ -5717,8 +5717,8 @@
     "878": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/878",
-      "status": "approved",
+      "path": "tasks/running/878",
+      "status": "running",
       "title": "workflow-fix: design-aligned split-half clause for crossed designs (llm-judging.md)"
     },
     "879": {
