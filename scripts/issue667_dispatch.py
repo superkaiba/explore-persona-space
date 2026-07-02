@@ -540,18 +540,28 @@ def _numeric_rslora_parity(
             "the adapter is applied under a DIFFERENT gauge than #537 committed (or is a "
             "no-op). HALT before the full sweep (plan §5(g)/§7)."
         )
-    # Marker behavioral HALT: #537's committed DIAGONAL manipulation check band-stops
-    # the source into 5–12 nat; a correctly-applied diagonal read lands ≥5 nat, a
-    # wrong-gauge one ~1–2 nat, a no-op ≈0. HALT below the 2.5-nat separator.
+    # Marker behavioral read — DIAGNOSTIC (WARN, never HALT). Demoted #813 launch-3:
+    # the round-2 reconciler (D4, binding) ruled the NUMERIC gauge probe above the
+    # sufficient apply-parity HALT — its cross-run reference is exact (em write_ratio
+    # 0.1729 on this stack == #667's committed 0.1729, so the apply path is
+    # gauge-equivalent). The behavioral threshold proved ungroundable without #537's
+    # frozen-R eval rig: this probe teacher-forces a FRESH greedy base R, so its slot
+    # conditioning differs from #537's committed diagonal read (5-12 nat band) and
+    # the measured delta (0.75-0.85 nat on a verified-applied adapter) reflects the
+    # READ-recipe difference, not adapter mis-application. Two false-HALTs (1.0-nat
+    # bar launch-2, 2.5-nat bar launch-3). The value is persisted for the analyzer;
+    # the experiment's own captures measure the marker construct properly.
     if marker_delta is not None and marker_delta < MARKER_BEHAVIORAL_MIN_DELTA_NATS:
-        raise RuntimeError(
-            f"marker behavioral parity FAILED: DIAGONAL teacher-forced Δ log P(※) "
-            f"trained-base = {marker_delta:.4f} nat < {MARKER_BEHAVIORAL_MIN_DELTA_NATS} "
-            f"for {behavior}/{source} — the marker install is NOT behaviorally present "
-            "on its own training context (a wrong-gauge application reads ~1-2 nat, a "
-            "no-op ~0; #537 band-stopped the diagonal into 5-12 nat). HALT before the "
-            "full sweep (plan §4.3/§7; belt-and-suspenders confirmation of the #537 "
-            "diagonal manipulation check)."
+        logger.warning(
+            "marker behavioral read BELOW reference band (diagnostic, non-gating): "
+            "DIAGONAL teacher-forced Δ log P(※) trained-base = %.4f nat < %.1f for "
+            "%s/%s. #537's committed diagonal band is 5-12 nat under its OWN frozen-R "
+            "rig; this probe uses fresh greedy R, so the absolute level is not "
+            "comparable. Persisted as marker_delta_logp_nats for the analyzer.",
+            marker_delta,
+            MARKER_BEHAVIORAL_MIN_DELTA_NATS,
+            behavior,
+            source,
         )
     result = {
         "behavior": behavior,

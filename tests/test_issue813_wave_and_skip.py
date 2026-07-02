@@ -653,44 +653,39 @@ def test_wrong_gauge_write_still_halts_at_marker_floor(monkeypatch):
         d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
 
 
-def test_marker_behavioral_gate_halts_below_2p5_nat_and_passes_above(monkeypatch):
-    """Part 2 REGRESSION: DIAGONAL marker Δ log P(※) < 2.5 nat HALTs; ≥ 2.5 nat PASSES.
+def test_marker_behavioral_read_is_diagnostic_never_halts(monkeypatch, caplog):
+    """Part 2 (launch-3 demotion): the marker behavioral read WARNs below the reference
+    band but NEVER raises — the value is persisted for the analyzer either way.
 
-    The write-ratio gate passes (ratio above floor), so ONLY the marker behavioral
-    confirmation decides the outcome. The bar is grounded on #537's committed DIAGONAL
-    manipulation check (source band-stopped to 5-12 nat on its OWN training context):
-    a correctly-applied diagonal read lands >=5 nat -> PASS; a wrong-gauge (alpha/sqrt(r)
-    vs alpha/r => ~1-2 nat) or no-op (~0) diagonal read is <=2 nat -> HALT. 2.5 separates.
-
-    This ALSO pins the round-5 threshold fix: the round-4 read of 0.8547 nat was an
-    OFF-DIAGONAL battery read against a 1.0-nat bar (a healthy adapter false-HALT); the
-    fix reads on the diagonal (5-12 nat expected) and raises the bar to 2.5. A
-    diagonal-read of 6.0 nat PASSES; a wrong-gauge diagonal-read of 1.5 nat HALTs.
+    Rationale (see the demotion comment at the read site in issue667_dispatch.py): the
+    round-2 reconciler (D4, binding) ruled the NUMERIC gauge probe the sufficient
+    apply-parity HALT (its cross-run em reference is exact: write_ratio 0.1729 on this
+    stack == #667's committed 0.1729). The behavioral threshold proved ungroundable
+    without #537's frozen-R eval rig — this probe teacher-forces FRESH greedy R, so its
+    slot conditioning differs from #537's committed diagonal band (5-12 nat) and a
+    verified-applied adapter measured 0.75-0.85 nat (two false-HALTs at 1.0- and
+    2.5-nat bars). The numeric floor gate (previous test) remains the HALT.
     """
+    import logging
+
     import issue667_dispatch as d
 
-    # Wrong-gauge DIAGONAL read = 1.5 nat (< 2.5) with a HEALTHY write ratio → HALT.
-    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=1.5)
-    with pytest.raises(RuntimeError, match=r"marker behavioral parity FAILED"):
-        d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
-
-    # A no-op read ≈0 also HALTs (well below 2.5).
-    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=0.0)
-    with pytest.raises(RuntimeError, match=r"marker behavioral parity FAILED"):
-        d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
-
-    # Correctly-applied #537 DIAGONAL install = 6.0 nat (in the 5-12 nat band) -> PASS.
-    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=6.0)
-    res = d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
-    assert res["marker_delta_logp_nats"] == 6.0
-
-    # The round-4 OFF-DIAGONAL battery value 0.8547 is no longer the gate's input; if a
-    # (now-fixed) read ever regressed to it, the 2.5 bar would still HALT — pin that
-    # the OLD 1.0 bar would have PASSED it (documenting the false-HALT the fix removes).
-    assert d.MARKER_BEHAVIORAL_MIN_DELTA_NATS > 0.8547, (
-        "the round-4 battery read 0.8547 nat is below the diagonal-grounded 2.5 bar; "
-        "the FIX is measuring on the diagonal (5-12 nat), not lowering the bar to admit it"
+    # Below-band read (the launch-3 value): WARNs, does NOT raise, value persisted.
+    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=0.7516)
+    with caplog.at_level(logging.WARNING):
+        res = d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
+    assert res["marker_delta_logp_nats"] == 0.7516
+    assert any("BELOW reference band" in r.message for r in caplog.records), (
+        "a below-band behavioral read must emit the diagnostic WARNING"
     )
+
+    # In-band read: no warning, value persisted.
+    caplog.clear()
+    _install_synthetic_parity_reads(monkeypatch, ratio=0.02, marker_delta=6.0)
+    with caplog.at_level(logging.WARNING):
+        res = d._numeric_rslora_parity("marker", min_write_ratio=_MARKER_FLOOR)
+    assert res["marker_delta_logp_nats"] == 6.0
+    assert not any("BELOW reference band" in r.message for r in caplog.records)
 
 
 def test_non_marker_behavior_skips_the_behavioral_gate(monkeypatch):
