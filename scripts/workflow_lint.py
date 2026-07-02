@@ -3657,13 +3657,26 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
         )
     else:
         text = codex.read_text(encoding="utf-8")
-        for token in ('"Step 0.55: Smoke-architecture marker presence gate"', marker):
+        heading = '"Step 0.55: Smoke-architecture marker presence gate"'
+        for token in (heading, marker):
             if token not in text:
                 errors.append(
                     f"{codex}: missing the Step 0.55 copy-list token {token!r} "
                     f"(#822) — the Codex twin must copy the same presence lens "
                     f"or the two reviewers drift (the #606 copy-list-omission "
                     f"class)."
+                )
+        idx = text.find(heading)
+        if idx != -1 and marker in text:
+            nxt = text.find('\n- "', idx + 1)
+            bullet = text[idx:nxt] if nxt != -1 else text[idx:]
+            if marker not in bullet:
+                errors.append(
+                    f"{codex}: the Step 0.55 copy-list bullet (heading token "
+                    f"to the next line-start '- \"' bullet) no longer names "
+                    f"{marker!r} (#822) — a marker mention elsewhere in the "
+                    f"file (e.g. the Step 7 blocker-tags line) does not keep "
+                    f"the copied lens itself keyed on that marker."
                 )
         rubric_lines = [ln for ln in text.splitlines() if "{{INLINED RUBRIC" in ln]
         if not any("0.55" in ln for ln in rubric_lines):
