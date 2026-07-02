@@ -1,0 +1,164 @@
+{
+  "commit": "b2e61215f8",
+  "created": "2026-07-02T19:55:37Z",
+  "figsize": [
+    9.0,
+    4.5
+  ],
+  "points": [
+    {
+      "category": "Raw target ceiling",
+      "Within-condition Pearson r": 0.4996336326448584,
+      "error": 0.13440165550276717,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Raw source read",
+      "Within-condition Pearson r": 0.2180909322154506,
+      "error": 0.22036153506911368,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Identity transport",
+      "Within-condition Pearson r": 0.2403788610143681,
+      "error": 0.2768166344443922,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Transported (ridge)",
+      "Within-condition Pearson r": 0.1944106252072233,
+      "error": 0.2371010836982388,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Transported (MLP)",
+      "Within-condition Pearson r": -0.001128191326919964,
+      "error": 0.19079357067143493,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Transported (GRU, exploratory)",
+      "Within-condition Pearson r": 0.2049086450620919,
+      "error": 0.1950779706780976,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Direct-hop ridge",
+      "Within-condition Pearson r": 0.21619102301164705,
+      "error": 0.2554036378042005,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Shuffled-context null",
+      "Within-condition Pearson r": 0.009978375085484627,
+      "error": 0.23043123371807292,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.36627863191981236,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Within-condition Pearson r": 0.04489161686413484,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.029886959729211543,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Within-condition Pearson r": -0.04115796518796902,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": -0.2394467576456267,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Within-condition Pearson r": 0.0010635373276908777,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": -0.06207583834302749,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Within-condition Pearson r": -0.21388786151014766,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.6350819429253467,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Within-condition Pearson r": 0.4856146870023622,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.5835202286179959,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Within-condition Pearson r": 0.43304420220850853,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.14214038369724316,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Within-condition Pearson r": 0.39121947868388607,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.44873143726537357,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "Within-condition Pearson r": 0.24697460592599818,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 24
+}
