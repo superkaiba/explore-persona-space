@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 858,
+  "highest_id": 859,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5580,6 +5580,13 @@
       "path": "tasks/proposed/858",
       "status": "proposed",
       "title": "workflow-fix: make audit-claim HF tests hermetic (fail on pristine main)"
+    },
+    "859": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/859",
+      "status": "proposed",
+      "title": "workflow-fix: select_step9c_tests must include touched tests/*.py in subset"
     },
     "88": {
       "has_clean_result": true,
