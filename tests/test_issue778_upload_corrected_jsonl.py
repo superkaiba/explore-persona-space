@@ -50,7 +50,12 @@ def test_pod_phase_uploads_all_six_jsonls(tmp_path, monkeypatch):
     monkeypatch.setattr(upload, "_upload_file", _fake_upload)
     monkeypatch.setattr(upload, "list_repo_files_complete", _fake_list)
 
-    summary = upload.upload_pod_phase(out_root, eval_root, "issue778_persona_vectors")
+    summary = upload.upload_pod_phase(
+        out_root,
+        eval_root,
+        "issue778_persona_vectors",
+        traits=["evil", "sycophancy", "hallucination"],
+    )
 
     jsonl_dests = [d for d in uploaded if "/followup_corrected/eval_jsonl/" in d]
     assert len(jsonl_dests) == 6, jsonl_dests
@@ -76,23 +81,94 @@ def test_pod_phase_raises_when_fresh_listing_missing_a_jsonl(tmp_path, monkeypat
     monkeypatch.setattr(
         upload,
         "list_repo_files_complete",
-        lambda *a, **k: ["issue778_persona_vectors/followup_corrected/eval_jsonl/evil.jsonl"],
+        lambda *a, **k: [
+            "issue778_persona_vectors/followup_corrected/eval_jsonl/monitoring_corrected_evil.jsonl"
+        ],
     )
 
     with pytest.raises(RuntimeError, match="eval-JSONL promotion verify FAILED"):
-        upload.upload_pod_phase(out_root, eval_root, "issue778_persona_vectors")
+        upload.upload_pod_phase(
+            out_root,
+            eval_root,
+            "issue778_persona_vectors",
+            traits=["evil", "sycophancy", "hallucination"],
+        )
 
 
-def test_pod_phase_no_jsonls_is_not_fatal(tmp_path, monkeypatch, capsys):
-    """An eval_root with no monitoring JSONLs warns but does not raise (empty summary)."""
+def test_pod_phase_no_jsonls_raises_before_upload(tmp_path, monkeypatch):
+    """An eval_root MISSING every expected monitoring JSONL FAILS LOUD before upload.
+
+    Round-2 BLOCKER jsonl-promotion-completeness: the parent codified a missing-
+    deliverable as a non-fatal warning, so the loss surfaced only off-pod after
+    teardown. It must now raise BEFORE any upload (never touch _upload_file).
+    """
     eval_root = tmp_path / "eval_results" / "issue_778"
     eval_root.mkdir(parents=True)
     out_root = tmp_path / "data" / "issue_778"
     out_root.mkdir(parents=True)
 
-    monkeypatch.setattr(upload, "_upload_file", lambda local, dest: None)
+    uploaded: list[str] = []
+    monkeypatch.setattr(upload, "_upload_file", lambda local, dest: uploaded.append(dest))
     monkeypatch.setattr(upload, "list_repo_files_complete", lambda *a, **k: [])
 
-    summary = upload.upload_pod_phase(out_root, eval_root, "issue778_persona_vectors")
-    assert summary["eval_jsonl"] == {}
-    assert "no monitoring JSONLs" in capsys.readouterr().out
+    with pytest.raises(RuntimeError, match=r"eval-JSONL promotion FAILED \(pre-upload\)"):
+        upload.upload_pod_phase(
+            out_root,
+            eval_root,
+            "issue778_persona_vectors",
+            traits=["evil", "sycophancy", "hallucination"],
+        )
+    assert uploaded == [], "must fail loud BEFORE uploading anything"
+
+
+def test_pod_phase_raises_when_a_required_local_jsonl_missing(tmp_path, monkeypatch):
+    """Only one of the expected JSONLs present -> fail loud pre-upload (Codex-named).
+
+    traits=["evil","sycophancy"] with only ``monitoring_corrected_evil.jsonl`` present
+    (the other 3 expected — corrected_sycophancy + both manyshot — absent) must raise
+    BEFORE returning and BEFORE uploading, so a silently-skipped trait / wrong root
+    can never warn-and-continue into a post-teardown null-battery FileNotFoundError.
+    """
+    eval_root = tmp_path / "eval_results" / "issue_778"
+    eval_root.mkdir(parents=True)
+    (eval_root / "monitoring_corrected_evil.jsonl").write_text('{"condition_id": 0}\n')
+    out_root = tmp_path / "data" / "issue_778"
+    out_root.mkdir(parents=True)
+
+    uploaded: list[str] = []
+    monkeypatch.setattr(upload, "_upload_file", lambda local, dest: uploaded.append(dest))
+    monkeypatch.setattr(upload, "list_repo_files_complete", lambda *a, **k: [])
+
+    with pytest.raises(RuntimeError, match=r"eval-JSONL promotion FAILED \(pre-upload\)"):
+        upload.upload_pod_phase(
+            out_root,
+            eval_root,
+            "issue778_persona_vectors",
+            traits=["evil", "sycophancy"],
+        )
+    assert uploaded == [], "must fail loud BEFORE uploading the one present JSONL"
+
+
+def test_pod_phase_smoke_slice_evil_only_uploads_two(tmp_path, monkeypatch):
+    """The smoke slice (traits=['evil']) expects exactly 2 JSONLs (2 tags x 1 trait)."""
+    eval_root = tmp_path / "eval_results" / "issue_778"
+    eval_root.mkdir(parents=True)
+    for tag in upload.MONITORING_JSONL_TAGS:
+        (eval_root / f"{tag}_evil.jsonl").write_text('{"condition_id": 0}\n')
+    out_root = tmp_path / "data" / "issue_778"
+    out_root.mkdir(parents=True)
+
+    uploaded: list[str] = []
+    monkeypatch.setattr(upload, "_upload_file", lambda local, dest: uploaded.append(dest))
+    monkeypatch.setattr(upload, "list_repo_files_complete", lambda *a, **k: uploaded)
+
+    summary = upload.upload_pod_phase(
+        out_root, eval_root, "issue778_persona_vectors", traits=["evil"]
+    )
+    jsonl_dests = [d for d in uploaded if "/followup_corrected/eval_jsonl/" in d]
+    assert len(jsonl_dests) == 2, jsonl_dests
+    assert summary["eval_jsonl"]["n_uploaded"] == 2
+    assert set(summary["eval_jsonl"]["basenames"]) == {
+        "monitoring_corrected_evil.jsonl",
+        "monitoring_manyshot_evil.jsonl",
+    }

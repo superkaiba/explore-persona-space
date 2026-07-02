@@ -81,8 +81,32 @@ def _upload_file(local: Path, dest: str) -> None:
         raise RuntimeError(f"upload returned no path for {local} -> {dest}")
 
 
-def upload_pod_phase(out_root: Path, eval_root: Path, exp_name: str) -> dict:
-    """Upload raw acts tensors + exemplar pools + eval JSONLs (pod-side, pre-teardown)."""
+def _expected_jsonl_basenames(traits: list[str], tags: tuple[str, ...]) -> list[str]:
+    """The EXACT set of primary-deliverable JSONL basenames the run must promote.
+
+    One per (tag, trait) — 6 in production (2 legs x 3 traits), fewer in a smoke
+    slice (e.g. evil-only). The dispatcher passes the run's ACTUAL trait set so the
+    completeness gate matches the slice actually produced.
+    """
+    return [f"{tag}_{trait}.jsonl" for tag in tags for trait in traits]
+
+
+def upload_pod_phase(
+    out_root: Path,
+    eval_root: Path,
+    exp_name: str,
+    *,
+    traits: list[str],
+    tags: tuple[str, ...] = MONITORING_JSONL_TAGS,
+) -> dict:
+    """Upload raw acts tensors + exemplar pools + eval JSONLs (pod-side, pre-teardown).
+
+    ``traits`` + ``tags`` pin the EXPECTED JSONL basename set (``{tag}_{trait}.jsonl``);
+    the phase FAILS LOUD BEFORE uploading if any expected JSONL is absent locally, and
+    re-verifies the fresh Hub listing carries the EXPECTED set (not merely whatever the
+    glob discovered) — so a missing/wrong-root JSONL bounces the pod phase pre-teardown
+    instead of warning-and-continuing (BLOCKER jsonl-promotion-completeness, r2).
+    """
     summary: dict = {"analysis_tensors": {}, "exemplar_pools": {}, "eval_jsonl": {}}
 
     # Raw last-prompt activation tensors -> analysis_tensors/ (null re-projection).
@@ -115,36 +139,47 @@ def upload_pod_phase(out_root: Path, eval_root: Path, exp_name: str) -> dict:
         print(f"[upload] exemplar pools -> {pool_prefix} ({n_pool})", flush=True)
 
     # PRIMARY-DELIVERABLE eval JSONLs -> followup_corrected/eval_jsonl/ (reconciler
-    # round-1 BLOCKER). The off-pod null battery reads these from HF if absent.
+    # round-1 BLOCKER). The off-pod null battery reads these from HF if absent, so a
+    # SILENT loss here is unrecoverable after teardown — verify the EXPECTED set, not
+    # merely the discovered subset (BLOCKER jsonl-promotion-completeness, r2).
     jsonl_prefix = f"{exp_name}/{EVAL_JSONL_SUBPREFIX}"
-    uploaded_jsonl: list[str] = []
-    for tag in MONITORING_JSONL_TAGS:
-        for jl in sorted(eval_root.glob(f"{tag}_*.jsonl")):
-            _upload_file(jl, f"{jsonl_prefix}/{jl.name}")
-            uploaded_jsonl.append(jl.name)
-    if uploaded_jsonl:
-        # Integration assert: EVERY uploaded JSONL basename must appear on a FRESH
-        # Hub listing under the prefix before the pod releases (mechanizable check).
-        files = list_repo_files_complete(HfApi(), DEFAULT_DATASET_REPO, repo_type="dataset")
-        present = {f.rsplit("/", 1)[-1] for f in files if f.startswith(jsonl_prefix + "/")}
-        missing = [b for b in uploaded_jsonl if b not in present]
-        if missing:
-            raise RuntimeError(
-                f"eval-JSONL promotion verify FAILED: uploaded {len(uploaded_jsonl)} JSONLs to "
-                f"{DEFAULT_DATASET_REPO}/{jsonl_prefix} but a fresh listing is MISSING "
-                f"{missing} — the off-pod null battery would FileNotFoundError post-teardown"
-            )
-        summary["eval_jsonl"] = {
-            "prefix": jsonl_prefix,
-            "n_uploaded": len(uploaded_jsonl),
-            "basenames": sorted(uploaded_jsonl),
-        }
-        print(
-            f"[upload] eval JSONLs -> {jsonl_prefix} ({len(uploaded_jsonl)} verified)",
-            flush=True,
+    expected = _expected_jsonl_basenames(traits, tags)
+
+    # Pre-upload completeness gate: every EXPECTED local JSONL must exist BEFORE we
+    # upload anything. A missing basename (wrong root / silently-skipped trait) fails
+    # loud here, while the pod + its inputs are still alive.
+    missing_local = [b for b in expected if not (eval_root / b).exists()]
+    if missing_local:
+        raise RuntimeError(
+            f"eval-JSONL promotion FAILED (pre-upload): expected {len(expected)} JSONLs "
+            f"for traits={traits} tags={list(tags)} but MISSING {missing_local} under "
+            f"{eval_root} — the off-pod null battery would FileNotFoundError post-teardown"
         )
-    else:
-        print(f"[upload] WARNING: no monitoring JSONLs found under {eval_root}", flush=True)
+
+    for b in expected:
+        _upload_file(eval_root / b, f"{jsonl_prefix}/{b}")
+
+    # Integration assert: EVERY EXPECTED basename must appear on a FRESH Hub listing
+    # under the prefix before the pod releases (mechanizable check; verifies the
+    # EXPECTED set, not the uploaded subset).
+    files = list_repo_files_complete(HfApi(), DEFAULT_DATASET_REPO, repo_type="dataset")
+    present = {f.rsplit("/", 1)[-1] for f in files if f.startswith(jsonl_prefix + "/")}
+    missing_hub = [b for b in expected if b not in present]
+    if missing_hub:
+        raise RuntimeError(
+            f"eval-JSONL promotion verify FAILED: uploaded {len(expected)} JSONLs to "
+            f"{DEFAULT_DATASET_REPO}/{jsonl_prefix} but a fresh listing is MISSING "
+            f"{missing_hub} — the off-pod null battery would FileNotFoundError post-teardown"
+        )
+    summary["eval_jsonl"] = {
+        "prefix": jsonl_prefix,
+        "n_uploaded": len(expected),
+        "basenames": sorted(expected),
+    }
+    print(
+        f"[upload] eval JSONLs -> {jsonl_prefix} ({len(expected)} expected, verified)",
+        flush=True,
+    )
 
     return summary
 
@@ -171,6 +206,14 @@ def main() -> None:
     parser.add_argument("--out-root", default="data/issue_778")
     parser.add_argument("--eval-results-root", default="eval_results/issue_778")
     parser.add_argument("--phase", choices=["pod", "offpod"], default="pod")
+    parser.add_argument(
+        "--traits",
+        nargs="+",
+        default=list(lib.TRAITS),
+        help="the run's ACTUAL trait set — pins the EXPECTED JSONL basename set "
+        "({tag}_{trait}.jsonl) the pod phase fails loud on if any is missing "
+        "before/after upload. The dispatcher passes its slice (evil-only in smoke).",
+    )
     args = parser.parse_args()
 
     exp_name = f"issue{args.issue}_{args.slug}"
@@ -178,7 +221,7 @@ def main() -> None:
     eval_root = Path(args.eval_results_root)
 
     if args.phase == "pod":
-        summary = upload_pod_phase(out_root, eval_root, exp_name)
+        summary = upload_pod_phase(out_root, eval_root, exp_name, traits=list(args.traits))
     else:
         summary = upload_offpod_phase(eval_root, exp_name)
 

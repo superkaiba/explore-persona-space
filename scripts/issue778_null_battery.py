@@ -113,6 +113,77 @@ def _ensure_monitoring_jsonls_local(
         )
 
 
+def _ensure_monitoring_acts_local(
+    out_root: Path,
+    traits: list[str],
+    input_tags: list[str],
+    *,
+    issue: int,
+    slug: str,
+    fetch_from_hf: bool,
+) -> None:
+    """Ensure every ``{input_tag}/{trait}_acts.pt`` the null re-projection needs is local.
+
+    ``run_monitoring`` RAISES on an absent raw last-prompt activation tensor (the nulls
+    re-project the RAW activation onto each null direction — the stored projections are
+    not enough). The pod-side dispatch writes these to ``data/issue_778/{tag}/{trait}_acts.pt``
+    AND uploads them to the HF DATA repo under
+    ``issue{issue}_{slug}/analysis_tensors/{tag}/{trait}_acts.pt`` (issue778_upload_corrected
+    .upload_pod_phase: ``at_prefix = {exp_name}/analysis_tensors`` + rel-to-out_root path).
+    This off-pod driver runs on the VM AFTER teardown, so any acts tensor absent locally is
+    downloaded from that HF prefix into ``out_root`` before the battery opens it. Fail-loud
+    if a required tensor is neither local nor on HF (BLOCKER offpod-monitoring-acts-never-
+    fetched, r2). Respects ``fetch_from_hf`` (``--no-hf-fetch``).
+    """
+    required = [(tag, t) for tag in input_tags for t in traits]
+    missing_local = [
+        (tag, t) for tag, t in required if not (out_root / tag / f"{t}_acts.pt").exists()
+    ]
+    if not missing_local:
+        return
+    exp_name = f"issue{issue}_{slug}"
+    # Mirror the producer layout: HF path preserves ``{tag}/{trait}_acts.pt`` under
+    # ``{exp_name}/analysis_tensors/`` (upload_pod_phase uploads pt.relative_to(out_root)).
+    at_prefix = f"{exp_name}/analysis_tensors"
+    if not fetch_from_hf:
+        names = [f"{tag}/{t}_acts.pt" for tag, t in missing_local]
+        raise RuntimeError(
+            f"monitoring raw-acts tensor(s) absent locally and --no-hf-fetch set: {names} "
+            f"(expected under {out_root} or HF prefix {at_prefix}/{{tag}}/{{trait}}_acts.pt)"
+        )
+    from huggingface_hub import hf_hub_download
+
+    from explore_persona_space.orchestrate.env import load_dotenv
+    from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO
+
+    load_dotenv()
+    for tag, trait in missing_local:
+        rel = f"{tag}/{trait}_acts.pt"
+        logger.info("fetching raw-acts tensor %s from HF %s/%s", rel, at_prefix, rel)
+        local = hf_hub_download(
+            repo_id=DEFAULT_DATASET_REPO,
+            repo_type="dataset",
+            filename=f"{at_prefix}/{rel}",
+            revision="main",
+        )
+        import shutil
+
+        dest = out_root / tag / f"{trait}_acts.pt"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(local, dest)
+    # Hard assert: every required acts tensor now resolves locally.
+    still_missing = [
+        f"{tag}/{t}_acts.pt"
+        for tag, t in required
+        if not (out_root / tag / f"{t}_acts.pt").exists()
+    ]
+    if still_missing:
+        raise RuntimeError(
+            f"monitoring raw-acts tensor(s) still absent after HF fetch: {still_missing} "
+            f"(HF prefix {DEFAULT_DATASET_REPO}/{at_prefix})"
+        )
+
+
 # ── Loaders ─────────────────────────────────────────────────────────────────────
 
 
@@ -528,6 +599,18 @@ def main() -> None:
     if "monitoring" in args.settings:
         _ensure_monitoring_jsonls_local(
             eval_root,
+            traits,
+            list(args.input_tag),
+            issue=args.issue,
+            slug=args.slug,
+            fetch_from_hf=not args.no_hf_fetch,
+        )
+        # The nulls re-project the RAW last-prompt activation; run_monitoring RAISES on
+        # an absent {input_tag}/{trait}_acts.pt. The pod uploaded these to HF
+        # analysis_tensors/ before teardown; download any absent locally BEFORE the
+        # battery opens them (BLOCKER offpod-monitoring-acts-never-fetched, r2).
+        _ensure_monitoring_acts_local(
+            out_root,
             traits,
             list(args.input_tag),
             issue=args.issue,

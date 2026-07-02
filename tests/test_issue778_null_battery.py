@@ -8,6 +8,8 @@ draw takes its OWN max-over-layers |r|) and the drop-never-coerce shape.
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 
@@ -351,3 +353,184 @@ def test_ensure_jsonls_local_fetches_missing_from_hf(tmp_path, monkeypatch):
     assert len(fetched) == 1
     landed = eval_root / "monitoring_manyshot_evil.jsonl"
     assert landed.exists() and landed.read_text() == '{"condition_id": 5}\n'
+
+
+# ── Off-pod RAW-ACTS fetch (round-2 BLOCKER: offpod-monitoring-acts-never-fetched) ──
+
+
+def test_ensure_acts_local_noop_when_all_present(tmp_path):
+    """When every required acts tensor exists locally, no HF fetch is attempted."""
+    from scripts import issue778_null_battery as nbd
+
+    out_root = tmp_path / "data" / "issue_778"
+    for tag in ("monitoring_corrected", "monitoring_manyshot"):
+        (out_root / tag).mkdir(parents=True)
+        (out_root / tag / "evil_acts.pt").write_bytes(b"pt")
+    # fetch_from_hf=False would raise if a fetch were needed; all-present -> silent no-op.
+    nbd._ensure_monitoring_acts_local(
+        out_root,
+        ["evil"],
+        ["monitoring_corrected", "monitoring_manyshot"],
+        issue=778,
+        slug="persona_vectors",
+        fetch_from_hf=False,
+    )
+
+
+def test_ensure_acts_local_raises_when_missing_and_no_fetch(tmp_path):
+    """A missing acts tensor with --no-hf-fetch fails loud (never silently proceeds)."""
+    from scripts import issue778_null_battery as nbd
+
+    out_root = tmp_path / "data" / "issue_778"
+    (out_root / "monitoring_corrected").mkdir(parents=True)
+    (out_root / "monitoring_corrected" / "evil_acts.pt").write_bytes(b"pt")  # only 1 of 2
+    with pytest.raises(RuntimeError, match="absent locally and --no-hf-fetch"):
+        nbd._ensure_monitoring_acts_local(
+            out_root,
+            ["evil", "sycophancy"],
+            ["monitoring_corrected"],
+            issue=778,
+            slug="persona_vectors",
+            fetch_from_hf=False,
+        )
+
+
+def test_ensure_acts_local_fetches_missing_from_hf(tmp_path, monkeypatch):
+    """A missing acts tensor is downloaded from the HF analysis_tensors prefix.
+
+    Verifies the exact producer layout mirror: upload_pod_phase writes the tensor to
+    ``{exp_name}/analysis_tensors/{tag}/{trait}_acts.pt`` (rel-to-out_root), so the
+    fetch must request THAT filename and land it at out_root/{tag}/{trait}_acts.pt.
+    """
+    from scripts import issue778_null_battery as nbd
+
+    out_root = tmp_path / "data" / "issue_778"
+    out_root.mkdir(parents=True)
+    hf_cache = tmp_path / "hfcache"
+    hf_cache.mkdir()
+    (hf_cache / "evil_acts.pt").write_bytes(b"rawacts")
+
+    fetched: list[str] = []
+    expect_name = "issue778_persona_vectors/analysis_tensors/monitoring_corrected/evil_acts.pt"
+
+    def _fake_download(*, repo_id, repo_type, filename, revision):
+        fetched.append(filename)
+        assert filename == expect_name
+        return str(hf_cache / "evil_acts.pt")
+
+    import huggingface_hub
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _fake_download)
+
+    nbd._ensure_monitoring_acts_local(
+        out_root,
+        ["evil"],
+        ["monitoring_corrected"],
+        issue=778,
+        slug="persona_vectors",
+        fetch_from_hf=True,
+    )
+    assert fetched == [expect_name]
+    landed = out_root / "monitoring_corrected" / "evil_acts.pt"
+    assert landed.exists() and landed.read_bytes() == b"rawacts"
+
+
+def test_run_monitoring_reached_after_acts_fetch(tmp_path, monkeypatch):
+    """End-to-end: after the off-pod fetch stages the acts tensor, run_monitoring
+    OPENS it and proceeds PAST the missing-tensor RuntimeError into compute_setting.
+
+    This reaches ``run_monitoring`` (the mechanizable check the reviewer named): the
+    acts loader (_load_monitoring_raw_acts) must return a real array — proving the
+    fetched tensor is where run_monitoring looks — and the run must complete without
+    the ``raw activation tensor ... missing`` raise. compute_setting + rb/pool loaders
+    are stubbed so the test stays CPU-only and offline.
+    """
+    import torch
+
+    from scripts import issue778_null_battery as nbd
+
+    trait, input_tag = "evil", "monitoring_corrected"
+    n_layers, dim = 3, 4
+
+    eval_root = tmp_path / "eval_results" / "issue_778"
+    eval_root.mkdir(parents=True)
+    # 3 kept rows + 1 dropped (score None) -> kept mask [T,T,F,T], target len 3.
+    scores = [10.0, 20.0, None, 30.0]
+    with open(eval_root / f"{input_tag}_{trait}.jsonl", "w") as f:
+        for i, s in enumerate(scores):
+            f.write(
+                json.dumps(
+                    {
+                        "condition_id": i % 2,
+                        "mean_trait_score": s,
+                        "projection_per_layer": [0.0] * n_layers,
+                    }
+                )
+                + "\n"
+            )
+
+    out_root = tmp_path / "data" / "issue_778"
+    out_root.mkdir(parents=True)
+    # Stage the raw acts tensor via the fetch leg (simulating post-teardown download).
+    hf_cache = tmp_path / "hfcache"
+    hf_cache.mkdir()
+    # 4 rows (pre-drop, aligned to JSONL order) x n_layers x dim.
+    torch.save(torch.randn(len(scores), n_layers, dim), hf_cache / "evil_acts.pt")
+
+    def _fake_download(*, repo_id, repo_type, filename, revision):
+        return str(hf_cache / "evil_acts.pt")
+
+    import huggingface_hub
+
+    monkeypatch.setattr(huggingface_hub, "hf_hub_download", _fake_download)
+
+    nbd._ensure_monitoring_acts_local(
+        out_root, [trait], [input_tag], issue=778, slug="persona_vectors", fetch_from_hf=True
+    )
+    assert (out_root / input_tag / f"{trait}_acts.pt").exists()
+
+    # Stub the loaders run_monitoring calls before the acts read + compute_setting so
+    # the test needs no rb/pool artifacts and no real stats — it only proves the acts
+    # tensor is FOUND (past the raise) and threaded into compute_setting.
+    monkeypatch.setattr(nbd, "_load_rb", lambda o, t: np.zeros((n_layers, dim)))
+    monkeypatch.setattr(
+        nbd,
+        "_load_pools",
+        lambda o, t: (np.zeros((2, n_layers, dim)), np.zeros((2, n_layers, dim))),
+    )
+    seen: dict = {}
+
+    class _StubResult:
+        # run_monitoring reads result.to_json() (payload) for _annotate_exceedance;
+        # result.nulls itself is only touched by _write_figure_arrays, stubbed below.
+        matched_max_abs = 0.0
+        matched_r = 0.0
+        matched_r_bootstrap_ci_95 = (0.0, 0.0)
+        reproducibility = None
+
+        def to_json(self):
+            return {"matched_max_abs": 0.0, "nulls": {}}
+
+    def _fake_compute_setting(t, setting, *, predictor_acts, **kw):
+        seen[setting] = predictor_acts.shape
+        return _StubResult(), {}
+
+    monkeypatch.setattr(nb, "compute_setting", _fake_compute_setting)
+    monkeypatch.setattr(nbd, "_write_draws", lambda *a, **k: None)
+    monkeypatch.setattr(nbd, "_write_figure_arrays", lambda *a, **k: None)
+
+    out = nbd.run_monitoring(
+        trait,
+        out_root,
+        eval_root,
+        {},
+        input_tag=input_tag,
+        n_draws=10,
+        lam=0.0,
+        pca_k=1,
+        n_boot=10,
+    )
+    # Both correlation settings were reached and fed the KEPT (3-row) raw acts.
+    assert set(out) == {"monitoring_overall", "monitoring_within"}
+    assert seen["monitoring_overall"] == (3, n_layers, dim), seen
+    assert seen["monitoring_within"] == (3, n_layers, dim), seen

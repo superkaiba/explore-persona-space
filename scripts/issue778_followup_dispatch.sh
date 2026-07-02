@@ -197,9 +197,14 @@ uv run python scripts/issue778_manyshot_monitoring.py \
 UPLOAD_SUMMARY="{}"
 if [ "${EPM_I778F_SKIP_UPLOAD:-0}" != "1" ]; then
   log_phase upload "start"
+  # --traits pins the EXPECTED JSONL basename set the completeness gate fails loud
+  # on (the run's ACTUAL slice — evil-only in smoke, all three in production); a
+  # missing/wrong-root deliverable bounces here pre-teardown, not silently.
+  # shellcheck disable=SC2086
   UPLOAD_SUMMARY="$(uv run python scripts/issue778_upload_corrected.py \
     --issue "$ISSUE" --slug "$SLUG" --phase pod \
-    --eval-results-root eval_results/issue_778)"
+    --eval-results-root eval_results/issue_778 \
+    --traits $TRAITS)"
 else
   log_phase upload "SKIPPED (EPM_I778F_SKIP_UPLOAD=1)"
 fi
