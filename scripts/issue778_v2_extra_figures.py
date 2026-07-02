@@ -74,7 +74,7 @@ def fig_v1_v2_comparison(out_root: Path, eval_root: Path, fig_root: Path, traits
     ax2.set_yticks(y)
     ax2.set_yticklabels(labels, fontsize=6)
     ax2.axvline(0, color="black", lw=0.8)
-    ax2.set_xlabel("observed |r| (v2 direction) − |r| (v1 direction) @ paper layer")
+    ax2.set_xlabel("observed |r| (v2 direction) - |r| (v1 direction) @ paper layer")
     ax2.set_title("Extraction-fidelity impact per cell")
     fig.tight_layout()
     pp.savefig_paper(fig, "v1_vs_v2_direction_impact", dir=str(fig_root), formats=("png", "pdf"))
