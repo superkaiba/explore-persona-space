@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Issue #833 — on-policy answer-profile generation + 2-leg paired extraction.
 
-Phases A0/A/B/C of plan v3 (tasks/running/833/plans/plan.md §4). The Phase-D fit
+Phases A0/A/B/C of plan v4 (tasks/running/833/plans/plan.md §4). The Phase-D fit
 driver is the SIBLING script ``issue833_fit_onpolicy.py`` (NOT this file).
 
 Stages (``--stage``):
@@ -68,6 +68,7 @@ import json
 import logging
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -93,7 +94,7 @@ HF_PREFIX = "issue833_onpolicy_map"
 RAW_PREFIX = f"{HF_PREFIX}/raw_completions/generation"
 RBASE_PREFIX = f"{HF_PREFIX}/raw_completions/rbase"  # fit driver --rbase-completions-prefix
 TENSORS_PREFIX = f"{HF_PREFIX}/analysis_tensors"
-# EVERY #667-store read threads this revision (plan v3 §10 consistency note).
+# EVERY #667-store read threads this revision (plan v4 §10 consistency note).
 STORE_REVISION = "0031fc55a0e965c33be4261287cd5c86393ca161"
 STORE_PREFIX = "issue667_gate_chain_preview/analysis_tensors"
 
@@ -212,25 +213,58 @@ def _resolve_adapter(behavior: str, source_cid: str, seed: int) -> tuple[str, Pa
 
 
 class _VllmLoraEngine:
-    """One vLLM engine serving base + all adapters via per-request LoRARequest."""
+    """One vLLM engine serving base + all adapters via per-request LoRARequest.
 
-    def __init__(self, gpu_mem_util: float = 0.85):
+    ``enable_lora=False`` builds a PLAIN base engine — ``LLM(model=BASE,
+    dtype="bfloat16")`` with NO LoRA kwargs — byte-matching #667's
+    ``vllm_generate_R`` engine construction. Base-model legs that feed a parity
+    gate against #667-era outputs (the A0 cross-era R_base regeneration, the
+    fleet-wide ``--stage rbase``) MUST use this plain form: a LoRA-enabled
+    engine can select different kernels even for base (no-adapter) requests,
+    and a kernel divergence would false-fail the 1e-3 cross-era gate.
+    """
+
+    def __init__(self, gpu_mem_util: float = 0.85, *, enable_lora: bool = True):
         from vllm import LLM
 
-        self._rslora_scaling_line_asserted = _assert_installed_vllm_rslora()
-        self.llm = LLM(
-            model=x667.BASE_MODEL,
-            dtype="bfloat16",
-            enable_lora=True,
-            max_lora_rank=32,
-            gpu_memory_utilization=gpu_mem_util,
-        )
+        self.enable_lora = enable_lora
+        if enable_lora:
+            self._rslora_scaling_line_asserted = _assert_installed_vllm_rslora()
+            self.llm = LLM(
+                model=x667.BASE_MODEL,
+                dtype="bfloat16",
+                enable_lora=True,
+                max_lora_rank=32,
+                gpu_memory_utilization=gpu_mem_util,
+            )
+        else:  # plain base engine — matches issue667_extract.vllm_generate_R
+            self.llm = LLM(
+                model=x667.BASE_MODEL,
+                dtype="bfloat16",
+                gpu_memory_utilization=gpu_mem_util,
+            )
         self._next_lora_id = 1
         self._lora_ids: dict[str, int] = {}
+
+    def engine_config(self) -> dict:
+        """Reproducibility record of how this engine was constructed."""
+        return {
+            "backend": "vllm",
+            "model": x667.BASE_MODEL,
+            "dtype": "bfloat16",
+            "enable_lora": self.enable_lora,
+            "construction": (
+                "LLM(..., enable_lora=True, max_lora_rank=32)"
+                if self.enable_lora
+                else "plain LLM (no LoRA kwargs) — matches issue667_extract.vllm_generate_R"
+            ),
+        }
 
     def _lora_request(self, adapter_dir: Path | None):
         if adapter_dir is None:
             return None
+        if not self.enable_lora:
+            raise RuntimeError("adapter request on a plain (enable_lora=False) engine")
         from vllm.lora.request import LoRARequest
 
         key = str(adapter_dir)
@@ -387,10 +421,17 @@ def stage_parity(args) -> int:
     # + Phase-B smoke R⁺ gens, then reap the engine before any HF model load.
     smoke_cell = cells[0]  # the fact cell smokes Phase B end-to-end
     if device.type != "cpu" and args.gen_backend == "vllm":
-        vllm_ids, cross_era_rbase = _a0_vllm_generations(cell_meta, tok, registry, demos, args)
+        vllm_ids, cross_era_rbase, ce_engine_config = _a0_vllm_generations(
+            cell_meta, tok, registry, demos, args
+        )
         smoke_rplus_ids: list[list[int]] | None = vllm_ids[smoke_cell]
     else:
         vllm_ids, cross_era_rbase, smoke_rplus_ids = {}, {}, None
+        ce_engine_config = (
+            {"backend": "peft-batched-greedy", "note": "gen == teacher-force path (plan §7.1)"}
+            if (device.type != "cpu" and args.gen_backend == "peft")
+            else {"backend": "synthetic-cpu-smoke", "note": "residuals un-asserted"}
+        )
 
     verdicts_ok = True
 
@@ -491,6 +532,9 @@ def stage_parity(args) -> int:
                 for ti, t_cid in enumerate(meta["targets"])
                 for qi in range(len(full_probes))
             }
+            # Smoke npz land in a TMP dir — eval_results/ is JSON/text only
+            # (upload policy); the parity summary JSONs stay under parity_dir.
+            smoke_store_dir = Path(tempfile.mkdtemp(prefix="issue833_a0_smoke_store_"))
             smoke_result = _phase_b_smoke(
                 base,
                 trained,
@@ -506,7 +550,7 @@ def stage_parity(args) -> int:
                 layers,
                 device,
                 meta["gauge"],
-                out_root / "parity" / "smoke_store",
+                smoke_store_dir,
                 gen_backend=args.gen_backend,
                 rbase_sha_by_probe=rbase_sha_by_probe,
             )
@@ -536,6 +580,7 @@ def stage_parity(args) -> int:
             "pass": (all(r["pass"] for r in cross_era_results) if not args.cpu_smoke else None),
             "cpu_smoke_unasserted": bool(args.cpu_smoke),
             "r_text_provenance": "regenerated-greedy (stored R_base text not persisted by #667)",
+            "engine_config": ce_engine_config,
         },
         "phase_b_smoke": smoke_result,
         "cpu_smoke": bool(args.cpu_smoke),
@@ -544,7 +589,12 @@ def stage_parity(args) -> int:
     _write_json(parity_dir / "a0_summary.json", gates)
     _write_json(
         parity_dir / "a0_cross_era.json",
-        {"results": cross_era_results, "rel_l2_threshold": A0_CROSS_ERA_REL_L2, "ts": _now()},
+        {
+            "results": cross_era_results,
+            "rel_l2_threshold": A0_CROSS_ERA_REL_L2,
+            "engine_config": ce_engine_config,
+            "ts": _now(),
+        },
     )
     _write_phase_sentinel("a0-gates", {"gates": gates, "pass": verdicts_ok})
     if not verdicts_ok:
@@ -555,15 +605,20 @@ def stage_parity(args) -> int:
 
 
 def _a0_vllm_generations(cell_meta, tok, registry, demos, args):
-    """ONE vLLM engine session for every A0 generation, reaped before HF loads.
+    """TWO sequential vLLM engine sessions, each reaped before HF loads.
 
-    Per cell: LoRA-loaded greedy over the parity prompt grid, PLUS a BASE-model
-    (no LoRA) regeneration of R_base over the FULL probe pool for the checked
-    targets — the stored npz v0/v_plus are means over the full pool, so the
-    cross-era comparison must match it.
+    Session 1 (LoRA engine): LoRA-loaded greedy over the parity prompt grid —
+    the backend-parity leg NEEDS the LoRA engine (it is what Phase A uses).
+    Session 2 (PLAIN engine, ``enable_lora=False``): the cross-era R_base
+    regeneration over the FULL probe pool for the checked targets — matching
+    #667's ``vllm_generate_R`` construction, because a LoRA-enabled engine can
+    take different kernels for base requests and a divergence would false-fail
+    the 1e-3 cross-era gate. The stored npz v0/v_plus are means over the full
+    pool, so the cross-era comparison must match it.
+
+    Returns ``(vllm_ids, cross_era_rbase, ce_engine_config)``.
     """
     vllm_ids: dict[tuple[str, str], list[list[int]]] = {}
-    cross_era_rbase: dict[tuple[str, str], list[list[int]]] = {}
     engine = _VllmLoraEngine()
     try:
         for key, meta in cell_meta.items():
@@ -572,18 +627,26 @@ def _a0_vllm_generations(cell_meta, tok, registry, demos, args):
                 max_new_tokens=args.max_new_tokens,
                 adapter_dir=meta["adapter_dir"],
             )
+    finally:
+        engine.shutdown()
+
+    cross_era_rbase: dict[tuple[str, str], list[list[int]]] = {}
+    plain = _VllmLoraEngine(enable_lora=False)
+    try:
+        ce_engine_config = plain.engine_config()
+        for key, meta in cell_meta.items():
             full_probes = x667.load_eval_probes(key[0])
             ce_prompts = [
                 _prompt_text(tok, registry, demos, tcid, key[0], q)
                 for tcid in meta["targets"]
                 for q in full_probes
             ]
-            cross_era_rbase[key] = engine.greedy(
+            cross_era_rbase[key] = plain.greedy(
                 ce_prompts, max_new_tokens=args.max_new_tokens, adapter_dir=None
             )
     finally:
-        engine.shutdown()
-    return vllm_ids, cross_era_rbase
+        plain.shutdown()
+    return vllm_ids, cross_era_rbase, ce_engine_config
 
 
 def _peft_rbase_texts(base, tok, registry, demos, behavior, targets, probes, args, device):
@@ -895,7 +958,9 @@ def stage_rbase(args) -> int:
     if args.gen_backend == "vllm":
         if device.type == "cpu":
             raise RuntimeError("--gen-backend vllm requires a GPU; use --gen-backend peft")
-        engine = _VllmLoraEngine()
+        # PLAIN engine (no enable_lora): R_base is base-only, and the A0
+        # cross-era gate certifies exactly this construction (#667 parity).
+        engine = _VllmLoraEngine(enable_lora=False)
     else:  # peft fallback (plan §8 R1) — BASE-only HF load, same path family as extraction
         from transformers import AutoModelForCausalLM
 
@@ -1049,6 +1114,12 @@ def _generate_one_cell(args, engine, tok, registry, demos, behavior, source, dev
         for (tcid, qi), text in zip(keys, texts, strict=True)
     ]
     n_empty = sum(1 for r in rows if not r["response"].strip())
+    # ``targets`` map {tcid: [text ordered by probe_idx]} mirrors the rbase
+    # payload shape (build_rbase_cell_payload) — the first (highest-precedence)
+    # shape the Phase-D fit driver's tolerant reader (_texts_from_json) resolves.
+    targets_map: dict[str, list[str]] = {}
+    for (tcid, _qi), text in zip(keys, texts, strict=True):
+        targets_map.setdefault(tcid, []).append(text)
     payload = {
         "behavior": behavior,
         "source_cid": source,
@@ -1061,6 +1132,7 @@ def _generate_one_cell(args, engine, tok, registry, demos, behavior, source, dev
         "n_probes": len(probes),
         "n_empty": n_empty,
         "ts": _now(),
+        "targets": targets_map,
         "responses": rows,
     }
     path = _write_json(_gen_json_path(out_root, behavior, source, args.seed), payload)
@@ -1110,11 +1182,16 @@ def _extract_and_write_target(
     sha256s thread in as ``resp_sha256_base`` (keyed ``(tcid, probe_idx)``),
     aligned index-for-index with ``resp_sha256`` (both skip empty-R⁺ rows) —
     the fit driver's preferred C7 hash source; a missing entry fails loud.
+    Empty-R⁺ rows are COMPACTED out of the hash arrays, so every npz also
+    persists ``probe_idx`` — the ORIGINAL probe ids, index-aligned with the
+    compacted ``resp_sha256``/``resp_sha256_base`` — which the fit driver's C7
+    read uses for text lookups (probe-index drift guard, round-2 blocker 2).
     Returns the number of npz written.
     """
     acc: dict[int, list[list[np.ndarray]]] = {li: [[], []] for li in layers}
     shas: list[str] = []
     shas_base: list[str] = []
+    probe_ids: list[int] = []
     for qi, q, r in rows:
         if not r.strip():
             continue
@@ -1127,6 +1204,7 @@ def _extract_and_write_target(
         per_layer = x667._mean_resp_acts(base, trained, tok, msgs, r, layers, device)
         shas.append(_sha256(r))
         shas_base.append(base_sha_by_probe[(tcid, qi)])
+        probe_ids.append(int(qi))
         for li in layers:
             v0, vp = per_layer[li]
             acc[li][0].append(v0)
@@ -1161,6 +1239,7 @@ def _extract_and_write_target(
             "n_probes": len(acc[li][0]),
             "resp_sha256": np.array(shas),
             "resp_sha256_base": np.array(shas_base),
+            "probe_idx": np.array(probe_ids, dtype=np.int64),
             "adapter_gauge": json.dumps(gauge),
             "gen_backend": gen_backend,
             "store_revision_pin": STORE_REVISION,

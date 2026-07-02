@@ -19,7 +19,7 @@ from the #833 store written by ``issue833_extract_onpolicy.py``. Records join on
 (behavior, source_cid, target_cid, layer) with a 100% coverage assert (missing
 cells NAMED, fail loud).
 
-Per behavior × layer it persists (plan v3 Must-Fix "Regime-local floors + raw
+Per behavior × layer it persists (plan v4 Must-Fix "Regime-local floors + raw
 deltas" — registration requirement):
 
 - ``eval_results/issue_833/cells/{behavior}_L{layer}.json`` — the ridge
@@ -56,6 +56,7 @@ import argparse
 import hashlib
 import json
 import logging
+import os
 import sys
 import tempfile
 import time
@@ -228,9 +229,10 @@ class OnPolicyLeg:
     layer: int
     v_plus_on: np.ndarray  # v⁺(R⁺), (H,)
     v0_on: np.ndarray  # v0(R⁺), (H,)
-    resp_sha256: list[str]  # per-probe sha256 of R⁺ text
+    resp_sha256: list[str]  # per-probe sha256 of R⁺ text (empty-R⁺ rows compacted out)
     resp_sha256_base: list[str] | None  # per-probe sha256 of R_base text, if threaded
     resp_texts: list[str] | None  # per-probe R⁺ text, if threaded
+    probe_idx: list[int] | None  # ORIGINAL probe ids, index-aligned with resp_sha256
 
 
 def _as_str_list(x) -> list[str]:
@@ -254,6 +256,13 @@ def _new_blob_to_leg(blob: dict, rel: str, beh: str, li: int, hidden: int) -> On
     assert file_layer == li, f"{rel} baked layer {file_layer} != requested {li}"
     file_beh = str(np.asarray(blob["behavior"]).item())
     assert file_beh == beh, f"{rel} behavior {file_beh} != dir {beh}"
+    resp_sha256 = _as_str_list(blob["resp_sha256"])
+    probe_idx: list[int] | None = None
+    if "probe_idx" in blob:
+        probe_idx = [int(v) for v in np.asarray(blob["probe_idx"]).reshape(-1).tolist()]
+        assert len(probe_idx) == len(resp_sha256), (
+            f"{rel} probe_idx len {len(probe_idx)} != resp_sha256 len {len(resp_sha256)}"
+        )
     return OnPolicyLeg(
         behavior=beh,
         source_cid=str(np.asarray(blob["source_cid"]).item()),
@@ -261,11 +270,12 @@ def _new_blob_to_leg(blob: dict, rel: str, beh: str, li: int, hidden: int) -> On
         layer=li,
         v_plus_on=v_plus_on,
         v0_on=v0_on,
-        resp_sha256=_as_str_list(blob["resp_sha256"]),
+        resp_sha256=resp_sha256,
         resp_sha256_base=(
             _as_str_list(blob["resp_sha256_base"]) if "resp_sha256_base" in blob else None
         ),
         resp_texts=_as_str_list(blob["resp_texts"]) if "resp_texts" in blob else None,
+        probe_idx=probe_idx,
     )
 
 
@@ -720,13 +730,17 @@ def _texts_from_json(obj, rel: str) -> dict[tuple[str, int], str]:
     """Tolerant reader: raw-completions JSON → {(target_cid, probe_idx): text}.
 
     Accepted shapes: ``{tcid: [text, ...]}``; ``{"targets": {tcid: [text, ...]}}``;
-    ``{tcid: {"responses": [text, ...]}}``; a list of records with
-    ``target_cid``/``tcid`` + ``response``/``text``/``completion`` (+ optional
-    ``probe_idx``/``qi``). Anything else fails loud naming the file.
+    ``{tcid: {"responses": [text, ...]}}``; a top-level payload dict carrying a
+    ``"responses"`` record LIST (the Phase-A / rbase payload shape — routed into
+    the record-list branch BEFORE arbitrary-key iteration); a list of records
+    with ``target_cid``/``tcid`` + ``response``/``text``/``completion``
+    (+ optional ``probe_idx``/``qi``). Anything else fails loud naming the file.
     """
     out: dict[tuple[str, int], str] = {}
     if isinstance(obj, dict) and isinstance(obj.get("targets"), dict):
         obj = obj["targets"]
+    if isinstance(obj, dict) and isinstance(obj.get("responses"), list):
+        obj = obj["responses"]
     if isinstance(obj, dict):
         for tcid, v in obj.items():
             if isinstance(v, dict) and isinstance(v.get("responses"), list):
@@ -778,6 +792,7 @@ def text_stats_for_behavior(
     onpolicy_prefix: str,
     old_revision: str | None,
     texts_override: dict[str, dict[tuple[str, str, int], str]] | None = None,
+    seed: int = 42,
 ) -> dict:
     """C7: exact-match fraction (sha256) + word-level edit-distance + length dists.
 
@@ -793,7 +808,7 @@ def text_stats_for_behavior(
     """
     joined = joined_by_layer[sorted(joined_by_layer)[0]]
     legs: list[OnPolicyLeg] = joined["legs"]
-    src_dirs = sorted({f"{lg.source_cid}_seed42" for lg in legs})
+    src_dirs = sorted({f"{lg.source_cid}_seed{seed}" for lg in legs})
 
     hashes_threaded = all(lg.resp_sha256_base for lg in legs)
     base_texts = on_texts = None
@@ -830,13 +845,24 @@ def text_stats_for_behavior(
     len_base: list[int] = []
     len_on: list[int] = []
     per_cell_frac: list[dict] = []
+    warned_no_probe_idx = False
     for lg in legs:
-        src = f"{lg.source_cid}_seed42"
+        src = f"{lg.source_cid}_seed{seed}"
         cell_match = cell_n = 0
-        for qi, sha_on in enumerate(lg.resp_sha256):
+        if lg.probe_idx is None and not warned_no_probe_idx:
+            logger.warning(
+                "C7 %s: npz lacks probe_idx (pre-fix store) — falling back to enumerate; "
+                "empty-R⁺ compaction may misalign text lookups (round-2 blocker 2)",
+                behavior,
+            )
+            warned_no_probe_idx = True
+        # k indexes the COMPACTED hash/text arrays; qi is the ORIGINAL probe id
+        # (stored probe_idx when present) used for rollout-JSON text lookups.
+        for k, sha_on in enumerate(lg.resp_sha256):
+            qi = int(lg.probe_idx[k]) if lg.probe_idx is not None else k
             # base-side hash: npz-threaded, else hashed from the stored R_base text
             if lg.resp_sha256_base:
-                sha_base = lg.resp_sha256_base[qi]
+                sha_base = lg.resp_sha256_base[k]
                 t_base = base_texts.get((src, lg.target_cid, qi)) if base_texts else None
             else:
                 t_base = base_texts.get((src, lg.target_cid, qi))
@@ -853,7 +879,7 @@ def text_stats_for_behavior(
             cell_match += int(match)
             # texts (edit distance + lengths)
             t_on = (
-                lg.resp_texts[qi]
+                lg.resp_texts[k]
                 if lg.resp_texts
                 else (on_texts.get((src, lg.target_cid, qi)) if on_texts else None)
             )
@@ -1142,13 +1168,16 @@ def fig_identity_residuals(decomp: dict, fig_dir: Path, paths):
 # ── smoke: synthetic tiny tensors exercising every code path (no HF, no GPU) ───
 
 
-def build_smoke_data(behaviors: tuple[str, ...], layers: tuple[int, ...], hidden: int = 64):
+def build_smoke_data(
+    behaviors: tuple[str, ...], layers: tuple[int, ...], hidden: int = 64, seed: int = 42
+):
     """Synthetic 3-sources × 4-targets grid per behavior × layer + fake r_B / E / texts.
 
     Returns ``(joined_by, r_hat_by, E_by, texts_override_by)`` shaped exactly like
     the production loaders' outputs so the SAME analysis code paths run end-to-end.
     Half the probes keep R⁺ == R_base (exercising the exact-match path), half
-    diverge (exercising hashes + edit distance + non-trivial Δ_text).
+    diverge (exercising hashes + edit distance + non-trivial Δ_text). ``seed``
+    names the ``{src}_seed{seed}`` text-override dirs (matches --seed).
     """
     rng = np.random.default_rng(833)
     sources = [f"src{i}" for i in range(3)]
@@ -1196,8 +1225,8 @@ def build_smoke_data(behaviors: tuple[str, ...], layers: tuple[int, ...], hidden
                         )
                         diverged = (qi + si + tj) % 2 == 0
                         to = tb if not diverged else tb + " trained extra tokens " + str(qi)
-                        base_texts[(f"{src}_seed42", tgt, qi)] = tb
-                        on_texts[(f"{src}_seed42", tgt, qi)] = to
+                        base_texts[(f"{src}_seed{seed}", tgt, qi)] = tb
+                        on_texts[(f"{src}_seed{seed}", tgt, qi)] = to
                         shas.append(_sha256_text(to))
                         shas_base.append(_sha256_text(tb))
                     legs[(beh, src, tgt, li)] = OnPolicyLeg(
@@ -1210,6 +1239,7 @@ def build_smoke_data(behaviors: tuple[str, ...], layers: tuple[int, ...], hidden
                         resp_sha256=shas,
                         resp_sha256_base=shas_base,
                         resp_texts=None,
+                        probe_idx=list(range(n_probes)),
                     )
                     E_vals.append(float(von @ r_hat) + 0.1 * rng.normal())
             joined = join_cells(old_cells, legs)
@@ -1235,8 +1265,11 @@ def _cell_json_valid(path: Path) -> bool:
 
 
 def _write_json(path: Path, obj: dict) -> None:
+    """Atomic JSON write (tmp + os.replace — mirrors the extractor's writer)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=2, default=float))
+    tmp = path.with_suffix(path.suffix + f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(obj, indent=2, default=float))
+    os.replace(tmp, path)
 
 
 def main() -> int:
@@ -1256,6 +1289,9 @@ def main() -> int:
     )
     ap.add_argument("--rbase-completions-prefix", default=RBASE_COMPLETIONS_PREFIX)
     ap.add_argument("--onpolicy-completions-prefix", default=ONPOLICY_COMPLETIONS_PREFIX)
+    ap.add_argument(
+        "--seed", type=int, default=42, help="adapter seed naming the {src}_seed{N} store dirs"
+    )
     ap.add_argument("--headline-layer", type=int, default=HEADLINE_LAYER)
     ap.add_argument("--refit-pairs", type=int, default=fitM.N_REFIT_PAIRS)
     ap.add_argument("--target-dim", type=int, default=fit658.A35_MLP_TARGET_DIM)
@@ -1302,7 +1338,9 @@ def main() -> int:
     # ---- load + join (production) or synthesize (smoke) ----
     texts_override_by: dict[str, dict] | None = None
     if args.smoke:
-        joined_by, r_hat_by, E_by, texts_override_by = build_smoke_data(behaviors, layers)
+        joined_by, r_hat_by, E_by, texts_override_by = build_smoke_data(
+            behaviors, layers, seed=args.seed
+        )
     else:
         g_meta = PROJECT_ROOT / "eval_results/issue_537/G_tensor/G_meta.json"
         if not g_meta.exists():
@@ -1410,6 +1448,7 @@ def main() -> int:
             onpolicy_prefix=args.onpolicy_completions_prefix,
             old_revision=None,
             texts_override=texts_override_by.get(beh) if texts_override_by else None,
+            seed=args.seed,
         )
         _write_json(ts_path, tstats[beh])
         logger.info(
@@ -1422,7 +1461,17 @@ def main() -> int:
     # ---- figures (HERO + exploratory dump, plan §6) ----
     fig_paths: list[str] = []
     beh_list, layer_list = list(behaviors), list(layers)
-    hero_layer = args.headline_layer if args.headline_layer in layers else layer_list[0]
+    if args.headline_layer in layers:
+        hero_layer = args.headline_layer
+    else:
+        hero_layer = layer_list[0]
+        logger.warning(
+            "[phase=fit_onpolicy] headline layer L%d not in --layers %s — SUBSTITUTING L%d "
+            "for the hero dumbbell + decomposition-scatter figures",
+            args.headline_layer,
+            layer_list,
+            hero_layer,
+        )
     fig_hero_dumbbell(cells, beh_list, hero_layer, args.figures_dir, fig_paths)
     fig_headline_grid(cells, beh_list, layer_list, args.figures_dir, fig_paths)
     fig_chain_rho(chains, beh_list, layer_list, args.figures_dir, fig_paths)
