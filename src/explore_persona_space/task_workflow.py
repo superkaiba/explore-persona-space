@@ -1381,6 +1381,318 @@ def stage_dispatch_should_skip(
     )
 
 
+# ─── Same-issue follow-up label grouping (#894) ────────────────────────────
+#
+# Distinct queued follow-ups share the marker KIND (`epm:followup-scope`)
+# under different `followup_label`s, so the highest-version-per-kind marker
+# map is the WRONG read for dispatch: a later label's completion must never
+# strand an earlier queued label (#763: scope v1 `neutral-contrast-and-cofit`
+# stayed invisible after scope v2's round ran). These helpers are the SINGLE
+# implementation of the label-grouped predicate; `/issue` Step 0, the Step 9b
+# loop, the resume table, and `scripts/autonomous_session_watch.py` all defer
+# here.
+
+FOLLOWUP_SCOPE_KIND = "epm:followup-scope"
+FOLLOWUP_RUN_KIND = "epm:same-issue-followup-run"
+USER_INITIATED_FOLLOWUP_SOURCES = frozenset({"user-chat", "step-10b-pick"})
+
+# An UNLABELED scope note inherits the previous entry's label ONLY when it
+# carries an explicit correction signal (the #658-v2 shape: "CORRECTION to
+# the earlier epm:followup-scope (...)"). An unlabeled note WITHOUT the
+# signal is a DISTINCT queued follow-up (#685 v2) and must NOT merge into
+# the previous label.
+CORRECTION_SIGNAL = re.compile(r"correction|supersede|re-?post", re.IGNORECASE)
+
+# The same-issue loop's stage-dispatch breadcrumb prefix (mirrors
+# `autonomous_session_watch._FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX`; the
+# watcher script cannot be imported from the library, so the literal is
+# duplicated here — both sides cite each other).
+_FOLLOWUP_STAGE_DISPATCH_PREFIX = "stage-dispatch stage=followup-"
+
+# Round-completion words for the class-3 retro-close evidence read
+# (`followup_retro_close_evidence`). Case-sensitive by design — a missed
+# close is safe (the label stays queued), a wrong close is not.
+_ROUND_COMPLETION_WORD = re.compile(r"PASS|re-park|awaiting_promotion|clean-result")
+
+
+def parse_followup_note_field(note: str, field: str) -> str | None:
+    """Extract ``<field>``'s value from a followup-scope / run-marker note.
+
+    Matches the FIRST line whose core (after stripping leading ``-``/``*``
+    bullets, bold markers, and whitespace) starts with ``<field>:`` OR
+    ``<field>=`` — both separators occur in the wild (the ``=`` form is the
+    dominant historical run-marker shape, e.g. #537/#552). The value is the
+    first whitespace token of the remainder, stripped of backticks / quotes /
+    ``*`` and a trailing comma (#664 ships a backtick-wrapped bold value).
+    Handles bare-colon, bare-equals, dash-bullet (#658 v1), star-bullet,
+    bold ``**field:**`` (#837 §4c), and single-line space-separated run notes
+    (first-token rule; labels are kebab-slugs with no whitespace — workflow.yaml
+    § markers). First hit wins: #763 v2 embeds a second bold label deep inside
+    its verbatim-proposal section, and the top-of-note canonical line is hit
+    first. Returns ``None`` when the field is absent or its value is empty.
+    """
+    for line in (note or "").splitlines():
+        core = line.strip().lstrip("-*").lstrip()
+        if core.startswith(f"{field}:") or core.startswith(f"{field}="):
+            rest = core[len(field) + 1 :].lstrip("*").strip()
+            tokens = rest.split()
+            value = tokens[0] if tokens else ""
+            value = value.strip("`'\"*").rstrip(",")
+            return value or None
+    return None
+
+
+def _scope_scan_key(event: dict) -> tuple[datetime, int]:
+    """Chronological scan key ``(ts, version)`` for followup-scope grouping.
+
+    CHRONOLOGICAL with version tiebreak — NOT ``(version, ts)``: per-kind
+    version monotonicity is VIOLATED in the wild (#480 carries TWO
+    ``version: 1`` scope rows with a v2 chronologically between them);
+    ``(ts, version)`` is robust there and identical to ``(version, ts)`` on
+    every conforming task (#658, #763). A malformed/missing ts sorts first.
+    """
+    ts = _stage_event_ts(event)
+    if ts is None:
+        ts = datetime.min.replace(tzinfo=UTC)
+    version = event.get("version")
+    if not isinstance(version, int):
+        version = 0
+    return (ts, version)
+
+
+def followup_label_groups(events: list[dict]) -> list[dict]:
+    """Group ``epm:followup-scope`` entries by ``followup_label``.
+
+    Scans scopes in ``(ts, version)`` order (see :func:`_scope_scan_key`).
+    Per entry the label is resolved as:
+
+    - ``parsed`` — the note carries a parseable ``followup_label``;
+    - ``inherited-from-previous`` — unlabeled BUT the note carries a
+      correction signal (:data:`CORRECTION_SIGNAL`): a correction follows
+      the scope it corrects (#658 v2), so it attributes to the previous
+      label;
+    - ``pseudo-ts`` — unlabeled with NO correction signal: a DISTINCT queued
+      follow-up under the pseudo-label ``unlabeled-<ts>`` (#685 v2). NEVER
+      silently dropped, but NON-dispatchable (``unlabeled-<ts>`` violates the
+      kebab-slug field contract and would name
+      ``eval_results/issue_<N>/<label>/`` artifact dirs with colons) — Step 0
+      surfaces these loudly as repair items instead of executing a malformed
+      round.
+
+    Returns one dict per label, in first-armed order, with JSON-native
+    values: ``{followup_label, source, user_initiated, armed_ts,
+    authoritative, label_parse, dispatchable, n_entries}``. Within a label
+    the AUTHORITATIVE entry is the last in scan order (corrections land
+    append-only — the #658 v3→v7 ``persona-vectors-style-rb`` chain);
+    ``armed_ts`` is the FIRST entry's ts (a later correction never re-queues
+    the label). ``source`` is the first parseable ``source`` across the
+    group's entries in scan order (a correction note that omits ``source``
+    must not demote a user-chat round), else ``"unknown"``.
+    """
+    scopes = sorted(
+        (e for e in events if e.get("kind") == FOLLOWUP_SCOPE_KIND),
+        key=_scope_scan_key,
+    )
+    prev_label: str | None = None
+    groups: dict[str, dict] = {}
+    sources: dict[str, list[str]] = {}
+    for ev in scopes:
+        note = ev.get("note") or ""
+        label = parse_followup_note_field(note, "followup_label")
+        if label:
+            parse_mode = "parsed"
+        elif prev_label is not None and CORRECTION_SIGNAL.search(note):
+            label, parse_mode = prev_label, "inherited-from-previous"
+        else:
+            label, parse_mode = f"unlabeled-{ev.get('ts', '')}", "pseudo-ts"
+        prev_label = label
+        group = groups.get(label)
+        if group is None:
+            group = {
+                "followup_label": label,
+                "armed_ts": ev.get("ts", ""),
+                "authoritative": ev,
+                "label_parse": parse_mode,
+                "n_entries": 0,
+            }
+            groups[label] = group
+            sources[label] = []
+        group["n_entries"] += 1
+        group["authoritative"] = ev  # last in (ts, version) order wins
+        group["label_parse"] = parse_mode
+        src = parse_followup_note_field(note, "source")
+        if src:
+            sources[label].append(src)
+    result: list[dict] = []
+    for label, group in groups.items():
+        group["source"] = sources[label][0] if sources[label] else "unknown"
+        group["user_initiated"] = group["source"] in USER_INITIATED_FOLLOWUP_SOURCES
+        group["dispatchable"] = group["label_parse"] in ("parsed", "inherited-from-previous")
+        result.append(group)
+    return result
+
+
+def unrun_followup_labels(events: list[dict]) -> list[dict]:
+    """Label groups (per :func:`followup_label_groups`) with NO matching
+    ``epm:same-issue-followup-run`` marker — the UNRUN queue.
+
+    A LABEL is unrun iff no run marker carries the same ``followup_label``
+    (workflow.yaml § markers — the label-keyed satisfier; the label's run
+    marker closes ALL of its scope entries). Pseudo-label groups are
+    INCLUDED (they must surface as repair items) but carry
+    ``dispatchable: False`` — consumers that execute rounds filter on
+    ``dispatchable``. A run marker with an unparseable label closes NOTHING
+    (conservative in the anti-stranding direction; the counterweight is the
+    Step 0 stale-label disposition rule / :func:`followup_retro_close_evidence`).
+
+    Ordered deterministically: user-initiated labels first
+    (:data:`USER_INITIATED_FOLLOWUP_SOURCES`), then oldest ``armed_ts``,
+    then the authoritative entry's ``version``.
+    """
+    run_labels = {
+        parse_followup_note_field(e.get("note") or "", "followup_label")
+        for e in events
+        if e.get("kind") == FOLLOWUP_RUN_KIND
+    } - {None}
+    unrun = [g for g in followup_label_groups(events) if g["followup_label"] not in run_labels]
+
+    def _order(group: dict) -> tuple[bool, str, int]:
+        version = group["authoritative"].get("version")
+        return (
+            not group["user_initiated"],
+            group["armed_ts"],
+            version if isinstance(version, int) else 0,
+        )
+
+    unrun.sort(key=_order)
+    return unrun
+
+
+def executing_followup_label(events: list[dict]) -> dict | None:
+    """Resolve WHICH unrun label the current / most-recent round is executing.
+
+    Shared by the Step 9b step-3 mid-round re-read, the step-4
+    completion-marker label derivation, and the watcher's
+    ``_post_followup_run_marker`` (SKILL.md Step 9b § Same-issue follow-up
+    loop). Resolution order:
+
+    1. The newest ``epm:progress`` note beginning
+       ``stage-dispatch stage=followup-`` that is strictly newer than the
+       newest ``epm:same-issue-followup-run`` ts and carries a
+       ``label=<slug>`` token (via :func:`_breadcrumb_fields`) → that
+       label's group, if unrun. This wins over the queue head because a
+       user-chat label posted MID-ROUND would jump the head; the breadcrumb
+       pins the round actually dispatched.
+    2. Fallback: the head of the DISPATCHABLE subset of
+       :func:`unrun_followup_labels` (Step 0 only ever dispatches
+       dispatchable heads, so head == executing round whenever no labeled
+       breadcrumb exists — breadcrumbs predating the #894 ``label=``
+       contract lack the token).
+    3. ``None`` when no dispatchable unrun labels exist.
+    """
+    unrun = unrun_followup_labels(events)
+    newest_run_ts: datetime | None = None
+    for ev in events:
+        if ev.get("kind") != FOLLOWUP_RUN_KIND:
+            continue
+        ts = _stage_event_ts(ev)
+        if ts is not None and (newest_run_ts is None or ts > newest_run_ts):
+            newest_run_ts = ts
+    crumb_label: str | None = None
+    crumb_ts: datetime | None = None
+    for ev in events:
+        if ev.get("kind") != "epm:progress":
+            continue
+        note = (ev.get("note") or "").lstrip()
+        if not note.startswith(_FOLLOWUP_STAGE_DISPATCH_PREFIX):
+            continue
+        label = _breadcrumb_fields(note).get("label")
+        if not label:
+            continue
+        ts = _stage_event_ts(ev)
+        if ts is None:
+            continue
+        if newest_run_ts is not None and ts <= newest_run_ts:
+            continue
+        if crumb_ts is None or ts > crumb_ts:
+            crumb_ts = ts
+            crumb_label = label
+    if crumb_label is not None:
+        for group in unrun:
+            if group["followup_label"] == crumb_label:
+                return group
+    for group in unrun:
+        if group["dispatchable"]:
+            return group
+    return None
+
+
+def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
+    """MECHANICAL, exact-label evidence that ``label``'s round already ran.
+
+    The predicate behind the Step 0 stale-label disposition rule (legacy
+    tasks like #658 carry ghost labels whose rounds demonstrably ran without
+    an ``epm:same-issue-followup-run`` record). Three evidence classes, all
+    EXACT-match — prose mention / substring / prefix evidence NEVER closes:
+
+    1. an ``epm:methodology-doc-generated`` note carrying ``extends=<label>``
+       (exact token, via :func:`parse_followup_note_field` or the
+       ``key=value`` breadcrumb grammar);
+    2. an ``epm:free-analysis-followup-run`` whose ``followup_ref`` EXACTLY
+       equals ``label`` (string equality — a PREFIX match like
+       ``<label>-9a-ter-fit`` never closes);
+    3. an ``epm:status-changed`` / ``epm:step-completed`` / ``epm:progress``
+       note with the exact parenthesized round token ``(<label>)`` AND a
+       round-completion word (:data:`_ROUND_COMPLETION_WORD`) on the same
+       line.
+
+    Returns the one-line evidence string when EXACTLY ONE class matches;
+    ``None`` otherwise (no evidence, OR multiple classes — ambiguity NEVER
+    closes; the caller skips the label and surfaces it for manual
+    disposition).
+    """
+    matches: list[str] = []
+    for ev in events:
+        kind = ev.get("kind")
+        note = ev.get("note") or ""
+        if kind == "epm:methodology-doc-generated":
+            extends = parse_followup_note_field(note, "extends")
+            if extends != label:
+                extends = _breadcrumb_fields(note).get("extends")
+            if extends == label:
+                matches.append(
+                    f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
+                )
+                break
+    for ev in events:
+        if ev.get("kind") != "epm:free-analysis-followup-run":
+            continue
+        ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
+        if ref == label:
+            matches.append(
+                f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
+            )
+            break
+    token = f"({label})"
+    for ev in events:
+        kind = ev.get("kind")
+        if kind not in ("epm:status-changed", "epm:step-completed", "epm:progress"):
+            continue
+        for line in (ev.get("note") or "").splitlines():
+            if token in line and _ROUND_COMPLETION_WORD.search(line):
+                matches.append(
+                    f"{kind} at {ev.get('ts', '?')} carries the round token "
+                    f"({label}) plus a round-completion word"
+                )
+                break
+        else:
+            continue
+        break
+    if len(matches) == 1:
+        return matches[0]
+    return None
+
+
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
     """Render the new (correcting) failure-lesson body as a durable memory entry.
 
@@ -3830,6 +4142,8 @@ __all__ = [
     "CONCERN_EVENTS",
     "CONCERN_SEVERITIES",
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
+    "FOLLOWUP_RUN_KIND",
+    "FOLLOWUP_SCOPE_KIND",
     "GOAL_H2_NAME",
     "KINDS",
     "PARK_STATUS",
@@ -3838,6 +4152,7 @@ __all__ = [
     "STATUSES",
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
+    "USER_INITIATED_FOLLOWUP_SOURCES",
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",
@@ -3848,7 +4163,10 @@ __all__ = [
     "audit",
     "create_task",
     "defer_concern",
+    "executing_followup_label",
     "find_task_path",
+    "followup_label_groups",
+    "followup_retro_close_evidence",
     "get_goal",
     "get_relates_to",
     "get_task",
@@ -3860,6 +4178,7 @@ __all__ = [
     "list_concerns",
     "list_events",
     "new_plan_version",
+    "parse_followup_note_field",
     "post_event",
     "primary_checkout_root",
     "promote",
@@ -3875,4 +4194,5 @@ __all__ = [
     "set_status",
     "set_title",
     "tasks_dir",
+    "unrun_followup_labels",
 ]
