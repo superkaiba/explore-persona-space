@@ -147,7 +147,7 @@ def _ensure_repo_root_on_syspath() -> None:
     repo_root_str = str(repo_root)
     if repo_root_str not in sys.path:
         sys.path.insert(0, repo_root_str)
-        logger.debug("Inserted repo root onto sys.path: %s", repo_root_str)
+        logger.info("Inserted repo root onto sys.path: %s", repo_root_str)
 
 
 def sha256_file(path: pathlib.Path) -> str:
@@ -1136,6 +1136,32 @@ def phase3_tf_extract(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> N
     b1_texts = [r["answer_text"] for r in b1_recs]
     c_texts = [c_data["contexts"][str(i)]["answer_text"] for i in range(n_contexts)]
 
+    # Apply common_valid_idx mask to ALL arms.  The C arm sources its text from the
+    # derangement (A' records via permutation), so an invalid context i can have a
+    # NON-EMPTY c_texts[i] (sourced from a valid context perm[i]).  Without this mask
+    # _tf_extract_arm would NOT skip invalid contexts for C, producing non-zero vectors
+    # that pollute the ridge fits.  Zero out every arm at invalid positions so
+    # _tf_extract_arm's skip_mask treats them uniformly as missing.
+    common_valid_path = base_dir / "raw_completions" / "phase1" / "common_valid_idx.json"
+    assert common_valid_path.exists(), (
+        f"common_valid_idx.json not found: {common_valid_path}. Run Phase 1 first."
+    )
+    common_valid_idx_set: set[int] = set(
+        json.loads(common_valid_path.read_text())["common_valid_idx"]
+    )
+    n_dropped = n_contexts - len(common_valid_idx_set)
+    logger.info(
+        "[phase3] common_valid_idx: %d valid, %d dropped (will zero out invalid arm texts)",
+        len(common_valid_idx_set),
+        n_dropped,
+    )
+    for _i in range(n_contexts):
+        if _i not in common_valid_idx_set:
+            a_prime_texts[_i] = ""
+            b1_texts[_i] = ""
+            b2_texts[_i] = ""
+            c_texts[_i] = ""  # C arm sourced from derangement — must also mask
+
     layers = list(range(EXPECTED_LAYERS))
     batch_size = int(os.environ.get("EPM_TF_BATCH_SIZE", "4" if smoke else "8"))
 
@@ -1329,17 +1355,17 @@ def _upload_arm_tensors(base_dir: pathlib.Path) -> None:
         commit_message=f"issue 823: arm tensors ({len(operations)} files)",
         operations=operations,
     )
-    # Post-commit Hub verification: confirm uploaded files are visible
+    # Post-commit Hub verification: confirm uploaded files are visible.
+    # list_repo_files() has no path_in_repo kwarg — filter client-side by prefix.
     from huggingface_hub import list_repo_files
 
     expected_paths = {f"{ISSUE_SLUG}/analysis_tensors/{f.name}" for f in files_to_upload}
-    hub_files = set(
-        list_repo_files(
-            repo_id=HF_DATA_REPO_DATA,
-            repo_type="dataset",
-            path_in_repo=f"{ISSUE_SLUG}/analysis_tensors/",
-        )
-    )
+    prefix = f"{ISSUE_SLUG}/analysis_tensors/"
+    hub_files = {
+        f
+        for f in list_repo_files(repo_id=HF_DATA_REPO_DATA, repo_type="dataset")
+        if f.startswith(prefix)
+    }
     missing = expected_paths - hub_files
     if missing:
         raise RuntimeError(
@@ -1347,6 +1373,31 @@ def _upload_arm_tensors(base_dir: pathlib.Path) -> None:
             f"{sorted(missing)[:3]}..."
         )
     logger.info("Upload complete and Hub-verified: %d files", len(operations))
+
+
+def _load_common_valid_idx(base_dir: pathlib.Path, n_contexts: int) -> np.ndarray:
+    """Load common_valid_idx from Phase 1 output; fall back to all indices if file absent.
+
+    Returns a sorted integer index array of valid context positions.  Logs the drop count
+    so callers don't need to repeat the accounting.
+    """
+    common_valid_path = base_dir / "raw_completions" / "phase1" / "common_valid_idx.json"
+    if common_valid_path.exists():
+        valid_idx = np.array(
+            sorted(json.loads(common_valid_path.read_text())["common_valid_idx"]), dtype=int
+        )
+        logger.info(
+            "[common_valid_idx] %d valid, %d dropped",
+            len(valid_idx),
+            n_contexts - len(valid_idx),
+        )
+    else:
+        valid_idx = np.arange(n_contexts)
+        logger.warning(
+            "[common_valid_idx] common_valid_idx.json not found — using all %d contexts (no mask)",
+            n_contexts,
+        )
+    return valid_idx
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1393,6 +1444,22 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
         v_b2.shape,
         v_c.shape,
     )
+
+    # ── Apply common_valid_idx mask (Phase 1 output) ──────────────────────────
+    # Zero-vector rows from invalid Sonnet contexts (empty answer_text → skip_mask in
+    # _tf_extract_arm) must be excluded from the ridge fits.  The C arm in Phase 3 is
+    # sourced from the derangement, so its skip_mask does NOT track A'/B1/B2 validity —
+    # we must restrict by the intersection written in Phase 1.
+    valid_idx = _load_common_valid_idx(base_dir, n_contexts)
+    # Slice all per-context arrays to valid rows only.
+    cx_last_full = cx_last_full[valid_idx]
+    v_x_full = v_x_full[valid_idx]
+    v_a_prime = v_a_prime[valid_idx]
+    v_b1 = v_b1[valid_idx]
+    v_b2 = v_b2[valid_idx]
+    v_c = v_c[valid_idx]
+    # Update n_contexts for all downstream size-dependent allocations (ctx_sse/ctx_sst etc.)
+    n_contexts = len(valid_idx)
 
     # Arm A is used ONLY for the harness reproduce-gate (DV0 check).
     # The DV1 per-arm refit and DV3 cross-arm transfer operate on {A', B1, B2, C}.
@@ -2269,13 +2336,44 @@ def parse_args() -> argparse.Namespace:
 
 
 def _phase1_outputs_exist(base_dir: pathlib.Path) -> bool:
-    """Return True iff all three Phase 1 output files are present and non-empty."""
+    """Return True iff all three Phase 1 output files are present, valid JSON, and non-empty.
+
+    Validates file existence, JSON parseability, and minimum record counts so that a
+    truncated / corrupted file from a previous failed run does not silently trigger the
+    resume skip.  b2_seed42.json and b1_seed43.json must each be non-empty JSON lists;
+    common_valid_idx.json must contain a non-empty "common_valid_idx" list key.
+    """
     p1_dir = base_dir / "raw_completions" / "phase1"
-    for name in ("b2_seed42.json", "b1_seed43.json", "common_valid_idx.json"):
-        p = p1_dir / name
+
+    def _valid_json_list(p: pathlib.Path) -> bool:
         if not p.exists() or p.stat().st_size == 0:
             return False
-    return True
+        try:
+            data = json.loads(p.read_text())
+        except (json.JSONDecodeError, OSError):
+            logger.warning("_phase1_outputs_exist: could not parse %s — treating as absent", p)
+            return False
+        return isinstance(data, list) and len(data) > 0
+
+    def _valid_common_valid_idx(p: pathlib.Path) -> bool:
+        if not p.exists() or p.stat().st_size == 0:
+            return False
+        try:
+            data = json.loads(p.read_text())
+        except (json.JSONDecodeError, OSError):
+            logger.warning("_phase1_outputs_exist: could not parse %s — treating as absent", p)
+            return False
+        return (
+            isinstance(data, dict)
+            and isinstance(data.get("common_valid_idx"), list)
+            and len(data["common_valid_idx"]) > 0
+        )
+
+    if not _valid_json_list(p1_dir / "b2_seed42.json"):
+        return False
+    if not _valid_json_list(p1_dir / "b1_seed43.json"):
+        return False
+    return _valid_common_valid_idx(p1_dir / "common_valid_idx.json")
 
 
 def _run_phases(
