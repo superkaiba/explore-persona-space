@@ -3,7 +3,8 @@ title: 'Layer-to-layer activation dynamics on real chat contexts: per-layer pred
   atlas of the residual-stream update + does a dynamics-pretrained predictor beat
   #779''s direct context->trait predictor'
 kind: experiment
-tags: []
+tags:
+- activation-dynamics
 created_at: '2026-07-02T06:56:23Z'
 has_clean_result: false
 parent_id: 779
