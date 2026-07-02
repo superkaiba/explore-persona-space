@@ -5,8 +5,6 @@ paths:
   - "scripts/build_paper.py"
   - "scripts/verify_paper.py"
 ---
-# Analyzer paper-mode protocol (relocated from analyzer.md, #829)
-
 # PAPER-TASK MODE (author the LaTeX paper) — `paper: true`
 
 When the task carries `paper: true` frontmatter, the canonical

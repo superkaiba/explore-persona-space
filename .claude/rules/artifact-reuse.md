@@ -284,4 +284,3 @@ both discovered at implementation-time via a post-hoc
 `dataclasses.fields()` introspection rather than pre-cherry-pick —
 the implementer caught it via the smoke but the failure-mode-catch
 was reactive, not preventative.)
-

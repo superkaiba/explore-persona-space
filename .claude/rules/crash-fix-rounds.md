@@ -165,4 +165,3 @@ instance / SLURM job. Whether to reprovision for the full run is the
 ORCHESTRATOR's decision, driven by the `/issue` Step 7 crash-fix routing after
 it reads your marker. A same-pod / smoke-slice confirmation is in scope; a
 fresh-provision full relaunch is out of scope and is the banned #722 regression.
-

@@ -157,4 +157,3 @@ only because the experimenter happened to repoint the pod-local
 re-runs preflight re-introduces the fatal check unless it parses the
 error list. (The experimenter's own preflight invocation carries the same
 legacy-scoped tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
-

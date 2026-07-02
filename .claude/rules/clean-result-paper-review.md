@@ -331,4 +331,3 @@ mechanizability standing rule (below) apply to the paper branch identically.
 pointer → `eval_results` JSON — is a planned v1.1 addition, NOT scored in
 v1; do not add it to the roster or FAIL a v1 paper for writing literal
 numbers.)
-
