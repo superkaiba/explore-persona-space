@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 902,
+  "highest_id": 903,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5916,6 +5916,13 @@
       "path": "tasks/proposed/902",
       "status": "proposed",
       "title": "workflow-fix: exit-137 kill-source verification checklist + PM stop-marker-before-kill"
+    },
+    "903": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/903",
+      "status": "proposed",
+      "title": "workflow-fix: watcher honors paused-takeover sentinel; stop resolves unregistered sessions"
     },
     "91": {
       "has_clean_result": false,
