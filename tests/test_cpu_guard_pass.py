@@ -16,7 +16,11 @@ Covers (plan #849 § Test plan, cases 1-15):
     cursor dedup, mem-avail single-tick fire + snapshot, seeded-snapshot
     kill attribution, dry-run zero-write/zero-subprocess, kill switch,
     garbled state + fail-soft arms + journal lookback bounds,
-  * the never-kills grep over the new source block.
+  * the never-kills grep over the new source block,
+  * round-2 review fixes (cases 16-19): wrong-TYPE valid-JSON state fields
+    (recent_kill_keys container, alerted bool) degrade + self-repair, a
+    snapshot match without an int issue is honestly unattributed on BOTH
+    match paths, newest-keys dedup truncation, 15-char kernel-comm matching.
 
 Mirrors tests/test_vm_disk_subfloor_sentinel.py's bootstrap + watcher_roots
 fixture (monkeypatch asw.PROJECT_ROOT + asw.AUTONOMOUS_REGISTRY_DIR).
@@ -520,6 +524,148 @@ def test_garbled_state_and_failsoft_arms(guard_env, watcher_roots, capsys):
     t1 = time.time()
     assert sig.since_calls[-1] >= t0 - asw.CPU_GUARD_JOURNAL_MAX_LOOKBACK_S - 1
     assert sig.since_calls[-1] <= t1 - asw.CPU_GUARD_JOURNAL_MAX_LOOKBACK_S + 1
+
+
+# ─── 16. wrong-TYPE (valid-JSON) state fields — degrade + self-repair ────────
+
+
+def test_state_wrong_type_recent_kill_keys_never_crashes(guard_env, watcher_roots):
+    """A valid-JSON state file with `recent_kill_keys: 5` (truthy non-
+    iterable) must NOT raise: the pass is called unwrapped in main()'s
+    daemon-independent block, so a TypeError here would abort the ENTIRE
+    watcher tick (pod-safety, crash-recovery, GC) every 10 min — AC4.
+    Pre-fix this crashed with `TypeError: 'int' object is not iterable`;
+    the pass now degrades to "no keys" and self-repairs the field."""
+    reg = watcher_roots / "reg"
+    reg.mkdir(parents=True, exist_ok=True)
+    (reg / "vm-cpu-guard.json").write_text(json.dumps({"recent_kill_keys": 5}))
+    assert asw.cpu_guard_pass(dry_run=False) is False  # must not raise
+    repaired = _read_state(watcher_roots)
+    assert isinstance(repaired["recent_kill_keys"], list)
+
+
+def test_alerted_wrong_type_does_not_suppress_episode(guard_env, watcher_roots):
+    """A wrong-type truthy `alerted` (e.g. "yes") must NOT suppress a real
+    episode: unguarded, decide_cpu_guard_fire sees alerted=True with no
+    valid last_alert_reasons/load5 and never emits the first pressure row
+    until a cold recovery tick. The isinstance(bool) guard reads it as
+    False, so the (second) hot tick fires."""
+    sig = guard_env
+    reg = watcher_roots / "reg"
+    reg.mkdir(parents=True, exist_ok=True)
+    (reg / "vm-cpu-guard.json").write_text(json.dumps({"alerted": "yes", "consecutive_hot": 1}))
+    sig.load = (210.0, 200.0)  # hot: 200 > 1.5 * 32
+    # consecutive_hot is already 1, so THIS tick completes the 2-tick streak.
+    assert asw.cpu_guard_pass(dry_run=False) is True
+    assert len(_pressure_rows(watcher_roots)) == 1
+    assert _read_state(watcher_roots)["alerted"] is True  # self-repaired to bool
+
+
+# ─── 17. a snapshot match WITHOUT an int issue is honestly unattributed ──────
+
+
+def test_kill_row_pid_match_without_issue_is_unattributed(guard_env, watcher_roots):
+    """Pid match against a snapshot row with `issue: None` -> the kill row is
+    explicitly unattributed. `issue: null` + `attribution_status: attributed`
+    is banned (the honesty contract the field exists for)."""
+    sig = guard_env
+    snap = {
+        "ts": 1.0,
+        "procs": [
+            {
+                "pid": 4087688,
+                "pcpu": 250.0,
+                "rss_mib": 3390.0,
+                "argv": "pytest tests/x.py",
+                "issue": None,
+            }
+        ],
+    }
+    kill = asw.parse_earlyoom_kill_line(_KILL_LINE)  # pid 4087688 — pid match
+    assert asw.attribute_kill(kill, snap) == (None, "unattributed")
+    reg = watcher_roots / "reg"
+    reg.mkdir(parents=True, exist_ok=True)
+    (reg / "vm-cpu-guard.json").write_text(json.dumps({"last_top_snapshot": snap}))
+    sig.kills = [kill]
+    asw.cpu_guard_pass(dry_run=False)
+    rows = _kill_rows(watcher_roots)
+    assert len(rows) == 1
+    assert rows[0]["attribution_status"] == "unattributed"
+    assert rows[0]["issue"] is None
+    assert rows[0]["attribution_source"] is None
+
+
+def test_kill_row_comm_match_without_issue_is_unattributed(guard_env, watcher_roots):
+    """Same honesty contract on the unique-comm fallback path: a unique comm
+    match to a snapshot row with `issue: None` is unattributed."""
+    sig = guard_env
+    snap = {
+        "ts": 1.0,
+        "procs": [
+            {
+                "pid": 500,  # kill pid 4087688 does NOT match -> comm path
+                "pcpu": 10.0,
+                "rss_mib": 100.0,
+                "argv": "pytest tests/y.py",
+                "issue": None,
+            }
+        ],
+    }
+    kill = asw.parse_earlyoom_kill_line(_KILL_LINE)  # comm "pytest", unique
+    assert asw.attribute_kill(kill, snap) == (None, "unattributed")
+    reg = watcher_roots / "reg"
+    reg.mkdir(parents=True, exist_ok=True)
+    (reg / "vm-cpu-guard.json").write_text(json.dumps({"last_top_snapshot": snap}))
+    sig.kills = [kill]
+    asw.cpu_guard_pass(dry_run=False)
+    rows = _kill_rows(watcher_roots)
+    assert len(rows) == 1
+    assert rows[0]["attribution_status"] == "unattributed"
+    assert rows[0]["issue"] is None
+
+
+# ─── 18. dedup-key truncation keeps the NEWEST keys ──────────────────────────
+
+
+def test_recent_kill_keys_truncation_keeps_newest(guard_env, watcher_roots):
+    """A >50-kill backlog scan keeps the NEWEST keys under the 50-key cap
+    (journal order is oldest-first), so a kill inside the 60 s overlap tail
+    survives the cap and is not re-emitted on the next tick."""
+    sig = guard_env
+    base = asw.parse_earlyoom_kill_line(_KILL_LINE)
+    sig.kills = [
+        dict(base, pid=1000 + i, journal_ts=f"2026-06-28T21:44:{i:02d}-0700") for i in range(55)
+    ]
+    asw.cpu_guard_pass(dry_run=False)
+    assert len(_kill_rows(watcher_roots)) == 55
+    keys = _read_state(watcher_roots)["recent_kill_keys"]
+    assert len(keys) == 50
+    newest = f"{sig.kills[-1]['journal_ts']}:{sig.kills[-1]['pid']}"
+    oldest = f"{sig.kills[0]['journal_ts']}:{sig.kills[0]['pid']}"
+    assert newest in keys
+    assert oldest not in keys
+    # Overlap re-scan of the newest tail: zero duplicate rows.
+    sig.kills = sig.kills[-5:]
+    asw.cpu_guard_pass(dry_run=False)
+    assert len(_kill_rows(watcher_roots)) == 55
+
+
+# ─── 19. kernel 15-char comm truncation still comm-matches ───────────────────
+
+
+def test_attribute_kill_comm_matches_kernel_15_char_truncation():
+    """Kernel `comm` is 15-char truncated; a long-named process must still
+    unique-comm-match by 15-char basename prefix."""
+    snap = {
+        "ts": 1.0,
+        "procs": [
+            {"pid": 7, "argv": "/usr/bin/my_very_long_worker_name --flag", "issue": 845},
+        ],
+    }
+    kill = {"pid": 1, "comm": "my_very_long_wo"}  # 15-char kernel truncation
+    assert asw.attribute_kill(kill, snap) == (845, "attributed")
+    # A short comm still requires an exact basename match (no prefix creep).
+    assert asw.attribute_kill({"pid": 1, "comm": "my_very"}, snap) == (None, "unattributed")
 
 
 # ─── env knob fail-soft ──────────────────────────────────────────────────────

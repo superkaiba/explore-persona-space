@@ -5,8 +5,9 @@ Twelve passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
 right after pass 2, the IDLE-UNMAPPED-SESSION pass (item 10) right after
 pass 7, the INFRA-DRAIN pass (item 11) between pass 5 (the orphan sweep)
 and pass 6 (session-reconcile), and the CPU-GUARD pass (item 12) in the
-daemon-independent block right after pass 1's disk checks, all before the
-GC pass:
+daemon-independent block right after the happy-patch check (order there:
+pass 1's disk checks -> data-disk -> happy-patch -> CPU-GUARD ->
+program-orchestrator recovery), all before the GC pass:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -2621,8 +2622,12 @@ def attribute_kill(kill: dict, snapshot: dict | None) -> tuple[int | None, str]:
     Matches the killed pid against the rolling PRE-KILL snapshot stored on
     the last pressure fire (an earlyoom-killed pid has no ``/proc/<pid>/cwd``
     left — pid -> issue is capturable only pre-kill). A pid match wins; else
-    a UNIQUE comm match among the snapshot argv basenames. No snapshot / no
-    match -> ``(None, "unattributed")``. Never raises."""
+    a UNIQUE comm match among the snapshot argv basenames (compared on the
+    first 15 chars of the basename — the kernel truncates ``comm`` to 15).
+    ``"attributed"`` REQUIRES an int issue on the matched row: a match whose
+    snapshot row carries no issue is honestly ``(None, "unattributed")``
+    (never ``issue: null`` + ``attributed``). No snapshot / no match ->
+    ``(None, "unattributed")``. Never raises."""
     try:
         if not isinstance(snapshot, dict):
             return (None, "unattributed")
@@ -2631,7 +2636,12 @@ def attribute_kill(kill: dict, snapshot: dict | None) -> tuple[int | None, str]:
         for p in procs:
             if p.get("pid") == pid:
                 issue = p.get("issue")
-                return (issue if isinstance(issue, int) else None, "attributed")
+                if isinstance(issue, int):
+                    return (issue, "attributed")
+                # Pid match is authoritative: the killed process IS this
+                # snapshot row, and it has no issue — do NOT fall through to
+                # comm matching (that could name a DIFFERENT process's issue).
+                return (None, "unattributed")
         comm = kill.get("comm")
         if isinstance(comm, str) and comm:
             matches = []
@@ -2640,11 +2650,15 @@ def attribute_kill(kill: dict, snapshot: dict | None) -> tuple[int | None, str]:
                 if not isinstance(argv, str):
                     continue
                 toks = argv.split()
-                if toks and os.path.basename(toks[0]) == comm:
+                # Kernel comm is 15-char truncated; match by 15-char prefix
+                # so long-named processes still comm-match.
+                if toks and os.path.basename(toks[0])[:15] == comm:
                     matches.append(p)
             if len(matches) == 1:
                 issue = matches[0].get("issue")
-                return (issue if isinstance(issue, int) else None, "attributed")
+                if isinstance(issue, int):
+                    return (issue, "attributed")
+                return (None, "unattributed")
         return (None, "unattributed")
     except Exception:  # pragma: no cover - absolute fail-soft backstop
         return (None, "unattributed")
@@ -2820,7 +2834,13 @@ def cpu_guard_pass(dry_run: bool) -> bool:
             file=sys.stderr,
         )
     elif kills is not None:
-        seen = {k for k in (state.get("recent_kill_keys") or []) if isinstance(k, str)}
+        # Guard the CONTAINER before the elements: a valid-JSON state file
+        # with e.g. `"recent_kill_keys": 5` (truthy non-iterable) must degrade
+        # to "no keys", never TypeError — the pass is called unwrapped in
+        # main()'s daemon-independent block, so a raise here would abort the
+        # ENTIRE watcher tick every 10 min (AC4; r1 review Critical).
+        raw_keys = state.get("recent_kill_keys")
+        seen = {k for k in (raw_keys if isinstance(raw_keys, list) else []) if isinstance(k, str)}
         raw_snap = state.get("last_top_snapshot")
         snapshot = raw_snap if isinstance(raw_snap, dict) else None
         new = [k for k in kills if f"{k['journal_ts']}:{k['pid']}" not in seen]
@@ -2857,8 +2877,14 @@ def cpu_guard_pass(dry_run: bool) -> bool:
                     dry_run,
                 )
                 state["last_kill_push_ts"] = now
+        # Keep the NEWEST keys under the 50-key cap: journal order is
+        # oldest-first, so reverse before truncating — a kill inside the 60 s
+        # overlap tail of a >50-kill backlog scan must survive the cap or it
+        # would be re-emitted once on the next tick (r1 review Minor).
         new_keys = [f"{k['journal_ts']}:{k['pid']}" for k in kills]
-        state["recent_kill_keys"] = list(dict.fromkeys(new_keys + sorted(seen)))[:50]
+        state["recent_kill_keys"] = list(dict.fromkeys(list(reversed(new_keys)) + sorted(seen)))[
+            :50
+        ]
         state["last_journal_epoch"] = now
 
     # ── (b) pressure detection: streaked rate signals + single-tick floor ───
@@ -2874,10 +2900,16 @@ def cpu_guard_pass(dry_run: bool) -> bool:
         prior_consec = 0
     raw_last_load5 = state.get("last_alert_load5")
     raw_last_reasons = state.get("last_alert_reasons")
+    # Type-guard `alerted` like every other read-back field: a wrong-type
+    # truthy (e.g. "yes") would read as alerted=True with NO valid
+    # last_alert_reasons/load5, suppressing a real episode indefinitely
+    # (r1 review Major). Non-bool degrades to False (fires at worst one
+    # extra row — escalate-only, so over-alerting beats suppression).
+    raw_alerted = state.get("alerted")
     fire, consec = decide_cpu_guard_fire(
         reasons,
         prior_consec,
-        bool(state.get("alerted")),
+        raw_alerted if isinstance(raw_alerted, bool) else False,
         raw_last_load5 if isinstance(raw_last_load5, int | float) else None,
         raw_last_reasons if isinstance(raw_last_reasons, list) else None,
         load5,
