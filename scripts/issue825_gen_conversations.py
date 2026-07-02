@@ -353,12 +353,15 @@ def run_track_m(n: int, seed: int, out: Path, smoke: bool, fixture: Path | None)
     if smoke:
         n = 3
     tokenizer = _load_tokenizer()
-    # Over-provision ~10% so post-generation filters can drop rows without
+    # Over-provision ~30% so post-generation filters can drop rows without
     # underfilling the fixed n=2000 design (code-review round-1: silent
     # underfill; plan fixes n and changing n is must-ask). Kept rows are
     # trimmed back to exactly n; a shortfall below n fails loud.
+    # 1.10 was insufficient: the production run measured a 13.4% combined drop
+    # (short_turn 73 + too_long 221 of 2200) -> 1906 kept < 2000 (crash-fix
+    # round 2). At the observed 86.6% keep rate, 1.30x -> ~2252 expected kept.
     n_target = n
-    n = max(n, -(-n * 11 // 10)) if not smoke else n  # ceil(1.10*n) without numpy
+    n = max(n, -(-n * 13 // 10)) if not smoke else n  # ceil(1.30*n) without numpy
     openers = harvest_openers(n, tokenizer)
     mix: dict[str, int] = {"lmsys": 0, "wildchat": 0}
     for o in openers:
