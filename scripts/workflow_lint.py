@@ -3790,18 +3790,28 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
-# Agent-spec size budget (#829): every .claude/agents/*.md is loaded whole on
-# each spawn of that agent, so spec size is a per-invocation token cost. WARN
-# above 40 KB (drifting), FAIL above 70 KB (relocate per-scenario content to
-# .claude/rules/ on-demand rules). Thresholds are STRICTLY-GREATER (a file at
-# exactly the threshold passes).
-AGENT_SPEC_WARN_BYTES = 40_000
-AGENT_SPEC_FAIL_BYTES = 70_000
+# Agent-spec size budget (#829, tightened #838): every .claude/agents/*.md is
+# loaded whole on each spawn of that agent, so spec size is a per-invocation
+# token cost. WARN above 28 KB (drifting), FAIL above 40 KB (relocate
+# per-scenario content to .claude/rules/ on-demand rules; planner.md /
+# critic.md are the #838 worked examples). Thresholds are STRICTLY-GREATER (a
+# file at exactly the threshold passes). #838 probe grounding: the shared
+# session pile alone measured ~125K tokens in an MCP-heavy session, so a
+# 63.9 KB spec left planner/critic spawns only ~39-48K tokens of headroom and
+# they autocompact-thrashed (#833/#834); 40 KB is the probe decision-table
+# band floor (B_safe < 20K there — see tasks .../838/artifacts/
+# spawn-baseline-probe.md).
+AGENT_SPEC_WARN_BYTES = 28_000
+AGENT_SPEC_FAIL_BYTES = 40_000
 
 # Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
-# Each cap = measured post-#829-trim size + <=3 KB margin; a grandfathered file
-# FAILs above its cap (regrowth ratchet) and FAILs as stale once it drops to
-# <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed.
+# Each cap = measured size + <=3 KB margin (post-#829 for the first two
+# entries; at the #838 FAIL tightening 70K -> 40K for the rest); a
+# grandfathered file FAILs above its cap (regrowth ratchet) and FAILs as stale
+# once it drops to <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN
+# when trimmed. planner.md and critic.md are deliberately NOT grandfathered
+# (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
+# incident files is a commit-time FAIL.
 AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 112,251 B post-#829; every-invocation Analysis-Protocol core —
     # SPEC.md-dedup trim is the #829 named follow-up
@@ -3809,6 +3819,16 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
     # load-bearing — SPEC.md-dedup trim is the #829 named follow-up
     "clean-result-critic.md": 107_000,
+    # the rest measured at the #838 tightening (2026-07-02), caps = measured
+    # + <=3 KB; each names a future trim direction, none is licensed to grow
+    "code-reviewer.md": 72_000,  # measured 69,548 B
+    "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
+    "codex-code-reviewer.md": 47_500,  # measured 44,841 B
+    "experiment-implementer.md": 53_000,  # measured 50,211 B
+    "experimenter.md": 65_500,  # measured 62,672 B
+    "methodology-writer.md": 48_000,  # measured 45,203 B
+    "research-pm.md": 43_500,  # measured 40,990 B
+    "upload-verifier.md": 45_500,  # measured 42,825 B
 }
 
 
@@ -4307,7 +4327,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
     parser.add_argument(
         "--check-agent-spec-size",
         action="store_true",
-        help="agent-spec size budget: WARN >40 KB, FAIL >70 KB (grandfather-ratchet)",
+        help="agent-spec size budget: WARN >28 KB, FAIL >40 KB (grandfather-ratchet)",
     )
     args = parser.parse_args(argv)
 

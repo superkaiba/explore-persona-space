@@ -1,20 +1,23 @@
-"""Tests for ``workflow_lint.check_agent_spec_size`` (#829).
+"""Tests for ``workflow_lint.check_agent_spec_size`` (#829, thresholds #838).
 
 The check enforces the agent-spec size budget over ``.claude/agents/*.md``:
-WARN above ``AGENT_SPEC_WARN_BYTES`` (40 KB), FAIL above
-``AGENT_SPEC_FAIL_BYTES`` (70 KB), both STRICTLY-GREATER (exactly-at-threshold
-passes). Files in ``AGENT_SPEC_SIZE_GRANDFATHER`` WARN above the FAIL threshold
-while under their per-file cap and FAIL above it (the regrowth ratchet).
-Grandfather hygiene FAILs a stale entry (file missing) and an entry whose file
-dropped to <= the FAIL threshold ("remove the entry"); a config self-check
-FAILs any cap <= the FAIL threshold. WARNs go to ``warn_sink`` (or stderr) and
-never enter the returned FAIL list.
+WARN above ``AGENT_SPEC_WARN_BYTES`` (28 KB as of #838), FAIL above
+``AGENT_SPEC_FAIL_BYTES`` (40 KB as of #838), both STRICTLY-GREATER
+(exactly-at-threshold passes). Files in ``AGENT_SPEC_SIZE_GRANDFATHER`` WARN
+above the FAIL threshold while under their per-file cap and FAIL above it (the
+regrowth ratchet). Grandfather hygiene FAILs a stale entry (file missing) and
+an entry whose file dropped to <= the FAIL threshold ("remove the entry"); a
+config self-check FAILs any cap <= the FAIL threshold. WARNs go to
+``warn_sink`` (or stderr) and never enter the returned FAIL list.
 
-Cases: (a) 39,999 B clean; (a2) exactly 40,000 B clean (strict >); (b) 40,001 B
-WARN only; (c) 70,001 B not grandfathered FAILs; (c2) exactly 70,000 B WARN
-only (strict >); (d) grandfathered 71,000 B under cap 74,000 WARNs only; (e)
-grandfathered 75,000 B over cap 74,000 FAILs (ratchet); (f) stale grandfather
-entry FAILs; (g) grandfathered file at 60,000 B FAILs "remove the entry"; (h)
+Cases (all sizes expressed relative to the constants so a future threshold
+change cannot silently invert a fixture's meaning — the #838 lesson: the old
+literal 60,000/65,000 fixtures flipped branches when FAIL dropped 70K -> 40K):
+(a) WARN-1 clean; (a2) exactly-at-WARN clean (strict >); (b) WARN+1 WARN only;
+(c) FAIL+1 not grandfathered FAILs; (c2) exactly-at-FAIL WARN only (strict >);
+(d) grandfathered FAIL+1,000 under cap FAIL+4,000 WARNs only; (e) grandfathered
+FAIL+5,000 over cap FAIL+4,000 FAILs (ratchet); (f) stale grandfather entry
+FAILs; (g) grandfathered file at FAIL-1,000 FAILs "remove the entry"; (h)
 missing agents dir FAILs; (i) the live tree PASSes (zero FAILs, WARNs allowed);
 (j) a grandfather cap <= the FAIL threshold FAILs "cap must exceed".
 """
@@ -60,14 +63,14 @@ def empty_grandfather(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_under_warn_threshold_clean(tmp_path: Path, empty_grandfather: None) -> None:
-    _write_agent(tmp_path, "small.md", AGENT_SPEC_WARN_BYTES - 1)  # 39,999
+    _write_agent(tmp_path, "small.md", AGENT_SPEC_WARN_BYTES - 1)  # WARN-1
     warns: list[str] = []
     assert check_agent_spec_size(repo_root=tmp_path, warn_sink=warns) == []
     assert warns == []
 
 
 def test_exactly_at_warn_threshold_clean(tmp_path: Path, empty_grandfather: None) -> None:
-    _write_agent(tmp_path, "atwarn.md", AGENT_SPEC_WARN_BYTES)  # 40,000 — strict >
+    _write_agent(tmp_path, "atwarn.md", AGENT_SPEC_WARN_BYTES)  # exactly-at — strict >
     warns: list[str] = []
     assert check_agent_spec_size(repo_root=tmp_path, warn_sink=warns) == []
     assert warns == []
@@ -79,7 +82,7 @@ def test_exactly_at_warn_threshold_clean(tmp_path: Path, empty_grandfather: None
 
 
 def test_over_warn_threshold_warns_only(tmp_path: Path, empty_grandfather: None) -> None:
-    _write_agent(tmp_path, "warned.md", AGENT_SPEC_WARN_BYTES + 1)  # 40,001
+    _write_agent(tmp_path, "warned.md", AGENT_SPEC_WARN_BYTES + 1)  # WARN+1
     warns: list[str] = []
     assert check_agent_spec_size(repo_root=tmp_path, warn_sink=warns) == []
     assert len(warns) == 1, warns
@@ -95,7 +98,7 @@ def test_over_warn_threshold_warns_only(tmp_path: Path, empty_grandfather: None)
 def test_over_fail_threshold_not_grandfathered_fails(
     tmp_path: Path, empty_grandfather: None
 ) -> None:
-    _write_agent(tmp_path, "big.md", AGENT_SPEC_FAIL_BYTES + 1)  # 70,001
+    _write_agent(tmp_path, "big.md", AGENT_SPEC_FAIL_BYTES + 1)  # FAIL+1
     warns: list[str] = []
     errors = check_agent_spec_size(repo_root=tmp_path, warn_sink=warns)
     assert len(errors) == 1, errors
@@ -106,7 +109,7 @@ def test_over_fail_threshold_not_grandfathered_fails(
 
 
 def test_exactly_at_fail_threshold_warns_only(tmp_path: Path, empty_grandfather: None) -> None:
-    _write_agent(tmp_path, "atfail.md", AGENT_SPEC_FAIL_BYTES)  # 70,000 — strict >
+    _write_agent(tmp_path, "atfail.md", AGENT_SPEC_FAIL_BYTES)  # exactly-at — strict >
     warns: list[str] = []
     assert check_agent_spec_size(repo_root=tmp_path, warn_sink=warns) == []
     assert len(warns) == 1, warns
@@ -122,8 +125,9 @@ def test_exactly_at_fail_threshold_warns_only(tmp_path: Path, empty_grandfather:
 def test_grandfathered_under_cap_warns_only(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": 74_000})
-    _write_agent(tmp_path, "gf.md", 71_000)
+    cap = AGENT_SPEC_FAIL_BYTES + 4_000
+    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": cap})
+    _write_agent(tmp_path, "gf.md", AGENT_SPEC_FAIL_BYTES + 1_000)  # over FAIL, under cap
     warns: list[str] = []
     assert check_agent_spec_size(repo_root=tmp_path, warn_sink=warns) == []
     assert len(warns) == 1, warns
@@ -137,14 +141,15 @@ def test_grandfathered_under_cap_warns_only(
 
 
 def test_grandfathered_over_cap_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": 74_000})
-    _write_agent(tmp_path, "gf.md", 75_000)
+    cap = AGENT_SPEC_FAIL_BYTES + 4_000
+    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": cap})
+    _write_agent(tmp_path, "gf.md", cap + 1_000)  # over its cap → ratchet FAIL
     warns: list[str] = []
     errors = check_agent_spec_size(repo_root=tmp_path, warn_sink=warns)
     assert len(errors) == 1, errors
     assert "gf.md" in errors[0]
     assert "ratchet" in errors[0]
-    assert "74000" in errors[0].replace(",", "")
+    assert str(cap) in errors[0].replace(",", "")
 
 
 # --------------------------------------------------------------------------
@@ -153,7 +158,9 @@ def test_grandfathered_over_cap_fails(tmp_path: Path, monkeypatch: pytest.Monkey
 
 
 def test_stale_grandfather_entry_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"ghost.md": 74_000})
+    monkeypatch.setattr(
+        workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"ghost.md": AGENT_SPEC_FAIL_BYTES + 4_000}
+    )
     _write_agent(tmp_path, "ok.md", 1_000)  # dir exists, entry's file does not
     errors = check_agent_spec_size(repo_root=tmp_path, warn_sink=[])
     assert len(errors) == 1, errors
@@ -169,8 +176,10 @@ def test_stale_grandfather_entry_fails(tmp_path: Path, monkeypatch: pytest.Monke
 def test_grandfathered_below_fail_threshold_fails_remove(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": 74_000})
-    _write_agent(tmp_path, "gf.md", 60_000)  # <= 70,000 — no longer needs it
+    monkeypatch.setattr(
+        workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": AGENT_SPEC_FAIL_BYTES + 4_000}
+    )
+    _write_agent(tmp_path, "gf.md", AGENT_SPEC_FAIL_BYTES - 1_000)  # <= FAIL — remove it
     errors = check_agent_spec_size(repo_root=tmp_path, warn_sink=[])
     assert len(errors) == 1, errors
     assert "gf.md" in errors[0]
@@ -209,7 +218,9 @@ def test_live_tree_passes() -> None:
 def test_grandfather_cap_at_or_below_fail_threshold_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": 65_000})
-    _write_agent(tmp_path, "gf.md", 71_000)
+    monkeypatch.setattr(
+        workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": AGENT_SPEC_FAIL_BYTES - 5_000}
+    )
+    _write_agent(tmp_path, "gf.md", AGENT_SPEC_FAIL_BYTES + 1_000)
     errors = check_agent_spec_size(repo_root=tmp_path, warn_sink=[])
     assert any("cap must exceed" in e for e in errors), errors

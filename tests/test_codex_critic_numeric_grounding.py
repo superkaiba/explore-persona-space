@@ -330,8 +330,8 @@ class TestAllowlistCoversFinalTemplate:
             "{{prior_critique_summaries — empty on round 1}}", "(none — round 1)"
         )
         composed = composed.replace(
-            "{{lens_items — the full, current item list for this lens from critic.md,\n"
-            "inserted by the composer at Step 3}}",
+            "{{lens_items — the full, current item list for this lens from\n"
+            "critic-lens-reference.md, inserted by the composer at Step 3}}",
             lens_items,
         )
         composed = composed.replace("{{revision_round}}", "1")

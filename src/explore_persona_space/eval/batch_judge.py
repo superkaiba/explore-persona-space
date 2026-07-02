@@ -437,7 +437,7 @@ def _aggregate_persona_scores(
         # verbatim, so a scalar-shaped judge rubric (persona-vectors {"score": N}
         # OR a bare integer scale point per llm-judging.md rule 6) can parse to a
         # bare int, which has no .get(). Such entries cannot be Betley-aggregated
-        # here — the scalar-rubric caller (e.g. issue778_lib.judge_graded) does its
+        # here — the scalar-rubric caller (e.g. eval.graded_judge.judge_graded) does its
         # OWN reduction from all_scores via save_raw and ignores this return — so
         # they are treated as invalid at THIS aggregator. Betley callers always
         # emit dicts, so behavior is unchanged for them. Fixes #778 r2.
