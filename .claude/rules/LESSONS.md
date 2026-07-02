@@ -10,7 +10,7 @@ trigger. Rule text stays on-demand; never inline bodies here. Add/remove a
 
 - **analyzer-paper-mode** ([`.claude/rules/analyzer-paper-mode.md`](analyzer-paper-mode.md)) — fires when: the analyzer runs a `paper: true` task (LaTeX clean-result; verify_paper.py gate).
 - **analyzer-section-reference** ([`.claude/rules/analyzer-section-reference.md`](analyzer-section-reference.md)) — fires when: the analyzer executes a protocol step (pointer-loaded step span; `paths:` self-glob).
-- **artifact-reuse** ([`.claude/rules/artifact-reuse.md`](artifact-reuse.md)) — fires when: a plan reuses a prior HF adapter/checkpoint/mix/completions/eval JSON instead of retraining (run the (a)-(h) fitness check).
+- **artifact-reuse** ([`.claude/rules/artifact-reuse.md`](artifact-reuse.md)) — fires when: a plan reuses an HF adapter/checkpoint/mix/completions/eval JSON/fit-analysis helper vs retraining ((a)-(i) fitness check).
 - **arxiv-mcp** ([`.claude/rules/arxiv-mcp.md`](arxiv-mcp.md)) — fires when: you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - **background-automation** ([`.claude/rules/background-automation.md`](background-automation.md)) — fires when: you touch or reason about the cron audits / autonomous-session watcher / pod or GCP janitors.
 - **clean-result-paper-review** ([`.claude/rules/clean-result-paper-review.md`](clean-result-paper-review.md)) — fires when: either clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
@@ -36,7 +36,7 @@ trigger. Rule text stays on-demand; never inline bodies here. Add/remove a
 - **research-project-structure** ([`.claude/rules/research-project-structure.md`](research-project-structure.md)) — fires when: you write result artifacts / the results index / the queue (one source of truth per layer).
 - **selection-symmetric-nulls** ([`.claude/rules/selection-symmetric-nulls.md`](selection-symmetric-nulls.md)) — fires when: a headline max/argmax/best-of/top-k over a free axis (layer/cell/k/seed/threshold) vs a null band (inherit selection per draw OR freeze axis held-out; #778).
 - **upload-policy** ([`.claude/rules/upload-policy.md`](upload-policy.md)) — fires when: you write training / Hub / sweep code (Hub-API verification gotcha, delete-after-eval persist, quota-403 recovery).
-- **vectorize-many-cell-fits** ([`.claude/rules/vectorize-many-cell-fits.md`](vectorize-many-cell-fits.md)) — fires when: a many-cell gradient-descent fit OR a non-trivial permutation/bootstrap/null-draw battery over a fixed pool (OVERHEAD-bound; vectorize before GPU; #722, #778, #811).
+- **vectorize-many-cell-fits** ([`.claude/rules/vectorize-many-cell-fits.md`](vectorize-many-cell-fits.md)) — fires when: many-cell GD fits OR perm/bootstrap/null-draw battery — OVERHEAD-bound; VECTORIZE first; rewrites fire the Supersede contract (#722, #778, #834).
 - **workflow-fix-on-bug** ([`.claude/rules/workflow-fix-on-bug.md`](workflow-fix-on-bug.md)) — fires when: any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`; see also the built-but-stranded lesson).
 - **agents-vs-skills** ([`.claude/rules/agents-vs-skills.md`](agents-vs-skills.md)) — fires when: you create / restructure anything under `.claude/` (decide agent vs skill).
 

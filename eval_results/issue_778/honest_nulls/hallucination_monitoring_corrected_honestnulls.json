@@ -1,0 +1,576 @@
+{
+  "trait": "hallucination",
+  "setting": "monitoring_corrected",
+  "stage_fixed": {
+    "overall": {
+      "observed_r_per_layer": [
+        -0.1819411212910589,
+        0.15386038361543575,
+        0.113792258121818,
+        0.17711224834535857,
+        0.07370041697161575,
+        0.3893556140782261,
+        0.24530347084978948,
+        0.30329061326139184,
+        0.0416583810901254,
+        0.12869684430087935,
+        0.17722501962054932,
+        0.30292834063712254,
+        0.1910817572961982,
+        0.5367944966223863,
+        0.6583046331208356,
+        0.681960215908706,
+        0.7156627759482057,
+        0.7263517039788326,
+        0.7778859460717031,
+        0.8030777722859952,
+        0.8144760887728398,
+        0.8373426445467382,
+        0.8324880946276111,
+        0.8268325050322465,
+        0.8082408659266841,
+        0.7954963768287359,
+        0.8107117364495562,
+        0.36165421092016
+      ],
+      "own_argmax_layer": 21,
+      "observed_matched_r_signed_at_argmax": 0.8373426445467382,
+      "layer_choices": {
+        "own_argmax": 21,
+        "issue778_selected": 21,
+        "paper_steering": 16
+      },
+      "bootstrap_ci95_at_own_argmax": [
+        0.7786602146740347,
+        0.8874144301385478
+      ],
+      "bootstrap_method": "row bootstrap (overall Pearson)",
+      "per_choice": {
+        "own_argmax": {
+          "layer": 21,
+          "observed_abs_r": 0.8373426445467382,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.046569738660699245,
+              "p50": 0.606490646060408,
+              "p97_5": 0.8245832878328114,
+              "raw_p": 0.008991008991008992,
+              "bh_within_family": 0.08241758241758243,
+              "bh_pooled_all": 0.019266447837876413
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.015180168181486002,
+              "p50": 0.307878929667758,
+              "p97_5": 0.7008967941659294,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.0024975024975024975,
+              "bh_pooled_all": 0.004560656734569778
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.029868352111024614,
+              "p50": 0.5702252068971094,
+              "p97_5": 0.8169719381955242,
+              "raw_p": 0.006993006993006993,
+              "bh_within_family": 0.009535918626827717,
+              "bh_pooled_all": 0.016317016317016316
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.01574374244731915,
+              "p50": 0.28407105714724057,
+              "p97_5": 0.6551357457112004,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.001873126873126873,
+              "bh_pooled_all": 0.004560656734569778
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.031166727505986015,
+              "p50": 0.5445589925536525,
+              "p97_5": 0.8094169896615018,
+              "raw_p": 0.004995004995004995,
+              "bh_within_family": 0.00999000999000999,
+              "bh_pooled_all": 0.013801987486198012
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.04975170552121131,
+              "p50": 0.6125340900215583,
+              "p97_5": 0.8189444710709575,
+              "raw_p": 0.008991008991008992,
+              "bh_within_family": 0.0803741712832622,
+              "bh_pooled_all": 0.019266447837876413
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.49669433269296853,
+                0.19386995996220863
+              ],
+              "p97_5": 0.4891237233746995,
+              "raw_p": 0.3333333333333333,
+              "bh_within_family": 0.3333333333333333,
+              "bh_pooled_all": 0.3333333333333333
+            }
+          }
+        },
+        "issue778_selected": {
+          "layer": 21,
+          "observed_abs_r": 0.8373426445467382,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.046569738660699245,
+              "p50": 0.606490646060408,
+              "p97_5": 0.8245832878328114,
+              "raw_p": 0.008991008991008992,
+              "bh_within_family": 0.08241758241758243,
+              "bh_pooled_all": 0.021455816910362368
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.015180168181486002,
+              "p50": 0.307878929667758,
+              "p97_5": 0.7008967941659294,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.002997002997002997,
+              "bh_pooled_all": 0.005827505827505828
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.029868352111024614,
+              "p50": 0.5702252068971094,
+              "p97_5": 0.8169719381955242,
+              "raw_p": 0.006993006993006993,
+              "bh_within_family": 0.01048951048951049,
+              "bh_pooled_all": 0.017482517482517484
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.01574374244731915,
+              "p50": 0.28407105714724057,
+              "p97_5": 0.6551357457112004,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.0024975024975024975,
+              "bh_pooled_all": 0.005827505827505828
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.031166727505986015,
+              "p50": 0.5445589925536525,
+              "p97_5": 0.8094169896615018,
+              "raw_p": 0.004995004995004995,
+              "bh_within_family": 0.012487512487512488,
+              "bh_pooled_all": 0.014985014985014986
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.04975170552121131,
+              "p50": 0.6125340900215583,
+              "p97_5": 0.8189444710709575,
+              "raw_p": 0.008991008991008992,
+              "bh_within_family": 0.0803741712832622,
+              "bh_pooled_all": 0.021455816910362368
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.49669433269296853,
+                0.19386995996220863
+              ],
+              "p97_5": 0.4891237233746995,
+              "raw_p": 0.3333333333333333,
+              "bh_within_family": 0.3333333333333333,
+              "bh_pooled_all": 0.3333333333333333
+            }
+          }
+        },
+        "paper_steering": {
+          "layer": 16,
+          "observed_abs_r": 0.7156627759482057,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.028665238399894682,
+              "p50": 0.5351081630305379,
+              "p97_5": 0.7486899314119788,
+              "raw_p": 0.0989010989010989,
+              "bh_within_family": 0.1648351648351648,
+              "bh_pooled_all": 0.15734265734265734
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.018371130924483836,
+              "p50": 0.32079391733508134,
+              "p97_5": 0.6631280973146295,
+              "raw_p": 0.003996003996003996,
+              "bh_within_family": 0.008562865705722848,
+              "bh_pooled_all": 0.014985014985014986
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.033510753374350534,
+              "p50": 0.4999199047325386,
+              "p97_5": 0.742036819864029,
+              "raw_p": 0.060939060939060936,
+              "bh_within_family": 0.07617382617382616,
+              "bh_pooled_all": 0.11225616488774383
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.01673845847617688,
+              "p50": 0.2824019651987544,
+              "p97_5": 0.6330498357494825,
+              "raw_p": 0.001998001998001998,
+              "bh_within_family": 0.004281432852861424,
+              "bh_pooled_all": 0.00999000999000999
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.027984796413843153,
+              "p50": 0.4879174306178239,
+              "p97_5": 0.7522840033700606,
+              "raw_p": 0.07892107892107893,
+              "bh_within_family": 0.1073926073926074,
+              "bh_pooled_all": 0.1375673506821048
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.03671185134993891,
+              "p50": 0.5216761555141365,
+              "p97_5": 0.7573926717032661,
+              "raw_p": 0.0969030969030969,
+              "bh_within_family": 0.1615051615051615,
+              "bh_pooled_all": 0.1565357719203873
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.6625066297403344,
+                0.4371066262162977
+              ],
+              "p97_5": 0.6568716296522334,
+              "raw_p": 0.3333333333333333,
+              "bh_within_family": 0.38461538461538464,
+              "bh_pooled_all": 0.38461538461538464
+            }
+          }
+        }
+      }
+    },
+    "within": {
+      "observed_r_per_layer": [
+        -0.4188378944499254,
+        -0.25324711502483976,
+        -0.1192920776518279,
+        0.030816218628976957,
+        -0.05631041600917316,
+        0.18484710113678787,
+        0.2293032661788226,
+        0.19323298528361071,
+        0.03921126136824116,
+        -0.1791236873373253,
+        -0.2377950938269412,
+        -0.25614245769704913,
+        -0.21571801587461156,
+        -0.13023942013122852,
+        -0.12177764557394533,
+        -0.1268076877384155,
+        -0.03279215252160874,
+        0.04814629537433155,
+        0.42813186321769503,
+        0.5245856821174467,
+        0.563163457128155,
+        0.6468543563677223,
+        0.6163759387017802,
+        0.5859194343088023,
+        0.5235311234760568,
+        0.48558294806169305,
+        0.5580098660783451,
+        -0.26049184387590524
+      ],
+      "own_argmax_layer": 21,
+      "observed_matched_r_signed_at_argmax": 0.6468543563677223,
+      "layer_choices": {
+        "own_argmax": 21,
+        "issue778_selected": 21,
+        "paper_steering": 16
+      },
+      "bootstrap_ci95_at_own_argmax": [
+        0.5467749948230889,
+        0.7538193237842915
+      ],
+      "bootstrap_method": "within-condition Fisher-z stratified row bootstrap",
+      "per_choice": {
+        "own_argmax": {
+          "layer": 21,
+          "observed_abs_r": 0.6468543563677223,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.020048041068446307,
+              "p50": 0.38196618156610823,
+              "p97_5": 0.6659427677665419,
+              "raw_p": 0.052947052947052944,
+              "bh_within_family": 0.0914085914085914,
+              "bh_pooled_all": 0.07315053367684947
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.009052348783997759,
+              "p50": 0.2116110289032321,
+              "p97_5": 0.5761105687029924,
+              "raw_p": 0.002997002997002997,
+              "bh_within_family": 0.004495504495504495,
+              "bh_pooled_all": 0.008991008991008992
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.018234944001080326,
+              "p50": 0.37797196991231663,
+              "p97_5": 0.660178060906896,
+              "raw_p": 0.03496503496503497,
+              "bh_within_family": 0.037462537462537464,
+              "bh_pooled_all": 0.05648197955890264
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.01166255692238883,
+              "p50": 0.24761826313511826,
+              "p97_5": 0.5680277084928891,
+              "raw_p": 0.005994005994005994,
+              "bh_within_family": 0.006916160762314608,
+              "bh_pooled_all": 0.014985014985014986
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.026177124055147407,
+              "p50": 0.3708597315398078,
+              "p97_5": 0.6646166676049426,
+              "raw_p": 0.04095904095904096,
+              "bh_within_family": 0.04726043187581649,
+              "bh_pooled_all": 0.06232897537245363
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.026887936727754438,
+              "p50": 0.3927496288028538,
+              "p97_5": 0.6726964179678078,
+              "raw_p": 0.04995004995004995,
+              "bh_within_family": 0.0803741712832622,
+              "bh_pooled_all": 0.07087507087507088
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.06981290857709166,
+                0.20185670531698424
+              ],
+              "p97_5": 0.19855561039848693,
+              "raw_p": 0.3333333333333333,
+              "bh_within_family": 0.3333333333333333,
+              "bh_pooled_all": 0.3333333333333333
+            }
+          }
+        },
+        "issue778_selected": {
+          "layer": 21,
+          "observed_abs_r": 0.6468543563677223,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.020048041068446307,
+              "p50": 0.38196618156610823,
+              "p97_5": 0.6659427677665419,
+              "raw_p": 0.052947052947052944,
+              "bh_within_family": 0.0914085914085914,
+              "bh_pooled_all": 0.07721445221445221
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.009052348783997759,
+              "p50": 0.2116110289032321,
+              "p97_5": 0.5761105687029924,
+              "raw_p": 0.002997002997002997,
+              "bh_within_family": 0.005619380619380619,
+              "bh_pooled_all": 0.01048951048951049
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.018234944001080326,
+              "p50": 0.37797196991231663,
+              "p97_5": 0.660178060906896,
+              "raw_p": 0.03496503496503497,
+              "bh_within_family": 0.037462537462537464,
+              "bh_pooled_all": 0.062225909683536806
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.01166255692238883,
+              "p50": 0.24761826313511826,
+              "p97_5": 0.5680277084928891,
+              "raw_p": 0.005994005994005994,
+              "bh_within_family": 0.007492507492507492,
+              "bh_pooled_all": 0.016562384983437616
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.026177124055147407,
+              "p50": 0.3708597315398078,
+              "p97_5": 0.6646166676049426,
+              "raw_p": 0.04095904095904096,
+              "bh_within_family": 0.0438846867418296,
+              "bh_pooled_all": 0.06719842657342658
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.026887936727754438,
+              "p50": 0.3927496288028538,
+              "p97_5": 0.6726964179678078,
+              "raw_p": 0.04995004995004995,
+              "bh_within_family": 0.0803741712832622,
+              "bh_pooled_all": 0.07492507492507493
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.06981290857709166,
+                0.20185670531698424
+              ],
+              "p97_5": 0.19855561039848693,
+              "raw_p": 0.3333333333333333,
+              "bh_within_family": 0.3333333333333333,
+              "bh_pooled_all": 0.3333333333333333
+            }
+          }
+        },
+        "paper_steering": {
+          "layer": 16,
+          "observed_abs_r": 0.03279215252160874,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.012483757006304106,
+              "p50": 0.2099469670269905,
+              "p97_5": 0.48548799352798266,
+              "raw_p": 0.9240759240759241,
+              "bh_within_family": 0.9240759240759241,
+              "bh_pooled_all": 0.9522031366691561
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.005247856491190023,
+              "p50": 0.13986029218527363,
+              "p97_5": 0.43706477286334505,
+              "raw_p": 0.8681318681318682,
+              "bh_within_family": 0.8681318681318682,
+              "bh_pooled_all": 0.9397303727200635
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.010712967744667722,
+              "p50": 0.216807094014211,
+              "p97_5": 0.4747658138450613,
+              "raw_p": 0.9250749250749251,
+              "bh_within_family": 0.9250749250749251,
+              "bh_pooled_all": 0.9522031366691561
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.011309149116025282,
+              "p50": 0.22100884761076073,
+              "p97_5": 0.5111332897480854,
+              "raw_p": 0.9250749250749251,
+              "bh_within_family": 0.9250749250749251,
+              "bh_pooled_all": 0.9522031366691561
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.009919610793486947,
+              "p50": 0.2018868989114713,
+              "p97_5": 0.49205843912738206,
+              "raw_p": 0.9210789210789211,
+              "bh_within_family": 0.9210789210789211,
+              "bh_pooled_all": 0.9522031366691561
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.01828679786614532,
+              "p50": 0.19926765283863784,
+              "p97_5": 0.49354705118841075,
+              "raw_p": 0.9340659340659341,
+              "bh_within_family": 0.9340659340659341,
+              "bh_pooled_all": 0.9522031366691561
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.1432951282076616,
+                0.08832770963169255
+              ],
+              "p97_5": 0.14192094274326236,
+              "raw_p": 1.0,
+              "bh_within_family": 1.0,
+              "bh_pooled_all": 1.0
+            }
+          }
+        }
+      }
+    }
+  },
+  "n_points": 152,
+  "tags": null,
+  "layer_index_note": "layers are 0-indexed into the 28-layer r_B tensor (block outputs, hidden_states[1..28] stored 0..27). paper_steering uses the brief's values as 0-indexed; the paper's 1-indexed convention would map layer L -> index L-1.",
+  "layer_independence_note": "Per-layer null draws are INDEPENDENT across layers, while r_B's 28 layers are highly correlated. The max-over-28 null therefore takes 28 near-independent chances at a high |r| whereas the observed r_B statistic takes ~1 effective chance \u2014 a conservative-against-the-vector inflation of the null band. Recorded, not corrected, in v1.",
+  "within_class_caveat": "The pooled within-class covariance null (within_class) is CONSERVATIVE but NOT fully trait-agnostic: each arm is centered by its own mean, so the between-arm contrast (== r_B) is removed, but residual trait-INTENSITY variance WITHIN the positive arm (judge-kept rollouts range 55-95, a gradient that points along r_B) plus the topic conditioning shared by all extraction rollouts remain in the covariance. The neg_arm_only rung (single-arm negative covariance) drops the positive-arm intensity variance and is the closest persisted approximation to a trait-agnostic covariance. A FULLY independent covariance null (activations on trait-UNRELATED generic rollouts) is DEFERRED to the planned rerun because no trait-neutral row-level activations are persisted \u2014 it needs a small capture pass.",
+  "reproducibility": {
+    "git_commit": "6297c8e9e9153d26fee4f2d4570a465ffc4bb846",
+    "timestamp": "2026-07-02T09:52:06-0700",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0",
+      "peft": "0.18.1",
+      "trl": "0.29.1"
+    }
+  },
+  "tensor_sha256": {
+    "rb": "8bea89cd0e2f43eb902d0fcff544a3eed2fc4006ec79b3bd440b785852db4a6f",
+    "activations_pos": "e74338ba4fe3f8d0f102b47618a3ddad37e3c5e952dcca15ead1647f74f833f2",
+    "activations_neg": "6144f001249516bf5f1b2e46276159d8e23f59217ffa0eb3ebdf7ed687cd3b50",
+    "monitoring_corrected_acts": "32372493c9067554c4bf4d24853d11c77a87a7132c42736190dda2775ec1a81b",
+    "monitoring_manyshot_acts": "14f81b84e7638c7d1a1b2379276492526aaf94a3f0817bf1146e71af334ad165"
+  },
+  "circularity_diagnostics": {
+    "layer": 25,
+    "cos_top_pc_pooled_vs_rB": 0.7358384225352537,
+    "variance_ratio_lambda1_over_mean": 495.84661924096173,
+    "variance_inflation_along_rB": 315.88483381083887,
+    "cos_top_pc_within_class_vs_rB": 0.5375111626047588,
+    "n_pos": 77,
+    "n_neg": 715
+  },
+  "seeds": {
+    "overall": {
+      "orig_randnorm": 0,
+      "isotropic": 100011,
+      "neg_arm_only": 400011,
+      "rb_projected_out": 300011,
+      "within_class": 200011,
+      "orig_perm": 0
+    },
+    "within": {
+      "orig_randnorm": 0,
+      "isotropic": 100012,
+      "neg_arm_only": 400012,
+      "rb_projected_out": 300012,
+      "within_class": 200012,
+      "orig_perm": 0
+    }
+  }
+}

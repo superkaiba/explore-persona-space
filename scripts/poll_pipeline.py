@@ -783,6 +783,17 @@ class PollResult:
     # never stops the pod. Defaulted so cross-backend PollResult(...) call
     # sites need no change.
     gpu_idle_escalation_posted: bool = False
+    # True when THIS tick posted the [gpu-width-advisory] marker (#873) — a
+    # STABLE strict subset of GPUs idle >= GPU_WIDTH_ADVISORY_MIN minutes on
+    # a multi-GPU pod (#813 idle-width class). Observability only; never
+    # changes ``status`` and never stops anything. Defaulted so the
+    # cross-backend PollResult(...) call sites need no change.
+    gpu_width_advisory_posted: bool = False
+    # True when THIS tick posted an epm:compute-deviation (source: poller)
+    # marker (#873) — elapsed wall-time exceeded ETA_DEVIATION_MULT x the
+    # plan §9 planned_wall_h TOTAL for the current phase or the whole run
+    # (#763 class). Observability only; never changes ``status``.
+    eta_deviation_posted: bool = False
     # Session-CPU signal (#518, #658). ``session_cpu_secs`` is the literal
     # probe output: a float string like ``"4271.5"`` or ``"unknown"``.
     # ``cpu_advancing`` is the ternary decision relative to the running
@@ -1800,22 +1811,35 @@ _latest_phase = latest_phase
 GPU_IDLE_UTIL_THRESHOLD = 5
 
 
+def _parse_gpu_utils(gpu_util: str) -> list[int] | None:
+    """Per-GPU int utilizations from the probe's comma string, or None.
+
+    Fail-safe: returns ``None`` when ``gpu_util`` is the literal sentinel
+    ``"unknown"``, is empty, parses to zero tokens, or any token fails to
+    parse as an int — the consumers (:func:`_gpu_idle`, the #873 width
+    advisory) treat ``None`` as "no GPU signal" and never count it as
+    idle. Extracted from ``_gpu_idle`` (#873), behavior-identical.
+    """
+    if not gpu_util or gpu_util == "unknown":
+        return None
+    try:
+        utils = [int(tok.strip()) for tok in gpu_util.split(",") if tok.strip()]
+    except ValueError:
+        return None
+    return utils or None
+
+
 def _gpu_idle(gpu_util: str) -> bool:
     """Return True iff every parsed GPU's utilization is <= IDLE threshold.
 
     Fail-safe: returns False (NOT idle) when ``gpu_util`` is the literal
     sentinel ``"unknown"``, is empty, or any token fails to parse as an
-    int. The stall verdict requires ``gpu_idle == True``, so a missing /
-    erroring ``nvidia-smi`` will NEVER by itself declare a healthy
-    long-phase run stalled — the per-phase-log + cell-log mtime signals
-    then carry the verdict.
+    int (``_parse_gpu_utils`` -> None). The stall verdict requires
+    ``gpu_idle == True``, so a missing / erroring ``nvidia-smi`` will
+    NEVER by itself declare a healthy long-phase run stalled — the
+    per-phase-log + cell-log mtime signals then carry the verdict.
     """
-    if not gpu_util or gpu_util == "unknown":
-        return False
-    try:
-        utils = [int(tok.strip()) for tok in gpu_util.split(",") if tok.strip()]
-    except ValueError:
-        return False
+    utils = _parse_gpu_utils(gpu_util)
     if not utils:
         return False
     return all(u <= GPU_IDLE_UTIL_THRESHOLD for u in utils)
@@ -1955,6 +1979,548 @@ def _maybe_post_gpu_idle_advisory(
     )
     advised_phases.add(current_phase)
     return update.idle_since_epoch, advised_phases, True
+
+
+# ── m-of-N GPU-width advisory (#873; incidents #813/#664) ────────────────────
+# Minutes of sustained "healthy verdict + a STABLE strict subset of GPUs idle"
+# on an N>1-GPU pod before a one-per-phase [gpu-width-advisory] epm:progress
+# marker. 0 (or negative) disables. Default 45 (middle of the 30-60 band the
+# #873 audit prescribed; ABOVE the 30-min all-idle default because partial
+# width has a legitimate transient — uneven shard finish tails).
+GPU_WIDTH_ADVISORY_MIN = int(os.environ.get("EPM_GPU_WIDTH_ADVISORY_MIN", "45"))
+
+
+@dataclass(frozen=True)
+class GpuWidthAdvisoryUpdate:
+    """Outcome of one width-advisory tick (``_gpu_width_advisory_update``)."""
+
+    should_post: bool
+    width_since_epoch: int  # 0 = no active partial-width span
+    idle_indices: tuple[int, ...]  # the CURRENT stable idle subset; () when no span
+    span_sec: int
+
+
+def _gpu_width_advisory_update(
+    *,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_phase: str,
+    prev_width_since_epoch: int,
+    prev_idle_indices: tuple[int, ...],
+    advised_phases: set[str],
+    now_epoch: int,
+    advisory_min: int,
+) -> GpuWidthAdvisoryUpdate:
+    """Pure decision core for the m-of-N GPU-width advisory (#873, #813).
+
+    Tracks the sustained span of "healthy verdict + a STABLE strict subset
+    of GPUs idle" on a multi-GPU pod. Everything RESETS the span (returns
+    ``(False, 0, (), 0)``): a disabled advisory (``advisory_min <= 0``), a
+    non-``running`` verdict, an ``unknown`` / unparseable GPU sample (the
+    ``_gpu_idle`` fail-safe carries over verbatim — a missing nvidia-smi
+    never accumulates), a single-GPU pod (N < 2), all-idle (the existing
+    idle advisory's domain — disjoint by construction), and all-active
+    (healthy). The span RESTARTS (``width_since = now_epoch``) on a phase
+    change, a missing prior span, or an idle-index-set CHANGE — a CHURNING
+    idle set is staggered shard progress, not the #813 structurally-unused-
+    GPUs signature; requiring set stability is the strictest false-positive
+    guard. ``should_post`` is True only when the span has lasted at least
+    ``advisory_min`` minutes AND ``current_phase`` is not already in
+    ``advised_phases`` (at-most-once-per-phase de-dup). Pure / no I/O —
+    the caller owns state persistence and the marker post.
+    """
+    reset = GpuWidthAdvisoryUpdate(
+        should_post=False, width_since_epoch=0, idle_indices=(), span_sec=0
+    )
+    if advisory_min <= 0 or status != "running":
+        return reset
+    utils = _parse_gpu_utils(gpu_util)
+    if utils is None or len(utils) < 2:
+        return reset
+    idle_indices = tuple(i for i, u in enumerate(utils) if u <= GPU_IDLE_UTIL_THRESHOLD)
+    active = len(utils) - len(idle_indices)
+    if not (1 <= active < len(utils)):
+        return reset
+    if (
+        current_phase != prev_phase
+        or prev_width_since_epoch <= 0
+        or idle_indices != prev_idle_indices
+    ):
+        width_since = now_epoch
+    else:
+        width_since = prev_width_since_epoch
+    span = max(0, now_epoch - width_since)
+    should_post = span >= advisory_min * 60 and current_phase not in advised_phases
+    return GpuWidthAdvisoryUpdate(
+        should_post=should_post,
+        width_since_epoch=width_since,
+        idle_indices=idle_indices,
+        span_sec=span,
+    )
+
+
+def _maybe_post_gpu_width_advisory(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[int, tuple[int, ...], set[str], bool]:
+    """Width-advisory wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(width_since_epoch, idle_indices, advised_phases, posted)`` for
+    the caller to persist via ``_save_state``. The caller applies the #873
+    run-scope reset (:func:`_tripwire_run_scope`, AC #6) BEFORE this call.
+    Posting rides the SAME ``epm:progress`` channel as the idle advisory
+    (note prefixed ``[gpu-width-advisory]``, plus a ``gpu_width_advisory=True``
+    extra) — no new marker kind. Guarded state parses: a corrupted int /
+    index set resets the span, never raises into ``poll_once``. A post
+    failure is logged and the phase is NOT recorded as advised, so the next
+    tick retries; the advisory never affects the status verdict and never
+    stops anything.
+    """
+    try:
+        prev_width_since = int(prev_state.get("gpu_width_since_epoch", "0"))
+    except (TypeError, ValueError):
+        prev_width_since = 0
+    try:
+        prev_idle_indices = tuple(
+            int(tok) for tok in (prev_state.get("gpu_width_idle_set", "") or "").split(",") if tok
+        )
+    except (TypeError, ValueError):
+        prev_idle_indices = ()
+    advised_phases = {
+        p for p in (prev_state.get("gpu_width_advised_phases", "") or "").split(",") if p
+    }
+    update = _gpu_width_advisory_update(
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        prev_phase=prev_state.get("phase", ""),
+        prev_width_since_epoch=prev_width_since,
+        prev_idle_indices=prev_idle_indices,
+        advised_phases=advised_phases,
+        now_epoch=now_epoch,
+        advisory_min=GPU_WIDTH_ADVISORY_MIN,
+    )
+    if not update.should_post:
+        return update.width_since_epoch, update.idle_indices, advised_phases, False
+    n_gpus = len(_parse_gpu_utils(gpu_util) or [])
+    span_min = update.span_sec // 60
+    idle_list = ",".join(str(i) for i in update.idle_indices)
+    note = (
+        f"[gpu-width-advisory] {len(update.idle_indices)} of {n_gpus} GPUs <= "
+        f"{GPU_IDLE_UTIL_THRESHOLD}% util for {span_min} min while the run is healthy "
+        f"(idle GPU indices: {idle_list}; phase={current_phase}, gpu_util={gpu_util}). "
+        "A sustained narrow phase holding a wide pod is the #813 idle-width / #664 "
+        "spend-leak class — consider widening the parallelism to fill the pod, or "
+        "releasing/downsizing it (CLAUDE.md: per-phase GPU-WIDTH right-sizing). "
+        "Advisory only: the stall verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_width_advisory=True,
+        )
+    except Exception as exc:
+        log.error("gpu-width advisory post failed (next tick will retry): %s", exc)
+        return update.width_since_epoch, update.idle_indices, advised_phases, False
+    log.warning(
+        "posted gpu-width advisory for #%d: %d of %d GPUs idle %d min during healthy phase=%s",
+        issue,
+        len(update.idle_indices),
+        n_gpus,
+        span_min,
+        current_phase,
+    )
+    advised_phases.add(current_phase)
+    return update.width_since_epoch, update.idle_indices, advised_phases, True
+
+
+# ── Phase-ETA tripwire (#873) ────────────────────────────────────────────────
+# Multiplier over the plan §9 TOTAL planned_wall_h before the poller auto-posts
+# epm:compute-deviation (source: poller). <= 0 disables. Read at import time to
+# mirror GPU_IDLE_ADVISORY_MIN; tests pass `mult` explicitly to the pure core.
+ETA_DEVIATION_MULT = float(os.environ.get("EPM_ETA_DEVIATION_MULT", "2.0"))
+
+# Run-level dedup key for the whole-run elapsed check (D1b). Phase names match
+# PHASE_RE ([a-z0-9_]+); __run_total__ shares the charset, so a collision with
+# a real phase name is possible in principle but costs only a suppressed
+# duplicate advisory marker (plan §12 assumption 14).
+ETA_RUN_TOTAL_KEY = "__run_total__"
+
+_LEADING_FLOAT_RE = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
+# A markdown |---|:---:|---| separator row: every pipe-split cell is only
+# whitespace / dashes / colons.
+_MD_SEPARATOR_CELL_RE = re.compile(r"[\s:\-]*")
+
+
+class _UnparseableWallRow(Exception):
+    """A located planned_wall_h data row yielded no leading float (AC #2)."""
+
+
+def _md_planned_wall_rows(plan_text: str) -> list[float]:
+    """Leading floats of every markdown-table planned_wall_h column cell.
+
+    Table-scoped: only rows FOLLOWING a ``|``-prefixed header line that
+    contains ``planned_wall_h`` are scanned, with the value-column index
+    DERIVED from that header's cell position (never a hardcoded ordinal).
+    Raises ``_UnparseableWallRow`` when ANY located data row's cell has no
+    leading float — the caller maps that to a disabled tripwire (``None``),
+    never a partial sum (AC #2).
+    """
+    rows: list[float] = []
+    lines = plan_text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if not (line.lstrip().startswith("|") and "planned_wall_h" in line):
+            i += 1
+            continue
+        header_cells = line.split("|")
+        col = next(idx for idx, c in enumerate(header_cells) if "planned_wall_h" in c)
+        j = i + 1
+        while j < len(lines) and lines[j].lstrip().startswith("|"):
+            cells = lines[j].split("|")
+            j += 1
+            if all(_MD_SEPARATOR_CELL_RE.fullmatch(c) for c in cells):
+                continue  # the |---|---| separator row
+            if col >= len(cells):
+                raise _UnparseableWallRow(lines[j - 1][:120])
+            m = _LEADING_FLOAT_RE.match(cells[col])
+            if not m:
+                raise _UnparseableWallRow(lines[j - 1][:120])
+            rows.append(float(m.group(1)))
+        i = j
+    return rows
+
+
+def _html_planned_wall_rows(plan_text: str) -> list[float]:
+    """Leading floats of every HTML-table planned_wall_h column cell.
+
+    The row scan is SCOPED to each ``<table>`` element whose ``<th>`` row
+    contains ``planned_wall_h`` (never a document-wide ``<td>`` scan), and
+    the value-column index is DERIVED from the ``<th>`` position (parity
+    with the markdown path). Raises ``_UnparseableWallRow`` on any located
+    data row whose cell has no leading float (AC #2).
+    """
+    rows: list[float] = []
+    for tbl_m in re.finditer(r"<table\b[^>]*>(.*?)</table>", plan_text, re.IGNORECASE | re.DOTALL):
+        tbl = tbl_m.group(1)
+        ths = re.findall(r"<th\b[^>]*>(.*?)</th>", tbl, re.IGNORECASE | re.DOTALL)
+        col = next((idx for idx, th in enumerate(ths) if "planned_wall_h" in th), None)
+        if col is None:
+            continue  # a table without the header never contributes
+        for tr_m in re.finditer(r"<tr\b[^>]*>(.*?)</tr>", tbl, re.IGNORECASE | re.DOTALL):
+            tds = re.findall(r"<td\b[^>]*>(.*?)</td>", tr_m.group(1), re.IGNORECASE | re.DOTALL)
+            if not tds:
+                continue  # the <th>-only header row
+            if col >= len(tds):
+                raise _UnparseableWallRow(tr_m.group(1)[:120])
+            cell = re.sub(r"<[^>]+>", "", tds[col])
+            m = _LEADING_FLOAT_RE.match(cell)
+            if not m:
+                raise _UnparseableWallRow(cell[:120])
+            rows.append(float(m.group(1)))
+    return rows
+
+
+def _parse_plan_wall_budget(plan_text: str) -> float | None:
+    """Sum of §9 per-component planned_wall_h, or None when no row parses.
+
+    Handles the markdown pipe-table form (a ``|``-prefixed header line
+    containing ``planned_wall_h``) and the HTML ``<tr><th>``/``<td>`` form
+    (both exist in real plans — e.g. #779's live plan is HTML). CONTRACT
+    (critic round 1, AC #2):
+
+    - ALL tables carrying a planned_wall_h header are located and summed
+      (multi-stage plans, e.g. #479 Stage 1 + Stage 2 — a single-header
+      parse under-counts and false-fires).
+    - The value-column index is DERIVED from the header cell position in
+      BOTH formats (markdown pipe cells AND the HTML ``<th>`` row) — never
+      a hardcoded ordinal; the HTML row scan is SCOPED to the table element
+      containing the planned_wall_h ``<th>``, never a document-wide
+      ``<td>`` scan.
+    - Each data cell contributes its LEADING float ("3 (async, off-GPU)"
+      -> 3.0). If ANY located data row's planned_wall_h cell yields NO
+      leading float, return None (tripwire disabled, log once) — NEVER a
+      partial sum: an under-parsed budget is the one path to a false
+      positive.
+    - Returns None on zero located tables / zero data rows. Whole body
+      exception-wrapped: ANY parse error returns None (fail-safe OFF).
+    """
+    try:
+        rows = _md_planned_wall_rows(plan_text) + _html_planned_wall_rows(plan_text)
+    except Exception:
+        return None
+    if not rows:
+        return None
+    return sum(rows) or None
+
+
+def _plan_total_wall_h_for_issue(issue: int) -> float | None:
+    """Read tasks/<status>/<issue>/plans/plan.md and parse the §9 total.
+
+    Fail-soft None on a missing task / missing plan / unreadable file /
+    unparseable table — the tripwire is then disabled for this run (AC #2).
+    ``plans/plan.md`` symlinks the highest plan version (D1).
+    """
+    try:
+        plan = find_task_path(issue) / "plans" / "plan.md"
+        if not plan.exists():
+            return None
+        return _parse_plan_wall_budget(plan.read_text())
+    except Exception:
+        return None
+
+
+@dataclass(frozen=True)
+class EtaDeviationPost:
+    """One epm:compute-deviation post the ETA tripwire decided to emit."""
+
+    dedup_key: str  # current phase name, or ETA_RUN_TOTAL_KEY
+    scope: str  # "phase" | "run"
+    elapsed_h: float
+    planned_wall_h: float
+    ratio: float
+
+
+@dataclass(frozen=True)
+class EtaDeviationUpdate:
+    """Outcome of one ETA-tripwire tick (``_eta_deviation_update``)."""
+
+    posts: tuple[EtaDeviationPost, ...]  # 0..2 entries
+
+
+def _eta_deviation_update(
+    *,
+    status: str,
+    current_phase: str,
+    phase_started_epoch: int,
+    run_age_sec: float | None,
+    total_planned_wall_h: float | None,
+    posted_keys: set[str],
+    now_epoch: int,
+    mult: float,
+) -> EtaDeviationUpdate:
+    """Pure decision core for the phase-ETA tripwire (#873; incident #763).
+
+    The budget is ``mult`` x the plan §9 TOTAL planned_wall_h (D1b — the
+    only mapping-free, zero-false-positive construct; §9 component names
+    are planner free-text with no mechanical phase mapping). Two strictly-
+    conservative checks share it, both STRICT ``>`` at the boundary:
+
+    * per-phase: elapsed since ``phase_started_epoch`` exceeds the budget
+      — any SINGLE phase exceeding ``mult`` x the ENTIRE plan's wall
+      estimate is unambiguously a deviation. Skipped for the ``""`` /
+      ``unknown`` / ``done`` phases and for an unknown start (<= 0).
+    * run-level: ``run_age_sec`` exceeds the budget — catches cumulative
+      overrun across phases. Dedup key :data:`ETA_RUN_TOTAL_KEY`.
+
+    Fail-safe OFF on ``mult <= 0``, a missing/non-positive budget, or a
+    non-``running`` verdict. Pure / no I/O — the caller owns state
+    persistence and the marker posts.
+    """
+    if mult <= 0 or total_planned_wall_h is None or total_planned_wall_h <= 0:
+        return EtaDeviationUpdate(posts=())
+    if status != "running":
+        return EtaDeviationUpdate(posts=())
+    budget_sec = mult * total_planned_wall_h * 3600.0
+    posts: list[EtaDeviationPost] = []
+    if (
+        current_phase not in {"", "unknown", "done"}
+        and phase_started_epoch > 0
+        and (now_epoch - phase_started_epoch) > budget_sec
+        and current_phase not in posted_keys
+    ):
+        elapsed = float(now_epoch - phase_started_epoch)
+        posts.append(
+            EtaDeviationPost(
+                dedup_key=current_phase,
+                scope="phase",
+                elapsed_h=elapsed / 3600.0,
+                planned_wall_h=total_planned_wall_h,
+                ratio=elapsed / (total_planned_wall_h * 3600.0),
+            )
+        )
+    if (
+        run_age_sec is not None
+        and run_age_sec > budget_sec
+        and ETA_RUN_TOTAL_KEY not in posted_keys
+    ):
+        posts.append(
+            EtaDeviationPost(
+                dedup_key=ETA_RUN_TOTAL_KEY,
+                scope="run",
+                elapsed_h=run_age_sec / 3600.0,
+                planned_wall_h=total_planned_wall_h,
+                ratio=run_age_sec / (total_planned_wall_h * 3600.0),
+            )
+        )
+    return EtaDeviationUpdate(posts=tuple(posts))
+
+
+def _maybe_post_eta_deviation(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    current_phase: str,
+    last_phase_change_epoch: int,
+    run_age_sec: float | None,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[set[str], bool, bool]:
+    """ETA-tripwire wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(posted_keys, posted_this_tick, budget_warned)`` for the
+    caller to persist via ``_save_state``. The caller applies the run-scope
+    reset (:func:`_tripwire_run_scope`, AC #6) BEFORE this call, so
+    ``prev_state`` is already scoped to the current run. Fail-soft
+    everywhere: a missing / unparseable plan budget disables the tripwire
+    with ONE logged line per run (state-flag-backed); a marker-post failure
+    is logged and the dedup key is NOT recorded, so the next tick retries.
+    Never flips ``status``, never stops anything. Phase start resolves to
+    ``last_phase_change_epoch`` when a boundary was observed this run, else
+    the run-launch epoch (``now - run_age_sec``), else 0 (phase check
+    skipped — fail-safe, D2).
+    """
+    posted_keys = {
+        k for k in (prev_state.get("eta_deviation_posted_keys", "") or "").split(",") if k
+    }
+    budget_warned = prev_state.get("eta_budget_warned", "0") == "1"
+    if ETA_DEVIATION_MULT <= 0:
+        return posted_keys, False, budget_warned
+    total = _plan_total_wall_h_for_issue(issue)
+    if total is None:
+        if not budget_warned:
+            log.info(
+                "no parseable §9 planned_wall_h for #%d; phase-ETA tripwire disabled (fail-safe)",
+                issue,
+            )
+            budget_warned = True
+        return posted_keys, False, budget_warned
+    if last_phase_change_epoch > 0:
+        phase_started_epoch = last_phase_change_epoch
+    elif run_age_sec is not None:
+        phase_started_epoch = int(now_epoch - run_age_sec)
+    else:
+        phase_started_epoch = 0
+    update = _eta_deviation_update(
+        status=status,
+        current_phase=current_phase,
+        phase_started_epoch=phase_started_epoch,
+        run_age_sec=run_age_sec,
+        total_planned_wall_h=total,
+        posted_keys=posted_keys,
+        now_epoch=now_epoch,
+        mult=ETA_DEVIATION_MULT,
+    )
+    posted_any = False
+    for p in update.posts:
+        component = "run total" if p.scope == "run" else f"phase {current_phase!r}"
+        note = (
+            f"component: {component} (elapsed vs §9 total)"
+            f" planned_wall_h: {p.planned_wall_h:.2f}"
+            f" projected_wall_h: {p.elapsed_h:.2f} (elapsed so far — run still in"
+            f" progress, a lower bound) ratio: {p.ratio:.1f}"
+            f" basis: poller elapsed-vs-plan tripwire, {ETA_DEVIATION_MULT:g}x the §9"
+            f" compute-projection planned_wall_h total (source: poller; advisory only"
+            f" — nothing stopped)"
+        )
+        try:
+            post_event(
+                issue,
+                "epm:compute-deviation",
+                by="poll_pipeline",
+                note=note,
+                phase=current_phase,
+                pod=pod,
+                source="poller",
+                basis="elapsed-vs-plan",
+            )
+        except Exception as exc:
+            log.error("phase-ETA deviation post failed (next tick will retry): %s", exc)
+            continue
+        log.warning(
+            "posted epm:compute-deviation for #%d: %s elapsed %.2fh vs §9 total %.2fh (%.1fx)",
+            issue,
+            p.dedup_key,
+            p.elapsed_h,
+            p.planned_wall_h,
+            p.ratio,
+        )
+        posted_keys.add(p.dedup_key)
+        posted_any = True
+    return posted_keys, posted_any, budget_warned
+
+
+# ── #873 run-scoped tripwire dedup (AC #6 / D4) ──────────────────────────────
+# State keys owned by the #873 tripwires; cleared together on a fresh
+# epm:run-launched epoch so a relaunch / same-issue follow-up round re-arms
+# both tripwires (without this, ETA_RUN_TOTAL_KEY would be permanently
+# suppressed per issue and common phase names would collide across runs).
+_TRIPWIRE_STATE_KEYS: tuple[str, ...] = (
+    "eta_deviation_posted_keys",
+    "eta_budget_warned",
+    "gpu_width_since_epoch",
+    "gpu_width_idle_set",
+    "gpu_width_advised_phases",
+)
+# Tolerance (seconds) when comparing the observed run-launched epoch against
+# the stored anchor: rounding jitter on ``now - run_age`` must never
+# spuriously reset the dedup keys mid-run.
+_TRIPWIRE_RUN_EPOCH_TOLERANCE_SEC = 60
+
+
+def _tripwire_run_scope(
+    prev_state: dict[str, str], *, run_age_sec: float | None, now_epoch: int
+) -> tuple[dict[str, str], int]:
+    """Run-scope the #873 tripwire dedup keys (AC #6 / plan D4).
+
+    Returns ``(state, tripwire_run_epoch)``: ``state`` is ``prev_state``
+    unchanged when no reset applies, or a copy with every
+    ``_TRIPWIRE_STATE_KEYS`` entry REMOVED when the CURRENT
+    ``epm:run-launched`` epoch (``now_epoch - run_age_sec``) is newer than
+    the stored ``tripwire_run_epoch`` anchor by more than the jitter
+    tolerance. ``tripwire_run_epoch`` is the anchor the caller persists via
+    ``_save_state`` / the GCP sibling state. Fail-safe: an unknown run age
+    (missing / unreadable marker) keeps the stored anchor and clears
+    nothing; a MALFORMED stored anchor (present but non-numeric) with a
+    known run age cannot decide run identity, so it fails toward RE-ARMING
+    — clear the tripwire keys and adopt the current epoch (cheaper failure
+    = one duplicate advisory, never a suppressed one); an absent/zero
+    anchor (genuine first run — no keys to protect) adopts the current
+    epoch and keeps the state. Never raises into the poll tick.
+    """
+    raw = prev_state.get("tripwire_run_epoch", "0") or 0
+    malformed = False
+    try:
+        stored = int(float(raw))
+    except (TypeError, ValueError):
+        stored = 0
+        malformed = True
+    if run_age_sec is None:
+        return prev_state, stored
+    current = round(now_epoch - run_age_sec)
+    if malformed:
+        cleared = {k: v for k, v in prev_state.items() if k not in _TRIPWIRE_STATE_KEYS}
+        return cleared, current
+    if stored <= 0:
+        return prev_state, current
+    if current > stored + _TRIPWIRE_RUN_EPOCH_TOLERANCE_SEC:
+        cleared = {k: v for k, v in prev_state.items() if k not in _TRIPWIRE_STATE_KEYS}
+        return cleared, current
+    return prev_state, stored
 
 
 # ── GPU-idle ESCALATION (incident #664) ──────────────────────────────────────
@@ -2811,6 +3377,34 @@ def poll_once(
         now_epoch=now_epoch,
     )
 
+    # ── #873 run-scoped tripwire dedup anchor (AC #6) ────────────────────
+    # A fresh epm:run-launched (relaunch / same-issue follow-up round)
+    # re-arms BOTH #873 tripwires: the stored ETA/width dedup keys belong
+    # to the PREVIOUS run, so _tripwire_run_scope clears them before the
+    # predicates run. ``run_age_sec`` is computed ONCE here and reused by
+    # the adaptive-interval relaunch clamp + the phase-ETA fallback below
+    # (one events.jsonl read per tick).
+    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
+        prev_state, run_age_sec=run_age_sec, now_epoch=now_epoch
+    )
+
+    # ── #873 m-of-N GPU-width advisory ───────────────────────────────────
+    # A STABLE strict subset of GPUs idle >= GPU_WIDTH_ADVISORY_MIN minutes
+    # on a multi-GPU pod while the run is healthy (#813 idle-width / #664
+    # spend-leak class). Advisory only — never flips ``status``.
+    gpu_width_since_epoch, gpu_width_idle_set, gpu_width_advised_phases, gpu_width_posted = (
+        _maybe_post_gpu_width_advisory(
+            issue=issue,
+            pod=pod,
+            status=status,
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            prev_state=tripwire_state,
+            now_epoch=now_epoch,
+        )
+    )
+
     # New milestone? (re-uses ``prev_state`` loaded above for the
     # ssh_fail_count tracking — we only read state once per tick.)
     prev_phase = prev_state.get("phase", "")
@@ -2844,7 +3438,8 @@ def poll_once(
         last_phase_change_epoch = int(float(prev_state.get("last_phase_change_epoch", "0") or 0))
     except (TypeError, ValueError):
         last_phase_change_epoch = 0
-    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    # ``run_age_sec`` was computed above at the #873 tripwire anchor (one
+    # events.jsonl read per tick); reused here for the relaunch clamp.
     # Relaunch clamp (code-review 2026-06-12): the state file persists
     # across same-issue relaunches / follow-up rounds, so a boundary
     # recorded BEFORE the current run's launch (latest epm:run-launched)
@@ -2876,6 +3471,23 @@ def poll_once(
         cpu_override_active=cpu_override_active,
         run_age_sec=run_age_sec,
         phase_changed_ago_sec=phase_changed_ago_sec,
+    )
+
+    # ── #873 phase-ETA tripwire ──────────────────────────────────────────
+    # Elapsed wall-clock (per current phase / whole run) vs the plan §9
+    # planned_wall_h TOTAL; posts epm:compute-deviation (source: poller).
+    # Placed AFTER the relaunch clamp + phase_transitioned update so it
+    # sees the FINAL last_phase_change_epoch (D2). Advisory only — never
+    # flips ``status``, never stops anything.
+    eta_posted_keys, eta_posted, eta_budget_warned = _maybe_post_eta_deviation(
+        issue=issue,
+        pod=pod,
+        status=status,
+        current_phase=current_phase,
+        last_phase_change_epoch=last_phase_change_epoch,
+        run_age_sec=run_age_sec,
+        prev_state=tripwire_state,
+        now_epoch=now_epoch,
     )
 
     _save_state(
@@ -2916,6 +3528,19 @@ def poll_once(
             # verdict all write "0" — a one-tick transient never
             # accumulates across a healthy gap.
             "zombie_streak": str(zombie_streak),
+            # #873 m-of-N GPU-width advisory span + stable idle set +
+            # per-phase de-dup (same comma-join contract as the idle sets).
+            "gpu_width_since_epoch": str(gpu_width_since_epoch),
+            "gpu_width_idle_set": ",".join(str(i) for i in gpu_width_idle_set),
+            "gpu_width_advised_phases": ",".join(sorted(gpu_width_advised_phases)),
+            # #873 phase-ETA tripwire dedup keys + the one-shot missing-
+            # budget warn flag. Phase names match PHASE_RE ([a-z0-9_]+) and
+            # __run_total__ shares the charset, so the comma join is safe.
+            "eta_deviation_posted_keys": ",".join(sorted(eta_posted_keys)),
+            "eta_budget_warned": "1" if eta_budget_warned else "0",
+            # #873 run-scope anchor: the epm:run-launched epoch the tripwire
+            # dedup keys above belong to (AC #6). A fresh launch clears them.
+            "tripwire_run_epoch": str(tripwire_run_epoch),
         },
     )
 
@@ -2948,6 +3573,8 @@ def poll_once(
         gpu_util=gpu_util,
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
         gpu_idle_escalation_posted=gpu_idle_escalation_posted,
+        gpu_width_advisory_posted=gpu_width_posted,
+        eta_deviation_posted=eta_posted,
         session_cpu_secs=current_session_cpu,
         cpu_advancing=cpu_advancing,
         next_interval=next_interval,
@@ -3022,6 +3649,8 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_util": result.gpu_util,
                 "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
                 "gpu_idle_escalation_posted": result.gpu_idle_escalation_posted,
+                "gpu_width_advisory_posted": result.gpu_width_advisory_posted,
+                "eta_deviation_posted": result.eta_deviation_posted,
                 "session_cpu_secs": result.session_cpu_secs,
                 "cpu_advancing": result.cpu_advancing,
                 "next_interval": result.next_interval,

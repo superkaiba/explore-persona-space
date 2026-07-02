@@ -1,0 +1,334 @@
+{
+  "trait": "hallucination",
+  "setting": "finetune",
+  "stage_fixed": {
+    "overall": {
+      "observed_r_per_layer": [
+        0.1340106902286036,
+        0.43222225854665874,
+        0.6132370182335223,
+        0.5697485919375778,
+        0.13756945197664328,
+        0.3444428858964447,
+        0.560283854713331,
+        0.7284617889279696,
+        0.7222875638761237,
+        0.5776557161173922,
+        0.7184016289882329,
+        0.6432112839058681,
+        0.7545468404920799,
+        0.8625999626308201,
+        0.9098853492995848,
+        0.9238341237533599,
+        0.9141476659482998,
+        0.9381041147145287,
+        0.966917047548859,
+        0.9591398649465286,
+        0.9645303178536758,
+        0.9677683870441519,
+        0.9687772386729238,
+        0.9618147001543063,
+        0.9666187085565344,
+        0.971412687398969,
+        0.9506714552336726,
+        0.5051648342421319
+      ],
+      "own_argmax_layer": 25,
+      "observed_matched_r_signed_at_argmax": 0.971412687398969,
+      "layer_choices": {
+        "own_argmax": 25,
+        "issue778_selected": 25,
+        "paper_steering": 16
+      },
+      "bootstrap_ci95_at_own_argmax": [
+        0.9508806563897894,
+        0.9859778247855572
+      ],
+      "bootstrap_method": "row bootstrap (overall Pearson)",
+      "per_choice": {
+        "own_argmax": {
+          "layer": 25,
+          "observed_abs_r": 0.971412687398969,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.05971977347931645,
+              "p50": 0.8141261643289598,
+              "p97_5": 0.9645924690115797,
+              "raw_p": 0.01098901098901099,
+              "bh_within_family": 0.08241758241758243,
+              "bh_pooled_all": 0.022624434389140274
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.01476833726395291,
+              "p50": 0.42592785838071723,
+              "p97_5": 0.8640268422487801,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.0024975024975024975,
+              "bh_pooled_all": 0.004560656734569778
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.06823737210336966,
+              "p50": 0.7869378062674266,
+              "p97_5": 0.9594362599877868,
+              "raw_p": 0.006993006993006993,
+              "bh_within_family": 0.009535918626827717,
+              "bh_pooled_all": 0.016317016317016316
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.02949357222524439,
+              "p50": 0.5122528663217198,
+              "p97_5": 0.8739120545165548,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.001873126873126873,
+              "bh_pooled_all": 0.004560656734569778
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.06113946062575458,
+              "p50": 0.7579736257489793,
+              "p97_5": 0.9535310662073141,
+              "raw_p": 0.001998001998001998,
+              "bh_within_family": 0.005994005994005994,
+              "bh_pooled_all": 0.007234145165179648
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.09069639254956564,
+              "p50": 0.8223488735924716,
+              "p97_5": 0.964663421898522,
+              "raw_p": 0.01098901098901099,
+              "bh_within_family": 0.0803741712832622,
+              "bh_pooled_all": 0.022624434389140274
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.46255269175877833,
+                0.1153926001326268
+              ],
+              "p97_5": 0.45387368946812456,
+              "raw_p": 0.3333333333333333,
+              "bh_within_family": 0.3333333333333333,
+              "bh_pooled_all": 0.3333333333333333
+            }
+          }
+        },
+        "issue778_selected": {
+          "layer": 25,
+          "observed_abs_r": 0.971412687398969,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.05971977347931645,
+              "p50": 0.8141261643289598,
+              "p97_5": 0.9645924690115797,
+              "raw_p": 0.01098901098901099,
+              "bh_within_family": 0.08241758241758243,
+              "bh_pooled_all": 0.025083612040133783
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.01476833726395291,
+              "p50": 0.42592785838071723,
+              "p97_5": 0.8640268422487801,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.002997002997002997,
+              "bh_pooled_all": 0.005827505827505828
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.06823737210336966,
+              "p50": 0.7869378062674266,
+              "p97_5": 0.9594362599877868,
+              "raw_p": 0.006993006993006993,
+              "bh_within_family": 0.01048951048951049,
+              "bh_pooled_all": 0.017482517482517484
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.02949357222524439,
+              "p50": 0.5122528663217198,
+              "p97_5": 0.8739120545165548,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.0024975024975024975,
+              "bh_pooled_all": 0.005827505827505828
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.06113946062575458,
+              "p50": 0.7579736257489793,
+              "p97_5": 0.9535310662073141,
+              "raw_p": 0.001998001998001998,
+              "bh_within_family": 0.00899100899100899,
+              "bh_pooled_all": 0.009121313469139556
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.09069639254956564,
+              "p50": 0.8223488735924716,
+              "p97_5": 0.964663421898522,
+              "raw_p": 0.01098901098901099,
+              "bh_within_family": 0.0803741712832622,
+              "bh_pooled_all": 0.025083612040133783
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.46255269175877833,
+                0.1153926001326268
+              ],
+              "p97_5": 0.45387368946812456,
+              "raw_p": 0.3333333333333333,
+              "bh_within_family": 0.3333333333333333,
+              "bh_pooled_all": 0.3333333333333333
+            }
+          }
+        },
+        "paper_steering": {
+          "layer": 16,
+          "observed_abs_r": 0.9141476659482998,
+          "nulls": {
+            "orig_randnorm": {
+              "n_draws": 1000,
+              "p2_5": 0.049777565582270485,
+              "p50": 0.7027311418377842,
+              "p97_5": 0.9203045735644168,
+              "raw_p": 0.03396603396603397,
+              "bh_within_family": 0.1648351648351648,
+              "bh_pooled_all": 0.07430069930069931
+            },
+            "isotropic": {
+              "n_draws": 1000,
+              "p2_5": 0.010603770663162747,
+              "p50": 0.3061018671813809,
+              "p97_5": 0.7584900132571666,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.005994005994005994,
+              "bh_pooled_all": 0.008068854222700376
+            },
+            "neg_arm_only": {
+              "n_draws": 1000,
+              "p2_5": 0.040803826546576064,
+              "p50": 0.6415399684191496,
+              "p97_5": 0.8994420596033587,
+              "raw_p": 0.011988011988011988,
+              "bh_within_family": 0.016347289074561802,
+              "bh_pooled_all": 0.0322754168908015
+            },
+            "rb_projected_out": {
+              "n_draws": 1000,
+              "p2_5": 0.020844968749569957,
+              "p50": 0.3236447605095737,
+              "p97_5": 0.7717609002523441,
+              "raw_p": 0.000999000999000999,
+              "bh_within_family": 0.002997002997002997,
+              "bh_pooled_all": 0.008068854222700376
+            },
+            "within_class": {
+              "n_draws": 1000,
+              "p2_5": 0.0452409080787927,
+              "p50": 0.6100775416994775,
+              "p97_5": 0.8963309790137198,
+              "raw_p": 0.00999000999000999,
+              "bh_within_family": 0.02140716426430712,
+              "bh_pooled_all": 0.029137529137529136
+            },
+            "orig_perm": {
+              "n_draws": 1000,
+              "p2_5": 0.06009870021057997,
+              "p50": 0.6854362451111695,
+              "p97_5": 0.9137510662966241,
+              "raw_p": 0.025974025974025976,
+              "bh_within_family": 0.14735264735264736,
+              "bh_pooled_all": 0.060606060606060615
+            },
+            "crosstrait": {
+              "n_draws": 2,
+              "values": [
+                0.7730569770395384,
+                0.3696659183948083
+              ],
+              "p97_5": 0.7629722005734201,
+              "raw_p": 0.3333333333333333,
+              "bh_within_family": 0.38461538461538464,
+              "bh_pooled_all": 0.38461538461538464
+            }
+          }
+        }
+      }
+    }
+  },
+  "n_points": 24,
+  "tags": [
+    "evil_normal",
+    "evil_misaligned_1",
+    "evil_misaligned_2",
+    "sycophancy_normal",
+    "sycophancy_misaligned_1",
+    "sycophancy_misaligned_2",
+    "hallucination_normal",
+    "hallucination_misaligned_1",
+    "hallucination_misaligned_2",
+    "mistake_medical_normal",
+    "mistake_medical_misaligned_1",
+    "mistake_medical_misaligned_2",
+    "mistake_math_normal",
+    "mistake_math_misaligned_1",
+    "mistake_math_misaligned_2",
+    "mistake_gsm8k_normal",
+    "mistake_gsm8k_misaligned_1",
+    "mistake_gsm8k_misaligned_2",
+    "mistake_opinions_normal",
+    "mistake_opinions_misaligned_1",
+    "mistake_opinions_misaligned_2",
+    "insecure_code_normal",
+    "insecure_code_misaligned_1",
+    "insecure_code_misaligned_2"
+  ],
+  "layer_index_note": "layers are 0-indexed into the 28-layer r_B tensor (block outputs, hidden_states[1..28] stored 0..27). paper_steering uses the brief's values as 0-indexed; the paper's 1-indexed convention would map layer L -> index L-1.",
+  "layer_independence_note": "Per-layer null draws are INDEPENDENT across layers, while r_B's 28 layers are highly correlated. The max-over-28 null therefore takes 28 near-independent chances at a high |r| whereas the observed r_B statistic takes ~1 effective chance \u2014 a conservative-against-the-vector inflation of the null band. Recorded, not corrected, in v1.",
+  "within_class_caveat": "The pooled within-class covariance null (within_class) is CONSERVATIVE but NOT fully trait-agnostic: each arm is centered by its own mean, so the between-arm contrast (== r_B) is removed, but residual trait-INTENSITY variance WITHIN the positive arm (judge-kept rollouts range 55-95, a gradient that points along r_B) plus the topic conditioning shared by all extraction rollouts remain in the covariance. The neg_arm_only rung (single-arm negative covariance) drops the positive-arm intensity variance and is the closest persisted approximation to a trait-agnostic covariance. A FULLY independent covariance null (activations on trait-UNRELATED generic rollouts) is DEFERRED to the planned rerun because no trait-neutral row-level activations are persisted \u2014 it needs a small capture pass.",
+  "reproducibility": {
+    "git_commit": "aedb3a0858aad7bf3ecdf30b2f95e158c2966e99",
+    "timestamp": "2026-07-02T09:51:37-0700",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0",
+      "peft": "0.18.1",
+      "trl": "0.29.1"
+    }
+  },
+  "tensor_sha256": {
+    "rb": "8bea89cd0e2f43eb902d0fcff544a3eed2fc4006ec79b3bd440b785852db4a6f",
+    "activations_pos": "e74338ba4fe3f8d0f102b47618a3ddad37e3c5e952dcca15ead1647f74f833f2",
+    "activations_neg": "6144f001249516bf5f1b2e46276159d8e23f59217ffa0eb3ebdf7ed687cd3b50",
+    "monitoring_corrected_acts": "32372493c9067554c4bf4d24853d11c77a87a7132c42736190dda2775ec1a81b",
+    "monitoring_manyshot_acts": "14f81b84e7638c7d1a1b2379276492526aaf94a3f0817bf1146e71af334ad165"
+  },
+  "circularity_diagnostics": {
+    "layer": 25,
+    "cos_top_pc_pooled_vs_rB": 0.7358384225352537,
+    "variance_ratio_lambda1_over_mean": 495.84661924096173,
+    "variance_inflation_along_rB": 315.88483381083887,
+    "cos_top_pc_within_class_vs_rB": 0.5375111626047588,
+    "n_pos": 77,
+    "n_neg": 715
+  },
+  "seeds": {
+    "overall": {
+      "orig_randnorm": 0,
+      "isotropic": 100010,
+      "neg_arm_only": 400010,
+      "rb_projected_out": 300010,
+      "within_class": 200010,
+      "orig_perm": 0
+    }
+  }
+}

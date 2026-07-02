@@ -729,10 +729,10 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
 
 def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     """Plans reusing trained HF artifacts must carry the fitness
-    attestations (a)-(h) (.claude/rules/artifact-reuse.md). WARN not FAIL:
+    attestations (a)-(i) (.claude/rules/artifact-reuse.md). WARN not FAIL:
     trigger and item-detection are both heuristic, and the demonstrated
     failure modes (#545/#600/#601) are semantic — the gate's value is
-    forcing the section to exist and naming the eight letters."""
+    forcing the section to exist and naming the nine letters."""
     cid, name = "c6_reuse_fitness", "reused-artifact fitness attestation"
     if kind != "experiment":
         return _skip(cid, name, "kind-exempt")
@@ -749,22 +749,23 @@ def check_reuse_fitness(plan: str, kind: str) -> CheckResult:
     if re.search(NA_RE + r"no (?:artifact )?reuse", text):
         return _pass(cid, name, "explicit no-reuse declaration (N/A — no artifact reuse)")
     fitness = re.search(r"(?i)fitness", text)
-    letters = {m.group(1) for m in re.finditer(r"\(([a-h])\)", text)}
+    letters = {m.group(1) for m in re.finditer(r"\(([a-i])\)", text)}
     if fitness and len(letters) >= 4:
-        return _pass(cid, name, f"fitness check present ({len(letters)}/8 lettered items spotted)")
+        return _pass(cid, name, f"fitness check present ({len(letters)}/9 lettered items spotted)")
     if fitness:
         return _warn(
             cid,
             name,
-            f"fitness vocabulary present but only {len(letters)} of the (a)–(h) items "  # noqa: RUF001
-            "detectable — verify all eight attestations (recipe/regime/cells/single-var/"
-            "hub-resolution/content-identity/scaling/backend-fetchability) before approval",
+            f"fitness vocabulary present but only {len(letters)} of the (a)–(i) items "  # noqa: RUF001
+            "detectable — verify all nine attestations (recipe/regime/cells/single-var/"
+            "hub-resolution/content-identity/scaling/backend-fetchability/code-throughput) "
+            "before approval",
         )
     return _warn(
         cid,
         name,
         "plan reuses HF artifacts but no fitness check found — CLAUDE.md reuse rule requires "
-        "attestations (a)–(h); consistency-checker + Methodology critic must gate this",  # noqa: RUF001
+        "attestations (a)–(i); consistency-checker + Methodology critic must gate this",  # noqa: RUF001
     )
 
 

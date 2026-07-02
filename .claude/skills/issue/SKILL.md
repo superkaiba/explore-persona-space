@@ -3524,6 +3524,32 @@ NEVER changes the status verdict and the poller NEVER stops the pod — it
 surfaces the leak loudly for action. This handling is additive to the
 `status=running` branch.
 
+**ETA-deviation / GPU-width advisory handling.** When a tick's JSON reports
+`eta_deviation_posted: true`, the poller has just posted an
+`epm:compute-deviation` marker (`source: poller`, `basis: elapsed-vs-plan`):
+elapsed wall-time for the current phase or the whole run exceeded
+`EPM_ETA_DEVIATION_MULT` (default 2.0) × the plan §9 `planned_wall_h` TOTAL —
+the #763 class (an ~80× overrun a human caught ~16h late). Surface it in the
+session text and weigh the run's remaining value: whether the plan's own
+compute-deviation machinery should engage — a mid-run `continue_as_is`
+acknowledgment, or a deliberate descope ONLY where the planner's §9
+stratification spec permits one. Elapsed-so-far is a lower bound on final
+wall, so `continue_as_is` is nearly always the right mid-run resolution; the
+poller variant carries no `action:` field and is never an auto-descope input.
+When a tick's JSON reports `gpu_width_advisory_posted: true`, the poller has
+posted a `[gpu-width-advisory]` `epm:progress` marker (plus a
+`gpu_width_advisory=True` extra): a STABLE strict subset of GPUs sat idle ≥
+`EPM_GPU_WIDTH_ADVISORY_MIN` (default 45) min on a multi-GPU pod while the run
+is healthy — the #813 idle-width / #664 spend-leak class. Apply the CLAUDE.md
+per-phase GPU-WIDTH right-sizing judgment (widen the parallelism to fill the
+pod, or release/downsize it) under the SAME three hard constraints as the
+idle advisory: (a) never kill un-checkpointable in-RAM work, (b) autonomous
+sessions never stop a pod to PARK, (c) this is NOT a mid-run cost gate — the
+trigger is the idle-width / elapsed-vs-plan fact, never "this is getting
+expensive". Both are advisory-only: neither changes the status verdict, and
+the poller stops nothing. This handling is additive to the `status=running`
+branch.
+
 **`--pid-file` is a POD-side path.** `poll_pipeline.py` evaluates
 `[ -f <pid_file> ]` inside its remote SSH heredoc, so the pid file must
 exist ON THE POD (the experimenter's launcher writes it there at launch
@@ -5165,6 +5191,31 @@ within the same task; the second free-analysis follow-up surfaces in
 the body as a regular bullet for a future human pass. Across tasks the
 mechanism stays fresh (each task gets its own one round).
 
+**Compute-character pre-launch statement (REQUIRED — one paragraph, not a
+planner round, not a gate).** "0 GPU-h" does not mean "0 compute review":
+this step, the Step 9b same-issue follow-up loop, and the CLAUDE.md
+§ Routing "User-chat inline free analysis" carve-out are the workflow's
+PLANNERLESS paths — they skip the planner+critic stack, where all
+compute-character review lives (incidents #667/#722/#778: reused serial
+parent code burned hours on "0 GPU-h" work, caught only by ad-hoc human
+watches). Before dispatching any stage that launches a fit, sweep, or
+statistical battery (permutation/bootstrap/null-draw batteries,
+per-cell/per-fold fits, per-row model calls), the dispatcher STATES, in
+the stage-dispatch `epm:progress` breadcrumb note (or an
+immediately-adjacent `epm:progress` marker): (1) the ops arithmetic —
+cells × folds × draws × epochs and the projected wall-time it implies;
+(2) the NAMED batched helper implementing the inner loop (e.g.
+`analysis/vectorized_mlp_skill.py`; the batched `perm_null_draws` in
+`analysis/null_battery.py`), or why the work is genuinely not batchable;
+(3) for reused parent code, that its inner loop + device routing were
+INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`). Projected
+wall-time > ~1h without a batched inner loop is a STOP: vectorize first
+(`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
+realized implementation later adds a fit/battery the dispatch statement
+did not cover — or materially changes its arithmetic — an updated
+statement is posted before that launch. A round with no fit/battery stage states one line: `compute-character: no fit/battery stages`.
+Routing, auto-continue behavior, and the marker schema are unchanged.
+
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one
 the analyzer flagged `headline_affecting: yes` — still a useful priority
@@ -5176,6 +5227,9 @@ explicit eval-data path):
    uv run python scripts/task.py post-marker <N> epm:progress \
      --note "stage-dispatch stage=free-analysis-followup round=1 subagent=experiment-implementer worktree=<abs path or 'repo-root'>"
    ```
+   When the follow-up runs any fit/battery, this breadcrumb (or an
+   immediately-following `epm:progress` note) carries the
+   § Compute-character pre-launch statement above.
 2. **Spawn `experiment-implementer`** (paired with `code-reviewer` on
    the resulting diff — same ensemble shape as Step 5). The prompt
    names the exact follow-up + cites the eval-data path(s) it must
@@ -6373,6 +6427,19 @@ orchestrators driving one round is the #778 root cause.
      `plans/v{N+1}.md` as a ONE-VARIABLE diff plan against the issue's
      own latest prior run, not a from-scratch plan. Planner-exempt
      re-runs (step 2) skip this.
+   - **Compute-character pre-launch statement** (canonical block: Step
+     9a-ter § Compute-character pre-launch statement — same three
+     elements, same > ~1h stop-and-vectorize rule): REQUIRED in the
+     `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
+     `epm:progress` note) before dispatching ANY stage of the round that
+     launches a fit, sweep, or statistical battery — INCLUDING
+     planner-exempt re-runs (step 2), which skip the amendment plan and
+     its §9 sizing entirely, and analysis / re-fold stages reusing parent
+     code. An amendment plan's §9 sizing does NOT substitute for it: the
+     plan schedules the battery, the executor states the implementation's
+     compute shape — #778's round re-ran the parent's serial 1000-draw
+     null battery (2+h, projected 4–6h, vs ~15–30 min batched) under a
+     plan that never said "serial".
    - `consistency-checker` diffs the amendment against the ISSUE'S OWN
      latest prior run — the latest prior plan version + the current
      clean-result body's `## Reproducibility` — NOT a `parent_id` task
