@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 868,
+  "highest_id": 869,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5650,6 +5650,13 @@
       "path": "tasks/proposed/868",
       "status": "proposed",
       "title": "extraction.py docstring: last-layer hook capture is pre-final-norm (not identical to hidden_states[-1])"
+    },
+    "869": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/869",
+      "status": "proposed",
+      "title": "workflow-fix: broaden vectorize/compute-sizing beyond GD fits"
     },
     "88": {
       "has_clean_result": true,
