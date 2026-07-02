@@ -91,9 +91,13 @@
 - [Row-merge reuse regression test](feedback_row_merge_reuse_regression_test.md) — verify consumer read-path + strip/re-inject loop (#556)
 - [Metric-standardization audit pattern](feedback_metric_standardization_audit.md) — single-var swap + raw-reproduction gate; cos=-1 trap (#536)
 - [Exact-value test constants re-derive](feedback_exact_value_test_constants_rederive.md) — LSE hits both pools; uniform-logits pins no span selection (#851)
+- [Reuse-fitness (a)-(g) mirror-set completeness](feedback_reuse_fitness_mirror_set_completeness.md) — workflow-fix plans editing the reuse checklist: independently grep the full call-site set; the documented mirror memory was stale (missed verify_plan.py c6 + its test); c6 = letter-range bookkeeping, keep >=4 threshold (#737)
+- [Row-merge reuse regression test](feedback_row_merge_reuse_regression_test.md) — merged-row reuse needs the consumer's actual read-path verified + a strip/re-inject/reproduce-parent-numbers loop (#556)
+- [Metric-standardization audit pattern](feedback_metric_standardization_audit.md) — sound audit = single-variable swap + raw-reproduction join gate + consumer-read fingerprint; 2-bank centering degenerates to cos≡−1 (#536)
 
 ## Infra-plan reviews
 - [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, success-path-only tests, checkpoint-per-phase (#564, #596, #607, #399)
+- [Verifier-check-addition plans](feedback_verifier_check_addition_plans.md) — FAIL = bounded bounce (2-cap+override); escape-regex under-triggers fail UNSAFE (#879)
 - [Forward-protection port claims](feedback_forward_protection_port_claims.md) — one-driver fix != forward protection; positional hole (#584)
 - [Full-suite-green needs baseline](feedback_full_suite_green_needs_baseline.md) — "full green" false-FAILs; baseline + no-NEW-failures (#584)
 - [Creation-helper reuse shortcut](feedback_creation_helper_reuse_shortcut_half_state.md) — failed-halfway retry exits 0, broken artifact (#596)

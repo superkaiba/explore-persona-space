@@ -16,6 +16,18 @@ only when ALL workload logs are stale past the effective stall window
 (``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)``) AND the stale-log candidate
 persisted 2 consecutive observed ticks (``zombie_streak`` sidecar key).
 
+Since #864 the override additionally carries a namespace-informativeness
+gate: the probe counts ``GPU_PIDS_TOTAL`` / ``GPU_PIDS_RESOLVABLE`` and
+(zombie-candidate-guarded) ``NVIDIA_UVM_LIVE_HOLDERS`` — live container
+processes holding an EXACT ``/dev/nvidia-uvm`` fd. When
+``total > 0 AND resolvable == 0 AND uvm > 0`` the dead-in-/proc signature
+is a PID-namespace artifact (the flagged PIDs ARE live workers under host
+ids — the #813 false positive: a healthy ~29-min CPU-bound quiet stretch
+outlived the #826 stale-log veto) and the override is vetoed regardless of
+log staleness. Gated by ``ZOMBIE_NAMESPACE_VETO_ENABLED``
+(``EPM_ZOMBIE_NAMESPACE_VETO``; ships default-OFF per the #864 live-pod
+gate disposition).
+
 These tests pin:
 
 * the probe-output parser (``_parse_probe_stdout``) lifting the new
@@ -31,7 +43,17 @@ These tests pin:
 * the healthy case (no zombies) leaving the CPU-override rescue intact;
 * the override NEVER firing on a ``done`` verdict;
 * the JSON surface (``poll_pipeline.main`` + ``backend_poll`` serializer)
-  carrying ``stall_reason``.
+  carrying ``stall_reason``;
+* the #864 namespace-informativeness gate: the parser lifting the three
+  count keys; the #813-shape veto (running + streak reset + the
+  ``cpu_override_active`` passthrough); the #664 total collapse and the
+  matched-namespace partial death still firing WITH the gate enabled;
+  degraded ``uvm`` / ``resolvable`` reads falling back to pure #826 (the
+  fail-toward-current-behavior direction); the
+  ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch; the producer-side probe
+  emission / key-parity / exact end-anchored ``/dev/nvidia-uvm`` matcher
+  pin (a heredoc typo must not leave the gate silently inert); and
+  ``_parse_probe_count`` unit behavior.
 """
 
 from __future__ import annotations
@@ -111,8 +133,15 @@ def _probe_stdout(
     session_cpu: str,
     zombie_pids: str,
     phase_log_mtime_epoch: int = 0,
+    gpu_pids_total: str = "unknown",
+    gpu_pids_resolvable: str = "unknown",
+    uvm_live_holders: str = "unknown",
 ) -> str:
-    """Probe stdout in the shape ``_parse_probe_stdout`` expects."""
+    """Probe stdout in the shape ``_parse_probe_stdout`` expects.
+
+    The #864 count kwargs default ``"unknown"`` — the degraded-probe read —
+    so every pre-#864 test exercises the fall-through-to-#826 path
+    UNMODIFIED (acceptance criterion: existing tests pass unchanged)."""
     return "\n".join(
         [
             "PID_FILE_MISSING=0",
@@ -128,6 +157,9 @@ def _probe_stdout(
             "SHARD_LOG_MTIME_EPOCH=0",
             f"GPU_UTIL={gpu_util}",
             f"ZOMBIE_GPU_PIDS={zombie_pids}",
+            f"GPU_PIDS_TOTAL={gpu_pids_total}",
+            f"GPU_PIDS_RESOLVABLE={gpu_pids_resolvable}",
+            f"NVIDIA_UVM_LIVE_HOLDERS={uvm_live_holders}",
             f"SESSION_CPU_SECS={session_cpu}",
             "RESULTS_SENTINEL_PRESENT=0",
         ]
@@ -143,6 +175,9 @@ def _patch_pod(
     session_cpu: str,
     zombie_pids: str,
     phase_log_mtime_epoch: int = 0,
+    gpu_pids_total: str = "unknown",
+    gpu_pids_resolvable: str = "unknown",
+    uvm_live_holders: str = "unknown",
 ) -> None:
     """Monkeypatch poll_pipeline's I/O boundary with a fully-controlled probe.
 
@@ -164,6 +199,9 @@ def _patch_pod(
                 session_cpu=session_cpu,
                 zombie_pids=zombie_pids,
                 phase_log_mtime_epoch=phase_log_mtime_epoch,
+                gpu_pids_total=gpu_pids_total,
+                gpu_pids_resolvable=gpu_pids_resolvable,
+                uvm_live_holders=uvm_live_holders,
             )
         )
         return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=stdout, stderr="")
@@ -596,3 +634,328 @@ def test_backend_poll_serializer_defaults_stall_reason_for_older_results() -> No
     )
     out = bp._serialize_poll_result(result)
     assert out["stall_reason"] is None
+
+
+# ── #864 namespace-informativeness gate ───────────────────────────────────────
+
+
+def test_parse_probe_count_units() -> None:
+    """``_parse_probe_count``: numeric strings parse; empty / ``unknown`` /
+    negative / garbage all return None (no signal -> #826 fall-through)."""
+    assert pp._parse_probe_count("4") == 4
+    assert pp._parse_probe_count("0") == 0
+    assert pp._parse_probe_count("") is None
+    assert pp._parse_probe_count(None) is None
+    assert pp._parse_probe_count("unknown") is None
+    assert pp._parse_probe_count("-1") is None
+    assert pp._parse_probe_count("x") is None
+
+
+def test_parse_probe_stdout_lifts_namespace_counts() -> None:
+    """The parser lifts the three #864 count keys; a stdout missing them
+    (older probe / SSH-era output) defaults all three to ``"unknown"``."""
+    parsed = pp._parse_probe_stdout(
+        "\n".join(
+            [
+                "PID_ALIVE=1",
+                "GPU_UTIL=0",
+                "ZOMBIE_GPU_PIDS=900001",
+                "GPU_PIDS_TOTAL=4",
+                "GPU_PIDS_RESOLVABLE=0",
+                "NVIDIA_UVM_LIVE_HOLDERS=4",
+            ]
+        )
+    )
+    assert parsed["gpu_pids_total"] == "4"
+    assert parsed["gpu_pids_resolvable"] == "0"
+    assert parsed["nvidia_uvm_live_holders"] == "4"
+
+    older = pp._parse_probe_stdout("PID_ALIVE=1\nGPU_UTIL=0\nZOMBIE_GPU_PIDS=900001\n")
+    assert older["gpu_pids_total"] == "unknown"
+    assert older["gpu_pids_resolvable"] == "unknown"
+    assert older["nvidia_uvm_live_holders"] == "unknown"
+
+
+def test_zombie_namespace_artifact_live_uvm_holders_vetoes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The #813 shape: stale logs (> 900s window), idle GPUs, CPU advancing
+    (present but unconsulted), 4 VRAM holders unresolvable in /proc, 4 live
+    in-container uvm holders, streak pre-seeded to "1" (would fire under
+    pure #826). The namespace gate vetoes regardless of log staleness:
+    running, no reason, streak reset to "0". Also pins the
+    ``cpu_override_active`` passthrough on the veto return (direct calls,
+    both truth values)."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-02 00:00:01 [phase=wc_long step=5/12]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",  # advancing vs prev 4000.0 — NOT consulted by the gate
+        zombie_pids="900001 900002 900003 900004",
+        gpu_pids_total="4",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="4",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "running"
+    assert result.stall_reason is None
+    assert _saved_zombie_streak(state_file) == "0"
+
+    # cpu_override_active passthrough on the veto return — both truth values.
+    for cpu_flag in (True, False):
+        out = pp._apply_zombie_override(
+            status="running",
+            zombie_gpu_pids=["900001"],
+            stall_sec=900,
+            last_mtime_ago=2000.0,
+            phase_log_mtime_ago=10**9,
+            shard_log_mtime_ago=10**9,
+            prev_state={"zombie_streak": "1"},
+            pod="pod-9664",
+            cpu_override_active=cpu_flag,
+            gpu_pids_total=4,
+            gpu_pids_resolvable=0,
+            uvm_live_holders=4,
+        )
+        assert out == ("running", None, cpu_flag, 0)
+
+
+def test_zombie_total_collapse_fires_with_namespace_counts(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The #664 shape WITH the gate enabled and counts present: 1 unresolvable
+    VRAM holder, ZERO live uvm holders (total collapse — nothing on the pod
+    holds a live CUDA context). Falls through to #826, which fires on
+    stale logs + 2-tick persistence."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="1262130",
+        gpu_pids_total="1",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="0",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_matched_namespace_fires_despite_live_uvm_holders(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """TP protection on a MATCHED-namespace pod: 8 compute PIDs, 7 resolve in
+    /proc (one genuinely reaped worker among live siblings), 7 live uvm
+    holders. ``resolvable > 0`` means the /proc signal is informative, so
+    live holders do NOT veto — #826 fires on the stale-log + 2-tick path."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="1262130",
+        gpu_pids_total="8",
+        gpu_pids_resolvable="7",
+        uvm_live_holders="7",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_uvm_unknown_falls_back_to_826(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A degraded UVM scan (``unknown``) can never arm the veto: the #813-like
+    counts (total 4, resolvable 0) with uvm unknown fall through to pure
+    #826, which fires on stale logs + 2-tick persistence — identical to
+    pre-#864 behavior (the fail-toward-current direction)."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="900001 900002 900003 900004",
+        gpu_pids_total="4",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="unknown",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_resolvable_unknown_falls_back_to_826(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A degraded ``resolvable`` read can NEVER arm the veto (guards a future
+    truthiness refactor of the ``== 0`` conjunct — the TP-miss direction):
+    total 4, resolvable unknown, uvm 4, stale logs, streak "1" -> #826
+    fires."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", True)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-06-27 00:00:01 [phase=training step=5/100]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="900001 900002 900003 900004",
+        gpu_pids_total="4",
+        gpu_pids_resolvable="unknown",
+        uvm_live_holders="4",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_zombie_namespace_veto_kill_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """``EPM_ZOMBIE_NAMESPACE_VETO=0`` (the ops escape hatch, and the shipped
+    default per the #864 live-pod gate disposition): the exact #813 veto
+    shape behaves as pure #826 — stale logs + 2-tick persistence fire the
+    override despite the namespace-artifact counts."""
+    monkeypatch.setattr(pp, "ZOMBIE_NAMESPACE_VETO_ENABLED", False)
+    now = int(time.time())
+    _patch_pod(
+        monkeypatch,
+        mtime_epoch=now - 2000,
+        tail="2026-07-02 00:00:01 [phase=wc_long step=5/12]",
+        gpu_util="0,0,0,0,0,0,0,0",
+        session_cpu="5000.0",
+        zombie_pids="900001 900002 900003 900004",
+        gpu_pids_total="4",
+        gpu_pids_resolvable="0",
+        uvm_live_holders="4",
+    )
+    state_file = tmp_path / "poll-state.json"
+    state_file.write_text(_stale_state(now, prev_cpu="4000.0", zombie_streak="1"))
+    result = pp.poll_once(
+        issue=9664,
+        pod="pod-9664",
+        log_path="/workspace/logs/issue-9664.log",
+        pid_file="/workspace/logs/issue-9664.pid",
+        state_file=state_file,
+    )
+    assert result.status == "stalled"
+    assert result.stall_reason == "vllm_worker_dead_zombie_gpu"
+
+
+def test_gpu_probe_emits_namespace_count_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Producer-side emission / key-parity pin (#864; the #607
+    producer->parser-contract hole): a heredoc typo must not leave the gate
+    permanently inert while every fixture test stays green. Captures the
+    REAL probe text ``_ssh_probe`` sends over SSH and asserts (a) the three
+    emission tokens in the nvidia-smi branch AND their ``=unknown`` twins in
+    the else branch; (b) key parity across ``_PROBE_SCALAR_KEYS``, the
+    parser defaults, the ssh-failed fallback dict, and the call-site
+    ``probe.get(...)`` reads; (c) the exact END-ANCHORED ``/dev/nvidia-uvm``
+    matcher (``/dev/nvidia-uvm-tools`` / ``nvidiactl`` / ``nvidia[0-9]``
+    must never count)."""
+    import subprocess as _subprocess
+
+    captured: dict[str, str] = {}
+
+    def _fake_run(cmd: list[str], **kwargs: Any):
+        captured["remote"] = cmd[-1]
+        return _subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    pp._ssh_probe(
+        "pod-9664",
+        "/workspace/logs/issue-9664.log",
+        "/workspace/logs/issue-9664.pid",
+        9664,
+    )
+    remote = captured["remote"]
+
+    # (a) emission tokens: nvidia-smi branch + else-branch unknown twins.
+    assert 'echo "GPU_PIDS_TOTAL=$GPU_PIDS_TOTAL"' in remote
+    assert 'echo "GPU_PIDS_RESOLVABLE=$GPU_PIDS_RESOLVABLE"' in remote
+    assert 'echo "NVIDIA_UVM_LIVE_HOLDERS=$UVM_HOLDERS"' in remote
+    assert 'echo "GPU_PIDS_TOTAL=unknown"' in remote
+    assert 'echo "GPU_PIDS_RESOLVABLE=unknown"' in remote
+    assert 'echo "NVIDIA_UVM_LIVE_HOLDERS=unknown"' in remote
+
+    # (b) key parity: emitted key -> _PROBE_SCALAR_KEYS -> parser default ->
+    # ssh-failed fallback -> call-site probe.get read (lowercased mapping).
+    new_keys = ("GPU_PIDS_TOTAL", "GPU_PIDS_RESOLVABLE", "NVIDIA_UVM_LIVE_HOLDERS")
+    parser_defaults = pp._parse_probe_stdout("")
+    for key in new_keys:
+        assert key in pp._PROBE_SCALAR_KEYS
+        assert parser_defaults[key.lower()] == "unknown"
+
+    def _fake_run_fail(cmd: list[str], **kwargs: Any):
+        return _subprocess.CompletedProcess(args=cmd, returncode=255, stdout="", stderr="down")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_fail)
+    fallback = pp._ssh_probe(
+        "pod-9664",
+        "/workspace/logs/issue-9664.log",
+        "/workspace/logs/issue-9664.pid",
+        9664,
+    )
+    for key in new_keys:
+        assert fallback[key.lower()] == "unknown"
+
+    src = (REPO_ROOT / "scripts" / "poll_pipeline.py").read_text()
+    for lowered in ("gpu_pids_total", "gpu_pids_resolvable", "nvidia_uvm_live_holders"):
+        assert f'_parse_probe_count(probe.get("{lowered}"))' in src
+
+    # (c) the exact end-anchored uvm matcher — a substring/prefix match would
+    # count /dev/nvidia-uvm-tools holders and suppress the #664 TP.
+    assert 'grep -q " -> /dev/nvidia-uvm$"' in remote
+    assert "/dev/nvidia-uvm-tools" not in remote

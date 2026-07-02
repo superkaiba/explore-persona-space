@@ -47,6 +47,7 @@ from workflow_lint import (  # noqa: E402
     check_gate_ids_unique,
     check_heredoc_dotenv,
     check_lessons_index,
+    check_long_loop_restartability_review_lens,
     check_marker_registry,
     check_no_workflow_improver_spawn,
     check_pipe_python,
@@ -2874,6 +2875,65 @@ def test_compute_shape_review_lens_flags_missing_875_tokens(tmp_path) -> None:
     subjects = [e.split(": ", 1)[0] for e in errors]
     assert sum(s.endswith("/code-reviewer.md") for s in subjects) == 2, subjects
     assert sum(s.endswith("/codex-code-reviewer.md") for s in subjects) == 2, subjects
+
+
+def test_long_loop_restartability_review_lens_live_tree_passes() -> None:
+    """The real tree carries the #823/#881 lens on all three surfaces."""
+    assert check_long_loop_restartability_review_lens() == []
+
+
+def _write_long_loop_conforming_tree(tmp_path) -> None:
+    """Write all three #881 surfaces with their full per-file token sets."""
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True)
+    rules = tmp_path / ".claude" / "rules"
+    rules.mkdir(parents=True)
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n### Step 3.6: Long-loop restartability\nresume predicate\n"
+    )
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nThe Step 3.6 Long-loop restartability rule VERBATIM\n"
+        "persistence + resume predicate pair\nSteps 3, 3.5, 3.6, 3.7, 4.5\n"
+    )
+    (rules / "code-style.md").write_text(
+        "# style\nIntra-phase grain for long loops\nresume predicate\n"
+    )
+
+
+def test_long_loop_restartability_review_lens_conforming_tmp_tree_passes(tmp_path) -> None:
+    """A tmp tree carrying every per-file token returns no errors (#881)."""
+    _write_long_loop_conforming_tree(tmp_path)
+    assert check_long_loop_restartability_review_lens(repo_root=tmp_path) == []
+
+
+def test_long_loop_restartability_review_lens_flags_missing_per_file(tmp_path) -> None:
+    """Each surface missing one distinct token FAILs exactly once per file (#881).
+
+    Strips a DIFFERENT required token per surface — the Claude file loses the
+    `Long-loop restartability` heading, the codex file loses the inlined-rubric
+    `3.5, 3.6, 3.7` enumeration (the executable-prompt pin the copy-list-only
+    token check would false-PASS), the rules file loses `Intra-phase grain` —
+    so the per-file token loop must emit exactly one error per file, each
+    naming its missing token.
+    """
+    _write_long_loop_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    rules = tmp_path / ".claude" / "rules"
+    (agents / "code-reviewer.md").write_text("# reviewer\nresume predicate\n")
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\nThe Step 3.6 Long-loop restartability rule VERBATIM\n"
+        "persistence + resume predicate pair\nSteps 3, 3.5, 3.7, 4.5\n"
+    )
+    (rules / "code-style.md").write_text("# style\nresume predicate\n")
+    errors = check_long_loop_restartability_review_lens(repo_root=tmp_path)
+    assert len(errors) == 3, errors
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert sum(s.endswith("/code-reviewer.md") for s in subjects) == 1, subjects
+    assert sum(s.endswith("/codex-code-reviewer.md") for s in subjects) == 1, subjects
+    assert sum(s.endswith("/code-style.md") for s in subjects) == 1, subjects
+    assert any("'Long-loop restartability'" in e for e in errors), errors
+    assert any("'3.5, 3.6, 3.7'" in e for e in errors), errors
+    assert any("'Intra-phase grain'" in e for e in errors), errors
 
 
 def _write_smoke_arch_conforming_tree(tmp_path) -> None:

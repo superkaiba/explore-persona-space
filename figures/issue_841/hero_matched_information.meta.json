@@ -1,0 +1,5484 @@
+{
+  "commit": "b64bdc93f3",
+  "created": "2026-07-02T20:17:50Z",
+  "figsize": [
+    15.0,
+    8.6
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.2180909322154506,
+      "error": 0.2371010836982388,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.19463834103351627,
+      "error": 0.28213863051714094,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.24177971401734924,
+      "error": 0.2928264735890229,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.09888422207793682,
+      "error": 0.2512559597698729,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.0864134837543252,
+      "error": 0.17989967330809903,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.1086497339269579,
+      "error": 0.14124053456420568,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.16590393621006794,
+      "error": 0.20387889311866023,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.17225148534368023,
+      "error": 0.15347014423483446,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.29755993106848583,
+      "error": 0.038634810374246265,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.30478978944086377,
+      "error": 0.05568965177935414,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.37162897857315347,
+      "error": 0.09452311101879052,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.2403788610143681,
+      "error": 0.2371010836982388,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.12176854901957233,
+      "error": 0.28213863051714094,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.22582950606460814,
+      "error": 0.2928264735890229,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.10408406499802238,
+      "error": 0.2512559597698729,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.05911763901735664,
+      "error": 0.17989967330809903,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.1490536842098753,
+      "error": 0.14124053456420568,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.059474067189167965,
+      "error": 0.20387889311866023,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.14880521143305162,
+      "error": 0.15347014423483446,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.3363980825282597,
+      "error": 0.038634810374246265,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.3265546358712513,
+      "error": 0.05568965177935414,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.3811481200467802,
+      "error": 0.09452311101879052,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.1944106252072233,
+      "error": 0.2371010836982388,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.20424935380280712,
+      "error": 0.28213863051714094,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.18764343374423148,
+      "error": 0.2928264735890229,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.06177358038770245,
+      "error": 0.2512559597698729,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.1652435347898242,
+      "error": 0.17989967330809903,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.018660727199472572,
+      "error": 0.14124053456420568,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.09650180072360401,
+      "error": 0.20387889311866023,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.12367260318016861,
+      "error": 0.15347014423483446,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.4363215855328037,
+      "error": 0.038634810374246265,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.2740136465443485,
+      "error": 0.05568965177935414,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.35368604089766875,
+      "error": 0.09452311101879052,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.2180909322154506,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.19463834103351627,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.24177971401734924,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.09888422207793682,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.0864134837543252,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.1086497339269579,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.16590393621006794,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.17225148534368023,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.29755993106848583,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.30478978944086377,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.37162897857315347,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.04489161686413484,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": -0.0031517161807953498,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.02085009238095084,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": -0.18855593804145196,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": -0.19347952108887992,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": -0.18818379487356038,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.39267615497735764,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": -0.06656736395130447,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.11651963298197515,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.25023646896493,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.27077571583011784,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.4856146870023622,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.498636975146058,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.6002080103367754,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.48119567326199897,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.4612174909802097,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.4783298991384394,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": 0.08283190944725688,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.37451402470665235,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.5434225951283886,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.37926028478916624,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.48916828708211807,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.2403788610143681,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.12176854901957233,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.22582950606460814,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.10408406499802238,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.05911763901735664,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.1490536842098753,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.059474067189167965,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.14880521143305162,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.3363980825282597,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.3265546358712513,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.3811481200467802,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.029886959729211543,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": -0.057588793759096965,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": -0.012685832332398339,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": -0.16808987858844154,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": -0.20138316329237757,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": -0.15306973663976092,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.30062895059008,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": -0.060011894114390674,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.1728760366516482,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.24520347654613606,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.2633906465531753,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.5835202286179959,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.3109124731347273,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.5542567679187252,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.5044395389098805,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.4466065859992386,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.48097370083952146,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": 0.16746646644157404,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.3080685641700005,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.5259271898964901,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.3994955674184914,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.5168736982732537,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.1944106252072233,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.20424935380280712,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.18764343374423148,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.06177358038770245,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.1652435347898242,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.018660727199472572,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.09650180072360401,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.12367260318016861,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.4363215855328037,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.2740136465443485,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.35368604089766875,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": -0.04115796518796902,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": -0.10989490379817685,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": -0.10142833781946459,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": -0.1973591318281562,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": -0.008017267406103118,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": -0.1468440371958223,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": -0.3421302353114179,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": -0.04307995853022732,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.3919942337284402,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.20959280826585652,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.268089158484721,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.43304420220850853,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r": 0.45438235723610504,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r": 0.4842246093585813,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.0,
+      "Within-condition Pearson r": 0.30515278771158966,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "Within-condition Pearson r": 0.3517820792100949,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 10.0,
+      "Within-condition Pearson r": 0.13563703193258905,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 12.0,
+      "Within-condition Pearson r": 0.06562755092590256,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 14.0,
+      "Within-condition Pearson r": 0.2638603299394416,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 16.0,
+      "Within-condition Pearson r": 0.46926385447693275,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 18.0,
+      "Within-condition Pearson r": 0.3209721118245648,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 19.0,
+      "Within-condition Pearson r": 0.457135380522302,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.4996336326448584,
+      "series": "Raw target ceiling (\u2113*=20)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Within-condition Pearson r": 0.4996336326448584,
+      "series": "Raw target ceiling (\u2113*=20)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r": 0.4378711211732441,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Within-condition Pearson r": 0.4378711211732441,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "y": -0.0733294566933468,
+      "error": 0.07755474065307288,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.17666120002283442,
+      "error": 0.09838369844740791,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "y": 0.2952694083122485,
+      "error": 0.0882239313473624,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 6.0,
+      "y": 0.03943284923283955,
+      "error": 0.09232203992996547,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 8.0,
+      "y": -0.030712645173098574,
+      "error": 0.07464291339068115,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 10.0,
+      "y": 0.11291330997845186,
+      "error": 0.06319656886125316,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 12.0,
+      "y": 0.21965327778566202,
+      "error": 0.03751855419637576,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 14.0,
+      "y": 0.5071558332407674,
+      "error": 0.041687518223968545,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 16.0,
+      "y": 0.413727731337497,
+      "error": 0.03718699414908044,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 18.0,
+      "y": 0.592105870971749,
+      "error": 0.04702063053681149,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 20.0,
+      "y": 0.5886480839222923,
+      "error": 0.039586622999669197,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 22.0,
+      "y": 0.5803672664998478,
+      "error": 0.038756049238861334,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 24.0,
+      "y": 0.5958848470549437,
+      "error": 0.059488688846535576,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 25.0,
+      "y": 0.6174435577619801,
+      "error": 0.05159530055788475,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "y": 0.24346715982059677,
+      "error": 0.07755474065307288,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": -0.004813062175412535,
+      "error": 0.09838369844740791,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "y": 0.1483229708254671,
+      "error": 0.0882239313473624,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 6.0,
+      "y": -0.18211452469481226,
+      "error": 0.09232203992996547,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 8.0,
+      "y": -0.014118227609994385,
+      "error": 0.07464291339068115,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 10.0,
+      "y": 0.0986024785969089,
+      "error": 0.06319656886125316,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 12.0,
+      "y": 0.14308202654494834,
+      "error": 0.03751855419637576,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 14.0,
+      "y": 0.511954245881662,
+      "error": 0.041687518223968545,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 16.0,
+      "y": 0.4891374970065331,
+      "error": 0.03718699414908044,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 18.0,
+      "y": 0.6667665339703517,
+      "error": 0.04702063053681149,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 20.0,
+      "y": 0.6577722725604088,
+      "error": 0.039586622999669197,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 22.0,
+      "y": 0.5974978920175726,
+      "error": 0.038756049238861334,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 24.0,
+      "y": 0.5930681233052421,
+      "error": 0.059488688846535576,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 25.0,
+      "y": 0.6123325298442348,
+      "error": 0.05159530055788475,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "y": 0.15060280000349344,
+      "error": 0.07755474065307288,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "y": 0.2128264223123867,
+      "error": 0.09838369844740791,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "y": 0.35625586608222704,
+      "error": 0.0882239313473624,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 6.0,
+      "y": 0.27479481058136446,
+      "error": 0.09232203992996547,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "y": 0.1643797492662304,
+      "error": 0.07464291339068115,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 10.0,
+      "y": 0.08573057954518344,
+      "error": 0.06319656886125316,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 12.0,
+      "y": 0.13861993561026556,
+      "error": 0.03751855419637576,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 14.0,
+      "y": 0.534076338735925,
+      "error": 0.041687518223968545,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 16.0,
+      "y": 0.470884400190403,
+      "error": 0.03718699414908044,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 18.0,
+      "y": 0.5819065332579249,
+      "error": 0.04702063053681149,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 20.0,
+      "y": 0.5567591050820779,
+      "error": 0.039586622999669197,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 22.0,
+      "y": 0.5952314500781221,
+      "error": 0.038756049238861334,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 24.0,
+      "y": 0.5924278993107918,
+      "error": 0.059488688846535576,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 25.0,
+      "y": 0.6118580436770555,
+      "error": 0.05159530055788475,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "y": -0.0733294566933468,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "y": 0.17666120002283442,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "y": 0.2952694083122485,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "y": 0.03943284923283955,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 8.0,
+      "y": -0.030712645173098574,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 10.0,
+      "y": 0.11291330997845186,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 12.0,
+      "y": 0.21965327778566202,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 14.0,
+      "y": 0.5071558332407674,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 16.0,
+      "y": 0.413727731337497,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 18.0,
+      "y": 0.592105870971749,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 20.0,
+      "y": 0.5886480839222923,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 22.0,
+      "y": 0.5803672664998478,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 24.0,
+      "y": 0.5958848470549437,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 25.0,
+      "y": 0.6174435577619801,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": -0.1498950124933965,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "y": 0.05827876437988788,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "y": 0.17510446017033812,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "y": -0.056342501297910234,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 8.0,
+      "y": -0.1413489579615953,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 10.0,
+      "y": 0.04275834971520412,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 12.0,
+      "y": 0.12430891629218326,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 14.0,
+      "y": 0.46221831865134283,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 16.0,
+      "y": 0.38846475544424386,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 18.0,
+      "y": 0.5269666278410807,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 20.0,
+      "y": 0.558327013267301,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 22.0,
+      "y": 0.5491877880271389,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 24.0,
+      "y": 0.5470604091038864,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 25.0,
+      "y": 0.5666427548622275,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": -0.0021774037572030586,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": 0.2842286062351562,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "y": 0.4227022041627499,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "y": 0.14769473468271954,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 8.0,
+      "y": 0.08950192624274367,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 10.0,
+      "y": 0.1931887512142747,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 12.0,
+      "y": 0.322348754900247,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 14.0,
+      "y": 0.5614594847649015,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 16.0,
+      "y": 0.43760087478907456,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 18.0,
+      "y": 0.6376375628924557,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 20.0,
+      "y": 0.6271273052871642,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 22.0,
+      "y": 0.6128530964799901,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 24.0,
+      "y": 0.6449947333149947,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 25.0,
+      "y": 0.6660577348583259,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.24346715982059677,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": -0.004813062175412535,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "y": 0.1483229708254671,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.0,
+      "y": -0.18211452469481226,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 8.0,
+      "y": -0.014118227609994385,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 10.0,
+      "y": 0.0986024785969089,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 12.0,
+      "y": 0.14308202654494834,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 14.0,
+      "y": 0.511954245881662,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 16.0,
+      "y": 0.4891374970065331,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 18.0,
+      "y": 0.6667665339703517,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 20.0,
+      "y": 0.6577722725604088,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 22.0,
+      "y": 0.5974978920175726,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 24.0,
+      "y": 0.5930681233052421,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 25.0,
+      "y": 0.6123325298442348,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "y": 0.1825006943041746,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "y": -0.09419824769613563,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": 0.05386815300275577,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 6.0,
+      "y": -0.2817247990886093,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 8.0,
+      "y": -0.10722630696375468,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 10.0,
+      "y": 0.024441468338373573,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 12.0,
+      "y": 0.0911052826373022,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 14.0,
+      "y": 0.47843184097548824,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 16.0,
+      "y": 0.4637633563035563,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 18.0,
+      "y": 0.61066389173175,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 20.0,
+      "y": 0.621684701787336,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 22.0,
+      "y": 0.566861563363637,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 24.0,
+      "y": 0.5383729192339635,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 25.0,
+      "y": 0.5542862689304694,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "y": 0.2994970810441159,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "y": 0.08967605450826131,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.2577425547028924,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.0,
+      "y": -0.07032851478418167,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 8.0,
+      "y": 0.09803665207059573,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 10.0,
+      "y": 0.17465814179972045,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 12.0,
+      "y": 0.1966798217930124,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 14.0,
+      "y": 0.5474639955160729,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 16.0,
+      "y": 0.5123318790569074,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 18.0,
+      "y": 0.722480929311294,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 20.0,
+      "y": 0.701943865977881,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 22.0,
+      "y": 0.633648226455641,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 24.0,
+      "y": 0.6449317539424835,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 25.0,
+      "y": 0.6656658970011424,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "y": 0.15060280000349344,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "y": 0.2128264223123867,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "y": 0.35625586608222704,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.0,
+      "y": 0.27479481058136446,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 8.0,
+      "y": 0.1643797492662304,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 10.0,
+      "y": 0.08573057954518344,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 12.0,
+      "y": 0.13861993561026556,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 14.0,
+      "y": 0.534076338735925,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 16.0,
+      "y": 0.470884400190403,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 18.0,
+      "y": 0.5819065332579249,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 20.0,
+      "y": 0.5567591050820779,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 22.0,
+      "y": 0.5952314500781221,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 24.0,
+      "y": 0.5924278993107918,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 25.0,
+      "y": 0.6118580436770555,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "y": 0.0736234665201816,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "y": 0.11627981524673753,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "y": 0.2713708449700775,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "y": 0.18630504191692662,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 8.0,
+      "y": 0.09649506802914226,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 10.0,
+      "y": 0.0250376517741703,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 12.0,
+      "y": 0.10128065490377872,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 14.0,
+      "y": 0.4921476909836995,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 16.0,
+      "y": 0.43033032517431224,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 18.0,
+      "y": 0.5317036952743713,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 20.0,
+      "y": 0.5217631174494888,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 22.0,
+      "y": 0.5590393763897781,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 24.0,
+      "y": 0.530890294354575,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 25.0,
+      "y": 0.5607459459365861,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "y": 0.2287329478263274,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "y": 0.31304721214155334,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "y": 0.4478187076648023,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0,
+      "y": 0.37094912177685757,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 8.0,
+      "y": 0.24578089481050455,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 10.0,
+      "y": 0.15143078949667663,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 12.0,
+      "y": 0.17631776329653023,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 14.0,
+      "y": 0.5755227274316366,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 16.0,
+      "y": 0.5047043134724731,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 18.0,
+      "y": 0.6257449563479943,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 20.0,
+      "y": 0.6009363634488272,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 22.0,
+      "y": 0.6365514748675007,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 24.0,
+      "y": 0.6498676720476462,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 25.0,
+      "y": 0.6639365470523556,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "y": 0.6023495304146909,
+      "series": "Raw target ceiling (\u2113*=26)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "y": 0.6023495304146909,
+      "series": "Raw target ceiling (\u2113*=26)",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "y": 0.9099466519888602,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "y": 0.9099466519888602,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "y": 0.06853961160292671,
+      "error": 0.09245723781239101,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "y": 0.2526668932236152,
+      "error": 0.07833233087851649,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "y": 0.3780275709752411,
+      "error": 0.09389933891402238,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 6.0,
+      "y": 0.2696064656040077,
+      "error": 0.06949543888713003,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 8.0,
+      "y": 0.14325046029543576,
+      "error": 0.036206289347202145,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 10.0,
+      "y": 0.22303336187436096,
+      "error": 0.08017462961057455,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 12.0,
+      "y": 0.15531236510144117,
+      "error": 0.1216871864923959,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 14.0,
+      "y": 0.3140990666386212,
+      "error": 0.08447629301649266,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 16.0,
+      "y": 0.4049247480147181,
+      "error": 0.11812760073691994,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "y": 0.20646889039852195,
+      "error": 0.09245723781239101,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "y": 0.2293163765499672,
+      "error": 0.07833233087851649,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "y": 0.042682732383921416,
+      "error": 0.09389933891402238,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 6.0,
+      "y": 0.26290282383519664,
+      "error": 0.06949543888713003,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 8.0,
+      "y": 0.11709798866790658,
+      "error": 0.036206289347202145,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 10.0,
+      "y": 0.298450688696113,
+      "error": 0.08017462961057455,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 12.0,
+      "y": 0.25671412012240435,
+      "error": 0.1216871864923959,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 14.0,
+      "y": 0.32074970071904074,
+      "error": 0.08447629301649266,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 16.0,
+      "y": 0.42206101640729865,
+      "error": 0.11812760073691994,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "y": 0.02316805407944668,
+      "error": 0.09245723781239101,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "y": 0.25107002846811016,
+      "error": 0.07833233087851649,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "y": 0.30989846617422645,
+      "error": 0.09389933891402238,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 6.0,
+      "y": 0.2771109382064097,
+      "error": 0.06949543888713003,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 8.0,
+      "y": 0.2666346205699254,
+      "error": 0.036206289347202145,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 10.0,
+      "y": 0.19652234395354162,
+      "error": 0.08017462961057455,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 12.0,
+      "y": 0.23178721919161688,
+      "error": 0.1216871864923959,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 14.0,
+      "y": 0.3121549598196172,
+      "error": 0.08447629301649266,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 16.0,
+      "y": 0.4445422533346967,
+      "error": 0.11812760073691994,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "y": 0.06853961160292671,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "y": 0.2526668932236152,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "y": 0.3780275709752411,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 6.0,
+      "y": 0.2696064656040077,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 8.0,
+      "y": 0.14325046029543576,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 10.0,
+      "y": 0.22303336187436096,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 12.0,
+      "y": 0.15531236510144117,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 14.0,
+      "y": 0.3140990666386212,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 16.0,
+      "y": 0.4049247480147181,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "y": -0.04048976732327951,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "y": 0.13825524470438208,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "y": 0.2969328557481179,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 6.0,
+      "y": 0.19147306227753222,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 8.0,
+      "y": 0.016971629961356094,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 10.0,
+      "y": 0.17803621154530713,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 12.0,
+      "y": 0.10504056584523969,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 14.0,
+      "y": 0.24231226190746566,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 16.0,
+      "y": 0.2809153610942972,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "y": 0.1768485471438822,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "y": 0.37092986591251803,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 4.0,
+      "y": 0.4513020486224401,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 6.0,
+      "y": 0.33919876952112654,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 8.0,
+      "y": 0.26987888317391967,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 10.0,
+      "y": 0.26412996484371637,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 12.0,
+      "y": 0.2041128581188346,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 14.0,
+      "y": 0.3942208634942566,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 16.0,
+      "y": 0.5223708820325044,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "y": 0.20646889039852195,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "y": 0.2293163765499672,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 4.0,
+      "y": 0.042682732383921416,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 6.0,
+      "y": 0.26290282383519664,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 8.0,
+      "y": 0.11709798866790658,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 10.0,
+      "y": 0.298450688696113,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 12.0,
+      "y": 0.25671412012240435,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 14.0,
+      "y": 0.32074970071904074,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 16.0,
+      "y": 0.42206101640729865,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "y": 0.167740866948241,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "y": 0.19883447759429976,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.0,
+      "y": -0.006333568393202406,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 6.0,
+      "y": 0.18870027705808903,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 8.0,
+      "y": 0.01120776885811528,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 10.0,
+      "y": 0.24989720663125542,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 12.0,
+      "y": 0.22155017311288566,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 14.0,
+      "y": 0.2488798564835071,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 16.0,
+      "y": 0.30635057725042375,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "y": 0.2451697237008073,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "y": 0.2589685655752164,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 4.0,
+      "y": 0.09046931568465139,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 6.0,
+      "y": 0.3321930365037801,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 8.0,
+      "y": 0.21376312974868014,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 10.0,
+      "y": 0.3430439205432101,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 12.0,
+      "y": 0.29161158172915275,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 14.0,
+      "y": 0.4008608908820715,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 16.0,
+      "y": 0.5284025293782003,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.02316805407944668,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "y": 0.25107002846811016,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 4.0,
+      "y": 0.30989846617422645,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 6.0,
+      "y": 0.2771109382064097,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 8.0,
+      "y": 0.2666346205699254,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 10.0,
+      "y": 0.19652234395354162,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 12.0,
+      "y": 0.23178721919161688,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 14.0,
+      "y": 0.3121549598196172,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 16.0,
+      "y": 0.4445422533346967,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.0,
+      "y": -0.06890548504276474,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2.0,
+      "y": 0.17876044618391773,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 4.0,
+      "y": 0.2150563068131865,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 6.0,
+      "y": 0.2061662095604085,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 8.0,
+      "y": 0.22916956021758508,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 10.0,
+      "y": 0.11608707960780931,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 12.0,
+      "y": 0.10242840248861468,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 14.0,
+      "y": 0.2314292173257824,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 16.0,
+      "y": 0.32320313146900664,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "y": 0.1160089905820173,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.0,
+      "y": 0.3354251079409507,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "y": 0.40285498464123126,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 6.0,
+      "y": 0.34515708733466854,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 8.0,
+      "y": 0.3015821389119894,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 10.0,
+      "y": 0.2764363388289584,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 12.0,
+      "y": 0.3458027754734065,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 14.0,
+      "y": 0.4003818033587677,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 16.0,
+      "y": 0.5594583329428465,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "y": 0.45595581160174337,
+      "series": "Raw target ceiling (\u2113*=17)",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "y": 0.45595581160174337,
+      "series": "Raw target ceiling (\u2113*=17)",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": 0.862119411426068,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": 0.862119411426068,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.07024203919539579,
+      "error": 0.14061040670113484,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.25255777836631454,
+      "error": 0.1506085496381264,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": -0.026760148712185267,
+      "error": 0.13693834974141278,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": -0.15262016928663602,
+      "error": 0.1031420789266921,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.2020225156603888,
+      "error": 0.07096622146745873,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": -0.01129695653217691,
+      "error": 0.13509311284163966,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.158998167828848,
+      "error": 0.1252821316706212,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.4170583770901459,
+      "error": 0.19935730486511805,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.4050326858185924,
+      "error": 0.1850269683695327,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.4890665759555319,
+      "error": 0.17129912029427308,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.6233907502192133,
+      "error": 0.14431630408005408,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.018529667635318426,
+      "error": 0.14061040670113484,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.22877814900963767,
+      "error": 0.1506085496381264,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": 0.10804704052743014,
+      "error": 0.13693834974141278,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": -0.0017427977583317836,
+      "error": 0.1031420789266921,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.2849168193064696,
+      "error": 0.07096622146745873,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": 0.09418044011165819,
+      "error": 0.13509311284163966,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.2595771704254082,
+      "error": 0.1252821316706212,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.49724020210015873,
+      "error": 0.19935730486511805,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.5038017222388499,
+      "error": 0.1850269683695327,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.5126562453733853,
+      "error": 0.17129912029427308,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.6238178195955629,
+      "error": 0.14431630408005408,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.05384313347895909,
+      "error": 0.14061040670113484,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.1315903015900058,
+      "error": 0.1506085496381264,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": 0.2118307880885154,
+      "error": 0.13693834974141278,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": 0.07734794219876229,
+      "error": 0.1031420789266921,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.3897026095537702,
+      "error": 0.07096622146745873,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": 0.29432345446433616,
+      "error": 0.13509311284163966,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.33339663541182,
+      "error": 0.1252821316706212,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.3230097289154869,
+      "error": 0.19935730486511805,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.4287307622544559,
+      "error": 0.1850269683695327,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.5519049931110619,
+      "error": 0.17129912029427308,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.5865223549174708,
+      "error": 0.14431630408005408,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.07024203919539579,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.25255777836631454,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": -0.026760148712185267,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": -0.15262016928663602,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.2020225156603888,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": -0.01129695653217691,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.158998167828848,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.4170583770901459,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.4050326858185924,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.4890665759555319,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.6233907502192133,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.1383994763306646,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": -0.005585538656144973,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": -0.17345247189017696,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": -0.2176002880020859,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.07541616275865609,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": -0.14009198589567617,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": -0.005559667385851841,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.2281783012608492,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.27118491892532665,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.30707623354617436,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.4746856554568621,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.007170158702341042,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.45760758905880994,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": 0.123958773792576,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": -0.06122570682706582,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.31595035344388167,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": 0.09222006567498238,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.28377624808413093,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.5952872359712241,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.5103142431019005,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.6489717084206333,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.7638450753002286,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.018529667635318426,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.22877814900963767,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": 0.10804704052743014,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": -0.0017427977583317836,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.2849168193064696,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": 0.09418044011165819,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.2595771704254082,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.49724020210015873,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.5038017222388499,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.5126562453733853,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.6238178195955629,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.090383864685091,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.03143695496287613,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": -0.059862736345917045,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": -0.14896556657210736,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.20018143757779228,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": -0.03371771447267688,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.10630129183713222,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.3002181350871907,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.3545030743849243,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.3302099602901343,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.4776553783481696,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": 0.0412988086133009,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.4060481677884102,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": 0.26236905035594993,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": 0.13292799525636487,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.3676119204322867,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": 0.20835931366491975,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.36686180135693264,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.6857087278628118,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.6314210770572004,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.6789260333927866,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.7598854336513422,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.05384313347895909,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.1315903015900058,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": 0.2118307880885154,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": 0.07734794219876229,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.3897026095537702,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": 0.29432345446433616,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.33339663541182,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.3230097289154869,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.4287307622544559,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.5519049931110619,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.5865223549174708,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": -0.19019307426956308,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": -0.012279589969750704,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": 0.07074502878015429,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": -0.024062046462139386,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.3170629251389446,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": 0.15156967859435194,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.21435733792408454,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.12945675335076032,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.22216447291207364,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.378006060559539,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.43966223202834165,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": 0.09102773913270659,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 2.0,
+      "Within-condition Pearson r": 0.2889375093065021,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 4.0,
+      "Within-condition Pearson r": 0.3446217282629798,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 6.0,
+      "Within-condition Pearson r": 0.1822221113912448,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 8.0,
+      "Within-condition Pearson r": 0.45899536807386204,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 10.0,
+      "Within-condition Pearson r": 0.42175590427763127,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 12.0,
+      "Within-condition Pearson r": 0.46492160126532694,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 14.0,
+      "Within-condition Pearson r": 0.5281713630809964,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 16.0,
+      "Within-condition Pearson r": 0.592218409651139,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 18.0,
+      "Within-condition Pearson r": 0.7206043011480852,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 19.0,
+      "Within-condition Pearson r": 0.7282948401884498,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": 0.5727369800970761,
+      "series": "Raw target ceiling (\u2113*=20)",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 1.0,
+      "Within-condition Pearson r": 0.5727369800970761,
+      "series": "Raw target ceiling (\u2113*=20)",
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 0.0,
+      "Within-condition Pearson r": 0.6261655011095664,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Source layer \u2113  (target \u2113*=20)": 1.0,
+      "Within-condition Pearson r": 0.6261655011095664,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": -0.169612349078835,
+      "error": 0.048652577667539804,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.08586359649182038,
+      "error": 0.0160048038310723,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.11325159208923903,
+      "error": 0.03151522753509961,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": -0.006696913925780238,
+      "error": 0.04453318190209668,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.008254188393436926,
+      "error": 0.027978109067494504,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.11622963095054199,
+      "error": 0.05662943101220047,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.12749964560062377,
+      "error": 0.02205112808669968,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.37281576372112785,
+      "error": 0.05699850740975573,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.3927971613662796,
+      "error": 0.04940409643725166,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.598955341068007,
+      "error": 0.02927418205686777,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.5514434387473999,
+      "error": 0.04699524756035331,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.508113013407276,
+      "error": 0.03761471112005338,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5352568783581597,
+      "error": 0.03824512989996037,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5687436633408334,
+      "error": 0.03681872028627847,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.04479282508220324,
+      "error": 0.048652577667539804,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": -0.07584433905569751,
+      "error": 0.0160048038310723,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.1357402779445923,
+      "error": 0.03151522753509961,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": -0.038649089941198575,
+      "error": 0.04453318190209668,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.056940267145513646,
+      "error": 0.027978109067494504,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.06291719393088344,
+      "error": 0.05662943101220047,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.11419803014576461,
+      "error": 0.02205112808669968,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.43015227107140913,
+      "error": 0.05699850740975573,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.4767775869954571,
+      "error": 0.04940409643725166,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.6537859270907391,
+      "error": 0.02927418205686777,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.623639215198538,
+      "error": 0.04699524756035331,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.540796358518298,
+      "error": 0.03761471112005338,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5435484728341645,
+      "error": 0.03824512989996037,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5736564027874067,
+      "error": 0.03681872028627847,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.19825989280409856,
+      "error": 0.048652577667539804,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.06071334593967672,
+      "error": 0.0160048038310723,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.21077303719601437,
+      "error": 0.03151522753509961,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": 0.15890969000182345,
+      "error": 0.04453318190209668,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.10589044004435162,
+      "error": 0.027978109067494504,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.14136351680207315,
+      "error": 0.05662943101220047,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.17086016501345433,
+      "error": 0.02205112808669968,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.42575134545141796,
+      "error": 0.05699850740975573,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.5182382270883796,
+      "error": 0.04940409643725166,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.5899512563017095,
+      "error": 0.02927418205686777,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.49713092115422786,
+      "error": 0.04699524756035331,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.5220544063795617,
+      "error": 0.03761471112005338,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5239487426763475,
+      "error": 0.03824512989996037,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.557068369010987,
+      "error": 0.03681872028627847,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": -0.169612349078835,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.08586359649182038,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.11325159208923903,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": -0.006696913925780238,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.008254188393436926,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.11622963095054199,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.12749964560062377,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.37281576372112785,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.3927971613662796,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.598955341068007,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.5514434387473999,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.508113013407276,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5352568783581597,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5687436633408334,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": -0.26585904990658066,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.028248973707377535,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.05826377438593575,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": -0.06991792385375002,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": -0.12247653991775335,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.04637404191750884,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.08993011114726623,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.3298490801105863,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.3544951206023324,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.5541463224304222,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.49752374968290913,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.46427582853637606,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.49727507932603376,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5294317946741491,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": -0.07611807661771515,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.14315297937751298,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.1654526115013792,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": 0.04790601355906511,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.11124697626358389,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.16643999376788218,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.1650691800539813,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.4224229777379015,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.4229512913207253,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.633377769061723,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.602466802991726,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.5484211161192348,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5667424078253259,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5980078547820629,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.04479282508220324,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": -0.07584433905569751,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.1357402779445923,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": -0.038649089941198575,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.056940267145513646,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.06291719393088344,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.11419803014576461,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.43015227107140913,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.4767775869954571,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.6537859270907391,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.623639215198538,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.540796358518298,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5435484728341645,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5736564027874067,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": -0.12134550202153753,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": -0.18452347649272144,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.06324210638649655,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": -0.1609766157718228,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": -0.0320128745780765,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.021102422374023135,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.05732443054052921,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.3945730016399764,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.4279369235820701,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.5677477426849185,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.5612468005145598,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.48770922574365433,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.49760278729268653,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5316902438456902,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.2159438524863429,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.05525389940738065,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.21897243899635516,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": 0.06817380952287264,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.14140672896705114,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.10340945120104901,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.17139255707310067,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.4609192719195592,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.5055174293391974,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.7136365305377103,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.6805226295916346,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.5842313870936247,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5820680315299017,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.6058653941799683,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.19825989280409856,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.06071334593967672,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.21077303719601437,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": 0.15890969000182345,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.10589044004435162,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.14136351680207315,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.17086016501345433,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.42575134545141796,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.5182382270883796,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.5899512563017095,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.49713092115422786,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.5220544063795617,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5239487426763475,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.557068369010987,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.14960731513655873,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.04441015192812381,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.17822262741935208,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": 0.1097899601224109,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.07877350801157425,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.08473408578987268,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.14625190577811817,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.35434020429503404,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.45476927435259523,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.5577577228199919,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.4471787797667746,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.4775783246556772,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.48218988094702675,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5157090966343786,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.24691247047163833,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 2.0,
+      "y": 0.07641975959026841,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 4.0,
+      "y": 0.2412530824895513,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 6.0,
+      "y": 0.19885632392660427,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 8.0,
+      "y": 0.13472972614656326,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 10.0,
+      "y": 0.19799294781427362,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 12.0,
+      "y": 0.19035416195151753,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 14.0,
+      "y": 0.4683372191145455,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 16.0,
+      "y": 0.5535774672270986,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 18.0,
+      "y": 0.6163060869337275,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 20.0,
+      "y": 0.5411692748874812,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 22.0,
+      "y": 0.5528077468957839,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 24.0,
+      "y": 0.5586801407469475,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 25.0,
+      "y": 0.5893465372069355,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.5519738362951138,
+      "series": "Raw target ceiling (\u2113*=26)",
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 1.0,
+      "y": 0.5519738362951138,
+      "series": "Raw target ceiling (\u2113*=26)",
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 0.0,
+      "y": 0.893362354565762,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Source layer \u2113  (target \u2113*=26)": 1.0,
+      "y": 0.893362354565762,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.1990080598322172,
+      "error": 0.14369519475052075,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.19743746966563142,
+      "error": 0.09889628933812725,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.24289982625506057,
+      "error": 0.10204086835864454,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.029859844271309405,
+      "error": 0.15281291332006702,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": -0.23511584871877772,
+      "error": 0.11935745925401545,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.14083305087000253,
+      "error": 0.13759472195878134,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.23778282818279628,
+      "error": 0.10910518075094668,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.24851783673443636,
+      "error": 0.08944575206394553,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.28643993225003583,
+      "error": 0.11677763571815859,
+      "series": "Raw source read  \u27e8h_\u2113, r_B(\u2113)\u27e9",
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.22822477142296532,
+      "error": 0.14369519475052075,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.17067528902653445,
+      "error": 0.09889628933812725,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.05453199581211288,
+      "error": 0.10204086835864454,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.1634698872965082,
+      "error": 0.15281291332006702,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": -0.22293515683450743,
+      "error": 0.11935745925401545,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.17054993717067393,
+      "error": 0.13759472195878134,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.2577870242051774,
+      "error": 0.10910518075094668,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.2713732904751224,
+      "error": 0.08944575206394553,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.2752317879707587,
+      "error": 0.11677763571815859,
+      "series": "Identity transport  \u27e8h_\u2113, r_B(\u2113*)\u27e9",
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": -0.0835505880726626,
+      "error": 0.14369519475052075,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.2723854332711649,
+      "error": 0.09889628933812725,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.36790814468733934,
+      "error": 0.10204086835864454,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.2420768766944187,
+      "error": 0.15281291332006702,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": 0.2694754007948374,
+      "error": 0.11935745925401545,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.19200834930585023,
+      "error": 0.13759472195878134,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.23422208462542,
+      "error": 0.10910518075094668,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.3416608516197576,
+      "error": 0.08944575206394553,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.2871841886035668,
+      "error": 0.11677763571815859,
+      "series": "Transported (affine ridge)",
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.1990080598322172,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.19743746966563142,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.24289982625506057,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.029859844271309405,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": -0.23511584871877772,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.14083305087000253,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.23778282818279628,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.24851783673443636,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.28643993225003583,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.17390374692429106,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.11178231385999582,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.13030733656551868,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": -0.10342313975854926,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": -0.35710479774761983,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.07511282164564825,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.1520655102330546,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.17786294194596086,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.19653018846811246,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.22414211087126687,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.28309262547126696,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.34827975452333504,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.15120847473455204,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": -0.12558780646049972,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.20648052202075595,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.3172488099202737,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.3518372189142605,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.4169628664894859,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.22822477142296532,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.17067528902653445,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.05453199581211288,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.1634698872965082,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": -0.22293515683450743,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.17054993717067393,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.2577870242051774,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.2713732904751224,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.2752317879707587,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.12706352724783793,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.1280019525411709,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": -0.03149399540785319,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.06169948033143721,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": -0.354017212034038,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.06003603804145985,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.15987510148419865,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.19427138313386227,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.1756627571349135,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.32938601559809266,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.2211852884182955,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.12775132433228747,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.27761323771157315,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": -0.08222342051872256,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.3189743836479507,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.35223302839433124,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.373936870460068,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.41702888403063787,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": -0.0835505880726626,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.2723854332711649,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.36790814468733934,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.2420768766944187,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": 0.2694754007948374,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.19200834930585023,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.23422208462542,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.3416608516197576,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.2871841886035668,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": -0.1933493408270795,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.18496054634299913,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.27754363862857295,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.10568272426941153,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": 0.1728984612528916,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.08053227912666495,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.13159092466675468,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.2640369454668587,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.18955840977098284,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.094041048673962,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 2.0,
+      "y": 0.3827531250192536,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 4.0,
+      "y": 0.48162537534586203,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 6.0,
+      "y": 0.41130855090954554,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 8.0,
+      "y": 0.4116133797609225,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 10.0,
+      "y": 0.3557217230442276,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 12.0,
+      "y": 0.34980128616864803,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 14.0,
+      "y": 0.44292844959474975,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 16.0,
+      "y": 0.42311368120730003,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.30046210630890285,
+      "series": "Raw target ceiling (\u2113*=17)",
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 1.0,
+      "y": 0.30046210630890285,
+      "series": "Raw target ceiling (\u2113*=17)",
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 0.0,
+      "y": 0.9233792985802598,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "Source layer \u2113  (target \u2113*=17)": 1.0,
+      "y": 0.9233792985802598,
+      "series": "Direct prompt\u2192trait predictor (#779)",
+      "_kind": "line",
+      "_group": 83
+    }
+  ],
+  "n_series": 84,
+  "total_points": 840
+}

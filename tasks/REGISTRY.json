@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 882,
+  "highest_id": 895,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -4965,8 +4965,8 @@
       "goal": "Replicate Persona Vectors' two prediction experiments (system-prompt projection, finetuning-shift) on Qwen2.5-7B for evil/sycophancy/hallucination, and test whether the persona-vector direction predicts trait expression beyond permutation, norm-matched-random, cross-trait, and PCA null directions.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/778",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/778",
+      "status": "followups_running",
       "title": "On Qwen2.5-7B, a persona vector predicts trait expression no better than a norm-matched random direction \u2014 Persona Vectors' prediction results replicate but the trait-specificity does not survive the random baseline the paper never ran (MODERATE confidence)"
     },
     "779": {
@@ -5210,19 +5210,19 @@
     },
     "810": {
       "goal": "On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the response (mean-over-answer / last token / the turn-boundary <|im_end|> and the newline after it / a dense per-position sweep / maxp) best supports BOTH (a) the linear context->answer map c_C->summary (held-out skill-over-mean R2 per layer, #722's DV) AND (b) predicting behavior expression E0 from the summary read out two ways -- the fixed persona-vector direction r_B and a trained LOCO-ridge regression summary->E0 -- reusing #658's 50-context base grid, completions, r_B and E0; the reconstruction winner is carried into #811.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/810",
-      "status": "interpreting",
-      "title": "Which answer-side position/summary gives the strongest base context->answer map (mean vs last vs turn-boundary vs per-position)"
+      "path": "tasks/awaiting_promotion/810",
+      "status": "awaiting_promotion",
+      "title": "Max-pooling \u2014 not the turn-boundary token \u2014 is the strongest late-layer answer-side summary for the base context\u2192answer map, and no summary rescues behavior read-out (MODERATE confidence)"
     },
     "811": {
       "goal": "Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/811",
       "status": "interpreting",
-      "title": "Does the best answer-summary change #722's base-vs-post-FT function-change verdict"
+      "title": "The pre/post-finetuning function-change verdict is answer-summary-dependent: the taught-fact \u0394-over-floor call at the primary layer is specific to the mean-over-answer read (LOW confidence)"
     },
     "812": {
       "goal": "On Qwen2.5-7B base representations (#658's 50 contexts, reusing #810's per-position answer extraction), quantify how much each pooling operator (mean / max / fixed-random attention / learned attention) loses versus the unpooled per-position multi-position input for predicting behavior expression E0 (and reconstructing the answer profile), per layer -- the incremental held-out gain of unpooled over each pool, with LOCO + label-shuffle null + #742-style reliability-ceiling/learning-curve guards for the n=50 sample size; all operators are cheap CPU reductions of one shared extraction, so the constraint is n, not compute.",
@@ -5449,11 +5449,11 @@
     },
     "841": {
       "goal": "On Qwen-2.5-7B-Instruct, characterize how well the residual-stream next-activation map can be learned and how much trait-relevant signal predicted activations retain: fit per-layer maps f_l: h_l -> h_{l+1} (identity / ridge / MLP / depth-sequence classes, target Delta_l, SmoothL1) at the last-prompt-token position on the #779 LMSYS corpus, then on #779's exact monitoring rig project rolled-forward predicted activations onto the persona directions at the trait read-out layers and benchmark the resulting trait monitor (within-condition Pearson r, #779 protocol verbatim) against #779's measured rows \u2014 raw projection at the source layer (the matched-information comparison), raw projection at the target layer (the transport ceiling), a direct-hop ridge map, and the learned map h / direct predictor g reference rows \u2014 reporting the per-layer Delta-predictability atlas, the trait-signal retention curve vs prediction horizon, and the Delta-R2-vs-retention divergence per (layer, function class).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/841",
-      "status": "running",
-      "title": "Layer-to-layer activation dynamics on real chat contexts: per-layer predictability atlas of the residual-stream update + does a dynamics-pretrained predictor beat #779's direct context->trait predictor"
+      "path": "tasks/interpreting/841",
+      "status": "interpreting",
+      "title": "Rolling an activation forward through a learned affine layer map beats a direct read of the source layer in a minority of read-out-layer cells (above chance in aggregate), on Qwen-2.5-7B-Instruct (MODERATE confidence)"
     },
     "842": {
       "has_clean_result": false,
@@ -5570,8 +5570,8 @@
     "857": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/857",
-      "status": "reviewing",
+      "path": "tasks/completed/857",
+      "status": "completed",
       "title": "Fix: restore issue734_figures functions dropped by 4109e30f17 (pinned test failing on main)"
     },
     "858": {
@@ -5584,8 +5584,8 @@
     "859": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/859",
-      "status": "running",
+      "path": "tasks/completed/859",
+      "status": "completed",
       "title": "workflow-fix: select_step9c_tests must include touched tests/*.py in subset"
     },
     "860": {
@@ -5619,15 +5619,15 @@
     "864": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/864",
-      "status": "planning",
+      "path": "tasks/completed/864",
+      "status": "completed",
       "title": "workflow-fix: zombie-GPU override veto keys on cpu/proc liveness, not only log freshness"
     },
     "865": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/865",
-      "status": "proposed",
+      "path": "tasks/on_hold/865",
+      "status": "on_hold",
       "title": "workflow-fix: Step 9c selector diffs main checkout, blind to worktree branches"
     },
     "866": {
@@ -5640,15 +5640,15 @@
     "867": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/867",
-      "status": "proposed",
+      "path": "tasks/completed/867",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md bullet \u2014 logits_to_keep=1 on hidden-state-only forwards"
     },
     "868": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/868",
-      "status": "proposed",
+      "path": "tasks/completed/868",
+      "status": "completed",
       "title": "extraction.py docstring: last-layer hook capture is pre-final-norm (not identical to hidden_states[-1])"
     },
     "869": {
@@ -5710,22 +5710,22 @@
     "877": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/877",
-      "status": "proposed",
+      "path": "tasks/completed/877",
+      "status": "completed",
       "title": "Fix pre-existing thread-caps test failure: issue779_layer_sweep.py missing load_dotenv-before-torch"
     },
     "878": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/878",
-      "status": "proposed",
+      "path": "tasks/running/878",
+      "status": "running",
       "title": "workflow-fix: design-aligned split-half clause for crossed designs (llm-judging.md)"
     },
     "879": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/879",
-      "status": "proposed",
+      "path": "tasks/planning/879",
+      "status": "planning",
       "title": "workflow-fix: verify_plan.py p-floor attainability check for empirical-null gates"
     },
     "88": {
@@ -5745,8 +5745,8 @@
     "881": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/881",
-      "status": "approved",
+      "path": "tasks/completed/881",
+      "status": "completed",
       "title": "workflow-fix: intra-phase checkpointing for >1h serial loops"
     },
     "882": {
@@ -5756,12 +5756,103 @@
       "status": "proposed",
       "title": "workflow-fix: judge caches must key on rubric+question+completion (llm-judging.md)"
     },
+    "883": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/883",
+      "status": "proposed",
+      "title": "workflow-fix: canonicalize setsid launcher-script SSH-MCP pod launch shape"
+    },
+    "884": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/884",
+      "status": "completed",
+      "title": "workflow-fix: setsid-detach VM-side long CPU phases (watcher-stop kill)"
+    },
+    "885": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/885",
+      "status": "proposed",
+      "title": "workflow-fix: GCP crash-persist sweeps scratch logs/ dir (worker tracebacks)"
+    },
+    "886": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/reviewing/886",
+      "status": "reviewing",
+      "title": "extraction.py: PEFT-wrapped models silently take the fallback path (post-norm L_max + full-tuple materialization) \u2014 fix detection"
+    },
+    "887": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/887",
+      "status": "proposed",
+      "title": "Audit #667-line last-layer (L27) activation reads for mixed pre-/post-final-norm convention contamination (bare base vs PeftModel trained)"
+    },
+    "888": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/888",
+      "status": "proposed",
+      "title": "workflow-fix: context-hygiene rule for harmful-content bank files in agent specs"
+    },
+    "889": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/889",
+      "status": "proposed",
+      "title": "workflow-fix: pre-dispatch triage gate for external audit markers"
+    },
     "89": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/89",
       "status": "archived",
       "title": "Sarcastic-source marker is destroyed by any assistant-voice SFT, no transfer detectable (MODERATE confidence)"
+    },
+    "890": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/890",
+      "status": "proposed",
+      "title": "workflow-fix: verification gates must test the live dispatched path"
+    },
+    "891": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/891",
+      "status": "proposed",
+      "title": "workflow-fix: thread caps at VM launch surfaces despite stale worktrees"
+    },
+    "892": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/892",
+      "status": "proposed",
+      "title": "workflow-fix: audit pre-reg regex misses 'as registered' phrasing"
+    },
+    "893": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/893",
+      "status": "proposed",
+      "title": "workflow-fix: bound verify_task_body committed-at-sha regex to a single clause"
+    },
+    "894": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/894",
+      "status": "planning",
+      "title": "workflow-fix: same-issue dispatch misses queued distinct-label followup-scopes"
+    },
+    "895": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/895",
+      "status": "planning",
+      "title": "workflow-fix: Step 9c selector misses glob-scanning tests for scripts/*.py diffs"
     },
     "9": {
       "has_clean_result": false,
