@@ -5619,8 +5619,8 @@
     "864": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/864",
-      "status": "reviewing",
+      "path": "tasks/completed/864",
+      "status": "completed",
       "title": "workflow-fix: zombie-GPU override veto keys on cpu/proc liveness, not only log freshness"
     },
     "865": {
