@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 890,
+  "highest_id": 891,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5818,6 +5818,13 @@
       "path": "tasks/proposed/890",
       "status": "proposed",
       "title": "workflow-fix: verification gates must test the live dispatched path"
+    },
+    "891": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/891",
+      "status": "proposed",
+      "title": "workflow-fix: thread caps at VM launch surfaces despite stale worktrees"
     },
     "9": {
       "has_clean_result": false,
