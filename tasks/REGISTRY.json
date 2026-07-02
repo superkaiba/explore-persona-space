@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 855,
+  "highest_id": 856,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5559,6 +5559,13 @@
       "path": "tasks/proposed/855",
       "status": "proposed",
       "title": "workflow-fix: chunk-cap calibration lesson (gotchas + vectorize rule)"
+    },
+    "856": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/856",
+      "status": "proposed",
+      "title": "workflow-fix: durable-output check before reviewer no-show fallback"
     },
     "88": {
       "has_clean_result": true,
