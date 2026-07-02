@@ -20,17 +20,18 @@ origin_prompt: '# Motivation - We''ve found that there is a map from context vec
   a deep literature search to see what has been done before. Assess the novelty and
   likelihood that it will work. [after lit review + discussion:] okay I think it''s
   worth running, can we benchmark against 779?'
-goal: 'On Qwen-2.5-7B-Instruct, (Q1) characterize the per-layer predictability of
-  residual-stream depth dynamics on real chat contexts — fit per-layer maps f_l: h_l
-  -> h_{l+1} at the last-prompt-token position (identity baseline, affine/ridge, MLP,
-  and a sequence model over the depth axis) on the #779 LMSYS activation corpus and
-  report held-out variance explained of the update Delta_l = h_{l+1} - h_l per layer
-  relative to the identity and affine baselines — and (Q2) test whether dynamics-derived
-  features or dynamics-pretraining add trait-expression-forecasting value over #779''s
-  matched-capacity direct context->trait predictor g on the identical monitoring rig
-  (same traits, conditions, judge, within-condition Pearson r), with label-efficiency
-  curves and held-out-behavior transfer as the pre-registered win conditions rather
-  than absolute accuracy alone.'
+goal: 'On Qwen-2.5-7B-Instruct, characterize how well the residual-stream next-activation
+  map can be learned and how much trait-relevant signal predicted activations retain:
+  fit per-layer maps f_l: h_l -> h_{l+1} (identity / ridge / MLP / depth-sequence
+  classes, target Delta_l, SmoothL1) at the last-prompt-token position on the #779
+  LMSYS corpus, then on #779''s exact monitoring rig project rolled-forward predicted
+  activations onto the persona directions at the trait read-out layers and benchmark
+  the resulting trait monitor (within-condition Pearson r, #779 protocol verbatim)
+  against #779''s measured rows — raw projection at the source layer (the matched-information
+  comparison), raw projection at the target layer (the transport ceiling), a direct-hop
+  ridge map, and the learned map h / direct predictor g reference rows — reporting
+  the per-layer Delta-predictability atlas, the trait-signal retention curve vs prediction
+  horizon, and the Delta-R2-vs-retention divergence per (layer, function class).'
 ---
 ## Overview / Motivation
 
@@ -53,7 +54,7 @@ Key framing constraint (data-processing inequality): a probe on f_ℓ(h_ℓ) can
 
 ## Goal
 
-On Qwen-2.5-7B-Instruct, (Q1) characterize the per-layer predictability of residual-stream depth dynamics on real chat contexts — fit per-layer maps f_ℓ: h_ℓ → h_{ℓ+1} at the last-prompt-token position (identity baseline, affine/ridge, MLP, and a sequence model over the depth axis) on the #779 LMSYS activation corpus and report held-out variance explained of the update Δ_ℓ = h_{ℓ+1} − h_ℓ per layer, relative to the identity and affine baselines — and (Q2) test whether dynamics-derived features or dynamics-pretraining add trait-expression-forecasting value over #779's matched-capacity direct context→trait predictor g on the identical monitoring rig (same traits, conditions, judge, within-condition Pearson r), with label-efficiency curves and held-out-behavior transfer as the pre-registered win conditions rather than absolute accuracy alone.
+On Qwen-2.5-7B-Instruct, characterize how well the residual-stream next-activation map can be learned and how much trait-relevant signal predicted activations retain: fit per-layer maps f_l: h_l -> h_{l+1} (identity / ridge / MLP / depth-sequence classes, target Delta_l, SmoothL1) at the last-prompt-token position on the #779 LMSYS corpus, then on #779's exact monitoring rig project rolled-forward predicted activations onto the persona directions at the trait read-out layers and benchmark the resulting trait monitor (within-condition Pearson r, #779 protocol verbatim) against #779's measured rows — raw projection at the source layer (the matched-information comparison), raw projection at the target layer (the transport ceiling), a direct-hop ridge map, and the learned map h / direct predictor g reference rows — reporting the per-layer Delta-predictability atlas, the trait-signal retention curve vs prediction horizon, and the Delta-R2-vs-retention divergence per (layer, function class).
 
 ## Benchmark spec — versus #779 (parent)
 
