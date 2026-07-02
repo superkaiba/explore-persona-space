@@ -96,6 +96,7 @@ import issue658_fit_predictors as fit658  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
 import issue722_load_activations as loadact  # noqa: E402
 from issue722_bootstrap import clustered_bootstrap_scalar, floor_sd, make_refit_pair  # noqa: E402
+from issue833_batched_floors import make_refit_pair_batched  # noqa: E402
 
 from explore_persona_space.analysis.issue667.gate_chain import (  # noqa: E402
     clustered_bootstrap_spearman,
@@ -625,6 +626,7 @@ def fit_cell_onpolicy(
     r_hat: np.ndarray,
     *,
     n_refit_pairs: int,
+    floors_impl: str = "batched",
 ) -> dict:
     """Fit the FOUR ridge maps + regime-local floors + raw/normalized deltas for one cell.
 
@@ -633,6 +635,12 @@ def fit_cell_onpolicy(
     ``make_refit_pair`` (the identical bootstrap+random-init refit floor), and
     ``fitM.m0_at_cplus_ridge_full`` (the shifted-design pseudo target). Both maps
     of every pair are evaluated on the SAME base grid (``common_c_grid`` = C0).
+
+    ``floors_impl`` selects the refit-floor engine: ``"batched"`` (DEFAULT — the
+    estimator-identical vectorized ``make_refit_pair_batched``, gated by
+    ``--floors-selftest``; round-5 throughput fix, ~40 s/pair serial → the whole
+    floor batched) or ``"serial"`` (the original #722 ``make_refit_pair`` loop,
+    kept selectable for forensic re-reads / the equivalence gate).
     """
     C0, Cplus = joined["C0"], joined["Cplus"]
     V0, Vplus = joined["V0"], joined["Vplus"]
@@ -658,57 +666,53 @@ def fit_cell_onpolicy(
     proj_pair = proj_on - proj_off  # SIGNED paired per-cell on-vs-off delta (raw units)
 
     # ---- Regime-local floors (v3 Must-Fix): one refit floor PER FITTED MAP ----
+    assert floors_impl in ("batched", "serial"), floors_impl
+
+    def _floor(Xf: np.ndarray, Yf: np.ndarray, counter: dict, name: str) -> np.ndarray:
+        """One refit floor via the selected engine (identical estimator; seed=0 both)."""
+        t0 = time.perf_counter()
+        if floors_impl == "batched":
+            out = make_refit_pair_batched(
+                Xf,
+                Yf,
+                grid,
+                r_hat,
+                families,
+                n_pairs=n_refit_pairs,
+                seed=0,
+                target_dim=fitM.TARGET_DIM,
+                lambdas=list(fit658.RIDGE_LAMBDAS),
+                device=fit658.DEVICE,
+                skip_counter=counter,
+            )
+        else:
+            out = make_refit_pair(
+                Xf,
+                Yf,
+                fitM._refit_ridge_fn(grid),
+                grid,
+                r_hat,
+                families,
+                n_pairs=n_refit_pairs,
+                skip_counter=counter,
+            )
+        logger.info(
+            "[phase=fit_onpolicy] %s L%d floor %s (%s, %d pairs): %.1fs",
+            behavior,
+            layer,
+            name,
+            floors_impl,
+            n_refit_pairs,
+            time.perf_counter() - t0,
+        )
+        return out
+
     sc: dict[str, dict] = {k: {} for k in ("m0", "off", "on", "ctrl", "shift")}
-    fl_m0 = make_refit_pair(
-        C0,
-        V0,
-        fitM._refit_ridge_fn(grid),
-        grid,
-        r_hat,
-        families,
-        n_pairs=n_refit_pairs,
-        skip_counter=sc["m0"],
-    )
-    fl_off = make_refit_pair(
-        Cplus,
-        Vplus,
-        fitM._refit_ridge_fn(grid),
-        grid,
-        r_hat,
-        families,
-        n_pairs=n_refit_pairs,
-        skip_counter=sc["off"],
-    )
-    fl_on = make_refit_pair(
-        Cplus,
-        Von,
-        fitM._refit_ridge_fn(grid),
-        grid,
-        r_hat,
-        families,
-        n_pairs=n_refit_pairs,
-        skip_counter=sc["on"],
-    )
-    fl_ctrl = make_refit_pair(
-        C0,
-        V0on,
-        fitM._refit_ridge_fn(grid),
-        grid,
-        r_hat,
-        families,
-        n_pairs=n_refit_pairs,
-        skip_counter=sc["ctrl"],
-    )
-    fl_shift = make_refit_pair(
-        Cplus,
-        fitM.m0_at_cplus_ridge_full(C0, V0, Cplus, pca),
-        fitM._refit_ridge_fn(grid),
-        grid,
-        r_hat,
-        families,
-        n_pairs=n_refit_pairs,
-        skip_counter=sc["shift"],
-    )
+    fl_m0 = _floor(C0, V0, sc["m0"], "m0")
+    fl_off = _floor(Cplus, Vplus, sc["off"], "off")
+    fl_on = _floor(Cplus, Von, sc["on"], "on")
+    fl_ctrl = _floor(C0, V0on, sc["ctrl"], "ctrl")
+    fl_shift = _floor(Cplus, fitM.m0_at_cplus_ridge_full(C0, V0, Cplus, pca), sc["shift"], "shift")
     refit_skip = fitM._aggregate_refit_skips(behavior, layer, *sc.values())
 
     p95 = {
@@ -782,7 +786,135 @@ def fit_cell_onpolicy(
             "proj_ctrl": proj_ctrl.tolist(),
         },
         "refit_skip": refit_skip,
+        "floors_impl": floors_impl,
     }
+
+
+# ── joined-design cache (round-5: skip the ~53-min store join on relaunch) ─────
+
+
+_JOINED_STACK_KEYS = ("C0", "Cplus", "V0", "Vplus", "Von", "V0on")
+_JOINED_STR_KEYS = ("families", "source_cids", "target_cids", "cell_keys")
+
+
+def _data_repo_main_sha() -> str:
+    """Current main-branch commit sha of the HF data repo (joined-cache staleness pin)."""
+    from huggingface_hub import HfApi
+
+    return str(HfApi().repo_info(DATA_REPO, repo_type="dataset").sha)
+
+
+def _joined_cache_path(out_dir: Path, behavior: str, layer: int) -> Path:
+    return out_dir / "joined_cache" / f"{behavior}_L{layer}.npz"
+
+
+def _joined_cache_regime(args, behavior: str, layer: int, repo_sha: str) -> dict:
+    """EVERY output-affecting regime key of the store join (a mismatch = cache MISS).
+
+    Includes the data repo's CURRENT main sha: the new/rbase namespaces are read
+    at main (unpinned), so ANY push to the repo conservatively invalidates the
+    cache. The old-store keys are included unconditionally (harmlessly
+    over-conservative when the reextracted contingency reads zero old-store
+    files). #722 r3 lesson: a resume/cache key that ignores a regime flag
+    silently reuses wrong rows — pin them all.
+    """
+    return {
+        "issue": 833,
+        "behavior": behavior,
+        "layer": int(layer),
+        "seed": int(args.seed),
+        "legs_mode": args.legs_mode,
+        "context_source": args.context_source,
+        "store_prefix": args.store_prefix,
+        "rbase_store_prefix": args.rbase_store_prefix,
+        "old_store_prefix": args.old_store_prefix,
+        "old_store_revision": args.old_store_revision,
+        "data_repo": DATA_REPO,
+        "data_repo_main_sha": repo_sha,
+    }
+
+
+def store_joined_cache(path: Path, regime: dict, joined: dict) -> None:
+    """Persist one (behavior, layer) joined design + legs to a local npz (atomic).
+
+    Written ONLY after the full production load path ran — i.e. after the join
+    coverage asserts + ``assert_rbase_hash_consistency`` passed — so a cache HIT
+    re-serves exactly the verified design without re-running those gates.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    legs_json = [
+        json.dumps(
+            {
+                "behavior": lg.behavior,
+                "source_cid": lg.source_cid,
+                "target_cid": lg.target_cid,
+                "layer": lg.layer,
+                "resp_sha256": lg.resp_sha256,
+                "resp_sha256_base": lg.resp_sha256_base,
+                "resp_texts": lg.resp_texts,
+                "probe_idx": lg.probe_idx,
+            }
+        )
+        for lg in joined["legs"]
+    ]
+    payload: dict[str, np.ndarray] = {
+        k: np.asarray(joined[k], dtype=np.float64) for k in _JOINED_STACK_KEYS
+    }
+    for k in _JOINED_STR_KEYS:
+        payload[k] = np.asarray([str(v) for v in joined[k]])
+    payload["legs_json"] = np.asarray(legs_json)
+    payload["regime_json"] = np.asarray(json.dumps(regime, sort_keys=True))
+    tmp = path.with_name(path.stem + ".tmp.npz")
+    np.savez(tmp, **payload)
+    os.replace(tmp, path)
+
+
+def load_joined_cache(path: Path, regime: dict) -> dict | None:
+    """Load one cached joined design; None (loud MISS) on absence/corruption/mismatch.
+
+    A MISS is never an error — the caller re-runs the full production load path
+    (which re-derives + rewrites the cache), so a stale or corrupt cache can only
+    cost a refetch, never serve wrong data.
+    """
+    if not path.exists():
+        return None
+    try:
+        d = np.load(path, allow_pickle=True)
+        stored = json.loads(str(d["regime_json"].item()))
+    except Exception as e:  # corrupt/partial cache file → refetch, never crash
+        logger.warning("[phase=fit_onpolicy] joined-cache %s unreadable (%s) — MISS", path, e)
+        return None
+    if stored != regime:
+        drift = sorted(k for k in set(stored) | set(regime) if stored.get(k) != regime.get(k))
+        logger.warning(
+            "[phase=fit_onpolicy] joined-cache %s regime mismatch on %s — MISS (refetch)",
+            path,
+            drift,
+        )
+        return None
+    joined: dict = {k: np.asarray(d[k], dtype=np.float64) for k in _JOINED_STACK_KEYS}
+    for k in _JOINED_STR_KEYS:
+        joined[k] = [str(v) for v in d[k].tolist()]
+    legs: list[OnPolicyLeg] = []
+    for i, s in enumerate(d["legs_json"].tolist()):
+        f = json.loads(str(s))
+        legs.append(
+            OnPolicyLeg(
+                behavior=f["behavior"],
+                source_cid=f["source_cid"],
+                target_cid=f["target_cid"],
+                layer=int(f["layer"]),
+                v_plus_on=joined["Von"][i],
+                v0_on=joined["V0on"][i],
+                resp_sha256=f["resp_sha256"],
+                resp_sha256_base=f["resp_sha256_base"],
+                resp_texts=f["resp_texts"],
+                probe_idx=f["probe_idx"],
+            )
+        )
+    joined["legs"] = legs
+    logger.info("[phase=fit_onpolicy] joined-cache HIT: %s (%d cells)", path, len(legs))
+    return joined
 
 
 # ── decomposition (plan C6: both split paths + identity assert) ────────────────
@@ -1604,6 +1736,265 @@ def resolve_context_source(cli_value: str, a0_summary_path: Path) -> tuple[str, 
     return resolved, reason
 
 
+# ── round-5: serial-vs-batched refit-floor equivalence gate (--floors-selftest) ─
+
+
+def _selftest_one_floor(
+    behavior: str,
+    layer: int,
+    floor_name: str,
+    X: np.ndarray,
+    Y: np.ndarray,
+    grid: np.ndarray,
+    r_hat: np.ndarray,
+    families: list[str],
+    n_pairs: int,
+) -> dict:
+    """Gate ONE floor: run BOTH engines on the same data, compare stats + λ picks.
+
+    Serial λ/PRESS capture: ``fit658._press_loo_mse_per_lambda`` is temporarily
+    wrapped with a recorder (module-attribute lookup at call time), yielding one
+    PRESS curve per refit in call order — alignable with the batched details
+    because both paths draw the SAME resample stream and the gate requires zero
+    skipped pairs on both sides. Asserts (a) per-pair floor statistics match
+    (hard gate max rel diff ≤ 1e-4; expect ≤ 1e-6) and (b) λ selections are
+    identical per refit — a near-tie flip is tolerated iff the two PRESS curves
+    match to ≤ 1e-8 relative (reported as a tie).
+    """
+    sc_serial: dict = {}
+    recorded: list[np.ndarray] = []
+    orig_press = fit658._press_loo_mse_per_lambda
+
+    def _recording_press(Xn, Yt, lambdas):
+        out = orig_press(Xn, Yt, lambdas)
+        recorded.append(out.detach().cpu().numpy().copy())
+        return out
+
+    t0 = time.perf_counter()
+    fit658._press_loo_mse_per_lambda = _recording_press
+    try:
+        stats_serial = make_refit_pair(
+            X,
+            Y,
+            fitM._refit_ridge_fn(grid),
+            grid,
+            r_hat,
+            families,
+            n_pairs=n_pairs,
+            skip_counter=sc_serial,
+        )
+    finally:
+        fit658._press_loo_mse_per_lambda = orig_press
+    t_serial = time.perf_counter() - t0
+    assert sc_serial.get("n_skipped", 0) == 0, (
+        f"{behavior} L{layer} {floor_name}: serial path skipped "
+        f"{sc_serial.get('n_skipped')} pairs — gate alignment needs zero skips"
+    )
+    assert len(recorded) == 2 * n_pairs, (len(recorded), 2 * n_pairs)
+    lam_serial = [int(np.argmin(mse)) for mse in recorded]
+
+    sc_batched: dict = {}
+    t0 = time.perf_counter()
+    stats_batched, det = make_refit_pair_batched(
+        X,
+        Y,
+        grid,
+        r_hat,
+        families,
+        n_pairs=n_pairs,
+        seed=0,
+        target_dim=fitM.TARGET_DIM,
+        lambdas=list(fit658.RIDGE_LAMBDAS),
+        device=fit658.DEVICE,
+        skip_counter=sc_batched,
+        return_details=True,
+    )
+    t_batched = time.perf_counter() - t0
+    assert sc_batched.get("n_skipped", 0) == 0, (
+        f"{behavior} L{layer} {floor_name}: batched path skipped pairs — gate needs zero"
+    )
+    assert stats_batched.shape == stats_serial.shape, (
+        stats_batched.shape,
+        stats_serial.shape,
+    )
+    # A pair whose two resamples drew the SAME row multiset is float-noise-zero in
+    # BOTH engines (batched exactly 0 — weights are order-free; serial ~1e-15 row-
+    # order noise): those DEGENERATE pairs are asserted ≈0 at floor scale (≤1e-9 of
+    # the floor max) on both sides; the rest are compared pure-relative.
+    scale = float(np.abs(stats_serial).max())
+    degenerate = np.abs(stats_serial) <= 1e-9 * scale
+    assert np.all(np.abs(stats_batched[degenerate]) <= 1e-9 * scale), (
+        f"{behavior} L{layer} {floor_name}: a degenerate (duplicate-resample) pair is "
+        "zero in serial but NOT in batched"
+    )
+    nd = ~degenerate
+    rel = np.abs(stats_batched[nd] - stats_serial[nd]) / np.abs(stats_serial[nd])
+    max_rel = float(rel.max()) if nd.any() else 0.0
+
+    lam_ties: list[dict] = []
+    lam_hard_mismatch: list[int] = []
+    for j in range(2 * n_pairs):
+        lb = det["lam_idx"][j]
+        if lb == lam_serial[j]:
+            continue
+        pr_b, pr_s = det["press"][j], recorded[j]
+        press_rel = float(np.max(np.abs(pr_b - pr_s) / np.maximum(np.abs(pr_s), 1e-300)))
+        if press_rel <= 1e-8:
+            lam_ties.append(
+                {
+                    "resample": j,
+                    "lam_serial": lam_serial[j],
+                    "lam_batched": int(lb),
+                    "press_max_rel_diff": press_rel,
+                }
+            )
+        else:
+            lam_hard_mismatch.append(j)
+    passed = max_rel <= 1e-4 and not lam_hard_mismatch
+    res = {
+        "behavior": behavior,
+        "layer": layer,
+        "floor": floor_name,
+        "n_pairs": n_pairs,
+        "max_rel_stat_diff": max_rel,
+        "n_degenerate_pairs": int(degenerate.sum()),
+        "lam_identical": not lam_ties and not lam_hard_mismatch,
+        "lam_near_ties": lam_ties,
+        "lam_hard_mismatch_resamples": lam_hard_mismatch,
+        "n_fallback_serial": det["n_fallback_serial"],
+        "t_serial_s": round(t_serial, 2),
+        "t_batched_s": round(t_batched, 2),
+        "speedup": round(t_serial / max(t_batched, 1e-9), 1),
+        "pass": passed,
+    }
+    logger.info(
+        "[phase=floors_selftest] %s L%d %s: max_rel=%.3e lam_ties=%d hard_mismatch=%d "
+        "fallback=%d serial=%.1fs batched=%.1fs (%.0fx) -> %s",
+        behavior,
+        layer,
+        floor_name,
+        max_rel,
+        len(lam_ties),
+        len(lam_hard_mismatch),
+        det["n_fallback_serial"],
+        t_serial,
+        t_batched,
+        res["speedup"],
+        "PASS" if passed else "FAIL",
+    )
+    return res
+
+
+def run_floors_selftest(args) -> int:
+    """Serial-vs-batched equivalence gate on REAL cells from the LOCAL store mirrors.
+
+    Loads the requested (behavior, layer) cells exactly as the production
+    reextracted-contingency path does — rbase namespace legs + ``__context__.npz``
+    context + new-store R⁺ legs, joined by ``join_cells`` — but from the local
+    mirrors under ``<out-dir>/analysis_tensors{,_rbase}`` (read-only; the
+    selftest writes NOTHING under eval_results). Then gates each requested floor
+    via ``_selftest_one_floor`` and times one full batched floor
+    (``--selftest-timed-pairs``) for the production wall projection. Exits 0 on
+    all-PASS, 1 otherwise.
+    """
+    cells_spec = []
+    for spec in args.selftest_cells:
+        beh, _, li = spec.partition(":")
+        cells_spec.append((beh, int(li)))
+    behaviors = tuple(dict.fromkeys(b for b, _ in cells_spec))
+    layers = tuple(sorted({li for _, li in cells_spec}))
+    new_root = args.out_dir / "analysis_tensors"
+    rbase_root = args.out_dir / "analysis_tensors_rbase"
+    for p in (new_root, rbase_root):
+        if not p.is_dir():
+            raise FileNotFoundError(
+                f"--floors-selftest needs the LOCAL store mirror at {p} (present on the "
+                "round-2 fit host; elsewhere download the namespaces first)"
+            )
+    a0_path = args.a0_summary_path or (args.out_dir / "parity" / "a0_summary.json")
+    resolved, reason = resolve_context_source("auto", a0_path)
+    if resolved != "reextracted":
+        raise RuntimeError(
+            f"--floors-selftest supports only the reextracted context contingency (got "
+            f"{resolved!r}: {reason}) — the store-context path would need pinned old-store "
+            "HF reads; gate on a host where the contingency fired"
+        )
+    new_streamer = loadact._Streamer(local_root=new_root)
+    new_layout = loadact.list_store_layout_local(new_root, behaviors)
+    legs = load_onpolicy_legs(behaviors, layers, new_streamer, new_layout)
+    rbase_streamer = loadact._Streamer(local_root=rbase_root)
+    rbase_layout = loadact.list_store_layout_local(rbase_root, behaviors)
+    rlegs = load_rbase_legs(behaviors, layers, rbase_streamer, rbase_layout)
+    ctx = load_reextracted_context(rbase_streamer, rbase_layout, behaviors, layers)
+    old_cells_by = build_cells_from_reextracted_context(rlegs, ctx, behaviors, layers, args.seed)
+    rb_main = fitM._load_rb_main()
+    rb_fact = fitM._load_rb_fact() if "fact" in behaviors else None
+
+    floors = list(args.selftest_floors)
+    results: list[dict] = []
+    timed: dict | None = None
+    for beh, li in cells_spec:
+        joined = join_cells(old_cells_by[(beh, li)], legs)
+        r_hat = fitM._r_hat_for(beh, li, rb_main, rb_fact)
+        C0, Cplus = joined["C0"], joined["Cplus"]
+        V0, Vplus = joined["V0"], joined["Vplus"]
+        Von, V0on = joined["Von"], joined["V0on"]
+        families = joined["families"]
+        grid = loadact.common_c_grid(joined)
+        floor_data = {
+            "m0": (C0, V0),
+            "off": (Cplus, Vplus),
+            "on": (Cplus, Von),
+            "ctrl": (C0, V0on),
+        }
+        if "shift" in floors:
+            pca = fitM._pca_basis_v0(V0, fitM.TARGET_DIM)
+            floor_data["shift"] = (Cplus, fitM.m0_at_cplus_ridge_full(C0, V0, Cplus, pca))
+        for fname in floors:
+            Xf, Yf = floor_data[fname]
+            results.append(
+                _selftest_one_floor(
+                    beh, li, fname, Xf, Yf, grid, r_hat, families, args.selftest_pairs
+                )
+            )
+        if timed is None and args.selftest_timed_pairs > 0:
+            t0 = time.perf_counter()
+            make_refit_pair_batched(
+                Cplus,
+                Von,
+                grid,
+                r_hat,
+                families,
+                n_pairs=args.selftest_timed_pairs,
+                seed=0,
+                target_dim=fitM.TARGET_DIM,
+                lambdas=list(fit658.RIDGE_LAMBDAS),
+                device=fit658.DEVICE,
+            )
+            t_floor = time.perf_counter() - t0
+            timed = {
+                "cell": f"{beh}_L{li}",
+                "floor": "on",
+                "n_pairs": args.selftest_timed_pairs,
+                "t_floor_s": round(t_floor, 1),
+                # 9 production cells × 5 floors each; the 4 headline ridge fits +
+                # bootstrap CIs + decomposition are seconds-scale per cell.
+                "projected_phase_d_floor_hours_9cells_5floors": round(9 * 5 * t_floor / 3600, 2),
+            }
+    ok_all = all(r["pass"] for r in results)
+    digest = {
+        "pass": ok_all,
+        "n_gates": len(results),
+        "gates": results,
+        "timed_floor": timed,
+        "target_dim": fitM.TARGET_DIM,
+        "device": fit658.DEVICE,
+    }
+    print(json.dumps({"issue833_floors_selftest": digest}, indent=2))
+    logger.info("[phase=floors_selftest] %s", "PASS" if ok_all else "FAIL")
+    return 0 if ok_all else 1
+
+
 def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source load routing + per-(behavior, layer) loop; flattening would inline the loaders
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     fit658.DEVICE = fit658._resolve_device("auto")  # ridge device (fit_M precedent)
@@ -1655,6 +2046,51 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
     ap.add_argument("--headline-layer", type=int, default=HEADLINE_LAYER)
     ap.add_argument("--refit-pairs", type=int, default=fitM.N_REFIT_PAIRS)
     ap.add_argument("--target-dim", type=int, default=fit658.A35_MLP_TARGET_DIM)
+    ap.add_argument(
+        "--floors-impl",
+        choices=["batched", "serial"],
+        default="batched",
+        help="refit-floor engine: 'batched' (DEFAULT — vectorized estimator-identical "
+        "make_refit_pair_batched; round-5 throughput fix) or 'serial' (the original "
+        "#722 make_refit_pair loop, ~40 s/pair)",
+    )
+    ap.add_argument(
+        "--floors-selftest",
+        action="store_true",
+        help="run the serial-vs-batched refit-floor EQUIVALENCE GATE on real local-mirror "
+        "cells (+ one timed batched floor), print a digest, and exit — no eval_results "
+        "writes (round-5 review-critical artifact)",
+    )
+    ap.add_argument(
+        "--selftest-cells",
+        nargs="+",
+        default=["em:7", "sycophancy:7"],
+        help="behavior:layer cells the selftest gates on (needs the local store mirrors "
+        "under <out-dir>/analysis_tensors{,_rbase})",
+    )
+    ap.add_argument(
+        "--selftest-floors",
+        nargs="+",
+        choices=["m0", "off", "on", "ctrl", "shift"],
+        default=["m0", "on"],
+        help="which floors to gate per cell (default m0+on spans both design regimes: "
+        "C0-design rank-16 input Gram and Cplus-design; off/ctrl/shift are same-shaped "
+        "twins of those two)",
+    )
+    ap.add_argument("--selftest-pairs", type=int, default=12)
+    ap.add_argument(
+        "--selftest-timed-pairs",
+        type=int,
+        default=100,
+        help="pairs for the timed full batched floor after the gate (0 disables)",
+    )
+    ap.add_argument(
+        "--joined-cache",
+        action="store_true",
+        help="cache the joined per-(behavior, layer) design to <out-dir>/joined_cache/ "
+        "keyed on EVERY join regime key + the data repo main sha; a relaunch with an "
+        "unchanged regime skips the ~53-min HF store join",
+    )
     ap.add_argument("--skip-mlp", action="store_true", help="skip the MLP validity gate")
     ap.add_argument(
         "--mlp-layers",
@@ -1710,6 +2146,9 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
     fit658._assert_ridge_exactness()  # startup exactness gate (fit_M precedent)
     logger.info("[phase=fit_onpolicy] ridge exactness gate PASS (device=%s)", fit658.DEVICE)
 
+    if args.floors_selftest:
+        return run_floors_selftest(args)
+
     # ---- load + join (production) or synthesize (smoke) ----
     texts_override_by: dict[str, dict] | None = None
     if args.smoke:
@@ -1746,53 +2185,93 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
                 "fact requested but r_b_fact.pt unavailable/degenerate — fact carries the #833 "
                 "verdict under test (kill K3: never silently dropped)"
             )
-        new_streamer = _PinnedStreamer(prefix=args.store_prefix, revision=None)
-        new_layout = _list_layout(args.store_prefix, behaviors, None)
-        legs = load_onpolicy_legs(behaviors, layers, new_streamer, new_layout)
-
-        rlegs: dict = {}
-        rbase_layout: dict = {}
-        if args.legs_mode == "reextracted" or args.context_source == "reextracted":
-            rbase_streamer = _PinnedStreamer(prefix=args.rbase_store_prefix, revision=None)
-            rbase_layout = _list_layout(args.rbase_store_prefix, behaviors, None)
-            rlegs = load_rbase_legs(behaviors, layers, rbase_streamer, rbase_layout)
-
-        if args.context_source == "reextracted":
-            # The extract-context contingency fired: ZERO old-store reads remain.
-            if args.legs_mode != "reextracted":
-                raise ValueError(
-                    "--context-source reextracted requires --legs-mode reextracted "
-                    "(the old store is not read at all in this mode)"
+        # ---- joined-design cache (round-5): skip the ~53-min HF store join when
+        # EVERY (behavior, layer) slice hits under the EXACT current regime. ----
+        want = [(beh, li) for beh in behaviors for li in layers]
+        cached_joined: dict[tuple[str, int], dict] = {}
+        repo_sha: str | None = None
+        if args.joined_cache:
+            repo_sha = _data_repo_main_sha()
+            for beh, li in want:
+                j = load_joined_cache(
+                    _joined_cache_path(args.out_dir, beh, li),
+                    _joined_cache_regime(args, beh, li, repo_sha),
                 )
-            ctx = load_reextracted_context(rbase_streamer, rbase_layout, behaviors, layers)
-            old_cells_by = build_cells_from_reextracted_context(
-                rlegs, ctx, behaviors, layers, args.seed
+                if j is not None:
+                    cached_joined[(beh, li)] = j
+        if args.joined_cache and len(cached_joined) == len(want):
+            logger.info(
+                "[phase=fit_onpolicy] joined-cache HIT for all %d (behavior, layer) slices "
+                "(repo main sha %s) — store join skipped",
+                len(want),
+                repo_sha,
             )
-        else:
-            old_streamer = _PinnedStreamer(
-                prefix=args.old_store_prefix, revision=args.old_store_revision
-            )
-            old_layout = _list_layout(args.old_store_prefix, behaviors, args.old_store_revision)
-            old_cells_by = loadact.load_cells(
-                behaviors=behaviors,
-                layers=layers,
-                streamer=old_streamer,
-                strict_counts=True,
-                layout=old_layout,
-            )
-        joined_by, r_hat_by, E_by = {}, {}, {}
-        for beh in behaviors:
-            for li in layers:
-                cells_li = old_cells_by[(beh, li)]
-                if args.legs_mode == "reextracted" and args.context_source != "reextracted":
-                    # Substitute the same-era L1/L2 (context stays store-pinned).
-                    cells_li = build_cells_reextracted(cells_li, rlegs)
-                joined = join_cells(cells_li, legs)
-                joined_by[(beh, li)] = joined
+            joined_by, r_hat_by, E_by = {}, {}, {}
+            for beh, li in want:
+                joined_by[(beh, li)] = cached_joined[(beh, li)]
                 r_hat_by[(beh, li)] = fitM._r_hat_for(beh, li, rb_main, rb_fact)
-                E_by[(beh, li)] = fitM._load_E(beh, joined["cell_keys"])
-        if args.legs_mode == "reextracted":
-            assert_rbase_hash_consistency(legs, rlegs)
+                E_by[(beh, li)] = fitM._load_E(beh, cached_joined[(beh, li)]["cell_keys"])
+        else:
+            new_streamer = _PinnedStreamer(prefix=args.store_prefix, revision=None)
+            new_layout = _list_layout(args.store_prefix, behaviors, None)
+            legs = load_onpolicy_legs(behaviors, layers, new_streamer, new_layout)
+
+            rlegs: dict = {}
+            rbase_layout: dict = {}
+            if args.legs_mode == "reextracted" or args.context_source == "reextracted":
+                rbase_streamer = _PinnedStreamer(prefix=args.rbase_store_prefix, revision=None)
+                rbase_layout = _list_layout(args.rbase_store_prefix, behaviors, None)
+                rlegs = load_rbase_legs(behaviors, layers, rbase_streamer, rbase_layout)
+
+            if args.context_source == "reextracted":
+                # The extract-context contingency fired: ZERO old-store reads remain.
+                if args.legs_mode != "reextracted":
+                    raise ValueError(
+                        "--context-source reextracted requires --legs-mode reextracted "
+                        "(the old store is not read at all in this mode)"
+                    )
+                ctx = load_reextracted_context(rbase_streamer, rbase_layout, behaviors, layers)
+                old_cells_by = build_cells_from_reextracted_context(
+                    rlegs, ctx, behaviors, layers, args.seed
+                )
+            else:
+                old_streamer = _PinnedStreamer(
+                    prefix=args.old_store_prefix, revision=args.old_store_revision
+                )
+                old_layout = _list_layout(args.old_store_prefix, behaviors, args.old_store_revision)
+                old_cells_by = loadact.load_cells(
+                    behaviors=behaviors,
+                    layers=layers,
+                    streamer=old_streamer,
+                    strict_counts=True,
+                    layout=old_layout,
+                )
+            joined_by, r_hat_by, E_by = {}, {}, {}
+            for beh in behaviors:
+                for li in layers:
+                    cells_li = old_cells_by[(beh, li)]
+                    if args.legs_mode == "reextracted" and args.context_source != "reextracted":
+                        # Substitute the same-era L1/L2 (context stays store-pinned).
+                        cells_li = build_cells_reextracted(cells_li, rlegs)
+                    joined = join_cells(cells_li, legs)
+                    joined_by[(beh, li)] = joined
+                    r_hat_by[(beh, li)] = fitM._r_hat_for(beh, li, rb_main, rb_fact)
+                    E_by[(beh, li)] = fitM._load_E(beh, joined["cell_keys"])
+            if args.legs_mode == "reextracted":
+                assert_rbase_hash_consistency(legs, rlegs)
+            if args.joined_cache:
+                assert repo_sha is not None
+                for (beh, li), joined in joined_by.items():
+                    store_joined_cache(
+                        _joined_cache_path(args.out_dir, beh, li),
+                        _joined_cache_regime(args, beh, li, repo_sha),
+                        joined,
+                    )
+                logger.info(
+                    "[phase=fit_onpolicy] joined-cache WROTE %d slices to %s",
+                    len(joined_by),
+                    args.out_dir / "joined_cache",
+                )
         logger.info(
             "[phase=fit_onpolicy] legs_mode=%s context_source=%s",
             args.legs_mode,
@@ -1828,9 +2307,17 @@ def main() -> int:  # noqa: C901 — top-level driver: legs-mode/context-source 
             logger.info("[phase=fit_onpolicy] %s L%d (%d cells)", beh, li, joined["C0"].shape[0])
             decomps[key] = decompose_cell(beh, li, joined, r_hat)  # K2 gate BEFORE fits
             _write_json(decomp_path, decomps[key])
-            cells[key] = fit_cell_onpolicy(beh, li, joined, r_hat, n_refit_pairs=args.refit_pairs)
+            cells[key] = fit_cell_onpolicy(
+                beh,
+                li,
+                joined,
+                r_hat,
+                n_refit_pairs=args.refit_pairs,
+                floors_impl=args.floors_impl,
+            )
             cells[key]["metadata"] = {
                 "issue": 833,
+                "floors_impl": args.floors_impl,
                 "legs_mode": args.legs_mode,
                 "context_source": args.context_source,
                 "context_source_resolution": {
