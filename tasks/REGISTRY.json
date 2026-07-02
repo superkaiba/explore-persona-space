@@ -5493,8 +5493,8 @@
     "847": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/847",
-      "status": "proposed",
+      "path": "tasks/planning/847",
+      "status": "planning",
       "title": "infra: default BLAS/torch thread caps for shared-VM python launches"
     },
     "848": {
