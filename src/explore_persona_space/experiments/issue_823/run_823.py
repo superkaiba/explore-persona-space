@@ -37,7 +37,8 @@ from typing import Any
 
 import numpy as np
 import torch
-from dotenv import load_dotenv
+
+from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
 
@@ -114,8 +115,14 @@ def resolve_base_dir(args_base_dir: str | None) -> pathlib.Path:
     ws = pathlib.Path("/workspace")
     if ws.exists():
         return ws
-    # Fall back to repo root / eval output
-    return pathlib.Path(__file__).resolve().parents[5]  # repo root
+    # Fall back to repo root (walk up until we find pyproject.toml or .git)
+    here = pathlib.Path(__file__).resolve()
+    for p in here.parents:
+        if (p / "pyproject.toml").exists() or (p / ".git").exists():
+            return p
+    # Last-resort: repo root is 4 levels up from this file:
+    # run_823.py -> issue_823/ -> experiments/ -> explore_persona_space/ -> src/ -> repo_root
+    return here.parents[4]
 
 
 def sha256_file(path: pathlib.Path) -> str:
@@ -333,6 +340,31 @@ def phase05_vllm_regen(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
 
     assert len(all_texts) == len(prompts), f"Expected {len(prompts)} outputs, got {len(all_texts)}"
 
+    # ── vLLM teardown (MUST happen before any HF Transformers load in the same process) ──
+    # Per CLAUDE.md gotchas: vLLM destroy_* doesn't reap worker subprocesses.
+    # We kill children with psutil to free GPU memory before Phase 3 loads HF model.
+    logger.info("Phase 0.5: tearing down vLLM engine...")
+    import gc
+
+    import psutil
+    import torch
+
+    try:
+        del llm
+        gc.collect()
+        torch.cuda.empty_cache()
+    except Exception as _e:
+        logger.warning("vLLM del/gc failed (non-fatal): %s", _e)
+
+    # Kill vLLM worker subprocesses that survive after del
+    import contextlib
+
+    _current = psutil.Process()
+    for _child in _current.children(recursive=True):
+        with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
+            _child.kill()
+    logger.info("Phase 0.5: vLLM teardown complete.")
+
     # Build record
     records = [
         {
@@ -419,6 +451,7 @@ async def phase1_sonnet_gen(base_dir: pathlib.Path, n_contexts: int, smoke: bool
         params: dict = {
             "model": SONNET_MODEL,
             "max_tokens": SONNET_MAX_TOKENS,
+            "temperature": 1.0,
             "messages": item.payload["messages"],
         }
         if item.payload.get("system"):
@@ -473,20 +506,53 @@ async def phase1_sonnet_gen(base_dir: pathlib.Path, n_contexts: int, smoke: bool
         len(failed),
     )
 
-    # Drop rule: if > 50 contexts fail (< 99% fill), abort
-    n_b2_ok = len(b2_results)
-    if n_b2_ok < int(n_contexts * 0.99):
-        raise RuntimeError(f"B2 fill rate below 99%: {n_b2_ok}/{n_contexts} contexts. Aborting.")
+    # Compute common valid index = intersection of A'∩B1∩B2.
+    # Arm A' valid set: contexts with non-empty answer from Phase 0.5.
+    a_prime_path = base_dir / "raw_completions" / "phase05" / "arm_a_prime_seed42.json"
+    if a_prime_path.exists():
+        a_prime_recs_raw: list[dict] = json.loads(a_prime_path.read_text())[:n_contexts]
+        a_prime_valid_idx: set[int] = {
+            i for i, r in enumerate(a_prime_recs_raw) if r.get("answer_text", "")
+        }
+    else:
+        # Phase 0.5 not yet run (e.g. CPU-only smoke): assume all A' are valid
+        a_prime_valid_idx = set(range(n_contexts))
+        logger.warning(
+            "Arm A' file not found; assuming all %d contexts valid for common-drop logic",
+            n_contexts,
+        )
 
-    # Build and persist B2 records
+    b2_valid_idx: set[int] = set(b2_results.keys())
+    b1_valid_idx: set[int] = set(b1_results.keys())
+    common_valid_idx: set[int] = a_prime_valid_idx & b1_valid_idx & b2_valid_idx
+    n_dropped = n_contexts - len(common_valid_idx)
+
+    logger.info(
+        "Common valid index: A'=%d, B1=%d, B2=%d, intersection=%d (dropped=%d)",
+        len(a_prime_valid_idx),
+        len(b1_valid_idx),
+        len(b2_valid_idx),
+        len(common_valid_idx),
+        n_dropped,
+    )
+    if n_dropped > 50:
+        raise RuntimeError(
+            f"Too many contexts dropped from common valid set: {n_dropped}/{n_contexts} "
+            f"(threshold 50). A'={len(a_prime_valid_idx)}, B1={len(b1_valid_idx)}, "
+            f"B2={len(b2_valid_idx)}, intersection={len(common_valid_idx)}. Aborting."
+        )
+
+    # Build and persist B2 records — use empty string for non-common contexts
+    # so downstream Phase 3 can apply the same common_valid_idx filter.
     b2_records = [
         {
             "context_id": i,
             "question": prompts[i],
-            "answer_text": b2_results.get(i, ""),
+            "answer_text": b2_results.get(i, "") if i in common_valid_idx else "",
             "arm": "b2_plain",
             "seed": 42,
             "filled": i in b2_results,
+            "in_common_valid": i in common_valid_idx,
         }
         for i in range(len(prompts))
     ]
@@ -495,21 +561,39 @@ async def phase1_sonnet_gen(base_dir: pathlib.Path, n_contexts: int, smoke: bool
     b2_path.write_text(json.dumps(b2_records, indent=2, default=_json_np))
     logger.info("B2 answers saved to %s", b2_path)
 
-    # Build and persist B1 records
+    # Build and persist B1 records — same common-valid masking
     b1_records = [
         {
             "context_id": i,
             "question": prompts[i],
-            "answer_text": b1_results.get(i, ""),
+            "answer_text": b1_results.get(i, "") if i in common_valid_idx else "",
             "arm": "b1_weird",
             "seed": 43,
             "filled": i in b1_results,
+            "in_common_valid": i in common_valid_idx,
         }
         for i in range(len(prompts))
     ]
     b1_path = base_dir / "raw_completions" / "phase1" / "b1_seed43.json"
     b1_path.write_text(json.dumps(b1_records, indent=2, default=_json_np))
     logger.info("B1 answers saved to %s", b1_path)
+
+    # Persist common valid index for Phase 3 to apply consistently
+    common_path = base_dir / "raw_completions" / "phase1" / "common_valid_idx.json"
+    common_path.write_text(
+        json.dumps(
+            {
+                "common_valid_idx": sorted(common_valid_idx),
+                "n_common": len(common_valid_idx),
+                "n_dropped": n_dropped,
+                "a_prime_valid": len(a_prime_valid_idx),
+                "b1_valid": len(b1_valid_idx),
+                "b2_valid": len(b2_valid_idx),
+            },
+            indent=2,
+        )
+    )
+    logger.info("Common valid index saved to %s (%d contexts)", common_path, len(common_valid_idx))
 
     log_phase("p1_done")
 
@@ -567,7 +651,7 @@ def phase2_derangement(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-def _tf_extract_arm(  # noqa: C901 — single TF loop; splitting risks span/logp misalignment
+def _tf_extract_arm(  # noqa: C901 — batched TF loop; spans/logp reduction done on GPU
     model,
     tokenizer,
     prompts: list[str],
@@ -577,27 +661,114 @@ def _tf_extract_arm(  # noqa: C901 — single TF loop; splitting risks span/logp
     a_prime_lengths: list[int] | None = None,
     batch_size: int = 8,
 ) -> tuple[np.ndarray, list[int], list[float]]:
-    """Teacher-forced extraction for one arm. Returns (v_s, span_lengths, mean_logps).
+    """Batched teacher-forced extraction for one arm. Returns (v_s, span_lengths, mean_logps).
 
     v_s shape: (n_contexts, n_layers, hidden_dim) float32.
     For B1/B2 arms, truncates response span to min(own_len, external_len) tokens.
     mean_logps: per-context mean log P of the (truncated) answer span under the
     base model — the plan §5 OOD covariate diagnostic (NaN for skipped contexts).
+
+    Batching: B contexts are padded (LEFT pad), run in one forward pass.
+    Span reduction is GPU-resident; only scalar means and (n, n_layers, hidden)
+    float32 activations move to CPU. This avoids the batch-1 throughput floor
+    (code-reviewer critical: Phase 3 was per-context batch-1; fix here).
+    position_ids are passed explicitly to handle left-padding (RoPE correctness).
     """
 
     n = len(prompts)
     n_layers = len(layers)
     v_s = np.zeros((n, n_layers, EXPECTED_HIDDEN), dtype=np.float32)
-    span_lengths: list[int] = []
+    span_lengths: list[int] = [0] * n
     mean_logps: list[float] = [float("nan")] * n
 
-    # Capture hooks
-    captured: dict[int, torch.Tensor] = {}
+    # Pre-tokenize all (prompt_only, full) pairs to get prompt_len, full_len.
+    all_prompt_ids: list[list[int]] = []
+    all_full_ids: list[list[int]] = []
+    all_resp_start: list[int] = []
+    all_resp_end: list[int] = []
+    skip_mask: list[bool] = [False] * n  # True = skip (empty answer or empty span)
 
-    def make_hook(layer_idx: int):
+    for ctx_i in range(n):
+        prompt_text = prompts[ctx_i]
+        answer_text = answers[ctx_i]
+
+        if not answer_text:
+            skip_mask[ctx_i] = True
+            continue
+
+        messages = [{"role": "user", "content": prompt_text}]
+        prompt_only = tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        # GENERATION_SUFFIX assert (same as issue779_collect.py:129-130)
+        prompt_ids_raw = tokenizer(prompt_only, return_tensors=None, add_special_tokens=False)[
+            "input_ids"
+        ]
+        suffix_decode = tokenizer.decode(prompt_ids_raw[-3:])
+        assert suffix_decode == GENERATION_SUFFIX, (
+            f"[{arm_name}] ctx {ctx_i}: position assert failed: "
+            f"{suffix_decode!r} != {GENERATION_SUFFIX!r}"
+        )
+        prompt_len = len(prompt_ids_raw)
+
+        full_messages = [*messages, {"role": "assistant", "content": answer_text}]
+        full_text = tokenizer.apply_chat_template(
+            full_messages, tokenize=False, add_generation_prompt=False
+        )
+        full_ids_raw = tokenizer(full_text, return_tensors=None, add_special_tokens=False)[
+            "input_ids"
+        ]
+        full_len = len(full_ids_raw)
+
+        if full_len <= prompt_len:
+            logger.warning(
+                "[%s] ctx %d: empty response span (full_len=%d <= prompt_len=%d)",
+                arm_name,
+                ctx_i,
+                full_len,
+                prompt_len,
+            )
+            skip_mask[ctx_i] = True
+            continue
+
+        resp_start = prompt_len
+        resp_end = full_len
+
+        # Length normalization for B1/B2: truncate to min(own_len, external_len)
+        if a_prime_lengths is not None:
+            own_len = a_prime_lengths[ctx_i]
+            external_len = resp_end - resp_start
+            if own_len > 0:
+                trunc_len = min(own_len, external_len)
+                resp_end = resp_start + trunc_len
+            else:
+                trunc_len = external_len
+            span_lengths[ctx_i] = trunc_len
+        else:
+            span_lengths[ctx_i] = resp_end - resp_start
+
+        if span_lengths[ctx_i] < 1:
+            logger.warning("[%s] ctx %d: span length < 1 after truncation", arm_name, ctx_i)
+            skip_mask[ctx_i] = True
+            continue
+
+        all_prompt_ids.append(prompt_ids_raw)
+        all_full_ids.append(full_ids_raw[:resp_end])  # truncated full seq
+        all_resp_start.append(resp_start)
+        all_resp_end.append(resp_end)
+
+    # Build an index map from all_prompt_ids position → ctx_i
+    valid_indices: list[int] = [i for i in range(n) if not skip_mask[i]]
+
+    # Capture hooks — GPU-resident (hooks capture on GPU, we reduce on GPU)
+    # We use a dict keyed by (batch_item, layer_hook_idx) to avoid threading issues.
+    captured: dict[int, torch.Tensor] = {}  # li -> (B, seq_len, hidden) on GPU
+
+    def make_hook(li: int):
         def hook(module, input, output):
             hidden = output[0] if isinstance(output, tuple) else output
-            captured[layer_idx] = hidden.detach().float().cpu()
+            # Keep on GPU; we slice and reduce after the forward
+            captured[li] = hidden.detach()  # (B, seq_len, hidden) bfloat16
 
         return hook
 
@@ -607,107 +778,86 @@ def _tf_extract_arm(  # noqa: C901 — single TF loop; splitting risks span/logp
         handles.append(handle)
 
     model.eval()
-    nan_count = 0
+    dev = next(model.parameters()).device
+
     with torch.no_grad():
-        for batch_start in range(0, n, batch_size):
-            batch_end = min(batch_start + batch_size, n)
-            for ctx_i in range(batch_start, batch_end):
-                prompt_text = prompts[ctx_i]
-                answer_text = answers[ctx_i]
+        for b_start in range(0, len(valid_indices), batch_size):
+            b_end = min(b_start + batch_size, len(valid_indices))
+            batch_ctx_idxs = valid_indices[b_start:b_end]
+            B = len(batch_ctx_idxs)
 
-                if not answer_text:
-                    # Dropped context — fill with zeros
-                    span_lengths.append(0)
-                    continue
+            # Map back to all_prompt_ids position
+            ai_idxs = list(range(b_start, b_end))  # indices into all_prompt_ids
 
-                messages = [{"role": "user", "content": prompt_text}]
-                prompt_only = tokenizer.apply_chat_template(
-                    messages, tokenize=False, add_generation_prompt=True
-                )
+            batch_full_ids = [all_full_ids[ai] for ai in ai_idxs]
+            batch_resp_start = [all_resp_start[ai] for ai in ai_idxs]
+            batch_resp_end = [all_resp_end[ai] for ai in ai_idxs]
 
-                # GENERATION_SUFFIX assert (same as issue779_collect.py:129-130)
-                prompt_inputs = tokenizer(
-                    prompt_only, return_tensors="pt", add_special_tokens=False
-                ).to(model.device)
-                suffix_decode = tokenizer.decode(prompt_inputs["input_ids"][0, -3:])
-                assert suffix_decode == GENERATION_SUFFIX, (
-                    f"[{arm_name}] ctx {ctx_i}: position assert failed: "
-                    f"{suffix_decode!r} != {GENERATION_SUFFIX!r}"
-                )
-                prompt_len = prompt_inputs["input_ids"].shape[1]
+            # LEFT-pad to the longest sequence in the batch
+            max_len = max(len(ids) for ids in batch_full_ids)
+            pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+            input_ids_list = []
+            attention_mask_list = []
+            pad_offsets: list[int] = []
+            for ids in batch_full_ids:
+                pad_n = max_len - len(ids)
+                padded = [pad_id] * pad_n + ids
+                mask = [0] * pad_n + [1] * len(ids)
+                input_ids_list.append(padded)
+                attention_mask_list.append(mask)
+                pad_offsets.append(pad_n)
 
-                full_messages = [*messages, {"role": "assistant", "content": answer_text}]
-                full_text = tokenizer.apply_chat_template(
-                    full_messages, tokenize=False, add_generation_prompt=False
-                )
-                full_inputs = tokenizer(
-                    full_text, return_tensors="pt", add_special_tokens=False
-                ).to(model.device)
-                full_len = full_inputs["input_ids"].shape[1]
+            input_ids_t = torch.tensor(input_ids_list, dtype=torch.long, device=dev)  # (B, T)
+            attention_mask_t = torch.tensor(
+                attention_mask_list, dtype=torch.long, device=dev
+            )  # (B, T)
 
-                if full_len <= prompt_len:
-                    logger.warning(
-                        "[%s] ctx %d: empty response span (full_len=%d <= prompt_len=%d)",
-                        arm_name,
-                        ctx_i,
-                        full_len,
-                        prompt_len,
-                    )
-                    span_lengths.append(0)
-                    continue
+            # Explicit position_ids to handle left-padding correctly (RoPE needs natural indices)
+            position_ids_t = (attention_mask_t.cumsum(dim=-1) - 1).clamp(min=0)  # (B, T)
 
-                resp_start = prompt_len
-                resp_end = full_len
+            captured.clear()
+            out = model(
+                input_ids=input_ids_t,
+                attention_mask=attention_mask_t,
+                position_ids=position_ids_t,
+                output_hidden_states=False,
+            )
 
-                # Length normalization for B1/B2: truncate to min(own_len, external_len)
-                if a_prime_lengths is not None:
-                    own_len = a_prime_lengths[ctx_i]
-                    external_len = resp_end - resp_start
-                    if own_len > 0:
-                        trunc_len = min(own_len, external_len)
-                        resp_end = resp_start + trunc_len
-                    else:
-                        trunc_len = external_len
-                    span_lengths.append(trunc_len)
-                else:
-                    span_lengths.append(resp_end - resp_start)
+            # GPU-resident span mean-pool and logp reduce
+            for j in range(B):
+                ctx_i = batch_ctx_idxs[j]
+                pad_off = pad_offsets[j]
+                r_start = batch_resp_start[j] + pad_off
+                r_end = batch_resp_end[j] + pad_off
 
-                if span_lengths[-1] < 1:
-                    logger.warning("[%s] ctx %d: span length < 1 after truncation", arm_name, ctx_i)
-                    continue
-
-                # Forward pass
-                captured.clear()
-                out = model(
-                    input_ids=full_inputs["input_ids"],
-                    attention_mask=full_inputs["attention_mask"],
-                    output_hidden_states=False,  # using hooks instead
-                )
-
-                # OOD covariate: mean log P of the (truncated) answer span under
-                # the base model. GPU-resident reduce; only the scalar moves to CPU.
-                span_logits = out.logits[0, resp_start - 1 : resp_end - 1].float()
-                span_targets = full_inputs["input_ids"][0, resp_start:resp_end]
+                # OOD covariate: mean log P of answer span — GPU reduce, scalar to CPU
+                logits_j = out.logits[j, r_start - 1 : r_end - 1].float()  # (span, V)
+                targets_j = input_ids_t[j, r_start:r_end]  # (span,)
                 tok_lp = (
-                    torch.log_softmax(span_logits, dim=-1)
-                    .gather(1, span_targets.unsqueeze(1))
-                    .squeeze(1)
+                    torch.log_softmax(logits_j, dim=-1).gather(1, targets_j.unsqueeze(1)).squeeze(1)
                 )
                 mean_logps[ctx_i] = float(tok_lp.mean().item())
-                del out, span_logits, tok_lp
+                del logits_j, tok_lp
 
-                # Mean-pool over response token span [resp_start:resp_end]
+                # Mean-pool hidden states over response span — GPU reduce
                 for li in range(n_layers):
                     if li not in captured:
                         continue
-                    hs = captured[li]  # (1, seq_len, hidden)
-                    span = hs[0, resp_start:resp_end, :]  # (span_len, hidden)
-                    if span.shape[0] == 0:
+                    hs_j = captured[li][j, r_start:r_end, :]  # (span, hidden) bfloat16
+                    if hs_j.shape[0] == 0:
                         continue
-                    v_s[ctx_i, li, :] = span.mean(0).numpy()
+                    # Reduce on GPU; move only the (hidden,) mean vector to CPU
+                    v_s[ctx_i, li, :] = hs_j.float().mean(dim=0).cpu().numpy()
 
-            if (batch_start // batch_size) % 50 == 0:
-                logger.info("[%s] Processed %d/%d contexts", arm_name, batch_end, n)
+            del out
+            torch.cuda.empty_cache()
+            # Clear captured dict for next batch (don't keep holding GPU tensors)
+            captured.clear()
+
+            if (b_start // batch_size) % 50 == 0:
+                logger.info(
+                    "[%s] Processed %d/%d valid contexts", arm_name, b_end, len(valid_indices)
+                )
 
     for h in handles:
         h.remove()
@@ -715,7 +865,7 @@ def _tf_extract_arm(  # noqa: C901 — single TF loop; splitting risks span/logp
 
     # Check NaN rate
     nan_mask = ~np.isfinite(v_s).all(axis=(1, 2))
-    nan_count = nan_mask.sum()
+    nan_count = int(nan_mask.sum())
     nan_rate = nan_count / n
     if nan_rate > 0.05:
         raise RuntimeError(f"[{arm_name}] NaN rate {nan_rate:.1%} > 5% — aborting (kill criterion)")
@@ -790,10 +940,13 @@ def phase3_tf_extract(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> N
     from scripts.issue779_collect import capture_context_vector  # type: ignore[import]
 
     rng = np.random.default_rng(0)
-    spot_idx = rng.choice(N_CONTEXTS_FULL, size=20, replace=False)
+    # Sample spot-check indices from the loaded context range, not the full 5000.
+    # In smoke mode n_contexts=10; in production n_contexts=N_CONTEXTS_FULL=5000.
+    n_spot = min(20, n_contexts)
+    spot_idx = rng.choice(n_contexts, size=n_spot, replace=False)
     spot_cosines = []
     alignment_pass = True
-    for i in spot_idx[: min(20, n_contexts)]:
+    for i in spot_idx:
         messages = [{"role": "user", "content": prompts[i]}]
         result = capture_context_vector(model, tokenizer, messages, layers)
         if result is None:
@@ -951,7 +1104,24 @@ def _upload_arm_tensors(base_dir: pathlib.Path) -> None:
         commit_message=f"issue 823: arm tensors ({len(operations)} files)",
         operations=operations,
     )
-    logger.info("Upload complete: %d files", len(operations))
+    # Post-commit Hub verification: confirm uploaded files are visible
+    from huggingface_hub import list_repo_files
+
+    expected_paths = {f"{ISSUE_SLUG}/analysis_tensors/{f.name}" for f in files_to_upload}
+    hub_files = set(
+        list_repo_files(
+            repo_id=HF_DATA_REPO_DATA,
+            repo_type="dataset",
+            path_in_repo=f"{ISSUE_SLUG}/analysis_tensors/",
+        )
+    )
+    missing = expected_paths - hub_files
+    if missing:
+        raise RuntimeError(
+            f"HF upload verification FAIL: {len(missing)} tensor files not visible on Hub: "
+            f"{sorted(missing)[:3]}..."
+        )
+    logger.info("Upload complete and Hub-verified: %d files", len(operations))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -999,25 +1169,39 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
         v_c.shape,
     )
 
-    arm_targets = {
-        "A": v_x_full,
+    # Arm A is used ONLY for the harness reproduce-gate (DV0 check).
+    # The DV1 per-arm refit and DV3 cross-arm transfer operate on {A', B1, B2, C}.
+    # Including arm A in the refit loop would make arm A both a reproduce-gate AND a
+    # new DV target — the plan §3 explicitly restricts A to the gate role.
+    refit_targets = {
         "A_prime": v_a_prime,
         "B1": v_b1,
         "B2": v_b2,
         "C": v_c,
     }
+    # v_x_full (arm A) is kept separate for the harness gate and A-vs-A' diagnostic.
 
     kf = KFold(n_splits=5, shuffle=True, random_state=0)
 
     # ── Computation A: per-arm refit ──────────────────────────────────────────
     log_phase("p4_refit")
-    logger.info("Phase 4 Computation A: per-arm refit...")
+    logger.info("Phase 4 Computation A: per-arm refit (arms: A', B1, B2, C)...")
     r2_refit: dict[str, dict[str, dict]] = {}
 
-    for s, Y_target_s in arm_targets.items():
+    # per_ctx_r2[arm][trait] = np.ndarray shape (n_contexts,) — per-context R²
+    # at the read-out layer, assembled from the 5 held-out folds.
+    # This is the primary uncertainty estimate surface (context-level bootstrap CI).
+    per_ctx_r2: dict[str, dict[str, np.ndarray]] = {}
+
+    for s, Y_target_s in refit_targets.items():
         r2_refit[s] = {}
+        per_ctx_r2[s] = {}
         for trait in TRAITS:
             r2_folds_per_layer = []
+            ro_layer = READ_OUT_LAYERS[trait]
+            # Accumulate per-context (ss_res, ss_tot) at the read-out layer across folds
+            ctx_sse = np.zeros(n_contexts)  # per-ctx sum-sq-residual at ro_layer
+            ctx_sst = np.zeros(n_contexts)  # per-ctx sum-sq-total at ro_layer
             for layer_idx in range(EXPECTED_LAYERS):
                 X = cx_last_full[:, layer_idx, :]  # (n, 3584)
                 Y = Y_target_s[:, layer_idx, :]  # (n, 3584)
@@ -1027,30 +1211,66 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
                     ss_res = float(np.sum((Y[val_idx] - Y_pred) ** 2))
                     ss_tot = float(np.sum((Y[val_idx] - Y[val_idx].mean(0)) ** 2))
                     r2_folds.append(1.0 - ss_res / (ss_tot + 1e-12))
+                    # Accumulate per-context at read-out layer only (saves memory vs all layers)
+                    if layer_idx == ro_layer:
+                        res_ctx = ((Y[val_idx] - Y_pred) ** 2).sum(axis=1)  # (val_n,)
+                        tot_ctx = ((Y[val_idx] - Y[val_idx].mean(0)) ** 2).sum(axis=1)  # (val_n,)
+                        ctx_sse[val_idx] += res_ctx
+                        ctx_sst[val_idx] += tot_ctx
                 r2_folds_per_layer.append(r2_folds)
             r2_refit[s][trait] = {
                 "r2_by_layer": r2_folds_per_layer,  # list[28][5]
                 "fit_arm": s,
                 "score_arm": s,  # mechanizable: refit rows have fit_arm == score_arm
             }
+            # Per-context R² at read-out layer (from accumulated folds)
+            per_ctx_r2[s][trait] = 1.0 - ctx_sse / (ctx_sst + 1e-12)
         logger.info("Arm %s refit complete (layers %d, folds 5)", s, EXPECTED_LAYERS)
+
+    # Compute arm A (bundle) R² separately for the harness reproduce-gate.
+    # Arm A is NOT in refit_targets (per plan §3 — A is the gate role only),
+    # so we run a dedicated 5-fold refit loop for the gate check.
+    log_phase("p4_arm_a_gate_refit")
+    logger.info("Phase 4: Computing arm A refit for harness gate...")
+    r2_arm_a: dict[str, dict] = {}
+    for trait in TRAITS:
+        r2_folds_per_layer_a = []
+        for layer_idx in range(EXPECTED_LAYERS):
+            X_a = cx_last_full[:, layer_idx, :]
+            Y_a = v_x_full[:, layer_idx, :]
+            r2_folds_a: list[float] = []
+            for train_idx_a, val_idx_a in kf.split(X_a):
+                Y_pred_a = ridge_fit_predict(X_a[train_idx_a], Y_a[train_idx_a], X_a[val_idx_a])
+                ss_res_a = float(np.sum((Y_a[val_idx_a] - Y_pred_a) ** 2))
+                ss_tot_a = float(np.sum((Y_a[val_idx_a] - Y_a[val_idx_a].mean(0)) ** 2))
+                r2_folds_a.append(1.0 - ss_res_a / (ss_tot_a + 1e-12))
+            r2_folds_per_layer_a.append(r2_folds_a)
+        r2_arm_a[trait] = {
+            "r2_by_layer": r2_folds_per_layer_a,
+            "fit_arm": "A",
+            "score_arm": "A",
+        }
+    logger.info("Arm A gate refit complete.")
+
+    # Build combined dict for gate and diagnostic (arm A separate from the DV refit dict).
+    r2_refit_for_gate = {"A": r2_arm_a, **r2_refit}
 
     # Harness reproduce-gate: arm A per-arm refit must match #779 within ±0.01.
     # Skip in smoke mode (reference file not available locally during smoke).
     if not smoke:
-        _check_harness_reproduce_gate(r2_refit, base_dir)
+        _check_harness_reproduce_gate(r2_refit_for_gate, base_dir)
     else:
         logger.info("Harness reproduce-gate SKIPPED (smoke mode — reference not pre-staged)")
 
     # A-vs-A' consistency diagnostic
-    a_vs_a_prime_diag = _compute_a_vs_a_prime_diag(v_x_full, v_a_prime, r2_refit)
+    a_vs_a_prime_diag = _compute_a_vs_a_prime_diag(v_x_full, v_a_prime, r2_refit_for_gate)
 
     # ── Computation B: cross-arm transfer ────────────────────────────────────
     log_phase("p4_transfer")
     logger.info("Phase 4 Computation B: cross-arm transfer (fit on A')...")
     r2_transfer: dict[str, dict[str, dict]] = {}
 
-    for s_prime, Y_target_sp in arm_targets.items():
+    for s_prime, Y_target_sp in refit_targets.items():
         r2_transfer[s_prime] = {}
         for trait in TRAITS:
             r2_folds_per_layer = []
@@ -1074,14 +1294,21 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
         logger.info("Transfer arm %s complete (fit=A', score=%s)", s_prime, s_prime)
 
     # ── Statistical tests ─────────────────────────────────────────────────────
-    stats = _compute_stats(r2_refit, r2_transfer)
+    stats = _compute_stats(r2_refit, r2_transfer, per_ctx_r2)
 
     # ── Persist results ───────────────────────────────────────────────────────
+    # Serialize per_ctx_r2 arrays as lists for JSON storage (used by Phase 5
+    # for the length-R² numeric correlation diagnostic).
+    per_ctx_r2_serialized: dict[str, dict[str, list[float]]] = {
+        arm: {trait: arr.tolist() for trait, arr in by_trait.items()}
+        for arm, by_trait in per_ctx_r2.items()
+    }
     result = {
         "refit": r2_refit,
         "transfer": r2_transfer,
         "stats": stats,
         "a_vs_a_prime_diagnostic": a_vs_a_prime_diag,
+        "per_ctx_r2": per_ctx_r2_serialized,
         "n_contexts": n_contexts,
         "smoke": smoke,
         "read_out_layers": READ_OUT_LAYERS,
@@ -1110,14 +1337,32 @@ def _check_harness_reproduce_gate(r2_refit: dict, base_dir: pathlib.Path) -> Non
             "Use --skip-harness-gate to explicitly bypass (smoke only)."
         )
     ref = json.loads(ref_path.read_text())
+
+    # Assert reference schema once — avoids silent wrong-key reads downstream.
+    # Actual top-level keys: read_out_layers, metadata, read1_heldout_recon, read2_projection_recon
+    # Means live at: ref["read1_heldout_recon"]["heldout_r2_vs_layer"][str(layer)]["mean"]
+    _expected_ref_keys = {"read1_heldout_recon", "read_out_layers"}
+    _missing = _expected_ref_keys - set(ref.keys())
+    if _missing:
+        raise RuntimeError(
+            f"Harness reproduce-gate: #779 reference at {ref_path} has unexpected schema. "
+            f"Expected top-level keys {_expected_ref_keys}, missing: {_missing}. "
+            f"Found keys: {list(ref.keys())}. "
+            "Check BUNDLE_REPO_REVISION and the correct percontext_recon.json path."
+        )
+    ref_heldout = ref["read1_heldout_recon"]["heldout_r2_vs_layer"]
+
     for trait in TRAITS:
         ro_layer = READ_OUT_LAYERS[trait]
         arm_a_r2 = float(np.mean(r2_refit["A"][trait]["r2_by_layer"][ro_layer]))
-        if trait not in ref or "mean_r2" not in ref[trait]:
+        layer_key = str(ro_layer)
+        if layer_key not in ref_heldout or "mean" not in ref_heldout[layer_key]:
             raise RuntimeError(
-                f"Harness reproduce-gate: trait '{trait}' not found in reference at {ref_path}."
+                f"Harness reproduce-gate: layer '{layer_key}' not found in "
+                f"ref['read1_heldout_recon']['heldout_r2_vs_layer'] at {ref_path}. "
+                f"Available layers: {list(ref_heldout.keys()[:10])}..."
             )
-        ref_r2 = float(ref[trait]["mean_r2"])
+        ref_r2 = float(ref_heldout[layer_key]["mean"])
         delta = abs(arm_a_r2 - ref_r2)
         if delta > 0.01:
             raise RuntimeError(
@@ -1176,8 +1421,23 @@ def _compute_a_vs_a_prime_diag(v_a: np.ndarray, v_a_prime: np.ndarray, r2_refit:
     return diag
 
 
-def _compute_stats(r2_refit: dict, r2_transfer: dict) -> dict:
-    """Compute paired t-tests, bootstrap CIs, and H1/H2/H3 verdicts."""
+def _compute_stats(
+    r2_refit: dict,
+    r2_transfer: dict,
+    per_ctx_r2: dict[str, dict[str, np.ndarray]],
+) -> dict:
+    """Compute paired t-tests, context-level bootstrap CIs, and H1/H2/H3 verdicts.
+
+    Args:
+        r2_refit: Per-arm fold-level R² dict (arm → trait → {"r2_by_layer": ...}).
+        r2_transfer: Cross-arm fold-level R² dict (same shape).
+        per_ctx_r2: Per-context R² at read-out layer, accumulated from 5-fold CV
+            (arm → trait → np.ndarray of shape (n_contexts,)).  Used for the
+            primary plan §6 context-level bootstrap CI (n≈5000, 1000 iterations).
+
+    Returns:
+        Dict with per-trait stats (paired t, context-level bootstrap CI, H1/H2/H3).
+    """
     from scipy import stats as scipy_stats
 
     BONFERRONI_ALPHA = 0.05 / 3
@@ -1188,7 +1448,7 @@ def _compute_stats(r2_refit: dict, r2_transfer: dict) -> dict:
 
     for trait in TRAITS:
         ro = READ_OUT_LAYERS[trait]
-        # Per-arm fold R² at read-out layer
+        # Per-arm fold R² at read-out layer (for paired t and point estimates)
         r2_ap = np.array(r2_refit["A_prime"][trait]["r2_by_layer"][ro])  # (5,)
         r2_b2 = np.array(r2_refit["B2"][trait]["r2_by_layer"][ro])
         r2_c = np.array(r2_refit["C"][trait]["r2_by_layer"][ro])
@@ -1218,33 +1478,79 @@ def _compute_stats(r2_refit: dict, r2_transfer: dict) -> dict:
         ap_vs_c = paired_t(r2_ap, r2_c)
         b2_vs_c = paired_t(r2_b2, r2_c)
 
-        # DEFERRED CONCERN (concern-id: fold-level-vs-context-level-bootstrap-ci):
-        # The plan §6 requires context-level bootstrap CI (n≈5000, 1000 iterations)
-        # as the PRIMARY uncertainty estimate. This implementation uses fold-level
-        # bootstrap (n=5 folds) instead, because _compute_stats only receives fold-mean
-        # R² values — per-context predictions are not accumulated here.
-        # To implement context-level CI, phase4_ridge_refit would need to persist
-        # per-context val predictions (n_contexts x n_layers x hidden) and pass them
-        # to _compute_stats. This is a significant refactor and is deferred to Phase 4
-        # once the basic pipeline is validated. The fold-level bootstrap CI reported
-        # here is conservative (wider than the true 5000-context CI) and is labelled
-        # accordingly — the H1/H2/H3 verdicts use point estimates, not CIs, so this
-        # does not affect the headline test. Raised as CONCERN (round 1).
-        rng = np.random.default_rng(0)
         delta_ap_b2 = float(r2_ap.mean() - r2_b2.mean())
         delta_ap_c = float(r2_ap.mean() - r2_c.mean())
         delta_b2_c = float(r2_b2.mean() - r2_c.mean())
 
-        # Fold-level bootstrap (5 folds, 1000 iterations) — conservative proxy only
-        boot_ap_b2: list[float] = []
-        for _ in range(N_BOOTSTRAP):
-            idx = rng.integers(0, 5, size=5)
-            boot_ap_b2.append(float(r2_ap[idx].mean() - r2_b2[idx].mean()))
-        ci_ap_b2 = (float(np.percentile(boot_ap_b2, 2.5)), float(np.percentile(boot_ap_b2, 97.5)))
+        # ── Context-level bootstrap CI (plan §6 PRIMARY uncertainty estimate) ──
+        # Resample n_contexts rows (with replacement) from per-context R²
+        # accumulated during 5-fold CV in phase4_ridge_refit.
+        ctx_ap = per_ctx_r2.get("A_prime", {}).get(trait)
+        ctx_b2 = per_ctx_r2.get("B2", {}).get(trait)
+        ctx_c = per_ctx_r2.get("C", {}).get(trait)
 
-        # H1/H2/H3 determination
+        if ctx_ap is not None and ctx_b2 is not None and ctx_c is not None:
+            n_ctx = len(ctx_ap)
+            rng = np.random.default_rng(0)
+            boot_ap_b2_ctx: list[float] = []
+            boot_ap_c_ctx: list[float] = []
+            boot_b2_c_ctx: list[float] = []
+            for _ in range(N_BOOTSTRAP):
+                idx = rng.integers(0, n_ctx, size=n_ctx)
+                boot_ap_b2_ctx.append(float(ctx_ap[idx].mean() - ctx_b2[idx].mean()))
+                boot_ap_c_ctx.append(float(ctx_ap[idx].mean() - ctx_c[idx].mean()))
+                boot_b2_c_ctx.append(float(ctx_b2[idx].mean() - ctx_c[idx].mean()))
+
+            ci_ap_b2 = {
+                "lo": float(np.percentile(boot_ap_b2_ctx, 2.5)),
+                "hi": float(np.percentile(boot_ap_b2_ctx, 97.5)),
+                "n_contexts": n_ctx,
+                "method": "context_level_bootstrap",
+            }
+            ci_ap_c = {
+                "lo": float(np.percentile(boot_ap_c_ctx, 2.5)),
+                "hi": float(np.percentile(boot_ap_c_ctx, 97.5)),
+                "n_contexts": n_ctx,
+                "method": "context_level_bootstrap",
+            }
+            ci_b2_c = {
+                "lo": float(np.percentile(boot_b2_c_ctx, 2.5)),
+                "hi": float(np.percentile(boot_b2_c_ctx, 97.5)),
+                "n_contexts": n_ctx,
+                "method": "context_level_bootstrap",
+            }
+            logger.info(
+                "Context-level bootstrap CI [%s]: Δ(A'-B2)=%.4f [%.4f, %.4f] n_ctx=%d",
+                trait,
+                delta_ap_b2,
+                ci_ap_b2["lo"],
+                ci_ap_b2["hi"],
+                n_ctx,
+            )
+        else:
+            # Fallback: fold-level bootstrap (conservative proxy)
+            logger.warning(
+                "per_ctx_r2 missing for trait=%s — falling back to fold-level bootstrap CI", trait
+            )
+            rng = np.random.default_rng(0)
+            boot_ap_b2_fold: list[float] = []
+            for _ in range(N_BOOTSTRAP):
+                idx = rng.integers(0, 5, size=5)
+                boot_ap_b2_fold.append(float(r2_ap[idx].mean() - r2_b2[idx].mean()))
+            lo, hi = np.percentile(boot_ap_b2_fold, [2.5, 97.5])
+            ci_ap_b2 = {
+                "lo": float(lo),
+                "hi": float(hi),
+                "n_contexts": 5,
+                "method": "fold_level_bootstrap_fallback",
+            }
+            ci_ap_c = {"lo": float("nan"), "hi": float("nan"), "method": "not_computed"}
+            ci_b2_c = {"lo": float("nan"), "hi": float("nan"), "method": "not_computed"}
+
+        # H1/H2/H3 determination (point estimates drive verdicts)
         h1 = delta_ap_b2 > 0.05 and r2_c.mean() < 0.05
-        h2 = max(abs(delta_ap_b2), abs(delta_ap_c), abs(delta_b2_c)) <= 0.03
+        # H2: per-comparison thresholds from plan §3 (NOT uniform 0.03)
+        h2 = abs(delta_ap_b2) <= 0.05 and abs(delta_ap_c) <= 0.06 and abs(delta_b2_c) <= 0.05
         h3 = (r2_ap.mean() >= r2_b2.mean() > r2_c.mean()) and delta_b2_c > 0.03
 
         verdict = "H1" if h1 else ("H2" if h2 else ("H3" if h3 else "AMBIGUOUS"))
@@ -1261,10 +1567,10 @@ def _compute_stats(r2_refit: dict, r2_transfer: dict) -> dict:
                 "A_prime_vs_C": ap_vs_c,
                 "B2_vs_C": b2_vs_c,
             },
-            "bootstrap_ci_A_prime_vs_B2_fold_level": {
-                "lo": ci_ap_b2[0],
-                "hi": ci_ap_b2[1],
-                "note": "fold-level proxy (n=5); context-level CI deferred",
+            "bootstrap_ci_context_level": {
+                "A_prime_vs_B2": ci_ap_b2,
+                "A_prime_vs_C": ci_ap_c,
+                "B2_vs_C": ci_b2_c,
             },
             "delta_r2": {
                 "A_prime_vs_B2": delta_ap_b2,
@@ -1413,24 +1719,66 @@ def phase5_validity_diag(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -
         logp_distributions["note"] = f"MISSING — {logp_path} not found (Phase 3 not yet run)"
 
     # 5. Length-R² correlation (if Phase 4 results exist)
+    # Uses per-context R² values persisted in ridge_r2_by_arm.json["per_ctx_r2"]
+    # for a genuine numeric Pearson + Spearman correlation with per-context length delta.
     length_r2_correlation: dict[str, Any] = {}
     ridge_path = base_dir / "eval_results" / "issue_823" / "ridge_r2_by_arm.json"
     if ridge_path.exists() and span_path.exists():
         try:
+            from scipy import stats as scipy_stats
+
+            ridge_data = json.loads(ridge_path.read_text())
+            per_ctx_r2_data = ridge_data.get("per_ctx_r2", {})
+
             for trait in TRAITS:
                 ro = READ_OUT_LAYERS[trait]
+                ctx_ap = per_ctx_r2_data.get("A_prime", {}).get(trait)
+                ctx_b2 = per_ctx_r2_data.get("B2", {}).get(trait)
+                has_per_ctx = ctx_ap is not None and ctx_b2 is not None
                 if "a_prime" in span_data and "b2" in span_data:
-                    ap_lens = np.array(span_data["a_prime"][:n_contexts])
-                    b2_lens = np.array(span_data["b2"][:n_contexts])
-                    len_delta = ap_lens.astype(float) - b2_lens.astype(float)
-                    # We have fold-level R², not context-level, so correlation is approximate
-                    length_r2_correlation[trait] = {
-                        "note": "Context-level length-R² correlation requires per-context R²; "
-                        "fold-level proxy only",
-                        "mean_ap_len": float(ap_lens.mean()),
-                        "mean_b2_len": float(b2_lens.mean()),
-                        "mean_delta": float(len_delta.mean()),
-                    }
+                    ap_lens = np.array(span_data["a_prime"][:n_contexts], dtype=float)
+                    b2_lens = np.array(span_data["b2"][:n_contexts], dtype=float)
+                    len_delta = ap_lens - b2_lens
+                    if has_per_ctx:
+                        r2_ap = np.array(ctx_ap[:n_contexts])
+                        r2_b2 = np.array(ctx_b2[:n_contexts])
+                        r2_gap = r2_ap - r2_b2  # per-context R2(A') - R2(B2)
+                        # Pearson
+                        pearson_r, pearson_p = scipy_stats.pearsonr(len_delta, r2_gap)
+                        # Spearman
+                        spearman_r, spearman_p = scipy_stats.spearmanr(len_delta, r2_gap)
+                        length_r2_correlation[trait] = {
+                            "read_out_layer": ro,
+                            "n_contexts": len(r2_gap),
+                            "len_delta_vs_r2_gap": {
+                                "pearson_r": float(pearson_r),
+                                "pearson_p": float(pearson_p),
+                                "spearman_r": float(spearman_r),
+                                "spearman_p": float(spearman_p),
+                            },
+                            "mean_ap_len": float(ap_lens.mean()),
+                            "mean_b2_len": float(b2_lens.mean()),
+                            "mean_delta": float(len_delta.mean()),
+                        }
+                        logger.info(
+                            "Length-R² corr [%s, L%d]: Pearson r=%.3f p=%.3f, "
+                            "Spearman r=%.3f p=%.3f",
+                            trait,
+                            ro,
+                            pearson_r,
+                            pearson_p,
+                            spearman_r,
+                            spearman_p,
+                        )
+                    else:
+                        # per_ctx_r2 not available (e.g. Phase 4 not yet run)
+                        length_r2_correlation[trait] = {
+                            "read_out_layer": ro,
+                            "note": "per_ctx_r2 unavailable — run Phase 4 first",
+                            "mean_ap_len": float(ap_lens.mean()),
+                            "mean_b2_len": float(b2_lens.mean()),
+                            "mean_delta": float(len_delta.mean()),
+                        }
         except Exception as e:
             logger.warning("Length-R² correlation: %s", e)
 
@@ -1489,7 +1837,24 @@ def upload_raw_completions(base_dir: pathlib.Path) -> None:
             commit_message=f"issue 823: raw completions ({len(ops)} files)",
             operations=ops,
         )
-        logger.info("Uploaded %d raw completion files to HF", len(ops))
+        # Post-commit Hub verification
+        from huggingface_hub import list_repo_files
+
+        hub_files = set(
+            list_repo_files(
+                repo_id=HF_DATA_REPO_DATA,
+                repo_type="dataset",
+                path_in_repo=f"{ISSUE_SLUG}/raw_completions/",
+            )
+        )
+        expected = {op.path_in_repo for op in ops}
+        missing = expected - hub_files
+        if missing:
+            raise RuntimeError(
+                f"HF raw-completions upload verification FAIL: {len(missing)} files missing "
+                f"on Hub after commit: {sorted(missing)[:3]}..."
+            )
+        logger.info("Uploaded and Hub-verified %d raw completion files", len(ops))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1504,9 +1869,13 @@ def write_final_sentinel(base_dir: pathlib.Path, smoke: bool) -> None:
 
     git_sha = "unknown"
     try:
+        # Use the repo root (derived from __file__) so git rev-parse works correctly
+        # on both local worktrees and pod /workspace checkouts (where base_dir=/workspace
+        # may not be the repo clone).
+        _repo_root = pathlib.Path(__file__).resolve().parents[4]
         git_sha = (
             subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], cwd=str(base_dir), env={**os.environ}
+                ["git", "rev-parse", "HEAD"], cwd=str(_repo_root), env={**os.environ}
             )
             .decode()
             .strip()
