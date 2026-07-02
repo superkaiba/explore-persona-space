@@ -1,7 +1,7 @@
 ---
-title: 'Layer-to-layer activation dynamics on real chat contexts: per-layer predictability
-  atlas of the residual-stream update + does a dynamics-pretrained predictor beat
-  #779''s direct context->trait predictor'
+title: Rolling an activation forward through a learned affine layer map beats a direct
+  read of the source layer in a minority of read-out-layer cells (above chance in
+  aggregate), on Qwen-2.5-7B-Instruct (MODERATE confidence)
 kind: experiment
 tags:
 - activation-dynamics
