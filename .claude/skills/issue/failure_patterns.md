@@ -100,7 +100,16 @@ stall window (`max(EPM_ZOMBIE_VETO_FRESH_SEC=60, stall_sec)`) for 2
 consecutive ticks — on host-PID-namespace containers nvidia-smi reports
 host PIDs unresolvable in the container's `/proc`, so the bare signature
 is false-positive on healthy runs (#816/#778); a fresh-log zombie flag is
-a namespace artifact, not a hang. The emit surface
+a namespace artifact, not a hang — and (since #864) only when the
+dead-in-/proc signature is namespace-informative: zero-resolvable compute
+PIDs with live in-container `/dev/nvidia-uvm` holders (exact fd-target
+match) are a PID-namespace artifact and are vetoed regardless of log
+staleness (#813: a healthy ~29-min CPU-bound quiet stretch outlived the
+#826 stale-log veto). The #864 veto ships default-OFF
+(`EPM_ZOMBIE_NAMESPACE_VETO=1` arms it; read at poller import) per its
+pre-merge live-pod gate — a cuInit'd parent/coordinator holding exact uvm
+while absent from compute-apps would suppress a genuine total collapse if
+armed unverified. The emit surface
 is `scripts/poll_pipeline.py` + `scripts/backend_poll.py`; the
 known-reason set is `STALL_REASON_INFRA` in `failure_classifier.py`; the
 recovery brief + recipe references are SKILL.md Step 7 § "Zombie-GPU
