@@ -150,6 +150,46 @@ def test_drop_never_coerce_propagation(tmp_path):
     assert drops.threshold_drops == 0
 
 
+def test_generation_drop_reason_split(tmp_path):
+    # A transport-side dispatch error (api_error) must land in api_error_drops, NOT
+    # refusal_drops — so an API outage can't inflate the yield-floor-relevant count.
+    beh = BEHAVIORS["sycophancy"]
+    msgs = [{"role": "user", "content": "Q?"}]
+
+    def _drop(rid, reason):
+        return GenCandidate(GenRequest(rid, POSITIVE, "q0", "v0", "Q?", msgs, msgs), None, reason)
+
+    cands = [
+        _cand("pos-0", POSITIVE, "a kept answer"),
+        _drop("pos-1", "api_error"),
+        _drop("pos-2", "empty"),
+        _drop("pos-3", "refusal"),
+    ]
+
+    def judge(items, ep, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+        return JudgeResult(
+            scores={rid: 80.0 for rid, _, _ in items},
+            n_total_draws=len(items),
+            n_dropped_draws=0,
+            per_item_draw_counts={rid: 1 for rid, _, _ in items},
+        )
+
+    kept, drops, *_ = datagen._judge_and_filter(
+        beh,
+        cands,
+        POSITIVE,
+        judge_fn=judge,
+        n_judge_draws=1,
+        cache_dir=tmp_path / "c",
+        save_raw=tmp_path / "r.json",
+    )
+    assert [c.request.request_id for c in kept] == ["pos-0"]
+    assert drops.generated == 1  # only the one non-None completion is judgeable
+    assert drops.api_error_drops == 1  # NOT counted as a refusal
+    assert drops.empty_drops == 1
+    assert drops.refusal_drops == 1
+
+
 def test_structural_keep_filter(tmp_path):
     list_text = "- one\n- two\n- three"
     prose_text = "This is a single flowing paragraph of prose with no list items at all."

@@ -119,7 +119,7 @@ class GenCandidate:
 
     request: GenRequest
     completion: str | None
-    drop_reason: str | None = None  # "refusal" | "empty" | None
+    drop_reason: str | None = None  # "refusal" | "empty" | "api_error" | None
 
 
 # generate_fn: requests -> candidates, aligned 1:1 (index-parallel).
@@ -217,7 +217,9 @@ def _canonical(obj) -> str:
 class _ArmDrops:
     requested: int = 0
     generated: int = 0  # candidates with a non-None completion
-    refusal_drops: int = 0
+    refusal_drops: int = 0  # genuine content refusal (model-side non-answer)
+    empty_drops: int = 0  # blank/whitespace completion
+    api_error_drops: int = 0  # transport-side dispatch error (NOT a refusal — an outage)
     judge_none_drops: int = 0
     threshold_drops: int = 0
     structural_drops: int = 0
@@ -288,8 +290,10 @@ def _mk_request(request_id, arm, question_id, variant_id, question, gen, emit) -
         raise ValueError(
             f"request_id must not contain '__' (judge custom_id delimiter): {request_id!r}"
         )
-    # Parity assert (defensive): stripping the instruction block recovers emit exactly.
-    assert _strip_instruction(gen) == emit, f"context-parity broken for {request_id}"
+    # Parity guard (defensive): stripping the instruction block recovers emit exactly.
+    # ValueError (not bare assert) so it survives `python -O` (behavior.py convention).
+    if _strip_instruction(gen) != emit:
+        raise ValueError(f"context-parity broken for {request_id}: strip(gen) != emit")
     return GenRequest(request_id, arm, question_id, variant_id, question, gen, emit)
 
 
@@ -334,7 +338,12 @@ def _default_generate_fn(
         for r in requests:
             res = results.get(r.request_id)
             if res is None or res.error:
-                candidates.append(GenCandidate(r, None, drop_reason="refusal"))
+                # A dispatch error (transient/parse/rate-limit-exhausted) or a missing
+                # result is a TRANSPORT failure, NOT a content refusal — classify it
+                # under api_error so an API outage cannot inflate refusal_drops toward
+                # the yield floor. A genuine content refusal comes back as completion
+                # text and is handled downstream by the judge (scores low -> dropped).
+                candidates.append(GenCandidate(r, None, drop_reason="api_error"))
             elif not (res.result and str(res.result).strip()):
                 candidates.append(GenCandidate(r, None, drop_reason="empty"))
             else:
@@ -394,6 +403,8 @@ def _build_manifest(
     context_C: Context,
     panel: Panel,
     target_n: int,
+    quota_floor: float,
+    n_judge_draws: int,
     seed: int,
     gen_model: str,
     gen_temperature: float,
@@ -415,6 +426,12 @@ def _build_manifest(
         "context_fingerprint": _context_fingerprint(context_C),
         "panel": [m.slug for m in panel],
         "target_n": target_n,
+        # quota_floor (→ floor_n) and n_judge_draws are part of the resume key: a
+        # re-invocation with either changed invalidates the manifest (and the
+        # manifest-hash-keyed judge cache), so a changed draw count re-judges
+        # fresh instead of silently reusing scores computed at the old count.
+        "quota_floor": quota_floor,
+        "n_judge_draws": n_judge_draws,
         "seed": seed,
         "gen_model": gen_model,
         "gen_temperature": gen_temperature,
@@ -444,9 +461,17 @@ def _judge_and_filter(
     for c in candidates:
         drops.variant_usage[c.request.variant_id] += 1
         drops.question_multiplicity[c.request.question_id] += 1
+        if c.completion is None:
+            # Split the generation-stage drops by reason so a transport-side API
+            # outage (api_error) never inflates the content-refusal count.
+            if c.drop_reason == "api_error":
+                drops.api_error_drops += 1
+            elif c.drop_reason == "empty":
+                drops.empty_drops += 1
+            else:  # "refusal" or unlabeled -> a model-side content non-answer
+                drops.refusal_drops += 1
     judgeable = [c for c in candidates if c.completion is not None]
     drops.generated = len(judgeable)
-    drops.refusal_drops = len(candidates) - len(judgeable)
 
     items = [(c.request.request_id, c.request.question, c.completion) for c in judgeable]
     result = judge_fn(
@@ -549,6 +574,8 @@ def generate_training_data(
         context_C=context_C,
         panel=panel,
         target_n=target_n,
+        quota_floor=quota_floor,
+        n_judge_draws=n_judge_draws,
         seed=seed,
         gen_model=gen_model,
         gen_temperature=gen_temperature,
@@ -766,6 +793,8 @@ def _build_pool_meta(**k) -> dict:
             "requested": drops.requested,
             "generated": drops.generated,
             "refusal_drops": drops.refusal_drops,
+            "empty_drops": drops.empty_drops,
+            "api_error_drops": drops.api_error_drops,
             "judge_none_drops": drops.judge_none_drops,
             "threshold_drops": drops.threshold_drops,
             "structural_drops": drops.structural_drops,
