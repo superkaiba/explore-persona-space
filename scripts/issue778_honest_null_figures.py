@@ -444,8 +444,27 @@ def fig_bar_ladder(layer_choice: str, stem: str, title_layer: str) -> dict:
                     )
                     rec["our_ci95"] = [round(lo, 4), round(hi, 4)] if ci_valid else None
                     rec["our_ci95_valid"] = ci_valid
+                elif slot == "crosstrait":
+                    # Cross-trait = the other 2 traits' r_B (only 2 fixed directions, no
+                    # 1000-draw band) -> plot the individual |r| values as POINTS, not a bar.
+                    vals = [float(v) for v in pc["nulls"]["crosstrait"]["values"]]
+                    ax.scatter(
+                        [xpos] * len(vals),
+                        vals,
+                        s=34,
+                        color=colors["crosstrait"],
+                        marker="D",
+                        edgecolor="#222222",
+                        linewidth=0.6,
+                        zorder=4,
+                        label="cross-trait direction |r| (points; 2 other-trait vectors)",
+                    )
+                    rec["crosstrait"] = {
+                        "values": [round(v, 4) for v in vals],
+                        "max": round(max(vals), 4),
+                    }
                 else:
-                    # Null family: median bar + p2.5-p97.5 band whiskers (cap + spread visible).
+                    # Random-direction family: median bar + p2.5-p97.5 band whiskers.
                     med, blo, bhi = _band_at(pc, slot)
                     kind = next(kd for k, _l, kd in LADDER if k == slot)
                     hatch = (
@@ -714,8 +733,8 @@ def main() -> None:
             "CIs are within-condition-resampled, not pooled); a cell whose recompute fails to "
             "reproduce the JSON or fails to bracket the observed value has its whisker suppressed "
             "+ our_ci95_valid=false. Null-family bars are the MEDIAN with p2.5-p97.5 whiskers "
-            "(full 95% band from 1000 draws; cross-trait uses median/min/max of its 2 directions). "
-            "Paper "
+            "(full 95% band from 1000 draws). Cross-trait is plotted as its 2 other-trait "
+            "direction |r| POINTS (no bar/band — only 2 fixed directions). Paper "
             "bars are point values with no whisker (the paper prints no CIs)."
         ),
         "paper_reference_values": PAPER_R,

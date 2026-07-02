@@ -1,7 +1,7 @@
 {
   "task": 778,
   "description": "Honest-null-ladder comparison figures: paper vs our reproduction vs each random-direction null.",
-  "rendered_at_git_head": "c79248e27f8477c99e70d51beb94ae15f241ad2d",
+  "rendered_at_git_head": "d8e7e4c1f50c1998b96963188a84adc3087cd4c8",
   "honestnulls_source": "eval_results/issue_778/honest_nulls/{trait}_{setting}_honestnulls.json",
   "honestnulls_git_commit": "97c70bf755 (committed by the honest-null-ladder run)",
   "model": "Qwen/Qwen2.5-7B-Instruct",
@@ -9,7 +9,7 @@
   "circularity_finding": "the two ORIGINAL #778 stochastic nulls (orig_randnorm pooled-cov, orig_perm shuffled-label) are circular: pooled-cov top PC vs r_B cos 0.996/0.985/0.736; the honest families (isotropic, within_class [primary], neg_arm_only, rb_projected_out) are trait-agnostic",
   "regime_note": "bar observed |r| is FIXED-LAYER (the #778-selected or paper-steering layer), NOT the max-over-28-layers regime of summary_scatter_ours_vs_random.png; regimes are never mixed in one panel",
   "paper_note": "paper appears only in the bar figure \u2014 we do not have the paper's raw datapoints",
-  "ci_note": "bar figure CIs: our |r| = 95% bootstrap CI recomputed AT THE PLOTTED LAYER via the ladder's imported bootstrap helper (seed = recorded cell_idx, n_boot=1000), validated bit-exact against the committed JSON's bootstrap_ci95_at_own_argmax (within cells' CIs are within-condition-resampled, not pooled); a cell whose recompute fails to reproduce the JSON or fails to bracket the observed value has its whisker suppressed + our_ci95_valid=false. Null-family bars are the MEDIAN with p2.5-p97.5 whiskers (full 95% band from 1000 draws; cross-trait uses median/min/max of its 2 directions). Paper bars are point values with no whisker (the paper prints no CIs).",
+  "ci_note": "bar figure CIs: our |r| = 95% bootstrap CI recomputed AT THE PLOTTED LAYER via the ladder's imported bootstrap helper (seed = recorded cell_idx, n_boot=1000), validated bit-exact against the committed JSON's bootstrap_ci95_at_own_argmax (within cells' CIs are within-condition-resampled, not pooled); a cell whose recompute fails to reproduce the JSON or fails to bracket the observed value has its whisker suppressed + our_ci95_valid=false. Null-family bars are the MEDIAN with p2.5-p97.5 whiskers (full 95% band from 1000 draws). Cross-trait is plotted as its 2 other-trait direction |r| POINTS (no bar/band \u2014 only 2 fixed directions). Paper bars are point values with no whisker (the paper prints no CIs).",
   "paper_reference_values": {
     "finetune": {
       "evil": null,
@@ -79,9 +79,11 @@
           "p97_5": 0.942
         },
         "crosstrait": {
-          "median": 0.4846,
-          "p2_5": 0.2448,
-          "p97_5": 0.7244
+          "values": [
+            0.7244,
+            0.2448
+          ],
+          "max": 0.7244
         }
       },
       "sycophancy": {
@@ -124,9 +126,11 @@
           "p97_5": 0.9175
         },
         "crosstrait": {
-          "median": 0.7165,
-          "p2_5": 0.7045,
-          "p97_5": 0.7284
+          "values": [
+            0.7045,
+            0.7284
+          ],
+          "max": 0.7284
         }
       },
       "hallucination": {
@@ -169,9 +173,11 @@
           "p97_5": 0.9647
         },
         "crosstrait": {
-          "median": 0.289,
-          "p2_5": 0.1154,
-          "p97_5": 0.4626
+          "values": [
+            0.4626,
+            0.1154
+          ],
+          "max": 0.4626
         }
       }
     },
@@ -216,9 +222,11 @@
           "p97_5": 0.8188
         },
         "crosstrait": {
-          "median": 0.6783,
-          "p2_5": 0.6131,
-          "p97_5": 0.7436
+          "values": [
+            0.6131,
+            0.7436
+          ],
+          "max": 0.7436
         }
       },
       "sycophancy": {
@@ -261,9 +269,11 @@
           "p97_5": 0.8335
         },
         "crosstrait": {
-          "median": 0.6723,
-          "p2_5": 0.637,
-          "p97_5": 0.7075
+          "values": [
+            0.7075,
+            0.637
+          ],
+          "max": 0.7075
         }
       },
       "hallucination": {
@@ -306,9 +316,11 @@
           "p97_5": 0.8189
         },
         "crosstrait": {
-          "median": 0.3453,
-          "p2_5": 0.1939,
-          "p97_5": 0.4967
+          "values": [
+            0.4967,
+            0.1939
+          ],
+          "max": 0.4967
         }
       }
     },
@@ -353,9 +365,11 @@
           "p97_5": 0.324
         },
         "crosstrait": {
-          "median": 0.1326,
-          "p2_5": 0.0952,
-          "p97_5": 0.1699
+          "values": [
+            0.0952,
+            0.1699
+          ],
+          "max": 0.1699
         }
       },
       "sycophancy": {
@@ -398,9 +412,11 @@
           "p97_5": 0.6793
         },
         "crosstrait": {
-          "median": 0.0684,
-          "p2_5": 0.0118,
-          "p97_5": 0.1249
+          "values": [
+            0.1249,
+            0.0118
+          ],
+          "max": 0.1249
         }
       },
       "hallucination": {
@@ -443,9 +459,11 @@
           "p97_5": 0.6727
         },
         "crosstrait": {
-          "median": 0.1358,
-          "p2_5": 0.0698,
-          "p97_5": 0.2019
+          "values": [
+            0.0698,
+            0.2019
+          ],
+          "max": 0.2019
         }
       }
     },
@@ -490,9 +508,11 @@
           "p97_5": 0.6902
         },
         "crosstrait": {
-          "median": 0.2062,
-          "p2_5": 0.1705,
-          "p97_5": 0.2419
+          "values": [
+            0.2419,
+            0.1705
+          ],
+          "max": 0.2419
         }
       },
       "sycophancy": {
@@ -535,9 +555,11 @@
           "p97_5": 0.8816
         },
         "crosstrait": {
-          "median": 0.4536,
-          "p2_5": 0.2872,
-          "p97_5": 0.62
+          "values": [
+            0.62,
+            0.2872
+          ],
+          "max": 0.62
         }
       },
       "hallucination": {
@@ -580,9 +602,11 @@
           "p97_5": 0.7462
         },
         "crosstrait": {
-          "median": 0.1791,
-          "p2_5": 0.1373,
-          "p97_5": 0.2209
+          "values": [
+            0.1373,
+            0.2209
+          ],
+          "max": 0.2209
         }
       }
     },
@@ -627,9 +651,11 @@
           "p97_5": 0.673
         },
         "crosstrait": {
-          "median": 0.3405,
-          "p2_5": 0.332,
-          "p97_5": 0.349
+          "values": [
+            0.332,
+            0.349
+          ],
+          "max": 0.349
         }
       },
       "sycophancy": {
@@ -672,9 +698,11 @@
           "p97_5": 0.845
         },
         "crosstrait": {
-          "median": 0.3299,
-          "p2_5": 0.2808,
-          "p97_5": 0.3791
+          "values": [
+            0.3791,
+            0.2808
+          ],
+          "max": 0.3791
         }
       },
       "hallucination": {
@@ -717,9 +745,11 @@
           "p97_5": 0.6967
         },
         "crosstrait": {
-          "median": 0.1081,
-          "p2_5": 0.1074,
-          "p97_5": 0.1088
+          "values": [
+            0.1074,
+            0.1088
+          ],
+          "max": 0.1088
         }
       }
     }
