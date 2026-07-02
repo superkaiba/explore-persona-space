@@ -5448,6 +5448,7 @@
       "title": "workflow-fix: restricted tools allowlists on agents (MCP schema bloat)"
     },
     "841": {
+      "goal": "On Qwen-2.5-7B-Instruct, (Q1) characterize the per-layer predictability of residual-stream depth dynamics on real chat contexts \u2014 fit per-layer maps f_l: h_l -> h_{l+1} at the last-prompt-token position (identity baseline, affine/ridge, MLP, and a sequence model over the depth axis) on the #779 LMSYS activation corpus and report held-out variance explained of the update Delta_l = h_{l+1} - h_l per layer relative to the identity and affine baselines \u2014 and (Q2) test whether dynamics-derived features or dynamics-pretraining add trait-expression-forecasting value over #779's matched-capacity direct context->trait predictor g on the identical monitoring rig (same traits, conditions, judge, within-condition Pearson r), with label-efficiency curves and held-out-behavior transfer as the pre-registered win conditions rather than absolute accuracy alone.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/841",
