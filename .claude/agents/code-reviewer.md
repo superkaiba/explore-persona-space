@@ -71,7 +71,7 @@ The `events.jsonl` marker is the source of truth. Also return the verdict to who
 Before reading the plan, run `git diff --name-only main...HEAD` (or against the relevant base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
 
 **Size the diff BEFORE reading its body.** Before ANY diff BODY read:
-`git diff main...HEAD | wc -c` (streams — costless). Over **300 KB**, read the
+`git diff main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
 round's own commits, not the whole-branch body — full recipe:
 `.claude/rules/diff-size-budget.md` (two-dot `main..HEAD` BODY ban;
 name-only/stat forms unrestricted). Scope changes, never skip — Step 0.7 holds.
