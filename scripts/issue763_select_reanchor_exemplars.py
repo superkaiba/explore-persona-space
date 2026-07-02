@@ -18,8 +18,8 @@ graded}]``) to the frozen gen-cell completion text
 Every tie chain ends in a lexicographic ``(context_id, probe)`` key so the
 selection is fully deterministic (structural argmin/argmax over ~3,000
 persisted rows — no model call, no seed). Each exemplar is a verbatim excerpt
-of the FIRST ≤120 words (whitespace-normalized for the single-line rubric
-anchor; marked ``[truncated]`` when cut), pinned with provenance
+(whitespace-normalized for the single-line rubric anchor; a genuinely
+over-length completion is cut head+tail — see ``_excerpt``), pinned with provenance
 ``{context_id, probe_sha256, parent_graded, parent_e0}`` in
 ``eval_results/issue_763/deception-rubric-reanchor/rubric_v2_exemplars.json``
 (committed — the plan-pinning llm-judging rule 6 requires).
@@ -67,17 +67,39 @@ def probe_sha256(probe: str) -> str:
     return hashlib.sha256(probe.encode("utf-8")).hexdigest()
 
 
+HEAD_WORDS = 100
+TAIL_WORDS = 60
+
+
 def _excerpt(text: str, max_words: int) -> tuple[str, bool, int]:
-    """First ≤``max_words`` words, whitespace-normalized -> (excerpt, truncated, n_words_full).
+    """Whitespace-normalized excerpt -> (excerpt, truncated, n_words_full).
 
     Whitespace is collapsed to single spaces so the excerpt sits verbatim-in-
-    words on the ONE anchor line of the v2 rubric; a cut excerpt is suffixed
-    ``[truncated]`` (plan §3a).
+    words on the ONE anchor line of the v2 rubric. A completion of
+    ≤``max_words`` words is kept whole; an over-length completion is
+    excerpted as the FIRST ``HEAD_WORDS`` + an elision marker + the LAST
+    ``TAIL_WORDS`` (~163 words total — inside the plan's deviation-allowed
+    80-200 band). STATED DEVIATION from the plan-sketch contiguous-prefix cut
+    (§11 marks the excerpt parameter ``ungrounded — needs smoke-test``): the
+    smoke found the selected 50-anchor's load-bearing move — a buried final
+    caveat — at words 225-268 of a 268-word completion, outside EVERY allowed
+    contiguous-prefix length, and a prefix-only excerpt would anchor
+    "50 = accurate-looking documentation", miscalibrating the very midpoint the
+    round exists to fix. Head+tail is deterministic, behavior-agnostic, and
+    generically captures end-buried hedges/caveats.
+
+    NO-OVERLAP GUARD: for ``max_words < len(words) <= HEAD_WORDS + TAIL_WORDS``
+    the head and tail windows would OVERLAP — duplicating middle words around
+    an elision marker that falsely implies dropped text — so such a completion
+    is returned WHOLE (nothing is actually elided; ≤160 words stays inside the
+    plan's 80-200 band). Only genuinely over-length completions are cut.
     """
     words = text.split()
-    if len(words) <= max_words:
+    if len(words) <= max(max_words, HEAD_WORDS + TAIL_WORDS):
         return " ".join(words), False, len(words)
-    return " ".join(words[:max_words]) + " [truncated]", True, len(words)
+    head = " ".join(words[:HEAD_WORDS])
+    tail = " ".join(words[-TAIL_WORDS:])
+    return f"{head} [... truncated ...] {tail}", True, len(words)
 
 
 def _join_rows(e0_per_ctx: dict[str, dict], gen_by_ctx: dict[str, dict]) -> list[dict]:
@@ -196,6 +218,12 @@ def select_exemplars(rows: list[dict], max_words: int) -> dict:
             ),
             "tie_break_final": "(len(text), context_id, probe) lexicographic — fully deterministic",
             "max_excerpt_words": max_words,
+            "over_length_excerpt": (
+                f"first {HEAD_WORDS} words + '[... truncated ...]' + last {TAIL_WORDS} words, "
+                f"applied only when n_words > max({max_words}, {HEAD_WORDS + TAIL_WORDS}) "
+                "(no-overlap guard: shorter completions are kept whole; stated deviation "
+                "from the plan-sketch contiguous-prefix cut — see _excerpt docstring)"
+            ),
             "whitespace_normalized": True,
         },
         "candidate_counts": {
