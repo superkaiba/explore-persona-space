@@ -5300,8 +5300,8 @@
     "822": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/822",
-      "status": "running",
+      "path": "tasks/reviewing/822",
+      "status": "reviewing",
       "title": "workflow-fix: code-reviewer must FAIL on missing smoke-architecture-check marker"
     },
     "823": {
