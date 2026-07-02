@@ -30,7 +30,7 @@ goal: 'On Qwen2.5-7B-Instruct base model, determine which answer-side summary of
 
 ## Takeaways
 
-- **Max-pool is the strongest answer-side summary for the linear context→answer map: held-out skill +0.826 (layer 21) vs the mean baseline's +0.800 (layer 18)**; n = 50 contexts, no training.
+- **Max-pool satisfies the planned win criterion for the linear context→answer map: held-out skill +0.826 (layer 21) vs the mean baseline's +0.800 (layer 18)** — point estimates, n = 50 contexts, no training.
 - The max-pool edge is decisive only at layers 19–26 (window chosen after seeing the profile); it trails the mean at seven early/mid layers, and peak-vs-peak is unresolved (p = 0.23).
 - **The turn-boundary hypothesis is refuted**: the newline after the turn end (+0.735) and the turn-end token (+0.664) trail the mean summary at every non-degenerate layer.
 - **No summary rescues behavior read-out** on the 3 behaviors tested (the 5 planned low-yield behaviors deferred): the two-method statistic 0.427 sits inside its null band 0.564 (p = 0.92).
@@ -108,21 +108,21 @@ Both figures show the reconstruction leg (n = 50 contexts): per-layer held-out s
 
 > **Figure.** *The pooled late-layer edge is variance-weighted.* Per-context error fraction at layer 21, mean (x) vs max-pool (y); points below the diagonal favor max-pool — 17 of 50 contexts, which carry 72% of the pooled target variance. Labels mark the 10 most off-diagonal contexts.
 
-Max-pool satisfies the planned win criterion, and the ranking is estimator-robust (rank agreement 0.991 with the nonlinear check). But the profile is non-monotone: max-pool trails the mean by more than 0.02 at seven early/mid layers, and peak-vs-peak is unresolved (+0.026, p = 0.23). The late-window gap (+0.118, layers 19–26) is exploratory — chosen after seeing the profile; the window fixed in advance (layers 14–22) gives +0.019. A length/norm pooling artifact remains untested.
+Max-pool satisfies the planned win criterion, and the ranking is stable across estimators (rank agreement 0.991 with the nonlinear check). But the profile is non-monotone: max-pool trails the mean by more than 0.02 at seven early/mid layers, and peak-vs-peak is unresolved (+0.026, p = 0.23). The late-window gap (+0.118, layers 19–26) is exploratory — chosen after seeing the profile; the window fixed in advance (layers 14–22) gives +0.019. A length/norm pooling artifact remains untested.
 
 ### The turn-boundary hypothesis is refuted: answer-side boundary tokens trail the mean summary at every non-degenerate layer
 
-The heatmap shows held-out reconstruction skill for every single-position summary: rows are answer positions (the turn-end token, the newline after it, 16 end-aligned and 16 start-aligned content positions), columns layers 0–27 (n = 50).
+Held-out reconstruction skill for every single-position summary: rows are answer positions (the turn-end token, the newline after it, 16 end-aligned and 16 start-aligned content positions), columns layers 0–27 (n = 50).
 
 ![Position by layer heatmap of held-out reconstruction skill; the two turn-boundary rows at the top are the brightest single positions and deep end-aligned positions are darkest](https://raw.githubusercontent.com/superkaiba/explore-persona-space/caf3d8f3704da09d916a341ddadbf9d6355976bd/figures/issue_810/hero2_position_heatmap.png)
 
 > **Figure.** *No single position matches the whole-answer aggregates.* Position × layer heatmap of held-out skill, n = 50. The two boundary rows (top) are the brightest single positions — peaking at +0.735 (newline after turn end) and +0.664 (turn-end token) vs mean +0.800 and max-pool +0.826 — early start-aligned positions come next; deep end-aligned positions are darkest.
 
-The newline after the turn end — the exact answer-side mirror of the boundary read that wins on the context side — trails the mean summary at every layer except the degenerate layer 0, and the best single content position reaches only +0.471. The answer profile the context predicts is an aggregate property of the whole response, not a boundary-token cache. The boundary token does share a large near-constant component with the context vector (cosine 0.62–0.69 at mid layers), but the skill target is train-fold centered, so a constant cannot explain this — and the boundary lost anyway.
+The newline after the turn end — the exact answer-side mirror of the boundary read that wins on the context side — trails the mean summary at every layer except the degenerate layer 0. The same ordering held in all 27 non-degenerate comparisons, and the best single content position reaches only +0.471. No single boundary token carries the answer profile the context predicts; it is a property of the whole response. The boundary token does share a large near-constant component with the context vector (cosine 0.62–0.69 at mid layers), but the skill target is train-fold centered, so a constant cannot explain this — and the boundary lost anyway.
 
 ### No answer-side summary rescues behavior read-out: the two-method statistic (0.427) sits inside its null band (0.564, p = 0.92)
 
-The heatmaps show read-out ρ — held-out rank correlation between each cell's prediction and the graded 0–100 behavior-expression score — per behavior × summary at each cell's maximum-magnitude layer, for the fixed-direction (left) and trained-ridge (right) methods, with each method's null band in the panel title (n = 50).
+Read-out ρ (held-out rank correlation between each cell's prediction and the graded 0–100 behavior-expression score), per behavior × summary at each cell's maximum-magnitude layer: fixed-direction method left, trained-ridge right, each method's null band in the panel title (n = 50).
 
 ![Behavior by summary heatmaps of read-out correlation at the maximum-magnitude layer for the fixed-direction and trained-ridge methods, with each panel's selection-symmetric null band in its title](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2511ed7da083434d4aa7a4cdefc878a0e148a0aa/figures/issue_810/hero3_readout_heatmap.png)
 
@@ -138,7 +138,7 @@ The figure plots refusal read-out ρ along the fixed behavior direction, per lay
 
 > **Figure.** *The refusal signal is negative and sign-stable across depth.* Held-out ρ per layer for three summaries; the newline-after-turn-end summary reaches −0.607 at layer 22, just past the dashed band (p = 0.013); only layer 27 flips positive. The anti-correlation concentrates in the mean- and boundary-class summaries.
 
-Contexts whose answer summaries project higher on the refusal direction expressed *less* refusal — the opposite of the hypothesized direction. The signal clears its band on a clean target but stays low-confidence: the reading is exploratory (the binding statistic was the two-method conjunction), band-edge, and length-confounded (answer length correlates with graded refusal at −0.25 and with winning-cell predictions at −0.21 to −0.43). The stronger sibling — harmful compliance, peak −0.685 — is exactly the contaminated target (see Methodology); a mixture target with inverted polarity can manufacture a stable anti-correlation, so it is quarantined, not a finding. Follow-up diagnostics on existing artifacts will sharpen or retire this.
+Contexts whose answer summaries project higher on the refusal direction expressed *less* refusal — the opposite of the hypothesized direction. The signal clears its band on a clean target but stays low-confidence: the reading is exploratory (the binding statistic was the two-method conjunction) and sits at the band edge. Answer length is a live confound: it correlates with graded refusal at −0.25 and with winning-cell predictions at −0.21 to −0.43. The stronger sibling, harmful compliance (peak −0.685), is exactly the contaminated target (see Methodology); a mixture target with inverted polarity can manufacture a stable anti-correlation, so we quarantine it rather than count it. A length-partialled recompute of this read (queued on the existing artifacts) will sharpen or retire it.
 
 ---
 
