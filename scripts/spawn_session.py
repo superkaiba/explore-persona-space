@@ -346,23 +346,24 @@ def _register_autonomous_session(
             existing = {}
         old_sid = existing.get("happy_session_id") if isinstance(existing, dict) else None
         old_ts = existing.get("spawned_at") if isinstance(existing, dict) else None
+        # Collision window capped at the 900 s DEFAULT: raising
+        # EPM_DISPATCH_LEASE_TTL_S lengthens the LEASE but must never widen
+        # this window past RESPAWN_SPAWN_GRACE_S, or a raised TTL would
+        # suppress legitimate crash-recovery respawns (round-1 hardening).
+        window_s = min(_dispatch_lease_ttl_s(), float(DISPATCH_LEASE_TTL_S))
         if (
             isinstance(old_sid, str)
             and old_sid
             and old_sid != session_id
             and isinstance(old_ts, int | float)
             and not isinstance(old_ts, bool)
-            # Collision window capped at the 900 s DEFAULT: raising
-            # EPM_DISPATCH_LEASE_TTL_S lengthens the LEASE but must never widen
-            # this window past RESPAWN_SPAWN_GRACE_S, or a raised TTL would
-            # suppress legitimate crash-recovery respawns (round-1 hardening).
-            and time.time() - old_ts < min(_dispatch_lease_ttl_s(), float(DISPATCH_LEASE_TTL_S))
+            and time.time() - old_ts < window_s
         ):
             age_s = time.time() - old_ts
             raise RegistrationCollisionError(
                 f"issue-{issue}.json already names session {old_sid} spawned "
-                f"{age_s:.0f}s ago (< {min(_dispatch_lease_ttl_s(), float(DISPATCH_LEASE_TTL_S)):.0f}s "
-                f"window); refusing to overwrite — duplicate dispatch",
+                f"{age_s:.0f}s ago (< {window_s:.0f}s window); refusing to "
+                f"overwrite — duplicate dispatch",
                 existing_session_id=old_sid,
                 age_s=age_s,
             )
