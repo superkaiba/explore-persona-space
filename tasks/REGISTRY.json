@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 869,
+  "highest_id": 876,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5258,8 +5258,8 @@
       "goal": "Reproduce Persona Vectors' three non-prediction experiments (steering/causal control, preventative steering during finetuning, pre-finetuning data screening) on Qwen2.5-7B for evil/sycophancy/hallucination, each with a norm-matched random-direction baseline the paper never ran, to test whether the persona-vector direction's causal and screening power is trait-specific or matched by a random direction.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/816",
-      "status": "verifying",
+      "path": "tasks/interpreting/816",
+      "status": "interpreting",
       "title": "Reproduce Persona Vectors' steering, preventative-steering, and data-screening experiments on Qwen2.5-7B with a norm-matched random-direction baseline"
     },
     "817": {
@@ -5507,8 +5507,8 @@
     "849": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/849",
-      "status": "reviewing",
+      "path": "tasks/completed/849",
+      "status": "completed",
       "title": "workflow-fix: watcher CPU/memory-pressure escalation arm for the shared VM"
     },
     "85": {
@@ -5521,8 +5521,8 @@
     "850": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/850",
-      "status": "running",
+      "path": "tasks/completed/850",
+      "status": "completed",
       "title": "workflow-fix: analyzer.md context-budget protocol (spawn thrash)"
     },
     "851": {
@@ -5549,22 +5549,22 @@
     "854": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/854",
-      "status": "running",
+      "path": "tasks/completed/854",
+      "status": "completed",
       "title": "workflow-fix: GCP EXIT-trap poweroff races crash-diagnostics upload"
     },
     "855": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/855",
-      "status": "running",
+      "path": "tasks/completed/855",
+      "status": "completed",
       "title": "workflow-fix: chunk-cap calibration lesson (gotchas + vectorize rule)"
     },
     "856": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/856",
-      "status": "proposed",
+      "path": "tasks/running/856",
+      "status": "running",
       "title": "workflow-fix: durable-output check before reviewer no-show fallback"
     },
     "857": {
@@ -5654,9 +5654,58 @@
     "869": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/869",
-      "status": "proposed",
+      "path": "tasks/planning/869",
+      "status": "planning",
       "title": "workflow-fix: broaden vectorize/compute-sizing beyond GD fits"
+    },
+    "870": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/870",
+      "status": "planning",
+      "title": "workflow-fix: compute-deviation gains mandatory vectorize-first lever"
+    },
+    "871": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/871",
+      "status": "planning",
+      "title": "workflow-fix: artifact-reuse fitness check gains throughput item (i)"
+    },
+    "872": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/872",
+      "status": "planning",
+      "title": "workflow-fix: vectorized rewrites land on main + tombstone serial twin"
+    },
+    "873": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/873",
+      "status": "planning",
+      "title": "workflow-fix: poller phase-ETA tripwire + m-of-N GPU-width advisory"
+    },
+    "874": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/874",
+      "status": "planning",
+      "title": "workflow-fix: compute-character statement on plannerless launch paths"
+    },
+    "875": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/875",
+      "status": "planning",
+      "title": "workflow-fix: work-conserving dispatcher + per-row IO review lens"
+    },
+    "876": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/876",
+      "status": "planning",
+      "title": "Parametrize DEVICE in issue658_fit_predictors.py (CPU pin hit #763/#812)"
     },
     "88": {
       "has_clean_result": true,

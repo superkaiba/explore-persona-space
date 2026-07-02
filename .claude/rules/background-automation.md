@@ -152,7 +152,7 @@ themselves in a worktree.
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
 detector, orphan-file sweep, the infra-drain pass, the capacity-retry pass,
 the gate-push pass, the program-orchestrator recovery pass, the
-stale-registration pass, and three session reapers — the session-vs-status
+stale-registration pass, the CPU/memory-pressure guard pass, and three session reapers — the session-vs-status
 reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
 
 **Stall-detection hardening (#845; the five 2026-07-01 incident classes).**
@@ -518,6 +518,51 @@ no-ops (the spawn-path guard owns the precise `missing` reachability
 disambiguation via `daemon.state.json`). `--happy-patch-only` runs just this
 pass (pair with `--dry-run` for a live smoke). Pinned by
 `tests/test_happy_patch_check.py` (`test_watcher_pass_*`).
+
+**CPU/memory-pressure guard pass (task #849, `cpu_guard_pass`).** A
+daemon-INDEPENDENT, escalate-only pass (runs every 10-min tick in the
+daemon-independent block right after `happy_patch_pass`) giving the fleet a
+CPU/memory-pressure detection + attribution channel on the shared 32-core VM
+(2026-07-02 incident: load 186-226 for hours; earlyoom SIGTERM sweeps silently
+killed 4-7 GB analysis workers — exit 143, no traceback, misattributed for
+hours). **Signals + thresholds** (each leg skips cleanly when its source is
+unreadable — a missing signal never fires and never masks the others):
+load5 > 1.5x nproc (`EPM_VM_CPU_GUARD_LOAD_FACTOR`), PSI cpu `some avg10` > 50
+(`EPM_VM_CPU_GUARD_PSI_CPU_PCT`), PSI memory `full avg10` > 10
+(`EPM_VM_CPU_GUARD_PSI_MEM_PCT`) — these three are RATE signals and need
+**2 consecutive hot ticks** (~20 min at the 10-min cron,
+`EPM_VM_CPU_GUARD_TICKS`) so a healthy short burst never alerts — PLUS a
+**SINGLE-TICK urgent MemAvailable floor** at < 20% of MemTotal
+(`EPM_VM_CPU_GUARD_MEMAVAIL_PCT`): memory can collapse 15%→3% inside one
+10-min interval, and 20% sits one band above earlyoom's 10% kill floor, so
+this leg fires while culprits are still alive — the fire stores a rolling
+**pre-kill top-process snapshot** (top-CPU ∪ top-RSS via one `ps` call,
+pid → issue via `/proc/<pid>/cwd` + cmdline hints) in the state file. A fire
+writes ONE attributed `kind=vm-cpu-pressure` row to the DEDICATED sidecar
+`.claude/cache/cpu-guard-events.jsonl` + a deduped `_telegram_push` (digest
+queue); in-episode repeats are suppressed unless load5 grows > 25% or the
+reason set changes, and recovery (no hot signals) resets the episode so a
+later re-overload fires afresh. **earlyoom kill surfacing** runs EVERY tick,
+threshold-independent: new journal kill lines (persistent cursor + key dedup;
+first-run lookback deliberately ~30 min — the watcher is a monitor, not a
+backfill tool; post-outage re-scan capped at 24 h) each produce one
+`kind=earlyoom-kill` row carrying an explicit **`attribution_status:
+attributed | unattributed`** — `attributed` (with `attribution_source:
+pre-kill-snapshot`) only when the killed pid (or a unique comm) matches the
+rolling snapshot; a sudden sub-tick collapse that beat the snapshot yields an
+honest `unattributed` row (visibility guaranteed, attribution best-effort).
+A failing/missing `journalctl` degrades the kill arm VISIBLY (stderr line +
+`kill_arm: "unavailable"` on any pressure row that tick, cursor not
+advanced), never silently. **WARN-ONLY:** never kills, never renices, never
+signals any process (pinned by
+`tests/test_cpu_guard_pass.py::test_cpu_guard_never_kills`). State singleton
+`~/.eps-autonomous/vm-cpu-guard.json` (atomic write; `isinstance` type-guards
+on every field read back). Kill switch `EPM_DISABLE_CPU_GUARD_PASS=1`;
+`--cpu-guard-only` runs just this pass (pair with `--dry-run` for a live
+smoke — dry-run performs zero writes and zero `subprocess.run`). NOTE: the
+disk-guard ack-sentinel mechanism is DELIBERATELY omitted here — CPU/memory
+episodes self-terminate on recovery (unlike a persistently-full disk), so the
+recovery reset already bounds re-alert churn.
 
 ## Dedicated data disk for `.claude/worktrees/` (#681)
 

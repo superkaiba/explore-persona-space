@@ -110,6 +110,29 @@ reduction, then memory-bounded chunked batched projection + correlation —
 fix item 3 realized in code). Import or mirror them for any new draw battery
 instead of writing a fresh serial loop.
 
+## Memory sizing: calibrate the chunk cap from a MEASURED peak
+
+Vectorizing trades many tiny fits for a few LARGE batched tensors, so the
+batched path needs a memory-aware chunk cap — and the cap's live-tensor
+factor must come from a MEASURED real-shape peak, never from counting the
+code's explicit temporaries. The named intermediates undercount the true
+per-chunk peak ~6×: the autograd backward graph, AdamW moment buffers, and
+allocator high-water retention dominate (#811 r8: a factor-4 explicit-
+temporary count picked c=218, whose real ~36 GiB peak re-OOM'd the exact
+shape the cap protected — n=480, d_in=3584). Canonical implementation:
+`resolve_chunk_cap()` in the helper above (`live_factor=26`, measured:
+~10.7 GiB ru_maxrss delta on one c=64 chunk ≈ 26× the single
+`(c, n, d_in)` fp32 tensor; built on the `issue-811` branch, on `main` once
+#811's worktree auto-merges). Recipe: run ONE chunk at the production shape
+in a fresh process, read the ru_maxrss / `torch.cuda.mem_get_info` delta,
+set the factor from that; the factor is shape/optimizer/precision-specific —
+re-measure when any change. Modest over-estimation is cheap (a larger factor
+only adds chunk count at constant FLOPs — chunk size must not change
+results, pinned by a chunk-size-invariance test); and LOG the resolved cap +
+the probed free bytes at the cap site so the next OOM is diagnosable from
+the log alone. Full trap-and-fix entry: `.claude/rules/gotchas.md`
+§ "Memory caps for torch fit loops".
+
 ## Relation to the compute-character carve-out
 
 `CLAUDE.md` § "compute-character carve-out" (+ `planner.md` §9, `critic.md`
@@ -130,7 +153,8 @@ bigger CPU pod fixes redundant per-draw pool re-reduction.
 during #722 at commit `19a5758fab`, landed on `main` via #740);
 incidents #722 (base-skill-over-mean, 19.5 CPU-h), #658 (`_fit_mlp_loco`),
 #778 (`perm_null_draws` serial null battery, ~15h projected across its draw
-loops → ~70× batched subset-sum GEMM).
+loops → ~70× batched subset-sum GEMM), #811 r8 (`resolve_chunk_cap`
+live_factor 4→26 — measured-peak chunk-cap calibration).
 
 **Sibling rule:** `.claude/rules/selection-symmetric-nulls.md` — the same #778
 null battery is its origin incident; a permutation/bootstrap-battery plan
