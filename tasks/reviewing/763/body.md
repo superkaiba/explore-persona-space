@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_763.md](https://github.com/superkaiba/explore-persona-space/blob/bf47ab112249b3b5b79c2d2afa52a26b280afe11/docs/methodology/issue_763.md) · [gist](https://gist.github.com/superkaiba/ff9725fdd2564e1432b4c5a0f0c324ae)
+
 ## Takeaways
 
 - Matched probes + graded E0: LOCO **ρ = 0.71/0.62/0.74/0.86** (fact_expression/format_style/self_report/persona_drift; the last two are m=20 reduced-power reads), all **shuffle p ≤ 0.001**, control-task pass (format_style misses one of the two pass criteria) — behaviors previously scored unpredictable at m=8.
