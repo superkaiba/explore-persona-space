@@ -5337,8 +5337,8 @@
     "827": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/827",
-      "status": "proposed",
+      "path": "tasks/archived/827",
+      "status": "archived",
       "title": "workflow-fix: liveness-veto the #664 zombie-GPU stall flag (2-tick persistence)"
     },
     "828": {
