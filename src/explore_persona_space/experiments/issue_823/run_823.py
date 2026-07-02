@@ -1453,7 +1453,10 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
 
     from sklearn.model_selection import KFold
 
-    from explore_persona_space.experiments.issue_779.fit_h import ridge_fit_predict_fast
+    from explore_persona_space.experiments.issue_779.fit_h import (
+        ridge_fit_predict,
+        ridge_fit_predict_fast,
+    )
 
     # Load bundle
     bundle_path = pathlib.Path(
@@ -1527,7 +1530,24 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
     # ridge_fit_predict_fast (the #779 Gram-eigh twin), parity-gated here at
     # full size against the canonical SVD path before any fit is trusted.
     _ridge_device = os.environ.get("EPS_RIDGE_DEVICE", "cpu")
-    _ridge_equivalence_gate(cx_last_full, v_a_prime, kf, device=_ridge_device)
+    _ridge_solver = os.environ.get("EPS_RIDGE_SOLVER", "canonical")
+    if _ridge_solver == "fast":
+        # OPT-IN Gram-eigh fast solver. Live parity slice on the #823 inputs
+        # (2026-07-02, n_tr~3998, H=3584, 2 layers x 5 folds): max rel diff
+        # ~1.7e-5 vs the canonical SVD path — FAILED the <=1e-8 ship gate (the
+        # #779 8e-13 figure was measured at n=500, where the squared-condition
+        # Gram is benign). Therefore NOT the default; the full-size gate below
+        # hard-raises on divergence, so this branch cannot silently ship
+        # off-parity numbers.
+        _ridge_equivalence_gate(cx_last_full, v_a_prime, kf, device=_ridge_device)
+
+        def _fit(x_tr: np.ndarray, y_tr: np.ndarray, x_ev: np.ndarray) -> np.ndarray:
+            return ridge_fit_predict_fast(x_tr, y_tr, x_ev, device=_ridge_device)
+    else:
+        # Canonical numpy-SVD path — the dedupe below reuses IDENTICAL
+        # deterministic computations, so outputs are bit-identical to the
+        # unpatched loops.
+        _fit = ridge_fit_predict
 
     # Fold splits depend only on n (KFold re-derives from random_state on every
     # .split call), so materialize once and reuse everywhere.
@@ -1562,9 +1582,7 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
             Y = Y_target_s[:, layer_idx, :]  # (n, 3584)
             r2_folds: list[float] = []
             for train_idx, val_idx in folds:
-                Y_pred = ridge_fit_predict_fast(
-                    X[train_idx], Y[train_idx], X[val_idx], device=_ridge_device
-                )
+                Y_pred = _fit(X[train_idx], Y[train_idx], X[val_idx])
                 ss_res = float(np.sum((Y[val_idx] - Y_pred) ** 2))
                 ss_tot = float(np.sum((Y[val_idx] - Y[val_idx].mean(0)) ** 2))
                 r2_folds.append(1.0 - ss_res / (ss_tot + 1e-12))
@@ -1610,9 +1628,7 @@ def phase4_ridge_refit(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -> 
         Y_a = v_x_full[:, layer_idx, :]
         r2_folds_a: list[float] = []
         for train_idx_a, val_idx_a in folds:
-            Y_pred_a = ridge_fit_predict_fast(
-                X_a[train_idx_a], Y_a[train_idx_a], X_a[val_idx_a], device=_ridge_device
-            )
+            Y_pred_a = _fit(X_a[train_idx_a], Y_a[train_idx_a], X_a[val_idx_a])
             ss_res_a = float(np.sum((Y_a[val_idx_a] - Y_pred_a) ** 2))
             ss_tot_a = float(np.sum((Y_a[val_idx_a] - Y_a[val_idx_a].mean(0)) ** 2))
             r2_folds_a.append(1.0 - ss_res_a / (ss_tot_a + 1e-12))

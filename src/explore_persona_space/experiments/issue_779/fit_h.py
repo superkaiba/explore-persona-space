@@ -106,10 +106,15 @@ def ridge_fit_predict_fast(
     lambdas: np.ndarray | None = None,
     device: str = "cpu",
 ) -> np.ndarray:
-    """Torch-eigh Gram-space ridge — the fast, verified-equivalent twin of
+    """Torch-eigh Gram-space ridge — fast APPROXIMATE twin of
     :func:`ridge_fit_predict` (same standardize-X / center-Y / GCV-lambda-select /
-    un-center recipe; identical predictions to ~8e-13 and identical selected
-    lambda in the #779 Read-1 equivalence gate).
+    un-center recipe). PARITY IS SIZE-DEPENDENT: the #779 Read-1 gate measured
+    ~8e-13 agreement at n_train=500, but a live #823 full-size slice
+    (2026-07-02, n_train~3998, H=3584) measured max rel diff ~1.7e-5 vs the SVD
+    path — the Gram squares the condition number, so precision degrades with n.
+    NOT a default-on substitute: callers MUST run a full-size slow-vs-fast
+    parity gate on their own inputs (e.g. run_823._ridge_equivalence_gate) and
+    ship it only when the gate passes their tolerance.
 
     Ported VERBATIM from ``scripts/issue779_percontext_recon.py::_ridge_fit_predict_fast``
     (the #779 fast path that cut 140 CV fits from ~5 h to ~28 min) into the shared
