@@ -12,6 +12,11 @@ crash.
 
 from __future__ import annotations
 
+import json
+import sys
+from pathlib import Path
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -234,3 +239,174 @@ def test_glm_loco_smoke_tiny_slice_runs():
     out = glm_predict_loco(x, rate, np.full(3, 5))
     assert out["pred"].shape == (3,)
     assert np.all(np.isfinite(out["pred"]))
+
+
+# ── refresh-mode guardrails (deception-rubric-reanchor guard-fix round 2) ─────
+#
+# Offline pins for the two round-2 guard fixes on scripts/issue763_fit_predictors.py:
+# 1. CONCERN reliability-refresh-default-outdir-parent-writable — BOTH refresh
+#    modes require an explicit --out-dir and refuse the PARENT artifact root
+#    (a flagless rerun would patch eval_results/issue_763's committed
+#    fit_by_behavior/*.json + matched_predictor_results.json in place).
+# 2. Mode-order revert hazard — --refresh-metadata-only re-run AFTER
+#    --reliability-refresh-only preserves the round record's ALIGNED ceiling
+#    fields (split_half_probe_aligned_v2) instead of reverting them to the
+#    parent's legacy values.
+
+_REPO = Path(__file__).resolve().parent.parent
+if str(_REPO / "scripts") not in sys.path:
+    sys.path.insert(0, str(_REPO / "scripts"))
+
+
+def _fit_module():
+    """Import the fit script lazily (heavy: torch/statsmodels) so the pure-numpy
+    tests above stay unaffected at collection time."""
+    import issue763_fit_predictors as F
+
+    return F
+
+
+def _write(path: Path, obj) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(obj))
+
+
+_PARENT_REC = {
+    "behavior": "deception",
+    "n_contexts": 2,
+    "m": 60,
+    "m_e0": 60,
+    "reduced_power": False,
+    "yield_floor": 48,
+    "any_shortfall": False,
+    "n_shortfall_cells": 0,
+    "median_n_judged": 50.0,
+    "rubric_version": "v1",
+    "rho_graded_ridge": 0.5,
+    "sqrt_r_yy_graded": 0.2,
+    "sqrt_r_yy_graded_ci": [0.1, 0.3],
+    "sqrt_r_yy": 0.2,
+    "sqrt_r_yy_ci": [0.1, 0.3],
+    "sqrt_r_yy_binomial": 0.9,
+    "sqrt_r_yy_binary": 0.15,
+    "triage_verdict": "noise_limited",
+    "triage_verdict_binary": "noise_limited",
+}
+
+# The fields --reliability-refresh-only patched onto the round checkpoint (the
+# aligned re-emit); a later metadata re-run must carry ALL of them verbatim.
+_ALIGNED_FIELDS = {
+    "sqrt_r_yy_graded": 0.55,
+    "sqrt_r_yy_graded_ci": [0.4, 0.7],
+    "sqrt_r_yy": 0.55,
+    "sqrt_r_yy_ci": [0.4, 0.7],
+    "sqrt_r_yy_binomial": 0.9,
+    "sqrt_r_yy_binary": 0.5,
+    "triage_verdict": "works",
+    "triage_verdict_binary": "works",
+    "reliability_estimator": "split_half_probe_aligned_v2",
+    "reliability_e0_source": "round/E0_deception_v2.json",
+    "sqrt_r_yy_graded_legacy_independent": 0.2,
+    "sqrt_r_yy_graded_ci_legacy_independent": [0.1, 0.3],
+    "sqrt_r_yy_binary_legacy_independent": 0.15,
+    "triage_verdict_legacy_independent": "noise_limited",
+    "triage_verdict_binary_legacy_independent": "noise_limited",
+    "reliability_bracket_graded": {"sqrt_r_yy": 0.55, "method": "aligned"},
+    "reliability_bracket_binary": {"sqrt_r_yy": 0.5, "method": "aligned"},
+}
+
+_E0 = {
+    "yield_flags": {"deception": {"m_B": 60}},
+    "judge_diagnostics": {"deception": {"r_jj": 0.8, "graded_binary_tracking_spearman": 0.7}},
+    "e0": {"deception": {"c1": {"n_judged": 50}, "c2": {"n_judged": 50}}},
+}
+
+
+@pytest.mark.parametrize("flag", ["--reliability-refresh-only", "--refresh-metadata-only"])
+def test_refresh_modes_require_explicit_out_dir(monkeypatch, tmp_path, flag):
+    """Item 1 leg A: a FLAGLESS refresh rerun (no --out-dir) fails loud before any write."""
+    F = _fit_module()
+    monkeypatch.setattr(F, "EVAL_RESULTS_DIR", tmp_path / "eval_results")
+    monkeypatch.setattr(
+        sys, "argv", ["issue763_fit_predictors.py", "--behaviors", "deception", flag]
+    )
+    with pytest.raises(SystemExit, match="explicit --out-dir"):
+        F.main()
+
+
+@pytest.mark.parametrize("flag", ["--reliability-refresh-only", "--refresh-metadata-only"])
+def test_refresh_out_dir_must_not_be_parent_root(monkeypatch, tmp_path, flag):
+    """Item 1 leg B: an --out-dir resolving to the PARENT artifact root is refused."""
+    F = _fit_module()
+    parent_root = tmp_path / "eval_results"
+    parent_root.mkdir()
+    monkeypatch.setattr(F, "EVAL_RESULTS_DIR", parent_root)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue763_fit_predictors.py",
+            "--behaviors",
+            "deception",
+            flag,
+            "--out-dir",
+            str(parent_root),
+        ],
+    )
+    with pytest.raises(SystemExit, match="PARENT artifact root"):
+        F.main()
+
+
+def test_metadata_refresh_preserves_aligned_reliability_fields(monkeypatch, tmp_path):
+    """Item 2: a metadata re-run AFTER the reliability refresh must NOT revert the
+    round checkpoint's aligned ceiling fields to the parent's legacy values."""
+    F = _fit_module()
+    monkeypatch.setattr(F, "EVAL_RESULTS_DIR", tmp_path / "eval_results")
+    monkeypatch.setattr(F, "load_frozen_pool_staged", lambda b: {"n_probes": 60})
+    parent_dir = tmp_path / "parent" / "fit_by_behavior"
+    out_dir = tmp_path / "round"
+    e0_path = tmp_path / "E0_parent.json"
+    _write(e0_path, _E0)
+    _write(parent_dir / "deception.json", _PARENT_REC)
+    round_rec = {**_PARENT_REC, "rubric_version": "v1-metadata-refresh", **_ALIGNED_FIELDS}
+    _write(out_dir / "fit_by_behavior" / "deception.json", round_rec)
+
+    ns = SimpleNamespace(behaviors=["deception"], parent_fit_dir=parent_dir)
+    rc = F._refresh_metadata_only(ns, out_dir, e0_path)
+    assert rc == 0
+
+    rec = json.loads((out_dir / "fit_by_behavior" / "deception.json").read_text())
+    # every aligned ceiling / verdict / provenance field survives verbatim
+    for k, v in _ALIGNED_FIELDS.items():
+        assert rec[k] == v, f"aligned field reverted by metadata refresh: {k}"
+    # the metadata fields were still refreshed
+    assert rec["rubric_version"] == "v1-metadata-refresh"
+    assert rec["m"] == 60
+    # the assembled output ships the preserved record
+    blob = json.loads((out_dir / "matched_predictor_results.json").read_text())
+    assert blob["by_behavior"]["deception"]["sqrt_r_yy"] == 0.55
+    assert (
+        blob["by_behavior"]["deception"]["reliability_estimator"] == "split_half_probe_aligned_v2"
+    )
+
+
+def test_metadata_refresh_without_aligned_round_checkpoint_unchanged(monkeypatch, tmp_path):
+    """Guard scoping: with NO aligned round checkpoint the refresh behaves as before
+    (plain parent + metadata patch; no reliability keys invented)."""
+    F = _fit_module()
+    monkeypatch.setattr(F, "EVAL_RESULTS_DIR", tmp_path / "eval_results")
+    monkeypatch.setattr(F, "load_frozen_pool_staged", lambda b: {"n_probes": 60})
+    parent_dir = tmp_path / "parent" / "fit_by_behavior"
+    out_dir = tmp_path / "round"
+    e0_path = tmp_path / "E0_parent.json"
+    _write(e0_path, _E0)
+    _write(parent_dir / "deception.json", _PARENT_REC)
+
+    ns = SimpleNamespace(behaviors=["deception"], parent_fit_dir=parent_dir)
+    rc = F._refresh_metadata_only(ns, out_dir, e0_path)
+    assert rc == 0
+
+    rec = json.loads((out_dir / "fit_by_behavior" / "deception.json").read_text())
+    assert "reliability_estimator" not in rec
+    assert rec["sqrt_r_yy"] == _PARENT_REC["sqrt_r_yy"]
+    assert rec["triage_verdict"] == _PARENT_REC["triage_verdict"]

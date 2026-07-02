@@ -954,6 +954,12 @@ def fit_behavior(behavior, v0, ctx_ids, e0, rb_blob, *, n_perms, n_boot, pool_m=
         "sqrt_r_yy": sqrt_r_yy_g,
         "sqrt_r_yy_ci": ceiling_g.get("sqrt_r_yy_ci"),
         "sqrt_r_yy_binomial": ceiling_g.get("sqrt_r_yy_binomial"),
+        # Estimator stamp (round-2 minor): compute_bracket defaults to the
+        # probe-ALIGNED crossed-design split-half, so a FRESH fit carries the
+        # same estimator tag the reliability refresh patches — without it the
+        # plot's estimator-named title (issue763_plot.py) would mislabel a
+        # future fresh fit as "independent split (legacy)".
+        "reliability_estimator": RELIABILITY_ESTIMATOR_ALIGNED,
         "shuffle_null_p": shuffle_g.get("p_value"),
         "shuffle_null_p95": shuffle_g.get("null_p95"),
         "control_task_pass": control_g["control_task_pass"],
@@ -1113,22 +1119,46 @@ def _refresh_metadata_only(args, out_dir: Path, e0_path: Path) -> int:
         patched = dict(parent)
         patched.update({k: meta[k] for k in _METADATA_PATCH_FIELDS if k != "rubric_version"})
         patched["rubric_version"] = "v1-metadata-refresh"
+        # ── Mode-order guard (round-2 minor, reconciler-endorsed): a metadata
+        # re-run AFTER --reliability-refresh-only must not silently revert the
+        # round record's ALIGNED ceiling fields back to the parent's legacy
+        # values. When the ROUND checkpoint already carries the aligned-estimator
+        # tag, carry its _RELIABILITY_PATCH_FIELDS over verbatim — this mode
+        # never computes reliability, so it never overwrites fields it did not
+        # compute. The identity asserts below widen by EXACTLY the preserved set.
+        preserved: set[str] = set()
+        round_path = ckpt_dir / f"{behavior}.json"
+        if round_path.exists():
+            existing = load_json(round_path)
+            if existing.get("reliability_estimator") == RELIABILITY_ESTIMATOR_ALIGNED:
+                for k in _RELIABILITY_PATCH_FIELDS:
+                    if k in existing:
+                        patched[k] = existing[k]
+                        preserved.add(k)
+                logger.info(
+                    "[refresh] %s: preserved %d aligned reliability fields from the "
+                    "round checkpoint (mode-order guard)",
+                    behavior,
+                    len(preserved),
+                )
         # ── NUMERIC-IDENTITY HARD ASSERT (JSON round-trip equality) ──
         parent_rt = json.loads(json.dumps(parent, sort_keys=True))
         patched_rt = json.loads(json.dumps(patched, sort_keys=True))
         drifted = [
             k
             for k in parent_rt
-            if k not in _METADATA_PATCH_FIELDS and patched_rt.get(k) != parent_rt[k]
+            if k not in _METADATA_PATCH_FIELDS
+            and k not in preserved
+            and patched_rt.get(k) != parent_rt[k]
         ]
         assert not drifted, (
             f"NUMERIC-IDENTITY GATE FAILED for {behavior}: non-metadata fields drifted "
             f"from the parent checkpoint: {drifted}"
         )
         new_keys = set(patched_rt) - set(parent_rt)
-        assert new_keys <= _METADATA_PATCH_FIELDS, (
+        assert new_keys <= (_METADATA_PATCH_FIELDS | preserved), (
             f"refresh added non-metadata keys for {behavior}: "
-            f"{sorted(new_keys - _METADATA_PATCH_FIELDS)}"
+            f"{sorted(new_keys - _METADATA_PATCH_FIELDS - preserved)}"
         )
         n_other = len([k for k in parent_rt if k not in _METADATA_PATCH_FIELDS])
         logger.info(
@@ -1241,6 +1271,16 @@ def _refresh_reliability_only(args, out_dir: Path, e0_path: Path) -> int:
         ckpt_path = ckpt_dir / f"{behavior}.json"
         rec = load_json(ckpt_path)
         if rec.get("reliability_estimator") == RELIABILITY_ESTIMATOR_ALIGNED:
+            if "sqrt_r_yy_graded_legacy_independent" not in rec:
+                # A FRESH fit stamped aligned at fit time (round-2 estimator
+                # stamp): its ceilings are aligned by construction and there are
+                # no shipped legacy values to reconstruct/gate against — nothing
+                # to realign; keep the record as-is (assembled from disk below).
+                logger.info(
+                    "[reliability-refresh] %s: fresh aligned fit (no legacy fields) — skipping",
+                    behavior,
+                )
+                continue
             # IDEMPOTENT re-run: rebuild the pre-patch record from the preserved
             # legacy fields so the gates + identity assert compare against the
             # SHIPPED (pre-realign) state, and the re-emit reproduces itself.
@@ -1442,6 +1482,30 @@ def _dispatch_refresh_mode(args, out_dir: Path, e0_path: Path) -> int | None:
     """
     if args.refresh_metadata_only and args.reliability_refresh_only:
         raise SystemExit("--refresh-metadata-only and --reliability-refresh-only are exclusive")
+    if args.refresh_metadata_only or args.reliability_refresh_only:
+        # ── Parent-artifact write guard (round-2 CONCERN
+        # reliability-refresh-default-outdir-parent-writable): both refresh modes
+        # REWRITE fit_by_behavior/*.json + matched_predictor_results.json under
+        # out_dir, and the flagless default resolves out_dir to the PARENT
+        # eval_results root — a flagless rerun would patch the parent's committed
+        # artifacts in place. Require an explicit --out-dir AND refuse the parent
+        # root itself (it is never a valid refresh target; pass a fresh round dir).
+        mode = (
+            "--refresh-metadata-only"
+            if args.refresh_metadata_only
+            else "--reliability-refresh-only"
+        )
+        if args.out_dir is None:
+            raise SystemExit(
+                f"{mode} requires an explicit --out-dir (a fresh ROUND directory): the "
+                f"flagless default resolves to the PARENT artifact root ({EVAL_RESULTS_DIR}), "
+                "and a refresh must never patch the parent artifacts in place"
+            )
+        if out_dir.resolve() == EVAL_RESULTS_DIR.resolve():
+            raise SystemExit(
+                f"{mode}: --out-dir {out_dir} resolves to the PARENT artifact root "
+                f"({EVAL_RESULTS_DIR}) — never a valid refresh target; pass a fresh round dir"
+            )
     if args.refresh_metadata_only:
         return _refresh_metadata_only(args, out_dir, e0_path)
     if args.reliability_refresh_only:
