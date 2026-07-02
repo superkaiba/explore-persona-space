@@ -1,0 +1,1 @@
+{"ts": "2026-07-02T04:17:23Z", "event": "raised", "concern_id": "fold-level-vs-context-level-bootstrap-ci", "severity": "CONCERN", "summary": "Bootstrap CI in _compute_stats is fold-level (n=5) not context-level (n~5000) as plan §6 requires; CI widths are not the valid PRIMARY uncertainty estimate", "raised_by": "experiment-implementer", "raised_at_round": 1}
