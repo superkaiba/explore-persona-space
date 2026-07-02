@@ -343,7 +343,9 @@ def test_quoted_breadcrumb_behaviorally_pinned():
         _ev(
             "2026-07-01T10:10:00Z",
             "epm:progress",
-            "note: earlier 'stage-dispatch stage=implementing round=1' crumb was cleared",
+            # No quote chars around the tokens — they must parse cleanly (round=1 as int) so a
+            # substring-anchored impl WOULD accept this note as a fresh crumb and fail the test.
+            "note: earlier stage-dispatch stage=implementing round=1 crumb was cleared",
         ),
     ]
     assert (
