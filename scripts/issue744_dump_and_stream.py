@@ -84,7 +84,6 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import torch  # noqa: E402
-from dotenv import load_dotenv  # noqa: E402
 from issue404_common import reproducibility_metadata  # noqa: E402
 from issue744_common import (  # noqa: E402
     BROADER_RANDOM_POOL,
@@ -121,6 +120,7 @@ from explore_persona_space.analysis.continuity import (  # noqa: E402
     random_baseline,
 )
 from explore_persona_space.analysis.penn_parser import build_ns_gold_clause_mask  # noqa: E402
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
