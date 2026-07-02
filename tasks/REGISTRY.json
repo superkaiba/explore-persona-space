@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 851,
+  "highest_id": 852,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5531,6 +5531,13 @@
       "path": "tasks/proposed/851",
       "status": "proposed",
       "title": "artifacts: promote judge_graded + tf-margin to eval/ library (Phase 0a)"
+    },
+    "852": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/852",
+      "status": "proposed",
+      "title": "artifacts: Behavior + Context specs, registries, render_chat shim (Phase 0b)"
     },
     "88": {
       "has_clean_result": true,
