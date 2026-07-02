@@ -5542,8 +5542,8 @@
     "853": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/853",
-      "status": "planning",
+      "path": "tasks/approved/853",
+      "status": "approved",
       "title": "workflow-fix: gotchas entry \u2014 script-mode scripts.* imports crash pod-side"
     },
     "854": {
