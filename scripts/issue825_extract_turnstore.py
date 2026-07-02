@@ -22,6 +22,9 @@ path.
 from __future__ import annotations
 
 import argparse
+import contextlib
+import ctypes
+import gc
 import json
 import re
 import subprocess
@@ -540,6 +543,15 @@ def main() -> None:
         )
         n_done += len(records)
         del records, block
+        gc.collect()
+        # Return freed arena pages to the OS. The per-conv ~7 MB CPU tensors sit
+        # under glibc's dynamic mmap threshold, so without an explicit trim the
+        # freed blocks stay in the arena free lists and RSS climbs monotonically
+        # across blocks (run 5: 14.9 GiB anon RSS ~= 2 fully-retained flushed
+        # blocks + a partial third, despite `del`). Portability no-op guard only
+        # (non-glibc); this is an allocator hint, not a correctness path.
+        with contextlib.suppress(OSError):
+            ctypes.CDLL("libc.so.6").malloc_trim(0)
     print(f"[done] {n_done} conversations -> {len(paths)} shard(s) in {args.out_dir}")
 
 

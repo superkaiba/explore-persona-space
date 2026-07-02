@@ -18,6 +18,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Pin glibc's mmap threshold so the extractor's ~7 MB per-conv CPU tensors are
+# mmap-allocated and their pages RETURN to the OS on free. Without this, the
+# dynamic threshold migrates them into arena free lists and extract RSS climbs
+# monotonically across flushed blocks (run 5 kernel OOM at 14.9 GiB anon RSS).
+export MALLOC_MMAP_THRESHOLD_=131072
+
 PHASES=(gen_s gen_m render extract fit upload)
 DATA_DIR="data/issue_825"
 TS_DIR="$DATA_DIR/turnstore"
