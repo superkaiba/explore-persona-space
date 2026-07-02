@@ -1112,14 +1112,14 @@ def _fabricate_smoke_turnstore(turnstore_dir: Path, *, n: int = 24, dim: int = 1
             perpos = rng.normal(size=(n, 4, 8, len(FROZEN_LAYERS), dim)).astype(np.float16)
             nll = rng.uniform(1.0, 4.0, size=(n, 4)).astype(np.float32)
             np.savez(
-                turnstore_dir / f"{model_key}_{format_key}.npz",
+                turnstore_dir / f"{model_key}_{format_key}_m.npz",
                 slots=slots,
                 profiles=profiles,
                 perpos=perpos,
                 perpos_mask=np.ones((n, 4, 8), dtype=bool),
                 nll=nll,
             )
-            (turnstore_dir / f"{model_key}_{format_key}.json").write_text(
+            (turnstore_dir / f"{model_key}_{format_key}_m.json").write_text(
                 json.dumps({"conv_ids": [f"smoke_{i:03d}" for i in range(n)]})
             )
 
@@ -1128,6 +1128,46 @@ def _all_cells() -> tuple[list[dict], list[dict]]:
     within = [_normalize_cell(c) for c in list(WITHIN_ROLE_CELLS) + list(TRACK_S_CELLS)]
     cross = [_normalize_cell(c) for c in CROSS_ROLE_CELLS]
     return within, cross
+
+
+def _apply_gates(cell: dict, res: dict, args) -> None:
+    """Plan section 7 gate checks for the S1 anchor (G1) and the G3 cell.
+
+    Writes gate JSONs; HALTs with distinct exit codes on a production
+    failure (smoke exempt).
+    """
+    if cell["cell_id"] == "S1":
+        run_power_curve(res["xy"], args.out_dir, n_folds=args.folds, seed=args.seed)
+        g1 = g1_gate(
+            res["sweep"]["r2_obs"], args.out_dir, seed=args.seed, n=len(res["xy"]["conv_ids"])
+        )
+        if not g1["pass"] and not args.smoke:
+            print(
+                "[fit_cells] G1 REPLICATION GATE FAILED — see g1_gate.json; "
+                "HALT per plan section 7",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
+    if cell["cell_id"] == "M_instruct_assistant_chat":
+        summ = res["summary"]
+        g3_pass = bool(summ["obs_layer_max_r2"] > max(summ["null_layer_max_r2_per_draw"]))
+        _write_json(
+            args.out_dir / "g3_gate.json",
+            {
+                "metadata": _metadata(args.seed, len(res["xy"]["conv_ids"])),
+                "obs_layer_max_r2": summ["obs_layer_max_r2"],
+                "null_layer_max_r2_per_draw": summ["null_layer_max_r2_per_draw"],
+                "pass": g3_pass,
+            },
+        )
+        if not g3_pass and not args.smoke:
+            print(
+                "[fit_cells] G3 SANITY GATE FAILED — M_instruct_assistant_chat "
+                "does not beat its selection-inherited null; HALT per plan "
+                "section 7 before interpreting user cells",
+                file=sys.stderr,
+            )
+            raise SystemExit(3)
 
 
 def main() -> int:
@@ -1176,43 +1216,23 @@ def main() -> int:
                 n_boot=args.n_boot,
             )
         except FileNotFoundError as e:
+            if (
+                not args.smoke
+                and args.cells == "all"
+                and cell["cell_id"] in ("S1", "M_instruct_assistant_chat")
+            ):
+                # Gate cells (G1 anchor / G3 sanity) may never silently skip
+                # in a production full run — that would bypass the plan §7
+                # halts entirely (round-2 review hardening).
+                print(
+                    f"[fit_cells] FATAL: gate cell {cell['cell_id']} bundle missing: {e}",
+                    file=sys.stderr,
+                )
+                raise SystemExit(4) from e
             print(f"[fit_cells] SKIP {cell['cell_id']}: {e}")
             continue
         results[cell["cell_id"]] = res
-        if cell["cell_id"] == "S1":
-            run_power_curve(res["xy"], args.out_dir, n_folds=args.folds, seed=args.seed)
-            g1 = g1_gate(
-                res["sweep"]["r2_obs"], args.out_dir, seed=args.seed, n=len(res["xy"]["conv_ids"])
-            )
-            if not g1["pass"] and not args.smoke:
-                # Plan section 7 G1: materially outside the anchor = wiring
-                # bug -> HALT; never publish downstream cells past a failed
-                # replication anchor. g1_gate.json is already written.
-                raise SystemExit(
-                    "[fit_cells] G1 REPLICATION GATE FAILED — see g1_gate.json; "
-                    "HALT per plan section 7 (exit 2)"
-                )
-        if cell["cell_id"] == "M_instruct_assistant_chat":
-            # Plan section 7 G3: this cell must beat its selection-inherited
-            # shuffle null before any user cell is interpreted (observed
-            # layer-max vs the max of the null draws' own layer-maxes).
-            summ = res["summary"]
-            g3_pass = bool(summ["obs_layer_max_r2"] > max(summ["null_layer_max_r2_per_draw"]))
-            _write_json(
-                args.out_dir / "g3_gate.json",
-                {
-                    "metadata": _metadata(args.seed, len(res["xy"]["conv_ids"])),
-                    "obs_layer_max_r2": summ["obs_layer_max_r2"],
-                    "null_layer_max_r2_per_draw": summ["null_layer_max_r2_per_draw"],
-                    "pass": g3_pass,
-                },
-            )
-            if not g3_pass and not args.smoke:
-                raise SystemExit(
-                    "[fit_cells] G3 SANITY GATE FAILED — M_instruct_assistant_chat "
-                    "does not beat its selection-inherited null; HALT per plan "
-                    "section 7 before interpreting user cells (exit 3)"
-                )
+        _apply_gates(cell, res, args)
         if cell.get("format_key") == "chat":
             run_per_position(
                 cell, args.turnstore_dir, args.out_dir, n_folds=args.folds, seed=args.seed

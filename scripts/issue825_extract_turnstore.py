@@ -305,9 +305,9 @@ def process_batch(
                 # same 2 bytes. Finiteness asserted before storage.
                 "slots": _finite(slot_vecs.to(torch.bfloat16), "slots", r.conv_id),
                 "profiles": _finite(profiles.to(torch.bfloat16), "profiles", r.conv_id),
-                "perpos": perpos,
+                "perpos": _finite(perpos, "perpos", r.conv_id),
                 "perpos_mask": perpos_mask,
-                "nll": nll,
+                "nll": _finite(nll, "nll", r.conv_id),
                 "spans_meta": {
                     "conv_id": r.conv_id,
                     "format": r.format,
