@@ -230,6 +230,28 @@ Behaviours:
   The canonical pin ``claude-sonnet-4-5-20250929`` carries no forbidden
   substring, so it never matches. Motivating incident: the #650/#657 stale
   legacy-Haiku judge pins (#765).
+* ``--check-agent-tools`` (also bundled into the no-flags default run):
+  every ``.claude/agents/*.md`` must declare an explicit tool surface — a
+  ``tools:`` allowlist or a ``disallowedTools:`` denylist — in its YAML
+  frontmatter (task #840). An agent file with neither key inherits the
+  parent session's FULL tool inventory including every user-level MCP
+  server's tool schemas; incident #778 (2026-07-01): two
+  ``experiment-implementer`` spawns each paid ~168K static first-turn
+  tokens on the inlined schemas and died in autocompact thrash. Sub-checks:
+  (1) declaration required on every file; (2) mentioned ⊆ declared — every
+  spec-BODY tool mention per the widened extractor (explicit ``mcp__...``
+  tokens, the built-in literals ``WebSearch``/``WebFetch``/
+  ``NotebookEdit``/``TodoWrite``, the ``Agent``/``Skill`` phrase forms, and
+  prose MCP aliases such as "context7 MCP" →
+  ``mcp__plugin_context7_context7``) must be covered by the allowlist,
+  modulo the
+  :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` dict (descriptive-not-instructive
+  mentions, each waived with an inline reason); (2b) declared-name
+  validity — every DECLARED ``mcp__...`` token must name a server in
+  :data:`KNOWN_MCP_SERVERS` (the harness silently ignores unknown names,
+  so a typo strips a capability with no error); (3) a
+  ``disallowedTools:``-only file (research-pm) skips the containment check
+  but must not deny a body-mentioned tool.
 
 Exit codes:
 
@@ -675,6 +697,108 @@ AGENT_MODEL_PIN_RE = re.compile(
 # (the only suffix the harness currently exposes for a model pin); any
 # other tail is treated as part of an unknown base id and flagged.
 AGENT_MODEL_1M_SUFFIX = "[1m]"
+
+
+# `--check-agent-tools`: every `.claude/agents/*.md` must declare an explicit
+# tool surface — a `tools:` allowlist or a `disallowedTools:` denylist — in
+# its YAML frontmatter. An agent file with NEITHER key inherits the parent
+# session's FULL tool inventory, including every user-level MCP server's tool
+# schemas (todoist ~100, google-workspace ~90, playwright ~35, runpod ~28,
+# ...); incident #778 (2026-07-01): two `experiment-implementer` spawns each
+# paid ~168K static first-turn tokens on the inlined MCP schemas and died in
+# autocompact thrash. Task #840 added explicit declarations to all 28 files;
+# this check keeps the invariant durable (a NEW agent file landing without a
+# declaration reintroduces the bug silently).
+#
+# Three sub-checks per file (see `check_agent_tools`):
+#   1. declaration required (`tools:` or `disallowedTools:` present);
+#   2. mentioned ⊆ declared — a spec-BODY tool mention (explicit `mcp__...`
+#      token, built-in literal name, `Agent`/`Skill` phrase form, or a prose
+#      MCP alias like "context7 MCP") must be covered by the declaration,
+#      modulo :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` (descriptive-not-
+#      instructive mentions, each with an inline reason);
+#   2b. declared-name validity — every DECLARED `mcp__...` token must name a
+#      server in :data:`KNOWN_MCP_SERVERS` (a silent typo like
+#      `mcp__plugin_context7_contex7` strips a capability with no error);
+#   3. denylist files — no BODY-mentioned token may be denied.
+#
+# Known MCP server names, snapshotted from the live runtime tool-name strings
+# (`mcp__<server>__<tool>`) on 2026-07-02 (task #840 plan §4.2). Update when a
+# new MCP server is registered at user level AND an agent declaration needs
+# it — the constant gates only DECLARED names, so an unrelated new server
+# needs no entry here.
+KNOWN_MCP_SERVERS: frozenset[str] = frozenset(
+    {
+        "arxiv",
+        "arxiv-latex",
+        "google-workspace",
+        "happy",
+        "plugin_context7_context7",
+        "plugin_huggingface-skills_huggingface-skills",
+        "plugin_playwright_playwright",
+        "runpod",
+        "ssh",
+        "todoist",
+    }
+)
+
+# (filename, mentioned-token) pairs the mentioned-⊆-declared check skips.
+# Every entry MUST carry an inline reason explaining why the body mention is
+# descriptive-not-instructive (the mention documents ANOTHER actor's tool
+# use, or a retired/historical pattern) — never add an entry to silence a
+# genuine instruction; add the tool to the declaration instead (the additive
+# direction is always safe per the #840 plan §13).
+AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
+    ("planner.md", "mcp__ssh__ssh_execute"): (
+        "describes the upload-verifier's Step-8 on-pod glob enumeration "
+        "(primary-deliverable block), not a planner instruction"
+    ),
+    ("codex-clean-result-critic.md", "Agent"): (
+        "'spawned from a single Agent(...) call' describes how the "
+        "ORCHESTRATOR spawns the ensemble, not an instruction for this "
+        "prompt-composer wrapper to call the Agent tool"
+    ),
+    ("codex-follow-up-critic.md", "Agent"): (
+        "'Both spawned from a single Agent(...) call' describes the "
+        "orchestrator's ensemble spawn, not a wrapper instruction"
+    ),
+    ("codex-interpretation-critic.md", "Agent"): (
+        "'Both spawned from a single Agent(...) call' describes the "
+        "orchestrator's ensemble spawn, not a wrapper instruction"
+    ),
+    ("codex-reviewer.md", "Agent"): (
+        "DEPRECATED file (2026-05-13, never spawned); the Agent(...) mention "
+        "describes the historical ensemble spawn pattern"
+    ),
+    ("workflow-improver.md", "Agent"): (
+        "DEPRECATED/frozen file (#678, never spawned; "
+        "--check-no-workflow-improver-spawn bans it); Agent( appears only in "
+        "historical examples of the retired auto-spawn pattern and a "
+        "grep-target example"
+    ),
+}
+
+# Spec-BODY tool-mention extractor vocabulary (the #840 plan §4.3 "widened
+# extractor"). Four layers:
+#   (i)  explicit MCP tokens — full `mcp__<server>__<tool>` and server-level
+#        `mcp__<server>` forms (one greedy regex matches both; the char class
+#        includes `_`, so a full token is captured whole);
+#   (ii) built-in literal names an allowlist can silently block;
+#   (iii) phrase forms for `Agent` (nested spawns) and `Skill` (runtime
+#        skill loads) — the literal bare names are far too common in prose
+#        ("the agent", "the skill") to match directly;
+#   (iv) prose MCP aliases mapped to their server-level token.
+AGENT_TOOLS_MCP_TOKEN_RE = re.compile(r"mcp__[A-Za-z0-9_-]+")
+AGENT_TOOLS_BUILTIN_RE = re.compile(r"\b(WebSearch|WebFetch|NotebookEdit|TodoWrite)\b")
+AGENT_TOOLS_AGENT_PHRASE_RE = re.compile(r"`Agent`\s+tool|\bAgent\(")
+AGENT_TOOLS_SKILL_PHRASE_RE = re.compile(
+    r"`Skill`\s+tool|\binvoke[sd]?\s+the\s+`?[\w/-]+`?\s+skill\b", re.IGNORECASE
+)
+AGENT_TOOLS_MCP_ALIASES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"`?context7`?\s+MCP", re.IGNORECASE), "mcp__plugin_context7_context7"),
+    (re.compile(r"\bSSH\s+MCP\b", re.IGNORECASE), "mcp__ssh"),
+    (re.compile(r"\barXiv\s+MCP\b", re.IGNORECASE), "mcp__arxiv"),
+)
 
 
 # `--check-upload-as-file`: the shared HF-Hub upload helper
@@ -2377,6 +2501,280 @@ def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
                 f"all 25 agents pinned to 'claude-fable-5[1m]' → ~72h "
                 f"outage). Pin '{base_id}' alone, or switch to a base whose "
                 f"AGENT_MODEL_ALLOWLIST tuple has supports_1m_suffix=True."
+            )
+    return errors
+
+
+def _split_agent_frontmatter(text: str) -> tuple[list[str] | None, str, int]:
+    """Split an agent file into ``(frontmatter_lines, body, body_line_offset)``.
+
+    The frontmatter block is the lines between the FIRST two ``---`` lines
+    (the file must start with ``---``). ``body_line_offset`` is the 1-based
+    file line number of the first body line, so body-relative match
+    positions can be reported as real file:line locations. Returns
+    ``(None, text, 1)`` when the file has no parseable frontmatter block —
+    callers report that as a missing-declaration failure.
+    """
+    lines = text.split("\n")
+    if not lines or lines[0].strip() != "---":
+        return None, text, 1
+    for i, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            fm_lines = lines[1:i]
+            body = "\n".join(lines[i + 1 :])
+            return fm_lines, body, i + 2
+    return None, text, 1
+
+
+def _parse_agent_tool_decls(
+    fm_lines: list[str],
+) -> tuple[list[str] | None, list[str] | None]:
+    """Parse ``tools:`` / ``disallowedTools:`` out of a frontmatter block.
+
+    Both repo syntaxes are honored (mirroring the harness): the inline
+    comma-separated scalar (``tools: Read, Grep, Glob, Bash``) and the YAML
+    list form (``tools:`` followed by ``  - Read`` items). Only TOP-LEVEL
+    keys (column 0) are considered, so folded ``description: >`` blocks
+    never introduce fake keys (their continuation lines are indented).
+    Returns ``(tools, disallowed)`` — each ``None`` when the key is absent,
+    else the (possibly empty) list of declared names.
+    """
+    tools: list[str] | None = None
+    disallowed: list[str] | None = None
+    for i, line in enumerate(fm_lines):
+        match = re.match(r"^(tools|disallowedTools):\s*(.*)$", line)
+        if match is None:
+            continue
+        key, rest = match.group(1), match.group(2).strip()
+        if rest:
+            values = [v.strip() for v in rest.split(",") if v.strip()]
+        else:
+            values = []
+            for cont in fm_lines[i + 1 :]:
+                item = re.match(r"^\s+-\s+(\S.*?)\s*$", cont)
+                if item is None:
+                    break
+                values.append(item.group(1))
+        if key == "tools":
+            tools = values
+        else:
+            disallowed = values
+    return tools, disallowed
+
+
+def _extract_agent_body_tool_mentions(body: str) -> dict[str, int]:
+    """Extract every tool the spec BODY mentions, per the #840 §4.3 widened
+    extractor vocabulary (see the :data:`AGENT_TOOLS_MCP_TOKEN_RE` comment
+    block). Returns ``{token: first_body_line_index}`` (0-based line index
+    within the body; callers add the frontmatter offset)."""
+    mentions: dict[str, int] = {}
+
+    def record(token: str, pos: int) -> None:
+        lineno = body.count("\n", 0, pos)
+        if token not in mentions or lineno < mentions[token]:
+            mentions[token] = lineno
+
+    for m in AGENT_TOOLS_MCP_TOKEN_RE.finditer(body):
+        record(m.group(0), m.start())
+    for m in AGENT_TOOLS_BUILTIN_RE.finditer(body):
+        record(m.group(1), m.start())
+    for m in AGENT_TOOLS_AGENT_PHRASE_RE.finditer(body):
+        record("Agent", m.start())
+    for m in AGENT_TOOLS_SKILL_PHRASE_RE.finditer(body):
+        record("Skill", m.start())
+    for alias_re, token in AGENT_TOOLS_MCP_ALIASES:
+        for m in alias_re.finditer(body):
+            record(token, m.start())
+    return mentions
+
+
+def _mcp_server_of(token: str) -> str | None:
+    """Return the ``<server>`` segment of an ``mcp__...`` token (full-tool,
+    server-level, or ``__*``-wildcard form), or None for a non-MCP name.
+    Server names never contain a double underscore, so splitting on ``__``
+    is unambiguous (``mcp__plugin_context7_context7`` has only single
+    underscores inside the server segment)."""
+    parts = token.split("__")
+    if len(parts) < 2 or parts[0] != "mcp" or not parts[1]:
+        return None
+    return parts[1]
+
+
+def _agent_tool_mention_covered(token: str, declared: list[str]) -> bool:
+    """True iff a body-mentioned ``token`` is covered by the ``tools:``
+    allowlist ``declared``: exact match; the token's server-level
+    ``mcp__<server>`` (or ``mcp__<server>__*``) form is declared; or — for a
+    SERVER-LEVEL mention (a prose alias like "arXiv MCP") — the declaration
+    names at least one tool from that server (e.g. related-work-finder
+    declares 4 ``mcp__arxiv__*`` tools; its "arXiv MCP" prose is covered)."""
+    if token in declared:
+        return True
+    if not token.startswith("mcp__"):
+        return False
+    parts = token.split("__")
+    server_form = "__".join(parts[:2])
+    if server_form in declared or f"{server_form}__*" in declared:
+        return True
+    if len(parts) == 2:
+        return any(d.startswith(server_form + "__") for d in declared)
+    return False
+
+
+def _agent_tool_mention_denied(token: str, denied: list[str]) -> bool:
+    """True iff a body-mentioned ``token`` is removed by the
+    ``disallowedTools:`` denylist ``denied`` (exact name, its server-level
+    form, the ``__*`` wildcard form, or the all-MCP ``mcp__*`` wildcard)."""
+    if token in denied:
+        return True
+    if token.startswith("mcp__"):
+        if "mcp__*" in denied:
+            return True
+        parts = token.split("__")
+        server_form = "__".join(parts[:2])
+        if server_form in denied or f"{server_form}__*" in denied:
+            return True
+    return False
+
+
+def check_agent_tools(*, roots: list[Path] | None = None) -> list[str]:
+    """Walk ``.claude/agents/*.md`` and enforce the explicit-tool-surface
+    invariant (task #840; incident #778 — an agent file with no ``tools:``
+    key inherits the parent session's full MCP tool-schema payload, ~168K
+    static first-turn tokens at the measured worst case).
+
+    Per file:
+
+    1. **Declaration required** — FAIL if the frontmatter has neither a
+       ``tools:`` allowlist nor a ``disallowedTools:`` denylist (or has no
+       parseable frontmatter at all).
+    2. **Mentioned ⊆ declared** (allowlist files) — FAIL if the spec body
+       mentions a tool (per :func:`_extract_agent_body_tool_mentions`) that
+       the allowlist does not cover (per
+       :func:`_agent_tool_mention_covered`), unless the ``(filename,
+       token)`` pair is waived in :data:`AGENT_TOOLS_MENTION_EXCEPTIONS`
+       with an inline reason.
+    2b. **Declared-name validity** — FAIL if any DECLARED ``mcp__...`` token
+       (in either key) names a server outside :data:`KNOWN_MCP_SERVERS` —
+       the harness silently ignores unknown names, so a typo strips a
+       capability with no error anywhere.
+    3. **Denylist consistency** (denylist files) — FAIL if a body-mentioned
+       token is denied by the denylist. Denylist-only files skip check 2
+       (they inherit everything not denied).
+
+    ``roots`` is the unit-test override hook (same contract as
+    :func:`check_agent_model_pins`); production callers pass None and the
+    canonical agent tree under :data:`_REPO_ROOT` is walked.
+    """
+    if roots is None:
+        targets = _iter_agent_pin_target_files(_REPO_ROOT)
+    else:
+        targets = []
+        for root in roots:
+            if root.is_file():
+                targets.append(root)
+            else:
+                targets.extend(p for p in root.glob("**/*.md") if p.is_file())
+        targets = sorted(targets)
+    errors: list[str] = []
+    for path in targets:
+        text = path.read_text()
+        fm_lines, body, body_offset = _split_agent_frontmatter(text)
+        if fm_lines is None:
+            errors.append(
+                f"{path}: no parseable YAML frontmatter block (file must start "
+                f"with '---' and close the block with a second '---'), so no "
+                f"tools:/disallowedTools: declaration exists. Every agent file "
+                f"must declare its tool surface (task #840; incident #778)."
+            )
+            continue
+        tools, disallowed = _parse_agent_tool_decls(fm_lines)
+        # Check 1 — declaration required.
+        if tools is None and disallowed is None:
+            errors.append(
+                f"{path}: frontmatter declares neither 'tools:' nor "
+                f"'disallowedTools:'. An undeclared agent inherits the parent "
+                f"session's FULL tool inventory including every MCP server's "
+                f"schemas (~168K static first-turn tokens at the #778 worst "
+                f"case). Add a 'tools:' allowlist (see the restricted agents "
+                f"for the house YAML-list style) or, for a broad main-session "
+                f"persona, a 'disallowedTools:' denylist (research-pm.md "
+                f"precedent). Task #840."
+            )
+            continue
+        errors.extend(_agent_tools_decl_validity_errors(path, tools, disallowed))
+        mentions = _extract_agent_body_tool_mentions(body)
+        errors.extend(_agent_tools_mention_errors(path, tools, disallowed, mentions, body_offset))
+    return errors
+
+
+def _agent_tools_decl_validity_errors(
+    path: Path, tools: list[str] | None, disallowed: list[str] | None
+) -> list[str]:
+    """Check 2b — every DECLARED ``mcp__...`` token (either key) must name a
+    server in :data:`KNOWN_MCP_SERVERS`; the ``mcp__*`` all-MCP denylist
+    wildcard is valid as-is."""
+    errors: list[str] = []
+    for decl_list, key in ((tools, "tools"), (disallowed, "disallowedTools")):
+        if decl_list is None:
+            continue
+        for token in decl_list:
+            if not token.startswith("mcp__"):
+                continue
+            server = _mcp_server_of(token)
+            if server is not None and server.endswith("*"):
+                # `mcp__*` all-MCP wildcard (denylist form) — valid.
+                continue
+            if server is None or server not in KNOWN_MCP_SERVERS:
+                known = ", ".join(sorted(KNOWN_MCP_SERVERS))
+                errors.append(
+                    f"{path}: '{key}:' declares '{token}' whose server "
+                    f"segment is not a known MCP server. The harness "
+                    f"silently ignores unknown tool names, so a typo here "
+                    f"strips the capability with no error at spawn. Known "
+                    f"servers: {known}. If a NEW MCP server was just "
+                    f"registered, add it to KNOWN_MCP_SERVERS in "
+                    f"scripts/workflow_lint.py."
+                )
+    return errors
+
+
+def _agent_tools_mention_errors(
+    path: Path,
+    tools: list[str] | None,
+    disallowed: list[str] | None,
+    mentions: dict[str, int],
+    body_offset: int,
+) -> list[str]:
+    """Checks 2 + 3 — a body-mentioned token must be covered by the
+    ``tools:`` allowlist (when present) and must not be removed by the
+    ``disallowedTools:`` denylist (when present), modulo the
+    :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` waivers."""
+    errors: list[str] = []
+    for token, body_lineno in sorted(mentions.items()):
+        if (path.name, token) in AGENT_TOOLS_MENTION_EXCEPTIONS:
+            continue
+        lineno = body_offset + body_lineno
+        if tools is not None and not _agent_tool_mention_covered(token, tools):
+            errors.append(
+                f"{path}:{lineno}: spec body mentions tool '{token}' "
+                f"but the frontmatter 'tools:' allowlist does not "
+                f"cover it — the agent is instructed to use a tool it "
+                f"cannot call. Either add '{token}' (or its "
+                f"'mcp__<server>' form) to the allowlist, or — if the "
+                f"mention is descriptive-not-instructive (documents "
+                f"another actor's tool use) — add "
+                f"('{path.name}', '{token}') to "
+                f"AGENT_TOOLS_MENTION_EXCEPTIONS with an inline "
+                f"reason. Task #840."
+            )
+        if disallowed is not None and _agent_tool_mention_denied(token, disallowed):
+            errors.append(
+                f"{path}:{lineno}: spec body mentions tool '{token}' "
+                f"but the frontmatter 'disallowedTools:' denylist "
+                f"removes it — the agent is instructed to use a tool "
+                f"it cannot call. Drop the deny entry or fix the spec "
+                f"body (body edits are a separate change per the #840 "
+                f"frontmatter-only scope)."
             )
     return errors
 
@@ -4205,6 +4603,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-agent-tools",
+        action="store_true",
+        help="Verify every .claude/agents/*.md declares an explicit tool "
+        "surface ('tools:' allowlist or 'disallowedTools:' denylist), that "
+        "every spec-body tool mention (mcp__ tokens, built-in literals, "
+        "Agent/Skill phrase forms, prose MCP aliases) is covered by the "
+        "declaration (modulo AGENT_TOOLS_MENTION_EXCEPTIONS), that declared "
+        "mcp__ names match KNOWN_MCP_SERVERS (silent-typo guard), and that a "
+        "denylist never denies a body-mentioned tool. Closes the #778 class "
+        "(an undeclared agent inherits every MCP server's schemas, ~168K "
+        "static first-turn tokens). Task #840. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-upload-as-file",
         action="store_true",
         help="AST-walk scripts/**/*.py and FAIL on any _upload(...) call "
@@ -4359,6 +4771,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_pipe_python
         or args.check_marker_registry
         or args.check_agent_model_pins
+        or args.check_agent_tools
         or args.check_upload_as_file
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
@@ -4420,6 +4833,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
         errors.extend(check_agent_model_pins())
+    if args.check_agent_tools or no_flags:
+        errors.extend(check_agent_tools())
     if args.check_upload_as_file or no_flags:
         errors.extend(check_upload_as_file())
     if args.check_dotenv_before_hf_import or no_flags:
