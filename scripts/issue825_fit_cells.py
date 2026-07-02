@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -596,29 +597,46 @@ def _spearman(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def g1_gate(r2_obs: np.ndarray, out_dir: Path, *, seed: int, n: int) -> dict:
-    """G1: Spearman of our per-layer R^2 curve vs the #779 reference curve."""
-    ref: dict[int, float] = dict(G1_ANCHORS)
-    source = "embedded_anchors"
-    if G1_CURVE_PATH.exists():
-        try:
-            raw = json.loads(G1_CURVE_PATH.read_text())
-            cand = raw.get("r2_per_layer") or raw.get("per_layer_r2") or raw
-            if isinstance(cand, dict):
-                ref = {int(k): float(v) for k, v in cand.items() if str(k).isdigit()}
-                source = str(G1_CURVE_PATH)
-            elif isinstance(cand, list):
-                ref = {i: float(v) for i, v in enumerate(cand)}
-                source = str(G1_CURVE_PATH)
-        except Exception as exc:  # fail toward the embedded anchors, loudly
-            print(f"[fit_cells] WARN G1 curve load failed ({exc}); using anchors")
+    """G1: Spearman of our per-layer R^2 curve vs the #779 reference curve.
+
+    The reference is the COMMITTED artifact eval_results/issue_779/
+    percontext_recon.json, whose curve lives at
+    read1_heldout_recon.heldout_r2_vs_layer.<layer>.mean (round-2 review
+    blocker: the previous parser guessed nonexistent keys and would have
+    spuriously HALTed a healthy run). The artifact is required — it is in
+    every full clone; a missing/short parse is a broken checkout and FAILS
+    LOUD rather than degrading to a few-anchor gate.
+    """
+    if not G1_CURVE_PATH.exists():
+        print(
+            f"[fit_cells] FATAL: G1 reference artifact missing: {G1_CURVE_PATH} "
+            "(committed to git — a missing file means a broken/sparse checkout; "
+            "the G1 Spearman gate cannot run on embedded anchors)",
+            file=sys.stderr,
+        )
+        raise SystemExit(5)
+    raw = json.loads(G1_CURVE_PATH.read_text())
+    curve = raw["read1_heldout_recon"]["heldout_r2_vs_layer"]
+    ref = {int(k): float(v["mean"]) for k, v in curve.items()}
+    if len(ref) < EXPECTED_LAYERS:
+        print(
+            f"[fit_cells] FATAL: G1 reference curve has {len(ref)} layers "
+            f"(< {EXPECTED_LAYERS}) — artifact shape drift; refusing to gate",
+            file=sys.stderr,
+        )
+        raise SystemExit(5)
+    # Cross-check the embedded documentation anchors against the parsed curve
+    # (loud drift signal; anchors are documentation, never the gate).
+    for li, va in G1_ANCHORS.items():
+        assert abs(ref[li] - va) < 0.005, (li, ref[li], va)
     layers = sorted(li for li in ref if li < len(r2_obs))
     ours = np.array([r2_obs[li] for li in layers])
     theirs = np.array([ref[li] for li in layers])
-    rho = _spearman(ours, theirs) if len(layers) >= 3 else float("nan")
-    l19_abs = abs(float(r2_obs[19]) - G1_ANCHORS[19]) if len(r2_obs) > 19 else float("nan")
+    rho = _spearman(ours, theirs)
+    l19_abs = abs(float(r2_obs[19]) - ref[19]) if len(r2_obs) > 19 else float("nan")
     payload = {
         "metadata": _metadata(seed, n),
-        "reference_source": source,
+        "reference_source": str(G1_CURVE_PATH),
         "layers_compared": layers,
         "spearman_vs_779": rho,
         "abs_dev_L19_vs_0677": l19_abs,
@@ -1048,6 +1066,9 @@ def run_per_position(
 # ---------------------------------------------------------------------------
 
 
+MLP_TIME_BUDGET_S = int(os.environ.get("EPS_MLP_TIME_BUDGET_S", "1800"))
+
+
 def run_mlp_secondary(
     res: dict,
     out_dir: Path,
@@ -1060,12 +1081,25 @@ def run_mlp_secondary(
     """fit_h.mlp_fit_predict (PCA-64) at the frozen layers with a shuffle null."""
     from explore_persona_space.experiments.issue_779.fit_h import mlp_fit_predict
 
+    started = time.monotonic()
     xy = res["xy"]
     X, Y, conv_ids = xy["X"], xy["Y"], xy["conv_ids"]
     folds = _cv_folds(conv_ids, n_folds, seed)
     rng = np.random.default_rng(seed + 13)
     out: dict[str, dict] = {}
+    budget_hit = False
     for li in [v for v in FROZEN_LAYERS if v < X.shape[1]]:
+        if time.monotonic() - started > MLP_TIME_BUDGET_S:
+            # Production-safe default (round-2 review): the MLP secondary is
+            # a bounded extra, never a completion risk — on budget exhaustion
+            # record the skip and move on; primary results are unaffected.
+            budget_hit = True
+            print(
+                f"[fit_cells] MLP budget ({MLP_TIME_BUDGET_S}s) exhausted for "
+                f"{cell_id}; skipping remaining layers",
+                file=sys.stderr,
+            )
+            break
         Xl, Yl = X[:, li, :], Y[:, li, :]
 
         def _cv_r2(Yv: np.ndarray, Xl: np.ndarray = Xl) -> float:
@@ -1089,6 +1123,7 @@ def run_mlp_secondary(
     cells_path = out_dir / f"cells_{cell_id}.json"
     payload = json.loads(cells_path.read_text()) if cells_path.exists() else {}
     payload["mlp"] = out
+    payload["mlp_budget_exhausted"] = budget_hit
     _write_json(cells_path, payload)
 
 
@@ -1187,6 +1222,11 @@ def main() -> int:
 
     torch.set_num_threads(max(1, min(8, torch.get_num_threads())))
     within, cross = _all_cells()
+    # Sequential gate ordering (plan section 7): the S1 anchor (G1) fits
+    # FIRST, then S2, then the G3 sanity cell, then all remaining cells —
+    # a broken anchor halts before any non-gate output is produced.
+    _prio = {"S1": 0, "S2": 1, "M_instruct_assistant_chat": 2}
+    within.sort(key=lambda c: _prio.get(c["cell_id"], 9))
     if args.smoke:
         args.turnstore_dir = args.out_dir / "_smoke_turnstore"
         _fabricate_smoke_turnstore(args.turnstore_dir)

@@ -296,9 +296,9 @@ def a2_span_integrity(rendered: list[Rendered]) -> dict[str, Any]:
     n = 0
     for r in rendered:
         seq_len = len(r.input_ids)
-        for turn in TURN_KEYS:
-            if turn not in r.spans:
-                raise AssertionError(f"a2 FAIL: conv {r.conv_id} missing span {turn!r}.")
+        # Present turns only: Track-S rows carry u1/a1; the contiguity
+        # invariant is enforced at render time by _present_turns.
+        for turn in [k for k in TURN_KEYS if k in r.spans]:
             start, end = r.spans[turn]
             if not (0 <= start < end <= seq_len):
                 raise AssertionError(
@@ -486,7 +486,7 @@ def _load_conversations(path: str) -> list[dict[str, Any]]:
             if not line:
                 continue
             conv = json.loads(line)
-            missing = [k for k in TURN_KEYS if k not in conv]
+            missing = [k for k in ("u1", "a1") if k not in conv]
             if missing:
                 raise AssertionError(f"Conversation {conv.get('conv_id')!r} missing {missing}.")
             convs.append(conv)

@@ -194,6 +194,13 @@ def _render(tokenizer, messages: list[dict[str, str]]) -> str:
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
+def _rf():
+    """Lazy import of the sibling render module (same scripts/ dir)."""
+    import issue825_render_formats
+
+    return issue825_render_formats
+
+
 def _ntok(tokenizer, text: str) -> int:
     return len(tokenizer.encode(text, add_special_tokens=False))
 
@@ -417,7 +424,15 @@ def run_track_m(n: int, seed: int, out: Path, smoke: bool, fixture: Path | None)
         if min(toks) < MIN_TURN_CONTENT_TOKENS:
             drops["short_turn"] += 1
             continue
-        if sum(toks) > MAX_CONV_TOKENS:
+        # Length filter on the RENDERED sequence (headers included), max over
+        # both formats — raw turn-token sums under-count by the header/
+        # terminator overhead (round-2 review minor).
+        row_probe = {"conv_id": i, "u1": o["u1"], "a1": a1, "u2": u2, "a2": a2}
+        rendered_len = max(
+            len(_rf().render_chat(row_probe, tokenizer).input_ids),
+            len(_rf().render_naturalistic(row_probe, tokenizer).input_ids),
+        )
+        if rendered_len > MAX_CONV_TOKENS:
             drops["too_long"] += 1
             continue
         kept.append(
