@@ -4003,6 +4003,77 @@ def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[st
     return errors
 
 
+def check_long_loop_restartability_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the long-loop restartability lens (#881) is absent from any of
+    its three surfaces.
+
+    Task #823 phase 4 accumulated ~20h (unpatched; ~3.7h patched) of serial
+    ridge fits purely in memory with a single terminal JSON write: both GCE
+    crashes forfeited all completed fits, a user-directed
+    restart-with-optimization was refused solely because restart forfeits
+    unpersisted fits, and five code-review rounds never flagged it. The #881
+    fix extended the checkpoint-per-phase rule to INTRA-PHASE grain (per-unit
+    persistence + a resume predicate for any > ~1h serial loop) and added a
+    Step 3.6 review lens to BOTH code-reviewer agent files. This check pins
+    all three surfaces so a future refactor cannot silently strip one:
+
+    (a) code-reviewer.md — the ``Long-loop restartability`` Step 3.6 heading
+        + the lowercase ``resume predicate`` requirement;
+    (b) codex-code-reviewer.md — the same two tokens (the Step-2 copy-list
+        bullets) PLUS the inlined-rubric placeholder enumeration
+        ``3.5, 3.6, 3.7`` — a token check on the copy-list alone
+        false-PASSes while the composed executable Codex prompt still omits
+        Step 3.6 (the #606 twin-omission class);
+    (c) code-style.md — the ``Intra-phase grain`` extension of the
+        checkpoint-per-phase bullet + ``resume predicate``.
+
+    Tokens are case-sensitive substrings, per-file. ``repo_root`` is a
+    unit-test override hook; production callers pass None. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    required_by_file: dict[Path, tuple[str, ...]] = {
+        root / ".claude" / "agents" / "code-reviewer.md": (
+            "Long-loop restartability",
+            "resume predicate",
+        ),
+        root / ".claude" / "agents" / "codex-code-reviewer.md": (
+            "Long-loop restartability",
+            "resume predicate",
+            "3.5, 3.6, 3.7",  # the inlined-rubric placeholder enumeration
+        ),
+        root / ".claude" / "rules" / "code-style.md": (
+            "Intra-phase grain",
+            "resume predicate",
+        ),
+    }
+    errors: list[str] = []
+    for p, required in required_by_file.items():
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #881 long-loop restartability lens must "
+                f"live in code-reviewer.md, codex-code-reviewer.md, and "
+                f"code-style.md."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the long-loop restartability lens token "
+                    f"{token!r} (#823/#881). The Step 3.6 lens (per-unit "
+                    f"persistence + resume predicate for > ~1h serial loops) "
+                    f"must be present in code-reviewer.md AND "
+                    f"codex-code-reviewer.md (incl. the inlined-rubric "
+                    f"placeholder enumeration), and the intra-phase-grain "
+                    f"extension of the checkpoint-per-phase bullet in "
+                    f"code-style.md (incident #823 phase 4: a ~20h in-memory "
+                    f"accumulate-and-write-at-end ridge loop PASSed five "
+                    f"review rounds)."
+                )
+    return errors
+
+
 def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the smoke-architecture marker presence gate (#822) is absent
     from ANY of its three surfaces.
@@ -4333,12 +4404,16 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 107_000,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 78,522 B post-#875+#869 (work-conserving schedule sub-check +
-    # anti-pattern (d), then the Step 0.6 extrapolation block + Step 0.68 —
-    # both plan-mandated growth; cap = measured + <=3 KB)
-    "code-reviewer.md": 81_500,
+    # measured 82,176 B post-#875+#869+#881 (work-conserving schedule
+    # sub-check + anti-pattern (d), the Step 0.6 extrapolation block +
+    # Step 0.68, then the #881 Step 3.6 long-loop restartability lens —
+    # all plan-mandated growth; cap = measured + <=3 KB)
+    "code-reviewer.md": 84_500,
     "codex-clean-result-critic.md": 62_000,  # measured 59,358 B
-    "codex-code-reviewer.md": 47_500,  # measured 44,841 B
+    # measured 47,930 B post-#881 (Step 3.6 copy-list bullets + the
+    # inlined-rubric 3.6 slot — plan-mandated growth; cap = measured
+    # + <=3 KB)
+    "codex-code-reviewer.md": 50_400,
     # measured 55,812 B post-#869 (vectorize-first item 7 + item-5 per-call
     # re-derivation — plan-mandated growth; cap = measured + <=3 KB)
     "experiment-implementer.md": 58_500,
@@ -4826,6 +4901,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-long-loop-restartability-review-lens",
+        action="store_true",
+        help="FAIL if the #881 long-loop restartability lens (the Step 3.6 "
+        "heading + `resume predicate` requirement in code-reviewer.md, the "
+        "codex copy-list bullets + the inlined-rubric `3.5, 3.6, 3.7` "
+        "enumeration in codex-code-reviewer.md, and the `Intra-phase grain` "
+        "extension of the checkpoint-per-phase bullet in code-style.md) is "
+        "absent from any of its three surfaces. Pins that both reviewers "
+        "verify a > ~1h serial loop persists per-unit results and resumes "
+        "(incident #823 phase 4: a ~20h in-memory accumulate-and-write-at-end "
+        "ridge loop PASSed five review rounds). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
         "--check-smoke-architecture-review-lens",
         action="store_true",
         help="FAIL if the #822 smoke-architecture marker presence gate (Step "
@@ -4912,6 +5001,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
+        or args.check_long_loop_restartability_review_lens
         or args.check_smoke_architecture_review_lens
         or args.check_smoke_output_hygiene
         or args.check_judge_model_pins
@@ -4986,6 +5076,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agent_spec_size())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
+    if args.check_long_loop_restartability_review_lens or no_flags:
+        errors.extend(check_long_loop_restartability_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
     if args.check_smoke_output_hygiene or no_flags:
