@@ -6,6 +6,7 @@ kind: experiment
 tags:
 - activation-dynamics
 - context-geometry
+- followup-auto
 created_at: '2026-07-02T06:56:23Z'
 has_clean_result: true
 parent_id: 779
