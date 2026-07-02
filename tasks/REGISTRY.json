@@ -5682,8 +5682,8 @@
     "873": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/873",
-      "status": "approved",
+      "path": "tasks/running/873",
+      "status": "running",
       "title": "workflow-fix: poller phase-ETA tripwire + m-of-N GPU-width advisory"
     },
     "874": {
