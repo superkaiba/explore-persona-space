@@ -110,7 +110,11 @@ from explore_persona_space.analysis.issue_763_pca import (  # noqa: E402
     nested_cv_pca_reduce,
     select_pca_dim,
 )
-from explore_persona_space.analysis.issue_763_reliability import compute_bracket  # noqa: E402
+from explore_persona_space.analysis.issue_763_reliability import (  # noqa: E402
+    compute_bracket,
+    reliability_binomial_variance,
+    reliability_split_half_over_probes,
+)
 from explore_persona_space.analysis.issue_763_vectorized import (  # noqa: E402
     assert_matches_reference,
     batched_binomial_glm_loco_fixed_dim,
@@ -386,11 +390,19 @@ def _e0_vectors(e0: dict, behavior: str, ctx_ids: list[str]):
     construction. On a parent-shaped E0 (no ``binary_weight_n``) it falls back
     to the SAME ``n_graded or n_judged`` rule as ``n_judged`` — bit-identical
     legacy behavior.
+
+    The per-probe dicts keep ``None`` PLACEHOLDERS for probes with no scoreable
+    judgment (they used to be filtered out): the E0 is fully crossed (the same
+    ordered probe tuple under every context), and the probe-ALIGNED split-half
+    ceiling (``issue_763_reliability``, the reliability-realign fix) needs the
+    positional probe alignment preserved — a filtered list silently shifts
+    every downstream probe's column. The estimator skips ``None`` entries from
+    the half means itself.
     """
     per_ctx = e0["e0"][behavior]
     graded, rates, njudged, bweight, kept = [], [], [], [], []
-    per_probe_graded: dict[str, list[float]] = {}
-    per_probe_binary: dict[str, list[float]] = {}
+    per_probe_graded: dict[str, list[float | None]] = {}
+    per_probe_binary: dict[str, list[float | None]] = {}
     for c in ctx_ids:
         cell = per_ctx.get(c)
         if cell is None or cell.get("graded_mean") is None:
@@ -405,12 +417,8 @@ def _e0_vectors(e0: dict, behavior: str, ctx_ids: list[str]):
             int(cell.get("binary_weight_n") or cell.get("n_graded") or cell.get("n_judged", 1))
         )
         kept.append(c)
-        per_probe_graded[c] = [
-            pr["graded"] for pr in cell.get("per_probe", []) if pr.get("graded") is not None
-        ]
-        per_probe_binary[c] = [
-            pr["e0"] for pr in cell.get("per_probe", []) if pr.get("e0") is not None
-        ]
+        per_probe_graded[c] = [pr.get("graded") for pr in cell.get("per_probe", [])]
+        per_probe_binary[c] = [pr.get("e0") for pr in cell.get("per_probe", [])]
     return (
         np.asarray(graded),
         np.asarray(rates),
@@ -986,6 +994,37 @@ _METADATA_PATCH_FIELDS = frozenset(
     }
 )
 
+# The ONLY fields --reliability-refresh-only may change/add on a ROUND checkpoint
+# (the reliability-realign fix: probe-ALIGNED split-half becomes the crossed-design
+# default; everything else is hard-asserted `==` to the pre-patch record).
+RELIABILITY_ESTIMATOR_ALIGNED = "split_half_probe_aligned_v2"
+RELIABILITY_ESTIMATOR_LEGACY = "split_half_independent_v1"
+_RELIABILITY_PATCH_FIELDS = frozenset(
+    {
+        # graded (headline) ceiling + its aliases + the verdict that keys on it
+        "sqrt_r_yy_graded",
+        "sqrt_r_yy_graded_ci",
+        "sqrt_r_yy",
+        "sqrt_r_yy_ci",
+        "sqrt_r_yy_binomial",
+        "triage_verdict",
+        # binary companion ceiling + verdict (same estimator bug)
+        "sqrt_r_yy_binary",
+        "triage_verdict_binary",
+        # provenance: estimator version + E0 source + preserved legacy numbers
+        "reliability_estimator",
+        "reliability_e0_source",
+        "sqrt_r_yy_graded_legacy_independent",
+        "sqrt_r_yy_graded_ci_legacy_independent",
+        "sqrt_r_yy_binary_legacy_independent",
+        "triage_verdict_legacy_independent",
+        "triage_verdict_binary_legacy_independent",
+        # full aligned bracket detail (r_hh, CI, method, seed) per DV
+        "reliability_bracket_graded",
+        "reliability_bracket_binary",
+    }
+)
+
 
 def _assemble_results(ckpt_dir: Path, fresh: dict[str, dict]) -> dict[str, dict]:
     """Union the round's per-behavior checkpoints with the freshly produced records.
@@ -1127,6 +1166,289 @@ def _refresh_metadata_only(args, out_dir: Path, e0_path: Path) -> int:
     return 0
 
 
+def _reliability_e0_path_for(behavior: str, out_dir: Path, parent_e0_path: Path) -> Path:
+    """The E0 each round record's ceiling was originally computed from.
+
+    The reanchor round record set is MIXED: deception was refit from the round's
+    graded-only ``E0_deception_v2.json`` (rubric v2); the other 4 behaviors are
+    the parent records (metadata-refreshed), whose ceilings came from the parent
+    ``E0_matched_by_behavior.json``. The reliability refresh must recompute each
+    record's ceiling from the SAME E0 its shipped ceiling used.
+    """
+    if behavior == "deception":
+        v2 = out_dir / "E0_deception_v2.json"
+        if v2.exists():
+            return v2
+    return parent_e0_path
+
+
+def _reliability_inputs(e0: dict, behavior: str):
+    """E0-derived ceiling inputs, exactly as ``fit_behavior`` builds them.
+
+    Returns ``(graded_bracket_args, binary_bracket_args, n_kept)`` where each
+    ``*_args`` is the ``(per_probe, rates, n_judged)`` triple ``compute_bracket``
+    consumes — graded uses ``n_graded or n_judged`` weights, binary uses the
+    ``binary_weight_n``-aware weights + drops NaN-rate contexts, mirroring the
+    fit path so a recompute reproduces the shipped numbers bit-for-bit.
+    """
+    ctx_ids = list(e0["e0"][behavior].keys())
+    graded, rates, n_judged, binary_weight, per_probe_graded, per_probe_binary, kept = _e0_vectors(
+        e0, behavior, ctx_ids
+    )
+    graded_args = (per_probe_graded, list(graded), [int(n) for n in n_judged])
+    bin_mask = ~np.isnan(rates)
+    ppb = {kept[i]: per_probe_binary.get(kept[i], []) for i in range(len(kept)) if bin_mask[i]}
+    binary_args = (ppb, list(rates[bin_mask]), [int(n) for n in binary_weight[bin_mask]])
+    return graded_args, binary_args, len(kept)
+
+
+def _refresh_reliability_only(args, out_dir: Path, e0_path: Path) -> int:
+    """Re-emit ONLY the reliability-ceiling fields with the probe-ALIGNED estimator.
+
+    The shipped ``sqrt_r_yy*`` fields came from the INDEPENDENT-shuffle split-half
+    (``method="independent"``), which is downward-biased on this fully-crossed
+    design (probe main effects, sd ≈ 27/100, leak into the split noise as
+    anti-correlated half deviations — r_hh systematically negative, Spearman-Brown
+    clips to 0; see ``issue_763_reliability`` module docstring). This mode:
+
+    1. loads each ROUND checkpoint ``<out_dir>/fit_by_behavior/<b>.json``
+       (the parent run's committed records are NEVER touched — history);
+    2. recomputes the ceiling bracket from the SAME E0 the shipped ceiling used
+       (deception → the round's v2 E0; others → the parent E0), with
+       ``method="aligned"`` for the new numbers;
+    3. PLUMBING GATES (fail-loud): the deterministic binomial ceiling must
+       reproduce the shipped value EXACTLY (≤1e-6 — proves the kept-context
+       set + graded means + weights match what the original fit consumed);
+       the legacy independent split-half point must agree within split noise
+       (≤0.05 — its Monte-Carlo draw sequence depends on context iteration
+       order, v0-shard order originally vs the committed E0's order here, so
+       bit-exact reproduction is not expected);
+    4. re-runs ``_triage`` with the record's OWN rho/CI/null/control fields
+       (nothing is refit — only the ceiling term of the verdict changes);
+    5. patches ONLY ``_RELIABILITY_PATCH_FIELDS`` (legacy values preserved
+       under ``*_legacy_independent``; estimator version tagged), hard-asserts
+       every other field ``==`` the pre-patch record, and rewrites the round's
+       checkpoints + ``matched_predictor_results.json``.
+
+    Also writes a deception-v1 aligned-ceiling diagnostic sidecar (the parent
+    E0 read the critics' diagnosis names), without touching the parent record.
+    """
+    ckpt_dir = out_dir / "fit_by_behavior"
+    fresh: dict[str, dict] = {}
+    e0_cache: dict[Path, dict] = {}
+    digest: list[str] = []
+    for behavior in args.behaviors:
+        ckpt_path = ckpt_dir / f"{behavior}.json"
+        rec = load_json(ckpt_path)
+        if rec.get("reliability_estimator") == RELIABILITY_ESTIMATOR_ALIGNED:
+            # IDEMPOTENT re-run: rebuild the pre-patch record from the preserved
+            # legacy fields so the gates + identity assert compare against the
+            # SHIPPED (pre-realign) state, and the re-emit reproduces itself.
+            logger.info("[reliability-refresh] %s: already aligned — re-emitting", behavior)
+            rec = dict(rec)
+            rec["sqrt_r_yy_graded"] = rec["sqrt_r_yy_graded_legacy_independent"]
+            rec["sqrt_r_yy"] = rec["sqrt_r_yy_graded_legacy_independent"]
+            rec["sqrt_r_yy_graded_ci"] = rec["sqrt_r_yy_graded_ci_legacy_independent"]
+            rec["sqrt_r_yy_ci"] = rec["sqrt_r_yy_graded_ci_legacy_independent"]
+            rec["sqrt_r_yy_binary"] = rec["sqrt_r_yy_binary_legacy_independent"]
+            rec["triage_verdict"] = rec["triage_verdict_legacy_independent"]
+            rec["triage_verdict_binary"] = rec["triage_verdict_binary_legacy_independent"]
+            for k in _RELIABILITY_PATCH_FIELDS - {
+                "sqrt_r_yy_graded",
+                "sqrt_r_yy_graded_ci",
+                "sqrt_r_yy",
+                "sqrt_r_yy_ci",
+                "sqrt_r_yy_binomial",
+                "sqrt_r_yy_binary",
+                "triage_verdict",
+                "triage_verdict_binary",
+            }:
+                rec.pop(k, None)
+        b_e0_path = _reliability_e0_path_for(behavior, out_dir, e0_path)
+        e0 = e0_cache.setdefault(b_e0_path, load_json(b_e0_path))
+        graded_args, binary_args, n_kept = _reliability_inputs(e0, behavior)
+        assert n_kept == rec.get("n_contexts"), (
+            f"{behavior}: E0-derived context set ({n_kept}) != record n_contexts "
+            f"({rec.get('n_contexts')}) — wrong E0 for this record? ({b_e0_path})"
+        )
+
+        # ── PLUMBING GATES ──
+        # (1) EXACT (≤1e-6): the binomial ceiling is a deterministic, draw-free
+        # function of (rates, weights) — equality proves the E0-derived kept-
+        # context set + graded means + precision weights match what the shipped
+        # fit consumed (only summation-order ulps allowed).
+        binom_g = reliability_binomial_variance(graded_args[1], graded_args[2])
+        got_b, want_b = binom_g["sqrt_r_yy"], rec.get("sqrt_r_yy_binomial")
+        assert abs((got_b or 0.0) - (want_b or 0.0)) <= 1e-6, (
+            f"{behavior}: binomial ceiling recompute {got_b} != shipped {want_b} — "
+            f"E0/context plumbing mismatch; refusing to patch"
+        )
+        # (2) CONSISTENCY (≤0.05): the legacy split-half point is a seeded
+        # MONTE-CARLO mean whose draw sequence depends on the context iteration
+        # order (the shipped fit iterated v0-shard order; this refresh iterates
+        # the committed E0's order — the v0 .pt shards are not in git, and the
+        # re-emit must be reproducible from the committed tree alone). Same
+        # data, different draws => agreement within split noise, not bit-exact
+        # (observed delta 0.018 on fact_expression). Catches gross mismatches
+        # (wrong E0 / wrong behavior / broken per-probe extraction) only.
+        legacy_g = reliability_split_half_over_probes(
+            graded_args[0], seed=SEED, method="independent"
+        )
+        got, want = legacy_g["sqrt_r_yy"], rec.get("sqrt_r_yy_graded")
+        assert got is not None and want is not None and abs(got - want) <= 0.05, (
+            f"{behavior}: legacy independent recompute {got} vs shipped sqrt_r_yy_graded "
+            f"{want} disagree beyond split noise — E0/per-probe plumbing mismatch; "
+            "refusing to patch"
+        )
+
+        # ── the ALIGNED recompute (graded headline + binary companion) ──
+        ceiling_g = compute_bracket(*graded_args, n_boot=N_BOOTSTRAP, seed=SEED, method="aligned")
+        ceiling_b = compute_bracket(*binary_args, n_boot=N_BOOTSTRAP, seed=SEED, method="aligned")
+        verdict_g = _triage(
+            rec.get("rho_graded_ridge"),
+            rec.get("rho_graded_ridge_ci"),
+            ceiling_g["sqrt_r_yy"],
+            rec.get("shuffle_null_p"),
+            bool(rec.get("control_task_pass")),
+        )
+        verdict_b = _triage(
+            rec.get("rho_binary_GLM"),
+            rec.get("rho_binary_GLM_ci"),
+            ceiling_b["sqrt_r_yy"],
+            rec.get("shuffle_null_p_binary"),
+            bool(rec.get("control_task_pass_binary")),
+        )
+
+        patched = dict(rec)
+        patched.update(
+            {
+                # legacy numbers preserved (reader-visible estimator provenance)
+                "sqrt_r_yy_graded_legacy_independent": rec.get("sqrt_r_yy_graded"),
+                "sqrt_r_yy_graded_ci_legacy_independent": rec.get("sqrt_r_yy_graded_ci"),
+                "sqrt_r_yy_binary_legacy_independent": rec.get("sqrt_r_yy_binary"),
+                "triage_verdict_legacy_independent": rec.get("triage_verdict"),
+                "triage_verdict_binary_legacy_independent": rec.get("triage_verdict_binary"),
+                # aligned (crossed-design) ceiling — the reported numbers
+                "sqrt_r_yy_graded": ceiling_g["sqrt_r_yy"],
+                "sqrt_r_yy_graded_ci": ceiling_g["sqrt_r_yy_ci"],
+                "sqrt_r_yy": ceiling_g["sqrt_r_yy"],
+                "sqrt_r_yy_ci": ceiling_g["sqrt_r_yy_ci"],
+                "sqrt_r_yy_binomial": ceiling_g["sqrt_r_yy_binomial"],
+                "sqrt_r_yy_binary": ceiling_b["sqrt_r_yy"],
+                "triage_verdict": verdict_g,
+                "triage_verdict_binary": verdict_b,
+                "reliability_estimator": RELIABILITY_ESTIMATOR_ALIGNED,
+                "reliability_e0_source": str(b_e0_path),
+                "reliability_bracket_graded": ceiling_g,
+                "reliability_bracket_binary": ceiling_b,
+            }
+        )
+
+        # ── NUMERIC-IDENTITY HARD ASSERT on every non-reliability field ──
+        rec_rt = json.loads(json.dumps(rec, sort_keys=True))
+        patched_rt = json.loads(json.dumps(patched, sort_keys=True))
+        drifted = [
+            k
+            for k in rec_rt
+            if k not in _RELIABILITY_PATCH_FIELDS and patched_rt.get(k) != rec_rt[k]
+        ]
+        assert not drifted, (
+            f"RELIABILITY-REFRESH IDENTITY GATE FAILED for {behavior}: non-reliability "
+            f"fields drifted: {drifted}"
+        )
+        new_keys = set(patched_rt) - set(rec_rt)
+        assert new_keys <= _RELIABILITY_PATCH_FIELDS, (
+            f"reliability refresh added non-reliability keys for {behavior}: "
+            f"{sorted(new_keys - _RELIABILITY_PATCH_FIELDS)}"
+        )
+
+        def _f(v: float | None) -> str:
+            return "None" if v is None else f"{v:.3f}"
+
+        line = (
+            f"{behavior}: sqrt_r_yy {_f(rec.get('sqrt_r_yy_graded'))} "
+            f"(ci={rec.get('sqrt_r_yy_graded_ci')}) verdict={rec.get('triage_verdict')} "
+            f"-> {_f(ceiling_g['sqrt_r_yy'])} (ci={ceiling_g['sqrt_r_yy_ci']}) "
+            f"verdict={verdict_g} | binary {_f(rec.get('sqrt_r_yy_binary'))} -> "
+            f"{_f(ceiling_b['sqrt_r_yy'])} verdict_b={rec.get('triage_verdict_binary')}"
+            f"->{verdict_b} | e0={b_e0_path.name}"
+        )
+        digest.append(line)
+        logger.info("[reliability-refresh] %s", line)
+        dump_json(patched, ckpt_path)
+        fresh[behavior] = patched
+
+    results = _assemble_results(ckpt_dir, fresh)
+    out = {
+        "by_behavior": results,
+        "n_shuffle_perms": N_SHUFFLE_PERMS,
+        "n_bootstrap": N_BOOTSTRAP,
+        "have_pv_baseline": (EVAL_RESULTS_DIR / "pv_rb_by_behavior.json").exists(),
+        "metadata": reproducibility_metadata(
+            {
+                "phase": "fit",
+                "mode": "reliability-refresh-aligned",
+                "reliability_estimator": RELIABILITY_ESTIMATOR_ALIGNED,
+                "parent_e0": str(e0_path),
+            }
+        ),
+    }
+    dump_json(out, out_dir / "matched_predictor_results.json")
+
+    # ── deception-v1 aligned diagnostic (parent E0; parent RECORD untouched) ──
+    if "deception" in args.behaviors and e0_path.exists():
+        e0_v1 = e0_cache.setdefault(e0_path, load_json(e0_path))
+        g_args, _b_args, _n = _reliability_inputs(e0_v1, "deception")
+        diag = {
+            "what": (
+                "deception ceiling on the PARENT (rubric-v1) E0 under BOTH split-half "
+                "estimators — diagnostic only; the parent record is history and is "
+                "not rewritten"
+            ),
+            "aligned": compute_bracket(*g_args, n_boot=N_BOOTSTRAP, seed=SEED, method="aligned"),
+            "legacy_independent": compute_bracket(
+                *g_args, n_boot=N_BOOTSTRAP, seed=SEED, method="independent"
+            ),
+            "metadata": reproducibility_metadata(
+                {"phase": "fit", "mode": "reliability-refresh-aligned", "e0": str(e0_path)}
+            ),
+        }
+        diag_path = out_dir / "reliability_realign_v1_deception_diagnostic.json"
+        dump_json(diag, diag_path)
+        logger.info(
+            "[reliability-refresh] v1 deception diagnostic: aligned sqrt_r_yy=%s ci=%s "
+            "(legacy %s) -> %s",
+            diag["aligned"]["sqrt_r_yy"],
+            diag["aligned"]["sqrt_r_yy_ci"],
+            diag["legacy_independent"]["sqrt_r_yy"],
+            diag_path,
+        )
+
+    print(
+        f"[issue763.fit] reliability refresh ({RELIABILITY_ESTIMATOR_ALIGNED}) wrote "
+        f"{len(fresh)} patched records ({len(results)} assembled) -> "
+        f"{out_dir / 'matched_predictor_results.json'}"
+    )
+    for line in digest:
+        print(f"[issue763.fit]   {line}")
+    return 0
+
+
+def _dispatch_refresh_mode(args, out_dir: Path, e0_path: Path) -> int | None:
+    """Route the two no-refit patch modes; ``None`` = proceed with the full fit.
+
+    Both modes skip the exactness gate + HF input staging (only checkpoints +
+    E0s (+ frozen pools for the metadata mode) are read, fully offline).
+    """
+    if args.refresh_metadata_only and args.reliability_refresh_only:
+        raise SystemExit("--refresh-metadata-only and --reliability-refresh-only are exclusive")
+    if args.refresh_metadata_only:
+        return _refresh_metadata_only(args, out_dir, e0_path)
+    if args.reliability_refresh_only:
+        return _refresh_reliability_only(args, out_dir, e0_path)
+    return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Issue #763: GLM/ridge/PV LOCO fits + nulls + ceiling."
@@ -1162,6 +1484,15 @@ def main() -> int:
         "--behaviors (no refit, numeric-identity hard assert — plan §3b)",
     )
     ap.add_argument(
+        "--reliability-refresh-only",
+        action="store_true",
+        help="re-emit ONLY the sqrt_r_yy* ceiling fields (+ the verdicts that key on "
+        "them) onto the ROUND checkpoints under --out-dir, recomputed with the "
+        "probe-ALIGNED split-half (the crossed-design estimator; legacy independent "
+        "values preserved under *_legacy_independent). No refit; parent artifacts "
+        "never touched.",
+    )
+    ap.add_argument(
         "--parent-fit-dir",
         type=Path,
         default=EVAL_RESULTS_DIR / "fit_by_behavior",
@@ -1185,10 +1516,9 @@ def main() -> int:
     out_dir = args.out_dir or EVAL_RESULTS_DIR
     e0_path = args.e0_json or (EVAL_RESULTS_DIR / "E0_matched_by_behavior.json")
 
-    if args.refresh_metadata_only:
-        # No fitting at all: skip the exactness gate + input staging (only the
-        # parent checkpoints + E0 + frozen pools are read).
-        return _refresh_metadata_only(args, out_dir, e0_path)
+    refresh_rc = _dispatch_refresh_mode(args, out_dir, e0_path)
+    if refresh_rc is not None:
+        return refresh_rc
 
     # CPU-lane thread discipline: the batched fits are small tensors, so a sane
     # thread count (default = cpu-mid's 8 vCPU) beats the default oversubscription.

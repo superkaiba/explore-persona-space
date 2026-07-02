@@ -345,7 +345,13 @@ def _plot_reanchor_exploratory(
             )
     ax.set_xticks(range(len(behs)))
     ax.set_xticklabels(behs, rotation=30, ha="right", fontsize=7)
-    ax.set_title("√(r_yy) by behavior (hatched = reduced power m<50)", fontsize=9)
+    # Name the split-half estimator when the records carry the reliability-realign
+    # tag (probe-aligned crossed-design split vs the legacy independent shuffle).
+    aligned = all(
+        results_v2[b].get("reliability_estimator") == "split_half_probe_aligned_v2" for b in behs
+    )
+    est_tag = "probe-aligned split" if aligned else "independent split (legacy)"
+    ax.set_title(f"√(r_yy) by behavior, {est_tag} (hatched = reduced power m<50)", fontsize=9)
 
     # (5) dropped-draw counts v1 vs v2.
     ax = axes[1][1]

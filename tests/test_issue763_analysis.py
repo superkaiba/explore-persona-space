@@ -13,6 +13,7 @@ crash.
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from explore_persona_space.analysis.issue_763_glm import glm_predict_loco
 from explore_persona_space.analysis.issue_763_reliability import (
@@ -63,6 +64,79 @@ def test_split_half_pure_noise_low_ceiling():
 def test_split_half_too_few_contexts_returns_none():
     out = reliability_split_half_over_probes({"a": [1.0, 0.0], "b": [0.0, 1.0]}, seed=0)
     assert out["sqrt_r_yy"] is None
+
+
+def _crossed_design(n_ctx=40, m=30, probe_sd=25.0, ctx_sd=3.0, noise_sd=2.0, seed=7):
+    """Fully crossed per-probe scores with probe MAIN effects >> context signal.
+
+    score(c, p) = ctx_effect(c) + probe_effect(p) + noise — the #763 E0 shape
+    (same m probes under every context; per-probe difficulty dominates). True
+    split-half ceiling ≈ ctx_var / (ctx_var + noise_var/(m/2)) ≈ 0.97 (√ ≈ 0.99).
+    """
+    rng = np.random.default_rng(seed)
+    probe = rng.normal(0.0, probe_sd, m)
+    ctx = rng.normal(0.0, ctx_sd, n_ctx)
+    mat = ctx[:, None] + probe[None, :] + rng.normal(0.0, noise_sd, (n_ctx, m))
+    return {f"c{i}": [float(v) for v in mat[i]] for i in range(n_ctx)}
+
+
+def test_split_half_crossed_design_independent_clips_aligned_recovers():
+    """The reliability-realign fix: on a crossed design with probe main effects
+    dominating the context signal, the INDEPENDENT per-context shuffle drives the
+    half correlation systematically negative (probe effects leak into the split
+    noise as anti-correlated half deviations) and Spearman-Brown clips the ceiling
+    to 0, while the probe-ALIGNED split (the default) recovers the true ceiling."""
+    per = _crossed_design()
+    ind = reliability_split_half_over_probes(per, seed=11, method="independent")
+    ali = reliability_split_half_over_probes(per, seed=11)  # aligned is the default
+    assert ind["method"] == "independent"
+    assert ind["r_hh"] is not None and ind["r_hh"] < 0.0, ind
+    assert ind["sqrt_r_yy"] == 0.0, ind  # clipped — the shipped-estimator failure mode
+    assert ali["method"] == "aligned"
+    assert ali["sqrt_r_yy"] is not None and ali["sqrt_r_yy"] > 0.9, ali
+
+
+def test_split_half_aligned_tolerates_none_placeholders():
+    """None entries (dropped judge draws) are skipped from the half means without
+    breaking the positional probe alignment."""
+    per = _crossed_design(seed=8)
+    per["c0"][3] = None
+    per["c5"][0] = None
+    per["c5"][17] = None
+    out = reliability_split_half_over_probes(per, seed=8)
+    assert out["sqrt_r_yy"] is not None and out["sqrt_r_yy"] > 0.9, out
+
+
+def test_split_half_aligned_ragged_input_raises():
+    """The aligned split requires the crossed probe axis — ragged input fails loud."""
+    per = _crossed_design(n_ctx=6, m=10, seed=9)
+    per["c0"] = per["c0"][:7]  # break the crossed design
+
+    with pytest.raises(ValueError, match="CROSSED"):
+        reliability_split_half_over_probes(per, seed=9)
+
+
+def test_split_half_seed_pinned():
+    """Split draws are fully seed-pinned: same seed => identical output."""
+    per = _crossed_design(seed=10)
+    a = reliability_split_half_over_probes(per, seed=42)
+    b = reliability_split_half_over_probes(per, seed=42)
+    assert a == b
+
+
+def test_compute_bracket_threads_method_and_tags_it():
+    """compute_bracket threads the estimator through point + bootstrap and tags it."""
+    per = _crossed_design(n_ctx=20, m=20, seed=12)
+    rates = [float(np.mean(v)) for v in per.values()]
+    nj = [20] * len(per)
+    ali = compute_bracket(per, rates, nj, n_boot=100, seed=12)
+    ind = compute_bracket(per, rates, nj, n_boot=100, seed=12, method="independent")
+    assert ali["split_half_method"] == "aligned" and ali["seed"] == 12
+    assert ind["split_half_method"] == "independent"
+    assert ali["sqrt_r_yy"] is not None and ali["sqrt_r_yy"] > 0.9
+    assert ind["sqrt_r_yy"] == 0.0  # clipped on the crossed design
+    # the CI must come from the SAME estimator as the point (aligned: a real band)
+    assert ali["sqrt_r_yy_ci"] is not None and ali["sqrt_r_yy_ci"][0] > 0.5
 
 
 def test_binomial_variance_signal_vs_noise():

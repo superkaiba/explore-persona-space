@@ -17,10 +17,10 @@
   "rho_binary": 0.32416725836364013,
   "rho_GLM": 0.4733253301320528,
   "rho_PV": 0.467563025210084,
-  "sqrt_r_yy_graded": 0.0,
+  "sqrt_r_yy_graded": 0.585573147246944,
   "sqrt_r_yy_graded_ci": [
-    0.0,
-    0.0
+    0.07975236876127198,
+    0.7490610019819982
   ],
   "primary_dv": "graded_mean",
   "headline_predictor": "ridge",
@@ -32,10 +32,10 @@
   "rho_graded_glm": 0.4733253301320528,
   "rho_graded_PV": 0.467563025210084,
   "optimism_delta_graded": 0.03668667466986786,
-  "sqrt_r_yy": 0.0,
+  "sqrt_r_yy": 0.585573147246944,
   "sqrt_r_yy_ci": [
-    0.0,
-    0.0
+    0.07975236876127198,
+    0.7490610019819982
   ],
   "sqrt_r_yy_binomial": 1.0,
   "shuffle_null_p": 0.000999000999000999,
@@ -134,7 +134,7 @@
     0.28633853541416565,
     0.467563025210084
   ],
-  "triage_verdict": "noise_limited",
+  "triage_verdict": "works",
   "companion_dv": "rate",
   "rho_binary_GLM": 0.32416725836364013,
   "rho_binary_GLM_ci": [
@@ -177,5 +177,69 @@
     0.13890823991519446,
     0.32416725836364013
   ],
-  "triage_verdict_binary": "noise_limited"
+  "triage_verdict_binary": "noise_limited",
+  "sqrt_r_yy_graded_legacy_independent": 0.0,
+  "sqrt_r_yy_graded_ci_legacy_independent": [
+    0.0,
+    0.0
+  ],
+  "sqrt_r_yy_binary_legacy_independent": 0.0,
+  "triage_verdict_legacy_independent": "noise_limited",
+  "triage_verdict_binary_legacy_independent": "noise_limited",
+  "reliability_estimator": "split_half_probe_aligned_v2",
+  "reliability_e0_source": "eval_results/issue_763/deception-rubric-reanchor/E0_deception_v2.json",
+  "reliability_bracket_graded": {
+    "sqrt_r_yy_split_half": 0.585573147246944,
+    "sqrt_r_yy_binomial": 1.0,
+    "sqrt_r_yy": 0.585573147246944,
+    "sqrt_r_yy_ci": [
+      0.07975236876127198,
+      0.7490610019819982
+    ],
+    "split_half": {
+      "r_hh": 0.20692478704666514,
+      "r_yy": 0.3428959107766912,
+      "sqrt_r_yy": 0.585573147246944,
+      "n_contexts_used": 50,
+      "n_splits": 200,
+      "method": "aligned"
+    },
+    "binomial": {
+      "r_yy": 1.0,
+      "sqrt_r_yy": 1.0,
+      "signal_var": 35.36535476014117,
+      "mean_noise_var": -23.47117394956722,
+      "observed_var": 11.894180810573957,
+      "n_contexts": 50
+    },
+    "split_half_method": "aligned",
+    "seed": 763
+  },
+  "reliability_bracket_binary": {
+    "sqrt_r_yy_split_half": 0.0,
+    "sqrt_r_yy_binomial": 0.0,
+    "sqrt_r_yy": 0.0,
+    "sqrt_r_yy_ci": [
+      0.0,
+      0.5480375491514834
+    ],
+    "split_half": {
+      "r_hh": -0.009612790638217484,
+      "r_yy": 0.0,
+      "sqrt_r_yy": 0.0,
+      "n_contexts_used": 50,
+      "n_splits": 200,
+      "method": "aligned"
+    },
+    "binomial": {
+      "r_yy": 0.0,
+      "sqrt_r_yy": 0.0,
+      "signal_var": -0.0015752587436885404,
+      "mean_noise_var": 0.00405064010477083,
+      "observed_var": 0.00247538136108229,
+      "n_contexts": 50
+    },
+    "split_half_method": "aligned",
+    "seed": 763
+  }
 }

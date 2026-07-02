@@ -19,10 +19,10 @@
       "rho_binary": 0.32416725836364013,
       "rho_GLM": 0.4733253301320528,
       "rho_PV": 0.467563025210084,
-      "sqrt_r_yy_graded": 0.0,
+      "sqrt_r_yy_graded": 0.585573147246944,
       "sqrt_r_yy_graded_ci": [
-        0.0,
-        0.0
+        0.07975236876127198,
+        0.7490610019819982
       ],
       "primary_dv": "graded_mean",
       "headline_predictor": "ridge",
@@ -34,10 +34,10 @@
       "rho_graded_glm": 0.4733253301320528,
       "rho_graded_PV": 0.467563025210084,
       "optimism_delta_graded": 0.03668667466986786,
-      "sqrt_r_yy": 0.0,
+      "sqrt_r_yy": 0.585573147246944,
       "sqrt_r_yy_ci": [
-        0.0,
-        0.0
+        0.07975236876127198,
+        0.7490610019819982
       ],
       "sqrt_r_yy_binomial": 1.0,
       "shuffle_null_p": 0.000999000999000999,
@@ -136,7 +136,7 @@
         0.28633853541416565,
         0.467563025210084
       ],
-      "triage_verdict": "noise_limited",
+      "triage_verdict": "works",
       "companion_dv": "rate",
       "rho_binary_GLM": 0.32416725836364013,
       "rho_binary_GLM_ci": [
@@ -179,7 +179,71 @@
         0.13890823991519446,
         0.32416725836364013
       ],
-      "triage_verdict_binary": "noise_limited"
+      "triage_verdict_binary": "noise_limited",
+      "sqrt_r_yy_graded_legacy_independent": 0.0,
+      "sqrt_r_yy_graded_ci_legacy_independent": [
+        0.0,
+        0.0
+      ],
+      "sqrt_r_yy_binary_legacy_independent": 0.0,
+      "triage_verdict_legacy_independent": "noise_limited",
+      "triage_verdict_binary_legacy_independent": "noise_limited",
+      "reliability_estimator": "split_half_probe_aligned_v2",
+      "reliability_e0_source": "eval_results/issue_763/deception-rubric-reanchor/E0_deception_v2.json",
+      "reliability_bracket_graded": {
+        "sqrt_r_yy_split_half": 0.585573147246944,
+        "sqrt_r_yy_binomial": 1.0,
+        "sqrt_r_yy": 0.585573147246944,
+        "sqrt_r_yy_ci": [
+          0.07975236876127198,
+          0.7490610019819982
+        ],
+        "split_half": {
+          "r_hh": 0.20692478704666514,
+          "r_yy": 0.3428959107766912,
+          "sqrt_r_yy": 0.585573147246944,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 1.0,
+          "sqrt_r_yy": 1.0,
+          "signal_var": 35.36535476014117,
+          "mean_noise_var": -23.47117394956722,
+          "observed_var": 11.894180810573957,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      },
+      "reliability_bracket_binary": {
+        "sqrt_r_yy_split_half": 0.0,
+        "sqrt_r_yy_binomial": 0.0,
+        "sqrt_r_yy": 0.0,
+        "sqrt_r_yy_ci": [
+          0.0,
+          0.5480375491514834
+        ],
+        "split_half": {
+          "r_hh": -0.009612790638217484,
+          "r_yy": 0.0,
+          "sqrt_r_yy": 0.0,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 0.0,
+          "sqrt_r_yy": 0.0,
+          "signal_var": -0.0015752587436885404,
+          "mean_noise_var": 0.00405064010477083,
+          "observed_var": 0.00247538136108229,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      }
     },
     "fact_expression": {
       "behavior": "fact_expression",
@@ -193,10 +257,10 @@
       "rho_binary": 0.7403084564541494,
       "rho_GLM": 0.8149339735894358,
       "rho_PV": 0.7804561824729891,
-      "sqrt_r_yy_graded": 0.6857057379695229,
+      "sqrt_r_yy_graded": 0.8980524140492648,
       "sqrt_r_yy_graded_ci": [
-        0.22272843426105093,
-        0.8230983059100778
+        0.8089854889332464,
+        0.9430231014595293
       ],
       "primary_dv": "graded_mean",
       "headline_predictor": "ridge",
@@ -208,10 +272,10 @@
       "rho_graded_glm": 0.8149339735894358,
       "rho_graded_PV": 0.7804561824729891,
       "optimism_delta_graded": -0.10064825930372145,
-      "sqrt_r_yy": 0.6857057379695229,
+      "sqrt_r_yy": 0.8980524140492648,
       "sqrt_r_yy_ci": [
-        0.22272843426105093,
-        0.8230983059100778
+        0.8089854889332464,
+        0.9430231014595293
       ],
       "sqrt_r_yy_binomial": 1.0,
       "shuffle_null_p": 0.000999000999000999,
@@ -319,7 +383,7 @@
       ],
       "rho_binary_ridge": 0.7475141062152371,
       "rho_binary_PV": 0.7126867990366466,
-      "sqrt_r_yy_binary": 0.5075720676512554,
+      "sqrt_r_yy_binary": 0.7739938062707598,
       "shuffle_null_p_binary": 0.000999000999000999,
       "control_task_pass_binary": true,
       "chosen_layer_binary_glm": 12,
@@ -359,7 +423,71 @@
       "yield_floor": 48,
       "m_e0": 60,
       "median_n_judged": 58.0,
-      "rubric_version": "v1-metadata-refresh"
+      "rubric_version": "v1-metadata-refresh",
+      "sqrt_r_yy_graded_legacy_independent": 0.6857057379695229,
+      "sqrt_r_yy_graded_ci_legacy_independent": [
+        0.22272843426105093,
+        0.8230983059100778
+      ],
+      "sqrt_r_yy_binary_legacy_independent": 0.5075720676512554,
+      "triage_verdict_legacy_independent": "works",
+      "triage_verdict_binary_legacy_independent": "works",
+      "reliability_estimator": "split_half_probe_aligned_v2",
+      "reliability_e0_source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-763/eval_results/issue_763/E0_matched_by_behavior.json",
+      "reliability_bracket_graded": {
+        "sqrt_r_yy_split_half": 0.8980524140492648,
+        "sqrt_r_yy_binomial": 1.0,
+        "sqrt_r_yy": 0.8980524140492648,
+        "sqrt_r_yy_ci": [
+          0.8089854889332464,
+          0.9430231014595293
+        ],
+        "split_half": {
+          "r_hh": 0.6757409974080956,
+          "r_yy": 0.8064981383797122,
+          "sqrt_r_yy": 0.8980524140492648,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 1.0,
+          "sqrt_r_yy": 1.0,
+          "signal_var": 142.2343228136262,
+          "mean_noise_var": -80.92254500168296,
+          "observed_var": 61.311777811943244,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      },
+      "reliability_bracket_binary": {
+        "sqrt_r_yy_split_half": 0.7739938062707598,
+        "sqrt_r_yy_binomial": 0.5682477300445331,
+        "sqrt_r_yy": 0.7739938062707598,
+        "sqrt_r_yy_ci": [
+          0.5916409134511172,
+          0.8608327213106813
+        ],
+        "split_half": {
+          "r_hh": 0.4276194227471947,
+          "r_yy": 0.5990664121454984,
+          "sqrt_r_yy": 0.7739938062707598,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 0.3229054827007645,
+          "sqrt_r_yy": 0.5682477300445331,
+          "signal_var": 0.0014858779689617212,
+          "mean_noise_var": 0.0031157099524755853,
+          "observed_var": 0.0046015879214373065,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      }
     },
     "format_style": {
       "behavior": "format_style",
@@ -373,10 +501,10 @@
       "rho_binary": 0.5585537216333601,
       "rho_GLM": 0.5585537216333601,
       "rho_PV": -0.07458618231121335,
-      "sqrt_r_yy_graded": 0.8237369411034406,
+      "sqrt_r_yy_graded": 0.9256823053198127,
       "sqrt_r_yy_graded_ci": [
-        0.6333777763471555,
-        0.9075328978713872
+        0.8642279172862781,
+        0.9613088148407454
       ],
       "primary_dv": "graded_mean",
       "headline_predictor": "ridge",
@@ -388,10 +516,10 @@
       "rho_graded_glm": 0.5585537216333601,
       "rho_graded_PV": -0.07458618231121335,
       "optimism_delta_graded": 0.05667394227262634,
-      "sqrt_r_yy": 0.8237369411034406,
+      "sqrt_r_yy": 0.9256823053198127,
       "sqrt_r_yy_ci": [
-        0.6333777763471555,
-        0.9075328978713872
+        0.8642279172862781,
+        0.9613088148407454
       ],
       "sqrt_r_yy_binomial": 1.0,
       "shuffle_null_p": 0.000999000999000999,
@@ -499,7 +627,7 @@
       ],
       "rho_binary_ridge": 0.5693877377857314,
       "rho_binary_PV": -0.07458618231121335,
-      "sqrt_r_yy_binary": 0.8237369411034406,
+      "sqrt_r_yy_binary": 0.9256823053198127,
       "shuffle_null_p_binary": 0.000999000999000999,
       "control_task_pass_binary": true,
       "chosen_layer_binary_glm": 18,
@@ -539,7 +667,71 @@
       "yield_floor": 48,
       "m_e0": 60,
       "median_n_judged": 60.0,
-      "rubric_version": "v1-metadata-refresh"
+      "rubric_version": "v1-metadata-refresh",
+      "sqrt_r_yy_graded_legacy_independent": 0.8237369411034406,
+      "sqrt_r_yy_graded_ci_legacy_independent": [
+        0.6333777763471555,
+        0.9075328978713872
+      ],
+      "sqrt_r_yy_binary_legacy_independent": 0.8237369411034406,
+      "triage_verdict_legacy_independent": "works",
+      "triage_verdict_binary_legacy_independent": "works",
+      "reliability_estimator": "split_half_probe_aligned_v2",
+      "reliability_e0_source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-763/eval_results/issue_763/E0_matched_by_behavior.json",
+      "reliability_bracket_graded": {
+        "sqrt_r_yy_split_half": 0.9256823053198127,
+        "sqrt_r_yy_binomial": 1.0,
+        "sqrt_r_yy": 0.9256823053198127,
+        "sqrt_r_yy_ci": [
+          0.8642279172862781,
+          0.9613088148407454
+        ],
+        "split_half": {
+          "r_hh": 0.7496094243382635,
+          "r_yy": 0.8568877303822028,
+          "sqrt_r_yy": 0.9256823053198127,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 1.0,
+          "sqrt_r_yy": 1.0,
+          "signal_var": 403.041753590325,
+          "mean_noise_var": -52.30592592592593,
+          "observed_var": 350.7358276643991,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      },
+      "reliability_bracket_binary": {
+        "sqrt_r_yy_split_half": 0.9256823053198127,
+        "sqrt_r_yy_binomial": 0.9476677022219459,
+        "sqrt_r_yy": 0.9256823053198127,
+        "sqrt_r_yy_ci": [
+          0.8642279172862781,
+          0.9613088148407454
+        ],
+        "split_half": {
+          "r_hh": 0.7496094243382635,
+          "r_yy": 0.8568877303822028,
+          "sqrt_r_yy": 0.9256823053198127,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 0.8980740738346226,
+          "sqrt_r_yy": 0.9476677022219459,
+          "signal_var": 0.0314986753590325,
+          "mean_noise_var": 0.0035749074074074073,
+          "observed_var": 0.03507358276643991,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      }
     },
     "persona_drift": {
       "behavior": "persona_drift",
@@ -553,10 +745,10 @@
       "rho_binary": 0.8230547343448857,
       "rho_GLM": 0.8513325330132053,
       "rho_PV": 0.8397118847539016,
-      "sqrt_r_yy_graded": 0.9661983343355194,
+      "sqrt_r_yy_graded": 0.9765925384017565,
       "sqrt_r_yy_graded_ci": [
-        0.941023251891411,
-        0.9723128816310406
+        0.9591078903026656,
+        0.9837970525510551
       ],
       "primary_dv": "graded_mean",
       "headline_predictor": "ridge",
@@ -568,10 +760,10 @@
       "rho_graded_glm": 0.8513325330132053,
       "rho_graded_PV": 0.8397118847539016,
       "optimism_delta_graded": 0.009315726290516135,
-      "sqrt_r_yy": 0.9661983343355194,
+      "sqrt_r_yy": 0.9765925384017565,
       "sqrt_r_yy_ci": [
-        0.941023251891411,
-        0.9723128816310406
+        0.9591078903026656,
+        0.9837970525510551
       ],
       "sqrt_r_yy_binomial": 1.0,
       "shuffle_null_p": 0.000999000999000999,
@@ -679,7 +871,7 @@
       ],
       "rho_binary_ridge": 0.8397762620202912,
       "rho_binary_PV": 0.7932154565103259,
-      "sqrt_r_yy_binary": 0.936928950859697,
+      "sqrt_r_yy_binary": 0.9469414170903236,
       "shuffle_null_p_binary": 0.000999000999000999,
       "control_task_pass_binary": true,
       "chosen_layer_binary_glm": 0,
@@ -719,7 +911,71 @@
       "yield_floor": 16,
       "m_e0": 60,
       "median_n_judged": 15.0,
-      "rubric_version": "v1-metadata-refresh"
+      "rubric_version": "v1-metadata-refresh",
+      "sqrt_r_yy_graded_legacy_independent": 0.9661983343355194,
+      "sqrt_r_yy_graded_ci_legacy_independent": [
+        0.941023251891411,
+        0.9723128816310406
+      ],
+      "sqrt_r_yy_binary_legacy_independent": 0.936928950859697,
+      "triage_verdict_legacy_independent": "works",
+      "triage_verdict_binary_legacy_independent": "works",
+      "reliability_estimator": "split_half_probe_aligned_v2",
+      "reliability_e0_source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-763/eval_results/issue_763/E0_matched_by_behavior.json",
+      "reliability_bracket_graded": {
+        "sqrt_r_yy_split_half": 0.9765925384017565,
+        "sqrt_r_yy_binomial": 1.0,
+        "sqrt_r_yy": 0.9765925384017565,
+        "sqrt_r_yy_ci": [
+          0.9591078903026656,
+          0.9837970525510551
+        ],
+        "split_half": {
+          "r_hh": 0.9115579229361905,
+          "r_yy": 0.9537329860619862,
+          "sqrt_r_yy": 0.9765925384017565,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 1.0,
+          "sqrt_r_yy": 1.0,
+          "signal_var": 981.8374872130103,
+          "mean_noise_var": -108.3838640625,
+          "observed_var": 873.4536231505102,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      },
+      "reliability_bracket_binary": {
+        "sqrt_r_yy_split_half": 0.9469414170903236,
+        "sqrt_r_yy_binomial": 0.9593666238506467,
+        "sqrt_r_yy": 0.9469414170903236,
+        "sqrt_r_yy_ci": [
+          0.9098690860313274,
+          0.9669320715961512
+        ],
+        "split_half": {
+          "r_hh": 0.8127403792667478,
+          "r_yy": 0.8966980474010302,
+          "sqrt_r_yy": 0.9469414170903236,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 0.9203843189585883,
+          "sqrt_r_yy": 0.9593666238506467,
+          "signal_var": 0.08797417182974812,
+          "mean_noise_var": 0.007609998845052809,
+          "observed_var": 0.09558417067480093,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      }
     },
     "self_report": {
       "behavior": "self_report",
@@ -733,10 +989,10 @@
       "rho_binary": 0.6651766421443708,
       "rho_GLM": 0.7858343337334933,
       "rho_PV": 0.754717887154862,
-      "sqrt_r_yy_graded": 0.754283788556652,
+      "sqrt_r_yy_graded": 0.840571296871411,
       "sqrt_r_yy_graded_ci": [
-        0.45312145616835425,
-        0.8565400677567393
+        0.6941953244282403,
+        0.9078898140954442
       ],
       "primary_dv": "graded_mean",
       "headline_predictor": "ridge",
@@ -748,10 +1004,10 @@
       "rho_graded_glm": 0.7858343337334933,
       "rho_graded_PV": 0.754717887154862,
       "optimism_delta_graded": -0.043217286914765896,
-      "sqrt_r_yy": 0.754283788556652,
+      "sqrt_r_yy": 0.840571296871411,
       "sqrt_r_yy_ci": [
-        0.45312145616835425,
-        0.8565400677567393
+        0.6941953244282403,
+        0.9078898140954442
       ],
       "sqrt_r_yy_binomial": 1.0,
       "shuffle_null_p": 0.000999000999000999,
@@ -859,7 +1115,7 @@
       ],
       "rho_binary_ridge": 0.7236013960087103,
       "rho_binary_PV": 0.6503180010381313,
-      "sqrt_r_yy_binary": 0.7611984034218285,
+      "sqrt_r_yy_binary": 0.815122386593763,
       "shuffle_null_p_binary": 0.000999000999000999,
       "control_task_pass_binary": true,
       "chosen_layer_binary_glm": 25,
@@ -899,20 +1155,85 @@
       "yield_floor": 16,
       "m_e0": 60,
       "median_n_judged": 14.0,
-      "rubric_version": "v1-metadata-refresh"
+      "rubric_version": "v1-metadata-refresh",
+      "sqrt_r_yy_graded_legacy_independent": 0.754283788556652,
+      "sqrt_r_yy_graded_ci_legacy_independent": [
+        0.45312145616835425,
+        0.8565400677567393
+      ],
+      "sqrt_r_yy_binary_legacy_independent": 0.7611984034218285,
+      "triage_verdict_legacy_independent": "works",
+      "triage_verdict_binary_legacy_independent": "works",
+      "reliability_estimator": "split_half_probe_aligned_v2",
+      "reliability_e0_source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-763/eval_results/issue_763/E0_matched_by_behavior.json",
+      "reliability_bracket_graded": {
+        "sqrt_r_yy_split_half": 0.840571296871411,
+        "sqrt_r_yy_binomial": 1.0,
+        "sqrt_r_yy": 0.840571296871411,
+        "sqrt_r_yy_ci": [
+          0.6941953244282403,
+          0.9078898140954442
+        ],
+        "split_half": {
+          "r_hh": 0.5462643513032117,
+          "r_yy": 0.7065601051240857,
+          "sqrt_r_yy": 0.840571296871411,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 1.0,
+          "sqrt_r_yy": 1.0,
+          "signal_var": 242.22180998608977,
+          "mean_noise_var": -32.55819354990434,
+          "observed_var": 209.66361643618544,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      },
+      "reliability_bracket_binary": {
+        "sqrt_r_yy_split_half": 0.815122386593763,
+        "sqrt_r_yy_binomial": 0.9172803306032661,
+        "sqrt_r_yy": 0.815122386593763,
+        "sqrt_r_yy_ci": [
+          0.6687346734033609,
+          0.8943173211905583
+        ],
+        "split_half": {
+          "r_hh": 0.497481802920583,
+          "r_yy": 0.6644245051263121,
+          "sqrt_r_yy": 0.815122386593763,
+          "n_contexts_used": 50,
+          "n_splits": 200,
+          "method": "aligned"
+        },
+        "binomial": {
+          "r_yy": 0.8414032049116371,
+          "sqrt_r_yy": 0.9172803306032661,
+          "signal_var": 0.03215101718858226,
+          "mean_noise_var": 0.006060172168556814,
+          "observed_var": 0.038211189357139075,
+          "n_contexts": 50
+        },
+        "split_half_method": "aligned",
+        "seed": 763
+      }
     }
   },
   "n_shuffle_perms": 1000,
   "n_bootstrap": 2000,
   "have_pv_baseline": true,
   "metadata": {
-    "git_commit": "eac836354a8fa8073b1e714f8025f042575d52cf",
-    "timestamp_utc": "2026-07-02T16:27:03.524345Z",
+    "git_commit": "6ca67c904eac3a129de508c4a6e0b0e4d94c4054",
+    "timestamp_utc": "2026-07-02T20:12:47.678646Z",
     "python_version": "3.11.15",
-    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
     "cuda_visible_devices": "all",
     "phase": "fit",
-    "mode": "refresh-metadata-only",
-    "parent_fit_dir": "/workspace/eps-issue-763/eval_results/issue_763/fit_by_behavior"
+    "mode": "reliability-refresh-aligned",
+    "reliability_estimator": "split_half_probe_aligned_v2",
+    "parent_e0": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-763/eval_results/issue_763/E0_matched_by_behavior.json"
   }
 }
