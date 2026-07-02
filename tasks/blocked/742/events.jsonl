@@ -221,3 +221,4 @@
 {"ts": "2026-07-02T14:40:35Z", "kind": "epm:progress", "version": 73, "by": "unknown", "note": "[poll-tick] 5th launch 7h30m. 4/8 cells done; ultrachat in progress. Disk 69G free."}
 {"ts": "2026-07-02T15:31:33Z", "kind": "epm:progress", "version": 74, "by": "unknown", "note": "[poll-tick] 5th launch 8h20m. 4/8 cells done; ultrachat in progress. Disk 67G free."}
 {"ts": "2026-07-02T16:22:35Z", "kind": "epm:progress", "version": 75, "by": "unknown", "note": "[poll-tick] 5th launch 9h10m. 4/8 cells done; ultrachat in progress. Disk 56G free (fleet pressure, my footprint small)."}
+{"ts": "2026-07-02T17:13:39Z", "kind": "epm:progress", "version": 76, "by": "unknown", "note": "[poll-tick] 5th launch 10h. 5/8 cells done (+ultrachat__broad_em). 3 remain (ultrachat harmful_compliance, sycophancy, refusal). Disk recovered to 97G."}
