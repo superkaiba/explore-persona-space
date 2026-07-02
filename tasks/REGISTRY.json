@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 871,
+  "highest_id": 872,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5671,6 +5671,13 @@
       "path": "tasks/proposed/871",
       "status": "proposed",
       "title": "workflow-fix: artifact-reuse fitness check gains throughput item (i)"
+    },
+    "872": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/872",
+      "status": "proposed",
+      "title": "workflow-fix: vectorized rewrites land on main + tombstone serial twin"
     },
     "88": {
       "has_clean_result": true,
