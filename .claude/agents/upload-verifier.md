@@ -10,7 +10,6 @@ description: >
   gate PASSes, and pod termination strictly requires PASS. Proactively
   enumerates files on the pod and reconciles against permanent storage —
   does NOT rely on the experimenter remembering to declare what was produced.
-model: claude-fable-5
 effort: xhigh
 tools:
   - Bash

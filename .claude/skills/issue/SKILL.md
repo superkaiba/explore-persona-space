@@ -2095,8 +2095,8 @@ reconciler invocations.
 **5c-bis. Mechanical-contract-only FAIL strip (anti-gate-hopping).**
 
 A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
-(reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Step
-0.5), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
+(reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Steps
+0.5 / 0.55), `smoke-run-missing` (Step 0.6), `git-provenance` (Step 0.9)} and does
 NOT contain `substantive`
 (any code / plan / test / security finding). The `**Blocker tags:**` line is
 the parse target; if a legacy verdict omits it, fall back to reading the
@@ -2111,8 +2111,19 @@ worktree `events.jsonl` — before the implementation marker was pulled in — i
 the most common false absence; the canonical read is what catches it.) No LLM
 judgment, just structural presence:
 
-- **marker-shape:** all four H3 sections `(a)`–`(d)` present with non-empty
-  content AND `(c)` carries at least one fenced command.
+- **marker-shape:** two sub-recipes, keyed PER BLOCKER on the blocker body
+  (a conforming Step 0.55 blocker names exactly ONE marker kind,
+  `epm:smoke-architecture-check` — never a combined Step 0.5 + 0.55 blocker).
+  When the blocker names `epm:smoke-architecture-check` (Step 0.55): a
+  separate `epm:smoke-architecture-check` events row exists in canonical task
+  state with a `verdict:` line matching `PASS_UNIFIED` | `PASS_CANARY
+  canary_cell=<id>` | `FAIL_NO_CANARY` — present + parseable → STRIP (a
+  stale-worktree false absence); absent or verdict-less → leave the FAIL in
+  place (the gate is doing its job; do NOT check the implementation marker's
+  H3s for this sub-case — they can be conforming while the separate row is
+  missing, which is exactly incident #811). Otherwise (the Step 0.5 default):
+  all four H3 sections `(a)`–`(d)` present with non-empty content AND `(c)`
+  carries at least one fenced command.
 - **smoke-run-missing:** a `## Smoke run` section is present, and EVERY phase
   the pipeline actually executes (typically data-gen, training, eval) has its
   own sub-section with a command, exit code `0`, and an artifact digest. A
@@ -4026,7 +4037,7 @@ When this skill is re-invoked in `running`:
    auto-continue, no gate. Both crash-fix shapes — the `code`-row
    `experiment-implementer` round and the `infra`-row experimenter
    respawn whose relaunch applied a fix — are REQUIRED (by
-   `experiment-implementer.md` § "Crash-fix rounds: failure-lesson
+   `.claude/rules/crash-fix-rounds.md` § "Crash-fix rounds: failure-lesson
    block" and `experimenter.md` § "Failure-lesson block on
    relaunch-with-fix") to end their report with a structured lesson
    block. A THIRD shape arrives outside this step: an experimenter that
@@ -4170,7 +4181,7 @@ entry guard convention):
    upload-verification PASS. See the two hard joins below.
    **Paper-mode branch (`paper: true` frontmatter).** When the task
    carries `paper: true`, the analyzer runs its PAPER-TASK MODE
-   (`.claude/agents/analyzer.md` § PAPER-TASK MODE): the analysis Steps
+   (`.claude/rules/analyzer-paper-mode.md` § PAPER-TASK MODE): the analysis Steps
    1→3.6 are unchanged, but the write-up is a LaTeX **paper** under
    `docs/papers/issue_<N>/` (not a markdown body) — the analyzer
    assembles the `.tex` (splicing in the `methodology-writer`'s Methods +
@@ -4844,7 +4855,7 @@ paper-task's reader-facing prose lives in the `.tex`
 interpretation / Discussion), not a markdown `body.md` to extract — and
 the analyzer already ran `/humanize academic` (em-dash zero-tolerance,
 copula avoidance, classical academic terms) on those paper surfaces
-INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/agents/analyzer.md`
+INTERNALLY during its PAPER-TASK MODE Step 4.5 (`.claude/rules/analyzer-paper-mode.md`
 § PAPER-TASK MODE). Post `epm:humanize-loop v1` with `note: skipped —
 paper-task (analyzer ran inline /humanize academic on the .tex)` so the
 audit log records it, and proceed straight to 9a-ter.
@@ -5018,7 +5029,7 @@ explicit eval-data path):
    true`?** The re-spawned analyzer re-authors the `.tex` in place —
    re-writing the Abstract + the affected Results subsection, re-running
    `build_paper.py` → `verify_paper.py`, re-writing the paper-stub — per
-   `.claude/agents/analyzer.md` § "Same-issue follow-up rounds
+   `.claude/rules/analyzer-paper-mode.md` § "Same-issue follow-up rounds
    (paper-task)"; the mechanical gate is `verify_paper.py`, not
    `verify_task_body.py`. The same applies to the Step 9b cheap-band /
    same-issue follow-up loop folds.)

@@ -7,7 +7,6 @@ description: >
   and is ranked by information gain per GPU-hour. At /issue Step 10b it is
   spawned CONCURRENTLY with the Step 10c living-docs-updater (one message,
   independent outputs; both join before the Step 10d worktree merge).
-model: claude-fable-5
 effort: xhigh
 tools:
   - Read

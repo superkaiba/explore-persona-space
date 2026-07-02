@@ -9,11 +9,12 @@ paths:
 
 CLAUDE.md Critical Rules carries the always-on rule ("Reuse existing trained
 artifacts when fit-for-purpose — never reuse a wrong one") plus a one-line
-summary naming checks (a)-(h); this file is the full checklist. The operational
-copies the reviewers enforce live in `planner.md` step 5 (self-attested),
-`critic.md` Methodology lens item 9 (REVISE), and `consistency-checker.md`
-(reuse-smuggled-variable diff + Hub-resolution gate) — keep all surfaces in
-sync when editing any check.
+summary naming checks (a)-(h); this file is the full checklist AND, as of
+#829, the single operational copy — `planner.md` step 5 self-attests it via a
+pointer here (the former inline copy is relocated into § Plan-time search +
+verification mechanics below), `critic.md` Methodology lens item 9 enforces it
+(REVISE), and `consistency-checker.md` runs the reuse-smuggled-variable diff +
+Hub-resolution gate — keep those surfaces in sync when editing any check.
 
 The reuse default extends to TRAINED ARTIFACTS already on HF: LoRA adapters /
 merged checkpoints (`superkaiba1/explore-persona-space`), training-mix JSONLs +
@@ -25,27 +26,102 @@ instead of retraining 16 sources). Reuse is conditional on a POSITIVE fitness
 check — silently reusing a wrong / stale / saturated artifact confounds the
 result and is WORSE than retraining.
 
+## Plan-time search + verification mechanics (relocated from planner.md step 5, #829)
+
+Default to reuse: training new
+models / regenerating datasets / re-running evals when an existing
+artifact would answer the new Goal wastes GPU-hours and breaks
+sibling-comparability. Before designing any new training step, search
+the existing artifact base for candidates:
+
+- **Trained LoRA adapters / merged checkpoints:** `superkaiba1/explore-persona-space` HF model repo. Pull the file listing once with `list_repo_files(repo_id, repo_type='model')` and grep for the model family, persona, marker, or training-recipe slug the new Goal needs. Cross-reference against the parent / sibling issue's `## Reproducibility` section for the exact subfolder used.
+- **Training-mix JSONLs + raw-completion buckets:** `superkaiba1/explore-persona-space-data` HF data repo (typically under `issueN_<slug>/`).
+- **Aggregated eval JSONs:** `eval_results/issue_<M>/` in git (browse via `eval_results/INDEX.md` or `python scripts/task.py view <M>`).
+
+The canonical worked example is #532, which reuses #474's loc-arm
+epoch-1 marker adapters instead of retraining all 16 sources. Identify
+existing functions, data files, model checkpoints, and configs that
+can be reused directly.
+
+Then, for EVERY cited HF reuse artifact (LoRA adapter, merged model,
+dataset, raw-completion bucket) the plan would record as reused, you
+MUST run a Hub-API existence check BEFORE writing it into §10
+(Reproducibility Card) or §11 (Decision Rationale) as a confirmed
+reuse:
+
+```bash
+uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('<repo_id>', repo_type='<model|dataset>', revision='main')))" | grep '<expected_subfolder_or_path>'
+```
+
+Confirm the EXPECTED files actually resolve at the cited path /
+subfolder:
+- **LoRA adapter:** `adapter_config.json` + `adapter_model.safetensors`
+  present at the cited subfolder.
+- **Merged model / full checkpoint:** `config.json` + a weights shard
+  (e.g. `model.safetensors` or `pytorch_model.bin*`) present at the
+  cited path.
+- **Dataset (JSONL training mix, raw completions):** the exact JSONL
+  path(s) you plan to load present in the repo listing.
+
+Use `huggingface_hub.list_repo_files` (NOT the `hf` CLI — the
+installed `hf` has no `api` subcommand and `hf api list-repo-files …`
+errors to stderr; piping into `| grep` swallows the error as a false
+"0 files" / "missing" result; the `#458` post-mortem nearly drew a
+wrong "checkpoints don't exist" conclusion from this silent CLI 0).
+Full Hub-API verification recipe: `.claude/rules/upload-policy.md`.
+
+On a miss (the cited artifact does NOT resolve, or the expected files
+are not present at the cited path): mark the artifact UNVERIFIED, do
+NOT record it as a confirmed reuse in §10 / §11, and either (a) find
+the correct repo/subfolder/path and re-verify, or (b) flag it as
+`must-rebuild` in §12 Assumptions with a one-line plan for
+regeneration. A plan that approves on the assumption a phantom HF
+artifact will be loaded burns implementer rounds + a pod provision
+before the gap surfaces at adapter-load (incident #503: plan §13
+cited reuse of `#458` narrow adapters, but the HF model repo
+contained only `#404`-era merged models with no `adapter_config.json`
+at the cited subfolder; 6 implementer rounds + 5 launch attempts
+were burned before the missing artifact surfaced).
+
 ## The checklist
 
 The planner verifies, before recording an artifact as reused in §10/§11:
 
 - **(a)** same base model + same training recipe / hyperparameters the new
-  question requires (marker token id, lr, epochs, rank,
-  contrastive-vs-positives arm, etc. — adapter-architecture values grounded on
-  the artifact's own `adapter_config.json` via `hf_hub_download`, never the
-  parent body's Reproducibility row alone; on disagreement the config wins and
-  the body row gets record-corrected — incident #545);
+  question requires (marker token id — e.g. ` ※` = id 83399, not bare `※` =
+  id 63680 — lr, epochs / checkpoint step, rank, contrastive-vs-positives arm,
+  etc. — adapter-architecture values grounded on the artifact's own
+  `adapter_config.json` via `hf_hub_download`, never the parent body's
+  Reproducibility row alone; on disagreement the config wins and the body row
+  gets record-corrected (post a note on #M) rather than encoding body-row
+  values into a runtime fitness assert — incident #545 round 23: a
+  body-row-derived assert (r=16/α=32 vs the config's r=32/α=256) crashed all 7
+  reuse cells mid-sweep);
 - **(b)** the artifact is in a VALID measurement regime for the new question —
   for marker work specifically, NOT saturated (source `log P − base ∈ [5,12]`
   nat, bystanders below the argmax ceiling per
-  `.claude/rules/marker-training-recipe.md`);
+  `.claude/rules/marker-training-recipe.md`); for non-marker reuse, name the
+  regime check the new DV requires (e.g. eval-judge prompt version match,
+  base-model decoder identical);
 - **(c)** the required conditions / cells the new design needs are actually
-  present;
+  present — the specific personas / sources / training-mix slices / eval
+  probes (a 4-source adapter doesn't cover a 16-source sweep; a parent's
+  `medical_doctor + french_person` negative panel doesn't cover a design that
+  needs a `police_officer` arm);
 - **(d)** reuse does NOT break single-variable-change (consistency-checker) or
-  measurement validity;
+  measurement validity — no second silently-changed variable rides along
+  (e.g. reusing #M's adapter trained at lr=1e-4 in a sweep claiming to vary
+  only LoRA rank — the parent's lr came along too); name the parent issue and
+  the single variable being varied, and carry any inherited choices into §11
+  with `Source: #<M>`;
 - **(e)** the artifact actually resolves on HF via
   `huggingface_hub.list_repo_files` (NOT the `hf` CLI — see
-  `.claude/rules/upload-policy.md`);
+  `.claude/rules/upload-policy.md`; full existence-check recipe: § Plan-time
+  search + verification mechanics above), AND the producing issue is not
+  retracted / superseded — check the producing task's status and any
+  `epm:retracted` markers; an adapter from a task later marked `not-useful` or
+  whose clean-result was retracted cannot be cited as a confirmed baseline
+  without naming it;
 - **(f)** content identity across copies — when the verified copy is a local
   untracked file but execution fetches the artifact's HF mirror, the plan
   names the pin mechanism (`EXPECTED_SHA256` table asserted at prefetch, or an
@@ -69,7 +145,7 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   (`huggingface_hub.list_repo_files`, for training mixes / on-policy caches /
   HF-uploaded eval JSONs) OR **git-tree reachability** for a committed
   `eval_results/issue_<M>/` JSON (`git ls-tree -r origin/main -- <path>`
-  returns it — `planner.md` line 120 sanctions in-git eval JSONs as a reuse
+  returns it — § Plan-time search + verification mechanics above sanctions in-git eval JSONs as a reuse
   source, and the git-clone-only lanes pick them up via the clone); **(ii)
   consumer-exact path layout** — the plan NAMES the exact path/filename
   pattern the NEW consumer (dispatcher / driver / eval / training script) will
@@ -120,3 +196,91 @@ check) → `consistency-checker` (independent reuse-smuggled-variable diff vs
 the parent recipe) → `critic.md` Methodology lens item 9 (REVISE); the reuse
 provenance is then carried into the clean-result `## Reproducibility`
 (`analyzer.md`) and audited by `clean-result-critic` Lens 5.
+
+## Porting a recipe from an unmerged sibling branch (relocated from experiment-implementer.md, #829)
+
+If the parent experiment's scripts/configs live on a branch that was
+never merged to `main` (e.g. issue-432's recipe sits on the `issue-432`
+branch at `<sha>`), do NOT cherry-pick functions one at a time. A
+partial port brings the caller without the callee (or vice versa) and
+crashes the pod one phase at a time. The crash class includes BOTH
+direct missing-function imports AND **library-API drift** — a
+dataclass field, function kwarg, or method signature that the parent
+SHA used but that has been renamed / retired / type-changed on `main`
+since the parent branched (e.g. `TrainLoraConfig.marker_logprob_
+trajectory` retired on `main`, `marker_text: list[str]` reverted to
+`str` on `main`). The parent-branch caller passes the old shape; the
+`main`-resident callee rejects it; the cell crashes at the first pod
+launch. The reconciliation MUST happen pre-cherry-pick, not at the
+crash.
+
+Three mandatory steps, BEFORE the first commit on the worktree:
+
+1. **Diff the WHOLE train+eval+experiments code path against `main`
+   and reconcile every hunk** (port it, or confirm `main`'s version is
+   equivalent + adjust the cherry-picked call site to match `main`'s
+   current signature):
+
+   ```bash
+   git diff <parent-sha>..origin/main -- scripts/train.py scripts/eval.py \
+     src/explore_persona_space/train/ \
+     src/explore_persona_space/eval/ \
+     src/explore_persona_space/experiments/ \
+     configs/
+   ```
+
+   "Reconcile" is not optional and not silent — the implementation
+   report's `(b) Considered but not done` section MUST list every
+   non-trivial hunk you reconciled, naming which fields / functions /
+   kwargs drifted and which way you resolved them (ported the
+   parent's shape, or adjusted the call site to `main`'s shape). A
+   hunk you "didn't notice" is the partial-port crash class.
+
+2. **Signature smoke per kwarg the dispatcher passes.** Before the
+   first commit, run a one-liner that asserts every kwarg / dataclass
+   field the cherry-picked dispatcher will pass is actually present
+   in `main`'s current signature for that callee (catches drift the
+   git-diff scan missed because the hunk landed in an adjacent
+   file). Pattern:
+
+   ```bash
+   uv run python -c "
+   from dataclasses import fields
+   from explore_persona_space.train.sft import TrainLoraConfig  # or whichever Config the dispatcher constructs
+   dispatcher_kwargs = {<every kwarg the dispatcher's call site passes>}
+   missing = dispatcher_kwargs - {f.name for f in fields(TrainLoraConfig)}
+   assert not missing, f'Library-API drift: dispatcher passes kwargs missing from main: {missing}'
+   "
+   ```
+
+   For non-dataclass callees use `inspect.signature(<fn>).parameters`
+   instead of `fields(<Config>)`. Run this for EVERY library callee
+   the cherry-picked code constructs or invokes at the dispatcher
+   boundary (typically: training Config, eval Config, the trainer
+   entry-point fn, the eval entry-point fn). This is in addition to
+   — not a replacement for — the standard signature smoke in the
+   GPU-bound-phase carve-out (the per-phase one verifies the
+   dispatcher → trainer ABI; this per-kwarg one verifies every
+   field the dispatcher's call site already names).
+
+3. **Surface every reconciled drift in the implementation report.**
+   Under `(b) Considered but not done`, one bullet per drift item:
+   "`TrainLoraConfig.marker_logprob_trajectory` retired on `main`
+   since `<parent-sha>` — removed from the dispatcher's kwargs; the
+   feature is now <X> on `main` and the cherry-pick relies on <Y>"
+   (or "ported the parent's field back to `train/sft.py` because
+   `main`'s replacement <Z> is not equivalent for this experiment").
+   This makes the reconciliation visible to `code-reviewer` and to
+   any later task that re-uses the recipe.
+
+(Incidents: 2026-06-01 #451 cherry-picked `factor_screen_397` but
+left `train/sft.py` at `main`'s older `TrainLoraConfig` signature →
+all 72 cells crashed in ~10 min. #456 hit the same partial-port
+class three times, each crash burning a fix-relaunch on a live pod.
+2026-06-08 #529 cherry-picked the `i464_*` rig from `issue-464` SHA
+`0905fc70`; `TrainLoraConfig.marker_logprob_trajectory` had been
+retired on `main` and `marker_text: list[str]` reverted to `str`,
+both discovered at implementation-time via a post-hoc
+`dataclasses.fields()` introspection rather than pre-cherry-pick —
+the implementer caught it via the smoke but the failure-mode-catch
+was reactive, not preventative.)
