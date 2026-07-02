@@ -5696,8 +5696,8 @@
     "875": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/875",
-      "status": "planning",
+      "path": "tasks/approved/875",
+      "status": "approved",
       "title": "workflow-fix: work-conserving dispatcher + per-row IO review lens"
     },
     "876": {
