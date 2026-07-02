@@ -38,7 +38,9 @@ logger = logging.getLogger("issue816.lib")
 
 # Reused #778 r_B directions on the HF DATA repo.
 DATA_REPO = "superkaiba1/explore-persona-space-data"
-RB_PREFIX = "issue778_persona_vectors/analysis_tensors/rb"
+# v2 paths: corrected r_B with coherence gate + unpaired filtering fix
+RB_PREFIX = "issue778_persona_vectors/analysis_tensors_v2/rb"
+NEUTRAL_COV_PREFIX = "issue778_persona_vectors/analysis_tensors_v2"
 # Layer 20 (1-indexed, the paper's steering layer) == 0-indexed block-output index 19.
 LAYER_20_IDX = 19
 LAYER_20_1IDX = 20
@@ -62,7 +64,10 @@ def sha256_file(path: Path) -> str:
 
 
 def fetch_rb(trait: str, *, cache_dir: Path):
-    """Download the reused #778 ``r_B[trait]`` tensor from HF and return (tensor, sha256).
+    """Download the v2 #778 ``r_B[trait]`` tensor from HF and return (tensor, sha256).
+
+    v2 paths: ``issue778_persona_vectors/analysis_tensors_v2/rb/{trait}.pt`` —
+    corrected r_B with coherence gate + unpaired filtering fix (plan §4.C Must-Fix B).
 
     Returns a torch tensor of shape ``(N_LAYERS, HIDDEN_DIM)`` == ``(28, 3584)``
     (0-indexed by block; ``r_B[19]`` == the paper's layer 20) plus the SHA256 of
@@ -95,8 +100,55 @@ def fetch_rb(trait: str, *, cache_dir: Path):
         raise ValueError(
             f"r_B[{trait}] shape {tuple(rb.shape)} != expected ({N_LAYERS}, {HIDDEN_DIM})"
         )
-    logger.info("fetched r_B[%s] shape=%s sha256=%s", trait, tuple(rb.shape), sha[:16])
+    logger.info("fetched v2 r_B[%s] shape=%s sha256=%s", trait, tuple(rb.shape), sha[:16])
     return rb.float(), sha
+
+
+def fetch_neutral_cov(trait: str, *, cache_dir: Path):
+    """Download the v2 neutral covariance tensor for ``trait`` and return (tensor, sha256).
+
+    Path: ``issue778_persona_vectors/analysis_tensors_v2/neutral_cov_{trait}.pt``
+    Shape: ``(N_LAYERS, HIDDEN_DIM, HIDDEN_DIM)`` full covariance matrix, OR
+           ``(N_LAYERS, HIDDEN_DIM)`` diagonal approximation — both accepted.
+    dtype: float32.
+
+    The neutral covariance is used to construct the honest null family (2)
+    independent/neutral-cov draws: N(0, Sigma_neutral_l) renormed to ||r_B[l]||,
+    per plan §4.C honest null ladder.
+    """
+    import torch
+    from huggingface_hub import hf_hub_download
+
+    if trait not in TRAITS:
+        raise ValueError(f"unknown trait {trait!r}; expected one of {TRAITS}")
+    filename = f"{NEUTRAL_COV_PREFIX}/neutral_cov_{trait}.pt"
+    local = hf_hub_download(
+        repo_id=DATA_REPO,
+        repo_type="dataset",
+        filename=filename,
+        revision="main",
+        local_dir=str(cache_dir),
+    )
+    local_path = Path(local)
+    # hf_hub_download may nest; find the actual file
+    if not local_path.exists():
+        candidate = cache_dir / Path(filename).name
+        local_path = candidate if candidate.exists() else cache_dir / filename
+    sha = sha256_file(local_path)
+    t = torch.load(local_path, map_location="cpu", weights_only=True)
+    if not isinstance(t, torch.Tensor):
+        raise ValueError(f"neutral_cov[{trait}]: expected tensor, got {type(t)}")
+    t = t.float()
+    # Accept full (N_LAYERS, D, D) or diagonal (N_LAYERS, D)
+    ok_full = tuple(t.shape) == (N_LAYERS, HIDDEN_DIM, HIDDEN_DIM)
+    ok_diag = tuple(t.shape) == (N_LAYERS, HIDDEN_DIM)
+    if not (ok_full or ok_diag):
+        raise ValueError(
+            f"neutral_cov[{trait}] shape {tuple(t.shape)} is neither "
+            f"({N_LAYERS},{HIDDEN_DIM},{HIDDEN_DIM}) nor ({N_LAYERS},{HIDDEN_DIM})"
+        )
+    logger.info("fetched neutral_cov[%s] shape=%s sha256=%s", trait, tuple(t.shape), sha[:16])
+    return t, sha
 
 
 def norm_matched_random_dirs(

@@ -88,6 +88,11 @@ def _extract_trait_mean(row: dict, trait: str) -> float:
 
 
 def run_exp5(args) -> dict:
+    """Run Exp-5 null battery screening for all traits.
+
+    Uses honest v2 r_B directions and neutral_cov from HF, separate pos/neg pools.
+    Writes per-trait screening JSON to out_root/v3/.
+    """
     tensor_root = Path(args.screening_tensor_root)
     eval_778 = Path(args.eval_778_root)
     cache_dir = Path(args.cache_dir)
@@ -98,11 +103,11 @@ def run_exp5(args) -> dict:
         target = _load_778_targets(eval_778, names, trait)
         rb, _ = ilib.fetch_rb(trait, cache_dir=cache_dir)
         rb = rb.numpy()
-        pos = _load_pool(trait, "pos", cache_dir)  # (n, L, D)
-        neg = _load_pool(trait, "neg", cache_dir)
-        # per-layer covariance pool for randnorm = stacked pos+neg at each layer.
-        pool_all = np.concatenate([pos, neg], axis=0)
-        pool_per_layer = {L: pool_all[:, L, :] for L in range(pool_all.shape[1])}
+        pos = _load_pool(trait, "pos", cache_dir)  # (n_pos, L, D)
+        neg = _load_pool(trait, "neg", cache_dir)  # (n_neg, L, D)
+        # Fetch v2 neutral covariance (Σ_neutral, not contaminated pos+neg pool).
+        neutral_cov_tensor, _ = ilib.fetch_neutral_cov(trait, cache_dir=cache_dir)
+        neutral_cov_np = neutral_cov_tensor.numpy()  # (N_LAYERS, D, D) or (N_LAYERS, D)
         other = {
             t: ilib.fetch_rb(t, cache_dir=cache_dir)[0].numpy() for t in args.traits if t != trait
         }
@@ -112,27 +117,26 @@ def run_exp5(args) -> dict:
             predictor,
             target,
             rb,
-            pool_acts_per_layer=pool_per_layer,
             extraction_pos_acts=pos,
             extraction_neg_acts=neg,
+            neutral_cov_per_layer=neutral_cov_np,
             other_rbs=other,
             pca_diff_acts=pca_diffs,
-            n_draws=args.n_null_draws,
+            n_draws_stochastic=args.n_null_draws,
+            n_draws_within_class=max(50, args.n_null_draws // 4),
             seed=args.seed,
         )
         res["dataset_names"] = names
         res["target"] = [float(x) for x in target]
-        # BH across the 4 nulls' one-sided p at the frozen layer.
-        pvals = [res["nulls"][k]["one_sided_p"] for k in ("randnorm", "perm", "crosstrait", "pca")]
-        pvals = [p for p in pvals if p is not None]
-        res["bh_adjusted"] = null_battery.benjamini_hochberg(pvals) if pvals else []
+        # BH is handled inside run_null_battery_screening (stochastic families only).
         out_path = out_root / f"screening_{trait}_nullbattery.json"
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w") as f:
             json.dump(res, f)
         results[trait] = {
             "real_abs_r": res["real_abs_r_frozen"],
-            "nulls": {k: v["p97_5"] for k, v in res["nulls"].items()},
+            "nulls": {k: v.get("p97_5") for k, v in res["nulls"].items()},
+            "bh_adjusted_stochastic": res.get("bh_adjusted_stochastic"),
             "out": str(out_path),
         }
         logger.info("Exp-5 %s: real |r|=%.3f", trait, res["real_abs_r_frozen"])
@@ -157,7 +161,8 @@ def _load_pool(trait: str, side: str, cache_dir: Path) -> np.ndarray:
 
 
 def run_exp2(args) -> dict:
-    steer_dir = Path(args.out_root) / "steering"
+    """Compute Exp-2 steering beat-count over positive coefficients (coherence-gated)."""
+    steer_dir = Path(args.scored_root) / "steering"
     results: dict[str, dict] = {}
     for trait in args.traits:
         real_by_coef: dict[float, dict] = {}
@@ -210,7 +215,8 @@ def run_exp2(args) -> dict:
 
 
 def run_exp4(args) -> dict:
-    prev_dir = Path(args.out_root) / "preventative"
+    """Compute Exp-4 preventative real-vs-random reduction at pre-frozen alpha* = 1.25."""
+    prev_dir = Path(args.scored_root) / "preventative"
     eval_778 = Path(args.eval_778_root)
     results: dict[str, dict] = {}
     for trait in args.traits:
@@ -355,7 +361,18 @@ def make_figures(exp2: dict, exp4: dict, exp5: dict, fig_dir: Path) -> list[str]
     written.append("exp4_preventative_barr")
 
     # Exp-5 hero: real |r| vs each null's p97.5 band, per trait (bar).
-    fig, ax = plt.subplots(figsize=(7, 4))
+    # Keys match the 8 honest null families from run_null_battery_screening.
+    NULL_DISPLAY_KEYS = (
+        "isotropic",
+        "neutral_cov",
+        "within_pos",
+        "within_neg",
+        "rb_out_iso",
+        "cross_trait",
+        "pca_top5",
+        "contaminated_pooled",
+    )
+    fig, ax = plt.subplots(figsize=(9, 4))
     traits5 = list(exp5)
     x = np.arange(len(traits5))
     ax.bar(
@@ -365,14 +382,16 @@ def make_figures(exp2: dict, exp4: dict, exp5: dict, fig_dir: Path) -> list[str]
         label="real |r|",
         color=paper_palette_role("primary"),
     )
-    for j, nk in enumerate(("randnorm", "perm", "crosstrait", "pca")):
+    n_keys = len(NULL_DISPLAY_KEYS)
+    for j, nk in enumerate(NULL_DISPLAY_KEYS):
         vals = [exp5[t]["nulls"].get(nk) or 0 for t in traits5]
-        ax.scatter(x + (j - 1.5) * 0.08, vals, s=40, label=f"{nk} p97.5")
+        offset = (j - (n_keys - 1) / 2) * 0.06
+        ax.scatter(x + offset, vals, s=30, label=f"{nk} p97.5")
     ax.set_xticks(x)
     ax.set_xticklabels(traits5)
     ax.set_ylabel("|Pearson r| (DeltaP vs shift)")
-    ax.set_title("Exp-5 screening: real vs null bands @ layer 20")
-    ax.legend(fontsize=7)
+    ax.set_title("Exp-5 screening: real vs 8-null bands @ layer 20")
+    ax.legend(fontsize=6, ncol=3)
     savefig_paper(fig, "exp5_screening_bands", dir=str(fig_dir))
     plt.close(fig)
     written.append("exp5_screening_bands")
@@ -381,7 +400,11 @@ def make_figures(exp2: dict, exp4: dict, exp5: dict, fig_dir: Path) -> list[str]
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Issue #816 Phase-C off-pod analysis.")
-    parser.add_argument("--out-root", default="eval_results/issue_816")
+    parser.add_argument("--out-root", default="eval_results/issue_816/v3")
+    # --scored-root: where the Phase-B judge wrote {steering,preventative}/*_scored.json.
+    # Defaults to the parent of --out-root (eval_results/issue_816), since judge
+    # outputs to eval_results/issue_816/ directly.
+    parser.add_argument("--scored-root", default=None)
     parser.add_argument("--eval-778-root", default="eval_results/issue_778")
     parser.add_argument("--screening-tensor-root", default="data/issue_816/store/screening")
     parser.add_argument("--fig-dir", default="figures/issue_816")
@@ -397,6 +420,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # Resolve scored-root: directory where Phase-B judge output lives.
+    if args.scored_root is None:
+        # Default: parent of out-root (judge writes to eval_results/issue_816/,
+        # analysis writes to eval_results/issue_816/v3/).
+        args.scored_root = str(Path(args.out_root).parent)
     out = {}
     if "exp5" in args.phases:
         out["exp5"] = run_exp5(args)

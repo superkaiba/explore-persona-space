@@ -126,115 +126,339 @@ def dataset_mean_diff_activation(diff_acts: np.ndarray) -> np.ndarray:
     return diff_acts.mean(axis=0)
 
 
-def run_null_battery_screening(
+def run_null_battery_screening(  # noqa: C901
     predictor_acts: np.ndarray,
     target: np.ndarray,
     rb_trait: np.ndarray,
     *,
-    pool_acts_per_layer: dict[int, np.ndarray],
     extraction_pos_acts: np.ndarray,
     extraction_neg_acts: np.ndarray,
+    neutral_cov_per_layer: np.ndarray,
     other_rbs: dict[str, np.ndarray],
     pca_diff_acts: np.ndarray,
     layer_idx: int = LAYER_20_IDX,
-    n_draws: int = null_battery.DEFAULT_N_DRAWS,
-    seed: int = 0,
+    n_draws_stochastic: int = 200,
+    n_draws_within_class: int = 50,
+    seed: int = 42,
 ) -> dict:
-    """Exp-5 real-vs-null-battery read at the FROZEN layer ``layer_idx`` (20, 0-idx 19).
+    """Exp-5 honest 8-family null battery at the FROZEN layer ``layer_idx`` (20, 0-idx 19).
 
-    ``predictor_acts`` is the ``(n_datasets, N_LAYERS, D)`` per-dataset
-    mean-projection-difference tensor; ``target`` the ``(n_datasets,)`` #778
-    post-ft trait scores. The real |r| and every null's |r| are read at the SAME
-    frozen layer (fixed-axis carve-out -- NO max-over-layer). The per-null-draw x
-    per-layer |r| matrix from each null is persisted so the analyzer can recompute
-    any honest band post-hoc.
+    Fixes the contaminated-null defect from the prior run:
+    - OLD (contaminated): null draws from a shrunk covariance fit on the POOLED pos+neg
+      pool, whose top PC ~ r_B (cos ~0.996) — the null was a near-copy of r_B.
+    - NEW (honest): 8 families using SEPARATE pos/neg pools, isotropic draws, and
+      the neutral covariance from v2 artifacts. See plan §4.C.
+
+    Null families:
+      (1) isotropic    — N(0, I*s2_l) normalized to ||r_B[l]||; s2 = mean eigenval of
+                         neutral_cov, n=200. STOCHASTIC.
+      (2) neutral_cov  — N(0, Sigma_neutral_l) renormed to ||r_B[l]||; n=200. STOCHASTIC.
+      (3) within_pos   — random linear combo of pos residuals at l, project out r_B
+                         BEFORE renorm; n=50. STOCHASTIC. Must-Fix A1.
+      (4) within_neg   — same for neg residuals; n=50. STOCHASTIC.
+      (5) rb_out_iso   — isotropic in the r_B-orthogonal subspace, renormed; n=100.
+                         STOCHASTIC. (r_B projected out from isotropic draws.)
+      (6) cross_trait  — fixed other-trait r_B directions; n=2. DESCRIPTIVE ONLY.
+      (7) pca_top5     — fixed PCA top-5 of (pos-neg) diffs; n=5. DESCRIPTIVE ONLY.
+      (8) contaminated — old pooled-cov randnorm (cos ~0.996 to r_B); n=200.
+                         LABELED CONTAMINATED -- included as a reference/comparison
+                         only; excluded from BH correction (plan §4.C Must-Fix S1).
+
+    BH FDR correction is applied ONLY over stochastic families (1)-(5) with
+    n_draws >= 50. Descriptive-only families (6-7) and the contaminated reference
+    (8) are excluded.
+
+    Must-Fix A1: within-class draws project out r_B BEFORE renorm; per-draw
+    cos_to_rb is persisted in each draw's metadata.
+    Must-Fix S1: conservative empirical-p formula p=(r+1)/(n+1); BH only over
+    stochastic families.
 
     Args:
-        rb_trait: ``(N_LAYERS, D)`` this trait's r_B (RAW; project is scale-invariant).
-        pool_acts_per_layer: ``{layer: (n_pool, D)}`` activation pool for the
-            covariance-realistic randnorm null (the #778 extraction pos+neg pool
-            stacked, one entry per layer -- sampled activation covariance there).
-        extraction_pos_acts / extraction_neg_acts: ``(n_pos, N_LAYERS, D)`` /
-            ``(n_neg, N_LAYERS, D)`` #778 extraction response-avg activation pools
-            (kept rollouts) -- the shuffled-label permutation null re-derives a
-            diff-of-means DIRECTION from these (the same pools the real r_B was
-            built from), NOT from the DeltaP predictor's train/base pairs.
-        other_rbs: ``{other_trait: (N_LAYERS, D)}`` for the cross-trait null.
-        pca_diff_acts: ``(n_pairs, N_LAYERS, D)`` (pos-neg) per-pair activation
-            diffs for the PCA-top-5 null.
+        predictor_acts: ``(n_datasets, N_LAYERS, D)`` per-dataset mean-projection-
+            difference tensor (from ``dataset_mean_diff_activation``).
+        target: ``(n_datasets,)`` #778 post-ft trait scores.
+        rb_trait: ``(N_LAYERS, D)`` this trait's v2 r_B (RAW; project is scale-invariant).
+        extraction_pos_acts: ``(n_pos, N_LAYERS, D)`` #778 extraction pos response-avg acts.
+        extraction_neg_acts: ``(n_neg, N_LAYERS, D)`` #778 extraction neg response-avg acts.
+        neutral_cov_per_layer: ``(N_LAYERS, D, D)`` full neutral covariance OR
+            ``(N_LAYERS, D)`` diagonal form (from v2 HF artifact; used for families 1+2).
+        other_rbs: ``{other_trait: (N_LAYERS, D)}`` for cross-trait null (family 6).
+        pca_diff_acts: ``(n_pairs, N_LAYERS, D)`` (pos-neg) per-pair diffs for PCA null (family 7).
+        layer_idx: frozen layer index (0-indexed; default 19 = layer 20 paper-1indexed).
+        n_draws_stochastic: draws for families 1, 2, 8 (default 200).
+        n_draws_within_class: draws for families 3, 4 and also family 5 (default 50;
+            family 5 uses 100 draws by default via 2x this value).
+        seed: base RNG seed; families draw in sequence from shared rng(seed).
+
     Returns:
         A JSON-serializable dict: observed |r| at the frozen layer, each null's
-        band + one-sided p at the frozen layer, and the per-draw x per-layer
-        matrices (as nested lists) for post-hoc recompute.
+        band + conservative one-sided p at the frozen layer (stochastic families),
+        BH-corrected q-values over stochastic families only, and per-draw x per-layer
+        matrices (nested lists) for post-hoc recompute.
     """
     predictor_acts = np.asarray(predictor_acts, dtype=np.float64)
     target = np.asarray(target, dtype=np.float64)
     rb_trait = np.asarray(rb_trait, dtype=np.float64)
-    n = predictor_acts.shape[0]
+    neutral_cov_arr = np.asarray(neutral_cov_per_layer, dtype=np.float64)
+    n_datasets = predictor_acts.shape[0]
+    n_layers = predictor_acts.shape[1]
+    D = predictor_acts.shape[2]
+    assert rb_trait.shape == (n_layers, D), rb_trait.shape
 
-    # Observed real-vector |r| per layer (frozen-layer read is out[layer_idx]).
+    # Shared RNG — families draw in sequence so seed=42 is fully reproducible.
+    rng = np.random.default_rng(seed)
+
+    # Observed real-vector |r| per layer (frozen-layer read = out[layer_idx]).
     real_r_layers = null_battery.r_per_layer(predictor_acts, rb_trait, target)
     real_r_frozen = float(np.abs(real_r_layers[layer_idx]))
 
-    rb_norm_per_layer = np.linalg.norm(rb_trait, axis=1)
+    rb_norm_per_layer = np.linalg.norm(rb_trait, axis=1)  # (L,)
 
-    # --- Null 1: covariance-realistic norm-matched random ---
-    randnorm_mat = null_battery.randnorm_null_draws(
-        pool_acts_per_layer,
+    # --- Neutral cov helpers ---
+    def _neutral_cov_at(layer: int) -> np.ndarray:
+        """Return the (D, D) covariance at ``layer`` (expand diagonal form if needed)."""
+        cov_layer = neutral_cov_arr[layer]
+        if cov_layer.ndim == 1:
+            # Diagonal form → full diagonal matrix
+            return np.diag(cov_layer)
+        return cov_layer
+
+    def _sigma2_iso(layer: int) -> float:
+        """Isotropic σ² = mean diagonal of neutral_cov at ``layer``."""
+        cov_layer = neutral_cov_arr[layer]
+        if cov_layer.ndim == 1:
+            return float(cov_layer.mean())
+        return float(np.diag(cov_layer).mean())
+
+    # --- Family (1): isotropic N(0, I*s2_l) renormed ---
+    logger.info("[null] family 1: isotropic (n=%d)", n_draws_stochastic)
+    iso_mat = np.zeros((n_draws_stochastic, n_layers), dtype=np.float64)
+    for draw in range(n_draws_stochastic):
+        dirs = np.zeros((n_layers, D), dtype=np.float64)
+        for layer in range(n_layers):
+            sigma = float(np.sqrt(_sigma2_iso(layer)))
+            z = rng.standard_normal(D) * sigma
+            znorm = float(np.linalg.norm(z))
+            target_norm = float(rb_norm_per_layer[layer])
+            dirs[layer] = (z / znorm * target_norm) if znorm > 1e-12 else z
+        iso_mat[draw] = np.abs(null_battery.r_per_layer(predictor_acts, dirs, target))
+
+    # --- Family (2): neutral_cov N(0, Sigma_neutral_l) renormed ---
+    logger.info("[null] family 2: neutral_cov (n=%d)", n_draws_stochastic)
+    ncov_mat = np.zeros((n_draws_stochastic, n_layers), dtype=np.float64)
+    for draw in range(n_draws_stochastic):
+        dirs = np.zeros((n_layers, D), dtype=np.float64)
+        for layer in range(n_layers):
+            cov_l = _neutral_cov_at(layer)
+            # Cholesky factor for sampling; add small nugget for numerical stability
+            try:
+                L_chol = np.linalg.cholesky(cov_l + 1e-8 * np.eye(D))
+                z = L_chol @ rng.standard_normal(D)
+            except np.linalg.LinAlgError:
+                # Fall back to isotropic if Cholesky fails
+                sigma = float(np.sqrt(_sigma2_iso(layer)))
+                z = rng.standard_normal(D) * sigma
+            znorm = float(np.linalg.norm(z))
+            target_norm = float(rb_norm_per_layer[layer])
+            dirs[layer] = (z / znorm * target_norm) if znorm > 1e-12 else z
+        ncov_mat[draw] = np.abs(null_battery.r_per_layer(predictor_acts, dirs, target))
+
+    # --- Family (3): within-class-pos (random combos of pos residuals, r_B projected out)
+    # Must-Fix A1: project out r_B BEFORE renorm; persist cos_to_rb per draw.
+    logger.info("[null] family 3: within_pos (n=%d)", n_draws_within_class)
+    pos_acts = np.asarray(extraction_pos_acts, dtype=np.float64)  # (n_pos, L, D)
+    neg_acts = np.asarray(extraction_neg_acts, dtype=np.float64)  # (n_neg, L, D)
+    within_pos_mat = np.zeros((n_draws_within_class, n_layers), dtype=np.float64)
+    within_pos_cos_to_rb = []  # per draw: list of cos(dir[layer_idx], rb[layer_idx])
+    rb_unit_frozen = rb_trait[layer_idx] / (float(np.linalg.norm(rb_trait[layer_idx])) + 1e-12)
+    for draw in range(n_draws_within_class):
+        dirs = np.zeros((n_layers, D), dtype=np.float64)
+        n_pos = pos_acts.shape[0]
+        coeffs = rng.standard_normal(n_pos)
+        for layer in range(n_layers):
+            # Weighted combo of pos residuals
+            v = coeffs @ pos_acts[:, layer, :]  # (D,)
+            # Must-Fix A1: project out r_B at this layer BEFORE renorm
+            rb_l = rb_trait[layer]
+            rb_l_norm = float(np.linalg.norm(rb_l))
+            if rb_l_norm > 1e-12:
+                rb_l_unit = rb_l / rb_l_norm
+                v = v - np.dot(v, rb_l_unit) * rb_l_unit
+            vnorm = float(np.linalg.norm(v))
+            target_norm = float(rb_norm_per_layer[layer])
+            dirs[layer] = (v / vnorm * target_norm) if vnorm > 1e-12 else v
+        within_pos_mat[draw] = np.abs(null_battery.r_per_layer(predictor_acts, dirs, target))
+        # cos_to_rb at frozen layer (after projection-out, should be near-zero)
+        d_frozen = dirs[layer_idx]
+        d_frozen_norm = float(np.linalg.norm(d_frozen))
+        cos_rb = (
+            float(np.dot(d_frozen / d_frozen_norm, rb_unit_frozen))
+            if d_frozen_norm > 1e-12
+            else 0.0
+        )
+        within_pos_cos_to_rb.append(float(cos_rb))
+
+    # --- Family (4): within-class-neg (random combos of neg residuals, r_B projected out)
+    logger.info("[null] family 4: within_neg (n=%d)", n_draws_within_class)
+    within_neg_mat = np.zeros((n_draws_within_class, n_layers), dtype=np.float64)
+    within_neg_cos_to_rb = []
+    for draw in range(n_draws_within_class):
+        dirs = np.zeros((n_layers, D), dtype=np.float64)
+        n_neg = neg_acts.shape[0]
+        coeffs = rng.standard_normal(n_neg)
+        for layer in range(n_layers):
+            v = coeffs @ neg_acts[:, layer, :]  # (D,)
+            # Must-Fix A1: project out r_B at this layer BEFORE renorm
+            rb_l = rb_trait[layer]
+            rb_l_norm = float(np.linalg.norm(rb_l))
+            if rb_l_norm > 1e-12:
+                rb_l_unit = rb_l / rb_l_norm
+                v = v - np.dot(v, rb_l_unit) * rb_l_unit
+            vnorm = float(np.linalg.norm(v))
+            target_norm = float(rb_norm_per_layer[layer])
+            dirs[layer] = (v / vnorm * target_norm) if vnorm > 1e-12 else v
+        within_neg_mat[draw] = np.abs(null_battery.r_per_layer(predictor_acts, dirs, target))
+        d_frozen = dirs[layer_idx]
+        d_frozen_norm = float(np.linalg.norm(d_frozen))
+        cos_rb = (
+            float(np.dot(d_frozen / d_frozen_norm, rb_unit_frozen))
+            if d_frozen_norm > 1e-12
+            else 0.0
+        )
+        within_neg_cos_to_rb.append(float(cos_rb))
+
+    # --- Family (5): r_B-projected-out isotropic (n = 2 * n_draws_within_class = 100)
+    n_draws_rb_out = n_draws_within_class * 2
+    logger.info("[null] family 5: rb_out_iso (n=%d)", n_draws_rb_out)
+    rb_out_mat = np.zeros((n_draws_rb_out, n_layers), dtype=np.float64)
+    for draw in range(n_draws_rb_out):
+        dirs = np.zeros((n_layers, D), dtype=np.float64)
+        for layer in range(n_layers):
+            sigma = float(np.sqrt(_sigma2_iso(layer)))
+            z = rng.standard_normal(D) * sigma
+            # Project out r_B BEFORE renorm
+            rb_l = rb_trait[layer]
+            rb_l_norm = float(np.linalg.norm(rb_l))
+            if rb_l_norm > 1e-12:
+                rb_l_unit = rb_l / rb_l_norm
+                z = z - np.dot(z, rb_l_unit) * rb_l_unit
+            znorm = float(np.linalg.norm(z))
+            target_norm = float(rb_norm_per_layer[layer])
+            dirs[layer] = (z / znorm * target_norm) if znorm > 1e-12 else z
+        rb_out_mat[draw] = np.abs(null_battery.r_per_layer(predictor_acts, dirs, target))
+
+    # --- Family (6): cross-trait fixed directions (descriptive only, no p-value) ---
+    logger.info("[null] family 6: cross_trait (n=%d)", len(other_rbs))
+    crosstrait_mat = null_battery.crosstrait_null(other_rbs, predictor_acts, target)
+
+    # --- Family (7): PCA top-5 (fixed, descriptive only) ---
+    logger.info("[null] family 7: pca_top5")
+    pca_mat = null_battery.pca_topk_null(pca_diff_acts, predictor_acts, target)
+
+    # --- Family (8): contaminated reference (old pooled-cov randnorm, labeled as such) ---
+    # This is the CONTAMINATED null from the prior run, included for comparison.
+    # The pooled covariance top-PC ~ r_B (cos ~0.996) — it is NOT an honest null.
+    # Excluded from BH correction. n=200.
+    logger.info("[null] family 8: contaminated_pooled (reference only, n=%d)", n_draws_stochastic)
+    pool_all = np.concatenate([pos_acts, neg_acts], axis=0)  # (n_pool, L, D)
+    pool_per_layer = {layer: pool_all[:, layer, :] for layer in range(n_layers)}
+    contaminated_mat = null_battery.randnorm_null_draws(
+        pool_per_layer,
         rb_norm_per_layer,
         predictor_acts,
         target,
-        n_draws=n_draws,
-        seed=seed,
-    )  # (n_draws, L) |r|
-    # --- Null 2: shuffled-label permutation (re-derives the DIRECTION from the
-    # #778 extraction pos/neg pools by shuffling their labels), then correlates
-    # against the SAME ΔP predictor. Destroys the trait signal, keeps the pipeline.
-    perm_mat = null_battery.perm_null_draws(
-        extraction_pos_acts,
-        extraction_neg_acts,
-        predictor_acts,
-        target,
-        n_draws=n_draws,
-        seed=seed,
-    )  # (n_draws, L) |r|
-    # --- Null 3: cross-trait (fixed directions) ---
-    crosstrait_mat = null_battery.crosstrait_null(other_rbs, predictor_acts, target)
-    # --- Null 4: PCA top-5 (fixed) ---
-    pca_mat = null_battery.pca_topk_null(pca_diff_acts, predictor_acts, target)
+        n_draws=n_draws_stochastic,
+        seed=seed,  # same seed for reproducibility with old run
+    )
 
-    def _band_and_p(mat: np.ndarray) -> dict:
+    # --- Conservative empirical-p (Must-Fix S1) ---
+    # p = (r + 1) / (n_draws + 1) — applied only to stochastic families with n_draws >= 50.
+    def _conservative_p(col: np.ndarray, observed: float) -> float:
+        """Conservative one-sided p-value: (count_ge + 1) / (n + 1)."""
+        col = col[~np.isnan(col)]
+        n = int(col.size)
+        if n == 0:
+            return float("nan")
+        r = int(np.sum(col >= observed))
+        return float((r + 1) / (n + 1))
+
+    def _band_and_p(mat: np.ndarray, stochastic: bool = True, label: str = "") -> dict:
+        """Band + conservative one-sided p at the frozen layer."""
         col = np.asarray(mat, dtype=np.float64)[:, layer_idx]
         col = col[~np.isnan(col)]
-        if col.size == 0:
-            return {"p2_5": None, "p97_5": None, "one_sided_p": None, "n_draws": 0}
+        n = int(col.size)
+        if n == 0:
+            return {
+                "p2_5": None,
+                "p97_5": None,
+                "one_sided_p": None,
+                "n_draws": 0,
+                "stochastic": stochastic,
+            }
         lo, hi = np.percentile(col, [2.5, 97.5])
-        one_sided_p = float(np.mean(col >= real_r_frozen))
+        one_sided_p = _conservative_p(col, real_r_frozen) if stochastic and n >= 50 else None
         return {
             "p2_5": float(lo),
             "p97_5": float(hi),
             "one_sided_p": one_sided_p,
-            "n_draws": int(col.size),
+            "n_draws": n,
+            "stochastic": stochastic,
         }
+
+    nulls = {
+        "isotropic": _band_and_p(iso_mat, stochastic=True),
+        "neutral_cov": _band_and_p(ncov_mat, stochastic=True),
+        "within_pos": _band_and_p(within_pos_mat, stochastic=True),
+        "within_neg": _band_and_p(within_neg_mat, stochastic=True),
+        "rb_out_iso": _band_and_p(rb_out_mat, stochastic=True),
+        "cross_trait": _band_and_p(crosstrait_mat, stochastic=False),
+        "pca_top5": _band_and_p(pca_mat, stochastic=False),
+        "contaminated_pooled": _band_and_p(contaminated_mat, stochastic=False),  # excluded from BH
+    }
+
+    # --- BH correction over stochastic families with n_draws >= 50 (Must-Fix S1) ---
+    # Families (1)-(5); cross-trait (6), PCA (7), contaminated (8) excluded.
+    stochastic_keys = ["isotropic", "neutral_cov", "within_pos", "within_neg", "rb_out_iso"]
+    bh_pvals = []
+    bh_keys_used = []
+    for key in stochastic_keys:
+        p = nulls[key]["one_sided_p"]
+        if p is not None:
+            bh_pvals.append(p)
+            bh_keys_used.append(key)
+
+    if bh_pvals:
+        bh_qvals = null_battery.benjamini_hochberg(bh_pvals)
+        for key, qval in zip(bh_keys_used, bh_qvals, strict=True):
+            nulls[key]["bh_q"] = float(qval)
+    for key in nulls:
+        if "bh_q" not in nulls[key]:
+            nulls[key]["bh_q"] = None
 
     result = {
         "layer_idx_frozen": layer_idx,
         "layer_1indexed": layer_idx + 1,
-        "n_datasets": int(n),
+        "n_datasets": int(n_datasets),
         "real_abs_r_frozen": real_r_frozen,
         "real_r_per_layer": [float(x) for x in real_r_layers],
-        "nulls": {
-            "randnorm": _band_and_p(randnorm_mat),
-            "perm": _band_and_p(perm_mat),
-            "crosstrait": _band_and_p(crosstrait_mat),
-            "pca": _band_and_p(pca_mat),
+        "seed": seed,
+        "bh_correction_scope": "stochastic families (1-5) with n_draws>=50 only",
+        "bh_keys_used": bh_keys_used,
+        "nulls": nulls,
+        "within_class_metadata": {
+            "within_pos_cos_to_rb_at_frozen_layer": within_pos_cos_to_rb,
+            "within_neg_cos_to_rb_at_frozen_layer": within_neg_cos_to_rb,
         },
-        # Per-draw x per-layer matrices (nested lists) for post-hoc honest bands.
+        # Per-draw x per-layer matrices (nested lists) for post-hoc recompute.
         "matrices": {
-            "randnorm": randnorm_mat.tolist(),
-            "perm": perm_mat.tolist(),
-            "crosstrait": crosstrait_mat.tolist(),
-            "pca": pca_mat.tolist(),
+            "isotropic": iso_mat.tolist(),
+            "neutral_cov": ncov_mat.tolist(),
+            "within_pos": within_pos_mat.tolist(),
+            "within_neg": within_neg_mat.tolist(),
+            "rb_out_iso": rb_out_mat.tolist(),
+            "cross_trait": crosstrait_mat.tolist(),
+            "pca_top5": pca_mat.tolist(),
+            "contaminated_pooled": contaminated_mat.tolist(),
         },
     }
     return result
