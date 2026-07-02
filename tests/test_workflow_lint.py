@@ -50,6 +50,7 @@ from workflow_lint import (  # noqa: E402
     check_pipe_python,
     check_script_references,
     check_skill_references,
+    check_smoke_architecture_review_lens,
     check_upload_as_file,
     check_wandb_required,
 )
@@ -2838,3 +2839,131 @@ def test_compute_shape_review_lens_flags_both_files(tmp_path) -> None:
     subjects = {e.split(": ", 1)[0] for e in errors}
     assert any(s.endswith("/code-reviewer.md") for s in subjects), subjects
     assert any(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def _write_smoke_arch_conforming_tree(tmp_path) -> None:
+    """Write all three #822 surfaces in conforming shape under tmp_path.
+
+    Tests then break exactly ONE surface each, so failures stay attributable
+    (absence errors from the untouched surfaces would otherwise pollute
+    counts).
+    """
+    agents = tmp_path / ".claude" / "agents"
+    agents.mkdir(parents=True, exist_ok=True)
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n"
+        "### Step 0.55: Smoke-architecture marker presence gate\n"
+        "check for an `epm:smoke-architecture-check` events row.\n"
+        "### Step 0.8\nnext section\n"
+    )
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\n"
+        '- "Step 0.55: Smoke-architecture marker presence gate" bullet naming\n'
+        "  `epm:smoke-architecture-check`.\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6}}\n"
+    )
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    skill.mkdir(parents=True, exist_ok=True)
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "**5c-bis. Mechanical strip** — a blocker naming\n"
+        "`epm:smoke-architecture-check` gets the per-blocker sub-recipe.\n"
+        "**5c-ter. Next step**\n"
+    )
+
+
+def test_smoke_architecture_review_lens_live_tree_passes() -> None:
+    """The real tree carries the #822 presence gate on all three surfaces."""
+    assert check_smoke_architecture_review_lens() == []
+
+
+def test_smoke_architecture_review_lens_conforming_fixture_passes(tmp_path) -> None:
+    """The synthetic conforming tree passes — validates the fixture itself."""
+    _write_smoke_arch_conforming_tree(tmp_path)
+    assert check_smoke_architecture_review_lens(repo_root=tmp_path) == []
+
+
+def test_smoke_architecture_review_lens_flags_missing_step_section(tmp_path) -> None:
+    """code-reviewer.md without the '### Step 0.55' section FAILs (#822)."""
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "code-reviewer.md").write_text("# reviewer\nno presence gate here\n")
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for code-reviewer.md missing Step 0.55"
+    # Key on the SUBJECT of each error — the file path before the first ': '
+    # (message bodies cross-reference sibling filenames in prose, so a naive
+    # substring search would collide).
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/code-reviewer.md") for s in subjects), subjects
+    assert all(not s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def test_smoke_architecture_review_lens_flags_marker_missing_from_section(tmp_path) -> None:
+    """A Step 0.55 section whose body drops the marker name FAILs (#822).
+
+    The region is the section body up to the next '### ' heading — the marker
+    appearing elsewhere in the file must NOT satisfy the check.
+    """
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "code-reviewer.md").write_text(
+        "# reviewer\n"
+        "### Step 0.55: Smoke-architecture marker presence gate\n"
+        "body without the marker name.\n"
+        "### Step 0.8\nmentions `epm:smoke-architecture-check` outside the region\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the marker-less Step 0.55 body"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/code-reviewer.md") for s in subjects), subjects
+
+
+def test_smoke_architecture_review_lens_flags_codex_tokens(tmp_path) -> None:
+    """codex-code-reviewer.md missing bullet heading + marker FAILs twice (#822)."""
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\n{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.55, 0.6}}\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    # Both required copy-list tokens are missing → one error per token.
+    assert len(errors) == 2, errors
+    subjects = {e.split(": ", 1)[0] for e in errors}
+    assert subjects and all(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+
+
+def test_smoke_architecture_review_lens_flags_rubric_placeholder(tmp_path) -> None:
+    """The '{{INLINED RUBRIC' placeholder line without '0.55' FAILs (#822)."""
+    _write_smoke_arch_conforming_tree(tmp_path)
+    agents = tmp_path / ".claude" / "agents"
+    (agents / "codex-code-reviewer.md").write_text(
+        "# codex\n"
+        '- "Step 0.55: Smoke-architecture marker presence gate" bullet naming\n'
+        "  `epm:smoke-architecture-check`.\n"
+        "{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6}}\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the 0.55-less rubric placeholder line"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/codex-code-reviewer.md") for s in subjects), subjects
+    assert any("0.55" in e for e in errors), errors
+
+
+def test_smoke_architecture_review_lens_flags_skill_region(tmp_path) -> None:
+    """A 5c-bis region without the marker sub-recipe FAILs (#822).
+
+    The marker appearing OUTSIDE the '**5c-bis.' → '**5c-ter.' region must not
+    satisfy the check.
+    """
+    _write_smoke_arch_conforming_tree(tmp_path)
+    skill = tmp_path / ".claude" / "skills" / "issue"
+    (skill / "SKILL.md").write_text(
+        "# issue skill\n"
+        "`epm:smoke-architecture-check` mentioned before the region.\n"
+        "**5c-bis. Mechanical strip** — no sub-recipe here.\n"
+        "**5c-ter. Next step**\n"
+    )
+    errors = check_smoke_architecture_review_lens(repo_root=tmp_path)
+    assert errors, "expected a FAIL for the sub-recipe-less 5c-bis region"
+    subjects = [e.split(": ", 1)[0] for e in errors]
+    assert all(s.endswith("/SKILL.md") for s in subjects), subjects

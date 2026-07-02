@@ -3591,6 +3591,111 @@ def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[st
     return errors
 
 
+def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the smoke-architecture marker presence gate (#822) is absent
+    from ANY of its three surfaces.
+
+    Task #811's implementer claimed the smoke-architecture verdict in prose (a
+    dispatcher header) but never posted the separate
+    `epm:smoke-architecture-check` events row; both reviewers PASSed 5 rounds
+    and the gap surfaced only at /issue Step 6d.0 AFTER pod provisioning. The
+    fix added a Step 0.55 presence lens to BOTH code-reviewer agent files and
+    a per-blocker `marker-shape` sub-recipe to the /issue Step 5c-bis strip.
+    This check pins all three surfaces, region-anchored, so a future refactor
+    cannot silently strip one and re-open the gap:
+
+    (a) code-reviewer.md — a ``### Step 0.55`` section whose body (up to the
+        next ``### `` heading) names ``epm:smoke-architecture-check``;
+    (b) codex-code-reviewer.md — the Step 0.55 copy-list bullet (heading
+        literal + marker kind) AND ``0.55`` on the ``{{INLINED RUBRIC``
+        placeholder line;
+    (c) `.claude/skills/issue/SKILL.md` — the Step 5c-bis region (between the
+        ``**5c-bis.`` and ``**5c-ter.`` headings) names
+        ``epm:smoke-architecture-check``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    marker = "epm:smoke-architecture-check"
+    errors: list[str] = []
+
+    # (a) code-reviewer.md: the Step 0.55 section body names the marker.
+    reviewer = root / ".claude" / "agents" / "code-reviewer.md"
+    if not reviewer.is_file():
+        errors.append(
+            f"{reviewer}: missing — the #822 smoke-architecture marker "
+            f"presence gate (Step 0.55) must live in code-reviewer.md."
+        )
+    else:
+        text = reviewer.read_text(encoding="utf-8")
+        idx = text.find("### Step 0.55")
+        if idx == -1:
+            errors.append(
+                f"{reviewer}: missing the '### Step 0.55' section (#822). The "
+                f"smoke-architecture marker presence gate must stay in the "
+                f"Claude reviewer so a missing {marker} events row FAILs at "
+                f"code-review, not at Step 6d.0 post-provision (incident #811)."
+            )
+        else:
+            nxt = text.find("\n### ", idx + 1)
+            body = text[idx:nxt] if nxt != -1 else text[idx:]
+            if marker not in body:
+                errors.append(
+                    f"{reviewer}: the '### Step 0.55' section body no longer "
+                    f"names {marker!r} (#822) — the presence gate must key on "
+                    f"that exact marker kind."
+                )
+
+    # (b) codex-code-reviewer.md: the copy-list bullet + rubric placeholder.
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if not codex.is_file():
+        errors.append(
+            f"{codex}: missing — the #822 smoke-architecture marker presence "
+            f"gate (Step 0.55 copy-list bullet) must live in "
+            f"codex-code-reviewer.md."
+        )
+    else:
+        text = codex.read_text(encoding="utf-8")
+        for token in ('"Step 0.55: Smoke-architecture marker presence gate"', marker):
+            if token not in text:
+                errors.append(
+                    f"{codex}: missing the Step 0.55 copy-list token {token!r} "
+                    f"(#822) — the Codex twin must copy the same presence lens "
+                    f"or the two reviewers drift (the #606 copy-list-omission "
+                    f"class)."
+                )
+        rubric_lines = [ln for ln in text.splitlines() if "{{INLINED RUBRIC" in ln]
+        if not any("0.55" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.55' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#822) — the composed Codex prompt would "
+                f"omit the Step 0.55 lens."
+            )
+
+    # (c) SKILL.md: the Step 5c-bis strip region names the marker sub-recipe.
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        errors.append(
+            f"{skill}: missing — the #822 Step 5c-bis per-blocker "
+            f"marker-shape sub-recipe must live in the /issue skill."
+        )
+    else:
+        text = skill.read_text(encoding="utf-8")
+        start = text.find("**5c-bis.")
+        end = text.find("**5c-ter.")
+        region = text[start:end] if (start != -1 and end != -1 and end > start) else ""
+        if marker not in region:
+            errors.append(
+                f"{skill}: the Step 5c-bis region (between '**5c-bis.' and "
+                f"'**5c-ter.') no longer names {marker!r} (#822) — the "
+                f"mechanical-contract strip needs the per-blocker sub-recipe "
+                f"to distinguish a stale-worktree false absence (STRIP) from "
+                f"a genuine one (leave the FAIL in place)."
+            )
+    return errors
+
+
 # `--check-lessons-index`: every `.claude/rules/*.md` (except LESSONS.md
 # itself) must have exactly one matching row in `.claude/rules/LESSONS.md`, and
 # every row in LESSONS.md must point at an existing rule file. Closes the
@@ -4034,6 +4139,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-smoke-architecture-review-lens",
+        action="store_true",
+        help="FAIL if the #822 smoke-architecture marker presence gate (Step "
+        "0.55) is absent from any of its three surfaces: the Step 0.55 "
+        "section in code-reviewer.md, the Step 0.55 copy-list bullet + "
+        "rubric-placeholder entry in codex-code-reviewer.md, or the "
+        "epm:smoke-architecture-check sub-recipe in the /issue Step 5c-bis "
+        "strip region. Pins the reviewer-side presence check for the "
+        "epm:smoke-architecture-check events row (incident #811: the verdict "
+        "lived in prose across 5 PASSed rounds and the gap surfaced only at "
+        "Step 6d.0 post-provision). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-judge-model-pins",
         action="store_true",
         help="Walk scripts/**/*.py, scripts/**/*.sh, "
@@ -4088,6 +4206,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
+        or args.check_smoke_architecture_review_lens
         or args.check_judge_model_pins
     )
 
@@ -4155,6 +4274,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_lessons_index())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
+    if args.check_smoke_architecture_review_lens or no_flags:
+        errors.extend(check_smoke_architecture_review_lens())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
 
