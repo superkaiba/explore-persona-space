@@ -283,54 +283,164 @@ def test_phase0_base_loader_fails_loud_on_mean_only_store(tmp_path):
         )
 
 
-# ── 5. Mean-parity check: fires on drift, passes on match ──────────────────────
-
-
-def test_mean_parity_fires_on_drift(monkeypatch, tmp_path):
-    """A re-extracted v0 that diverges from the #667 ref FAILS LOUD (failure_class: code)."""
-    import issue811_mean_parity_check as pc
-    import pytest
-
-    H = 3584
-    rng = np.random.default_rng(0)
-    ref = rng.standard_normal(H).astype(np.float64)
-    # Stub the #667 reference loader to return `ref`; write a phase0 cell whose v0
-    # is an UNRELATED vector (cosine ~ 0) — a real reader-logic drift.
-    monkeypatch.setattr(pc, "_load_ref_v0", lambda b, s, t, layer: ref)
-    _write_phase0_cell_for_parity(tmp_path, "em", "src0", "tgt0", 14, rng.standard_normal(H))
-    with pytest.raises(RuntimeError, match="MEAN-PARITY DRIFT"):
-        pc.check_mean_parity(tmp_path, "em", 14, 1)
-
-
-def test_mean_parity_passes_on_match(monkeypatch, tmp_path):
-    """A re-extracted v0 that matches the #667 ref up to tiny bf16-scale noise PASSES."""
-    import issue811_mean_parity_check as pc
-
-    H = 3584
-    rng = np.random.default_rng(1)
-    ref = rng.standard_normal(H).astype(np.float64)
-    monkeypatch.setattr(pc, "_load_ref_v0", lambda b, s, t, layer: ref)
-    # v0 = ref + tiny noise (bf16-scale) -> cosine ~ 1, rel_l2 tiny -> PASS.
-    noisy = (ref + 1e-3 * rng.standard_normal(H)).astype(np.float32)
-    _write_phase0_cell_for_parity(tmp_path, "em", "src0", "tgt0", 14, noisy)
-    recs = pc.check_mean_parity(tmp_path, "em", 14, 1)
-    assert len(recs) == 1 and recs[0]["ok"] is True
-    assert recs[0]["cosine"] >= pc.COS_FLOOR and recs[0]["rel_l2"] <= pc.REL_L2_CEIL
+# ── 5. Parity check (round-6 redesign): 3 like-for-like checks per cell ─────────
+#
+# The single unachievable v0-identity gate (crashed the att-20260701-233116 run at
+# cosine 0.997028 < floor 0.999 — a legitimate R-token-flip cell, NOT a bug) is
+# replaced by: (a) HARD reader-faithfulness new c_C(t) vs #667 c_Cp(t); (b) v0
+# argmax/confusion over the source's ref targets; (c) v0 gross-drift floor (0.98,
+# R-resampling-aware). Fixtures monkeypatch the #667 ref loader — pure numpy, no net.
 
 
 def _write_phase0_cell_for_parity(
-    root: Path, behavior: str, source: str, target: str, layer: int, v0: np.ndarray
+    root: Path,
+    behavior: str,
+    source: str,
+    target: str,
+    layer: int,
+    c_c: np.ndarray,
+    v0: np.ndarray,
 ) -> None:
-    """Write a phase0 cell with a caller-supplied v0 (the parity check reads v0)."""
+    """Write a phase0 cell with caller-supplied c_C + v0 (the parity check reads both)."""
     d = root / behavior / f"{source}_seed42"
     d.mkdir(parents=True, exist_ok=True)
     np.savez(
         d / f"{target}_L{layer}.npz",
+        c_C=c_c.astype(np.float32),
         v0=v0.astype(np.float32),
         source_cid=np.asarray(source),
         target_cid=np.asarray(target),
         layer=np.asarray(layer),
     )
+
+
+def _stub_refs(monkeypatch, refs: dict):
+    """Monkeypatch the #667 ref loader + per-source v0 lister from a fixture dict.
+
+    ``refs`` maps ``(behavior, source, target) -> {"v0": ndarray, "c_Cp": ndarray}``.
+    """
+    import issue811_mean_parity_check as pc
+
+    monkeypatch.setattr(pc, "_load_ref", lambda b, s, t, layer: refs[(b, s, t)])
+    monkeypatch.setattr(
+        pc,
+        "_list_ref_v0_for_source",
+        lambda b, s, layer, tgts: {t: refs[(b, s, t)]["v0"] for t in tgts},
+    )
+
+
+def test_parity_passes_on_faithful_reextraction(monkeypatch, tmp_path):
+    """Faithful c_C (~1e-4 to c_Cp) + resampled-R v0 (cos 0.997, argmax OK) -> PASS.
+
+    The exact real-data regime: reader is exact; v0 is in the R-resampling band and
+    argmax-matches its own target. This is the case the old gate WRONGLY failed.
+    """
+    import issue811_mean_parity_check as pc
+
+    H = 3584
+    rng = np.random.default_rng(1)
+    c_cp = rng.standard_normal(H).astype(np.float64)
+    v0_ref0 = rng.standard_normal(H).astype(np.float64)
+    v0_ref1 = rng.standard_normal(H).astype(np.float64)  # a second target (confusion set)
+    refs = {
+        ("em", "src0", "tgt0"): {"v0": v0_ref0, "c_Cp": c_cp},
+        ("em", "src0", "tgt1"): {"v0": v0_ref1, "c_Cp": rng.standard_normal(H)},
+    }
+    _stub_refs(monkeypatch, refs)
+    # c_C ~ c_Cp up to tiny numeric noise (faithful reader); v0 ~ 0.997 cos to its ref.
+    c_c_new = (c_cp + 1e-4 * rng.standard_normal(H)).astype(np.float32)
+    v0_new = _at_cosine(v0_ref0, 0.997, rng).astype(np.float32)
+    _write_phase0_cell_for_parity(tmp_path, "em", "src0", "tgt0", 14, c_c_new, v0_new)
+    _write_phase0_cell_for_parity(
+        tmp_path, "em", "src0", "tgt1", 14, refs[("em", "src0", "tgt1")]["c_Cp"], v0_ref1
+    )
+    recs = pc.check_mean_parity(tmp_path, "em", 14, 1)  # sample the 1st cell (tgt0)
+    assert len(recs) == 1 and recs[0]["ok"] is True
+    r = recs[0]
+    assert r["cc_ok"] and r["v0_argmax_ok"] and r["v0_ok"]
+    assert r["cc_cosine"] >= pc.COS_FLOOR and r["cc_rel_l2"] <= pc.REL_L2_CEIL
+    assert 0.98 <= r["v0_cosine"] < 0.999  # in the R-resampling band, below the old floor
+    assert r["v0_argmax_target"] == "tgt0"
+
+
+def test_parity_fires_on_c_c_drift(monkeypatch, tmp_path):
+    """(a) A c_C that diverges from #667 c_Cp FAILS LOUD — the reader read is not exact."""
+    import issue811_mean_parity_check as pc
+    import pytest
+
+    H = 3584
+    rng = np.random.default_rng(0)
+    c_cp = rng.standard_normal(H).astype(np.float64)
+    v0_ref = rng.standard_normal(H).astype(np.float64)
+    _stub_refs(monkeypatch, {("em", "src0", "tgt0"): {"v0": v0_ref, "c_Cp": c_cp}})
+    # c_C is an UNRELATED vector (cosine ~ 0) — a reader-logic drift; v0 is faithful.
+    _write_phase0_cell_for_parity(
+        tmp_path, "em", "src0", "tgt0", 14, rng.standard_normal(H), v0_ref
+    )
+    with pytest.raises(RuntimeError, match="READER-FAITHFULNESS DRIFT"):
+        pc.check_mean_parity(tmp_path, "em", 14, 1)
+
+
+def test_parity_fires_on_v0_misalignment(monkeypatch, tmp_path):
+    """(b) A cell whose v0 argmax-matches a DIFFERENT target FAILS LOUD (misalignment)."""
+    import issue811_mean_parity_check as pc
+    import pytest
+
+    H = 3584
+    rng = np.random.default_rng(2)
+    c_cp = rng.standard_normal(H).astype(np.float64)
+    v0_tgt0 = rng.standard_normal(H).astype(np.float64)
+    v0_tgt1 = rng.standard_normal(H).astype(np.float64)
+    refs = {
+        ("em", "src0", "tgt0"): {"v0": v0_tgt0, "c_Cp": c_cp},
+        ("em", "src0", "tgt1"): {"v0": v0_tgt1, "c_Cp": rng.standard_normal(H)},
+    }
+    _stub_refs(monkeypatch, refs)
+    # Cell is labelled tgt0 but its v0 is a copy of the tgt1 ref (wrong-cell bug); the
+    # c_C read is faithful so check (a) passes and (b) fires.
+    _write_phase0_cell_for_parity(
+        tmp_path, "em", "src0", "tgt0", 14, (c_cp + 1e-4 * rng.standard_normal(H)), v0_tgt1
+    )
+    _write_phase0_cell_for_parity(
+        tmp_path, "em", "src0", "tgt1", 14, refs[("em", "src0", "tgt1")]["c_Cp"], v0_tgt1
+    )
+    with pytest.raises(RuntimeError, match="V0 MISALIGNMENT"):
+        pc.check_mean_parity(tmp_path, "em", 14, 1)
+
+
+def test_parity_fires_on_v0_gross_drift(monkeypatch, tmp_path):
+    """(c) A v0 below the 0.98 gross-drift floor FAILS LOUD (beyond the R band)."""
+    import issue811_mean_parity_check as pc
+    import pytest
+
+    H = 3584
+    rng = np.random.default_rng(3)
+    c_cp = rng.standard_normal(H).astype(np.float64)
+    v0_ref = rng.standard_normal(H).astype(np.float64)
+    _stub_refs(monkeypatch, {("em", "src0", "tgt0"): {"v0": v0_ref, "c_Cp": c_cp}})
+    # c_C faithful (a passes); v0 at cosine ~0.90 -> below the 0.98 gross-drift floor.
+    # Single target so argmax (b) is vacuously OK; (c) is the check that fires.
+    c_c_new = (c_cp + 1e-4 * rng.standard_normal(H)).astype(np.float32)
+    v0_new = _at_cosine(v0_ref, 0.90, rng).astype(np.float32)
+    _write_phase0_cell_for_parity(tmp_path, "em", "src0", "tgt0", 14, c_c_new, v0_new)
+    with pytest.raises(RuntimeError, match="V0 GROSS DRIFT"):
+        pc.check_mean_parity(tmp_path, "em", 14, 1)
+
+
+def _at_cosine(ref: np.ndarray, target_cos: float, rng: np.random.Generator) -> np.ndarray:
+    """Build a vector whose cosine to ``ref`` is ~``target_cos`` (numerically exact).
+
+    v = cos * r_hat + sin * n_hat, with n_hat a unit vector orthogonal to ref, scaled
+    to ref's norm — so cosine(v, ref) == target_cos regardless of ref magnitude.
+    """
+    r = np.asarray(ref, dtype=np.float64)
+    r_norm = float(np.linalg.norm(r))
+    r_hat = r / r_norm
+    n = rng.standard_normal(r.shape[0])
+    n = n - (n @ r_hat) * r_hat  # orthogonalize against ref
+    n_hat = n / float(np.linalg.norm(n))
+    sin = float(np.sqrt(max(0.0, 1.0 - target_cos**2)))
+    return r_norm * (target_cos * r_hat + sin * n_hat)
 
 
 # ── 6. run_phase0_gate: degenerate (vacuous) PASS is fail-loud on production ────
@@ -545,3 +655,89 @@ def test_upload_store_raises_when_analysis_store_empty(monkeypatch, tmp_path):
     (tmp_path / "eval_results/issue_811/analysis_tensors").mkdir(parents=True, exist_ok=True)
     with pytest.raises(RuntimeError, match="required uploads"):
         up.upload_store()
+
+
+# ── 8. Phase-0 staging: completeness verify (round-6 crash-fix) ─────────────────
+
+
+def _write_staged_cell(root: Path, behavior: str, source: str, targets: list[str], layer: int):
+    """Write a COMPLETE staged phase-0 cell dir (target npz + the .done sentinel)."""
+    d = root / behavior / f"{source}_seed42"
+    d.mkdir(parents=True, exist_ok=True)
+    for tgt in targets:
+        np.savez(
+            d / f"{tgt}_L{layer}.npz",
+            c_C=np.zeros(3, dtype=np.float32),
+            v0=np.zeros(3, dtype=np.float32),
+            v0_turn_nl=np.zeros(3, dtype=np.float32),
+            source_cid=np.asarray(source),
+            target_cid=np.asarray(tgt),
+            layer=np.asarray(layer),
+        )
+    (d / ".done").write_text("{}")
+
+
+def test_stage_verify_passes_on_complete_grid(tmp_path):
+    """_verify_complete returns cleanly when every resolved cell is complete (+.done)."""
+    import issue811_stage_phase0 as st
+
+    out = tmp_path / "phase0"
+    grid = {"em": ["src0", "src1"], "sycophancy": ["src0"]}
+    for beh, srcs in grid.items():
+        for s in srcs:
+            _write_staged_cell(out, beh, s, ["tgt0", "tgt1", "tgt2"], 14)
+    # None targets -> production mode: .done + >=1 target npz per cell.
+    st._verify_complete(out, grid, 14, None)  # no raise
+
+
+def test_stage_verify_fails_loud_on_missing_cell(tmp_path):
+    """_verify_complete raises listing the missing (behavior, source) on a shortfall."""
+    import issue811_stage_phase0 as st
+    import pytest
+
+    out = tmp_path / "phase0"
+    grid = {"em": ["src0", "src1"]}
+    _write_staged_cell(out, "em", "src0", ["tgt0", "tgt1"], 14)  # src1 absent
+    with pytest.raises(RuntimeError, match=r"(?s)INCOMPLETE.*src1"):
+        st._verify_complete(out, grid, 14, None)
+
+
+def test_stage_verify_fails_loud_on_missing_done_sentinel(tmp_path):
+    """A cell dir with target npz but NO .done (truncated/partial) fails loud."""
+    import issue811_stage_phase0 as st
+    import pytest
+
+    out = tmp_path / "phase0"
+    grid = {"em": ["src0"]}
+    _write_staged_cell(out, "em", "src0", ["tgt0"], 14)
+    (out / "em" / "src0_seed42" / ".done").unlink()  # simulate a truncated upload
+    with pytest.raises(RuntimeError, match=r"(?s)INCOMPLETE.*no \.done sentinel"):
+        st._verify_complete(out, grid, 14, None)
+
+
+def test_stage_verify_smoke_requires_named_targets(tmp_path):
+    """Smoke mode (--targets given) requires exactly the named target subset present."""
+    import issue811_stage_phase0 as st
+    import pytest
+
+    out = tmp_path / "phase0"
+    grid = {"em": ["src0"]}
+    _write_staged_cell(out, "em", "src0", ["default", "sp_swe"], 14)  # sp_doctor missing
+    with pytest.raises(RuntimeError, match=r"(?s)INCOMPLETE.*sp_doctor"):
+        st._verify_complete(out, grid, 14, ["default", "sp_swe", "sp_doctor"])
+    # And PASSES when the named subset is fully present.
+    _write_staged_cell(out, "em", "src0", ["default", "sp_swe", "sp_doctor"], 14)
+    st._verify_complete(out, grid, 14, ["default", "sp_swe", "sp_doctor"])  # no raise
+
+
+def test_stage_sources_spec_parse():
+    """_parse_sources_spec handles the dispatcher's behavior=srcs;... format + errors."""
+    import issue811_stage_phase0 as st
+    import pytest
+
+    got = st._parse_sources_spec("em=binst_em,default;sycophancy=sp_swe;")
+    assert got == {"em": ["binst_em", "default"], "sycophancy": ["sp_swe"]}
+    with pytest.raises(ValueError, match="malformed"):
+        st._parse_sources_spec("em binst_em")
+    with pytest.raises(ValueError, match="empty grid"):
+        st._parse_sources_spec(";;")

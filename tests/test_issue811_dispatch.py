@@ -56,7 +56,12 @@ def _make_fake_uv(sandbox: Path, invocation_log: Path, gate_rc: int) -> Path:
 
 
 def _run_dispatch(
-    tmp_path: Path, gate_rc: int, extra_args: list[str], *, precreate_phase0: bool = True
+    tmp_path: Path,
+    gate_rc: int,
+    extra_args: list[str],
+    *,
+    precreate_phase0: bool = True,
+    stage_prefix: str | None = None,
 ) -> tuple[int, str]:
     """Run the real dispatcher in a sandbox with a fake `uv`. Returns (rc, invocation_log).
 
@@ -64,7 +69,10 @@ def _run_dispatch(
     ``-d "$PHASE0_DIR"`` local-root branch fires (the round-3 fix). Set it False to
     reproduce the round-4 case: a fresh NON-skip run whose Phase 0 produced nothing
     (the fake `uv` extractor creates no dir), which MUST hard-fail (exit 5) rather
-    than fall back to HF."""
+    than fall back to HF. ``stage_prefix`` sets EPM_PHASE0_STAGE_PREFIX to exercise
+    the round-6 phase-0 staging branch (the fake `uv` returns 0 for the stage script,
+    simulating a successful + complete stage — the real stage script would fail loud
+    on a shortfall, covered by the unit tests in test_issue811_turn_nl.py)."""
     sandbox = tmp_path / "workload"
     (sandbox / "scripts").mkdir(parents=True, exist_ok=True)
     if precreate_phase0:
@@ -79,6 +87,10 @@ def _run_dispatch(
     env["WORKLOAD_ROOT"] = str(sandbox)
     env["PATH"] = f"{bindir}:{env['PATH']}"
     env["EPM_SKIP_UPLOAD"] = "1"  # never attempt a real upload
+    if stage_prefix is not None:
+        env["EPM_PHASE0_STAGE_PREFIX"] = stage_prefix
+    else:
+        env.pop("EPM_PHASE0_STAGE_PREFIX", None)
     proc = subprocess.run(
         ["bash", str(DISPATCH), "--sources", "default,sp_swe", *extra_args],
         env=env,
@@ -150,6 +162,40 @@ def test_dispatcher_hard_fails_when_local_store_missing_on_nonskip_run(tmp_path)
     )
     # ...and Phase 1 paired extract certainly never ran.
     assert "issue667_extract.py" not in log, f"Phase 1 ran after a missing-store HALT!\nlog:\n{log}"
+
+
+def test_dispatcher_stages_phase0_and_skips_reextraction(tmp_path):
+    """round-6: EPM_PHASE0_STAGE_PREFIX set -> the dispatcher stages the completed
+    phase-0 store (invokes issue811_stage_phase0.py), SKIPS the ~5.6h base-leg
+    re-extraction, and still runs the parity + gate + Phase 1 paired extract on it.
+
+    precreate_phase0=False proves the SKIP is real: the fake `uv` phase-0 extractor
+    would have created no store, yet the run reaches the gate + Phase 1 because the
+    stage step "produced" a complete store (fake uv returns 0). The staging step is
+    what makes $PHASE0_DIR present for the gate's --local-root branch — but here we
+    also seed one so the gate's -d branch fires deterministically."""
+    rc, log = _run_dispatch(
+        tmp_path,
+        gate_rc=0,
+        extra_args=[],
+        precreate_phase0=True,  # so the gate's -d "$PHASE0_DIR" local-root branch fires
+        stage_prefix="issue811_partial/att-20260701-233116/eval_results_issue_811/phase0_base_leg",
+    )
+    assert rc == 0, f"dispatcher rc={rc}, expected 0 (staged PASS-through)\nlog:\n{log}"
+    # The stage script WAS invoked with the prefix...
+    stage_lines = [ln for ln in log.splitlines() if "issue811_stage_phase0.py" in ln]
+    assert stage_lines, f"stage script never invoked despite EPM_PHASE0_STAGE_PREFIX\nlog:\n{log}"
+    assert "att-20260701-233116" in stage_lines[0]
+    # ...the phase-0 base-leg re-extractor was NEVER run (the ~5.6h skip)...
+    assert "issue811_phase0_extract.py" not in log, (
+        f"phase-0 base-leg re-extraction ran despite a staged store!\nlog:\n{log}"
+    )
+    # ...but parity + the gate + Phase 1 paired extract all still run on the staged store.
+    assert "issue811_mean_parity_check.py" in log, f"parity skipped after staging!\nlog:\n{log}"
+    assert "issue811_fit.py --phase0-gate" in log, f"gate skipped after staging!\nlog:\n{log}"
+    assert "issue667_extract.py" in log and "--turn-nl" in log, (
+        f"Phase 1 paired extract did NOT run after a staged PASS!\nlog:\n{log}"
+    )
 
 
 def test_dispatcher_skip_extract_allows_hf_fallback_when_no_local_store(tmp_path):

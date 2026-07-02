@@ -125,8 +125,51 @@ print(','.join(select_sources('$1', None)))
   fi
 }
 
+# ---- Phase 0-stage: reuse a COMPLETED phase-0 base-leg store from HF (opt-in) ----
+# The att-20260701-233116 production run completed the phase-0 base leg cleanly (3
+# behaviors x 16 sources x 30 targets @ L14) and the crash's EXIT trap uploaded the
+# FULL store (incl. every per-source .done sentinel) to HF under
+# issue811_partial/att-.../eval_results_issue_811/phase0_base_leg. Re-extracting costs
+# ~5.6h wall on the L4 lane — do not repay it. When EPM_PHASE0_STAGE_PREFIX is set
+# (value = that HF prefix), snapshot_download it into $PHASE0_DIR, then VERIFY the
+# store is COMPLETE for THIS run's resolved (behaviors x sources) grid: each cell dir
+# has its atomic .done sentinel AND the expected per-source target npz at the primary
+# layer. On a COMPLETE stage, skip the phase-0 extraction loop (parity 0a + gate 0b
+# still run on the staged store). On a SHORTFALL, FAIL LOUD listing the missing cells
+# — the phase-0 extractor has NO per-cell resume-skip (it re-runs every cell it is
+# handed), so a partial stage cannot be safely "topped up" by falling through to
+# extraction (that would re-extract ALL cells, clobbering the staged good ones), and
+# stamping a trusted-complete flag over a partial dir is banned. Fail-fast: the
+# operator re-stages a complete prefix or unsets the env var to extract from scratch.
+PHASE0_STAGED=""
+if [ -n "${EPM_PHASE0_STAGE_PREFIX:-}" ] && [ -z "$SKIP_EXTRACT" ]; then
+  echo "[phase=phase0_stage] staging completed phase-0 store from HF prefix=$EPM_PHASE0_STAGE_PREFIX -> $PHASE0_DIR"
+  # Resolve the per-behavior source lists + this run's target set for the verify.
+  # (Production: 30 eval targets/source; smoke: the --targets subset.)
+  P0_TARGETS_ARG=""
+  case "$PHASE0_SMOKE_ARGS" in
+    *"--targets "*) P0_TARGETS_ARG="$(echo "$PHASE0_SMOKE_ARGS" | sed -n 's/.*--targets \([^ ]*\).*/\1/p')" ;;
+  esac
+  P0_SOURCES_JSON=""
+  IFS=',' read -r -a P0_BEH_ARR <<< "$BEHAVIORS"
+  for beh in "${P0_BEH_ARR[@]}"; do
+    P0_SOURCES_JSON="${P0_SOURCES_JSON}${beh}=$(resolve_sources "$beh");"
+  done
+  # shellcheck disable=SC2086
+  uv run python scripts/issue811_stage_phase0.py \
+    --hf-prefix "$EPM_PHASE0_STAGE_PREFIX" \
+    --out "$PHASE0_DIR" \
+    --primary-layer "$PRIMARY_LAYER" \
+    --sources-spec "$P0_SOURCES_JSON" \
+    ${P0_TARGETS_ARG:+--targets "$P0_TARGETS_ARG"}
+  PHASE0_STAGED="1"
+  echo "[phase=phase0_stage] staged + verified complete for behaviors=$BEHAVIORS at L$PRIMARY_LAYER — skipping phase-0 re-extraction"
+fi
+
 # ---- Phase 0: BASE-LEG-ONLY re-extraction + KILL-1 PRE-SPEND gate (GPU->CPU) ----
-if [ -n "$SKIP_EXTRACT" ]; then
+if [ -n "$PHASE0_STAGED" ]; then
+  echo "[phase=phase0] skipped (staged a completed phase-0 store from HF; parity + gate run on it)"
+elif [ -n "$SKIP_EXTRACT" ]; then
   echo "[phase=phase0] skipped (--skip-extract; phase0 store already on disk/HF)"
 else
   echo "[phase=phase0] starting base-leg-only extraction behaviors=$BEHAVIORS primary_layer=$PRIMARY_LAYER sources=${SOURCES:-<16 train cids>}"
