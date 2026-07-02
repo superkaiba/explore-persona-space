@@ -35,6 +35,8 @@ from __future__ import annotations
 
 import logging
 
+from transformers import TrainerCallback
+
 logger = logging.getLogger("issue816.preventative")
 
 DEFAULT_LAYER = 20  # paper's 1-indexed steering layer; hook at layer_idx = layer - 1
@@ -92,7 +94,7 @@ def _resolve_layer_module(model, layer_idx: int):
     )
 
 
-class PreventativeSteeringCallback:
+class PreventativeSteeringCallback(TrainerCallback):
     """A ``transformers.TrainerCallback`` that steers TOWARD ``vector`` during training.
 
     Registers a forward hook on block ``layer - 1`` at ``on_train_begin`` and
