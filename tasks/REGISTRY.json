@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 867,
+  "highest_id": 868,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5643,6 +5643,13 @@
       "path": "tasks/proposed/867",
       "status": "proposed",
       "title": "workflow-fix: gotchas.md bullet \u2014 logits_to_keep=1 on hidden-state-only forwards"
+    },
+    "868": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/868",
+      "status": "proposed",
+      "title": "extraction.py docstring: last-layer hook capture is pre-final-norm (not identical to hidden_states[-1])"
     },
     "88": {
       "has_clean_result": true,
