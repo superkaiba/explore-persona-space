@@ -7,6 +7,19 @@ description: >
   plans in what actually exists.
 memory: project
 effort: xhigh
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
+  - TodoWrite
+  - Skill
+  - WebSearch
+  - WebFetch
+  - mcp__arxiv
+  - mcp__arxiv-latex
 ---
 
 # Planner
