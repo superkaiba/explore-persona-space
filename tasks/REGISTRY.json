@@ -5577,8 +5577,8 @@
     "858": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/858",
-      "status": "proposed",
+      "path": "tasks/archived/858",
+      "status": "archived",
       "title": "workflow-fix: make audit-claim HF tests hermetic (fail on pristine main)"
     },
     "859": {
