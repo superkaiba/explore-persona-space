@@ -2495,16 +2495,26 @@ def _tripwire_run_scope(
     tolerance. ``tripwire_run_epoch`` is the anchor the caller persists via
     ``_save_state`` / the GCP sibling state. Fail-safe: an unknown run age
     (missing / unreadable marker) keeps the stored anchor and clears
-    nothing; a corrupted stored anchor reads as 0 (adopt the current epoch,
-    keep the keys), never raises into the poll tick.
+    nothing; a MALFORMED stored anchor (present but non-numeric) with a
+    known run age cannot decide run identity, so it fails toward RE-ARMING
+    — clear the tripwire keys and adopt the current epoch (cheaper failure
+    = one duplicate advisory, never a suppressed one); an absent/zero
+    anchor (genuine first run — no keys to protect) adopts the current
+    epoch and keeps the state. Never raises into the poll tick.
     """
+    raw = prev_state.get("tripwire_run_epoch", "0") or 0
+    malformed = False
     try:
-        stored = int(float(prev_state.get("tripwire_run_epoch", "0") or 0))
+        stored = int(float(raw))
     except (TypeError, ValueError):
         stored = 0
+        malformed = True
     if run_age_sec is None:
         return prev_state, stored
     current = round(now_epoch - run_age_sec)
+    if malformed:
+        cleared = {k: v for k, v in prev_state.items() if k not in _TRIPWIRE_STATE_KEYS}
+        return cleared, current
     if stored <= 0:
         return prev_state, current
     if current > stored + _TRIPWIRE_RUN_EPOCH_TOLERANCE_SEC:
