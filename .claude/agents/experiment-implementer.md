@@ -358,14 +358,10 @@ mid-task). While building or smoke-testing a data path over such corpora:
    always use the standard end-to-end smoke shape above — the
    carve-out applies ONLY to genuinely GPU-bound phases. The
    code-reviewer mirror rule lives in
-   `.claude/agents/code-reviewer.md` Step 0.6 (incident: task #514
-   round 2 — Codex code-reviewer FAILed with `smoke-run-missing`
-   because the implementer's "(signature smoke)" notation for
-   GPU-bound training/eval phases lacked both the documented sub-
-   heading and the three-item substitute coverage; the carve-out
-   below formalizes the report-time labeling that lets code-reviewer
-   distinguish a documented GPU-bound phase from a genuinely missing
-   smoke).
+   `.claude/agents/code-reviewer.md` Step 0.6 (incident #514 r2:
+   unlabeled "(signature smoke)" notation FAILed `smoke-run-missing`;
+   the sub-heading + three-item coverage is the documented escape
+   hatch).
 
    **Plan-declared runtime guards / monitors must show smoke evidence.**
    Every runtime guard, monitor, or trajectory logger the approved plan
@@ -406,15 +402,23 @@ mid-task). While building or smoke-testing a data path over such corpora:
    STATES which mechanism was used (fallback: paste the empty porcelain
    output). Capture the artifact digest BEFORE the restore/delete.
    A dirty worktree of smoke-truncated production JSONs/figures is a
-   latent clobber: swept into a later explicit-path commit, it silently
-   replaces production artifacts (three #722 instances: a review smoke
-   truncated committed 28-layer JSONs+figures; a reviewer's pytest rerun
-   regenerated committed figures at smoke scale; the hero figure shipped
-   2-layer — figure path not `_smoke`-suffixed while its JSONs diverted).
+   latent clobber swept into a later explicit-path commit (three #722
+   instances, incl. a hero figure shipped at 2-layer smoke scale).
    Corollaries for NEW/EDITED code: (a) a script growing a smoke flag
    diverts ALL outputs together — JSONs AND figures (a partial divert is
-   instance 3); (b) tests never write canonical `eval_results/` /
+   the hero-figure instance); (b) tests never write canonical `eval_results/` /
    `figures/` paths — use pytest's `tmp_path`.
+
+   **`timeout`-bound every smoke; kill any prior instance before a
+   re-run.** The Bash TOOL timeout kills the shell and ORPHANS the python
+   child — wrap every smoke command in `timeout --kill-after=30s <N>s
+   <cmd>` (`<N>+30` ending ≥60 s before the tool timeout) so an abandoned
+   smoke self-terminates. Before ANY re-run (revision / crash-fix round,
+   same-turn retry): exact-invocation-scoped `pgrep -af` probe → kill →
+   confirm-dead, per `.claude/rules/crash-fix-rounds.md`
+   § Kill-before-relaunch. NEVER a broad `pkill -f python` on this shared
+   VM (incident 2026-07-02: three concurrent #823 smoke instances, same
+   output paths, ~1/3 of a load-186 overload).
 4. **Self-review against plan.** Walk down the plan's "File paths + concrete
    diffs" list and confirm each item is addressed.
 5. **Compute-deviation check.** For every row in the plan's §9
@@ -571,24 +575,19 @@ with the turn.
   `run_in_background` plus a bounded same-turn polling loop over the
   output file. Never end the turn while a poll is still pending.
 - NEVER arm watchers/Monitor and end the turn "pausing until one fires" —
-  the turn ends permanently, and everything downstream (the remaining
-  smoke verification, concern responses, the
-  `epm:experiment-implementation` marker) is silently left unposted
-  (incident: task #540 round 3, 2026-06-09 — the agent armed three
-  watchers on a locally-running smoke phase and truncated; the
-  orchestrator had to detect the truncation and resume it by hand).
+  the turn ends permanently and everything downstream (remaining smoke
+  verification, concern responses, the marker) is silently left unposted
+  (incident #540 r3, 2026-06-09).
 - If a phase genuinely cannot finish within the tool-timeout budget, do
   NOT end the turn silently mid-verification: post the implementation
   marker with that phase explicitly marked NOT-RUN plus the exact
   copy-pasteable command, so code-reviewer and the orchestrator see the
   gap instead of a truncation.
 - A locally-launched background PROCESS is never your deliverable either:
-  it dies with your subagent shell. If a long local job must outlive your
-  turn, launch it `setsid ... < /dev/null &`, write a PID file + log path,
-  and state explicitly in your report that THE ORCHESTRATOR owns the watch
-  (mirroring the pod-side nohup convention). Incident #539, 2026-06-09:
-  an implementer's bg launch died with its shell and ~85 min passed before
-  the orchestrator noticed and re-ran it.
+  it dies with your subagent shell. A long local job that must outlive the
+  turn: launch `setsid ... < /dev/null &`, write a PID file + log path,
+  and state in your report that THE ORCHESTRATOR owns the watch (incident
+  #539, 2026-06-09: a bg launch died with its shell).
 
 ### Commit work-in-progress as you go
 
