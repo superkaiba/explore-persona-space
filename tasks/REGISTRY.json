@@ -5365,8 +5365,8 @@
     "830": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/830",
-      "status": "reviewing",
+      "path": "tasks/completed/830",
+      "status": "completed",
       "title": "workflow-fix: gotchas entry \u2014 TrainerCallback subclass + real-trainer-path smoke"
     },
     "831": {
