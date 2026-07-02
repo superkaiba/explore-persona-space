@@ -1,0 +1,2077 @@
+{
+  "commit": "4c0b2f9c98",
+  "created": "2026-07-02T09:37:11Z",
+  "figsize": [
+    13.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -30.29961229195206,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -33.02722275570073,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -24.546263717688717,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -28.667803174669555,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -29.879613169838215,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -29.105421675732817,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -33.363456333967974,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -32.93235494539925,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -30.237181968574074,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -30.0455938521717,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -26.574787132579285,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -34.012347033019076,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -32.29282115630685,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -21.327162738837615,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -32.25972003055911,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -31.022558579990395,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -21.024124549881687,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -33.60315210643911,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -29.1034452554044,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -27.051433161354154,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -25.870727074930127,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -29.45130917273878,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -17.758127564692963,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -24.6196017748699,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -26.597293094470658,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -23.50058489146215,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -30.29469958195775,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -23.483178882713034,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -22.676718525724013,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -27.229971261312564,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -19.3868538499896,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -25.936429176296837,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -28.498573229631425,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -17.844044517538492,
+      "graded trait score (0\u2013100)": 4.5,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -24.79292598833429,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -21.59930021026451,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -18.203577238052446,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -28.818396031124273,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -22.156167652498176,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -19.48131445414635,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -18.9329799697109,
+      "graded trait score (0\u2013100)": 6.616666666666667,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -22.706873302464487,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -2.763062321015554,
+      "graded trait score (0\u2013100)": 90.44999999999999,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -7.384882037328043,
+      "graded trait score (0\u2013100)": 36.16666666666667,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -20.80064396310653,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -10.852377781185824,
+      "graded trait score (0\u2013100)": 32.99999999999999,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -27.986029396931325,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -14.334201527311336,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -6.9700113294845325,
+      "graded trait score (0\u2013100)": 69.33333333333334,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -23.834721893456912,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -6.847272223250845,
+      "graded trait score (0\u2013100)": 7.45,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -16.738773794439595,
+      "graded trait score (0\u2013100)": 4.083333333333334,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -26.138154504862765,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -4.064097834253582,
+      "graded trait score (0\u2013100)": 78.83333333333333,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -14.106554013531436,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -5.754955961101623,
+      "graded trait score (0\u2013100)": 36.75,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -9.7144762391102,
+      "graded trait score (0\u2013100)": 28.583333333333336,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -25.669865228239882,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -8.914371002287046,
+      "graded trait score (0\u2013100)": 38.239999999999995,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -9.16937469834725,
+      "graded trait score (0\u2013100)": 20.583333333333332,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -19.908509043930238,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -20.937733775035245,
+      "graded trait score (0\u2013100)": 8.833333333333332,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -11.756636704147505,
+      "graded trait score (0\u2013100)": 42.733333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -11.995539194966733,
+      "graded trait score (0\u2013100)": 57.65,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -17.446934068344166,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -17.330541689488264,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -28.41973773205025,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -16.041922489367472,
+      "graded trait score (0\u2013100)": 49.233333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -13.348371287746522,
+      "graded trait score (0\u2013100)": 9.5,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -23.99542131348116,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -13.522337651456318,
+      "graded trait score (0\u2013100)": 7.5,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -20.728763600948522,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -23.823470233890063,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -9.549591346027569,
+      "graded trait score (0\u2013100)": 73.33333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -16.956786446573123,
+      "graded trait score (0\u2013100)": 1.35,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -16.147574454490968,
+      "graded trait score (0\u2013100)": 10.883333333333333,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -14.476118101391059,
+      "graded trait score (0\u2013100)": 9.75,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -18.730852707790106,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -14.109174416508083,
+      "graded trait score (0\u2013100)": 56.88333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -14.257754737747518,
+      "graded trait score (0\u2013100)": 4.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -19.561337713964782,
+      "graded trait score (0\u2013100)": 7.5,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -24.289351187153592,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -13.186482776518135,
+      "graded trait score (0\u2013100)": 81.66666666666667,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -21.220015398596793,
+      "graded trait score (0\u2013100)": 3.6666666666666665,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -20.95419729562597,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -18.564999199609606,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -28.03111129425829,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -16.544479743087944,
+      "graded trait score (0\u2013100)": 58.45,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -16.791905086986617,
+      "graded trait score (0\u2013100)": 13.25,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -22.993314897506654,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -13.582104205825503,
+      "graded trait score (0\u2013100)": 37.16666666666667,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -21.801725389218017,
+      "graded trait score (0\u2013100)": 1.0833333333333335,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -25.996152920042736,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -12.3508140776024,
+      "graded trait score (0\u2013100)": 85.5,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -18.61309603330118,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -16.557645297350152,
+      "graded trait score (0\u2013100)": 14.166666666666666,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -16.187550445050427,
+      "graded trait score (0\u2013100)": 11.616666666666669,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -22.194560038675196,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -15.336203791029241,
+      "graded trait score (0\u2013100)": 50.51833333333333,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -19.167423660541154,
+      "graded trait score (0\u2013100)": 0.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -8.715682529079736,
+      "y": 8.333333333333334,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -9.833601024597552,
+      "y": 15.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -7.3959223465216155,
+      "y": 24.083333333333332,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -6.513459376523817,
+      "y": 15.083333333333332,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -8.584279818694217,
+      "y": 18.5,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -5.520884779874591,
+      "y": 21.666666666666664,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -13.45711031105524,
+      "y": 13.75,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -5.435773499503771,
+      "y": 16.166666666666664,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -8.982838988959967,
+      "y": 20.666666666666664,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 2.321382035390458,
+      "y": 58.95,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -10.060723041422369,
+      "y": 29.28333333333334,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -7.226641044371016,
+      "y": 12.416666666666668,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -10.363356596939994,
+      "y": 14.75,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -5.8352131779703384,
+      "y": 14.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -14.142077835417183,
+      "y": 14.666666666666668,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -10.575045450876386,
+      "y": 10.583333333333334,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -6.4956738372434,
+      "y": 21.583333333333336,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -12.096323707189555,
+      "y": 13.583333333333332,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -9.389461302351737,
+      "y": 14.916666666666668,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -7.058551650817485,
+      "y": 16.166666666666668,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -7.393723073402817,
+      "y": 12.416666666666668,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -2.581219850263856,
+      "y": 30.5,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 6.460381715553711,
+      "y": 49.41666666666667,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -3.784233967817394,
+      "y": 19.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 0.8317584718298281,
+      "y": 32.5,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 2.850977392315084,
+      "y": 29.25,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -5.914174746234148,
+      "y": 27.083333333333336,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -0.8679059265859339,
+      "y": 40.35,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 0.7610238751388413,
+      "y": 52.81666666666666,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 7.794552908916817,
+      "y": 80.36666666666667,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 0.884063159216327,
+      "y": 58.16666666666667,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -1.6498234011963937,
+      "y": 21.833333333333332,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -9.768477690345925,
+      "y": 23.583333333333336,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -0.40281215923331787,
+      "y": 14.433333333333334,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 0.6517923558145856,
+      "y": 39.06666666666667,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -7.964588217917751,
+      "y": 14.666666666666668,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 3.4465161919772767,
+      "y": 40.849999999999994,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -7.654344800718566,
+      "y": 15.5,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 2.4956214458954538,
+      "y": 34.86666666666667,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -4.15162861763877,
+      "y": 20.499999999999996,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -5.949948130352424,
+      "y": 15.083333333333334,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 3.180904196092544,
+      "y": 32.666666666666664,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 12.71818089895246,
+      "y": 70.66666666666666,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -1.0289782279270885,
+      "y": 20.833333333333336,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 4.317491046184541,
+      "y": 43.949999999999996,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 9.083302053010476,
+      "y": 55.333333333333336,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -3.132997114378095,
+      "y": 28.866666666666667,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 5.915913415453492,
+      "y": 59.833333333333336,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 8.26538799489914,
+      "y": 75.4,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 11.586820904640891,
+      "y": 77.2,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 6.892987498966646,
+      "y": 73.31666666666666,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 3.610383292007642,
+      "y": 33.58333333333333,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -7.246165251170387,
+      "y": 24.25,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 4.833979769925661,
+      "y": 20.666666666666668,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 3.2657341660011716,
+      "y": 54.36666666666666,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -5.318894162691816,
+      "y": 14.416666666666668,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 9.9473171416271,
+      "y": 56.616666666666674,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 0.221821219160325,
+      "y": 20.75,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 9.72689138290347,
+      "y": 59.06666666666668,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 1.2822959616422676,
+      "y": 31.28333333333334,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -3.0278048772419743,
+      "y": 13.916666666666668,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 0.7844554716888049,
+      "y": 32.16666666666667,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 11.143568480909213,
+      "y": 73.85,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -2.0979001952541334,
+      "y": 25.250000000000004,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 2.1247272809666877,
+      "y": 44.28333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 7.895358461590505,
+      "y": 52.04999999999999,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -5.1644672160583704,
+      "y": 36.38333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 4.324247954675059,
+      "y": 59.65,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 5.156225409662082,
+      "y": 74.35000000000001,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 10.779859249652166,
+      "y": 77.1,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 3.2200796346328455,
+      "y": 59.53333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -0.5482493628725614,
+      "y": 20.583333333333332,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -5.62904409073004,
+      "y": 26.5,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 3.4701951063965275,
+      "y": 20.25,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 2.780830643506101,
+      "y": 53.15,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -4.872160710992767,
+      "y": 18.916666666666664,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 9.744230311408003,
+      "y": 58.01666666666667,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -3.2323626193607384,
+      "y": 15.666666666666666,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 8.731196619337679,
+      "y": 47.833333333333336,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 0.14293181363162952,
+      "y": 29.78333333333333,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -2.936395568444551,
+      "y": 15.833333333333334,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 5.730758926708589,
+      "y": 48.53333333333333,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 14.306434253315636,
+      "y": 78.1,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 1.1629927782505876,
+      "y": 31.5,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 7.363615856373523,
+      "y": 65.01666666666667,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 11.491239132502775,
+      "y": 65.75,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 2.8203171713918596,
+      "y": 37.7,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 6.919771985468179,
+      "y": 57.033333333333324,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 9.463340891630336,
+      "y": 75.83333333333333,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 13.757310109736343,
+      "y": 83.13333333333333,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 9.83167523886797,
+      "y": 79.98333333333333,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 4.659688859054882,
+      "y": 34.6,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -3.8652977996984355,
+      "y": 28.25,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 6.879816815726252,
+      "y": 30.75,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 8.212032843886815,
+      "y": 74.01666666666668,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": -2.577780084443704,
+      "y": 24.333333333333336,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 12.168728352133108,
+      "y": 77.2,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 2.0202169603424682,
+      "y": 28.833333333333332,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 12.11267935473239,
+      "y": 78.69999999999999,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "last-prompt-token projection onto the persona vector (selected layer)": 3.169616553817165,
+      "y": 41.2,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": -12.371616449557965,
+      "y": 11.466666666666667,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -28.1236996559315,
+      "y": 10.483333333333333,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -20.008077554693497,
+      "y": 9.5,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -22.497383579204413,
+      "y": 24.791666666666664,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -33.07798178537048,
+      "y": 9.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -18.537793186371943,
+      "y": 63.125,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -28.527239004305876,
+      "y": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -9.090461645135685,
+      "y": 43.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -28.038922552025912,
+      "y": 5.325,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -15.001130835778087,
+      "y": 75.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -28.773529761427447,
+      "y": 1.3,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -29.97164433399932,
+      "y": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -18.877926123793046,
+      "y": 62.54629629629629,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -34.28420363701784,
+      "y": 7.5,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -31.11611969156641,
+      "y": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -18.48415355006471,
+      "y": 15.648148148148149,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -32.468369872516526,
+      "y": 0.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -18.12041234660142,
+      "y": 42.425925925925924,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -8.361273184755388,
+      "y": 63.0,
+      "series": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -18.672159732074952,
+      "y": 2.4583333333333335,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -20.54551108877788,
+      "y": 19.09259259259259,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -8.842956870028582,
+      "y": 8.166666666666668,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -15.062502313188325,
+      "y": 15.46875,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -29.749151943638868,
+      "y": 6.25,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -19.610342391470823,
+      "y": 76.11111111111111,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -17.968728576498226,
+      "y": 22.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -8.24239453791925,
+      "y": 81.66666666666667,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -15.732896132502317,
+      "y": 54.2,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -13.266554776495228,
+      "y": 85.0,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -13.434210956697255,
+      "y": 41.94444444444444,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -26.049795638002788,
+      "y": 0.33333333333333337,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -15.534722607469126,
+      "y": 98.75,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -29.326624650881048,
+      "y": 6.208333333333334,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -25.355335976539752,
+      "y": 1.375,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -7.005919465401576,
+      "y": 18.694444444444443,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -30.39765260258875,
+      "y": 12.38095238095238,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -8.649852868685082,
+      "y": 78.75,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -6.035404238944676,
+      "y": 91.66666666666667,
+      "series": "5",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 4.232286604343498,
+      "y": 97.32142857142857,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.9292014812520561,
+      "y": 96.63333333333334,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.49734237235809764,
+      "y": 90.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -8.164440922142926,
+      "y": 11.527777777777779,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -25.518673346634028,
+      "y": 9.61111111111111,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -16.86843794970839,
+      "y": 93.57142857142857,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -11.385948149203355,
+      "y": 1.6,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -5.791813287603222,
+      "y": 82.5,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.0500276264604254,
+      "y": 98.12962962962962,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -9.913757988111977,
+      "y": 95.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.799084510100588,
+      "y": 99.51666666666668,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -7.500466852132173,
+      "y": 39.00833333333333,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.8456129948693439,
+      "y": 99.04761904761904,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -14.265770017561438,
+      "y": 59.208333333333336,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -20.673371068163565,
+      "y": 12.25,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.7512061922304264,
+      "y": 86.14583333333334,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -1.9010127496231224,
+      "y": 89.81666666666668,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -0.8870161493144577,
+      "y": 55.0,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": -1.682828083671808,
+      "y": 93.375,
+      "series": "10",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.8103423430539753,
+      "y": 74.4375,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.8193986688613435,
+      "y": 96.72916666666667,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.18577512616327,
+      "y": 63.33333333333333,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -7.899132832961199,
+      "y": 2.4285714285714284,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -22.85615472790736,
+      "y": 2.5462962962962963,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -15.10431562631381,
+      "y": 80.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -8.042380329644192,
+      "y": 0.5555555555555556,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -6.5042947019127695,
+      "y": 82.5,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.8861036596310585,
+      "y": 98.75,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -13.222520553342985,
+      "y": 85.83333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 4.776173402890619,
+      "y": 95.2,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -9.70306372714709,
+      "y": 28.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -2.6793597388349375,
+      "y": 99.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -14.155541066833699,
+      "y": 59.907407407407405,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -17.010859197630545,
+      "y": 5.625,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.7089949027529465,
+      "y": 99.83333333333334,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -6.5749586250712895,
+      "y": 98.225,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0940904478142666,
+      "y": 68.5,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": -1.5102986628430322,
+      "y": 75.0,
+      "series": "15",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.775224845525166,
+      "y": 56.03703703703704,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -2.0202108075759515,
+      "y": 87.31481481481481,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -1.8144585811131522,
+      "y": 23.98148148148148,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -11.694424495647535,
+      "y": 21.575,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -26.90058094706271,
+      "y": 5.833333333333333,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -15.16619342752204,
+      "y": 74.6875,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -10.565170484546213,
+      "y": 10.462962962962964,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -6.397986619815458,
+      "y": 85.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -2.812220119475426,
+      "y": 98.42592592592592,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -11.810895168660071,
+      "y": 87.5,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.1236764734923073,
+      "y": 93.98333333333333,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -16.043447305273816,
+      "y": 45.83333333333333,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -4.091241886240292,
+      "y": 99.55555555555556,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -17.50734060589088,
+      "y": 43.98148148148148,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -22.35802689282045,
+      "y": 5.462962962962963,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.6711933009844808,
+      "y": 99.55555555555556,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -12.60990394157351,
+      "y": 64.33333333333334,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -1.564810551475608,
+      "y": 75.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": -3.2325736630290134,
+      "y": 95.0,
+      "series": "20",
+      "_kind": "scatter",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 295
+}

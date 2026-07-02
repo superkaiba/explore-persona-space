@@ -1,0 +1,120 @@
+{
+  "commit": "4c0b2f9c98",
+  "created": "2026-07-02T09:36:48Z",
+  "figsize": [
+    13.5,
+    8.6
+  ],
+  "points": [
+    {
+      "x": 2.5,
+      "pooled (overall r)\nmax over 28 layers of |r|": 0.8609320832237064,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 2.5,
+      "pooled (overall r)\nmax over 28 layers of |r|": 0.7435903706648623,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -1.5,
+      "pooled (overall r)\nmax over 28 layers of |r|": 0.807488913181647,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.5,
+      "y": 0.7471750854123981,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.5,
+      "y": 0.6926543357375434,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -1.5,
+      "y": 0.7959494589931628,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.5,
+      "y": 0.7224059602887347,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.5,
+      "y": 0.60094899919748,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -1.5,
+      "y": 0.8373426445467381,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.5,
+      "within-condition r\nmax over 28 layers of |r|": 0.16764320727545914,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.5,
+      "within-condition r\nmax over 28 layers of |r|": 0.25865036618312287,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -1.5,
+      "within-condition r\nmax over 28 layers of |r|": 0.38741373543813296,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.5,
+      "y": 0.33944729680724184,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.5,
+      "y": 0.3192660246491144,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -1.5,
+      "y": 0.6826755946774208,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.5,
+      "y": 0.41969518484582863,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.5,
+      "y": 0.3885059977920293,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -1.5,
+      "y": 0.6468543563677224,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 18
+}
