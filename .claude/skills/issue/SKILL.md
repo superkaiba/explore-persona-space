@@ -4659,13 +4659,13 @@ re-invocation).**
      rounds commonly exceed 15 min wall time).
    - Window = **15 min** for everything else (`verifying` and any other
      Step 8/9 stage).
-   - **effective age ≤ window** → the subagent is presumed STILL
+   - **effective age < window** → the subagent is presumed STILL
      RUNNING. EXIT the skill cleanly (`post_step_completed.py ...
      --exit-kind parked --notes "stage <stage> round <r> still in flight
      (dispatched <Δ>m ago, window <W>m); backstop tick yielding"`). Do
      NOT re-dispatch — let the live work finish; the next tick (or the
      live subagent's own completion) advances the pipeline.
-   - **effective age > window** → the stage looks genuinely STALLED (a
+   - **effective age >= window** → the stage looks genuinely STALLED (a
      subagent that never posted its result). Proceed to re-dispatch it
      normally (the freshness window is what distinguishes "live" from
      "stalled").

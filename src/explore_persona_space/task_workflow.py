@@ -1182,13 +1182,32 @@ def _cb_gate_label(plan_text: str, ladder: list[str]) -> str:
 
 STAGE_RESULT_KINDS: dict[str, frozenset[str]] = {
     # NORMALIZED stage token (see _normalize_stage) -> marker kind(s) that complete it.
+    # Clearing = "ANY completion marker a subagent of this stage posts" — the set answers
+    # "did the last dispatched subagent finish?", NOT "did the whole stage finish?"
+    # (one stage+round legitimately dispatches analyzer -> critic -> reconciler in sequence;
+    # #547 replay: an intermediate epm:interpretation must clear the analyzer crumb so the
+    # critic dispatch is not wrongly skipped).
     "verifying": frozenset({"epm:upload-verification"}),
-    "interpreting": frozenset({"epm:interpretation"}),
-    "clean-result": frozenset({"epm:clean-result-critique"}),
+    "interpreting": frozenset(
+        {
+            "epm:interpretation",
+            "epm:interp-critique",
+            "epm:interp-critique-codex",
+            "epm:review-reconcile",
+        }
+    ),
+    "clean-result": frozenset(
+        {
+            "epm:clean-result-critique",
+            "epm:interpretation",
+            "epm:clean-result-critique-codex",
+            "epm:review-reconcile",
+        }
+    ),
     "implementing": frozenset({"epm:experiment-implementation"}),
     "free-analysis-followup": frozenset({"epm:free-analysis-followup-run"}),
     "methodology-reference": frozenset({"epm:methodology-doc-generated"}),
-    "code-review": frozenset({"epm:code-review"}),
+    "code-review": frozenset({"epm:code-review", "epm:code-review-codex", "epm:review-reconcile"}),
     "planning": frozenset({"epm:plan"}),
     "related-work": frozenset({"epm:related-work-proposed"}),
 }

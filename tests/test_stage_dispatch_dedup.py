@@ -285,3 +285,116 @@ def test_no_breadcrumb_returns_none():
         )
         is None
     )
+
+
+def test_547_replay_clean_result_critic_after_analyzer_revision():
+    # #547 real sequence: analyzer crumb 13:29:31 -> epm:interpretation (the analyzer's
+    # revise output) 13:48:23 -> critic dispatch attempt 13:49:13. The intermediate
+    # epm:interpretation is a clearing kind for stage=clean-result (the LAST dispatched
+    # subagent finished), so the next in-round dispatch must be ALLOWED.
+    events = [
+        _ev(
+            "2026-06-10T13:29:31Z",
+            "epm:progress",
+            "stage-dispatch stage=clean-result round=2 subagent=analyzer",
+        ),
+        _ev("2026-06-10T13:48:23Z", "epm:interpretation", "revise round 2 landed"),
+    ]
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "clean-result", 2, 30, now=_dt("2026-06-10T13:49:13Z")
+        )
+        is None
+    )
+
+
+def test_547_replay_interpreting_reconciler_after_critique():
+    # #547 sibling replay: interpretation-critic crumb -> epm:interp-critique 19m later;
+    # the reconciler dispatch 21m in (< 30m window) must be ALLOWED because the critique
+    # marker clears the critic's crumb.
+    events = [
+        _ev(
+            "2026-06-10T14:00:00Z",
+            "epm:progress",
+            "stage-dispatch stage=interpreting round=1 subagent=interpretation-critic",
+        ),
+        _ev("2026-06-10T14:19:00Z", "epm:interp-critique", "verdict: REVISE"),
+    ]
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "interpreting", 1, 30, now=_dt("2026-06-10T14:21:00Z")
+        )
+        is None
+    )
+
+
+def test_quoted_breadcrumb_behaviorally_pinned():
+    # Discriminating fixture: [real crumb t0, its clearing result marker t0+5m, a note at
+    # t0+10m that CONTAINS but does not START WITH the breadcrumb text]. A substring-matching
+    # impl would read the quoting note as the freshest crumb with no result after it -> skip;
+    # the startswith anchor keeps the real crumb (already cleared) -> dispatch allowed.
+    events = [
+        _ev(
+            "2026-07-01T10:00:00Z",
+            "epm:progress",
+            "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+        ),
+        _ev("2026-07-01T10:05:00Z", "epm:experiment-implementation", "round 1 landed"),
+        _ev(
+            "2026-07-01T10:10:00Z",
+            "epm:progress",
+            "note: earlier 'stage-dispatch stage=implementing round=1' crumb was cleared",
+        ),
+    ]
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:11:00Z")
+        )
+        is None
+    )
+
+
+def test_non_integer_round_token_never_matches():
+    events = [
+        _ev("2026-07-01T10:00:00Z", "epm:progress", "stage-dispatch stage=implementing round=abc")
+    ]
+    for round_num in (0, 1, 2):
+        assert (
+            tw.stage_dispatch_should_skip(
+                events, "implementing", round_num, 15, now=_dt("2026-07-01T10:01:00Z")
+            )
+            is None
+        )
+
+
+def test_malformed_breadcrumb_ts_fails_toward_dispatch():
+    events = [
+        _ev(
+            "not-a-date",
+            "epm:progress",
+            "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+        )
+    ]
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:01:00Z")
+        )
+        is None
+    )
+
+
+def test_age_exactly_window_allows_dispatch():
+    events = [
+        _ev(
+            "2026-07-01T10:00:00Z",
+            "epm:progress",
+            "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+        )
+    ]
+    # age == window (15.0m exactly) -> >= is dispatch-allowed (stalled boundary).
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:15:00Z")
+        )
+        is None
+    )
