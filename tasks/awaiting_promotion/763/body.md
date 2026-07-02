@@ -5,6 +5,7 @@ title: Base-model answer activations predict behavioral expression for all 5 mat
 kind: experiment
 tags:
 - followup-auto
+- followup-manual
 created_at: '2026-06-30T09:48:56Z'
 has_clean_result: true
 parent_id: 658
